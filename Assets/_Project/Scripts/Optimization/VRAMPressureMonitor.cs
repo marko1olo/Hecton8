@@ -13,16 +13,21 @@ namespace Hecton8.Optimization
     public sealed class VRAMPressureMonitor : MonoBehaviour, ITickable, IUpdatable
     {
         private const float BytesPerMegabyte = 1024f * 1024f;
+        private const float DefaultWarningVramFraction = 1600f / 1800f;
         private const float DefaultRestoreFraction = 1.40f / 1.80f;
         private const int DefaultSampleIntervalFrames = 90;
         private const float RamWarningFraction = 0.75f;
         private const float RamEmergencyFraction = 0.90f;
+        private const long SoftVramPressureBytes = 1600L * 1024L * 1024L;
+        private const long ForcedHalfResolutionVramBytes = 1600L * 1024L * 1024L;
+        private const long RedZoneVramPressureBytes = 1800L * 1024L * 1024L;
+        private const long RestoreFullResolutionVramBytes = 1200L * 1024L * 1024L;
         private const long MinimumHardwareHeadroomBytes = 200L * 1024L * 1024L;
         private const int WorldPrefabEvictionIdleFrames = 180;
 
         [Header("VRAM Pressure Thresholds")]
-        [Tooltip("Preventive mip downgrade threshold against the 1.8 GB MX350 ceiling.")]
-        [SerializeField, Range(0.5f, 1f)] private float warningVramFraction = 0.85f;
+        [Tooltip("Preventive mip downgrade threshold: 1.6 GB against the 1.8 GB MX350 ceiling.")]
+        [SerializeField, Range(0.5f, 1f)] private float warningVramFraction = DefaultWarningVramFraction;
 
         [Tooltip("Emergency eviction threshold against the 1.8 GB MX350 ceiling.")]
         [SerializeField, Range(0.5f, 1f)] private float emergencyVramFraction = 0.95f;
@@ -47,6 +52,7 @@ namespace Hecton8.Optimization
         internal float RamPressureFactor { get; private set; }
         internal float PressureFactor { get; private set; }
         internal float LastStreamingMipBudgetMb { get; private set; }
+        internal long LastUsedVramBytes { get; private set; }
         internal int EmergencyEvictionCount { get; private set; }
 
         private void Awake()
@@ -159,6 +165,7 @@ namespace Hecton8.Optimization
             VRAMBudgetThresholds thresholds = VRAMBudgetThresholds.Default;
             long vramBudgetBytes = thresholds.TotalVRAMBudgetBytes;
             long usedVramBytes = monitor != null ? monitor.TotalVRAMBytes : 0L;
+            LastUsedVramBytes = usedVramBytes;
 
             VramPressureFactor = vramBudgetBytes > 0L ? usedVramBytes / (float)vramBudgetBytes : 0f;
             RamPressureFactor = maxSystemRamBytes > 0L ? currentReservedBytes / (float)maxSystemRamBytes : 0f;
@@ -191,10 +198,13 @@ namespace Hecton8.Optimization
         private void ApplyMipBias()
         {
             int targetMipLimit = _activeMipLimit;
+            bool softVramPressure = IsSoftVramPressureActive();
 
-            if (VramPressureFactor >= emergencyVramFraction)
-                targetMipLimit = Mathf.Max(_baselineMipLimit, 2);
-            else if (VramPressureFactor >= warningVramFraction)
+            if (LastUsedVramBytes >= ForcedHalfResolutionVramBytes)
+                targetMipLimit = Mathf.Max(_baselineMipLimit, 1);
+            else if (LastUsedVramBytes <= RestoreFullResolutionVramBytes)
+                targetMipLimit = _baselineMipLimit;
+            else if (softVramPressure)
                 targetMipLimit = Mathf.Max(_baselineMipLimit, 1);
             else if (VramPressureFactor <= restoreVramFraction)
                 targetMipLimit = _baselineMipLimit;
@@ -203,7 +213,15 @@ namespace Hecton8.Optimization
                 return;
 
             QualitySettings.globalTextureMipmapLimit = targetMipLimit;
+#pragma warning disable CS0618
+            QualitySettings.masterTextureLimit = targetMipLimit;
+#pragma warning restore CS0618
             _activeMipLimit = targetMipLimit;
+        }
+
+        private bool IsSoftVramPressureActive()
+        {
+            return LastUsedVramBytes >= SoftVramPressureBytes || VramPressureFactor >= warningVramFraction;
         }
 
         private void RunPressureEviction(AssetLifecycleGovernor governor, VRAMMonitor monitor)
@@ -221,7 +239,8 @@ namespace Hecton8.Optimization
                     hardwareHeadroomBytes = 0L;
             }
 
-            if (VramPressureFactor >= emergencyVramFraction || RamPressureFactor >= RamEmergencyFraction)
+            bool redZoneVramPressure = LastUsedVramBytes >= RedZoneVramPressureBytes || VramPressureFactor >= 1f;
+            if (redZoneVramPressure || VramPressureFactor >= emergencyVramFraction || RamPressureFactor >= RamEmergencyFraction)
             {
                 if (governor != null)
                 {
@@ -231,7 +250,7 @@ namespace Hecton8.Optimization
                         AssetPriorityTier.Tier4MidRange);
                 }
 
-                if (monitor != null && monitor.RenderTextureBudgetUtilization >= 1f)
+                if (redZoneVramPressure || (monitor != null && monitor.RenderTextureBudgetUtilization >= 1f))
                 {
                     RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
                     if (pool != null)
@@ -248,7 +267,7 @@ namespace Hecton8.Optimization
                 return;
             }
 
-            if (VramPressureFactor >= warningVramFraction || RamPressureFactor >= RamWarningFraction)
+            if (IsSoftVramPressureActive() || RamPressureFactor >= RamWarningFraction)
             {
                 if (governor != null)
                 {

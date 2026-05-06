@@ -18,6 +18,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         _FaunaBiolumDim("Fauna Biolum Dim", Range(0, 1)) = 1.0
         _DeathDitherFade("Death Dither Fade", Range(0, 1)) = 0.0
         _CorpseBloatAge01("Corpse Bloat Age 01", Range(0, 1)) = 0.0
+        _CorpseBloatStartTime("Corpse Bloat Start Time", Float) = -1.0
+        _CorpseBloatDuration("Corpse Bloat Duration", Range(1, 120)) = 60.0
         _CorpseBloatStrength("Corpse Bloat Strength", Range(0, 0.35)) = 0.08
         _TailSwayStrength("Tail Sway Strength", Range(0, 0.35)) = 0.045
         _TailSwaySpeed("Tail Sway Speed", Range(0, 16)) = 4.6
@@ -78,6 +80,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float _FaunaBiolumDim;
             float _DeathDitherFade;
             float _CorpseBloatAge01;
+            float _CorpseBloatStartTime;
+            float _CorpseBloatDuration;
             float _CorpseBloatStrength;
             float _TailSwayStrength;
             float _TailSwaySpeed;
@@ -149,7 +153,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float tailWave = sin(_Time.y * _TailSwaySpeed + worldPos.y * _TailSwayPhase);
             positionOS.x += tailWave * _TailSwayStrength * tailMask;
 
-            float bloat01 = saturate(_CorpseBloatAge01);
+            float timedBloat01 = saturate((_Time.y - _CorpseBloatStartTime) / max(_CorpseBloatDuration, 0.001)) * step(0.0, _CorpseBloatStartTime);
+            float bloat01 = max(saturate(_CorpseBloatAge01), timedBloat01);
             positionOS += normalOS * (bloat01 * bloat01 * _CorpseBloatStrength);
             return positionOS;
         }
@@ -268,7 +273,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half3 woundEmission = woundColor * (woundMask * _WoundEmissionBoost);
             half oceanPanic = saturate((half)_GlobalOceanPanic);
             half3 panicEmissionColor = lerp(_EmissionColor.rgb, _GlobalOceanPanicColor.rgb, oceanPanic);
-            half3 emission = ((panicEmissionColor * (_EmissionStrength * emissionMask)) + biolum) * faunaBiolumDim + woundEmission;
+            half panicBlink = lerp(1.0h, lerp(0.35h, 1.45h, (half)step(0.5, frac(_Time.y * 7.0 + input.positionWS.y * 0.03))), oceanPanic);
+            half3 emission = ((panicEmissionColor * (_EmissionStrength * emissionMask) * panicBlink) + biolum) * faunaBiolumDim + woundEmission;
             half3 finalColor = HectonCoreLitApplyNoirFog(color + caustics + emission + sss, input.fogFactor, input.positionWS);
             return half4(finalColor, 1.0h);
         }

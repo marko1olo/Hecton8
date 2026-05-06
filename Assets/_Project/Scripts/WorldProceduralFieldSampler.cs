@@ -156,6 +156,21 @@ namespace Hecton8.World
             CrystalGrowth = 5
         }
 
+        public const float BiomeBorderOverlapMeters = 50f;
+
+        public static float EvaluateBiomeBorderSmoothstepBlend01(float distanceFromBorderMeters, float overlapMeters = BiomeBorderOverlapMeters)
+        {
+            float safeOverlap = math.max(0.0001f, overlapMeters);
+            float t = math.saturate(1f - math.abs(distanceFromBorderMeters) / safeOverlap);
+            return 0.5f * t * t * (3f - 2f * t);
+        }
+
+        public static byte EvaluateBiomeBorderSmoothstepBlend255(float distanceFromBorderMeters, float overlapMeters = BiomeBorderOverlapMeters)
+        {
+            float blend01 = EvaluateBiomeBorderSmoothstepBlend01(distanceFromBorderMeters, overlapMeters);
+            return (byte)math.clamp((int)math.floor(blend01 * 255f + 0.5f), 0, 255);
+        }
+
         public struct BiomeInfluenceCell
         {
             public uint Packed;
@@ -284,6 +299,7 @@ namespace Hecton8.World
             public int SecondaryBiomeMatrixDataIndex;
             public int MapMagicBiomeBlend255;
             public int BiomeFamilyDataIndex;
+            public ulong BiomeFamilyFlags;
             public int ResolvedZoneKind;
             public int ResolvedPattern;
             public int PreviewOverrideActive;
@@ -309,6 +325,7 @@ namespace Hecton8.World
             public int zoneDataIndex;
             public int biomeMatrixDataIndex;
             public int biomeFamilyDataIndex;
+            public ulong biomeFamilyFlags;
             public HectonBiomeMatrixProfile biomeProfile;
             public HectonBiomeMatrixProfile secondaryBiomeProfile;
             public HectonBiomeFamilyProfile biomeFamily;
@@ -824,7 +841,9 @@ namespace Hecton8.World
                     output.BiomeFamilyDataIndex = biomeMatrices[volumetricBiomeMatrixIndex].FamilyDataIndex;
             }
 
+            output.BiomeFamilyFlags = (ulong)ResolveBiomeFamilyFlags(output.BiomeFamilyDataIndex, biomeFamilies, biomeFamilyCount);
             ComputeHeatChannels(ref output, biomeMatrices, biomeMatrixCount);
+            ApplyTectonicSpineSteepSlopeHeatBias(ref output);
             return output;
         }
 
@@ -1238,8 +1257,11 @@ namespace Hecton8.World
         {
             float scale = math.max(0.0001f, zone.EdgeNoiseScale);
             float2 sample = (positionXZ * scale) + zone.EdgeNoiseOffset;
-            float centered = noise.snoise(sample);
-            return math.clamp(1f + centered * zone.EdgeNoiseStrength, 0.75f, 1.35f);
+            float coarse = noise.snoise(sample);
+            float fine = noise.snoise(sample * 2.73f + new float2(19.31f, -41.77f));
+            float shard = noise.snoise(sample * 6.11f + new float2(-7.13f, 83.29f));
+            float centered = coarse * 0.62f + fine * 0.28f + shard * 0.10f;
+            return math.clamp(1f + centered * zone.EdgeNoiseStrength, 0.65f, 1.45f);
         }
 
         private static float EvaluateRadiusWeightFromDistance(float distance, float noisyRadius, float blend)
@@ -1582,6 +1604,21 @@ namespace Hecton8.World
             output.ShelterDensityHeat = ResolveChannelHeat(12, in output, biomeMatrices, biomeMatrixCount);
             output.ServiceDensityHeat = ResolveChannelHeat(13, in output, biomeMatrices, biomeMatrixCount);
             output.GenericHeat = ResolveChannelHeat(14, in output, biomeMatrices, biomeMatrixCount);
+        }
+
+        private static void ApplyTectonicSpineSteepSlopeHeatBias(ref CellOutputData output)
+        {
+            BiomeFamilyFlags flags = (BiomeFamilyFlags)output.BiomeFamilyFlags;
+            if ((flags & BiomeFamilyFlags.Tectonic) == 0 || output.SlopeDegrees < 45f)
+                return;
+
+            float slope01 = math.saturate((output.SlopeDegrees - 45f) / 30f);
+            output.RockDensityHeat = math.max(output.RockDensityHeat, 0.74f + slope01 * 0.20f);
+            output.DebrisDensityHeat = math.max(output.DebrisDensityHeat, 0.80f + slope01 * 0.18f);
+            output.LandmarkStrengthHeat = math.max(output.LandmarkStrengthHeat, 0.62f + slope01 * 0.18f);
+            output.HazardDensityHeat = math.max(output.HazardDensityHeat, 0.68f + slope01 * 0.18f);
+            output.CanyonSignal = math.max(output.CanyonSignal, 0.72f + slope01 * 0.18f);
+            output.CompositionPotential = math.max(output.CompositionPotential, 0.74f + slope01 * 0.16f);
         }
 
         private static float ResolveChannelHeat(int channelIndex, in CellOutputData output, NativeArray<BiomeMatrixData> biomeMatrices, int biomeMatrixCount)
@@ -2020,6 +2057,12 @@ namespace Hecton8.World
             _samplingFramePrepared = false;
         }
 
+        public void MarkScatterSamplingJobCompleted()
+        {
+            _lastSamplingJobHandle = default;
+            _hasPendingSamplingJob = false;
+        }
+
         public void MarkBurstDataDirty()
         {
             _isDataDirty = true;
@@ -2326,6 +2369,7 @@ namespace Hecton8.World
                 zoneDataIndex = output.ZoneDataIndex,
                 biomeMatrixDataIndex = output.BiomeMatrixDataIndex,
                 biomeFamilyDataIndex = output.BiomeFamilyDataIndex,
+                biomeFamilyFlags = output.BiomeFamilyFlags,
                 biomeProfile = output.BiomeMatrixDataIndex >= 0 && output.BiomeMatrixDataIndex < _biomeMatrixBakeList.Count ? _biomeMatrixBakeList[output.BiomeMatrixDataIndex] : null,
                 secondaryBiomeProfile = ResolveSecondaryBiomeProfile(output),
                 biomeFamily = output.BiomeFamilyDataIndex >= 0 && output.BiomeFamilyDataIndex < _biomeFamilyBakeList.Count ? _biomeFamilyBakeList[output.BiomeFamilyDataIndex] : null,
@@ -2841,6 +2885,7 @@ namespace Hecton8.World
                 zoneDataIndex = zoneDataIndex,
                 biomeMatrixDataIndex = biomeMatrixDataIndex,
                 biomeFamilyDataIndex = biomeFamilyDataIndex,
+                biomeFamilyFlags = (ulong)TokenizeFamilyFlags(biomeFamily),
                 biomeProfile = biomeProfile,
                 secondaryBiomeProfile = ResolveManagedSecondaryBiomeProfile(
                     volumetricOverrideApplied,
@@ -3144,6 +3189,7 @@ namespace Hecton8.World
                 landmarkBias);
             patternShapedValue = Mathf.Clamp01(patternShapedValue + biomeMatrixBonus * 0.92f);
             value = Mathf.Lerp(value, patternShapedValue, ResolvePatternFieldBlend(sample.seafloorSource, sample.zone));
+            value = ApplyManagedTectonicSpineSteepSlopeHeatBias(value, channel, sample);
 
             if (family != null)
             {
@@ -3164,6 +3210,28 @@ namespace Hecton8.World
             if (ShouldUpdateDiagnostics())
                 UpdateDiagnostics(sample, channel, value);
             return value;
+        }
+
+        private static float ApplyManagedTectonicSpineSteepSlopeHeatBias(
+            float value,
+            string channel,
+            in FieldSample sample)
+        {
+            if (((BiomeFamilyFlags)sample.biomeFamilyFlags & BiomeFamilyFlags.Tectonic) == 0 ||
+                sample.slopeDegrees < 45f)
+            {
+                return value;
+            }
+
+            float slope01 = Mathf.Clamp01((sample.slopeDegrees - 45f) / 30f);
+            return channel switch
+            {
+                "rock_density" => Mathf.Max(value, 0.74f + slope01 * 0.20f),
+                "debris_density" => Mathf.Max(value, 0.80f + slope01 * 0.18f),
+                "landmark_strength" => Mathf.Max(value, 0.62f + slope01 * 0.18f),
+                "hazard_density" => Mathf.Max(value, 0.68f + slope01 * 0.18f),
+                _ => value
+            };
         }
 
         private bool ShouldUpdateDiagnostics()

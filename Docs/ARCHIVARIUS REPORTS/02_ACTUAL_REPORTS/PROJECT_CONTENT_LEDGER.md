@@ -1,6 +1,6 @@
-# PROJECT_CONTENT_LEDGER
+﻿# PROJECT_CONTENT_LEDGER
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: content hash authority, proxy/ghost policy, and authored template integrity surface
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Persistent_Object_Registry.txt`
@@ -91,7 +91,7 @@ Important boundary:
 ## 64-bit Flora Genetic Trait Definitions
 
 - Authoring/runtime owner: `FloraDataTemplate.GeneticsMask` and `CultivationManager.CultivationSlotState.GeneticsMask`.
-- Persistence owner: `InventoryDTO.itemGeneticsWords : ulong[]` and `ModuleDTO.cultivationGeneticsMasks : ulong[]`.
+- Persistence owner: `InventoryDTO.itemGeneticsWords : byte[]` and `ModuleDTO.cultivationGeneticsMasks : ulong[]`.
 - Save format: v53 introduced 64-bit genetics; v54 keeps the same layout and migrates v48-v52 legacy `uint[]` masks into `ulong[]`.
 - Splice equation: `result = (maskA | maskB) ^ (XorShift32(seed) & 0x000000000000000FUL)`.
 

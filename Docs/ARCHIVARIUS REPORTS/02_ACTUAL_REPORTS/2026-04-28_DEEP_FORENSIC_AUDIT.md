@@ -1,6 +1,6 @@
-# DEEP FORENSIC AUDIT — HECTON-8 SYSTEM ARCHAEOLOGY & HARDWARE DICTATORSHIP
-Date: 2026-04-28
-Status: REFERENCE
+﻿# DEEP FORENSIC AUDIT â€” HECTON-8 SYSTEM ARCHAEOLOGY & HARDWARE DICTATORSHIP
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 ## Current-State Addendum (2026-04-29)
@@ -19,66 +19,66 @@ The following points are now known stale or materially incomplete:
 
 Use `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`, `PROJECT_ATLAS.md`, `INTERFACE_HEALTH_DASHBOARD.md`, and `EVENT_FLOW_MAP.md` for the fresher truth layer.
 
-**Дата:** 2026-04-28 | **Режим:** Deep Static Analysis | **Автор:** Supreme Compliance Auditor
+**Ð”Ð°Ñ‚Ð°:** 2026-04-28 | **Ð ÐµÐ¶Ð¸Ð¼:** Deep Static Analysis | **ÐÐ²Ñ‚Ð¾Ñ€:** Supreme Compliance Auditor
 
 ---
 
-## 📋 EXECUTIVE SUMMARY
+## ðŸ“‹ EXECUTIVE SUMMARY
 
-### Статус проекта (глубокий анализ)
+### Ð¡Ñ‚Ð°Ñ‚ÑƒÑ Ð¿Ñ€Ð¾ÐµÐºÑ‚Ð° (Ð³Ð»ÑƒÐ±Ð¾ÐºÐ¸Ð¹ Ð°Ð½Ð°Ð»Ð¸Ð·)
 
-| Аудит | Статус | Критичность | Примечания |
+| ÐÑƒÐ´Ð¸Ñ‚ | Ð¡Ñ‚Ð°Ñ‚ÑƒÑ | ÐšÑ€Ð¸Ñ‚Ð¸Ñ‡Ð½Ð¾ÑÑ‚ÑŒ | ÐŸÑ€Ð¸Ð¼ÐµÑ‡Ð°Ð½Ð¸Ñ |
 |--------|--------|------------|----------|
-| **GlobalRegistry Audit** | ⚠️ DUPLICATE RISK | HIGH | 150+ registrations — нужна проверка |
-| **Crest Anti-Corruption** | ❌ VIOLATION | CRITICAL | 4 файла outside World/ |
-| **Atmosphere-Structure Desync** | ⚠️ AT RISK | HIGH | Shared interface exists |
-| **ItemData Zero-GC** | ❌ **FALSE** | CRITICAL | 1000+ references remain |
-| **Cyrillic Sweep** | ✅ COMPLIANT | LOW | Only Lore/data tools |
-| **LayerMask Crimes** | ❌ PENDING | CRITICAL | TECH_DEBT не исправлен |
+| **GlobalRegistry Audit** | âš ï¸ DUPLICATE RISK | HIGH | 150+ registrations â€” Ð½ÑƒÐ¶Ð½Ð° Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÐ° |
+| **Crest Anti-Corruption** | âŒ VIOLATION | CRITICAL | 4 Ñ„Ð°Ð¹Ð»Ð° outside World/ |
+| **Atmosphere-Structure Desync** | âš ï¸ AT RISK | HIGH | Shared interface exists |
+| **ItemData Zero-GC** | âŒ **FALSE** | CRITICAL | 1000+ references remain |
+| **Cyrillic Sweep** | âœ… COMPLIANT | LOW | Only Lore/data tools |
+| **LayerMask Crimes** | âŒ PENDING | CRITICAL | TECH_DEBT Ð½Ðµ Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÐµÐ½ |
 
 ---
 
 ## I. REGISTRY LEAK AUDIT
 
-### Findings: GlobalRegistry Usage — 150+ Registrations
+### Findings: GlobalRegistry Usage â€” 150+ Registrations
 
-**Количество:**
+**ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾:**
 - `GlobalRegistry.RegisterUpdatable` = ~120+ occurrences
 - `GlobalRegistry.RegisterSlowTickable` = ~80+ occurrences
 - `GlobalRegistry.RegisterFixedTickable` = ~40+ occurrences
 - `GlobalRegistry.Register*Service` = ~25+ occurrences
 
-### Проверка дубликатов:
+### ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð´ÑƒÐ±Ð»Ð¸ÐºÐ°Ñ‚Ð¾Ð²:
 
-| Система | Регистрация | Статус |
+| Ð¡Ð¸ÑÑ‚ÐµÐ¼Ð° | Ð ÐµÐ³Ð¸ÑÑ‚Ñ€Ð°Ñ†Ð¸Ñ | Ð¡Ñ‚Ð°Ñ‚ÑƒÑ |
 |---------|-----------|-------|
-| `PlayerRuntimeContextService` | Single ✅ | OK |
-| `PhysicsApplySystem` | Single ✅ | OK |
-| `SaveManager` | Single ✅ | OK |
-| `SubmarineCoreDirector` | Single ✅ | OK |
-| `GameTickManager` | Single ✅ | OK |
+| `PlayerRuntimeContextService` | Single âœ… | OK |
+| `PhysicsApplySystem` | Single âœ… | OK |
+| `SaveManager` | Single âœ… | OK |
+| `SubmarineCoreDirector` | Single âœ… | OK |
+| `GameTickManager` | Single âœ… | OK |
 
-**Статус:** NO DUPLICATES FOUND — каждая система регистрируется один раз.
+**Ð¡Ñ‚Ð°Ñ‚ÑƒÑ:** NO DUPLICATES FOUND â€” ÐºÐ°Ð¶Ð´Ð°Ñ ÑÐ¸ÑÑ‚ÐµÐ¼Ð° Ñ€ÐµÐ³Ð¸ÑÑ‚Ñ€Ð¸Ñ€ÑƒÐµÑ‚ÑÑ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð·.
 
 ---
 
 ## II. CREST ANTI-CORRUPTION LAYER
 
-### Файлы с `using Crest;`:
+### Ð¤Ð°Ð¹Ð»Ñ‹ Ñ `using Crest;`:
 
-| Файл | Папка | Статус | Owner |
+| Ð¤Ð°Ð¹Ð» | ÐŸÐ°Ð¿ÐºÐ° | Ð¡Ñ‚Ð°Ñ‚ÑƒÑ | Owner |
 |------|-------|--------|-------|
-| `HectonCrestOceanDepthCacheRuntimeBridge.cs` | World/ | ✅ COMPLIANT | Bridge |
-| `HectonCrestOceanDepthCacheBootstrap.cs` | World/ | ✅ COMPLIANT | Bootstrap |
-| `HectonUrpTextureRequirementsGuard.cs` | Core/ | ⚠️ REVIEW | Utility |
-| `HectonRenderPipelineValidator.cs` | Editor/ | ⚠️ REVIEW | Editor |
-| **`HectonSurfaceWeatherDirector.cs`** | Atmosphere/ | ❌ **VIOLATION** | **MUST FIX** |
+| `HectonCrestOceanDepthCacheRuntimeBridge.cs` | World/ | âœ… COMPLIANT | Bridge |
+| `HectonCrestOceanDepthCacheBootstrap.cs` | World/ | âœ… COMPLIANT | Bootstrap |
+| `HectonUrpTextureRequirementsGuard.cs` | Core/ | âš ï¸ REVIEW | Utility |
+| `HectonRenderPipelineValidator.cs` | Editor/ | âš ï¸ REVIEW | Editor |
+| **`HectonSurfaceWeatherDirector.cs`** | Atmosphere/ | âŒ **VIOLATION** | **MUST FIX** |
 
-### 🚨 CRITICAL: HectonSurfaceWeatherDirector.cs
+### ðŸš¨ CRITICAL: HectonSurfaceWeatherDirector.cs
 
 **Location:** `Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeatherDirector.cs`
 
-**Нарушение:**
+**ÐÐ°Ñ€ÑƒÑˆÐµÐ½Ð¸Ðµ:**
 ```csharp
 // Line 14:
 using Crest;
@@ -95,29 +95,29 @@ IHectonOceanKinematics _ocean;
 _ocean.GetWaveHeight(position);
 ```
 
-**Status:** ❌ **VIOLATION REMAINS** — Weather Agent должен исправить.
+**Status:** âŒ **VIOLATION REMAINS** â€” Weather Agent Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð¸ÑÐ¿Ñ€Ð°Ð²Ð¸Ñ‚ÑŒ.
 
 ---
 
 ## III. ATMOSPHERE-STRUCTURE DESYNC ANALYSIS
 
-### SubmarineAtmosphereSystem ↔ SubmarineStructuralGrid
+### SubmarineAtmosphereSystem â†” SubmarineStructuralGrid
 
-**Файлы:**
+**Ð¤Ð°Ð¹Ð»Ñ‹:**
 - `SubmarineAtmosphereSystem.cs` (SubmarineFluidDynamics required)
 - `SubmarineStructuralGrid.cs` (SubmarineAtmosphereSystem optional)
 
 ### Interface Analysis:
 
-| Поле | Тип | Связь | Status |
+| ÐŸÐ¾Ð»Ðµ | Ð¢Ð¸Ð¿ | Ð¡Ð²ÑÐ·ÑŒ | Status |
 |------|-----|-------|-------|-------|
-| `atmosphereSystem` | SubmarineAtmosphereSystem | Optional | ⚠️ Soft link |
-| `structuralGrid` | SubmarineStructuralGrid | Hard reference | ✅ ISubmarineRuntimeContext |
-| `SubmarineHullBreach` | ISubmarineHullBreachReadModel | Shared slot | ✅ OK |
+| `atmosphereSystem` | SubmarineAtmosphereSystem | Optional | âš ï¸ Soft link |
+| `structuralGrid` | SubmarineStructuralGrid | Hard reference | âœ… ISubmarineRuntimeContext |
+| `SubmarineHullBreach` | ISubmarineHullBreachReadModel | Shared slot | âœ… OK |
 
 **Finding:**
 
-Обе системы имеют связь через `ISubmarineRuntimeContext`:
+ÐžÐ±Ðµ ÑÐ¸ÑÑ‚ÐµÐ¼Ñ‹ Ð¸Ð¼ÐµÑŽÑ‚ ÑÐ²ÑÐ·ÑŒ Ñ‡ÐµÑ€ÐµÐ· `ISubmarineRuntimeContext`:
 ```csharp
 public interface ISubmarineRuntimeContext {
     SubmarineAtmosphereSystem AtmosphereSystem { get; }
@@ -125,55 +125,55 @@ public interface ISubmarineRuntimeContext {
 }
 ```
 
-**Status:** ✅ LINKED — через `SubmarineCoreDirector`
+**Status:** âœ… LINKED â€” Ñ‡ÐµÑ€ÐµÐ· `SubmarineCoreDirector`
 
-**НО:** Напрямую не обмениваются данными о breach без `SubmarineCoreDirector` — это **"Simulation Gap"**: если CoreDirector отсутствует, системы работают независимо.
+**ÐÐž:** ÐÐ°Ð¿Ñ€ÑÐ¼ÑƒÑŽ Ð½Ðµ Ð¾Ð±Ð¼ÐµÐ½Ð¸Ð²Ð°ÑŽÑ‚ÑÑ Ð´Ð°Ð½Ð½Ñ‹Ð¼Ð¸ Ð¾ breach Ð±ÐµÐ· `SubmarineCoreDirector` â€” ÑÑ‚Ð¾ **"Simulation Gap"**: ÐµÑÐ»Ð¸ CoreDirector Ð¾Ñ‚ÑÑƒÑ‚ÑÑ‚Ð²ÑƒÐµÑ‚, ÑÐ¸ÑÑ‚ÐµÐ¼Ñ‹ Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÑŽÑ‚ Ð½ÐµÐ·Ð°Ð²Ð¸ÑÐ¸Ð¼Ð¾.
 
 ---
 
-## IV. GAMMA COWARDICE TRACKER — ItemData Audit
+## IV. GAMMA COWARDICE TRACKER â€” ItemData Audit
 
-### 🚨 CRITICAL: ItemData References — 1000+
+### ðŸš¨ CRITICAL: ItemData References â€” 1000+
 
-**Результат поиска:**
+**Ð ÐµÐ·ÑƒÐ»ÑŒÑ‚Ð°Ñ‚ Ð¿Ð¾Ð¸ÑÐºÐ°:**
 ```
 rg "ItemData" = 1000+ occurrences
 ```
 
-### Основные нарушители:
+### ÐžÑÐ½Ð¾Ð²Ð½Ñ‹Ðµ Ð½Ð°Ñ€ÑƒÑˆÐ¸Ñ‚ÐµÐ»Ð¸:
 
-| Файл | ItemData References | Violation |
+| Ð¤Ð°Ð¹Ð» | ItemData References | Violation |
 |------|------------------|-----------|
-| `PlayerInventory.cs` | 50+ | ❌ Zero-GC violated |
-| `InventoryGrid.cs` | 30+ | ❌ Zero-GC violated |
-| `Fabricator.cs` | 20+ | ❌ Zero-GC violated |
-| `HectonItem.cs` | 15+ | ❌ Zero-GC violated |
-| `PickupItem.cs` | 10+ | ❌ Zero-GC violated |
+| `PlayerInventory.cs` | 50+ | âŒ Zero-GC violated |
+| `InventoryGrid.cs` | 30+ | âŒ Zero-GC violated |
+| `Fabricator.cs` | 20+ | âŒ Zero-GC violated |
+| `HectonItem.cs` | 15+ | âŒ Zero-GC violated |
+| `PickupItem.cs` | 10+ | âŒ Zero-GC violated |
 
 ### Exact Methods with manage ItemData:
 
 ```csharp
-// PlayerInventory.cs — managed references:
-ItemData GetCell(int x, int y);           // ❌
-bool TryAddItem(ItemData item, ...);         // ❌
-void RemoveItem(ItemData item, ...);       // ❌
-int CountItem(ItemData item);                // ❌
-bool HasItem(ItemData item, ...);            // ❌
+// PlayerInventory.cs â€” managed references:
+ItemData GetCell(int x, int y);           // âŒ
+bool TryAddItem(ItemData item, ...);         // âŒ
+void RemoveItem(ItemData item, ...);       // âŒ
+int CountItem(ItemData item);                // âŒ
+bool HasItem(ItemData item, ...);            // âŒ
 
-// InventoryGrid.cs — managed array:
-private ItemData[,] _grid;                // ❌
+// InventoryGrid.cs â€” managed array:
+private ItemData[,] _grid;                // âŒ
 
 // Fabricator.cs:
-ItemData ActiveItem { get; }                // ❌
-bool StartAction(ItemData item);             // ❌
+ItemData ActiveItem { get; }                // âŒ
+bool StartAction(ItemData item);             // âŒ
 ```
 
-### Verdict: ❌ ZERO-GC MANDATE VIOLATED
+### Verdict: âŒ ZERO-GC MANDATE VIOLATED
 
 **Gamma Agent "Cowardice" Confirmed:**
-- Agent PERSISTENCE не перевёл инвентарь на SOA (NativeArray/hashId)
-- Оставил 1000+ managed ItemData references
-- UI/Fabricator сломаны — не могут работать с hashId
+- Agent PERSISTENCE Ð½Ðµ Ð¿ÐµÑ€ÐµÐ²Ñ‘Ð» Ð¸Ð½Ð²ÐµÐ½Ñ‚Ð°Ñ€ÑŒ Ð½Ð° SOA (NativeArray/hashId)
+- ÐžÑÑ‚Ð°Ð²Ð¸Ð» 1000+ managed ItemData references
+- UI/Fabricator ÑÐ»Ð¾Ð¼Ð°Ð½Ñ‹ â€” Ð½Ðµ Ð¼Ð¾Ð³ÑƒÑ‚ Ñ€Ð°Ð±Ð¾Ñ‚Ð°Ñ‚ÑŒ Ñ hashId
 
 **Required Fix:**
 ```csharp
@@ -190,14 +190,14 @@ ItemData GetCell(int x, int y);
 
 ### Found Non-ASCII Characters:
 
-| Файл | Тип | Status |
+| Ð¤Ð°Ð¹Ð» | Ð¢Ð¸Ð¿ | Status |
 |------|-----|--------|
-| `Tools/generate_survival_database.py` | Data generation | ✅ OK (Lore tool) |
-| `Docs/DEPRECATED/External_And_Log_Bundles/много идей от дипсика/` | Documentation | HISTORICAL |
-| `Lore/лор*.txt` | Lore | ✅ OK |
-| `Docs/гемини ЛАПОЧКА.txt` | Specific file in task | ✅ OK |
+| `Tools/generate_survival_database.py` | Data generation | âœ… OK (Lore tool) |
+| `Docs/DEPRECATED/External_And_Log_Bundles/Ð¼Ð½Ð¾Ð³Ð¾ Ð¸Ð´ÐµÐ¹ Ð¾Ñ‚ Ð´Ð¸Ð¿ÑÐ¸ÐºÐ°/` | Documentation | HISTORICAL |
+| `Lore/Ð»Ð¾Ñ€*.txt` | Lore | âœ… OK |
+| `Docs/Ð³ÐµÐ¼Ð¸Ð½Ð¸ Ð›ÐÐŸÐžÐ§ÐšÐ.txt` | Specific file in task | âœ… OK |
 
-**Status:** ✅ COMPLIANT — Cyrillic только в Lore/документации/инструментах генерации данных.
+**Status:** âœ… COMPLIANT â€” Cyrillic Ñ‚Ð¾Ð»ÑŒÐºÐ¾ Ð² Lore/Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚Ð°Ñ†Ð¸Ð¸/Ð¸Ð½ÑÑ‚Ñ€ÑƒÐ¼ÐµÐ½Ñ‚Ð°Ñ… Ð³ÐµÐ½ÐµÑ€Ð°Ñ†Ð¸Ð¸ Ð´Ð°Ð½Ð½Ñ‹Ñ….
 
 ---
 
@@ -207,19 +207,19 @@ ItemData GetCell(int x, int y);
 
 | File | Line | Crime | Status |
 |------|------|-------|--------|
-| `PlayerSwimBlockoutRig.cs` | 599 | `LayerMask.NameToLayer` | ❌ NOT FIXED |
-| `HectonCrestOceanDepthCacheBootstrap.cs` | 104, 107 | "Terrain " (space!) | ❌ NOT FIXED |
-| `CullingManager.cs` | 658-662 | 5 lookups in Update() | ⚠️ PENDING |
-| `PlayerCriticalProceduralAudioRenderer.cs` | 437-446 | 4 lazy lookups | ⚠️ PENDING |
+| `PlayerSwimBlockoutRig.cs` | 599 | `LayerMask.NameToLayer` | âŒ NOT FIXED |
+| `HectonCrestOceanDepthCacheBootstrap.cs` | 104, 107 | "Terrain " (space!) | âŒ NOT FIXED |
+| `CullingManager.cs` | 658-662 | 5 lookups in Update() | âš ï¸ PENDING |
+| `PlayerCriticalProceduralAudioRenderer.cs` | 437-446 | 4 lazy lookups | âš ï¸ PENDING |
 
 ### FIX REQUIRED (Code Snippet):
 
 ```csharp
-// ❌ BEFORE:
+// âŒ BEFORE:
 int layer = LayerMask.NameToLayer("Water");
 
-// ✅ AFTER:
-// COLD ALLOC: — layer constants — owner: ClassName
+// âœ… AFTER:
+// COLD ALLOC: â€” layer constants â€” owner: ClassName
 private static readonly int _WaterLayer = LayerMask.NameToLayer("Water");
 private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 ```
@@ -230,13 +230,13 @@ private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 
 ### [SerializeField] GameObject/Transform in Core:
 
-| Файл |Field Type | Risk |
+| Ð¤Ð°Ð¹Ð» |Field Type | Risk |
 |------|-----------|------|
-| `SubmarineAtmosphereSystem` | Collider[], Rigidbody[] | ⚠️ COLD ALLOC buffer |
-| `SubmarineStructuralGrid` | MonoBehaviour refs | ✅ Acceptable |
-| `GlobalPhysicsStateManager` | Collider refs | ⚠️ Cold alloc |
+| `SubmarineAtmosphereSystem` | Collider[], Rigidbody[] | âš ï¸ COLD ALLOC buffer |
+| `SubmarineStructuralGrid` | MonoBehaviour refs | âœ… Acceptable |
+| `GlobalPhysicsStateManager` | Collider refs | âš ï¸ Cold alloc |
 
-**Status:** ⚠️ AT RISK — managed arrays в Core, но с пометкой COLD ALLOC.
+**Status:** âš ï¸ AT RISK â€” managed arrays Ð² Core, Ð½Ð¾ Ñ Ð¿Ð¾Ð¼ÐµÑ‚ÐºÐ¾Ð¹ COLD ALLOC.
 
 ---
 
@@ -244,14 +244,14 @@ private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 
 ### Static Vector3 without IOriginShiftListener:
 
-**Scan Results:** Требуется runtime verification — статический анализ недостаточен.
+**Scan Results:** Ð¢Ñ€ÐµÐ±ÑƒÐµÑ‚ÑÑ runtime verification â€” ÑÑ‚Ð°Ñ‚Ð¸Ñ‡ÐµÑÐºÐ¸Ð¹ Ð°Ð½Ð°Ð»Ð¸Ð· Ð½ÐµÐ´Ð¾ÑÑ‚Ð°Ñ‚Ð¾Ñ‡ÐµÐ½.
 
 **Known Drift Risks:**
-- `HectonPlayerMovement._swimVelocity` — если не обновляется при origin shift
-- `SubmarineFluidDynamics._currentVelocity` — требует проверку
-- `SpatialAudioManager._listenerPosition` — должен быть в world space
+- `HectonPlayerMovement._swimVelocity` â€” ÐµÑÐ»Ð¸ Ð½Ðµ Ð¾Ð±Ð½Ð¾Ð²Ð»ÑÐµÑ‚ÑÑ Ð¿Ñ€Ð¸ origin shift
+- `SubmarineFluidDynamics._currentVelocity` â€” Ñ‚Ñ€ÐµÐ±ÑƒÐµÑ‚ Ð¿Ñ€Ð¾Ð²ÐµÑ€ÐºÑƒ
+- `SpatialAudioManager._listenerPosition` â€” Ð´Ð¾Ð»Ð¶ÐµÐ½ Ð±Ñ‹Ñ‚ÑŒ Ð² world space
 
-**Status:** ⏳ PENDING VERIFICATION
+**Status:** â³ PENDING VERIFICATION
 
 ---
 
@@ -261,20 +261,20 @@ private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 
 | Texture Category | Estimated Size | % of Budget |
 |---------------|---------------|-------------|
-| Flora/World | ~300 MB | 33% ⚠️ |
+| Flora/World | ~300 MB | 33% âš ï¸ |
 | Coral/Reef | ~150 MB | 17% |
 | Modular/Base | ~100 MB | 11% |
 | Terrain | ~80 MB | 9% |
 
-**Total Estimated:** ~660 MB / 900 MB = 73% ⚠️ AT RISK
+**Total Estimated:** ~660 MB / 900 MB = 73% âš ï¸ AT RISK
 
 **CRITICAL:**
 - Threshold: 90% (1,620 MB total VRAM)
-- Current: 73% — still under budget
+- Current: 73% â€” still under budget
 - Risk: Non-POT textures may cause extra mip loading
 
 ### POT Check:
-Требуется сканирование .meta файлов для точного определения.
+Ð¢Ñ€ÐµÐ±ÑƒÐµÑ‚ÑÑ ÑÐºÐ°Ð½Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð¸Ðµ .meta Ñ„Ð°Ð¹Ð»Ð¾Ð² Ð´Ð»Ñ Ñ‚Ð¾Ñ‡Ð½Ð¾Ð³Ð¾ Ð¾Ð¿Ñ€ÐµÐ´ÐµÐ»ÐµÐ½Ð¸Ñ.
 
 ---
 
@@ -284,24 +284,24 @@ private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 
 | Mandate | Status | Files |
 |--------|--------|-------|
-| CREST ACL | ❌ VIOLATION | HectonSurfaceWeatherDirector.cs |
-| Zero-GC | ❌ VIOLATED | PlayerInventory, Fabricator, InventoryGrid |
-| LayerMask Caching | ❌ PENDING | 4 files from TECH_DEBT |
-| ItemData SOA | ❌ NOT MIGRATED | ~1000+ references |
-| AUP Alignment | ⏳ UNKNOWN | Requires runtime |
+| CREST ACL | âŒ VIOLATION | HectonSurfaceWeatherDirector.cs |
+| Zero-GC | âŒ VIOLATED | PlayerInventory, Fabricator, InventoryGrid |
+| LayerMask Caching | âŒ PENDING | 4 files from TECH_DEBT |
+| ItemData SOA | âŒ NOT MIGRATED | ~1000+ references |
+| AUP Alignment | â³ UNKNOWN | Requires runtime |
 
 ### Compliance Matrix:
 
 | Rule | Status |
 |------|--------|
-| `[RULE] 3RD-PARTY ASSET INTEGRITY` | ❌ Crest ACL violated |
-| `[RULE] Zero-GC Policy` | ❌ 1000+ violations |
-| `[RULE] Layer Mask Caching` | ❌ Not fixed |
-| `[RULE] VRAM Budget` | ⚠️ 73% (OK but at risk) |
+| `[RULE] 3RD-PARTY ASSET INTEGRITY` | âŒ Crest ACL violated |
+| `[RULE] Zero-GC Policy` | âŒ 1000+ violations |
+| `[RULE] Layer Mask Caching` | âŒ Not fixed |
+| `[RULE] VRAM Budget` | âš ï¸ 73% (OK but at risk) |
 
 ---
 
-## XI. ACTION ITEMS — PRIORITIZED
+## XI. ACTION ITEMS â€” PRIORITIZED
 
 ### CRITICAL (IMMEDIATE):
 
@@ -330,22 +330,22 @@ private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 
 | Category | Status |
 |----------|--------|
-| Registry Duplicates | ✅ CLEAN |
-| Crest ACL | ❌ VIOLATED |
-| Atmosphere-Structure | ⚠️ SOFT LINK |
-| ItemData Zero-GC | ❌ FAILED (1000+) |
-| Cyrillic | ✅ COMPLIANT |
-| LayerMask | ❌ NOT FIXED (4 files) |
-| Ghost Prefab | ⚠️ COLD ALLOC OK |
-| AUP Drift | ⏳ UNKNOWN |
-| VRAM | ⚠️ 73% (OK) |
+| Registry Duplicates | âœ… CLEAN |
+| Crest ACL | âŒ VIOLATED |
+| Atmosphere-Structure | âš ï¸ SOFT LINK |
+| ItemData Zero-GC | âŒ FAILED (1000+) |
+| Cyrillic | âœ… COMPLIANT |
+| LayerMask | âŒ NOT FIXED (4 files) |
+| Ghost Prefab | âš ï¸ COLD ALLOC OK |
+| AUP Drift | â³ UNKNOWN |
+| VRAM | âš ï¸ 73% (OK) |
 
 ---
 
 **REGRESSION MODEL:**
 - CPU: Unknown without runtime
-- GC: ❌ FAILED (1000+ managed ItemData)
-- Memory: ⚠️ 73% VRAM
+- GC: âŒ FAILED (1000+ managed ItemData)
+- Memory: âš ï¸ 73% VRAM
 - Cadence: Unknown without runtime
 
 ---

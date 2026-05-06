@@ -174,9 +174,23 @@ namespace Hecton8.Quest
                    _stateManager.IsQuestActive(questHash);
         }
 
+        public bool IsActive(uint questHash)
+        {
+            return questHash != 0u &&
+                   _stateManager != null &&
+                   _stateManager.IsQuestActive(questHash);
+        }
+
         public bool IsCompleted(string questId)
         {
             return TryResolveQuestHash(questId, logUnknownQuest: false, out uint questHash, out _) &&
+                   _stateManager != null &&
+                   _stateManager.IsQuestCompleted(questHash);
+        }
+
+        public bool IsCompleted(uint questHash)
+        {
+            return questHash != 0u &&
                    _stateManager != null &&
                    _stateManager.IsQuestCompleted(questHash);
         }

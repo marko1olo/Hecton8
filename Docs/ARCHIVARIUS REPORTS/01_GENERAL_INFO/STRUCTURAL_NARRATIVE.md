@@ -1,6 +1,6 @@
-# HECTON-8 STRUCTURAL NARRATIVE
+﻿# HECTON-8 STRUCTURAL NARRATIVE
 
-Date: 2026-04-29
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: architecture narrative only, not a profiler report
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `DBG_Telemetry_Crash_Reporting_PostMortem.txt`

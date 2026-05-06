@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Gameplay;
 using UnityEngine;
 
@@ -20,6 +21,10 @@ namespace Hecton8.Construction
     {
         private const float ToxicCo2ThresholdNormalized = 0.75f;
         private const float HypoxiaCo2ThresholdNormalized = 0.80f;
+        private const string AirReserveSummaryPrefix = "Breathable reserve down to ";
+        private const string AirReserveSummarySuffix = "% inside the dry shelter loop. Scrubber support is no longer keeping pace with occupancy.";
+        private const string Co2CriticalSummaryPrefix = "CO2 saturation reached ";
+        private const string Co2CriticalSummarySuffix = "% of scrubber capacity. Mechanical circulation is no longer restoring breathable air without botanical conversion.";
 
         private float _oxygenRefillRate;
         private float _baseBreathableReserveCapacity;
@@ -332,16 +337,38 @@ namespace Hecton8.Construction
 
         public string BuildAirReserveSummary()
         {
-            return string.Format(
-                "Breathable reserve down to {0:0}% inside the dry shelter loop. Scrubber support is no longer keeping pace with occupancy.",
-                AirReserveNormalized * 100f);
+            return BuildPercentSummary(
+                AirReserveSummaryPrefix,
+                Mathf.Clamp(Mathf.RoundToInt(AirReserveNormalized * 100f), 0, 999),
+                AirReserveSummarySuffix);
         }
 
         public string BuildCo2CriticalSummary()
         {
-            return string.Format(
-                "CO2 saturation reached {0:0}% of scrubber capacity. Mechanical circulation is no longer restoring breathable air without botanical conversion.",
-                Co2Normalized * 100f);
+            return BuildPercentSummary(
+                Co2CriticalSummaryPrefix,
+                Mathf.Clamp(Mathf.RoundToInt(Co2Normalized * 100f), 0, 999),
+                Co2CriticalSummarySuffix);
+        }
+
+        private static string BuildPercentSummary(string prefix, int percent, string suffix)
+        {
+            int digitCount = percent >= 100
+                ? 3
+                : percent >= 10
+                    ? 2
+                    : 1;
+            return string.Create(
+                prefix.Length + digitCount + suffix.Length,
+                (Prefix: prefix, Percent: percent, Suffix: suffix),
+                static (span, state) =>
+                {
+                    state.Prefix.AsSpan().CopyTo(span);
+                    int cursor = state.Prefix.Length;
+                    state.Percent.TryFormat(span.Slice(cursor), out int written);
+                    cursor += written;
+                    state.Suffix.AsSpan().CopyTo(span.Slice(cursor));
+                });
         }
 
         private float ResolveAirRefillScale()

@@ -59,7 +59,7 @@ The settings UI structure has been created in `01_MAIN_MENU.unity` scene, but In
 2. Select it to view SettingsManager component in Inspector
 
 **Assign:**
-- `mainCamera` → `Main Camera` (or leave null for auto-find via Camera.main)
+- `mainCamera` -> registry-owned player camera (or leave null for GlobalRegistry player camera resolution)
 - `urpVolume` → Find Volume GameObject with post-processing profile (search for "Volume" in Hierarchy)
 - `audioMixer` → `Assets/_Project/MasterMixer.mixer` (should already be assigned)
 

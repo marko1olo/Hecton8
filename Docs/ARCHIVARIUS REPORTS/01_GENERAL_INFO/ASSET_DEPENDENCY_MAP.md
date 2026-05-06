@@ -1,11 +1,11 @@
-# ASSET DEPENDENCY MAP — HECTON-8 Hard-Referenced / Addressables Migration
-Date: 2026-05-04
-Status: REFERENCE
+﻿# ASSET DEPENDENCY MAP â€” HECTON-8 Hard-Referenced / Addressables Migration
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 **Date:** 2026-04-29  
 **Scope:** first-party world prefabs, ambient audio beds, wreck modules, and first-wave hero prop textures  
-**Status:** POPULATED — persistence/addressables paging owners identified
+**Status:** POPULATED â€” persistence/addressables paging owners identified
 
 ---
 
@@ -34,7 +34,7 @@ The previous placeholder state is no longer valid.
 
 ---
 
-## WORLD HERO PROPS — TOOL DROP PREFABS
+## WORLD HERO PROPS â€” TOOL DROP PREFABS
 
 These are the concrete GUID fallbacks now mirrored in `ItemCatalog`.
 
@@ -111,4 +111,4 @@ These are the currently identified high-value close-range texture assets. This i
 - Ambient audio grouping is documented, but the audio bootstrapper still needs the final Addressables ownership pass.
 - AUP save surgery remains separate from this asset map. The current save payload still stores compact `AbsoluteUniversePosition` in the metadata prefix.
 
-**STATUS:** POPULATED — first-wave Addressables migration map established.
+**STATUS:** POPULATED â€” first-wave Addressables migration map established.

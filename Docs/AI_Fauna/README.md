@@ -1,7 +1,7 @@
-# AI Fauna Docs
+﻿# AI Fauna Docs
 
-Date: `2026-04-17`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Purpose: active fauna planning and coverage reference moved out of repo root.
 

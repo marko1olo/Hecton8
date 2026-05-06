@@ -1,6 +1,7 @@
 # GC and Singleton Kill List
 
-Date: 2026-04-30
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Scope: `Assets/_Project`, focused deep scan on `Assets/_Project/Scripts/World` and `Assets/_Project/Scripts/Fauna`
 Requested status string: `ETA CODEX VERIFIED`
 Actual status: PENDING VERIFICATION. `ETA CODEX VERIFIED` is not defensible because play-mode GC/frame-time was not measured and two local audit helper commands had PowerShell/rg syntax failures before corrected reruns.
@@ -227,6 +228,6 @@ No other `.ToString()`, LINQ, `ToList()`, or interpolation hits were found in th
 
 ## Final Audit Status
 
-STATUS: PENDING VERIFICATION.
+Status: PENDING VERIFICATION
 
 `ETA CODEX VERIFIED` is rejected as a project status. Current evidence proves a static audit was performed and one MCP console read returned an empty current error/warning slice before the final MCP recheck failed readiness. It does not prove 60 FPS, 0 B/frame, full agent evidence compliance, or complete bootstrap sovereignty.

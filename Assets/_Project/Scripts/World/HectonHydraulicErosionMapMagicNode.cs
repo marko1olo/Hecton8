@@ -59,6 +59,9 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Erosion Depth Mask", "Outlet")]
         public readonly Outlet<MatrixWorld> wearMaskOut = new Outlet<MatrixWorld>();
 
+        [System.NonSerialized] private IInlet<object>[] _inletCache;
+        [System.NonSerialized] private IOutlet<object>[] _outletCache;
+
         /// <summary>Total droplet count. Draft generation uses a reduced count.</summary>
         [Den.Tools.GUI.ValAttribute("Droplets")]
         public int dropletCount = 1000000;
@@ -184,15 +187,29 @@ namespace MapMagic.Nodes.MatrixGenerators
         /// <inheritdoc />
         public IEnumerable<IInlet<object>> Inlets()
         {
-            yield return heightIn;
+            if (_inletCache == null)
+            {
+                // COLD ALLOC: IInlet<object>[1] - MapMagic port enumeration cache - owner: HectonHydraulicErosionMapMagicNode
+                _inletCache = new IInlet<object>[1];
+                _inletCache[0] = heightIn;
+            }
+
+            return _inletCache;
         }
 
         /// <inheritdoc />
         public IEnumerable<IOutlet<object>> Outlets()
         {
-            yield return erodedHeightOut;
-            yield return sedimentMaskOut;
-            yield return wearMaskOut;
+            if (_outletCache == null)
+            {
+                // COLD ALLOC: IOutlet<object>[3] - MapMagic port enumeration cache - owner: HectonHydraulicErosionMapMagicNode
+                _outletCache = new IOutlet<object>[3];
+                _outletCache[0] = erodedHeightOut;
+                _outletCache[1] = sedimentMaskOut;
+                _outletCache[2] = wearMaskOut;
+            }
+
+            return _outletCache;
         }
 
         /// <inheritdoc />

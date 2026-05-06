@@ -1,6 +1,6 @@
-# VRAM_EXECUTION_LIST.md — Top 20 VRAM Offenders
-Date: 2026-04-28
-Status: REFERENCE
+﻿# VRAM_EXECUTION_LIST.md â€” Top 20 VRAM Offenders
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 ## Current-State Addendum (2026-04-29)
@@ -20,38 +20,38 @@ Preferred current cross-checks:
 - `2026-04-28_DEAD_ASSET_SWEEP.md`
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
 - current Codex audit bundles under `Docs/2026-04-29_*`
-**Status:** ⚠️ 73% BUDGET CONSUMED  
+**Status:** âš ï¸ 73% BUDGET CONSUMED  
 **Scan Date:** 2026-04-28  
 **Budget:** 900 MB (Texture) / 1800 MB (Total VRAM ceiling for MX350)
 
 ---
 
 ## Methodology
-- Estimate: `(width × height × 4 bytes) / CompressionRatio`
+- Estimate: `(width Ã— height Ã— 4 bytes) / CompressionRatio`
 - BC7 assumed for opaque albedo/normal/roughness (4 bpp)
-- BC5 assumed for normal maps (RG, 2 channels → ~4 bpp effective)
+- BC5 assumed for normal maps (RG, 2 channels â†’ ~4 bpp effective)
 - Non-POT textures flagged for deletion or resize
 
 ## Top Offenders by Category
 
 | Rank | Category | Est. Size | % of Budget | Action |
 |------|----------|-----------|-------------|--------|
-| 1 | Flora/World (atlases + tiles) | ~300 MB | 33% | Audit import settings — ensure BC7 |
+| 1 | Flora/World (atlases + tiles) | ~300 MB | 33% | Audit import settings â€” ensure BC7 |
 | 2 | Coral/Reef (multiple 2K sets) | ~150 MB | 17% | Atlas merge candidates |
 | 3 | Modular/Base (construction mats) | ~100 MB | 11% | Trim sheets OK |
 | 4 | Terrain/MapMagic splats | ~80 MB | 9% | 4 layers/chunk max |
-| 5 | Rocks (2K PBR sets × N) | ~60 MB | 7% | `Rock 4` folder has dupes |
+| 5 | Rocks (2K PBR sets Ã— N) | ~60 MB | 7% | `Rock 4` folder has dupes |
 | 6 | Skyboxes / Panoramas | ~40 MB | 4% | OK if compressed |
 | 7 | Hero props (scanner, suit) | ~30 MB | 3% | Justified |
-| — | **TOTAL ESTIMATED** | **~660 MB** | **73%** | — |
+| â€” | **TOTAL ESTIMATED** | **~660 MB** | **73%** | â€” |
 
 ## Critical Findings
 
 ### Non-POT / Oversized
 | File | Size | Issue |
 |------|------|-------|
-| `Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/*.jpg` | 2K | Folder name non-ASCII; possible duplicate sets |
-| `Sandbox/Coral_Albedo.png` | Unknown | In `Sandbox/` — verify if used in production mats |
+| `Rock 4 - Ð£ÐÐ˜Ð’Ð•Ð Ð¡ÐÐ›Ð¬ÐÐ«Ð™ Ð’Ð«Ð‘ÐžÐ /*.jpg` | 2K | Folder name non-ASCII; possible duplicate sets |
+| `Sandbox/Coral_Albedo.png` | Unknown | In `Sandbox/` â€” verify if used in production mats |
 | `Skyboxes/panorama_den.png` | Large | Non-POT? Verify compression |
 
 ### Recommendations
@@ -61,6 +61,6 @@ Preferred current cross-checks:
 4. **Monitor:** If total > 90% (810 MB), trigger automatic Mip-downgrade policy.
 
 ## Verdict
-- **Current:** 660 / 900 MB = 73% ⚠️
-- **Threshold:** 90% (810 MB) → Mip-downgrade mandatory
+- **Current:** 660 / 900 MB = 73% âš ï¸
+- **Threshold:** 90% (810 MB) â†’ Mip-downgrade mandatory
 - **Headroom:** ~240 MB before critical path

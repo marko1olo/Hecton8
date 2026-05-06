@@ -713,7 +713,9 @@ namespace Hecton8.World
         private void UpdateDebugState()
         {
             _debugBreadcrumbCount = _breadcrumbCount;
-            _debugPendingWriteCount = 0;
+            _debugPendingWriteCount = _breadcrumbs.IsCreated
+                ? math.max(0, _breadcrumbs.Length - _breadcrumbCount)
+                : 0;
         }
     }
 }

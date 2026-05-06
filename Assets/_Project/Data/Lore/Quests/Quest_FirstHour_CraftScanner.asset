@@ -26,7 +26,7 @@ MonoBehaviour:
   triggerType: 0
   triggerId: Data_TitaniumScrap
   triggerValue: 1
-  completionType: 0
+  completionType: 6
   completionId: Item_Tool_Scanner
   completionValue: 1
   prerequisiteQuestIds:

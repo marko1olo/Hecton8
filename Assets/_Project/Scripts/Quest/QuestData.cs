@@ -16,6 +16,7 @@ namespace Hecton8.Quest
         OnAudioLogFound = 4,
         OnEclipseStart = 5,
         OnSignalDetected = 6,
+        OnCraftCompleted = 7,
         Manual = 99,
     }
 
@@ -30,6 +31,7 @@ namespace Hecton8.Quest
         OnDiscoveryMade = 3,
         OnAudioLogFound = 4,
         OnSignalDecoded = 5,
+        OnCraftCompleted = 6,
         Manual = 99,
     }
 

@@ -108,9 +108,9 @@ namespace Hecton8.Meta
         // COLD ALLOC: HashSet<string>[32] - global unlocked achievement lookup - owner: GlobalProfileManager
         private readonly HashSet<string> _globalUnlockedAchievements = new HashSet<string>(StringComparer.Ordinal);
         private HectonSurvivalSystem _survivalSystem;
+        private HectonDiscoveryManager _discoveryManager;
         private GlobalProfileData _profile = new GlobalProfileData();
         private HectonEventSubscription _achievementUnlockedSubscription;
-        private HectonEventSubscription _biomeDiscoveredSubscription;
         private HectonEventSubscription _gameLoadedSubscription;
         private HectonEventSubscription _playerDiedSubscription;
         private HectonEventSubscription _itemCollectedSubscription;
@@ -315,7 +315,7 @@ namespace Hecton8.Meta
             }
         }
 
-        private void HandleBiomeDiscovered(BiomeDiscoveredEvent biomeDiscoveredEvent)
+        private void HandleBiomeDiscovered(int biomeId)
         {
             _currentRunBiomeDiscoveries++;
             _profile.totalBiomesDiscoveredAllTime = Mathf.Max(0, _profile.totalBiomesDiscoveredAllTime + 1);
@@ -378,9 +378,6 @@ namespace Hecton8.Meta
             if (_achievementUnlockedSubscription == null)
                 _achievementUnlockedSubscription = HectonEventBus.Subscribe<AchievementUnlockedEvent>(HandleAchievementUnlocked, "meta.profile");
 
-            if (_biomeDiscoveredSubscription == null)
-                _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, "meta.profile");
-
             if (_gameLoadedSubscription == null)
                 _gameLoadedSubscription = HectonEventBus.Subscribe<GameLoadedEvent>(HandleGameLoaded, "meta.profile");
 
@@ -401,8 +398,6 @@ namespace Hecton8.Meta
         {
             _achievementUnlockedSubscription?.Dispose();
             _achievementUnlockedSubscription = null;
-            _biomeDiscoveredSubscription?.Dispose();
-            _biomeDiscoveredSubscription = null;
             _gameLoadedSubscription?.Dispose();
             _gameLoadedSubscription = null;
             _playerDiedSubscription?.Dispose();
@@ -426,6 +421,10 @@ namespace Hecton8.Meta
 
         private void UnbindOwnerSubscriptions()
         {
+            if (_discoveryManager != null)
+                _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
+
+            _discoveryManager = null;
         }
 
         private bool ResolveOwners()
@@ -436,7 +435,15 @@ namespace Hecton8.Meta
 
             HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
             if (discoveryManager != null)
+            {
+                if (!ReferenceEquals(_discoveryManager, discoveryManager))
+                {
+                    _discoveryManager = discoveryManager;
+                    _discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
+                }
+
                 _currentRunBiomeDiscoveries = discoveryManager.TotalDiscovered;
+            }
 
             return _survivalSystem != null || discoveryManager != null;
         }

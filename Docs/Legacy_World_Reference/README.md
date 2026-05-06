@@ -1,7 +1,7 @@
-# Legacy World Reference
+﻿# Legacy World Reference
 
-Date: `2026-04-17`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Purpose: hold older but still useful world-structure and terrain reference docs outside repo root.
 

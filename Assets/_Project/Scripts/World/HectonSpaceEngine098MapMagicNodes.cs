@@ -31,6 +31,9 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Height", "Outlet")]
         public readonly Outlet<MatrixWorld> heightOut = new Outlet<MatrixWorld>();
 
+        [System.NonSerialized] private IInlet<object>[] _inletCache;
+        [System.NonSerialized] private IOutlet<object>[] _outletCache;
+
         [Den.Tools.GUI.ValAttribute("Amplitude m")] public float amplitudeMeters = 420f;
         [Den.Tools.GUI.ValAttribute("Frequency")] public float frequency = 0.00042f;
         [Den.Tools.GUI.ValAttribute("Octaves")] public int octaves = 6;
@@ -49,12 +52,26 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         public IEnumerable<IInlet<object>> Inlets()
         {
-            yield return heightIn;
+            if (_inletCache == null)
+            {
+                // COLD ALLOC: IInlet<object>[1] - MapMagic port enumeration cache - owner: HectonSpaceEngine098RidgedMultifractalMapMagicNode
+                _inletCache = new IInlet<object>[1];
+                _inletCache[0] = heightIn;
+            }
+
+            return _inletCache;
         }
 
         public IEnumerable<IOutlet<object>> Outlets()
         {
-            yield return heightOut;
+            if (_outletCache == null)
+            {
+                // COLD ALLOC: IOutlet<object>[1] - MapMagic port enumeration cache - owner: HectonSpaceEngine098RidgedMultifractalMapMagicNode
+                _outletCache = new IOutlet<object>[1];
+                _outletCache[0] = heightOut;
+            }
+
+            return _outletCache;
         }
 
         public override (string, int) GetCodeFileLine() => GetCodeFileLineBase();
@@ -159,6 +176,9 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Height", "Outlet")]
         public readonly Outlet<MatrixWorld> heightOut = new Outlet<MatrixWorld>();
 
+        [System.NonSerialized] private IInlet<object>[] _inletCache;
+        [System.NonSerialized] private IOutlet<object>[] _outletCache;
+
         [Den.Tools.GUI.ValAttribute("Crater Count")] public int craterCount = 3;
         [Den.Tools.GUI.ValAttribute("Radius m")] public float radiusMeters = 850f;
         [Den.Tools.GUI.ValAttribute("Amplitude m")] public float amplitudeMeters = 115f;
@@ -178,12 +198,26 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         public IEnumerable<IInlet<object>> Inlets()
         {
-            yield return heightIn;
+            if (_inletCache == null)
+            {
+                // COLD ALLOC: IInlet<object>[1] - MapMagic port enumeration cache - owner: HectonSpaceEngine098CraterMapMagicNode
+                _inletCache = new IInlet<object>[1];
+                _inletCache[0] = heightIn;
+            }
+
+            return _inletCache;
         }
 
         public IEnumerable<IOutlet<object>> Outlets()
         {
-            yield return heightOut;
+            if (_outletCache == null)
+            {
+                // COLD ALLOC: IOutlet<object>[1] - MapMagic port enumeration cache - owner: HectonSpaceEngine098CraterMapMagicNode
+                _outletCache = new IOutlet<object>[1];
+                _outletCache[0] = heightOut;
+            }
+
+            return _outletCache;
         }
 
         public override (string, int) GetCodeFileLine() => GetCodeFileLineBase();
@@ -304,6 +338,9 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Height", "Outlet")]
         public readonly Outlet<MatrixWorld> heightOut = new Outlet<MatrixWorld>();
 
+        [System.NonSerialized] private IInlet<object>[] _inletCache;
+        [System.NonSerialized] private IOutlet<object>[] _outletCache;
+
         [Den.Tools.GUI.ValAttribute("Cell Frequency")] public float cellFrequency = 0.0018f;
         [Den.Tools.GUI.ValAttribute("Depth m")] public float depthMeters = 260f;
         [Den.Tools.GUI.ValAttribute("Rim Lift m")] public float rimLiftMeters = 18f;
@@ -319,12 +356,26 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         public IEnumerable<IInlet<object>> Inlets()
         {
-            yield return heightIn;
+            if (_inletCache == null)
+            {
+                // COLD ALLOC: IInlet<object>[1] - MapMagic port enumeration cache - owner: HectonSpaceEngine098RilleMapMagicNode
+                _inletCache = new IInlet<object>[1];
+                _inletCache[0] = heightIn;
+            }
+
+            return _inletCache;
         }
 
         public IEnumerable<IOutlet<object>> Outlets()
         {
-            yield return heightOut;
+            if (_outletCache == null)
+            {
+                // COLD ALLOC: IOutlet<object>[1] - MapMagic port enumeration cache - owner: HectonSpaceEngine098RilleMapMagicNode
+                _outletCache = new IOutlet<object>[1];
+                _outletCache[0] = heightOut;
+            }
+
+            return _outletCache;
         }
 
         public override (string, int) GetCodeFileLine() => GetCodeFileLineBase();

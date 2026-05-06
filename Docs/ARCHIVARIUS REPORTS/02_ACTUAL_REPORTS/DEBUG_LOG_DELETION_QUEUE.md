@@ -1,10 +1,10 @@
-# DEBUG.LOG DELETION QUEUE — Unsanitized First-Party Runtime Logs
-Date: 2026-05-04
-Status: REFERENCE
+﻿# DEBUG.LOG DELETION QUEUE â€” Unsanitized First-Party Runtime Logs
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 > **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md § Debug Log Hygiene — "Guard: #if UNITY_EDITOR || DEVELOPMENT_BUILD OR [System.Diagnostics.Conditional]"  
+> **Mandates Followed:** AGENTS.md Â§ Debug Log Hygiene â€” "Guard: #if UNITY_EDITOR || DEVELOPMENT_BUILD OR [System.Diagnostics.Conditional]"  
 
 ---
 
@@ -23,7 +23,7 @@ Smoke-test utilities (`*SmokeTester.cs`) are noted but deprioritized because the
 
 ## 2. DELETION QUEUE
 
-### 🔴 HIGH PRIORITY — Runtime systems that may spam
+### ðŸ”´ HIGH PRIORITY â€” Runtime systems that may spam
 
 | # | File | Method | Line | Violation | Fix Strategy |
 |---|------|--------|------|-----------|--------------|
@@ -38,7 +38,7 @@ Smoke-test utilities (`*SmokeTester.cs`) are noted but deprioritized because the
 | 9 | `Atlas6DirectiveSystem.cs` | `LogPlayerStatus(Atlas6PlayerStatus)` | 360 | `Debug.Log($"[Atlas6] Player status: {newStatus}")` | Wrap in `#if UNITY_EDITOR || DEVELOPMENT_BUILD` |
 | 10 | `BeaconNetworkSystem.cs` | *(inline)* | 286 | `Debug.Log($"[BeaconNetwork] Deployed {label} at {position}")` gated by `verboseLogging` | Guard the entire block with `#if UNITY_EDITOR || DEVELOPMENT_BUILD` so `verboseLogging` bool does not leak string alloc in release |
 
-### 🟡 LOW PRIORITY — Smoke testers (test-only, likely stripped)
+### ðŸŸ¡ LOW PRIORITY â€” Smoke testers (test-only, likely stripped)
 
 | # | File | Note |
 |---|------|------|
@@ -62,15 +62,15 @@ These files already follow the mandate and serve as the reference pattern:
 #endif
 ```
 
-- `GameBootstrapper.cs:312` — `Debug.LogException` inside guard
-- `SystemDispatcher.cs` — all logs inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD`
-- `GlobalRegistry.cs` — all logs inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD`
-- `GameTickManager.cs` — all logs inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD`
-- `BootstrapController.cs:515` — `LogWarning` inside guard
-- `HectonMusicDirector.cs:716` — `LogError` inside guard
-- `AudioLogPickup.cs:123` — `LogWarning` inside guard
-- `PlayerCriticalProceduralAudioRenderer.cs` — warnings inside guard + one-shot bool gates
-- `FaunaBrain.cs:466` — watchdog log throttled to 5 s + inside guard
+- `GameBootstrapper.cs:312` â€” `Debug.LogException` inside guard
+- `SystemDispatcher.cs` â€” all logs inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD`
+- `GlobalRegistry.cs` â€” all logs inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD`
+- `GameTickManager.cs` â€” all logs inside `#if UNITY_EDITOR || DEVELOPMENT_BUILD`
+- `BootstrapController.cs:515` â€” `LogWarning` inside guard
+- `HectonMusicDirector.cs:716` â€” `LogError` inside guard
+- `AudioLogPickup.cs:123` â€” `LogWarning` inside guard
+- `PlayerCriticalProceduralAudioRenderer.cs` â€” warnings inside guard + one-shot bool gates
+- `FaunaBrain.cs:466` â€” watchdog log throttled to 5 s + inside guard
 
 ---
 

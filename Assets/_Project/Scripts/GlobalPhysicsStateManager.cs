@@ -195,7 +195,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8995)]
-    public sealed class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener
+    public sealed class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener, IServiceHeartbeat
     {
         private struct RigidbodyState
         {
@@ -309,10 +309,17 @@ namespace Hecton8.Physics
         private bool _registeredPostFixedTick;
         private bool _registeredOriginShift;
         private bool _sceneEventsSubscribed;
+        private bool _trackedBodyCapacityOverflowReported;
         private int _lastKineticAnomalyFrame = -1;
         private Transform _playerTransform;
 
         internal static GlobalPhysicsStateManager ActiveRuntimeInstance { get; private set; }
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -458,7 +465,7 @@ namespace Hecton8.Physics
             if (!_lastValidPositions.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float3>[512 initial] â€” authoritative last-valid runtime-space body positions for origin-shift-safe recovery â€” owner: GlobalPhysicsStateManager
-                _lastValidPositions = new NativeArray<float3>(_trackedBodies.Length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                _lastValidPositions = new NativeArray<float3>(MaxTrackedBodies, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(
                     _lastValidPositions,
                     nameof(GlobalPhysicsStateManager),
@@ -895,7 +902,8 @@ namespace Hecton8.Physics
             if (_trackedBodyIndexByEntityId.ContainsKey(bodyEntityId))
                 return;
 
-            EnsureTrackedBodyCapacity(_trackedBodyCount + 1);
+            if (!EnsureTrackedBodyCapacity(_trackedBodyCount + 1))
+                return;
 
             EnsureReporter(body);
             IPhysicsColliderLodHysteresisSink colliderLodSink = ResolveColliderLodSink(body);
@@ -1735,41 +1743,19 @@ namespace Hecton8.Physics
             body.gameObject.AddComponent<PhysicsStateReporter>(); // COLD ALLOC: PhysicsStateReporter[1] â€” runtime collision relay added to tracked rigidbodies â€” owner: GlobalPhysicsStateManager
         }
 
-        private void EnsureTrackedBodyCapacity(int requiredCount)
+        private bool EnsureTrackedBodyCapacity(int requiredCount)
         {
-            if (requiredCount <= _trackedBodies.Length)
-                return;
+            if (requiredCount <= MaxTrackedBodies)
+                return true;
 
-            int newCapacity = _trackedBodies.Length;
-            int growthWatchdog = 31;
-            while (newCapacity < requiredCount && growthWatchdog-- > 0)
-                newCapacity <<= 1;
-
-            if (newCapacity < requiredCount)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_trackedBodyCapacityOverflowReported)
             {
-                Debug.LogError(
-                    $"[GlobalPhysicsStateManager] Failed to grow tracked body capacity for requiredCount={requiredCount}.");
-                return;
+                Debug.LogError("[GlobalPhysicsStateManager] MaxTrackedBodies capacity exceeded. Increase MaxTrackedBodies; runtime buffer growth is forbidden.");
+                _trackedBodyCapacityOverflowReported = true;
             }
-
-            Array.Resize(ref _trackedBodies, newCapacity);
-            Array.Resize(ref _bodyStates, newCapacity);
-
-            if (!_lastValidPositions.IsCreated)
-                return;
-
-            NativeArray<float3> resizedPositions = new NativeArray<float3>(newCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            for (int i = 0; i < _trackedBodyCount; i++)
-                resizedPositions[i] = _lastValidPositions[i];
-
-            NativeMemorySentinel.UnregisterNativeArray(_lastValidPositions);
-            _lastValidPositions.Dispose();
-            _lastValidPositions = resizedPositions;
-            NativeMemorySentinel.RegisterNativeArray(
-                _lastValidPositions,
-                nameof(GlobalPhysicsStateManager),
-                nameof(_lastValidPositions),
-                NativeAllocationLifetime.Session);
+#endif
+            return false;
         }
 
         private void ScanLoadedScenesForRigidbodies()
@@ -1797,7 +1783,13 @@ namespace Hecton8.Physics
                 _sceneRigidbodyScratch.Clear();
                 rootObject.GetComponentsInChildren(false, _sceneRigidbodyScratch);
                 int bodyCount = _sceneRigidbodyScratch.Count;
-                EnsureTrackedBodyCapacity(_trackedBodyCount + bodyCount);
+                if (!EnsureTrackedBodyCapacity(_trackedBodyCount + bodyCount))
+                {
+                    bodyCount = MaxTrackedBodies - _trackedBodyCount;
+                    if (bodyCount <= 0)
+                        return;
+                }
+
                 for (int bodyIndex = 0; bodyIndex < bodyCount; bodyIndex++)
                     RegisterTrackedBodyInternal(_sceneRigidbodyScratch[bodyIndex]);
             }

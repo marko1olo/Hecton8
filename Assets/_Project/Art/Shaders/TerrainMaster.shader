@@ -21,6 +21,8 @@ Shader "HECTON/Terrain/TerrainMaster"
         _BiomeLayerStride ("Biome Layer Stride", Float) = 2
         _SandLayerIndex ("Sand Layer Offset", Float) = 0
         _RockLayerIndex ("Rock Layer Offset", Float) = 1
+        _BumpOffsetStrength ("Bump Offset Strength", Range(0, 0.08)) = 0.018
+        _BumpOffsetHeightCenter ("Bump Offset Height Center", Range(0, 1)) = 0.5
 
         [Header(Blending)]
         _SlopeSharpness ("Slope Blend Sharpness", Range(1,32)) = 8.0
@@ -80,6 +82,8 @@ Shader "HECTON/Terrain/TerrainMaster"
             float  _BiomeLayerStride;
             float  _SandLayerIndex;
             float  _RockLayerIndex;
+            float  _BumpOffsetStrength;
+            float  _BumpOffsetHeightCenter;
             float  _SlopeSharpness;
             float  _TriplanarThreshold;
             float  _BiomeEdgeBleedScale;
@@ -215,12 +219,13 @@ Shader "HECTON/Terrain/TerrainMaster"
             return SAMPLE_TEXTURE2D_ARRAY(_TerrainAlbedoArray, sampler_TerrainAlbedoArray, uv, slice);
         }
 
-        half3 HectonSampleTerrainNormalArray(float3 posWS, float3 normalWS, float scale, float strength, float slice)
+        half4 HectonSampleTerrainAlbedoArrayAtUv(float2 uv, float slice)
         {
-            float2 uv;
-            half dominantAxis;
-            HectonResolveTerrainProjection(posWS, normalWS, scale, uv, dominantAxis);
+            return SAMPLE_TEXTURE2D_ARRAY(_TerrainAlbedoArray, sampler_TerrainAlbedoArray, uv, slice);
+        }
 
+        half3 HectonSampleTerrainNormalArrayAtUv(float2 uv, half dominantAxis, float3 normalWS, float strength, float slice)
+        {
             half3 tangentNormal = UnpackNormalScale(
                 SAMPLE_TEXTURE2D_ARRAY(_TerrainNormalArray, sampler_TerrainNormalArray, uv, slice), strength);
             half3 normalSign = sign((half3)normalWS);
@@ -231,6 +236,43 @@ Shader "HECTON/Terrain/TerrainMaster"
                 return half3(tangentNormal.x, tangentNormal.y, tangentNormal.z * normalSign.z);
 
             return half3(tangentNormal.x, tangentNormal.z * normalSign.y, tangentNormal.y);
+        }
+
+        half3 HectonSampleTerrainNormalArray(float3 posWS, float3 normalWS, float scale, float strength, float slice)
+        {
+            float2 uv;
+            half dominantAxis;
+            HectonResolveTerrainProjection(posWS, normalWS, scale, uv, dominantAxis);
+            return HectonSampleTerrainNormalArrayAtUv(uv, dominantAxis, normalWS, strength, slice);
+        }
+
+        float2 HectonResolveTerrainBumpOffset(half3 viewDirectionWS, half dominantAxis, half height01)
+        {
+            half strength = saturate((half)_BumpOffsetStrength);
+            if (strength <= 0.0001h)
+                return float2(0.0, 0.0);
+
+            half3 viewDir = normalize(viewDirectionWS);
+            float2 projectedView;
+            half axisDepth;
+            if (dominantAxis < 0.5h)
+            {
+                projectedView = viewDir.zy;
+                axisDepth = abs(viewDir.x);
+            }
+            else if (dominantAxis > 1.5h)
+            {
+                projectedView = viewDir.xy;
+                axisDepth = abs(viewDir.z);
+            }
+            else
+            {
+                projectedView = viewDir.xz;
+                axisDepth = abs(viewDir.y);
+            }
+
+            half centeredHeight = height01 - saturate((half)_BumpOffsetHeightCenter);
+            return -projectedView * (centeredHeight * strength / max(axisDepth, 0.25h));
         }
 
         half EvaluateSargassumCanopyShadow(float3 positionWS)
@@ -496,10 +538,22 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half slopeBlend = saturate(pow(abs(slope), _SlopeSharpness));
                 float terrainScale = lerp(_SandScale, _RockScale, slopeBlend);
                 float terrainSlice = HectonResolveTerrainArraySlice(slopeBlend, biome);
-                half4 terrainSample = HectonSampleTerrainAlbedoArray(
-                    IN.positionWS, IN.normalWS, terrainScale, terrainSlice);
-                half3 rockNormalWS = HectonSampleTerrainNormalArray(
-                    IN.positionWS, IN.normalWS, terrainScale, _RockNormalStr, terrainSlice);
+                float2 terrainUv;
+                half terrainDominantAxis;
+                HectonResolveTerrainProjection(IN.positionWS, IN.normalWS, terrainScale, terrainUv, terrainDominantAxis);
+                half4 terrainHeightSample = HectonSampleTerrainAlbedoArrayAtUv(terrainUv, terrainSlice);
+                float3 viewDirectionWS = GetWorldSpaceNormalizeViewDir(IN.positionWS);
+                float2 offsetTerrainUv = terrainUv;
+                [branch]
+                if (_BumpOffsetStrength > 0.0001)
+                    offsetTerrainUv += HectonResolveTerrainBumpOffset((half3)viewDirectionWS, terrainDominantAxis, terrainHeightSample.a);
+
+                half4 terrainSample = terrainHeightSample;
+                [branch]
+                if (_BumpOffsetStrength > 0.0001)
+                    terrainSample = HectonSampleTerrainAlbedoArrayAtUv(offsetTerrainUv, terrainSlice);
+                half3 rockNormalWS = HectonSampleTerrainNormalArrayAtUv(
+                    offsetTerrainUv, terrainDominantAxis, IN.normalWS, _RockNormalStr, terrainSlice);
                 half3 albedo = terrainSample.rgb * lerp(_SandColor.rgb, _RockColor.rgb, slopeBlend);
                 half smoothness = terrainSample.a * _BaseSmooth;
 
@@ -524,14 +578,13 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half distantHeightShadow = EvaluateDistantTerrainHeightShadow(IN.positionWS);
                 if (distantHeightShadow > 0.0001h)
                 {
-                    albedo = lerp(albedo, albedo * 0.22h, distantHeightShadow);
+                    albedo = lerp(albedo, albedo * 0.20h, distantHeightShadow);
                     emission *= 1.0h - distantHeightShadow * 0.9h;
                 }
 
                 // ---- Final world normal ----
                 float3 finalNormalWS = NormalizeNormalPerPixel(
                     IN.normalWS + rockNormalWS * slopeBlend);
-                float3 viewDirectionWS = GetWorldSpaceNormalizeViewDir(IN.positionWS);
                 ApplyNoirPressureSheen(
                     IN.positionWS,
                     (half3)finalNormalWS,

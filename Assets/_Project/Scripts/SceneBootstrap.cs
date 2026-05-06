@@ -714,7 +714,7 @@ namespace Hecton8.Bootstrap
 
             _activationStarted = true;
             BootstrapState.PublishGameReady(false);
-            SceneInstantiationGate.Instance?.BeginSceneLoad(gameObject.scene.name);
+            SceneInstantiationGate.ActiveRuntime?.BeginSceneLoad(gameObject.scene.name);
 
             // ── Деактивируем игрока на время загрузки ──
             DisablePlayer();
@@ -778,13 +778,13 @@ namespace Hecton8.Bootstrap
                 // ── STEP 7: Спавн игрока ─────────────────────
                 SetStep("Step 7: Player Spawn");
                 await SpawnPlayerAsync(ct);
-                SceneInstantiationGate.Instance?.MarkPlayerInstantiated(playerObject);
+                SceneInstantiationGate.ActiveRuntime?.MarkPlayerInstantiated(playerObject);
                 ct.ThrowIfCancellationRequested();
 
                 // ── STEP 8: Активация + Game Ready ───────────
                 SetStep("Step 8: Runtime World Prime");
                 await PrimeRuntimeWorldAsync(ct);
-                SceneInstantiationGate.Instance?.MarkWorldPrimed();
+                SceneInstantiationGate.ActiveRuntime?.MarkWorldPrimed();
                 ct.ThrowIfCancellationRequested();
 
                 SetStep("Step 8.5: Cold Cleanup + Memory Snapshot");
@@ -1515,7 +1515,7 @@ namespace Hecton8.Bootstrap
             if (vramMonitor != null)
                 totalVramMb = vramMonitor.TotalVRAMBytes / BytesPerMegabyte;
 
-            SceneInstantiationGate.Instance?.CaptureMemorySnapshot(
+            SceneInstantiationGate.ActiveRuntime?.CaptureMemorySnapshot(
                 _debugStartupTextureMemoryMb,
                 _debugStartupReservedMemoryMb,
                 totalVramMb);
@@ -1523,7 +1523,7 @@ namespace Hecton8.Bootstrap
 
         private async Awaitable WaitForSceneInstantiationGateAsync(CancellationToken ct)
         {
-            SceneInstantiationGate gate = SceneInstantiationGate.Instance;
+            SceneInstantiationGate gate = SceneInstantiationGate.ActiveRuntime;
             if (gate == null)
             {
                 Log("  Scene instantiation gate missing. Continuing with bootstrap-only verification.");

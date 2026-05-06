@@ -13,6 +13,7 @@
 // Меню: Hecton/Authoring/Rebuild Procedural Geology Finals
 // ============================================================================
 #if UNITY_EDITOR
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -261,8 +262,12 @@ namespace Hecton8.EditorTools
             {
                 // Обновляем существующий ассет
                 existing.Clear();
-                existing.SetVertices(mesh.vertices);
-                existing.SetTriangles(mesh.triangles, 0);
+                List<Vector3> vertices = new List<Vector3>(mesh.vertexCount);
+                List<int> triangles = new List<int>((int)mesh.GetIndexCount(0));
+                mesh.GetVertices(vertices);
+                mesh.GetTriangles(triangles, 0);
+                existing.SetVertices(vertices);
+                existing.SetTriangles(triangles, 0);
                 existing.RecalculateNormals();
                 existing.RecalculateBounds();
                 existing.Optimize();

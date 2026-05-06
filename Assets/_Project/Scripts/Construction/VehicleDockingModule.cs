@@ -3,6 +3,8 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Power;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -93,8 +95,8 @@ namespace Hecton8.Construction
         private RigidbodyConstraints _cachedBodyConstraints;
         private Vector3 _dockingStartPosition;
         private Quaternion _dockingStartRotation = Quaternion.identity;
-        private Vector3 _dockingLinearVelocity;
-        private Vector3 _dockingAngularVelocityRadians;
+        private AbsoluteUniversePosition _dockingStartAup;
+        private AbsoluteUniversePosition _dockingTargetAup;
         private float _dockingElapsedSeconds;
         private MountablePlayerTransport _mountedTransportLockOwner;
         private ulong _lastRejectedDockColliderId;
@@ -113,10 +115,16 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
+            SanitizeDockingSettings();
             _cachedTransform = transform;
             _triggerCollider = GetComponent<Collider>();
             _triggerCollider.isTrigger = true;
             _powerNode = GetComponent<PowerNode>();
+        }
+
+        private void OnValidate()
+        {
+            SanitizeDockingSettings();
         }
 
         private void OnEnable()
@@ -147,8 +155,6 @@ namespace Hecton8.Construction
             _dockingInProgress = false;
             _isDocked = false;
             _dockingElapsedSeconds = 0f;
-            _dockingLinearVelocity = Vector3.zero;
-            _dockingAngularVelocityRadians = Vector3.zero;
             _lastRejectedDockColliderId = 0UL;
             ClearTransportLookupCache();
             _debugDockOccupied = false;
@@ -165,8 +171,6 @@ namespace Hecton8.Construction
             _dockingInProgress = false;
             _isDocked = false;
             _dockingElapsedSeconds = 0f;
-            _dockingLinearVelocity = Vector3.zero;
-            _dockingAngularVelocityRadians = Vector3.zero;
             _lastRejectedDockColliderId = 0UL;
             ClearTransportLookupCache();
             _debugDockOccupied = false;
@@ -311,11 +315,7 @@ namespace Hecton8.Construction
             ResolveDockedBody(transportBehaviour);
             BeginDockingControlLock(transportBehaviour);
             _dockingElapsedSeconds = 0f;
-            if (_dockedBody == null)
-            {
-                _dockingLinearVelocity = Vector3.zero;
-                _dockingAngularVelocityRadians = Vector3.zero;
-            }
+            CacheDockingTrajectory();
             _dockingInProgress = true;
             _isDocked = false;
         }
@@ -343,8 +343,6 @@ namespace Hecton8.Construction
             _dockingInProgress = false;
             _isDocked = false;
             _dockingElapsedSeconds = 0f;
-            _dockingLinearVelocity = Vector3.zero;
-            _dockingAngularVelocityRadians = Vector3.zero;
             _lastRejectedDockColliderId = 0UL;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
@@ -367,11 +365,31 @@ namespace Hecton8.Construction
             _cachedBodyConstraints = _dockedBody.constraints;
             _dockingStartPosition = _dockedBody.position;
             _dockingStartRotation = _dockedBody.rotation;
-            _dockingLinearVelocity = HectonPlayerMotor.SafeVelocity(_dockedBody.linearVelocity);
-            _dockingAngularVelocityRadians = HectonPlayerMotor.SafeVelocity(_dockedBody.angularVelocity);
             _dockedBody.linearVelocity = Vector3.zero;
             _dockedBody.angularVelocity = Vector3.zero;
             _dockedBody.useGravity = false;
+        }
+
+        private void CacheDockingTrajectory()
+        {
+            Transform anchor = dockAnchor != null ? dockAnchor : _cachedTransform;
+            Vector3 startPosition = _dockingStartPosition;
+            Quaternion startRotation = _dockingStartRotation;
+            if (_dockedBody != null)
+            {
+                startPosition = _dockedBody.position;
+                startRotation = _dockedBody.rotation;
+            }
+            else if (_dockedTransform != null)
+            {
+                startPosition = _dockedTransform.position;
+                startRotation = _dockedTransform.rotation;
+            }
+
+            _dockingStartPosition = startPosition;
+            _dockingStartRotation = startRotation;
+            _dockingStartAup = AbsoluteUniversePosition.FromRuntimePosition(startPosition);
+            _dockingTargetAup = AbsoluteUniversePosition.FromRuntimePosition(anchor != null ? anchor.position : startPosition);
         }
 
         private void SnapDockedBodyToAnchor()
@@ -393,67 +411,45 @@ namespace Hecton8.Construction
         private void AdvanceDockingPose(float fixedDeltaTime)
         {
             float duration = Mathf.Max(0.25f, dockingDurationSeconds);
-            float safeDeltaTime = Mathf.Max(0.0001f, fixedDeltaTime);
-            _dockingElapsedSeconds = Mathf.Min(duration, _dockingElapsedSeconds + safeDeltaTime);
+            _dockingElapsedSeconds = Mathf.Min(duration, _dockingElapsedSeconds + Mathf.Max(0.0001f, fixedDeltaTime));
             Transform anchor = dockAnchor != null ? dockAnchor : _cachedTransform;
             Vector3 anchorPosition = anchor.position;
             Quaternion anchorRotation = anchor.rotation;
-            Vector3 evaluatedPosition = anchorPosition;
-            Quaternion evaluatedRotation = anchorRotation;
-            bool hasEvaluatedPose = false;
+            _dockingTargetAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
+            float normalizedTime = Mathf.Clamp01(_dockingElapsedSeconds / duration);
+            float easedTime = normalizedTime * normalizedTime * (3f - (2f * normalizedTime));
+            Vector3 evaluatedPosition = ResolveRuntimeAupLerp(_dockingStartAup, _dockingTargetAup, easedTime, anchorPosition);
+            quaternion startRotationQ = new quaternion(
+                _dockingStartRotation.x,
+                _dockingStartRotation.y,
+                _dockingStartRotation.z,
+                _dockingStartRotation.w);
+            quaternion anchorRotationQ = new quaternion(
+                anchorRotation.x,
+                anchorRotation.y,
+                anchorRotation.z,
+                anchorRotation.w);
+            quaternion evaluatedRotationQ = math.slerp(startRotationQ, anchorRotationQ, easedTime);
+            Quaternion evaluatedRotation = new Quaternion(
+                evaluatedRotationQ.value.x,
+                evaluatedRotationQ.value.y,
+                evaluatedRotationQ.value.z,
+                evaluatedRotationQ.value.w);
 
             if (_dockedBody != null)
             {
-                Vector3 currentPosition = _dockedBody.position;
-                Quaternion currentRotation = _dockedBody.rotation;
-                Vector3 positionError = anchorPosition - currentPosition;
-                float bodyMass = Mathf.Max(1f, _dockedBody.mass);
-                Vector3 positionForce = ((positionError * dockingPositionSpring) - (_dockingLinearVelocity * dockingPositionDamping)) * bodyMass;
-                Vector3 positionAcceleration = ClampVectorMagnitude(positionForce, maxDockingForce) / bodyMass;
-                _dockingLinearVelocity = HectonPlayerMotor.SafeVelocity(_dockingLinearVelocity + (positionAcceleration * safeDeltaTime));
-                Vector3 nextPosition = currentPosition + (_dockingLinearVelocity * safeDeltaTime);
-
-                Vector3 rotationErrorRadians = ResolveRotationErrorRadians(currentRotation, anchorRotation);
-                Vector3 angularAcceleration = (rotationErrorRadians * dockingRotationSpring) - (_dockingAngularVelocityRadians * dockingRotationDamping);
-                _dockingAngularVelocityRadians = HectonPlayerMotor.SafeVelocity(_dockingAngularVelocityRadians + (angularAcceleration * safeDeltaTime));
-                Quaternion nextRotation = IntegrateAngularVelocity(currentRotation, _dockingAngularVelocityRadians, safeDeltaTime);
-
-                _dockedBody.linearVelocity = _dockingLinearVelocity;
-                _dockedBody.angularVelocity = _dockingAngularVelocityRadians;
-                _dockedBody.MovePosition(nextPosition);
-                _dockedBody.MoveRotation(nextRotation);
-                evaluatedPosition = nextPosition;
-                evaluatedRotation = nextRotation;
-                hasEvaluatedPose = true;
+                _dockedBody.linearVelocity = Vector3.zero;
+                _dockedBody.angularVelocity = Vector3.zero;
+                _dockedBody.MovePosition(evaluatedPosition);
+                _dockedBody.MoveRotation(evaluatedRotation);
             }
             else if (_dockedTransform != null)
             {
-                Vector3 currentPosition = _dockedTransform.position;
-                Quaternion currentRotation = _dockedTransform.rotation;
-                Vector3 positionError = anchorPosition - currentPosition;
-                Vector3 positionForce = (positionError * dockingPositionSpring) - (_dockingLinearVelocity * dockingPositionDamping);
-                Vector3 positionAcceleration = ClampVectorMagnitude(positionForce, maxDockingForce);
-                _dockingLinearVelocity = HectonPlayerMotor.SafeVelocity(_dockingLinearVelocity + (positionAcceleration * safeDeltaTime));
-                Vector3 rotationErrorRadians = ResolveRotationErrorRadians(currentRotation, anchorRotation);
-                Vector3 angularAcceleration = (rotationErrorRadians * dockingRotationSpring) - (_dockingAngularVelocityRadians * dockingRotationDamping);
-                _dockingAngularVelocityRadians = HectonPlayerMotor.SafeVelocity(_dockingAngularVelocityRadians + (angularAcceleration * safeDeltaTime));
-                Vector3 nextPosition = currentPosition + (_dockingLinearVelocity * safeDeltaTime);
-                Quaternion nextRotation = IntegrateAngularVelocity(currentRotation, _dockingAngularVelocityRadians, safeDeltaTime);
-                _dockedTransform.SetPositionAndRotation(
-                    nextPosition,
-                    nextRotation);
-                evaluatedPosition = nextPosition;
-                evaluatedRotation = nextRotation;
-                hasEvaluatedPose = true;
+                _dockedTransform.SetPositionAndRotation(evaluatedPosition, evaluatedRotation);
             }
 
             bool durationElapsed = _dockingElapsedSeconds >= duration - 0.0001f;
-            bool positionCaptured = hasEvaluatedPose &&
-                                    Vector3.SqrMagnitude(anchorPosition - evaluatedPosition) <=
-                                    dockingCaptureDistanceEpsilon * dockingCaptureDistanceEpsilon;
-            bool rotationCaptured = hasEvaluatedPose &&
-                                    Quaternion.Angle(evaluatedRotation, anchorRotation) <= dockingCaptureAngleEpsilonDegrees;
-            if (!durationElapsed && (!positionCaptured || !rotationCaptured))
+            if (!durationElapsed)
                 return;
 
             FinalizeDockedTransport();
@@ -474,45 +470,32 @@ namespace Hecton8.Construction
             ConnectDockedCargoCrates();
             _dockingInProgress = false;
             _isDocked = true;
-            _dockingLinearVelocity = Vector3.zero;
-            _dockingAngularVelocityRadians = Vector3.zero;
         }
 
-        private static Vector3 ClampVectorMagnitude(Vector3 vector, float maxMagnitude)
+        private void SanitizeDockingSettings()
         {
-            float safeMaxMagnitude = Mathf.Max(0f, maxMagnitude);
-            if (safeMaxMagnitude <= 0f)
-                return Vector3.zero;
-
-            float sqrMagnitude = vector.sqrMagnitude;
-            float maxSqrMagnitude = safeMaxMagnitude * safeMaxMagnitude;
-            if (sqrMagnitude <= maxSqrMagnitude || sqrMagnitude <= 0.000001f)
-                return vector;
-
-            return vector * (safeMaxMagnitude / Mathf.Sqrt(sqrMagnitude));
+            dockingDurationSeconds = Mathf.Clamp(dockingDurationSeconds, 0.25f, 8f);
+            dockingPositionSpring = Mathf.Max(0f, dockingPositionSpring);
+            dockingPositionDamping = Mathf.Max(0f, dockingPositionDamping);
+            maxDockingForce = Mathf.Max(1f, maxDockingForce);
+            dockingRotationSpring = Mathf.Max(0f, dockingRotationSpring);
+            dockingRotationDamping = Mathf.Max(0f, dockingRotationDamping);
+            dockingCaptureDistanceEpsilon = Mathf.Max(0.001f, dockingCaptureDistanceEpsilon);
+            dockingCaptureAngleEpsilonDegrees = Mathf.Max(0.01f, dockingCaptureAngleEpsilonDegrees);
         }
 
-        private static Vector3 ResolveRotationErrorRadians(Quaternion currentRotation, Quaternion targetRotation)
+        private static Vector3 ResolveRuntimeAupLerp(
+            AbsoluteUniversePosition from,
+            AbsoluteUniversePosition to,
+            float normalizedTime,
+            Vector3 fallbackPosition)
         {
-            Quaternion error = targetRotation * Quaternion.Inverse(currentRotation);
-            error.ToAngleAxis(out float angleDegrees, out Vector3 axis);
-            if (angleDegrees > 180f)
-                angleDegrees -= 360f;
-
-            if (!IsFiniteVector(axis) || axis.sqrMagnitude <= 0.000001f || !float.IsFinite(angleDegrees))
-                return Vector3.zero;
-
-            return axis.normalized * (angleDegrees * Mathf.Deg2Rad);
-        }
-
-        private static Quaternion IntegrateAngularVelocity(Quaternion currentRotation, Vector3 angularVelocityRadians, float deltaTime)
-        {
-            float angularSpeed = angularVelocityRadians.magnitude;
-            if (angularSpeed <= 0.0001f || !float.IsFinite(angularSpeed))
-                return currentRotation;
-
-            Vector3 axis = angularVelocityRadians / angularSpeed;
-            return Quaternion.AngleAxis(angularSpeed * Mathf.Rad2Deg * Mathf.Max(0f, deltaTime), axis) * currentRotation;
+            double3 start = from.ToAbsoluteDouble3();
+            double3 target = to.ToAbsoluteDouble3();
+            double3 resolved = start + ((target - start) * (double)Mathf.Clamp01(normalizedTime));
+            float3 runtime = AbsoluteUniversePosition.FromAbsolutePosition(resolved).ToRuntimeFloat3();
+            Vector3 runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return IsFiniteVector(runtimePosition) ? runtimePosition : fallbackPosition;
         }
 
         private static bool IsFiniteVector(Vector3 value)

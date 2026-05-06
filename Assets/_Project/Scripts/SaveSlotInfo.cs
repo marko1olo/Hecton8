@@ -33,7 +33,30 @@ namespace Hecton8.SaveSystem
 
         public string slotName => SlotName;
         public SaveMetadata metadata => Metadata;
-        public string integrity => IntegrityState.ToString();
+        public string integrity => ToStorageString(IntegrityState);
+
+        internal static string ToStorageString(SaveSlotIntegrityState state)
+        {
+            switch (state)
+            {
+                case SaveSlotIntegrityState.Healthy:
+                    return "Healthy";
+                case SaveSlotIntegrityState.HealthyWithBackup:
+                    return "HealthyWithBackup";
+                case SaveSlotIntegrityState.BackupOnly:
+                    return "BackupOnly";
+                case SaveSlotIntegrityState.MissingMetadata:
+                    return "MissingMetadata";
+                case SaveSlotIntegrityState.MetadataRecoveredFromBackup:
+                    return "MetadataRecoveredFromBackup";
+                case SaveSlotIntegrityState.MetadataSynthesized:
+                    return "MetadataSynthesized";
+                case SaveSlotIntegrityState.CorruptedMetadata:
+                    return "CorruptedMetadata";
+                default:
+                    return "Empty";
+            }
+        }
 
         public bool HasAnySaveData => HasPrimarySave || HasBackupSave;
 

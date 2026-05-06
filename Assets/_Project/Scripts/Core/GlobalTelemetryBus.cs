@@ -30,7 +30,8 @@ namespace Hecton8.Core
         ModCommandRejected = 10,
         DroneFleetStatus = 11,
         ModCriticalMemoryEviction = 12,
-        PerformanceWarning = 13
+        PerformanceWarning = 13,
+        BootstrapDuration = 14
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -269,6 +270,14 @@ namespace Hecton8.Core
         public static void PublishPerformanceWarning(uint warningHash, uint contextHash, float scalarValue)
         {
             Publish(TelemetryEventType.PerformanceWarning, warningHash, contextHash, scalarValue, default);
+        }
+
+        /// <summary>
+        /// Publishes total bootstrap duration using precomputed stable hashes only.
+        /// </summary>
+        public static void PublishBootstrapDuration(uint durationHash, uint contextHash, float elapsedMilliseconds)
+        {
+            Publish(TelemetryEventType.BootstrapDuration, durationHash, contextHash, elapsedMilliseconds, default);
         }
 
         /// <summary>

@@ -1,6 +1,6 @@
-# HECTON-8 DATA DICTIONARY — DOD Struct Reference
-Date: 2026-04-28
-Status: REFERENCE
+﻿# HECTON-8 DATA DICTIONARY â€” DOD Struct Reference
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 ## Current-State Addendum (2026-04-29)
@@ -15,54 +15,54 @@ Important boundary:
 
 Use this file as a reference map, not as blind implementation instructions.
 
-**Версия:** 2026-04-28 | **Исторический статус на момент скана:** ETA VERIFIED
+**Ð’ÐµÑ€ÑÐ¸Ñ:** 2026-04-28 | **Ð˜ÑÑ‚Ð¾Ñ€Ð¸Ñ‡ÐµÑÐºÐ¸Ð¹ ÑÑ‚Ð°Ñ‚ÑƒÑ Ð½Ð° Ð¼Ð¾Ð¼ÐµÐ½Ñ‚ ÑÐºÐ°Ð½Ð°:** ETA VERIFIED
 
 ---
 
-## 📋 КРИТИЧЕСКИЕ STRUCTS — AARCH (Absolute AUP)
+## ðŸ“‹ ÐšÐ Ð˜Ð¢Ð˜Ð§Ð•Ð¡ÐšÐ˜Ð• STRUCTS â€” AARCH (Absolute AUP)
 
 ### AbsoluteUniversePosition
 
-**Файл:** `World/PersistentWorldRegistry.cs`
+**Ð¤Ð°Ð¹Ð»:** `World/PersistentWorldRegistry.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
 internal struct AbsoluteUniversePosition {
-    public long gridX;    // 8 bytes — int64 grid coordinate
+    public long gridX;    // 8 bytes â€” int64 grid coordinate
     public long gridY;    // 8 bytes
     public long gridZ;    // 8 bytes
-    public float localX;   // 4 bytes — local offset within cell
+    public float localX;   // 4 bytes â€” local offset within cell
     public float localY;  // 4 bytes
     public float localZ;  // 4 bytes
 }
 ```
 
-**Размер:** 36 bytes ⚠️ NOT 16-byte aligned — требует padding
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 36 bytes âš ï¸ NOT 16-byte aligned â€” Ñ‚Ñ€ÐµÐ±ÑƒÐµÑ‚ padding
 
 ---
 
 ### AbsoluteUniversePositionBlit128
 
-**Файл:** `World/PersistentWorldRegistry.cs`
+**Ð¤Ð°Ð¹Ð»:** `World/PersistentWorldRegistry.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 48)]
 internal struct AbsoluteUniversePositionBlit128 {
     public float4 cellOrigin;     // 16 bytes
     public float4 localOffset;   // 16 bytes
-    public float4 orientation;   // 16 bytes — quaternion encoding
+    public float4 orientation;   // 16 bytes â€” quaternion encoding
 }
 ```
 
-**Размер:** 48 bytes ✅ 16-byte aligned
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 48 bytes âœ… 16-byte aligned
 
 ---
 
-## 📋 PHYSICS STRUCTS
+## ðŸ“‹ PHYSICS STRUCTS
 
 ### ForcePacket
 
-**Файл:** `PhysicsApplySystem.cs`
+**Ð¤Ð°Ð¹Ð»:** `PhysicsApplySystem.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
@@ -75,13 +75,13 @@ public struct ForcePacket {
 }
 ```
 
-**Размер:** ~36 bytes ✅ Burst-compatible
+**Ð Ð°Ð·Ð¼ÐµÑ€:** ~36 bytes âœ… Burst-compatible
 
 ---
 
 ### SplashEvent
 
-**Файл:** `SubmarineFluidDynamics.cs`
+**Ð¤Ð°Ð¹Ð»:** `SubmarineFluidDynamics.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
@@ -93,13 +93,13 @@ public struct SplashEvent {
 }
 ```
 
-**Размер:** 32 bytes ✅ Burst-compatible
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 32 bytes âœ… Burst-compatible
 
 ---
 
 ### CompartmentState
 
-**Файл:** `SubmarineFluidDynamics.cs`
+**Ð¤Ð°Ð¹Ð»:** `SubmarineFluidDynamics.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
@@ -114,30 +114,30 @@ private struct CompartmentState {
 }
 ```
 
-**Размер:** 32 bytes ✅ Burst-compatible, Pack = 4
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 32 bytes âœ… Burst-compatible, Pack = 4
 
 ---
 
-## 📋 AI / COGNITION STRUCTS
+## ðŸ“‹ AI / COGNITION STRUCTS
 
 ### CognitionCore
 
-**Файл:** `Fauna/PredatorCognitionDomain.cs`
+**Ð¤Ð°Ð¹Ð»:** `Fauna/PredatorCognitionDomain.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
 internal struct CognitionCore {
-    public fixed byte Data[64];   // 64 bytes — tightly packed
+    public fixed byte Data[64];   // 64 bytes â€” tightly packed
 }
 ```
 
-**Размер:** 64 bytes ✅ Cache-aligned
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 64 bytes âœ… Cache-aligned
 
 ---
 
 ### PackedCognitionOutput
 
-**Файл:** `Fauna/PredatorCognitionDomain.cs`
+**Ð¤Ð°Ð¹Ð»:** `Fauna/PredatorCognitionDomain.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 40)]
@@ -151,20 +151,20 @@ internal struct PackedCognitionOutput {
 }
 ```
 
-**Размер:** 40 bytes ⚠️ NOT 16-byte aligned
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 40 bytes âš ï¸ NOT 16-byte aligned
 
 ---
 
-## 📋 SAVE / PERSISTENCE STRUCTS
+## ðŸ“‹ SAVE / PERSISTENCE STRUCTS
 
 ### SaveFileHeader
 
-**Файл:** `SaveBinaryStorage.cs`
+**Ð¤Ð°Ð¹Ð»:** `SaveBinaryStorage.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 1, Size = CurrentHeaderSize)]
 internal struct SaveFileHeader {
-    public ulong magic;                  // 8 bytes — 'H8SAV000'
+    public ulong magic;                  // 8 bytes â€” 'H8SAV000'
     public uint version;                 // 4 bytes
     public uint headerSize;               // 4 bytes
     public long creationTimestamp;        // 8 bytes
@@ -177,13 +177,13 @@ internal struct SaveFileHeader {
 }
 ```
 
-**Размер:** ~120 bytes ✅ Pack = 1 for binary serialization
+**Ð Ð°Ð·Ð¼ÐµÑ€:** ~120 bytes âœ… Pack = 1 for binary serialization
 
 ---
 
 ### DeltaCell
 
-**Файл:** `SaveBinaryStorage.cs`
+**Ð¤Ð°Ð¹Ð»:** `SaveBinaryStorage.cs`
 
 ```csharp
 [Serializable]
@@ -197,34 +197,34 @@ public struct DeltaCell {
 }
 ```
 
-**Размер:** 20 bytes ⚠️ NOT 16-byte aligned
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 20 bytes âš ï¸ NOT 16-byte aligned
 
 ---
 
-## 📋 WORLD / VEGETATION STRUCTS
+## ðŸ“‹ WORLD / VEGETATION STRUCTS
 
 ### HectonVegetationInstanceData
 
-**Файл:** `World/HectonIndirectVegetationContracts.cs`
+**Ð¤Ð°Ð¹Ð»:** `World/HectonIndirectVegetationContracts.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
 public struct HectonVegetationInstanceData {
-    public float4x4 worldMatrix;      // 64 bytes — matrix
-    public float4 colorParams;        // 16 bytes — wind/tint
-    public float4 windData;          // 16 bytes — motion
+    public float4x4 worldMatrix;      // 64 bytes â€” matrix
+    public float4 colorParams;        // 16 bytes â€” wind/tint
+    public float4 windData;          // 16 bytes â€” motion
     public uint instanceID;          // 4 bytes
     public uint variationSeed;         // 4 bytes
 }
 ```
 
-**Размер:** ~104 bytes ✅ Used in GPU instancing
+**Ð Ð°Ð·Ð¼ÐµÑ€:** ~104 bytes âœ… Used in GPU instancing
 
 ---
 
 ### FloraInteractionPointGpuData
 
-**Файл:** `World/FloraInteractionManager.cs`
+**Ð¤Ð°Ð¹Ð»:** `World/FloraInteractionManager.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
@@ -236,15 +236,15 @@ private struct FloraInteractionPointGpuData {
 }
 ```
 
-**Размер:** 32 bytes ✅ Burst-compatible
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 32 bytes âœ… Burst-compatible
 
 ---
 
-## 📋 BOIDS / ECOSYSTEM STRUCTS
+## ðŸ“‹ BOIDS / ECOSYSTEM STRUCTS
 
 ### BoidData
 
-**Файл:** `World/SargassumMicroFaunaBoids.cs`
+**Ð¤Ð°Ð¹Ð»:** `World/SargassumMicroFaunaBoids.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
@@ -256,13 +256,13 @@ internal struct BoidData {
 }
 ```
 
-**Размер:** 32 bytes ✅ Pack = 4, cache-aligned
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 32 bytes âœ… Pack = 4, cache-aligned
 
 ---
 
 ### SimulationFrameConstants
 
-**Файл:** `World/SargassumMicroFaunaBoids.cs`
+**Ð¤Ð°Ð¹Ð»:** `World/SargassumMicroFaunaBoids.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 640)]
@@ -273,15 +273,15 @@ private struct SimulationFrameConstants {
 }
 ```
 
-**Размер:** 640 bytes ⚠️ Large constant buffer
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 640 bytes âš ï¸ Large constant buffer
 
 ---
 
-## 📋 SUBMARINE STRUCTS
+## ðŸ“‹ SUBMARINE STRUCTS
 
 ### AtmosphereStepJob
 
-**Файл:** `SubmarineAtmosphereSystem.cs`
+**Ð¤Ð°Ð¹Ð»:** `SubmarineAtmosphereSystem.cs`
 
 ```csharp
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -299,15 +299,15 @@ private struct AtmosphereStepJob : IJob {
 }
 ```
 
-**Размер:** Variable (handles NativeArrays)
+**Ð Ð°Ð·Ð¼ÐµÑ€:** Variable (handles NativeArrays)
 
 ---
 
-## 📋 INTERACTION STRUCTS
+## ðŸ“‹ INTERACTION STRUCTS
 
 ### InteractionPacket
 
-**Файл:** `Interaction/EquipmentInteractionContracts.cs`
+**Ð¤Ð°Ð¹Ð»:** `Interaction/EquipmentInteractionContracts.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
@@ -321,15 +321,15 @@ public struct InteractionPacket {
 }
 ```
 
-**Размер:** 40 bytes ⚠️ NOT 16-byte aligned
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 40 bytes âš ï¸ NOT 16-byte aligned
 
 ---
 
-## 📋 PLAYER STATE STRUCTS
+## ðŸ“‹ PLAYER STATE STRUCTS
 
 ### PlayerMovementRuntimeState
 
-**Файл:** `Core/PlayerRuntimeContext.cs`
+**Ð¤Ð°Ð¹Ð»:** `Core/PlayerRuntimeContext.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
@@ -343,13 +343,13 @@ public struct PlayerMovementRuntimeState {
 }
 ```
 
-**Размер:** 52 bytes ⚠️ NOT 16-byte aligned — needs padding
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 52 bytes âš ï¸ NOT 16-byte aligned â€” needs padding
 
 ---
 
 ### PlayerSurvivalRuntimeState
 
-**Файл:** `Core/PlayerRuntimeContext.cs`
+**Ð¤Ð°Ð¹Ð»:** `Core/PlayerRuntimeContext.cs`
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
@@ -364,13 +364,13 @@ public struct PlayerSurvivalRuntimeState {
 }
 ```
 
-**Размер:** 28 bytes ⚠️ NOT 16-byte aligned
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 28 bytes âš ï¸ NOT 16-byte aligned
 
 ---
 
-## 📋 OPTIMIZATION ALERTS
+## ðŸ“‹ OPTIMIZATION ALERTS
 
-### ❌ NOT 16-BYTE ALIGNED (Require Fix):
+### âŒ NOT 16-BYTE ALIGNED (Require Fix):
 
 | Struct | Current Size | Required Size |
 |--------|------------|--------------|
@@ -383,11 +383,11 @@ public struct PlayerSurvivalRuntimeState {
 
 ---
 
-## 📋 QUANTIZATION STRUCTS
+## ðŸ“‹ QUANTIZATION STRUCTS
 
 ### SByte3
 
-**Файл:** `World/ChunkLocalOffsetQuantization.cs`
+**Ð¤Ð°Ð¹Ð»:** `World/ChunkLocalOffsetQuantization.cs`
 
 ```csharp
 internal struct SByte3
@@ -398,15 +398,15 @@ internal struct SByte3
 }
 ```
 
-**Размер:** 3 bytes ✅ Pack = 1 (sbyte alignment = 1)  
-**Назначение:** Мёртвый мусор (трупы рыб, осколки) хранится как offset от центра чанка вместо float3.  
-**Экономия:** 12 bytes → 3 bytes (−75%).
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 3 bytes âœ… Pack = 1 (sbyte alignment = 1)  
+**ÐÐ°Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ:** ÐœÑ‘Ñ€Ñ‚Ð²Ñ‹Ð¹ Ð¼ÑƒÑÐ¾Ñ€ (Ñ‚Ñ€ÑƒÐ¿Ñ‹ Ñ€Ñ‹Ð±, Ð¾ÑÐºÐ¾Ð»ÐºÐ¸) Ñ…Ñ€Ð°Ð½Ð¸Ñ‚ÑÑ ÐºÐ°Ðº offset Ð¾Ñ‚ Ñ†ÐµÐ½Ñ‚Ñ€Ð° Ñ‡Ð°Ð½ÐºÐ° Ð²Ð¼ÐµÑÑ‚Ð¾ float3.  
+**Ð­ÐºÐ¾Ð½Ð¾Ð¼Ð¸Ñ:** 12 bytes â†’ 3 bytes (âˆ’75%).
 
 ---
 
 ### QuantizedLocalOffset
 
-**Файл:** `World/ChunkLocalOffsetQuantization.cs`
+**Ð¤Ð°Ð¹Ð»:** `World/ChunkLocalOffsetQuantization.cs`
 
 ```csharp
 internal struct QuantizedLocalOffset
@@ -415,17 +415,17 @@ internal struct QuantizedLocalOffset
 }
 ```
 
-**Размер:** 3 bytes ✅ Pack = 1  
-**Назначение:** Wrapper для типизированного массива квантованных смещений в Job-системе сброса мусора.  
+**Ð Ð°Ð·Ð¼ÐµÑ€:** 3 bytes âœ… Pack = 1  
+**ÐÐ°Ð·Ð½Ð°Ñ‡ÐµÐ½Ð¸Ðµ:** Wrapper Ð´Ð»Ñ Ñ‚Ð¸Ð¿Ð¸Ð·Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ð¾Ð³Ð¾ Ð¼Ð°ÑÑÐ¸Ð²Ð° ÐºÐ²Ð°Ð½Ñ‚Ð¾Ð²Ð°Ð½Ð½Ñ‹Ñ… ÑÐ¼ÐµÑ‰ÐµÐ½Ð¸Ð¹ Ð² Job-ÑÐ¸ÑÑ‚ÐµÐ¼Ðµ ÑÐ±Ñ€Ð¾ÑÐ° Ð¼ÑƒÑÐ¾Ñ€Ð°.  
 **Alignment:** 1 byte (no padding).
 
 ---
 
-## 📋 BURST JOB STRUCTS
+## ðŸ“‹ BURST JOB STRUCTS
 
 ### BuoyancyJob
 
-**Файл:** `HectonFluidEngine.cs`
+**Ð¤Ð°Ð¹Ð»:** `HectonFluidEngine.cs`
 
 ```csharp
 [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -442,7 +442,7 @@ public struct BuoyancyJob : IJobParallelFor {
 
 ### WaveQueryJob
 
-**Файл:** `HectonFluidEngine.cs`
+**Ð¤Ð°Ð¹Ð»:** `HectonFluidEngine.cs`
 
 ```csharp
 [BurstCompile(CompileSynchronously = false, FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
@@ -456,4 +456,4 @@ public struct WaveQueryJob : IJobParallelFor {
 
 ---
 
-**Historical Scan Status:** ETA VERIFIED — 11 critical structs documented, 6 alignment violations flagged
+**Historical Scan Status:** ETA VERIFIED â€” 11 critical structs documented, 6 alignment violations flagged

@@ -19,12 +19,19 @@ CBUFFER_START(HectonVolumetricLightParams)
     float4 _HectonVolumetricHalfSize;
     float4 _HectonVolumetricMainLightDirection;
     float4 _HectonVolumetricMainLightColor;
+    float4 _HectonFlashlightPositionWS;
+    float4 _HectonFlashlightDirectionWS;
+    float4 _HectonFlashlightColor;
+    float4 _HectonFlashlightConeData;
     float4 _HectonVolumetricScatteringParams;
     float4 _HectonHudFogPerturbation;
     float4 _HectonVolumetricMarchParams;
     float4 _HectonVolumetricShadowParams;
     float4 _HectonVolumetricCompositeParams;
     float _FogScatteringCoeff;
+    float _HectonFlashlightActive;
+    float _HectonFlashlightVolumetricOpacity;
+    float _HectonFreezeFrameDither;
     float4x4 _HectonVolumetricInverseViewProjection;
     float4x4 _HectonVolumetricViewProjection;
 CBUFFER_END
@@ -173,9 +180,40 @@ float ResolveDepthOcclusionAtWorldPosition(float3 samplePositionWS, float depthB
     if (validMask <= 0.5)
         return 0.0;
 
-    float sceneDistance = distance(_WorldSpaceCameraPos, scenePositionWS);
-    float sampleDistance = distance(_WorldSpaceCameraPos, samplePositionWS);
-    return step(sceneDistance + depthBias, sampleDistance);
+    float sampleEyeDepth = samplePositionCS.w;
+    return step(linearEyeDepth + depthBias, sampleEyeDepth);
+}
+
+float ResolveFlashlightConeMask(float3 samplePositionWS, float3 cameraToSampleDirectionWS, out float3 coneColor)
+{
+    coneColor = 0.0;
+    if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightColor.w <= 0.001 || _HectonFlashlightVolumetricOpacity <= 0.001)
+        return 0.0;
+
+    float3 lightPositionWS = _HectonFlashlightPositionWS.xyz;
+    float lightRange = max(_HectonFlashlightPositionWS.w, 0.1);
+    float lightRangeSq = lightRange * lightRange;
+    float3 lightToSampleWS = samplePositionWS - lightPositionWS;
+    float sampleDistanceSq = dot(lightToSampleWS, lightToSampleWS);
+    if (sampleDistanceSq <= 1e-6 || sampleDistanceSq >= lightRangeSq)
+        return 0.0;
+
+    float3 lightDirectionWS = SafeNormalize3(_HectonFlashlightDirectionWS.xyz);
+    float invSampleDistance = rsqrt(sampleDistanceSq);
+    float3 sampleDirectionWS = lightToSampleWS * invSampleDistance;
+    float innerCos = _HectonFlashlightDirectionWS.w;
+    float outerCos = _HectonFlashlightConeData.x;
+    float coneMask = saturate((dot(lightDirectionWS, sampleDirectionWS) - outerCos) * SafeRcp(max(innerCos - outerCos, 0.001)));
+    coneMask *= coneMask;
+
+    float rangeMask = saturate(1.0 - sampleDistanceSq * SafeRcp(lightRangeSq));
+    rangeMask *= rangeMask;
+
+    float viewAlignment = saturate(dot(SafeNormalize3(cameraToSampleDirectionWS), lightDirectionWS));
+    float backscatter = lerp(0.18, 1.0, viewAlignment * viewAlignment);
+    float pressureStripe = 0.94 + 0.06 * sin(dot(samplePositionWS, float3(0.31, 1.73, -0.27)) + _Time.y * 3.1);
+    coneColor = _HectonFlashlightColor.rgb * _HectonFlashlightColor.w * saturate(_HectonFlashlightVolumetricOpacity);
+    return coneMask * rangeMask * backscatter * pressureStripe;
 }
 
 float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirectionWS, float density)
@@ -184,7 +222,7 @@ float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirec
     if (strength <= 0.0001 || density <= 0.0001)
         return 1.0;
 
-    int stepCount = clamp((int)round(_HectonVolumetricShadowParams.x), 1, 15);
+    int stepCount = clamp((int)round(_HectonVolumetricShadowParams.x), 1, 7);
     float marchDistance = max(_HectonVolumetricShadowParams.y, 0.1);
     float depthBias = max(_HectonVolumetricShadowParams.z, 0.001);
     float stepLength = marchDistance * SafeRcp((float)stepCount);
@@ -192,7 +230,7 @@ float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirec
     float transmittance = 1.0;
 
     [loop]
-    for (int stepIndex = 0; stepIndex < 15; stepIndex++)
+    for (int stepIndex = 0; stepIndex < 7; stepIndex++)
     {
         if (stepIndex >= stepCount)
             break;
@@ -224,8 +262,10 @@ float ResolveMeteorFogShadow(float3 samplePositionWS)
 
         float4 payload = _MeteorFogShadowPositions[index];
         float radius = max(payload.w, 1.0);
-        float distanceToMeteor = distance(samplePositionWS, payload.xyz);
-        float localShadow = saturate(1.0 - distanceToMeteor * SafeRcp(radius));
+        float radiusSq = radius * radius;
+        float3 meteorDelta = samplePositionWS - payload.xyz;
+        float distanceSq = dot(meteorDelta, meteorDelta);
+        float localShadow = saturate(1.0 - distanceSq * SafeRcp(radiusSq));
         occlusion = max(occlusion, localShadow * localShadow);
     }
 
@@ -240,7 +280,9 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (pixel.x >= halfResolution.x || pixel.y >= halfResolution.y)
         return;
 
-    if (_HectonVolumetricMainLightDirection.w <= 0.5)
+    float mainLightAvailable = step(0.5, _HectonVolumetricMainLightDirection.w);
+    float flashlightAvailable = step(0.5, _HectonFlashlightActive) * step(0.001, _HectonFlashlightColor.w) * step(0.001, _HectonFlashlightVolumetricOpacity);
+    if (mainLightAvailable <= 0.0 && flashlightAvailable <= 0.0)
     {
         _HectonVolumetricHalfResult[pixel] = 0.0;
         return;
@@ -260,17 +302,19 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float3 cameraPositionWS = _WorldSpaceCameraPos;
     float3 rayVectorWS = cameraPositionWS - scenePositionWS;
-    float rayLength = min(length(rayVectorWS), max(_HectonVolumetricMarchParams.x, 0.1));
-    if (rayLength <= 0.0001)
+    float rayLengthSq = dot(rayVectorWS, rayVectorWS);
+    if (rayLengthSq <= 1e-8)
     {
         _HectonVolumetricHalfResult[pixel] = 0.0;
         return;
     }
 
-    int stepCount = max((int)round(_HectonVolumetricMarchParams.y), 1);
+    float invRayLength = rsqrt(rayLengthSq);
+    float rayLength = min(rayLengthSq * invRayLength, max(_HectonVolumetricMarchParams.x, 0.1));
+    int stepCount = clamp((int)round(_HectonVolumetricMarchParams.y), 1, 7);
     float stepSize = rayLength * SafeRcp((float)stepCount);
     float jitter = ResolveBlueNoise(screenUv) * stepSize * saturate(_HectonVolumetricMarchParams.z);
-    float3 rayDirectionWS = rayVectorWS * SafeRcp(rayLength);
+    float3 rayDirectionWS = rayVectorWS * invRayLength;
     float3 lightDirectionWS = SafeNormalize3(_HectonVolumetricMainLightDirection.xyz);
     float3 lightColor = _HectonVolumetricMainLightColor.rgb;
     float scatterCoeff = max(_HectonVolumetricScatteringParams.y, 0.0);
@@ -281,7 +325,7 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
     float3 accumulatedLight = 0.0;
 
     [loop]
-    for (int stepIndex = 0; stepIndex < 32; stepIndex++)
+    for (int stepIndex = 0; stepIndex < 7; stepIndex++)
     {
         if (stepIndex >= stepCount)
             break;
@@ -301,19 +345,31 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
         density *= hudDensityLift;
 
         float extinction = density * max(localScatterCoeff, 0.0001);
-        float cosTheta = saturate(dot(rayDirectionWS, lightDirectionWS));
-        float phase = PhaseHG(cosTheta, anisotropy);
-        float shadowTerm = ResolveMainLightShadow(samplePositionWS);
-        shadowTerm *= ResolveVolumetricShadowRaymarch(samplePositionWS, lightDirectionWS, density);
-        shadowTerm *= ResolveMeteorFogShadow(samplePositionWS);
         transmittance *= exp(-extinction * stepSize);
-        accumulatedLight += density * localScatterCoeff * phase * shadowTerm * transmittance * stepSize;
+
+        if (mainLightAvailable > 0.0)
+        {
+            float cosTheta = saturate(dot(rayDirectionWS, lightDirectionWS));
+            float phase = PhaseHG(cosTheta, anisotropy);
+            float shadowTerm = ResolveMainLightShadow(samplePositionWS);
+            shadowTerm *= ResolveVolumetricShadowRaymarch(samplePositionWS, lightDirectionWS, density);
+            shadowTerm *= ResolveMeteorFogShadow(samplePositionWS);
+            accumulatedLight += density * localScatterCoeff * phase * shadowTerm * transmittance * stepSize * lightColor;
+        }
+
+        if (flashlightAvailable > 0.0)
+        {
+            float3 flashlightColor;
+            float flashlightCone = ResolveFlashlightConeMask(samplePositionWS, -rayDirectionWS, flashlightColor);
+            float coneDither = lerp(0.58, 1.22, ResolveBlueNoise(screenUv + float2(stepIndex * 0.071, stepIndex * 0.113)));
+            accumulatedLight += density * localScatterCoeff * flashlightCone * coneDither * transmittance * stepSize * flashlightColor;
+        }
 
         if (transmittance <= minTransmittance)
             break;
     }
 
-    _HectonVolumetricHalfResult[pixel] = float4(accumulatedLight * lightColor * intensity, 1.0 - transmittance);
+    _HectonVolumetricHalfResult[pixel] = float4(accumulatedLight * intensity, 1.0 - transmittance);
 }
 
 [numthreads(8, 8, 1)]
@@ -332,7 +388,9 @@ void CompositeVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
     ResolveDepthData(centerUv, rawDepth, validMask, linearEyeDepth, positionWS);
 
     float4 sourceColor = LOAD_TEXTURE2D_X(_HectonVolumetricSourceColor, pixel);
-    if (_HectonVolumetricMainLightDirection.w <= 0.5 || validMask <= 0.5)
+    float mainLightAvailable = step(0.5, _HectonVolumetricMainLightDirection.w);
+    float flashlightAvailable = step(0.5, _HectonFlashlightActive) * step(0.001, _HectonFlashlightColor.w) * step(0.001, _HectonFlashlightVolumetricOpacity);
+    if ((mainLightAvailable <= 0.0 && flashlightAvailable <= 0.0) || validMask <= 0.5)
     {
         _HectonVolumetricCompositeResult[pixel] = sourceColor;
         return;
@@ -372,5 +430,9 @@ void CompositeVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
     }
 
     float4 volumetric = weightSum > 1e-5 ? accumulated * SafeRcp(weightSum) : 0.0;
+    float freeze = saturate(_HectonFreezeFrameDither);
+    float freezeNoise = ResolveBlueNoise(centerUv + frac(_Time.y * float2(0.7548777, 0.5698403)));
+    float freezeKeep = lerp(1.0, step(freezeNoise, saturate(volumetric.a + 0.25)), freeze);
+    volumetric.rgb = volumetric.rgb * freezeKeep + (freezeNoise - 0.5) * freeze * 0.018;
     _HectonVolumetricCompositeResult[pixel] = float4(sourceColor.rgb + volumetric.rgb, sourceColor.a);
 }

@@ -1,5 +1,6 @@
-# Owner Deep Dive — World, Gameplay, UI
+﻿# Owner Deep Dive â€” World, Gameplay, UI
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 Purpose:
@@ -45,7 +46,7 @@ Static shape:
 
 What this means:
 - scatter is not a local feature
-- it is one of the project’s true runtime sovereigns
+- it is one of the projectâ€™s true runtime sovereigns
 
 Why it is strong:
 - owns a meaningful service contract
@@ -135,8 +136,8 @@ Why it is dangerous:
 - that is effective, but it is also expensive coupling
 
 Read:
-- one of the project’s best-executed user-facing systems
-- one of the project’s heaviest UI owners
+- one of the projectâ€™s best-executed user-facing systems
+- one of the projectâ€™s heaviest UI owners
 
 ### `PlayerPDA`
 
@@ -152,7 +153,7 @@ Static shape:
 
 Why it matters:
 - PDA is real product logic, not mock UI
-- but it also exposes a meaningful policy drift from the project’s stronger queue-backed event-bus story
+- but it also exposes a meaningful policy drift from the projectâ€™s stronger queue-backed event-bus story
 
 Why it is strong:
 - clear feature identity
@@ -168,7 +169,7 @@ Read:
 
 ## Cross-Domain Reading
 
-The project’s most important owners all share the same pattern:
+The projectâ€™s most important owners all share the same pattern:
 - real implementation depth
 - high cross-system authority
 - growing architectural gravity
@@ -181,7 +182,7 @@ That is also why it feels dangerous.
 The core world/gameplay/UI owners are not fake.
 They are overgrown.
 
-The project is already beyond “does this system exist?”
+The project is already beyond â€œdoes this system exist?â€
 The correct question now is:
 
 who is allowed to own this much at once without becoming a regression machine?

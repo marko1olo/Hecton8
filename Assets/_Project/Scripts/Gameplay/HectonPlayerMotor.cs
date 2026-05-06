@@ -16,7 +16,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Motor")]
-    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable, IInventoryEventListener
+    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable, ILateFrameTickable, IInventoryEventListener
     {
         private struct ScheduledSweepState
         {
@@ -40,9 +40,17 @@ namespace Hecton8.Gameplay
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
         private const float WakeSiltEmissionCooldownSeconds = 0.35f;
         private const float WallSlideTelemetryMaxNormalY = 0.75f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const double SweepSolveTelemetryBudgetMilliseconds = 0.2d;
+#endif
 
         private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _scheduledSweepConsumeProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Consume");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static readonly uint _sweepScheduleBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonPlayerMotor.CapsuleSweep.ScheduleOverBudget"));
+        private static readonly uint _sweepConsumeBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonPlayerMotor.CapsuleSweep.ConsumeOverBudget"));
+        private static readonly uint _sweepTelemetryContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonPlayerMotor.CapsuleSweep"));
+#endif
 
         private Rigidbody _body;
         private CapsuleCollider _capsule;
@@ -57,6 +65,7 @@ namespace Hecton8.Gameplay
         private RaycastHit _scheduledSweepBlockingHit;
         private Vector3 _scheduledSweepResolvedPosition;
         private float _scheduledSweepBlockedSpeed;
+        private bool _registeredLateFrameTick;
         private bool _registeredPostFixedTick;
         private bool _registeredMotorService;
         private float _encumbranceMovementMultiplier = 1f;
@@ -67,6 +76,7 @@ namespace Hecton8.Gameplay
         private float _lastWallSlideAngleDegrees;
         private float _lastWallSlideVelocityReduction01;
         private int _lastWallSlidePhysicsFrame = -1;
+        private bool _lastWallSlideIsVoxel;
 
         /// <inheritdoc />
         public Rigidbody Body => _body;
@@ -93,12 +103,35 @@ namespace Hecton8.Gameplay
             out float velocityReduction01,
             out int physicsFrame)
         {
+            return TryGetRecentWallSlideContact(
+                maxPhysicsFrameAge,
+                out normal,
+                out point,
+                out blockedSpeed,
+                out slideAngleDegrees,
+                out velocityReduction01,
+                out physicsFrame,
+                out _);
+        }
+
+        /// <summary>Returns the most recent KCC wall projection contact with voxel-wall classification.</summary>
+        public bool TryGetRecentWallSlideContact(
+            int maxPhysicsFrameAge,
+            out Vector3 normal,
+            out Vector3 point,
+            out float blockedSpeed,
+            out float slideAngleDegrees,
+            out float velocityReduction01,
+            out int physicsFrame,
+            out bool isVoxelWall)
+        {
             normal = Vector3.zero;
             point = Vector3.zero;
             blockedSpeed = 0f;
             slideAngleDegrees = 0f;
             velocityReduction01 = 0f;
             physicsFrame = _lastWallSlidePhysicsFrame;
+            isVoxelWall = false;
 
             if (_lastWallSlidePhysicsFrame < 0)
                 return false;
@@ -115,6 +148,7 @@ namespace Hecton8.Gameplay
             blockedSpeed = _lastWallSlideBlockedSpeed;
             slideAngleDegrees = _lastWallSlideAngleDegrees;
             velocityReduction01 = _lastWallSlideVelocityReduction01;
+            isVoxelWall = _lastWallSlideIsVoxel;
             return true;
         }
 
@@ -135,6 +169,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             InventoryEvents.Register(this);
+            TryRegisterLateFrameTick();
             TryRegisterPostFixedTick();
             TryRegisterMotorService();
         }
@@ -142,6 +177,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             InventoryEvents.Unregister(this);
+            TryUnregisterLateFrameTick();
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
             ResetWallSlideContactState();
@@ -152,6 +188,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             InventoryEvents.Unregister(this);
+            TryUnregisterLateFrameTick();
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
             ResetWallSlideContactState();
@@ -338,7 +375,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Applies a sweep-gated move and removes velocity along the blocking surface normal.
+        /// Schedules a sweep-gated move probe. Resolution is deferred to the post-fixed swap window.
         /// </summary>
         public bool TrySweepGatedMove(
             Vector3 displacement,
@@ -366,7 +403,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Applies a sweep-gated move using caller-supplied capsule metrics to avoid transform traversal in hot paths.
+        /// Schedules a sweep-gated move using caller-supplied capsule metrics to avoid transform traversal in hot paths.
         /// </summary>
         public bool TrySweepGatedMove(
             Vector3 displacement,
@@ -391,84 +428,16 @@ namespace Hecton8.Gameplay
             if (distance <= 0.0001f)
                 return true;
 
-            Vector3 currentPosition = _body.position;
-            Vector3 currentPoint1 = capsulePoint1;
-            Vector3 currentPoint2 = capsulePoint2;
-            Vector3 remainingDisplacement = displacement;
-            Vector3 accumulatedDisplacement = Vector3.zero;
-            bool blocked = false;
-            blockingHit = default;
-
-            for (int iteration = 0; iteration < MaxSlideSweepIterations; iteration++)
-            {
-                float remainingDistance = remainingDisplacement.magnitude;
-                if (remainingDistance <= 0.0001f)
-                    break;
-
-                Vector3 direction = remainingDisplacement / remainingDistance;
-                if (!TryFindNearestBlockingHit(
-                        currentPoint1,
-                        currentPoint2,
-                        capsuleRadius,
-                        direction,
-                        remainingDistance + skinWidth,
-                        layerMask,
-                        selfColliderInstanceId,
-                        out RaycastHit nearestHit))
-                {
-                    accumulatedDisplacement += remainingDisplacement;
-                    currentPosition += remainingDisplacement;
-                    break;
-                }
-
-                blocked = true;
-                if (blockingHit.collider == null)
-                    blockingHit = nearestHit;
-
-                float safeDistance = math.max(0f, nearestHit.distance - skinWidth);
-                Vector3 advance = direction * safeDistance;
-                if (advance.sqrMagnitude > MinVectorMagnitudeSq)
-                {
-                    accumulatedDisplacement += advance;
-                    currentPosition += advance;
-                }
-
-                float penetrationDepth = math.max(0f, skinWidth - nearestHit.distance);
-                if (penetrationDepth > 0f)
-                {
-                    Vector3 depenetration = nearestHit.normal * penetrationDepth;
-                    accumulatedDisplacement += depenetration;
-                    currentPosition += depenetration;
-                }
-
-                Vector3 remainingAfterAdvance = remainingDisplacement - advance;
-                Vector3 safeNormal = SafeNormal(nearestHit.normal, Vector3.up);
-                float displacementIntoWall = Vector3.Dot(remainingAfterAdvance, safeNormal);
-                Vector3 slideDisplacement = remainingAfterAdvance - (safeNormal * displacementIntoWall);
-                float slideAngleDegrees = ResolveProjectionAngleDegrees(remainingAfterAdvance, slideDisplacement);
-                if (safeNormal.y < WallSlideTelemetryMaxNormalY)
-                {
-                    float blockedSpeed = ResolveSlideBlockedSpeed(remainingAfterAdvance, slideDisplacement, safeNormal);
-                    float velocityReduction01 = ResolveProjectionVelocityReduction01(remainingAfterAdvance, slideDisplacement);
-                    RecordWallSlideContact(in nearestHit, safeNormal, slideAngleDegrees, blockedSpeed, velocityReduction01);
-                }
-
-                if (slideDisplacement.sqrMagnitude <= MinVectorMagnitudeSq)
-                    break;
-
-                Vector3 capsuleOffset = currentPosition - _body.position;
-                currentPoint1 = capsulePoint1 + capsuleOffset;
-                currentPoint2 = capsulePoint2 + capsuleOffset;
-                remainingDisplacement = slideDisplacement;
-            }
-
-            resolvedPosition = _body.position + accumulatedDisplacement;
-            MovePosition(resolvedPosition);
-
-            if (!blocked)
-                return true;
-
-            ProjectLinearVelocityOnPlane(blockingHit.normal);
+            Vector3 direction = displacement / distance;
+            ScheduleCapsuleSweepBatch(
+                capsulePoint1,
+                capsulePoint2,
+                capsuleRadius,
+                direction,
+                distance,
+                layerMask,
+                skinWidth,
+                selfColliderInstanceId);
             return false;
         }
 
@@ -526,6 +495,15 @@ namespace Hecton8.Gameplay
             _isGrounded = false;
             ResetWallSlideContactState();
             ResetHydrodynamicAddedMassState();
+            if (_scheduledSweepPending)
+                DispatcherJobSwap.TryComplete(ref _nativeState.ScheduledSweepHandle, forceComplete: true);
+
+            _scheduledSweepPending = false;
+            _scheduledSweepResultReady = false;
+            _scheduledSweepWasBlocked = false;
+            _scheduledSweepBlockingHit = default;
+            _scheduledSweepResolvedPosition = _body != null ? _body.position : Vector3.zero;
+            _scheduledSweepBlockedSpeed = 0f;
         }
 
         /// <summary>
@@ -580,6 +558,9 @@ namespace Hecton8.Gameplay
                 new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore),
                 distance + skinWidth);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            long scheduleBudgetStart = BeginSweepBudgetSample();
+#endif
             using (_scheduledSweepProfilerMarker.Auto())
             {
                 _nativeState.ScheduledSweepHandle = CapsulecastCommand.ScheduleBatch(
@@ -590,6 +571,9 @@ namespace Hecton8.Gameplay
                     default);
                 _scheduledSweepPending = true;
             }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            EndSweepBudgetSample(scheduleBudgetStart, _sweepScheduleBudgetWarningHash);
+#endif
 
             return true;
         }
@@ -625,8 +609,13 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void PostFixedTick(float fixedDeltaTime)
         {
-            CompleteScheduledSweepInPostFixedSwapWindow();
             TryEmitWakeSiltDecal(fixedDeltaTime);
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            CompleteScheduledSweepInLateFrameSwapWindow();
         }
 
         private static bool IsFiniteNonZero(Vector3 value)
@@ -634,6 +623,29 @@ namespace Hecton8.Gameplay
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > MinVectorMagnitudeSq;
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static long BeginSweepBudgetSample()
+        {
+            return System.Diagnostics.Stopwatch.GetTimestamp();
+        }
+
+        private static void EndSweepBudgetSample(long startTimestamp, uint warningHash)
+        {
+            if (startTimestamp == 0L)
+                return;
+
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds <= SweepSolveTelemetryBudgetMilliseconds)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                warningHash,
+                _sweepTelemetryContextHash,
+                (float)elapsedMilliseconds);
+        }
+#endif
 
         private void RecordWallSlideContact(
             in RaycastHit hit,
@@ -648,6 +660,7 @@ namespace Hecton8.Gameplay
             _lastWallSlideAngleDegrees = math.max(0f, slideAngleDegrees);
             _lastWallSlideVelocityReduction01 = math.saturate(velocityReduction01);
             _lastWallSlidePhysicsFrame = PhysicsFrame.Current;
+            _lastWallSlideIsVoxel = IsVoxelWallHit(in hit);
         }
 
         private void ResetWallSlideContactState()
@@ -658,6 +671,13 @@ namespace Hecton8.Gameplay
             _lastWallSlideAngleDegrees = 0f;
             _lastWallSlideVelocityReduction01 = 0f;
             _lastWallSlidePhysicsFrame = -1;
+            _lastWallSlideIsVoxel = false;
+        }
+
+        private static bool IsVoxelWallHit(in RaycastHit hit)
+        {
+            Collider hitCollider = hit.collider;
+            return hitCollider != null && hitCollider.gameObject.layer == HectonLayerMasks.VoxelCave;
         }
 
         private float ResolveSlideBlockedSpeed(Vector3 intendedDisplacement, Vector3 slideDisplacement, Vector3 wallNormal)
@@ -748,37 +768,7 @@ namespace Hecton8.Gameplay
             out RaycastHit nearestHit)
         {
             nearestHit = default;
-            int hitCount = UnityEngine.Physics.CapsuleCastNonAlloc(
-                capsulePoint1,
-                capsulePoint2,
-                math.max(0.01f, capsuleRadius),
-                direction,
-                _sweepHitBuffer,
-                distance,
-                layerMask,
-                QueryTriggerInteraction.Ignore);
-
-            float nearestDistance = float.MaxValue;
-            int nearestIndex = -1;
-            for (int i = 0; i < hitCount; i++)
-            {
-                RaycastHit hit = _sweepHitBuffer[i];
-                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
-                if (hitColliderInstanceId == 0 || hitColliderInstanceId == selfColliderInstanceId)
-                    continue;
-
-                if (hit.distance < nearestDistance)
-                {
-                    nearestDistance = hit.distance;
-                    nearestIndex = i;
-                }
-            }
-
-            if (nearestIndex < 0)
-                return false;
-
-            nearestHit = _sweepHitBuffer[nearestIndex];
-            return true;
+            return false;
         }
 
         internal static Vector3 SafeVelocity(Vector3 velocity, Vector3 fallback = default)
@@ -876,6 +866,24 @@ namespace Hecton8.Gameplay
             _registeredPostFixedTick = false;
         }
 
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_registeredLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrameTick = false;
+        }
+
         private void TryRegisterMotorService()
         {
             if (_registeredMotorService || !Application.isPlaying)
@@ -894,7 +902,7 @@ namespace Hecton8.Gameplay
             _registeredMotorService = false;
         }
 
-        private void CompleteScheduledSweepInPostFixedSwapWindow()
+        private void CompleteScheduledSweepInLateFrameSwapWindow()
         {
             if (!_scheduledSweepPending)
                 return;
@@ -902,6 +910,9 @@ namespace Hecton8.Gameplay
             if (!DispatcherJobSwap.TryComplete(ref _nativeState.ScheduledSweepHandle, forceComplete: false))
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            long consumeBudgetStart = BeginSweepBudgetSample();
+#endif
             _scheduledSweepPending = false;
             _scheduledSweepResultReady = true;
             _scheduledSweepWasBlocked = false;
@@ -926,7 +937,12 @@ namespace Hecton8.Gameplay
             }
 
             if (nearestIndex < 0)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                EndSweepBudgetSample(consumeBudgetStart, _sweepConsumeBudgetWarningHash);
+#endif
                 return;
+            }
 
             _scheduledSweepWasBlocked = true;
             _scheduledSweepBlockingHit = _nativeState.ScheduledSweepResults[nearestIndex];
@@ -940,8 +956,27 @@ namespace Hecton8.Gameplay
             Vector3 projectedVelocity = ProjectVelocityOnCollisionPlane(previousVelocity, _scheduledSweepBlockingHit.normal);
             _scheduledSweepBlockedSpeed = (previousVelocity - projectedVelocity).magnitude;
 
+            Vector3 safeNormal = SafeNormal(_scheduledSweepBlockingHit.normal, Vector3.up);
+            Vector3 intendedDisplacement = _scheduledSweepState.Direction * _scheduledSweepState.Distance;
+            float displacementIntoWall = Vector3.Dot(intendedDisplacement, safeNormal);
+            Vector3 projectedDisplacement = intendedDisplacement - (safeNormal * displacementIntoWall);
+            if (safeNormal.y < WallSlideTelemetryMaxNormalY)
+            {
+                float slideAngleDegrees = ResolveProjectionAngleDegrees(intendedDisplacement, projectedDisplacement);
+                float velocityReduction01 = ResolveProjectionVelocityReduction01(intendedDisplacement, projectedDisplacement);
+                RecordWallSlideContact(
+                    in _scheduledSweepBlockingHit,
+                    safeNormal,
+                    slideAngleDegrees,
+                    _scheduledSweepBlockedSpeed,
+                    velocityReduction01);
+            }
+
             MovePosition(_scheduledSweepResolvedPosition);
             SetLinearVelocity(projectedVelocity);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            EndSweepBudgetSample(consumeBudgetStart, _sweepConsumeBudgetWarningHash);
+#endif
         }
 
         private int ResolveSelfColliderInstanceId()

@@ -1,7 +1,7 @@
-# Hecton Gas Band Bake Job Reference
+﻿# Hecton Gas Band Bake Job Reference
 
-Date: 2026-05-05
-Status: REFERENCE
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Clean-room Burst texture bake reference from exposed SpaceEngine gas giant parameter names. This is not SpaceEngine source.
 

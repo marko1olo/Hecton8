@@ -6,6 +6,9 @@ using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Visor
 {
@@ -15,6 +18,10 @@ namespace Hecton8.Visor
     [DisallowMultipleComponent]
     public sealed class CausticsProjectorManager : MonoBehaviour, ITickable, ISlowTickable
     {
+#if UNITY_EDITOR
+        private const string DefaultCausticsTextureAPath = "Assets/Feel/MMTools/Tools/MMVFX/MMNoise/MMVoronoiNoise.png";
+        private const string DefaultCausticsTextureBPath = "Assets/Feel/MMTools/Tools/MMVFX/MMNoise/MMCellNoise.png";
+#endif
         private const float DependencyResolveRetryIntervalSeconds = 0.5f;
         private static readonly int _CausticsWorldRectId = Shader.PropertyToID("_HectonProjectedCausticsWorldRect");
         private static readonly int _CausticsParamsId = Shader.PropertyToID("_HectonProjectedCausticsParams");
@@ -22,6 +29,9 @@ namespace Hecton8.Visor
         private static readonly int _CausticsSimulationParamsAId = Shader.PropertyToID("_HectonCausticsSimulationParamsA");
         private static readonly int _CausticsSimulationParamsBId = Shader.PropertyToID("_HectonCausticsSimulationParamsB");
         private static readonly int _CausticsSimulationParamsCId = Shader.PropertyToID("_HectonCausticsSimulationParamsC");
+        private static readonly int _CausticsTextureAId = Shader.PropertyToID("_HectonCausticsTextureA");
+        private static readonly int _CausticsTextureBId = Shader.PropertyToID("_HectonCausticsTextureB");
+        private static readonly int _CausticsTextureParamsId = Shader.PropertyToID("_HectonCausticsTextureParams");
         private static readonly int _AbyssalFlowWeatherCurrentId = Shader.PropertyToID("_AbyssalFlowWeatherCurrent");
 
         [Header("Shader Field")]
@@ -40,7 +50,11 @@ namespace Hecton8.Visor
         [SerializeField, Range(0f, 1f)]
         private float stormFadePenalty = 0.28f;
 
-        [Header("ALU Pattern")]
+        [Header("Texture Caustics")]
+        [SerializeField] private Texture2D causticsTextureA;
+        [SerializeField] private Texture2D causticsTextureB;
+
+        [Header("Texture Scroll")]
         [SerializeField, Range(4f, 32f)]
         private float primaryCellDensity = 12f;
         [SerializeField, Range(8f, 48f)]
@@ -71,9 +85,13 @@ namespace Hecton8.Visor
         private Camera _gameplayCamera;
         private Vector4 _worldRect;
         private float _nextDependencyResolveTime;
+        private Texture2D _publishedCausticsTextureA;
+        private Texture2D _publishedCausticsTextureB;
 
         private void Awake()
         {
+            ResolveDefaultCausticsTextures();
+            PublishCausticsTextureGlobals();
             _playerTransform = transform;
             ResolveDependencies();
             PublishShaderOnlyGlobals(Time.unscaledTime);
@@ -81,6 +99,8 @@ namespace Hecton8.Visor
 
         private void OnEnable()
         {
+            ResolveDefaultCausticsTextures();
+            PublishCausticsTextureGlobals();
             TryRegisterTickHandlers();
             PublishShaderOnlyGlobals(Time.unscaledTime);
         }
@@ -89,12 +109,14 @@ namespace Hecton8.Visor
         {
             TryUnregisterTickHandlers();
             Shader.SetGlobalVector(_CausticsParamsId, Vector4.zero);
+            Shader.SetGlobalVector(_CausticsTextureParamsId, Vector4.zero);
         }
 
         private void OnDestroy()
         {
             TryUnregisterTickHandlers();
             Shader.SetGlobalVector(_CausticsParamsId, Vector4.zero);
+            Shader.SetGlobalVector(_CausticsTextureParamsId, Vector4.zero);
         }
 
         public void Tick(float deltaTime)
@@ -183,11 +205,13 @@ namespace Hecton8.Visor
             Vector4 waveCoupling = ResolveWaveCoupling(waterLevel);
             Vector4 abyssalFlowWeatherCurrent = ResolveAbyssalFlowWeatherCurrent(timeValue);
 
+            bool textureCausticsEnabled = causticsTextureA != null && causticsTextureB != null;
             Shader.SetGlobalVector(_CausticsWorldRectId, _worldRect);
             Shader.SetGlobalVector(_CausticsColorId, scatteringColor.linear);
             Shader.SetGlobalVector(_CausticsSimulationParamsAId, new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed));
             Shader.SetGlobalVector(_CausticsSimulationParamsBId, new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, waterLevel));
             Shader.SetGlobalVector(_CausticsSimulationParamsCId, waveCoupling);
+            Shader.SetGlobalVector(_CausticsTextureParamsId, new Vector4(textureCausticsEnabled ? 1f : 0f, 0f, 0f, 0f));
             Shader.SetGlobalVector(_AbyssalFlowWeatherCurrentId, abyssalFlowWeatherCurrent);
             Shader.SetGlobalVector(
                 _CausticsParamsId,
@@ -196,6 +220,34 @@ namespace Hecton8.Visor
                     waterLevel,
                     depthFadeStart,
                     1f / math.max(0.01f, depthFadeRange)));
+        }
+
+        private void PublishCausticsTextureGlobals()
+        {
+            if (_publishedCausticsTextureA != causticsTextureA)
+            {
+                _publishedCausticsTextureA = causticsTextureA;
+                if (_publishedCausticsTextureA != null)
+                    Shader.SetGlobalTexture(_CausticsTextureAId, _publishedCausticsTextureA);
+            }
+
+            if (_publishedCausticsTextureB != causticsTextureB)
+            {
+                _publishedCausticsTextureB = causticsTextureB;
+                if (_publishedCausticsTextureB != null)
+                    Shader.SetGlobalTexture(_CausticsTextureBId, _publishedCausticsTextureB);
+            }
+        }
+
+        private void ResolveDefaultCausticsTextures()
+        {
+#if UNITY_EDITOR
+            if (causticsTextureA == null)
+                causticsTextureA = AssetDatabase.LoadAssetAtPath<Texture2D>(DefaultCausticsTextureAPath);
+
+            if (causticsTextureB == null)
+                causticsTextureB = AssetDatabase.LoadAssetAtPath<Texture2D>(DefaultCausticsTextureBPath);
+#endif
         }
 
         private void UpdateWorldRect()

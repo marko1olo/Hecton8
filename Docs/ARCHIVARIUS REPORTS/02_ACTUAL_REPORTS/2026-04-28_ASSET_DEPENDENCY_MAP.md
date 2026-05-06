@@ -1,6 +1,6 @@
-# ASSET-TO-CODE DEPENDENCY MAP
-Date: 2026-04-28
-Status: REFERENCE
+﻿# ASSET-TO-CODE DEPENDENCY MAP
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 ## Current-State Addendum (2026-04-29)
@@ -19,28 +19,28 @@ Preferred current references:
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
 - `2026-04-28_DEAD_ASSET_SWEEP.md` for deletion-proof boundaries
 
-**Версия:** 2026-04-28 | **Исторический статус на момент скана:** ETA VERIFIED
+**Ð’ÐµÑ€ÑÐ¸Ñ:** 2026-04-28 | **Ð˜ÑÑ‚Ð¾Ñ€Ð¸Ñ‡ÐµÑÐºÐ¸Ð¹ ÑÑ‚Ð°Ñ‚ÑƒÑ Ð½Ð° Ð¼Ð¾Ð¼ÐµÐ½Ñ‚ ÑÐºÐ°Ð½Ð°:** ETA VERIFIED
 
 ---
 
-## 📋 HARDCODED PREFAB REFERENCES
+## ðŸ“‹ HARDCODED PREFAB REFERENCES
 
 ### Player Prefab Dependencies
 
 | Unity Object | Script | Hardcoded Reference | Asset Name |
 |--------------|--------|-------------------|------------|
-| Player | Root | SerializeField → PFB_Player | PFB_Player.prefab |
-| Submarine | Root | SerializeField → PFB_Submarine | PFB_Submarine.prefab |
+| Player | Root | SerializeField â†’ PFB_Player | PFB_Player.prefab |
+| Submarine | Root | SerializeField â†’ PFB_Submarine | PFB_Submarine.prefab |
 
-### ⚠️ GOD OBJECT DEPENDENCIES
+### âš ï¸ GOD OBJECT DEPENDENCIES
 
 | Prefab | Component Count | Scripts | Risk |
 |--------|----------------|---------|------|
-| PFB_Player | 42 components | Multiple | 🔴 CRITICAL |
+| PFB_Player | 42 components | Multiple | ðŸ”´ CRITICAL |
 
 ---
 
-## 📋 SCRIPTABLE OBJECT DEPENDENCIES
+## ðŸ“‹ SCRIPTABLE OBJECT DEPENDENCIES
 
 ### Module Catalog
 
@@ -68,7 +68,7 @@ Preferred current references:
 
 ---
 
-## 📋 MATERIAL DEPENDENCIES (Hardcoded)
+## ðŸ“‹ MATERIAL DEPENDENCIES (Hardcoded)
 
 ### Third-Party Materials (NOT TO BE MODIFIED)
 
@@ -87,7 +87,7 @@ Preferred current references:
 
 ---
 
-## 📋 REQUIRECOMPONENT DEPENDENCIES
+## ðŸ“‹ REQUIRECOMPONENT DEPENDENCIES
 
 ### Critical Chains
 
@@ -115,7 +115,7 @@ Obsolete note:
 
 ---
 
-## 📋 SERIALIZEFIELD DIRECT REFERENCES
+## ðŸ“‹ SERIALIZEFIELD DIRECT REFERENCES
 
 ### Absolute Hardcoded Paths (DO NOT RENAME)
 
@@ -130,9 +130,9 @@ Obsolete note:
 
 ---
 
-## 📋 ASSET NAMING CONTRACT VIOLATIONS
+## ðŸ“‹ ASSET NAMING CONTRACT VIOLATIONS
 
-### ❌ NON-COMPLIANT ASSET NAMES
+### âŒ NON-COMPLIANT ASSET NAMES
 
 | Current Name | Required Name | Location |
 |--------------|---------------|----------|
@@ -144,7 +144,7 @@ Obsolete note:
 
 ---
 
-## 📋 SCENE OBJECT DEPENDENCIES
+## ðŸ“‹ SCENE OBJECT DEPENDENCIES
 
 ### Bootstrap Scene (00_BOOTSTRAP)
 
@@ -173,7 +173,7 @@ Obsolete note:
 
 ---
 
-## 📋 BAKING DEPENDENCIES (Editor Only)
+## ðŸ“‹ BAKING DEPENDENCIES (Editor Only)
 
 ### MapMagic Integration
 
@@ -191,18 +191,18 @@ Obsolete note:
 
 ---
 
-## 📋 SUMMARY
+## ðŸ“‹ SUMMARY
 
 | Dependency Type | Count | Risk |
 |----------------|-------|------|
-| ScriptableObject | 50+ | ✅ Low |
-| Prefabs | ~20 | ⚠️ Medium |
-| Materials | ~30 | ✅ Low |
-| Scene Objects | ~100 | 🔴 HIGH (hardcoded names) |
+| ScriptableObject | 50+ | âœ… Low |
+| Prefabs | ~20 | âš ï¸ Medium |
+| Materials | ~30 | âœ… Low |
+| Scene Objects | ~100 | ðŸ”´ HIGH (hardcoded names) |
 
 ---
 
-**Historical Scan Status:** ETA VERIFIED ✅
+**Historical Scan Status:** ETA VERIFIED âœ…
 
 **Critical Risk:** Scene object name dependencies  
 **Recommendation:** Replace scene object search with GlobalRegistry injection

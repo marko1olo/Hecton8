@@ -8,6 +8,7 @@ Shader "HECTON/World/AbyssalFluidDecal"
         _WakeDistortion("Wake Distortion", Range(0.0, 1.0)) = 0.22
         _WakeTearStrength("Wake Tear Strength", Range(0.0, 1.0)) = 0.68
         _WakeThreshold("Wake Threshold", Range(0.0, 1.0)) = 0.08
+        _DepthFadeDistance("Depth Fade Distance", Range(0.02, 2.0)) = 0.42
     }
 
     SubShader
@@ -37,6 +38,7 @@ Shader "HECTON/World/AbyssalFluidDecal"
             #pragma fragment Frag
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+            #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _TintColor;
@@ -45,6 +47,7 @@ Shader "HECTON/World/AbyssalFluidDecal"
                 half _WakeDistortion;
                 half _WakeTearStrength;
                 half _WakeThreshold;
+                half _DepthFadeDistance;
             CBUFFER_END
 
             TEXTURE2D(_HectonShallowWaterFieldRT);
@@ -101,7 +104,12 @@ Shader "HECTON/World/AbyssalFluidDecal"
                 half edge = saturate(1.0h - smoothstep(max(0.0h, 1.0h - _Softness), 1.0h, radial));
                 half centerBoost = saturate(1.0h - radial * 0.82h);
                 half tearMask = saturate(1.0h - wakeMask * _WakeTearStrength);
-                half alpha = saturate(edge * tearMask * _TintColor.a * lerp(0.72h, 1.0h, centerBoost));
+                float2 screenUV = input.positionCS.xy / _ScaledScreenParams.xy;
+                float sceneRawDepth = SampleSceneDepth(screenUV);
+                float sceneEyeDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
+                float fragmentEyeDepth = LinearEyeDepth(input.positionCS.z, _ZBufferParams);
+                half depthFade = saturate((half)((sceneEyeDepth - fragmentEyeDepth) / max(_DepthFadeDistance, 0.001h)));
+                half alpha = saturate(edge * tearMask * depthFade * _TintColor.a * lerp(0.72h, 1.0h, centerBoost));
                 half3 color = _TintColor.rgb * lerp(0.86h, 1.08h, centerBoost) * lerp(1.0h, 1.12h, wakeMask * 0.25h);
                 return half4(color, alpha);
             }

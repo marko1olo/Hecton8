@@ -1,6 +1,7 @@
-# Flora Texture Import Log
+﻿# Flora Texture Import Log
 
-Status: REFERENCE
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
 ## 2026-04-09

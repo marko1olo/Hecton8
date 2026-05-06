@@ -42,6 +42,7 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
         float4 _HectonBiolumVolumeHalfExtents;
         float4 _HectonBiolumVolumeParams;
         float _HectonBiolumVolumeActive;
+        float _HectonFreezeFrameDither;
         float4x4 _HectonBiolumVolumeWorldToLocal;
 
         TEXTURE3D(_HectonBiolumVolumeTex);
@@ -186,7 +187,16 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
 
             resolvedColor += (half3)SampleMarineSnowSonarGlow(input.screenUV);
 
-            half dither = (half)(ResolveBlueNoise(input.screenUV) - 0.5) * (half)(_HectonNoirResolveSettings.y / 255.0);
+            float noise = ResolveBlueNoise(input.screenUV);
+            half freeze = (half)saturate(_HectonFreezeFrameDither);
+            half scanline = (half)step(0.5, frac(input.positionCS.y * 0.5));
+            half ditherMask = (half)step(noise, freeze);
+            half3 frozenTint = resolvedColor * 0.64h + half3(0.010h, 0.055h, 0.075h) * 0.36h;
+            frozenTint += (((half)noise - 0.5h) * 0.070h) + (scanline * 0.022h);
+            frozenTint *= lerp(1.0h, 0.76h + ditherMask * 0.24h, freeze);
+            resolvedColor = lerp(resolvedColor, frozenTint, freeze);
+
+            half dither = (half)(noise - 0.5) * (half)(_HectonNoirResolveSettings.y / 255.0);
             return half4(max(resolvedColor + dither.xxx, 0.0h), sourceColor.a);
         }
         ENDHLSL

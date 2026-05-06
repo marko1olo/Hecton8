@@ -40,6 +40,7 @@ using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Gameplay;
 using Hecton8.Input;
+using Hecton8.Optimization;
 using Hecton8.World;
 using System;
 using System.Runtime.InteropServices;
@@ -144,7 +145,7 @@ namespace Hecton8.UI
             if (listener == null || !_listeners.Contains(listener))
                 return;
 
-            Debug.LogError($"[PDAEvents] {ownerName} was destroyed while still registered as an IPDAEventListener.");
+            Debug.LogError("[PDAEvents] Listener destroyed while still registered as an IPDAEventListener.");
         }
 
         /// <summary>
@@ -1136,6 +1137,7 @@ namespace Hecton8.UI
 
             // Switch to UI input map
             GlobalRegistry.Input.SwitchToUIInput();
+            SystemDispatcher.RequestPdaDepthOfField(true);
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -1164,6 +1166,7 @@ namespace Hecton8.UI
             float duration = Time.time - _openStartTime;
 
             IsOpen = false;
+            SystemDispatcher.RequestPdaDepthOfField(false);
 
             // Switch back to Player input map
             GlobalRegistry.Input.SwitchToPlayerInput();
@@ -1183,6 +1186,7 @@ namespace Hecton8.UI
 
             PlaySound(closeSound);
             PDAEvents.RaiseClosed(duration);
+            ReclaimPdaRenderTextures();
 
             ClearTabHistory();
         }
@@ -1219,6 +1223,7 @@ namespace Hecton8.UI
             float duration = Time.time - _openStartTime;
 
             IsOpen = false;
+            SystemDispatcher.RequestPdaDepthOfField(false);
             _isFading = false;
             _currentAlpha = 0f;
             _targetAlpha = 0f;
@@ -1234,6 +1239,7 @@ namespace Hecton8.UI
             GlobalRegistry.Input.SwitchToPlayerInput();
 
             PDAEvents.RaiseClosed(duration);
+            ReclaimPdaRenderTextures();
             ClearTabHistory();
         }
 
@@ -1259,6 +1265,13 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — FADE ANIMATION
         // ══════════════════════════════════════════════════════════
+
+        private static void ReclaimPdaRenderTextures()
+        {
+            RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
+            if (pool != null)
+                pool.ReclaimPdaRenderTextures();
+        }
 
         private void ProcessFadeAnimation(float deltaTime)
         {

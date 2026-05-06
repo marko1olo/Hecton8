@@ -75,6 +75,7 @@ namespace Hecton8.Editor
         private static int _frameDeltaSampleCount;
         private static int _lastSampledFrame = -1;
         private static double _frameDeltaTotalSeconds;
+        private static bool _runInvokedFromAutoRunFlag;
 
         static CodexPlayModeLauncher()
         {
@@ -82,16 +83,23 @@ namespace Hecton8.Editor
                 AttachCallbacks();
 
             if (TryConsumeAutoRunFlag())
+            {
+                _runInvokedFromAutoRunFlag = true;
                 EditorApplication.delayCall += Run;
+            }
         }
 
         [MenuItem("Hecton8/Codex/Run Play Mode Sentinel")]
         public static void Run()
         {
+            bool resumedFromAutoRunFlag = _runInvokedFromAutoRunFlag;
+            _runInvokedFromAutoRunFlag = false;
             ResetSessionState();
             SessionState.SetBool(ActiveKey, true);
             SessionState.SetString(MetricsPathKey, ResolveMetricsPath());
             SessionState.SetInt(BeeKilledKey, KillBeeBackends());
+            if (!resumedFromAutoRunFlag)
+                TryWriteAutoRunFlag();
             SetPhase(Phase.Compile);
             AttachCallbacks();
 
@@ -172,6 +180,7 @@ namespace Hecton8.Editor
 
         private static void TickEnterPlay()
         {
+            TryDeleteAutoRunFlag();
             if (!EditorApplication.isPlayingOrWillChangePlaymode)
                 EditorApplication.isPlaying = true;
 
@@ -368,6 +377,7 @@ namespace Hecton8.Editor
 
         private static void CompleteRun(string status, int exitCode)
         {
+            TryDeleteAutoRunFlag();
             if (EditorApplication.isPlaying)
             {
                 CaptureEndMetrics();
@@ -550,9 +560,7 @@ namespace Hecton8.Editor
 
         private static bool TryConsumeAutoRunFlag()
         {
-            DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
-            string rootPath = projectRoot != null ? projectRoot.FullName : Application.dataPath;
-            string flagPath = Path.Combine(rootPath, "CodexArtifacts", AutoRunFlagFileName);
+            string flagPath = ResolveAutoRunFlagPath();
             if (!File.Exists(flagPath))
                 return false;
 
@@ -566,6 +574,44 @@ namespace Hecton8.Editor
                 Debug.LogWarning("[CodexPlayModeLauncher] Failed to consume autorun flag: " + exception.Message);
                 return false;
             }
+        }
+
+        private static void TryWriteAutoRunFlag()
+        {
+            try
+            {
+                string flagPath = ResolveAutoRunFlagPath();
+                string directory = Path.GetDirectoryName(flagPath);
+                if (!string.IsNullOrEmpty(directory))
+                    Directory.CreateDirectory(directory);
+
+                File.WriteAllText(flagPath, "1", Encoding.ASCII);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[CodexPlayModeLauncher] Failed to write autorun flag: " + exception.Message);
+            }
+        }
+
+        private static void TryDeleteAutoRunFlag()
+        {
+            try
+            {
+                string flagPath = ResolveAutoRunFlagPath();
+                if (File.Exists(flagPath))
+                    File.Delete(flagPath);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[CodexPlayModeLauncher] Failed to delete autorun flag: " + exception.Message);
+            }
+        }
+
+        private static string ResolveAutoRunFlagPath()
+        {
+            DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
+            string rootPath = projectRoot != null ? projectRoot.FullName : Application.dataPath;
+            return Path.Combine(rootPath, "CodexArtifacts", AutoRunFlagFileName);
         }
 
         private static void WriteMetrics()

@@ -1,5 +1,6 @@
-# Dependency Gravity And Monolith Risk
+﻿# Dependency Gravity And Monolith Risk
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 Purpose:
@@ -17,7 +18,7 @@ Notable owner mass:
 - `PlayerInventory` ~1.9k lines
 
 Interpretation:
-- the project’s most important runtime truth sits in a small set of very large files
+- the projectâ€™s most important runtime truth sits in a small set of very large files
 
 ## Native Density Risk
 
@@ -89,7 +90,7 @@ Reasons:
 - `PlayerPDA` carries logic, events, battery policy, and player-blocking semantics
 
 Reading:
-- UI is now part of the game’s systems layer
+- UI is now part of the gameâ€™s systems layer
 - it should be treated with the same seriousness as world and gameplay
 
 ## 2026-04-30 Rechecked Monolith Classes
@@ -193,11 +194,11 @@ Fear these:
 - touching one large owner and invalidating three adjacent systems
 - silently reintroducing old singleton assumptions into registry-driven code
 - increasing file size instead of splitting authority
-- adding more “temporary” ownership to already overloaded classes
+- adding more â€œtemporaryâ€ ownership to already overloaded classes
 
 ## Brutal Summary
 
-The project’s main risk is now structural gravity.
+The projectâ€™s main risk is now structural gravity.
 
 Large owners are no longer just code smell.
 They are the real organizational limit on how safely the project can keep growing.

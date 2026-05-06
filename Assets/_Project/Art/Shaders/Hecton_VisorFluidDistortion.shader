@@ -204,11 +204,34 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 return offset * (_HectonVisorFluidDistortionStrength * mask);
             }
 
-            float ComputeScreenSpaceRain(float2 uv, float rainIntensity)
+            struct RainOverlayResult
             {
+                float mask;
+                float2 normalOffset;
+            };
+
+            float2 ComputeScrollingRainNormal(float2 uv, float2 windDir, float windSpeed, float rainIntensity)
+            {
+                float2 normalUV = uv * float2(28.0, 58.0);
+                normalUV.x += uv.y * (1.4 + windDir.x * 2.6) + windDir.x * _Time.y * 1.7;
+                normalUV.y -= _Time.y * (7.5 + windSpeed * 7.0);
+                float height = ValueNoise(normalUV);
+                float heightX = ValueNoise(normalUV + float2(0.071, 0.0)) - height;
+                float heightY = ValueNoise(normalUV + float2(0.0, 0.071)) - height;
+                return float2(heightX + windDir.x * 0.05, heightY - 0.08) * (rainIntensity * 0.0065);
+            }
+
+            RainOverlayResult ComputeScreenSpaceRain(float2 uv, float rainIntensity)
+            {
+                RainOverlayResult result;
+                result.mask = 0.0;
+                result.normalOffset = float2(0.0, 0.0);
                 float densityScale = max(0.25, _HectonScreenSpaceRainParams.y);
                 float areaScale = max(0.1, _HectonScreenSpaceRainParams.z);
                 float exposure = saturate(_HectonScreenSpaceRainParams.w);
+                if (rainIntensity <= 0.0001 || exposure <= 0.0001)
+                    return result;
+
                 float windSpeed = saturate(_GlobalWind.w * 0.08);
                 float2 windXZ = _GlobalWind.xz;
                 float windLenSq = max(dot(windXZ, windXZ), 0.0001);
@@ -229,7 +252,9 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 streak *= step(1.0 - saturate(rainIntensity * densityScale * 0.85), seed);
 
                 float mistNoise = saturate(Fbm(uv * float2(18.0, 32.0) + float2(_Time.y * windDir.x, -_Time.y * 1.7)) - 0.54);
-                return saturate((streak + mistNoise * rainIntensity * 0.28) * rainIntensity * exposure);
+                result.mask = saturate((streak + mistNoise * rainIntensity * 0.28) * rainIntensity * exposure);
+                result.normalOffset = ComputeScrollingRainNormal(uv, windDir, windSpeed, rainIntensity) * exposure;
+                return result;
             }
 
             half4 Frag(Varyings input) : SV_Target
@@ -268,13 +293,19 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 color.rgb += dustTint * (half)(dustMask * 0.18);
 
                 float rainIntensity = saturate(_RainIntensity);
-                float rainMask = ComputeScreenSpaceRain(input.screenUV, rainIntensity);
+                RainOverlayResult rainOverlay = ComputeScreenSpaceRain(input.screenUV, rainIntensity);
+                float rainMask = rainOverlay.mask;
+                half3 rainRefracted = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(input.screenUV + rainOverlay.normalOffset)).rgb;
                 half3 rainTint = half3(0.48h, 0.58h, 0.68h);
+                color.rgb = lerp(color.rgb, rainRefracted, (half)(rainMask * 0.36));
                 color.rgb = lerp(color.rgb, color.rgb * (1.0h - (half)(rainIntensity * 0.08)), (half)rainIntensity);
                 color.rgb += rainTint * (half)(rainMask * 0.22);
-                color.rgb += (half)saturate(_HectonLightningFlash) * half3(0.07h, 0.09h, 0.12h);
+                float lightningFlash = saturate(_HectonLightningFlash);
+                float2 lightningCenter = input.screenUV * 2.0 - 1.0;
+                float whiteVignette = smoothstep(0.18, 1.15, dot(lightningCenter, lightningCenter));
+                color.rgb += (half)lightningFlash * half3(1.0h, 1.0h, 1.0h) * (half)(0.10 + whiteVignette * 0.72);
 
-                float stormVoltage = saturate(rainIntensity * 0.72 + _HectonLightningFlash);
+                float stormVoltage = saturate(rainIntensity * 0.72 + lightningFlash);
                 float bandSeed = Hash21(floor(input.screenUV * float2(11.0, 19.0)));
                 float voltageBand = abs(frac(input.screenUV.y * 22.0 - _Time.y * 3.1 + bandSeed) - 0.5);
                 float voltagePulse = smoothstep(0.035, 0.0, voltageBand) * stormVoltage;

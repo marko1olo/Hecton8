@@ -4,7 +4,7 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
 #ifndef HECTON_FLASHLIGHT_SDF_SHADOW_MAX_STEPS
-#define HECTON_FLASHLIGHT_SDF_SHADOW_MAX_STEPS 24
+#define HECTON_FLASHLIGHT_SDF_SHADOW_MAX_STEPS 7
 #endif
 
 #ifndef HECTON_PARASITE_MAX_ANCHORS
@@ -67,6 +67,11 @@ TEXTURE2D(_NoirFogLUT);
 SAMPLER(sampler_NoirFogLUT);
 TEXTURE2D(_HectonPhotophobiaFieldTex);
 SAMPLER(sampler_HectonPhotophobiaFieldTex);
+TEXTURE2D(_HectonCausticsTextureA);
+SAMPLER(sampler_HectonCausticsTextureA);
+TEXTURE2D(_HectonCausticsTextureB);
+SAMPLER(sampler_HectonCausticsTextureB);
+float4 _HectonCausticsTextureParams; // x=texture path enabled, yzw=reserved
 float4 _HectonNoirFogLutParams;
 float _HectonNoirFogLutBlend;
 float _HectonWeatherIntensity;
@@ -115,15 +120,48 @@ float2 HectonCoreLitHash22(float2 p)
     return frac((p3.xx + p3.yz) * p3.zy);
 }
 
+float HectonCoreLitSampleTilingVoronoi(float2 p)
+{
+    float2 baseCell = floor(p);
+    float2 localPosition = frac(p);
+    float nearest = 8.0;
+    float secondNearest = 8.0;
+
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; x++)
+        {
+            float2 neighbor = float2((float)x, (float)y);
+            float2 feature = HectonCoreLitHash22(baseCell + neighbor);
+            float2 delta = neighbor + feature - localPosition;
+            float distanceSq = dot(delta, delta);
+            if (distanceSq < nearest)
+            {
+                secondNearest = nearest;
+                nearest = distanceSq;
+            }
+            else if (distanceSq < secondNearest)
+            {
+                secondNearest = distanceSq;
+            }
+        }
+    }
+
+    float cellCore = 1.0 - saturate(sqrt(nearest));
+    float cellRidge = 1.0 - saturate((sqrt(secondNearest) - sqrt(nearest)) * 2.15);
+    return saturate(cellCore * 0.42 + cellRidge * 0.72);
+}
+
 float HectonCoreLitSampleSubmarineCrushBuckling(float3 positionWS)
 {
     float scale = max(_HectonSubmarineCrushDepthParams.w, 0.001);
     float3 centeredPosition = (positionWS - _HectonSubmarineCrushCenterRadius.xyz) * scale;
-    float2 plateA = floor(centeredPosition.xz + centeredPosition.y * 0.17);
-    float2 plateB = floor(centeredPosition.xy * 1.73 + centeredPosition.z * 0.11 + 11.37);
-    float cellBreakup = abs(HectonCoreLitHash22(plateA).x - HectonCoreLitHash22(plateB).y);
+    float cellBreakup = HectonCoreLitSampleTilingVoronoi(centeredPosition.xz + centeredPosition.y * 0.17);
+    float crossBreakup = HectonCoreLitSampleTilingVoronoi(centeredPosition.xy * 1.73 + centeredPosition.z * 0.11 + 11.37);
     float crease = 1.0 - abs(frac(dot(centeredPosition, float3(0.31, 0.47, 0.19))) * 2.0 - 1.0);
-    return saturate(cellBreakup * 1.85 + crease * 0.42);
+    return saturate(max(cellBreakup, crossBreakup * 0.82) + crease * 0.32);
 }
 
 float3 HectonCoreLitApplySubmarineCrushDepth(float3 positionWS, float3 normalWS)
@@ -316,6 +354,20 @@ float HectonCoreLitEvaluateProceduralCaustics(float2 uv)
 
     float primaryTime = timeValue * primarySpeed + wavePhase;
     float secondaryTime = timeValue * secondarySpeed + wavePhase * 1.37 + 17.0;
+
+    if (_HectonCausticsTextureParams.x > 0.5)
+    {
+        float2 textureUvA = animatedUv * primaryDensity + float2(primaryTime, -primaryTime * 0.61);
+        float2 textureUvB = (animatedUv + 0.37) * secondaryDensity + float2(-secondaryTime * 0.73, secondaryTime);
+        float primaryTex = SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, frac(textureUvA)).r;
+        float secondaryTex = SAMPLE_TEXTURE2D(_HectonCausticsTextureB, sampler_HectonCausticsTextureB, frac(textureUvB)).r;
+        float twoTextureWeb = min(primaryTex, secondaryTex);
+        float textureCombined = lerp(primaryTex, twoTextureWeb, secondaryWeight);
+        textureCombined = pow(saturate(textureCombined * 1.65), sharpness);
+        textureCombined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035));
+        return saturate(textureCombined);
+    }
+
     float primaryLayer = HectonCoreLitCheapCausticRidge(animatedUv, primaryDensity, primaryTime);
     float secondaryLayer = HectonCoreLitCheapCausticRidge(animatedUv + 0.37, secondaryDensity, secondaryTime);
     float twoLayerWeb = min(primaryLayer, secondaryLayer);
@@ -600,11 +652,11 @@ float HectonCoreLitEvaluateMainLightContactShadow(float3 surfacePositionWS, floa
         return 1.0;
 
     float3 biasedSurfacePositionWS = surfacePositionWS + normalWS * max(_HectonContactShadowBias, 0.001);
-    int stepCount = clamp((int)round(_HectonContactShadowSteps), 1, 8);
+    int stepCount = clamp((int)round(_HectonContactShadowSteps), 1, 7);
     float shadowOcclusion = 0.0;
 
     [loop]
-    for (int stepIndex = 0; stepIndex < 8; stepIndex++)
+    for (int stepIndex = 0; stepIndex < 7; stepIndex++)
     {
         if (stepIndex >= stepCount)
             break;

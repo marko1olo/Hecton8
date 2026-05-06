@@ -1,4 +1,5 @@
 using System.Threading;
+using Hecton8.Core;
 using Hecton8.Optimization;
 using UnityEngine;
 
@@ -12,7 +13,6 @@ namespace Hecton8.Bootstrap
     public sealed class SceneInstantiationGate : MonoBehaviour
     {
         private const int GateOpenWatchdogFrames = 50000;
-        private static SceneInstantiationGate _instance;
 
         private bool _worldPrimed;
         private bool _playerInstantiated;
@@ -20,14 +20,15 @@ namespace Hecton8.Bootstrap
         private bool _gateOpen;
         private string _sceneName = string.Empty;
 
-        internal static SceneInstantiationGate Instance => _instance;
+        internal static SceneInstantiationGate ActiveRuntime => GlobalRegistry.SceneInstantiationGateRuntime;
         internal bool IsOpen => _gateOpen;
         internal string LastFailureReason { get; private set; } = "UNINITIALIZED";
 
         internal static SceneInstantiationGate EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            SceneInstantiationGate runtime = GlobalRegistry.SceneInstantiationGateRuntime;
+            if (runtime != null)
+                return runtime;
 
             GameObject runtimeRoot = new GameObject("[SceneInstantiationGate]"); // COLD ALLOC: GameObject[1] - bootstrap-owned async scene activation gate root - owner: SceneInstantiationGate
             return runtimeRoot.AddComponent<SceneInstantiationGate>();
@@ -35,19 +36,19 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            SceneInstantiationGate runtime = GlobalRegistry.SceneInstantiationGateRuntime;
+            if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterSceneInstantiationGateRuntime(this);
         }
 
         private void OnDestroy()
         {
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.ClearSceneInstantiationGateRuntime(this);
         }
 
         internal void BeginSceneLoad(string sceneName)

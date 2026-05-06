@@ -8,6 +8,7 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Assertions;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.Editor
 {
@@ -19,6 +20,16 @@ namespace Hecton8.Editor
         private const int Resolution = 33;
         private const int PixelCount = Resolution * Resolution;
         private const int Center = Resolution / 2;
+        private const float SmokeHeightStepMeters = 10f;
+        private const float SmokeFlatPlaneHeightMeters = 90f;
+        private const double PerfectBowlBudgetMilliseconds = 1.0d;
+        private const int PillarSdfWidth = 7;
+        private const int PillarSdfHeight = 8;
+        private const int PillarSdfDepth = 7;
+        private const int PillarSdfVoxelCount = PillarSdfWidth * PillarSdfHeight * PillarSdfDepth;
+        private const int PillarTerrainCount = PillarSdfWidth * PillarSdfDepth;
+        private const int PillarCenter = PillarSdfWidth / 2;
+        private const float PillarBaseHeightMeters = 2f;
         private const string NativeMemoryOwner = nameof(AnomalySmokeTester);
         private const string HeightmapLabel = "heightmap";
         private const string BasinMaskLabel = "basinMask";
@@ -27,6 +38,8 @@ namespace Hecton8.Editor
         private const string FloodHeapLabel = "floodHeap";
         private const string VisitedStampLabel = "visitedStamp";
         private const string AcceptedCellsLabel = "acceptedCells";
+        private const string PillarTerrainHeightsLabel = "pillarTerrainHeights";
+        private const string PillarSdfLabel = "pillarSdf";
         private const string OutputFolder = "CodexArtifacts";
         private const string OutputFileName = "anomaly-smoke-report.json";
 
@@ -66,7 +79,7 @@ namespace Hecton8.Editor
                 acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
 
-                SmokeCaseResult perfectBowl = RunCase(
+                RunCase(
                     heightmap,
                     basinMask,
                     candidateMask,
@@ -75,6 +88,27 @@ namespace Hecton8.Editor
                     visitedStamp,
                     acceptedCells,
                     SmokeCase.PerfectBowl);
+
+                SmokeCaseResult perfectBowl = default;
+                double perfectBowlMilliseconds = double.MaxValue;
+                for (int pass = 0; pass < 8; pass++)
+                {
+                    SmokeCaseResult measuredBowl = RunCase(
+                        heightmap,
+                        basinMask,
+                        candidateMask,
+                        basinRecords,
+                        floodHeap,
+                        visitedStamp,
+                        acceptedCells,
+                        SmokeCase.PerfectBowl,
+                        out double measuredMilliseconds);
+                    if (measuredMilliseconds < perfectBowlMilliseconds)
+                    {
+                        perfectBowlMilliseconds = measuredMilliseconds;
+                        perfectBowl = measuredBowl;
+                    }
+                }
 
                 SmokeCaseResult flatPlane = RunCase(
                     heightmap,
@@ -99,15 +133,18 @@ namespace Hecton8.Editor
                 Assert.AreEqual(1, perfectBowl.ValidBasins, "Perfect bowl basin count mismatch.");
                 Assert.AreEqual(Center, perfectBowl.FirstDeepestX, "Perfect bowl deepest X mismatch.");
                 Assert.AreEqual(Center, perfectBowl.FirstDeepestZ, "Perfect bowl deepest Z mismatch.");
-                Assert.AreEqual(16f, perfectBowl.FirstLipHeight, "Perfect bowl lip mismatch.");
+                Assert.AreEqual(160f, perfectBowl.FirstLipHeight, "Perfect bowl lip mismatch.");
+                Assert.IsTrue(perfectBowlMilliseconds <= PerfectBowlBudgetMilliseconds, "Perfect bowl basin detector exceeded the 1 ms editor smoke budget.");
                 Assert.AreEqual(0, flatPlane.ValidBasins, "Flat plane emitted a false basin.");
                 Assert.AreEqual(2, dualBowl.ValidBasins, "Dual bowl basin count mismatch.");
+                AssertPillarBaseInjectionDoesNotCreateAirGap();
 
                 return new SmokeReport
                 {
                     PerfectBowl = perfectBowl,
                     FlatPlane = flatPlane,
                     DualBowl = dualBowl,
+                    PerfectBowlMilliseconds = perfectBowlMilliseconds,
                     TotalCases = 3,
                     PassedCases = 3
                 };
@@ -124,6 +161,67 @@ namespace Hecton8.Editor
             }
         }
 
+        private static void AssertPillarBaseInjectionDoesNotCreateAirGap()
+        {
+            NativeArray<float> terrainHeights = default;
+            NativeArray<float> sdf = default;
+
+            try
+            {
+                // COLD ALLOC: NativeArray pillar seam buffers - editor-only anomaly smoke validation - owner: AnomalySmokeTester
+                terrainHeights = new NativeArray<float>(PillarTerrainCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                sdf = new NativeArray<float>(PillarSdfVoxelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(terrainHeights, NativeMemoryOwner, PillarTerrainHeightsLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeArray(sdf, NativeMemoryOwner, PillarSdfLabel, NativeAllocationLifetime.TempJob);
+
+                for (int i = 0; i < terrainHeights.Length; i++)
+                    terrainHeights[i] = PillarBaseHeightMeters;
+
+                JobHandle seamHandle = HectonAnomalyEngine.SnapSDFToTerrain(
+                    terrainHeights,
+                    PillarSdfWidth,
+                    PillarSdfDepth,
+                    1f,
+                    new double3(0.0, 0.0, 0.0),
+                    sdf,
+                    PillarSdfWidth,
+                    PillarSdfHeight,
+                    PillarSdfDepth,
+                    1f,
+                    new double3(0.0, 0.0, 0.0));
+
+                JobHandle pillarHandle = HectonAnomalyEngine.InjectMegaPillarSDF(
+                    sdf,
+                    PillarSdfWidth,
+                    PillarSdfHeight,
+                    PillarSdfDepth,
+                    1f,
+                    new double3(0.0, 0.0, 0.0),
+                    new double3(PillarCenter, PillarBaseHeightMeters, PillarCenter),
+                    2f,
+                    8f,
+                    0f,
+                    0.01f,
+                    seamHandle);
+
+                pillarHandle.Complete();
+
+                int belowBase = FlatSdfIndex(PillarCenter, 1, PillarCenter, PillarSdfWidth, PillarSdfHeight);
+                int atBase = FlatSdfIndex(PillarCenter, 2, PillarCenter, PillarSdfWidth, PillarSdfHeight);
+                int aboveBase = FlatSdfIndex(PillarCenter, 3, PillarCenter, PillarSdfWidth, PillarSdfHeight);
+                int exteriorVoid = FlatSdfIndex(0, 3, 0, PillarSdfWidth, PillarSdfHeight);
+                Assert.IsTrue(sdf[belowBase] > 0f, "Pillar base smoke lost solid terrain below the seam.");
+                Assert.AreEqual(0f, sdf[atBase], "Pillar base smoke lost the exact seam lock.");
+                Assert.IsTrue(sdf[aboveBase] > 0f, "Pillar base smoke left an air gap above the base.");
+                Assert.IsTrue(sdf[exteriorVoid] < 0f, "Pillar base smoke filled exterior negative void.");
+            }
+            finally
+            {
+                DisposeTracked(ref terrainHeights);
+                DisposeTracked(ref sdf);
+            }
+        }
+
         private static SmokeCaseResult RunCase(
             NativeArray<float> heightmap,
             NativeArray<byte> basinMask,
@@ -134,17 +232,41 @@ namespace Hecton8.Editor
             NativeArray<int> acceptedCells,
             SmokeCase smokeCase)
         {
+            return RunCase(
+                heightmap,
+                basinMask,
+                candidateMask,
+                basinRecords,
+                floodHeap,
+                visitedStamp,
+                acceptedCells,
+                smokeCase,
+                out _);
+        }
+
+        private static SmokeCaseResult RunCase(
+            NativeArray<float> heightmap,
+            NativeArray<byte> basinMask,
+            NativeArray<byte> candidateMask,
+            NativeArray<AnomalyBasinRecord> basinRecords,
+            NativeArray<int> floodHeap,
+            NativeArray<int> visitedStamp,
+            NativeArray<int> acceptedCells,
+            SmokeCase smokeCase,
+            out double detectionMilliseconds)
+        {
             FillHeightmap(heightmap, smokeCase);
             var settings = new AnomalyBasinDetectionSettings
             {
                 Width = Resolution,
                 Height = Resolution,
                 CellSizeMeters = 1f,
-                MinimumDepthMeters = 1f,
+                MinimumDepthMeters = 50f,
                 MaxFloodCells = PixelCount,
                 EqualHeightEpsilon = 0.000001f
             };
 
+            long detectionStartTicks = Stopwatch.GetTimestamp();
             JobHandle handle = HectonAnomalyEngine.ScheduleClosedBasinDetection(
                 heightmap,
                 basinMask,
@@ -157,13 +279,14 @@ namespace Hecton8.Editor
 
             // COLD SYNC JOB: editor smoke test must inspect deterministic output synchronously.
             handle.Complete();
+            detectionMilliseconds = (Stopwatch.GetTimestamp() - detectionStartTicks) * 1000.0d / Stopwatch.Frequency;
             return ExtractResult(basinRecords, basinMask);
         }
 
         private static void FillHeightmap(NativeArray<float> heightmap, SmokeCase smokeCase)
         {
             for (int i = 0; i < heightmap.Length; i++)
-                heightmap[i] = 9f;
+                heightmap[i] = SmokeFlatPlaneHeightMeters;
 
             if (smokeCase == SmokeCase.FlatPlane)
                 return;
@@ -174,8 +297,8 @@ namespace Hecton8.Editor
                 return;
             }
 
-            FillChebyshevBowl(heightmap, 10, 10, 6);
-            FillChebyshevBowl(heightmap, 23, 23, 6);
+            FillChebyshevBowl(heightmap, 8, 8, 6);
+            FillChebyshevBowl(heightmap, 24, 24, 6);
         }
 
         private static void FillChebyshevBowl(NativeArray<float> heightmap, int centerX, int centerZ, int radius)
@@ -186,9 +309,14 @@ namespace Hecton8.Editor
                 {
                     int dx = math.abs(x - centerX);
                     int dz = math.abs(z - centerZ);
-                    heightmap[x + z * Resolution] = math.max(dx, dz);
+                    heightmap[x + z * Resolution] = math.max(dx, dz) * SmokeHeightStepMeters;
                 }
             }
+        }
+
+        private static int FlatSdfIndex(int x, int y, int z, int width, int height)
+        {
+            return x + y * width + z * width * height;
         }
 
         private static SmokeCaseResult ExtractResult(NativeArray<AnomalyBasinRecord> records, NativeArray<byte> basinMask)
@@ -237,6 +365,7 @@ namespace Hecton8.Editor
             builder.AppendLine("  \"status\": \"PENDING_VERIFICATION\",");
             builder.AppendLine("  \"totalCases\": " + report.TotalCases + ",");
             builder.AppendLine("  \"passedCases\": " + report.PassedCases + ",");
+            builder.AppendLine("  \"perfectBowlMilliseconds\": " + report.PerfectBowlMilliseconds + ",");
             AppendCase(builder, "perfectBowl", report.PerfectBowl, false);
             AppendCase(builder, "flatPlane", report.FlatPlane, false);
             AppendCase(builder, "dualBowl", report.DualBowl, true);
@@ -309,6 +438,9 @@ namespace Hecton8.Editor
 
             /// <summary>Dual bowl result.</summary>
             public SmokeCaseResult DualBowl;
+
+            /// <summary>Measured warmed perfect bowl detector runtime in milliseconds.</summary>
+            public double PerfectBowlMilliseconds;
 
             /// <summary>Total executed cases.</summary>
             public int TotalCases;

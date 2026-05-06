@@ -1,6 +1,6 @@
-# MEMORY_ALIGNMENT_FIX.md — DOD Struct Layout Surgery
-Date: 2026-04-28
-Status: REFERENCE
+﻿# MEMORY_ALIGNMENT_FIX.md â€” DOD Struct Layout Surgery
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 ## Current-State Addendum (2026-04-29)
@@ -57,10 +57,10 @@ public struct HectonVegetationInstanceData
 public struct HectonVegetationInstanceData
 {
     public Vector3 Position;      // 12 bytes
-    private float _padding0;       // 4 bytes → 16-byte boundary
+    private float _padding0;       // 4 bytes â†’ 16-byte boundary
     public Quaternion Rotation;   // 16 bytes
     public Vector3 Scale;         // 12 bytes
-    private float _padding1;       // 4 bytes → 16-byte boundary
+    private float _padding1;       // 4 bytes â†’ 16-byte boundary
     public float BendAmount;      // 4 bytes
     public float SwayPhase;       // 4 bytes
     public float Age;             // 4 bytes
@@ -117,7 +117,7 @@ public struct ForcePacket
 **File:** `Assets/_Project/Scripts/Fauna/BoidData.cs` (inferred)  
 **Current Size:** 32 bytes  
 **Alignment:** 4-byte  
-**Status:** ✅ Burst-compatible, no surgery needed
+**Status:** âœ… Burst-compatible, no surgery needed
 
 ```csharp
 [StructLayout(LayoutKind.Sequential)]
@@ -137,7 +137,7 @@ public struct BoidData
 **File:** `Assets/_Project/Scripts/AI/CognitionCore.cs` (inferred)  
 **Current Size:** 64 bytes  
 **Alignment:** 64-byte (cache-aligned)  
-**Status:** ✅ COMPLIANT — cache line aligned
+**Status:** âœ… COMPLIANT â€” cache line aligned
 
 ---
 
@@ -145,7 +145,7 @@ public struct BoidData
 **File:** `Assets/_Project/Scripts/Core/AbsoluteUniversePosition.cs` (inferred)  
 **Current Size:** 48 bytes  
 **Alignment:** 16-byte  
-**Status:** ✅ GPU-friendly, no surgery needed
+**Status:** âœ… GPU-friendly, no surgery needed
 
 ---
 
@@ -175,9 +175,9 @@ private struct QueryKey
 private struct QueryKey
 {
     public Vector3 SourcePosition;           // 12 bytes
-    public int LayerMask;                    // 4 bytes → 16-byte boundary
+    public int LayerMask;                    // 4 bytes â†’ 16-byte boundary
     public Vector3 ListenerPosition;         // 12 bytes
-    private int _padding0;                    // 4 bytes → 16-byte boundary
+    private int _padding0;                    // 4 bytes â†’ 16-byte boundary
     public ulong IgnoreOriginRootEntityId;   // 8 bytes
     public ulong IgnoreTargetRootEntityId;   // 8 bytes
     public ulong IgnoreOriginBodyEntityId;   // 8 bytes
@@ -192,9 +192,9 @@ private struct QueryKey
 
 | Priority | Struct | File | Action | Risk |
 |----------|--------|------|--------|------|
-| P0 | `HectonVegetationInstanceData` | `InstancedFloraRenderer.cs` | Reorder + pad to 48 bytes | HIGH — GPU instancing break if size changes |
-| P1 | `QueryKey` | `AcousticOcclusionUtility.cs` | Reorder fields | LOW — internal struct |
-| P2 | `ForcePacket` | `PhysicsApplySystem.cs` | Pad to 40 bytes | LOW — queue internal |
+| P0 | `HectonVegetationInstanceData` | `InstancedFloraRenderer.cs` | Reorder + pad to 48 bytes | HIGH â€” GPU instancing break if size changes |
+| P1 | `QueryKey` | `AcousticOcclusionUtility.cs` | Reorder fields | LOW â€” internal struct |
+| P2 | `ForcePacket` | `PhysicsApplySystem.cs` | Pad to 40 bytes | LOW â€” queue internal |
 | P3 | `EnclosureKey` | `AcousticOcclusionUtility.cs` | Same treatment as QueryKey | LOW |
 
 ---
@@ -204,7 +204,7 @@ private struct QueryKey
 After each struct surgery:
 1. Check `UnsafeUtility.SizeOf<T>()` equals target size
 2. Check `UnsafeUtility.AlignOf<T>()` is multiple of 8
-3. Run Burst compiler — verify no `Struct size mismatch` errors
+3. Run Burst compiler â€” verify no `Struct size mismatch` errors
 4. Test GPU instancing count matches pre-surgery
 
-**STATUS:** PENDING SURGERY — Requires Agent BETA or runtime owner approval.
+**STATUS:** PENDING SURGERY â€” Requires Agent BETA or runtime owner approval.

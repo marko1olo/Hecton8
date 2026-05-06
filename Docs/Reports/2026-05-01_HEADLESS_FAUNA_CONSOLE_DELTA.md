@@ -1,6 +1,7 @@
-# Headless Fauna / Console Delta - 2026-05-01
+﻿# Headless Fauna / Console Delta - 2026-05-01
+Date: 2026-05-07
 
-Status: `PENDING VERIFICATION`
+Status: PENDING VERIFICATION
 
 ## Mandates Followed
 

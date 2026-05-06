@@ -1,6 +1,6 @@
-# HECTON-8 SAVE PARTICIPANT LEDGER
+﻿# HECTON-8 SAVE PARTICIPANT LEDGER
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: source-backed inventory of current `ISaveable` participants and observed priority bands
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
@@ -159,7 +159,7 @@ Current interpretation:
 Current interpretation:
 
 - this band is late, knowledge-heavy, and UI-adjacent
-- that generally matches the intended “late restoration” shape better than older docs implied
+- that generally matches the intended â€œlate restorationâ€ shape better than older docs implied
 
 ## Notable Structural Signals
 
@@ -180,7 +180,7 @@ That is internally coherent.
 
 ### 4. Some Priorities Deserve Future Scrutiny
 
-The most obvious “deserves a future dependency audit” cases in this pass:
+The most obvious â€œdeserves a future dependency auditâ€ cases in this pass:
 
 - `VoxelDeltaProcessor` with `SavePriority 40` and `LoadPriority 30`
 - `HectonPlayerHealth` at `100`
@@ -211,7 +211,7 @@ They are dependency-audit candidates.
 
 - same-band systems can still hide ordering dependencies
 - late knowledge/UI systems can reference state that restored incorrectly earlier
-- broad world registries can restore technically “successfully” but still drift semantically
+- broad world registries can restore technically â€œsuccessfullyâ€ but still drift semantically
 
 ## Regression Model
 

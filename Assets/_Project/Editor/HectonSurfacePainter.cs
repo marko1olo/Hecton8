@@ -1204,6 +1204,32 @@ public sealed class HectonSurfacePainter : EditorWindow
         return dot > 0.999f ? Vector3.right : Vector3.up;
     }
 
+    private static long ResolveIndexCount(Mesh mesh)
+    {
+        if (mesh == null)
+            return 0L;
+
+        long indexCount = 0L;
+        for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+        {
+            indexCount += mesh.GetIndexCount(subMeshIndex);
+        }
+
+        return indexCount;
+    }
+
+    private static void CollectMeshTriangles(Mesh mesh, List<int> triangles)
+    {
+        triangles.Clear();
+        List<int> submeshTriangles = new List<int>();
+        for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+        {
+            submeshTriangles.Clear();
+            mesh.GetTriangles(submeshTriangles, subMeshIndex, true);
+            triangles.AddRange(submeshTriangles);
+        }
+    }
+
     private static bool IntersectRayMesh(Ray localRay, Mesh mesh, out RaycastHit hit, out int triangleIndex)
     {
         hit = default;
@@ -1212,14 +1238,17 @@ public sealed class HectonSurfacePainter : EditorWindow
         if (mesh == null)
             return false;
 
-        Vector3[] vertices = mesh.vertices;
-        int[] triangles = mesh.triangles;
-        Vector3[] normals = mesh.normals;
+        List<Vector3> vertices = new List<Vector3>(mesh.vertexCount);
+        List<int> triangles = new List<int>((int)global::System.Math.Min(ResolveIndexCount(mesh), int.MaxValue));
+        List<Vector3> normals = new List<Vector3>(mesh.vertexCount);
+        mesh.GetVertices(vertices);
+        CollectMeshTriangles(mesh, triangles);
+        mesh.GetNormals(normals);
 
         bool found = false;
         float closestDistance = float.MaxValue;
 
-        for (int i = 0; i < triangles.Length; i += 3)
+        for (int i = 0; i < triangles.Count; i += 3)
         {
             Vector3 v0 = vertices[triangles[i]];
             Vector3 v1 = vertices[triangles[i + 1]];
@@ -1236,7 +1265,7 @@ public sealed class HectonSurfacePainter : EditorWindow
             triangleIndex = i / 3;
 
             Vector3 normal;
-            if (normals != null && normals.Length == vertices.Length)
+            if (normals.Count == vertices.Count)
             {
                 Vector3 n0 = normals[triangles[i]];
                 Vector3 n1 = normals[triangles[i + 1]];

@@ -64,6 +64,7 @@ namespace Hecton8.World
         [SerializeField] private string sourceWaterPattern = "None";
         [SerializeField] private string sourceBiomeContext = "None";
         [SerializeField] private bool usesGenerativeGeology;
+        [SerializeField] private bool collisionEnabled = true;
         [SerializeField] private string geologyProfileId = "None";
         [SerializeField] private string geologyArchetype = "None";
         [SerializeField] private int cellX;
@@ -86,6 +87,8 @@ namespace Hecton8.World
         private readonly List<LODGroup> _lodGroupBuffer = new List<LODGroup>(4);
         // COLD ALLOC: List<LODGroup>[4] — currently registered LOD groups — owner: WorldProceduralProxyInstance
         private readonly List<LODGroup> _registeredLodGroups = new List<LODGroup>(4);
+        // COLD ALLOC: List<Collider>[8] - scatter collider toggle buffer for no-collision decor policy - owner: WorldProceduralProxyInstance
+        private readonly List<Collider> _colliderBuffer = new List<Collider>(8);
 
         public string ActiveVariantId => variantId;
         public int ActiveVariantHash => variantHash;
@@ -212,6 +215,7 @@ namespace Hecton8.World
             sourceWaterPattern = "None";
             sourceBiomeContext = "None";
             usesGenerativeGeology = family != null && family.UsesGenerativeGeology();
+            collisionEnabled = true;
             geologyProfileId = family != null && family.generativeGeologyProfile != null ? family.generativeGeologyProfile.profileId : "None";
             geologyArchetype = ResolveGeologyArchetypeLabel(family);
             cellX = 0;
@@ -255,7 +259,8 @@ namespace Hecton8.World
             bool configuredHasMacroZone = false,
             WorldMacroZoneCoordinate configuredMacroZoneCoord = default,
             bool configuredSupportsFinalVariant = false,
-            bool configuredFinalVariantActive = false)
+            bool configuredFinalVariantActive = false,
+            bool configuredCollisionEnabled = true)
         {
             familyId = family != null ? family.familyId : "world.family.generic";
             familyLabel = family != null ? family.familyLabel : "Generic World Family";
@@ -292,6 +297,7 @@ namespace Hecton8.World
             sourceWaterPattern = string.IsNullOrWhiteSpace(configuredWaterPattern) ? "None" : configuredWaterPattern;
             sourceBiomeContext = string.IsNullOrWhiteSpace(configuredBiomeContext) ? "None" : configuredBiomeContext;
             usesGenerativeGeology = family != null && family.UsesGenerativeGeology();
+            collisionEnabled = configuredCollisionEnabled;
             geologyProfileId = family != null && family.generativeGeologyProfile != null ? family.generativeGeologyProfile.profileId : "None";
             geologyArchetype = ResolveGeologyArchetypeLabel(family);
             cellX = configuredCellX;
@@ -301,6 +307,7 @@ namespace Hecton8.World
             hasMacroZone = configuredHasMacroZone;
             macroZoneX = configuredMacroZoneCoord.x;
             macroZoneZ = configuredMacroZoneCoord.z;
+            ApplyCollisionState();
         }
 
         public void SetPoolManaged(bool poolManaged)
@@ -367,6 +374,19 @@ namespace Hecton8.World
 
             RefreshLodRegistration();
             RefreshCullingRegistration();
+        }
+
+        private void ApplyCollisionState()
+        {
+            _colliderBuffer.Clear();
+            gameObject.GetComponentsInChildren(true, _colliderBuffer);
+
+            for (int i = 0; i < _colliderBuffer.Count; i++)
+            {
+                Collider current = _colliderBuffer[i];
+                if (current != null)
+                    current.enabled = collisionEnabled;
+            }
         }
 
         private void RefreshLodRegistration()

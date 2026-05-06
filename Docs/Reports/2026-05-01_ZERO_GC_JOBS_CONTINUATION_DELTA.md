@@ -1,4 +1,6 @@
 # 2026-05-01 Zero-GC / Jobs Continuation Delta
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Mandates followed:
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
@@ -30,7 +32,7 @@ Mandates followed:
 14. `ProximityColliderSystem.Tick()` and `PerformanceMonitor.Tick()` had development diagnostic logs reachable in release builds.
 15. `PlayerToolManager` built interpolated debug strings for swap/spawn/despawn diagnostics before `LogToolDebug()` could check `toolDebugLogging`.
 16. `PlayerToolManager`, `BeaconNetworkSystem`, and `CameraJuiceSystem` still had noncritical `Debug.*` branches reachable from gameplay/action paths in production builds.
-17. `PDAAtlasSignalTab.Tick()` could route through `UpdateCountdownDisplay()` and write `_pulseTimerLabel.text = "—:—"` from the active PDA Atlas tab.
+17. `PDAAtlasSignalTab.Tick()` could route through `UpdateCountdownDisplay()` and write `_pulseTimerLabel.text = "â€”:â€”"` from the active PDA Atlas tab.
 18. `AcousticEcholocationTranslator.TerminalBootSequence` built a pooled `StringBuilder`, called `ToString()`, and assigned `_consoleLabel.text` on every sonar boot sequence event.
 19. `AudioCaptionOverlay` compared and assigned `slot.Label.text` for runtime caption requests, causing TMP string surface use in a player-facing caption path.
 20. `HectonOSBootManager.StartSequence()` built the boot log through `StringBuilderPool.Get()`, `builder.ToString()`, `_consoleLabel.text`, `slotName.ToUpperInvariant()`, enum `.ToString().ToUpperInvariant()`, and float `.ToString(format)`.
@@ -78,7 +80,7 @@ Mandates followed:
 17. `PlayerToolManager` direct warning/error logs in swap/spawn/inventory error branches are guarded behind `UNITY_EDITOR || DEVELOPMENT_BUILD`.
 18. `BeaconNetworkSystem` verbose deployment logging now routes through a conditional guarded helper, so release builds do not format beacon deploy strings.
 19. `CameraJuiceSystem.TriggerShake(null)` and `TransitionToBiome(null)` diagnostics are now editor/development-only; early-return behavior is unchanged.
-20. `PDAAtlasSignalTab` no-signal countdown now writes the cached `—:—` payload through `TMP_Text.SetCharArray()` instead of `TMP_Text.text`.
+20. `PDAAtlasSignalTab` no-signal countdown now writes the cached `â€”:â€”` payload through `TMP_Text.SetCharArray()` instead of `TMP_Text.text`.
 21. `TerminalBootSequence` now owns a fixed `StringBuilder[192]` and writes directly with `TMP_Text.SetText(StringBuilder)`, removing `StringBuilder.ToString()` and `_consoleLabel.text`.
 22. `AudioCaptionOverlay` now caches `LastCaptionText` per slot and writes captions through `TMP_Text.SetText(string)` only when the requested caption changes; slot initialization uses `SetText(string.Empty)`.
 23. `HectonOSBootManager` now owns a fixed `StringBuilder[512]`, writes boot text through `TMP_Text.SetText(StringBuilder)`, appends slot names in-place as uppercase chars, resolves language tags through a switch, and appends boot numerics without formatted `.ToString()`.
@@ -234,7 +236,7 @@ Editor.log facts:
 - Older `PhysicsEvents.OnImpact` errors are stale relative to current source: disk files now contain `PhysicsEvents.Register/Unregister`.
 - A later `McpBridgeAutoStartOnce.cs` compile error referenced a file that no longer exists on disk and no longer appears in `git status`.
 
-Status: `PENDING VERIFICATION`. A fresh Unity compile is still required before declaring the project compile-clean.
+Status: PENDING VERIFICATION
 
 ## Regression Model
 

@@ -1,6 +1,6 @@
-# HECTON-8 Conceptual System Authority Map
+﻿# HECTON-8 Conceptual System Authority Map
 
-Date: 2026-05-01
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: concept-level current system ownership across source and active docs
 
@@ -67,6 +67,7 @@ Gameplay reality:
 | Voxel / cave / geology | `HectonVoxelEngine`, `VoxelDeltaProcessor`, `WorldCaveDirector`, geology directors | LOAD-BEARING BUT STALL-PRONE | Chunk generation, collision, nav, and mesh lifecycle need unified job ownership. |
 | Scatter / flora placement | `WorldProceduralScatterDirector`, scatter partials/backends | LOAD-BEARING BUT MONOLITHIC | Runtime selection/placement must stay separate from editor preview and authoring shape. |
 | MapMagic / vegetation bridge | `HectonMapMagicVegetationBridge` | ACTIVE BUT HIGH COUPLING | Third-party bridge only; do not leak MapMagic policy into core gameplay. |
+| Physics / force application | `PhysicsApplySystem`, `GlobalPhysicsStateManager`, `PhysicsEventBus` | Active/Transitional | Contact modification, fixed-step force queueing, and managed collision callbacks coexist; profiler/GC proof is absent. |
 | Fauna / ecosystem | `FaunaBrain`, `FaunaDirector`, `EcosystemDirector`, cognition domains | LOAD-BEARING BUT HEADLESS/AUP RISK | Gameplay state must not depend on camera/Animator presentation. |
 | Ocean / weather / thermal | `OceanKinematicsRuntimeService`, `GlobalWeatherDirector`, `AbyssalThermalManager`, atmosphere systems | ACTIVE BUT MIXED | Environmental truth must stay service-owned, not visual-effect-owned. |
 
@@ -105,7 +106,7 @@ Persistence reality:
 
 | Surface | Current conceptual classification | Handling |
 |---|---|---|
-| DOTS / Entities backend | EXPERIMENTAL / PLACEHOLDER SEAM | `com.unity.entities` is not in current `Packages/manifest.json`; `World/Dots` is gated placeholder scaffolding, not production ownership. |
+| DOTS / Entities backend | Experimental Seam | `com.unity.entities` is not in current `Packages/manifest.json`; `World/Dots` is gated placeholder scaffolding, not production ownership. |
 | Networking | EXPERIMENTAL / PLACEHOLDER | Do not let network docs imply production multiplayer readiness. |
 | Modding API | ACTIVE BOUNDARY / NOT CORE AUTHORITY | Useful as external-facing seam; must not drive internal engine ownership. |
 | Runtime smoke testers / verifiers | QA SUPPORT | Useful for proving flows; strict coroutine usage is source-migrated, but they are still not production gameplay and still need Play Mode proof. |

@@ -28,6 +28,8 @@ namespace Hecton8.SaveSystem
         private const float MinPoseCaptureAngleDegrees = 5f;
         private const float MinPoseCaptureDistanceSq = MinPoseCaptureDistanceMeters * MinPoseCaptureDistanceMeters;
         private const string NativeMemoryOwner = nameof(SaveThumbnailSystem);
+        private static readonly float MinPoseCaptureQuaternionDot =
+            Mathf.Cos(MinPoseCaptureAngleDegrees * Mathf.Deg2Rad * 0.5f);
 
         private struct CaptureRequest
         {
@@ -266,7 +268,8 @@ namespace Hecton8.SaveSystem
             if (delta.sqrMagnitude > MinPoseCaptureDistanceSq)
                 return true;
 
-            return Quaternion.Angle(_lastCaptureRotation, captureTransform.rotation) > MinPoseCaptureAngleDegrees;
+            float rotationDot = Mathf.Abs(Quaternion.Dot(_lastCaptureRotation, captureTransform.rotation));
+            return rotationDot < MinPoseCaptureQuaternionDot;
         }
 
         private static void HandleReadbackCompleted(AsyncGPUReadbackRequest request)

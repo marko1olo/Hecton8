@@ -1,5 +1,6 @@
-# 18 Interaction Construction And Runtime Linkage
+﻿# 18 Interaction Construction And Runtime Linkage
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 Mandates followed:
@@ -56,7 +57,7 @@ Verdict:
 ## 3. Construction has serious backend weight
 
 Evidence:
-- `HabitatGraphManager.cs:18` is an internal `IDisposable` backend, not a MonoBehaviour façade.
+- `HabitatGraphManager.cs:18` is an internal `IDisposable` backend, not a MonoBehaviour faÃ§ade.
 - It owns native CSR-style graph buffers and power/atmosphere adjacency data (`43-49`, `877-888`).
 - It directly describes itself as feeding downstream power and atmosphere solvers.
 - `HabitatConstructionManager.cs:19` owns placement validation, adjacency assembly, build-cost transactions, and Burst-backed integrity validation (`48-53`, `531-542`, `711-719`).
@@ -64,7 +65,7 @@ Evidence:
 
 What is genuinely good:
 - Base building is not fake. It has topology reasoning, graph publication, cost consumption, validation BFS, and module subsystems.
-- Construction is one of the project’s clearest examples of authored gameplay resting on substantial runtime infrastructure.
+- Construction is one of the projectâ€™s clearest examples of authored gameplay resting on substantial runtime infrastructure.
 
 What is bad:
 - Construction is already another system-of-systems.

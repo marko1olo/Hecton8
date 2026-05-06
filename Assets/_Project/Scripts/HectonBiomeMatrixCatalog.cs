@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace Hecton8.Environment
@@ -25,9 +26,10 @@ namespace Hecton8.Environment
         public const uint BlendMask = 0xFFu;
         public const uint GpuPackedMask = (1u << FlagsShift) - 1u;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte MapToVisualFamily(int biomeId)
         {
-            return (byte)ResolveVisualFamily(biomeId);
+            return (byte)ResolveVisualFamilyFast(biomeId);
         }
 
         public static VisualFamily ResolveVisualFamily(int biomeId)
@@ -35,6 +37,107 @@ namespace Hecton8.Environment
             return (uint)biomeId < (uint)HectonBiomeMatrixCatalog.VisualFamiliesByBiomeId.Length
                 ? HectonBiomeMatrixCatalog.VisualFamiliesByBiomeId[biomeId]
                 : VisualFamily.Abyssal;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static VisualFamily ResolveVisualFamilyFast(int biomeId)
+        {
+            switch (biomeId)
+            {
+                case 1:
+                case 2:
+                    return VisualFamily.Vegetation;
+
+                case 4:
+                case 8:
+                case 13:
+                case 14:
+                case 24:
+                case 28:
+                case 30:
+                case 32:
+                case 36:
+                    return VisualFamily.Sand;
+
+                case 5:
+                case 6:
+                case 12:
+                case 16:
+                case 34:
+                    return VisualFamily.Coral;
+
+                case 3:
+                case 10:
+                case 41:
+                case 42:
+                case 77:
+                case 82:
+                case 84:
+                case 98:
+                case 106:
+                    return VisualFamily.Volcanic;
+
+                case 57:
+                case 59:
+                case 80:
+                case 81:
+                case 105:
+                case 108:
+                    return VisualFamily.Ruin;
+
+                case 33:
+                case 40:
+                case 79:
+                case 89:
+                case 90:
+                case 91:
+                case 92:
+                case 93:
+                case 94:
+                case 95:
+                case 96:
+                case 99:
+                case 100:
+                case 101:
+                case 102:
+                case 103:
+                case 104:
+                case 107:
+                    return VisualFamily.Void;
+            }
+
+            if ((biomeId >= 44 && biomeId <= 56) ||
+                (biomeId >= 61 && biomeId <= 68) ||
+                biomeId == 37 ||
+                biomeId == 39 ||
+                biomeId == 58 ||
+                biomeId == 78)
+            {
+                return VisualFamily.Abyssal;
+            }
+
+            if ((biomeId >= 69 && biomeId <= 76) ||
+                (biomeId >= 85 && biomeId <= 88) ||
+                biomeId == 7 ||
+                biomeId == 9 ||
+                biomeId == 11 ||
+                (biomeId >= 15 && biomeId <= 23) ||
+                biomeId == 25 ||
+                biomeId == 26 ||
+                biomeId == 27 ||
+                biomeId == 29 ||
+                biomeId == 31 ||
+                biomeId == 35 ||
+                biomeId == 38 ||
+                biomeId == 43 ||
+                biomeId == 60 ||
+                biomeId == 83 ||
+                biomeId == 97)
+            {
+                return VisualFamily.Rock;
+            }
+
+            return VisualFamily.Abyssal;
         }
 
         public static uint PackCompactInfluence(byte primaryVisualFamilyId, byte secondaryVisualFamilyId, byte blend255)

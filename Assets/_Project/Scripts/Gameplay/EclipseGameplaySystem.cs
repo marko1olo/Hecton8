@@ -318,7 +318,7 @@ namespace Hecton8.Gameplay
 
         [Header("── Bioluminescence ────────────────────────")]
         [Tooltip("Множитель биолюминесценции во время затмения.")]
-        [SerializeField] private float biolumMultiplier = 1.5f;
+        [SerializeField] private float biolumMultiplier = 2f;
 
         [Header("Eclipse Audio")]
         [SerializeField, Range(-300f, 0f)] private float totalEclipseAcousticPitchShiftCents = -150f;
@@ -345,6 +345,7 @@ namespace Hecton8.Gameplay
 
         private static readonly int _ShaderBiolumMultiplier =
             Shader.PropertyToID("_EclipseBiolumMultiplier");
+        private const float EclipseBiolumBoostOverlapThreshold = 0.8f;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -524,11 +525,14 @@ namespace Hecton8.Gameplay
 
             float occlusion01 = ResolveEclipseOcclusion01();
             float resonanceMultiplier = 1f;
-            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
             if (celestialEngine != null && celestialEngine.IsLunarResonanceActive)
                 resonanceMultiplier = Mathf.Max(1f, celestialEngine.LunarResonanceBiolumMultiplier);
 
-            return Mathf.Lerp(1f, Mathf.Max(1f, biolumMultiplier) * resonanceMultiplier, occlusion01);
+            if (occlusion01 < EclipseBiolumBoostOverlapThreshold)
+                return 1f;
+
+            return Mathf.Max(1f, biolumMultiplier) * resonanceMultiplier;
         }
 
         private float ResolveTargetAcousticPitchShiftCents()
@@ -546,7 +550,7 @@ namespace Hecton8.Gameplay
         private static float ResolveEclipseOcclusion01()
         {
             float occlusion01 = 1f;
-            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
             if (celestialEngine != null)
             {
                 occlusion01 = Mathf.Clamp01(Mathf.Max(

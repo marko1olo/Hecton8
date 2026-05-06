@@ -98,6 +98,8 @@ namespace Hecton8.Gameplay
 
         /// <summary>Компонент PlayerTool на текущем экземпляре.</summary>
         private PlayerTool _currentTool;
+        // COLD ALLOC: char[512] — zero-GC active tool HUD summary staging buffer — owner: PlayerToolManager
+        private FixedCharBuffer _toolSummaryBuffer = new FixedCharBuffer(512);
 
         /// <summary>Индекс текущего активного слота (-1 = ничего).</summary>
         private int _currentSlotIndex = -1;
@@ -608,35 +610,15 @@ namespace Hecton8.Gameplay
                 return cursor > 0;
             }
 
-            int toolCursor = 0;
-            toolCursor = AppendUpper(destination, toolCursor, ResolveOperationalToolName(_currentTool));
-            if (!_currentTool.IsEquipped)
-            {
-                toolCursor = AppendLiteral(destination, toolCursor, " // STANDBY");
-                length = toolCursor;
-                return true;
-            }
+            _toolSummaryBuffer.Clear();
+            _currentTool.WriteOperationalSummary(_toolSummaryBuffer);
+            ReadOnlySpan<char> summary = _toolSummaryBuffer.AsSpan();
+            int copyLength = Mathf.Min(summary.Length, destination.Length);
+            if (copyLength <= 0)
+                return false;
 
-            if (_currentTool.IsBroken)
-            {
-                toolCursor = AppendLiteral(destination, toolCursor, " // BROKEN");
-                length = toolCursor;
-                return true;
-            }
-
-            ToolMetadata metadata = _currentTool.Metadata;
-            if (metadata != null)
-            {
-                toolCursor = AppendLiteral(destination, toolCursor, " // DUR ");
-                toolCursor = AppendInt(destination, toolCursor, Mathf.Max(0, Mathf.RoundToInt(_currentTool.CurrentDurability)));
-                toolCursor = AppendLiteral(destination, toolCursor, "/");
-                toolCursor = AppendInt(destination, toolCursor, Mathf.Max(0, Mathf.RoundToInt(metadata.maxDurability)));
-                length = toolCursor;
-                return true;
-            }
-
-            toolCursor = AppendLiteral(destination, toolCursor, " // READY");
-            length = toolCursor;
+            summary.Slice(0, copyLength).CopyTo(destination);
+            length = copyLength;
             return true;
         }
 

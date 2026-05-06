@@ -637,6 +637,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     private const string NativeMemoryOwner = nameof(HectonWorldGenerator);
     private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+    const int WorldStreamingQueueMaxCapacity = 512;
+    const int PendingChunkMaxCapacity = 64;
+    const int PendingPhysicsBakeMaxCapacity = 2048;
+    const int DeferredChunkRetirementMaxCapacity = 2048;
 
     private struct PendingChunk
     {
@@ -693,26 +697,26 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     }
 
     // COLD ALLOC: Dictionary<int2,HectonChunkData>[512] - active streamed chunk lookup for residency refresh - owner: HectonWorldGenerator
-    readonly Dictionary<int2, HectonChunkData> _active = new Dictionary<int2, HectonChunkData>(512);
+    readonly Dictionary<int2, HectonChunkData> _active = new Dictionary<int2, HectonChunkData>(WorldStreamingQueueMaxCapacity);
     // COLD ALLOC: List<HectonChunkRequest>[512] - active streaming request queue, reused across refreshes - owner: HectonWorldGenerator
-    readonly List<HectonChunkRequest> _queue = new List<HectonChunkRequest>(512);
+    readonly List<HectonChunkRequest> _queue = new List<HectonChunkRequest>(WorldStreamingQueueMaxCapacity);
     // COLD ALLOC: Dictionary<int2,int>[512] — reused desired-chunk set for AUP streaming refresh — owner: HectonWorldGenerator
-    readonly Dictionary<int2, int> _desiredChunks = new Dictionary<int2, int>(512);
+    readonly Dictionary<int2, int> _desiredChunks = new Dictionary<int2, int>(WorldStreamingQueueMaxCapacity);
     // COLD ALLOC: List<int2>[256] — reused active-chunk removal scratch for AUP streaming refresh — owner: HectonWorldGenerator
-    readonly List<int2> _chunksToRemove = new List<int2>(256);
+    readonly List<int2> _chunksToRemove = new List<int2>(WorldStreamingQueueMaxCapacity);
     // COLD ALLOC: HashSet<int2>[256] — reused pending-chunk lookup for AUP streaming refresh — owner: HectonWorldGenerator
-    readonly HashSet<int2> _pendingChunkCoordSet = new HashSet<int2>(256);
+    readonly HashSet<int2> _pendingChunkCoordSet = new HashSet<int2>(PendingChunkMaxCapacity);
     // COLD ALLOC: List<HectonChunkRequest>[512] — reused chunk-request sort scratch for AUP streaming refresh — owner: HectonWorldGenerator
-    readonly List<HectonChunkRequest> _requestScratch = new List<HectonChunkRequest>(512);
+    readonly List<HectonChunkRequest> _requestScratch = new List<HectonChunkRequest>(WorldStreamingQueueMaxCapacity);
     int _queueHead;
 
     // COLD ALLOC: List<PendingChunk>[64] - pending streamed chunk job records - owner: HectonWorldGenerator
-    private readonly List<PendingChunk> _pendingChunks = new List<PendingChunk>(64);
+    private readonly List<PendingChunk> _pendingChunks = new List<PendingChunk>(PendingChunkMaxCapacity);
 
     // COLD ALLOC: List<PendingPhysicsBake>[64] — background PhysX bake queue for streamed chunk colliders — owner: HectonWorldGenerator
-    readonly List<PendingPhysicsBake> _pendingPhysicsBakes = new List<PendingPhysicsBake>(64);
+    readonly List<PendingPhysicsBake> _pendingPhysicsBakes = new List<PendingPhysicsBake>(PendingPhysicsBakeMaxCapacity);
     // COLD ALLOC: List<HectonChunkData>[64] - deferred chunk destruction while PhysX bake jobs finish - owner: HectonWorldGenerator
-    readonly List<HectonChunkData> _deferredChunkRetirements = new List<HectonChunkData>(64);
+    readonly List<HectonChunkData> _deferredChunkRetirements = new List<HectonChunkData>(DeferredChunkRetirementMaxCapacity);
     // COLD ALLOC: Dictionary<int2,int>[1024] - reused cave cell to accumulator index map for voxel POI finalization - owner: HectonWorldGenerator
     readonly Dictionary<int2, int> _voxelClusterIndexByCell = new Dictionary<int2, int>(1024);
     // COLD ALLOC: List<VoxelClusterAccumulator>[1024] - reused cave cluster accumulators, replaces per-chunk List/Dictionary allocations - owner: HectonWorldGenerator
@@ -891,6 +895,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     void StartStreaming()
     {
         if (viewer == null) { UnityEngine.Debug.LogWarning("[Hecton] No viewer assigned."); return; }
+        maxChunksPerFrame = Mathf.Clamp(maxChunksPerFrame, 1, PendingChunkMaxCapacity);
+        maxPendingChunks = Mathf.Clamp(maxPendingChunks, 1, PendingChunkMaxCapacity);
+        maxFinalizationsPerFrame = Mathf.Clamp(maxFinalizationsPerFrame, 1, PendingChunkMaxCapacity);
         EnsureLUTs();
         EnsurePoiVectorListPool();
         EnsureTriangleScratchCapacity(ComputeConfiguredTriangleScratchRequirement());
@@ -1027,6 +1034,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     void EnsureTriangleScratchCapacity(int requiredTriangleIndices)
     {
         if (_triangleScratch.Capacity >= requiredTriangleIndices)
+            return;
+
+        if (_streaming)
             return;
 
         // COLD ALLOC: List<int>.Capacity[requiredTriangleIndices] - authoring setting exceeded default streamed triangle scratch; avoids repeated runtime chunk-finalize arrays - owner: HectonWorldGenerator
@@ -1177,7 +1187,13 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             double dSq = math.lengthsq(viewerAbsoluteXZ - center);
 
             if (dSq <= distantRadiusSq)
-                _desiredChunks[c] = dSq <= activeRadiusSq ? 0 : 1;
+            {
+                int lod = dSq <= activeRadiusSq ? 0 : 1;
+                if (_desiredChunks.ContainsKey(c))
+                    _desiredChunks[c] = lod;
+                else if (_desiredChunks.Count < WorldStreamingQueueMaxCapacity)
+                    _desiredChunks.Add(c, lod);
+            }
         }
 
         _chunksToRemove.Clear();
@@ -1186,7 +1202,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         {
             var kvp = activeEnumerator.Current;
             if (!_desiredChunks.TryGetValue(kvp.Key, out int wantLod) || wantLod != kvp.Value.lod)
-                _chunksToRemove.Add(kvp.Key);
+            {
+                if (_chunksToRemove.Count < WorldStreamingQueueMaxCapacity)
+                    _chunksToRemove.Add(kvp.Key);
+            }
         }
         for (int i = 0; i < _chunksToRemove.Count; i++)
         {
@@ -1214,7 +1233,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
         _pendingChunkCoordSet.Clear();
         for (int i = 0; i < _pendingChunks.Count; i++)
-            _pendingChunkCoordSet.Add(_pendingChunks[i].coord);
+        {
+            if (_pendingChunkCoordSet.Count < PendingChunkMaxCapacity)
+                _pendingChunkCoordSet.Add(_pendingChunks[i].coord);
+        }
 
         _requestScratch.Clear();
         var desiredEnumerator = _desiredChunks.GetEnumerator();
@@ -1225,6 +1247,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             if (_pendingChunkCoordSet.Contains(kvp.Key)) continue;
 
             double2 center = ResolveChunkCenterAbsoluteXZ(kvp.Key);
+            if (_requestScratch.Count >= WorldStreamingQueueMaxCapacity)
+                continue;
+
             _requestScratch.Add(new HectonChunkRequest
             {
                 coord  = kvp.Key,
@@ -1235,7 +1260,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         _requestScratch.Sort(_chunkRequestDistanceComparison);
 
         _queue.Clear();
-        _queue.AddRange(_requestScratch);
+        for (int i = 0; i < _requestScratch.Count && _queue.Count < WorldStreamingQueueMaxCapacity; i++)
+            _queue.Add(_requestScratch[i]);
         _queueHead = 0;
     }
 
@@ -1244,7 +1270,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         int scheduled = 0;
         while (_queueHead < _queue.Count
                && scheduled < maxChunksPerFrame
-               && _pendingChunks.Count < maxPendingChunks)
+               && _pendingChunks.Count < maxPendingChunks
+               && _pendingChunks.Count < PendingChunkMaxCapacity)
         {
             var req = _queue[_queueHead++];
 
@@ -1286,7 +1313,12 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
             var cd = pc.cancelRequested ? null : FinalizeChunk(pc);
             if (cd != null)
-                _active[pc.coord] = cd;
+            {
+                if (_active.ContainsKey(pc.coord) || _active.Count < WorldStreamingQueueMaxCapacity)
+                    _active[pc.coord] = cd;
+                else
+                    DestroyChunk(cd, allowDeferredRetirement: false);
+            }
             else if (pc.cancelRequested)
                 pc.DisposeArrays();
 
@@ -1305,6 +1337,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     void ScheduleChunkJob(int2 coord, int lod)
     {
+        if (_pendingChunks.Count >= PendingChunkMaxCapacity)
+            return;
+
         float sp  = lod == 0 ? lod0Spacing : lod1Spacing;
         int   res = Mathf.CeilToInt(chunkSize / sp) + 1;
         int   vc  = res * res;
@@ -1363,7 +1398,15 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         };
 
         pc.RegisterArrays();
-        _pendingChunks.Add(pc);
+        if (_pendingChunks.Count < PendingChunkMaxCapacity)
+        {
+            _pendingChunks.Add(pc);
+        }
+        else
+        {
+            pc.DisposeArrays(pc.combinedHandle);
+            JobHandle.ScheduleBatchedJobs();
+        }
     }
 
     HectonChunkData FinalizeChunk(PendingChunk pc)
@@ -1376,7 +1419,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             int maxTri = (res - 1) * (pc.resZ - 1) * 6;
             _triangleScratch.Clear();
             if (_triangleScratch.Capacity < maxTri)
-                EnsureTriangleScratchCapacity(maxTri);
+            {
+                return null;
+            }
 
             bool cutCaves = pc.lod == 0;
 
@@ -1407,11 +1452,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             if (_triangleScratch.Count == 0) return null;
 
             var mesh = new Mesh();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            mesh.name = $"Hecton_{pc.coord.x}_{pc.coord.y}_L{pc.lod}";
-#else
             mesh.name = RuntimeChunkObjectName;
-#endif
             if (vc > 65535) mesh.indexFormat = IndexFormat.UInt32;
 
             mesh.SetVertices(pc.verts);
@@ -1448,16 +1489,23 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 if (pendingCollisionBakeMaterial != null)
                     mr.sharedMaterial = pendingCollisionBakeMaterial;
 
-                _pendingPhysicsBakes.Add(new PendingPhysicsBake
+                if (_pendingPhysicsBakes.Count < PendingPhysicsBakeMaxCapacity)
                 {
-                    Mesh = mesh,
-                    Owner = go,
-                    Renderer = mr,
-                    Collider = meshCollider,
-                    DefaultMaterial = terrainMaterial,
-                    Handle = default,
-                    State = PhysicsBakeStatePending
-                });
+                    _pendingPhysicsBakes.Add(new PendingPhysicsBake
+                    {
+                        Mesh = mesh,
+                        Owner = go,
+                        Renderer = mr,
+                        Collider = meshCollider,
+                        DefaultMaterial = terrainMaterial,
+                        Handle = default,
+                        State = PhysicsBakeStatePending
+                    });
+                }
+                else
+                {
+                    mr.sharedMaterial = terrainMaterial;
+                }
             }
 
             if (pc.lod == 0)
@@ -1991,7 +2039,12 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             return false;
 
         if (!_deferredChunkRetirements.Contains(cd))
+        {
+            if (_deferredChunkRetirements.Count >= DeferredChunkRetirementMaxCapacity)
+                return false;
+
             _deferredChunkRetirements.Add(cd);
+        }
 
         if (cd.renderer != null)
             cd.renderer.enabled = false;
@@ -2146,22 +2199,25 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         // ── Destroy child voxel volumes (v2.1: через DespawnVolume) ──
         if (voxelEngine != null)
         {
-            float2 chunkOrigin = ChunkOrigin(cd.coord);
-            voxelEngine.DespawnVolumesInsideXZ(
-                chunkOrigin.x,
-                chunkOrigin.x + chunkSize,
-                chunkOrigin.y,
-                chunkOrigin.y + chunkSize);
+            double safeChunkSize = math.max(1d, (double)chunkSize);
+            double chunkMinX = (double)cd.coord.x * safeChunkSize;
+            double chunkMinZ = (double)cd.coord.y * safeChunkSize;
+            voxelEngine.DespawnVolumesInsideAbsoluteXZ(
+                chunkMinX,
+                chunkMinX + safeChunkSize,
+                chunkMinZ,
+                chunkMinZ + safeChunkSize);
         }
         else if (cd.go != null)
         {
-            string cavePrefix = $"Voxel_Cave_{cd.coord.x}_{cd.coord.y}";
-            string riftPrefix = $"Voxel_Rift_{cd.coord.x}_{cd.coord.y}";
-
             for (int i = transform.childCount - 1; i >= 0; i--)
             {
                 var child = transform.GetChild(i);
-                if (child.name.StartsWith(cavePrefix) || child.name.StartsWith(riftPrefix))
+                string childName = child.name;
+                if (childName.StartsWith("Cave_") ||
+                    childName.StartsWith("RuntimeCave") ||
+                    childName.StartsWith("Voxel_Cave_") ||
+                    childName.StartsWith("Voxel_Rift_"))
                 {
                     // v2.1: Делегируем очистку VoxelEngine.
                     // DespawnVolume удаляет из _activeVolumes,
@@ -2392,7 +2448,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             mesh.SetNormals(norms);
             mesh.SetUVs(0, uvs);
             mesh.SetColors(cols);
-            mesh.triangles = tris;
+            mesh.SetTriangles(tris, 0);
             mesh.RecalculateTangents();
             mesh.RecalculateBounds();
 
@@ -2595,7 +2651,11 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         {
             var mf = transform.GetChild(i).GetComponent<MeshFilter>();
             if (mf != null && mf.sharedMesh != null)
-                total += mf.sharedMesh.triangles.Length / 3;
+            {
+                Mesh mesh = mf.sharedMesh;
+                for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+                    total += (long)mesh.GetIndexCount(subMeshIndex) / 3L;
+            }
         }
         return total;
     }

@@ -1,7 +1,7 @@
-# Editor Log Console Stabilization
+﻿# Editor Log Console Stabilization
 
-Date: `2026-05-01`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Scope: local Unity `Editor.log` evidence after console-spam mitigation
 
 ## Mandates Followed

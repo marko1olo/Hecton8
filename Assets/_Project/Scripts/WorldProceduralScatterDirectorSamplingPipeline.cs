@@ -273,6 +273,8 @@ namespace Hecton8.World
             {
                 // COLD SYNC JOB: editor preview and bootstrap prime require immediate scatter output before continuing.
                 DispatcherJobSwap.TryComplete(ref _samplingJobHandle, forceComplete: true);
+                if (fieldSampler != null)
+                    fieldSampler.MarkScatterSamplingJobCompleted();
                 _isSamplingJobRunning = false;
                 _scatterState = ScatterState.Processing;
                 ProcessCompletedScatterSampling();
@@ -287,6 +289,8 @@ namespace Hecton8.World
 
             // COLD SYNC JOB: editor preview and bootstrap prime require immediate scatter output before continuing.
             DispatcherJobSwap.TryComplete(ref _samplingJobHandle, forceComplete: true);
+            if (fieldSampler != null)
+                fieldSampler.MarkScatterSamplingJobCompleted();
             _isSamplingJobRunning = false;
             _scatterState = ScatterState.Processing;
             ProcessCompletedScatterSampling();
@@ -301,6 +305,8 @@ namespace Hecton8.World
             if (!DispatcherJobSwap.TryComplete(ref _samplingJobHandle, forceComplete: false))
                 return;
 
+            if (fieldSampler != null)
+                fieldSampler.MarkScatterSamplingJobCompleted();
             _isSamplingJobRunning = false;
             _scatterState = ScatterState.Processing;
         }
@@ -311,6 +317,8 @@ namespace Hecton8.World
             {
             if (!TryBuildScatterSamplingCompletionContext(out ScatterSamplingCompletionContext completionContext))
             {
+                if (fieldSampler != null)
+                    fieldSampler.EndScatterSamplingFrame();
                 ResetSamplingState();
                 return;
             }
@@ -480,7 +488,8 @@ namespace Hecton8.World
                                 activeFieldSample.zone,
                                 activeFieldSample.resolvedZoneKind,
                                 activeFieldSample.depthMeters,
-                                activeFieldSample.slopeDegrees))
+                                activeFieldSample.slopeDegrees,
+                                activeFieldSample.biomeFamilyFlags))
                         {
                             continue;
                         }
@@ -1127,7 +1136,7 @@ namespace Hecton8.World
             rejectedByGate = deterministicClutter
                 ? gate <= DeterministicClutterSpawnThreshold
                 : gate > spawnProbability;
-            if (rejectedByGate && !needsRescueTracking)
+            if (rejectedByGate && (deterministicClutter || !needsRescueTracking))
                 return false;
 
             if (!HasPatternLayerGlobalBudget(layer, layerPlacementCounts[layerIndex], _patternLayerTargetMaxBuffer))
@@ -1315,7 +1324,8 @@ namespace Hecton8.World
             float baseScore = spawnProbability
                 + heat
                 + runtimeRule.ScoreBaseBonus
-                + runtimeRule.AcceptedFamilyAffinityBonus;
+                + runtimeRule.AcceptedFamilyAffinityBonus
+                + GetTectonicSpineRockBoulderScoreBonus(activeFieldSample, runtimeRule.Family);
             float combinedPatternScore = GetCombinedPatternScoreBonus(activeFieldSample.resolvedPattern, runtimeRule);
             float biomeContextScore = GetBiomeContextBonus(cellBiomeContext, runtimeRule);
             float biomeSignatureScore = GetBiomeSignatureScoreBonus(runtimeRule, layerPreferredFamilyIndex, patternScoreContext);

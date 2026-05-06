@@ -25,7 +25,7 @@ namespace Hecton8.Visor
         private const float DefaultShadowFloor = 0.08f;
         private const float DefaultShadowMinStep = 0.12f;
         private const float DefaultShadowSoftness = 6.5f;
-        private const float DefaultShadowStepCount = 24f;
+        private const float DefaultShadowStepCount = 7f;
         private const float LightResolveRetryIntervalSeconds = 0.5f;
 
         private static readonly int _FlashlightActiveId = Shader.PropertyToID("_HectonFlashlightActive");

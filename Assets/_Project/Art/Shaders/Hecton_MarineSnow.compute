@@ -33,6 +33,7 @@ struct MarineSnowFrameData
     float4 FlowFieldCenterCellSize;
     float4 ShellParams;
     float4 MetaParams;
+    float4 CameraVelocityStretch;
 };
 
 StructuredBuffer<MarineSnowFrameData> _HectonMarineSnowFrame;

@@ -116,8 +116,8 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (celestialEngine == null)
-                celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance != null
-                    ? HectonCelestialEngine.ActiveRuntimeInstance
+                celestialEngine = GlobalRegistry.CelestialEngine != null
+                    ? GlobalRegistry.CelestialEngine
                     : UnityEngine.Object.FindAnyObjectByType<HectonCelestialEngine>(FindObjectsInactive.Include);
 
             if (eclipseGameplaySystem == null)

@@ -11,7 +11,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9922)]
-    public sealed class PlayerInventoryManager : MonoBehaviour, IPlayerInventoryService, IUpdatable
+    public sealed class PlayerInventoryManager : MonoBehaviour, IPlayerInventoryService, IUpdatable, IServiceHeartbeat
     {
         [Header("── Inventory Capacity ──────────────────")]
         [Tooltip("Authoritative player carry-capacity ceiling used by UI/readiness systems. Current inventory mass above this value is treated as encumbered.")]
@@ -29,6 +29,13 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
+
         internal float CarryCapacityKilograms => Mathf.Max(1f, carryCapacityKilograms);
         internal PlayerToolManager CachedToolManager => _toolManager;
         internal PlayerInventory CachedInventory => _inventory;

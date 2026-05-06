@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -155,6 +156,15 @@ namespace Hecton8.Atmosphere
             Vector2 windDirection,
             float intensity)
         {
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals == null)
+                return;
+
+            Vector3 decalPosition = centerPosition;
+            decalPosition.y = surfaceY + 0.01f;
+            Vector3 driftVelocity = new Vector3(windDirection.x, 0f, windDirection.y) *
+                                    Mathf.Lerp(0.5f, 3.5f, Mathf.Clamp01(intensity));
+            fluidDecals.RegisterWaterSplash(decalPosition, driftVelocity, intensity);
         }
 
         /// <summary>

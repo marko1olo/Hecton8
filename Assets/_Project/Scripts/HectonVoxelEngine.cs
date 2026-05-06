@@ -503,7 +503,7 @@ public struct VoxelDensityJob : IJobParallelFor
         float terrainH = SampleTerrainHeight(wp.xz);
         float terrainDensity = structureOnlyMode
             ? -1f
-            : math.clamp(terrainH - wp.y, -50f, 50f);
+            : VoxelSeamDirector.ComputeTerrainDensity(terrainH, wp.y);
 
         smoothDensityValue = terrainDensity;
         finalDensityValue = terrainDensity;
@@ -761,8 +761,12 @@ public struct VoxelDensityJob : IJobParallelFor
         float baseFinalCaveDist = finalCaveDist;
         if (math.abs(baseFinalCaveDist) < caveParams.noiseEvalDistance)
         {
-            finalCaveDist += EvaluateWallDetail(absoluteWp, baseFinalCaveDist);
-            finalCaveDist -= EvaluateFractalNoiseCarve(warpedAbsolutePos, absoluteWp, baseFinalCaveDist);
+            float mouthPerturbationMask = EvaluateCaveMouthSdfPerturbationMask(wp);
+            if (mouthPerturbationMask > 0.0001f)
+            {
+                finalCaveDist += EvaluateWallDetail(absoluteWp, baseFinalCaveDist) * mouthPerturbationMask;
+                finalCaveDist -= EvaluateFractalNoiseCarve(warpedAbsolutePos, absoluteWp, baseFinalCaveDist) * mouthPerturbationMask;
+            }
         }
     }
 
@@ -1029,6 +1033,20 @@ public struct VoxelDensityJob : IJobParallelFor
             math.max(entrance.innerRadius, entrance.radius * 0.85f));
 
         return SmoothMinExp(core, flare, caveParams.entranceBlendK * 0.4f);
+    }
+
+    float EvaluateCaveMouthSdfPerturbationMask(float3 wp)
+    {
+        float mask = 1f;
+        for (int i = 0; i < caveEntrances.Length; i++)
+        {
+            CaveEntrance entrance = caveEntrances[i];
+            float radius = math.max(entrance.radius, voxelStep);
+            float distance = math.length(wp - entrance.surfacePosition);
+            mask = math.min(mask, math.smoothstep(radius * 1.35f, radius * 2.75f, distance));
+        }
+
+        return mask;
     }
 
     void EvaluateStructuresSDF(float3 wp, out float smoothStructDist, out float finalStructDist)
@@ -2390,8 +2408,7 @@ public struct VoxelColorJob : IJobParallelFor
                 continue;
 
             weight = localWeight;
-            float caveCutDepth01 = math.saturate(1f - distance / math.max(radius * 1.85f, voxelStep));
-            float mouthDarkening = caveCutDepth01 * caveCutDepth01 * blend * 0.58f;
+            float mouthDarkening = math.saturate(1f - distance / math.max(radius * 1.85f, voxelStep)) * blend * 0.58f;
             terrainColor = math.saturate(entrance.terrainSplatColor);
             terrainColor.xyz *= 1f - mouthDarkening;
         }
@@ -2572,19 +2589,24 @@ public class HectonVoxelEngine : MonoBehaviour
     private const int DeferredVoxelPhysicsBakeBackpressureThreshold = 64;
     private const int DeferredVoxelPhysicsBakeBackpressureReleaseThreshold = 32;
     private const int DeferredVoxelPhysicsBakeTeardownCapacity = 2048;
+    private static readonly long ChunkGenerationFrameBudgetTicks = Stopwatch.Frequency / 500L;
     private const byte DeferredVoxelBakeDestroyOwner = 1 << 0;
     private const float VoxelLodColliderDisableDistanceMeters = 200f;
     private const int VoxelPhysicsBakeMeshPoolSize = 32;
     private const string VoxelPhysicsBakePoolMeshName = "VoxelPhysicsBakePool";
+    private const float VoxelAnomalySolveWarningMs = 0.2f;
     private const byte DeltaModeAdditive = 1 << 0;
     private const byte DeltaModeReplace = 1 << 1;
     private const string NativeMemoryOwner = nameof(HectonVoxelEngine);
-    private const string ModifiedCellsNativeMemoryLabelPrefix = "VoxelPipelineData.ModifiedCells.";
-    private const string SpawnPointListNativeMemoryLabelPrefix = "VoxelPipelineData.SpawnPointList.";
+    private const string ModifiedCellsNativeMemoryLabel = "VoxelPipelineData.ModifiedCells";
+    private const string SpawnPointListNativeMemoryLabel = "VoxelPipelineData.SpawnPointList";
     private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
     private static readonly uint _VoxelTeardownBackpressureWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Voxel.PhysicsBake.TeardownBackpressure"));
     private static readonly uint _VoxelPhysicsBakePoolExhaustedWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Voxel.PhysicsBake.MeshPoolExhausted"));
     private static readonly uint _VoxelPhysicsBakeContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonVoxelEngine.PhysicsBake"));
+    private static readonly uint _VoxelAnomalySolveWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Voxel.Anomaly.SolveBudgetExceeded"));
+    private static readonly uint _VoxelAnomalyContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonVoxelEngine.AnomalySolve"));
+    private static bool _voxelAnomalySolveWarningArmed;
 
     // ╔═══════════════════════════════════════════════╗
     // ║           INSPECTOR SETTINGS                  ║
@@ -2626,9 +2648,24 @@ public class HectonVoxelEngine : MonoBehaviour
     // ── Constants ──
     const float ABYSSAL_MAX_DEPTH = 5000f;
     const float TerrainVoxelSeamTransitionBand = VoxelSeamDirector.SeamTransitionBandMeters;
+    const float ChthonicPillarRadiusMeters = 50f;
+    const float ChthonicPillarHeightMeters = 1000f;
+    const float ChthonicPillarEdgeWarpMeters = 24f;
+    const float ChthonicPillarNoiseFrequency = 0.004f;
+    const float ChthonicPillarMinimumProminenceMeters = 24f;
+    const float ChthonicPillarTectonicBoundaryFrequencyFallback = 0.0065f;
+    const uint ChthonicPillarTectonicBoundarySeedFallback = 83117u;
+    const float ChthonicPillarMinimumTectonicBoundaryMask = 0.55f;
+    const float CliffOverhangSlopeThreshold = 1.7320508f;
+    const float CliffOverhangLateralAmplitudeMeters = 1.25f;
+    const float CliffOverhangNoiseFrequency = 0.075f;
+    const float CliffOverhangBlendStrength = 0.55f;
     const int JOB_BATCH = 64;
     const int ActiveVolumeRegistryCapacity = 64;
     const int AirPocketRegistryCapacity = 64;
+    const double VoxelRebuildBudgetMilliseconds = 5.0d;
+    const int VoxelRebuildBudgetStrikeFrames = 3;
+    const uint VoxelRebuildLaneHash = 0x56584F4Cu;
 
     /// <summary>
     /// MC raw buffer multiplier. 2× totalCells instead of 15× (worst case).
@@ -2641,7 +2678,8 @@ public class HectonVoxelEngine : MonoBehaviour
     static int _liveEngineCount;
     static int _activeGenerationOperations;
     static int _shutdownRequested;
-    internal static HectonVoxelEngine ActiveRuntimeInstance { get; private set; }
+    static int _voxelRebuildOverBudgetConsecutive;
+    internal static HectonVoxelEngine ActiveRuntimeInstance => GlobalRegistry.VoxelEngine;
     private static int _airPocketCount;
     private static readonly Vector3[] _airPocketCenters = new Vector3[AirPocketRegistryCapacity]; // COLD ALLOC: Vector3[64] - fixed voxel air-pocket centers - owner: HectonVoxelEngine
     private static readonly Vector3[] _airPocketHalfExtents = new Vector3[AirPocketRegistryCapacity]; // COLD ALLOC: Vector3[64] - fixed voxel air-pocket AABB extents - owner: HectonVoxelEngine
@@ -2653,7 +2691,7 @@ public class HectonVoxelEngine : MonoBehaviour
         _liveEngineCount = 0;
         _activeGenerationOperations = 0;
         _shutdownRequested = 0;
-        ActiveRuntimeInstance = null;
+        _voxelRebuildOverBudgetConsecutive = 0;
         ClearAirPocketRegistry();
         _deferredVoxelPhysicsBakeTeardowns.Clear();
         _deferredVoxelPhysicsBakeTeardownRegistered = false;
@@ -2818,6 +2856,10 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<float> GridBiome;
         public NativeArray<float> DensityField;
         public NativeArray<float> SmoothDensityField;
+        public NativeArray<float> OverhangDensityField;
+        public NativeArray<AnomalyFeatureRecord> AnomalyFeatureRecords;
+        public NativeArray<byte> AnomalyFissureMask;
+        public NativeArray<AnomalyFeatureRecord> SelectedPillarFeature;
         public NativeArray<int> ChunkContentFlags;
         public NativeArray<int> CellVertexCounts;
         public NativeArray<int> CellVertexOffsets;
@@ -2829,6 +2871,10 @@ public class HectonVoxelEngine : MonoBehaviour
             HectonVoxelEngine.DisposeTrackedNativeArray(ref GridBiome);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref DensityField);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref SmoothDensityField);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref OverhangDensityField);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref AnomalyFeatureRecords);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref AnomalyFissureMask);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref SelectedPillarFeature);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref ChunkContentFlags);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref CellVertexCounts);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref CellVertexOffsets);
@@ -2845,6 +2891,10 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<float> GridBiome;
         public NativeArray<float> DensityField;
         public NativeArray<float> SmoothDensityField;
+        public NativeArray<float> OverhangDensityField;
+        public NativeArray<AnomalyFeatureRecord> AnomalyFeatureRecords;
+        public NativeArray<byte> AnomalyFissureMask;
+        public NativeArray<AnomalyFeatureRecord> SelectedPillarFeature;
         public NativeArray<int> ChunkContentFlags;
         public NativeArray<int> CellVertexCounts;
         public NativeArray<int> CellVertexOffsets;
@@ -2858,6 +2908,10 @@ public class HectonVoxelEngine : MonoBehaviour
             NativeArray<float> gridBiome,
             NativeArray<float> densityField,
             NativeArray<float> smoothDensityField,
+            NativeArray<float> overhangDensityField,
+            NativeArray<AnomalyFeatureRecord> anomalyFeatureRecords,
+            NativeArray<byte> anomalyFissureMask,
+            NativeArray<AnomalyFeatureRecord> selectedPillarFeature,
             NativeArray<int> chunkContentFlags,
             NativeArray<int> cellVertexCounts,
             NativeArray<int> cellVertexOffsets)
@@ -2868,6 +2922,10 @@ public class HectonVoxelEngine : MonoBehaviour
             GridBiome = gridBiome;
             DensityField = densityField;
             SmoothDensityField = smoothDensityField;
+            OverhangDensityField = overhangDensityField;
+            AnomalyFeatureRecords = anomalyFeatureRecords;
+            AnomalyFissureMask = anomalyFissureMask;
+            SelectedPillarFeature = selectedPillarFeature;
             ChunkContentFlags = chunkContentFlags;
             CellVertexCounts = cellVertexCounts;
             CellVertexOffsets = cellVertexOffsets;
@@ -2916,7 +2974,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<CaveStructure> Structures;
         public NativeArray<VoxelCraterStamp> CraterStamps;
         public NativeParallelHashMap<int3, VoxelModifiedCell> ModifiedCells;
-        public string ModifiedCellsNativeMemoryLabel;
+        public int ModifiedCellsNativeMemoryId;
         public NativeArray<MCRawVertex> RawVertices;
         public NativeArray<float3> WeldedPositions;
         public NativeArray<int> TriangleIndices;
@@ -2931,7 +2989,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<float> DirtyBlendValues;
         public NativeArray<Color> Colors;
         public NativeList<CaveSpawnData> SpawnPointList;
-        public string SpawnPointListNativeMemoryLabel;
+        public int SpawnPointListNativeMemoryId;
         public int PartitionDimX;
         public int PartitionDimY;
         public int PartitionDimZ;
@@ -2949,12 +3007,11 @@ public class HectonVoxelEngine : MonoBehaviour
             ScratchLease.Dispose();
             if (ModifiedCells.IsCreated)
             {
-                if (!string.IsNullOrEmpty(ModifiedCellsNativeMemoryLabel))
-                    NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, ModifiedCellsNativeMemoryLabel);
+                NativeMemorySentinel.Unregister(ModifiedCellsNativeMemoryId);
 
                 ModifiedCells.Dispose(default);
                 ModifiedCells = default;
-                ModifiedCellsNativeMemoryLabel = null;
+                ModifiedCellsNativeMemoryId = 0;
             }
 
             HectonVoxelEngine.DisposeTrackedNativeArray(ref RawVertices);
@@ -2972,12 +3029,11 @@ public class HectonVoxelEngine : MonoBehaviour
             HectonVoxelEngine.DisposeTrackedNativeArray(ref Colors);
             if (SpawnPointList.IsCreated)
             {
-                if (!string.IsNullOrEmpty(SpawnPointListNativeMemoryLabel))
-                    NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, SpawnPointListNativeMemoryLabel);
+                NativeMemorySentinel.Unregister(SpawnPointListNativeMemoryId);
 
                 SpawnPointList.Dispose(default);
                 SpawnPointList = default;
-                SpawnPointListNativeMemoryLabel = null;
+                SpawnPointListNativeMemoryId = 0;
             }
             HectonVoxelEngine.DisposeTrackedNativeArray(ref NodeBucketOffsets);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref NodeBucketIndices);
@@ -3008,7 +3064,7 @@ public class HectonVoxelEngine : MonoBehaviour
             return;
 
         _teardownStreamingScratchRequested = false;
-        ActiveRuntimeInstance = this;
+        GlobalRegistry.RegisterVoxelEngineRuntime(this);
         EnsureVoxelBakeGhostMaterial();
         EnsureVoxelPhysicsBakeMeshPool();
         _deltaProcessor = GetComponent<VoxelDeltaProcessor>();
@@ -3148,7 +3204,9 @@ public class HectonVoxelEngine : MonoBehaviour
             CaveGraphGenerator.Validate(caveNodes, caveTunnels, caveEntrances, worldCenter, volumeHalfExtent);
 #endif
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log(CaveGraphGenerator.GetSummary(caveNodes, caveTunnels, caveEntrances));
+#endif
 
             pipelineData = new VoxelPipelineData
             {
@@ -3184,11 +3242,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 return null;
 
             GameObject targetGO = SpawnVolume();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            targetGO.name = $"Cave_{preset.presetType}_{seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
-#else
             targetGO.name = RuntimeCaveVolumeName;
-#endif
 
             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
@@ -3214,12 +3268,7 @@ public class HectonVoxelEngine : MonoBehaviour
             RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            int spawnCount = pipelineData.SpawnPointList.IsCreated ? pipelineData.SpawnPointList.Length : 0;
-            float reduction = (1f - (float)pipelineData.WeldedCount / pipelineData.RawCount) * 100f;
-            float coverageM = gridDim * voxelStep;
-            Debug.Log($"[HectonVoxel] Cave '{targetGO.name}': lod={clampedLodLevel} grid={gridDim}^3 voxel={voxelStep}m coverage={coverageM:F0}m | " +
-                      $"{pipelineData.RawCount} raw -> {pipelineData.WeldedCount} welded ({reduction:F0}% reduction) | " +
-                      $"{pipelineData.RawCount / 3} tris | {spawnCount} spawn points");
+            Debug.Log("[HectonVoxel] Cave volume generated.");
 #endif
             return targetGO;
         }
@@ -3390,10 +3439,9 @@ public class HectonVoxelEngine : MonoBehaviour
 
             if (RuntimeDiagnosticsTrace.IsActive)
             {
-                float setupMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "voxel.pipeline",
-                    $"preawait grid={gridDim} voxel={voxelStep:0.00} lod={clampedLodLevel} pts={totalPts} cells={totalCells} setup={setupMs:0.00}ms collider={buildCollider}");
+                    "preawait");
             }
 
             if (!await ExecuteVoxelPipelineAsync(pipelineData, ct))
@@ -3401,18 +3449,13 @@ public class HectonVoxelEngine : MonoBehaviour
 
             if (RuntimeDiagnosticsTrace.IsActive)
             {
-                float surfaceMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "voxel.pipeline",
-                    $"surface-data grid={gridDim} voxel={voxelStep:0.00} lod={clampedLodLevel} rawVerts={pipelineData.RawCount} weldedVerts={pipelineData.WeldedCount} spawnPoints={pipelineData.SpawnPointList.Length} elapsed={surfaceMs:0.00}ms");
+                    "surface-data");
             }
 
             GameObject targetGO = SpawnVolume();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            targetGO.name = $"Cave_Data_{caveParams.seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
-#else
             targetGO.name = RuntimeCaveVolumeName;
-#endif
 
             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
@@ -3439,14 +3482,13 @@ public class HectonVoxelEngine : MonoBehaviour
 
             if (RuntimeDiagnosticsTrace.IsActive)
             {
-                float totalMs = (float)((Stopwatch.GetTimestamp() - generationStartTimestamp) * 1000.0d / Stopwatch.Frequency);
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "voxel.pipeline",
-                    $"mesh-build grid={gridDim} voxel={voxelStep:0.00} lod={clampedLodLevel} collider={buildCollider} spawnPoints={pipelineData.SpawnPointList.Length} total={totalMs:0.00}ms");
+                    "mesh-build");
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[HectonVoxel] Data volume generated seed={caveParams.seed} grid={gridDim} voxel={voxelStep:F2} lod={clampedLodLevel}.");
+            Debug.Log("[HectonVoxel] Data volume generated.");
 #endif
             return targetGO;
         }
@@ -3558,17 +3600,16 @@ public class HectonVoxelEngine : MonoBehaviour
                 terrainHeightCenter = sampledHeight;
 
             NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells = default;
-            string modifiedCellsNativeMemoryLabel = null;
+            int modifiedCellsNativeMemoryId = 0;
             if (_deltaProcessor != null)
                 _deltaProcessor.TryBuildDeltaMapForVolume(volume, out modifiedCells);
 
             if (modifiedCells.IsCreated)
             {
-                modifiedCellsNativeMemoryLabel = BuildModifiedCellsNativeMemoryLabel(volume, expectedRuntimeStamp);
-                NativeMemorySentinel.RegisterNativeParallelHashMap(
+                modifiedCellsNativeMemoryId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(
                     modifiedCells,
                     NativeMemoryOwner,
-                    modifiedCellsNativeMemoryLabel,
+                    ModifiedCellsNativeMemoryLabel,
                     NativeMemoryLifetime);
             }
 
@@ -3603,7 +3644,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 Structures = structures,
                 CraterStamps = craterStamps,
                 ModifiedCells = modifiedCells,
-                ModifiedCellsNativeMemoryLabel = modifiedCellsNativeMemoryLabel
+                ModifiedCellsNativeMemoryId = modifiedCellsNativeMemoryId
             };
 
             if (!await ExecuteVoxelPipelineAsync(pipelineData, ct))
@@ -3706,7 +3747,7 @@ public class HectonVoxelEngine : MonoBehaviour
     /// <summary>
     /// Despawns active voxel volumes whose runtime center lies inside the supplied XZ bounds.
     /// </summary>
-    internal int DespawnVolumesInsideXZ(float minX, float maxX, float minZ, float maxZ)
+    internal int DespawnVolumesInsideAbsoluteXZ(double minX, double maxX, double minZ, double maxZ)
     {
         int despawned = 0;
         for (int i = _activeVolumes.Count - 1; i >= 0; i--)
@@ -3718,9 +3759,18 @@ public class HectonVoxelEngine : MonoBehaviour
                 continue;
             }
 
-            Vector3 position = activeVolume.transform.position;
-            if (position.x < minX || position.x > maxX ||
-                position.z < minZ || position.z > maxZ)
+            HectonVoxelVolume volume = i < _activeVolumeComponents.Count ? _activeVolumeComponents[i] : null;
+            if (volume == null || !volume.HasRuntimeData)
+                continue;
+
+            Vector3 absolutePosition = volume.GenerationAbsoluteUniversePosition;
+            AbsoluteUniversePosition volumeAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                absolutePosition.x,
+                absolutePosition.y,
+                absolutePosition.z));
+            double3 resolvedPosition = volumeAup.ToAbsoluteDouble3();
+            if (resolvedPosition.x < minX || resolvedPosition.x > maxX ||
+                resolvedPosition.z < minZ || resolvedPosition.z > maxZ)
                 continue;
 
             DespawnVolume(activeVolume);
@@ -3810,7 +3860,8 @@ public class HectonVoxelEngine : MonoBehaviour
     internal bool TryGetNearestActiveVolume(Vector3 worldPosition, out Hecton8.Caves.HectonVoxelVolume nearestVolume)
     {
         nearestVolume = null;
-        float bestSqrDistance = float.PositiveInfinity;
+        AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+        double bestSqrDistance = double.PositiveInfinity;
 
         for (int i = 0; i < _activeVolumes.Count; i++)
         {
@@ -3824,7 +3875,12 @@ public class HectonVoxelEngine : MonoBehaviour
                 continue;
             }
 
-            float sqrDistance = (volume.generationPosition - worldPosition).sqrMagnitude;
+            Vector3 volumeAbsolute = volume.GenerationAbsoluteUniversePosition;
+            AbsoluteUniversePosition volumeAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                volumeAbsolute.x,
+                volumeAbsolute.y,
+                volumeAbsolute.z));
+            double sqrDistance = AbsoluteUniversePosition.DistanceSq(in volumeAup, in queryAup);
             if (sqrDistance >= bestSqrDistance)
                 continue;
 
@@ -3850,7 +3906,7 @@ public class HectonVoxelEngine : MonoBehaviour
         TryFinalizeStreamingScratchTeardown();
 
         if (ReferenceEquals(ActiveRuntimeInstance, this))
-            ActiveRuntimeInstance = null;
+            GlobalRegistry.UnregisterVoxelEngineRuntime(this);
 
         if (_registeredLiveEngine)
         {
@@ -3912,6 +3968,16 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             DispatcherJobSwap.TryComplete(ref handle, true);
         }
+    }
+
+    static async Awaitable<long> YieldIfChunkGenerationBudgetExpiredAsync(long frameStartTimestamp, CancellationToken ct)
+    {
+        if (Stopwatch.GetTimestamp() - frameStartTimestamp < ChunkGenerationFrameBudgetTicks)
+            return frameStartTimestamp;
+
+        await Awaitable.NextFrameAsync(cancellationToken: ct);
+        ct.ThrowIfCancellationRequested();
+        return Stopwatch.GetTimestamp();
     }
 
     static async Awaitable<bool> AwaitForPhysicsBakeCompletionOrDeferAsync(
@@ -4175,6 +4241,47 @@ public class HectonVoxelEngine : MonoBehaviour
             VoxelLodColliderDisableDistanceMeters);
     }
 
+    private static bool ShouldUseCinematicColliderFake(in VoxelPipelineData data)
+    {
+        if (!data.BuildCollider || data.LODLevel > 0)
+            return false;
+
+        if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            return false;
+
+        AbsoluteUniversePosition volumeAup = BuildCapturedAup(data.WorldCenter, data.AbsoluteUniverseOffsetAtStart);
+        double distanceSq = AbsoluteUniversePosition.DistanceSq(in volumeAup, in playerAup);
+        double thresholdSq = (double)VoxelLodColliderDisableDistanceMeters * VoxelLodColliderDisableDistanceMeters;
+        return distanceSq > thresholdSq;
+    }
+
+    private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+    {
+        if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+        {
+            playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            return true;
+        }
+
+        Transform bootstrapPlayer = BootstrapState.CurrentPlayerTransform;
+        if (bootstrapPlayer != null)
+        {
+            playerAup = AbsoluteUniversePosition.FromRuntimePosition(bootstrapPlayer.position);
+            return true;
+        }
+
+        playerAup = default;
+        return false;
+    }
+
+    private static AbsoluteUniversePosition BuildCapturedAup(Vector3 runtimePosition, Vector3 capturedOffset)
+    {
+        return AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+            (double)runtimePosition.x + capturedOffset.x,
+            (double)runtimePosition.y + capturedOffset.y,
+            (double)runtimePosition.z + capturedOffset.z));
+    }
+
     private static bool ResolveDeferredVoxelPhysicsBakeBackpressureState(int pendingCount, bool currentlyActive)
     {
         return VoxelRuntimeIntegrityUtility.ResolveBackpressureState(
@@ -4263,11 +4370,79 @@ public class HectonVoxelEngine : MonoBehaviour
         return false;
     }
 
+    private static void PublishVoxelAnomalySolveWarningIfNeeded(long startTimestamp)
+    {
+        float elapsedMs = (float)((Stopwatch.GetTimestamp() - startTimestamp) * 1000.0d / Stopwatch.Frequency);
+        if (elapsedMs <= VoxelAnomalySolveWarningMs)
+        {
+            _voxelAnomalySolveWarningArmed = false;
+            return;
+        }
+
+        if (_voxelAnomalySolveWarningArmed)
+            return;
+
+        _voxelAnomalySolveWarningArmed = true;
+        GlobalTelemetryBus.PublishPerformanceWarning(
+            _VoxelAnomalySolveWarningHash,
+            _VoxelAnomalyContextHash,
+            elapsedMs);
+    }
+
     static void LogVoxelJobWaitWatchdog(string context, int waitFrames)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogError($"[HectonVoxel] Job wait watchdog tripped. Context={context}. Frames={waitFrames}. Cleanup barrier required.");
+        Debug.LogError("[HectonVoxel] Job wait watchdog tripped. Cleanup barrier required.");
 #endif
+    }
+
+    static void TryBindSelectedChthonicPillarResources(NativeArray<AnomalyFeatureRecord> selectedPillarFeature)
+    {
+        if (!selectedPillarFeature.IsCreated || selectedPillarFeature.Length <= 0)
+            return;
+
+        AnomalyFeatureRecord record = selectedPillarFeature[0];
+        if (record.Valid == 0 || record.Kind != (byte)AnomalyFeatureKind.ChthonicPillar)
+            return;
+
+        ResourceDistributionDirector director = GlobalRegistry.ResourceDistribution;
+        if (director == null)
+            return;
+
+        director.TryBindChthonicPillarResourcesAtAup(
+            new double3(record.AupX, record.AupY, record.AupZ),
+            ChthonicPillarRadiusMeters,
+            ChthonicPillarHeightMeters,
+            ComputeChthonicPillarStableId(in record));
+    }
+
+    static uint ComputeChthonicPillarStableId(in AnomalyFeatureRecord record)
+    {
+        uint hash = 2166136261u;
+        hash = HashPillarCoordinate(hash, QuantizePillarCoordinate(record.AupX));
+        hash = HashPillarCoordinate(hash, QuantizePillarCoordinate(record.AupY));
+        hash = HashPillarCoordinate(hash, QuantizePillarCoordinate(record.AupZ));
+        return hash == 0u ? 1u : hash;
+    }
+
+    static long QuantizePillarCoordinate(double value)
+    {
+        return value >= 0d
+            ? (long)(value + 0.5d)
+            : (long)(value - 0.5d);
+    }
+
+    static uint HashPillarCoordinate(uint hash, long value)
+    {
+        unchecked
+        {
+            ulong folded = (ulong)value;
+            hash ^= (uint)folded;
+            hash *= 16777619u;
+            hash ^= (uint)(folded >> 32);
+            hash *= 16777619u;
+            return hash;
+        }
     }
 
     async Awaitable<bool> ExecuteVoxelPipelineAsync(VoxelPipelineData data, CancellationToken ct)
@@ -4281,9 +4456,14 @@ public class HectonVoxelEngine : MonoBehaviour
         NativeArray<float> gridBiome = data.ScratchLease.GridBiome;
         NativeArray<float> densityField = data.ScratchLease.DensityField;
         NativeArray<float> smoothDensityField = data.ScratchLease.SmoothDensityField;
+        NativeArray<float> overhangDensityField = data.ScratchLease.OverhangDensityField;
+        NativeArray<AnomalyFeatureRecord> anomalyFeatureRecords = data.ScratchLease.AnomalyFeatureRecords;
+        NativeArray<byte> anomalyFissureMask = data.ScratchLease.AnomalyFissureMask;
+        NativeArray<AnomalyFeatureRecord> selectedPillarFeature = data.ScratchLease.SelectedPillarFeature;
         NativeArray<int> chunkContentFlags = data.ScratchLease.ChunkContentFlags;
         NativeArray<int> cellVertexCounts = data.ScratchLease.CellVertexCounts;
         NativeArray<int> cellVertexOffsets = data.ScratchLease.CellVertexOffsets;
+        long chunkGenerationFrameStart = Stopwatch.GetTimestamp();
 
         float fallbackHeight = data.TerrainHeightCenter;
         bool sampledHeightGrid = false;
@@ -4303,22 +4483,30 @@ public class HectonVoxelEngine : MonoBehaviour
         if (!sampledHeightGrid)
         {
             for (int iz = 0; iz < data.PtsZ; iz++)
-            for (int ix = 0; ix < data.PtsX; ix++)
             {
-                float wx = data.VolumeOrigin.x + ix * data.VoxelStep;
-                float wz = data.VolumeOrigin.z + iz * data.VoxelStep;
-                int hi = ix + iz * data.PtsX;
+                for (int ix = 0; ix < data.PtsX; ix++)
+                {
+                    float wx = data.VolumeOrigin.x + ix * data.VoxelStep;
+                    float wz = data.VolumeOrigin.z + iz * data.VoxelStep;
+                    int hi = ix + iz * data.PtsX;
 
-                Vector3 absoluteSamplePosition = new Vector3(wx, 0f, wz) + data.AbsoluteUniverseOffsetAtStart;
-                if (mapMagicBridge.TryGetHeightAUP(absoluteSamplePosition, out float sampledHeight))
-                    terrainHeights[hi] = sampledHeight;
-                else
-                    terrainHeights[hi] = fallbackHeight;
+                    Vector3 absoluteSamplePosition = new Vector3(wx, 0f, wz) + data.AbsoluteUniverseOffsetAtStart;
+                    if (mapMagicBridge.TryGetHeightAUP(absoluteSamplePosition, out float sampledHeight))
+                        terrainHeights[hi] = sampledHeight;
+                    else
+                        terrainHeights[hi] = fallbackHeight;
+                }
+
+                chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
             }
         }
 
         for (int i = 0; i < gridBiome.Length; i++)
+        {
             gridBiome[i] = 0f;
+            if ((i & 1023) == 1023)
+                chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
+        }
 
         ct.ThrowIfCancellationRequested();
         NativeArray<byte> navGridBackBuffer = default;
@@ -4363,6 +4551,90 @@ public class HectonVoxelEngine : MonoBehaviour
             density = densityField,
             smoothDensity = smoothDensityField
         }.Schedule(data.TotalPts, JOB_BATCH);
+        long anomalySolveStartTimestamp = Stopwatch.GetTimestamp();
+
+        double3 terrainOriginAup = new double3(absoluteGridOrigin.x, 0d, absoluteGridOrigin.z);
+        double3 sdfOriginAup = new double3(
+            data.VolumeOrigin.x + data.AbsoluteUniverseOffsetAtStart.x,
+            data.VolumeOrigin.y + data.AbsoluteUniverseOffsetAtStart.y,
+            data.VolumeOrigin.z + data.AbsoluteUniverseOffsetAtStart.z);
+        JobHandle pillarDetectionHandle = HectonAnomalyEngine.ScheduleRidgeFeatureDetection(
+            terrainHeights,
+            anomalyFeatureRecords,
+            anomalyFissureMask,
+            new AnomalyRidgeDetectionSettings
+            {
+                Width = data.PtsX,
+                Height = data.PtsZ,
+                CellSizeMeters = data.VoxelStep,
+                OriginAup = terrainOriginAup,
+                MinimumPillarProminenceMeters = ChthonicPillarMinimumProminenceMeters,
+                MinimumPillarRidgeArms = 3,
+                MinimumFissureDepthMeters = float.MaxValue,
+                EqualHeightEpsilon = 0.001f,
+                FissureInfluencePacked = 0u,
+                RequireTectonicBoundary = 1,
+                TectonicBoundaryFrequency = mapMagicBridge != null
+                    ? mapMagicBridge.SandboxTectonicSpineFrequency
+                    : ChthonicPillarTectonicBoundaryFrequencyFallback,
+                TectonicBoundarySeed = mapMagicBridge != null
+                    ? mapMagicBridge.SandboxTectonicSpineSeed
+                    : ChthonicPillarTectonicBoundarySeedFallback,
+                MinimumTectonicBoundaryMask = ChthonicPillarMinimumTectonicBoundaryMask
+            });
+        JobHandle selectedPillarHandle = new SelectStrongestPillarFeatureJob
+        {
+            FeatureRecords = anomalyFeatureRecords,
+            SelectedFeature = selectedPillarFeature
+        }.Schedule(pillarDetectionHandle);
+
+        densityHandle = HectonAnomalyEngine.ApplyVoxelCliffOverhangNoise(
+            densityField,
+            overhangDensityField,
+            data.PtsX,
+            data.PtsY,
+            data.PtsZ,
+            data.VoxelStep,
+            CliffOverhangSlopeThreshold,
+            CliffOverhangLateralAmplitudeMeters,
+            CliffOverhangNoiseFrequency,
+            CliffOverhangBlendStrength,
+            densityHandle);
+        densityField = overhangDensityField;
+
+        var snapTopCellsJob = new SnapSDFTopCellsToTerrainJob
+        {
+            TerrainHeights = terrainHeights,
+            TerrainWidth = data.PtsX,
+            TerrainDepth = data.PtsZ,
+            TerrainCellSizeMeters = data.VoxelStep,
+            TerrainOriginAup = terrainOriginAup,
+            Sdf = densityField,
+            SdfWidth = data.PtsX,
+            SdfHeight = data.PtsY,
+            SdfDepth = data.PtsZ,
+            VoxelSizeMeters = data.VoxelStep,
+            SdfOriginAup = sdfOriginAup
+        };
+        densityHandle = Unity.Jobs.IJobParallelForExtensions.Schedule(
+            snapTopCellsJob,
+            data.PtsX * data.PtsZ,
+            JOB_BATCH,
+            densityHandle);
+
+        densityHandle = HectonAnomalyEngine.InjectSelectedMegaPillarSDF(
+            densityField,
+            selectedPillarFeature,
+            data.PtsX,
+            data.PtsY,
+            data.PtsZ,
+            data.VoxelStep,
+            sdfOriginAup,
+            ChthonicPillarRadiusMeters,
+            ChthonicPillarHeightMeters,
+            ChthonicPillarEdgeWarpMeters,
+            ChthonicPillarNoiseFrequency,
+            JobHandle.CombineDependencies(densityHandle, selectedPillarHandle));
 
         chunkContentFlags[0] = 1;
         JobHandle chunkContentHandle = new VoxelChunkBoundsContentJob
@@ -4375,6 +4647,7 @@ public class HectonVoxelEngine : MonoBehaviour
         }.Schedule(densityHandle);
 
         await AwaitForJobCompletionAsync(chunkContentHandle, ct, "density/content bounds phase");
+        PublishVoxelAnomalySolveWarningIfNeeded(anomalySolveStartTimestamp);
         ct.ThrowIfCancellationRequested();
         if (chunkContentFlags[0] == 0)
         {
@@ -4478,6 +4751,8 @@ public class HectonVoxelEngine : MonoBehaviour
         }
         if (navGridScheduled)
             VoxelDynamicNavGridRuntime.CommitBuild(data.SourceVolume, data.SourceRuntimeStamp);
+
+        TryBindSelectedChthonicPillarResources(selectedPillarFeature);
 
         int exactRawVertexCount = 0;
         for (int cellIndex = 0; cellIndex < data.TotalCells; cellIndex++)
@@ -4596,13 +4871,10 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             int maxSpawnPoints = math.max(data.WeldedCount / 20, 64);
             data.SpawnPointList = new NativeList<CaveSpawnData>(maxSpawnPoints, Allocator.Persistent);
-            data.SpawnPointListNativeMemoryLabel = BuildSpawnPointListNativeMemoryLabel(
-                data.SourceVolume,
-                data.SourceRuntimeStamp);
-            NativeMemorySentinel.RegisterNativeList(
+            data.SpawnPointListNativeMemoryId = NativeMemorySentinel.RegisterNativeListInstance(
                 data.SpawnPointList,
                 NativeMemoryOwner,
-                data.SpawnPointListNativeMemoryLabel,
+                SpawnPointListNativeMemoryLabel,
                 NativeMemoryLifetime);
         }
 
@@ -4750,9 +5022,9 @@ public class HectonVoxelEngine : MonoBehaviour
         int totalCellCount,
         int waitFrames)
     {
-        GetStreamingScratchLeaseState(out int slotCount, out int inUseCount, out bool teardownRequested);
-        int activeGenerationOperations = Volatile.Read(ref _activeGenerationOperations);
-        Debug.LogError($"[HectonVoxel] Streaming scratch lease timed out after {waitFrames} frames. slots={slotCount} inUse={inUseCount} teardown={teardownRequested} activeOps={activeGenerationOperations} height={heightCount} points={totalPointCount} cells={totalCellCount}.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        Debug.LogError("[HectonVoxel] Streaming scratch lease timed out.");
+#endif
     }
 
     void GetStreamingScratchLeaseState(out int slotCount, out int inUseCount, out bool teardownRequested)
@@ -4800,6 +5072,10 @@ public class HectonVoxelEngine : MonoBehaviour
                     slot.GridBiome,
                     slot.DensityField,
                     slot.SmoothDensityField,
+                    slot.OverhangDensityField,
+                    slot.AnomalyFeatureRecords,
+                    slot.AnomalyFissureMask,
+                    slot.SelectedPillarFeature,
                     slot.ChunkContentFlags,
                     slot.CellVertexCounts,
                     slot.CellVertexOffsets);
@@ -4886,6 +5162,10 @@ public class HectonVoxelEngine : MonoBehaviour
         EnsureNativeArrayCapacity(ref slot.GridBiome, heightCount, nameof(VoxelStreamingScratchSlot.GridBiome));
         EnsureNativeArrayCapacity(ref slot.DensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.DensityField));
         EnsureNativeArrayCapacity(ref slot.SmoothDensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.SmoothDensityField));
+        EnsureNativeArrayCapacity(ref slot.OverhangDensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.OverhangDensityField));
+        EnsureNativeArrayCapacity(ref slot.AnomalyFeatureRecords, heightCount, nameof(VoxelStreamingScratchSlot.AnomalyFeatureRecords));
+        EnsureNativeArrayCapacity(ref slot.AnomalyFissureMask, heightCount, nameof(VoxelStreamingScratchSlot.AnomalyFissureMask));
+        EnsureNativeArrayCapacity(ref slot.SelectedPillarFeature, 1, nameof(VoxelStreamingScratchSlot.SelectedPillarFeature), true);
         EnsureNativeArrayCapacity(ref slot.ChunkContentFlags, 1, nameof(VoxelStreamingScratchSlot.ChunkContentFlags), true);
         EnsureNativeArrayCapacity(ref slot.CellVertexCounts, totalCellCount, nameof(VoxelStreamingScratchSlot.CellVertexCounts));
         EnsureNativeArrayCapacity(ref slot.CellVertexOffsets, totalCellCount, nameof(VoxelStreamingScratchSlot.CellVertexOffsets));
@@ -4922,18 +5202,6 @@ public class HectonVoxelEngine : MonoBehaviour
         NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
     }
 
-    static string BuildModifiedCellsNativeMemoryLabel(HectonVoxelVolume volume, int runtimeStamp)
-    {
-        EntityId volumeId = volume != null ? volume.GetEntityId() : default;
-        return ModifiedCellsNativeMemoryLabelPrefix + volumeId + ":" + runtimeStamp;
-    }
-
-    static string BuildSpawnPointListNativeMemoryLabel(HectonVoxelVolume volume, int runtimeStamp)
-    {
-        EntityId volumeId = volume != null ? volume.GetEntityId() : default;
-        return SpawnPointListNativeMemoryLabelPrefix + volumeId + ":" + runtimeStamp;
-    }
-
     static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
     {
         if (!array.IsCreated)
@@ -4946,19 +5214,53 @@ public class HectonVoxelEngine : MonoBehaviour
 
     void BuildSpatialPartitions(VoxelPipelineData data)
     {
-        using (ProfilerRegistry.VoxelRebuild.Auto())
+        long startTimestamp = Stopwatch.GetTimestamp();
+        try
         {
-            float3 volumeSize = new float3(data.GridDimension, data.GridDimension, data.GridDimension) * data.VoxelStep;
-            int partitionDim = math.clamp(data.GridDimension / 12, 4, 8);
-            data.PartitionDimX = partitionDim;
-            data.PartitionDimY = partitionDim;
-            data.PartitionDimZ = partitionDim;
-            data.PartitionOrigin = data.VolumeOrigin;
-            data.PartitionCellSize = volumeSize / new float3(partitionDim, partitionDim, partitionDim);
+            using (ProfilerRegistry.VoxelRebuild.Auto())
+            {
+                float3 volumeSize = new float3(data.GridDimension, data.GridDimension, data.GridDimension) * data.VoxelStep;
+                int partitionDim = math.clamp(data.GridDimension / 12, 4, 8);
+                data.PartitionDimX = partitionDim;
+                data.PartitionDimY = partitionDim;
+                data.PartitionDimZ = partitionDim;
+                data.PartitionOrigin = data.VolumeOrigin;
+                data.PartitionCellSize = volumeSize / new float3(partitionDim, partitionDim, partitionDim);
 
-            BuildNodeSpatialBuckets(data);
-            BuildTunnelSpatialBuckets(data);
+                BuildNodeSpatialBuckets(data);
+                BuildTunnelSpatialBuckets(data);
+            }
         }
+        finally
+        {
+            double elapsedMilliseconds = (Stopwatch.GetTimestamp() - startTimestamp) * 1000.0d / Stopwatch.Frequency;
+            RecordVoxelRebuildBudget(elapsedMilliseconds);
+        }
+    }
+
+    static void RecordVoxelRebuildBudget(double elapsedMilliseconds)
+    {
+        if (elapsedMilliseconds <= VoxelRebuildBudgetMilliseconds)
+        {
+            _voxelRebuildOverBudgetConsecutive = 0;
+            return;
+        }
+
+        _voxelRebuildOverBudgetConsecutive++;
+        if (_voxelRebuildOverBudgetConsecutive < VoxelRebuildBudgetStrikeFrames)
+            return;
+
+        _voxelRebuildOverBudgetConsecutive = 0;
+        LODSystemManager lodSystem = GlobalRegistry.LODSystem;
+        if (lodSystem != null)
+            lodSystem.ApplyEmergencyLODBiasStrike();
+        else
+            QualitySettings.lodBias = Mathf.Max(0.35f, QualitySettings.lodBias - 0.1f);
+
+        CrashTelemetryBuffer.ReportCriticalPerformanceSpike(
+            VoxelRebuildLaneHash,
+            elapsedMilliseconds,
+            unchecked((uint)Time.frameCount));
     }
 
     void BuildNodeSpatialBuckets(VoxelPipelineData data)
@@ -4969,6 +5271,8 @@ public class HectonVoxelEngine : MonoBehaviour
         int bucketCount = data.PartitionDimX * data.PartitionDimY * data.PartitionDimZ;
         NativeArray<int> bucketCounts = new NativeArray<int>(bucketCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
         NativeArray<int> writeHeads = default;
+        int bucketCountsMemoryId = NativeMemorySentinel.RegisterNativeArray(bucketCounts, NativeMemoryOwner, "nodeBucketCounts", NativeAllocationLifetime.Temp);
+        int writeHeadsMemoryId = 0;
 
         try
         {
@@ -5003,6 +5307,7 @@ public class HectonVoxelEngine : MonoBehaviour
             data.NodeBucketIndices = new NativeArray<int>(totalReferences, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             RegisterTrackedNativeArray(data.NodeBucketIndices, nameof(data.NodeBucketIndices));
             writeHeads = new NativeArray<int>(bucketCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            writeHeadsMemoryId = NativeMemorySentinel.RegisterNativeArray(writeHeads, NativeMemoryOwner, "nodeBucketWriteHeads", NativeAllocationLifetime.Temp);
             for (int bucketIndex = 0; bucketIndex < bucketCount; bucketIndex++)
                 writeHeads[bucketIndex] = data.NodeBucketOffsets[bucketIndex];
 
@@ -5028,6 +5333,8 @@ public class HectonVoxelEngine : MonoBehaviour
         }
         finally
         {
+            NativeMemorySentinel.Unregister(bucketCountsMemoryId);
+            NativeMemorySentinel.Unregister(writeHeadsMemoryId);
             if (bucketCounts.IsCreated) bucketCounts.Dispose();
             if (writeHeads.IsCreated) writeHeads.Dispose();
         }
@@ -5041,6 +5348,8 @@ public class HectonVoxelEngine : MonoBehaviour
         int bucketCount = data.PartitionDimX * data.PartitionDimY * data.PartitionDimZ;
         NativeArray<int> bucketCounts = new NativeArray<int>(bucketCount, Allocator.Temp, NativeArrayOptions.ClearMemory);
         NativeArray<int> writeHeads = default;
+        int bucketCountsMemoryId = NativeMemorySentinel.RegisterNativeArray(bucketCounts, NativeMemoryOwner, "tunnelBucketCounts", NativeAllocationLifetime.Temp);
+        int writeHeadsMemoryId = 0;
 
         try
         {
@@ -5075,6 +5384,7 @@ public class HectonVoxelEngine : MonoBehaviour
             data.TunnelBucketIndices = new NativeArray<int>(totalReferences, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             RegisterTrackedNativeArray(data.TunnelBucketIndices, nameof(data.TunnelBucketIndices));
             writeHeads = new NativeArray<int>(bucketCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            writeHeadsMemoryId = NativeMemorySentinel.RegisterNativeArray(writeHeads, NativeMemoryOwner, "tunnelBucketWriteHeads", NativeAllocationLifetime.Temp);
             for (int bucketIndex = 0; bucketIndex < bucketCount; bucketIndex++)
                 writeHeads[bucketIndex] = data.TunnelBucketOffsets[bucketIndex];
 
@@ -5100,6 +5410,8 @@ public class HectonVoxelEngine : MonoBehaviour
         }
         finally
         {
+            NativeMemorySentinel.Unregister(bucketCountsMemoryId);
+            NativeMemorySentinel.Unregister(writeHeadsMemoryId);
             if (bucketCounts.IsCreated) bucketCounts.Dispose();
             if (writeHeads.IsCreated) writeHeads.Dispose();
         }
@@ -5404,11 +5716,7 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             mesh = new Mesh
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                name = $"CaveMesh_{go.name}"
-#else
                 name = RuntimeCaveMeshName
-#endif
             };
             mesh.MarkDynamic();
             mf.sharedMesh = mesh;
@@ -5462,20 +5770,26 @@ public class HectonVoxelEngine : MonoBehaviour
                     projectionState.AbsolutePositionOffset,
                     voxelMaterial);
 
-                var mcol = go.GetComponent<MeshCollider>();
-                if (mcol == null) mcol = go.AddComponent<MeshCollider>();
-
                 HectonVoxelVolume volume = go.GetComponent<HectonVoxelVolume>();
+                bool buildCollider = data.BuildCollider && !ShouldUseCinematicColliderFake(in data);
+                MeshCollider mcol = go.GetComponent<MeshCollider>();
 
-                if (!data.BuildCollider)
+                if (!buildCollider)
                 {
                     if (volume != null)
                         volume.ResetColliderChunks(false);
 
-                    mcol.sharedMesh = null;
-                    mcol.enabled = false;
+                    if (mcol != null)
+                    {
+                        mcol.sharedMesh = null;
+                        mcol.enabled = false;
+                    }
+
                     return true;
                 }
+
+                if (mcol == null)
+                    mcol = go.AddComponent<MeshCollider>();
 
                 if (volume == null)
                 {
@@ -5563,6 +5877,7 @@ public class HectonVoxelEngine : MonoBehaviour
             RegisterTrackedNativeArray(bucketOffsets, nameof(bucketOffsets));
             RegisterTrackedNativeArray(bucketWriteHeads, nameof(bucketWriteHeads));
             RegisterTrackedNativeArray(chunkTriangleIndices, nameof(chunkTriangleIndices));
+            long chunkGenerationFrameStart = Stopwatch.GetTimestamp();
 
             float3 boundsMin = localVolumeOrigin;
             float3 boundsSize = new float3(data.GridDimension, data.GridDimension, data.GridDimension) * data.VoxelStep;
@@ -5580,7 +5895,11 @@ public class HectonVoxelEngine : MonoBehaviour
             await AwaitForJobCompletionAsync(classifyHandle, ct, "collider chunk classify");
 
             for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
+            {
                 bucketCounts[triangleBuckets[triangleIndex]] += 3;
+                if ((triangleIndex & 1023) == 1023)
+                    chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
+            }
 
             int runningOffset = 0;
             for (int chunkIndex = 0; chunkIndex < colliderChunkCount; chunkIndex++)
@@ -5589,6 +5908,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 bucketWriteHeads[chunkIndex] = runningOffset;
                 runningOffset += bucketCounts[chunkIndex];
             }
+            chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
 
             for (int triangleIndex = 0; triangleIndex < triangleCount; triangleIndex++)
             {
@@ -5599,6 +5919,8 @@ public class HectonVoxelEngine : MonoBehaviour
                 chunkTriangleIndices[writeHead + 1] = data.TriangleIndices[triBase + 1];
                 chunkTriangleIndices[writeHead + 2] = data.TriangleIndices[triBase + 2];
                 bucketWriteHeads[bucket] = writeHead + 3;
+                if ((triangleIndex & 1023) == 1023)
+                    chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
             }
 
             for (int chunkIndex = 0; chunkIndex < colliderChunkCount; chunkIndex++)
@@ -5632,12 +5954,18 @@ public class HectonVoxelEngine : MonoBehaviour
                 NativeParallelHashMap<int, int> localVertexMap = default;
                 NativeList<float3> localPositions = default;
                 NativeArray<int> localIndices = default;
+                int localVertexMapMemoryId = 0;
+                int localPositionsMemoryId = 0;
+                int localIndicesMemoryId = 0;
 
                 try
                 {
                     localVertexMap = new NativeParallelHashMap<int, int>(math.max(1, chunkIndexCount), Allocator.Temp);
                     localPositions = new NativeList<float3>(math.max(3, chunkIndexCount), Allocator.Temp);
                     localIndices = new NativeArray<int>(chunkIndexCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                    localVertexMapMemoryId = NativeMemorySentinel.RegisterNativeParallelHashMapInstance(localVertexMap, NativeMemoryOwner, "colliderChunkLocalVertexMap", NativeAllocationLifetime.Temp);
+                    localPositionsMemoryId = NativeMemorySentinel.RegisterNativeListInstance(localPositions, NativeMemoryOwner, "colliderChunkLocalPositions", NativeAllocationLifetime.Temp);
+                    localIndicesMemoryId = NativeMemorySentinel.RegisterNativeArray(localIndices, NativeMemoryOwner, "colliderChunkLocalIndices", NativeAllocationLifetime.Temp);
 
                     for (int localIndex = 0; localIndex < chunkIndexCount; localIndex++)
                     {
@@ -5653,9 +5981,13 @@ public class HectonVoxelEngine : MonoBehaviour
                     }
 
                     UploadColliderMesh(chunkMesh, localPositions.AsArray(), localIndices, localPositions.Length, chunkIndexCount);
+                    chunkGenerationFrameStart = await YieldIfChunkGenerationBudgetExpiredAsync(chunkGenerationFrameStart, ct);
                 }
                 finally
                 {
+                    NativeMemorySentinel.Unregister(localVertexMapMemoryId);
+                    NativeMemorySentinel.Unregister(localPositionsMemoryId);
+                    NativeMemorySentinel.Unregister(localIndicesMemoryId);
                     if (localIndices.IsCreated) localIndices.Dispose();
                     if (localPositions.IsCreated) localPositions.Dispose();
                     if (localVertexMap.IsCreated) localVertexMap.Dispose();
@@ -5812,7 +6144,8 @@ public class HectonVoxelEngine : MonoBehaviour
         Vector3 capturedTotalOffset,
         Vector3 committedTotalOffset)
     {
-        if (!spawnPointList.IsCreated || spawnPointList.Length <= 0 || ScavengePopulator.Instance == null)
+        ScavengePopulator scavengePopulator = null;
+        if (!spawnPointList.IsCreated || spawnPointList.Length <= 0 || !WorldRuntimeReferenceUtility.TryResolveScavengePopulator(ref scavengePopulator))
             return;
 
         Vector3 absoluteUniverseCenter = worldCenter + capturedTotalOffset;
@@ -5825,7 +6158,7 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             CaveSpawnData spawnData = spawnPointList[sp];
             Vector3 runtimeSpawnPosition = (Vector3)spawnData.position + capturedTotalOffset - committedTotalOffset;
-            ScavengePopulator.Instance.RegisterSpawnPoint(
+            scavengePopulator.RegisterSpawnPoint(
                 runtimeSpawnPosition,
                 Quaternion.identity,
                 Vector3.one,

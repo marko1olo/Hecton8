@@ -148,8 +148,9 @@ namespace Hecton8.Interaction
             }
 
             NarrativeEvents.RaiseDiscoveryMade(discoveryId);
-            LoreAcquiredEvent loreAcquiredEvent = new LoreAcquiredEvent(LoreDatabaseManager.ComputeLoreHash(discoveryId));
-            HectonEventBus.Publish(in loreAcquiredEvent);
+            LoreDatabaseManager loreDatabase = Hecton8.Core.GlobalRegistry.LoreDatabase;
+            if (loreDatabase != null)
+                loreDatabase.TryUnlockByHash(LoreDatabaseManager.ComputeLoreHash(discoveryId));
 
             if (linkedAudioLog != null && Hecton8.Core.GlobalRegistry.AudioLogs != null)
                 Hecton8.Core.GlobalRegistry.AudioLogs.PlayLog(linkedAudioLog);

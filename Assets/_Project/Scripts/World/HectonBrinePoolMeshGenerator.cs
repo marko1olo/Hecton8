@@ -23,6 +23,7 @@ namespace Hecton8.World
         private const uint BrineGeneratorContextHash = 0x414E4252u;
         private const int MaxGeneratedBrinePools = 32;
         private const string BrineToxicityLayerName = "BrineToxicity";
+        private const string BrinePoolObjectName = "BrinePool";
         private static readonly int BrineToxicityLayer = LayerMask.NameToLayer(BrineToxicityLayerName);
 
         [Header("Rendering")]
@@ -192,7 +193,7 @@ namespace Hecton8.World
             runtimeCenter = center;
 
             // COLD ALLOC: GameObject[1] — generated brine pool mesh and hazard — owner: HectonBrinePoolMeshGenerator
-            var poolObject = new GameObject($"BrinePool_{poolBounds.BasinId:000}");
+            var poolObject = new GameObject(BrinePoolObjectName);
             poolObject.transform.SetParent(_poolRoot, false);
             poolObject.transform.position = center;
             poolObject.transform.localScale = new Vector3(sizeX, 1f, sizeZ);
@@ -244,7 +245,7 @@ namespace Hecton8.World
             };
 
             // COLD ALLOC: Vector3[4] - one-time shared brine quad vertices - owner: HectonBrinePoolMeshGenerator
-            mesh.vertices = new[]
+            Vector3[] vertices =
             {
                 new Vector3(-0.5f, 0f, -0.5f),
                 new Vector3(0.5f, 0f, -0.5f),
@@ -252,7 +253,7 @@ namespace Hecton8.World
                 new Vector3(0.5f, 0f, 0.5f)
             };
             // COLD ALLOC: Vector2[4] - one-time shared brine quad uvs - owner: HectonBrinePoolMeshGenerator
-            mesh.uv = new[]
+            Vector2[] uvs =
             {
                 new Vector2(0f, 0f),
                 new Vector2(1f, 0f),
@@ -260,7 +261,7 @@ namespace Hecton8.World
                 new Vector2(1f, 1f)
             };
             // COLD ALLOC: Vector3[4] - one-time shared brine quad normals - owner: HectonBrinePoolMeshGenerator
-            mesh.normals = new[]
+            Vector3[] normals =
             {
                 Vector3.up,
                 Vector3.up,
@@ -268,7 +269,11 @@ namespace Hecton8.World
                 Vector3.up
             };
             // COLD ALLOC: int[6] - one-time shared brine quad indices - owner: HectonBrinePoolMeshGenerator
-            mesh.triangles = new[] { 0, 2, 1, 1, 2, 3 };
+            int[] triangles = { 0, 2, 1, 1, 2, 3 };
+            mesh.SetVertices(vertices);
+            mesh.uv = uvs;
+            mesh.SetNormals(normals);
+            mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
             _sharedPoolMesh = mesh;
             return mesh;

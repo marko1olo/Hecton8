@@ -106,7 +106,7 @@ namespace Hecton8.Dev
 
         private static void ApplyCelestialTimeScale(float scale)
         {
-            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
             if (celestialEngine != null)
                 celestialEngine.SetDebugCelestialTimeScale(Mathf.Max(1f, scale));
         }

@@ -1,6 +1,6 @@
-# HECTON-8 SAVE / LOAD RUNTIME TRUTH
+﻿# HECTON-8 SAVE / LOAD RUNTIME TRUTH
 
-Date: 2026-04-29
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: current source-backed truth for first-party save/load runtime behavior
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
@@ -74,7 +74,7 @@ Confirmed facts:
 
 Current truth:
 
-`SaveEvents` is queue-backed, not a naïve direct static action bus.
+`SaveEvents` is queue-backed, not a naÃ¯ve direct static action bus.
 
 ## Save Flow
 

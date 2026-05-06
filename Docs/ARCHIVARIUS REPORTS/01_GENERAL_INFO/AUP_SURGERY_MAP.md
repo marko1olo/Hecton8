@@ -1,10 +1,10 @@
-# HECTON-8 — AUP SURGERY BYTE MAP
-Date: 2026-05-04
-Status: REFERENCE
+﻿# HECTON-8 â€” AUP SURGERY BYTE MAP
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 **Status:** ETA SURGERY_PREPPED  
-**Target:** `AbsoluteUniversePosition` layout mutation (int64×3 + float3 → TBD)  
-**Risk:** CRITICAL — breaks binary save compatibility, native container layouts, and payload prefix offsets.  
+**Target:** `AbsoluteUniversePosition` layout mutation (int64Ã—3 + float3 â†’ TBD)  
+**Risk:** CRITICAL â€” breaks binary save compatibility, native container layouts, and payload prefix offsets.  
 **Author:** Autonomous Crusade / Pre-Surgery Mapping  
 **Date:** 2026-04-28
 
@@ -12,7 +12,7 @@ Status: REFERENCE
 
 ## 1. CURRENT LAYOUT (v7 Baseline)
 
-### `AbsoluteUniversePosition` — 36 bytes
+### `AbsoluteUniversePosition` â€” 36 bytes
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 36)]
 internal struct AbsoluteUniversePosition
@@ -26,7 +26,7 @@ internal struct AbsoluteUniversePosition
 }
 ```
 
-### `AbsoluteUniversePositionBlit128` — 48 bytes
+### `AbsoluteUniversePositionBlit128` â€” 48 bytes
 ```csharp
 [StructLayout(LayoutKind.Sequential, Pack = 16, Size = 48)]
 internal struct AbsoluteUniversePositionBlit128
@@ -35,19 +35,19 @@ internal struct AbsoluteUniversePositionBlit128
     public long   GridY;    // bytes 8-15  (int64)
     public long   GridZ;    // bytes 16-23 (int64)
     public float4 Local;    // bytes 32-47 (16-byte aligned)
-    public ulong  Reserved; // DECLARED but EXCEEDS Size=48 — UNREACHABLE MEMORY
+    public ulong  Reserved; // DECLARED but EXCEEDS Size=48 â€” UNREACHABLE MEMORY
 }
 ```
-> ⚠️ **BUG:** `Reserved` field in `AbsoluteUniversePositionBlit128` is declared after a 48-byte boundary but `Size=48`. Any write to `Reserved` is a silent 8-byte buffer overflow. Fix BEFORE surgery.
+> âš ï¸ **BUG:** `Reserved` field in `AbsoluteUniversePositionBlit128` is declared after a 48-byte boundary but `Size=48`. Any write to `Reserved` is a silent 8-byte buffer overflow. Fix BEFORE surgery.
 
 ---
 
 ## 2. STRUCTURAL CORRUPTION MAP
 
-### 2.1 `PersistentWorldItemRecord` — Runtime NativeList (192 bytes)
-| Field | Offset (v7) | Offset if AUP→48B | Δ |
+### 2.1 `PersistentWorldItemRecord` â€” Runtime NativeList (192 bytes)
+| Field | Offset (v7) | Offset if AUPâ†’48B | Î” |
 |---|---|---|---|
-| `Position` (AUP) | 0 | 0 | — |
+| `Position` (AUP) | 0 | 0 | â€” |
 | `ChunkId` (int3) | 36 | 48 | **+12** |
 | `ItemPersistentIdHash` (ulong) | 48 | 60 | **+12** |
 | `ItemPersistentId` (FixedString128) | 56 | 68 | **+12** |
@@ -57,10 +57,10 @@ internal struct AbsoluteUniversePositionBlit128
 
 > **Impact:** `_records` NativeList, `_entityStateByInstanceUid` EntityDataRecord mapping, and all chunk-hash lookups become misaligned. **Native container rebuild required.**
 
-### 2.2 `EntityDataRecord` — Runtime NativeHashMap payload (64 bytes)
-| Field | Offset (v7) | Offset if Blit128→64B | Δ |
+### 2.2 `EntityDataRecord` â€” Runtime NativeHashMap payload (64 bytes)
+| Field | Offset (v7) | Offset if Blit128â†’64B | Î” |
 |---|---|---|---|
-| `Position` (Blit128) | 0 | 0 | — |
+| `Position` (Blit128) | 0 | 0 | â€” |
 | `Quantity` (int) | 48 | 64 | **+16** |
 | `Integrity01` (float) | 52 | 68 | **+16** |
 | `InventoryHash` (int) | 56 | 72 | **+16** |
@@ -69,45 +69,45 @@ internal struct AbsoluteUniversePositionBlit128
 
 > **Impact:** `_entityStateByInstanceUid` value stride changes. Old saves loaded into new runtime = **structural memory corruption**.
 
-### 2.3 `PayloadPrefix` — Save File Binary Header (60 bytes)
-| Field | Offset (v7) | Offset if AUP→48B | Δ |
+### 2.3 `PayloadPrefix` â€” Save File Binary Header (60 bytes)
+| Field | Offset (v7) | Offset if AUPâ†’48B | Î” |
 |---|---|---|---|
-| `TimestampUnixMs` (ulong) | 0 | 0 | — |
-| `PlayTimeSeconds` (float) | 8 | 8 | — |
-| `PlayerPosition` (AUP) | 12 | 12 | — |
+| `TimestampUnixMs` (ulong) | 0 | 0 | â€” |
+| `PlayTimeSeconds` (float) | 8 | 8 | â€” |
+| `PlayerPosition` (AUP) | 12 | 12 | â€” |
 | `SaveDataVersion` (int) | 48 | 60 | **+12** |
 | `SaveDataByteLength` (uint) | 52 | 64 | **+12** |
 | `SceneNameByteLength` (ushort) | 56 | 68 | **+12** |
 | `GameVersionByteLength` (ushort) | 58 | 70 | **+12** |
 | **Total Size** | **60** | **72** | **+12** |
 
-> **Impact:** `TryReadMetadata` and `TryLoadSaveData` read garbage string lengths → **save file parse failure** or **out-of-bounds string read**.
+> **Impact:** `TryReadMetadata` and `TryLoadSaveData` read garbage string lengths â†’ **save file parse failure** or **out-of-bounds string read**.
 
-### 2.4 `PersistentWorldDeltaRecord` — Save/Runtime (32 bytes)
+### 2.4 `PersistentWorldDeltaRecord` â€” Save/Runtime (32 bytes)
 **DOES NOT EMBED `AbsoluteUniversePosition` DIRECTLY.** Byte offsets are **structurally preserved**.
 
 | Field | Offset | Size | AUP-Surgery Safe? |
 |---|---|---|---|
-| `ChunkId` | 0 | 12 | ✅ Structurally safe |
-| `ItemPersistentIdHash` | 12 | 8 | ✅ Structurally safe |
-| `InstanceUid` | 20 | 4 | ✅ Structurally safe |
-| `PackedLocalPosition` | 24 | 4 | ⚠️ **SEMANTICALLY CORRUPTED** |
-| `Quantity` | 28 | 2 | ✅ Structurally safe |
-| `ItemFlags` | 30 | 1 | ✅ Structurally safe |
-| `Reserved` | 31 | 1 | ✅ Structurally safe |
+| `ChunkId` | 0 | 12 | âœ… Structurally safe |
+| `ItemPersistentIdHash` | 12 | 8 | âœ… Structurally safe |
+| `InstanceUid` | 20 | 4 | âœ… Structurally safe |
+| `PackedLocalPosition` | 24 | 4 | âš ï¸ **SEMANTICALLY CORRUPTED** |
+| `Quantity` | 28 | 2 | âœ… Structurally safe |
+| `ItemFlags` | 30 | 1 | âœ… Structurally safe |
+| `Reserved` | 31 | 1 | âœ… Structurally safe |
 
 > **Semantic Corruption:** `PackLocalPosition()` and `UnpackPosition()` call `AbsoluteUniversePosition.ToAbsoluteDouble3()` and `FromAbsolutePosition()`. If AUP coordinate math changes (e.g., `CellSizeMeters` changes, grid origin shifts, or local encoding changes), every `PackedLocalPosition` in every save file decodes to **wrong world coordinates**.
 
-### 2.5 `PersistentWorldSaveRecord16` — On-Disk v5+ Format (16 bytes)
-**NOT AFFECTED structurally** — contains no AUP. However, `ChunkIndex` and `ItemHashIndex` resolve through lookup tables built at save-time from `PersistentWorldDeltaRecord` data. If semantic corruption occurs in delta records, the lookup tables are meaningless.
+### 2.5 `PersistentWorldSaveRecord16` â€” On-Disk v5+ Format (16 bytes)
+**NOT AFFECTED structurally** â€” contains no AUP. However, `ChunkIndex` and `ItemHashIndex` resolve through lookup tables built at save-time from `PersistentWorldDeltaRecord` data. If semantic corruption occurs in delta records, the lookup tables are meaningless.
 
 ---
 
-## 3. SAVE FILE MIGRATION — v6 → v8
+## 3. SAVE FILE MIGRATION â€” v6 â†’ v8
 
 ### 3.1 Version Bump Rule
 - `CurrentVersion` in `SaveBinaryStorage` must advance to `0x0008`.
-- `MinimumSupportedVersion` remains `0x0003` (migration path: 3→4→5→6→7→8).
+- `MinimumSupportedVersion` remains `0x0003` (migration path: 3â†’4â†’5â†’6â†’7â†’8).
 - New compat mask bit: `FlagAupV8 = 0x04` (optional, for forward compatibility checks).
 
 ### 3.2 Migration Code
@@ -115,7 +115,7 @@ internal struct AbsoluteUniversePositionBlit128
 // ============================================================================
 // FILE: SaveDataMigration_AupV8.cs
 // LOCATION: Assets/_Project/Scripts/SaveSystem/
-// MANDATE: AGENTS.md — Zero GC, Native-only, no managed allocs in hot path.
+// MANDATE: AGENTS.md â€” Zero GC, Native-only, no managed allocs in hot path.
 // ============================================================================
 using System;
 using Unity.Collections;
@@ -131,7 +131,7 @@ namespace Hecton8.SaveSystem
         internal const byte FlagAupV8 = 0x04;
 
         // ----------------------------------------------------------------------
-        // OLD v6/v7 LAYOUT CONSTANTS (frozen — do NOT change after deploy)
+        // OLD v6/v7 LAYOUT CONSTANTS (frozen â€” do NOT change after deploy)
         // ----------------------------------------------------------------------
         private const int OldAupSize = 36;
         private const int OldPayloadPrefixSize = 60;
@@ -311,7 +311,7 @@ namespace Hecton8.SaveSystem
             *(float*)(ptr + 24) = aup.LocalX;
             *(float*)(ptr + 28) = aup.LocalY;
             *(float*)(ptr + 32) = aup.LocalZ;
-            // bytes 36-47: reserved / padding — zero-filled by MemClear
+            // bytes 36-47: reserved / padding â€” zero-filled by MemClear
         }
 
         // ----------------------------------------------------------------------
@@ -320,7 +320,7 @@ namespace Hecton8.SaveSystem
         // ----------------------------------------------------------------------
         private static AbsoluteUniversePosition ConvertAupV7ToV8(AbsoluteUniversePosition oldAup)
         {
-            // CURRENT: identity mapping — coordinates are preserved.
+            // CURRENT: identity mapping â€” coordinates are preserved.
             // If CTO changes CellSizeMeters, replace with:
             //   double3 absolute = OldAupMath.ToAbsoluteDouble3(oldAup);
             //   return NewAupMath.FromAbsolutePosition(absolute);
@@ -351,7 +351,7 @@ namespace Hecton8.SaveSystem
             out string error)
         {
             error = string.Empty;
-            // PENDING: implement full v5 section parser → re-encode with new
+            // PENDING: implement full v5 section parser â†’ re-encode with new
             // AbsoluteUniversePosition math if coordinate space changed.
             // If only struct size changed (no semantic coordinate change),
             // this section can be copied opaque because PersistentWorldSaveRecord16
@@ -363,14 +363,14 @@ namespace Hecton8.SaveSystem
 ```
 
 ### 3.3 Migration Checklist (Pre-Flight)
-- [ ] Freeze `OldAupSize = 36` and `OldPayloadPrefixSize = 60` as `const` — never change after v8 deploy.
-- [ ] Fix `AbsoluteUniversePositionBlit128.Reserved` overflow (Size must be ≥56 if Reserved is used).
+- [ ] Freeze `OldAupSize = 36` and `OldPayloadPrefixSize = 60` as `const` â€” never change after v8 deploy.
+- [ ] Fix `AbsoluteUniversePositionBlit128.Reserved` overflow (Size must be â‰¥56 if Reserved is used).
 - [ ] Update `SaveBinaryStorage.CurrentVersion` to `0x0008`.
 - [ ] Update `SaveBinaryStorage.CurrentHeaderSize` if header struct changes (currently 52).
 - [ ] Add `FlagAupV8` to header `Flags` field on write.
 - [ ] Run `TryMigratePayloadToV8` on ALL `.sav` files in `slot_0/1/2` during first v8 boot.
 - [ ] After migration: verify payload hash recomputation (`Hash64` over new raw payload).
-- [ ] Regression test: load v7 save → migrate → save as v8 → load v8 → compare `PlayerPosition` double3 equality.
+- [ ] Regression test: load v7 save â†’ migrate â†’ save as v8 â†’ load v8 â†’ compare `PlayerPosition` double3 equality.
 
 ---
 
@@ -378,15 +378,15 @@ namespace Hecton8.SaveSystem
 
 | Struct | Contains AUP? | Corrupted Offsets | Corruption Type |
 |---|---|---|---|
-| `PayloadPrefix` | ✅ @+12 | `SaveDataVersion` (48→60), `SaveDataByteLength` (52→64), `SceneNameByteLength` (56→68), `GameVersionByteLength` (58→70) | **Binary shift** — parse failure |
-| `PersistentWorldItemRecord` | ✅ @+0 | `ChunkId` (+12), `ItemPersistentIdHash` (+12), `ItemPersistentId` (+12), `_packedQuantityAndFlags` (+12), `InstanceUid` (+12) | **NativeList misalignment** — memory corruption |
-| `EntityDataRecord` | ✅ (Blit128) @+0 | `Quantity` (+16), `Integrity01` (+16), `InventoryHash` (+16), `InstanceUid` (+16) | **NativeHashMap value stride mismatch** |
-| `PersistentWorldDeltaRecord` | ❌ No embedded AUP | None structurally | **Semantic** — `PackedLocalPosition` decode failure if coordinate math changes |
-| `PersistentWorldSaveRecord16` | ❌ No embedded AUP | None | **Indirect** — lookup tables built from semantically corrupted deltas |
-| `PoolSlotData` | ❌ No embedded AUP | None | ✅ Safe (uses `int3` + `float3` local, not AUP) |
-| `AbsoluteUniversePositionBlit128` | Self | `Reserved` field overflows Size=48 | **Silent 8-byte overflow** — fix first |
+| `PayloadPrefix` | âœ… @+12 | `SaveDataVersion` (48â†’60), `SaveDataByteLength` (52â†’64), `SceneNameByteLength` (56â†’68), `GameVersionByteLength` (58â†’70) | **Binary shift** â€” parse failure |
+| `PersistentWorldItemRecord` | âœ… @+0 | `ChunkId` (+12), `ItemPersistentIdHash` (+12), `ItemPersistentId` (+12), `_packedQuantityAndFlags` (+12), `InstanceUid` (+12) | **NativeList misalignment** â€” memory corruption |
+| `EntityDataRecord` | âœ… (Blit128) @+0 | `Quantity` (+16), `Integrity01` (+16), `InventoryHash` (+16), `InstanceUid` (+16) | **NativeHashMap value stride mismatch** |
+| `PersistentWorldDeltaRecord` | âŒ No embedded AUP | None structurally | **Semantic** â€” `PackedLocalPosition` decode failure if coordinate math changes |
+| `PersistentWorldSaveRecord16` | âŒ No embedded AUP | None | **Indirect** â€” lookup tables built from semantically corrupted deltas |
+| `PoolSlotData` | âŒ No embedded AUP | None | âœ… Safe (uses `int3` + `float3` local, not AUP) |
+| `AbsoluteUniversePositionBlit128` | Self | `Reserved` field overflows Size=48 | **Silent 8-byte overflow** â€” fix first |
 
 ---
 
 **STATUS:** ETA SURGERY_PREPPED  
-**NEXT ACTION:** CTO approval on new AUP byte size → freeze migration constants → execute.
+**NEXT ACTION:** CTO approval on new AUP byte size â†’ freeze migration constants â†’ execute.

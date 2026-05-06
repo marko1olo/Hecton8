@@ -1,9 +1,9 @@
-# Docs Index
+﻿# Docs Index
 
-Date: `2026-05-05`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
-Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, `2026-05-02` documentation actuality sweep, `2026-05-03` foundation-hardening continuation, `2026-05-04` documentation/current-evidence recheck, `2026-05-04` documentation sorting authority map, and `2026-05-05` Omega-autonomy bounded verification.
+Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, `2026-05-02` documentation actuality sweep, `2026-05-03` foundation-hardening continuation, `2026-05-04` documentation/current-evidence recheck, `2026-05-04` documentation sorting authority map, `2026-05-05` Omega-autonomy bounded verification, and `2026-05-06` documentation synchronization pass.
 
 ## Read First
 
@@ -13,6 +13,7 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 - `SYSTEMS_CONTRACTS.md` - non-asset system contracts.
 - `DOC_GOVERNANCE.md` - placement rules for active/reference/archive docs.
 - `ROOT_DOCS_REFERENCE.md` - root/doc boundary and relocation map.
+- `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` - latest broad documentation synchronization pass and current May 6 doc/source inventory boundary.
 - `Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` - latest documentation sorting and authority map.
 - `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` - current header normalization and archive/move queue.
 - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` - latest documentation sweep and current May 4 build/guard/MCP evidence boundary.
@@ -34,6 +35,7 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 
 ## Current Audit Outputs
 
+- `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
 - `Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
 - `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
 - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
@@ -67,6 +69,7 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 
 Current-state rule:
 
+- use `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` as the latest broad documentation synchronization layer and current May 6 inventory boundary
 - use `Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` as the latest documentation sorting and authority classification map
 - use `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` as the current header normalization and archive/move queue
 - use `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` as the latest broad documentation-sweep and current May 4 build/guard/MCP evidence addendum
@@ -84,6 +87,12 @@ Current-state rule:
 
 Current verification boundary:
 
+- latest May 6 documentation synchronization scan reports `Docs/**/*.md` total `429`, all markdown missing `Date:` `0`, all markdown missing `Status:` `0`, active non-report docs `162`, active header debt `0`, root `.md` files `5`, root `.txt`/`.log` files `0`, `Docs/Reports/*.md` `54`, relocated root logs `9`, `Assets/_Project/**/*.cs` `1206`, `Assets/_Project/Scripts/**/*.cs` `1165`, and `Assets/_Project/Scripts` line count `643074` by `Get-Content.Count`
+- latest May 6 Unity MCP editor readback reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`, render textures `37`, render texture bytes `56,320,492`, renderer `PC_Renderer`, and `9` renderer features; this is editor-state proof only, not Play Mode/profiler/player-build proof
+- latest May 6 recursive `Docs` category scan inventoried `886` total files and `823` rewritable text-like files under the current extension policy; archive/deprecated/extracted research payloads remain evidence/provenance, not active authority
+- latest May 6 official source check found Unity `6000.4.5f1` is newer than the local project pin `6000.4.1f1`; do not treat this as permission to upgrade without the LTS migration protocol
+- the fifth root markdown file is `BROKEN_PREFABS.md`; it is classified as a generated prefab-audit snapshot, not documentation authority
+- latest May 6 domain purge reports remain scoped source/pattern/diff evidence only; they explicitly leave full build blocked by missing `Assets/_Project/Scripts/SavePredictivePagingMath.cs` and Unity MCP validation unavailable without an active session
 - latest May 5 Omega bounded Core build evidence is `CodexArtifacts/dotnet-h8core-omega-autonomy-doc-continuation-build.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, and `0` first-party `Assets/_Project` matches
 - last May 5 Omega warning-bearing baseline is `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log`: `Build succeeded`, `48 Warning(s)`, `0 Error(s)`; warning owners are dependency/vendor surfaces only: Unity URP PackageCache, GPUInstancer, Den.Tools/MapMagic, Crest, WaveHarmonic.Crest, Unity ShaderGraph/Core Editor PackageCache
 - first-party warning check against `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log` also returned `0` `Assets/_Project/Scripts` matches; older artifact logs may contain first-party warnings and must not be treated as current build output without rerunning the matching build
@@ -173,6 +182,7 @@ Canonical-path rule:
 - `DEPRECATED/2026-04-29_Audit_Bundles/README.md`
 - `DEPRECATED/External_And_Log_Bundles/README.md`
 - `DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/README.md`
+- `DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-05/README.md`
 - `DEPRECATED/Root_Redirect_Stubs_2026-05-01/README.md`
 - `DEPRECATED/Encoding_Damaged_2026-05-01/README.md`
 - `Reports/DEPRECATED/2026-04-29_Static_Audit_Snapshots/README.md`

@@ -1,10 +1,10 @@
-# FRAME TIMELINE — HECTON-8 Runtime Execution Order
-Date: 2026-05-04
-Status: REFERENCE
+﻿# FRAME TIMELINE â€” HECTON-8 Runtime Execution Order
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 > **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md § Tick System · § Jobs/Burst · § Init Order Safety  
+> **Mandates Followed:** AGENTS.md Â§ Tick System Â· Â§ Jobs/Burst Â· Â§ Init Order Safety  
 > **Scope:** First-party production runtime under `Assets/_Project/Scripts/`  
 
 ---
@@ -15,8 +15,8 @@ HECTON-8 uses a **dual-layer tick architecture**:
 
 | Layer | Owner | Contract | Lists |
 |-------|-------|----------|-------|
-| **Dispatcher** | `SystemDispatcher` | `IUpdatable` · `IFixedTickable` · `ISlowTickable` | `RegistryBucket<T>` per `PriorityLayer` lane |
-| **Legacy Manager** | `GameTickManager` | `ITickable` · `IFixedTickable` · `ISlowTickable` | internal `TickList<T>` (buffered add/remove) |
+| **Dispatcher** | `SystemDispatcher` | `IUpdatable` Â· `IFixedTickable` Â· `ISlowTickable` | `RegistryBucket<T>` per `PriorityLayer` lane |
+| **Legacy Manager** | `GameTickManager` | `ITickable` Â· `IFixedTickable` Â· `ISlowTickable` | internal `TickList<T>` (buffered add/remove) |
 
 `GameTickManager` is itself registered into `SystemDispatcher` **Core lane** as `IUpdatable`/`IFixedTickable`.  
 Therefore, `GameTickManager.Tick()` and `GameTickManager.FixedTick()` are invoked by `SystemDispatcher`, and they in turn fan-out to the legacy `ITickable`/`IFixedTickable`/`ISlowTickable` lists.
@@ -25,61 +25,61 @@ Therefore, `GameTickManager.Tick()` and `GameTickManager.FixedTick()` are invoke
 
 ## 2. CHRONOLOGICAL FRAME FLOW
 
-### Phase A — Unity FixedUpdate
+### Phase A â€” Unity FixedUpdate
 ```
 UnityEngine FixedUpdate
-└── SystemDispatcher.FixedUpdate()        [DefaultExecutionOrder -9950]
-    └── Lane 0 : Core
-        └── GameTickManager.FixedTick()   [registered as IFixedTickable]
-            └── FOR each IFixedTickable in _fixedTickables (TickList)
-    └── Lane 1 : Environment              IFixedTickable[]
-    └── Lane 2 : Player                   IFixedTickable[]  (skipped during bootstrap)
-    └── Lane 3 : UI                       IFixedTickable[]
+â””â”€â”€ SystemDispatcher.FixedUpdate()        [DefaultExecutionOrder -9950]
+    â””â”€â”€ Lane 0 : Core
+        â””â”€â”€ GameTickManager.FixedTick()   [registered as IFixedTickable]
+            â””â”€â”€ FOR each IFixedTickable in _fixedTickables (TickList)
+    â””â”€â”€ Lane 1 : Environment              IFixedTickable[]
+    â””â”€â”€ Lane 2 : Player                   IFixedTickable[]  (skipped during bootstrap)
+    â””â”€â”€ Lane 3 : UI                       IFixedTickable[]
 ```
 
-### Phase B — Unity Update
+### Phase B â€” Unity Update
 ```
 UnityEngine Update
-└── SystemDispatcher.Update()             [DefaultExecutionOrder -9950]
-    ├── BootstrapStatus.TryTriggerSafeHalt()
-    ├── FoveatedSimulationManager.BeginDispatcherFrame(dt)
-    ├── PredatorCognitionDomain.BeginDispatcherFrame(frameCount)
-    │
-    ├── Lane 0 : Core
-    │   └── GameTickManager.Tick(dt)      [registered as IUpdatable]
-    │       ├── FOR each ITickable in _tickables (TickList)
-    │       └── ProcessSlowTickIfNeeded() → IF _accumulator >= 0.5s
-    │           └── ExecuteSlowTick() → FOR each ISlowTickable in _slowTickables
-    │
-    ├── Lane 1 : Environment              IUpdatable.Tick(dt)
-    ├── Lane 2 : Player                   IUpdatable.Tick(dt)  (skipped during bootstrap)
-    ├── Lane 3 : UI                       IUpdatable.Tick(dt)
-    │
-    ├── PredatorCognitionDomain.ScheduleFrameEvaluation(frameCount)   [BURST JOB SCHEDULE]
-    ├── FoveatedSimulationManager.ScheduleFrameJobs()                  [BURST JOB SCHEDULE]
-    │
-    └── RunSlowTick(dt)  ← *only if GameTickManager path missed it*
-        └── Lane 0..3 : ISlowTickable.SlowTick()
+â””â”€â”€ SystemDispatcher.Update()             [DefaultExecutionOrder -9950]
+    â”œâ”€â”€ BootstrapStatus.TryTriggerSafeHalt()
+    â”œâ”€â”€ FoveatedSimulationManager.BeginDispatcherFrame(dt)
+    â”œâ”€â”€ PredatorCognitionDomain.BeginDispatcherFrame(frameCount)
+    â”‚
+    â”œâ”€â”€ Lane 0 : Core
+    â”‚   â””â”€â”€ GameTickManager.Tick(dt)      [registered as IUpdatable]
+    â”‚       â”œâ”€â”€ FOR each ITickable in _tickables (TickList)
+    â”‚       â””â”€â”€ ProcessSlowTickIfNeeded() â†’ IF _accumulator >= 0.5s
+    â”‚           â””â”€â”€ ExecuteSlowTick() â†’ FOR each ISlowTickable in _slowTickables
+    â”‚
+    â”œâ”€â”€ Lane 1 : Environment              IUpdatable.Tick(dt)
+    â”œâ”€â”€ Lane 2 : Player                   IUpdatable.Tick(dt)  (skipped during bootstrap)
+    â”œâ”€â”€ Lane 3 : UI                       IUpdatable.Tick(dt)
+    â”‚
+    â”œâ”€â”€ PredatorCognitionDomain.ScheduleFrameEvaluation(frameCount)   [BURST JOB SCHEDULE]
+    â”œâ”€â”€ FoveatedSimulationManager.ScheduleFrameJobs()                  [BURST JOB SCHEDULE]
+    â”‚
+    â””â”€â”€ RunSlowTick(dt)  â† *only if GameTickManager path missed it*
+        â””â”€â”€ Lane 0..3 : ISlowTickable.SlowTick()
 ```
 
-### Phase C — Unity LateUpdate
+### Phase C â€” Unity LateUpdate
 ```
 UnityEngine LateUpdate
-└── SystemDispatcher.LateUpdate()
-    ├── FoveatedSimulationManager.CompleteFrameJobs()    [BURST JOB COMPLETE]
-    ├── WorldSpatialHashGrid.LateFrameMaintenance(frameCount)
-    └── UnsafeArenaAllocator.ResetFrame()
+â””â”€â”€ SystemDispatcher.LateUpdate()
+    â”œâ”€â”€ FoveatedSimulationManager.CompleteFrameJobs()    [BURST JOB COMPLETE]
+    â”œâ”€â”€ WorldSpatialHashGrid.LateFrameMaintenance(frameCount)
+    â””â”€â”€ UnsafeArenaAllocator.ResetFrame()
 ```
 
-### Phase D — SRP Render (per camera)
+### Phase D â€” SRP Render (per camera)
 ```
 RenderPipelineManager.beginCameraRendering
-└── RenderDispatcher.HandleBeginCameraRendering()   [DefaultExecutionOrder -9940]
-    ├── RenderSettingsSnapshot.Capture()
-    ├── GlobalRenderContext.SetCurrent(context, camera)
-    ├── FOR each IRenderable in GlobalRegistry.Renderables (reverse order)
-    │       └── renderable.Render(dt)
-    └── GlobalRenderContext.Clear()
+â””â”€â”€ RenderDispatcher.HandleBeginCameraRendering()   [DefaultExecutionOrder -9940]
+    â”œâ”€â”€ RenderSettingsSnapshot.Capture()
+    â”œâ”€â”€ GlobalRenderContext.SetCurrent(context, camera)
+    â”œâ”€â”€ FOR each IRenderable in GlobalRegistry.Renderables (reverse order)
+    â”‚       â””â”€â”€ renderable.Render(dt)
+    â””â”€â”€ GlobalRenderContext.Clear()
 ```
 
 ---
@@ -88,10 +88,10 @@ RenderPipelineManager.beginCameraRendering
 
 | Lane Index | PriorityLayer | Typical Systems | DefaultExecutionOrder samples |
 |------------|---------------|-----------------|-------------------------------|
-| 0 | **Core** | GameTickManager, CrashTelemetryBuffer, PerformanceMonitor, InputDispatcher, HectonFloatingOrigin | -10000 … -9000 |
-| 1 | **Environment** | MapMagicBridge, GlobalWeatherDirector, HectonFluidEngine, BiomeSamplerCache, AmbientWaterMotionManager | -7000 … -4000 |
-| 2 | **Player** | HectonPlayerMovement, PlayerActionController, PlayerInteraction, HectonSurvivalSystem, VisorHUDController | — |
-| 3 | **UI** | HUDQuickBar, InteractionUI, PauseMenuController, LoadingScreenController | — |
+| 0 | **Core** | GameTickManager, CrashTelemetryBuffer, PerformanceMonitor, InputDispatcher, HectonFloatingOrigin | -10000 â€¦ -9000 |
+| 1 | **Environment** | MapMagicBridge, GlobalWeatherDirector, HectonFluidEngine, BiomeSamplerCache, AmbientWaterMotionManager | -7000 â€¦ -4000 |
+| 2 | **Player** | HectonPlayerMovement, PlayerActionController, PlayerInteraction, HectonSurvivalSystem, VisorHUDController | â€” |
+| 3 | **UI** | HUDQuickBar, InteractionUI, PauseMenuController, LoadingScreenController | â€” |
 
 > **Bootstrap Gate:** During `BootstrapState.IsGameReady == false`, Lane 2 (Player) is skipped. All other lanes continue so that startup queues, residency, and spawn drains can complete.
 
@@ -113,12 +113,12 @@ RenderPipelineManager.beginCameraRendering
 
 | Interface | Registered Via | Dispatcher Path | Manager Path |
 |-----------|----------------|-----------------|--------------|
-| `IUpdatable` | `GlobalRegistry.RegisterUpdatable(layer)` | SystemDispatcher.Update lane order | — |
-| `IFixedTickable` | `GlobalRegistry.RegisterFixedTickable(layer)` | SystemDispatcher.FixedUpdate lane order | — |
+| `IUpdatable` | `GlobalRegistry.RegisterUpdatable(layer)` | SystemDispatcher.Update lane order | â€” |
+| `IFixedTickable` | `GlobalRegistry.RegisterFixedTickable(layer)` | SystemDispatcher.FixedUpdate lane order | â€” |
 | `ISlowTickable` | `GlobalRegistry.RegisterSlowTickable(layer)` | SystemDispatcher.Update (RunSlowTick) | GameTickManager.ProcessSlowTickIfNeeded |
-| `ITickable` | `GameTickManager.Register()` | — | GameTickManager.Tick() |
-| `IFixedTickable` (legacy) | `GameTickManager.Register()` | — | GameTickManager.FixedTick() |
-| `ISlowTickable` (legacy) | `GameTickManager.Register()` | — | GameTickManager.ExecuteSlowTick() |
+| `ITickable` | `GameTickManager.Register()` | â€” | GameTickManager.Tick() |
+| `IFixedTickable` (legacy) | `GameTickManager.Register()` | â€” | GameTickManager.FixedTick() |
+| `ISlowTickable` (legacy) | `GameTickManager.Register()` | â€” | GameTickManager.ExecuteSlowTick() |
 
 **WARNING:** Some classes implement **both** `ITickable` and `IUpdatable` (e.g. `FaunaBrain`, `HectonUnderwaterVisuals`). They receive **double dispatch** unless the author explicitly no-ops one path. Verify per-class registration logic before adding new tick contracts.
 
@@ -128,9 +128,9 @@ RenderPipelineManager.beginCameraRendering
 
 | File | Method | Status |
 |------|--------|--------|
-| `SystemDispatcher.cs` | `Update()` · `FixedUpdate()` · `LateUpdate()` | ✅ ALLOWED — dispatcher root |
-| `GameTickManager.cs` | None directly; implements `IUpdatable.Tick()` · `IFixedTickable.FixedTick()` | ✅ COMPLIANT |
-| All other first-party gameplay scripts | None | ✅ COMPLIANT |
+| `SystemDispatcher.cs` | `Update()` Â· `FixedUpdate()` Â· `LateUpdate()` | âœ… ALLOWED â€” dispatcher root |
+| `GameTickManager.cs` | None directly; implements `IUpdatable.Tick()` Â· `IFixedTickable.FixedTick()` | âœ… COMPLIANT |
+| All other first-party gameplay scripts | None | âœ… COMPLIANT |
 
 Third-party packages (Crest, Feel, GPUInstancer, etc.) contain native `Update()` calls. These are **outside first-party architecture** and are tracked as third-party debt, not violations.
 

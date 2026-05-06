@@ -1,10 +1,13 @@
 using System;
+using System.Runtime.CompilerServices;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Physics;
 using Hecton8.VFX;
 using Hecton8.World;
+using TMPro;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -15,7 +18,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9940)]
-    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable
+    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable, IServiceHeartbeat
     {
         private const int SceneActivationWatchdogInitialFrames = 1200;
         private const int SceneActivationWatchdogRepeatFrames = 300;
@@ -25,19 +28,29 @@ namespace Hecton8.Core
         private const float MainMenuCameraPanDurationSeconds = 2f;
         private const float MainMenuCameraPanDepth = 9f;
         private const float MainMenuCameraPanPitchDegrees = 16f;
-        private const float TransitionDissolveSeconds = 2.5f;
+        private const float TransitionDissolveSeconds = 3f;
+        private const float AudioSnapshotDiveCrossfadeSeconds = 4f;
+        private const float CinematicHeaveAmplitude = 0.18f;
+        private const float CinematicHeaveFrequencyHz = 0.31f;
         private const float MainMenuUiSubmergePixels = 140f;
         private const float WorldDroneLoadDb = -40f;
         private const float WorldDroneRuntimeDb = -5f;
         private const float InputReclaimStartFov = 90f;
         private const float InputReclaimDurationSeconds = 1f;
         private const int TransitionOverlaySortingOrder = 32766;
+        private const int TerminalBootBufferLength = 384;
+        private const uint TerminalBootHashSalt = 0x9E3779B9u;
         private static readonly int _TransitionDitherProgressId = Shader.PropertyToID("_DitherProgress");
         private static readonly int _TransitionDitherColorId = Shader.PropertyToID("_Color");
         private static readonly int _TransitionBlueNoiseTextureId = Shader.PropertyToID("_BlueNoiseTex");
+        private static readonly int _HectonFreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
         private static readonly Color _TransitionAbyssColor = new Color(0.002f, 0.004f, 0.009f, 1f);
+        private static readonly Color _TerminalBootTextColor = new Color(0.38f, 0.84f, 0.88f, 0.82f);
 
-        private static SceneRuntimeService _instance;
+        [Header("Audio Snapshots")]
+        [SerializeField] private AudioMixerSnapshot mainMenuMusicSnapshot;
+        [SerializeField] private AudioMixerSnapshot abyssalAmbientSnapshot;
+
         private static bool _suppressRuntimeClearForManagedUnload;
         private bool _isInitialized;
         private bool _registeredSceneService;
@@ -62,11 +75,22 @@ namespace Hecton8.Core
         private GameObject _transitionOverlayRoot;
         private CanvasGroup _transitionOverlayGroup;
         private Material _transitionDitherMaterial;
+        private TMP_Text _terminalBootText;
+        // COLD ALLOC: char[384] - transition terminal boot text buffer - owner: SceneRuntimeService
+        private readonly char[] _terminalBootBuffer = new char[TerminalBootBufferLength];
+        private uint _terminalBootSeed;
+        private int _terminalBootLastFrame = -1;
 
         /// <summary>
         /// True once the service has registered itself into <see cref="GlobalRegistry"/>.
         /// </summary>
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
 
         /// <summary>
         /// True when bootstrap has completed and guarded transitions are allowed.
@@ -91,18 +115,20 @@ namespace Hecton8.Core
         /// <returns>Live scene service instance.</returns>
         public static SceneRuntimeService EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            SceneRuntimeService sceneRuntime = GlobalRegistry.SceneRuntime;
+            if (sceneRuntime != null)
+                return sceneRuntime;
 
             GameObject runtimeRoot = new GameObject("[SceneRuntimeService]");
             SceneRuntimeService sceneService = runtimeRoot.AddComponent<SceneRuntimeService>();
+            GlobalRegistry.RegisterSceneRuntime(sceneService);
             return sceneService;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+            GlobalRegistry.ClearSceneRuntime(null);
             _suppressRuntimeClearForManagedUnload = false;
         }
 
@@ -111,6 +137,8 @@ namespace Hecton8.Core
         /// </summary>
         public void InitializeService()
         {
+            GlobalRegistry.RegisterSceneRuntime(this);
+
             if (_isInitialized)
             {
                 TryRegisterUpdatable();
@@ -180,7 +208,7 @@ namespace Hecton8.Core
                 int waitFrames = 0;
                 int nextWatchdogFrame = SceneActivationWatchdogInitialFrames;
 
-                while (Application.isPlaying && ReferenceEquals(_instance, this) && !_pendingSceneLoadOperation.isDone)
+                while (Application.isPlaying && ReferenceEquals(GlobalRegistry.SceneRuntime, this) && !_pendingSceneLoadOperation.isDone)
                 {
                     if (useCinematicTransition)
                         TickMainMenuCinematicTransition(Time.unscaledDeltaTime);
@@ -204,7 +232,7 @@ namespace Hecton8.Core
                     await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
                 }
 
-                if (useCinematicTransition && Application.isPlaying && ReferenceEquals(_instance, this))
+                if (useCinematicTransition && Application.isPlaying && ReferenceEquals(GlobalRegistry.SceneRuntime, this))
                     await CompleteMainMenuCinematicTransitionAsync(previousScene, sceneName);
             }
             catch (OperationCanceledException)
@@ -230,13 +258,12 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            SceneRuntimeService activeRuntime = GlobalRegistry.SceneRuntime;
+            if (activeRuntime != null && activeRuntime != this)
             {
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
 
         }
 
@@ -264,8 +291,7 @@ namespace Hecton8.Core
             TryUnregisterSceneService();
             _isInitialized = false;
 
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.ClearSceneRuntime(this);
         }
 
         private static void HandleSceneUnloaded(Scene scene)
@@ -341,8 +367,13 @@ namespace Hecton8.Core
             if (_cinematicMenuRect != null)
                 _cinematicMenuStartAnchoredPosition = _cinematicMenuRect.anchoredPosition;
 
+            ResetWorldEntryFreezeState();
+            BeginAudioSnapshotDiveCrossfade();
             BeginWorldDroneCrossfade();
             EnsureTransitionOverlay();
+            _terminalBootSeed = ComputeTerminalBootSeed(_pendingSceneName, Time.frameCount);
+            _terminalBootLastFrame = -1;
+            UpdateTerminalBootOverlay();
             if (_transitionOverlayGroup != null)
                 _transitionOverlayGroup.alpha = 0f;
             SetTransitionDitherCoverage(1f);
@@ -359,15 +390,7 @@ namespace Hecton8.Core
                 : 1f;
             float eased = SmoothStep01(normalized);
 
-            if (_cinematicCamera != null)
-            {
-                Transform cameraTransform = _cinematicCamera.transform;
-                Vector3 targetPosition = _cinematicCameraStartPosition + (Vector3.down * MainMenuCameraPanDepth);
-                Quaternion targetRotation = _cinematicCameraStartRotation * Quaternion.Euler(MainMenuCameraPanPitchDegrees, 0f, 0f);
-                cameraTransform.SetPositionAndRotation(
-                    Vector3.LerpUnclamped(_cinematicCameraStartPosition, targetPosition, eased),
-                    Quaternion.SlerpUnclamped(_cinematicCameraStartRotation, targetRotation, eased));
-            }
+            ApplyCinematicCameraPose(eased, _cinematicTransitionElapsed);
 
             if (_transitionOverlayGroup != null)
                 _transitionOverlayGroup.alpha = eased;
@@ -380,6 +403,7 @@ namespace Hecton8.Core
                     eased);
 
             SetTransitionDitherCoverage(1f);
+            UpdateTerminalBootOverlay();
         }
 
         private async Awaitable CompleteMainMenuCinematicTransitionAsync(Scene previousScene, string loadedSceneName)
@@ -406,6 +430,7 @@ namespace Hecton8.Core
             }
 
             BeginInputReclaimInterpolation();
+            ResetWorldEntryFreezeState();
             await DissolveTransitionOverlayAsync();
         }
 
@@ -427,7 +452,9 @@ namespace Hecton8.Core
                     ? Mathf.Clamp01(elapsed / TransitionDissolveSeconds)
                     : 1f;
                 float eased = SmoothStep01(normalized);
+                ApplyCinematicCameraPose(1f, MainMenuCameraPanDurationSeconds + elapsed);
                 SetTransitionDitherCoverage(1f - eased);
+                UpdateTerminalBootOverlay();
                 UpdateWorldDroneCrossfade(eased);
                 if (_transitionDitherMaterial == null)
                     _transitionOverlayGroup.alpha = 1f - eased;
@@ -438,6 +465,23 @@ namespace Hecton8.Core
             SetTransitionDitherCoverage(0f);
             UpdateWorldDroneCrossfade(1f);
             _transitionOverlayGroup.alpha = 0f;
+        }
+
+        private void ApplyCinematicCameraPose(float eased, float elapsedSeconds)
+        {
+            if (_cinematicCamera == null)
+                return;
+
+            Transform cameraTransform = _cinematicCamera.transform;
+            Vector3 targetPosition = _cinematicCameraStartPosition + (Vector3.down * MainMenuCameraPanDepth);
+            Quaternion targetRotation = _cinematicCameraStartRotation * Quaternion.Euler(MainMenuCameraPanPitchDegrees, 0f, 0f);
+            float heave = Mathf.Sin(elapsedSeconds * Mathf.PI * 2f * CinematicHeaveFrequencyHz) *
+                          CinematicHeaveAmplitude *
+                          SmoothStep01(eased);
+            Vector3 heaveOffset = (_cinematicCameraStartRotation * Vector3.up) * heave;
+            cameraTransform.SetPositionAndRotation(
+                Vector3.LerpUnclamped(_cinematicCameraStartPosition, targetPosition, eased) + heaveOffset,
+                Quaternion.SlerpUnclamped(_cinematicCameraStartRotation, targetRotation, eased));
         }
 
         private void EndMainMenuCinematicTransition()
@@ -456,9 +500,29 @@ namespace Hecton8.Core
 
             _transitionOverlayRoot = null;
             _transitionOverlayGroup = null;
+            _terminalBootText = null;
+            _terminalBootLastFrame = -1;
             if (_transitionDitherMaterial != null)
                 Destroy(_transitionDitherMaterial);
             _transitionDitherMaterial = null;
+            ResetWorldEntryFreezeState();
+        }
+
+        private void BeginAudioSnapshotDiveCrossfade()
+        {
+            if (mainMenuMusicSnapshot != null)
+                mainMenuMusicSnapshot.TransitionTo(0f);
+
+            if (abyssalAmbientSnapshot != null)
+                abyssalAmbientSnapshot.TransitionTo(AudioSnapshotDiveCrossfadeSeconds);
+        }
+
+        private static void ResetWorldEntryFreezeState()
+        {
+            if (Time.timeScale == 0f)
+                Time.timeScale = 1f;
+
+            Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
         }
 
         private static void BeginWorldDroneCrossfade()
@@ -524,7 +588,133 @@ namespace Hecton8.Core
                 image.material = _transitionDitherMaterial;
             }
 
+            GameObject terminalRoot = new GameObject("TerminalBootOverlay", typeof(RectTransform), typeof(TextMeshProUGUI)); // COLD ALLOC: GameObject[1] - zero-GC terminal boot overlay text - owner: SceneRuntimeService
+            terminalRoot.transform.SetParent(root.transform, false);
+            RectTransform terminalRect = terminalRoot.GetComponent<RectTransform>();
+            terminalRect.anchorMin = Vector2.zero;
+            terminalRect.anchorMax = Vector2.one;
+            terminalRect.offsetMin = new Vector2(48f, 40f);
+            terminalRect.offsetMax = new Vector2(-48f, -40f);
+
+            TextMeshProUGUI terminalText = terminalRoot.GetComponent<TextMeshProUGUI>();
+            terminalText.raycastTarget = false;
+            terminalText.alignment = TextAlignmentOptions.BottomLeft;
+            terminalText.textWrappingMode = TextWrappingModes.NoWrap;
+            terminalText.fontSize = 17f;
+            terminalText.color = _TerminalBootTextColor;
+            _terminalBootText = terminalText;
+
             _transitionOverlayRoot = root;
+        }
+
+        private void UpdateTerminalBootOverlay()
+        {
+            if (_terminalBootText == null)
+                return;
+
+            int frame = Time.frameCount;
+            if (_terminalBootLastFrame == frame)
+                return;
+
+            _terminalBootLastFrame = frame;
+            Span<char> buffer = _terminalBootBuffer;
+            int cursor = 0;
+            AppendLiteral(buffer, ref cursor, "LOADING NEURAL INTERFACE...");
+            AppendNewLine(buffer, ref cursor);
+            AppendLiteral(buffer, ref cursor, "AUP SECTOR 0x");
+            AppendHex8(buffer, ref cursor, MixTerminalBootHash(_terminalBootSeed, (uint)frame));
+            AppendLiteral(buffer, ref cursor, " / 0x");
+            AppendHex8(buffer, ref cursor, MixTerminalBootHash(_terminalBootSeed ^ 0xA53A9D2Du, (uint)(frame + 17)));
+            AppendNewLine(buffer, ref cursor);
+            AppendLiteral(buffer, ref cursor, "BOOT MASK 0x");
+            AppendHex8(buffer, ref cursor, MixTerminalBootHash(_terminalBootSeed ^ 0xC2B2AE35u, (uint)(frame + 31)));
+            AppendNewLine(buffer, ref cursor);
+            AppendServiceHandle(buffer, ref cursor, "DISP", GlobalRegistry.Dispatcher);
+            AppendServiceHandle(buffer, ref cursor, "TICK", GlobalRegistry.TickManager);
+            AppendServiceHandle(buffer, ref cursor, "SCEN", GlobalRegistry.Scene);
+            AppendServiceHandle(buffer, ref cursor, "PHYS", GlobalRegistry.Physics);
+            AppendServiceHandle(buffer, ref cursor, "AUDI", GlobalRegistry.Audio);
+
+            _terminalBootText.SetCharArray(_terminalBootBuffer, 0, cursor);
+        }
+
+        private static uint ComputeTerminalBootSeed(string sceneName, int frame)
+        {
+            uint hash = TerminalBootHashSalt ^ (uint)frame;
+            if (sceneName == null)
+                return MixTerminalBootHash(hash, 0u);
+
+            for (int i = 0; i < sceneName.Length; i++)
+            {
+                hash ^= sceneName[i];
+                hash *= 16777619u;
+            }
+
+            return MixTerminalBootHash(hash, 0xB5297A4Du);
+        }
+
+        private static uint MixTerminalBootHash(uint seed, uint value)
+        {
+            uint hash = seed ^ (value + TerminalBootHashSalt + (seed << 6) + (seed >> 2));
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return hash;
+        }
+
+        private static void AppendLiteral(Span<char> buffer, ref int cursor, string literal)
+        {
+            if (literal == null)
+                return;
+
+            for (int i = 0; i < literal.Length && cursor < buffer.Length; i++)
+                buffer[cursor++] = literal[i];
+        }
+
+        private static void AppendNewLine(Span<char> buffer, ref int cursor)
+        {
+            if (cursor < buffer.Length)
+                buffer[cursor++] = '\n';
+        }
+
+        private static void AppendHex8(Span<char> buffer, ref int cursor, uint value)
+        {
+            if (cursor >= buffer.Length)
+                return;
+
+            if (value.TryFormat(buffer.Slice(cursor), out int written, "X8"))
+                cursor += written;
+        }
+
+        private static void AppendHex16(Span<char> buffer, ref int cursor, ulong value)
+        {
+            if (cursor >= buffer.Length)
+                return;
+
+            if (value.TryFormat(buffer.Slice(cursor), out int written, "X16"))
+                cursor += written;
+        }
+
+        private static void AppendServiceHandle(Span<char> buffer, ref int cursor, string label, object service)
+        {
+            AppendLiteral(buffer, ref cursor, "SVC ");
+            AppendLiteral(buffer, ref cursor, label);
+            AppendLiteral(buffer, ref cursor, " 0x");
+            if (service == null)
+            {
+                AppendLiteral(buffer, ref cursor, IntPtr.Size == 8 ? "0000000000000000" : "00000000");
+                AppendNewLine(buffer, ref cursor);
+                return;
+            }
+
+            IntPtr handle = new IntPtr(RuntimeHelpers.GetHashCode(service));
+            if (IntPtr.Size == 8)
+                AppendHex16(buffer, ref cursor, unchecked((ulong)handle.ToInt64()));
+            else
+                AppendHex8(buffer, ref cursor, unchecked((uint)handle.ToInt32()));
+            AppendNewLine(buffer, ref cursor);
         }
 
         private void SetTransitionDitherCoverage(float coverage)

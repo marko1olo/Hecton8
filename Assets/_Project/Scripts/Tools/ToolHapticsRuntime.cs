@@ -1,5 +1,7 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Physics;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -11,16 +13,19 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9916)]
-    public sealed class ToolHapticsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable
+    public sealed class ToolHapticsRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IPhysicsAcousticImpulseEventListener
     {
         private const int BufferCapacity = 16;
         private const float DefaultDecayRate = 1.5f;
         private const float DefaultDurationSeconds = 0.18f;
+        private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
+        private const byte BothMotorMask = LeftMotorMask | RightMotorMask;
+        private const float PhysicsImpulseHapticMinimumVolume = 0.08f;
+        private const float PhysicsImpulseHapticDurationSeconds = 0.12f;
+        private const float PhysicsImpulseHapticDecayRate = 4.2f;
         internal const byte PriorityCritical = 3;
         private const float TwoPi = 6.28318530718f;
-
-        private static ToolHapticsRuntime _instance;
 
         private NativeArray<HapticCommand> _frontBuffer;
         private NativeArray<HapticCommand> _backBuffer;
@@ -28,6 +33,7 @@ namespace Hecton8.Tools
         private int _backCount;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
+        private bool _serviceRegistered;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct HapticCommand
@@ -46,16 +52,9 @@ namespace Hecton8.Tools
             public float FrequencyHz;
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
         public static void EnqueueToolFeedback(float powerDelivered, float ratedPower, byte priority = 1)
         {
-            ToolHapticsRuntime runtime = EnsureRuntimeInstance();
-            if (runtime == null)
+            if (!TryGetRuntime(out ToolHapticsRuntime runtime))
                 return;
 
             runtime.EnqueueBackBuffer(powerDelivered, ratedPower, priority);
@@ -70,8 +69,7 @@ namespace Hecton8.Tools
             byte motorMask,
             byte blendMode)
         {
-            ToolHapticsRuntime runtime = EnsureRuntimeInstance();
-            if (runtime == null)
+            if (!TryGetRuntime(out ToolHapticsRuntime runtime))
                 return;
 
             runtime.EnqueueBackBufferCommand(
@@ -96,8 +94,7 @@ namespace Hecton8.Tools
             byte priority,
             byte motorMask)
         {
-            ToolHapticsRuntime runtime = EnsureRuntimeInstance();
-            if (runtime == null)
+            if (!TryGetRuntime(out ToolHapticsRuntime runtime))
                 return;
 
             runtime.EnqueueBackBufferCommand(
@@ -113,16 +110,12 @@ namespace Hecton8.Tools
 
         public static ToolHapticsRuntime EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
-
-            GameObject runtimeRoot = new GameObject("[ToolHapticsRuntime]"); // COLD ALLOC: GameObject[1] — tool-side haptic queue owner — owner: ToolHapticsRuntime
-            return runtimeRoot.AddComponent<ToolHapticsRuntime>();
+            return GlobalRegistry.ToolHaptics;
         }
 
         public static bool TryGetRuntime(out ToolHapticsRuntime runtime)
         {
-            runtime = _instance;
+            runtime = GlobalRegistry.ToolHaptics;
             return runtime != null;
         }
 
@@ -146,7 +139,7 @@ namespace Hecton8.Tools
                 if (command.BaseHighFreqIntensity <= 0f && command.HighFreqIntensity > 0f)
                     command.BaseHighFreqIntensity = command.HighFreqIntensity;
 
-                float decayFactor = math.exp(-math.max(0f, command.DecayRate) * safeDeltaTime);
+                float decayFactor = ResolveHapticDecayFactor(command.DecayRate, safeDeltaTime);
                 command.BaseLowFreqIntensity = math.saturate(command.BaseLowFreqIntensity * decayFactor);
                 command.BaseHighFreqIntensity = math.saturate(command.BaseHighFreqIntensity * decayFactor);
                 float wave = command.FrequencyHz > 0.001f
@@ -198,44 +191,97 @@ namespace Hecton8.Tools
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             EnsureBuffers();
         }
 
         private void OnEnable()
         {
             EnsureBuffers();
+            TryRegisterService();
+            PhysicsEventBus.Register(this);
             TryRegisterUpdate();
             TryRegisterLateFrame();
         }
 
         private void OnDisable()
         {
+            PhysicsEventBus.Unregister(this);
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            PhysicsEventBus.Unregister(this);
             TryUnregisterLateFrame();
             TryUnregisterUpdate();
+            TryUnregisterService();
             DisposeBuffers();
+        }
 
-            if (_instance == this)
-                _instance = null;
+        void IPhysicsAcousticImpulseEventListener.OnAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        {
+            if ((impulseEvent.Flags & AcousticImpulseFlags.Critical) == 0 ||
+                impulseEvent.Volume01 < PhysicsImpulseHapticMinimumVolume)
+            {
+                return;
+            }
+
+            Vector3 localDirection = impulseEvent.Direction;
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            Transform playerTransform = player != null ? player.PlayerTransform : null;
+            if (playerTransform != null)
+                localDirection = playerTransform.InverseTransformDirection(impulseEvent.Direction);
+
+            float side = math.clamp(localDirection.x, -1f, 1f);
+            float intensity = math.saturate(impulseEvent.Volume01);
+            byte motorMask;
+            float leftIntensity;
+            float rightIntensity;
+            if (side < -0.15f)
+            {
+                motorMask = LeftMotorMask;
+                leftIntensity = intensity;
+                rightIntensity = 0f;
+            }
+            else if (side > 0.15f)
+            {
+                motorMask = RightMotorMask;
+                leftIntensity = 0f;
+                rightIntensity = intensity;
+            }
+            else
+            {
+                motorMask = BothMotorMask;
+                leftIntensity = intensity * 0.65f;
+                rightIntensity = intensity * 0.65f;
+            }
+
+            EnqueueBackBufferCommand(
+                leftIntensity,
+                rightIntensity,
+                PhysicsImpulseHapticDurationSeconds,
+                PhysicsImpulseHapticDecayRate,
+                PriorityCritical,
+                motorMask,
+                2,
+                0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveHapticDecayFactor(float decayRate, float deltaTime)
+        {
+            float x = math.clamp(math.max(0f, decayRate) * math.max(0f, deltaTime), 0f, 3f);
+            float x2 = x * x;
+            return math.rcp(1f + x + (0.5f * x2));
         }
 
         private void EnsureBuffers()
         {
             if (!_frontBuffer.IsCreated)
             {
-                _frontBuffer = new NativeArray<HapticCommand>(BufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HapticCommand>[16] — active haptic buffer consumed by input dispatch — owner: ToolHapticsRuntime
+                _frontBuffer = new NativeArray<HapticCommand>(BufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HapticCommand>[16] - active haptic buffer consumed by input dispatch - owner: ToolHapticsRuntime
 
                 NativeMemorySentinel.RegisterNativeArray(
                     _frontBuffer,
@@ -246,7 +292,7 @@ namespace Hecton8.Tools
 
             if (!_backBuffer.IsCreated)
             {
-                _backBuffer = new NativeArray<HapticCommand>(BufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HapticCommand>[16] — frame-local haptic write buffer merged in LateFrameTick — owner: ToolHapticsRuntime
+                _backBuffer = new NativeArray<HapticCommand>(BufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HapticCommand>[16] - frame-local haptic write buffer merged in LateFrameTick - owner: ToolHapticsRuntime
                 NativeMemorySentinel.RegisterNativeArray(
                     _backBuffer,
                     nameof(ToolHapticsRuntime),
@@ -360,6 +406,25 @@ namespace Hecton8.Tools
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
             _registeredUpdate = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterToolHapticsRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ToolHaptics, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.ToolHaptics, this))
+                GlobalRegistry.UnregisterToolHapticsRuntime(this);
+            _serviceRegistered = false;
         }
 
         private void TryUnregisterUpdate()

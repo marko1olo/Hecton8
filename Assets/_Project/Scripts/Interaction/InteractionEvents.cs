@@ -19,7 +19,8 @@ namespace Hecton8.Interaction
     {
         ItemCollected = 0,
         InteractionStarted = 1,
-        HoverChanged = 2
+        HoverChanged = 2,
+        ItemLost = 3
     }
 
     /// <summary>
@@ -252,6 +253,30 @@ namespace Hecton8.Interaction
                 ReferenceSlot = referenceSlot,
                 Quantity = quantity,
                 EventType = (ushort)InteractionEventType.ItemCollected,
+                Reserved = 0
+            });
+        }
+
+        /// <summary>
+        /// Enqueues a lost/discarded item event for quest deadlock recovery and other native listeners.
+        /// </summary>
+        public static void RaiseItemLost(ItemData item, int quantity, Transform interactor)
+        {
+            if (!TryReserveReferenceSlot(out int referenceSlot))
+                return;
+
+            _referenceSlots[referenceSlot].Item = item;
+            _referenceSlots[referenceSlot].Target = null;
+            _referenceSlots[referenceSlot].Interactor = interactor;
+
+            Enqueue(new InteractionEventPayload
+            {
+                ItemHashId = ComputeItemHash(item),
+                TargetHashId = 0u,
+                InteractorHashId = ComputeTransformHash(interactor),
+                ReferenceSlot = referenceSlot,
+                Quantity = quantity,
+                EventType = (ushort)InteractionEventType.ItemLost,
                 Reserved = 0
             });
         }

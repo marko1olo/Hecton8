@@ -1,6 +1,7 @@
-# AI Flora Execution Brief
+﻿# AI Flora Execution Brief
 
-Status: `ACTIVE`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Verification: `PENDING VERIFICATION`
 
 Short entry point for kelp/coral/flora work. This file does not replace `AGENTS.md` or `Docs/PROCEDURAL_ASSET_PIPELINE.md`. It exists so an agent does not need to parse large legacy flora docs before acting.
@@ -9,7 +10,7 @@ Short entry point for kelp/coral/flora work. This file does not replace `AGENTS.
 
 - Use this as flora execution orientation, not as runtime proof.
 - Completion, beauty, performance, texture import, material validity, and scene/runtime scatter wiring remain `PENDING VERIFICATION` until validators, console, profiler, or asset readback prove them.
-- Current project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project truth starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 
 ## Authority Order
 
@@ -23,8 +24,8 @@ Short entry point for kelp/coral/flora work. This file does not replace `AGENTS.
 8. Legacy concept/reference docs only:
    - `Vodorosli.md`
    - `Coralli.md`
-   - `работа с водорослями.md`
-   - `работа с кораллами.md`
+   - `Ñ€Ð°Ð±Ð¾Ñ‚Ð° Ñ Ð²Ð¾Ð´Ð¾Ñ€Ð¾ÑÐ»ÑÐ¼Ð¸.md`
+   - `Ñ€Ð°Ð±Ð¾Ñ‚Ð° Ñ ÐºÐ¾Ñ€Ð°Ð»Ð»Ð°Ð¼Ð¸.md`
    - `VODOROSLI_TRANSFER_LEDGER.md`
    - `CORALLI_TRANSFER_LEDGER.md`
 

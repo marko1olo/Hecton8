@@ -1,7 +1,7 @@
-# Dispatch Pipeline
+﻿# Dispatch Pipeline
 
-Date: `2026-05-03`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 ## Scope
 This document is the authoritative handoff for future agents touching `SystemDispatcher`, `PhysicsApplySystem`, late-frame job ownership recovery, and structural command draining.

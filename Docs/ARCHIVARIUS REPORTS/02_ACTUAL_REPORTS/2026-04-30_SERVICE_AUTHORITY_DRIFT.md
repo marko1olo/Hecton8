@@ -1,6 +1,6 @@
-# SERVICE AUTHORITY DRIFT
+﻿# SERVICE AUTHORITY DRIFT
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: current source-backed audit of active runtime service owners that still mix singleton ownership, `DontDestroyOnLoad`, and `GlobalRegistry` publication
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `STRM_Persistent_Object_Registry.txt`

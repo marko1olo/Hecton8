@@ -1,7 +1,7 @@
-# Reports
+﻿# Reports
 
-Date: `2026-05-05`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Purpose: canonical drop zone for new reports, audits, and validation writeups that are still active.
 
@@ -18,6 +18,8 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 
 ## Current High-Authority Reports
 
+- `2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
+- `2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json`
 - `2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
 - `2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
 - `2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
@@ -47,14 +49,20 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 - `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
 - `DOOMSDAY_FLAW_REPORT.md`
 
+`2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` is the latest broad documentation synchronization report.
+It records the current May 6 filesystem inventory: `Docs/**/*.md` total `429`, all markdown missing `Date:` `0`, all markdown missing `Status:` `0`, active non-report docs `162`, active header debt `0`, root `.md` files `5`, root `.txt`/`.log` files `0`, `Docs/Reports/*.md` `54`, relocated root logs `9`, `Assets/_Project/**/*.cs` `1206`, `Assets/_Project/Scripts/**/*.cs` `1165`, and `Assets/_Project/Scripts` line count `643074` by `Get-Content.Count`. It also records the recursive `Docs` category scan (`887` total files, `824` rewritable text-like files under the current extension policy), classifies `BROKEN_PREFABS.md` as a generated root snapshot, records that active and full-markdown `Date:` / `Status:` header debt is closed, adds the official Unity/package source-check boundary, records fresh Unity MCP editor readback, and states that the May 6 Grand Purge reports are scoped evidence only while full build remains blocked by missing `Assets/_Project/Scripts/SavePredictivePagingMath.cs`.
+
+`2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json` is the machine-readable active documentation manifest.
+It lists `216` active markdown files with parsed `Date`, `Status`, and title fields. The JSON is ASCII-escaped so the manifest itself does not add a new non-ASCII content violation.
+
 `2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority classification map.
-It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, the follow-up relocation of repository-root logs into a deprecated evidence bundle, and the 2026-05-05 documentation influx count boundary.
+It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, the follow-up relocation of repository-root logs into a deprecated evidence bundle, and the 2026-05-05 documentation influx count boundary. Read the May 6 synchronization report first for current counters.
 
 `2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` is the current bounded Omega-autonomy hardening evidence report.
 It records the PowerGrid native-sentinel and job-barrier telemetry changes, BaseLogisticsNetwork route BFS `.Run()` removal, procedural audio overflow telemetry, the explicit-EventSystem `MainMenuInputRoutingGuard` smoke fix, repair telemetry code/dedupe proof, runtime-watchdog registry hijack smoke, `HectonWorldGenerator.ActiveRuntimeInstance` compile-blocker cleanup through `GlobalRegistry.WorldSeedProvider`, scoped no-`IJob.Run()`/`JobHandle.Complete()` scan, scoped native-memory registration scan, `Hecton8.Core` build evidence, and final `OmegaAutonomySmokeTester` JSON `PASS` covering route edge cases, procedural audio overflow/reentry, main-menu input repair, runtime-watchdog registry ownership, registry hijack blocking, Burst clear native allocation delta, and construction logistics automation. The latest serial Omega Core build is `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; the last warning-bearing Omega baseline had `48 Warning(s)` owned by dependency/vendor code and `0` first-party `Assets/_Project/Scripts` warning matches. Status is `OMEGA VERIFIED (SCOPED)` for that edited domain only; project-wide `OMEGA VERIFIED` is not claimed.
 
 `2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` is the current structural cleanup queue.
-It records `41` active markdown files still missing `Date:`, notes that repository-root `.log` evidence artifacts have been moved to dated `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*` bundles, records that active root `Docs/*.md` contract files, `Docs/ARCHITECTURE/*.md`, `Docs/ARCHIVARIUS REPORTS/*.md`, and `Docs/SPACE_ENGINE_RESEARCH/*.md` are no longer in the missing-header set, and keeps the remaining archive/deprecated move candidates queued for a separate pass. It also records the editor-only documentation authority smoke guard, its three-pass stress runner, failed-audit telemetry hook, CI-facing `RunBatchAll` entrypoint, direct Roslyn compile evidence, and the current Unity licensing/project-lock blocker that prevents claiming batch smoke proof.
+It previously recorded `41` active markdown files still missing `Date:`; the May 6 synchronization pass closed that debt and then normalized the remaining `_Archive`, `Reports`, and `DEPRECATED` markdown provenance headers. Current full `Docs/**/*.md` header debt is `0`. It also notes that repository-root `.log` evidence artifacts have been moved to dated `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*` bundles and keeps archive/deprecated move candidates queued for a separate pass. It also records the editor-only documentation authority smoke guard, its three-pass stress runner, failed-audit telemetry hook, CI-facing `RunBatchAll` entrypoint, direct Roslyn compile evidence, and the current Unity licensing/project-lock blocker that prevents claiming batch smoke proof.
 
 `2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest broad documentation and local evidence addendum.
 It records the current source/doc counts, fresh `Hecton8.Core` and `Hecton8.Editor` compile results `0 Warning(s)` / `0 Error(s)`, historical `Hecton8.World.Dots` restore build `1 Warning(s)` / `0 Error(s)`, `Hecton8.PlayModeTests` restore build `0 Warning(s)` / `0 Error(s)`, and the pre-repair foundation guard failure. Read `2026-05-04_WARNING_CLEANUP.md` and `2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` next for the current warning-clean and guard-clean source/build addenda.

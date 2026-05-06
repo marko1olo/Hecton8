@@ -67,12 +67,16 @@ namespace Hecton8.AI
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
     public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IAcousticPingEventListener
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        , RuntimeWatchdog.IEmergencyResetTarget
+#endif
     {
         private const int CreaturePoolMinimumReserve = 8;
         private const int CreaturePoolBurstReserveMultiplier = 2;
         private const int SmallPassiveProxyMinimumReserve = 24;
         private const int SmallPassiveProxyBurstReserveMultiplier = 3;
         private const string SmallPassiveProxyPrefabName = "SmallPassiveProxy";
+        private const string DebugBiomeFallbackLabel = "None";
         private const float PlayerResolveRetryInterval = 1f;
         private const float DirectorSlowTickIntervalSeconds = 0.5f;
         private const float DehydrationDistanceMeters = 40f;
@@ -80,6 +84,7 @@ namespace Hecton8.AI
         private const float HibernationDistanceMeters = 150f;
         private const double HibernationDistanceSq = HibernationDistanceMeters * HibernationDistanceMeters;
         private const float HibernationStarvationHuntThreshold01 = 0.9f;
+        private const float HibernationHungerCatchUpRatePerSecond = 0.045f;
         private const float ThermalApexMigrationIntervalSeconds = 2f;
         private const float ThermalApexMigrationRadiusMeters = 1000f;
         private const float ThermalApexMigrationStepMeters = 250f;
@@ -98,6 +103,7 @@ namespace Hecton8.AI
         private const int AcousticPanicCommandIndexMask = AcousticPanicCommandCapacity - 1;
         private const float AcousticPingBoidPanicRadiusMeters = 100f;
         private const float AcousticPingBoidPanicDurationSeconds = 3f;
+        private const string MaxHibernatedFaunaStatesWarning = "[FaunaDirector] Max hibernated fauna states reached. Extra residents were not saved.";
         private static readonly string[] ThermalHabitatTokens = { "thermal", "brine", "heat", "furnace", "volcanic", "chemical" };
         private static readonly string[] CaveHabitatTokens = { "cave", "nest", "ambush", "rift", "pocket", "burrow", "crevice" };
         private Unity.Mathematics.Random _biomeSpawnRandom;
@@ -371,8 +377,10 @@ namespace Hecton8.AI
         [SerializeField] private int _debugActiveMacroZones;
         [SerializeField] private int _debugRegistryFaunaAnchors;
         [SerializeField] private int _debugRegistryLargeThreatZones;
-        [SerializeField] private string _debugCurrentChunk = "(0,0)";
-        [SerializeField] private string _debugCurrentMacroZone = "(0,0)";
+        [SerializeField] private int _debugCurrentChunkX;
+        [SerializeField] private int _debugCurrentChunkZ;
+        [SerializeField] private int _debugCurrentMacroZoneX;
+        [SerializeField] private int _debugCurrentMacroZoneZ;
         [SerializeField] private float _debugRuntimeChunkSize = 192f;
         [SerializeField] private float _debugRuntimeMacroZoneSize = 768f;
         [SerializeField] private int _debugRuntimeGlobalMaxCount = 30;
@@ -385,7 +393,7 @@ namespace Hecton8.AI
         [SerializeField] private int _debugSpawnValidationSuccesses;
         [SerializeField] private int _debugAnchorBasedSpawns;
         [SerializeField] private int _debugFallbackRingSpawns;
-        [SerializeField] private string _debugMatrixFaunaMood = "None";
+        [SerializeField] private WorldProceduralFaunaMood _debugMatrixFaunaMood = WorldProceduralFaunaMood.None;
         [SerializeField] private int _debugEffectiveGlobalMaxCount = 30;
         [SerializeField] private int _debugEffectiveSpawnsPerTick = 3;
         [SerializeField] private int _debugEffectiveBiomeMaxCount = 10;
@@ -421,6 +429,9 @@ namespace Hecton8.AI
         /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Transform Ð¸Ð³Ñ€Ð¾ÐºÐ°.</summary>
         private Transform _playerTransform;
         private Transform _playerViewTransform;
+        private Vector3 _playerLookViewPosition;
+        private Vector3 _playerLookViewForward;
+        private bool _hasPlayerLookView;
         private HectonMapMagicVegetationBridge _vegetationThreatBridge;
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
@@ -556,7 +567,7 @@ namespace Hecton8.AI
             {
                 return biomeMatrixDirector != null && biomeMatrixDirector.CurrentProfile != null
                     ? biomeMatrixDirector.CurrentProfile.name
-                    : _debugCurrentBiome.ToString();
+                    : DebugBiomeFallbackLabel;
             }
         }
         internal string DebugEcologyBiasLabel { get { return ResolveDebugEcologyBiasLabel(); } }
@@ -595,6 +606,9 @@ namespace Hecton8.AI
 
             GlobalRegistry.Save?.Register(this);
             TryRegisterFaunaSimulationService();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
+#endif
             SubscribeAcousticPingEvents();
 
             if (GlobalRegistry.Dispatcher == null)
@@ -643,6 +657,9 @@ namespace Hecton8.AI
                 return;
 
             GlobalRegistry.Save?.Unregister(this);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
+#endif
             TryUnregisterFaunaSimulationService();
             UnsubscribeAcousticPingEvents();
             CompleteResidentDataOnlySimulation(forceComplete: false);
@@ -667,6 +684,9 @@ namespace Hecton8.AI
             if (Application.isPlaying)
                 GlobalRegistry.Save?.Unregister(this);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
+#endif
             TryUnregisterFaunaSimulationService();
             UnsubscribeAcousticPingEvents();
 
@@ -696,6 +716,9 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             InitializeDehydrationResidencyState();
             TryRegisterFaunaSimulationService();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
+#endif
             SubscribeAcousticPingEvents();
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -713,6 +736,23 @@ namespace Hecton8.AI
                 _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
         }
+
+        internal void ServiceEmergencyReset()
+        {
+            DespawnAll();
+            ResetDehydrationResidencyState();
+            TryRegisterFaunaSimulationService();
+            _slowTickAccumulator = 0f;
+            _runtimeSettingsDirty = true;
+            _nextRuntimeSettingsRefreshTime = 0f;
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        void RuntimeWatchdog.IEmergencyResetTarget.ServiceEmergencyReset()
+        {
+            ServiceEmergencyReset();
+        }
+#endif
 
         private void TryRegisterFaunaSimulationService()
         {
@@ -752,6 +792,9 @@ namespace Hecton8.AI
         /// <param name="deltaTime">Scaled frame delta supplied by <see cref="SystemDispatcher"/>.</param>
         public void Tick(float deltaTime)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector);
+#endif
             if (deltaTime <= 0f)
                 return;
 
@@ -911,6 +954,7 @@ namespace Hecton8.AI
             {
                 _playerTransform = null;
                 _playerViewTransform = null;
+                _hasPlayerLookView = false;
                 _nextPlayerResolveTime = 0f;
                 return;
             }
@@ -1052,12 +1096,12 @@ namespace Hecton8.AI
                 }
 
                 // â”€â”€ Distance check â”€â”€
-                Vector3 diff = creature.transform.position - playerPos;
+                AbsoluteUniversePosition creatureAup = AbsoluteUniversePosition.FromRuntimePosition(creature.transform.position);
                 float cullDistanceSqr = creature.isLargeThreat
                     ? _runtimeLargeThreatKillDistanceSqr
                     : _runtimeKillDistanceSqr;
 
-                if (diff.sqrMagnitude > cullDistanceSqr)
+                if (AbsoluteUniversePosition.DistanceSq(in creatureAup, in playerAup) > cullDistanceSqr)
                 {
                     // Ð”ÐµÑÐ¿Ð°Ð²Ð½ Ñ‡ÐµÑ€ÐµÐ· Ð¿ÑƒÐ»
                     if (pool != null)
@@ -1586,18 +1630,20 @@ namespace Hecton8.AI
             return new Unity.Mathematics.Random(seed == 0u ? 1u : seed);
         }
 
-        private static bool IsSpawnPointValid(Transform viewTransform, Vector3 spawnPoint)
+        private bool IsSpawnPointValid(Transform viewTransform, Vector3 spawnPoint)
         {
-            if (viewTransform == null)
+            if (!_hasPlayerLookView && viewTransform == null)
                 return true;
 
-            Vector3 toSpawn = spawnPoint - viewTransform.position;
+            Vector3 viewPosition = _hasPlayerLookView ? _playerLookViewPosition : viewTransform.position;
+            Vector3 viewForward = _hasPlayerLookView ? _playerLookViewForward : viewTransform.forward;
+            Vector3 toSpawn = spawnPoint - viewPosition;
             float sqrMagnitude = toSpawn.sqrMagnitude;
             if (sqrMagnitude <= MinimumSpawnViewDirectionMagnitudeSqr)
                 return false;
 
             float inverseMagnitude = 1f / Mathf.Sqrt(sqrMagnitude);
-            float dot = Vector3.Dot(viewTransform.forward, toSpawn * inverseMagnitude);
+            float dot = Vector3.Dot(viewForward, toSpawn * inverseMagnitude);
             return dot <= SpawnVisibilityDotThreshold;
         }
 
@@ -2677,7 +2723,7 @@ namespace Hecton8.AI
             for (int i = 0; i < _persistedFaunaRestoreScratch.Count; i++)
             {
                 EntityDataRecord cachedState = _persistedFaunaRestoreScratch[i];
-                FaunaHibernationRestoreResult restoreResult = BuildPurgeHibernationRestoreResult(in cachedState);
+                FaunaHibernationRestoreResult restoreResult = BuildPurgeHibernationRestoreResult(in cachedState, Time.time);
                 if (!TryRestorePersistedTier2FaunaState(in cachedState, in restoreResult))
                 {
                     registry.TryCacheFaunaHibernationState(in cachedState);
@@ -2689,12 +2735,16 @@ namespace Hecton8.AI
             }
         }
 
-        private static FaunaHibernationRestoreResult BuildPurgeHibernationRestoreResult(in EntityDataRecord cachedState)
+        private static FaunaHibernationRestoreResult BuildPurgeHibernationRestoreResult(in EntityDataRecord cachedState, float currentTimeSeconds)
         {
+            float savedHunger01 = PersistentWorldRegistry.GetFaunaHibernationHunger01(in cachedState);
+            float sleepStartTimeSeconds = PersistentWorldRegistry.GetFaunaHibernationSleepStartTimeSeconds(in cachedState);
+            float timeAsleepSeconds = math.max(0f, currentTimeSeconds - sleepStartTimeSeconds);
+            float restoredHunger01 = math.saturate(savedHunger01 + (HibernationHungerCatchUpRatePerSecond * timeAsleepSeconds));
             return new FaunaHibernationRestoreResult
             {
                 Health = PersistentWorldRegistry.GetFaunaHibernationHealth(in cachedState),
-                Hunger01 = PersistentWorldRegistry.StableRandom01(cachedState.InstanceUid)
+                Hunger01 = restoredHunger01
             };
         }
 
@@ -2814,7 +2864,7 @@ namespace Hecton8.AI
             {
                 if (savedCount >= ProceduralWorldStateDTO.MaxHibernatedFaunaStates)
                 {
-                    Debug.LogWarning($"[FaunaDirector] Max hibernated fauna states ({ProceduralWorldStateDTO.MaxHibernatedFaunaStates}) reached. Extra residents were not saved.", this);
+                    Debug.LogWarning(MaxHibernatedFaunaStatesWarning, this);
                     break;
                 }
 
@@ -3037,16 +3087,25 @@ namespace Hecton8.AI
             if (_playerTransform == null)
             {
                 _playerViewTransform = null;
+                _hasPlayerLookView = false;
                 return;
             }
 
-            if (_playerViewTransform != null)
-                return;
+            _hasPlayerLookView = false;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
+            {
+                PlayerLookState lookState = runtimeContext.LookState;
+                if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                    math.lengthsq(lookState.AimForward) > MinimumSpawnViewDirectionMagnitudeSqr)
+                {
+                    _playerLookViewPosition = (Vector3)lookState.EyePosition;
+                    _playerLookViewForward = (Vector3)math.normalize(lookState.AimForward);
+                    _hasPlayerLookView = true;
+                }
+            }
 
-            Camera playerCamera = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null
-                ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera
-                : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
-            _playerViewTransform = playerCamera != null ? playerCamera.transform : _playerTransform;
+            _playerViewTransform = _playerTransform;
         }
 
         private void ResolveSpawnRegistry()
@@ -3653,6 +3712,8 @@ namespace Hecton8.AI
             EncounterThreatClass threatClass,
             Vector3 spawnPosition,
             uint deterministicSeed,
+            uint squadStateBits,
+            int squadOrdinal,
             out GameObject spawnedInstance)
         {
             spawnedInstance = null;
@@ -3741,6 +3802,12 @@ namespace Hecton8.AI
 
                 if (selectedEntry.isPredator || threatClass != EncounterThreatClass.Drone)
                     ai.ForceState(FaunaBrain.AIState.Aggressive);
+
+                if (threatClass == EncounterThreatClass.Stalker && _playerTransform != null)
+                {
+                    uint resolvedSquadStateBits = squadStateBits != 0u ? squadStateBits : FaunaBrain.PredatorHuntingStateBits;
+                    ai.ApplyHunterSquadDirective(_playerTransform.position, resolvedSquadStateBits, squadOrdinal, 18f);
+                }
             }
 
             if (!TryBuildActiveCreatureRecord(
@@ -4359,7 +4426,7 @@ namespace Hecton8.AI
             _debugSpawnValidationSuccesses = spawnValidationSuccesses;
             _debugAnchorBasedSpawns = anchorBasedSpawns;
             _debugFallbackRingSpawns = fallbackRingSpawns;
-            _debugMatrixFaunaMood = _currentMatrixFaunaMood.ToString();
+            _debugMatrixFaunaMood = _currentMatrixFaunaMood;
             _debugEffectiveGlobalMaxCount = _currentEffectiveGlobalMaxCount;
             _debugEffectiveSpawnsPerTick = _currentEffectiveSpawnsPerTick;
             _debugEffectiveBiomeMaxCount = _cachedBiomeIndex >= 0 ? _currentEffectiveBiomeMaxCount : 0;
@@ -4383,9 +4450,11 @@ namespace Hecton8.AI
             if (_playerTransform != null)
             {
                 WorldChunkCoordinate playerChunk = WorldChunkCoordinate.FromWorldPosition(_playerTransform.position, _runtimeChunkSize);
-                _debugCurrentChunk = playerChunk.ToString();
+                _debugCurrentChunkX = playerChunk.x;
+                _debugCurrentChunkZ = playerChunk.z;
                 WorldMacroZoneCoordinate playerMacroZone = WorldMacroZoneCoordinate.FromWorldPosition(_playerTransform.position, _runtimeMacroZoneSize);
-                _debugCurrentMacroZone = playerMacroZone.ToString();
+                _debugCurrentMacroZoneX = playerMacroZone.x;
+                _debugCurrentMacroZoneZ = playerMacroZone.z;
             }
         }
 

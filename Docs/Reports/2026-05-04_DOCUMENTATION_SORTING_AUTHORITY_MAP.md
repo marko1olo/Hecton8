@@ -1,7 +1,7 @@
-# Documentation Sorting Authority Map
+﻿# Documentation Sorting Authority Map
 
-Date: `2026-05-04`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Scope: repository-root text files, active `Docs/` authority, report sorting, archive/deprecated boundaries
 
 ## Mandates Followed
@@ -54,16 +54,17 @@ Use this order when deciding whether a document is current:
 2. task-relevant `.agents-skills/*` mandates
 3. current source files and fresh command logs
 4. `Docs/README.md`
-5. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
-6. `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
-7. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
-8. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
-9. `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
-10. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
-11. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-12. domain-specific active contracts and reports
-13. historical reports only after reading their latest delta/supersession notes
-14. archive/deprecated folders only as preserved evidence
+5. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
+6. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
+7. `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
+8. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+9. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
+10. `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
+11. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+12. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+13. domain-specific active contracts and reports
+14. historical reports only after reading their latest delta/supersession notes
+15. archive/deprecated folders only as preserved evidence
 
 ## Root Sorting
 
@@ -138,6 +139,7 @@ Archive and deprecated bundles:
 
 Current first-read reports:
 
+- `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
 - `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
 - `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
 - `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
@@ -203,15 +205,50 @@ Historical but still useful evidence reports:
 - Expanded the relocated-root-log counter to scan every `Root_Logs_*` bundle and moved two newly generated root logs into the 2026-05-05 deprecated evidence bundle.
 - Archivarius reality sync added `Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md` as the current SpaceEngine/Sandbox/source-count/naming/interface delta.
 - Archivarius naming sync added `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` as the current active non-ASCII path/content ledger.
-- Current measured post-sync counts: `Docs/**/*.md` total `422`, active docs excluding archive/deprecated/obsolete `209`, active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports` `162`, `Docs/Reports/*.md` `47`.
+- May 5 measured post-sync counts before the May 6 synchronization addendum: `Docs/**/*.md` total `422`, active docs excluding archive/deprecated/obsolete `209`, active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports` `162`, `Docs/Reports/*.md` `47`.
 - SpaceEngine research and Planetary Sandbox logs are primary authority for terrain math/shelf work before old 2026-04-29 reports.
 - Old `2026-04-29` reports and patch artifacts are historical unless a current May 5/May 4 authority file explicitly promotes a narrow claim.
+
+## 2026-05-06 Synchronization Addendum
+
+Read `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` before using the counters in this file.
+
+Fresh May 6 inventory supersedes the May 5 count boundary above:
+
+| Surface | Count |
+|---|---:|
+| `Docs/**/*.md`, total | `429` |
+| all `Docs/**/*.md` missing `Date:` | `0` |
+| all `Docs/**/*.md` missing `Status:` | `0` |
+| active non-report `Docs/**/*.md`, excluding `_Archive`, `DEPRECATED`, `Reports`, and `ARCHIVARIUS REPORTS/03_OBSOLETE` | `162` |
+| `Docs/Reports/*.md` | `54` |
+| active header debt | `0` |
+| root `.md` files | `5` |
+| root `.txt` / `.log` files | `0` |
+| relocated root `.log` files | `9` |
+| `Assets/_Project/**/*.cs` | `1206` |
+| `Assets/_Project/Scripts/**/*.cs` | `1165` |
+| `Assets/_Project/Scripts` line count by `Get-Content.Count` | `643074` |
+
+Root active authority remains `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+`BROKEN_PREFABS.md` is now present in root and is classified as generated snapshot evidence, not authority.
+The root `TERRAIN_AND_BIOME_REALITY_MAP.md` file remains a non-canonical compatibility mirror.
+
+An intermediate May 6 scan found one missing `Status:` file:
+
+- `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md`
+
+That header is now normalized, and the follow-up sync cycle normalized the remaining `41` active missing-`Date:` files plus `_Archive`, `Reports`, and `DEPRECATED` markdown provenance headers. Current full `Docs/**/*.md` missing `Date:` count is `0`, full missing `Status:` count is `0`, active missing `Date:` count is `0`, active missing `Status:` count is `0`, and active header debt is `0`.
+
+The May 6 Grand Purge reports are scoped source/pattern/diff evidence only. They do not provide project-wide build proof while `Assets/_Project/Scripts/SavePredictivePagingMath.cs` remains missing. Fresh Unity MCP editor readback now exists in `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, but it does not upgrade those reports into Play Mode, profiler, GC, memory-retention, or player-build proof.
+
+Official Unity source check in the May 6 sync pass reports Unity `6000.4.5f1` as newer than the local project pin `6000.4.1f1`. This is version drift only. It is not an upgrade instruction; `PROJECT_LTS_Compatibility_Layer` requires a migration branch, compile dry-run, adapter review, CI/perf gates, and regression proof.
 
 No gameplay/runtime files, scenes, prefabs, project settings, packages, or assets were changed by this sorting pass. The only source changes are the editor-only smoke guard and compile-proof fixes in adjacent dirty smoke/import code.
 
 ## Do Not Claim
 
-- Do not claim documentation is fully clean. This pass maps authority and updates the active indexes; it does not normalize every old file header. Current active header debt is `41`.
+- Do not claim archive/deprecated/raw research payloads are current authority or externally revalidated. Current full markdown header debt is `0`, but content truth was not re-proven.
 - Do not claim archive/deprecated content has been revalidated.
 - Do not claim Play Mode stability, zero-GC, frame time, memory retention, or player-build readiness from documentation sorting.
 - Do not claim Unity batch verification for documentation authority until `RunBatchAll` emits the batch JSON artifact from Unity with exit `0`.

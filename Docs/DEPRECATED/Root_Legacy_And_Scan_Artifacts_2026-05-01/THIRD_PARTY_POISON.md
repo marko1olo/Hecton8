@@ -1,4 +1,6 @@
 # Deprecated Document
+Date: 2026-05-01
+Status: DEPRECATED
 
 The old root-level `THIRD_PARTY_POISON.md` was stale and is no longer authoritative.
 

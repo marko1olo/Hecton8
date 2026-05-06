@@ -1,6 +1,8 @@
 ﻿# Foundation Guard Scan
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
-- Generated: 2026-05-04 23:33:55
+- Generated: 2026-05-06 13:50:28
 - Project root: C:\hades\Hecton8
 - Scope: Assets/_Project/Scripts/**/*.cs
 - Status: PENDING VERIFICATION
@@ -9,12 +11,12 @@
 
 | Guard | Count | Meaning |
 |---|---:|---|
-| Global registry self-registration sites | 500 | Informational. Broad GlobalRegistry.Register*(this) and Renderables.Register(this) scan. Must use registry truth-state checks, not blind flags. |
+| Global registry self-registration sites | 518 | Informational. Broad GlobalRegistry.Register*(this) and Renderables.Register(this) scan. Must use registry truth-state checks, not blind flags. |
 | Blind registry flag drift | 0 | Must be 0. Pattern: Register*(this, ...) followed by _field = true. |
 | Origin shift listener blind flag drift | 0 | Must be 0. Pattern: HectonFloatingOrigin.RegisterListener(this) followed by _field = true. |
-| Synchronous job .Run( sites | 0 | Must be 0. Synchronous JobSystem barriers are no longer allowed in first-party runtime source. |
+| Synchronous job .Run( sites | 10 | Must be 0. Synchronous JobSystem barriers are no longer allowed in first-party runtime source. |
 | Hot-path synchronous job .Run( review sites | 0 | Must be 0. Secondary classifier for stale sync job barriers in gameplay cadence. |
-| Completion .Complete( text hits | 5 | Review queue. Custom dispatcher completions must be classified separately from JobHandle.Complete. |
+| Completion .Complete( text hits | 35 | Review queue. Custom dispatcher completions must be classified separately from JobHandle.Complete. |
 | Guarded dispatcher completion sites | 1 | Source-level IsCompleted/swap-window helper pattern, not runtime proof. |
 | UnsafeUtility.MemCpy outside guard | 0 | Must be 0 outside UnsafeMemoryCopyGuard. |
 | Legacy PlayerSignalEvents.On* subscriptions | 0 | Must be 0 after NativeQueue/listener migration. |
@@ -24,13 +26,13 @@
 | Hot-path direct InputManager.Instance review sites | 0 | Must be 0. One-hop source classifier for stale singleton reads in gameplay cadence. |
 | Optimization singleton residue | 0 | Must be 0. Optimization/VRAM services are registry-owned; no private _instance, static Instance, DDOL, or SINGLETON comments. |
 | Unauthorized Unity loop methods | 0 | Must be 0 outside SystemDispatcher/Core-approved exceptions. Gameplay cadence belongs to ITickable/dispatcher lanes. |
-| Legacy coroutine sites | 0 | Must be 0 outside Editor. Coroutines bypass controlled tick lanes and allocate state. |
+| Legacy coroutine sites | 22 | Must be 0 outside Editor. Coroutines bypass controlled tick lanes and allocate state. |
 | Forbidden runtime asset API sites | 0 | Must be 0 outside Editor. Forbids Resources.Load and Camera.main. |
 | Release-reachable direct hot-path Debug.Log sites | 0 | Must be 0. Debug.Log/Warning/Error directly inside gameplay cadence is forbidden outside UNITY_EDITOR/DEVELOPMENT_BUILD guards. |
 | Release-reachable one-hop Debug.Log review sites | 0 | Review queue. Conservative same-file call classifier; owner review required before promotion to hard gate. |
 | Broad physics layer masks outside Editor | 0 | Must be 0. Forbids LayerMask=-1, ~0, and direct all-layer masks in Physics/RaycastCommand lines. |
-| Runtime Find API text hits outside Editor folder | 8 | Review queue. Bootstrap cold paths must be documented; gameplay hot paths must be removed. |
-| One-hop hot-path callee names | 2473 | Audit classifier only. Used to mark .Run/.Complete/MemCpy/Find hits inside methods called by hot members. |
+| Runtime Find API text hits outside Editor folder | 9 | Review queue. Bootstrap cold paths must be documented; gameplay hot paths must be removed. |
+| One-hop hot-path callee names | 2573 | Audit classifier only. Used to mark .Run/.Complete/MemCpy/Find hits inside methods called by hot members. |
 
 ## Blind Registry Flag Hits
 
@@ -42,15 +44,54 @@
 
 ## Synchronous Job Run Sites
 
-- none
+- Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs:185 [TryRunRuntimeBarrierSourceAudit; cold/unknown review] - return ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveManager.cs"), ".Complete(", ".Run(") &&
+- Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs:186 [TryRunRuntimeBarrierSourceAudit; cold/unknown review] - ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs"), ".Complete(", ".Run(") &&
+- Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs:187 [TryRunRuntimeBarrierSourceAudit; cold/unknown review] - ContainsNone(ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"), ".Complete(", ".Run(") &&
+- Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs:188 [TryRunRuntimeBarrierSourceAudit; cold/unknown review] - ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveIndexedSectorBoundsMath.cs"), ".Complete(", ".Run(");
+- Assets\_Project\Scripts\Audio\Editor\AudioOmegaAutonomySmokeTester.cs:150 [MethodBodyIsBridgeOnly; cold/unknown review] - body.IndexOf(".Run()", StringComparison.Ordinal) < 0 &&
+- Assets\_Project\Scripts\Editor\OmegaAutonomySmokeTestRunner.cs:21 [Run; cold/unknown review] - passed = OmegaAutonomySmokeTester.Run(out json);
+- Assets\_Project\Scripts\Editor\SpaceEngine098TerrainSmokeTestRunner.cs:21 [Run; cold/unknown review] - passed = SpaceEngine098TerrainSmokeTester.Run(out json);
+- Assets\_Project\Scripts\Editor\SpaceEngineResearchSmokeTester.cs:328 [AuditRecentScope; cold/unknown review] - result.JobBarrierTokenCount += CountToken(text, ".Complete()") + CountToken(text, ".Run()");
+- Assets\_Project\Scripts\Editor\TechArtPipelineSmokeTestAutoRunner.cs:42 [RunRequestedSmokeTest; cold/unknown review] - passed = TechArtPipelineSmokeTester.Run(out json);
+- Assets\_Project\Scripts\Editor\TechArtPipelineSmokeTester.cs:177 [CheckForensicStaticRules; cold/unknown review] - !FileContains(BridgePath, ".Run()");
 
 ## Completion Text Hits
 
-- Assets\_Project\Scripts\VoxelDeformationSmokeTester.cs:170 [ValidatePureVoidNavGrid; cold/unknown review] - handle.Complete();
-- Assets\_Project\Scripts\VoxelDeformationSmokeTester.cs:232 [ValidateVertexAmbientOcclusion; cold/unknown review] - handle.Complete();
-- Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:136 [RunFogBlendSmokeTest; cold/unknown review] - job.Schedule(1, 1).Complete();
+- Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs:116 [TryRunBurstSubtractionBoundsStress; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs:185 [TryRunRuntimeBarrierSourceAudit; cold/unknown review] - return ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveManager.cs"), ".Complete(", ".Run(") &&
+- Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs:186 [TryRunRuntimeBarrierSourceAudit; cold/unknown review] - ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs"), ".Complete(", ".Run(") &&
+- Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs:187 [TryRunRuntimeBarrierSourceAudit; cold/unknown review] - ContainsNone(ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"), ".Complete(", ".Run(") &&
+- Assets\_Project\Scripts\SavePersistenceOmegaSmokeTester.cs:188 [TryRunRuntimeBarrierSourceAudit; cold/unknown review] - ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveIndexedSectorBoundsMath.cs"), ".Complete(", ".Run(");
+- Assets\_Project\Scripts\ThermalMeltSmokeTester.cs:131 [ValidateDirtyBlendJob; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\ThermalMeltSmokeTester.cs:174 [ValidateAupRaymarchJob; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\ThermalMeltSmokeTester.cs:206 [ValidateLocalizedNavPatchJob; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\VoxelDeformationSmokeTester.cs:226 [ValidatePureVoidNavGrid; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\VoxelDeformationSmokeTester.cs:267 [ValidateVoidChunkBoundsEarlyExit; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\VoxelDeformationSmokeTester.cs:280 [ValidateVoidChunkBoundsEarlyExit; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\VoxelDeformationSmokeTester.cs:335 [ValidateVertexAmbientOcclusion; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\Audio\PlayerCriticalBufferJobs.cs:27 [Clear; cold/unknown review] - job.Schedule(safeCount, 256).Complete();
+- Assets\_Project\Scripts\Audio\PlayerCriticalMetallicGrainBank.cs:25 [Generate; cold/unknown review] - job.Schedule(grainBank.Length, 64).Complete();
+- Assets\_Project\Scripts\Audio\Editor\AudioOmegaAutonomySmokeTester.cs:73 [Run; cold/unknown review] - AppendCheck("hot DSP block has no JobHandle completion", !ExtractMethodBody(renderer, "private void MixAndFilterBlock").Contains(".Complete()"), ref passedCount, ref failedCount, checks);
+- Assets\_Project\Scripts\Audio\Editor\AudioOmegaAutonomySmokeTester.cs:149 [MethodBodyIsBridgeOnly; cold/unknown review] - body.IndexOf(".Complete()", StringComparison.Ordinal) < 0 &&
+- Assets\_Project\Scripts\Editor\AnomalySmokeTester.cs:161 [RunSmoke; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\Editor\AnomalyTestHarness.cs:123 [RunPerfectBowlAssertion; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\Editor\AnomalyTestHarness.cs:176 [RunCliffOverhangAssertion; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\Editor\AnomalyTestHarness.cs:260 [RunFeatureDetectionAssertion; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\Editor\AnomalyTestHarness.cs:316 [RunSeamStitchAssertion; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\Editor\AnomalyTestHarness.cs:391 [RunSdfInjectionAssertion; cold/unknown review] - fissureHandle.Complete();
+- Assets\_Project\Scripts\Editor\SpaceEngineResearchSmokeTester.cs:328 [AuditRecentScope; cold/unknown review] - result.JobBarrierTokenCount += CountToken(text, ".Complete()") + CountToken(text, ".Run()");
+- Assets\_Project\Scripts\Editor\TechArtPipelineSmokeTester.cs:175 [CheckForensicStaticRules; cold/unknown review] - bool noJobBarrier = !FileContains(BridgePath, ".Complete()") &&
+- Assets\_Project\Scripts\Quest\QuestStateManager.cs:657 [EvaluateSignal; cold/unknown review] - signalEvaluationHandle.Complete();
+- Assets\_Project\Scripts\Quest\QuestStateManager.cs:1327 [RefreshStateMetadata; cold/unknown review] - checksumHandle.Complete();
+- Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:142 [RunFogBlendSmokeTest; cold/unknown review] - job.Schedule(1, 1).Complete();
 - Assets\_Project\Scripts\World\DispatcherJobSwap.cs:71 [TryComplete; guarded review: guarded by DispatcherJobSwap.TryComplete IsCompleted/swap-window contract] - handle.Complete();
-- Assets\_Project\Scripts\World\HectonBiomeMatrixMapMagicPostProcessNode.cs:134 [Generate; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\World\HectonAnomalyMapMagicNode.cs:242 [Generate; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\World\HectonBiomeMatrixMapMagicPostProcessNode.cs:141 [Generate; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\World\HectonBrinePoolMeshGenerator.cs:93 [<unknown>; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\World\HectonTerrainSplatmapMapMagicNode.cs:148 [Generate; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\World\HectonTerrainSplatmapMapMagicNode.cs:163 [Generate; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:67 [RunSlopeCavitySplatmapSmoke; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\World\PlanetaryCanvasSmokeTester.cs:84 [RunSlopeCavitySplatmapSmoke; cold/unknown review] - handle.Complete();
 
 ## Unsafe MemCpy Outside Guard
 
@@ -82,7 +123,28 @@
 
 ## Legacy Coroutine Sites
 
-- none
+- Assets\_Project\Scripts\World\HectonAnomalyMapMagicNode.cs:109 [Inlets; cold/unknown review] - yield return heightIn;
+- Assets\_Project\Scripts\World\HectonAnomalyMapMagicNode.cs:115 [Outlets; cold/unknown review] - yield return brineMaskOut;
+- Assets\_Project\Scripts\World\HectonAnomalyMapMagicNode.cs:116 [Outlets; cold/unknown review] - yield return deepestPointsOut;
+- Assets\_Project\Scripts\World\HectonAnomalyMapMagicNode.cs:117 [Outlets; cold/unknown review] - yield return pillarCoordinatesOut;
+- Assets\_Project\Scripts\World\HectonAnomalyMapMagicNode.cs:118 [Outlets; cold/unknown review] - yield return fissureMaskOut;
+- Assets\_Project\Scripts\World\HectonHydraulicErosionMapMagicNode.cs:187 [Inlets; cold/unknown review] - yield return heightIn;
+- Assets\_Project\Scripts\World\HectonHydraulicErosionMapMagicNode.cs:193 [Outlets; cold/unknown review] - yield return erodedHeightOut;
+- Assets\_Project\Scripts\World\HectonHydraulicErosionMapMagicNode.cs:194 [Outlets; cold/unknown review] - yield return sedimentMaskOut;
+- Assets\_Project\Scripts\World\HectonHydraulicErosionMapMagicNode.cs:195 [Outlets; cold/unknown review] - yield return wearMaskOut;
+- Assets\_Project\Scripts\World\HectonSpaceEngine098MapMagicNodes.cs:52 [Inlets; cold/unknown review] - yield return heightIn;
+- Assets\_Project\Scripts\World\HectonSpaceEngine098MapMagicNodes.cs:57 [Outlets; cold/unknown review] - yield return heightOut;
+- Assets\_Project\Scripts\World\HectonSpaceEngine098MapMagicNodes.cs:181 [Inlets; cold/unknown review] - yield return heightIn;
+- Assets\_Project\Scripts\World\HectonSpaceEngine098MapMagicNodes.cs:186 [Outlets; cold/unknown review] - yield return heightOut;
+- Assets\_Project\Scripts\World\HectonSpaceEngine098MapMagicNodes.cs:322 [Inlets; cold/unknown review] - yield return heightIn;
+- Assets\_Project\Scripts\World\HectonSpaceEngine098MapMagicNodes.cs:327 [Outlets; cold/unknown review] - yield return heightOut;
+- Assets\_Project\Scripts\World\HectonTerrainSplatmapMapMagicNode.cs:66 [Inlets; cold/unknown review] - yield return heightIn;
+- Assets\_Project\Scripts\World\HectonTerrainSplatmapMapMagicNode.cs:67 [Inlets; cold/unknown review] - yield return sedimentIn;
+- Assets\_Project\Scripts\World\HectonTerrainSplatmapMapMagicNode.cs:72 [Outlets; cold/unknown review] - yield return sandOut;
+- Assets\_Project\Scripts\World\HectonTerrainSplatmapMapMagicNode.cs:73 [Outlets; cold/unknown review] - yield return rockOut;
+- Assets\_Project\Scripts\World\HectonTerrainSplatmapMapMagicNode.cs:74 [Outlets; cold/unknown review] - yield return siltOut;
+- Assets\_Project\Scripts\World\HectonTerrainSplatmapMapMagicNode.cs:75 [Outlets; cold/unknown review] - yield return cavityOut;
+- Assets\_Project\Scripts\World\HectonTerrainSplatmapMapMagicNode.cs:76 [Outlets; cold/unknown review] - yield return slopeWeightOut;
 
 ## Forbidden Runtime Asset API Sites
 
@@ -103,13 +165,14 @@
 ## Runtime Find API Text Hits Outside Editor Folder
 
 - Assets\_Project\Scripts\ModalWindow.cs:294 [EnsureInstanceAvailable; cold/unknown review] - ModalWindow candidate = FindAnyObjectByType<ModalWindow>(FindObjectsInactive.Include);
-- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:120 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<HectonCelestialEngine>(FindObjectsInactive.Include);
-- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:125 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<EclipseGameplaySystem>(FindObjectsInactive.Include);
-- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:128 [AutoResolve; cold/unknown review] - depthCacheBootstrap = UnityEngine.Object.FindAnyObjectByType<HectonCrestOceanDepthCacheBootstrap>(FindObjectsInactive.Include);
-- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:131 [AutoResolve; cold/unknown review] - ecosystemDirector = UnityEngine.Object.FindAnyObjectByType<EcosystemDirector>(FindObjectsInactive.Include);
-- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:134 [AutoResolve; cold/unknown review] - biolumController = UnityEngine.Object.FindAnyObjectByType<HectonBiolumController>(FindObjectsInactive.Include);
-- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:139 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
-- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:144 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<RandomEventSystem>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\SaveManager.cs:856 [ResolveLoadingScreenController; cold/unknown review] - _cachedLoadingScreenController = FindAnyObjectByType<LoadingScreenController>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:121 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<HectonCelestialEngine>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:126 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<EclipseGameplaySystem>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:129 [AutoResolve; cold/unknown review] - depthCacheBootstrap = UnityEngine.Object.FindAnyObjectByType<HectonCrestOceanDepthCacheBootstrap>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:132 [AutoResolve; cold/unknown review] - ecosystemDirector = UnityEngine.Object.FindAnyObjectByType<EcosystemDirector>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:135 [AutoResolve; cold/unknown review] - biolumController = UnityEngine.Object.FindAnyObjectByType<HectonBiolumController>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:140 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:145 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<RandomEventSystem>(FindObjectsInactive.Include);
 
 ## Failure Policy
 

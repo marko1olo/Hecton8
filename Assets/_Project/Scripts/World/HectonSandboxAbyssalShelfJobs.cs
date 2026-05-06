@@ -9,6 +9,7 @@ namespace Hecton8.World
     /// <summary>
     /// Blittable parameter block for the sandbox tectonic shelf height function.
     /// </summary>
+    [System.Serializable]
     public struct HectonSandboxAbyssalShelfParams
     {
         public double AupCellSizeMeters;
@@ -24,6 +25,11 @@ namespace Hecton8.World
         public float DomainWarpMeters;
         public float DomainWarpFrequency;
         public float MacroExponentialFalloff;
+        public float ShelfRunMeters;
+        public float ShelfTargetSlopeDegrees;
+        public float TrenchDepthMeters;
+        public float TrenchWidthMeters;
+        public float TrenchSharpness;
         public float IslandCenterRadiusMeters;
         public float IslandJunctionThreshold;
         public uint Seed;
@@ -35,6 +41,7 @@ namespace Hecton8.World
         public float EdgeMask;
         public float JunctionMask;
         public float IslandMask;
+        public float TrenchMask;
     }
 
     /// <summary>
@@ -60,6 +67,8 @@ namespace Hecton8.World
         public float MaxSlopeDegrees;
         public float SlopeAngleSumDegrees;
         public float ActiveSlopeAngleSumDegrees;
+        public float ActiveSlopeMinDegrees;
+        public float ActiveSlopeMaxDegrees;
         public int Slope30SampleCount;
         public int ActiveSlopeSampleCount;
     }
@@ -75,6 +84,9 @@ namespace Hecton8.World
         public float MaxSlopeDegrees;
         public float AverageSlopeDegrees;
         public float AverageActiveSlopeDegrees;
+        public float ActiveSlopeMinDegrees;
+        public float ActiveSlopeMaxDegrees;
+        public int ActiveSlopeSampleCount;
         public int Slope30SampleCount;
         public float AupDeterminismDeltaMeters;
         public float AupBoundaryDeltaMeters;
@@ -116,26 +128,37 @@ namespace Hecton8.World
             double2 aupXZ,
             in HectonSandboxAbyssalShelfParams parameters)
         {
-            float heightRange = math.max(0.001f, parameters.HighWorldY - parameters.LowWorldY);
+            float highWorldY = ResolveSlopeLockedHighWorldY(in parameters);
+            float heightRange = math.max(0.001f, highWorldY - parameters.LowWorldY);
             float macro01 = EvaluateGreatDescent01(
                 aupXZ,
                 parameters.DescentRadiusMeters,
                 parameters.MacroExponentialFalloff);
-            float baseY = math.lerp(parameters.HighWorldY, parameters.LowWorldY, macro01);
+            float baseY = math.lerp(highWorldY, parameters.LowWorldY, macro01);
             float base01 = math.saturate((baseY - parameters.LowWorldY) / heightRange);
 
-            HectonSandboxAbyssalShelfRidgeData ridge = EvaluateVoronoiRidgeData(aupXZ, in parameters);
+            EvaluateVoronoiRidgeData(aupXZ, in parameters, out HectonSandboxAbyssalShelfRidgeData ridge);
             float ridgeMask = ridge.RidgeMask;
             float ridgeAttenuation = math.smoothstep(0.04f, 0.42f, base01);
             float ridgeLift01 = math.saturate(parameters.RidgeHeightMeters / heightRange) * ridgeMask * ridgeAttenuation;
             float multiplied01 = base01 * (1f + math.max(0f, parameters.RidgeMultiplier) * ridgeMask * ridgeAttenuation);
             float ridged01 = math.saturate(multiplied01 + ridgeLift01);
             float heightMeters = parameters.LowWorldY + ridged01 * heightRange;
+            float trenchMask = math.pow(math.saturate(ridge.TrenchMask), math.max(0.35f, parameters.TrenchSharpness));
+            float trenchDepth = math.max(0f, parameters.TrenchDepthMeters);
+            float trenchDescentBias = math.smoothstep(0.18f, 0.96f, macro01);
+            heightMeters -= trenchDepth * trenchMask * trenchDescentBias;
 
             if (heightMeters > 0f)
                 heightMeters *= ridge.IslandMask;
 
-            return math.clamp(heightMeters, parameters.LowWorldY, parameters.HighWorldY);
+            return math.clamp(heightMeters, parameters.LowWorldY, highWorldY);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveSlopeLockedHighWorldY(in HectonSandboxAbyssalShelfParams parameters)
+        {
+            return math.max(parameters.HighWorldY, parameters.LowWorldY + 1f);
         }
 
         /// <summary>
@@ -157,6 +180,28 @@ namespace Hecton8.World
                 position.GridX,
                 position.GridZ);
             return EvaluateSeededHeightMeters(aupXZ, in seededParameters);
+        }
+
+        /// <summary>
+        /// Evaluates the Voronoi ridge/intersection masks used by shelf generation for site gating.
+        /// </summary>
+        /// <param name="position">Absolute Universe Position payload.</param>
+        /// <param name="parameters">Terrain function parameters.</param>
+        /// <returns>Voronoi edge, junction, island, and trench masks in [0,1].</returns>
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void EvaluateVoronoiRidgeData(
+            in AbsoluteUniversePosition position,
+            in HectonSandboxAbyssalShelfParams parameters,
+            out HectonSandboxAbyssalShelfRidgeData ridgeData)
+        {
+            double2 aupXZ = ResolveAupXZ(in position, math.max(1.0, parameters.AupCellSizeMeters));
+            HectonSandboxAbyssalShelfParams seededParameters = parameters;
+            seededParameters.Seed = DeriveAupGridSeed(
+                parameters.Seed,
+                position.GridX,
+                position.GridZ);
+            EvaluateVoronoiRidgeData(aupXZ, in seededParameters, out ridgeData);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -185,6 +230,12 @@ namespace Hecton8.World
         public static float NormalizeHeight01(float heightMeters, float lowWorldY, float highWorldY)
         {
             return math.saturate((heightMeters - lowWorldY) / math.max(0.001f, highWorldY - lowWorldY));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SlopeAngleDegreesToGradient(float angleDegrees)
+        {
+            return math.tan(math.radians(math.clamp(angleDegrees, 0.001f, 89f)));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -251,9 +302,10 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static HectonSandboxAbyssalShelfRidgeData EvaluateVoronoiRidgeData(
+        private static void EvaluateVoronoiRidgeData(
             double2 aupXZ,
-            in HectonSandboxAbyssalShelfParams parameters)
+            in HectonSandboxAbyssalShelfParams parameters,
+            out HectonSandboxAbyssalShelfRidgeData ridgeData)
         {
             double2 warpedXZ = aupXZ + EvaluateDomainWarp(aupXZ, in parameters);
             double safePlateSize = math.max(1.0, parameters.PlateCellSizeMeters);
@@ -301,14 +353,32 @@ namespace Hecton8.World
 
             float edgeWidth = math.max(0.001f, parameters.RidgeWidthMeters);
             float junctionWidth = math.max(0.001f, parameters.JunctionWidthMeters);
-            float edgeMask = 1f - math.smoothstep(edgeWidth * 0.18f, edgeWidth, edgeDeltaMeters);
-            float junctionMask = 1f - math.smoothstep(junctionWidth * 0.22f, junctionWidth, junctionDeltaMeters);
+            float branchNoise = FractalPerlinNoise(
+                new float2((float)(warpedXZ.x * 0.00037), (float)(warpedXZ.y * 0.00037)),
+                parameters.Seed ^ 0x31D9A7B5u);
+            float branchWidthScale = math.lerp(0.58f, 1.42f, branchNoise);
+            float edgeMask = 1f - math.smoothstep(edgeWidth * 0.10f, edgeWidth * branchWidthScale, edgeDeltaMeters);
+            float junctionWidthScale = math.lerp(0.72f, 1.32f, branchNoise);
+            float junctionMask = 1f - math.smoothstep(junctionWidth * 0.14f, junctionWidth * junctionWidthScale, junctionDeltaMeters);
             float forkNoise = FractalPerlinNoise(
                 new float2((float)(warpedXZ.x * 0.00021), (float)(warpedXZ.y * 0.00021)),
                 parameters.Seed ^ 0x51633E2Du);
             float irregularity = math.lerp(0.86f, 1.14f, HashToUnitFloat(nearestHash ^ 0xA24BAED5u));
-            float branched = math.saturate(edgeMask * 0.82f + junctionMask * 0.72f + forkNoise * 0.10f);
+            float forkLift = math.smoothstep(0.38f, 0.92f, junctionMask + forkNoise * 0.28f);
+            float branched = math.saturate(edgeMask * 0.76f + junctionMask * 0.82f + forkLift * 0.18f);
             float ridgeMask = math.saturate(branched * irregularity);
+            float centerDistanceMeters = (float)(firstDistance * safePlateSize);
+            float trenchWidth = parameters.TrenchWidthMeters > 0.001f
+                ? parameters.TrenchWidthMeters
+                : edgeWidth * 0.58f;
+            trenchWidth = math.max(1f, trenchWidth);
+            float centerMask = 1f - math.smoothstep(trenchWidth * 0.12f, trenchWidth, centerDistanceMeters);
+            float lowCenterToken = math.pow(1f - HashToUnitFloat(nearestHash ^ 0x6C8E9CF5u), 2.35f);
+            float trenchCandidate = math.smoothstep(0.46f, 0.92f, lowCenterToken);
+            float trenchNoise = FractalPerlinNoise(
+                new float2((float)(warpedXZ.x * 0.00043), (float)(warpedXZ.y * 0.00043)),
+                parameters.Seed ^ 0x91E83B37u);
+            float trenchMask = math.saturate(centerMask * trenchCandidate * math.lerp(0.74f, 1.18f, trenchNoise));
             float islandNoise = FractalPerlinNoise(
                 new float2((float)(warpedXZ.x * 0.000083), (float)(warpedXZ.y * 0.000083)),
                 parameters.Seed ^ 0xDB4F0B91u);
@@ -319,12 +389,13 @@ namespace Hecton8.World
             float centerRadius = math.max(1f, parameters.IslandCenterRadiusMeters);
             float centerIsland = 1f - math.smoothstep(centerRadius * 0.35f, centerRadius, (float)radius);
 
-            return new HectonSandboxAbyssalShelfRidgeData
+            ridgeData = new HectonSandboxAbyssalShelfRidgeData
             {
                 RidgeMask = ridgeMask,
                 EdgeMask = edgeMask,
                 JunctionMask = junctionMask,
-                IslandMask = math.saturate(math.max(centerIsland, junctionIsland))
+                IslandMask = math.saturate(math.max(centerIsland, junctionIsland)),
+                TrenchMask = trenchMask
             };
         }
 
@@ -531,10 +602,11 @@ namespace Hecton8.World
         public float CellSizeMeters;
         public float LowWorldY;
         public float HighWorldY;
-        public float PlateauSourceAngleDegrees;
-        public float PlateauTargetAngleDegrees;
-        public float CliffSourceAngleDegrees;
-        public float CliffTargetAngleDegrees;
+        public float PlateauSourceGradient;
+        public float PlateauTargetGradient;
+        public float CliffSourceGradient;
+        public float CliffRampEndGradient;
+        public float CliffTargetGradient;
         public float Strength;
 
         public void Execute(int index)
@@ -560,20 +632,19 @@ namespace Hecton8.World
             float dx = (right - left) * 0.5f * invCellSize;
             float dz = (forward - back) * 0.5f * invCellSize;
             float gradient = math.max(0.0001f, math.sqrt(dx * dx + dz * dz));
-            float angle = math.degrees(math.atan(gradient));
             float average = (left + right + back + forward) * 0.25f;
             float delta = center - average;
 
-            float targetAngle = math.clamp(PlateauTargetAngleDegrees, 1f, 60f);
-            float plateauSource = math.clamp(PlateauSourceAngleDegrees, targetAngle + 0.001f, 45f);
-            float cliffSource = math.clamp(CliffSourceAngleDegrees, plateauSource + 0.001f, 88f);
-            float cliffTarget = math.clamp(CliffTargetAngleDegrees, cliffSource + 0.001f, 89f);
-            float plateauMask = 1f - math.smoothstep(targetAngle, plateauSource, angle);
-            float cliffMask = math.smoothstep(cliffSource, cliffSource + math.max(1f, cliffTarget - cliffSource) * 0.25f, angle);
-            float resolvedTargetAngle = math.lerp(angle, targetAngle, plateauMask);
-            resolvedTargetAngle = math.lerp(resolvedTargetAngle, cliffTarget, cliffMask);
-            float targetGradient = math.tan(math.radians(resolvedTargetAngle));
-            float targetFactor = targetGradient / gradient;
+            float targetGradient = math.max(0.0001f, PlateauTargetGradient);
+            float plateauSourceGradient = math.max(targetGradient + 0.0001f, PlateauSourceGradient);
+            float cliffSourceGradient = math.max(plateauSourceGradient + 0.0001f, CliffSourceGradient);
+            float cliffRampEndGradient = math.max(cliffSourceGradient + 0.0001f, CliffRampEndGradient);
+            float cliffTargetGradient = math.max(cliffSourceGradient + 0.0001f, CliffTargetGradient);
+            float plateauMask = 1f - math.smoothstep(targetGradient, plateauSourceGradient, gradient);
+            float cliffMask = math.smoothstep(cliffSourceGradient, cliffRampEndGradient, gradient);
+            float resolvedTargetGradient = math.lerp(gradient, targetGradient, plateauMask);
+            resolvedTargetGradient = math.lerp(resolvedTargetGradient, cliffTargetGradient, cliffMask);
+            float targetFactor = resolvedTargetGradient / gradient;
             float quantizeStrength = math.saturate(Strength);
 
             float adjustMask = math.saturate(math.max(plateauMask, cliffMask));
@@ -667,6 +738,7 @@ namespace Hecton8.World
         public void Execute(int index)
         {
             HectonSandboxAbyssalShelfAuditSample sample = Samples[index];
+            bool activeSlope = sample.SlopeAngleDegrees > 15f && sample.SlopeAngleDegrees < 45f;
             Reductions[index] = new HectonSandboxAbyssalShelfSampleReduction
             {
                 InvalidSampleCount = (sample.Flags & 0x03) != 0 ? 1 : 0,
@@ -676,9 +748,11 @@ namespace Hecton8.World
                 MaxHeightMeters = sample.HeightMeters,
                 MaxSlopeDegrees = sample.SlopeAngleDegrees,
                 SlopeAngleSumDegrees = sample.SlopeAngleDegrees,
-                ActiveSlopeAngleSumDegrees = sample.SlopeAngleDegrees > 15f && sample.SlopeAngleDegrees < 58f ? sample.SlopeAngleDegrees : 0f,
+                ActiveSlopeAngleSumDegrees = activeSlope ? sample.SlopeAngleDegrees : 0f,
+                ActiveSlopeMinDegrees = activeSlope ? sample.SlopeAngleDegrees : float.MaxValue,
+                ActiveSlopeMaxDegrees = activeSlope ? sample.SlopeAngleDegrees : float.MinValue,
                 Slope30SampleCount = (sample.Flags & 0x10) != 0 ? 1 : 0,
-                ActiveSlopeSampleCount = sample.SlopeAngleDegrees > 15f && sample.SlopeAngleDegrees < 58f ? 1 : 0
+                ActiveSlopeSampleCount = activeSlope ? 1 : 0
             };
         }
     }
@@ -715,6 +789,8 @@ namespace Hecton8.World
             float maxSlope = 0f;
             float slopeSum = 0f;
             float activeSlopeSum = 0f;
+            float activeSlopeMin = float.MaxValue;
+            float activeSlopeMax = float.MinValue;
             int slope30Count = 0;
             int activeSlopeCount = 0;
 
@@ -729,6 +805,8 @@ namespace Hecton8.World
                 maxSlope = math.max(maxSlope, reduction.MaxSlopeDegrees);
                 slopeSum += reduction.SlopeAngleSumDegrees;
                 activeSlopeSum += reduction.ActiveSlopeAngleSumDegrees;
+                activeSlopeMin = math.min(activeSlopeMin, reduction.ActiveSlopeMinDegrees);
+                activeSlopeMax = math.max(activeSlopeMax, reduction.ActiveSlopeMaxDegrees);
                 slope30Count += reduction.Slope30SampleCount;
                 activeSlopeCount += reduction.ActiveSlopeSampleCount;
             }
@@ -770,14 +848,19 @@ namespace Hecton8.World
             int farChunkInvalid = CountInvalidChunk(farOrigin, farOrigin, chunkResolution, chunkSize, in Parameters);
             float averageSlope = slopeSum / math.max(1, sampleCount);
             float averageActiveSlope = activeSlopeSum / math.max(1, activeSlopeCount);
+            float resolvedActiveSlopeMin = activeSlopeCount > 0 ? activeSlopeMin : 0f;
+            float resolvedActiveSlopeMax = activeSlopeCount > 0 ? activeSlopeMax : 0f;
             bool passed =
                 sampleCount == RequiredSampleCount &&
                 invalidCount == 0 &&
                 plateauCount > 0 &&
                 slope30Count > 0 &&
+                activeSlopeCount > 0 &&
                 minHeight <= RequiredMinHeightMeters &&
                 maxHeight >= RequiredMaxHeightMeters &&
                 maxSlope <= MaxAllowedSlopeDegrees &&
+                resolvedActiveSlopeMin >= 15f &&
+                resolvedActiveSlopeMax <= 45f &&
                 averageActiveSlope >= 24f &&
                 averageActiveSlope <= 42f &&
                 aupDelta <= AupDeterminismToleranceMeters &&
@@ -797,6 +880,9 @@ namespace Hecton8.World
                 MaxSlopeDegrees = maxSlope,
                 AverageSlopeDegrees = averageSlope,
                 AverageActiveSlopeDegrees = averageActiveSlope,
+                ActiveSlopeMinDegrees = resolvedActiveSlopeMin,
+                ActiveSlopeMaxDegrees = resolvedActiveSlopeMax,
+                ActiveSlopeSampleCount = activeSlopeCount,
                 Slope30SampleCount = slope30Count,
                 AupDeterminismDeltaMeters = aupDelta,
                 AupBoundaryDeltaMeters = boundaryDelta,

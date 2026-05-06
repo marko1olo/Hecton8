@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Reflection;
 using System.Text;
+using Hecton8.Core;
 using Hecton8.Physics;
 using UnityEditor;
 using UnityEngine;
@@ -263,7 +264,8 @@ namespace Hecton8.Editor
 
         private static Vector3 ResolveAnchor(WaveHarmonic.Crest.WaterRenderer crest5Water)
         {
-            Vector3 anchor = Camera.main != null ? Camera.main.transform.position : crest5Water.transform.position;
+            Camera contextCamera = GlobalRenderContext.CurrentCamera;
+            Vector3 anchor = contextCamera != null ? contextCamera.transform.position : crest5Water.transform.position;
             anchor.y = crest5Water != null ? crest5Water.SeaLevel : anchor.y;
             return anchor;
         }

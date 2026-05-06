@@ -90,7 +90,7 @@ namespace Hecton8.Editor
                 Debug.Log(
                     $"[HectonMeshGenerator] Sky dome mesh UPDATED at: {fullPath}\n" +
                     $"  Vertices: {existingMesh.vertexCount}\n" +
-                    $"  Triangles: {existingMesh.triangles.Length / 3}\n" +
+                    $"  Triangles: {ResolveTriangleCount(existingMesh)}\n" +
                     $"  Existing references preserved.");
             }
             else
@@ -102,7 +102,7 @@ namespace Hecton8.Editor
                 Debug.Log(
                     $"[HectonMeshGenerator] Sky dome mesh CREATED at: {fullPath}\n" +
                     $"  Vertices: {mesh.vertexCount}\n" +
-                    $"  Triangles: {mesh.triangles.Length / 3}");
+                    $"  Triangles: {ResolveTriangleCount(mesh)}");
             }
 
             // ── Ping in Project window ──
@@ -300,10 +300,10 @@ namespace Hecton8.Editor
                 ? UnityEngine.Rendering.IndexFormat.UInt32
                 : UnityEngine.Rendering.IndexFormat.UInt16;
 
-            mesh.vertices  = vertices;
-            mesh.normals   = normals;
-            mesh.uv        = uvs;
-            mesh.triangles = triangles;
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0, true);
 
             // ── Tangents for normal mapping (if ever needed) ──
             mesh.RecalculateTangents();
@@ -319,6 +319,20 @@ namespace Hecton8.Editor
         // ══════════════════════════════════════════════════════════
         //  VALIDATION
         // ══════════════════════════════════════════════════════════
+
+        private static long ResolveTriangleCount(Mesh mesh)
+        {
+            if (mesh == null)
+                return 0L;
+
+            long triangles = 0L;
+            for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+            {
+                triangles += (long)mesh.GetIndexCount(subMeshIndex) / 3L;
+            }
+
+            return triangles;
+        }
 
         [MenuItem("Tools/Hecton/Generate Sky Dome", true)]
         private static bool ValidateGenerateSkyDome()

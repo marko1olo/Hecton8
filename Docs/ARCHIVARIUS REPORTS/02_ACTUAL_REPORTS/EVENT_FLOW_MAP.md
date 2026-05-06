@@ -1,6 +1,6 @@
-# HECTON-8 EVENT FLOW MAP
+﻿# HECTON-8 EVENT FLOW MAP
 
-Date: 2026-05-03
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: source-backed event topology visible in first-party code; no profiler or play-mode proof in this document.
 
@@ -30,6 +30,20 @@ No runtime replay, scene wiring proof, or GCMonitor capture is claimed here.
 ## 2. Dispatcher Flush Topology
 
 `SystemDispatcher.LateUpdate()` is the current deferred-event drain owner.
+
+## 2.1 Five-Artery Mega-Bus Classification
+
+The source-level bus inventory is not one flat conceptual system. It is classified into exactly five arteries for architecture work:
+
+| Artery | Scope | Representative source queues |
+| --- | --- | --- |
+| Core | bootstrap, save/load, registry, telemetry, scene bootstrap, localization, mod registry, object-pool diagnostics, performance warnings | `BootstrapEvents`, `SaveEvents`, `LocalizationEvents`, `ModRegistryEvents`, `GlobalRegistry`, `ObjectPoolDiagnostics`, `PerformanceEvents`, `GlobalTelemetryBus` |
+| Env | atmosphere, weather, ocean/acoustics, celestial, physics signals, fluid feedback, biome/depth/soundscape changes | `AtmosphereEvents`, `WeatherEvents`, `CelestialEvents`, `PhysicsEventBus`, `FluidFeedbackEvents`, `MapMagicBiomeEvents`, `BiomeMatrixEvents`, `DepthZoneEvents`, `SoundscapeEvents` |
+| Player | interaction, crafting, scanner, PDA, flashlight, laser cutter, inventory, player signals, player expression, notifications | `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `PDAEvents`, `FlashlightEvents`, `LaserCutterEvents`, `InventoryEvents`, `PlayerSignalEvents`, `PlayerExpressionEvents`, `NotificationEvents` |
+| Base | submarine OS, modules, base integrity, power telemetry, emergency service relays, pressure alarm lanes | `HectonSubmarineOsEvents`, `ModuleStatusEvents`, `BaseIntegrityEvents`, `PowerGridTelemetryEvents`, `EmergencyServiceRelayEvents`, `HighPressureEvents`, `FatalPressureImplosionEvents` |
+| AI | director, drone fleet, random events, Atlas signal/directive, narrative/audio-log discovery pressure | `DirectorAIEvents`, `HectonDroneFleetEvents`, `RandomEventEvents`, `AtlasSignalEvents`, `Atlas6Events`, `NarrativeEvents`, `AudioLogEvents` |
+
+This classification is an ownership map, not a new runtime dispatcher. `SystemDispatcher.LateUpdate()` remains the actual drain point and enforces the shared late-frame budget.
 
 Flush order visible in source:
 1. `ThreadSafeCommandQueue.DrainMainThread()`

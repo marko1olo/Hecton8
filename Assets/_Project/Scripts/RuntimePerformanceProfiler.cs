@@ -364,12 +364,7 @@ namespace Hecton8.Dev
                 return true;
             }
 
-            if (BootstrapController.Instance != null)
-                return true;
-
-            BootstrapController bootstrapController =
-                BootstrapController.Instance;
-            return bootstrapController != null;
+            return GlobalRegistry.BootstrapperRuntime != null;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -377,7 +372,7 @@ namespace Hecton8.Dev
         {
             Scene activeScene = SceneManager.GetActiveScene();
             string sceneName = activeScene.IsValid() ? activeScene.name : "InvalidScene";
-            bool hasBootstrapInstance = BootstrapController.Instance != null;
+            bool hasBootstrapInstance = GlobalRegistry.BootstrapperRuntime != null;
             bool hasProfilerInstance = _instance != null;
             bool hasExistingProfiler =
                 RuntimePerformanceProfiler.Instance != null;

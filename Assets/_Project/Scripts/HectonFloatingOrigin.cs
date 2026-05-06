@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
+using Hecton8.Optimization;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Burst;
@@ -21,7 +22,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)]
-    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat
     {
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct OriginShiftTranslateJob : IJobParallelForTransform
@@ -31,6 +32,11 @@ namespace Hecton8.Core
             public void Execute(int index, TransformAccess transform)
             {
                 if (!transform.isValid)
+                    return;
+
+                float3 shift = new float3(ShiftOffset.x, ShiftOffset.y, ShiftOffset.z);
+                float3 position = new float3(transform.position.x, transform.position.y, transform.position.z);
+                if (!math.all(math.isfinite(shift)) || !math.all(math.isfinite(position)))
                     return;
 
                 transform.position -= ShiftOffset;
@@ -50,7 +56,11 @@ namespace Hecton8.Core
             {
                 double3 expectedRuntime = TrackedAbsolutePositions[index] - CurrentTotalOffset;
                 double3 delta = expectedRuntime - RuntimePositions[index];
-                InvalidMask[index] = math.lengthsq(delta) > MaxDeltaSq ? (byte)1 : (byte)0;
+                bool finite =
+                    math.all(math.isfinite(expectedRuntime)) &&
+                    math.all(math.isfinite(delta)) &&
+                    math.all(math.isfinite(RuntimePositions[index]));
+                InvalidMask[index] = !finite || math.lengthsq(delta) > MaxDeltaSq ? (byte)1 : (byte)0;
             }
         }
 
@@ -74,9 +84,9 @@ namespace Hecton8.Core
         private const float ShiftDeadzoneReleaseMeters = 4500f;
         private const float OutwardMotionSpeedEpsilon = 0.05f;
         private const int DriftCheckEntityCapacity = 2;
-        private const double DriftCheckThresholdSq = 0.0001d;
+        private const double DriftCheckThresholdSq = 0.000001d;
+        private const int PostShiftUnloadUnusedAssetsMinimumFrames = 300;
 
-        private static HectonFloatingOrigin _instance;
         private static OriginShiftEventData _lastShiftEvent;
 
         private readonly List<GameObject> _sceneRootObjects = new List<GameObject>(256);
@@ -93,9 +103,11 @@ namespace Hecton8.Core
         private bool _physicsPauseActive;
         private bool _shiftDeadzoneArmed = true;
         private bool _hasPreviousAnchorPosition;
+        private bool _postShiftUnloadUnusedAssetsRunning;
         private SimulationMode _physicsSimulationModeBeforeShift = SimulationMode.FixedUpdate;
         private bool _driftCheckScheduled;
         private int _physicsResumeFrame = -1;
+        private int _lastPostShiftUnloadUnusedAssetsFrame = -PostShiftUnloadUnusedAssetsMinimumFrames;
         private float _thresholdSqr;
         private float _anchorResolveTimer;
         private uint _shiftSequence;
@@ -120,8 +132,8 @@ namespace Hecton8.Core
         [Tooltip("Object to follow (normally Player). If null, resolves via SceneBootstrap.")]
         [SerializeField] private Transform _anchor;
 
-        /// <summary>Singleton instance.</summary>
-        public static HectonFloatingOrigin Instance => _instance;
+        /// <summary>Registry-backed floating-origin owner.</summary>
+        public static HectonFloatingOrigin Instance => GlobalRegistry.FloatingOrigin;
 
         /// <summary>Cumulative absolute-universe offset committed since startup.</summary>
         public Vector3 TotalOffset { get; private set; }
@@ -130,22 +142,56 @@ namespace Hecton8.Core
         public Vector3 TotalUniverseOffset => TotalOffset;
 
         /// <summary>Current absolute-universe offset committed since startup.</summary>
-        public static Vector3 CurrentTotalOffset => _instance != null ? _instance.TotalOffset : Vector3.zero;
+        public static Vector3 CurrentTotalOffset
+        {
+            get
+            {
+                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                return origin != null ? origin.TotalOffset : Vector3.zero;
+            }
+        }
 
         /// <summary>Fractional fixed-step interpolation alpha sampled for the current render frame.</summary>
         public static float CurrentFixedInterpolationAlpha => ResolveFixedInterpolationAlpha();
 
         /// <summary>Current committed shift sequence.</summary>
-        public static uint CurrentShiftSequence => _instance != null ? _instance._shiftSequence : 0u;
+        public static uint CurrentShiftSequence
+        {
+            get
+            {
+                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                return origin != null ? origin._shiftSequence : 0u;
+            }
+        }
 
         /// <summary>True while the floating-origin shift job is executing.</summary>
-        public static bool IsShiftInProgress => _instance != null && _instance._isShiftInProgress;
+        public static bool IsShiftInProgress
+        {
+            get
+            {
+                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                return origin != null && origin._isShiftInProgress;
+            }
+        }
 
         /// <summary>True while PhysX remains paused for the shift window.</summary>
-        public static bool IsPhysicsPausedForShift => _instance != null && _instance._physicsPauseActive;
+        public static bool IsPhysicsPausedForShift
+        {
+            get
+            {
+                HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+                return origin != null && origin._physicsPauseActive;
+            }
+        }
 
         /// <summary>Last committed shift event payload.</summary>
         public static OriginShiftEventData LastShiftEvent => _lastShiftEvent;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isRegistered && !_isShiftInProgress ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Booting;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isRegistered && !_isShiftInProgress;
 
         /// <summary>
         /// Ensures a live floating-origin owner exists for bootstrap-owned simulation.
@@ -153,8 +199,9 @@ namespace Hecton8.Core
         /// <returns>Live floating-origin owner.</returns>
         internal static HectonFloatingOrigin EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            if (origin != null)
+                return origin;
 
             GameObject runtimeRoot = new GameObject("[HectonFloatingOrigin]"); // COLD ALLOC: GameObject[1] - bootstrap-owned AUP/floating-origin authority - owner: HectonFloatingOrigin
             return runtimeRoot.AddComponent<HectonFloatingOrigin>();
@@ -166,8 +213,9 @@ namespace Hecton8.Core
         public static void BeginSafeTeleportProtocol()
         {
             PhysicsApplySystem.ClearQueuedPacketsStatic();
-            if (_instance != null)
-                BeginSafeTeleportProtocolInternal(_instance);
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            if (origin != null)
+                BeginSafeTeleportProtocolInternal(origin);
         }
 
         /// <summary>
@@ -175,14 +223,14 @@ namespace Hecton8.Core
         /// </summary>
         public static void EndSafeTeleportProtocol()
         {
-            if (_instance != null)
-                _instance._physicsResumeFrame = Time.frameCount + 1;
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            if (origin != null)
+                origin._physicsResumeFrame = Time.frameCount + 1;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
             _lastShiftEvent = default;
             _originShiftListeners.Clear();
             Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
@@ -301,10 +349,11 @@ namespace Hecton8.Core
         /// </summary>
         public static void MarkShiftTargetsDirty()
         {
-            if (_instance == null)
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            if (origin == null)
                 return;
 
-            _instance._shiftTargetsDirty = true;
+            origin._shiftTargetsDirty = true;
         }
 
         /// <summary>
@@ -317,25 +366,22 @@ namespace Hecton8.Core
         public static async Awaitable<OriginShiftEventData> WaitForShiftStabilityAsync(CancellationToken cancellationToken = default)
         {
             int watchdog = 0;
-            while (_instance != null &&
-                   (_instance._isShiftInProgress ||
-                    _instance._physicsPauseActive ||
-                    HasPendingSceneRebaseBarrier(_instance)))
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            while (origin != null &&
+                   (origin._isShiftInProgress ||
+                    origin._physicsPauseActive ||
+                    HasPendingSceneRebaseBarrier(origin)))
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (watchdog++ > ShiftStabilityWatchdogFrames)
                 {
-                    int readyCount = Volatile.Read(ref _instance._lastShiftSceneReadyCount);
-                    int totalCount = Volatile.Read(ref _instance._lastShiftSceneTotal);
-                    Debug.LogError(
-                        $"[FloatingOrigin] WaitForShiftStabilityAsync timed out after {ShiftStabilityWatchdogFrames} frames. " +
-                        $"shiftInProgress={_instance._isShiftInProgress} physicsPause={_instance._physicsPauseActive} " +
-                        $"sceneReady={readyCount}/{totalCount}");
+                    Debug.LogError("[FloatingOrigin] WaitForShiftStabilityAsync timed out.", origin);
                     break;
                 }
 
                 await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                origin = GlobalRegistry.FloatingOrigin;
             }
 
             Vector3 currentOffset = CurrentTotalOffset;
@@ -345,13 +391,14 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            HectonFloatingOrigin registeredOrigin = GlobalRegistry.FloatingOrigin;
+            if (registeredOrigin != null && registeredOrigin != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterFloatingOriginRuntime(this);
             RefreshThresholdCache();
             TryResolveAnchor(force: true);
             EnsureDriftCheckBuffers();
@@ -378,7 +425,7 @@ namespace Hecton8.Core
             DisposeShiftTargetAccessArray();
             DisposeDriftCheckState();
 
-            if (_instance == this)
+            if (GlobalRegistry.FloatingOrigin == this)
             {
                 if (_physicsPauseActive)
                 {
@@ -386,7 +433,7 @@ namespace Hecton8.Core
                 }
 
                 _originShiftListeners.Clear();
-                _instance = null;
+                GlobalRegistry.UnregisterFloatingOriginRuntime(this);
             }
         }
 
@@ -395,6 +442,9 @@ namespace Hecton8.Core
         /// </summary>
         internal void InitializeService()
         {
+            if (GlobalRegistry.FloatingOrigin != this)
+                GlobalRegistry.RegisterFloatingOriginRuntime(this);
+
             RefreshThresholdCache();
             TryResolveAnchor(force: true);
             EnsureDriftCheckBuffers();
@@ -468,6 +518,12 @@ namespace Hecton8.Core
 
         private void BeginShiftWorld(Vector3 shiftOffset)
         {
+            if (!IsFiniteVector(shiftOffset))
+            {
+                CrashTelemetryBuffer.ReportNanPhysicsRecovery(shiftOffset, Vector3.zero);
+                return;
+            }
+
             if (shiftOffset.sqrMagnitude <= 0.0001f)
                 return;
 
@@ -480,9 +536,17 @@ namespace Hecton8.Core
 
         private async Awaitable ShiftWorldAsync(Vector3 shiftOffset, CancellationToken cancellationToken)
         {
+            if (!IsFiniteVector(shiftOffset))
+            {
+                CrashTelemetryBuffer.ReportNanPhysicsRecovery(shiftOffset, Vector3.zero);
+                _isShiftInProgress = false;
+                return;
+            }
+
             _isShiftInProgress = true;
             bool trackedBodiesPrepared = false;
             bool trackedBodiesFinalized = false;
+            int gen0CollectionCountBeforeShift = GC.CollectionCount(0);
             PausePhysicsForShift();
             try
             {
@@ -547,10 +611,49 @@ namespace Hecton8.Core
                 _isShiftInProgress = false;
             }
 
+            if (trackedBodiesFinalized)
+                _ = RunPostShiftUnusedAssetUnloadGuardAsync(gen0CollectionCountBeforeShift, cancellationToken);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (trackedBodiesFinalized)
-                Debug.Log($"[FloatingOrigin] shift={shiftOffset} seq={_shiftSequence} total={TotalOffset}");
+                Debug.Log("[FloatingOrigin] shift committed.");
 #endif
+        }
+
+        private async Awaitable RunPostShiftUnusedAssetUnloadGuardAsync(
+            int gen0CollectionCountBeforeShift,
+            CancellationToken cancellationToken)
+        {
+            if (_postShiftUnloadUnusedAssetsRunning)
+                return;
+
+            int currentFrame = Time.frameCount;
+            if (currentFrame - _lastPostShiftUnloadUnusedAssetsFrame < PostShiftUnloadUnusedAssetsMinimumFrames)
+                return;
+
+            _postShiftUnloadUnusedAssetsRunning = true;
+            try
+            {
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+
+                if (GC.CollectionCount(0) != gen0CollectionCountBeforeShift)
+                    return;
+
+                _lastPostShiftUnloadUnusedAssetsFrame = Time.frameCount;
+                AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
+                governor?.ForceDrainPendingReleaseQueue();
+
+                RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
+                pool?.ClearAllPools();
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            finally
+            {
+                _postShiftUnloadUnusedAssetsRunning = false;
+            }
         }
 
         private void PausePhysicsForShift()
@@ -620,7 +723,7 @@ namespace Hecton8.Core
                     if (watchdog++ > ShiftStabilityWatchdogFrames)
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogError($"[FloatingOrigin] Transform shift job timed out after {ShiftStabilityWatchdogFrames} frames. Forcing completion before physics resumes.");
+                        Debug.LogError("[FloatingOrigin] Transform shift job timed out. Forcing completion before physics resumes.");
 #endif
                         break;
                     }
@@ -873,6 +976,9 @@ namespace Hecton8.Core
                 return writeIndex;
 
             Vector3 runtimePosition = tracker.Transform.position;
+            if (!IsFiniteVector(runtimePosition) || !math.all(math.isfinite(tracker.AbsolutePosition)))
+                return writeIndex;
+
             _driftCheckRuntimePositions[writeIndex] = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             _driftCheckAbsolutePositions[writeIndex] = tracker.AbsolutePosition;
             return writeIndex + 1;
@@ -903,6 +1009,13 @@ namespace Hecton8.Core
             if (forcedShiftOffset.sqrMagnitude <= 0.0001f)
                 forcedShiftOffset = _anchor.position;
 
+            if (!IsFiniteVector(forcedShiftOffset))
+            {
+                CrashTelemetryBuffer.ReportNanPhysicsRecovery(forcedShiftOffset, Vector3.zero);
+                return false;
+            }
+
+            CrashTelemetryBuffer.ReportAupJitterCorrection(forcedShiftOffset, math.sqrt((float)DriftCheckThresholdSq));
             _shiftDeadzoneArmed = false;
             BeginShiftWorld(forcedShiftOffset);
             return true;
@@ -964,6 +1077,21 @@ namespace Hecton8.Core
             _driftCheckRuntimePositions = new NativeArray<float3>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _driftCheckAbsolutePositions = new NativeArray<double3>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _driftCheckInvalidMask = new NativeArray<byte>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _driftCheckRuntimePositions,
+                nameof(HectonFloatingOrigin),
+                nameof(_driftCheckRuntimePositions),
+                NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(
+                _driftCheckAbsolutePositions,
+                nameof(HectonFloatingOrigin),
+                nameof(_driftCheckAbsolutePositions),
+                NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(
+                _driftCheckInvalidMask,
+                nameof(HectonFloatingOrigin),
+                nameof(_driftCheckInvalidMask),
+                NativeAllocationLifetime.Session);
         }
 
         private void DisposeDriftCheckState()
@@ -971,18 +1099,21 @@ namespace Hecton8.Core
             JobHandle dependency = _driftCheckScheduled ? _driftCheckHandle : default;
             if (_driftCheckRuntimePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_driftCheckRuntimePositions);
                 _driftCheckRuntimePositions.Dispose(dependency);
                 _driftCheckRuntimePositions = default;
             }
 
             if (_driftCheckAbsolutePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_driftCheckAbsolutePositions);
                 _driftCheckAbsolutePositions.Dispose(dependency);
                 _driftCheckAbsolutePositions = default;
             }
 
             if (_driftCheckInvalidMask.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_driftCheckInvalidMask);
                 _driftCheckInvalidMask.Dispose(dependency);
                 _driftCheckInvalidMask = default;
             }
@@ -1227,7 +1358,7 @@ namespace Hecton8.Core
 
         private void ApplyCommittedOffsetToLoadedScene(Scene scene, Vector3 committedTotalOffset)
         {
-            if (committedTotalOffset.sqrMagnitude <= 0.0001f)
+            if (!IsFiniteVector(committedTotalOffset) || committedTotalOffset.sqrMagnitude <= 0.0001f)
                 return;
 
             _sceneRootObjects.Clear();
@@ -1238,8 +1369,22 @@ namespace Hecton8.Core
                 if (rootObject == null)
                     continue;
 
-                rootObject.transform.position -= committedTotalOffset;
+                Transform rootTransform = rootObject.transform;
+                Vector3 rootPosition = rootTransform.position;
+                if (!IsFiniteVector(rootPosition))
+                {
+                    CrashTelemetryBuffer.ReportNanPhysicsRecovery(rootPosition, Vector3.zero);
+                    continue;
+                }
+
+                rootTransform.position = rootPosition - committedTotalOffset;
             }
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            float3 value3 = new float3(value.x, value.y, value.z);
+            return math.all(math.isfinite(value3));
         }
 
 #if UNITY_EDITOR

@@ -1,6 +1,6 @@
-# HECTON-8 WORLD / ENVIRONMENT / SUBMARINE SYSTEM MAP
+﻿# HECTON-8 WORLD / ENVIRONMENT / SUBMARINE SYSTEM MAP
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: source-backed map of current world, environment, ocean, ecology, debris, and submarine runtime owners
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
@@ -232,7 +232,7 @@ It is also harder to navigate without a map.
 - major world-facing runtime domains do have identifiable owners
 - service-facing owners are explicit for weather, ocean, thermal, worldgen, ecosystem, debris, and submarine
 - submarine authority is not falsely compressed into one giant root class
-- ecology and scatter are already separate from simple “environment” labeling
+- ecology and scatter are already separate from simple â€œenvironmentâ€ labeling
 
 ## What Looks Merely Acceptable
 

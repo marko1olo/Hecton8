@@ -1,5 +1,6 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
+using Hecton.Localization;
 using UnityEngine;
 using UnityEngine.Profiling;
 
@@ -15,8 +16,8 @@ namespace Hecton8.Core
         private const int MemoryPressureSampleIntervalFrames = 60;
         private const int NativeLeakAuditIntervalFrames = 300;
         private const double CriticalMemoryPressureRatio = 0.85d;
-
-        private static GCMonitor _instance;
+        private static readonly uint _Gen0CollectionWarningHash = unchecked((uint)LocHash.Compute("GCMonitor.Gen0CollectionDetected"));
+        private static readonly uint _GcMonitorContextHash = unchecked((uint)LocHash.Compute(nameof(GCMonitor)));
 
         private bool _registeredPostFixed;
         private int _lastGen0CollectionCount;
@@ -28,13 +29,14 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+            GlobalRegistry.ClearGCMonitorRuntime(null);
         }
 
         public static GCMonitor EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            GCMonitor runtime = GlobalRegistry.GCMonitorRuntime;
+            if (runtime != null)
+                return runtime;
 
             GameObject runtimeRoot = new GameObject("[GCMonitor]"); // COLD ALLOC: GameObject[1] - bootstrap-owned GC sentinel root - owner: GCMonitor
             return runtimeRoot.AddComponent<GCMonitor>();
@@ -49,17 +51,16 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            GCMonitor runtime = GlobalRegistry.GCMonitorRuntime;
+            if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterGCMonitorRuntime(this);
             _lastGen0CollectionCount = GC.CollectionCount(0);
             PrimeSamplingFrames();
-            if (Application.isPlaying)
-                DontDestroyOnLoad(gameObject);
         }
 
         private void OnEnable()
@@ -84,8 +85,7 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             OnDisable();
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.ClearGCMonitorRuntime(this);
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -104,32 +104,8 @@ namespace Hecton8.Core
                 return;
 
             _lastReportedFrame = frame;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            SystemDispatcher.TryGetLastPostFixedGcAttribution(
-                out string ownerName,
-                out int attributedFrame,
-                out int attributedDelta,
-                out int laneIndex,
-                out int itemIndex);
-
-            Debug.LogAssertion(
-                "[GCMonitor] Gen0 GC collection detected at frame " +
-                frame +
-                " attributedFrame=" +
-                attributedFrame +
-                " attributedOwner=" +
-                ownerName +
-                " attributedDelta=" +
-                attributedDelta +
-                " lane=" +
-                laneIndex +
-                " item=" +
-                itemIndex +
-                " delta=" +
-                delta +
-                " fixedDeltaTime=" +
-                fixedDeltaTime.ToString("0.000000"));
-#endif
+            GlobalTelemetryBus.PublishPerformanceWarning(_Gen0CollectionWarningHash, _GcMonitorContextHash, delta);
+            Debug.LogAssertion("[GCMonitor] Gen0 GC collection detected. Telemetry emitted.");
         }
 
         private void TryDispatchCriticalMemoryPressure(int frame)

@@ -1,5 +1,6 @@
-# Evidence Ledger
+﻿# Evidence Ledger
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 ## 2026-05-04 Supersession Note

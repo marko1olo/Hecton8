@@ -1892,6 +1892,7 @@ namespace Hecton8.UI
             bool hasInteractorPosition = dropOrigin != null;
             ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(dropOrigin.GetEntityId()) : 0ul;
             Vector3 interactorPosition = hasInteractorPosition ? dropOrigin.position : Vector3.zero;
+            InteractionEvents.RaiseItemLost(dropped, 1, dropOrigin);
             HectonEventBus.Publish(new ItemDiscardedEvent(
                 dropped,
                 1,

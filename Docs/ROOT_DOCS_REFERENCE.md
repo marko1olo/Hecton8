@@ -1,7 +1,7 @@
-# Root Docs Reference
+﻿# Root Docs Reference
 
-Date: `2026-05-04`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Purpose: explain what still remains in repository root versus `Docs/` after the current documentation cleanup.
 
@@ -13,6 +13,7 @@ It is not runtime proof.
 | File | Current handling |
 |---|---|
 | `AGENTS.md` | active operating contract; keep in root |
+| `BROKEN_PREFABS.md` | generated prefab-audit snapshot; not active authority unless summarized in `Docs/Reports/` |
 | `MASTER_RELEASE_WORK_PLAN.md` | active production roadmap anchor; keep in root unless a later roadmap migration is approved |
 | `BUILD_PLAYTEST_ISSUES.md` | active validation/build observation ledger; keep in root unless a later QA migration is approved |
 | `TERRAIN_AND_BIOME_REALITY_MAP.md` | root compatibility mirror / stale legacy surface; canonical current report is `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md` |
@@ -63,13 +64,15 @@ The repository root text surface is reduced to three active anchors plus `TERRAI
 Treat it as a compatibility mirror only.
 If new root text files appear, classify them before treating them as current authority.
 
-## 2026-05-04 Check
+## 2026-05-06 Check
 
 Root documentation anchors remain `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
 Root `TERRAIN_AND_BIOME_REALITY_MAP.md` is not active authority; use `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
-Root `.log` files were moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/README.md`.
+Root `BROKEN_PREFABS.md` is not active authority; it is a generated snapshot and must be summarized in a dated `Docs/Reports/` file before citation.
+Root `.log` files were moved to dated bundles under `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*/`.
 `.codex-artifacts/**` remains evidence artifact storage, not documentation authority.
+Latest documentation synchronization pass: `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`.
 Latest documentation sweep: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
 Latest documentation sorting map: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
 Latest header/archive queue: `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
-Current root text scan after the log move saw `4` root `.md` files and `0` root `.txt`/`.log` files; only the three anchors listed above are active documentation authority.
+Current root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files; only the three anchors listed above are active documentation authority.

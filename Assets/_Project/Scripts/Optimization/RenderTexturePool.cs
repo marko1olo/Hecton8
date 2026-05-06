@@ -13,6 +13,8 @@ namespace Hecton8.Optimization
     [DefaultExecutionOrder(-7998)]
     public sealed class RenderTexturePool : MonoBehaviour
     {
+        private const string PooledRenderTextureName = "Pooled_RT";
+
         // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
         
         
@@ -52,16 +54,10 @@ namespace Hecton8.Optimization
         {
             get
             {
-                int total = 0;
-                foreach (var kvp in _poolR8)
-                    total += kvp.Value.Count;
-                foreach (var kvp in _poolRG16)
-                    total += kvp.Value.Count;
-                foreach (var kvp in _poolRGBA16)
-                    total += kvp.Value.Count;
-                foreach (var kvp in _poolRGBA32)
-                    total += kvp.Value.Count;
-                return total;
+                return CountPool(_poolR8) +
+                       CountPool(_poolRG16) +
+                       CountPool(_poolRGBA16) +
+                       CountPool(_poolRGBA32);
             }
         }
         
@@ -130,7 +126,7 @@ namespace Hecton8.Optimization
             
             // Pool miss - allocate new RT
             RenderTexture newRT = new RenderTexture(width, height, 0, format);
-            newRT.name = $"Pooled_RT_{width}x{height}_{format}";
+            newRT.name = PooledRenderTextureName;
             
             RenderTextureLifecycleTracker lifecycle = GlobalRegistry.RenderTextureLifecycle;
             if (lifecycle != null)
@@ -194,6 +190,14 @@ namespace Hecton8.Optimization
             ClearPool(_poolRGBA16);
             ClearPool(_poolRGBA32);
         }
+
+        /// <summary>
+        /// PDA close path: release pooled visor/UI RTs immediately instead of retaining them for reuse.
+        /// </summary>
+        public void ReclaimPdaRenderTextures()
+        {
+            ClearAllPools();
+        }
         
         // ── PRIVATE METHODS ────────────────────────────────────────────────────────
         
@@ -248,11 +252,13 @@ namespace Hecton8.Optimization
         
         private void ClearPool(Dictionary<ulong, Queue<RenderTexture>> pool)
         {
-            foreach (var kvp in pool)
+            Dictionary<ulong, Queue<RenderTexture>>.Enumerator enumerator = pool.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                while (kvp.Value.Count > 0)
+                Queue<RenderTexture> queue = enumerator.Current.Value;
+                while (queue.Count > 0)
                 {
-                    RenderTexture rt = kvp.Value.Dequeue();
+                    RenderTexture rt = queue.Dequeue();
                     if (rt != null)
                     {
                         RenderTextureLifecycleTracker lifecycle = GlobalRegistry.RenderTextureLifecycle;
@@ -265,6 +271,16 @@ namespace Hecton8.Optimization
             }
             pool.Clear();
         }
+
+        private static int CountPool(Dictionary<ulong, Queue<RenderTexture>> pool)
+        {
+            int total = 0;
+            Dictionary<ulong, Queue<RenderTexture>>.Enumerator enumerator = pool.GetEnumerator();
+            while (enumerator.MoveNext())
+                total += enumerator.Current.Value.Count;
+
+            return total;
+        }
         
         private void HandleSceneUnloaded(Scene scene)
         {
@@ -275,10 +291,7 @@ namespace Hecton8.Optimization
         private void LogPoolStats()
         {
             if (Time.time >= _nextStatsLogTime)
-            {
                 _nextStatsLogTime = Time.time + 60f; // Log every 60s
-                Debug.Log($"[RTPool] Hit Rate: {(PoolHitRate * 100f):0.0}% | Total Pooled: {TotalPooledCount} | Rent Calls: {_totalRentCalls} | Reuses: {_totalReuseCount}");
-            }
         }
 #endif
     }

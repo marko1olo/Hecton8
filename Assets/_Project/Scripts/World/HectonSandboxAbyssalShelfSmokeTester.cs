@@ -15,13 +15,15 @@ namespace Hecton8.World
     public sealed class HectonSandboxAbyssalShelfSmokeTester : MonoBehaviour
     {
         private const int SampleCount = 16;
-        private const int JsonBufferLength = 1024;
+        private const int JsonBufferLength = 1536;
         private const double SlopeProbeMeters = 64.0;
         private const float HighWorldY = 2000f;
         private const float LowWorldY = -5000f;
+        private const float ShelfRunMeters = 15000f;
+        private const float ShelfTargetSlopeDegrees = 30f;
         private const float RequiredMinMeters = -4900f;
         private const float RequiredMaxMeters = 1900f;
-        private const float MaxAllowedSlopeDegrees = 86f;
+        private const float MaxAllowedSlopeDegrees = 62f;
         private const float AupDeterminismToleranceMeters = 0.0001f;
         private const float AupBoundaryContinuityToleranceMeters = 2f;
         private const double AupBoundaryProbeMeters = 0.25;
@@ -56,6 +58,9 @@ namespace Hecton8.World
         [SerializeField] private float _debugMaxSlopeDegrees;
         [SerializeField] private float _debugAverageSlopeDegrees;
         [SerializeField] private float _debugAverageActiveSlopeDegrees;
+        [SerializeField] private float _debugActiveSlopeMinDegrees;
+        [SerializeField] private float _debugActiveSlopeMaxDegrees;
+        [SerializeField] private int _debugActiveSlopeSampleCount;
         [SerializeField] private int _debugSlope30SampleCount;
         [SerializeField] private float _debugAupDeterminismDeltaMeters;
         [SerializeField] private float _debugAupBoundaryDeltaMeters;
@@ -65,7 +70,7 @@ namespace Hecton8.World
         [SerializeField] private float _debugCompletionMilliseconds;
         [SerializeField] private string _debugJson = "NotRun";
 
-        // COLD ALLOC: char[1024] - inspector JSON staging for sandbox smoke result - owner: HectonSandboxAbyssalShelfSmokeTester
+        // COLD ALLOC: char[1536] - inspector JSON staging for sandbox smoke result - owner: HectonSandboxAbyssalShelfSmokeTester
         private readonly char[] _jsonBuffer = new char[JsonBufferLength];
 
         public bool LastRunPassed => _debugPassed;
@@ -174,7 +179,7 @@ namespace Hecton8.World
                         _debugAupBoundaryDeltaMeters);
                 }
 
-                if (_debugCliffSampleCount > 0 || _debugPlateauSampleCount == 0 || _debugSlope30SampleCount == 0)
+                if (_debugMaxSlopeDegrees > MaxAllowedSlopeDegrees || _debugPlateauSampleCount == 0 || _debugSlope30SampleCount == 0)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(
                         _smokeCoverageWarningHash,
@@ -182,7 +187,7 @@ namespace Hecton8.World
                         _debugCliffSampleCount + _debugPlateauSampleCount + _debugSlope30SampleCount);
                 }
 
-                if (_debugPassed && _debugCompletionMilliseconds > 4f)
+                if (_debugPassed && _debugCompletionMilliseconds > 0.2f)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(
                         _smokeCompletionWarningHash,
@@ -237,6 +242,9 @@ namespace Hecton8.World
                 _debugMaxSlopeDegrees,
                 _debugAverageSlopeDegrees,
                 _debugAverageActiveSlopeDegrees,
+                _debugActiveSlopeMinDegrees,
+                _debugActiveSlopeMaxDegrees,
+                _debugActiveSlopeSampleCount,
                 _debugSlope30SampleCount,
                 _debugAupDeterminismDeltaMeters,
                 _debugAupBoundaryDeltaMeters,
@@ -252,7 +260,7 @@ namespace Hecton8.World
             return new HectonSandboxAbyssalShelfParams
             {
                 AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters,
-                DescentRadiusMeters = 17500.0,
+                DescentRadiusMeters = ShelfRunMeters,
                 PlateCellSizeMeters = 4200.0,
                 HighWorldY = HighWorldY,
                 LowWorldY = LowWorldY,
@@ -264,6 +272,11 @@ namespace Hecton8.World
                 DomainWarpMeters = 1450f,
                 DomainWarpFrequency = 0.00011f,
                 MacroExponentialFalloff = 3.1f,
+                ShelfRunMeters = ShelfRunMeters,
+                ShelfTargetSlopeDegrees = ShelfTargetSlopeDegrees,
+                TrenchDepthMeters = 5000f,
+                TrenchWidthMeters = 780f,
+                TrenchSharpness = 2.4f,
                 IslandCenterRadiusMeters = 2600f,
                 IslandJunctionThreshold = 0.58f,
                 Seed = HectonSandboxAbyssalShelfMath.CombineWorldSeed(880031u, 0)
@@ -302,6 +315,9 @@ namespace Hecton8.World
             _debugMaxSlopeDegrees = summary.MaxSlopeDegrees;
             _debugAverageSlopeDegrees = summary.AverageSlopeDegrees;
             _debugAverageActiveSlopeDegrees = summary.AverageActiveSlopeDegrees;
+            _debugActiveSlopeMinDegrees = summary.ActiveSlopeMinDegrees;
+            _debugActiveSlopeMaxDegrees = summary.ActiveSlopeMaxDegrees;
+            _debugActiveSlopeSampleCount = summary.ActiveSlopeSampleCount;
             _debugSlope30SampleCount = summary.Slope30SampleCount;
             _debugAupDeterminismDeltaMeters = summary.AupDeterminismDeltaMeters;
             _debugAupBoundaryDeltaMeters = summary.AupBoundaryDeltaMeters;
@@ -340,6 +356,9 @@ namespace Hecton8.World
             float maxSlopeDegrees,
             float averageSlopeDegrees,
             float averageActiveSlopeDegrees,
+            float activeSlopeMinDegrees,
+            float activeSlopeMaxDegrees,
+            int activeSlopeSampleCount,
             int slope30SampleCount,
             float aupDeterminismDeltaMeters,
             float aupBoundaryDeltaMeters,
@@ -371,6 +390,12 @@ namespace Hecton8.World
                 AppendFloat(destination, ref cursor, averageSlopeDegrees) &&
                 AppendLiteral(destination, ref cursor, ",\"averageActiveSlopeDegrees\":") &&
                 AppendFloat(destination, ref cursor, averageActiveSlopeDegrees) &&
+                AppendLiteral(destination, ref cursor, ",\"activeSlopeMinDegrees\":") &&
+                AppendFloat(destination, ref cursor, activeSlopeMinDegrees) &&
+                AppendLiteral(destination, ref cursor, ",\"activeSlopeMaxDegrees\":") &&
+                AppendFloat(destination, ref cursor, activeSlopeMaxDegrees) &&
+                AppendLiteral(destination, ref cursor, ",\"activeSlopeSamples\":") &&
+                AppendInt(destination, ref cursor, activeSlopeSampleCount) &&
                 AppendLiteral(destination, ref cursor, ",\"slope30Samples\":") &&
                 AppendInt(destination, ref cursor, slope30SampleCount) &&
                 AppendLiteral(destination, ref cursor, ",\"aupDeltaMeters\":") &&

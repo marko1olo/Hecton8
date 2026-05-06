@@ -130,8 +130,16 @@ namespace Hecton8.World
         private Color seismicDustColor = new Color(0.34f, 0.32f, 0.26f, 0.42f);
 
         [SerializeField]
+        [Tooltip("Slow brown-black silt volume tint used when voxel cave mouths collapse under laser cutting.")]
+        private Color voxelCaveInDustColor = new Color(0.27f, 0.24f, 0.18f, 0.48f);
+
+        [SerializeField]
         [Tooltip("Low-alpha disturbed-silt tint used for KCC and submarine wake trails.")]
         private Color wakeSiltColor = new Color(0.28f, 0.31f, 0.29f, 0.34f);
+
+        [SerializeField]
+        [Tooltip("White-blue foam tint used for water-entry splash decals.")]
+        private Color waterSplashFoamColor = new Color(0.64f, 0.86f, 1f, 0.48f);
 
         [SerializeField]
         [Tooltip("White-blue foam tint used for module high-pressure leak spray ribbons.")]
@@ -233,6 +241,34 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Registers a slow unlit silt sheet at a voxel SDF carve AUP projected into the current runtime origin.
+        /// </summary>
+        public void RegisterVoxelCaveInDust(Vector3 positionWS, Vector3 impulseDirectionWS, float radiusScale)
+        {
+            EnsureRenderingResources(true);
+            float3 position3 = new float3(positionWS.x, positionWS.y, positionWS.z);
+            float3 impulse3 = new float3(impulseDirectionWS.x, impulseDirectionWS.y, impulseDirectionWS.z);
+            if (!math.all(math.isfinite(position3)) || !math.all(math.isfinite(impulse3)))
+                return;
+
+            float clampedScale = math.saturate(radiusScale);
+            if (clampedScale <= 0.001f)
+                return;
+
+            float3 resolvedImpulse = math.normalizesafe(impulse3, new float3(0f, 1f, 0f));
+            float downwardBias = math.saturate(-resolvedImpulse.y * 0.5f + 0.5f);
+            Color color = voxelCaveInDustColor;
+            color.a *= Mathf.Lerp(0.55f, 1f, clampedScale);
+            Vector3 liftedPosition = positionWS + Vector3.up * Mathf.Lerp(0.08f, 0.22f, clampedScale);
+            RegisterDecal(
+                liftedPosition,
+                color,
+                Mathf.Lerp(0.45f, 1.1f, clampedScale),
+                Mathf.Lerp(1.8f, 4.8f, clampedScale) * Mathf.Lerp(0.86f, 1.16f, downwardBias),
+                Mathf.Lerp(3.6f, 7.2f, clampedScale));
+        }
+
+        /// <summary>
         /// Registers a disturbed-silt sheet emitted by fast KCC or vehicle wake motion.
         /// </summary>
         public void RegisterWakeSilt(Vector3 positionWS, Vector3 sourceVelocityWS, float intensity01)
@@ -253,6 +289,30 @@ namespace Hecton8.World
             float startRadius = Mathf.Lerp(0.45f, 1.4f, clampedIntensity);
             float targetRadius = Mathf.Lerp(1.6f, 5.2f, clampedIntensity) + speed * 0.04f;
             float lifetime = Mathf.Lerp(2.2f, 6.5f, clampedIntensity);
+            RegisterDecal(positionWS, color, startRadius, targetRadius, lifetime);
+        }
+
+        /// <summary>
+        /// Registers a flat shader splash sheet for object water entry. No particle drops are spawned.
+        /// </summary>
+        public void RegisterWaterSplash(Vector3 positionWS, Vector3 sourceVelocityWS, float intensity01)
+        {
+            EnsureRenderingResources(true);
+            float3 position3 = new float3(positionWS.x, positionWS.y, positionWS.z);
+            float3 velocity3 = new float3(sourceVelocityWS.x, sourceVelocityWS.y, sourceVelocityWS.z);
+            if (!math.all(math.isfinite(position3)) || !math.all(math.isfinite(velocity3)))
+                return;
+
+            float clampedIntensity = math.saturate(intensity01);
+            if (clampedIntensity <= 0.001f)
+                return;
+
+            float speed = math.sqrt(math.lengthsq(velocity3));
+            Color color = waterSplashFoamColor;
+            color.a *= Mathf.Lerp(0.45f, 1f, clampedIntensity);
+            float startRadius = Mathf.Lerp(0.35f, 1.15f, clampedIntensity);
+            float targetRadius = Mathf.Lerp(1.4f, 5.4f, clampedIntensity) + speed * 0.025f;
+            float lifetime = Mathf.Lerp(0.75f, 2.2f, clampedIntensity);
             RegisterDecal(positionWS, color, startRadius, targetRadius, lifetime);
         }
 
@@ -597,7 +657,7 @@ namespace Hecton8.World
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
             if (playerCamera == null)
-                playerCamera = SystemDispatcher.CurrentCamera;
+                playerCamera = GlobalRenderContext.CurrentCamera;
             return playerCamera != null ? playerCamera.transform : null;
         }
 

@@ -1,6 +1,6 @@
-# Naming Violations
+﻿# Naming Violations
 
-Date: 2026-05-05
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: `Assets/_Project` and `Docs` non-ASCII path/content sweep
 
@@ -35,11 +35,53 @@ rg -n --pcre2 "[^\x00-\x7F]" Assets/_Project Docs `
 
 | Finding | Count |
 |---|---:|
-| Non-ASCII path entries under `Assets/_Project` and `Docs` | `637` |
-| Non-ASCII path entries excluding archive/deprecated/obsolete folders | `575` |
-| Non-ASCII path entries under `Assets/_Project` | `570` |
-| Non-ASCII path entries under `Docs` | `67` |
-| Non-ASCII content files in active scan scope | `648` |
+| Cyrillic path entries under repository scan scope, excluding `Library`, `Temp`, `obj`, and `bin` | `790` |
+| Cyrillic comment/content sample hits captured from first-party code/shader comments | `300` sample cap reached |
+| Previous non-ASCII path entries under `Assets/_Project` and `Docs` | `638` |
+| Previous non-ASCII path entries excluding archive/deprecated/obsolete folders | `575` |
+| Previous non-ASCII path entries under `Assets/_Project` | `570` |
+| Previous non-ASCII path entries under `Docs` | `68` |
+| Previous non-ASCII content files in active scan scope | `646` |
+
+## 2026-05-07 Cyrillic Path / Comment Sweep
+
+Command:
+
+```powershell
+Get-ChildItem -LiteralPath . -Recurse -File -Force -ErrorAction SilentlyContinue |
+  Where-Object {
+    $_.FullName -match '[\p{IsCyrillic}]' -and
+    $_.FullName -notmatch '\\Library\\|\\Temp\\|\\obj\\|\\bin\\'
+  }
+
+rg -n "//.*[\p{Cyrillic}]|/\*.*[\p{Cyrillic}]|\*.*[\p{Cyrillic}]" `
+  Assets/_Project -g "*.cs" -g "*.shader" -g "*.hlsl" -g "*.compute"
+```
+
+Representative Cyrillic path hits:
+
+- `Assets/кучка мелка 1 лод 1.asset`
+- `Assets/пиллар2 лод1.asset`
+- `Assets/Scenes/пустая сцена.unity`
+- `Assets/_Project/Art/Materials/Fonts/текст.ttf`
+- `Assets/_Project/Art/Materials/Fonts/цифры.ttf`
+- `Assets/_Project/Art/Meshes/Cleaned/ENV__арка1_GEO_LOD0_cleaned.asset`
+- `Assets/_Project/Art/Meshes/Cleaned/ENV__Болдер_1_geo_LOD0_cleaned.asset`
+- `Assets/_Project/Art/Meshes/Cleaned/ENV__донная_куча_geo_LOD0_cleaned.asset`
+
+Representative Cyrillic comment hits:
+
+- `Assets/_Project/Art/Shaders/SkyboxBlend.shader:2`
+- `Assets/_Project/Art/Shaders/SG_GasGiant_CelestialLighting.hlsl:3`
+- `Assets/_Project/Editor/VisorOpaqueTextureEnsurer.cs:2`
+- `Assets/_Project/Editor/RockDataBakerWindow.cs:3`
+- `Assets/_Project/Editor/ObjectSpawner.cs:5`
+- `Assets/_Project/Scripts/BeaconRuntime.cs:200`
+- `Assets/_Project/Scripts/BeaconNetworkSystem.cs:528`
+- `Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs:3`
+- `Assets/_Project/Scripts/BaseModule.cs:3`
+
+This is a log only. No asset rename was performed because Unity `.meta` GUIDs, prefab references, Addressables, and MapMagic graph links require a dependency walk before any move.
 
 ## High-Impact Path Violations
 

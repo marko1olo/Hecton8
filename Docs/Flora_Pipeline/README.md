@@ -1,7 +1,7 @@
-# Flora Pipeline Docs
+﻿# Flora Pipeline Docs
 
-Date: `2026-04-17`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Purpose: canonical active bundle for flora execution, prompts, and import-state tracking.
 

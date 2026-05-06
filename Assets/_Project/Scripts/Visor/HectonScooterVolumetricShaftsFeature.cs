@@ -419,7 +419,7 @@ namespace Hecton8.Visor
                 UpdateMaterialParameters(_blurVerticalMaterial, _settings, 2f, exposureAvailable);
                 UpdateMaterialParameters(_compositeMaterial, _settings, 3f, exposureAvailable);
 
-                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Raymarch", out var passData, _profilingSampler))
+                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Radial Shafts", out var passData, _profilingSampler))
                 {
                     passData.source = sourceTexture;
                     passData.destination = shaftsTexture;

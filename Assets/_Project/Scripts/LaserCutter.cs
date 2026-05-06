@@ -4,7 +4,7 @@
 //
 // v2.2 CHANGES (ZERO-GC REFACTOR):
 //   [ZERO-GC] Diagnosis system entirely refactored to use FixedCharBuffer.
-//     • Eliminated string.Format and string interpolation in diagnosis and operational summaries.
+//     • Eliminated managed formatting in diagnosis and operational summaries.
 //     • Removed legacy CutterDiagnosis fields (headline/summary) in favor of persistent buffers.
 //     • Consolidated state management and removed clobbered field declarations.
 //
@@ -611,6 +611,10 @@ namespace Hecton8.Gameplay
         private readonly FixedCharBuffer _diagnosisHeadline = new FixedCharBuffer(64);
         private readonly FixedCharBuffer _diagnosisSummary = new FixedCharBuffer(256);
         private readonly FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512);
+        // COLD ALLOC: char[128] — cached recovery progress message construction scratch — owner: LaserCutter
+        private static FixedCharBuffer s_recoveryProgressBuffer = new FixedCharBuffer(128);
+        // COLD ALLOC: char[256] — scan archive text construction scratch — owner: LaserCutter
+        private static FixedCharBuffer s_archiveStringBuffer = new FixedCharBuffer(256);
 
         private bool _secondaryLatched;
         private bool _deconstructStartReported;
@@ -916,23 +920,28 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
+            _telemetryBuffer.Clear();
+            WriteOperationalSummary(_telemetryBuffer);
+            return BuildStringFromBuffer(in _telemetryBuffer);
+        }
+
+        public override void WriteOperationalSummary(FixedCharBuffer buffer)
+        {
             if (_isLockedOut)
             {
-                _telemetryBuffer.Clear();
-                _telemetryBuffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_LOCKOUT_PREFIX, "LASER CUTTER // LOCKOUT "));
-                _telemetryBuffer.AppendInt((int)(_heatLevel * 100f));
-                _telemetryBuffer.Append("%");
-                return _telemetryBuffer.ToString();
+                buffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_LOCKOUT_PREFIX, "LASER CUTTER // LOCKOUT "));
+                buffer.AppendInt((int)(_heatLevel * 100f));
+                buffer.Append("%");
+                return;
             }
 
             if (_cachedDeconstructModule != null)
             {
                 float progress = Mathf.Clamp01(_deconstructProgress / math.max(0.01f, deconstructThreshold));
-                _telemetryBuffer.Clear();
-                _telemetryBuffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_RECOVERY_PREFIX, "LASER CUTTER // RECOVERY "));
-                _telemetryBuffer.AppendInt((int)(progress * 100f));
-                _telemetryBuffer.Append("%");
-                return _telemetryBuffer.ToString();
+                buffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_RECOVERY_PREFIX, "LASER CUTTER // RECOVERY "));
+                buffer.AppendInt((int)(progress * 100f));
+                buffer.Append("%");
+                return;
             }
 
             if (!_diagnosisCached)
@@ -940,22 +949,20 @@ namespace Hecton8.Gameplay
             
             if (_diagnosisHeadline.Length > 0)
             {
-                _telemetryBuffer.Clear();
-                _telemetryBuffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_DIAGNOSIS_PREFIX, "LASER CUTTER // "));
-                _telemetryBuffer.Append(_diagnosisHeadline);
-                return _telemetryBuffer.ToString();
+                buffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_DIAGNOSIS_PREFIX, "LASER CUTTER // "));
+                buffer.Append(_diagnosisHeadline);
+                return;
             }
 
             if (_heatLevel > 0.01f)
             {
-                _telemetryBuffer.Clear();
-                _telemetryBuffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_HEAT_PREFIX, "LASER CUTTER // HEAT "));
-                _telemetryBuffer.AppendInt((int)(_heatLevel * 100f));
-                _telemetryBuffer.Append("%");
-                return _telemetryBuffer.ToString();
+                buffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_HEAT_PREFIX, "LASER CUTTER // HEAT "));
+                buffer.AppendInt((int)(_heatLevel * 100f));
+                buffer.Append("%");
+                return;
             }
 
-            return ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_READY, "LASER CUTTER // READY");
+            buffer.Append(ResolveLocalized(LocalizationKeys.LASER_OPERATIONAL_READY, "LASER CUTTER // READY"));
         }
 
         public override string GetOperationalDirective()
@@ -970,7 +977,7 @@ namespace Hecton8.Gameplay
                 ReadDiagnosisNow();
             
             if (_diagnosisSummary.Length > 0)
-                return _diagnosisSummary.ToString();
+                return BuildStringFromBuffer(in _diagnosisSummary);
 
             if (_heatLevel >= 0.75f)
                 return ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_HOT, "Core is running hot. Finish the cut or vent heat before lockout.");
@@ -1272,9 +1279,67 @@ namespace Hecton8.Gameplay
             string[] messages = new string[RecoveryProgressMessageCount];
             string template = ResolveLocalized(LocalizationKeys.LASER_RECOVERY_PROGRESS, "RECOVERY PROGRESS - {0}%");
             for (int i = 0; i < RecoveryProgressMessageCount; i++)
-                messages[i] = string.Format(template, i);
+                messages[i] = BuildNumericTemplateString(template, i, ref s_recoveryProgressBuffer);
             _recoveryProgressMessages = messages;
             _recoveryProgressLanguage = language;
+        }
+
+        private static string BuildStringFromBuffer(in FixedCharBuffer buffer)
+        {
+            return buffer.Length > 0 ? new string(buffer.Buffer, 0, buffer.Length) : string.Empty;
+        }
+
+        private static string BuildNumericTemplateString(string template, int value, ref FixedCharBuffer buffer)
+        {
+            buffer.Clear();
+            AppendTemplateValue(template, value, ref buffer);
+            return BuildStringFromBuffer(in buffer);
+        }
+
+        private static string BuildTextTemplateString(string template, string value, ref FixedCharBuffer buffer)
+        {
+            buffer.Clear();
+            AppendTemplateValue(template, value, ref buffer);
+            return BuildStringFromBuffer(in buffer);
+        }
+
+        private static void AppendTemplateValue(string template, int value, ref FixedCharBuffer buffer)
+        {
+            if (string.IsNullOrEmpty(template))
+                return;
+
+            int tokenIndex = template.IndexOf("{0}", StringComparison.Ordinal);
+            if (tokenIndex < 0)
+            {
+                buffer.Append(template);
+                return;
+            }
+
+            buffer.Append(template.AsSpan(0, tokenIndex));
+            buffer.AppendInt(value);
+            int suffixIndex = tokenIndex + 3;
+            if (suffixIndex < template.Length)
+                buffer.Append(template.AsSpan(suffixIndex));
+        }
+
+        private static void AppendTemplateValue(string template, string value, ref FixedCharBuffer buffer)
+        {
+            if (string.IsNullOrEmpty(template))
+                return;
+
+            int tokenIndex = template.IndexOf("{0}", StringComparison.Ordinal);
+            if (tokenIndex < 0)
+            {
+                buffer.Append(template);
+                return;
+            }
+
+            buffer.Append(template.AsSpan(0, tokenIndex));
+            if (!string.IsNullOrEmpty(value))
+                buffer.Append(value);
+            int suffixIndex = tokenIndex + 3;
+            if (suffixIndex < template.Length)
+                buffer.Append(template.AsSpan(suffixIndex));
         }
 
         private void EnsurePlayerInventory()
@@ -1374,16 +1439,18 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(moduleId))
                 return;
 
-            string entryId = $"recovery.module.{moduleId}".ToLowerInvariant();
-            string title = string.Format(
+            string entryId = string.Concat("recovery.module.", moduleId).ToLowerInvariant();
+            string title = BuildTextTemplateString(
                 ResolveLocalized(LocalizationKeys.LASER_ARCHIVE_RECOVERY_TITLE, "{0} RECOVERY"),
-                data.moduleName);
+                data.moduleName,
+                ref s_archiveStringBuffer);
             string category = ResolveLocalized(LocalizationKeys.LASER_ARCHIVE_CATEGORY, "Construction");
-            string summary = string.Format(
+            string summary = BuildTextTemplateString(
                 ResolveLocalized(
                     LocalizationKeys.LASER_ARCHIVE_RECOVERY_SUMMARY,
                     "Laser-assisted recovery completed for {0}. Structural blueprint and salvage profile archived."),
-                data.moduleName);
+                data.moduleName,
+                ref s_archiveStringBuffer);
             Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(entryId, title, category, summary);
         }
 

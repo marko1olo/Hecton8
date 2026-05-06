@@ -1,12 +1,12 @@
-# SINGLETON WITCH HUNT — FIRST-PARTY VIOLATIONS
-Date: 2026-05-04
-Status: REFERENCE
+﻿# SINGLETON WITCH HUNT â€” FIRST-PARTY VIOLATIONS
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 **Status:** PENDING VERIFICATION  
 **Audit Review Date:** 2026-04-29  
 **Chronology Note:** The previous header claimed `2026-05-02`, which is impossible relative to the current workspace date. Treat this file as a static inventory until re-scanned.
-**Rule:** AGENTS.md § PRIME DIRECTIVES — "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."
+**Rule:** AGENTS.md Â§ PRIME DIRECTIVES â€” "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."
 
 ---
 
@@ -151,7 +151,7 @@ Status: REFERENCE
 - **High-touch systems** (tick, physics, player, world): Refactor to `GlobalRegistry.Register/Unregister` in bootstrap. Risk: execution-order regressions.
 - **Low-touch systems** (verifiers, debug HUDs): Delete or merge into existing GlobalRegistry services.
 
-**Recommendation:** Do NOT refactor all 101 violations in one pass. Batch by subsystem (Core → Player → World → UI) with per-batch MCP validation.
+**Recommendation:** Do NOT refactor all 101 violations in one pass. Batch by subsystem (Core â†’ Player â†’ World â†’ UI) with per-batch MCP validation.
 
 ---
 

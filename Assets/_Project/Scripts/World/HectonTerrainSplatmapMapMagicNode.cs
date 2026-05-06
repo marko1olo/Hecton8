@@ -45,6 +45,9 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Slope Weight", "Outlet")]
         public readonly Outlet<MatrixWorld> slopeWeightOut = new Outlet<MatrixWorld>();
 
+        [System.NonSerialized] private IInlet<object>[] _inletCache;
+        [System.NonSerialized] private IOutlet<object>[] _outletCache;
+
         [Den.Tools.GUI.ValAttribute("Rock Slope")]
         public float rockSlopeThresholdDegrees = 45f;
 
@@ -63,17 +66,31 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         public IEnumerable<IInlet<object>> Inlets()
         {
-            yield return heightIn;
-            yield return sedimentIn;
+            if (_inletCache == null)
+            {
+                // COLD ALLOC: IInlet<object>[2] - MapMagic port enumeration cache - owner: HectonTerrainSplatmapMapMagicNode
+                _inletCache = new IInlet<object>[2];
+                _inletCache[0] = heightIn;
+                _inletCache[1] = sedimentIn;
+            }
+
+            return _inletCache;
         }
 
         public IEnumerable<IOutlet<object>> Outlets()
         {
-            yield return sandOut;
-            yield return rockOut;
-            yield return siltOut;
-            yield return cavityOut;
-            yield return slopeWeightOut;
+            if (_outletCache == null)
+            {
+                // COLD ALLOC: IOutlet<object>[5] - MapMagic port enumeration cache - owner: HectonTerrainSplatmapMapMagicNode
+                _outletCache = new IOutlet<object>[5];
+                _outletCache[0] = sandOut;
+                _outletCache[1] = rockOut;
+                _outletCache[2] = siltOut;
+                _outletCache[3] = cavityOut;
+                _outletCache[4] = slopeWeightOut;
+            }
+
+            return _outletCache;
         }
 
         public override (string, int) GetCodeFileLine() => GetCodeFileLineBase();

@@ -3,13 +3,11 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using UnityEngine;
-using UnityEngine.Rendering;
-using UnityEngine.Rendering.Universal;
 
 namespace Hecton8.Visor
 {
     /// <summary>
-    /// Applies critical-state pulse feedback through a dedicated runtime volume and heartbeat cues.
+    /// Applies critical-state pulse feedback through shader globals and heartbeat cues.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PlayerStressVFX : MonoBehaviour, ITickable, IPlayerSignalEventListener
@@ -31,23 +29,17 @@ namespace Hecton8.Visor
         [SerializeField, Min(0.05f)] private float heartbeatIntervalMinSeconds = 0.36f;
 
         [Header("── Post FX ──────────────────")]
-        [Tooltip("Peak vignette intensity injected by the stress pulse.")]
-        [SerializeField, Range(0f, 0.8f)] private float maxVignetteIntensity = 0.42f;
+        [Tooltip("Peak shader-only edge vignette fake driven by the stress pulse.")]
+        [SerializeField, Range(0f, 1f)] private float shaderVignetteMaximum = 0.42f;
 
-        [Tooltip("Peak chromatic aberration intensity injected by the stress pulse.")]
-        [SerializeField, Range(0f, 1f)] private float maxChromaticIntensity = 0.36f;
+        [Tooltip("Decay speed for one-shot HUD shader stress pulses raised by save/load integrity warnings.")]
+        [SerializeField, Range(0.1f, 8f)] private float traumaChromaticPulseDecayPerSecond = 2.6f;
 
-        [Tooltip("Extra vignette smoothness applied at high stress.")]
-        [SerializeField, Range(0f, 1f)] private float maxVignetteSmoothness = 0.86f;
+        [Tooltip("Peak shader-only condensation fake injected into SuitVisor.")]
+        [SerializeField, Range(0f, 1f)] private float shaderFogCondensationMaximum = 0.35f;
 
-        [Tooltip("Priority applied to the runtime stress volume so it layers above baseline presentation.")]
-        [SerializeField] private float runtimeVolumePriority = 95f;
-
-        [Tooltip("Maximum contrast loss applied during visor fogging.")]
-        [SerializeField, Range(0f, 100f)] private float fogContrastLoss = 28f;
-
-        [Tooltip("Maximum saturation loss applied during visor fogging.")]
-        [SerializeField, Range(0f, 100f)] private float fogSaturationLoss = 22f;
+        [Tooltip("Peak shader-only frost fake injected into SuitVisor.")]
+        [SerializeField, Range(0f, 1f)] private float shaderFrostMaximum = 0.5f;
 
         [Tooltip("Oxygen threshold below which visor fogging starts to bloom.")]
         [SerializeField, Range(0.01f, 1f)] private float oxygenFogThreshold = 0.24f;
@@ -60,9 +52,6 @@ namespace Hecton8.Visor
 
         [Tooltip("Resolved environment temperature at which frost reaches full edge coverage.")]
         [SerializeField] private float frostMaxTemperatureCelsius = -30f;
-
-        [Tooltip("Cold tint used for frost edging on the visor.")]
-        [SerializeField] private Color frostTint = new Color(0.72f, 0.9f, 1f, 1f);
 
         [Header("── Thresholds ──────────────────")]
         [Tooltip("Oxygen threshold below which the pulse starts ramping aggressively.")]
@@ -84,15 +73,13 @@ namespace Hecton8.Visor
         private const float PulseTwoPi = Mathf.PI * 2f;
         private const float DependencyResolveRetryIntervalSeconds = 0.5f;
         private static readonly int HectonHudStressChromaticAberrationId = Shader.PropertyToID("_HectonHudStressChromaticAberration");
+        private static readonly int HectonHudStressVignetteId = Shader.PropertyToID("_HectonHudStressVignette");
+        private static readonly int HectonHudFogFrostId = Shader.PropertyToID("_HectonHudFogFrost");
 
         private bool _registered;
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
-        private Volume _runtimeVolume;
-        private VolumeProfile _runtimeProfile;
-        private Vignette _runtimeVignette;
-        private ChromaticAberration _runtimeChromatic;
-        private ColorAdjustments _runtimeColorAdjustments;
+        private HectonPlayerHealth _playerHealth;
         private float _pulsePhase;
         private float _heartbeatTimer;
         private float _lastEnvironmentTemperature = 20f;
@@ -101,13 +88,13 @@ namespace Hecton8.Visor
         private float _interactionVolume01 = 1f;
         private float _interactionPitchScale = 1f;
         private float _interactionFrequency01;
+        private float _traumaPulse01;
         private float _nextDependencyResolveTime;
         private bool _hasInteractionSignal;
 
         private void Awake()
         {
             TryResolveDependencies(force: true);
-            EnsureRuntimeVolume();
             _heartbeatTimer = heartbeatIntervalMaxSeconds;
         }
 
@@ -128,6 +115,7 @@ namespace Hecton8.Visor
             _interactionVolume01 = 1f;
             _interactionPitchScale = 1f;
             _interactionFrequency01 = 0f;
+            _traumaPulse01 = 0f;
             _hasInteractionSignal = false;
         }
 
@@ -135,9 +123,6 @@ namespace Hecton8.Visor
         {
             TryUnregisterTickHandler();
             ResetRuntimeEffects();
-
-            if (_runtimeProfile != null)
-                Destroy(_runtimeProfile);
         }
 
         /// <summary>
@@ -151,7 +136,10 @@ namespace Hecton8.Visor
 
             TryResolveDependencies();
 
-            float stress01 = ResolveStress01();
+            if (_traumaPulse01 > 0f)
+                _traumaPulse01 = Mathf.Max(0f, _traumaPulse01 - deltaTime * Mathf.Max(0.1f, traumaChromaticPulseDecayPerSecond));
+
+            float stress01 = Mathf.Max(ResolveStress01(), _traumaPulse01);
             float audioStress01 = _hasInteractionSignal ? Mathf.Max(stress01, _interactionStress01) : stress01;
             _debugStress01 = stress01;
             float fog01 = ResolveFogging01();
@@ -191,6 +179,7 @@ namespace Hecton8.Visor
 
         void IPlayerSignalEventListener.OnTraumaHudSignal(in TraumaHudSignal signal)
         {
+            _traumaPulse01 = Mathf.Max(_traumaPulse01, Mathf.Clamp01(signal.GlitchIntensity));
         }
 
         void IPlayerSignalEventListener.OnInteractionSignal(in InteractionSignal signal)
@@ -213,7 +202,7 @@ namespace Hecton8.Visor
 
         private void TryResolveDependencies(bool force = false)
         {
-            if (!force && _survivalSystem != null && _playerMovement != null)
+            if (!force && _survivalSystem != null && _playerMovement != null && _playerHealth != null)
                 return;
 
             if (!force)
@@ -231,7 +220,10 @@ namespace Hecton8.Visor
             if (_playerMovement == null)
                 TryGetComponent(out _playerMovement);
 
-            if ((_survivalSystem == null || _playerMovement == null) &&
+            if (_playerHealth == null)
+                TryGetComponent(out _playerHealth);
+
+            if ((_survivalSystem == null || _playerMovement == null || _playerHealth == null) &&
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
@@ -240,46 +232,10 @@ namespace Hecton8.Visor
 
                 if (_playerMovement == null)
                     playerTransform.TryGetComponent(out _playerMovement);
+
+                if (_playerHealth == null)
+                    playerTransform.TryGetComponent(out _playerHealth);
             }
-        }
-
-        private void EnsureRuntimeVolume()
-        {
-            if (_runtimeVolume != null)
-                return;
-
-            GameObject runtimeObject = new GameObject("__PlayerStressVFXVolume"); // COLD ALLOC: one runtime child volume for player stress pulse - owner: PlayerStressVFX
-            runtimeObject.transform.SetParent(transform, false);
-            _runtimeVolume = runtimeObject.AddComponent<Volume>();
-            _runtimeVolume.isGlobal = true;
-            _runtimeVolume.priority = runtimeVolumePriority;
-            _runtimeVolume.weight = 1f;
-
-            _runtimeProfile = ScriptableObject.CreateInstance<VolumeProfile>(); // COLD ALLOC: runtime-only volume profile so authored scene profiles remain immutable - owner: PlayerStressVFX
-            _runtimeVolume.profile = _runtimeProfile;
-
-            _runtimeVignette = _runtimeProfile.Add<Vignette>(true);
-            _runtimeVignette.active = true;
-            _runtimeVignette.intensity.overrideState = true;
-            _runtimeVignette.smoothness.overrideState = true;
-            _runtimeVignette.rounded.overrideState = true;
-            _runtimeVignette.intensity.value = 0f;
-            _runtimeVignette.smoothness.value = 0.6f;
-            _runtimeVignette.rounded.value = true;
-
-            _runtimeChromatic = _runtimeProfile.Add<ChromaticAberration>(true);
-            _runtimeChromatic.active = true;
-            _runtimeChromatic.intensity.overrideState = true;
-            _runtimeChromatic.intensity.value = 0f;
-
-            _runtimeColorAdjustments = _runtimeProfile.Add<ColorAdjustments>(true);
-            _runtimeColorAdjustments.active = true;
-            _runtimeColorAdjustments.contrast.overrideState = true;
-            _runtimeColorAdjustments.saturation.overrideState = true;
-            _runtimeColorAdjustments.colorFilter.overrideState = true;
-            _runtimeColorAdjustments.contrast.value = 0f;
-            _runtimeColorAdjustments.saturation.value = 0f;
-            _runtimeColorAdjustments.colorFilter.value = Color.white;
         }
 
         private void TryRegisterTickHandler()
@@ -309,9 +265,10 @@ namespace Hecton8.Visor
             float oxygenNormalized = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.OxygenNormalized) : 1f;
             float integrityNormalized = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.IntegrityNormalized) : 1f;
             float fatalPressure01 = _playerMovement != null ? Mathf.Clamp01(_playerMovement.CurrentFatalPressureSequence01) : 0f;
+            float healthStress01 = _playerHealth != null ? Mathf.Clamp01(_playerHealth.Stress) : 0f;
             float oxygenStress01 = Mathf.Clamp01(Mathf.InverseLerp(oxygenCriticalThreshold, 0.05f, oxygenNormalized));
             float integrityStress01 = Mathf.Clamp01(Mathf.InverseLerp(integrityCriticalThreshold, 0.08f, integrityNormalized));
-            float stress01 = Mathf.Clamp01(Mathf.Max(oxygenStress01, integrityStress01, fatalPressure01));
+            float stress01 = Mathf.Clamp01(Mathf.Max(healthStress01, Mathf.Max(oxygenStress01, Mathf.Max(integrityStress01, fatalPressure01))));
 
             _debugOxygenNormalized = oxygenNormalized;
             _debugIntegrityNormalized = integrityNormalized;
@@ -322,48 +279,25 @@ namespace Hecton8.Visor
         private void ApplyStressPulse(float stress01, float beat01, float fog01, float frost01)
         {
             float pulse = stress01 * (0.35f + beat01 * 0.65f);
-            float hudStressChroma = Mathf.Clamp01(pulse + fog01 * 0.18f);
+            float hudStressChroma = Mathf.Clamp01(stress01 + fog01 * 0.18f);
+            float shaderVignette = Mathf.Clamp01((pulse + frost01 * 0.58f + fog01 * 0.18f) * Mathf.Clamp01(shaderVignetteMaximum));
+            float shaderFog = Mathf.Clamp01(fog01 * Mathf.Clamp01(shaderFogCondensationMaximum));
+            float shaderFrost = Mathf.Clamp01(frost01 * Mathf.Clamp01(shaderFrostMaximum));
+
             Shader.SetGlobalFloat(HectonHudStressChromaticAberrationId, hudStressChroma);
-
-            if (_runtimeVignette == null || _runtimeChromatic == null || _runtimeColorAdjustments == null)
-                return;
-
-            float combinedVignette = Mathf.Clamp01(pulse + frost01 * 0.58f + fog01 * 0.18f);
-            _runtimeVignette.intensity.value = maxVignetteIntensity * combinedVignette;
-            _runtimeVignette.smoothness.value = Mathf.Lerp(0.55f, maxVignetteSmoothness, Mathf.Max(pulse, frost01));
-            _runtimeVignette.color.overrideState = true;
-            _runtimeVignette.color.value = Color.Lerp(Color.black, frostTint, frost01);
-            _runtimeChromatic.intensity.value = maxChromaticIntensity * Mathf.Clamp01(pulse + fog01 * 0.22f);
-            _runtimeColorAdjustments.contrast.value = -fogContrastLoss * fog01;
-            _runtimeColorAdjustments.saturation.value = -fogSaturationLoss * fog01;
-            _runtimeColorAdjustments.colorFilter.value = Color.Lerp(Color.white, frostTint, frost01 * 0.45f + fog01 * 0.18f);
+            Shader.SetGlobalFloat(HectonHudStressVignetteId, shaderVignette);
+            Shader.SetGlobalVector(HectonHudFogFrostId, new Vector4(shaderFog, shaderFrost, fog01, frost01));
         }
 
         private void ResetRuntimeEffects()
         {
-            if (_runtimeVignette != null)
-            {
-                _runtimeVignette.intensity.value = 0f;
-                _runtimeVignette.smoothness.value = 0.6f;
-                _runtimeVignette.color.overrideState = true;
-                _runtimeVignette.color.value = Color.black;
-            }
-
-            if (_runtimeChromatic != null)
-                _runtimeChromatic.intensity.value = 0f;
-
-            if (_runtimeColorAdjustments != null)
-            {
-                _runtimeColorAdjustments.contrast.value = 0f;
-                _runtimeColorAdjustments.saturation.value = 0f;
-                _runtimeColorAdjustments.colorFilter.value = Color.white;
-            }
-
             _debugFog01 = 0f;
             _debugFrost01 = 0f;
             _debugTemperatureShock01 = 0f;
             _debugPulse01 = 0f;
             Shader.SetGlobalFloat(HectonHudStressChromaticAberrationId, 0f);
+            Shader.SetGlobalFloat(HectonHudStressVignetteId, 0f);
+            Shader.SetGlobalVector(HectonHudFogFrostId, Vector4.zero);
         }
 
         private void PlayHeartbeat(float stress01)

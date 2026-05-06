@@ -3,7 +3,10 @@ namespace Hecton8.Tools
     using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Power;
+    using Hecton8.World;
+    using Unity.Burst;
     using Unity.Collections;
+    using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
     using UnityEngine.SceneManagement;
@@ -14,7 +17,7 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9918)]
-    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, IPowerGridTelemetryListener
+    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, ILateFrameTickable, IPowerGridTelemetryListener
     {
         private const int MaxTrackedTools = 16;
         private const float OverchargePowerMultiplier = 3f;
@@ -22,8 +25,12 @@ namespace Hecton8.Tools
         private const float OverchargeHeatScale = 1.75f;
         private const float OverchargeExplosionHeatThreshold = 1.5f;
         private const float OverchargeExplosionPlayerDamage = 45f;
+        private const double BatteryDrainJobWarningMilliseconds = 0.2d;
 
-        private static ModularEquipmentEngine _instance;
+        private static readonly uint _batteryDrainJobWarningHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("ModularEquipment.BatteryDrainJob"));
+        private static readonly uint _batteryDrainJobContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("ModularEquipment.LateFrameDrain"));
 
         // COLD ALLOC: PlayerTool[16] — managed owner mirror for native tool slots — owner: ModularEquipmentEngine
         private readonly PlayerTool[] _toolOwners = new PlayerTool[MaxTrackedTools];
@@ -36,30 +43,70 @@ namespace Hecton8.Tools
 
         private NativeArray<ToolState> _toolStates;
         private NativeArray<ToolRuntimeStats> _toolStats;
+        private NativeArray<float> _batteryDrainRates;
+        private NativeArray<float> _batteryDrainDeltaSeconds;
         private NativeHashMap<uint, int> _toolIndexById;
+        private JobHandle _batteryDrainHandle;
         private bool _isInitialized;
         private bool _registeredService;
         private bool _registeredUpdatable;
+        private bool _registeredLateFrame;
         private bool _telemetrySubscribed;
+        private bool _batteryDrainJobScheduled;
+        private uint _pendingBatteryDrainMask;
         private float _latestSupplyRatio = 1f;
         private bool _wirelessBrownoutActive;
         private float _brownoutPulseTime;
 
         public bool IsInitialized => _isInitialized;
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ToolBatteryDrainJob : IJob
+        {
+            public NativeArray<ToolState> ToolStates;
+            public NativeArray<float> DrainRates;
+            public NativeArray<float> DeltaSeconds;
+            public int SlotCount;
+
+            public void Execute()
+            {
+                if (!ToolStates.IsCreated || !DrainRates.IsCreated || !DeltaSeconds.IsCreated)
+                    return;
+
+                int count = math.min(SlotCount, math.min(ToolStates.Length, math.min(DrainRates.Length, DeltaSeconds.Length)));
+                for (int i = 0; i < count; i++)
+                {
+                    float drainAmount = math.max(0f, DrainRates[i]) * math.max(0f, DeltaSeconds[i]);
+                    if (drainAmount > 0f)
+                    {
+                        ToolState state = ToolStates[i];
+                        state.CurrentBattery = math.max(0f, state.CurrentBattery - drainAmount);
+                        ToolStates[i] = state;
+                    }
+
+                    DrainRates[i] = 0f;
+                    DeltaSeconds[i] = 0f;
+                }
+            }
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
         }
 
         public static ModularEquipmentEngine EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            IModularEquipmentService registered = GlobalRegistry.ModularEquipment;
+            if (registered is ModularEquipmentEngine runtime)
+                return runtime;
+            if (registered != null)
+                return null;
 
             GameObject runtimeRoot = new GameObject("[ModularEquipmentEngine]"); // COLD ALLOC: GameObject[1] — bootstrap-owned equipment runtime root — owner: ModularEquipmentEngine
-            return runtimeRoot.AddComponent<ModularEquipmentEngine>();
+            ModularEquipmentEngine engine = runtimeRoot.AddComponent<ModularEquipmentEngine>();
+            engine.InitializeService();
+            return engine;
         }
 
         public void InitializeService()
@@ -68,11 +115,11 @@ namespace Hecton8.Tools
             {
                 TryRegisterService();
                 TryRegisterUpdatable();
+                TryRegisterLateFrame();
                 return;
             }
 
-            EnsureSingletonOwnership();
-            if (_instance != this)
+            if (!CanOwnServiceSlot())
                 return;
 
             if (!_toolStates.IsCreated)
@@ -108,12 +155,35 @@ namespace Hecton8.Tools
                     NativeAllocationLifetime.Scene);
             }
 
+            if (!_batteryDrainRates.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float>[16] — deferred battery drain rates batched for late-frame job — owner: ModularEquipmentEngine
+                _batteryDrainRates = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _batteryDrainRates,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_batteryDrainRates),
+                    NativeAllocationLifetime.Scene);
+            }
+
+            if (!_batteryDrainDeltaSeconds.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<float>[16] — deferred battery drain delta seconds batched for late-frame job — owner: ModularEquipmentEngine
+                _batteryDrainDeltaSeconds = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _batteryDrainDeltaSeconds,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_batteryDrainDeltaSeconds),
+                    NativeAllocationLifetime.Scene);
+            }
+
             if (Application.isPlaying && transform.parent != null)
                 transform.SetParent(null, true);
 
             _isInitialized = true;
             TryRegisterService();
             TryRegisterUpdatable();
+            TryRegisterLateFrame();
         }
 
         public void Tick(float deltaTime)
@@ -146,6 +216,28 @@ namespace Hecton8.Tools
 
                 _toolStates[i] = state;
             }
+        }
+
+        public void LateFrameTick()
+        {
+            if (!_isInitialized || !_toolStates.IsCreated)
+                return;
+
+            CompleteBatteryDrainJobIfNeeded(false);
+            if (_pendingBatteryDrainMask == 0u || _batteryDrainJobScheduled)
+                return;
+
+            _batteryDrainHandle = new ToolBatteryDrainJob
+            {
+                ToolStates = _toolStates,
+                DrainRates = _batteryDrainRates,
+                DeltaSeconds = _batteryDrainDeltaSeconds,
+                SlotCount = MaxTrackedTools
+            }.Schedule();
+            _batteryDrainJobScheduled = true;
+            _pendingBatteryDrainMask = 0u;
+
+            CompleteBatteryDrainJobIfNeeded(true);
         }
 
         public uint RegisterTool(PlayerTool tool)
@@ -361,7 +453,16 @@ namespace Hecton8.Tools
                 return;
 
             float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
-            ConsumeBatteryAbsolute(slotIndex, math.max(0f, normalizedBatteryDelta) * capacity);
+            ConsumeBatteryAbsolute(slotIndex, math.max(0f, normalizedBatteryDelta) * capacity, 1f);
+        }
+
+        public void ConsumeBattery(uint toolId, float normalizedBatteryDrainRate, float deltaSeconds)
+        {
+            if (!_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+                return;
+
+            float capacity = math.max(0.1f, _toolStats[slotIndex].BatteryCapacity);
+            ConsumeBatteryAbsolute(slotIndex, math.max(0f, normalizedBatteryDrainRate) * capacity, math.max(0f, deltaSeconds));
         }
 
         public void SetHeat(uint toolId, float normalizedHeat)
@@ -387,11 +488,6 @@ namespace Hecton8.Tools
             _toolStates[slotIndex] = state;
         }
 
-        private void Awake()
-        {
-            EnsureSingletonOwnership();
-        }
-
         private void OnEnable()
         {
             SceneManager.sceneUnloaded += HandleSceneUnloaded;
@@ -401,6 +497,7 @@ namespace Hecton8.Tools
             {
                 TryRegisterService();
                 TryRegisterUpdatable();
+                TryRegisterLateFrame();
             }
         }
 
@@ -410,6 +507,7 @@ namespace Hecton8.Tools
             TryUnregisterTelemetry();
             TryUnregisterService();
             TryUnregisterUpdatable();
+            TryUnregisterLateFrame();
         }
 
         private void OnDestroy()
@@ -418,21 +516,21 @@ namespace Hecton8.Tools
             TryUnregisterTelemetry();
             TryUnregisterService();
             TryUnregisterUpdatable();
+            TryUnregisterLateFrame();
+            CompleteBatteryDrainJobIfNeeded(true);
             DisposeNativeState();
-
-            if (_instance == this)
-                _instance = null;
         }
 
-        private void EnsureSingletonOwnership()
+        private bool CanOwnServiceSlot()
         {
-            if (_instance != null && _instance != this)
+            IModularEquipmentService registered = GlobalRegistry.ModularEquipment;
+            if (registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
-                return;
+                return false;
             }
 
-            _instance = this;
+            return true;
         }
 
         private int ResolveOrAllocateSlot(uint toolId)
@@ -496,14 +594,16 @@ namespace Hecton8.Tools
             _toolStates[slotIndex] = state;
         }
 
-        private void ConsumeBatteryAbsolute(int slotIndex, float absoluteBatteryDelta)
+        private void ConsumeBatteryAbsolute(int slotIndex, float absoluteBatteryDrainRate, float deltaSeconds)
         {
-            if (absoluteBatteryDelta <= 0f || !_toolStates.IsCreated || (uint)slotIndex >= (uint)_toolStates.Length)
+            if (absoluteBatteryDrainRate <= 0f || deltaSeconds <= 0f || !_toolStates.IsCreated || !_batteryDrainRates.IsCreated || !_batteryDrainDeltaSeconds.IsCreated || (uint)slotIndex >= (uint)_toolStates.Length)
                 return;
 
-            ToolState state = _toolStates[slotIndex];
-            state.CurrentBattery = math.max(0f, state.CurrentBattery - absoluteBatteryDelta);
-            _toolStates[slotIndex] = state;
+            float existingAmount = _batteryDrainRates[slotIndex] * _batteryDrainDeltaSeconds[slotIndex];
+            float nextAmount = existingAmount + (absoluteBatteryDrainRate * deltaSeconds);
+            _batteryDrainRates[slotIndex] = nextAmount;
+            _batteryDrainDeltaSeconds[slotIndex] = 1f;
+            _pendingBatteryDrainMask |= 1u << slotIndex;
         }
 
         private void RebuildCompiledState(int slotIndex, PlayerTool owner, uint toolId)
@@ -531,6 +631,9 @@ namespace Hecton8.Tools
         private void TryRegisterService()
         {
             if (_registeredService)
+                return;
+
+            if (!CanOwnServiceSlot())
                 return;
 
             GlobalRegistry.RegisterModularEquipmentService(this);
@@ -612,6 +715,27 @@ namespace Hecton8.Tools
             _registeredUpdatable = false;
         }
 
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
+            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this);
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            _registeredLateFrame = false;
+        }
+
         private void HandleSceneUnloaded(Scene unloadedScene)
         {
             if (gameObject.scene != unloadedScene)
@@ -672,6 +796,8 @@ namespace Hecton8.Tools
 
         private void DisposeNativeState()
         {
+            CompleteBatteryDrainJobIfNeeded(true);
+
             for (int i = 0; i < MaxTrackedTools; i++)
             {
                 _toolOwners[i] = null;
@@ -699,10 +825,50 @@ namespace Hecton8.Tools
                 _toolIndexById.Dispose();
             }
 
+            if (_batteryDrainRates.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_batteryDrainRates);
+                _batteryDrainRates.Dispose();
+            }
+
+            if (_batteryDrainDeltaSeconds.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_batteryDrainDeltaSeconds);
+                _batteryDrainDeltaSeconds.Dispose();
+            }
+
             _isInitialized = false;
             _toolStates = default;
             _toolStats = default;
             _toolIndexById = default;
+            _batteryDrainRates = default;
+            _batteryDrainDeltaSeconds = default;
+            _pendingBatteryDrainMask = 0u;
+        }
+
+        private void CompleteBatteryDrainJobIfNeeded(bool forceComplete)
+        {
+            if (!_batteryDrainJobScheduled)
+                return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+#endif
+            if (!DispatcherJobSwap.TryComplete(ref _batteryDrainHandle, forceComplete))
+                return;
+
+            _batteryDrainJobScheduled = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            double elapsedMilliseconds =
+                (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds > BatteryDrainJobWarningMilliseconds)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _batteryDrainJobWarningHash,
+                    _batteryDrainJobContextHash,
+                    (float)elapsedMilliseconds);
+            }
+#endif
         }
     }
 }

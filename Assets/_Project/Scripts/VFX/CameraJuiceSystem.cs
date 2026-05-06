@@ -11,7 +11,6 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Optimization;
-using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
@@ -136,6 +135,7 @@ namespace Hecton8.VFX
         private float _inputReclaimFovDuration;
         private float _inputReclaimFovElapsed;
         private bool _inputReclaimFovActive;
+        private float _swimmingVelocityFovOffset;
         private const float MIN_FOV = 40f;
         private const float MAX_FOV = 90f;
 
@@ -158,11 +158,6 @@ namespace Hecton8.VFX
         private IInteractable _focusTarget;
         private Transform _focusTargetTransform;
         private float _focusDistance;
-        private NativeArray<RaycastCommand> _focusRaycastCommands;
-        private NativeArray<RaycastHit> _focusRaycastHits;
-        private JobHandle _focusRaycastHandle;
-        private bool _focusRaycastScheduled;
-        private float _resolvedFocusDistance = 0.06f;
         private float _focusDistanceVelocity;
         private float _pauseDepthOfFieldWeight;
         private float _pauseDofBaseFocalLength;
@@ -177,13 +172,6 @@ namespace Hecton8.VFX
         private const float PauseDofGaussianEnd = 4f;
         private const float PauseDofGaussianMaxRadius = 1f;
         private const int TransparentFxLayerIndex = 1;
-        private const int WaterLayerIndex = 4;
-        private const int UiLayerIndex = 5;
-        private const int HudInternalLayerIndex = 17;
-        private static readonly int _TransparentFxLayer = TransparentFxLayerIndex;
-        private static readonly int _WaterLayer = WaterLayerIndex;
-        private static readonly int _UiLayer = UiLayerIndex;
-        private static readonly int _HudInternalLayer = HudInternalLayerIndex;
 
         // ═══ SETTINGS ═══
         [Header("── Settings ──────────────────")]
@@ -196,6 +184,18 @@ namespace Hecton8.VFX
         [SerializeField, Range(0f, 2f), Tooltip("FOV effects intensity multiplier (0 = off, 1 = default, 2 = double)")]
         private float _fovIntensityMultiplier = 1.0f;
 
+        [SerializeField, Range(0f, 20f), Tooltip("Player water speed where delayed swimming FOV warp starts.")]
+        private float _swimmingFovWarpStartSpeed = 5f;
+
+        [SerializeField, Range(0.1f, 35f), Tooltip("Player water speed where delayed swimming FOV warp reaches full offset.")]
+        private float _swimmingFovWarpFullSpeed = 18f;
+
+        [SerializeField, Range(0f, 8f), Tooltip("Maximum FOV degrees added by fast underwater locomotion.")]
+        private float _swimmingFovWarpMaxOffset = 4.5f;
+
+        [SerializeField, Range(0.1f, 12f), Tooltip("Delayed lerp sharpness for swimming velocity FOV warp.")]
+        private float _swimmingFovWarpSharpness = 3.5f;
+
         [SerializeField, Tooltip("Enable motion blur post-processing effect")]
         private bool _motionBlurEnabled = false;
 
@@ -204,12 +204,6 @@ namespace Hecton8.VFX
 
         [SerializeField, Tooltip("Enable depth-of-field post-processing effect")]
         private bool _depthOfFieldEnabled = true;
-
-        [SerializeField, Tooltip("Physics layers sampled by the center-eye focus ray.")]
-        private LayerMask _interactionFocusMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
-        [SerializeField, Tooltip("Maximum range used by the center-eye focus ray.")]
-        private float _interactionFocusRayDistance = 120f;
 
         [SerializeField, Tooltip("Fallback near-field focus distance used when the diegetic visor HUD is the active focus plane.")]
         private float _hudFocusDistance = 0.06f;
@@ -402,9 +396,7 @@ namespace Hecton8.VFX
 
             TryResolveGameplayDependencies();
             SyncDependencyFlags();
-            EnsureFocusRaycastBuffers();
-            EnsureShakeJobBuffers();
-            SanitizeInteractionFocusMask();
+            AllocateShakeJobBuffersCold();
             EnsureCameraSpeedLineParticles();
 
             // Performance mode degradation
@@ -430,7 +422,7 @@ namespace Hecton8.VFX
 
             TryResolveGameplayDependencies();
             SyncDependencySubscriptions();
-            EnsureShakeJobBuffers();
+            AllocateShakeJobBuffersCold();
             EnsureCameraSpeedLineParticles();
 
             InteractionEvents.Register(this);
@@ -459,7 +451,6 @@ namespace Hecton8.VFX
             _shakeOffset = Vector3.zero;
             _shakeJobApplyResult = false;
             ClearSubmarineImpactShakeState();
-            ReleaseFocusRaycastBuffers();
             ReleaseShakeJobBuffers();
             StopCameraSpeedLineParticles();
 
@@ -472,26 +463,6 @@ namespace Hecton8.VFX
             {
                 _mainCamera.fieldOfView = _baseFOV;
             }
-        }
-
-        private void SanitizeInteractionFocusMask()
-        {
-            int layerMask = _interactionFocusMask.value;
-            layerMask = ExcludeLayer(layerMask, _TransparentFxLayer);
-            layerMask = ExcludeLayer(layerMask, _WaterLayer);
-            layerMask = ExcludeLayer(layerMask, _UiLayer);
-            layerMask = IncludeLayer(layerMask, _HudInternalLayer);
-            _interactionFocusMask = layerMask;
-        }
-
-        private static int ExcludeLayer(int mask, int layer)
-        {
-            return layer >= 0 ? mask & ~(1 << layer) : mask;
-        }
-
-        private static int IncludeLayer(int mask, int layer)
-        {
-            return layer >= 0 ? mask | (1 << layer) : mask;
         }
 
         private void TryUnregister()
@@ -560,7 +531,6 @@ namespace Hecton8.VFX
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
 
-            ReleaseFocusRaycastBuffers();
             ReleaseShakeJobBuffers();
 
         }
@@ -632,7 +602,6 @@ namespace Hecton8.VFX
         public void LateFrameTick()
         {
             ResolveScheduledShakeJob(false);
-            ResolveScheduledFocusRaycast();
             ApplyPostAupShakeOffset();
         }
 
@@ -726,13 +695,13 @@ namespace Hecton8.VFX
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogShakeMaxDisplacementClamped(float maxDisplacement)
         {
-            Debug.LogWarning($"[CameraJuiceSystem] ShakeProfile MaxDisplacement out of range [0, 1]: {maxDisplacement}. Clamping.");
+            Debug.LogWarning("[CameraJuiceSystem] ShakeProfile MaxDisplacement out of range [0, 1]. Clamping.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogShakeDurationDefaulted(float duration)
         {
-            Debug.LogWarning($"[CameraJuiceSystem] ShakeProfile Duration invalid: {duration}. Using default 0.5s.");
+            Debug.LogWarning("[CameraJuiceSystem] ShakeProfile Duration invalid. Using default 0.5s.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
@@ -875,6 +844,28 @@ namespace Hecton8.VFX
             };
 
             _activeShakes.Add(shake);
+        }
+
+        /// <summary>
+        /// Triggers the fixed 0.5s submarine impact shake without requiring a ShakeProfile asset.
+        /// </summary>
+        public void TriggerSubmarineImpactShake(float severity01)
+        {
+            if (!_shakeEnabled)
+                return;
+
+            float safeSeverity = Mathf.Clamp01(severity01);
+            if (safeSeverity <= 0f)
+                return;
+
+            _submarineImpactShakeSign = _submarineImpactShakeSign >= 0f ? -1f : 1f;
+            _submarineImpactShakeSeverity = Mathf.Max(_submarineImpactShakeSeverity * 0.65f, safeSeverity);
+            _submarineImpactShakeTimer = SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS;
+            _submarineImpactShakeKickOffset = new Vector3(
+                _submarineImpactShakeSign * SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT * safeSeverity,
+                -SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT * 0.55f * safeSeverity,
+                -SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT * 0.25f * safeSeverity);
+            _submarineImpactShakeKickPending = true;
         }
 
         /// <summary>
@@ -1025,20 +1016,22 @@ namespace Hecton8.VFX
             {
                 _shakeOffset = Vector3.zero;
                 _shakeJobApplyResult = false;
+                ClearSubmarineImpactShakeState();
                 return;
             }
 
+            UpdateSubmarineImpactShake(dt, effectiveShakeScale);
             _shakeNoiseTime += Mathf.Max(0f, dt);
 
             int count = _activeShakes.Count;
             if (count <= 0)
             {
-                _shakeOffset = Vector3.zero;
+                _shakeOffset = _submarineImpactShakeOffset;
                 _shakeJobApplyResult = false;
                 return;
             }
 
-            if (_shakeJobScheduled || !EnsureShakeJobBuffers())
+            if (_shakeJobScheduled || !HasShakeJobBuffers())
                 return;
 
             int liveCount = 0;
@@ -1078,7 +1071,7 @@ namespace Hecton8.VFX
 
             if (liveCount <= 0)
             {
-                _shakeOffset = Vector3.zero;
+                _shakeOffset = _submarineImpactShakeOffset;
                 _shakeJobApplyResult = false;
                 return;
             }
@@ -1089,7 +1082,12 @@ namespace Hecton8.VFX
                 Mathf.Min(MAX_SHAKE_DISPLACEMENT, Mathf.Max(0.005f, _cameraShakeClipSafeDisplacement)));
         }
 
-        private bool EnsureShakeJobBuffers()
+        private bool HasShakeJobBuffers()
+        {
+            return _shakeJobInputs.IsCreated && _shakeJobResults.IsCreated;
+        }
+
+        private void AllocateShakeJobBuffersCold()
         {
             if (!_shakeJobInputs.IsCreated)
             {
@@ -1117,7 +1115,6 @@ namespace Hecton8.VFX
                     NativeAllocationLifetime.Scene);
             }
 
-            return _shakeJobInputs.IsCreated && _shakeJobResults.IsCreated;
         }
 
         private void ScheduleShakeJob(int count, float effectiveShakeScale, float maxShakeDisplacement)
@@ -1152,8 +1149,84 @@ namespace Hecton8.VFX
             }
 
             ShakeJobResult result = _shakeJobResults[0];
-            _shakeOffset = new Vector3(result.Offset.x, result.Offset.y, result.Offset.z);
+            _shakeOffset = new Vector3(result.Offset.x, result.Offset.y, result.Offset.z) + _submarineImpactShakeOffset;
             _shakeJobApplyResult = false;
+        }
+
+        private void UpdateSubmarineImpactShake(float dt, float effectiveShakeScale)
+        {
+            float safeDt = Mathf.Max(0f, dt);
+            Vector3 targetOffset = Vector3.zero;
+
+            if (_submarineImpactShakeTimer > 0f)
+            {
+                float elapsed = SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS - _submarineImpactShakeTimer;
+                float normalizedTime = Mathf.Clamp01(elapsed / SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS);
+                float falloff = 1f - normalizedTime;
+                falloff *= falloff;
+
+                float3 sample = ResolvePrebakedSubmarineImpactPerlin(normalizedTime);
+                sample.x *= _submarineImpactShakeSign;
+                sample.z *= -_submarineImpactShakeSign;
+                float amplitude = SUBMARINE_IMPACT_SHAKE_MAX_DISPLACEMENT *
+                    _submarineImpactShakeSeverity *
+                    Mathf.Max(0f, effectiveShakeScale) *
+                    falloff;
+                targetOffset = new Vector3(sample.x, sample.y, sample.z) * amplitude;
+                _submarineImpactShakeTimer = Mathf.Max(0f, _submarineImpactShakeTimer - safeDt);
+            }
+
+            if (_submarineImpactShakeKickPending)
+            {
+                _submarineImpactShakeOffset = targetOffset +
+                    (_submarineImpactShakeKickOffset * Mathf.Max(0f, effectiveShakeScale));
+                _submarineImpactShakeKickPending = false;
+                return;
+            }
+
+            float blend = Mathf.Clamp01(1f - Mathf.Exp(-SUBMARINE_IMPACT_SHAKE_RECOVERY_SHARPNESS * safeDt));
+            _submarineImpactShakeOffset = Vector3.Lerp(_submarineImpactShakeOffset, targetOffset, blend);
+            if (_submarineImpactShakeTimer <= 0f &&
+                targetOffset.sqrMagnitude <= SUBMARINE_IMPACT_SHAKE_EPSILON_SQ &&
+                _submarineImpactShakeOffset.sqrMagnitude <= SUBMARINE_IMPACT_SHAKE_EPSILON_SQ)
+            {
+                ClearSubmarineImpactShakeState();
+            }
+        }
+
+        private void ClearSubmarineImpactShakeState()
+        {
+            _submarineImpactShakeTimer = 0f;
+            _submarineImpactShakeSeverity = 0f;
+            _submarineImpactShakeOffset = Vector3.zero;
+            _submarineImpactShakeKickOffset = Vector3.zero;
+            _submarineImpactShakeKickPending = false;
+        }
+
+        private static float3 ResolvePrebakedSubmarineImpactPerlin(float normalizedTime)
+        {
+            float scaled = math.saturate(normalizedTime) * 10f;
+            int index = math.min(9, (int)scaled);
+            float t = scaled - index;
+            return math.lerp(GetSubmarineImpactPerlinSample(index), GetSubmarineImpactPerlinSample(index + 1), t);
+        }
+
+        private static float3 GetSubmarineImpactPerlinSample(int index)
+        {
+            switch (index)
+            {
+                case 0: return new float3(-0.68f, 0.84f, -0.22f);
+                case 1: return new float3(0.93f, -0.52f, 0.36f);
+                case 2: return new float3(-0.41f, -0.88f, -0.64f);
+                case 3: return new float3(0.27f, 0.72f, 0.91f);
+                case 4: return new float3(-0.86f, 0.18f, -0.35f);
+                case 5: return new float3(0.54f, -0.44f, 0.62f);
+                case 6: return new float3(-0.33f, 0.31f, -0.74f);
+                case 7: return new float3(0.21f, -0.24f, 0.38f);
+                case 8: return new float3(-0.14f, 0.16f, -0.19f);
+                case 9: return new float3(0.08f, -0.07f, 0.11f);
+                default: return float3.zero;
+            }
         }
 
         private void ReleaseShakeJobBuffers()
@@ -1326,6 +1399,17 @@ namespace Hecton8.VFX
             return float.IsFinite(speed) ? speed : 0f;
         }
 
+        private bool HasSubmarineVelocityFovSource()
+        {
+            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
+            Rigidbody submarineBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            if (submarineBody == null)
+                return false;
+
+            float startSpeed = Mathf.Max(0f, _swimmingFovWarpStartSpeed);
+            return submarineBody.linearVelocity.sqrMagnitude > startSpeed * startSpeed;
+        }
+
         private void StopCameraSpeedLineParticles()
         {
             _speedLineIntensity = 0f;
@@ -1355,7 +1439,21 @@ namespace Hecton8.VFX
 
             // Calculate target FOV
             float targetFOV = _baseFOV + (_currentFOVOffset * _fovIntensityMultiplier * _adaptiveFOVScale);
-            targetFOV = Mathf.Clamp(targetFOV, MIN_FOV, MAX_FOV);
+            float swimmingWarpTarget = 0f;
+            bool velocityWarpEligible =
+                (_playerMovement != null && _playerMovement.IsPlayerSubmerged) ||
+                HasSubmarineVelocityFovSource();
+            if (velocityWarpEligible && _swimmingFovWarpMaxOffset > 0f)
+            {
+                float currentSpeed = ResolveCurrentCameraSpeed();
+                float speedRange = Mathf.Max(0.01f, _swimmingFovWarpFullSpeed - _swimmingFovWarpStartSpeed);
+                float speedT = math.saturate((currentSpeed - _swimmingFovWarpStartSpeed) / speedRange);
+                swimmingWarpTarget = speedT * _swimmingFovWarpMaxOffset * _adaptiveFOVScale;
+            }
+
+            float warpBlendT = 1f - math.exp(-math.max(0.01f, _swimmingFovWarpSharpness) * math.max(0f, dt));
+            _swimmingVelocityFovOffset = math.lerp(_swimmingVelocityFovOffset, swimmingWarpTarget, warpBlendT);
+            targetFOV = Mathf.Clamp(targetFOV + _swimmingVelocityFovOffset, MIN_FOV, MAX_FOV);
 
             if (_inputReclaimFovActive)
             {
@@ -1399,8 +1497,6 @@ namespace Hecton8.VFX
                 return;
             }
 
-            EnsureFocusRaycastBuffers();
-
             float targetFocusDistance = ResolveTargetFocusDistance();
             _focusDistance = Mathf.SmoothDamp(
                 _focusDistance > 0f ? _focusDistance : targetFocusDistance,
@@ -1412,7 +1508,6 @@ namespace Hecton8.VFX
 
             _interactionDoF.focusDistance.value = _focusDistance;
             _interactionDoF.active = true;
-            ScheduleFocusRaycast();
         }
 
         private void UpdatePauseDepthOfField(float dt)
@@ -1472,86 +1567,6 @@ namespace Hecton8.VFX
             _interactionDoF.gaussianMaxRadius.value = _pauseDofBaseGaussianMaxRadius;
         }
 
-        private void EnsureFocusRaycastBuffers()
-        {
-            if (_focusRaycastCommands.IsCreated && _focusRaycastHits.IsCreated)
-                return;
-
-            if (!_focusRaycastCommands.IsCreated)
-            {
-                _focusRaycastCommands = new NativeArray<RaycastCommand>(
-                    1,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] — center-eye DoF focus ray lane — owner: CameraJuiceSystem
-                NativeMemorySentinel.RegisterNativeArray(
-                    _focusRaycastCommands,
-                    nameof(CameraJuiceSystem),
-                    nameof(_focusRaycastCommands),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_focusRaycastHits.IsCreated)
-            {
-                _focusRaycastHits = new NativeArray<RaycastHit>(
-                    1,
-                    Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] — center-eye DoF focus hit lane — owner: CameraJuiceSystem
-                NativeMemorySentinel.RegisterNativeArray(
-                    _focusRaycastHits,
-                    nameof(CameraJuiceSystem),
-                    nameof(_focusRaycastHits),
-                    NativeAllocationLifetime.Scene);
-            }
-        }
-
-        private void ReleaseFocusRaycastBuffers()
-        {
-            if (_focusRaycastCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_focusRaycastCommands);
-                if (_focusRaycastScheduled)
-                    _focusRaycastCommands.Dispose(_focusRaycastHandle);
-                else
-                    _focusRaycastCommands.Dispose();
-
-                _focusRaycastCommands = default;
-            }
-
-            if (_focusRaycastHits.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_focusRaycastHits);
-                if (_focusRaycastScheduled)
-                    _focusRaycastHits.Dispose(_focusRaycastHandle);
-                else
-                    _focusRaycastHits.Dispose();
-
-                _focusRaycastHits = default;
-            }
-
-            _focusRaycastScheduled = false;
-            _focusRaycastHandle = default;
-        }
-
-        private void ResolveScheduledFocusRaycast()
-        {
-            if (!_focusRaycastScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _focusRaycastHandle, false))
-                return;
-
-            _focusRaycastScheduled = false;
-
-            RaycastHit hit = _focusRaycastHits[0];
-            if (hit.collider != null && hit.distance > 0f)
-            {
-                _resolvedFocusDistance = hit.distance;
-                return;
-            }
-
-            _resolvedFocusDistance = ResolveHudPlaneFocusDistance();
-        }
-
         private float ResolveTargetFocusDistance()
         {
             if (PlayerPDA.IsOpen)
@@ -1559,37 +1574,53 @@ namespace Hecton8.VFX
 
             if (HectonFabricatorUI.IsMenuOpen)
             {
-                float focusCandidate = _focusRaycastScheduled
-                    ? _resolvedFocusDistance
-                    : (_focusTargetTransform != null
-                        ? ResolveAupRuntimeDistance(_cameraTransform.position, _focusTargetTransform.position)
-                        : ResolveHudPlaneFocusDistance());
-
-                if (focusCandidate <= Mathf.Max(0.01f, _pdaFocusThreshold))
+                if (_focusTargetTransform == null || IsFocusTargetInsidePdaThreshold())
                     return Mathf.Max(0.01f, _pdaFocusDistance);
 
                 return Mathf.Max(0.01f, _worldFocusDistance);
             }
 
-            if (_focusRaycastScheduled)
-                return Mathf.Max(0.01f, _resolvedFocusDistance);
-
             if (_focusTargetTransform != null)
-                return Mathf.Max(0.01f, ResolveAupRuntimeDistance(_cameraTransform.position, _focusTargetTransform.position));
+                return ResolveCinematicTargetFocusDistance();
 
             return Mathf.Max(0.01f, ResolveHudPlaneFocusDistance());
         }
 
-        private static float ResolveAupRuntimeDistance(Vector3 fromRuntimePosition, Vector3 toRuntimePosition)
+        private bool IsFocusTargetInsidePdaThreshold()
+        {
+            if (_cameraTransform == null || _focusTargetTransform == null)
+                return false;
+
+            float threshold = Mathf.Max(0.01f, _pdaFocusThreshold);
+            double distanceSq = ResolveAupRuntimeDistanceSq(_cameraTransform.position, _focusTargetTransform.position);
+            return distanceSq <= threshold * threshold;
+        }
+
+        private float ResolveCinematicTargetFocusDistance()
+        {
+            if (_cameraTransform == null || _focusTargetTransform == null)
+                return Mathf.Max(0.01f, _hudFocusDistance);
+
+            float nearFocus = Mathf.Max(0.01f, _pdaFocusDistance);
+            float farFocus = Mathf.Max(nearFocus, _worldFocusDistance);
+            float nearThreshold = Mathf.Max(0.01f, _pdaFocusThreshold);
+            double nearSq = nearThreshold * nearThreshold;
+            double farSq = farFocus * farFocus;
+            double distanceSq = ResolveAupRuntimeDistanceSq(_cameraTransform.position, _focusTargetTransform.position);
+            if (distanceSq <= nearSq)
+                return nearFocus;
+            if (distanceSq >= farSq)
+                return farFocus;
+
+            float t = Mathf.Clamp01((float)((distanceSq - nearSq) / Math.Max(0.0001d, farSq - nearSq)));
+            return Mathf.Lerp(nearFocus, farFocus, t);
+        }
+
+        private static double ResolveAupRuntimeDistanceSq(Vector3 fromRuntimePosition, Vector3 toRuntimePosition)
         {
             AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromRuntimePosition);
             AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntimePosition);
-            double distanceSq = AbsoluteUniversePosition.DistanceSq(in fromAup, in toAup);
-            if (distanceSq <= 0d)
-                return 0f;
-
-            double distance = Math.Sqrt(distanceSq);
-            return distance >= float.MaxValue ? float.MaxValue : (float)distance;
+            return AbsoluteUniversePosition.DistanceSq(in fromAup, in toAup);
         }
 
         private float ResolveHudPlaneFocusDistance()
@@ -1607,41 +1638,6 @@ namespace Hecton8.VFX
 
             float planeDistance = Vector3.Dot(_cameraTransform.forward, canvasRect.position - _cameraTransform.position);
             return Mathf.Max(0.01f, planeDistance > 0f ? planeDistance : _hudFocusDistance);
-        }
-
-        private void ScheduleFocusRaycast()
-        {
-            if (_focusRaycastScheduled || _cameraTransform == null || !_focusRaycastCommands.IsCreated || !_focusRaycastHits.IsCreated)
-                return;
-
-            _focusRaycastCommands[0] = CreateFocusRaycastCommand(
-                _cameraTransform.position,
-                _cameraTransform.forward,
-                Mathf.Max(0.1f, _interactionFocusRayDistance),
-                _interactionFocusMask);
-            _focusRaycastHandle = RaycastCommand.ScheduleBatch(_focusRaycastCommands, _focusRaycastHits, 1, default);
-            _focusRaycastScheduled = true;
-        }
-
-        private static RaycastCommand CreateFocusRaycastCommand(
-            Vector3 origin,
-            Vector3 direction,
-            float range,
-            int layerMask)
-        {
-            return new RaycastCommand
-            {
-                from = origin,
-                direction = direction,
-                distance = range,
-                queryParameters = new QueryParameters
-                {
-                    layerMask = layerMask,
-                    hitTriggers = QueryTriggerInteraction.Ignore,
-                    hitBackfaces = false,
-                    hitMultipleFaces = false
-                }
-            };
         }
 
         private bool TryResolveCamera()
@@ -1840,7 +1836,7 @@ namespace Hecton8.VFX
         private float ResolveStructuralFatigueChromaticContribution()
         {
             ISubmarineRuntimeContext submarineRuntimeContext = GlobalRegistry.Submarine;
-            SubmarineStructuralGrid structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
+            Hecton8.Physics.SubmarineStructuralGrid structuralGrid = submarineRuntimeContext != null ? submarineRuntimeContext.StructuralGrid : null;
             if (structuralGrid == null || !structuralGrid.isActiveAndEnabled || !structuralGrid.IsReady)
                 return 0f;
 

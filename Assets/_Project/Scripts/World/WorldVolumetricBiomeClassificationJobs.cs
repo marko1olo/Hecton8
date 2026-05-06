@@ -1,3 +1,4 @@
+using Hecton8.Environment;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -128,7 +129,7 @@ namespace Hecton8.World
             {
                 PrimaryBiomeMatrixDataIndex = primaryIndex,
                 SecondaryBiomeMatrixDataIndex = blend255 > 0 ? input.SecondaryBiomeMatrixDataIndex : -1,
-                InfluenceCell = WorldProceduralFieldSampler.BiomeInfluenceCell.Create(
+                InfluenceCell = WorldProceduralFieldSampler.BiomeInfluenceCell.CreateFromBiomeIds(
                     primaryBiomeId,
                     blend255 > 0 ? secondaryBiomeId : (byte)0,
                     blend255,
@@ -214,20 +215,21 @@ namespace Hecton8.World
             VolumetricBiomeClassificationResult result = Results[index];
             WorldProceduralFieldSampler.BiomeInfluenceCell cell = result.InfluenceCell;
             int expectedBiomeId = ExpectedBiomeIds[index];
+            byte expectedVisualFamilyId = HectonBiomeVisualFamilyUtility.MapToVisualFamily(expectedBiomeId);
             byte expectedFlags = ExpectedFlagMasks[index];
             int failureMask = 0;
 
-            if (cell.PrimaryBiomeId != expectedBiomeId)
+            if (cell.PrimaryVisualFamilyId != expectedVisualFamilyId)
                 failureMask |= 1;
 
             if ((cell.Flags & expectedFlags) != expectedFlags)
                 failureMask |= 2;
 
-            uint expectedPack = (uint)(
-                cell.PrimaryBiomeId |
-                (cell.SecondaryBiomeId << 8) |
-                (cell.Blend255 << 16) |
-                (cell.Flags << 24));
+            uint expectedPack = HectonBiomeVisualFamilyUtility.PackCell(
+                cell.PrimaryVisualFamilyId,
+                cell.SecondaryVisualFamilyId,
+                cell.Blend255,
+                cell.Flags);
 
             if (cell.Packed != expectedPack)
                 failureMask |= 4;
@@ -235,8 +237,8 @@ namespace Hecton8.World
             AuditResults[index] = new VolumetricBiomeStressAuditResult
             {
                 FailureMask = failureMask,
-                PrimaryBiomeId = cell.PrimaryBiomeId,
-                ExpectedBiomeId = expectedBiomeId,
+                PrimaryBiomeId = cell.PrimaryVisualFamilyId,
+                ExpectedBiomeId = expectedVisualFamilyId,
                 Flags = cell.Flags,
                 PackedCell = cell.Packed
             };

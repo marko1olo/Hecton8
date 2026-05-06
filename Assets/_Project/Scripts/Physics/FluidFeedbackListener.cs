@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
 using UnityEngine;
@@ -222,19 +223,15 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
-    /// Presentation listener that owns optional ParticleSystem and AudioSource feedback for fluid events.
+    /// Presentation listener that owns flat decal and optional AudioSource feedback for fluid events.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Fluid Feedback Listener")]
     public sealed class FluidFeedbackListener : MonoBehaviour, IFluidSplashEventListener
     {
         [Header("Feedback")]
-        [Tooltip("Optional particle system used for low-frequency hull splash events.")]
-        [SerializeField] private ParticleSystem splashParticleSystem;
         [Tooltip("Optional audio source reserved for low-frequency hull splash feedback.")]
         [SerializeField] private AudioSource splashAudioSource;
-        [Tooltip("Maximum particles emitted by one splash event.")]
-        [SerializeField, Min(1)] private int maxParticlesPerSplash = 12;
 
         private void OnEnable()
         {
@@ -254,15 +251,15 @@ namespace Hecton8.Physics
                 splashEvent.RuntimePosition.y,
                 splashEvent.RuntimePosition.z);
 
-            if (splashParticleSystem != null)
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals != null)
             {
-                ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams
-                {
-                    position = runtimePosition,
-                    velocity = Vector3.up * Mathf.Max(0.1f, splashEvent.ImpactSpeedMetersPerSecond * 0.15f)
-                };
-                int particleCount = Mathf.Clamp(Mathf.CeilToInt(splashEvent.KineticEnergyJoules * 0.001f), 1, maxParticlesPerSplash);
-                splashParticleSystem.Emit(emitParams, particleCount);
+                Vector3 decalVelocity = Vector3.up * Mathf.Max(0.1f, splashEvent.ImpactSpeedMetersPerSecond);
+                float intensity = Mathf.Clamp01(
+                    splashEvent.SubmersionFactor * 0.45f +
+                    splashEvent.ImpactSpeedMetersPerSecond * 0.055f +
+                    splashEvent.KineticEnergyJoules * 0.00008f);
+                fluidDecals.RegisterWaterSplash(runtimePosition, decalVelocity, intensity);
             }
 
             if (splashAudioSource == null)

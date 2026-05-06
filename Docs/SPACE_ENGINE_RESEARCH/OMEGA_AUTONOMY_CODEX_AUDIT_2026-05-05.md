@@ -1,7 +1,7 @@
-# Omega Autonomy Codex Audit - Terrain/World Domain
+﻿# Omega Autonomy Codex Audit - Terrain/World Domain
 
-Date: 2026-05-05
-Status: OMEGA VERIFIED
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Scope: sandbox abyssal shelf terrain smoke path, Omega dev smoke barrier cleanup, SpaceEngine research artifact reporting.
 Requested status: OMEGA VERIFIED  
 Executable smoke status: OMEGA VERIFIED via standalone terrain-domain smoke.  

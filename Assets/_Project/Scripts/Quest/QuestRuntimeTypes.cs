@@ -14,7 +14,8 @@ namespace Hecton8.Quest
         AudioLogFound = 5,
         EclipseStarted = 6,
         SignalDecoded = 7,
-        ItemLost = 8
+        ItemLost = 8,
+        CraftCompleted = 9
     }
 
     internal enum QuestStateBand : byte
@@ -161,7 +162,7 @@ namespace Hecton8.Quest
         }
     }
 
-    internal static class QuestFlagHashKernel
+    internal static unsafe class QuestFlagHashKernel
     {
         public static uint ComputeStableHash(string value)
         {

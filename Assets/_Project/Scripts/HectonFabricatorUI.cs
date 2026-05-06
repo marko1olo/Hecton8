@@ -1018,7 +1018,7 @@ namespace Hecton8.UI
 
             for (int i = 0; i < MaxVisibleRecipeEntries; i++)
             {
-                GameObject entryObject = new GameObject($"RecipeEntry_{i}"); // COLD ALLOC: GameObject[8] — diegetic recipe entry pool — owner: HectonFabricatorUI
+                GameObject entryObject = new GameObject("RecipeEntry"); // COLD ALLOC: GameObject[8] — diegetic recipe entry pool — owner: HectonFabricatorUI
                 entryObject.hideFlags = HideFlags.DontSave;
                 entryObject.transform.SetParent(_recipeListRoot, false);
 
@@ -1029,7 +1029,7 @@ namespace Hecton8.UI
                 label.textWrappingMode = TextWrappingModes.NoWrap;
                 label.SetCharArray(Array.Empty<char>(), 0, 0);
 
-                GameObject inflationObject = new GameObject($"RecipeInflation_{i}"); // COLD ALLOC: GameObject[8] — diegetic inflation label pool — owner: HectonFabricatorUI
+                GameObject inflationObject = new GameObject("RecipeInflation"); // COLD ALLOC: GameObject[8] — diegetic inflation label pool — owner: HectonFabricatorUI
                 inflationObject.hideFlags = HideFlags.DontSave;
                 inflationObject.transform.SetParent(entryObject.transform, false);
                 inflationObject.transform.localPosition = new Vector3(1.38f, 0f, 0f);
@@ -1413,8 +1413,8 @@ namespace Hecton8.UI
                 4, 0, 1, 4, 1, 5
             };
 
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             mesh.UploadMeshData(false);

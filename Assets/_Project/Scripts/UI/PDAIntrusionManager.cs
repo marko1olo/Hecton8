@@ -299,14 +299,6 @@ namespace Hecton8.UI
         private const int MaxBioformContacts = 24;
         private const int MaxDriftTargets = 96;
 
-        private static PDAIntrusionManager _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
         [Header("── Intrusion Thresholds ──────────────────")]
         [Tooltip("Minimum director glitch intensity required before the intrusion owner treats the event as a hostile EMI strike.")]
         [SerializeField, Range(0f, 1f)] private float equipmentGlitchThreshold = EquipmentGlitchHackThreshold;
@@ -342,6 +334,7 @@ namespace Hecton8.UI
         private InputAction _submitAction;
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private GameObject _driftPanelRoot;
+        private bool _serviceRegistered;
         private bool _registeredToTick;
         private bool _hotSwapListenerRegistered;
         private bool _isHacked;
@@ -356,7 +349,7 @@ namespace Hecton8.UI
         /// <summary>
         /// Active runtime intrusion owner attached to the current player.
         /// </summary>
-        public static PDAIntrusionManager ActiveRuntimeInstance => _instance;
+        public static PDAIntrusionManager ActiveRuntimeInstance => GlobalRegistry.PDAIntrusion;
 
         /// <summary>
         /// True when the PDA is currently hijacked and the player must manually reboot it.
@@ -373,19 +366,20 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            PDAIntrusionManager activeRuntime = GlobalRegistry.PDAIntrusion;
+            if (activeRuntime != null && activeRuntime != this)
             {
                 Destroy(this);
                 return;
             }
 
-            _instance = this;
             ResolveRuntimeOwners();
             ResolveInputActionOwner();
         }
 
         private void OnEnable()
         {
+            TryRegisterService();
             ResolveRuntimeOwners();
             ResolveInputActionOwner();
             TryRegisterHotSwapListener();
@@ -406,6 +400,7 @@ namespace Hecton8.UI
             DirectorAIEvents.Unregister(this);
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
+            TryUnregisterService();
             ClearInputActionOwner();
             ClearVisualOverride();
             ResetTransientState();
@@ -416,10 +411,34 @@ namespace Hecton8.UI
             DirectorAIEvents.Unregister(this);
             UnregisterFromTickManager();
             TryUnregisterHotSwapListener();
+            TryUnregisterService();
             ClearInputActionOwner();
+        }
 
-            if (_instance == this)
-                _instance = null;
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            PDAIntrusionManager activeRuntime = GlobalRegistry.PDAIntrusion;
+            if (activeRuntime != null && activeRuntime != this)
+            {
+                enabled = false;
+                Destroy(this);
+                return;
+            }
+
+            GlobalRegistry.RegisterPDAIntrusionRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PDAIntrusion, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterPDAIntrusionRuntime(this);
+            _serviceRegistered = false;
         }
 
         /// <inheritdoc />
@@ -470,6 +489,11 @@ namespace Hecton8.UI
 
         void IDirectorAIEventListener.OnDirectorPredatorPressureChanged(bool pressureEnabled)
         {
+        }
+
+        void IDirectorAIEventListener.OnDirectorThreatSpike(Vector3 position, float intensity)
+        {
+            HandleEquipmentGlitchRequested(intensity);
         }
 
         private void TickAmbientIntrusionThreat(float dt)

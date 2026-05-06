@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -10,7 +11,7 @@ namespace Hecton8.World
     /// Burst kernel that forces SDF density to exactly match a terrain heightfield top surface.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
-    public struct SnapSDFToTerrainJob : IJobParallelFor
+    public struct SnapSDFToTerrainJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>Terrain heights in meters.</summary>
         [ReadOnly] public NativeArray<float> TerrainHeights;
@@ -89,7 +90,7 @@ namespace Hecton8.World
     /// Burst kernel that forces the nearest terrain-roof voxel in each XZ column to exact zero density.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
-    public struct SnapSDFTopCellsToTerrainJob : IJobParallelFor
+    public struct SnapSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>Terrain heights in meters.</summary>
         [ReadOnly] public NativeArray<float> TerrainHeights;
@@ -107,7 +108,137 @@ namespace Hecton8.World
         public double3 TerrainOriginAup;
 
         /// <summary>SDF density array. Positive means solid.</summary>
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity cannot infer this column-lane mapping because the scheduled index is an XZ column, not the final
+        // SDF element index. The mapping is still injective: one scheduled lane owns exactly one (x,z) column and
+        // writes only the lower/upper terrain-crossing y cells inside that column. No other lane can produce the
+        // same (x,z), so no other lane can write the same flat SDF index.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // The job is dependency-chained after the full SDF terrain snap and before pillar injection / Marching
+        // Cubes. No concurrent job writes the same SDF array while this seam lock is scheduled. The dual version
+        // applies the same column ownership rule to both arrays.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // A full SDF-index pass was rejected for the production path because it schedules SdfWidth*SdfHeight*SdfDepth
+        // lanes to update two cells per column. This column pass schedules only SdfWidth*SdfDepth lanes while keeping
+        // deterministic AUP sampling and exact top-surface density writes.
+        [NativeDisableParallelForRestriction]
         public NativeArray<float> Sdf;
+
+        /// <summary>SDF sample width.</summary>
+        public int SdfWidth;
+
+        /// <summary>SDF sample height.</summary>
+        public int SdfHeight;
+
+        /// <summary>SDF sample depth.</summary>
+        public int SdfDepth;
+
+        /// <summary>SDF voxel size in meters.</summary>
+        public float VoxelSizeMeters;
+
+        /// <summary>Absolute universe origin of the SDF volume.</summary>
+        public double3 SdfOriginAup;
+
+        /// <summary>
+        /// Applies the terrain seam lock for one XZ column lane.
+        /// </summary>
+        public void Execute(int index)
+        {
+            if (SdfWidth <= 0 || SdfHeight <= 0 || SdfDepth <= 0)
+                return;
+
+            int columnCount = SdfWidth * SdfDepth;
+            if ((uint)index >= (uint)columnCount)
+                return;
+
+            int z = index / SdfWidth;
+            int x = index - z * SdfWidth;
+            double absX = SdfOriginAup.x + x * (double)VoxelSizeMeters;
+            double absZ = SdfOriginAup.z + z * (double)VoxelSizeMeters;
+            float terrainHeight = SampleTerrainHeight(absX, absZ);
+            float terrainY = (terrainHeight - (float)SdfOriginAup.y) / VoxelSizeMeters;
+            int lowerY = (int)math.floor(terrainY);
+            int upperY = lowerY + 1;
+
+            WriteExactTerrainDensity(x, lowerY, z, terrainHeight);
+            WriteExactTerrainDensity(x, upperY, z, terrainHeight);
+        }
+
+        private void WriteExactTerrainDensity(int x, int y, int z, float terrainHeight)
+        {
+            if (y < 0 || y >= SdfHeight)
+                return;
+
+            int index = x + y * SdfWidth + z * SdfWidth * SdfHeight;
+            float absY = (float)(SdfOriginAup.y + y * (double)VoxelSizeMeters);
+            Sdf[index] = terrainHeight - absY;
+        }
+
+        private float SampleTerrainHeight(double absX, double absZ)
+        {
+            float tx = (float)((absX - TerrainOriginAup.x) / TerrainCellSizeMeters);
+            float tz = (float)((absZ - TerrainOriginAup.z) / TerrainCellSizeMeters);
+            tx = math.clamp(tx, 0f, TerrainWidth - 1f);
+            tz = math.clamp(tz, 0f, TerrainDepth - 1f);
+
+            int x0 = (int)math.floor(tx);
+            int z0 = (int)math.floor(tz);
+            int x1 = math.min(x0 + 1, TerrainWidth - 1);
+            int z1 = math.min(z0 + 1, TerrainDepth - 1);
+            float fx = tx - x0;
+            float fz = tz - z0;
+
+            float h00 = TerrainHeights[x0 + z0 * TerrainWidth];
+            float h10 = TerrainHeights[x1 + z0 * TerrainWidth];
+            float h01 = TerrainHeights[x0 + z1 * TerrainWidth];
+            float h11 = TerrainHeights[x1 + z1 * TerrainWidth];
+            float hx0 = math.lerp(h00, h10, fx);
+            float hx1 = math.lerp(h01, h11, fx);
+            return math.lerp(hx0, hx1, fz);
+        }
+    }
+
+    /// <summary>
+    /// Burst kernel that writes the same exact terrain seam lock into primary and secondary SDF arrays.
+    /// </summary>
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    public struct SnapDualSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
+    {
+        /// <summary>Terrain heights in meters.</summary>
+        [ReadOnly] public NativeArray<float> TerrainHeights;
+
+        /// <summary>Terrain sample width.</summary>
+        public int TerrainWidth;
+
+        /// <summary>Terrain sample depth.</summary>
+        public int TerrainDepth;
+
+        /// <summary>Terrain sample size in meters.</summary>
+        public float TerrainCellSizeMeters;
+
+        /// <summary>Absolute universe origin of the terrain heightmap.</summary>
+        public double3 TerrainOriginAup;
+
+        /// <summary>SDF density array. Positive means solid.</summary>
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity cannot infer this column-lane mapping because the scheduled index is an XZ column, not the final
+        // SDF element index. The mapping is still injective: one scheduled lane owns exactly one (x,z) column and
+        // writes only the lower/upper terrain-crossing y cells inside that column. No other lane can produce the
+        // same (x,z), so no other lane can write the same flat SDF index.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // The job is dependency-chained after the full SDF terrain snap and before pillar injection / Marching
+        // Cubes. No concurrent job writes either target SDF array while this dual seam lock is scheduled.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // A full SDF-index pass was rejected for the production path because it schedules SdfWidth*SdfHeight*SdfDepth
+        // lanes to update two cells per column. This column pass schedules only SdfWidth*SdfDepth lanes while keeping
+        // deterministic AUP sampling and exact top-surface density writes.
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> Sdf;
+
+        /// <summary>Second SDF density array written with the same seam lock.</summary>
+        // Shares the same lane-safety proof as Sdf: identical flat index, distinct NativeArray target.
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> SecondarySdf;
 
         /// <summary>SDF sample width.</summary>
         public int SdfWidth;
@@ -127,17 +258,36 @@ namespace Hecton8.World
         /// <inheritdoc />
         public void Execute(int index)
         {
-            int x = index % SdfWidth;
-            int z = index / SdfWidth;
-            if (z >= SdfDepth)
+            if (SdfWidth <= 0 || SdfHeight <= 0 || SdfDepth <= 0)
                 return;
 
+            int columnCount = SdfWidth * SdfDepth;
+            if ((uint)index >= (uint)columnCount)
+                return;
+
+            int z = index / SdfWidth;
+            int x = index - z * SdfWidth;
             double absX = SdfOriginAup.x + x * (double)VoxelSizeMeters;
             double absZ = SdfOriginAup.z + z * (double)VoxelSizeMeters;
             float terrainHeight = SampleTerrainHeight(absX, absZ);
-            int y = (int)math.round((terrainHeight - (float)SdfOriginAup.y) / VoxelSizeMeters);
-            y = math.clamp(y, 0, SdfHeight - 1);
-            Sdf[x + y * SdfWidth + z * SdfWidth * SdfHeight] = 0f;
+            float terrainY = (terrainHeight - (float)SdfOriginAup.y) / VoxelSizeMeters;
+            int lowerY = (int)math.floor(terrainY);
+            int upperY = lowerY + 1;
+
+            WriteExactTerrainDensity(x, lowerY, z, terrainHeight);
+            WriteExactTerrainDensity(x, upperY, z, terrainHeight);
+        }
+
+        private void WriteExactTerrainDensity(int x, int y, int z, float terrainHeight)
+        {
+            if (y < 0 || y >= SdfHeight)
+                return;
+
+            int index = x + y * SdfWidth + z * SdfWidth * SdfHeight;
+            float absY = (float)(SdfOriginAup.y + y * (double)VoxelSizeMeters);
+            float density = terrainHeight - absY;
+            Sdf[index] = density;
+            SecondarySdf[index] = density;
         }
 
         private float SampleTerrainHeight(double absX, double absZ)
@@ -168,68 +318,183 @@ namespace Hecton8.World
     /// Burst kernel that unions a 1 km chthonic pillar into an SDF density array.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
-    public struct InjectMegaPillarSDFJob : IJobParallelFor
+    public struct InjectMegaPillarSDFJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's safety system cannot prove this remapped write because the scheduled lane index is not the
+        // final NativeArray index. The mapping is still injective: lane -> (localX,y,localZ) inside one pillar
+        // envelope -> (x,y,z) around PillarBaseAup -> flat SDF index. For one scalar pillar center, no two lanes
+        // can produce the same (x,y,z), and invalid out-of-volume lanes return before touching Sdf.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Alternatives rejected: full-grid one-write-per-index parallel injection measured above the 0.5 ms
+        // SDF-injection budget because every voxel lane was scheduled; single-thread bounded injection avoided
+        // suppression but measured worse due to serial loop cost. Duplicating the whole SDF field for a merge pass
+        // would add native memory bandwidth and another full-grid pass before Marching Cubes.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is established by HectonAnomalyEngine.ResolvePillarEnvelopeRadiusCells and the laneCount
+        // schedule: exactly (diameter * SdfHeight * diameter) lanes are launched for a single pillar envelope.
+        // ExecuteLane derives x/y/z only from that lane and the immutable pillar base; the only write is Sdf[sdfIndex]
+        // for that unique coordinate, after bounds and radius-envelope rejection.
+        [NativeDisableParallelForRestriction]
+        [NativeDisableContainerSafetyRestriction]
         public NativeArray<float> Sdf;
 
-        /// <summary>SDF sample width.</summary>
         public int SdfWidth;
-
-        /// <summary>SDF sample height.</summary>
         public int SdfHeight;
-
-        /// <summary>SDF sample depth.</summary>
         public int SdfDepth;
-
-        /// <summary>SDF voxel size in meters.</summary>
         public float VoxelSizeMeters;
-
-        /// <summary>Absolute universe origin of the SDF volume.</summary>
         public double3 SdfOriginAup;
-
-        /// <summary>Absolute universe base center of the pillar.</summary>
         public double3 PillarBaseAup;
-
-        /// <summary>Base pillar radius in meters.</summary>
         public float RadiusMeters;
-
-        /// <summary>Pillar height in meters.</summary>
         public float HeightMeters;
-
-        /// <summary>Maximum radius warp in meters.</summary>
         public float EdgeWarpMeters;
-
-        /// <summary>Noise frequency in reciprocal meters.</summary>
         public float NoiseFrequency;
 
         /// <inheritdoc />
         public void Execute(int index)
         {
-            int slice = SdfWidth * SdfHeight;
-            int z = index / slice;
-            int rem = index - z * slice;
-            int y = rem / SdfWidth;
-            int x = rem - y * SdfWidth;
+            ExecuteLane(index, PillarBaseAup);
+        }
 
-            double3 abs = new double3(
-                SdfOriginAup.x + x * (double)VoxelSizeMeters,
-                SdfOriginAup.y + y * (double)VoxelSizeMeters,
-                SdfOriginAup.z + z * (double)VoxelSizeMeters);
+        private void ExecuteLane(int laneIndex, double3 pillarBaseAup)
+        {
+            float halfHeight = HeightMeters * 0.5f;
+            float maxRadius = RadiusMeters + EdgeWarpMeters + VoxelSizeMeters;
+            int radiusCells = (int)math.ceil(maxRadius / VoxelSizeMeters);
+            int diameter = radiusCells * 2 + 1;
+            int localZ = laneIndex / (diameter * SdfHeight);
+            int rem = laneIndex - localZ * diameter * SdfHeight;
+            int localYIndex = rem / diameter;
+            int localX = rem - localYIndex * diameter;
+            int centerX = (int)math.round((pillarBaseAup.x - SdfOriginAup.x) / VoxelSizeMeters);
+            int centerZ = (int)math.round((pillarBaseAup.z - SdfOriginAup.z) / VoxelSizeMeters);
+            int x = centerX + localX - radiusCells;
+            int z = centerZ + localZ - radiusCells;
+            if (x < 0 || x >= SdfWidth || z < 0 || z >= SdfDepth)
+                return;
 
+            float absX = (float)(SdfOriginAup.x + x * (double)VoxelSizeMeters);
+            float absY = (float)(SdfOriginAup.y + localYIndex * (double)VoxelSizeMeters);
+            float absZ = (float)(SdfOriginAup.z + z * (double)VoxelSizeMeters);
             float3 local = new float3(
-                (float)(abs.x - PillarBaseAup.x),
-                (float)(abs.y - (PillarBaseAup.y + HeightMeters * 0.5f)),
-                (float)(abs.z - PillarBaseAup.z));
+                absX - (float)pillarBaseAup.x,
+                absY - (float)(pillarBaseAup.y + halfHeight),
+                absZ - (float)pillarBaseAup.z);
 
-            float3 noisePosition = new float3((float)abs.x, (float)abs.y * 0.35f, (float)abs.z) * NoiseFrequency;
-            float warp = (AnomalySdfNoise.FractalNoise3D(noisePosition) * 2f - 1f) * EdgeWarpMeters;
+            if (math.abs(local.y) > halfHeight + VoxelSizeMeters ||
+                math.lengthsq(local.xz) > maxRadius * maxRadius)
+                return;
+
+            float3 noisePosition = new float3(absX, absY * 0.35f, absZ) * NoiseFrequency;
+            float warp = (AnomalySdfNoise.FastHashNoise3D(noisePosition) * 2f - 1f) * EdgeWarpMeters;
             float warpedRadius = math.max(0.001f, RadiusMeters + warp);
-
             float radial = math.length(local.xz) - warpedRadius;
-            float vertical = math.abs(local.y) - HeightMeters * 0.5f;
-            float signedDistance = math.max(radial, vertical);
-            Sdf[index] = math.max(Sdf[index], -signedDistance);
+            float vertical = math.abs(local.y) - halfHeight;
+            int sdfIndex = x + localYIndex * SdfWidth + z * SdfWidth * SdfHeight;
+            Sdf[sdfIndex] = math.max(Sdf[sdfIndex], -math.max(radial, vertical));
+        }
+    }
+
+    /// <summary>
+    /// Burst kernel that unions the selected strongest pillar record into an SDF density array.
+    /// </summary>
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    public struct InjectSelectedMegaPillarSDFJob : Unity.Jobs.IJobParallelFor
+    {
+        /// <summary>SDF density array. Positive means solid.</summary>
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // This job schedules only the selected pillar XZ envelope, not the full SDF volume. The scheduled lane
+        // index maps to exactly one (localX,localZ) envelope column and then writes bounded Y samples inside that
+        // column after bounds checks. For one immutable selected pillar record, two lanes cannot resolve to the
+        // same (x,z) column or the same flat SDF sample.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // The write is intentionally not tied to the parallel-for lane index because the envelope is centered on
+        // the selected AUP and one lane owns a contiguous vertical column. A full-grid pass would restore safety
+        // inference but would reintroduce work for unrelated voxels before Marching Cubes.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The broadphase radius check executes before noise and before any SDF write. The visual warp is a
+        // lateral XZ cinematic fake computed once per column; invalid lanes return without touching the NativeArray,
+        // preserving single-writer behavior per SDF sample.
+        [NativeDisableParallelForRestriction]
+        [NativeDisableContainerSafetyRestriction]
+        public NativeArray<float> Sdf;
+
+        [ReadOnly] public NativeArray<AnomalyFeatureRecord> SelectedFeature;
+        public int SdfWidth;
+        public int SdfHeight;
+        public int SdfDepth;
+        public float VoxelSizeMeters;
+        public double3 SdfOriginAup;
+        public float RadiusMeters;
+        public float HeightMeters;
+        public float EdgeWarpMeters;
+        public float NoiseFrequency;
+
+        /// <inheritdoc />
+        public void Execute(int index)
+        {
+            if (!SelectedFeature.IsCreated || SelectedFeature.Length <= 0)
+                return;
+
+            AnomalyFeatureRecord record = SelectedFeature[0];
+            if (record.Valid == 0 || record.Kind != (byte)AnomalyFeatureKind.ChthonicPillar)
+                return;
+
+            ExecuteLane(index, new double3(record.AupX, record.AupY, record.AupZ));
+        }
+
+        private void ExecuteLane(int laneIndex, double3 pillarBaseAup)
+        {
+            float halfHeight = HeightMeters * 0.5f;
+            float maxRadius = RadiusMeters + EdgeWarpMeters + VoxelSizeMeters;
+            float maxRadiusSq = maxRadius * maxRadius;
+            float innerRadius = math.max(0f, RadiusMeters - EdgeWarpMeters - VoxelSizeMeters);
+            float innerRadiusSq = innerRadius * innerRadius;
+            int radiusCells = (int)math.ceil(maxRadius / VoxelSizeMeters);
+            int diameter = radiusCells * 2 + 1;
+            int localZ = laneIndex / diameter;
+            int localX = laneIndex - localZ * diameter;
+            int centerX = (int)math.round((pillarBaseAup.x - SdfOriginAup.x) / VoxelSizeMeters);
+            int centerZ = (int)math.round((pillarBaseAup.z - SdfOriginAup.z) / VoxelSizeMeters);
+            float centerY = (float)(pillarBaseAup.y + halfHeight);
+            int x = centerX + localX - radiusCells;
+            int z = centerZ + localZ - radiusCells;
+
+            if (x < 0 || x >= SdfWidth || z < 0 || z >= SdfDepth)
+                return;
+
+            float absX = (float)(SdfOriginAup.x + x * (double)VoxelSizeMeters);
+            float absZ = (float)(SdfOriginAup.z + z * (double)VoxelSizeMeters);
+
+            float dx = absX - (float)pillarBaseAup.x;
+            float dz = absZ - (float)pillarBaseAup.z;
+            float radialSq = dx * dx + dz * dz;
+            if (radialSq > maxRadiusSq)
+                return;
+
+            float radialDistance = math.sqrt(radialSq);
+            float warpedRadius = RadiusMeters;
+            if (radialSq > innerRadiusSq)
+            {
+                float3 noisePosition = new float3(absX, 0f, absZ) * NoiseFrequency;
+                float warp = (AnomalySdfNoise.FastHashNoise3D(noisePosition) * 2f - 1f) * EdgeWarpMeters;
+                warpedRadius = math.max(0.001f, RadiusMeters + warp);
+            }
+
+            float radial = radialDistance - warpedRadius;
+            int zOffset = z * SdfWidth * SdfHeight;
+            for (int sampleY = 0; sampleY < SdfHeight; sampleY++)
+            {
+                float absY = (float)(SdfOriginAup.y + sampleY * (double)VoxelSizeMeters);
+                float localY = absY - centerY;
+                float vertical = math.abs(localY) - halfHeight;
+                if (vertical > VoxelSizeMeters)
+                    continue;
+
+                int sdfIndex = x + sampleY * SdfWidth + zOffset;
+                Sdf[sdfIndex] = math.max(Sdf[sdfIndex], -math.max(radial, vertical));
+            }
         }
     }
 
@@ -237,7 +502,7 @@ namespace Hecton8.World
     /// Burst kernel that carves a sharp vertical fissure into an SDF density array.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
-    public struct InjectDeepFissureSDFJob : IJobParallelFor
+    public struct InjectDeepFissureSDFJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
         public NativeArray<float> Sdf;
@@ -320,7 +585,7 @@ namespace Hecton8.World
     /// Burst kernel that applies lateral noise displacement to steep SDF slopes.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
-    public struct VoxelCliffOverhangNoiseJob : IJobParallelFor
+    public struct VoxelCliffOverhangNoiseJob : Unity.Jobs.IJobParallelFor
     {
         /// <summary>Input stitched SDF density array.</summary>
         [ReadOnly] public NativeArray<float> InputSdf;
@@ -363,6 +628,13 @@ namespace Hecton8.World
 
             float baseValue = InputSdf[index];
             if (x <= 0 || y <= 0 || z <= 0 || x >= SdfWidth - 1 || y >= SdfHeight - 1 || z >= SdfDepth - 1)
+            {
+                OutputSdf[index] = baseValue;
+                return;
+            }
+
+            float visibleSurfaceEnvelope = math.max(VoxelSizeMeters * 2f, math.abs(LateralAmplitudeMeters) + VoxelSizeMeters);
+            if (math.abs(baseValue) > visibleSurfaceEnvelope)
             {
                 OutputSdf[index] = baseValue;
                 return;
@@ -430,6 +702,12 @@ namespace Hecton8.World
 
     internal static class AnomalySdfNoise
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastHashNoise3D(float3 p)
+        {
+            return HashToUnit((int3)math.floor(p));
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float FractalNoise3D(float3 p)
         {

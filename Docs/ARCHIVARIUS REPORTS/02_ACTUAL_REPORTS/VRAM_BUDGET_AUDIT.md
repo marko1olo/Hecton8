@@ -1,10 +1,10 @@
-# VRAM BUDGET AUDIT — First-Party Texture Accounting
-Date: 2026-05-04
-Status: REFERENCE
+﻿# VRAM BUDGET AUDIT â€” First-Party Texture Accounting
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 > **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md § Textures · § VRAM HARD CEILING  
+> **Mandates Followed:** AGENTS.md Â§ Textures Â· Â§ VRAM HARD CEILING  
 > **Method:** `.meta` parser + `System.Drawing` image dimension read. No guesswork.
 
 ---
@@ -25,10 +25,10 @@ Status: REFERENCE
 
 | Metric | Value | Limit | Headroom |
 |--------|-------|-------|----------|
-| **First-party texture count** | 91 | — | — |
+| **First-party texture count** | 91 | â€” | â€” |
 | **First-party texture VRAM** | **139.02 MB** | 900 MB (texture budget) | **760.98 MB** |
-| **Total VRAM ceiling (MX350)** | — | 1800 MB | — |
-| **RT + Depth budget** | — | 320 MB | — |
+| **Total VRAM ceiling (MX350)** | â€” | 1800 MB | â€” |
+| **RT + Depth budget** | â€” | 320 MB | â€” |
 
 **Verdict:** First-party textures are **well within budget**. The 139 MB leaves ample room for third-party assets, runtime RTs, and future content.
 
@@ -38,12 +38,12 @@ Status: REFERENCE
 
 | Format Code | Meaning | Count | Est. BPP | Notes |
 |-------------|---------|-------|----------|-------|
-| `-1` | Auto (platform default) | 87 | 0.5–1.0 | Unity picks BC7/BC5/DXT at build time |
+| `-1` | Auto (platform default) | 87 | 0.5â€“1.0 | Unity picks BC7/BC5/DXT at build time |
 | `1` | Compressed (DXT/BC) | 3 | 0.5 | Explicit compressed |
 | `10` | DXT5 (BC3) | 0 | 1.0 | RGBA compressed |
-| `12` | RGBA 32-bit | 0 | 4.0 | Uncompressed — forbidden by mandate |
-| `3` | RGB 24-bit | 0 | 3.0 | Uncompressed — forbidden by mandate |
-| `4` | RGBA 32-bit (legacy) | 0 | 4.0 | Uncompressed — forbidden by mandate |
+| `12` | RGBA 32-bit | 0 | 4.0 | Uncompressed â€” forbidden by mandate |
+| `3` | RGB 24-bit | 0 | 3.0 | Uncompressed â€” forbidden by mandate |
+| `4` | RGBA 32-bit (legacy) | 0 | 4.0 | Uncompressed â€” forbidden by mandate |
 
 **All textures use compressed or auto-compressed formats.** No uncompressed RGB/RGBA violations detected in first-party set.
 
@@ -53,10 +53,10 @@ Status: REFERENCE
 
 | Dimension Bucket | Count | % of Total |
 |------------------|-------|------------|
-| ≤512 × 512 | 12 | 13% |
-| 1024 × 1024 | 9 | 10% |
-| 2048 × 2048 | 70 | 77% |
-| >2048 × 2048 | 0 | 0% |
+| â‰¤512 Ã— 512 | 12 | 13% |
+| 1024 Ã— 1024 | 9 | 10% |
+| 2048 Ã— 2048 | 70 | 77% |
+| >2048 Ã— 2048 | 0 | 0% |
 
 **Max size:** 2048 (hero/world limit per AGENTS.md). No violations.
 
@@ -66,18 +66,18 @@ Status: REFERENCE
 
 | VRAM (MB) | Size | File |
 |-----------|------|------|
-| 5.33 | 2048×2048 | `TEXTURES/foam.png` |
-| 2.67 | 2048×2048 | `WorldProceduralFlora/Imported/family.coral.low/normal___family.coral.low.png` |
-| 2.67 | 2048×2048 | `WorldProceduralFlora/Imported/family.coral.low/mask___family.coral.low.png` |
-| 2.67 | 2048×2048 | `WorldProceduralFlora/Imported/family.kelp.tall/normal___family.kelp.tall.png` |
-| 2.67 | 2048×2048 | `WorldProceduralFlora/Imported/family.kelp.patch.dense/normal___family.kelp.patch.dense.png` |
-| 2.67 | 2048×2048 | `WorldProceduralFlora/Imported/family.kelp.tall/albedo___family.kelp.tall.png` |
-| 2.67 | 2048×2048 | `WorldProceduralFlora/Imported/family.kelp.tall/mask___family.kelp.tall.png` |
-| 2.67 | 2048×2048 | `WorldProceduralFlora/Imported/family.coral.branching/mask___family.coral.branching.png` |
-| 2.67 | 2048×2048 | `WorldProceduralFlora/Imported/family.coral.branching/detail___family.coral.branching.png` |
-| 2.67 | 2048×2048 | `WorldProceduralFlora/Imported/family.coral.branching/albedo___family.coral.branching.png` |
+| 5.33 | 2048Ã—2048 | `TEXTURES/foam.png` |
+| 2.67 | 2048Ã—2048 | `WorldProceduralFlora/Imported/family.coral.low/normal___family.coral.low.png` |
+| 2.67 | 2048Ã—2048 | `WorldProceduralFlora/Imported/family.coral.low/mask___family.coral.low.png` |
+| 2.67 | 2048Ã—2048 | `WorldProceduralFlora/Imported/family.kelp.tall/normal___family.kelp.tall.png` |
+| 2.67 | 2048Ã—2048 | `WorldProceduralFlora/Imported/family.kelp.patch.dense/normal___family.kelp.patch.dense.png` |
+| 2.67 | 2048Ã—2048 | `WorldProceduralFlora/Imported/family.kelp.tall/albedo___family.kelp.tall.png` |
+| 2.67 | 2048Ã—2048 | `WorldProceduralFlora/Imported/family.kelp.tall/mask___family.kelp.tall.png` |
+| 2.67 | 2048Ã—2048 | `WorldProceduralFlora/Imported/family.coral.branching/mask___family.coral.branching.png` |
+| 2.67 | 2048Ã—2048 | `WorldProceduralFlora/Imported/family.coral.branching/detail___family.coral.branching.png` |
+| 2.67 | 2048Ã—2048 | `WorldProceduralFlora/Imported/family.coral.branching/albedo___family.coral.branching.png` |
 
-**Observation:** The `foam.png` (5.33 MB) is an outlier. It uses `textureFormat: 1` with `alphaIsTransparency: 0`, yet occupies double the VRAM of other 2048×2048 textures. Verify if it is imported as a normal map or HDR texture inadvertently. If it is a standard albedo, it should compress to ~2.67 MB like its peers.
+**Observation:** The `foam.png` (5.33 MB) is an outlier. It uses `textureFormat: 1` with `alphaIsTransparency: 0`, yet occupies double the VRAM of other 2048Ã—2048 textures. Verify if it is imported as a normal map or HDR texture inadvertently. If it is a standard albedo, it should compress to ~2.67 MB like its peers.
 
 ---
 
@@ -87,14 +87,14 @@ These packages are known to carry significant texture memory but were **outside 
 
 | Package | Known Texture Assets | Est. VRAM |
 |---------|---------------------|-----------|
-| **Crest** | Ocean LOD data arrays, foam textures, depth probe | 150–300 MB |
-| **MapMagic** | Terrain splatmaps, heightmap textures | 100–200 MB |
-| **MicroSplat** | Texture arrays, prop data textures | 50–100 MB |
-| **VolumetricLightBeam** | Noise3D 64³, dust particles, blue noise | 5–15 MB |
-| **GPUInstancer** | Occlusion culling Hi-Z depth texture | 10–20 MB |
-| **Feel / MMFeedbacks** | UI sprite atlases, juice textures | 5–10 MB |
+| **Crest** | Ocean LOD data arrays, foam textures, depth probe | 150â€“300 MB |
+| **MapMagic** | Terrain splatmaps, heightmap textures | 100â€“200 MB |
+| **MicroSplat** | Texture arrays, prop data textures | 50â€“100 MB |
+| **VolumetricLightBeam** | Noise3D 64Â³, dust particles, blue noise | 5â€“15 MB |
+| **GPUInstancer** | Occlusion culling Hi-Z depth texture | 10â€“20 MB |
+| **Feel / MMFeedbacks** | UI sprite atlases, juice textures | 5â€“10 MB |
 
-**Recommended:** Run Unity Editor → Window → Analysis → Frame Debugger → Texture Memory to capture the *actual* runtime resident set. Meta-based accounting cannot predict runtime mip streaming, texture array packing, or dynamic RT allocation.
+**Recommended:** Run Unity Editor â†’ Window â†’ Analysis â†’ Frame Debugger â†’ Texture Memory to capture the *actual* runtime resident set. Meta-based accounting cannot predict runtime mip streaming, texture array packing, or dynamic RT allocation.
 
 ---
 
@@ -102,13 +102,13 @@ These packages are known to carry significant texture memory but were **outside 
 
 | Rule | Status |
 |------|--------|
-| BC7 for albedo/roughness/AO | ✅ Auto format lets Unity choose BC7 on Standalone |
-| BC5 for normals (RG/DXT5nm) | ✅ Normal maps detected with `convertToNormalMap: 0` — verify filter in DCC |
-| Max size hero ≤ 2048 | ✅ |
-| Max size world/terrain ≤ 2048 tiled | ✅ |
-| MipMaps On for world | ✅ `enableMipMap: 1` on all scanned textures |
-| No uncompressed RGB/RGBA | ✅ No `textureFormat: 3` or `4` detected |
-| Texture budget ≤ 900 MB | ✅ 139 MB first-party |
+| BC7 for albedo/roughness/AO | âœ… Auto format lets Unity choose BC7 on Standalone |
+| BC5 for normals (RG/DXT5nm) | âœ… Normal maps detected with `convertToNormalMap: 0` â€” verify filter in DCC |
+| Max size hero â‰¤ 2048 | âœ… |
+| Max size world/terrain â‰¤ 2048 tiled | âœ… |
+| MipMaps On for world | âœ… `enableMipMap: 1` on all scanned textures |
+| No uncompressed RGB/RGBA | âœ… No `textureFormat: 3` or `4` detected |
+| Texture budget â‰¤ 900 MB | âœ… 139 MB first-party |
 
 ---
 

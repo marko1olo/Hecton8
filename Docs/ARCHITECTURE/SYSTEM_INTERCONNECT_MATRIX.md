@@ -1,7 +1,7 @@
-# System Interconnect Matrix
+﻿# System Interconnect Matrix
 
-Date: `2026-05-03`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Mandates followed:
 
@@ -29,6 +29,18 @@ Current-state boundary:
 - This matrix maps lane ownership and flush order.
 - It is not runtime profiler proof. Code validators passed for the edited scripts; console/play-mode GC proof is separate.
 - `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` remains the historic risk authority for event cascade/depth concerns.
+
+## Five-Artery Mega-Bus Model
+
+The source inventory is summarized as exactly five arteries. This is a documentation-level ownership model over the existing queue lanes, not a replacement for `SystemDispatcher.LateUpdate()`.
+
+| Artery | Runtime scope | Representative lanes |
+|---|---|---|
+| Core | bootstrap, scene, registry, save/load, localization, telemetry, performance, object-pool diagnostics, mod registry | `BootstrapEvents`, `SceneBootstrap`, `GlobalRegistry`, `SaveEvents`, `LocalizationEvents`, `GlobalTelemetryBus`, `PerformanceEvents`, `ObjectPoolDiagnostics`, `ModRegistryEvents` |
+| Env | weather, atmosphere, biome, celestial, acoustic, physics, fluid, pressure, depth, soundscape, random/seismic world pressure | `WeatherEvents`, `AtmosphereEvents`, `MapMagicBiomeEvents`, `BiomeMatrixEvents`, `CelestialEvents`, `EclipseGameplayEvents`, `AcousticZoneEvents`, `PhysicsEventBus`, `PhysicsEvents`, `FluidFeedbackEvents`, `HighPressureEvents`, `FatalPressureImplosionEvents`, `DepthZoneEvents`, `SoundscapeEvents`, `RandomEventEvents` |
+| Player | input-facing interaction, crafting, scan, tools, PDA, inventory, player signal/expression, notifications, Atlas signal | `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `FlashlightEvents`, `LaserCutterEvents`, `PDAEvents`, `PDAIntrusionEvents`, `InventoryEvents`, `PlayerSignalEvents`, `PlayerExpressionEvents`, `NotificationEvents`, `AtlasSignalEvents` |
+| Base | base modules, airlocks, base integrity, submarine OS, power grid, emergency service relay, drone fleet telemetry | `ModuleStatusEvents`, `BaseAirlockEvents`, `BaseIntegrityEvents`, `HectonSubmarineOsEvents`, `PowerGridTelemetryEvents`, `EmergencyServiceRelayEvents`, `HectonDroneFleetEvents` |
+| AI | encounter director, quest/progression, narrative/audio logs, first-hour, endings, Atlas-6 directives, ecosystem/fauna pressure | `DirectorAIEvents`, `QuestEvents`, `NarrativeEvents`, `AudioLogEvents`, `FirstHourEvents`, `EndingEvents`, `Atlas6Events`, `SargassumGlobalDragManager` |
 
 ## Verified LateUpdate Flush Order
 

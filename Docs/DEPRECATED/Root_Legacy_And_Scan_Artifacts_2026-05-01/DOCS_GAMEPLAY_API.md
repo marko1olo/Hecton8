@@ -1,4 +1,6 @@
 # HECTON-8 Gameplay API Documentation
+Date: 2026-05-01
+Status: DEPRECATED
 
 > **Source of Truth** for all public gameplay APIs. Last updated: 2026-04-18
 

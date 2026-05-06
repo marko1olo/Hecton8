@@ -165,7 +165,11 @@ namespace Hecton8.Optimization.Editor
                     var pngData = texture.EncodeToPNG();
                     
                     // Write to file
-                    System.IO.File.WriteAllBytes(fullPath, pngData);
+                    using (var stream = new System.IO.FileStream(fullPath, System.IO.FileMode.Create, System.IO.FileAccess.Write, System.IO.FileShare.None))
+                    {
+                        stream.Write(pngData, 0, pngData.Length);
+                        stream.Flush(true);
+                    }
                     
                     Object.DestroyImmediate(texture);
                     

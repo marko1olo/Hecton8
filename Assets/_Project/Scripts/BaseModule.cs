@@ -100,10 +100,14 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
         private const int ModuleWaterLevelShaderCapacity = 64;
-        private const int BrownoutInteriorLightBudget = 64;
+        private const float BrownoutShaderStateEpsilon = 0.001f;
         private static readonly int s_ModuleAmbienceDataId = Shader.PropertyToID("_ModuleAmbienceData");
-        private static readonly int s_ModuleFloodAndFlickerDataId = Shader.PropertyToID("_ModuleFloodAndFlickerData");
+        private static readonly int s_ModuleWaterLevelsId = Shader.PropertyToID("_ModuleWaterLevels");
         private static readonly int s_ModuleWaterLevelCountId = Shader.PropertyToID("_ModuleWaterLevelCount");
+        private static readonly int s_BaseVoltageId = Shader.PropertyToID("_BaseVoltage");
+        private static readonly int s_BaseVoltageFlickerSpeedId = Shader.PropertyToID("_BaseVoltageFlickerSpeed");
+        private static readonly int s_BaseVoltageMinimumId = Shader.PropertyToID("_BaseVoltageMinimum");
+        private static readonly int s_BaseBrownoutEmergencyColorId = Shader.PropertyToID("_BaseBrownoutEmergencyColor");
         // COLD ALLOC: Vector4[256] — global module center/radius upload scratch — owner: BaseModule
         private static readonly Vector4[] s_moduleAmbienceData = new Vector4[ModuleWaterLevelShaderCapacity];
         // COLD ALLOC: Vector4[256] — global module water/flicker upload scratch — owner: BaseModule
@@ -120,6 +124,11 @@ namespace Hecton8.Gameplay
                 s_moduleAmbienceData[i] = Vector4.zero;
                 s_moduleFloodAndFlickerData[i] = new Vector4(0f, 0f, 1f, 0f);
             }
+
+            Shader.SetGlobalFloat(s_BaseVoltageId, 1f);
+            Shader.SetGlobalFloat(s_BaseVoltageFlickerSpeedId, 19f);
+            Shader.SetGlobalFloat(s_BaseVoltageMinimumId, 0.04f);
+            Shader.SetGlobalColor(s_BaseBrownoutEmergencyColorId, new Color(1f, 0.13f, 0.06f, 1f));
         }
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
@@ -157,7 +166,7 @@ namespace Hecton8.Gameplay
         private const float DefaultJointShearDamagePerSecondAtFullDelta = 0.02f;
         private const float DefaultJointShearStressRecoveryPerSecond = 0.08f;
         private const float DefaultJointShearGroanCooldownSeconds = 4f;
-        private const float DefaultHullCondensationStartDepthMeters = 900f;
+        private const float DefaultHullCondensationStartDepthMeters = 2000f;
         private const float DefaultHullCondensationFullDepthMeters = 5000f;
         private const float DefaultLowIntegrityGroanNoiseFrequency = 0.19f;
         private const float DefaultLowIntegrityGroanNoiseThreshold = 0.58f;
@@ -449,10 +458,10 @@ namespace Hecton8.Gameplay
         [Tooltip("Deterministic noise frequency used by low-voltage light flicker.")]
         [SerializeField, Min(0.1f)] private float brownoutFlickerSpeed = 19f;
 
-        [Tooltip("Minimum light intensity fraction during brownout flicker.")]
+        [Tooltip("Minimum shader emission fraction during brownout flicker.")]
         [SerializeField, Range(0f, 1f)] private float brownoutMinimumLightIntensityRatio = 0.04f;
 
-        [Tooltip("Emergency tint applied to interior point lights during brownout.")]
+        [Tooltip("Emergency tint reference for shader-driven brownout surfaces. PointLight mutation is forbidden.")]
         [SerializeField] private Color brownoutEmergencyEmissionColor = new Color(1f, 0.13f, 0.06f, 1f);
 
         [Tooltip("Seconds required for white interior lighting to transition into emergency red.")]
@@ -475,7 +484,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private AudioClip oxygenScrubberHumLoop;
         [SerializeField, Range(0f, 1f)] private float oxygenScrubberHumVolume = 0.18f;
         [SerializeField, Min(0.01f)] private float oxygenScrubberHumPoweredPitch = 1f;
-        [SerializeField, Min(0.01f)] private float oxygenScrubberHumFailPitch = 0.55f;
+        [SerializeField, Min(0.01f)] private float oxygenScrubberHumFailPitch = 0.2f;
         [SerializeField, Min(0.1f)] private float oxygenScrubberHumFailFadeSeconds = 3f;
         [Header("── Life Support ──────────────────────────────")]
         [Tooltip("Oxygen refill rate (units per second) when player is inside,\n" +
@@ -528,11 +537,7 @@ namespace Hecton8.Gameplay
         private bool _ambientLightsBrownedOut;
         private bool _updatableRegistered;
         private float _ambientVoltageSupplyRatio = 1f;
-        private float _brownoutFlickerTime;
         private float _brownoutNoiseSeed;
-        private float[] _interiorLightBaseIntensities = Array.Empty<float>();
-        private Color[] _interiorLightBaseColors = Array.Empty<Color>();
-        private bool _brownoutVisualsApplied;
         private float _currentBrownoutFlicker01 = 1f;
         private float _brownoutTransition01;
         private float _brownoutTransitionTarget01;
@@ -566,7 +571,6 @@ namespace Hecton8.Gameplay
         private bool _breachLatched;
         private Rigidbody _moduleRigidbody;
         private int _cachedAtmosphereRoomIndex = -1;
-        private Vector3 _defaultCenterOfMassLocal;
         private Vector3 _breachCenterOfMassTargetLocal;
         private bool _hasBreachCenterOfMassTarget;
         private float _defaultBodyMass;
@@ -879,6 +883,10 @@ namespace Hecton8.Gameplay
 
             UpdateDrainDiagnostics();
             SyncSpatialRole();
+            UpdateOxygenScrubberHumTarget();
+            AdvanceBrownoutShaderState(0f);
+            PublishActiveModuleWaterLevelsToShader();
+            UpdateAmbienceTickRegistration();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -904,13 +912,11 @@ namespace Hecton8.Gameplay
             CacheReferences();
             ReadBuildablePower();
             ConfigureRuntimeComponentsFromSerializedState();
-            CaptureBrownoutLightBaselines();
+            InitializeAmbienceNoiseSeed();
             ConfigureOxygenScrubberHumSource();
             _isDeconstructing = false;
             _ambientLightsBrownedOut = false;
             _ambientVoltageSupplyRatio = 1f;
-            _brownoutFlickerTime = 0f;
-            _brownoutVisualsApplied = false;
             _currentBrownoutFlicker01 = 1f;
             _brownoutTransition01 = 0f;
             _brownoutTransitionTarget01 = 0f;
@@ -1120,7 +1126,7 @@ namespace Hecton8.Gameplay
                 PhysicsForceRouter.QueueForceAtPosition(
                     _moduleRigidbody,
                     Vector3.up * netAccelerationY,
-                    transform.TransformPoint(_defaultCenterOfMassLocal),
+                    transform.position,
                     ForceMode.Acceleration);
             }
 
@@ -1133,14 +1139,14 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             float dt = Mathf.Max(0f, deltaTime);
-            if (IsBrownoutFlickerActive())
-                ApplyBrownoutFlicker(dt);
-            else if (_brownoutVisualsApplied)
-                RestoreBrownoutVisuals();
-            else if (_brownoutTransition01 > 0.0001f && !_ambientLightsBrownedOut)
-                AdvanceBrownoutTransition(dt);
+            bool shaderStateChanged = false;
+            if (ShouldAdvanceBrownoutShaderState())
+                shaderStateChanged = AdvanceBrownoutShaderState(dt);
 
             UpdateOxygenScrubberHum(dt);
+            if (shaderStateChanged)
+                PublishActiveModuleWaterLevelsToShader();
+
             UpdateAmbienceTickRegistration();
         }
 
@@ -1162,7 +1168,7 @@ namespace Hecton8.Gameplay
             CaptureModuleRigidbodyDefaults();
             CaptureFloodSurfaceDefaults();
             CapturePressureCompressionDefaults();
-            CaptureBrownoutLightBaselines();
+            InitializeAmbienceNoiseSeed();
             ConfigureOxygenScrubberHumSource();
             ApplyCondensationVisualState(_condensationActive);
         }
@@ -1194,7 +1200,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregisterUpdatable();
-            RestoreBrownoutVisuals();
+            ResetBrownoutShaderState();
             s_activeModules.Remove(this);
             PhysicsEventBus.Unregister(this);
             TryUnregister();
@@ -1214,7 +1220,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregisterUpdatable();
-            RestoreBrownoutVisuals();
+            ResetBrownoutShaderState();
             s_activeModules.Remove(this);
             PhysicsEventBus.Unregister(this);
             TryUnregister();
@@ -2317,18 +2323,21 @@ namespace Hecton8.Gameplay
         internal void SetAmbientPowerVisualState(bool brownedOut, float voltageSupplyRatio)
         {
             _brownoutTransitionTarget01 = brownedOut ? 1f : 0f;
+            float sanitizedVoltageRatio = Mathf.Clamp01(float.IsFinite(voltageSupplyRatio) ? voltageSupplyRatio : 1f);
             if (_ambientLightsBrownedOut == brownedOut)
             {
-                _ambientVoltageSupplyRatio = Mathf.Clamp01(float.IsFinite(voltageSupplyRatio) ? voltageSupplyRatio : 1f);
+                _ambientVoltageSupplyRatio = sanitizedVoltageRatio;
+                AdvanceBrownoutShaderState(0f);
+                PublishActiveModuleWaterLevelsToShader();
                 UpdateAmbienceTickRegistration();
                 return;
             }
 
             _ambientLightsBrownedOut = brownedOut;
-            _ambientVoltageSupplyRatio = Mathf.Clamp01(float.IsFinite(voltageSupplyRatio) ? voltageSupplyRatio : 1f);
+            _ambientVoltageSupplyRatio = sanitizedVoltageRatio;
             SetLightsEnabled(ShouldLightsBeEnabled());
-            if (!IsBrownoutFlickerActive() && !brownedOut)
-                RestoreBrownoutVisuals();
+            AdvanceBrownoutShaderState(0f);
+            PublishActiveModuleWaterLevelsToShader();
             UpdateAmbienceTickRegistration();
         }
 
@@ -2758,6 +2767,11 @@ namespace Hecton8.Gameplay
 
             s_lastModuleWaterLevelUploadFrame = currentFrame;
             int moduleCount = Mathf.Min(s_activeModules.Count, ModuleWaterLevelShaderCapacity);
+            float baseVoltage01 = 1f;
+            float baseFlickerSpeed = 19f;
+            float baseVoltageMinimum = 0.04f;
+            Color baseEmergencyColor = new Color(1f, 0.13f, 0.06f, 1f);
+            bool hasGlobalModuleSettings = false;
             for (int i = 0; i < moduleCount; i++)
             {
                 BaseModule module = s_activeModules[i];
@@ -2769,11 +2783,21 @@ namespace Hecton8.Gameplay
                 }
 
                 module.ResolveModuleAmbienceBounds(out Vector3 centerWS, out float radiusMeters);
+                float moduleVoltage01 = Mathf.Clamp01(module._currentBrownoutFlicker01);
+                baseVoltage01 = Mathf.Min(baseVoltage01, moduleVoltage01);
+                if (!hasGlobalModuleSettings)
+                {
+                    baseFlickerSpeed = Mathf.Max(0.1f, module.brownoutFlickerSpeed);
+                    baseVoltageMinimum = Mathf.Clamp01(module.brownoutMinimumLightIntensityRatio);
+                    baseEmergencyColor = module.brownoutEmergencyEmissionColor;
+                    hasGlobalModuleSettings = true;
+                }
+
                 s_moduleAmbienceData[i] = new Vector4(centerWS.x, centerWS.y, centerWS.z, radiusMeters);
                 s_moduleFloodAndFlickerData[i] = new Vector4(
                     module.ResolveFloodSurfaceWorldY(),
                     Mathf.Clamp01(module._cachedFloodLevel01),
-                    Mathf.Clamp01(module._currentBrownoutFlicker01),
+                    moduleVoltage01,
                     module.ResolveHullCondensationDepth01());
             }
 
@@ -2784,8 +2808,12 @@ namespace Hecton8.Gameplay
             }
 
             Shader.SetGlobalVectorArray(s_ModuleAmbienceDataId, s_moduleAmbienceData);
-            Shader.SetGlobalVectorArray(s_ModuleFloodAndFlickerDataId, s_moduleFloodAndFlickerData);
+            Shader.SetGlobalVectorArray(s_ModuleWaterLevelsId, s_moduleFloodAndFlickerData);
             Shader.SetGlobalInt(s_ModuleWaterLevelCountId, moduleCount);
+            Shader.SetGlobalFloat(s_BaseVoltageId, baseVoltage01);
+            Shader.SetGlobalFloat(s_BaseVoltageFlickerSpeedId, baseFlickerSpeed);
+            Shader.SetGlobalFloat(s_BaseVoltageMinimumId, baseVoltageMinimum);
+            Shader.SetGlobalColor(s_BaseBrownoutEmergencyColorId, baseEmergencyColor);
         }
 
         private float ResolveHullCondensationDepth01()
@@ -2954,18 +2982,7 @@ namespace Hecton8.Gameplay
                 : ResolveDefaultBreachLocalPoint();
             float pressureDeltaKPa = Mathf.Max(0f, ResolveHydrostaticPressureKPa(depthMeters) - SurfacePressureKPa);
             float pressureVisualScale = Mathf.Clamp01((pressureDeltaKPa * 0.001f) + (deltaVolumeM3 * 0.35f));
-            EmitHullBreachJet(localLeakPoint, Mathf.Lerp(1.5f, 7.5f, pressureVisualScale));
-
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
-            if (fluidDecals == null)
-                return;
-
-            Vector3 worldPoint = transform.TransformPoint(localLeakPoint);
-            Vector3 inwardDirection = transform.position - worldPoint;
-            if (inwardDirection.sqrMagnitude < 0.0001f)
-                inwardDirection = -transform.forward;
-            inwardDirection.Normalize();
-            fluidDecals.RegisterPressureSpray(worldPoint, inwardDirection, pressureVisualScale);
+            RegisterInstancedPressureSpray(localLeakPoint, pressureVisualScale);
         }
 
         private void SetWaterVolumeM3(float nextVolumeM3)
@@ -3078,39 +3095,8 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void CaptureBrownoutLightBaselines()
+        private void InitializeAmbienceNoiseSeed()
         {
-            int count = interiorLights != null
-                ? Mathf.Min(interiorLights.Length, BrownoutInteriorLightBudget)
-                : 0;
-            if (_brownoutVisualsApplied &&
-                _interiorLightBaseIntensities != null &&
-                _interiorLightBaseIntensities.Length == count &&
-                _interiorLightBaseColors != null &&
-                _interiorLightBaseColors.Length == count)
-            {
-                return;
-            }
-
-            if (_interiorLightBaseIntensities == null || _interiorLightBaseIntensities.Length != count)
-                _interiorLightBaseIntensities = count > 0 ? new float[count] : Array.Empty<float>(); // COLD ALLOC: float[interiorLights] - module brownout intensity baselines - owner: BaseModule
-            if (_interiorLightBaseColors == null || _interiorLightBaseColors.Length != count)
-                _interiorLightBaseColors = count > 0 ? new Color[count] : Array.Empty<Color>(); // COLD ALLOC: Color[interiorLights] - module brownout color baselines - owner: BaseModule
-
-            for (int i = 0; i < count; i++)
-            {
-                Light light = interiorLights[i];
-                if (light == null)
-                {
-                    _interiorLightBaseIntensities[i] = 0f;
-                    _interiorLightBaseColors[i] = Color.black;
-                    continue;
-                }
-
-                _interiorLightBaseIntensities[i] = Mathf.Max(0f, light.intensity);
-                _interiorLightBaseColors[i] = light.color;
-            }
-
             ulong entitySeed = EntityId.ToULong(GetEntityId());
             _brownoutNoiseSeed = (float)(entitySeed & 0xFFFFu) * 0.01731f;
         }
@@ -3122,45 +3108,33 @@ namespace Hecton8.Gameplay
                    _ambientVoltageSupplyRatio < Mathf.Clamp01(brownoutActivationVoltageRatio);
         }
 
-        private void ApplyBrownoutFlicker(float dt)
+        private bool ShouldAdvanceBrownoutShaderState()
         {
-            CaptureBrownoutLightBaselines();
-            _brownoutFlickerTime += Mathf.Max(0f, dt);
+            return IsBrownoutFlickerActive() ||
+                   Mathf.Abs(_brownoutTransition01 - _brownoutTransitionTarget01) > BrownoutShaderStateEpsilon ||
+                   Mathf.Abs(_currentBrownoutFlicker01 - ResolveBrownoutShaderVoltage01()) > BrownoutShaderStateEpsilon;
+        }
+
+        private bool AdvanceBrownoutShaderState(float dt)
+        {
+            float previousTransition01 = _brownoutTransition01;
+            float previousVoltage01 = _currentBrownoutFlicker01;
             AdvanceBrownoutTransition(dt);
-            float speed = Mathf.Max(0.1f, brownoutFlickerSpeed);
-            float primaryNoise = noise.snoise(new float2(_brownoutFlickerTime * speed, _brownoutNoiseSeed));
-            float dropoutNoise = noise.snoise(new float2((_brownoutFlickerTime + 11.37f) * speed * 1.83f, _brownoutNoiseSeed + 7.19f));
+            _currentBrownoutFlicker01 = ResolveBrownoutShaderVoltage01();
+            return Mathf.Abs(previousTransition01 - _brownoutTransition01) > BrownoutShaderStateEpsilon ||
+                   Mathf.Abs(previousVoltage01 - _currentBrownoutFlicker01) > BrownoutShaderStateEpsilon;
+        }
+
+        private float ResolveBrownoutShaderVoltage01()
+        {
+            if (!HasOperationalPower)
+                return 0f;
+
+            if (!_ambientLightsBrownedOut)
+                return Mathf.Lerp(1f, 0f, Mathf.Clamp01(_brownoutTransition01));
+
             float voltage01 = Mathf.Clamp01(_ambientVoltageSupplyRatio / Mathf.Max(0.01f, brownoutActivationVoltageRatio));
-            float sineFlicker01 = 0.5f + 0.5f * math.sin(_brownoutFlickerTime * 20f);
-            float flicker01 = Mathf.Lerp(
-                Mathf.Clamp01(brownoutMinimumLightIntensityRatio),
-                1f,
-                Mathf.Abs(primaryNoise) * voltage01);
-            if (dropoutNoise > 0.62f)
-                flicker01 *= 0.08f + 0.18f * voltage01;
-            flicker01 *= Mathf.Lerp(0.55f, 1.35f, sineFlicker01);
-            flicker01 = Mathf.Clamp01(flicker01);
-
-            float emergencyBlend01 = Mathf.Clamp01(_brownoutTransition01 * Mathf.Lerp(0.82f, 1f, sineFlicker01));
-
-            int count = interiorLights != null
-                ? Mathf.Min(Mathf.Min(interiorLights.Length, _interiorLightBaseIntensities.Length), BrownoutInteriorLightBudget)
-                : 0;
-            for (int i = 0; i < count; i++)
-            {
-                Light light = interiorLights[i];
-                if (light == null)
-                    continue;
-
-                if (!light.enabled)
-                    light.enabled = true;
-                light.intensity = _interiorLightBaseIntensities[i] * flicker01;
-                light.color = Color.Lerp(_interiorLightBaseColors[i], brownoutEmergencyEmissionColor, emergencyBlend01);
-            }
-
-            _currentBrownoutFlicker01 = flicker01;
-            PublishActiveModuleWaterLevelsToShader();
-            _brownoutVisualsApplied = true;
+            return Mathf.Lerp(1f, Mathf.Max(Mathf.Clamp01(brownoutMinimumLightIntensityRatio), voltage01), Mathf.Clamp01(_brownoutTransition01));
         }
 
         private void AdvanceBrownoutTransition(float dt)
@@ -3168,31 +3142,16 @@ namespace Hecton8.Gameplay
             float transitionSeconds = Mathf.Max(0.05f, brownoutEmergencyTransitionSeconds);
             float transitionStep = math.saturate(Mathf.Max(0f, dt) / transitionSeconds);
             _brownoutTransition01 = math.lerp(_brownoutTransition01, _brownoutTransitionTarget01, transitionStep);
-            if (Mathf.Abs(_brownoutTransition01 - _brownoutTransitionTarget01) <= 0.001f)
+            if (Mathf.Abs(_brownoutTransition01 - _brownoutTransitionTarget01) <= BrownoutShaderStateEpsilon)
                 _brownoutTransition01 = _brownoutTransitionTarget01;
         }
 
-        private void RestoreBrownoutVisuals()
+        private void ResetBrownoutShaderState()
         {
-            int lightCount = interiorLights != null
-                ? Mathf.Min(Mathf.Min(interiorLights.Length, _interiorLightBaseIntensities.Length), BrownoutInteriorLightBudget)
-                : 0;
-            for (int i = 0; i < lightCount; i++)
-            {
-                Light light = interiorLights[i];
-                if (light == null)
-                    continue;
-
-                light.intensity = _interiorLightBaseIntensities[i];
-                light.color = _interiorLightBaseColors[i];
-                light.enabled = ShouldLightsBeEnabled();
-            }
-
             _currentBrownoutFlicker01 = 1f;
             _brownoutTransition01 = 0f;
             _brownoutTransitionTarget01 = 0f;
             PublishActiveModuleWaterLevelsToShader();
-            _brownoutVisualsApplied = false;
         }
 
         private void ConfigureOxygenScrubberHumSource()
@@ -3205,7 +3164,7 @@ namespace Hecton8.Gameplay
             oxygenScrubberHumSource.loop = true;
             oxygenScrubberHumSource.playOnAwake = false;
             oxygenScrubberHumSource.volume = 0f;
-            oxygenScrubberHumSource.pitch = Mathf.Max(0.01f, oxygenScrubberHumFailPitch);
+            oxygenScrubberHumSource.pitch = ResolveOxygenScrubberHumFailPitch();
         }
 
         private void UpdateOxygenScrubberHumTarget()
@@ -3243,10 +3202,15 @@ namespace Hecton8.Gameplay
 
             oxygenScrubberHumSource.volume = oxygenScrubberHumVolume * _oxygenHum01;
             oxygenScrubberHumSource.pitch = Mathf.Lerp(
-                Mathf.Max(0.01f, oxygenScrubberHumFailPitch),
+                ResolveOxygenScrubberHumFailPitch(),
                 Mathf.Max(0.01f, oxygenScrubberHumPoweredPitch),
                 _oxygenHum01);
             _oxygenHumActive = true;
+        }
+
+        private float ResolveOxygenScrubberHumFailPitch()
+        {
+            return Mathf.Clamp(oxygenScrubberHumFailPitch, 0.2f, Mathf.Max(0.2f, oxygenScrubberHumPoweredPitch));
         }
 
         /// <summary>
@@ -3337,7 +3301,6 @@ namespace Hecton8.Gameplay
             if (_moduleRigidbody == null && !TryGetComponent(out _moduleRigidbody))
                 return;
 
-            _defaultCenterOfMassLocal = _moduleRigidbody.centerOfMass;
             _defaultBodyMass = _moduleRigidbody.mass;
             _defaultLinearDamping = _moduleRigidbody.linearDamping;
             _defaultAngularDamping = _moduleRigidbody.angularDamping;
@@ -3589,8 +3552,8 @@ namespace Hecton8.Gameplay
             CapturePressureCompressionDefaults();
 
             Vector3 localFloodBias = _hasBreachCenterOfMassTarget
-                ? _breachCenterOfMassTargetLocal - _defaultCenterOfMassLocal
-                : ResolveDefaultBreachLocalPoint() - _defaultCenterOfMassLocal;
+                ? _breachCenterOfMassTargetLocal
+                : ResolveDefaultBreachLocalPoint();
             localFloodBias.y = 0f;
 
             if (!IsFiniteVector(localFloodBias) || localFloodBias.sqrMagnitude <= 0.000001f || floodFill01 <= 0.001f)
@@ -3931,9 +3894,7 @@ namespace Hecton8.Gameplay
 
         private bool ShouldRunAmbienceTick()
         {
-            return IsBrownoutFlickerActive() ||
-                   _brownoutVisualsApplied ||
-                   Mathf.Abs(_brownoutTransition01 - _brownoutTransitionTarget01) > 0.001f ||
+            return Mathf.Abs(_brownoutTransition01 - _brownoutTransitionTarget01) > 0.001f ||
                    Mathf.Abs(_oxygenHum01 - _oxygenHumTarget01) > 0.001f ||
                    _oxygenHumActive;
         }
@@ -4398,30 +4359,23 @@ namespace Hecton8.Gameplay
 
         internal void EmitHullBreachJet(Vector3 localPoint, float pressureDelta)
         {
-            if (leakVfx == null)
+            float burst01 = Mathf.Clamp01(pressureDelta * 0.25f);
+            RegisterInstancedPressureSpray(localPoint, burst01);
+        }
+
+        private void RegisterInstancedPressureSpray(Vector3 localPoint, float intensity01)
+        {
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals == null)
                 return;
 
-            float burst01 = Mathf.Clamp01(pressureDelta * 0.25f);
-            ParticleSystem.EmitParams emitParams = default;
-            ParticleSystem.MainModule main = leakVfx.main;
-            bool worldSpace = main.simulationSpace == ParticleSystemSimulationSpace.World;
             Vector3 worldPoint = transform.TransformPoint(localPoint);
             Vector3 worldDirection = transform.position - worldPoint;
             if (worldDirection.sqrMagnitude < 0.0001f)
                 worldDirection = -transform.forward;
 
             worldDirection.Normalize();
-            Vector3 burstVelocity = worldDirection * Mathf.Lerp(4f, 18f, burst01);
-
-            emitParams.position = worldSpace ? worldPoint : localPoint;
-            emitParams.velocity = worldSpace ? burstVelocity : transform.InverseTransformDirection(burstVelocity);
-            emitParams.startSize = Mathf.Lerp(0.05f, 0.18f, burst01);
-            emitParams.startLifetime = Mathf.Lerp(0.35f, 1.15f, burst01);
-            emitParams.applyShapeToPosition = true;
-
-            leakVfx.Emit(emitParams, Mathf.RoundToInt(Mathf.Lerp(6f, 24f, burst01)));
-            if (!leakVfx.isPlaying)
-                leakVfx.Play();
+            fluidDecals.RegisterPressureSpray(worldPoint, worldDirection, Mathf.Clamp01(intensity01));
         }
 
         internal bool TryGetInteriorHazardBounds(out Vector3 worldCenter, out float radius)
@@ -4724,6 +4678,8 @@ namespace Hecton8.Gameplay
             if (lowIntegrityGroanPitchMin < 0.1f) lowIntegrityGroanPitchMin = 0.1f;
             if (lowIntegrityGroanPitchMax < lowIntegrityGroanPitchMin) lowIntegrityGroanPitchMax = lowIntegrityGroanPitchMin;
             if (brownoutEmergencyTransitionSeconds < 0.05f) brownoutEmergencyTransitionSeconds = 0.05f;
+            if (oxygenScrubberHumFailPitch < 0.2f) oxygenScrubberHumFailPitch = 0.2f;
+            if (oxygenScrubberHumPoweredPitch < oxygenScrubberHumFailPitch) oxygenScrubberHumPoweredPitch = oxygenScrubberHumFailPitch;
             if (breachVortexDurationSeconds < 0f) breachVortexDurationSeconds = 0f;
             if (breachVortexReferenceMassKilograms < 1f) breachVortexReferenceMassKilograms = 1f;
             if (breachVortexMaximumAccelerationMetersPerSecondSquared < 0f) breachVortexMaximumAccelerationMetersPerSecondSquared = 0f;

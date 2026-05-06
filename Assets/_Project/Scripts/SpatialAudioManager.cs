@@ -72,7 +72,7 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through Hecton8.Core.GlobalRegistry.Audio.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IServiceHeartbeat
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float SoundSpeedAirMetersPerSecond = 343f;
@@ -88,6 +88,13 @@ namespace Hecton8.Audio
         private const float Tier1UpdateIntervalSeconds = 1f / 30f;
         private const float Tier1LowPassCutoffHertz = 1800f;
         private const float VoxelSourceOcclusionUpdateIntervalSeconds = 0.2f;
+        private const float VoxelSourceOcclusionTraceMaximumDistanceMeters = Tier0FullDspDistanceMeters;
+        private const float VoxelSourceOcclusionTraceMaximumDistanceSq =
+            VoxelSourceOcclusionTraceMaximumDistanceMeters * VoxelSourceOcclusionTraceMaximumDistanceMeters;
+        private const float VoxelSourceOcclusionCinematicNearCutoffHertz = 3200f;
+        private const float VoxelSourceOcclusionCinematicFarCutoffHertz = 900f;
+        private const float VoxelSourceOcclusionCinematicNearTransmission = 0.96f;
+        private const float VoxelSourceOcclusionCinematicFarTransmission = 0.72f;
         private const float StereoPanDistanceNormalizationMeters = 15f;
         private const int MaxImpactRadarEmitters = 16;
         private const float ImpactEmitterLifetimeMinSeconds = 0.18f;
@@ -254,6 +261,23 @@ namespace Hecton8.Audio
         [Tooltip("Optional authored world-drone clip assigned to the authored source if the source has no clip.")]
         [SerializeField] private AudioClip _worldDroneClip;
 
+        [Header("Surface Weather Wind")]
+        [Tooltip("Authored 2D looping wind source. Runtime source creation is forbidden.")]
+        [SerializeField] private AudioSource _globalWindHowlSource;
+
+        [Tooltip("Optional wind howl loop assigned to the authored source when it has no clip.")]
+        [SerializeField] private AudioClip _globalWindHowlClip;
+
+        [Tooltip("Optional authored low-pass filter on the wind source. Interior BaseModule/Submarine occlusion clamps it to 200 Hz.")]
+        [SerializeField] private AudioLowPassFilter _globalWindHowlLowPass;
+
+        [SerializeField, Range(0f, 1f)] private float _globalWindHowlMaxVolume = 0.42f;
+        [SerializeField, Range(0f, 1f)] private float _globalWindHowlStormFloor = 0.22f;
+        [SerializeField, Range(20f, 22000f)] private float _globalWindHowlInteriorLowPassCutoffHz = 200f;
+        [SerializeField, Range(1000f, 22000f)] private float _globalWindHowlOpenLowPassCutoffHz = 22000f;
+        [SerializeField, Range(0.1f, 24f)] private float _globalWindHowlFadeSharpness = 5f;
+        [SerializeField, Range(0.1f, 32f)] private float _globalWindHowlOcclusionSharpness = 14f;
+
         [Tooltip("Exposed mixer parameter that attenuates the Bed bus in dB while Threat is active.")]
         [SerializeField] private string _bedDuckDbParameter = "BedDuckDb";
 
@@ -366,6 +390,9 @@ namespace Hecton8.Audio
         private float _worldDroneCrossfadeTargetDb = -5f;
         private float _worldDroneCrossfadeDuration = 2.5f;
         private bool _worldDroneCrossfadeActive;
+        private float _globalWindHowlVolume01;
+        private float _globalWindHowlOcclusion01;
+        private float _lastGlobalWindHowlCutoffHz = -1f;
         private float _eclipseAcousticPitchShiftCents;
         private float _eclipseAcousticPitchRatio = 1f;
         private float _listenerWaterDensityMul;
@@ -429,6 +456,7 @@ namespace Hecton8.Audio
             _listenerWaterDensityMul = 0f;
             SetParasiteRoomAcousticLoad(0);
             SetEclipseAcousticPitchShiftCents(0f);
+            ResetGlobalWindHowlState();
             _worldDroneCrossfadeActive = false;
             ApplyThreatBusDucking(0f, 0f);
             ApplyParasiteRoomAcousticState(0f);
@@ -447,6 +475,12 @@ namespace Hecton8.Audio
         /// True once the audio runtime has been registered into the global service locator.
         /// </summary>
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
 
         /// <summary>
         /// Current eclipse-driven pitch shift applied to ambient bed/drone world sources.
@@ -530,6 +564,7 @@ namespace Hecton8.Audio
             InitializePool();
             InitializePool2D();
             InitializeTelemetryCaches();
+            PrepareGlobalWindHowlSource();
             _runtimeResourcesInitialized = true;
         }
 
@@ -539,6 +574,7 @@ namespace Hecton8.Audio
                 return;
 
             PhysicsEvents.Register(this);
+            PhysicsEventBus.Register(this);
             FatalPressureImplosionEvents.Register(this);
             RepairDroneTorchAcousticEvents.Register(this);
             _eventsSubscribed = true;
@@ -550,6 +586,7 @@ namespace Hecton8.Audio
                 return;
 
             PhysicsEvents.Unregister(this);
+            PhysicsEventBus.Unregister(this);
             FatalPressureImplosionEvents.Unregister(this);
             RepairDroneTorchAcousticEvents.Unregister(this);
             _eventsSubscribed = false;
@@ -573,6 +610,7 @@ namespace Hecton8.Audio
                 : default;
             Vector3 listenerVelocity = ResolveListenerAbsoluteVelocity(listenerAbsolutePosition, safeDeltaTime);
             UpdateListenerWaterDensityMul(safeDeltaTime);
+            UpdateGlobalWindHowl(safeDeltaTime);
             float threatActivity = 0f;
             DecayImpactEmitters(now);
             AdvanceAcousticRadarDecayCadence(safeDeltaTime);
@@ -591,7 +629,9 @@ namespace Hecton8.Audio
                     continue;
                 }
 
-                UpdateWorldSourceAudioLod(sourceIndex, source, now, false);
+                Transform sourceTransform = source.transform;
+                Vector3 sourcePosition = sourceTransform.position;
+                UpdateWorldSourceAudioLod(sourceIndex, source, sourcePosition, now, false);
                 if (listener != null)
                     UpdateManualDopplerPitch(sourceIndex, source, listenerAbsolutePosition, listenerVelocity, safeDeltaTime);
                 if (!source.isPlaying)
@@ -608,9 +648,9 @@ namespace Hecton8.Audio
                 if (IsThreatWorldSource(source))
                     threatActivity = math.max(threatActivity, math.saturate(source.volume));
                 float sourceAmplitude = math.max(0f, source.volume);
-                DepositAcousticRadarSample(listener, source.transform.position, sourceAmplitude);
+                DepositAcousticRadarSample(listener, sourcePosition, sourceAmplitude);
                 if (listener != null)
-                    QueueNearestRadarEmitter(listenerAbsolutePosition, listener.position, source.transform.position, sourceAmplitude, source.transform.root);
+                    QueueNearestRadarEmitter(listenerAbsolutePosition, listener.position, sourcePosition, sourceAmplitude, sourceTransform.root);
                 activeSlot++;
             }
 
@@ -963,7 +1003,7 @@ namespace Hecton8.Audio
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
             source.pitch = ResolveSourcePitch(index, source, 1f);
             _audioLodTiers[index] = lodTier;
-            UpdateWorldSourceAudioLod(index, source, Time.unscaledTime, true);
+            UpdateWorldSourceAudioLod(index, source, position, Time.unscaledTime, true);
             ApplyHaasMask(index, position);
             source.spatialBlend = ResolveTargetSpatialBlend(index, Time.unscaledTime);
 
@@ -1016,7 +1056,7 @@ namespace Hecton8.Audio
             source.pitch = ResolveSourcePitch(index, source, 1f);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
-            UpdateWorldSourceAudioLod(index, source, now, true);
+            UpdateWorldSourceAudioLod(index, source, position, now, true);
             float cutoff = math.clamp(
                 lowPassCutoffHz,
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
@@ -1265,7 +1305,10 @@ namespace Hecton8.Audio
             if (!(amplitude > 0f))
                 return;
 
-            Vector3 listenerLocalPosition = listener.InverseTransformPoint(sourcePosition);
+            float3 runtimeDelta = ResolveAupDelta(listener, sourcePosition);
+            if (math.lengthsq(runtimeDelta) <= 0.0001f)
+                return;
+
             float distanceSqr = ResolveAbsoluteDistanceSqr(listener, sourcePosition);
             if (distanceSqr <= 0.0001f)
                 return;
@@ -1275,9 +1318,11 @@ namespace Hecton8.Audio
             if (!(energy > bestScore))
                 return;
 
-            float azimuth = math.atan2(listenerLocalPosition.x, listenerLocalPosition.z);
+            float3 sourceDirection = math.normalizesafe(runtimeDelta, new float3(0f, 0f, 1f));
+            float earAxisDot = math.clamp(math.dot((float3)listener.right, sourceDirection), -1f, 1f);
+            float azimuth = math.asin(earAxisDot);
             float absAzimuth = math.abs(azimuth);
-            float absSin = math.abs(math.sin(azimuth));
+            float absSin = math.abs(earAxisDot);
             float waterDensityMul = math.saturate(_listenerWaterDensityMul);
             float airItdSeconds =
                 (BinauralHeadRadiusMeters / SoundSpeedAirMetersPerSecond) *
@@ -1474,7 +1519,7 @@ private int AcquireSourceIndex()
             source.pitch = ResolveSourcePitch(index, source, 1f);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
-            UpdateWorldSourceAudioLod(index, source, now, true);
+            UpdateWorldSourceAudioLod(index, source, position, now, true);
             ApplyHaasMask(index, position);
             source.spatialBlend = ResolveTargetSpatialBlend(index, now);
             source.Play();
@@ -1500,6 +1545,11 @@ private int AcquireSourceIndex()
             HandlePhysicsImpact(in impactSignal);
         }
 
+        void IPhysicsAcousticImpulseEventListener.OnAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        {
+            HandleAcousticImpulse(in impulseEvent);
+        }
+
         private void HandlePhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
             // Mirrors impact positions for passive radar/UI consumers only.
@@ -1509,6 +1559,15 @@ private int AcquireSourceIndex()
                 amplitude = math.max(amplitude, 0.45f);
 
             TryQueueImpactRadarEmitter(impactSignal.Point, amplitude, math.saturate(impactSignal.Intensity));
+        }
+
+        private void HandleAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        {
+            float amplitude = math.saturate(impulseEvent.Volume01 * ImpactEmitterAmplitudeScale);
+            if ((impulseEvent.Flags & AcousticImpulseFlags.Leviathan) != 0)
+                amplitude = math.max(amplitude, 0.5f);
+
+            TryQueueImpactRadarEmitter(impulseEvent.RuntimePosition, amplitude, math.saturate(impulseEvent.Volume01));
         }
 
         private bool TryQueueImpactRadarEmitter(Vector3 position, float amplitude, float lifetime01)
@@ -1752,6 +1811,13 @@ private int AcquireSourceIndex()
         {
             acousticTransmission01 = 1f;
             lowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            float sourceListenerDistanceSq = (listenerAbsolutePosition - sourceAbsolutePosition).sqrMagnitude;
+            if (sourceListenerDistanceSq > VoxelSourceOcclusionTraceMaximumDistanceSq)
+            {
+                ResolveCinematicFarVoxelOcclusion(sourceListenerDistanceSq, out acousticTransmission01, out lowPassCutoffHz);
+                return;
+            }
+
             if (!AcousticOcclusionUtility.TryTraceVoxelDensityOcclusion(
                     sourceAbsolutePosition,
                     listenerAbsolutePosition,
@@ -2067,6 +2133,15 @@ private int AcquireSourceIndex()
 
             Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
             Vector3 listenerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(listener.position);
+            float sourceListenerDistanceSq = (listenerAbsolutePosition - sourceAbsolutePosition).sqrMagnitude;
+            if (sourceListenerDistanceSq > VoxelSourceOcclusionTraceMaximumDistanceSq)
+            {
+                ResolveCinematicFarVoxelOcclusion(sourceListenerDistanceSq, out transmission01, out lowPassCutoffHz);
+                _sourceVoxelTransmissions[sourceIndex] = transmission01;
+                _sourceVoxelLowPassCutoffs[sourceIndex] = lowPassCutoffHz;
+                return lowPassCutoffHz < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f || transmission01 < 0.999f;
+            }
+
             if (!AcousticOcclusionUtility.TryTraceVoxelDensityOcclusion(
                     sourceAbsolutePosition,
                     listenerAbsolutePosition,
@@ -2085,17 +2160,47 @@ private int AcquireSourceIndex()
             return lowPassCutoffHz < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f || transmission01 < 0.999f;
         }
 
-        private void UpdateWorldSourceAudioLod(int sourceIndex, AudioSource source, float now, bool forceImmediate)
+        private static void ResolveCinematicFarVoxelOcclusion(
+            float sourceListenerDistanceSq,
+            out float transmission01,
+            out float lowPassCutoffHz)
+        {
+            float distance = math.sqrt(math.max(0f, sourceListenerDistanceSq));
+            float range = math.max(
+                0.001f,
+                Tier1ReducedDspDistanceMeters - VoxelSourceOcclusionTraceMaximumDistanceMeters);
+            float far01 = math.saturate((distance - VoxelSourceOcclusionTraceMaximumDistanceMeters) / range);
+            transmission01 = math.lerp(
+                VoxelSourceOcclusionCinematicNearTransmission,
+                VoxelSourceOcclusionCinematicFarTransmission,
+                far01);
+            lowPassCutoffHz = math.lerp(
+                VoxelSourceOcclusionCinematicNearCutoffHertz,
+                VoxelSourceOcclusionCinematicFarCutoffHertz,
+                far01);
+        }
+
+        private void UpdateWorldSourceAudioLod(int sourceIndex, AudioSource source, Vector3 sourcePosition, float now, bool forceImmediate)
         {
             if (source == null)
                 return;
 
-            AudioLodTier resolvedTier = ResolveAudioLodTier(source.transform.position);
-            bool rearHemisphereFilterEnabled = TryResolveRearHemisphereLowPassCutoff(source.transform.position, out float rearHemisphereCutoff);
-            bool caveLowPassEnabled = TryResolveCaveExternalLowPassCutoff(source, source.transform.position, out float caveLowPassCutoff);
+            AudioLodTier resolvedTier = ResolveAudioLodTier(sourcePosition);
+            if (resolvedTier == AudioLodTier.Tier2Culled)
+            {
+                if (_audioLodTiers != null && sourceIndex >= 0 && sourceIndex < _audioLodTiers.Length)
+                    _audioLodTiers[sourceIndex] = resolvedTier;
+                source.Stop();
+                source.enabled = false;
+                ResetWorldSourceState(sourceIndex, true);
+                return;
+            }
+
+            bool rearHemisphereFilterEnabled = TryResolveRearHemisphereLowPassCutoff(sourcePosition, out float rearHemisphereCutoff);
+            bool caveLowPassEnabled = TryResolveCaveExternalLowPassCutoff(source, sourcePosition, out float caveLowPassCutoff);
             bool voxelLowPassEnabled = TryRefreshSourceVoxelOcclusion(
                 sourceIndex,
-                source.transform.position,
+                sourcePosition,
                 now,
                 forceImmediate,
                 out float voxelTransmission01,
@@ -2132,7 +2237,7 @@ private int AcquireSourceIndex()
 
                 case AudioLodTier.Tier1Reduced:
                     source.enabled = true;
-                    source.panStereo = ResolveStereoPan(source.transform.position);
+                    source.panStereo = ResolveStereoPan(sourcePosition);
                     float tierOneCutoff = Tier1LowPassCutoffHertz;
                     if (rearHemisphereFilterEnabled)
                         tierOneCutoff = math.min(tierOneCutoff, rearHemisphereCutoff);
@@ -2207,7 +2312,7 @@ private int AcquireSourceIndex()
             if (listener == null)
                 return 0f;
 
-            Vector3 listenerLocalPosition = listener.InverseTransformPoint(sourcePosition);
+            float3 listenerLocalPosition = ResolveAupLocalDelta(listener, sourcePosition);
             float lateralPan = listenerLocalPosition.x / math.max(0.01f, StereoPanDistanceNormalizationMeters);
             return math.clamp(lateralPan, -1f, 1f);
         }
@@ -2220,11 +2325,11 @@ private int AcquireSourceIndex()
             if (listener == null)
                 return false;
 
-            Vector3 toSource = sourcePosition - listener.position;
-            if (toSource.sqrMagnitude <= 0.0001f)
+            float3 toSource = ResolveAupDelta(listener, sourcePosition);
+            if (math.lengthsq(toSource) <= 0.0001f)
                 return false;
 
-            float forwardDot = math.dot((float3)listener.forward, math.normalize((float3)toSource));
+            float forwardDot = math.dot((float3)listener.forward, math.normalize(toSource));
             if (forwardDot >= RearHemisphereLowPassStartDot)
                 return false;
 
@@ -2470,6 +2575,144 @@ private int AcquireSourceIndex()
 
             if (_worldDroneSource != null)
                 _worldDroneSource.volume = DbToLinearVolume(gainDb);
+        }
+
+        private void PrepareGlobalWindHowlSource()
+        {
+            if (_globalWindHowlSource == null)
+                return;
+
+            if (_globalWindHowlSource.clip == null && _globalWindHowlClip != null)
+                _globalWindHowlSource.clip = _globalWindHowlClip;
+
+            _globalWindHowlSource.loop = true;
+            _globalWindHowlSource.playOnAwake = false;
+            _globalWindHowlSource.spatialBlend = 0f;
+            if (_globalWindHowlSource.outputAudioMixerGroup == null)
+                _globalWindHowlSource.outputAudioMixerGroup = ResolvedBedBusGroup;
+
+            if (_globalWindHowlLowPass == null)
+                _globalWindHowlSource.TryGetComponent(out _globalWindHowlLowPass);
+
+            _globalWindHowlSource.volume = 0f;
+            ApplyGlobalWindHowlLowPass(_globalWindHowlOpenLowPassCutoffHz);
+        }
+
+        private void UpdateGlobalWindHowl(float deltaTime)
+        {
+            if (_globalWindHowlSource == null || _globalWindHowlSource.clip == null)
+                return;
+
+            float target01 = ResolveGlobalWindHowlTarget01();
+            float blendT = deltaTime > 0f
+                ? 1f - math.exp(-math.max(0.1f, _globalWindHowlFadeSharpness) * deltaTime)
+                : 1f;
+            _globalWindHowlVolume01 = math.lerp(_globalWindHowlVolume01, target01, blendT);
+            float targetVolume = _globalWindHowlVolume01 * math.saturate(_globalWindHowlMaxVolume);
+            _globalWindHowlSource.volume = targetVolume;
+
+            if (targetVolume > 0.001f)
+            {
+                if (!_globalWindHowlSource.isPlaying)
+                    _globalWindHowlSource.Play();
+            }
+            else if (_globalWindHowlSource.isPlaying)
+            {
+                _globalWindHowlSource.Stop();
+            }
+
+            bool windHowlOccluded = ResolveGlobalWindHowlOccluded();
+            if (windHowlOccluded)
+            {
+                _globalWindHowlOcclusion01 = 1f;
+            }
+            else
+            {
+                float occlusionT = deltaTime > 0f
+                    ? 1f - math.exp(-math.max(0.1f, _globalWindHowlOcclusionSharpness) * deltaTime)
+                    : 1f;
+                _globalWindHowlOcclusion01 = math.lerp(_globalWindHowlOcclusion01, 0f, occlusionT);
+            }
+
+            float cutoff = math.lerp(
+                math.max(20f, _globalWindHowlOpenLowPassCutoffHz),
+                math.max(20f, _globalWindHowlInteriorLowPassCutoffHz),
+                math.saturate(_globalWindHowlOcclusion01));
+            ApplyGlobalWindHowlLowPass(cutoff);
+        }
+
+        private float ResolveGlobalWindHowlTarget01()
+        {
+            float target01 = 0f;
+
+            IWeatherService weatherService = GlobalRegistry.Weather;
+            if (weatherService != null && weatherService.IsInitialized)
+            {
+                Vector3 wind = weatherService.GlobalWindVector;
+                target01 = math.max(target01, math.saturate(wind.magnitude / 28f));
+                if ((weatherService.CurrentWeatherState & WeatherState.Storm) != 0)
+                    target01 = math.max(target01, math.saturate(_globalWindHowlStormFloor));
+            }
+
+            HectonSurfaceWeatherDirector surfaceWeather = GlobalRegistry.SurfaceWeather;
+            if (surfaceWeather != null && !surfaceWeather.IsSurfaceSuppressed)
+            {
+                float weatherPressure = math.saturate(
+                    surfaceWeather.CurrentPrecipitationIntensity * 0.72f +
+                    surfaceWeather.CurrentElectricalActivity * 0.48f);
+                target01 = math.max(target01, weatherPressure);
+                switch (surfaceWeather.CurrentWeatherKind)
+                {
+                    case SurfaceWeatherKind.HeavyRain:
+                    case SurfaceWeatherKind.ElectricalStorm:
+                        target01 = math.max(target01, math.saturate(_globalWindHowlStormFloor));
+                        break;
+                }
+            }
+
+            return math.saturate(target01);
+        }
+
+        private static bool ResolveGlobalWindHowlOccluded()
+        {
+            HectonSurfaceWeatherDirector surfaceWeather = GlobalRegistry.SurfaceWeather;
+            if (surfaceWeather != null && surfaceWeather.IsLocallySheltered)
+                return true;
+
+            AcousticZoneController acousticZone = GlobalRegistry.AcousticZone;
+            return acousticZone != null && acousticZone.IsInterior;
+        }
+
+        private void ApplyGlobalWindHowlLowPass(float cutoffHz)
+        {
+            if (_globalWindHowlLowPass == null)
+                return;
+
+            float resolvedCutoff = math.clamp(
+                cutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            if (math.abs(resolvedCutoff - _lastGlobalWindHowlCutoffHz) <= 1f)
+                return;
+
+            _globalWindHowlLowPass.enabled = resolvedCutoff < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f;
+            _globalWindHowlLowPass.cutoffFrequency = resolvedCutoff;
+            _lastGlobalWindHowlCutoffHz = resolvedCutoff;
+        }
+
+        private void ResetGlobalWindHowlState()
+        {
+            _globalWindHowlVolume01 = 0f;
+            _globalWindHowlOcclusion01 = 0f;
+            _lastGlobalWindHowlCutoffHz = -1f;
+            if (_globalWindHowlSource != null)
+            {
+                _globalWindHowlSource.volume = 0f;
+                if (_globalWindHowlSource.isPlaying)
+                    _globalWindHowlSource.Stop();
+            }
+
+            ApplyGlobalWindHowlLowPass(_globalWindHowlOpenLowPassCutoffHz);
         }
 
         private static float DbToLinearVolume(float gainDb)
@@ -2726,7 +2969,7 @@ private int AcquireSourceIndex()
             if (listener == null || !_acousticRadarIntensityBins.IsCreated || !(amplitude > 0f))
                 return;
 
-            Vector3 listenerLocalPosition = listener.InverseTransformPoint(sourcePosition);
+            float3 listenerLocalPosition = ResolveAupLocalDelta(listener, sourcePosition);
             float azimuthDegrees = math.degrees(math.atan2(listenerLocalPosition.x, listenerLocalPosition.z));
             if (azimuthDegrees < 0f)
                 azimuthDegrees += AcousticRadarBinCount;
@@ -2811,12 +3054,12 @@ private int AcquireSourceIndex()
                 if (!(amplitude > 0f))
                     continue;
 
-                Vector3 listenerLocalPosition = listener.InverseTransformPoint(sourcePosition);
+                float3 listenerLocalPosition = ResolveAupLocalDelta(listener, sourcePosition);
                 float azimuthDegrees = math.degrees(math.atan2(listenerLocalPosition.x, listenerLocalPosition.z));
                 if (azimuthDegrees < 0f)
                     azimuthDegrees += 360f;
 
-                float3 listenerLocalDirection = new float3(listenerLocalPosition.x, listenerLocalPosition.y, listenerLocalPosition.z);
+                float3 listenerLocalDirection = listenerLocalPosition;
                 float inverseDirectionLength = math.rsqrt(math.max(math.lengthsq(listenerLocalDirection), 0.000001f));
                 float3 direction = listenerLocalDirection * inverseDirectionLength;
                 float elevationDegrees = math.degrees(math.asin(math.clamp(direction.y, -1f, 1f)));
@@ -2951,7 +3194,8 @@ private int AcquireSourceIndex()
                 return;
             }
 
-            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(source.transform.position);
+            Vector3 sourceRuntimePosition = source.transform.position;
+            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourceRuntimePosition);
             Vector3 sourceVelocity = Vector3.zero;
             if (deltaTime > 0.0001f)
                 sourceVelocity = (sourceAbsolutePosition - _previousAbsolutePositions[sourceIndex]) / deltaTime;
@@ -2959,12 +3203,17 @@ private int AcquireSourceIndex()
             _currentAbsoluteVelocities[sourceIndex] = sourceVelocity;
             _previousAbsolutePositions[sourceIndex] = sourceAbsolutePosition;
 
-            Vector3 listenerToSource = sourceAbsolutePosition - listenerAbsolutePosition;
+            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                listenerAbsolutePosition.x,
+                listenerAbsolutePosition.y,
+                listenerAbsolutePosition.z));
+            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourceRuntimePosition);
+            float3 listenerToSourceAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup);
             float targetRatio = 1f;
-            float distanceSq = listenerToSource.sqrMagnitude;
+            float distanceSq = math.lengthsq(listenerToSourceAup);
             if (distanceSq > 0.0001f)
             {
-                Vector3 direction = listenerToSource / math.sqrt(distanceSq);
+                Vector3 direction = new Vector3(listenerToSourceAup.x, listenerToSourceAup.y, listenerToSourceAup.z) / math.sqrt(distanceSq);
                 float relativeVelocity = Vector3.Dot(listenerVelocity - sourceVelocity, direction);
                 float clampedRelativeVelocity = math.clamp(
                     relativeVelocity,
@@ -3073,15 +3322,40 @@ private int AcquireSourceIndex()
 
         private static float ResolveAbsoluteDistanceSqr(Transform listener, Vector3 sourcePosition)
         {
-            Vector3 listenerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(listener.position);
-            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
-            return (listenerAbsolutePosition - sourceAbsolutePosition).sqrMagnitude;
+            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listener.position);
+            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            return ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
         }
 
         private static float ResolveAbsoluteDistanceSqr(Vector3 listenerAbsolutePosition, Vector3 sourcePosition)
         {
-            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
-            return (listenerAbsolutePosition - sourceAbsolutePosition).sqrMagnitude;
+            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                listenerAbsolutePosition.x,
+                listenerAbsolutePosition.y,
+                listenerAbsolutePosition.z));
+            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            return ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
+        }
+
+        private static float3 ResolveAupDelta(Transform listener, Vector3 sourcePosition)
+        {
+            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listener.position);
+            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            return AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup);
+        }
+
+        private static float3 ResolveAupLocalDelta(Transform listener, Vector3 sourcePosition)
+        {
+            float3 worldDelta = ResolveAupDelta(listener, sourcePosition);
+            return new float3(
+                math.dot(worldDelta, (float3)listener.right),
+                math.dot(worldDelta, (float3)listener.up),
+                math.dot(worldDelta, (float3)listener.forward));
+        }
+
+        private static float ClampAupDistanceSqToFloat(double distanceSqr)
+        {
+            return distanceSqr >= float.MaxValue ? float.MaxValue : (float)Math.Max(0d, distanceSqr);
         }
 
         private int Acquire2DSourceIndex()

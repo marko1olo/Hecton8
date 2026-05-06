@@ -1,6 +1,7 @@
-# AI Creature Roster Enterprise
+﻿# AI Creature Roster Enterprise
 
-Status: REFERENCE
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
 ## 2026-05-04 Current-State Boundary
@@ -10,192 +11,192 @@ Verification: PENDING VERIFICATION
 - Do not use this prose as production writing, runtime truth, or final design copy until it is re-authored from source.
 - Current runtime fauna truth must be checked in source, registries, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 
-## Что это
+## Ð§Ñ‚Ð¾ ÑÑ‚Ð¾
 
-- Это набор реальных профилей видов.
-- Их можно подвешивать к префабам и потом раскидывать по биомам.
-- Основной упор здесь: много разных хищников и левиафанов.
+- Ð­Ñ‚Ð¾ Ð½Ð°Ð±Ð¾Ñ€ Ñ€ÐµÐ°Ð»ÑŒÐ½Ñ‹Ñ… Ð¿Ñ€Ð¾Ñ„Ð¸Ð»ÐµÐ¹ Ð²Ð¸Ð´Ð¾Ð².
+- Ð˜Ñ… Ð¼Ð¾Ð¶Ð½Ð¾ Ð¿Ð¾Ð´Ð²ÐµÑˆÐ¸Ð²Ð°Ñ‚ÑŒ Ðº Ð¿Ñ€ÐµÑ„Ð°Ð±Ð°Ð¼ Ð¸ Ð¿Ð¾Ñ‚Ð¾Ð¼ Ñ€Ð°ÑÐºÐ¸Ð´Ñ‹Ð²Ð°Ñ‚ÑŒ Ð¿Ð¾ Ð±Ð¸Ð¾Ð¼Ð°Ð¼.
+- ÐžÑÐ½Ð¾Ð²Ð½Ð¾Ð¹ ÑƒÐ¿Ð¾Ñ€ Ð·Ð´ÐµÑÑŒ: Ð¼Ð½Ð¾Ð³Ð¾ Ñ€Ð°Ð·Ð½Ñ‹Ñ… Ñ…Ð¸Ñ‰Ð½Ð¸ÐºÐ¾Ð² Ð¸ Ð»ÐµÐ²Ð¸Ð°Ñ„Ð°Ð½Ð¾Ð².
 
-## Мирная жизнь
+## ÐœÐ¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ
 
 ### Shore Skimmer
 
 - `ID`: `creature.ambient.shore_skimmer`
-- `Зачем нужен`: Мелкая стайная жизнь спокойной воды.
-- `Суть`: Даёт живой фон у поверхности и в спокойных арках.
-- `Подходит для`: fauna.family.littoral_passive, fauna.family.reef_ambush
-- `Биомы`: biome.family.littoral_karst, biome.family.fossil_reef
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: ÐœÐµÐ»ÐºÐ°Ñ ÑÑ‚Ð°Ð¹Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ ÑÐ¿Ð¾ÐºÐ¾Ð¹Ð½Ð¾Ð¹ Ð²Ð¾Ð´Ñ‹.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð”Ð°Ñ‘Ñ‚ Ð¶Ð¸Ð²Ð¾Ð¹ Ñ„Ð¾Ð½ Ñƒ Ð¿Ð¾Ð²ÐµÑ€Ñ…Ð½Ð¾ÑÑ‚Ð¸ Ð¸ Ð² ÑÐ¿Ð¾ÐºÐ¾Ð¹Ð½Ñ‹Ñ… Ð°Ñ€ÐºÐ°Ñ….
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.littoral_passive, fauna.family.reef_ambush
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.littoral_karst, biome.family.fossil_reef
 
 ### Kelp Raylet
 
 - `ID`: `creature.ambient.kelp_raylet`
-- `Зачем нужен`: Мирная широкая жизнь ярких зарослей и рифов.
-- `Суть`: Даёт мягкую крупную жизнь там, где мир должен казаться богатым, а не боевым.
-- `Подходит для`: fauna.family.littoral_passive, fauna.family.crystal_skittish
-- `Биомы`: biome.family.fossil_reef, biome.family.crystal_growth
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: ÐœÐ¸Ñ€Ð½Ð°Ñ ÑˆÐ¸Ñ€Ð¾ÐºÐ°Ñ Ð¶Ð¸Ð·Ð½ÑŒ ÑÑ€ÐºÐ¸Ñ… Ð·Ð°Ñ€Ð¾ÑÐ»ÐµÐ¹ Ð¸ Ñ€Ð¸Ñ„Ð¾Ð².
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð”Ð°Ñ‘Ñ‚ Ð¼ÑÐ³ÐºÑƒÑŽ ÐºÑ€ÑƒÐ¿Ð½ÑƒÑŽ Ð¶Ð¸Ð·Ð½ÑŒ Ñ‚Ð°Ð¼, Ð³Ð´Ðµ Ð¼Ð¸Ñ€ Ð´Ð¾Ð»Ð¶ÐµÐ½ ÐºÐ°Ð·Ð°Ñ‚ÑŒÑÑ Ð±Ð¾Ð³Ð°Ñ‚Ñ‹Ð¼, Ð° Ð½Ðµ Ð±Ð¾ÐµÐ²Ñ‹Ð¼.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.littoral_passive, fauna.family.crystal_skittish
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.fossil_reef, biome.family.crystal_growth
 
 ### Silt Drifter
 
 - `ID`: `creature.ambient.silt_drifter`
-- `Зачем нужен`: Донный мирный сборщик осадочной воды.
-- `Суть`: Делает ресурсную воду живой, но не агрессивной.
-- `Подходит для`: fauna.family.sediment_scavengers, fauna.family.abyssal_sparse
-- `Биомы`: biome.family.sediment_drift, biome.family.abyssal_silt, biome.family.granite_escarpment
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð”Ð¾Ð½Ð½Ñ‹Ð¹ Ð¼Ð¸Ñ€Ð½Ñ‹Ð¹ ÑÐ±Ð¾Ñ€Ñ‰Ð¸Ðº Ð¾ÑÐ°Ð´Ð¾Ñ‡Ð½Ð¾Ð¹ Ð²Ð¾Ð´Ñ‹.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð”ÐµÐ»Ð°ÐµÑ‚ Ñ€ÐµÑÑƒÑ€ÑÐ½ÑƒÑŽ Ð²Ð¾Ð´Ñƒ Ð¶Ð¸Ð²Ð¾Ð¹, Ð½Ð¾ Ð½Ðµ Ð°Ð³Ñ€ÐµÑÑÐ¸Ð²Ð½Ð¾Ð¹.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.sediment_scavengers, fauna.family.abyssal_sparse
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.sediment_drift, biome.family.abyssal_silt, biome.family.granite_escarpment
 
 ### Wall Glider
 
 - `ID`: `creature.ambient.wall_glider`
-- `Зачем нужен`: Мирная жизнь стен, уступов и гребней.
-- `Суть`: Делает маршруты вдоль стен живыми и читаемыми.
-- `Подходит для`: fauna.family.escarpment_watchers, fauna.family.ridge_hunters
-- `Биомы`: biome.family.granite_escarpment, biome.family.rift_spine
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: ÐœÐ¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ ÑÑ‚ÐµÐ½, ÑƒÑÑ‚ÑƒÐ¿Ð¾Ð² Ð¸ Ð³Ñ€ÐµÐ±Ð½ÐµÐ¹.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð”ÐµÐ»Ð°ÐµÑ‚ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ñ‹ Ð²Ð´Ð¾Ð»ÑŒ ÑÑ‚ÐµÐ½ Ð¶Ð¸Ð²Ñ‹Ð¼Ð¸ Ð¸ Ñ‡Ð¸Ñ‚Ð°ÐµÐ¼Ñ‹Ð¼Ð¸.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.escarpment_watchers, fauna.family.ridge_hunters
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.granite_escarpment, biome.family.rift_spine
 
 ### Brine Siphoner
 
 - `ID`: `creature.ambient.brine_siphoner`
-- `Зачем нужен`: Странная мирная жизнь химических карманов и вентов.
-- `Суть`: Нужен, чтобы токсичная и сервисная вода не была мёртвой.
-- `Подходит для`: fauna.family.chemical_specialists, fauna.family.thermal_hostile
-- `Биомы`: biome.family.chemosynthetic_brine, biome.family.tectonic_spine, biome.family.volcanic_glass
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð¡Ñ‚Ñ€Ð°Ð½Ð½Ð°Ñ Ð¼Ð¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ Ñ…Ð¸Ð¼Ð¸Ñ‡ÐµÑÐºÐ¸Ñ… ÐºÐ°Ñ€Ð¼Ð°Ð½Ð¾Ð² Ð¸ Ð²ÐµÐ½Ñ‚Ð¾Ð².
+- `Ð¡ÑƒÑ‚ÑŒ`: ÐÑƒÐ¶ÐµÐ½, Ñ‡Ñ‚Ð¾Ð±Ñ‹ Ñ‚Ð¾ÐºÑÐ¸Ñ‡Ð½Ð°Ñ Ð¸ ÑÐµÑ€Ð²Ð¸ÑÐ½Ð°Ñ Ð²Ð¾Ð´Ð° Ð½Ðµ Ð±Ñ‹Ð»Ð° Ð¼Ñ‘Ñ€Ñ‚Ð²Ð¾Ð¹.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.chemical_specialists, fauna.family.thermal_hostile
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.chemosynthetic_brine, biome.family.tectonic_spine, biome.family.volcanic_glass
 
 ### Lantern Sifter
 
 - `ID`: `creature.ambient.lantern_sifter`
-- `Зачем нужен`: Редкая мирная жизнь открытой глубины.
-- `Суть`: Даёт ощущение редкой жизни даже в поздней пустоте.
-- `Подходит для`: fauna.family.abyssal_sparse, fauna.family.hadal_apex
-- `Биомы`: biome.family.abyssal_silt, biome.family.metallic_hadal, biome.family.rift_void
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð ÐµÐ´ÐºÐ°Ñ Ð¼Ð¸Ñ€Ð½Ð°Ñ Ð¶Ð¸Ð·Ð½ÑŒ Ð¾Ñ‚ÐºÑ€Ñ‹Ñ‚Ð¾Ð¹ Ð³Ð»ÑƒÐ±Ð¸Ð½Ñ‹.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð”Ð°Ñ‘Ñ‚ Ð¾Ñ‰ÑƒÑ‰ÐµÐ½Ð¸Ðµ Ñ€ÐµÐ´ÐºÐ¾Ð¹ Ð¶Ð¸Ð·Ð½Ð¸ Ð´Ð°Ð¶Ðµ Ð² Ð¿Ð¾Ð·Ð´Ð½ÐµÐ¹ Ð¿ÑƒÑÑ‚Ð¾Ñ‚Ðµ.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.abyssal_sparse, fauna.family.hadal_apex
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.abyssal_silt, biome.family.metallic_hadal, biome.family.rift_void
 
-## Территориальные
+## Ð¢ÐµÑ€Ñ€Ð¸Ñ‚Ð¾Ñ€Ð¸Ð°Ð»ÑŒÐ½Ñ‹Ðµ
 
 ### Nursery Shellguard
 
 - `ID`: `creature.territorial.nursery_shellguard`
-- `Зачем нужен`: Защитник кладок и безопасных карманов.
-- `Суть`: Локальный защитник гнезда. Сначала давит, потом срывается.
-- `Подходит для`: fauna.family.reef_ambush, fauna.family.littoral_passive
-- `Биомы`: biome.family.fossil_reef, biome.family.littoral_karst
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð—Ð°Ñ‰Ð¸Ñ‚Ð½Ð¸Ðº ÐºÐ»Ð°Ð´Ð¾Ðº Ð¸ Ð±ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ñ‹Ñ… ÐºÐ°Ñ€Ð¼Ð°Ð½Ð¾Ð².
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð›Ð¾ÐºÐ°Ð»ÑŒÐ½Ñ‹Ð¹ Ð·Ð°Ñ‰Ð¸Ñ‚Ð½Ð¸Ðº Ð³Ð½ÐµÐ·Ð´Ð°. Ð¡Ð½Ð°Ñ‡Ð°Ð»Ð° Ð´Ð°Ð²Ð¸Ñ‚, Ð¿Ð¾Ñ‚Ð¾Ð¼ ÑÑ€Ñ‹Ð²Ð°ÐµÑ‚ÑÑ.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.reef_ambush, fauna.family.littoral_passive
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.fossil_reef, biome.family.littoral_karst
 
 ### Archway Sentinel
 
 - `ID`: `creature.territorial.archway_sentinel`
-- `Зачем нужен`: Сторож арок, стен и узких проходов.
-- `Суть`: Держит маршрут и выталкивает игрока с прохода.
-- `Подходит для`: fauna.family.escarpment_watchers, fauna.family.ridge_hunters
-- `Биомы`: biome.family.granite_escarpment, biome.family.rift_spine
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð¡Ñ‚Ð¾Ñ€Ð¾Ð¶ Ð°Ñ€Ð¾Ðº, ÑÑ‚ÐµÐ½ Ð¸ ÑƒÐ·ÐºÐ¸Ñ… Ð¿Ñ€Ð¾Ñ…Ð¾Ð´Ð¾Ð².
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð”ÐµÑ€Ð¶Ð¸Ñ‚ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚ Ð¸ Ð²Ñ‹Ñ‚Ð°Ð»ÐºÐ¸Ð²Ð°ÐµÑ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ° Ñ Ð¿Ñ€Ð¾Ñ…Ð¾Ð´Ð°.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.escarpment_watchers, fauna.family.ridge_hunters
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.granite_escarpment, biome.family.rift_spine
 
-## Хищники
+## Ð¥Ð¸Ñ‰Ð½Ð¸ÐºÐ¸
 
 ### Pocket Ambusher
 
 - `ID`: `creature.hunter.pocket_ambusher`
-- `Зачем нужен`: Короткая засада из опасных карманов.
-- `Суть`: Сидит в укрытии и наказывает жадный заход в карман.
-- `Подходит для`: fauna.family.reef_ambush, fauna.family.sediment_scavengers
-- `Биомы`: biome.family.fossil_reef, biome.family.sediment_drift
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: ÐšÐ¾Ñ€Ð¾Ñ‚ÐºÐ°Ñ Ð·Ð°ÑÐ°Ð´Ð° Ð¸Ð· Ð¾Ð¿Ð°ÑÐ½Ñ‹Ñ… ÐºÐ°Ñ€Ð¼Ð°Ð½Ð¾Ð².
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð¡Ð¸Ð´Ð¸Ñ‚ Ð² ÑƒÐºÑ€Ñ‹Ñ‚Ð¸Ð¸ Ð¸ Ð½Ð°ÐºÐ°Ð·Ñ‹Ð²Ð°ÐµÑ‚ Ð¶Ð°Ð´Ð½Ñ‹Ð¹ Ð·Ð°Ñ…Ð¾Ð´ Ð² ÐºÐ°Ñ€Ð¼Ð°Ð½.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.reef_ambush, fauna.family.sediment_scavengers
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.fossil_reef, biome.family.sediment_drift
 
 ### Needle Hunter
 
 - `ID`: `creature.hunter.needle_hunter`
-- `Зачем нужен`: Быстрый режущий хищник яркой воды.
-- `Суть`: Резко входит и резко выходит. Ломает комфорт скоростью.
-- `Подходит для`: fauna.family.crystal_skittish, fauna.family.reef_ambush
-- `Биомы`: biome.family.crystal_growth, biome.family.littoral_karst
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð‘Ñ‹ÑÑ‚Ñ€Ñ‹Ð¹ Ñ€ÐµÐ¶ÑƒÑ‰Ð¸Ð¹ Ñ…Ð¸Ñ‰Ð½Ð¸Ðº ÑÑ€ÐºÐ¾Ð¹ Ð²Ð¾Ð´Ñ‹.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð ÐµÐ·ÐºÐ¾ Ð²Ñ…Ð¾Ð´Ð¸Ñ‚ Ð¸ Ñ€ÐµÐ·ÐºÐ¾ Ð²Ñ‹Ñ…Ð¾Ð´Ð¸Ñ‚. Ð›Ð¾Ð¼Ð°ÐµÑ‚ ÐºÐ¾Ð¼Ñ„Ð¾Ñ€Ñ‚ ÑÐºÐ¾Ñ€Ð¾ÑÑ‚ÑŒÑŽ.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.crystal_skittish, fauna.family.reef_ambush
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.crystal_growth, biome.family.littoral_karst
 
 ### Ridge Pack Cutter
 
 - `ID`: `creature.hunter.ridge_pack_cutter`
-- `Зачем нужен`: Стайный хищник гребней и стен.
-- `Суть`: Один держит фронт, другие режут с флангов.
-- `Подходит для`: fauna.family.ridge_hunters, fauna.family.escarpment_watchers
-- `Биомы`: biome.family.granite_escarpment, biome.family.rift_spine
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð¡Ñ‚Ð°Ð¹Ð½Ñ‹Ð¹ Ñ…Ð¸Ñ‰Ð½Ð¸Ðº Ð³Ñ€ÐµÐ±Ð½ÐµÐ¹ Ð¸ ÑÑ‚ÐµÐ½.
+- `Ð¡ÑƒÑ‚ÑŒ`: ÐžÐ´Ð¸Ð½ Ð´ÐµÑ€Ð¶Ð¸Ñ‚ Ñ„Ñ€Ð¾Ð½Ñ‚, Ð´Ñ€ÑƒÐ³Ð¸Ðµ Ñ€ÐµÐ¶ÑƒÑ‚ Ñ Ñ„Ð»Ð°Ð½Ð³Ð¾Ð².
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.ridge_hunters, fauna.family.escarpment_watchers
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.granite_escarpment, biome.family.rift_spine
 
 ### Brine Stalker
 
 - `ID`: `creature.hunter.brine_stalker`
-- `Зачем нужен`: Тягучий охотник токсичной и сервисной воды.
-- `Суть`: Любит тяжёлую воду, шрамы сервиса и горячие карманы.
-- `Подходит для`: fauna.family.chemical_specialists, fauna.family.thermal_hostile
-- `Биомы`: biome.family.chemosynthetic_brine, biome.family.tectonic_spine
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð¢ÑÐ³ÑƒÑ‡Ð¸Ð¹ Ð¾Ñ…Ð¾Ñ‚Ð½Ð¸Ðº Ñ‚Ð¾ÐºÑÐ¸Ñ‡Ð½Ð¾Ð¹ Ð¸ ÑÐµÑ€Ð²Ð¸ÑÐ½Ð¾Ð¹ Ð²Ð¾Ð´Ñ‹.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð›ÑŽÐ±Ð¸Ñ‚ Ñ‚ÑÐ¶Ñ‘Ð»ÑƒÑŽ Ð²Ð¾Ð´Ñƒ, ÑˆÑ€Ð°Ð¼Ñ‹ ÑÐµÑ€Ð²Ð¸ÑÐ° Ð¸ Ð³Ð¾Ñ€ÑÑ‡Ð¸Ðµ ÐºÐ°Ñ€Ð¼Ð°Ð½Ñ‹.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.chemical_specialists, fauna.family.thermal_hostile
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.chemosynthetic_brine, biome.family.tectonic_spine
 
 ### Armor Breaker
 
 - `ID`: `creature.hunter.armor_breaker`
-- `Зачем нужен`: Тяжёлый металлический охотник поздней глубины.
-- `Суть`: Не самый быстрый, но очень опасен на близкой дистанции.
-- `Подходит для`: fauna.family.metal_predators, fauna.family.hadal_apex
-- `Биомы`: biome.family.metallic_hadal, biome.family.rift_void
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð¢ÑÐ¶Ñ‘Ð»Ñ‹Ð¹ Ð¼ÐµÑ‚Ð°Ð»Ð»Ð¸Ñ‡ÐµÑÐºÐ¸Ð¹ Ð¾Ñ…Ð¾Ñ‚Ð½Ð¸Ðº Ð¿Ð¾Ð·Ð´Ð½ÐµÐ¹ Ð³Ð»ÑƒÐ±Ð¸Ð½Ñ‹.
+- `Ð¡ÑƒÑ‚ÑŒ`: ÐÐµ ÑÐ°Ð¼Ñ‹Ð¹ Ð±Ñ‹ÑÑ‚Ñ€Ñ‹Ð¹, Ð½Ð¾ Ð¾Ñ‡ÐµÐ½ÑŒ Ð¾Ð¿Ð°ÑÐµÐ½ Ð½Ð° Ð±Ð»Ð¸Ð·ÐºÐ¾Ð¹ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ð¸.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.metal_predators, fauna.family.hadal_apex
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.metallic_hadal, biome.family.rift_void
 
 ### Heat Lurker
 
 - `ID`: `creature.hunter.heat_lurker`
-- `Зачем нужен`: Горячий засадный хищник вулканических губ.
-- `Суть`: Работает у горячих выбросов и резких узких маршрутов.
-- `Подходит для`: fauna.family.thermal_hostile, fauna.family.rift_stalkers
-- `Биомы`: biome.family.volcanic_glass, biome.family.volcanic_hadal
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð“Ð¾Ñ€ÑÑ‡Ð¸Ð¹ Ð·Ð°ÑÐ°Ð´Ð½Ñ‹Ð¹ Ñ…Ð¸Ñ‰Ð½Ð¸Ðº Ð²ÑƒÐ»ÐºÐ°Ð½Ð¸Ñ‡ÐµÑÐºÐ¸Ñ… Ð³ÑƒÐ±.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ Ñƒ Ð³Ð¾Ñ€ÑÑ‡Ð¸Ñ… Ð²Ñ‹Ð±Ñ€Ð¾ÑÐ¾Ð² Ð¸ Ñ€ÐµÐ·ÐºÐ¸Ñ… ÑƒÐ·ÐºÐ¸Ñ… Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ð¾Ð².
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.thermal_hostile, fauna.family.rift_stalkers
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.volcanic_glass, biome.family.volcanic_hadal
 
 ### Shadow Interceptor
 
 - `ID`: `creature.hunter.shadow_interceptor`
-- `Зачем нужен`: Редкий перехватчик пустоты.
-- `Суть`: Строит страх ожиданием и длинным перехватом.
-- `Подходит для`: fauna.family.abyssal_sparse, fauna.family.void_apex
-- `Биомы`: biome.family.abyssal_silt, biome.family.rift_void
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð ÐµÐ´ÐºÐ¸Ð¹ Ð¿ÐµÑ€ÐµÑ…Ð²Ð°Ñ‚Ñ‡Ð¸Ðº Ð¿ÑƒÑÑ‚Ð¾Ñ‚Ñ‹.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð¡Ñ‚Ñ€Ð¾Ð¸Ñ‚ ÑÑ‚Ñ€Ð°Ñ… Ð¾Ð¶Ð¸Ð´Ð°Ð½Ð¸ÐµÐ¼ Ð¸ Ð´Ð»Ð¸Ð½Ð½Ñ‹Ð¼ Ð¿ÐµÑ€ÐµÑ…Ð²Ð°Ñ‚Ð¾Ð¼.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.abyssal_sparse, fauna.family.void_apex
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.abyssal_silt, biome.family.rift_void
 
 ### Silt Flatmaw
 
 - `ID`: `creature.hunter.silt_flatmaw`
-- `Зачем нужен`: Осадочный засадник для ресурсной воды.
-- `Суть`: Ждёт добычу у дна и карает жадный сбор ресурсов.
-- `Подходит для`: fauna.family.sediment_scavengers, fauna.family.ridge_hunters
-- `Биомы`: biome.family.sediment_drift, biome.family.granite_escarpment
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: ÐžÑÐ°Ð´Ð¾Ñ‡Ð½Ñ‹Ð¹ Ð·Ð°ÑÐ°Ð´Ð½Ð¸Ðº Ð´Ð»Ñ Ñ€ÐµÑÑƒÑ€ÑÐ½Ð¾Ð¹ Ð²Ð¾Ð´Ñ‹.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð–Ð´Ñ‘Ñ‚ Ð´Ð¾Ð±Ñ‹Ñ‡Ñƒ Ñƒ Ð´Ð½Ð° Ð¸ ÐºÐ°Ñ€Ð°ÐµÑ‚ Ð¶Ð°Ð´Ð½Ñ‹Ð¹ ÑÐ±Ð¾Ñ€ Ñ€ÐµÑÑƒÑ€ÑÐ¾Ð².
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.sediment_scavengers, fauna.family.ridge_hunters
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.sediment_drift, biome.family.granite_escarpment
 
-## Левиафаны
+## Ð›ÐµÐ²Ð¸Ð°Ñ„Ð°Ð½Ñ‹
 
 ### Halo Crown Leviathan
 
 - `ID`: `creature.leviathan.halo_crown`
-- `Зачем нужен`: Круговой левиафан давления.
-- `Суть`: Ломает безопасность кругом и поздним входом.
-- `Подходит для`: fauna.family.hadal_apex, fauna.family.void_apex
-- `Биомы`: biome.family.rift_void, biome.family.abyssal_silt
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: ÐšÑ€ÑƒÐ³Ð¾Ð²Ð¾Ð¹ Ð»ÐµÐ²Ð¸Ð°Ñ„Ð°Ð½ Ð´Ð°Ð²Ð»ÐµÐ½Ð¸Ñ.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð›Ð¾Ð¼Ð°ÐµÑ‚ Ð±ÐµÐ·Ð¾Ð¿Ð°ÑÐ½Ð¾ÑÑ‚ÑŒ ÐºÑ€ÑƒÐ³Ð¾Ð¼ Ð¸ Ð¿Ð¾Ð·Ð´Ð½Ð¸Ð¼ Ð²Ñ…Ð¾Ð´Ð¾Ð¼.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.hadal_apex, fauna.family.void_apex
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.rift_void, biome.family.abyssal_silt
 
 ### Gate Warden Leviathan
 
 - `ID`: `creature.leviathan.gate_warden`
-- `Зачем нужен`: Сторож глубокого прохода.
-- `Суть`: Держит маршрут и выдавливает игрока из узкого места.
-- `Подходит для`: fauna.family.hadal_apex, fauna.family.rift_stalkers
-- `Биомы`: biome.family.rift_spine, biome.family.volcanic_hadal, biome.family.metallic_hadal
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð¡Ñ‚Ð¾Ñ€Ð¾Ð¶ Ð³Ð»ÑƒÐ±Ð¾ÐºÐ¾Ð³Ð¾ Ð¿Ñ€Ð¾Ñ…Ð¾Ð´Ð°.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð”ÐµÑ€Ð¶Ð¸Ñ‚ Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚ Ð¸ Ð²Ñ‹Ð´Ð°Ð²Ð»Ð¸Ð²Ð°ÐµÑ‚ Ð¸Ð³Ñ€Ð¾ÐºÐ° Ð¸Ð· ÑƒÐ·ÐºÐ¾Ð³Ð¾ Ð¼ÐµÑÑ‚Ð°.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.hadal_apex, fauna.family.rift_stalkers
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.rift_spine, biome.family.volcanic_hadal, biome.family.metallic_hadal
 
 ### Rift Lancer Leviathan
 
 - `ID`: `creature.leviathan.rift_lancer`
-- `Зачем нужен`: Рифтовый левиафан резкого рывка.
-- `Суть`: Пугает ложным заходом и ловит на резком сближении.
-- `Подходит для`: fauna.family.rift_stalkers, fauna.family.void_apex
-- `Биомы`: biome.family.rift_void, biome.family.rift_spine
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð Ð¸Ñ„Ñ‚Ð¾Ð²Ñ‹Ð¹ Ð»ÐµÐ²Ð¸Ð°Ñ„Ð°Ð½ Ñ€ÐµÐ·ÐºÐ¾Ð³Ð¾ Ñ€Ñ‹Ð²ÐºÐ°.
+- `Ð¡ÑƒÑ‚ÑŒ`: ÐŸÑƒÐ³Ð°ÐµÑ‚ Ð»Ð¾Ð¶Ð½Ñ‹Ð¼ Ð·Ð°Ñ…Ð¾Ð´Ð¾Ð¼ Ð¸ Ð»Ð¾Ð²Ð¸Ñ‚ Ð½Ð° Ñ€ÐµÐ·ÐºÐ¾Ð¼ ÑÐ±Ð»Ð¸Ð¶ÐµÐ½Ð¸Ð¸.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.rift_stalkers, fauna.family.void_apex
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.rift_void, biome.family.rift_spine
 
 ### Black Choir Leviathan
 
 - `ID`: `creature.leviathan.black_choir`
-- `Зачем нужен`: Левиафан позднего ужаса.
-- `Суть`: Строит страх ожиданием, звуком и поздним контактом.
-- `Подходит для`: fauna.family.void_apex, fauna.family.hadal_apex
-- `Биомы`: biome.family.rift_void, biome.family.abyssal_silt
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð›ÐµÐ²Ð¸Ð°Ñ„Ð°Ð½ Ð¿Ð¾Ð·Ð´Ð½ÐµÐ³Ð¾ ÑƒÐ¶Ð°ÑÐ°.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð¡Ñ‚Ñ€Ð¾Ð¸Ñ‚ ÑÑ‚Ñ€Ð°Ñ… Ð¾Ð¶Ð¸Ð´Ð°Ð½Ð¸ÐµÐ¼, Ð·Ð²ÑƒÐºÐ¾Ð¼ Ð¸ Ð¿Ð¾Ð·Ð´Ð½Ð¸Ð¼ ÐºÐ¾Ð½Ñ‚Ð°ÐºÑ‚Ð¾Ð¼.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.void_apex, fauna.family.hadal_apex
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.rift_void, biome.family.abyssal_silt
 
 ### Furnace Maw Leviathan
 
 - `ID`: `creature.leviathan.furnace_maw`
-- `Зачем нужен`: Вулканический сторож горячих шахт.
-- `Суть`: Жмёт на маршруте и добавляет ложные проходы перед реальной атакой.
-- `Подходит для`: fauna.family.thermal_hostile, fauna.family.hadal_apex
-- `Биомы`: biome.family.volcanic_glass, biome.family.volcanic_hadal
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð’ÑƒÐ»ÐºÐ°Ð½Ð¸Ñ‡ÐµÑÐºÐ¸Ð¹ ÑÑ‚Ð¾Ñ€Ð¾Ð¶ Ð³Ð¾Ñ€ÑÑ‡Ð¸Ñ… ÑˆÐ°Ñ…Ñ‚.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð–Ð¼Ñ‘Ñ‚ Ð½Ð° Ð¼Ð°Ñ€ÑˆÑ€ÑƒÑ‚Ðµ Ð¸ Ð´Ð¾Ð±Ð°Ð²Ð»ÑÐµÑ‚ Ð»Ð¾Ð¶Ð½Ñ‹Ðµ Ð¿Ñ€Ð¾Ñ…Ð¾Ð´Ñ‹ Ð¿ÐµÑ€ÐµÐ´ Ñ€ÐµÐ°Ð»ÑŒÐ½Ð¾Ð¹ Ð°Ñ‚Ð°ÐºÐ¾Ð¹.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.thermal_hostile, fauna.family.hadal_apex
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.volcanic_glass, biome.family.volcanic_hadal
 
 ### Void Ribbon Leviathan
 
 - `ID`: `creature.leviathan.void_ribbon`
-- `Зачем нужен`: Быстрый перехватчик пустоты.
-- `Суть`: Длинный тёмный перехватчик для открытой глубины.
-- `Подходит для`: fauna.family.void_apex, fauna.family.abyssal_sparse
-- `Биомы`: biome.family.abyssal_silt, biome.family.rift_void
+- `Ð—Ð°Ñ‡ÐµÐ¼ Ð½ÑƒÐ¶ÐµÐ½`: Ð‘Ñ‹ÑÑ‚Ñ€Ñ‹Ð¹ Ð¿ÐµÑ€ÐµÑ…Ð²Ð°Ñ‚Ñ‡Ð¸Ðº Ð¿ÑƒÑÑ‚Ð¾Ñ‚Ñ‹.
+- `Ð¡ÑƒÑ‚ÑŒ`: Ð”Ð»Ð¸Ð½Ð½Ñ‹Ð¹ Ñ‚Ñ‘Ð¼Ð½Ñ‹Ð¹ Ð¿ÐµÑ€ÐµÑ…Ð²Ð°Ñ‚Ñ‡Ð¸Ðº Ð´Ð»Ñ Ð¾Ñ‚ÐºÑ€Ñ‹Ñ‚Ð¾Ð¹ Ð³Ð»ÑƒÐ±Ð¸Ð½Ñ‹.
+- `ÐŸÐ¾Ð´Ñ…Ð¾Ð´Ð¸Ñ‚ Ð´Ð»Ñ`: fauna.family.void_apex, fauna.family.abyssal_sparse
+- `Ð‘Ð¸Ð¾Ð¼Ñ‹`: biome.family.abyssal_silt, biome.family.rift_void

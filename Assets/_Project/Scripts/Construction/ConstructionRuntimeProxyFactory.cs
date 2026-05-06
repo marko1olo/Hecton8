@@ -206,7 +206,7 @@ namespace Hecton8.Construction
                 name = "H8_RuntimeModuleWireBox"
             };
 
-            s_wireBoxMesh.vertices = s_wireBoxVertices;
+            s_wireBoxMesh.SetVertices(s_wireBoxVertices);
             s_wireBoxMesh.SetIndices(
                 s_wireBoxIndices,
                 MeshTopology.Lines,

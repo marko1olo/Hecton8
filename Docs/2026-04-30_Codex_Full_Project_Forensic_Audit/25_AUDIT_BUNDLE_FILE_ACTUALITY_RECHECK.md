@@ -1,5 +1,6 @@
-# 25 Audit Bundle File Actuality Recheck
+﻿# 25 Audit Bundle File Actuality Recheck
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 ## 2026-05-04 Supersession Note
@@ -82,7 +83,7 @@ Confirmed current facts:
 | Claim checked | Current result |
 |---|---|
 | Inventory save genetics path exists | `PlayerInventory.cs` writes `dto.itemGeneticsWords` |
-| Save genetics backing field exists | `SaveData.cs` defines `public uint[] itemGeneticsWords;` |
+| Save genetics backing field exists | `SaveData.cs` defines `public byte[] itemGeneticsWords;`; current source HAS the symbol and uses byte storage. |
 | Resource node density ranges exist | `ResourceNodeTemplate.cs` defines `MinimumDensity` and `MaximumDensity` |
 | Dedicated `Scripts/Physics` folder contains implementation files | true, folder contains current physics implementation files |
 | Physics namespace implementation exists | true, root-level `PhysicsApplySystem.cs` uses `Hecton8.Physics` |
@@ -187,3 +188,4 @@ Rules for reading the bundle:
 - `24_VERIFICATION_DOC_TRUST_AND_EVIDENCE_MODEL.md` and this file supersede earlier doc-count snapshots.
 - This file supersedes earlier first-party C# count and major folder line-count snapshots.
 - All readiness percentages are audit estimates unless a future report attaches profiler/play-mode/build evidence.
+

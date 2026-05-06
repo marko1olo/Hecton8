@@ -1,5 +1,6 @@
-# 28 Stale Error Purge And Trust Sync
+﻿# 28 Stale Error Purge And Trust Sync
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 Mandates followed:
@@ -18,19 +19,20 @@ Scope:
 
 ## 1. Stale Error Purge
 
-The following old compile-blocker claims are no longer current truth:
-- `InventoryDTO.itemGeneticsWords` missing.
-- `MinimumDensity` missing.
-- `MaximumDensity` missing.
+The following old compile-blocker claims are invalidated by current source:
+- Current source HAS `InventoryDTO.itemGeneticsWords`; it is defined and read/written.
+- Current source HAS `MinimumDensity`; it is defined and assigned.
+- Current source HAS `MaximumDensity`; it is defined and assigned.
 
 Current source evidence:
 
 | Symbol | Current proof |
 |---|---|
-| `dto.itemGeneticsWords` write path | `Assets/_Project/Scripts/PlayerInventory.cs:989` writes `_itemGeneticsWords[anchorIndex]` into `dto.itemGeneticsWords[cellIndex]` |
-| `itemGeneticsWords` save backing field | `Assets/_Project/Scripts/SaveData.cs:373` defines `public uint[] itemGeneticsWords;` |
-| `MinimumDensity` / `MaximumDensity` fields | `Assets/_Project/Scripts/Scavenging/ResourceNodeTemplate.cs:123-124` define both fields |
-| density assignment path | `Assets/_Project/Scripts/Scavenging/ResourceNodeTemplate.cs:549-550` assigns clamped density values |
+| `dto.itemGeneticsWords` write path | `Assets/_Project/Scripts/PlayerInventory.cs:1265` writes `_itemGenetics[anchorIndex]` into `dto.itemGeneticsWords[cellIndex]` |
+| `itemGeneticsWords` save backing field | `Assets/_Project/Scripts/SaveData.cs:374` defines `public byte[] itemGeneticsWords;` |
+| `itemGeneticsWords` binary codec | `Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs:267`, `475`, `483`, and `491` write/read the byte field and convert legacy integer arrays |
+| `MinimumDensity` / `MaximumDensity` fields | `Assets/_Project/Scripts/Scavenging/ResourceNodeTemplate.cs:124-125` define both fields |
+| density assignment path | `Assets/_Project/Scripts/Scavenging/ResourceNodeTemplate.cs:580-581` assigns clamped density values |
 
 Doc search result:
 - Current forensic files `07` and `25` already state these symbols now exist.

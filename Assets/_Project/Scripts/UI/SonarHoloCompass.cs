@@ -35,7 +35,6 @@ namespace Hecton8.UI
         private static readonly Color FrameColor = new Color(0.48f, 0.95f, 0.92f, 0.16f);
         private static readonly Color DotFrontColor = new Color(0.70f, 0.98f, 0.96f, 0.94f);
         private static readonly Color DotRearColor = new Color(0.62f, 0.78f, 0.82f, 0.34f);
-        private static Sprite s_quadSprite;
 
         private struct AcousticRadarBlipInput
         {
@@ -129,12 +128,6 @@ namespace Hecton8.UI
         // COLD ALLOC: NativeArray<AcousticRadarBlipOutput>[16] — persistent Burst output scratch for radar projection — owner: SonarHoloCompass
         private NativeArray<AcousticRadarBlipOutput> _projectionOutputs;
         private JobHandle _projectionHandle;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            s_quadSprite = null;
-        }
 
         private void OnEnable()
         {
@@ -334,7 +327,7 @@ namespace Hecton8.UI
         private void CreateFrame()
         {
             Image outerRing = EnsureImage(CreateRect(_root, "RingOuter").gameObject);
-            outerRing.sprite = ResolveQuadSprite();
+            outerRing.sprite = null;
             outerRing.color = FrameColor;
             outerRing.raycastTarget = false;
             outerRing.type = Image.Type.Simple;
@@ -344,7 +337,7 @@ namespace Hecton8.UI
             outerRing.rectTransform.sizeDelta = new Vector2(RootWidth - 18f, RootHeight - 18f);
 
             Image horizontalRule = EnsureImage(CreateRect(_root, "RuleH").gameObject);
-            horizontalRule.sprite = ResolveQuadSprite();
+            horizontalRule.sprite = null;
             horizontalRule.color = FrameColor;
             horizontalRule.raycastTarget = false;
             horizontalRule.rectTransform.anchorMin = new Vector2(0f, 0.5f);
@@ -352,7 +345,7 @@ namespace Hecton8.UI
             horizontalRule.rectTransform.sizeDelta = new Vector2(0f, 1f);
 
             Image verticalRule = EnsureImage(CreateRect(_root, "RuleV").gameObject);
-            verticalRule.sprite = ResolveQuadSprite();
+            verticalRule.sprite = null;
             verticalRule.color = FrameColor;
             verticalRule.raycastTarget = false;
             verticalRule.rectTransform.anchorMin = new Vector2(0.5f, 0f);
@@ -376,7 +369,7 @@ namespace Hecton8.UI
                 dotRect.sizeDelta = new Vector2(DotBaseSize, DotBaseSize);
 
                 Image dotImage = EnsureImage(dotRect.gameObject);
-                dotImage.sprite = ResolveQuadSprite();
+                dotImage.sprite = null;
                 dotImage.color = Color.clear;
                 dotImage.raycastTarget = false;
 
@@ -545,20 +538,6 @@ namespace Hecton8.UI
             return SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null
                 ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>()
                 : null;
-        }
-
-        private static Sprite ResolveQuadSprite()
-        {
-            if (s_quadSprite != null)
-                return s_quadSprite;
-
-            s_quadSprite = Sprite.Create(
-                Texture2D.whiteTexture,
-                new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
-                new Vector2(0.5f, 0.5f),
-                100f);
-            s_quadSprite.name = "SonarHoloCompassQuad";
-            return s_quadSprite;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string name)

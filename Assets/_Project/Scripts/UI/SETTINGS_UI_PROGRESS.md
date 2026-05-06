@@ -12,7 +12,7 @@
 ✅ All properties with persistence
 ✅ Quality presets (Low/Medium/High/Ultra)
 ✅ Zero GC compliance
-✅ ApplyCameraFOV() — finds Camera.main, applies FOV
+✅ ApplyCameraFOV() - resolves the registry-owned player camera, applies FOV
 ✅ ApplyPostProcessing() — toggles AO/Bloom/Motion Blur on URP Volume
 
 ### UI Structure (01_MAIN_MENU) — CREATED
@@ -63,7 +63,7 @@ Need to assign UI elements to SettingsPanel component:
 
 ### SettingsManager Inspector Assignment
 Need to assign in SettingsManager component:
-- mainCamera → Camera.main (or leave null for auto-find)
+- mainCamera -> registry-owned player camera (or leave null for auto-find)
 - urpVolume → find Volume in scene with post-processing profile
 - audioMixer → Assets/_Project/MasterMixer.mixer (already assigned)
 
@@ -94,7 +94,7 @@ Need to assign in SettingsManager component:
 - [ ] UserOptionsPersistence null-check in Load/Save
 - [ ] Invalid preset index (0-3) clamped
 - [ ] Missing UI elements (null-check all SerializeField)
-- [ ] Missing Camera.main (auto-find fallback)
+- [ ] Missing registry player camera (auto-find fallback)
 - [ ] Missing URP Volume (graceful fallback)
 
 ---
@@ -156,7 +156,7 @@ private void ApplyCameraFOV(float fov)
 {
     if (mainCamera == null)
     {
-        mainCamera = Camera.main;
+        mainCamera = GlobalRegistry.Player.PlayerCamera;
         if (mainCamera == null)
             return;
     }

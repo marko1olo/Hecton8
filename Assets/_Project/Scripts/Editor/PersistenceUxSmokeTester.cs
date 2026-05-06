@@ -36,9 +36,12 @@ namespace Hecton8.Dev
             string loadingScreen = ReadProjectFile("Assets/_Project/Scripts/UI/LoadingScreenController.cs");
             string suitHud = ReadProjectFile("Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs");
             string saveBinaryStorage = ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs");
+            string persistentWorldRegistry = ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs");
+            string unsafeMemoryCopyGuard = ReadProjectFile("Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs");
 
             bool asyncThumbnailPass =
                 ContainsAll(thumbnailSystem, "Extension = \".jpg\"", "EncodeNativeArrayToJPG", "Awaitable.BackgroundThreadAsync", "NativeMemorySentinel.RegisterNativeArray") &&
+                ContainsAll(thumbnailSystem, "MinPoseCaptureDistanceMeters = 5f", "MinPoseCaptureAngleDegrees = 5f", "MinPoseCaptureQuaternionDot", "HasCapturePoseChanged", "delta.sqrMagnitude > MinPoseCaptureDistanceSq", "Quaternion.Dot") &&
                 ContainsAll(captureFeature, "RequestAsyncReadback", "SaveThumbnailSystem.ReadbackCompletedCallback") &&
                 SourceIndex(saveManager, "SaveThumbnailSystem.CaptureThumbnail(slotName);") <
                 SourceIndex(saveManager, "SaveEvents.RaiseSaveStarted(slotName);");
@@ -51,19 +54,48 @@ namespace Hecton8.Dev
                 ContainsAll(saveManager, "TryApplySafeAupSnapOnLoad(data)", "Physics.SphereCastNonAlloc", "AbsoluteUniversePosition.FromRuntimePosition", "HectonFloatingOrigin.BeginSafeTeleportProtocol");
 
             bool savingHudPass =
-                ContainsAll(suitHud, "ISaveEventListener", "SavingProgressRoot", "SaveEventType.SaveStarted", "SaveEventType.SaveCompleted", "_savingProgressTargetAlpha");
+                ContainsAll(saveManager, "SaveEvents.RaiseMappedWriteStarted(slotName);") &&
+                ContainsAll(suitHud, "ISaveEventListener", "SavingProgressRoot", "SaveEventType.MappedWriteStarted", "SaveEventType.SaveCompleted", "_savingProgressTargetAlpha") &&
+                ContainsAll(suitHud, "SavingProgressMinimumVisibleSeconds", "_savingProgressHidePending", "BeginSavingProgressMappedWrite", "EmitSavingProgressHapticPulse", "ToolHapticsRuntime.EnqueueSinusoidalCommand", "RequestSavingProgressHide");
 
             bool corruptionDialogPass =
-                ContainsAll(saveBinaryStorage, "ConsumeIndexedSectorQuarantineFlag", "ReportIndexedSectorQuarantine") &&
+                ContainsAll(saveBinaryStorage, "ConsumeIndexedSectorQuarantineFlag", "ReportIndexedSectorQuarantine", "TryResetIndexedPersistentWorldSectorToPristine") &&
                 ContainsAll(saveManager, "CriticalSectorCorruptionMessage", "NotificationEvents.PushCritical(CriticalSectorCorruptionMessage)");
 
             bool seedConsistencyPass =
                 ContainsAll(saveManager, "GeologicalAnomalyDetectedMessage", "WorldGenerationVersionId", "RuntimeWorldGenerationVersionId") &&
-                ContainsAll(ReadProjectFile("Assets/_Project/Scripts/SaveData.cs"), "worldGenerationVersionId", "CurrentVersion = 58") &&
+                ContainsAll(ReadProjectFile("Assets/_Project/Scripts/SaveData.cs"), "worldGenerationVersionId", "CurrentVersion =") &&
                 ContainsAll(ReadProjectFile("Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs"), "RuntimeWorldGenerationVersionId") &&
                 ContainsAll(ReadProjectFile("Assets/_Project/Scripts/HectonWorldGenerator.cs"), "WorldGenerationAlgorithmVersionId");
 
             bool inventoryFullWritePass = RunInventoryFullWriteMmfAssert(out int rewrittenOffset, out int rewrittenLength);
+            bool unsafeMappedWritePass =
+                ContainsAll(saveBinaryStorage, "MemoryMappedFile.CreateFromFile", "UnsafeMemoryCopyGuard.SafeCopy") &&
+                ContainsAll(unsafeMemoryCopyGuard, "UnsafeUtility.MemCpy");
+
+            bool tombstoneLoadOrderPass =
+                ContainsAll(saveManager, "persistentWorldRegistryForLoad?.PreloadTombstonesFromLoadedRecords(loadedWorldDeltas);") &&
+                SourceIndex(saveManager, "PreloadTombstonesFromLoadedRecords(loadedWorldDeltas);") <
+                SourceIndex(saveManager, "saveable.LoadFromSaveData(data);") &&
+                ContainsAll(persistentWorldRegistry, "PreloadTombstonesFromLoadedRecords", "UpsertDeletedTombstone", "RegisterResourceNodeTombstone");
+
+            bool modPayloadSidecarPass =
+                ContainsAll(saveBinaryStorage, "ModPayloadSectorPrefix = 0x4D50000000000000UL", "ModPayloadSubBlockSizeBytes", "ModPayloadMagic = 0x50444F4Du") &&
+                ContainsAll(saveBinaryStorage, "payloadLength & 1", "Mod payload rejected: odd byte length.", "PayloadLength & 1");
+
+            bool hydrationTimeSlicePass =
+                ContainsAll(saveManager, "LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L)", "await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);") &&
+                ContainsAll(persistentWorldRegistry, "HydrationFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L)", "TryProcessHydrationBurst", "await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);") &&
+                ContainsAll(persistentWorldRegistry, "HydrationPerformanceWarningBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 5000L)", "PublishHydrationBudgetWarningIfNeeded", "GlobalTelemetryBus.PublishPerformanceWarning");
+
+            bool hydrationGcPurgePass =
+                ContainsAll(persistentWorldRegistry, "ComputePersistentIdHash(in record.ItemPersistentId)", "ComputePersistentIdHash(in FixedString128Bytes value)") &&
+                !ContainsAll(persistentWorldRegistry, "TryResolveItemData(in PersistentWorldItemRecord record", "ItemPersistentId.ToString()");
+
+            bool asyncDehydrationPipelinePass =
+                ContainsAll(saveBinaryStorage, "BuildSectorEntityStateSortEntriesJob", "CompressSectorEntityStateJob", "BurstCompile", "xxHash3");
+
+            bool writeAllBytesPurgedPass = !ProjectSourceContains("File." + "WriteAllBytes");
 
             bool pass = asyncThumbnailPass &&
                         loadingStagePass &&
@@ -71,7 +103,14 @@ namespace Hecton8.Dev
                         savingHudPass &&
                         corruptionDialogPass &&
                         seedConsistencyPass &&
-                        inventoryFullWritePass;
+                        inventoryFullWritePass &&
+                        unsafeMappedWritePass &&
+                        tombstoneLoadOrderPass &&
+                        modPayloadSidecarPass &&
+                        hydrationTimeSlicePass &&
+                        hydrationGcPurgePass &&
+                        asyncDehydrationPipelinePass &&
+                        writeAllBytesPurgedPass;
 
             WriteArtifact(
                 pass,
@@ -82,6 +121,13 @@ namespace Hecton8.Dev
                 corruptionDialogPass,
                 seedConsistencyPass,
                 inventoryFullWritePass,
+                unsafeMappedWritePass,
+                tombstoneLoadOrderPass,
+                modPayloadSidecarPass,
+                hydrationTimeSlicePass,
+                hydrationGcPurgePass,
+                asyncDehydrationPipelinePass,
+                writeAllBytesPurgedPass,
                 rewrittenOffset,
                 rewrittenLength);
 
@@ -114,7 +160,7 @@ namespace Hecton8.Dev
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            File.WriteAllBytes(mmfPath, before);
+            WriteBytes(mmfPath, before);
             using (FileStream stream = new FileStream(mmfPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
                 stream.Position = 0L;
@@ -197,6 +243,32 @@ namespace Hecton8.Dev
             return File.Exists(path) ? File.ReadAllText(path) : string.Empty;
         }
 
+        private static bool ProjectSourceContains(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            string sourceRoot = Path.Combine(System.Environment.CurrentDirectory, "Assets/_Project/Scripts");
+            if (!Directory.Exists(sourceRoot))
+                return false;
+
+            string[] files = Directory.GetFiles(sourceRoot, "*.cs", SearchOption.AllDirectories);
+            for (int i = 0; i < files.Length; i++)
+            {
+                if (File.ReadAllText(files[i]).IndexOf(value, StringComparison.Ordinal) >= 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void WriteBytes(string path, byte[] bytes)
+        {
+            using FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None);
+            stream.Write(bytes, 0, bytes.Length);
+            stream.Flush(true);
+        }
+
         private static void WriteArtifact(
             bool pass,
             bool asyncThumbnailPass,
@@ -206,6 +278,13 @@ namespace Hecton8.Dev
             bool corruptionDialogPass,
             bool seedConsistencyPass,
             bool inventoryFullWritePass,
+            bool unsafeMappedWritePass,
+            bool tombstoneLoadOrderPass,
+            bool modPayloadSidecarPass,
+            bool hydrationTimeSlicePass,
+            bool hydrationGcPurgePass,
+            bool asyncDehydrationPipelinePass,
+            bool writeAllBytesPurgedPass,
             int inventoryRewriteOffset,
             int inventoryRewriteLength)
         {
@@ -225,6 +304,13 @@ namespace Hecton8.Dev
                 .Append("\"corruptionDialogPass\":").Append(corruptionDialogPass ? "true" : "false").Append(',')
                 .Append("\"seedConsistencyPass\":").Append(seedConsistencyPass ? "true" : "false").Append(',')
                 .Append("\"inventoryFullWritePass\":").Append(inventoryFullWritePass ? "true" : "false").Append(',')
+                .Append("\"unsafeMappedWritePass\":").Append(unsafeMappedWritePass ? "true" : "false").Append(',')
+                .Append("\"tombstoneLoadOrderPass\":").Append(tombstoneLoadOrderPass ? "true" : "false").Append(',')
+                .Append("\"modPayloadSidecarPass\":").Append(modPayloadSidecarPass ? "true" : "false").Append(',')
+                .Append("\"hydrationTimeSlicePass\":").Append(hydrationTimeSlicePass ? "true" : "false").Append(',')
+                .Append("\"hydrationGcPurgePass\":").Append(hydrationGcPurgePass ? "true" : "false").Append(',')
+                .Append("\"asyncDehydrationPipelinePass\":").Append(asyncDehydrationPipelinePass ? "true" : "false").Append(',')
+                .Append("\"writeAllBytesPurgedPass\":").Append(writeAllBytesPurgedPass ? "true" : "false").Append(',')
                 .Append("\"inventoryRewriteOffset\":").Append(inventoryRewriteOffset).Append(',')
                 .Append("\"inventoryRewriteLength\":").Append(inventoryRewriteLength)
                 .Append('}');

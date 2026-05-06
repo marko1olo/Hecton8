@@ -89,6 +89,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         float4 _BlueNoiseTex_TexelSize;
         float4 _HectonShaftsTexture_TexelSize;
         float _EclipseOcclusion;
+        float _HectonFreezeFrameDither;
         float _HectonFloorBiolumStrength;
         float _HectonShallowWaterFieldActive;
         float _HectonScooterBrakeCloud;
@@ -212,10 +213,24 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return lerp(fallback, sampled, useBlueNoise);
         }
 
-        half3 ApplyResolveBlueNoiseDither(half3 color, float2 screenUV)
+        half3 ApplyResolveBlueNoiseDither(half3 color, float noise)
         {
-            float dither = (ResolveBlueNoise(screenUV) - 0.5) * (1.0 / 255.0);
+            float dither = (noise - 0.5) * (1.0 / 255.0);
             return max(color + (half)dither.xxx, 0.0h);
+        }
+
+        half3 ApplyFreezeFrameDither(half3 color, float4 positionCS, float noise)
+        {
+            half freeze = (half)saturate(_HectonFreezeFrameDither);
+            if (freeze <= 0.0001h)
+                return color;
+
+            half scanline = (half)step(0.5, frac(positionCS.y * 0.5));
+            half ditherMask = (half)step(noise, freeze);
+            half3 frozenTint = color * 0.62h + half3(0.010h, 0.056h, 0.078h) * 0.38h;
+            frozenTint += (((half)noise - 0.5h) * 0.072h) + (scanline * 0.024h);
+            frozenTint *= lerp(1.0h, 0.74h + ditherMask * 0.26h, freeze);
+            return lerp(color, frozenTint, freeze);
         }
 
         float ResolveFarRawDepth()
@@ -294,12 +309,12 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             if (_HectonScooterHeadlightCount <= 0 || _HectonContactShadowStrength <= 0.0001)
                 return 1.0;
 
-            int stepCount = max(1, (int)round(_HectonContactShadowSteps));
+            int stepCount = clamp((int)round(_HectonContactShadowSteps), 1, 7);
             float3 biasedSurfacePositionWS = surfacePositionWS + normalWS * _HectonContactShadowBias;
             float shadowOcclusion = 0.0;
 
             [loop]
-            for (int stepIndex = 0; stepIndex < 8; stepIndex++)
+            for (int stepIndex = 0; stepIndex < 7; stepIndex++)
             {
                 if (stepIndex >= stepCount)
                     break;
@@ -425,14 +440,14 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5 || rayLength <= 0.0001)
                 return 1.0;
 
-            int stepCount = max(1, (int)round(_HectonFlashlightShadowSteps));
+            int stepCount = clamp((int)round(_HectonFlashlightShadowSteps), 1, 7);
             float minStep = max(_HectonFlashlightShadowMinStep, 0.01);
             float shadowFloor = ResolveFlashlightShadowFloor();
             float result = 1.0;
             float travel = minStep;
 
             [loop]
-            for (int stepIndex = 0; stepIndex < 32; stepIndex++)
+            for (int stepIndex = 0; stepIndex < 7; stepIndex++)
             {
                 if (stepIndex >= stepCount || travel >= rayLength)
                     break;
@@ -910,7 +925,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             finalColor = ApplyAbyssalSensorEdgePulse(input.screenUV, finalColor, noirMinimum);
             if (any(isnan(finalColor)) || any(isinf(finalColor)))
                 finalColor = noirMinimum;
-            finalColor = ApplyResolveBlueNoiseDither(finalColor, input.screenUV);
+            float resolveNoise = ResolveBlueNoise(input.screenUV);
+            finalColor = ApplyFreezeFrameDither(finalColor, input.positionCS, resolveNoise);
+            finalColor = ApplyResolveBlueNoiseDither(finalColor, resolveNoise);
             return half4(finalColor, sourceColor.a);
         }
         ENDHLSL

@@ -39,9 +39,9 @@ public class HectonWaterGrid : EditorWindow
             }
         }
 
-        mesh.vertices = vertices;
-        mesh.uv = uv;
-        mesh.triangles = triangles;
+        mesh.SetVertices(vertices);
+        mesh.SetUVs(0, uv);
+        mesh.SetTriangles(triangles, 0, true);
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 

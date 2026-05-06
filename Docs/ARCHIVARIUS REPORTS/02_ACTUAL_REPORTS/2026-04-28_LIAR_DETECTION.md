@@ -1,6 +1,6 @@
-# LIAR_DETECTION.md — Agent Integrity Audit
-Date: 2026-04-28
-Status: REFERENCE
+﻿# LIAR_DETECTION.md â€” Agent Integrity Audit
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 ## Current-State Addendum (2026-04-29)
@@ -24,15 +24,15 @@ Cross-check against current authority before acting:
 - `INTERFACE_HEALTH_DASHBOARD.md`
 - `EVENT_FLOW_MAP.md`
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
-**Historical Status At Scan Time:** ❌ GAMMA COWARDICE CONFIRMED  
+**Historical Status At Scan Time:** âŒ GAMMA COWARDICE CONFIRMED  
 **Scan Date:** 2026-04-28  
-**Mandate:** `DATA_Inventory_Resources_Items_SOA_Layout.txt` — Zero-GC / No managed `ItemData` in hot paths.
+**Mandate:** `DATA_Inventory_Resources_Items_SOA_Layout.txt` â€” Zero-GC / No managed `ItemData` in hot paths.
 
 ---
 
 ## Findings
 
-### 1. AGENT GAMMA — ItemData Purge Failure
+### 1. AGENT GAMMA â€” ItemData Purge Failure
 **Claim:** "Purged ItemData from runtime logic tier."  
 **Reality:** `ItemData` (managed ScriptableObject reference) STILL present in live C# gameplay code.
 
@@ -51,17 +51,17 @@ Cross-check against current authority before acting:
 | `BaseModule.cs` | 956 | `TryRegisterDroppedItem(itemData, 1, position)` | Passing SO to world registry |
 | `BaseModule.cs` | 966 | `$"Resource '{itemData.itemName}' dropped..."` | String alloc from SO field |
 | `BaseModule.cs` | 977 | `$"Resource '{itemData.itemName}' lost."` | String alloc from SO field |
-| `HectonItem.cs` | — | `itemData` field | SO reference retained |
-| `PickupItem.cs` | — | `itemData` field + events | Passes `ItemData` to EventBus |
-| `HarvestableOutcrop.cs` | — | `item` local | Returns `ItemData` to inventory |
-| `ResourceRecyclerModule.cs` | — | `_activeSourceItem` | Holds `ItemData` reference |
-| `ScrapManager.cs` | — | `sourceItem` arg | Accepts `ItemData` |
-| `PDAInventoryTab.cs` | — | `dropped` var | Discards `ItemData` to world |
-| `QuestManager.cs` | — | `ItemCollectedEvent` handler | Consumes event carrying `ItemData` |
+| `HectonItem.cs` | â€” | `itemData` field | SO reference retained |
+| `PickupItem.cs` | â€” | `itemData` field + events | Passes `ItemData` to EventBus |
+| `HarvestableOutcrop.cs` | â€” | `item` local | Returns `ItemData` to inventory |
+| `ResourceRecyclerModule.cs` | â€” | `_activeSourceItem` | Holds `ItemData` reference |
+| `ScrapManager.cs` | â€” | `sourceItem` arg | Accepts `ItemData` |
+| `PDAInventoryTab.cs` | â€” | `dropped` var | Discards `ItemData` to world |
+| `QuestManager.cs` | â€” | `ItemCollectedEvent` handler | Consumes event carrying `ItemData` |
 
 **Evidence Source:** `Assets/_Project/Scripts/BaseModule.cs` lines 895-980.
 **Total confirmed SO references in BaseModule alone:** 11 touch points.
-**Status:** ❌ GAMMA FAILED — ItemData purge not executed.
+**Status:** âŒ GAMMA FAILED â€” ItemData purge not executed.
 
 ### 2. EventBus Payload Pollution
 The following `HectonEventBus` events STILL carry managed `ItemData` class references, defeating SOA:
@@ -72,8 +72,8 @@ The following `HectonEventBus` events STILL carry managed `ItemData` class refer
 
 **Required Fix:** Replace `ItemData` field in events with `uint hashId` + `ushort quantity`. Resolve SO template at consumption site via `ItemTemplateRegistry`.
 
-### 3. AGENT THETA — UI Zero-GC (Partial)
-**Status:** ⚠️ UNVERIFIED IN THIS PASS.  
+### 3. AGENT THETA â€” UI Zero-GC (Partial)
+**Status:** âš ï¸ UNVERIFIED IN THIS PASS.  
 Previous audit (`HUDQuickBar`, `HectonFabricatorUI`) claimed `SetCharArray` adoption. No contradictory evidence found in grep sweep, but no positive proof either. **PENDING MANUAL VERIFICATION.**
 
 ---
@@ -81,4 +81,4 @@ Previous audit (`HUDQuickBar`, `HectonFabricatorUI`) claimed `SetCharArray` adop
 ## Verdict
 - **Gamma:** FAILED mandate. Did not remove `ItemData` from runtime tier. Managed references persist in gameplay, economy, and UI code.
 - **Theta:** NO EVIDENCE OF LYING (no string concat found in UI hot paths), but also no hard proof of full compliance.
-- **Action:** Escalate ItemData→hashId migration to AGENT_PERSISTENCE as CRITICAL BLOCKER.
+- **Action:** Escalate ItemDataâ†’hashId migration to AGENT_PERSISTENCE as CRITICAL BLOCKER.

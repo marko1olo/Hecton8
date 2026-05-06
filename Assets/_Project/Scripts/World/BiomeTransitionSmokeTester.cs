@@ -1,3 +1,4 @@
+using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -55,7 +56,7 @@ namespace Hecton8.World
         /// </summary>
         /// <param name="fogDensity">Interpolated fog density from the AUP transition sample.</param>
         /// <param name="absorption">Interpolated absorption from the AUP transition sample.</param>
-        /// <param name="packedInfluence">Packed biome influence value using primary/secondary/blend/flags bytes.</param>
+        /// <param name="packedInfluence">Packed visual-family influence value using primary/secondary/blend/flags bits.</param>
         public static bool RunHeadlessSmokeTest(out float fogDensity, out float absorption, out uint packedInfluence)
         {
             bool fogPassed = RunFogBlendSmokeTest(out fogDensity, out absorption);
@@ -66,12 +67,12 @@ namespace Hecton8.World
         private static bool RunBiomeInfluencePackSmokeTest(out uint packedInfluence)
         {
             WorldProceduralFieldSampler.BiomeInfluenceCell cell =
-                WorldProceduralFieldSampler.BiomeInfluenceCell.Create(42, 43, 128, 5);
+                WorldProceduralFieldSampler.BiomeInfluenceCell.CreateFromBiomeIds(42, 43, 128, 5);
             packedInfluence = cell.Packed;
-            const uint Expected = 42u | (43u << 8) | (128u << 16) | (5u << 24);
-            return packedInfluence == Expected &&
-                   cell.PrimaryBiomeId == 42 &&
-                   cell.SecondaryBiomeId == 43 &&
+            uint expected = HectonBiomeVisualFamilyUtility.PackCellFromBiomeIds(42, 43, 128, 5);
+            return packedInfluence == expected &&
+                   cell.PrimaryVisualFamilyId == HectonBiomeVisualFamilyUtility.MapToVisualFamily(42) &&
+                   cell.SecondaryVisualFamilyId == HectonBiomeVisualFamilyUtility.MapToVisualFamily(43) &&
                    cell.Blend255 == 128 &&
                    cell.Flags == 5;
         }
@@ -90,27 +91,32 @@ namespace Hecton8.World
             try
             {
                 samples = new NativeArray<BiomeTransitionSample>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                sources = new NativeArray<BiomeTransitionFogSource>(64, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                sources = new NativeArray<BiomeTransitionFogSource>(
+                    HectonBiomeVisualFamilyUtility.VisualFamilyCount,
+                    Allocator.TempJob,
+                    NativeArrayOptions.ClearMemory);
                 fromAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 toAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 playerAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 results = new NativeArray<BiomeTransitionFogResult>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 
+                byte fromVisualFamilyId = HectonBiomeVisualFamilyUtility.MapToVisualFamily(42);
+                byte toVisualFamilyId = HectonBiomeVisualFamilyUtility.MapToVisualFamily(43);
                 samples[0] = new BiomeTransitionSample
                 {
-                    FromBiomeId = 42,
-                    ToBiomeId = 43,
+                    FromBiomeId = fromVisualFamilyId,
+                    ToBiomeId = toVisualFamilyId,
                     Blend255 = 0,
                     Flags = 1
                 };
-                sources[42] = new BiomeTransitionFogSource
+                sources[fromVisualFamilyId] = new BiomeTransitionFogSource
                 {
                     FogColor = new float4(0f, 0.1f, 0.2f, 1f),
                     Density = 0.02f,
                     Turbidity = 0.75f,
                     Absorption = 0.2f
                 };
-                sources[43] = new BiomeTransitionFogSource
+                sources[toVisualFamilyId] = new BiomeTransitionFogSource
                 {
                     FogColor = new float4(0.2f, 0.3f, 0.4f, 1f),
                     Density = 0.06f,
@@ -137,8 +143,8 @@ namespace Hecton8.World
                 BiomeTransitionFogResult result = results[0];
                 fogDensity = result.Density;
                 absorption = result.Absorption;
-                return result.Sample.FromBiomeId == 42 &&
-                       result.Sample.ToBiomeId == 43 &&
+                return result.Sample.FromBiomeId == fromVisualFamilyId &&
+                       result.Sample.ToBiomeId == toVisualFamilyId &&
                        result.Sample.Blend255 == 128 &&
                        math.abs(result.Density - 0.04f) <= 0.0001f &&
                        math.abs(result.Turbidity - 1f) <= 0.0001f &&

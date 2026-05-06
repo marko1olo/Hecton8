@@ -123,6 +123,8 @@ namespace Hecton8.Environment
         private const float GpuBubbleTrailFullSpeed = 5.2f;
         private const float GpuBubbleExhaleImpulseDecayRate = 2.8f;
         private const float WeatherFlowResponseSeconds = 2.4f;
+        private const float StormFogColorDriftRate = 0.45f;
+        private const float StormFogColorInfluence = 0.46f;
         private const float CalmFlowVelocityMultiplier = 1f;
         private const float StormFlowVelocityMultiplier = 3f;
         private const float CalmTurbulenceFrequency = 0.26f;
@@ -143,6 +145,8 @@ namespace Hecton8.Environment
         private const string UnderwaterShallowSunBeamChildName = "Underwater_ShallowSunBeam";
         private static readonly Color UnderwaterDaylightSeaTintShallow = new Color(0.118f, 0.402f, 0.424f, 1f);
         private static readonly Color UnderwaterDaylightSeaTintMid = new Color(0.026f, 0.156f, 0.238f, 1f);
+        private static readonly Color StormFogDriftDeepBlue = new Color(0.015f, 0.055f, 0.105f, 1f);
+        private static readonly Color StormFogDriftGreenGray = new Color(0.035f, 0.075f, 0.062f, 1f);
         private static readonly int _SargassumCanopyShadowParamsId = Shader.PropertyToID("_SargassumCanopyShadowParams");
         private static readonly int _SargassumCanopyLightingParamsId = Shader.PropertyToID("_SargassumCanopyLightingParams");
 
@@ -738,9 +742,7 @@ namespace Hecton8.Environment
         private const float UnderwaterScatterLuminanceFloor = 0.06f;
         private const float SharedOceanUnderwaterScatterLuminanceFloor = 0.48f;
         private const float CrestSkyDirectionality = 0.78f;
-        private const int BiomeFogSourceCapacity = 256;
-        private const byte BiomeFogOverrideFromId = 254;
-        private const byte BiomeFogOverrideToId = 255;
+        private const int BiomeFogSourceCapacity = HectonBiomeVisualFamilyUtility.VisualFamilyCount;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  RUNTIME STATE
@@ -840,6 +842,7 @@ namespace Hecton8.Environment
         private float _cachedCausticsStrength;
         private float _weatherStormFlowBlend;
         private float _sharedFlowSynchronyPhaseTime;
+        private Color _stormFogDriftColor = StormFogDriftDeepBlue;
         private float _smoothedSunLightFactor = -1f;
         private float _smoothedSunIntensity = -1f;
         private float _cachedSuspendedMotesEmission = -1f;
@@ -925,6 +928,7 @@ namespace Hecton8.Environment
             if (Application.isPlaying)
             {
                 ActiveRuntimeInstance = this;
+                GlobalRegistry.RegisterUnderwaterVisualsRuntime(this);
                 _debugEditorDriven = false;
                 if (mainCamera != null && !IsRuntimeMainCamera(mainCamera))
                     mainCamera = null;
@@ -1233,6 +1237,8 @@ namespace Hecton8.Environment
                     if (ReferenceEquals(RuntimeSkyMaterialReference, skyMaterial))
                         RuntimeSkyMaterialReference = null;
                 }
+                if (GlobalRegistry.UnderwaterVisuals == this)
+                    GlobalRegistry.UnregisterUnderwaterVisualsRuntime(this);
 
                 UnregisterRenderDispatcher();
                 MapMagicBiomeEvents.Unregister(this);
@@ -1310,6 +1316,8 @@ namespace Hecton8.Environment
             {
                 MapMagicBiomeEvents.Unregister(this);
                 BiomeMatrixEvents.Unregister(this);
+                if (GlobalRegistry.UnderwaterVisuals == this)
+                    GlobalRegistry.UnregisterUnderwaterVisualsRuntime(this);
             }
 
             if (ReferenceEquals(RuntimeSkyMaterialReference, skyMaterial))
@@ -2495,12 +2503,16 @@ namespace Hecton8.Environment
             float deepBlackBlend = math.max(depthBlackBlend, extinctionBlend);
             if (deepBlackBlend <= 0.0001f)
             {
+                if (_weatherStormFlowBlend > 0.0001f)
+                    fogColor = Color.Lerp(fogColor, _stormFogDriftColor, _weatherStormFlowBlend * StormFogColorInfluence);
                 fogColor.a = 1f;
                 return fogColor;
             }
 
             Color abyssColor = new Color(0.004f, 0.008f, 0.016f, 1f);
             fogColor = Color.Lerp(fogColor, abyssColor, deepBlackBlend * FogBlackBlendIntensity);
+            if (_weatherStormFlowBlend > 0.0001f)
+                fogColor = Color.Lerp(fogColor, _stormFogDriftColor, _weatherStormFlowBlend * StormFogColorInfluence);
             fogColor.a = 1f;
             return fogColor;
         }
@@ -2977,16 +2989,12 @@ namespace Hecton8.Environment
 
             _biomeFogFromProfile = fromProfile;
             _biomeFogToProfile = toProfile;
-            _biomeFogFromId = ResolveMatrixBiomeByte(previousProfile, _targetBiomeIndex);
-            _biomeFogToId = ResolveMatrixBiomeByte(nextProfile, _targetBiomeIndex);
-            if (!ReferenceEquals(fromProfile, toProfile) && _biomeFogFromId == _biomeFogToId)
-            {
-                _biomeFogFromId = BiomeFogOverrideFromId;
-                _biomeFogToId = BiomeFogOverrideToId;
-            }
+            _biomeFogFromId = ResolveMatrixVisualFamilyByte(previousProfile, _targetBiomeIndex);
+            _biomeFogToId = ResolveMatrixVisualFamilyByte(nextProfile, _targetBiomeIndex);
 
-            _biomeFogFallbackBlend01 = ReferenceEquals(fromProfile, toProfile) ? 1f : 0f;
-            _biomeFogTransitionActive = fromProfile != null && toProfile != null && !ReferenceEquals(fromProfile, toProfile);
+            bool sameFogFamily = _biomeFogFromId == _biomeFogToId;
+            _biomeFogFallbackBlend01 = ReferenceEquals(fromProfile, toProfile) || sameFogFamily ? 1f : 0f;
+            _biomeFogTransitionActive = fromProfile != null && toProfile != null && !sameFogFamily;
 
             CaptureBiomeFogTransitionAnchors();
         }
@@ -3029,8 +3037,8 @@ namespace Hecton8.Environment
                 Blend255 = (byte)Mathf.Clamp(Mathf.RoundToInt(_biomeFogFallbackBlend01 * 255f), 0, 255),
                 Flags = 0
             };
-            _biomeFogSources[_biomeFogFromId] = BuildBiomeFogSource(_biomeFogFromProfile);
-            _biomeFogSources[_biomeFogToId] = BuildBiomeFogSource(_biomeFogToProfile);
+            _biomeFogSources[_biomeFogFromId] = BuildBiomeFogSource(_biomeFogFromId, _biomeFogFromProfile);
+            _biomeFogSources[_biomeFogToId] = BuildBiomeFogSource(_biomeFogToId, _biomeFogToProfile);
             _biomeFogFromAup[0] = _biomeFogTransitionFromAup;
             _biomeFogToAup[0] = _biomeFogTransitionToAup;
             _biomeFogPlayerAup[0] = BuildAupFromRuntimePosition(playerPosition);
@@ -3086,7 +3094,7 @@ namespace Hecton8.Environment
                 ReleaseBiomeFogBlendBuffers();
 
             _biomeFogSamples = new NativeArray<BiomeTransitionSample>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeTransitionSample>[1] - biome fog transition sample lane - owner: HectonUnderwaterVisuals
-            _biomeFogSources = new NativeArray<BiomeTransitionFogSource>(BiomeFogSourceCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeTransitionFogSource>[256] - biome fog source LUT - owner: HectonUnderwaterVisuals
+            _biomeFogSources = new NativeArray<BiomeTransitionFogSource>(BiomeFogSourceCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeTransitionFogSource>[8] - visual-family fog source LUT - owner: HectonUnderwaterVisuals
             _biomeFogFromAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[1] - biome fog source AUP anchor - owner: HectonUnderwaterVisuals
             _biomeFogToAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[1] - biome fog target AUP anchor - owner: HectonUnderwaterVisuals
             _biomeFogPlayerAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[1] - player AUP sample for biome fog transition - owner: HectonUnderwaterVisuals
@@ -3145,11 +3153,11 @@ namespace Hecton8.Environment
             array = default;
         }
 
-        private BiomeTransitionFogSource BuildBiomeFogSource(HectonBiomeProfile profile)
+        private BiomeTransitionFogSource BuildBiomeFogSource(byte visualFamilyId, HectonBiomeProfile profile)
         {
             return new BiomeTransitionFogSource
             {
-                FogColor = ToFloat4(ResolveProfileFogColor(profile)),
+                FogColor = ToFloat4(ResolveVisualFamilyFogColor(visualFamilyId)),
                 Density = ResolveProfileFogDensityScale(profile),
                 Turbidity = ResolveProfileTurbidity(profile),
                 Absorption = ResolveProfileAbsorption(profile)
@@ -3173,10 +3181,33 @@ namespace Hecton8.Environment
             return biomePalette.Count > 0 ? biomePalette.GetProfile(0) : null;
         }
 
-        private static byte ResolveMatrixBiomeByte(HectonBiomeMatrixProfile profile, int fallbackBiomeIndex)
+        private static byte ResolveMatrixVisualFamilyByte(HectonBiomeMatrixProfile profile, int fallbackBiomeIndex)
         {
             int biomeId = profile != null ? profile.matrixIndex : fallbackBiomeIndex;
-            return (byte)Mathf.Clamp(biomeId, 0, 255);
+            return HectonBiomeVisualFamilyUtility.MapToVisualFamily(biomeId);
+        }
+
+        private static Color ResolveVisualFamilyFogColor(byte visualFamilyId)
+        {
+            switch ((VisualFamily)(visualFamilyId & 0x7))
+            {
+                case VisualFamily.Sand:
+                    return new Color(0.015f, 0.32f, 0.34f, 1f);
+                case VisualFamily.Rock:
+                    return new Color(0.025f, 0.04f, 0.05f, 1f);
+                case VisualFamily.Vegetation:
+                    return new Color(0.0f, 0.24f, 0.18f, 1f);
+                case VisualFamily.Coral:
+                    return new Color(0.08f, 0.18f, 0.20f, 1f);
+                case VisualFamily.Ruin:
+                    return new Color(0.035f, 0.045f, 0.05f, 1f);
+                case VisualFamily.Volcanic:
+                    return new Color(0.18f, 0.045f, 0.02f, 1f);
+                case VisualFamily.Void:
+                    return new Color(0.003f, 0.002f, 0.007f, 1f);
+                default:
+                    return new Color(0.002f, 0.003f, 0.004f, 1f);
+            }
         }
 
         private static AbsoluteUniversePositionBlit128 BuildAupFromRuntimePosition(Vector3 runtimePosition)
@@ -5231,6 +5262,7 @@ namespace Hecton8.Environment
         private void UpdateFlowSynchronyState(float deltaTime)
         {
             float targetStormBlend = ResolveStormFlowBlend();
+            UpdateStormFogColorDrift(deltaTime, targetStormBlend);
             if (deltaTime > 0f)
             {
                 float normalizedStep = deltaTime / WeatherFlowResponseSeconds;
@@ -5245,8 +5277,29 @@ namespace Hecton8.Environment
             }
         }
 
+        private void UpdateStormFogColorDrift(float deltaTime, float targetStormBlend)
+        {
+            Color targetFogColor = targetStormBlend > 0.001f
+                ? StormFogDriftGreenGray
+                : StormFogDriftDeepBlue;
+            float maxDelta = deltaTime > 0f
+                ? deltaTime * StormFogColorDriftRate
+                : 1f;
+            _stormFogDriftColor.r = Mathf.MoveTowards(_stormFogDriftColor.r, targetFogColor.r, maxDelta);
+            _stormFogDriftColor.g = Mathf.MoveTowards(_stormFogDriftColor.g, targetFogColor.g, maxDelta);
+            _stormFogDriftColor.b = Mathf.MoveTowards(_stormFogDriftColor.b, targetFogColor.b, maxDelta);
+            _stormFogDriftColor.a = 1f;
+        }
+
         private static float ResolveStormFlowBlend()
         {
+            IWeatherService weatherService = GlobalRegistry.Weather;
+            if (weatherService != null &&
+                (weatherService.CurrentWeatherState & WeatherState.Storm) != 0)
+            {
+                return 1f;
+            }
+
             HectonSurfaceWeatherDirector surfaceWeather = GlobalRegistry.SurfaceWeather;
             if (surfaceWeather == null || surfaceWeather.IsSurfaceSuppressed)
                 return 0f;
@@ -5704,7 +5757,7 @@ namespace Hecton8.Environment
             }
 
 #if UNITY_EDITOR
-            _debugFaunaMood = _currentFaunaMood.ToString();
+            _debugFaunaMood = ResolveFaunaMoodDebugName(_currentFaunaMood);
             _debugFaunaAmbience = string.IsNullOrWhiteSpace(_currentFaunaAmbienceSummary)
                 ? "None"
                 : _currentFaunaAmbienceSummary;
@@ -6416,11 +6469,51 @@ namespace Hecton8.Environment
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void UpdateSoundscapeDiagnostics()
         {
-            _debugSoundscapeTier = _currentSoundscapeTier.ToString();
+            _debugSoundscapeTier = ResolveSoundscapeTierDebugName(_currentSoundscapeTier);
             _debugSoundscapeFogScale = _soundscapeFogDensityScale;
             _debugSoundscapeAmbientScale = _soundscapeAmbientScale;
             _debugSoundscapeBeamScale = _soundscapeBeamScale;
             _debugSoundscapeCausticsScale = _soundscapeCausticsScale;
+        }
+
+        private static string ResolveFaunaMoodDebugName(WorldProceduralFaunaMood mood)
+        {
+            switch (mood)
+            {
+                case WorldProceduralFaunaMood.Calm:
+                    return "Calm";
+                case WorldProceduralFaunaMood.Lively:
+                    return "Lively";
+                case WorldProceduralFaunaMood.Mixed:
+                    return "Mixed";
+                case WorldProceduralFaunaMood.Hostile:
+                    return "Hostile";
+                case WorldProceduralFaunaMood.None:
+                default:
+                    return "None";
+            }
+        }
+
+        private static string ResolveSoundscapeTierDebugName(SoundscapeTier tier)
+        {
+            switch (tier)
+            {
+                case SoundscapeTier.Surface:
+                    return "Surface";
+                case SoundscapeTier.Twilight:
+                    return "Twilight";
+                case SoundscapeTier.Darkness:
+                    return "Darkness";
+                case SoundscapeTier.Abyss:
+                    return "Abyss";
+                case SoundscapeTier.DeepAbyss:
+                    return "DeepAbyss";
+                case SoundscapeTier.Thermal:
+                    return "Thermal";
+                case SoundscapeTier.Shallow:
+                default:
+                    return "Shallow";
+            }
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â

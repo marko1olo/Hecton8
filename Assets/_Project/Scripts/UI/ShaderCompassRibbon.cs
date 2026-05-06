@@ -18,7 +18,6 @@ namespace Hecton8.UI
         private const float OffsetEpsilon = 0.0001f;
 
         private static readonly int CompassOffsetId = Shader.PropertyToID("_CompassOffset");
-        private static Sprite s_quadSprite;
 
         [SerializeField] private Shader compassShader;
 
@@ -30,12 +29,6 @@ namespace Hecton8.UI
         private Image _ribbonImage;
         private Material _runtimeMaterial;
         private float _lastOffset = -1f;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            s_quadSprite = null;
-        }
 
         private void OnEnable()
         {
@@ -138,7 +131,7 @@ namespace Hecton8.UI
             if (_ribbonImage == null)
                 _ribbonImage = _root.gameObject.AddComponent<Image>();
 
-            _ribbonImage.sprite = ResolveQuadSprite();
+            _ribbonImage.sprite = null;
             _ribbonImage.color = Color.white;
             _ribbonImage.raycastTarget = false;
             EnsureRuntimeMaterial();
@@ -196,20 +189,6 @@ namespace Hecton8.UI
                 return overlay.TargetCanvas;
 
             return overlay != null ? overlay.GetComponent<Canvas>() : null;
-        }
-
-        private static Sprite ResolveQuadSprite()
-        {
-            if (s_quadSprite != null)
-                return s_quadSprite;
-
-            s_quadSprite = Sprite.Create(
-                Texture2D.whiteTexture,
-                new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
-                new Vector2(0.5f, 0.5f),
-                100f);
-            s_quadSprite.name = "ShaderCompassRibbonQuad";
-            return s_quadSprite;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string name)

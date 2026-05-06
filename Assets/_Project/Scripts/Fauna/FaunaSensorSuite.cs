@@ -344,14 +344,20 @@ namespace Hecton8.AI
             if (aupDistanceSq <= 0.0001d || aupDistanceSq > PlayerFlashlightBlindDistanceSq)
                 return;
 
-            float distance = math.sqrt((float)math.min(aupDistanceSq, float.MaxValue));
+            float distanceSq = (float)math.min(aupDistanceSq, float.MaxValue);
             float3 lightDirection = math.normalizesafe((float3)_cachedPlayerForward, new float3(0f, 0f, 1f));
-            float flashlightDot = math.dot(lightDirection, math.normalizesafe(toCreature, lightDirection));
-            if (flashlightDot < PlayerFlashlightConeDotThreshold)
+            float flashlightDotNumerator = math.dot(lightDirection, toCreature);
+            if (flashlightDotNumerator <= 0f)
                 return;
 
-            float cone01 = math.saturate((flashlightDot - PlayerFlashlightConeDotThreshold) / math.max(0.001f, 1f - PlayerFlashlightConeDotThreshold));
-            float distance01 = 1f - math.saturate(distance * 0.05f);
+            float dotThresholdSq = PlayerFlashlightConeDotThreshold * PlayerFlashlightConeDotThreshold;
+            float dotNumeratorSq = flashlightDotNumerator * flashlightDotNumerator;
+            if (dotNumeratorSq < dotThresholdSq * distanceSq)
+                return;
+
+            float coneSq01 = math.saturate(((dotNumeratorSq / math.max(distanceSq, 0.0001f)) - dotThresholdSq) / math.max(0.001f, 1f - dotThresholdSq));
+            float distance01 = 1f - math.saturate(distanceSq / PlayerFlashlightBlindDistanceSq);
+            float cone01 = coneSq01 * coneSq01;
             float exposure01 = math.saturate(cone01 * distance01);
             if (exposure01 <= 0.001f)
                 return;

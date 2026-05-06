@@ -16,7 +16,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8920)]
-    public sealed class DebrisManager : MonoBehaviour, IUpdatable, ILateFrameTickable, IDebrisService, IOriginShiftListener
+    public sealed class DebrisManager : MonoBehaviour, IUpdatable, ILateFrameTickable, IDebrisService, IOriginShiftListener, IServiceHeartbeat
     {
         private const int MaxActiveChunks = 192;
         private const int MaxPendingBursts = 24;
@@ -31,12 +31,16 @@ namespace Hecton8.Gameplay
         private const float WorldCullY = -5000f;
         private const float MaximumChunkLifetime = 60f;
         private const float ThermalPetrificationStillSeconds = 60f;
+        private const float ThermalPetrificationProbeIntervalSeconds = 0.25f;
         private const float ThermalPetrificationVelocitySq = 0.0025f;
         private const float ThermalPetrificationProbeRadius = 2.5f;
         private const float ThermalPetrificationSdfRadius = 0.75f;
+        private const double DebrisSolveWarningMs = 0.2d;
         private const int DebrisPoolTelemetryId = unchecked((int)0x00DEB815u);
         private const uint PendingBurstQueueFullReason = 0x44504251u;
         private const uint ActiveSlotPoolExhaustedReason = 0x4450534Cu;
+        private static readonly uint _DebrisSolveWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DebrisManager.SolveBudgetExceeded"));
+        private static readonly uint _DebrisTelemetryContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DebrisManager"));
 
         // COLD ALLOC: Mesh[192] - active chunk mesh slots - owner: DebrisManager
         private readonly Mesh[] _slotMeshes = new Mesh[MaxActiveChunks];
@@ -70,6 +74,10 @@ namespace Hecton8.Gameplay
         private readonly PendingBurstRequest[] _pendingBursts = new PendingBurstRequest[MaxPendingBursts];
         // COLD ALLOC: float[192] - per-slot stillness timer for thermal petrification - owner: DebrisManager
         private readonly float[] _thermalPetrificationTimers = new float[MaxActiveChunks];
+        // COLD ALLOC: float[192] - per-slot sparse thermal probe age gates - owner: DebrisManager
+        private readonly float[] _thermalPetrificationNextProbeAges = new float[MaxActiveChunks];
+        // COLD ALLOC: byte[192] - cached per-slot thermal petrification eligibility flags - owner: DebrisManager
+        private readonly byte[] _thermalPetrificationHotFlags = new byte[MaxActiveChunks];
 
         private NativeArray<DebrisChunkState> _frontStates;
         private NativeArray<DebrisChunkState> _backStates;
@@ -83,9 +91,17 @@ namespace Hecton8.Gameplay
         private bool _originShiftRegistered;
         private bool _clearRequested;
         private bool _isInitialized;
+        private bool _debrisSolveWarningArmed;
+        private float _lastTickDeltaTime;
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
 
         /// <summary>
         /// Ensures a live runtime debris owner exists.
@@ -329,6 +345,9 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
+            long solveStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
+            _lastTickDeltaTime = math.max(0f, deltaTime);
+
             if (_clearRequested && !_simulationScheduled)
             {
                 ResetActiveState();
@@ -350,7 +369,7 @@ namespace Hecton8.Gameplay
                 {
                     ReadStates = _frontStates,
                     WriteStates = _backStates,
-                    DeltaTime = math.max(0.0001f, deltaTime),
+                    DeltaTime = math.max(0.0001f, _lastTickDeltaTime),
                     PhysicsPhaseDuration = PhysicsPhaseDuration,
                     PoolReturnDelay = PoolReturnDelay,
                     SinkDepthMeters = SinkDepthMeters,
@@ -363,6 +382,8 @@ namespace Hecton8.Gameplay
                 _simulationHandle = job.Schedule(_frontStates.Length, 32);
                 _simulationScheduled = true;
             }
+
+            PublishDebrisSolveWarningIfNeeded(solveStartTimestamp);
         }
 
         /// <inheritdoc />
@@ -376,7 +397,10 @@ namespace Hecton8.Gameplay
 
             _simulationScheduled = false;
             SwapStateBuffers();
+
+            long solveStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
             ProcessThermalPetrification();
+            PublishDebrisSolveWarningIfNeeded(solveStartTimestamp);
         }
 
         /// <inheritdoc />
@@ -429,10 +453,13 @@ namespace Hecton8.Gameplay
                 int spawnedChunks = 0;
                 int authoredChunkCount = request.Definition.ChunkCount;
                 int startChunkIndex = authoredChunkCount > 0 ? rng.NextInt(0, authoredChunkCount) : 0;
+                float authoredSinkDuration = math.max(0.1f, request.Definition.SinkDuration);
+                float authoredSinkDistance = math.max(0.05f, request.Definition.SinkDistance);
                 float poolReturnDelay = request.LifetimeSeconds > 0f
                     ? math.max(0.5f, request.LifetimeSeconds)
-                    : PoolReturnDelay;
-                float physicsPhaseDuration = math.min(PhysicsPhaseDuration, math.max(0.1f, poolReturnDelay * 0.65f));
+                    : PhysicsPhaseDuration + authoredSinkDuration;
+                float sinkDuration = math.min(authoredSinkDuration, math.max(0.1f, poolReturnDelay - 0.1f));
+                float physicsPhaseDuration = math.min(PhysicsPhaseDuration, math.max(0.1f, poolReturnDelay - sinkDuration));
                 for (int chunkOffset = 0; chunkOffset < authoredChunkCount && spawnedChunks < requestedSlots; chunkOffset++)
                 {
                     int chunkIndex = (startChunkIndex + chunkOffset) % authoredChunkCount;
@@ -477,8 +504,9 @@ namespace Hecton8.Gameplay
                         Age = 0f,
                         GroundY = request.RuntimeOrigin.y - request.Definition.GroundPlaneOffset,
                         SinkStartY = runtimePosition.y,
-                        SinkTargetY = runtimePosition.y - SinkDepthMeters,
-                        SinkDuration = SinkPhaseDuration,
+                        SinkTargetY = runtimePosition.y - authoredSinkDistance,
+                        SinkDuration = sinkDuration,
+                        SinkDistance = authoredSinkDistance,
                         LinearDamping = math.max(0.05f, request.Definition.LinearDamping),
                         AngularDamping = math.max(0.05f, request.Definition.AngularDamping),
                         BounceDamping = math.clamp(request.Definition.BounceDamping, 0f, 1f),
@@ -718,6 +746,8 @@ namespace Hecton8.Gameplay
             System.Array.Clear(_slotReceiveShadows, 0, _slotReceiveShadows.Length);
             System.Array.Clear(_slotLayerMasks, 0, _slotLayerMasks.Length);
             System.Array.Clear(_thermalPetrificationTimers, 0, _thermalPetrificationTimers.Length);
+            System.Array.Clear(_thermalPetrificationNextProbeAges, 0, _thermalPetrificationNextProbeAges.Length);
+            System.Array.Clear(_thermalPetrificationHotFlags, 0, _thermalPetrificationHotFlags.Length);
         }
 
         private void ProcessThermalPetrification()
@@ -729,20 +759,39 @@ namespace Hecton8.Gameplay
             if (thermalManager == null)
                 return;
 
-            float deltaTime = Mathf.Max(0f, Time.deltaTime);
+            float deltaTime = _lastTickDeltaTime;
             for (int slotIndex = 0; slotIndex < _frontStates.Length; slotIndex++)
             {
                 DebrisChunkState state = _frontStates[slotIndex];
                 if (state.Active == 0 || state.SettledStatic != 0)
                 {
                     _thermalPetrificationTimers[slotIndex] = 0f;
+                    _thermalPetrificationNextProbeAges[slotIndex] = 0f;
+                    _thermalPetrificationHotFlags[slotIndex] = 0;
                     continue;
                 }
 
                 Vector3 runtimePosition = new Vector3(state.Position.x, state.Position.y, state.Position.z);
-                if (math.lengthsq(state.Velocity) > ThermalPetrificationVelocitySq ||
-                    !thermalManager.SampleThermalFlow(runtimePosition, ThermalPetrificationProbeRadius, out AbyssalThermalManager.ThermalFlowSample sample) ||
-                    sample.Heat01 <= 0.1f)
+                if (math.lengthsq(state.Velocity) > ThermalPetrificationVelocitySq)
+                {
+                    _thermalPetrificationTimers[slotIndex] = 0f;
+                    _thermalPetrificationNextProbeAges[slotIndex] = 0f;
+                    _thermalPetrificationHotFlags[slotIndex] = 0;
+                    continue;
+                }
+
+                if (state.Age >= _thermalPetrificationNextProbeAges[slotIndex])
+                {
+                    _thermalPetrificationNextProbeAges[slotIndex] = state.Age + ThermalPetrificationProbeIntervalSeconds;
+                    bool hasThermalFlow = thermalManager.SampleThermalFlow(
+                        runtimePosition,
+                        ThermalPetrificationProbeRadius,
+                        out AbyssalThermalManager.ThermalFlowSample sample) &&
+                        sample.Heat01 > 0.1f;
+                    _thermalPetrificationHotFlags[slotIndex] = hasThermalFlow ? (byte)1 : (byte)0;
+                }
+
+                if (_thermalPetrificationHotFlags[slotIndex] == 0)
                 {
                     _thermalPetrificationTimers[slotIndex] = 0f;
                     continue;
@@ -770,8 +819,30 @@ namespace Hecton8.Gameplay
                     state.Position.y = math.min(state.Position.y, state.SinkTargetY);
                     _frontStates[slotIndex] = state;
                     _thermalPetrificationTimers[slotIndex] = 0f;
+                    _thermalPetrificationNextProbeAges[slotIndex] = 0f;
+                    _thermalPetrificationHotFlags[slotIndex] = 0;
                 }
             }
+        }
+
+        private void PublishDebrisSolveWarningIfNeeded(long startTimestamp)
+        {
+            long elapsedTicks = global::System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            double elapsedMs = elapsedTicks * 1000d / global::System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMs <= DebrisSolveWarningMs)
+            {
+                _debrisSolveWarningArmed = false;
+                return;
+            }
+
+            if (_debrisSolveWarningArmed)
+                return;
+
+            _debrisSolveWarningArmed = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _DebrisSolveWarningHash,
+                _DebrisTelemetryContextHash,
+                (float)elapsedMs);
         }
 
         private void SwapStateBuffers()
@@ -895,6 +966,7 @@ namespace Hecton8.Gameplay
             public float SinkStartY;
             public float SinkTargetY;
             public float SinkDuration;
+            public float SinkDistance;
             public float LinearDamping;
             public float AngularDamping;
             public float BounceDamping;
@@ -924,8 +996,6 @@ namespace Hecton8.Gameplay
 
             public void Execute(int i)
             {
-                uint seed = math.hash(new uint2(RandomSeed != 0u ? RandomSeed : 1u, (uint)i + 1u));
-                BurstRandom rng = new BurstRandom(seed != 0u ? seed : 1u);
                 float dt = math.max(0.0001f, DeltaTime);
 
                 DebrisChunkState state = ReadStates[i];
@@ -958,8 +1028,7 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
-                float inverseMass = 1f / math.max(0.2f, state.MassScale);
-                float3 randomDrift = rng.NextFloat3Direction() * (NoiseStrength * dt * inverseMass);
+                float3 randomDrift = float3.zero;
                 float physicsPhaseDuration = state.PhysicsPhaseDuration > 0f
                     ? state.PhysicsPhaseDuration
                     : PhysicsPhaseDuration;
@@ -969,6 +1038,10 @@ namespace Hecton8.Gameplay
 
                 if (state.CollisionEnabled != 0)
                 {
+                    uint seed = math.hash(new uint2(RandomSeed != 0u ? RandomSeed : 1u, (uint)i + 1u));
+                    BurstRandom rng = new BurstRandom(seed != 0u ? seed : 1u);
+                    float inverseMass = 1f / math.max(0.2f, state.MassScale);
+                    randomDrift = rng.NextFloat3Direction() * (NoiseStrength * dt * inverseMass);
                     state.Velocity += new float3(0f, -Gravity, 0f) * dt;
                     state.Velocity += randomDrift;
                     state.Velocity *= math.saturate(1f - (state.LinearDamping * dt));
@@ -989,15 +1062,21 @@ namespace Hecton8.Gameplay
                     {
                         state.CollisionEnabled = 0;
                         state.Kinematic = 1;
+                        float sinkDistance = state.SinkDistance > 0f
+                            ? state.SinkDistance
+                            : SinkDepthMeters;
                         state.SinkStartY = state.Position.y;
-                        state.SinkTargetY = state.SinkStartY - SinkDepthMeters;
+                        state.SinkTargetY = state.SinkStartY - sinkDistance;
                         state.Velocity = float3.zero;
                         state.AngularVelocity = float3.zero;
                     }
                 }
                 else
                 {
-                    float sink01 = math.saturate((state.Age - physicsPhaseDuration) / math.max(0.0001f, poolReturnDelay - physicsPhaseDuration));
+                    float sinkDuration = state.SinkDuration > 0f
+                        ? state.SinkDuration
+                        : math.max(0.0001f, poolReturnDelay - physicsPhaseDuration);
+                    float sink01 = math.saturate((state.Age - physicsPhaseDuration) / math.max(0.0001f, sinkDuration));
                     float sinkSmooth = sink01 * sink01 * (3f - (2f * sink01));
                     state.Position.y = math.lerp(state.SinkStartY, state.SinkTargetY, sinkSmooth);
                     if (state.Age >= poolReturnDelay)

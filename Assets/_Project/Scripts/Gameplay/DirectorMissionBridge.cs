@@ -161,6 +161,10 @@ namespace Hecton8.Gameplay
         {
         }
 
+        void IDirectorAIEventListener.OnDirectorThreatSpike(Vector3 position, float intensity)
+        {
+        }
+
         private bool CanServeDirectorContent()
         {
             FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;

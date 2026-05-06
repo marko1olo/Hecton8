@@ -12,6 +12,11 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
         _InteriorCondensationScale("Interior Condensation Scale", Range(0.05, 2.0)) = 0.42
         _InteriorCondensationRunoff("Interior Condensation Runoff", Range(0.0, 1.0)) = 0.34
         _InteriorCondensationTint("Interior Condensation Tint", Color) = (0.64, 0.76, 0.70, 1)
+        _InteriorAbyssalFrostStrength("Interior Abyssal Frost Strength", Range(0.0, 1.0)) = 0.36
+        _InteriorAbyssalFrostDepthStart("Interior Abyssal Frost Start Depth", Float) = 1200.0
+        _InteriorAbyssalFrostDepthRange("Interior Abyssal Frost Depth Range", Float) = 2200.0
+        _InteriorAbyssalFrostFlowThreshold("Interior Abyssal Frost Flow Threshold", Range(0.0, 20.0)) = 3.0
+        _InteriorAbyssalFrostTint("Interior Abyssal Frost Tint", Color) = (0.68, 0.86, 0.92, 1)
         _WaterlineTint("Module Waterline Tint", Color) = (0.10, 0.38, 0.34, 0.32)
         _WaterlineDarken("Module Waterline Darken", Range(0.0, 1.0)) = 0.42
         _WaterlineRefractionStrength("Module Waterline Refraction Strength", Range(0.0, 0.08)) = 0.015
@@ -107,8 +112,12 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 
             float4 _ModuleAmbienceData[64];
-            float4 _ModuleFloodAndFlickerData[64];
+            float4 _ModuleWaterLevels[64];
             int _ModuleWaterLevelCount;
+            float _BaseVoltage;
+            float _BaseVoltageFlickerSpeed;
+            float _BaseVoltageMinimum;
+            float4 _BaseBrownoutEmergencyColor;
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
@@ -116,6 +125,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 float4 _ParasiteOverlayColor;
                 float4 _ParasiteOverlayEmissionColor;
                 float4 _InteriorCondensationTint;
+                float4 _InteriorAbyssalFrostTint;
                 float4 _BaseMap_ST;
                 float _Cutoff;
                 float _Smoothness;
@@ -124,6 +134,10 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 float _InteriorCondensationStrength;
                 float _InteriorCondensationScale;
                 float _InteriorCondensationRunoff;
+                float _InteriorAbyssalFrostStrength;
+                float _InteriorAbyssalFrostDepthStart;
+                float _InteriorAbyssalFrostDepthRange;
+                float _InteriorAbyssalFrostFlowThreshold;
                 float4 _WaterlineTint;
                 float _WaterlineDarken;
                 float _WaterlineRefractionStrength;
@@ -196,8 +210,14 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 inout half smoothness)
             {
                 half depthStrength = saturate(depthCondensation01);
-                half strength = saturate((half)_InteriorCondensationStrength) * depthStrength;
-                if (strength <= 0.0001h)
+                half condensationStrength = saturate((half)_InteriorCondensationStrength) * depthStrength;
+                half abyssalFlowSpeed = (half)length(_AbyssalFlowWeatherCurrent.xyz);
+                half abyssalFlowCold01 = saturate(
+                    (abyssalFlowSpeed - (half)_InteriorAbyssalFrostFlowThreshold) /
+                    max(0.01h, 20.0h - (half)_InteriorAbyssalFrostFlowThreshold));
+                half depthMeters = saturate((half)((-positionWS.y - _InteriorAbyssalFrostDepthStart) / max(_InteriorAbyssalFrostDepthRange, 1.0)));
+                half frostStrength = saturate((half)_InteriorAbyssalFrostStrength) * abyssalFlowCold01 * depthMeters;
+                if (condensationStrength <= 0.0001h && frostStrength <= 0.0001h)
                     return;
 
                 half wallMask = pow(saturate(1.0h - abs(normalWS.y)), 1.35h);
@@ -214,11 +234,17 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half condensation = saturate(
                     (filmNoise * 0.34h + dripLines * _InteriorCondensationRunoff) *
                     wallMask *
-                    strength *
+                    condensationStrength *
                     lerp(0.35h, 1.0h, detailMask));
 
+                half frostCrystal = smoothstep(0.58h, 0.93h, (half)HectonCoreLitValueNoise2(wallUv * 13.3 + float2(0.17, -0.09) * _Time.y));
+                half frostRime = smoothstep(0.42h, 0.96h, filmNoise) * smoothstep(0.15h, 0.86h, saturate(1.0h - abs(normalWS.y)));
+                half frost = saturate((frostCrystal * 0.76h + frostRime * 0.24h) * wallMask * frostStrength * lerp(0.28h, 1.0h, detailMask));
+
                 albedo = lerp(albedo, _InteriorCondensationTint.rgb, condensation * lerp(0.10h, 0.24h, depthStrength));
+                albedo = lerp(albedo, _InteriorAbyssalFrostTint.rgb, frost * 0.48h);
                 smoothness = lerp(smoothness, lerp(0.72h, 0.96h, depthStrength), condensation);
+                smoothness = lerp(smoothness, 0.32h, frost);
             }
 
             void ResolveModuleAmbience(
@@ -245,7 +271,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     if (distanceSq > radius * radius || distanceSq >= bestDistanceSq)
                         continue;
 
-                    float4 floodAndFlicker = _ModuleFloodAndFlickerData[i];
+                    float4 floodAndFlicker = _ModuleWaterLevels[i];
                     bestDistanceSq = distanceSq;
                     waterY = floodAndFlicker.x;
                     level01 = (half)saturate(floodAndFlicker.y);
@@ -285,6 +311,25 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 albedo = saturate(albedo * (1.0h - darken * 0.55h));
                 albedo = lerp(albedo, waterTint, tintStrength);
                 smoothness = lerp(smoothness, 0.88h, saturate(submerged01 * 0.62h));
+            }
+
+            half ResolveBaseVoltageFlicker01(half moduleVoltage01)
+            {
+                half voltage01 = saturate((half)_BaseVoltage * moduleVoltage01);
+                half brownout01 = saturate((0.8h - voltage01) * 1.25h);
+                if (brownout01 <= 0.0001h)
+                    return 1.0h;
+
+                float speed = max(_BaseVoltageFlickerSpeed, 0.1);
+                float2 noiseUv = float2(_Time.y * speed, _Time.y * (speed * 0.271 + 1.37));
+                half noise01 = (half)HectonCoreLitValueNoise2(noiseUv);
+                half dropout01 = (half)HectonCoreLitValueNoise2(noiseUv * 1.83 + float2(13.17, -4.91));
+                half sine01 = (half)(sin(_Time.y * 20.0) * 0.5 + 0.5);
+                half floor01 = saturate((half)_BaseVoltageMinimum);
+                half flicker01 = lerp(1.0h, lerp(floor01, 1.0h, noise01), brownout01);
+                flicker01 *= lerp(1.0h, lerp(0.14h, 0.42h, voltage01), brownout01 * step(0.68h, dropout01));
+                flicker01 *= lerp(1.0h, lerp(0.68h, 1.28h, sine01), brownout01);
+                return saturate(max(floor01, flicker01));
             }
 
             Varyings Vert(Attributes input)
@@ -381,8 +426,13 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     smoothness,
                     saturate(occlusion));
                 half3 emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, input.uv).rgb * _EmissionColor.rgb;
-                litColor *= lerp(0.72h, 1.0h, moduleFlicker01);
-                emission *= moduleFlicker01;
+                half baseVoltageFlicker01 = ResolveBaseVoltageFlicker01(moduleFlicker01);
+                half brownoutEmergency01 = saturate((0.8h - saturate((half)_BaseVoltage * moduleFlicker01)) * 1.25h);
+                half3 emergencyTint = half3(_BaseBrownoutEmergencyColor.r, _BaseBrownoutEmergencyColor.g, _BaseBrownoutEmergencyColor.b);
+                litColor *= lerp(0.62h, 1.0h, baseVoltageFlicker01);
+                litColor = lerp(litColor, litColor * emergencyTint, brownoutEmergency01 * (1.0h - baseVoltageFlicker01 * 0.35h));
+                emission *= baseVoltageFlicker01;
+                emission = lerp(emission, emergencyTint * max(emission.r, max(emission.g, emission.b)), brownoutEmergency01 * 0.65h);
                 if (parasiteMask > 0.0001)
                 {
                     float2 parasiteUv = input.positionWS.xz * max(_ParasiteOverlayScale, 0.001);

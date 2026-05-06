@@ -1,21 +1,20 @@
 using System;
 using System.Runtime.CompilerServices;
-using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Crafting;
+using Hecton8.Environment;
+using Hecton8.Interaction;
 using Hecton8.Items;
-using Hecton8.Modding;
 using Hecton8.Narrative;
 using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Quest
 {
-    internal sealed class QuestGraphEvaluator : IDisposable, INarrativeEventListener, IAtlasSignalEventListener, ICelestialEventListener, ICraftingEventListener
+    internal sealed class QuestGraphEvaluator : IDisposable, INarrativeEventListener, IAtlasSignalEventListener, ICelestialEventListener, ICraftingEventListener, IInteractionEventListener, IBiomeMatrixEventListener
     {
-        private const string EventSubscriberId = "quest.graph.evaluator";
         private const float DepthTierTwoMeters = 100f;
         private const float DepthTierThreeMeters = 300f;
         private const float DepthTierFourMeters = 1000f;
@@ -27,10 +26,6 @@ namespace Hecton8.Quest
         private readonly Action _onResultsAvailable;
         private readonly string _pendingSignalsSentinelLabel;
 
-        private HectonEventSubscription _itemCollectedSubscription;
-        private HectonEventSubscription _itemDiscardedSubscription;
-        private HectonEventSubscription _biomeDiscoveredSubscription;
-        private HectonEventSubscription _loreAcquiredSubscription;
         private NativeQueue<QuestSignalPayload> _pendingSignals;
         private int _pendingSignalCount;
         private bool _isBound;
@@ -68,12 +63,10 @@ namespace Hecton8.Quest
             if (_isBound)
                 return;
 
-            _itemCollectedSubscription = HectonEventBus.Subscribe<ItemCollectedEvent>(HandleItemCollected, EventSubscriberId);
-            _itemDiscardedSubscription = HectonEventBus.Subscribe<ItemDiscardedEvent>(HandleItemDiscarded, EventSubscriberId);
-            _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, EventSubscriberId);
-            _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
             NarrativeEvents.Register(this);
             CraftingEvents.Register(this);
+            InteractionEvents.Register(this);
+            BiomeMatrixEvents.Register(this);
             CelestialEvents.Register(this);
             AtlasSignalEvents.Register(this);
             _activeEvaluators.Register(this);
@@ -85,16 +78,10 @@ namespace Hecton8.Quest
             if (!_isBound)
                 return;
 
-            _itemCollectedSubscription?.Dispose();
-            _itemCollectedSubscription = null;
-            _itemDiscardedSubscription?.Dispose();
-            _itemDiscardedSubscription = null;
-            _biomeDiscoveredSubscription?.Dispose();
-            _biomeDiscoveredSubscription = null;
-            _loreAcquiredSubscription?.Dispose();
-            _loreAcquiredSubscription = null;
             NarrativeEvents.Unregister(this);
             CraftingEvents.Unregister(this);
+            InteractionEvents.Unregister(this);
+            BiomeMatrixEvents.Unregister(this);
             CelestialEvents.Unregister(this);
             AtlasSignalEvents.Unregister(this);
             _activeEvaluators.Unregister(this);
@@ -129,16 +116,31 @@ namespace Hecton8.Quest
             });
         }
 
-        private void HandleItemCollected(ItemCollectedEvent evt)
+        public void OnInteractionEvent(in InteractionEventPayload payload)
         {
-            if (evt == null)
+            InteractionEventType eventType = (InteractionEventType)payload.EventType;
+            if (eventType != InteractionEventType.ItemCollected &&
+                eventType != InteractionEventType.ItemLost)
+            {
+                return;
+            }
+
+            uint itemHash = payload.ItemHashId;
+            if (itemHash == 0u &&
+                InteractionEvents.TryResolveItem(in payload, out ItemData item) &&
+                item != null)
+            {
+                itemHash = QuestFlagHashKernel.ComputeStableHash(item.PersistentId);
+            }
+
+            if (itemHash == 0u)
                 return;
 
-            uint itemHash = evt.ItemHashId != 0
-                ? unchecked((uint)evt.ItemHashId)
-                : evt.Item != null
-                    ? QuestFlagHashKernel.ComputeStableHash(evt.Item.PersistentId)
-                    : 0u;
+            if (eventType == InteractionEventType.ItemLost)
+            {
+                TryRevertCriticalItem(itemHash);
+                return;
+            }
 
             EnqueueSignal(new QuestSignalPayload
             {
@@ -146,19 +148,13 @@ namespace Hecton8.Quest
                 EventType = (ushort)QuestSignalKind.ItemCollected,
                 ItemId = itemHash,
                 Timestamp = Time.timeAsDouble,
-                NumericValue = evt.Quantity
+                NumericValue = Mathf.Max(1, payload.Quantity)
             });
         }
 
-        private void HandleItemDiscarded(ItemDiscardedEvent evt)
+        private void TryRevertCriticalItem(uint itemHash)
         {
-            if (evt == null || _stateManager == null)
-                return;
-
-            uint itemHash = evt.Item != null
-                ? QuestFlagHashKernel.ComputeStableHash(evt.Item.PersistentId)
-                : 0u;
-            if (itemHash == 0u)
+            if (_stateManager == null || itemHash == 0u)
                 return;
 
             if (_stateManager.TryRevertCriticalItem(
@@ -171,34 +167,22 @@ namespace Hecton8.Quest
             }
         }
 
-        private void HandleBiomeDiscovered(BiomeDiscoveredEvent evt)
+        public void OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
-            if (evt == null)
+            if (profile == null)
                 return;
 
             EnqueueSignal(new QuestSignalPayload
             {
                 EventType = (ushort)QuestSignalKind.BiomeEntered,
                 Timestamp = Time.timeAsDouble,
-                NumericValue = evt.BiomeId
+                NumericValue = profile.matrixIndex
             });
         }
 
-        private void HandleLoreAcquired(in LoreAcquiredEvent evt)
+        public void OnDepthTierChanged(int depthTier, float depthMeters)
         {
-            double timestamp = Time.timeAsDouble;
-            EnqueueSignal(new QuestSignalPayload
-            {
-                EntityHash = evt.LoreHash,
-                EventType = (ushort)QuestSignalKind.DiscoveryMade,
-                Timestamp = timestamp
-            });
-            EnqueueSignal(new QuestSignalPayload
-            {
-                EntityHash = evt.LoreHash,
-                EventType = (ushort)QuestSignalKind.AudioLogFound,
-                Timestamp = timestamp
-            });
+            UpdateDepth(depthMeters > 0f ? depthMeters : MapDepthTierToMeters(depthTier));
         }
 
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
@@ -210,6 +194,15 @@ namespace Hecton8.Quest
                     {
                         EntityHash = payload.DiscoveryHash,
                         EventType = (ushort)QuestSignalKind.DiscoveryMade,
+                        Timestamp = Time.timeAsDouble
+                    });
+                    return;
+
+                case NarrativeEventType.AudioLogFound:
+                    EnqueueSignal(new QuestSignalPayload
+                    {
+                        EntityHash = payload.DiscoveryHash,
+                        EventType = (ushort)QuestSignalKind.AudioLogFound,
                         Timestamp = Time.timeAsDouble
                     });
                     return;
@@ -232,12 +225,22 @@ namespace Hecton8.Quest
             if (itemHash == 0u)
                 return;
 
+            double timestamp = Time.timeAsDouble;
+            EnqueueSignal(new QuestSignalPayload
+            {
+                EntityHash = itemHash,
+                EventType = (ushort)QuestSignalKind.CraftCompleted,
+                ItemId = itemHash,
+                Timestamp = timestamp,
+                NumericValue = 1f
+            });
+
             EnqueueSignal(new QuestSignalPayload
             {
                 EntityHash = itemHash,
                 EventType = (ushort)QuestSignalKind.ItemCollected,
                 ItemId = itemHash,
-                Timestamp = Time.timeAsDouble,
+                Timestamp = timestamp,
                 NumericValue = 1f
             });
         }
@@ -276,19 +279,6 @@ namespace Hecton8.Quest
             EnqueueSignal(new QuestSignalPayload
             {
                 EntityHash = payload.MessageHash,
-                EventType = (ushort)QuestSignalKind.SignalDecoded,
-                Timestamp = Time.timeAsDouble
-            });
-        }
-
-        private void HandleSignalDecoded(string messageId)
-        {
-            uint payloadHash = string.IsNullOrWhiteSpace(messageId)
-                ? 0u
-                : QuestFlagHashKernel.ComputeStableHash(messageId);
-            EnqueueSignal(new QuestSignalPayload
-            {
-                EntityHash = payloadHash,
                 EventType = (ushort)QuestSignalKind.SignalDecoded,
                 Timestamp = Time.timeAsDouble
             });

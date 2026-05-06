@@ -76,7 +76,7 @@ namespace Hecton8.Optimization
             if (typeof(T) == typeof(UIRTManager))
                 return GlobalRegistry.UIRT as T;
             if (typeof(T) == typeof(SceneInstantiationGate))
-                return SceneInstantiationGate.Instance as T;
+                return SceneInstantiationGate.ActiveRuntime as T;
 
             return null;
         }

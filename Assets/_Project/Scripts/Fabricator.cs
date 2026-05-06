@@ -107,6 +107,12 @@ namespace Hecton8.Crafting
         [Tooltip("Pre-authored GPU particle sparks emitted from the nozzle while fabrication advances.")]
         [SerializeField] private ParticleSystem fabricationSparks;
         [SerializeField, Min(0f)] private float fabricationSparksBaseRate = 18f;
+        [SerializeField] private AudioSource fabricationWeldingLoopSource;
+        [SerializeField] private AudioClip fabricationWeldingLoopClip;
+        [SerializeField, Range(0f, 1f)] private float fabricationWeldingLoopMaxVolume = 0.36f;
+        [SerializeField, Min(0.01f)] private float fabricationWeldingLoopPitchUpdateSeconds = 0.18f;
+        [SerializeField, Min(0.01f)] private float fabricationWeldingLoopMinPitch = 0.86f;
+        [SerializeField, Min(0.01f)] private float fabricationWeldingLoopMaxPitch = 1.22f;
         [SerializeField] private AudioClip fabricationErrorBuzzerSound;
         [SerializeField] private Renderer[] errorFeedbackRenderers;
         [SerializeField] private Color errorEmissionColor = new Color(1f, 0.04f, 0.02f, 1f);
@@ -189,6 +195,9 @@ namespace Hecton8.Crafting
         private float _sparkProxyLightRemainingSeconds;
         private bool _sparkProxyLightRegistered;
         private bool _sparkLightTickRegistered;
+        private float _weldingLoopNextPitchUpdateTime;
+        private float _weldingLoopPitch = 1f;
+        private uint _weldingLoopPitchSeed = 0x8F31C2A7u;
 
         // ── Craft State ──
         private bool       _isCrafting;
@@ -388,7 +397,7 @@ namespace Hecton8.Crafting
             EnsureScanLogSystem();
             MarkRecipeCacheDirty();
             _activeCraftPowerMultiplier = 1f;
-            _sparkProxyLightKey = unchecked(GetInstanceID() ^ 0x4641424C);
+            _sparkProxyLightKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x4641424C);
             ToolHapticsRuntime.EnsureRuntimeInstance();
             EnsureCraftingScratch();
         }
@@ -492,18 +501,41 @@ namespace Hecton8.Crafting
             if (!HasIngredients(recipe, safeMultiplier))
                 return false;
 
-            if (recipe.resultItem != null)
-            {
-                InventoryGrid grid = _playerInventory.Grid;
-                int neededCells = recipe.resultItem.CellArea * recipe.resultQuantity * safeMultiplier;
-                int ingredientCells = CountReclaimableIngredientCells(recipe, safeMultiplier);
-                int availableAfter = grid.FreeCells + ingredientCells;
-
-                if (neededCells > availableAfter)
-                    return false;
-            }
+            if (IsOutputStorageCapacityExceeded(recipe, safeMultiplier))
+                return false;
 
             return true;
+        }
+
+        private bool IsStorageCapacityExceededForRecipe(RecipeData recipe, int multiplier)
+        {
+            if (recipe == null) return false;
+            if (_isCrafting) return false;
+            if (!HasOperationalPower) return false;
+            if (_playerInventory == null || _playerInventory.Grid == null) return false;
+            if (recipe.ingredients == null || recipe.ingredients.Count == 0) return false;
+            if (recipe.resultItem == null || recipe.resultQuantity <= 0) return false;
+            if (!IsRecipeUnlocked(recipe)) return false;
+            if (!PassesBiomeLock(recipe)) return false;
+
+            int safeMultiplier = Mathf.Max(1, multiplier);
+            return HasIngredients(recipe, safeMultiplier) && IsOutputStorageCapacityExceeded(recipe, safeMultiplier);
+        }
+
+        private bool IsOutputStorageCapacityExceeded(RecipeData recipe, int multiplier)
+        {
+            if (recipe == null || recipe.resultItem == null || _playerInventory == null || _playerInventory.Grid == null)
+                return false;
+
+            InventoryGrid grid = _playerInventory.Grid;
+            int safeMultiplier = Mathf.Max(1, multiplier);
+            long neededCells =
+                (long)Mathf.Max(1, recipe.resultItem.CellArea) *
+                Mathf.Max(1, recipe.resultQuantity) *
+                safeMultiplier;
+            long ingredientCells = CountReclaimableIngredientCells(recipe, safeMultiplier);
+            long availableAfter = (long)grid.FreeCells + ingredientCells;
+            return neededCells > availableAfter;
         }
 
         /// <summary>
@@ -574,6 +606,9 @@ namespace Hecton8.Crafting
             int safeMultiplier = Mathf.Max(1, multiplier);
             if (!CanCraft(recipe, safeMultiplier))
             {
+                if (IsStorageCapacityExceededForRecipe(recipe, safeMultiplier))
+                    RaiseStorageCapacityExceededBark();
+
                 TriggerCraftFailureFeedback();
                 return false;
             }
@@ -1003,8 +1038,8 @@ namespace Hecton8.Crafting
                     out HectonBiomeMatrixProfile primaryProfile,
                     out HectonBiomeMatrixProfile secondaryProfile))
             {
-                return MatchesRecipeBiomeLock(recipe, primaryProfile, influence.PrimaryBiomeId) ||
-                       MatchesRecipeBiomeLock(recipe, secondaryProfile, influence.SecondaryBiomeId);
+                return MatchesRecipeBiomeLock(recipe, primaryProfile, primaryProfile != null ? primaryProfile.matrixIndex : 0) ||
+                       MatchesRecipeBiomeLock(recipe, secondaryProfile, secondaryProfile != null ? secondaryProfile.matrixIndex : 0);
             }
 
             BiomeMatrixDirector matrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
@@ -1689,6 +1724,8 @@ namespace Hecton8.Crafting
 
         private void SetFabricationSparksActive(bool active)
         {
+            UpdateWeldingAudioLoop(active, Mathf.Max(1f, _activeCraftPowerMultiplier));
+
             if (fabricationSparks == null)
                 return;
 
@@ -1715,6 +1752,43 @@ namespace Hecton8.Crafting
                 fabricationSparks.Stop(false, ParticleSystemStopBehavior.StopEmitting);
                 _fabricationSparksPlaying = false;
             }
+        }
+
+        private void UpdateWeldingAudioLoop(bool active, float intensity)
+        {
+            AudioSource source = fabricationWeldingLoopSource;
+            if (source == null)
+                return;
+
+            if (!active)
+            {
+                if (source.isPlaying)
+                    source.Stop();
+                return;
+            }
+
+            if (fabricationWeldingLoopClip != null && source.clip != fabricationWeldingLoopClip)
+                source.clip = fabricationWeldingLoopClip;
+
+            source.loop = true;
+            source.volume = Mathf.Clamp01(intensity * 0.18f) * Mathf.Clamp01(fabricationWeldingLoopMaxVolume);
+
+            float now = Time.unscaledTime;
+            if (now >= _weldingLoopNextPitchUpdateTime)
+            {
+                _weldingLoopPitchSeed = (_weldingLoopPitchSeed * 1664525u) + 1013904223u;
+                float randomTilt = Mathf.Lerp(0.96f, 1.04f, (_weldingLoopPitchSeed & 0x00FFFFFFu) * (1f / 16777215f));
+                float pitch01 = Mathf.Clamp01(intensity * 0.25f);
+                _weldingLoopPitch = Mathf.Clamp(
+                    Mathf.Lerp(fabricationWeldingLoopMinPitch, fabricationWeldingLoopMaxPitch, pitch01) * randomTilt,
+                    fabricationWeldingLoopMinPitch,
+                    fabricationWeldingLoopMaxPitch);
+                _weldingLoopNextPitchUpdateTime = now + Mathf.Max(0.01f, fabricationWeldingLoopPitchUpdateSeconds);
+            }
+
+            source.pitch = _weldingLoopPitch;
+            if (!source.isPlaying)
+                source.Play();
         }
 
         private void UpdateErrorFeedback(float deltaSeconds)
@@ -2226,7 +2300,7 @@ namespace Hecton8.Crafting
             if (craftPowerDraw < 0f) craftPowerDraw = 0f;
             if (string.IsNullOrEmpty(fabricatorName)) fabricatorName = "Фабрикатор";
 
-            _interactText = $"Использовать {fabricatorName}";
+            RebuildInteractText();
             MarkRecipeCacheDirty();
         }
 

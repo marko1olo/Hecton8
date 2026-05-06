@@ -1,19 +1,29 @@
-# ZERO_GC_UI_PIPELINE
-Date: `2026-05-04`
+﻿# ZERO_GC_UI_PIPELINE
+Date: 2026-05-07
 
-Status: REFERENCE
+Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
 2026-05-04 current-state boundary:
 
 - This is the UI zero-GC contract and source-oriented pattern reference, not profiler proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - Any claim of `0 B/frame` for HUD/PDA/menu paths still requires fresh GCMonitor or profiler capture.
 - Presentation/UI must not own gameplay state transitions without a logic-owned fallback.
 
 ## Scope
 
 This project does not push runtime HUD numbers into `TMP_Text.text`. Hot-path UI text is staged through fixed buffers, formatted with `Span<char>`, and committed through `TMP_Text.SetCharArray(...)`.
+
+## May 7 Non-Negotiable Checklist
+
+- `.ToString()` is forbidden in every HUD, visor, PDA, subtitle, warning, diagnostics, and diegetic UI update path.
+- `.ToString()` remains forbidden even when hidden behind a helper overload, a temporary variable, or an immediate `SetText(...)` call. Cold editor/report writers are outside this hot-path rule; runtime UI is not.
+- `string.Format`, string interpolation, string concatenation, and `TMP_Text.text = ...` are forbidden in hot UI paths.
+- Numeric values must use `TryFormat` into `Span<char>` backed by a preallocated buffer.
+- The final text commit path is `TMP_Text.SetCharArray(buffer, 0, length)`. Any claimed equivalent zero-string API remains `PENDING VERIFICATION` until source and profiler evidence prove it does not allocate.
+- Static or localized fragments must be cached outside the hot path and appended as `ReadOnlySpan<char>` or copied from prevalidated static buffers.
+- A UI change that cannot prove this path remains `PENDING VERIFICATION`, regardless of visual correctness.
 
 Relevant owners already in source:
 

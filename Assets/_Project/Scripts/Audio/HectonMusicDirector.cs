@@ -2337,6 +2337,13 @@ namespace Hecton8.Audio
             HandlePredatorPressureChanged(pressureEnabled);
         }
 
+        void IDirectorAIEventListener.OnDirectorThreatSpike(Vector3 position, float intensity)
+        {
+            _combatLatched = true;
+            PlayDangerStinger();
+            ReevaluateContext(true);
+        }
+
         private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
         {
             RefreshSceneFlags(nextScene);

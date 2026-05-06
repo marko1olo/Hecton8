@@ -1,7 +1,7 @@
-# Documentation Actuality Sweep
+﻿# Documentation Actuality Sweep
 
-Date: `2026-05-04`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Scope: active documentation authority, current source/build guard evidence, Unity MCP readback boundary
 
 ## Mandates Followed
@@ -211,7 +211,8 @@ Read `Docs/Reports/2026-05-04_WARNING_CLEANUP.md` after this sweep for the curre
 ## Current Documentation Truth
 
 - `Docs/README.md` is the entry point.
-- `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority classification map.
+- `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` is the latest broad documentation synchronization and current May 6 inventory/header/MCP boundary.
+- `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority classification map, amended by the May 6 synchronization pass.
 - This file is the latest documentation sweep and current evidence boundary.
 - `Docs/Reports/2026-05-04_WARNING_CLEANUP.md` is the latest warning-cleanup and current post-refresh console-readback boundary.
 - `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` is the latest foundation guard repair boundary.

@@ -271,7 +271,7 @@ Settings are restored from save data. If invalid, defaults to Medium preset.
 **Check:**
 1. LODSystemManager is active in scene
 2. LOD groups are registered (check `RegisteredLODGroupCount`)
-3. Camera.main is not null
+3. Registry-owned player camera is available
 4. LOD bias is applied (check QualitySettings.lodBias)
 
 ### High CPU time

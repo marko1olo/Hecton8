@@ -8,9 +8,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [NoScaleOffset] _FreshRockAlbedoMap ("Fresh Rock Albedo Map", 2D) = "white" {}
         [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
         [NoScaleOffset] _SiltLayerMap ("Horizontal Silt Layer Map", 2D) = "white" {}
+        [NoScaleOffset] _BiomeFamilyTintVolume ("Visual Family 3D Tint Volume", 3D) = "white" {}
         _Instance_Color ("Instance Color", Color) = (1, 1, 1, 1)
         _Tiling ("Tiling", Range(0.01, 4)) = 0.2
-        _TriplanarBlendSharpness ("Triplanar Blend Sharpness", Range(1, 8)) = 8
+        _DominantAxisEdgeNoise ("Dominant Axis Edge Noise", Range(0, 0.08)) = 0.035
+        _TriplanarBlendSharpness ("Triplanar Blend Sharpness", Range(1, 16)) = 8
         _Smoothness ("Smoothness", Range(0, 1)) = 0.15
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {}
         [NoScaleOffset] _NormalMap ("Normal Map", 2D) = "bump" {}
@@ -45,14 +47,15 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _OrganicDisplacementSeamBoost ("Organic Seam Boost", Range(0, 2)) = 0.65
         _CaveMouthDisplacementStrength ("Cave Mouth GPU Jag Strength", Range(0, 0.35)) = 0.08
         _CaveMouthDisplacementScale ("Cave Mouth GPU Jag Scale", Range(0.05, 4)) = 0.85
-        _CaveMouthFakeAoStrength ("Cave Mouth Fake AO Strength", Range(0, 1)) = 0.42
-        _CaveMouthFakeAoRadius ("Cave Mouth Fake AO Radius", Range(0.5, 8)) = 3.5
         _CaveMouthPhosphorPulseStrength ("Cave Mouth Phosphor Pulse Strength", Range(0, 1)) = 0.18
         _CaveMouthPhosphorPulseScale ("Cave Mouth Phosphor Pulse Scale", Range(0.05, 8)) = 1.6
         _HorizontalSiltDustStrength ("Horizontal Silt Dust Strength", Range(0, 1)) = 0.48
         _HorizontalSiltDustSharpness ("Horizontal Silt Dust Sharpness", Range(1, 12)) = 5
         _HorizontalSiltDustTiling ("Horizontal Silt Dust Tiling", Range(0.01, 4)) = 0.22
         _BiomeFamilyTintStrength ("Visual Family Tint Strength", Range(0, 1)) = 0.32
+        _BiomeFamilyTintVolumeStrength ("Visual Family 3D Tint Strength", Range(0, 1)) = 0.35
+        _BiomeFamilyTintVolumeWorldOrigin ("Visual Family 3D Tint Origin AUP", Vector) = (0, 0, 0, 0)
+        _BiomeFamilyTintVolumeWorldSize ("Visual Family 3D Tint Size AUP", Vector) = (512, 256, 512, 0)
         _BiomeFamilySandTint ("Visual Family Sand Tint", Color) = (0.50, 0.46, 0.36, 1)
         _BiomeFamilyBasaltTint ("Visual Family Basalt Tint", Color) = (0.17, 0.18, 0.19, 1)
         _BiomeFamilyKelpTint ("Visual Family Kelp Tint", Color) = (0.18, 0.29, 0.18, 1)
@@ -104,7 +107,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float4 _BiomeFamilyCoralTint;
             float4 _BiomeFamilyAbyssalTint;
             float4 _BiomeFamilyAlienTint;
+            float4 _BiomeFamilyTintVolumeWorldOrigin;
+            float4 _BiomeFamilyTintVolumeWorldSize;
             float _Tiling;
+            float _DominantAxisEdgeNoise;
             float _TriplanarBlendSharpness;
             float _Smoothness;
             float _SkirtBlendContrast;
@@ -129,14 +135,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _OrganicDisplacementSeamBoost;
             float _CaveMouthDisplacementStrength;
             float _CaveMouthDisplacementScale;
-            float _CaveMouthFakeAoStrength;
-            float _CaveMouthFakeAoRadius;
             float _CaveMouthPhosphorPulseStrength;
             float _CaveMouthPhosphorPulseScale;
             float _HorizontalSiltDustStrength;
             float _HorizontalSiltDustSharpness;
             float _HorizontalSiltDustTiling;
             float _BiomeFamilyTintStrength;
+            float _BiomeFamilyTintVolumeStrength;
             float _LocalCausticStrength;
             float _LocalCausticScale;
             float _LocalCausticSpeed;
@@ -154,6 +159,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         float _SargassumCutMaskActive;
         float _HectonDamageVolumeActive;
         float _HectonVoxelSSAOActive;
+        float4 _LaserHitAUP;
+        float4 _LaserHitHeat;
         int _HectonRecentCutHeatCount;
         int _HectonScatterBiomeInfluenceGridCount;
         float4 _HectonScatterBiomeInfluenceGridOrigin;
@@ -177,6 +184,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         SAMPLER(sampler_FreshRockNormalMap);
         TEXTURE2D(_SiltLayerMap);
         SAMPLER(sampler_SiltLayerMap);
+        TEXTURE3D(_BiomeFamilyTintVolume);
+        SAMPLER(sampler_BiomeFamilyTintVolume);
         TEXTURE2D(_HectonVoxelSSAOTex);
         SAMPLER(sampler_HectonVoxelSSAOTex);
         TEXTURE2D(_SargassumCutMaskRT);
@@ -313,7 +322,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
             half edgeBand = saturate((1.0h - max(absNormal.x, max(absNormal.y, absNormal.z))) * 2.0h);
             float noise = Hash31(float3(floor(uv * 37.0), (float)dominantAxis + 5.37)) * 2.0 - 1.0;
-            float stochasticEdgeOffset = noise * edgeBand * 0.035;
+            float stochasticEdgeOffset = noise * edgeBand * _DominantAxisEdgeNoise;
             uv += float2(stochasticEdgeOffset, -stochasticEdgeOffset);
         }
 
@@ -396,11 +405,75 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return gate * saturate(sinePulse * lerp(0.65h, 1.0h, gridNoise));
         }
 
+        half4 SampleDominantAxisColorAtUv(TEXTURE2D_PARAM(tex, samp), float2 uv)
+        {
+            return SAMPLE_TEXTURE2D(tex, samp, uv);
+        }
+
         half4 SampleDominantAxisColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS)
         {
             float2 uv;
             half dominantAxis;
             ResolveDominantAxisProjection(positionWS, normalWS, uv, dominantAxis);
+            return SampleDominantAxisColorAtUv(TEXTURE2D_ARGS(tex, samp), uv);
+        }
+
+        half ResolveStochasticDominantAxis(float3 positionWS, half3 normalWS)
+        {
+            half3 absNormal = max(abs(normalWS), half3(0.0001h, 0.0001h, 0.0001h));
+            half dominantAxis = 0.0h;
+            half dominantWeight = absNormal.x;
+            half runnerUpAxis = 1.0h;
+            half runnerUpWeight = absNormal.y;
+
+            if (absNormal.y > dominantWeight)
+            {
+                runnerUpAxis = dominantAxis;
+                runnerUpWeight = dominantWeight;
+                dominantAxis = 1.0h;
+                dominantWeight = absNormal.y;
+            }
+            else if (absNormal.y > runnerUpWeight)
+            {
+                runnerUpAxis = 1.0h;
+                runnerUpWeight = absNormal.y;
+            }
+
+            if (absNormal.z > dominantWeight)
+            {
+                runnerUpAxis = dominantAxis;
+                runnerUpWeight = dominantWeight;
+                dominantAxis = 2.0h;
+                dominantWeight = absNormal.z;
+            }
+            else if (absNormal.z > runnerUpWeight)
+            {
+                runnerUpAxis = 2.0h;
+                runnerUpWeight = absNormal.z;
+            }
+
+            half edgeWindow = max((half)_DominantAxisEdgeNoise * max((half)_TriplanarBlendSharpness, 1.0h), 0.0001h);
+            half edgeBlend = saturate(1.0h - (dominantWeight - runnerUpWeight) / edgeWindow);
+            half selector = (half)Hash31(floor(positionWS * max(_Tiling * 2.0, 0.0001)));
+            return selector < edgeBlend * 0.5h ? runnerUpAxis : dominantAxis;
+        }
+
+        float2 ResolveStochasticDominantAxisUv(float3 positionWS, half axis)
+        {
+            float tiling = max(_Tiling, 0.0001);
+            if (axis < 0.5h)
+                return positionWS.zy * tiling;
+
+            if (axis > 1.5h)
+                return positionWS.xy * tiling;
+
+            return positionWS.xz * tiling;
+        }
+
+        half4 SampleStochasticDominantAxisColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS)
+        {
+            half axis = ResolveStochasticDominantAxis(positionWS, normalWS);
+            float2 uv = ResolveStochasticDominantAxisUv(positionWS, axis);
             return SAMPLE_TEXTURE2D(tex, samp, uv);
         }
 
@@ -413,11 +486,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             if (family == 2u)
                 return (half3)_BiomeFamilyKelpTint.rgb;
             if (family == 3u)
-                return (half3)_BiomeFamilyBrineTint.rgb;
-            if (family == 4u)
-                return (half3)_BiomeFamilyVolcanicTint.rgb;
-            if (family == 5u)
                 return (half3)_BiomeFamilyCoralTint.rgb;
+            if (family == 4u)
+                return (half3)_BiomeFamilyBrineTint.rgb;
+            if (family == 5u)
+                return (half3)_BiomeFamilyVolcanicTint.rgb;
             if (family == 7u)
                 return (half3)_BiomeFamilyAlienTint.rgb;
 
@@ -450,32 +523,52 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return lerp(half3(1.0h, 1.0h, 1.0h), familyTint, saturate((half)_BiomeFamilyTintStrength));
         }
 
+        half3 ResolveBiomeFamilyTintVolumeMultiplier(float3 absolutePositionWS)
+        {
+            if (_BiomeFamilyTintVolumeStrength <= 0.0001)
+                return half3(1.0h, 1.0h, 1.0h);
+
+            float3 volumeSize = max(_BiomeFamilyTintVolumeWorldSize.xyz, float3(1.0, 1.0, 1.0));
+            float3 uvw = saturate((absolutePositionWS - _BiomeFamilyTintVolumeWorldOrigin.xyz) / volumeSize);
+            half3 volumeTint = SAMPLE_TEXTURE3D(_BiomeFamilyTintVolume, sampler_BiomeFamilyTintVolume, uvw).rgb;
+            return lerp(half3(1.0h, 1.0h, 1.0h), volumeTint, saturate((half)_BiomeFamilyTintVolumeStrength));
+        }
+
         half ResolveHorizontalSiltDust(float3 absolutePositionWS, half3 normalWS)
         {
-            half upward = pow(saturate(normalWS.y), max((half)_HorizontalSiltDustSharpness, 1.0h));
+            half upward = pow(saturate((normalWS.y - 0.8h) * 5.0h), max((half)_HorizontalSiltDustSharpness, 1.0h));
             half dustNoise = lerp(0.62h, 1.0h, (half)ValueNoise3(absolutePositionWS * max(_HorizontalSiltDustTiling, 0.01) + 71.9));
             return saturate(upward * dustNoise * (half)_HorizontalSiltDustStrength);
         }
 
-        half ResolveCaveMouthFakeAo(float3 absolutePositionWS, half seamMask)
+        void AccumulateCutHeatStamp(float3 positionAUP, float4 positionRadius, float4 strengthTime, inout half heatMask, inout half age01)
         {
-            half gate = saturate(seamMask * (half)_CaveMouthFakeAoStrength);
-            if (gate <= 0.0001h)
-                return 0.0h;
+            if (positionRadius.w <= 0.0 || strengthTime.x <= 0.0)
+                return;
 
-            float radius = max(_CaveMouthFakeAoRadius, 0.5);
-            float cellSize = radius * 2.0;
-            float3 caveCellCenter = (floor(absolutePositionWS / cellSize) + 0.5) * cellSize;
-            half deep = saturate(1.0h - (half)(distance(absolutePositionWS, caveCellCenter) / radius));
-            return saturate(deep * deep * gate);
+            float lifetime = max(strengthTime.z, 0.01);
+            float elapsed = _Time.y - strengthTime.y;
+            if (elapsed < 0.0 || elapsed >= lifetime)
+                return;
+
+            float radius = max(positionRadius.w, 0.05);
+            float distanceToStamp = length(positionAUP - positionRadius.xyz);
+            if (distanceToStamp >= radius)
+                return;
+
+            float radial = saturate(1.0 - distanceToStamp / radius);
+            radial *= radial;
+            float localAge01 = saturate(elapsed / lifetime);
+            float thermal = strengthTime.x * radial * (1.0 - localAge01);
+            if (thermal <= heatMask)
+                return;
+
+            heatMask = thermal;
+            age01 = localAge01;
         }
 
-        half3 SampleDominantAxisNormal(float3 positionWS, half3 baseNormalWS)
+        half3 SampleDominantAxisNormalAtUv(float2 uv, half dominantAxis, half3 baseNormalWS)
         {
-            float2 uv;
-            half dominantAxis;
-            ResolveDominantAxisProjection(positionWS, baseNormalWS, uv, dominantAxis);
-
             half3 normalSign = sign(baseNormalWS);
             half3 tangentNormal = UnpackNormal(SAMPLE_TEXTURE2D(_Normal_Map, sampler_Normal_Map, uv));
             if (dominantAxis < 0.5h)
@@ -485,6 +578,14 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 return SafeNormalize3(half3(tangentNormal.x, tangentNormal.y, tangentNormal.z * normalSign.z));
 
             return SafeNormalize3(half3(tangentNormal.x, tangentNormal.z * normalSign.y, tangentNormal.y));
+        }
+
+        half3 SampleDominantAxisNormal(float3 positionWS, half3 baseNormalWS)
+        {
+            float2 uv;
+            half dominantAxis;
+            ResolveDominantAxisProjection(positionWS, baseNormalWS, uv, dominantAxis);
+            return SampleDominantAxisNormalAtUv(uv, dominantAxis, baseNormalWS);
         }
 
         half EvaluateGlobalCutMask(float3 positionWS)
@@ -598,10 +699,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return lerp(1.0h, 1.0h + causticRaw * _LocalCausticStrength, causticMask);
         }
 
-        void EvaluateRecentCutHeat(float3 positionWS, out half heatMask, out half age01)
+        void EvaluateRecentCutHeat(float3 positionAUP, out half heatMask, out half age01)
         {
             heatMask = 0.0h;
             age01 = 1.0h;
+
+            AccumulateCutHeatStamp(positionAUP, _LaserHitAUP, _LaserHitHeat, heatMask, age01);
 
             [unroll]
             for (int i = 0; i < HECTON_RECENT_CUT_HEAT_MAX; i++)
@@ -609,28 +712,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 if (i >= _HectonRecentCutHeatCount)
                     break;
 
-                float4 positionRadius = _HectonRecentCutHeatPositionRadius[i];
-                float4 strengthTime = _HectonRecentCutHeatStrengthTime[i];
-                float lifetime = max(strengthTime.z, 0.01);
-                float elapsed = _Time.y - strengthTime.y;
-                if (elapsed < 0.0 || elapsed >= lifetime)
-                    continue;
-
-                float radius = max(positionRadius.w, 0.05);
-                float3 delta = positionWS - positionRadius.xyz;
-                float distanceToStamp = length(delta);
-                if (distanceToStamp >= radius)
-                    continue;
-
-                float radial = saturate(1.0 - distanceToStamp / radius);
-                radial *= radial;
-                float localAge01 = saturate(elapsed / lifetime);
-                float thermal = strengthTime.x * radial * (1.0 - localAge01);
-                if (thermal <= heatMask)
-                    continue;
-
-                heatMask = thermal;
-                age01 = localAge01;
+                AccumulateCutHeatStamp(
+                    positionAUP,
+                    _HectonRecentCutHeatPositionRadius[i],
+                    _HectonRecentCutHeatStrengthTime[i],
+                    heatMask,
+                    age01);
             }
         }
 
@@ -757,15 +844,18 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half skirtCoverage = ResolveSkirtCoverageMask(input.skirtAlpha);
                 half3 baseNormalWS = SafeNormalize3(input.normalWS);
                 float3 samplePositionWS = input.absolutePositionWS;
-                half3 dominantNormalWS = SampleDominantAxisNormal(samplePositionWS, baseNormalWS);
+                float2 rockUv;
+                half rockDominantAxis;
+                ResolveDominantAxisProjection(samplePositionWS, baseNormalWS, rockUv, rockDominantAxis);
+                half3 dominantNormalWS = SampleDominantAxisNormalAtUv(rockUv, rockDominantAxis, baseNormalWS);
 
-                half4 baseSample = SampleDominantAxisColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, baseNormalWS);
+                half4 baseSample = SampleStochasticDominantAxisColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, baseNormalWS);
                 half cutMask = max(EvaluateGlobalCutMask(input.positionWS), EvaluateDamageVolumeMask(input.positionWS));
                 half freshCutMask = saturate(max(input.freshCutBlend, cutMask));
                 half scarMask = pow(saturate(cutMask), max(_CutScarSharpness, 0.5h));
                 half recentHeatMask;
                 half recentHeatAge01;
-                EvaluateRecentCutHeat(input.positionWS, recentHeatMask, recentHeatAge01);
+                EvaluateRecentCutHeat(samplePositionWS, recentHeatMask, recentHeatAge01);
                 half3 boostedNormalWS = dominantNormalWS * lerp(1.0h, (half)_FreshCutNormalBoost, freshCutMask * 0.5h);
                 half3 normalWS = SafeNormalize3(baseNormalWS + boostedNormalWS);
                 half skirtBlend = 1.0h - skirtCoverage;
@@ -776,6 +866,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
                 half3 albedo = baseSample.rgb * _Instance_Color.rgb;
                 albedo *= ResolveBiomeFamilyTintMultiplier(samplePositionWS);
+                albedo *= ResolveBiomeFamilyTintVolumeMultiplier(samplePositionWS);
                 half3 freshAlbedo = baseSample.rgb * _Instance_Color.rgb * (half)_FreshCutColorBoost;
                 freshAlbedo = lerp(freshAlbedo, (half3)_CutScarColor.rgb, scarMask * 0.45h);
                 albedo = lerp(albedo, freshAlbedo, freshCutMask * 0.62h);
@@ -791,14 +882,14 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
                 half metallic = 0.0h;
                 half smoothness = saturate(lerp(_Smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
-                half seamMask = saturate(max(input.terrainSplatColor.a, input.skirtAlpha));
-                half caveMouthFakeAo = ResolveCaveMouthFakeAo(samplePositionWS, seamMask);
                 half ambientOcclusion = saturate(input.bakedAmbientOcclusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
-                ambientOcclusion *= 1.0h - caveMouthFakeAo * 0.75h;
-                albedo *= 1.0h - caveMouthFakeAo * 0.58h;
+                half caveMouthDistanceAo = saturate(max(input.terrainSplatColor.a, input.skirtAlpha));
+                ambientOcclusion *= 1.0h - caveMouthDistanceAo * 0.45h;
+                albedo *= 1.0h - caveMouthDistanceAo * 0.24h;
                 half horizontalDust = ResolveHorizontalSiltDust(samplePositionWS, normalWS);
-                half4 siltLayerSample = SampleDominantAxisColor(TEXTURE2D_ARGS(_SiltLayerMap, sampler_SiltLayerMap), samplePositionWS, half3(0.0h, 1.0h, 0.0h));
-                albedo = lerp(albedo, siltLayerSample.rgb * (half3)_SiltTint.rgb, horizontalDust);
+                half4 siltSample = SampleStochasticDominantAxisColor(TEXTURE2D_ARGS(_SiltLayerMap, sampler_SiltLayerMap), samplePositionWS, normalWS);
+                half3 siltAlbedo = saturate(siltSample.rgb * (half3)_SiltTint.rgb * 1.2h);
+                albedo = lerp(albedo, siltAlbedo, horizontalDust);
                 smoothness = lerp(smoothness, min(smoothness, 0.22h), horizontalDust);
                 half localCausticMask = ResolveLocalLightCaustic(samplePositionWS, normalWS, input.positionCS);
                 HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);

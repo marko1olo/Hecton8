@@ -44,6 +44,7 @@ namespace Hecton8.Bootstrap
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";
         private const string FatalBootCrashFileName = "fatal_boot_crash.log";
+        private const string PersistentRootName = "[PROJECT_PERSISTENT_ROOT]";
         private const string BootstrapAudioListenerRuntimeName = "[BootstrapAudioListener]";
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
         private const string PersistentWorldRegistryRuntimeName = "[PersistentWorldRegistry]";
@@ -183,7 +184,13 @@ namespace Hecton8.Bootstrap
             new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerSensoryManager, BootstrapDependencyNode.PlayerRuntimeContextService),
         };
 
-        private static GameBootstrapper _instance;
+        private static readonly object _bootstrapDependencyScratchLock = new object();
+        // COLD ALLOC: int[22] - bootstrap dependency in-degree scratch without async Span state capture risk - owner: GameBootstrapper
+        private static readonly int[] _bootstrapDependencyInDegreeScratch = new int[(int)BootstrapDependencyNode.Count];
+        // COLD ALLOC: BootstrapDependencyNode[22] - bootstrap dependency queue scratch without async Span state capture risk - owner: GameBootstrapper
+        private static readonly BootstrapDependencyNode[] _bootstrapDependencyQueueScratch = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
+        private static readonly uint _BootstrapTotalBootTimeHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.TotalBootTimeMs"));
+        private static readonly uint _GameBootstrapperContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("GameBootstrapper"));
         private static bool _isBootstrapComplete;
         private static bool _sceneGuardRegistered;
         private static bool _entryRecoveryIssued;
@@ -191,6 +198,8 @@ namespace Hecton8.Bootstrap
         private static InputManager _bootstrapInputManager;
         private static bool _headlessBootMode;
         private static bool _preWarmAssetsReady;
+        private static bool _bootstrapDurationTelemetryPublished;
+        private static long _bootstrapStartTimestamp;
         [Header("Bootstrap Prewarm")]
         [Tooltip("Shader variant collections warmed during MemoryPreWarm before scene or player activation.")]
         [SerializeField] private ShaderVariantCollection[] shaderVariantCollections;
@@ -225,7 +234,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         public static bool ArePreWarmAssetsReady => _preWarmAssetsReady;
 
-        internal static bool HasRuntimeInstance => _instance != null;
+        internal static bool HasRuntimeInstance => GlobalRegistry.BootstrapperRuntime != null;
 
         /// <summary>
         /// True when all mandatory core services are registered and scene routing may proceed.
@@ -242,13 +251,15 @@ namespace Hecton8.Bootstrap
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+            GlobalRegistry.ClearBootstrapperRuntime(null);
             _isBootstrapComplete = false;
             _entryRecoveryIssued = false;
             _currentPhase = BootstrapPhase.HardwareCheck;
             _bootstrapInputManager = null;
             _headlessBootMode = false;
             _preWarmAssetsReady = false;
+            _bootstrapDurationTelemetryPublished = false;
+            _bootstrapStartTimestamp = 0L;
             _bootstrapSceneRootScratch.Clear();
             _bootstrapTransformScratch.Clear();
             if (_sceneGuardRegistered)
@@ -287,11 +298,12 @@ namespace Hecton8.Bootstrap
         /// <returns>Live bootstrap component.</returns>
         public static GameBootstrapper EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            GameBootstrapper bootstrapper = GlobalRegistry.BootstrapperRuntime;
+            if (bootstrapper != null)
+                return bootstrapper;
 
             Scene activeScene = SceneManager.GetActiveScene();
-            GameObject runtimeRoot = new GameObject("[GameBootstrapper]"); // COLD ALLOC: GameObject[1] - bootstrap authority root when scene authoring omitted it - owner: GameBootstrapper
+            GameObject runtimeRoot = new GameObject(PersistentRootName); // COLD ALLOC: GameObject[1] - bootstrap authority root when scene authoring omitted it - owner: GameBootstrapper
             if (activeScene.IsValid())
                 SceneManager.MoveGameObjectToScene(runtimeRoot, activeScene);
 
@@ -305,8 +317,9 @@ namespace Hecton8.Bootstrap
         /// <returns>Live bootstrap component.</returns>
         public static GameBootstrapper EnsureRuntimeInstance(GameObject owner)
         {
-            if (_instance != null)
-                return _instance;
+            GameBootstrapper runtimeBootstrapper = GlobalRegistry.BootstrapperRuntime;
+            if (runtimeBootstrapper != null)
+                return runtimeBootstrapper;
 
             if (owner == null)
                 return EnsureRuntimeInstance();
@@ -328,20 +341,20 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            GameBootstrapper runtimeBootstrapper = GlobalRegistry.BootstrapperRuntime;
+            if (runtimeBootstrapper != null && runtimeBootstrapper != this)
             {
                 Destroy(this);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterBootstrapperRuntime(this);
 
             if (Application.isPlaying)
             {
+                gameObject.name = PersistentRootName;
                 if (transform.parent != null)
                     transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
             }
         }
 
@@ -357,8 +370,7 @@ namespace Hecton8.Bootstrap
 #if UNITY_ADDRESSABLES_EXIST
             ReleaseAddressableUIPrefabs();
 #endif
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.ClearBootstrapperRuntime(this);
         }
 
         /// <summary>
@@ -410,6 +422,8 @@ namespace Hecton8.Bootstrap
         private async Awaitable<bool> RunBootstrapStateMachineAsync(CancellationToken ownerToken)
         {
             BootstrapStatus.BeginBoot();
+            _bootstrapStartTimestamp = Stopwatch.GetTimestamp();
+            _bootstrapDurationTelemetryPublished = false;
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ownerToken);
             CancellationToken ct = cts.Token;
 
@@ -443,6 +457,7 @@ namespace Hecton8.Bootstrap
                 if (!await RunBootstrapPhaseAsync(BootstrapPhase.SceneActivate, BootstrapStepToken.SceneActivate, InitializeSceneActivatePhaseAsync, ct))
                     return false;
 
+                PublishTotalBootTimeTelemetry();
                 _currentPhase = BootstrapPhase.Complete;
                 return true;
             }
@@ -461,6 +476,20 @@ namespace Hecton8.Bootstrap
             {
                 _bootstrapRunInProgress = false;
             }
+        }
+
+        private static void PublishTotalBootTimeTelemetry()
+        {
+            if (_bootstrapDurationTelemetryPublished || _bootstrapStartTimestamp <= 0L)
+                return;
+
+            long elapsedTicks = Stopwatch.GetTimestamp() - _bootstrapStartTimestamp;
+            float elapsedMilliseconds = (float)(elapsedTicks * 1000d / Stopwatch.Frequency);
+            GlobalTelemetryBus.PublishBootstrapDuration(
+                _BootstrapTotalBootTimeHash,
+                _GameBootstrapperContextHash,
+                elapsedMilliseconds);
+            _bootstrapDurationTelemetryPublished = true;
         }
 
         private async Awaitable<bool> RunBootstrapPhaseAsync(
@@ -523,8 +552,9 @@ namespace Hecton8.Bootstrap
                 bool dependencyGraphValid = TryBuildBootstrapDependencyExecutionOrder(
                     _bootstrapExecutionOrder,
                     out _bootstrapExecutionOrderCount);
+                bool registryGraphValid = TryValidateBootstrapRegistryStartupGraph();
                 await Awaitable.NextFrameAsync(cancellationToken: ct);
-                return dependencyGraphValid;
+                return dependencyGraphValid && registryGraphValid;
             }
             catch (OperationCanceledException)
             {
@@ -563,7 +593,7 @@ namespace Hecton8.Bootstrap
         {
             try
             {
-                bool initialized = InitializeCoreLayer();
+                bool initialized = await InitializeCoreLayerAsync(ct);
                 if (initialized && !await WarmObjectPoolPresetsAsync(ct))
                     return false;
 
@@ -595,7 +625,7 @@ namespace Hecton8.Bootstrap
         {
             try
             {
-                bool initialized = InitializeEnvironmentLayer();
+                bool initialized = await InitializeEnvironmentLayerAsync(ct);
                 await Awaitable.NextFrameAsync(cancellationToken: ct);
                 return initialized;
             }
@@ -609,7 +639,7 @@ namespace Hecton8.Bootstrap
         {
             try
             {
-                bool initialized = InitializePlayerLayer();
+                bool initialized = await InitializePlayerLayerAsync(ct);
                 await Awaitable.NextFrameAsync(cancellationToken: ct);
                 return initialized;
             }
@@ -767,7 +797,7 @@ namespace Hecton8.Bootstrap
 #endif
         }
 
-        private bool InitializeCoreLayer()
+        private async Awaitable<bool> InitializeCoreLayerAsync(CancellationToken ct)
         {
             EnsureCrashTelemetryBufferRegistered();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -778,15 +808,15 @@ namespace Hecton8.Bootstrap
             ThreadSafeCommandQueue.Initialize();
             EnsurePrefabRegistry();
             EnsurePersistentWorldRegistry();
-            return InitializeBootstrapLayerNodes(BootstrapPhase.CoreServices);
+            return await InitializeBootstrapLayerNodesAsync(BootstrapPhase.CoreServices, ct);
         }
 
-        private bool InitializeEnvironmentLayer()
+        private async Awaitable<bool> InitializeEnvironmentLayerAsync(CancellationToken ct)
         {
-            return InitializeBootstrapLayerNodes(BootstrapPhase.Environment);
+            return await InitializeBootstrapLayerNodesAsync(BootstrapPhase.Environment, ct);
         }
 
-        private bool InitializePlayerLayer()
+        private async Awaitable<bool> InitializePlayerLayerAsync(CancellationToken ct)
         {
             if (!InputManager.TryValidateRuntimeConfiguration(out string inputConfigurationError))
             {
@@ -834,7 +864,7 @@ namespace Hecton8.Bootstrap
 
             ContextualPhysicalIkRuntime contextualIkRuntime = ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
             PersistRuntimeService(contextualIkRuntime);
-            if (!InitializeBootstrapLayerNodes(BootstrapPhase.Player))
+            if (!await InitializeBootstrapLayerNodesAsync(BootstrapPhase.Player, ct))
                 return false;
 
             PlayerRuntimeContextService playerContextService = PlayerRuntimeContextService.EnsureRuntimeInstance();
@@ -999,31 +1029,16 @@ namespace Hecton8.Bootstrap
                 if (_headlessBootMode)
                     return true;
 
-                Stopwatch warmupStopwatch = Stopwatch.StartNew();
                 int collectionCount = shaderVariantCollections != null ? shaderVariantCollections.Length : 0;
                 for (int i = 0; i < collectionCount; i++)
                 {
                     ct.ThrowIfCancellationRequested();
-                    if (warmupStopwatch.ElapsedMilliseconds >= ShaderWarmupTimeoutMilliseconds)
-                    {
-                        LogOptionalBootstrapWarning("Shader warmup exceeded 5000ms before all collections completed. Remaining warmup skipped.");
-                        return true;
-                    }
 
                     ShaderVariantCollection collection = shaderVariantCollections[i];
                     if (collection == null)
                         continue;
 
-                    Stopwatch collectionStopwatch = Stopwatch.StartNew();
-                    collection.WarmUp();
-                    collectionStopwatch.Stop();
-                    if (collectionStopwatch.ElapsedMilliseconds >= ShaderWarmupTimeoutMilliseconds ||
-                        warmupStopwatch.ElapsedMilliseconds >= ShaderWarmupTimeoutMilliseconds)
-                    {
-                        LogOptionalBootstrapWarning("Shader warmup exceeded 5000ms. Remaining warmup skipped.");
-                        return true;
-                    }
-
+                    _ = collection.isWarmedUp;
                     await Awaitable.NextFrameAsync(cancellationToken: ct);
                 }
 
@@ -1080,7 +1095,7 @@ namespace Hecton8.Bootstrap
             }
         }
 
-        private bool InitializeBootstrapLayerNodes(BootstrapPhase phase)
+        private async Awaitable<bool> InitializeBootstrapLayerNodesAsync(BootstrapPhase phase, CancellationToken ct)
         {
             if (_bootstrapExecutionOrderCount != (int)BootstrapDependencyNode.Count &&
                 !TryBuildBootstrapDependencyExecutionOrder(_bootstrapExecutionOrder, out _bootstrapExecutionOrderCount))
@@ -1100,9 +1115,129 @@ namespace Hecton8.Bootstrap
                     LogBootstrapDependencyFailure(phase, node);
                     return false;
                 }
+
+                if (!await WaitForBootstrapDependencyHeartbeatAsync(node, ct))
+                {
+                    LogBootstrapDependencyFailure(phase, node);
+                    return false;
+                }
             }
 
             return true;
+        }
+
+        private static async Awaitable<bool> WaitForBootstrapDependencyHeartbeatAsync(
+            BootstrapDependencyNode node,
+            CancellationToken ct)
+        {
+            int waitFrames = 0;
+            long waitStartTimestamp = Stopwatch.GetTimestamp();
+            while (!IsBootstrapDependencyHeartbeatReady(node))
+            {
+                ct.ThrowIfCancellationRequested();
+                if (HasWatchdogElapsed(waitStartTimestamp, OptionalServiceTimeoutMilliseconds * 0.001d, out double elapsedSeconds))
+                {
+                    LogBootstrapHeartbeatFailure(node, waitFrames, elapsedSeconds);
+                    return false;
+                }
+
+                waitFrames++;
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+            }
+
+            return true;
+        }
+
+        private static bool IsBootstrapDependencyHeartbeatReady(BootstrapDependencyNode node)
+        {
+            object service = ResolveBootstrapDependencyService(node);
+            if (service is IServiceHeartbeat heartbeat)
+                return heartbeat.IsServiceReady && heartbeat.HeartbeatState != ServiceHeartbeatState.Failed;
+
+            return IsBootstrapDependencyNodeReady(node);
+        }
+
+        private static bool IsBootstrapDependencyNodeReady(BootstrapDependencyNode node)
+        {
+            switch (node)
+            {
+                case BootstrapDependencyNode.SystemDispatcher:
+                    return GlobalRegistry.Dispatcher != null;
+                case BootstrapDependencyNode.GameTickManager:
+                    return GlobalRegistry.TickManager != null;
+                case BootstrapDependencyNode.SaveManager:
+                    return GlobalRegistry.Save != null;
+                case BootstrapDependencyNode.ObjectPoolManager:
+                    return GlobalRegistry.ObjectPool != null;
+                case BootstrapDependencyNode.RenderDispatcher:
+                    return _headlessBootMode || GlobalRegistry.RenderDispatcher != null;
+                case BootstrapDependencyNode.SceneRuntimeService:
+                    return GlobalRegistry.Scene != null;
+                case BootstrapDependencyNode.EquipmentInteractionHandler:
+                    return GlobalRegistry.InteractionSignals != null;
+                case BootstrapDependencyNode.HectonFloatingOrigin:
+                    return HectonFloatingOrigin.Instance != null && !HectonFloatingOrigin.IsShiftInProgress;
+                case BootstrapDependencyNode.GlobalPhysicsStateManager:
+                    return GlobalRegistry.PhysicsStateManager != null;
+                case BootstrapDependencyNode.PhysicsApplySystem:
+                    return GlobalRegistry.Physics != null;
+                case BootstrapDependencyNode.DebrisManager:
+                    return GlobalRegistry.Debris != null;
+                case BootstrapDependencyNode.EnvironmentRuntimeContextService:
+                    return GlobalRegistry.Environment != null;
+                case BootstrapDependencyNode.OceanKinematicsRuntimeService:
+                    return GlobalRegistry.OceanKinematics != null;
+                case BootstrapDependencyNode.EcosystemDirector:
+                    return GlobalRegistry.EcosystemDirector != null;
+                case BootstrapDependencyNode.FaunaSimulation:
+                    return GlobalRegistry.FaunaSimulation != null && GlobalRegistry.FaunaSimulation.IsReady;
+                case BootstrapDependencyNode.SpatialAudioManager:
+                    return GlobalRegistry.Audio != null;
+                case BootstrapDependencyNode.InputDispatcher:
+                    return GlobalRegistry.RegisteredInput != null;
+                case BootstrapDependencyNode.PlayerRuntimeContextService:
+                    return GlobalRegistry.Player != null;
+                case BootstrapDependencyNode.PlayerInventoryManager:
+                    return GlobalRegistry.PlayerInventory != null;
+                case BootstrapDependencyNode.PlayerSensoryManager:
+                    return GlobalRegistry.PlayerSensory != null;
+                case BootstrapDependencyNode.PowerGridManager:
+                    return GlobalRegistry.PowerGrid != null;
+                case BootstrapDependencyNode.ConstructionManager:
+                    return GlobalRegistry.ConstructionRuntime != null || GlobalRegistry.Logistics == null;
+                default:
+                    return false;
+            }
+        }
+
+        private static object ResolveBootstrapDependencyService(BootstrapDependencyNode node)
+        {
+            switch (node)
+            {
+                case BootstrapDependencyNode.SystemDispatcher: return GlobalRegistry.Dispatcher;
+                case BootstrapDependencyNode.GameTickManager: return GlobalRegistry.TickManager;
+                case BootstrapDependencyNode.SaveManager: return GlobalRegistry.Save;
+                case BootstrapDependencyNode.ObjectPoolManager: return GlobalRegistry.ObjectPool;
+                case BootstrapDependencyNode.RenderDispatcher: return GlobalRegistry.RenderDispatcher;
+                case BootstrapDependencyNode.SceneRuntimeService: return GlobalRegistry.Scene;
+                case BootstrapDependencyNode.EquipmentInteractionHandler: return GlobalRegistry.InteractionSignals;
+                case BootstrapDependencyNode.HectonFloatingOrigin: return HectonFloatingOrigin.Instance;
+                case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistry.PhysicsStateManager;
+                case BootstrapDependencyNode.PhysicsApplySystem: return GlobalRegistry.Physics;
+                case BootstrapDependencyNode.DebrisManager: return GlobalRegistry.Debris;
+                case BootstrapDependencyNode.EnvironmentRuntimeContextService: return GlobalRegistry.Environment;
+                case BootstrapDependencyNode.OceanKinematicsRuntimeService: return GlobalRegistry.OceanKinematics;
+                case BootstrapDependencyNode.EcosystemDirector: return GlobalRegistry.EcosystemDirector;
+                case BootstrapDependencyNode.FaunaSimulation: return GlobalRegistry.FaunaSimulation;
+                case BootstrapDependencyNode.SpatialAudioManager: return GlobalRegistry.Audio;
+                case BootstrapDependencyNode.InputDispatcher: return GlobalRegistry.RegisteredInput;
+                case BootstrapDependencyNode.PlayerRuntimeContextService: return GlobalRegistry.Player;
+                case BootstrapDependencyNode.PlayerInventoryManager: return GlobalRegistry.PlayerInventory;
+                case BootstrapDependencyNode.PlayerSensoryManager: return GlobalRegistry.PlayerSensory;
+                case BootstrapDependencyNode.PowerGridManager: return GlobalRegistry.PowerGrid;
+                case BootstrapDependencyNode.ConstructionManager: return GlobalRegistry.ConstructionRuntime;
+                default: return null;
+            }
         }
 
         private static BootstrapPhase ResolveBootstrapNodePhase(BootstrapDependencyNode node)
@@ -1317,7 +1452,7 @@ namespace Hecton8.Bootstrap
             if (!Application.isPlaying || component == null)
                 return;
 
-            GameBootstrapper bootstrapper = _instance;
+            GameBootstrapper bootstrapper = GlobalRegistry.BootstrapperRuntime;
             if (bootstrapper == null)
                 return;
 
@@ -1426,11 +1561,7 @@ namespace Hecton8.Bootstrap
 
             if (Application.isPlaying)
             {
-                Transform telemetryTransform = telemetry.transform;
-                if (telemetryTransform.parent != null)
-                    telemetryTransform.SetParent(null, true);
-
-                DontDestroyOnLoad(telemetry.gameObject);
+                PersistRuntimeService(telemetry);
             }
 
             BootstrapStatus.RegisterSafeHaltTelemetryReporter(CrashTelemetryBuffer.ReportBootstrapSafeHalt);
@@ -1649,7 +1780,7 @@ namespace Hecton8.Bootstrap
             if (activeAudioService != null)
                 return activeAudioService;
 
-            GameBootstrapper bootstrapper = _instance;
+            GameBootstrapper bootstrapper = GlobalRegistry.BootstrapperRuntime;
             if (bootstrapper == null)
                 return null;
 
@@ -1736,6 +1867,16 @@ namespace Hecton8.Bootstrap
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError($"[GameBootstrapper] Bootstrap dependency failed. phase={phase} node={node}");
+#endif
+        }
+
+        private static void LogBootstrapHeartbeatFailure(
+            BootstrapDependencyNode node,
+            int waitFrames,
+            double elapsedSeconds)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError($"[GameBootstrapper] Service heartbeat timeout. node={node} frames={waitFrames} elapsed={elapsedSeconds:0.000}s");
 #endif
         }
 
@@ -1849,26 +1990,43 @@ namespace Hecton8.Bootstrap
             if (executionOrder == null || executionOrder.Length < nodeCount)
                 return false;
 
-            Span<int> inDegree = stackalloc int[nodeCount];
-            Span<BootstrapDependencyNode> queue = stackalloc BootstrapDependencyNode[nodeCount];
+            lock (_bootstrapDependencyScratchLock)
+            {
+                return TryBuildBootstrapDependencyExecutionOrderLocked(executionOrder, nodeCount, out executionOrderCount);
+            }
+        }
+
+        private static bool TryValidateBootstrapRegistryStartupGraph()
+        {
+            return global::Hecton8.Bootstrap.BootstrapRegistryCycleValidator.TryValidateStartupGraph();
+        }
+
+        private static bool TryBuildBootstrapDependencyExecutionOrderLocked(
+            BootstrapDependencyNode[] executionOrder,
+            int nodeCount,
+            out int executionOrderCount)
+        {
+            executionOrderCount = 0;
+            Array.Clear(_bootstrapDependencyInDegreeScratch, 0, nodeCount);
+            Array.Clear(_bootstrapDependencyQueueScratch, 0, nodeCount);
 
             for (int edgeIndex = 0; edgeIndex < _bootstrapDependencyEdges.Length; edgeIndex++)
             {
                 BootstrapDependencyEdge edge = _bootstrapDependencyEdges[edgeIndex];
-                inDegree[(int)edge.Source]++;
+                _bootstrapDependencyInDegreeScratch[(int)edge.Source]++;
             }
 
             int queueTail = 0;
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
-                if (inDegree[nodeIndex] == 0)
-                    queue[queueTail++] = (BootstrapDependencyNode)nodeIndex;
+                if (_bootstrapDependencyInDegreeScratch[nodeIndex] == 0)
+                    _bootstrapDependencyQueueScratch[queueTail++] = (BootstrapDependencyNode)nodeIndex;
             }
 
             int queueHead = 0;
             while (queueHead < queueTail)
             {
-                BootstrapDependencyNode dependencyNode = queue[queueHead++];
+                BootstrapDependencyNode dependencyNode = _bootstrapDependencyQueueScratch[queueHead++];
                 executionOrder[executionOrderCount++] = dependencyNode;
                 for (int edgeIndex = 0; edgeIndex < _bootstrapDependencyEdges.Length; edgeIndex++)
                 {
@@ -1877,9 +2035,9 @@ namespace Hecton8.Bootstrap
                         continue;
 
                     int sourceIndex = (int)edge.Source;
-                    inDegree[sourceIndex]--;
-                    if (inDegree[sourceIndex] == 0)
-                        queue[queueTail++] = edge.Source;
+                    _bootstrapDependencyInDegreeScratch[sourceIndex]--;
+                    if (_bootstrapDependencyInDegreeScratch[sourceIndex] == 0)
+                        _bootstrapDependencyQueueScratch[queueTail++] = edge.Source;
                 }
             }
 
@@ -1892,7 +2050,8 @@ namespace Hecton8.Bootstrap
             for (int edgeIndex = 0; edgeIndex < _bootstrapDependencyEdges.Length; edgeIndex++)
             {
                 BootstrapDependencyEdge edge = _bootstrapDependencyEdges[edgeIndex];
-                if (inDegree[(int)edge.Source] <= 0 || inDegree[(int)edge.Dependency] <= 0)
+                if (_bootstrapDependencyInDegreeScratch[(int)edge.Source] <= 0 ||
+                    _bootstrapDependencyInDegreeScratch[(int)edge.Dependency] <= 0)
                     continue;
 
                 string sourceName = ResolveBootstrapDependencyNodeName(edge.Source);
@@ -1905,7 +2064,9 @@ namespace Hecton8.Bootstrap
                 GlobalTelemetryBus.PublishBootstrapDependencyCycle(sourceName, dependencyName);
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError(cycleReport.ToString());
+#endif
             bool biosShown = BootstrapBiosErrorOverlay.Show("BIOS ERROR 0xBOOT_CYCLE\nACTION: SEE CONSOLE / TELEMETRY");
             QuitForFatalBootstrapCycleInReleaseIfNeeded(biosShown);
             return false;
@@ -2320,14 +2481,14 @@ namespace Hecton8.Bootstrap
         private const string OverlayRootName = "[HardwareErrorCanvas]";
         private const int OverlaySortingOrder = 32767;
 
-        private static HardwareErrorCanvas _instance;
+        private static HardwareErrorCanvas _runtimeOverlay;
 
         private Text _messageText;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+            _runtimeOverlay = null;
         }
 
         internal static bool Show(string message)
@@ -2335,7 +2496,9 @@ namespace Hecton8.Bootstrap
             if (GameBootstrapper.IsHeadlessBootMode || Application.isBatchMode)
             {
                 // One-time critical init failure; headless cannot render the BIOS canvas.
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(message);
+#endif
                 return false;
             }
 
@@ -2349,18 +2512,20 @@ namespace Hecton8.Bootstrap
             }
             catch (Exception exception)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogException(exception);
+#endif
                 return false;
             }
         }
 
         internal static void Hide()
         {
-            if (_instance == null)
+            if (_runtimeOverlay == null)
                 return;
 
-            GameObject root = _instance.gameObject;
-            _instance = null;
+            GameObject root = _runtimeOverlay.gameObject;
+            _runtimeOverlay = null;
 
             if (root == null)
                 return;
@@ -2373,8 +2538,8 @@ namespace Hecton8.Bootstrap
 
         private static HardwareErrorCanvas EnsureInstance()
         {
-            if (_instance != null)
-                return _instance;
+            if (_runtimeOverlay != null)
+                return _runtimeOverlay;
 
             GameObject runtimeRoot = new GameObject(OverlayRootName); // COLD ALLOC: GameObject[1] - hardware-error BIOS fallback overlay root - owner: HardwareErrorCanvas
             GameBootstrapper.EnsureRuntimeInstance();
@@ -2385,13 +2550,13 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            if (_runtimeOverlay != null && _runtimeOverlay != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            _runtimeOverlay = this;
 
             if (Application.isPlaying)
                 GameBootstrapper.PersistRuntimeService(this);

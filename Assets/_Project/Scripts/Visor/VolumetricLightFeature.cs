@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using Hecton8.VFX;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -18,10 +19,20 @@ namespace Hecton8.Visor
     public sealed class VolumetricLightFeature : ScriptableRendererFeature
     {
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute";
+        private const float FlashlightVolumetricFullDistanceMeters = 20f;
+        private const float FlashlightVolumetricCullDistanceMeters = 30f;
+        private const float FlashlightVolumetricFullDistanceMetersSq = FlashlightVolumetricFullDistanceMeters * FlashlightVolumetricFullDistanceMeters;
+        private const float FlashlightVolumetricCullDistanceMetersSq = FlashlightVolumetricCullDistanceMeters * FlashlightVolumetricCullDistanceMeters;
+        private const double VolumetricSetupBudgetWarningMilliseconds = 0.2d;
+        private const int VolumetricPerformanceWarningCooldownFrames = 30;
+        private const uint TelemetryWarningVolumetricSetupOverBudgetHash = 0xD4A51F82u;
+        private const uint TelemetryContextVolumetricLightFeatureHash = 0x671C92E5u;
 
         [Serializable]
         private sealed class FeatureSettings
         {
+            private const int MaxDitheredConeRaymarchSteps = 7;
+
             [Tooltip("Compute shader that owns both the half-res raymarch and full-res bilateral composite.")]
             public ComputeShader computeShader = null;
 
@@ -38,10 +49,10 @@ namespace Hecton8.Visor
             [Range(0.25f, 1f)] public float renderScale = 0.5f;
 
             [Tooltip("Fallback medium-tier step count used when no emission profile is assigned.")]
-            [Range(8, 32)] public int fallbackSteps = 16;
+            [Range(1, MaxDitheredConeRaymarchSteps)] public int fallbackSteps = MaxDitheredConeRaymarchSteps;
 
-            [Tooltip("Screen-space shadow raymarch steps. Low/MX350 tier is clamped below 16.")]
-            [Range(4, 15)] public int volumetricShadowSteps = 8;
+            [Tooltip("Screen-space shadow raymarch steps. MX350 path is strictly below eight.")]
+            [Range(1, MaxDitheredConeRaymarchSteps)] public int volumetricShadowSteps = 4;
 
             [Tooltip("Maximum world-space distance for the secondary shadow raymarch toward the light.")]
             [Range(1f, 24f)] public float volumetricShadowDistance = 8f;
@@ -80,9 +91,9 @@ namespace Hecton8.Visor
             {
                 int maxStepCount = ResolveMx350SafeStepLimit();
                 if (emissionProfile != null)
-                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(hardwareTier), 4, maxStepCount);
+                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(hardwareTier), 1, maxStepCount);
 
-                return Mathf.Clamp(fallbackSteps, 4, maxStepCount);
+                return Mathf.Clamp(fallbackSteps, 1, maxStepCount);
             }
 
             internal int ResolveVolumetricShadowSteps()
@@ -92,10 +103,7 @@ namespace Hecton8.Visor
 
             private int ResolveMx350SafeStepLimit()
             {
-                return hardwareTier == VFXEmissionProfile.HardwareTier.Low ||
-                       (SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048)
-                    ? 15
-                    : 32;
+                return MaxDitheredConeRaymarchSteps;
             }
         }
 
@@ -116,6 +124,12 @@ namespace Hecton8.Visor
                 internal Matrix4x4 inverseViewProjection;
                 internal Vector4 mainLightDirection;
                 internal Vector4 mainLightColor;
+                internal Vector4 flashlightPosition;
+                internal Vector4 flashlightDirection;
+                internal Vector4 flashlightColor;
+                internal Vector4 flashlightConeData;
+                internal float flashlightActive;
+                internal float flashlightVolumetricOpacity;
                 internal Vector4 scatteringParams;
                 internal Vector4 hudFogPerturbation;
                 internal Vector4 marchParams;
@@ -138,6 +152,10 @@ namespace Hecton8.Visor
                 internal Vector4 halfSize;
                 internal Matrix4x4 inverseViewProjection;
                 internal Vector4 mainLightDirection;
+                internal Vector4 flashlightColor;
+                internal float flashlightActive;
+                internal float flashlightVolumetricOpacity;
+                internal float freezeFrameDither;
                 internal Vector4 compositeParams;
             }
 
@@ -154,6 +172,12 @@ namespace Hecton8.Visor
             private uint _compositeThreadGroupSizeY = 8;
             private Vector4 _mainLightDirection;
             private Vector4 _mainLightColor;
+            private Vector4 _flashlightPosition;
+            private Vector4 _flashlightDirection;
+            private Vector4 _flashlightColor;
+            private Vector4 _flashlightConeData;
+            private float _flashlightActive;
+            private float _flashlightVolumetricOpacity;
 
             public VolumetricLightPass()
             {
@@ -165,12 +189,24 @@ namespace Hecton8.Visor
                 FeatureSettings settings,
                 ComputeShader computeShader,
                 in Vector4 mainLightDirection,
-                in Vector4 mainLightColor)
+                in Vector4 mainLightColor,
+                in Vector4 flashlightPosition,
+                in Vector4 flashlightDirection,
+                in Vector4 flashlightColor,
+                in Vector4 flashlightConeData,
+                float flashlightActive,
+                float flashlightVolumetricOpacity)
             {
                 _settings = settings;
                 _computeShader = computeShader;
                 _mainLightDirection = mainLightDirection;
                 _mainLightColor = mainLightColor;
+                _flashlightPosition = flashlightPosition;
+                _flashlightDirection = flashlightDirection;
+                _flashlightColor = flashlightColor;
+                _flashlightConeData = flashlightConeData;
+                _flashlightActive = Mathf.Clamp01(flashlightActive);
+                _flashlightVolumetricOpacity = Mathf.Clamp01(flashlightVolumetricOpacity);
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
@@ -200,7 +236,7 @@ namespace Hecton8.Visor
                     _computeShader == null ||
                     _raymarchKernel < 0 ||
                     _compositeKernel < 0 ||
-                    _mainLightDirection.w <= 0.5f)
+                    (_mainLightDirection.w <= 0.5f && _flashlightActive <= 0.5f))
                 {
                     return;
                 }
@@ -265,6 +301,12 @@ namespace Hecton8.Visor
                     passData.inverseViewProjection = inverseViewProjection;
                     passData.mainLightDirection = _mainLightDirection;
                     passData.mainLightColor = _mainLightColor;
+                    passData.flashlightPosition = _flashlightPosition;
+                    passData.flashlightDirection = _flashlightDirection;
+                    passData.flashlightColor = _flashlightColor;
+                    passData.flashlightConeData = _flashlightConeData;
+                    passData.flashlightActive = _flashlightActive;
+                    passData.flashlightVolumetricOpacity = _flashlightVolumetricOpacity;
                     passData.scatteringParams = scatteringParams;
                     passData.hudFogPerturbation = hudFogPerturbation;
                     passData.marchParams = marchParams;
@@ -286,6 +328,12 @@ namespace Hecton8.Visor
                         context.cmd.SetComputeMatrixParam(data.computeShader, ShaderConstants.InverseViewProjectionId, data.inverseViewProjection);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MainLightDirectionId, data.mainLightDirection);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MainLightColorId, data.mainLightColor);
+                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.FlashlightPositionId, data.flashlightPosition);
+                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.FlashlightDirectionId, data.flashlightDirection);
+                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.FlashlightColorId, data.flashlightColor);
+                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.FlashlightConeDataId, data.flashlightConeData);
+                        context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FlashlightActiveId, data.flashlightActive);
+                        context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FlashlightVolumetricOpacityId, data.flashlightVolumetricOpacity);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.ScatteringParamsId, data.scatteringParams);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.HudFogPerturbationId, data.hudFogPerturbation);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MarchParamsId, data.marchParams);
@@ -310,6 +358,10 @@ namespace Hecton8.Visor
                     passData.halfSize = halfSize;
                     passData.inverseViewProjection = inverseViewProjection;
                     passData.mainLightDirection = _mainLightDirection;
+                    passData.flashlightColor = _flashlightColor;
+                    passData.flashlightActive = _flashlightActive;
+                    passData.flashlightVolumetricOpacity = _flashlightVolumetricOpacity;
+                    passData.freezeFrameDither = Shader.GetGlobalFloat(ShaderConstants.FreezeFrameDitherId);
                     passData.compositeParams = compositeParams;
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
@@ -329,6 +381,10 @@ namespace Hecton8.Visor
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.HalfSizeId, data.halfSize);
                         context.cmd.SetComputeMatrixParam(data.computeShader, ShaderConstants.InverseViewProjectionId, data.inverseViewProjection);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MainLightDirectionId, data.mainLightDirection);
+                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.FlashlightColorId, data.flashlightColor);
+                        context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FlashlightActiveId, data.flashlightActive);
+                        context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FlashlightVolumetricOpacityId, data.flashlightVolumetricOpacity);
+                        context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FreezeFrameDitherId, data.freezeFrameDither);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.CompositeParamsId, data.compositeParams);
                         context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
                     });
@@ -399,11 +455,19 @@ namespace Hecton8.Visor
             internal static readonly int ShadowParamsId = Shader.PropertyToID("_HectonVolumetricShadowParams");
             internal static readonly int CompositeParamsId = Shader.PropertyToID("_HectonVolumetricCompositeParams");
             internal static readonly int ViewProjectionId = Shader.PropertyToID("_HectonVolumetricViewProjection");
+            internal static readonly int FlashlightActiveId = Shader.PropertyToID("_HectonFlashlightActive");
+            internal static readonly int FlashlightPositionId = Shader.PropertyToID("_HectonFlashlightPositionWS");
+            internal static readonly int FlashlightDirectionId = Shader.PropertyToID("_HectonFlashlightDirectionWS");
+            internal static readonly int FlashlightColorId = Shader.PropertyToID("_HectonFlashlightColor");
+            internal static readonly int FlashlightConeDataId = Shader.PropertyToID("_HectonFlashlightConeData");
+            internal static readonly int FlashlightVolumetricOpacityId = Shader.PropertyToID("_HectonFlashlightVolumetricOpacity");
+            internal static readonly int FreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
 
         private VolumetricLightPass _pass;
+        private int _nextPerformanceWarningFrame;
 
         /// <inheritdoc />
         public override void Create()
@@ -422,6 +486,7 @@ namespace Hecton8.Visor
             if (settings == null || settings.computeShader == null || _pass == null || !SystemInfo.supportsComputeShaders)
                 return;
 
+            long setupStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
                 return;
@@ -442,11 +507,73 @@ namespace Hecton8.Visor
                 }
             }
 
-            if (mainLightDirection.w <= 0.5f)
+            Vector4 flashlightPosition = Shader.GetGlobalVector(ShaderConstants.FlashlightPositionId);
+            Vector4 flashlightDirection = Shader.GetGlobalVector(ShaderConstants.FlashlightDirectionId);
+            Vector4 flashlightColor = Shader.GetGlobalVector(ShaderConstants.FlashlightColorId);
+            Vector4 flashlightConeData = Shader.GetGlobalVector(ShaderConstants.FlashlightConeDataId);
+            float flashlightActive = Shader.GetGlobalFloat(ShaderConstants.FlashlightActiveId);
+            float flashlightHasCone = flashlightActive > 0.5f && flashlightColor.w > 0.001f && flashlightPosition.w > 0.1f
+                ? 1f
+                : 0f;
+            float flashlightVolumetricOpacity = ResolveFlashlightVolumetricOpacity(renderingData.cameraData.camera, in flashlightPosition, flashlightHasCone);
+            if (flashlightVolumetricOpacity <= 0.001f)
+                flashlightHasCone = 0f;
+
+            if (mainLightDirection.w <= 0.5f && flashlightHasCone <= 0.5f)
                 return;
 
-            _pass.Setup(settings, settings.computeShader, mainLightDirection, mainLightColor);
+            _pass.Setup(
+                settings,
+                settings.computeShader,
+                mainLightDirection,
+                mainLightColor,
+                flashlightPosition,
+                flashlightDirection,
+                flashlightColor,
+                flashlightConeData,
+                flashlightHasCone,
+                flashlightVolumetricOpacity);
             renderer.EnqueuePass(_pass);
+            PublishVolumetricSetupWarningIfNeeded(setupStartTimestamp);
+        }
+
+        private void PublishVolumetricSetupWarningIfNeeded(long setupStartTimestamp)
+        {
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - setupStartTimestamp;
+            double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds <= VolumetricSetupBudgetWarningMilliseconds || Time.frameCount < _nextPerformanceWarningFrame)
+                return;
+
+            _nextPerformanceWarningFrame = Time.frameCount + VolumetricPerformanceWarningCooldownFrames;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                TelemetryWarningVolumetricSetupOverBudgetHash,
+                TelemetryContextVolumetricLightFeatureHash,
+                (float)elapsedMilliseconds);
+        }
+
+        private static float ResolveFlashlightVolumetricOpacity(Camera camera, in Vector4 flashlightPosition, float flashlightHasCone)
+        {
+            if (flashlightHasCone <= 0.5f)
+                return 0f;
+
+            if (camera == null)
+                return 1f;
+
+            Vector3 cameraPosition = camera.transform.position;
+            float dx = flashlightPosition.x - cameraPosition.x;
+            float dy = flashlightPosition.y - cameraPosition.y;
+            float dz = flashlightPosition.z - cameraPosition.z;
+            float distanceSq = dx * dx + dy * dy + dz * dz;
+            if (float.IsNaN(distanceSq) || float.IsInfinity(distanceSq) || distanceSq >= FlashlightVolumetricCullDistanceMetersSq)
+                return 0f;
+
+            if (distanceSq <= FlashlightVolumetricFullDistanceMetersSq)
+                return 1f;
+
+            float fade = Mathf.Clamp01((distanceSq - FlashlightVolumetricFullDistanceMetersSq) /
+                (FlashlightVolumetricCullDistanceMetersSq - FlashlightVolumetricFullDistanceMetersSq));
+            fade = fade * fade * (3f - 2f * fade);
+            return 1f - fade;
         }
 
         /// <inheritdoc />

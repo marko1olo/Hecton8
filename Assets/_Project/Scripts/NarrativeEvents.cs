@@ -9,7 +9,8 @@ namespace Hecton8.Core
     public enum NarrativeEventType : byte
     {
         DiscoveryMade = 0,
-        DepthTierReached = 1
+        DepthTierReached = 1,
+        AudioLogFound = 2
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -217,6 +218,26 @@ namespace Hecton8.Core
 
             if (!_discoveryIdsByHash.ContainsKey(discoveryHash))
                 _discoveryIdsByHash.Add(discoveryHash, discoveryId);
+        }
+
+        public static void RaiseAudioLogFound(string logId)
+        {
+            uint logHash = ComputeDiscoveryHash(logId);
+            if (logHash == 0u)
+                return;
+
+            if (!Enqueue(new NarrativeEventPayload
+            {
+                DiscoveryHash = logHash,
+                EventType = (ushort)NarrativeEventType.AudioLogFound,
+                DepthTier = 0
+            }))
+            {
+                return;
+            }
+
+            if (!_discoveryIdsByHash.ContainsKey(logHash))
+                _discoveryIdsByHash.Add(logHash, logId);
         }
 
         public static void RaiseDepthTierReached(int tier)

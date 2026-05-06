@@ -3047,11 +3047,11 @@ namespace Hecton8.World
             // COLD ALLOC: int[6] - unit impostor card indices - owner: HectonIndirectVegetationRenderer
             int[] triangles = { 0, 1, 2, 0, 2, 3 };
 
-            mesh.vertices = vertices;
-            mesh.normals = normals;
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
             mesh.tangents = tangents;
             mesh.uv = uvs;
-            mesh.triangles = triangles;
+            mesh.SetTriangles(triangles, 0);
             mesh.bounds = new Bounds(new Vector3(0f, 0.5f, 0f), new Vector3(1f, 1f, 0.01f));
             return mesh;
         }

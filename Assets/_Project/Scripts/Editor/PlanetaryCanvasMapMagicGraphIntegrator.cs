@@ -42,6 +42,7 @@ namespace Hecton8.Editor
             HectonBiomeMatrixMapMagicPostProcessNode tectonicNode = EnsureGenerator<HectonBiomeMatrixMapMagicPostProcessNode>(graph, -460f, -80f, out bool createdTectonic);
             HectonHydraulicErosionMapMagicNode erosionNode = EnsureGenerator<HectonHydraulicErosionMapMagicNode>(graph, -260f, -80f, out bool createdErosion);
             HectonTerrainSplatmapMapMagicNode splatNode = EnsureGenerator<HectonTerrainSplatmapMapMagicNode>(graph, -80f, 150f, out bool createdSplat);
+            HectonAnomalyMapMagicNode anomalyNode = EnsureGenerator<HectonAnomalyMapMagicNode>(graph, 120f, 150f, out bool createdAnomaly);
 
             IOutlet<object> sourceOutlet = ResolveHeightSource(graph, heightOutput, tectonicNode, erosionNode, splatNode);
             if (sourceOutlet == null)
@@ -51,11 +52,13 @@ namespace Hecton8.Editor
             graph.Link(tectonicNode, erosionNode.heightIn);
             graph.Link(erosionNode.erodedHeightOut, splatNode.heightIn);
             graph.Link(erosionNode.sedimentMaskOut, splatNode.sedimentIn);
+            graph.Link(erosionNode.erodedHeightOut, anomalyNode.heightIn);
             graph.Link(erosionNode.erodedHeightOut, heightOutput);
 
             int rockLinks = 0;
             int sandLinks = 0;
             int siltLinks = 0;
+            int brineMudLinks = 0;
             if (texturesOutput != null && texturesOutput.layers != null)
             {
                 for (int i = 0; i < texturesOutput.layers.Length; i++)
@@ -80,6 +83,11 @@ namespace Hecton8.Editor
                         graph.Link(splatNode.sandOut, layer);
                         sandLinks++;
                     }
+                    else if (semantic == TextureSemantic.Mud)
+                    {
+                        graph.Link(anomalyNode.brineMaskOut, layer);
+                        brineMudLinks++;
+                    }
                 }
             }
 
@@ -94,10 +102,12 @@ namespace Hecton8.Editor
                 CreatedTectonicNode = createdTectonic,
                 CreatedErosionNode = createdErosion,
                 CreatedSplatNode = createdSplat,
+                CreatedAnomalyNode = createdAnomaly,
                 HeightOutputLinked = true,
                 RockTextureLinks = rockLinks,
                 SandTextureLinks = sandLinks,
-                SiltTextureLinks = siltLinks
+                SiltTextureLinks = siltLinks,
+                BrineMudTextureLinks = brineMudLinks
             };
         }
 
@@ -120,8 +130,15 @@ namespace Hecton8.Editor
 
         private static T FindFirst<T>(Graph graph)
         {
-            foreach (T generator in graph.GeneratorsOfType<T>())
-                return generator;
+            Generator[] generators = graph != null ? graph.generators : null;
+            if (generators == null)
+                return default;
+
+            for (int i = 0; i < generators.Length; i++)
+            {
+                if (generators[i] is T generator)
+                    return generator;
+            }
 
             return default;
         }
@@ -145,8 +162,15 @@ namespace Hecton8.Editor
             if (IsUsableSource(source, tectonicNode, erosionNode, splatNode))
                 return source;
 
-            foreach (Import200 importNode in graph.GeneratorsOfType<Import200>())
-                return importNode;
+            Generator[] generators = graph != null ? graph.generators : null;
+            if (generators != null)
+            {
+                for (int i = 0; i < generators.Length; i++)
+                {
+                    if (generators[i] is Import200 importNode)
+                        return importNode;
+                }
+            }
 
             return null;
         }
@@ -192,6 +216,16 @@ namespace Hecton8.Editor
                 return TextureSemantic.Sand;
             }
 
+            if (ContainsToken(layer.name, "mud") ||
+                ContainsToken(layer.name, "viscous") ||
+                ContainsToken(layer.name, "brine") ||
+                ContainsToken(layer.prototype != null ? layer.prototype.name : null, "mud") ||
+                ContainsToken(layer.prototype != null ? layer.prototype.name : null, "viscous") ||
+                ContainsToken(layer.prototype != null ? layer.prototype.name : null, "brine"))
+            {
+                return TextureSemantic.Mud;
+            }
+
             return TextureSemantic.None;
         }
 
@@ -212,10 +246,12 @@ namespace Hecton8.Editor
             builder.Append("  \"createdTectonicNode\": ").Append(report.CreatedTectonicNode ? "true" : "false").AppendLine(",");
             builder.Append("  \"createdErosionNode\": ").Append(report.CreatedErosionNode ? "true" : "false").AppendLine(",");
             builder.Append("  \"createdSplatNode\": ").Append(report.CreatedSplatNode ? "true" : "false").AppendLine(",");
+            builder.Append("  \"createdAnomalyNode\": ").Append(report.CreatedAnomalyNode ? "true" : "false").AppendLine(",");
             builder.Append("  \"heightOutputLinked\": ").Append(report.HeightOutputLinked ? "true" : "false").AppendLine(",");
             builder.Append("  \"rockTextureLinks\": ").Append(report.RockTextureLinks).AppendLine(",");
             builder.Append("  \"sandTextureLinks\": ").Append(report.SandTextureLinks).AppendLine(",");
-            builder.Append("  \"siltTextureLinks\": ").Append(report.SiltTextureLinks).AppendLine();
+            builder.Append("  \"siltTextureLinks\": ").Append(report.SiltTextureLinks).AppendLine(",");
+            builder.Append("  \"brineMudTextureLinks\": ").Append(report.BrineMudTextureLinks).AppendLine();
             builder.AppendLine("}");
             File.WriteAllText(ArtifactPath, builder.ToString());
         }
@@ -232,7 +268,8 @@ namespace Hecton8.Editor
             None,
             Sand,
             Rock,
-            Silt
+            Silt,
+            Mud
         }
 
         public struct IntegrationReport
@@ -243,10 +280,12 @@ namespace Hecton8.Editor
             public bool CreatedTectonicNode;
             public bool CreatedErosionNode;
             public bool CreatedSplatNode;
+            public bool CreatedAnomalyNode;
             public bool HeightOutputLinked;
             public int RockTextureLinks;
             public int SandTextureLinks;
             public int SiltTextureLinks;
+            public int BrineMudTextureLinks;
 
             public static IntegrationReport Failure(string graphPath, string message)
             {

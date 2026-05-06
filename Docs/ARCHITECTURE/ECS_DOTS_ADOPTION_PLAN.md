@@ -1,6 +1,6 @@
-# ECS/DOTS Adoption Plan - FaunaSimulationEngine and FluidMathCore
+﻿# ECS/DOTS Adoption Plan - FaunaSimulationEngine and FluidMathCore
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: roadmap only. No `com.unity.entities` production migration was performed in this pass.
 

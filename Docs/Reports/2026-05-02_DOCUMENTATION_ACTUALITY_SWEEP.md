@@ -1,7 +1,7 @@
-# Documentation Actuality Sweep
+﻿# Documentation Actuality Sweep
 
-Date: `2026-05-02`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Scope: active documentation authority, root documentation anchors, and current local verification evidence
 
 Supersession note: this report is historical. The current broad documentation-sweep authority is `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
@@ -178,7 +178,7 @@ The older report claim that `ProximityColliderSystem.Tick`, `SaveManager.Tick`, 
 
 Markdown link check over the active root/`Docs` surface found `3` missing markdown links before patching.
 
-All three were in `Docs/Legacy_Backlog/Что_и_как_исправляем_—_живой_план.md`:
+All three were in `Docs/Legacy_Backlog/Ð§Ñ‚Ð¾_Ð¸_ÐºÐ°Ðº_Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼_â€”_Ð¶Ð¸Ð²Ð¾Ð¹_Ð¿Ð»Ð°Ð½.md`:
 
 - two absolute `PROCEDURAL_WATER_PATTERN_REPORT.md` links pointed to a root file absent from the current workspace
 - one absolute `PROCEDURAL_MATRIX_BIOME_CONTENT_REPORT.md` link pointed to a moved report now present under `Docs/_Archive/2026-04-16_Workspace_Cleanup/root/procedural_status_snapshots/`
@@ -200,7 +200,7 @@ Current handling:
 - `Docs/DOC_GOVERNANCE.md` and `Docs/ROOT_DOCS_REFERENCE.md` now recognize the May 2 authority/evidence boundary.
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` count data was refreshed against the current filesystem.
 - `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` source-count and largest-file data were refreshed against the current filesystem.
-- `Docs/Legacy_Backlog/Что_и_как_исправляем_—_живой_план.md` no longer contains broken absolute markdown links to absent root reports.
+- `Docs/Legacy_Backlog/Ð§Ñ‚Ð¾_Ð¸_ÐºÐ°Ðº_Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼_â€”_Ð¶Ð¸Ð²Ð¾Ð¹_Ð¿Ð»Ð°Ð½.md` no longer contains broken absolute markdown links to absent root reports.
 
 ## Current Documentation Truth
 

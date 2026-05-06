@@ -23,18 +23,17 @@ namespace Hecton8.Meta
         private const float BiomeMasteryDamageEpsilon = 0.01f;
         private const int RecentEventBufferCapacity = 16;
 
-        private static DynamicDifficultyDirector _instance;
-
         private readonly float[] _deathTimestamps = new float[RecentEventBufferCapacity]; // COLD ALLOC: float[16] - recent death telemetry window - owner: DynamicDifficultyDirector
         private readonly float[] _advisoryTimestamps = new float[RecentEventBufferCapacity]; // COLD ALLOC: float[16] - recent advisory telemetry window - owner: DynamicDifficultyDirector
         private readonly float[] _achievementTimestamps = new float[RecentEventBufferCapacity]; // COLD ALLOC: float[16] - recent achievement telemetry window - owner: DynamicDifficultyDirector
         private HectonSurvivalSystem _survivalSystem;
+        private HectonDiscoveryManager _discoveryManager;
         private HectonEventSubscription _achievementUnlockedSubscription;
         private HectonEventSubscription _advisoryIssuedSubscription;
-        private HectonEventSubscription _biomeDiscoveredSubscription;
         private HectonEventSubscription _gameLoadedSubscription;
         private HectonEventSubscription _playerDiedSubscription;
         private bool _registeredToTick;
+        private bool _registeredService;
         private int _deathCount;
         private int _deathWriteIndex;
         private int _advisoryCount;
@@ -50,11 +49,6 @@ namespace Hecton8.Meta
         public event Action<DifficultyModifierData> ModifiersChanged;
 
         /// <summary>
-        /// Active runtime instance while the gameplay scene is loaded.
-        /// </summary>
-        public static DynamicDifficultyDirector Instance => _instance;
-
-        /// <summary>
         /// Current live difficulty modifiers.
         /// </summary>
         public DifficultyModifierData CurrentModifiers { get; private set; } = DifficultyModifierData.Default;
@@ -62,22 +56,23 @@ namespace Hecton8.Meta
         /// <summary>
         /// Returns the current modifier snapshot or the neutral baseline when the director is unavailable.
         /// </summary>
-        public static DifficultyModifierData Current => _instance != null ? _instance.CurrentModifiers : DifficultyModifierData.Default;
+        public static DifficultyModifierData Current
+        {
+            get
+            {
+                DynamicDifficultyDirector runtime = GlobalRegistry.DynamicDifficulty;
+                return runtime != null ? runtime.CurrentModifiers : DifficultyModifierData.Default;
+            }
+        }
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             CurrentModifiers = DifficultyModifierData.Default;
         }
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegisterWithTickManager();
             SubscribeToEventBus();
             RebindOwnerSubscriptions();
@@ -94,6 +89,7 @@ namespace Hecton8.Meta
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
@@ -101,9 +97,7 @@ namespace Hecton8.Meta
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
-
-            if (_instance == this)
-                _instance = null;
+            TryUnregisterService();
         }
 
         /// <inheritdoc />
@@ -126,7 +120,7 @@ namespace Hecton8.Meta
             RegisterRecentEvent(_advisoryTimestamps, ref _advisoryCount, ref _advisoryWriteIndex, ResolveTelemetryTimeSeconds());
         }
 
-        private void HandleBiomeDiscovered(BiomeDiscoveredEvent biomeDiscoveredEvent)
+        private void HandleBiomeDiscovered(int biomeId)
         {
             _biomesSinceDamage++;
         }
@@ -151,9 +145,6 @@ namespace Hecton8.Meta
             if (_advisoryIssuedSubscription == null)
                 _advisoryIssuedSubscription = HectonEventBus.Subscribe<PlayerAdvisoryIssuedEvent>(HandleAdvisoryIssued, "meta.difficulty");
 
-            if (_biomeDiscoveredSubscription == null)
-                _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, "meta.difficulty");
-
             if (_gameLoadedSubscription == null)
                 _gameLoadedSubscription = HectonEventBus.Subscribe<GameLoadedEvent>(HandleGameLoaded, "meta.difficulty");
 
@@ -167,8 +158,6 @@ namespace Hecton8.Meta
             _achievementUnlockedSubscription = null;
             _advisoryIssuedSubscription?.Dispose();
             _advisoryIssuedSubscription = null;
-            _biomeDiscoveredSubscription?.Dispose();
-            _biomeDiscoveredSubscription = null;
             _gameLoadedSubscription?.Dispose();
             _gameLoadedSubscription = null;
             _playerDiedSubscription?.Dispose();
@@ -186,6 +175,10 @@ namespace Hecton8.Meta
 
         private void UnbindOwnerSubscriptions()
         {
+            if (_discoveryManager != null)
+                _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
+
+            _discoveryManager = null;
         }
 
         private bool ResolveOwners()
@@ -194,7 +187,14 @@ namespace Hecton8.Meta
             if (_survivalSystem == null && playerObject != null)
                 playerObject.TryGetComponent(out _survivalSystem);
 
-            return _survivalSystem != null;
+            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
+            if (discoveryManager != null && !ReferenceEquals(_discoveryManager, discoveryManager))
+            {
+                _discoveryManager = discoveryManager;
+                _discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
+            }
+
+            return _survivalSystem != null || discoveryManager != null;
         }
 
         private void SampleIntegrityDrop()
@@ -329,6 +329,24 @@ namespace Hecton8.Meta
             return Mathf.Max(0f, Time.realtimeSinceStartup);
         }
 
+        private void TryRegisterService()
+        {
+            if (_registeredService || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterDynamicDifficultyRuntime(this);
+            _registeredService = ReferenceEquals(GlobalRegistry.DynamicDifficulty, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_registeredService)
+                return;
+
+            GlobalRegistry.UnregisterDynamicDifficultyRuntime(this);
+            _registeredService = false;
+        }
+
         private void TryRegisterWithTickManager()
         {
             if (_registeredToTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -343,7 +361,7 @@ namespace Hecton8.Meta
             if (!_registeredToTick)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
 
             _registeredToTick = false;
         }

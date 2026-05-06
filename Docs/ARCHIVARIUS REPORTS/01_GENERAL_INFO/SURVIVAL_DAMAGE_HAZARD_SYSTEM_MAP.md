@@ -1,6 +1,6 @@
-# HECTON-8 SURVIVAL / DAMAGE / HAZARD SYSTEM MAP
+﻿# HECTON-8 SURVIVAL / DAMAGE / HAZARD SYSTEM MAP
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: source-backed ownership map for survival, oxygen, pressure, thermal stress, hazard routing, damage consequences, and adjacent stress/presentation branches
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Persistent_Object_Registry.txt`
@@ -84,7 +84,7 @@ Direct authored placement confirmed on player root:
 |---|---|---|
 | `812` | `HectonSurvivalSystem` | authored player survival owner |
 
-This class is much broader than “oxygen bar logic”.
+This class is much broader than â€œoxygen bar logicâ€.
 It owns:
 
 - oxygen

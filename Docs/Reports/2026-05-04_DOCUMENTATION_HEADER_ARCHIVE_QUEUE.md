@@ -1,7 +1,7 @@
-# Documentation Header And Archive Queue
+﻿# Documentation Header And Archive Queue
 
-Date: `2026-05-04`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Scope: active markdown header compliance, relocated root evidence logs, archive/deprecated move candidates
 
 ## Mandates Followed
@@ -46,22 +46,22 @@ Result:
 
 | Finding | Count |
 |---|---:|
-| active markdown files missing `Date:` or `Status:` | `41` |
-| active markdown files missing `Date:` | `41` |
+| active markdown files missing `Date:` or `Status:` | `0` |
+| active markdown files missing `Date:` | `0` |
 | active markdown files missing `Status:` | `0` |
 
 ## Missing Header Breakdown
 
 | Area | Files needing header normalization |
 |---|---:|
-| `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/` | `28` |
-| `Docs/AI_Fauna/` | `2` |
+| `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/` | `0` |
+| `Docs/AI_Fauna/` | `0` |
 | `Docs/ARCHITECTURE/` | `0` |
 | `Docs/ARCHIVARIUS REPORTS/` | `0` |
-| `Docs/Flora_Pipeline/` | `4` |
-| `Docs/Legacy_Backlog/` | `2` |
-| `Docs/Legacy_World_Reference/` | `1` |
-| `Docs/Scatter_Runtime/` | `4` |
+| `Docs/Flora_Pipeline/` | `0` |
+| `Docs/Legacy_Backlog/` | `0` |
+| `Docs/Legacy_World_Reference/` | `0` |
+| `Docs/Scatter_Runtime/` | `0` |
 | `Docs/SPACE_ENGINE_RESEARCH/` | `0` |
 | root active `Docs/*.md` contract files | `0` |
 
@@ -69,6 +69,7 @@ Root active `Docs/*.md` contract file header normalization is complete for the f
 `Docs/ARCHITECTURE/*.md` header normalization is also complete for the `23` files previously missing `Date:` or `Status:`.
 `Docs/ARCHIVARIUS REPORTS/` header normalization is complete for the `60` files previously missing strict headers in `01_GENERAL_INFO`, `02_ACTUAL_REPORTS`, and `03_OBSOLETE`.
 `Docs/SPACE_ENGINE_RESEARCH/` header normalization is complete for the active research artifacts currently present.
+May 6 follow-up sync closed the remaining `41` active missing-`Date:` headers across the April 30 forensic bundle, AI/Fauna references, Flora pipeline docs, legacy reference/backlog docs, and Scatter runtime docs.
 
 ## Relocated Root Evidence Logs
 
@@ -170,13 +171,42 @@ Follow-up Unity batch attempt:
 
 Therefore the filesystem smoke/stress JSON is current evidence, but Unity batch execution remains pending on environment/licensing stability. The smoke guard now counts every `Root_Logs_*` bundle under `Docs/DEPRECATED/External_And_Log_Bundles/`, not only the original 2026-05-04 bundle.
 
-Scoped `git diff --check` excluding deprecated files passed.
-Full `git diff --check -- Docs` also passes in the current scan. Git still prints LF-to-CRLF working-copy warnings on touched markdown files; those are line-ending normalization warnings, not diff-check errors.
+## 2026-05-06 Synchronization Addendum
+
+Read `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` before using the May 5 counters above.
+
+Fresh May 6 header/inventory scan:
+
+| Finding | Count |
+|---|---:|
+| `Docs/**/*.md`, total | `429` |
+| all `Docs/**/*.md` missing `Date:` | `0` |
+| all `Docs/**/*.md` missing `Status:` | `0` |
+| active non-report markdown files | `162` |
+| active markdown files missing `Date:` or `Status:` | `0` |
+| active markdown files missing `Date:` | `0` |
+| active markdown files missing `Status:` | `0` |
+| direct root `Docs/*.md` header misses | `0` |
+| `Docs/ARCHITECTURE/*.md` header misses | `0` |
+| root `.txt` / `.log` files | `0` |
+| relocated root `.log` files | `9` |
+
+An intermediate scan found one active missing-`Status:` file:
+
+- `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md`
+
+That file now has `Status: PENDING VERIFICATION`, so current active missing `Status:` count is `0`.
+
+The same May 6 follow-up cycle normalized the remaining active missing-`Date:` files, then normalized `_Archive`, `Reports`, and `DEPRECATED` markdown provenance headers. Current full `Docs/**/*.md` missing `Date:` count is `0`, full missing `Status:` count is `0`, current active missing `Date:` count is `0`, active missing `Status:` count is `0`, and active header debt is `0`.
+
+Root loose text/log hygiene remains clean at `0`, but root markdown count is now `5` because `BROKEN_PREFABS.md` is present as generated snapshot evidence.
+
+Full `git diff --check -- Docs` exits `0` after trailing ASCII whitespace was removed from two deprecated raw `.txt` logs. Git still prints LF-to-CRLF working-copy warnings on touched markdown files; those are line-ending normalization warnings, not diff-check errors.
 
 ## Do Not Claim
 
-- Do not claim documentation is fully normalized. `41` active markdown files still need header cleanup.
-- Do not claim archived/deprecated raw logs are clean.
+- Do not claim archive/deprecated/raw research payloads are externally revalidated or current authority. Current full markdown header debt is `0`; content truth was not re-proven.
+- Do not claim all archived/deprecated raw logs were content-normalized; only two trailing-whitespace defects were removed for `git diff --check`.
 - Do not claim relocated root logs are current proof.
 - Do not claim Play Mode, GC, profiler, memory retention, player build, or scene/prefab proof from this documentation queue.
 - Do not claim Unity batch smoke proof for documentation authority until `RunBatchAll` emits `CodexArtifacts/documentation-authority-batch.json` from Unity with exit `0`.

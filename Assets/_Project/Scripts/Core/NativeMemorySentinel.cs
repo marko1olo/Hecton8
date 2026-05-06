@@ -26,9 +26,11 @@ namespace Hecton8.Core
     public static unsafe class NativeMemorySentinel
     {
         private const int MaxTrackedAllocations = 1024;
-        private const int LongLivedTransientFrameThreshold = 10000;
+        private const int TempAllocationFrameThreshold = 1;
+        private const int TempJobAllocationFrameThreshold = 4;
         private const string CriticalMemoryViolationPrefix = "CRITICAL_MEMORY_VIOLATION";
         private const string MemoryLeakDetectedPrefix = "MEMORY_LEAK_DETECTED";
+        private const string StaleBufferCrimePrefix = "STALE_BUFFER_CRIME";
 
         private struct NativeAllocationRecord
         {
@@ -122,6 +124,22 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a native list as a distinct pointerless instance. Caller must keep the returned id.
+        /// </summary>
+        public static int RegisterNativeListInstance<T>(
+            NativeList<T> list,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return 0;
+
+            long bytes = (long)UnsafeUtility.SizeOf<T>() * list.Capacity;
+            return RegisterPointer(null, bytes, owner, label, lifetime, false);
+        }
+
+        /// <summary>
         /// Registers a native hash map allocation by capacity. Unity does not expose stable hash map block pointers.
         /// </summary>
         public static int RegisterNativeHashMap<TKey, TValue>(
@@ -155,6 +173,24 @@ namespace Hecton8.Core
 
             long bytes = EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity);
             return RegisterPointer(null, bytes, owner, label, lifetime);
+        }
+
+        /// <summary>
+        /// Registers a native parallel hash map as a distinct pointerless instance. Caller must keep the returned id.
+        /// </summary>
+        public static int RegisterNativeParallelHashMapInstance<TKey, TValue>(
+            NativeParallelHashMap<TKey, TValue> map,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return 0;
+
+            long bytes = EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime, false);
         }
 
         /// <summary>
@@ -297,6 +333,17 @@ namespace Hecton8.Core
             string label,
             NativeAllocationLifetime lifetime)
         {
+            return RegisterPointer(pointer, bytes, owner, label, lifetime, true);
+        }
+
+        private static int RegisterPointer(
+            void* pointer,
+            long bytes,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime,
+            bool coalescePointerlessOwnerLabel)
+        {
             if (bytes <= 0L)
                 return 0;
 
@@ -306,6 +353,7 @@ namespace Hecton8.Core
                 NativeAllocationRecord existing = _records[i];
                 bool pointerMatches = pointerValue != IntPtr.Zero && existing.Pointer == pointerValue;
                 bool pointerlessOwnerMatches =
+                    coalescePointerlessOwnerLabel &&
                     pointerValue == IntPtr.Zero &&
                     existing.Pointer == IntPtr.Zero &&
                     string.Equals(existing.Owner, owner, StringComparison.Ordinal) &&
@@ -417,6 +465,24 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters a tracked allocation by stable registration id.
+        /// </summary>
+        public static void Unregister(int id)
+        {
+            if (id <= 0)
+                return;
+
+            for (int i = _count - 1; i >= 0; i--)
+            {
+                if (_records[i].Id != id)
+                    continue;
+
+                RemoveAt(i);
+                return;
+            }
+        }
+
+        /// <summary>
         /// Unregisters the latest matching owner/label record.
         /// </summary>
         public static void Unregister(string owner, string label)
@@ -464,7 +530,7 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Reports Temp/TempJob native allocations that survived far beyond their legal transient window.
+        /// Reports Temp/TempJob native allocations that survived beyond their legal transient window.
         /// </summary>
         public static void AuditLongLivedTransientAllocations(int currentFrame)
         {
@@ -482,16 +548,22 @@ namespace Hecton8.Core
                 }
 
                 int allocationFrame = record.AllocationFrame;
-                if (allocationFrame <= 0 ||
-                    currentFrame - allocationFrame <= LongLivedTransientFrameThreshold)
+                int retentionFrames = currentFrame - allocationFrame;
+                int legalFrameWindow = record.Lifetime == NativeAllocationLifetime.TempJob
+                    ? TempJobAllocationFrameThreshold
+                    : TempAllocationFrameThreshold;
+                if (allocationFrame <= 0 || retentionFrames <= legalFrameWindow)
                 {
                     continue;
                 }
 
                 record.LeakReported = true;
                 _records[i] = record;
+                string prefix = record.Lifetime == NativeAllocationLifetime.TempJob
+                    ? StaleBufferCrimePrefix
+                    : MemoryLeakDetectedPrefix;
                 Debug.LogError(
-                    $"{MemoryLeakDetectedPrefix}: {record.Lifetime} allocation survived {currentFrame - allocationFrame} frames. owner={record.Owner} label={record.Label} bytes={record.Bytes} pointer=0x{record.Pointer.ToInt64():X}\nALLOCATOR_STACK:\n{record.StackTrace}");
+                    $"{prefix}: {record.Lifetime} allocation retention={retentionFrames} frames legalWindow={legalFrameWindow} owner={record.Owner} label={record.Label} bytes={record.Bytes} pointer=0x{record.Pointer.ToInt64():X}\nALLOCATOR_STACK:\n{record.StackTrace}");
             }
         }
 

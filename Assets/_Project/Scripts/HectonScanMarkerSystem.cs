@@ -353,9 +353,9 @@ namespace Hecton8.Gameplay
                 name = "ScannerMarkerQuad"
             };
 
-            mesh.vertices = s_markerQuadVertices;
+            mesh.SetVertices(s_markerQuadVertices);
             mesh.uv = s_markerQuadUvs;
-            mesh.triangles = s_markerQuadTriangles;
+            mesh.SetTriangles(s_markerQuadTriangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             mesh.UploadMeshData(false);

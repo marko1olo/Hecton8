@@ -1,5 +1,5 @@
-# PROJECT_CONTENT_LEDGER
-Date: `2026-05-04`
+﻿# PROJECT_CONTENT_LEDGER
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 STATUS: PENDING VERIFICATION  
@@ -143,7 +143,7 @@ Source of truth: `Assets/_Project/Scripts/Core/HectonLayerMasks.cs` and `Project
 ## 64-bit Flora Genetic Trait Definitions
 
 - Authoring/runtime owner: `FloraDataTemplate.GeneticsMask` and `CultivationManager.CultivationSlotState.GeneticsMask`.
-- Persistence owner: `InventoryDTO.itemGeneticsWords : ulong[]` and `ModuleDTO.cultivationGeneticsMasks : ulong[]`.
+- Persistence owner: `InventoryDTO.itemGeneticsWords : byte[]` and `ModuleDTO.cultivationGeneticsMasks : ulong[]`.
 - Save format: v53 introduced 64-bit genetics; v54 keeps the same layout and migrates v48-v52 legacy `uint[]` masks into `ulong[]`.
 - Splice equation: `result = (maskA | maskB) ^ (XorShift32(seed) & 0x000000000000000FUL)`.
 

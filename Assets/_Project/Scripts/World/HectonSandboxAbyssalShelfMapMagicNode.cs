@@ -23,7 +23,7 @@ namespace MapMagic.Nodes.MatrixGenerators
     public sealed class HectonSandboxAbyssalShelfMapMagicNode : Generator, IOutlet<MatrixWorld>
     {
         private const string NativeMemoryOwner = nameof(HectonSandboxAbyssalShelfMapMagicNode);
-        private const double SyncCompletionWarningMilliseconds = 4.0;
+        private const double SyncCompletionWarningMilliseconds = 0.2;
         private static readonly uint _invalidMatrixWarningHash =
             unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.InvalidMatrix"));
         private static readonly uint _syncCompletionWarningHash =
@@ -33,8 +33,10 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 2000f;
         [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -5000f;
-        [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 17500f;
+        [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 15000f;
         [Den.Tools.GUI.ValAttribute("Exponential Falloff")] public float macroExponentialFalloff = 3.1f;
+        [Den.Tools.GUI.ValAttribute("Shelf Run m")] public float shelfRunMeters = 15000f;
+        [Den.Tools.GUI.ValAttribute("Shelf Slope deg")] public float shelfTargetSlopeDegrees = 30f;
 
         [Den.Tools.GUI.ValAttribute("Plate Cell m")] public float plateCellSizeMeters = 4200f;
         [Den.Tools.GUI.ValAttribute("Ridge Height m")] public float ridgeHeightMeters = 700f;
@@ -44,15 +46,18 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Plate Uniformity")] public float plateUniformity = 0.78f;
         [Den.Tools.GUI.ValAttribute("Warp m")] public float domainWarpMeters = 1450f;
         [Den.Tools.GUI.ValAttribute("Warp Frequency")] public float domainWarpFrequency = 0.00011f;
+        [Den.Tools.GUI.ValAttribute("Trench Depth m")] public float trenchDepthMeters = 5000f;
+        [Den.Tools.GUI.ValAttribute("Trench Width m")] public float trenchWidthMeters = 780f;
+        [Den.Tools.GUI.ValAttribute("Trench Sharpness")] public float trenchSharpness = 2.4f;
         [Den.Tools.GUI.ValAttribute("Island Radius m")] public float islandCenterRadiusMeters = 2600f;
         [Den.Tools.GUI.ValAttribute("Island Junction")] public float islandJunctionThreshold = 0.58f;
         [Den.Tools.GUI.ValAttribute("Seed")] public int seed = 880031;
 
         [Den.Tools.GUI.ValAttribute("Quantize Slopes")] public bool enableSlopeQuantization = true;
-        [Den.Tools.GUI.ValAttribute("Plateau Source deg")] public float plateauSourceAngleDegrees = 15f;
-        [Den.Tools.GUI.ValAttribute("Plateau Target deg")] public float plateauTargetAngleDegrees = 3.5f;
+        [Den.Tools.GUI.ValAttribute("Plateau Source deg")] public float plateauSourceAngleDegrees = 8f;
+        [Den.Tools.GUI.ValAttribute("Plateau Target deg")] public float plateauTargetAngleDegrees = 2.5f;
         [Den.Tools.GUI.ValAttribute("Cliff Source deg")] public float cliffSourceAngleDegrees = 45f;
-        [Den.Tools.GUI.ValAttribute("Cliff Target deg")] public float cliffTargetAngleDegrees = 80f;
+        [Den.Tools.GUI.ValAttribute("Cliff Target deg")] public float cliffTargetAngleDegrees = 52f;
         [Den.Tools.GUI.ValAttribute("Quantize Strength")] public float slopeQuantizationStrength = 1f;
 
         public override (string, int) GetCodeFileLine() => GetCodeFileLineBase();
@@ -110,7 +115,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 var parameters = new HectonSandboxAbyssalShelfParams
                 {
                     AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters,
-                    DescentRadiusMeters = math.max(15000.0, descentRadiusMeters),
+                    DescentRadiusMeters = math.max(15000.0, shelfRunMeters > 0f ? shelfRunMeters : descentRadiusMeters),
                     PlateCellSizeMeters = math.max(1f, plateCellSizeMeters),
                     HighWorldY = math.max(highWorldY, lowWorldY + 1f),
                     LowWorldY = lowWorldY,
@@ -122,6 +127,11 @@ namespace MapMagic.Nodes.MatrixGenerators
                     DomainWarpMeters = math.max(0f, domainWarpMeters),
                     DomainWarpFrequency = math.max(0.000001f, domainWarpFrequency),
                     MacroExponentialFalloff = math.max(0.1f, macroExponentialFalloff),
+                    ShelfRunMeters = math.max(1f, shelfRunMeters),
+                    ShelfTargetSlopeDegrees = math.clamp(shelfTargetSlopeDegrees, 1f, 75f),
+                    TrenchDepthMeters = math.max(0f, trenchDepthMeters),
+                    TrenchWidthMeters = math.max(1f, trenchWidthMeters),
+                    TrenchSharpness = math.max(0.35f, trenchSharpness),
                     IslandCenterRadiusMeters = math.max(1f, islandCenterRadiusMeters),
                     IslandJunctionThreshold = math.saturate(islandJunctionThreshold),
                     Seed = worldSeed
@@ -142,6 +152,11 @@ namespace MapMagic.Nodes.MatrixGenerators
 
                 if (enableSlopeQuantization && width > 2 && height > 2)
                 {
+                    float plateauTargetAngle = math.clamp(plateauTargetAngleDegrees, 1f, 60f);
+                    float plateauSourceAngle = math.clamp(plateauSourceAngleDegrees, plateauTargetAngle + 0.001f, 45f);
+                    float cliffSourceAngle = math.clamp(cliffSourceAngleDegrees, plateauSourceAngle + 0.001f, 88f);
+                    float cliffTargetAngle = math.clamp(cliffTargetAngleDegrees, cliffSourceAngle + 0.001f, 62f);
+                    float cliffRampEndAngle = math.min(89f, cliffSourceAngle + math.max(1f, cliffTargetAngle - cliffSourceAngle) * 0.25f);
                     var quantizeJob = new HectonSandboxSlopeQuantizationJob
                     {
                         InputHeights01 = rawHeights,
@@ -151,10 +166,11 @@ namespace MapMagic.Nodes.MatrixGenerators
                         CellSizeMeters = (float)math.max(0.001, sampleCellSizeMeters),
                         LowWorldY = parameters.LowWorldY,
                         HighWorldY = parameters.HighWorldY,
-                        PlateauSourceAngleDegrees = plateauSourceAngleDegrees,
-                        PlateauTargetAngleDegrees = plateauTargetAngleDegrees,
-                        CliffSourceAngleDegrees = cliffSourceAngleDegrees,
-                        CliffTargetAngleDegrees = cliffTargetAngleDegrees,
+                        PlateauSourceGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(plateauSourceAngle),
+                        PlateauTargetGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(plateauTargetAngle),
+                        CliffSourceGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffSourceAngle),
+                        CliffRampEndGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffRampEndAngle),
+                        CliffTargetGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffTargetAngle),
                         Strength = slopeQuantizationStrength
                     };
 

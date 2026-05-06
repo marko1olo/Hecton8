@@ -175,8 +175,22 @@ namespace Hecton.Editor
             Debug.Log(
                 $"[HectonSkyTools] Sky dome saved: {DOME_ASSET_PATH}\n" +
                 $"  {mesh.vertexCount} vertices, " +
-                $"{mesh.triangles.Length / 3} triangles, " +
+                $"{ResolveTriangleCount(mesh)} triangles, " +
                 $"radius {_domeRadius}");
+        }
+
+        private static long ResolveTriangleCount(Mesh mesh)
+        {
+            if (mesh == null)
+                return 0L;
+
+            long triangles = 0L;
+            for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+            {
+                triangles += (long)mesh.GetIndexCount(subMeshIndex) / 3L;
+            }
+
+            return triangles;
         }
 
         /// <summary>
@@ -324,10 +338,10 @@ namespace Hecton.Editor
                 mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             }
 
-            mesh.vertices  = positions;
-            mesh.normals   = normals;
-            mesh.uv        = uvs;
-            mesh.triangles = triangles;
+            mesh.SetVertices(positions);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0, true);
 
             // Tangents for potential normal mapping in future
             mesh.RecalculateTangents();

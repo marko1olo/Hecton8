@@ -232,6 +232,10 @@ namespace Hecton8.Scavenging
         [Tooltip("Pitch scalar applied to active-sonar returns from this node family. Values below 1 sound dull, above 1 sound sharp.")]
         private float acousticResonance = 1f;
 
+        [SerializeField, Range(0, 3)]
+        [Tooltip("Audio material id for active-sonar echoes. 1 = metal, 2 = rock, 3 = glass. Zero auto-resolves to rock for legacy nodes.")]
+        private byte audioMaterialId = 2;
+
         [SerializeField]
         [Tooltip("Optional physical-response override for spawned mining shards. Auto resolves from the authored density range.")]
         private DebrisPhysicalProfile debrisPhysicalProfile = DebrisPhysicalProfile.Auto;
@@ -427,6 +431,9 @@ namespace Hecton8.Scavenging
 
         /// <summary>Pitch scalar applied to active-sonar echo rendering for this node family.</summary>
         public float AcousticResonance => math.clamp(acousticResonance, 0.65f, 1.45f);
+
+        /// <summary>Audio material route consumed by active-sonar echo coloration.</summary>
+        public byte AudioMaterialID => audioMaterialId == 0 ? (byte)2 : audioMaterialId;
 
         /// <summary>Mean authored density used by debris-profile auto-resolution.</summary>
         public float AverageDensity => math.max(0f, (minimumDensity + maximumDensity) * 0.5f);

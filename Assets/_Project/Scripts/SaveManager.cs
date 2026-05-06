@@ -33,7 +33,7 @@ namespace Hecton8.SaveSystem
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class SaveManager : MonoBehaviour, ISaveService, IUpdatable, ISlowTickable, ILateFrameTickable
+    public sealed class SaveManager : MonoBehaviour, ISaveService, IUpdatable, ISlowTickable, ILateFrameTickable, IServiceHeartbeat
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
@@ -44,7 +44,7 @@ namespace Hecton8.SaveSystem
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const int SafeAupSnapHitCapacity = 8;
-        private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: SECTOR CORRUPTION DETECTED. TERRAIN RE-INITIALIZED.";
+        private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
         private const string GeologicalAnomalyDetectedMessage = "UNSTABLE REALITY";
         private const int MaxRegisteredSaveables = 256;
         private static readonly long CompressionThrottleBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 100L);
@@ -63,6 +63,8 @@ namespace Hecton8.SaveSystem
         // ══════════════════════════════════════════════════════════
 
         public bool IsInitialized => _serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this);
+        public ServiceHeartbeatState HeartbeatState => IsInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+        public bool IsServiceReady => IsInitialized;
         public bool IsBusy => _isBusy;
         public float CurrentPlayTimeSeconds => (float)ResolveCurrentPlayTimeSeconds();
         public bool LastOperationSucceeded { get; private set; }
@@ -662,10 +664,13 @@ namespace Hecton8.SaveSystem
                 if (divergenceSnapshotTimer.ElapsedTicks > PreCompressionYieldBudgetTicks)
                     await Awaitable.NextFrameAsync();
 
+                await AwaitCompressionThrottleWindowAsync();
+                SaveEvents.RaiseMappedWriteStarted(slotName);
                 await Awaitable.BackgroundThreadAsync();
 
                 ulong payloadHash64;
                 int rawPayloadLength;
+                long compressionPipelineStartTicks = Stopwatch.GetTimestamp();
 
                 ExecuteVerifiedSavePipeline(
                     slotName,
@@ -683,6 +688,8 @@ namespace Hecton8.SaveSystem
                     out payloadHash64,
                     out rawPayloadLength);
 
+                RegisterCompressionPipelineElapsed(Stopwatch.GetTimestamp() - compressionPipelineStartTicks);
+
                 await Awaitable.MainThreadAsync();
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
                 int backupRetention = GetBackupRetentionCount(slotName);
@@ -690,6 +697,7 @@ namespace Hecton8.SaveSystem
                     ? SaveSlotIntegrityState.HealthyWithBackup
                     : SaveSlotIntegrityState.Healthy;
                 RecordSuccessfulSave(slotName, data.version, savedIntegrity);
+                NotifyMappedInventoryWritesCommitted();
 
                 LastOperationSucceeded = true;
                 Debug.Log($"[SaveManager] Saved '{slotName}' (XXH3-64: {metadata.Checksum}) in {totalTimer.ElapsedMilliseconds}ms");
@@ -723,6 +731,43 @@ namespace Hecton8.SaveSystem
             Debug.LogWarning(
                 $"[SaveManager] Main-thread snapshot for '{slotName}' took {snapshotElapsedMs}ms. " +
                 $"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.");
+        }
+
+        private async Awaitable AwaitCompressionThrottleWindowAsync()
+        {
+            if (!_compressionThrottleArmed)
+                return;
+
+            if (!_slowTickRegistered)
+            {
+                _compressionThrottleArmed = false;
+                return;
+            }
+
+            int releaseSlowTick = _compressionThrottleReleaseSlowTick;
+            while (Application.isPlaying && _slowTickSequence == releaseSlowTick)
+                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+
+            _compressionThrottleArmed = false;
+        }
+
+        private void RegisterCompressionPipelineElapsed(long elapsedTicks)
+        {
+            _lastSaveCompressionPipelineTicks = elapsedTicks > 0L ? elapsedTicks : 0L;
+            if (elapsedTicks <= CompressionThrottleBudgetTicks)
+                return;
+
+            _compressionThrottleReleaseSlowTick = _slowTickSequence;
+            _compressionThrottleArmed = true;
+        }
+
+        private void NotifyMappedInventoryWritesCommitted()
+        {
+            for (int i = 0; i < _saveableCount; i++)
+            {
+                if (_saveables[i] is PlayerInventory inventory && inventory != null)
+                    inventory.NotifyMappedInventoryWriteCommitted();
+            }
         }
 
         private static void StampRuntimeWorldSeed(SaveData data)
@@ -768,6 +813,12 @@ namespace Hecton8.SaveSystem
                 " / version " + runtimeWorldGenerationVersion + ".");
 #endif
             NotificationEvents.PushWarning(GeologicalAnomalyDetectedMessage);
+            PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(
+                0.78f,
+                0.12f,
+                1f,
+                1f,
+                false));
         }
 
         private void ReportLoadPipelineStage(LoadingPipelineStage stage, float progress01)
@@ -2408,7 +2459,7 @@ namespace Hecton8.SaveSystem
             record.LastSuccessfulSaveTicksUtc = DateTime.UtcNow.Ticks;
             record.SuccessfulSaveCount++;
             record.LastKnownSaveVersion = dataVersion;
-            record.LastKnownIntegrityState = integrityState.ToString();
+            record.LastKnownIntegrityState = SaveSlotInfo.ToStorageString(integrityState);
             record.LastFailureContext = string.Empty;
             record.LastFailureMessage = string.Empty;
             record.Save();
@@ -2427,7 +2478,7 @@ namespace Hecton8.SaveSystem
             record.LastSuccessfulLoadTicksUtc = DateTime.UtcNow.Ticks;
             record.SuccessfulLoadCount++;
             record.LastKnownSaveVersion = dataVersion;
-            record.LastKnownIntegrityState = integrityState.ToString();
+            record.LastKnownIntegrityState = SaveSlotInfo.ToStorageString(integrityState);
             record.LastLoadUsedBackup = usedBackup;
             record.LastLoadBackupGeneration = backupGeneration;
             record.LastLoadUsedLegacyCompression = usedLegacyCompression;
@@ -2461,7 +2512,7 @@ namespace Hecton8.SaveSystem
             record.LastAuditReadable = result.SlotReadable;
             record.LastAuditRecommendedRepair = result.RecommendedRepair;
             record.LastKnownSaveVersion = result.DetectedVersion;
-            record.LastKnownIntegrityState = result.IntegrityState.ToString();
+            record.LastKnownIntegrityState = SaveSlotInfo.ToStorageString(result.IntegrityState);
             record.LastLoadUsedBackup = result.SelectedBackupSource;
             record.LastLoadBackupGeneration = result.SelectedBackupSource ? math.max(1, result.SelectedBackupGeneration) : 0;
             record.LastLoadUsedLegacyCompression = result.SelectedLegacyCompression;
@@ -2478,7 +2529,7 @@ namespace Hecton8.SaveSystem
             record.LastRepairTicksUtc = DateTime.UtcNow.Ticks;
             record.RepairCount++;
             record.LastKnownSaveVersion = dataVersion;
-            record.LastKnownIntegrityState = result.IntegrityAfter.ToString();
+            record.LastKnownIntegrityState = SaveSlotInfo.ToStorageString(result.IntegrityAfter);
             record.LastLoadUsedBackup = result.UsedBackupSource;
             record.LastLoadBackupGeneration = result.UsedBackupSource ? math.max(1, result.SourceBackupGeneration) : 0;
             record.LastLoadUsedLegacyCompression = result.UsedLegacyCompression;

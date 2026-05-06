@@ -1,6 +1,6 @@
-# HECTON-8 GLOBALREGISTRY RUNTIME AUTHORITY MATRIX
+﻿# HECTON-8 GLOBALREGISTRY RUNTIME AUTHORITY MATRIX
 
-Date: 2026-04-29
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: current source-backed truth for `GlobalRegistry` slots, runtime owners, publishers, and bootstrap fallback coverage
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`

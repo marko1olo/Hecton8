@@ -1,6 +1,7 @@
-# ECS / DOTS Adoption Plan
+﻿# ECS / DOTS Adoption Plan
 
-Status: `PROPOSED`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Verification: `PENDING VERIFICATION`
 
 This document defines where ECS / DOTS is worth introducing in HECTON-8, where it is not, and in what order the work should happen.
@@ -261,7 +262,7 @@ These systems already use the right shape and should be improved in-place first:
 Reason:
 
 - they already use Burst, GPU compute, `NativeArray`, or staged job pipelines
-- the current bottleneck is not necessarily “lack of Entities”
+- the current bottleneck is not necessarily â€œlack of Entitiesâ€
 - rewrite cost is large relative to likely gain
 
 ### `HectonFluidEngine`
@@ -312,7 +313,7 @@ Correct direction:
 
 - keep GPU path
 - profile VRAM and dispatch cost
-- do not replace with Entities Graphics just to “use DOTS”
+- do not replace with Entities Graphics just to â€œuse DOTSâ€
 
 ### `HectonVoxelEngine`
 
@@ -853,7 +854,7 @@ Keep that split.
 
 ## Verification Requirements
 
-No phase is “done” from code review alone.
+No phase is â€œdoneâ€ from code review alone.
 
 Each phase requires:
 

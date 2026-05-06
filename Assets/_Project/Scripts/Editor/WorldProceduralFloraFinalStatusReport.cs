@@ -660,7 +660,13 @@ namespace Hecton8.EditorTools
             if (!string.IsNullOrWhiteSpace(directoryPath))
                 Directory.CreateDirectory(directoryPath);
 
-            File.WriteAllBytes(absolutePath, source.EncodeToPNG());
+            byte[] pngBytes = source.EncodeToPNG(); // COLD ALLOC: byte[] - editor-only automation preview PNG encode output - owner: WorldProceduralFloraFinalStatusReport
+            using (FileStream stream = new FileStream(absolutePath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                stream.Write(pngBytes, 0, pngBytes.Length);
+                stream.Flush(true);
+            }
+
             return assetPath;
         }
 

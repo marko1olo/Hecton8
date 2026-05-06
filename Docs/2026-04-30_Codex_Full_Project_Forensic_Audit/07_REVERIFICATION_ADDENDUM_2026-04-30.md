@@ -1,5 +1,6 @@
-# Reverification Addendum — 2026-04-30
+﻿# Reverification Addendum â€” 2026-04-30
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 Purpose:
@@ -56,7 +57,7 @@ Current reverification result:
 - stale as a current finding
 - the symbol exists in current source
 - `PlayerInventory.cs` contains `dto.itemGeneticsWords`
-- `SaveData.cs` contains `public uint[] itemGeneticsWords;`
+- `SaveData.cs` contains `public byte[] itemGeneticsWords;`; current source HAS the symbol and writes the byte-backed genetics field.
 - `PlayerInventory.cs` was modified at `2026-04-30 03:42:59`
 
 Verdict:
@@ -167,3 +168,4 @@ Current strongest verified conclusions:
 - DOTS is still mostly non-production
 - tests are still extremely weak
 - the current live operational problem is editor instability and resource-error flood, not the earlier compile snapshot
+

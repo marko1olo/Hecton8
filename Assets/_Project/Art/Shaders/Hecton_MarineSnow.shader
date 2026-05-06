@@ -53,6 +53,7 @@ Shader "Hecton8/VFX/MarineSnow"
                 float4 FlowFieldCenterCellSize;
                 float4 ShellParams;
                 float4 MetaParams;
+                float4 CameraVelocityStretch;
             };
 
             StructuredBuffer<MarineSnowFrameData> _HectonMarineSnowFrame;
@@ -63,6 +64,7 @@ Shader "Hecton8/VFX/MarineSnow"
             #define _MarineSnowFlowFieldCenterCellSize (_HectonMarineSnowFrame[0].FlowFieldCenterCellSize)
             #define _MarineSnowShellParams (_HectonMarineSnowFrame[0].ShellParams)
             #define _MarineSnowMetaParams (_HectonMarineSnowFrame[0].MetaParams)
+            #define _MarineSnowCameraVelocity_Stretch (_HectonMarineSnowFrame[0].CameraVelocityStretch)
 
             float4 _MarineSnowTint;
             float4 _MarineSnowRenderParams;
@@ -103,7 +105,17 @@ Shader "Hecton8/VFX/MarineSnow"
                 float distanceFade = saturate(1.0 - distance(particle.Pos, _MarineSnowCameraPosition_Time.xyz) / maxDistance);
                 float isBubble = ((particle.Flags & 1u) != 0u) ? 1.0 : 0.0;
                 float size = particle.Size * lerp(0.65, 1.0, distanceFade) * lerp(1.0, 1.65, isBubble);
-                float3 billboardOffset = (cameraRight * corner.x + cameraUp * corner.y) * size;
+                float stretchScale = max(1.0, _MarineSnowCameraVelocity_Stretch.w);
+                float2 screenMotion = float2(
+                    dot(-_MarineSnowCameraVelocity_Stretch.xyz, cameraRight),
+                    dot(-_MarineSnowCameraVelocity_Stretch.xyz, cameraUp));
+                float motionMagnitudeSq = dot(screenMotion, screenMotion);
+                float2 stretchAxis = motionMagnitudeSq > 0.0001 ? screenMotion * rsqrt(motionMagnitudeSq) : float2(0.0, 1.0);
+                float2 crossAxis = float2(-stretchAxis.y, stretchAxis.x);
+                float2 stretchedCorner =
+                    stretchAxis * (dot(corner, stretchAxis) * stretchScale) +
+                    crossAxis * dot(corner, crossAxis);
+                float3 billboardOffset = (cameraRight * stretchedCorner.x + cameraUp * stretchedCorner.y) * size;
                 float3 worldPosition = particle.Pos + billboardOffset;
 
                 output.positionCS = TransformWorldToHClip(worldPosition);

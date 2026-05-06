@@ -621,7 +621,7 @@ namespace Hecton8.World
             if (!enableTidalHeightCacheModulation || tidalHeightCacheAmplitudeMeters <= 0f)
                 return 0f;
 
-            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
             if (celestialEngine == null ||
                 !celestialEngine.TryGetAegirSkyDirection(out Vector3 aegirDirection) ||
                 !IsFiniteVector3(aegirDirection))

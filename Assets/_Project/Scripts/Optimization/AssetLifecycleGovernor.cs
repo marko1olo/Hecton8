@@ -1,7 +1,14 @@
 using System.Collections.Generic;
-using System.Text;
 using Hecton8.Core;
+using Hecton8.SaveSystem;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
+using Stopwatch = System.Diagnostics.Stopwatch;
+#if UNITY_ADDRESSABLES_EXIST
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
+#endif
 
 namespace Hecton8.Optimization
 {
@@ -10,10 +17,19 @@ namespace Hecton8.Optimization
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8012)]
-    public sealed class AssetLifecycleGovernor : MonoBehaviour, ITickable, IUpdatable
+    public sealed class AssetLifecycleGovernor : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
         private const uint CollisionSalt = 0xDEADBEEF;
         private const float NativeHeapOverheadFactor = 1.15f;
+        private const float ColdReleaseIntervalSeconds = 1f;
+        private const float DistantChunkReleaseDistanceMeters = 1500f;
+        private const float DistantChunkReleaseDistanceSq = DistantChunkReleaseDistanceMeters * DistantChunkReleaseDistanceMeters;
+        private const int MaxColdDistantChunkReleases = 8;
+        private const double ColdTickWarningMilliseconds = 0.2d;
+        private const float ColdTickWarningCooldownSeconds = 5f;
+        private static readonly uint _AssetLifecycleContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor"));
+        private static readonly uint _ColdTickOverBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.ColdTickOverBudget"));
+        private static readonly uint _DoubleReleaseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.DoubleRelease"));
         private static readonly float[] _retryBackoffSeconds = { 5f, 15f, 60f };
 
         [Header("Asset Registry")]
@@ -24,8 +40,11 @@ namespace Hecton8.Optimization
         [SerializeField] private int maxDeferredReleasesPerFrame = 8;
 
         private bool _registeredTick;
+        private bool _registeredSlowTick;
         private bool _registeredService;
         private long _frameSequence;
+        private float _nextColdReleaseTime;
+        private float _nextColdTickWarningTime;
         private Texture2D _checkerboardTexture;
         private Material _checkerboardMaterial;
 
@@ -39,7 +58,6 @@ namespace Hecton8.Optimization
         private readonly List<uint> _retryCandidates = new List<uint>(16);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // COLD ALLOC: StringBuilder[512] - throttled diagnostics builder - owner: AssetLifecycleGovernor
-        private readonly StringBuilder _logBuilder = new StringBuilder(512);
 #endif
 
         internal long TrackedResidentBytes { get; private set; }
@@ -86,8 +104,27 @@ namespace Hecton8.Optimization
         public void Tick(float deltaTime)
         {
             _frameSequence++;
-            DrainPendingReleaseQueue(maxDeferredReleasesPerFrame);
-            PumpRetries();
+        }
+
+        /// <inheritdoc />
+        public void SlowTick()
+        {
+            float now = Time.unscaledTime;
+            if (now < _nextColdReleaseTime)
+                return;
+
+            _nextColdReleaseTime = now + ColdReleaseIntervalSeconds;
+            long startTicks = Stopwatch.GetTimestamp();
+            try
+            {
+                DrainPendingReleaseQueue(maxDeferredReleasesPerFrame);
+                PumpRetries();
+                ReleaseDistantChunkAddressables(MaxColdDistantChunkReleases);
+            }
+            finally
+            {
+                ReportColdTickBudgetIfNeeded(startTicks);
+            }
         }
 
         internal uint Acquire(
@@ -140,13 +177,17 @@ namespace Hecton8.Optimization
                 PendingRelease = false,
                 IsFallback = false,
                 OwnsAssetInstance = ownsAssetInstance,
+                IsChunkAsset = false,
+                HasAbsoluteUniversePosition = false,
                 RetryCount = 0,
                 BiomeId = biomeId,
                 LodLevel = lodLevel,
                 LastAccessFrame = _frameSequence,
                 SizeBytes = ClampNonNegative(sizeBytes),
                 ActiveRequestId = 0,
-                NextRetryTime = 0f
+                NextRetryTime = 0f,
+                AbsoluteUniverseAup = default,
+                AbsoluteUniversePosition = Vector3.zero
             };
 
             _registry[key] = created;
@@ -182,6 +223,63 @@ namespace Hecton8.Optimization
             _registry[key] = record;
         }
 
+#if UNITY_ADDRESSABLES_EXIST
+        internal void MarkAddressableLoaded(
+            uint key,
+            AsyncOperationHandle handle,
+            Object asset,
+            long sizeBytes,
+            Vector3 absoluteUniversePosition,
+            bool isChunkAsset)
+        {
+            if (!_registry.TryGetValue(key, out AssetRecord record))
+                return;
+
+            if (record.ActiveRequestId != 0)
+            {
+                AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+                if (dispatcher != null)
+                    dispatcher.AcknowledgeDispatchRequest(record.ActiveRequestId, true);
+
+                record.ActiveRequestId = 0;
+            }
+
+            ReplaceTrackedSize(ref record, sizeBytes);
+            record.Asset = asset;
+            record.IsFallback = false;
+            record.OwnsAssetInstance = false;
+            record.HasAddressableHandle = handle.IsValid();
+            record.AddressableHandle = handle;
+            record.IsChunkAsset = isChunkAsset;
+            record.HasAbsoluteUniversePosition = true;
+            record.AbsoluteUniversePosition = absoluteUniversePosition;
+            record.AbsoluteUniverseAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                absoluteUniversePosition.x,
+                absoluteUniversePosition.y,
+                absoluteUniversePosition.z));
+            record.NextRetryTime = 0f;
+            record.RetryCount = 0;
+            record.LastAccessFrame = _frameSequence;
+            _registry[key] = record;
+        }
+#endif
+
+        internal void MarkChunkResidency(uint key, Vector3 absoluteUniversePosition)
+        {
+            if (!_registry.TryGetValue(key, out AssetRecord record))
+                return;
+
+            record.IsChunkAsset = true;
+            record.HasAbsoluteUniversePosition = true;
+            record.AbsoluteUniversePosition = absoluteUniversePosition;
+            record.AbsoluteUniverseAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                absoluteUniversePosition.x,
+                absoluteUniversePosition.y,
+                absoluteUniversePosition.z));
+            record.LastAccessFrame = _frameSequence;
+            _registry[key] = record;
+        }
+
         internal void MarkAccessed(uint key)
         {
             if (!_registry.TryGetValue(key, out AssetRecord record))
@@ -200,8 +298,9 @@ namespace Hecton8.Optimization
             if (record.RefCount < 0)
             {
                 record.RefCount = 0;
+                GlobalTelemetryBus.PublishPerformanceWarning(_DoubleReleaseWarningHash, _AssetLifecycleContextHash, key);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError($"[AssetLifecycleGovernor] Double release detected for asset key {key}.");
+                Debug.LogError("[AssetLifecycleGovernor] Double release detected.", this);
 #endif
             }
 
@@ -283,12 +382,7 @@ namespace Hecton8.Optimization
             _registry[key] = record;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            _logBuilder.Clear();
-            _logBuilder.Append("[AssetLifecycleGovernor] ASSET_FAIL key=")
-                .Append(key)
-                .Append(" error=")
-                .Append(error);
-            Debug.LogError(_logBuilder.ToString(), this);
+            Debug.LogError("[AssetLifecycleGovernor] Asset load failed.", this);
 #endif
         }
 
@@ -303,6 +397,9 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = GlobalRegistry.Updatables.Contains(this);
+
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private bool TryRegisterService()
@@ -326,6 +423,12 @@ namespace Hecton8.Optimization
 
         private void TryUnregister()
         {
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                _registeredSlowTick = false;
+            }
+
             if (!_registeredTick)
                 return;
 
@@ -365,6 +468,24 @@ namespace Hecton8.Optimization
 
             for (int i = 0; i < _retryCandidates.Count; i++)
                 QueueAsyncDispatch(_retryCandidates[i]);
+        }
+
+        private void ReportColdTickBudgetIfNeeded(long startTicks)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTicks;
+            double elapsedMilliseconds = elapsedTicks * 1000d / Stopwatch.Frequency;
+            if (elapsedMilliseconds <= ColdTickWarningMilliseconds)
+                return;
+
+            float now = Time.unscaledTime;
+            if (now < _nextColdTickWarningTime)
+                return;
+
+            _nextColdTickWarningTime = now + ColdTickWarningCooldownSeconds;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _ColdTickOverBudgetWarningHash,
+                _AssetLifecycleContextHash,
+                (float)elapsedMilliseconds);
         }
 
         private void QueueAsyncDispatch(uint key)
@@ -429,14 +550,97 @@ namespace Hecton8.Optimization
 
             DisableOwnerPresentation(record.Owner);
 
+#if UNITY_ADDRESSABLES_EXIST
+            if (record.HasAddressableHandle && record.AddressableHandle.IsValid())
+            {
+                Addressables.Release(record.AddressableHandle);
+            }
+            else if (record.OwnsAssetInstance && record.Asset != null && !ReferenceEquals(record.Asset, _checkerboardMaterial))
+#else
             if (record.OwnsAssetInstance && record.Asset != null && !ReferenceEquals(record.Asset, _checkerboardMaterial))
+#endif
+            {
                 Destroy(record.Asset);
+            }
 
             TrackedResidentBytes -= record.SizeBytes;
             if (TrackedResidentBytes < 0L)
                 TrackedResidentBytes = 0L;
 
             _registry.Remove(key);
+            return true;
+        }
+
+        private int ReleaseDistantChunkAddressables(int maxReleaseCount)
+        {
+            if (maxReleaseCount <= 0)
+                return 0;
+
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return 0;
+
+            _evictionCandidates.Clear();
+
+            Dictionary<uint, AssetRecord>.Enumerator enumerator = _registry.GetEnumerator();
+            while (enumerator.MoveNext() && _evictionCandidates.Count < maxReleaseCount)
+            {
+                AssetRecord record = enumerator.Current.Value;
+                if (!record.IsChunkAsset || !record.HasAbsoluteUniversePosition)
+                    continue;
+
+#if UNITY_ADDRESSABLES_EXIST
+                if (!record.HasAddressableHandle || !record.AddressableHandle.IsValid())
+                    continue;
+#else
+                continue;
+#endif
+
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in record.AbsoluteUniverseAup, in playerAup);
+                if (distanceSq <= DistantChunkReleaseDistanceSq)
+                    continue;
+
+                _evictionCandidates.Add(record.Key);
+            }
+
+            int releaseCount = 0;
+            for (int i = 0; i < _evictionCandidates.Count; i++)
+            {
+                uint key = _evictionCandidates[i];
+                if (!_registry.TryGetValue(key, out AssetRecord record))
+                    continue;
+
+                record.RefCount = 0;
+                record.PendingRelease = false;
+                _registry[key] = record;
+
+                if (ExecuteReleaseFlow(key))
+                    releaseCount++;
+            }
+
+            _evictionCandidates.Clear();
+
+            ItemCatalog catalog = GlobalRegistry.PlayerInventory != null && GlobalRegistry.PlayerInventory.Inventory != null
+                ? GlobalRegistry.PlayerInventory.Inventory.ItemCatalog
+                : null;
+            if (catalog != null && releaseCount < maxReleaseCount)
+            {
+                releaseCount += catalog.EvictWorldPrefabsBeyondPlayerAup(
+                    DistantChunkReleaseDistanceMeters,
+                    maxReleaseCount - releaseCount);
+            }
+
+            return releaseCount;
+        }
+
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                return false;
+
+            playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
             return true;
         }
 
@@ -614,7 +818,7 @@ namespace Hecton8.Optimization
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[AssetLifecycleGovernor] Asset key collision for guid='{assetGuid}' address='{address}'.");
+            Debug.LogError("[AssetLifecycleGovernor] Asset key collision.");
 #endif
             return false;
         }

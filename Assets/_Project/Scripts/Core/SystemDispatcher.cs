@@ -1,6 +1,7 @@
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -50,7 +51,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9950)]
-    public sealed class SystemDispatcher : MonoBehaviour
+    public sealed class SystemDispatcher : MonoBehaviour, IServiceHeartbeat
     {
         private const int LaneCount = 4;
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
@@ -64,9 +65,10 @@ namespace Hecton8.Core
         private const int MaxPdaEventsPerFrame = 30;
         private const int PdaCongestionWarningFrameThreshold = 5;
         private const int LateFrameCircuitBreakerLaneCapacity = 32;
+        private const int ArteryFlushSampleCapacity = 64;
         private const double LateFrameEventFlushBudgetMilliseconds = 2.0;
         private const double LateFrameFlushPassSpikeMilliseconds = 0.5;
-        private const float PauseDepthOfFieldBlendSeconds = 0.15f;
+        private const float PauseDepthOfFieldBlendSeconds = 0.2f;
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
         private const string AupNanInquisitorWarningMessage = "[SystemDispatcher] AUP NaN-Inquisitor detected invalid camera-relative results.";
@@ -93,6 +95,8 @@ namespace Hecton8.Core
         private static readonly uint _AmbientEventsDropHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SystemDispatcher.AmbientEventsDropped"));
         private static readonly uint _CriticalPerformanceSpikeHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CRITICAL_PERF_SPIKE"));
         private static readonly int _HectonFreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
+        private static readonly float[] _arteryFlushMilliseconds = new float[ArteryFlushSampleCapacity];
+        private static int _arteryFlushSampleCursor;
         private static readonly ProfilerMarker[] _updateLaneProfilerMarkers =
         {
             new ProfilerMarker("H8.Dispatcher.Update.Core"),
@@ -183,6 +187,12 @@ namespace Hecton8.Core
         internal static float CurrentFrameUnscaledDeltaTime { get; private set; }
 
         internal static SystemDispatcher ActiveRuntimeInstance { get; private set; }
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static object _currentPostFixedGcOwner;
         private static object _lastPostFixedGcOwner;
@@ -198,6 +208,8 @@ namespace Hecton8.Core
         private static float _nextJobHandleWarningLogTime;
         private static float _pauseDepthOfFieldWeight;
         private static bool _temporalCompressionActive;
+        private static bool _pauseMenuDepthOfFieldRequested;
+        private static bool _pdaDepthOfFieldRequested;
         private static bool _pauseDepthOfFieldTargetActive;
         private static int _temporalCompressionFrameCount;
         private static int _pdaOverBudgetConsecutiveFrames;
@@ -269,14 +281,21 @@ namespace Hecton8.Core
             _dominantLateFrameCircuitBreakerLaneHash = 0u;
             _lateFrameEventBudgetStartTimestamp = 0L;
             _dominantLateFrameCircuitBreakerLaneCount = 0;
+            _arteryFlushSampleCursor = 0;
             System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
             System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
+            System.Array.Clear(_arteryFlushMilliseconds, 0, _arteryFlushMilliseconds.Length);
             _nextAupNanInquisitorLogTime = 0f;
             _nextDispatcherPhaseWarningLogTime = 0f;
             _nextFoveatedFrameWarningLogTime = 0f;
             _nextJobHandleWarningLogTime = 0f;
             _pauseDepthOfFieldWeight = 0f;
+            _pauseMenuDepthOfFieldRequested = false;
+            _pdaDepthOfFieldRequested = false;
             _pauseDepthOfFieldTargetActive = false;
+            _pauseFreezeFrameDitherActive = false;
+            Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, 0f);
+            _criticalPerformanceSpikeReported = false;
             _temporalCompressionActive = false;
             _temporalCompressionFrameCount = 0;
             _pdaOverBudgetConsecutiveFrames = 0;
@@ -301,7 +320,17 @@ namespace Hecton8.Core
         /// </summary>
         public static void RequestPauseDepthOfField(bool active)
         {
-            _pauseDepthOfFieldTargetActive = active;
+            _pauseMenuDepthOfFieldRequested = active;
+            _pauseDepthOfFieldTargetActive = _pauseMenuDepthOfFieldRequested || _pdaDepthOfFieldRequested;
+        }
+
+        /// <summary>
+        /// Requests PDA depth-of-field isolation without overriding the pause menu request.
+        /// </summary>
+        public static void RequestPdaDepthOfField(bool active)
+        {
+            _pdaDepthOfFieldRequested = active;
+            _pauseDepthOfFieldTargetActive = _pauseMenuDepthOfFieldRequested || _pdaDepthOfFieldRequested;
         }
 
         internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
@@ -1013,6 +1042,7 @@ namespace Hecton8.Core
 
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - passStartTimestamp;
             double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            RecordArteryFlushSample(elapsedMilliseconds);
             if (elapsedMilliseconds <= LateFrameFlushPassSpikeMilliseconds || _criticalPerformanceSpikeReported)
                 return;
 
@@ -1023,6 +1053,32 @@ namespace Hecton8.Core
                 _CriticalPerformanceSpikeHash,
                 laneHash,
                 (float)elapsedMilliseconds);
+        }
+
+        internal static int CopyArteryFlushMilliseconds(float[] destination)
+        {
+            if (destination == null || destination.Length == 0)
+                return 0;
+
+            int available = math.min(_arteryFlushSampleCursor, ArteryFlushSampleCapacity);
+            int copyCount = math.min(available, destination.Length);
+            int start = (_arteryFlushSampleCursor - copyCount) % ArteryFlushSampleCapacity;
+            if (start < 0)
+                start += ArteryFlushSampleCapacity;
+
+            for (int i = 0; i < copyCount; i++)
+                destination[i] = _arteryFlushMilliseconds[(start + i) % ArteryFlushSampleCapacity];
+
+            return copyCount;
+        }
+
+        private static void RecordArteryFlushSample(double elapsedMilliseconds)
+        {
+            int writeIndex = _arteryFlushSampleCursor % ArteryFlushSampleCapacity;
+            _arteryFlushMilliseconds[writeIndex] = elapsedMilliseconds > float.MaxValue
+                ? float.MaxValue
+                : (float)math.max(0d, elapsedMilliseconds);
+            _arteryFlushSampleCursor++;
         }
 
         private static bool ShouldDropAmbientLateFrameEvents(uint laneHash)
@@ -1047,6 +1103,8 @@ namespace Hecton8.Core
 
         private static void DropAmbientEnvironmentEvents()
         {
+            WeatherEvents.DropPendingAmbient();
+            RandomEventEvents.DropPendingAmbient();
             SoundscapeEvents.DropPendingAmbient();
         }
 
@@ -1062,12 +1120,9 @@ namespace Hecton8.Core
 
         private static uint CaptureCriticalPerformanceStackHash(uint laneHash)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            string stackTrace = System.Environment.StackTrace;
-            return unchecked((uint)Hecton.Localization.LocHash.Compute(stackTrace));
-#else
-            return laneHash ^ _CriticalPerformanceSpikeHash;
-#endif
+            uint frameHash = unchecked((uint)Time.frameCount * 747796405u);
+            uint budgetHash = unchecked((uint)_lateFrameEventDispatchBudget * 2891336453u);
+            return laneHash ^ _CriticalPerformanceSpikeHash ^ frameHash ^ budgetHash;
         }
 
         private static void TrackPdaBusCongestion(int pendingBeforeFlush, int pendingAfterFlush)
@@ -1643,9 +1698,15 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9940)]
-    public sealed class RenderDispatcher : MonoBehaviour
+    public sealed class RenderDispatcher : MonoBehaviour, IServiceHeartbeat
     {
         internal static RenderDispatcher ActiveRuntimeInstance { get; private set; }
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()

@@ -7,7 +7,6 @@ using Hecton8.Physics;
 using Hecton8.World;
 using NASAPunk.Visor;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 namespace Hecton8.Gameplay
 {
@@ -28,12 +27,6 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(1f, 5f)] private float lunarResonanceGrowthMultiplier = 3f;
         [SerializeField, Min(0.5f)] private float lunarResonanceHoldSeconds = 12f;
 
-        [Header("Cinematic Tides")]
-        [SerializeField] private bool enableFluidWaterLevelTides = true;
-        [FormerlySerializedAs("physicalTideAmplitudeMeters")]
-        [SerializeField, Min(0f)] private float cinematicTideAmplitudeMeters = 4f;
-        [SerializeField, Min(1f)] private float cinematicTidePeriodSeconds = 180f;
-
         [Header("Meteor Fog Shadows")]
         [SerializeField, Min(1f)] private float meteorFogShadowRadiusMeters = 90f;
         [SerializeField, Range(0f, 1f)] private float meteorFogShadowStrength = 0.42f;
@@ -45,11 +38,8 @@ namespace Hecton8.Gameplay
         private static readonly List<VisorHUDController> s_visorControllers = new List<VisorHUDController>(4);
 
         private bool _registered;
-        private bool _hasBaseFluidWaterLevel;
         private bool _reportedMissingFloraDirector;
-        private bool _reportedMissingFluidRuntime;
         private bool _reportedMissingEmpVisorController;
-        private float _baseFluidWaterLevel;
         private float _meteorFogShadowRemainingSeconds;
         private float _solarEmpGlitchRemainingSeconds;
         private float _solarEmpGlitchDurationSeconds;
@@ -60,7 +50,6 @@ namespace Hecton8.Gameplay
         private static readonly int _SolarEmpGlitchParamsId = Shader.PropertyToID("_SolarEmpGlitchParams");
         private static readonly uint _CataclysmContextHash = unchecked((uint)LocHash.Compute("CelestialCataclysmSystem"));
         private static readonly uint _FloraDirectorMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.FloraDirectorMissing"));
-        private static readonly uint _TideFluidMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.TideFluidMissing"));
         private static readonly uint _SolarEmpNoVisorControllerWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.SolarEmpNoVisorController"));
 
         private void OnEnable()
@@ -87,11 +76,10 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Advances low-frequency water-level, resonance, and meteor-fog shadow state.
+        /// Advances low-frequency resonance and meteor-fog shadow state.
         /// </summary>
         public void SlowTick()
         {
-            ApplyCinematicFluidTide();
             ApplyLunarResonanceIfActive();
             AdvanceMeteorFogShadows(0.5f);
             AdvanceSolarEmpGlitch(0.5f);
@@ -172,7 +160,7 @@ namespace Hecton8.Gameplay
 
         private void ApplyLunarResonanceIfActive()
         {
-            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
             if (celestialEngine == null || !celestialEngine.IsLunarResonanceActive)
                 return;
 
@@ -185,31 +173,6 @@ namespace Hecton8.Gameplay
             }
 
             PublishOnce(ref _reportedMissingFloraDirector, _FloraDirectorMissingWarningHash, lunarResonanceGrowthMultiplier);
-        }
-
-        private void ApplyCinematicFluidTide()
-        {
-            if (!enableFluidWaterLevelTides || cinematicTideAmplitudeMeters <= 0f)
-                return;
-
-            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
-            if (fluidEngine == null)
-            {
-                PublishOnce(ref _reportedMissingFluidRuntime, _TideFluidMissingWarningHash, cinematicTideAmplitudeMeters);
-                return;
-            }
-
-            _reportedMissingFluidRuntime = false;
-
-            if (!_hasBaseFluidWaterLevel)
-            {
-                _baseFluidWaterLevel = fluidEngine.WaterLevel;
-                _hasBaseFluidWaterLevel = true;
-            }
-
-            float period = Mathf.Max(1f, cinematicTidePeriodSeconds);
-            float phase = Time.unscaledTime * (Mathf.PI * 2f) / period;
-            fluidEngine.WaterLevel = _baseFluidWaterLevel + Mathf.Sin(phase) * Mathf.Max(0f, cinematicTideAmplitudeMeters);
         }
 
         private void AdvanceMeteorFogShadows(float deltaTime)

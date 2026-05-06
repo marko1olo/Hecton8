@@ -1,6 +1,6 @@
-# DEAD_ASSET_SWEEP_REPORT
-Date: 2026-04-28
-Status: REFERENCE
+﻿# DEAD_ASSET_SWEEP_REPORT
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 **Date:** 2026-04-29  
@@ -24,7 +24,7 @@ Status: REFERENCE
 | Path or area | Current result |
 |---|---|
 | `Assets/_Project` | `7963` files currently present |
-| `Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР` | folder exists and currently contains `41` files in this sweep |
+| `Assets/_Project/Art/Models/Rocks/Rock 4 - Ð£ÐÐ˜Ð’Ð•Ð Ð¡ÐÐ›Ð¬ÐÐ«Ð™ Ð’Ð«Ð‘ÐžÐ ` | folder exists and currently contains `41` files in this sweep |
 | `Assets/_Project/Art/Models/Sandbox` | folder exists and currently contains `4` files in this sweep |
 | `Assets/_Project/Art/Models/Sandbox/Coral_Albedo.png` | present |
 | `Assets/_Project/Art/Models/Sandbox/Coral_Normal.png` | present |
@@ -45,7 +45,7 @@ Status: REFERENCE
 
 | Candidate | Current judgement |
 |---|---|
-| `Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР` | `NOT PROVEN DEAD` |
+| `Rock 4 - Ð£ÐÐ˜Ð’Ð•Ð Ð¡ÐÐ›Ð¬ÐÐ«Ð™ Ð’Ð«Ð‘ÐžÐ ` | `NOT PROVEN DEAD` |
 | `Coral_Albedo.png` / `Coral_Normal.png` | `NOT PROVEN DEAD` |
 | Sandbox-labeled assets in general | `NOT PROVEN DEAD`; sandbox content still exists as an active content bucket in the project tree |
 

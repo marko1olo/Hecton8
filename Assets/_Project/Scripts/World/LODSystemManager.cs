@@ -4,7 +4,7 @@
 //
 // RESPONSIBILITIES:
 //   • Register/unregister LODGroup components
-//   • Schedule Burst-compiled distance calculation jobs
+//   • Resolve a capped camera-relative distance slice
 //   • Apply LOD transitions (crossfade/discrete)
 //   • Manage quality presets (Low/Medium/High)
 //   • Persist LOD settings via SaveManager
@@ -13,26 +13,23 @@
 //   • GlobalRegistry.LODSystem is the authoritative runtime lookup.
 //   • ITickable — registers with GameTickManager
 //   • ISaveable — persists quality settings
-//   • Zero-GC — pre-allocated collections, NativeArrays
-//   • Burst-compiled jobs for distance calculations
+//   • Zero-GC — pre-allocated collections and fixed distance scratch
+//   • AUP-backed far-distance precision beyond floating origin
 //
 // PERFORMANCE:
-//   • Target: < 1ms per frame for 500 LODGroups
+//   • Target: < 0.2ms per frame for 64 LODGroups
 //   • Zero GC allocations in hot paths
 //   • Squared distance calculations (no sqrt)
 //
 // INTEGRATION:
 //   • GameTickManager — ITickable registration
 //   • SaveManager — ISaveable (LoadPriority=5)
-//   • Unity Jobs System — Burst-compiled distance jobs
+//   • AbsoluteUniversePosition — far-distance precision beyond floating origin
 // ============================================================================
 
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using Unity.Jobs;
-using Unity.Collections;
-using Unity.Burst;
 using Unity.Mathematics;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -63,32 +60,36 @@ namespace Hecton8.World
     /// <remarks>
     /// ZERO-GC ARCHITECTURE:
     ///   • Pre-allocated collections with capacity
-    ///   • NativeArray for job data (Allocator.Persistent)
+    ///   • Fixed hot-path distance scratch
     ///   • No LINQ, no string operations in hot paths
     ///   • Struct-based data where possible
     /// 
     /// PERFORMANCE TARGET:
-    ///   • LOD processing: < 1ms per frame
-    ///   • Distance job: < 1ms per frame
-    ///   • Total: < 2ms per frame
+    ///   • LOD processing: < 0.2ms per frame
+    ///   • Distance solve: 64 groups per frame
+    ///   • Total: < 0.2ms per frame
     /// </remarks>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-150)] // Run before gameplay systems
-    public sealed class LODSystemManager : MonoBehaviour, ITickable, ILateFrameTickable, ISaveable
+    public sealed class LODSystemManager : MonoBehaviour, ITickable, ISaveable
     {
         private const float CameraResolveRetryInterval = 1f;
         private const int MaxHotPathLODGroupsPerFrame = 64;
+        private const float AupDistanceThresholdMeters = 50f;
+        private const float AupDistanceThresholdSqr = AupDistanceThresholdMeters * AupDistanceThresholdMeters;
+        private const float LODSolveBudgetWarningMs = 0.2f;
+        private const int LODPerformanceWarningCooldownFrames = 30;
+        private const uint LODSolveBudgetWarningHash = 0x4C4F4457u;
+        private const uint LODSystemContextHash = 0x4C4F4453u;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private static LODSystemManager _instance;
-
         /// <summary>
-        /// Singleton instance. Null if not initialized.
+        /// Registry-backed runtime instance. Null if not initialized.
         /// </summary>
-        public static LODSystemManager Instance => _instance;
+        public static LODSystemManager Instance => GlobalRegistry.LODSystem;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR SETTINGS
@@ -124,16 +125,10 @@ namespace Hecton8.World
         // COLD ALLOC: HashSet<LODGroup>[500] — O(1) duplicate check — owner: LODSystemManager
         private readonly HashSet<LODGroup> _registeredLODGroupsSet = new HashSet<LODGroup>();
 
-        // COLD ALLOC: NativeArray<float3>[500] — job input positions — owner: LODSystemManager
-        private NativeArray<float3> _lodGroupPositions;
+        // COLD ALLOC: float[64] - capped hot-path distance scratch - owner: LODSystemManager
+        private float[] _lodGroupSquaredDistances;
 
-        // COLD ALLOC: NativeArray<float>[500] — job output squared distances — owner: LODSystemManager
-        private NativeArray<float> _lodGroupSquaredDistances;
-
-        private JobHandle _distanceJobHandle;
-        private bool _jobScheduled;
         private bool _registered;
-        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
 
         private Camera _mainCamera;
@@ -145,6 +140,7 @@ namespace Hecton8.World
         private int _lodHotPathCursor;
         private int _lodBatchStartIndex;
         private int _scheduledLODGroupBatchCount;
+        private int _nextLODPerformanceWarningFrame;
 
         private float _lodSystemCPUTime;
 
@@ -174,24 +170,21 @@ namespace Hecton8.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
         }
 
         private void Awake()
         {
-            // Singleton setup
-            if (_instance != null && _instance != this)
+            LODSystemManager registered = GlobalRegistry.LODSystem;
+            if (registered != null && registered != this)
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[LODSystemManager] Duplicate instance detected. Destroying duplicate.");
+                Debug.LogWarning("[LODSystemManager] Duplicate registry owner detected. Destroying duplicate.");
                 #endif
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
-
-            EnsureNativeBuffersAllocated();
+            EnsureDistanceScratchAllocated();
             _defaultLODBias = QualitySettings.lodBias;
             TryResolveMainCamera();
             ApplyQualityPreset(_qualityPreset);
@@ -206,10 +199,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            EnsureNativeBuffersAllocated();
+            EnsureDistanceScratchAllocated();
             TryRegisterService();
             TryRegister();
-            TryRegisterLateFrame();
         }
 
         private void OnDisable()
@@ -217,14 +209,9 @@ namespace Hecton8.World
             RestoreDefaultLODBias();
             UnregisterAllImpostorCandidates();
             TryUnregister();
-            TryUnregisterLateFrame();
             TryUnregisterService();
 
-            JobHandle disposeDependency = _jobScheduled ? _distanceJobHandle : default;
-            _jobScheduled = false;
-            _distanceJobHandle = default;
-
-            ReleaseNativeBuffers(disposeDependency);
+            ReleaseDistanceScratch();
         }
 
         private void OnDestroy()
@@ -232,73 +219,23 @@ namespace Hecton8.World
             // Unregister from the authoritative save service.
             GlobalRegistry.Save?.Unregister(this);
 
-            JobHandle disposeDependency = _jobScheduled ? _distanceJobHandle : default;
-            _jobScheduled = false;
-            _distanceJobHandle = default;
-
-            ReleaseNativeBuffers(disposeDependency);
+            ReleaseDistanceScratch();
 
             RestoreDefaultLODBias();
             UnregisterAllImpostorCandidates();
             TryUnregister();
-            TryUnregisterLateFrame();
             TryUnregisterService();
-
-            // Clear singleton
-            if (_instance == this)
-                _instance = null;
         }
 
-        private void EnsureNativeBuffersAllocated()
+        private void EnsureDistanceScratchAllocated()
         {
-            if (!_lodGroupPositions.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float3>[maxLODGroupsPerFrame] — LOD job input positions — owner: LODSystemManager
-                _lodGroupPositions = new NativeArray<float3>(_maxLODGroupsPerFrame, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _lodGroupPositions,
-                    nameof(LODSystemManager),
-                    nameof(_lodGroupPositions),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_lodGroupSquaredDistances.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<float>[maxLODGroupsPerFrame] — LOD job output squared distances — owner: LODSystemManager
-                _lodGroupSquaredDistances = new NativeArray<float>(_maxLODGroupsPerFrame, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _lodGroupSquaredDistances,
-                    nameof(LODSystemManager),
-                    nameof(_lodGroupSquaredDistances),
-                    NativeAllocationLifetime.Session);
-            }
+            if (_lodGroupSquaredDistances == null || _lodGroupSquaredDistances.Length < MaxHotPathLODGroupsPerFrame)
+                _lodGroupSquaredDistances = new float[MaxHotPathLODGroupsPerFrame];
         }
 
-        private void ReleaseNativeBuffers(JobHandle disposeDependency = default)
+        private void ReleaseDistanceScratch()
         {
-            if (_lodGroupPositions.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_lodGroupPositions);
-
-                if (!disposeDependency.Equals(default))
-                    disposeDependency = _lodGroupPositions.Dispose(disposeDependency);
-                else
-                    _lodGroupPositions.Dispose();
-
-                _lodGroupPositions = default;
-            }
-
-            if (_lodGroupSquaredDistances.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_lodGroupSquaredDistances);
-
-                if (!disposeDependency.Equals(default))
-                    disposeDependency = _lodGroupSquaredDistances.Dispose(disposeDependency);
-                else
-                    _lodGroupSquaredDistances.Dispose();
-
-                _lodGroupSquaredDistances = default;
-            }
+            _lodGroupSquaredDistances = null;
         }
 
         private void TryRegister()
@@ -319,24 +256,6 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registered = false;
-        }
-
-        private void TryRegisterLateFrame()
-        {
-            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
-        }
-
-        private void TryUnregisterLateFrame()
-        {
-            if (!_lateFrameRegistered)
-                return;
-
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            _lateFrameRegistered = false;
         }
 
         private void TryRegisterService()
@@ -391,30 +310,15 @@ namespace Hecton8.World
             if (_enablePerformanceMonitoring)
                 startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
 
-            if (_jobScheduled)
-                return;
-
-            // Schedule new distance calculation job
-            ScheduleDistanceCalculationJob();
+            CalculateDistanceSlice();
+            ApplyLODTransitions();
 
             if (_enablePerformanceMonitoring)
             {
                 long endTicks = System.Diagnostics.Stopwatch.GetTimestamp();
                 _lodSystemCPUTime = (endTicks - startTicks) / (float)System.Diagnostics.Stopwatch.Frequency * 1000f;
+                PublishLODPerformanceWarningIfNeeded(_lodSystemCPUTime);
             }
-        }
-
-        /// <inheritdoc />
-        public void LateFrameTick()
-        {
-            if (!_jobScheduled || !_distanceJobHandle.IsCompleted)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _distanceJobHandle, forceComplete: false))
-                return;
-
-            ApplyLODTransitions();
-            _jobScheduled = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -537,6 +441,16 @@ namespace Hecton8.World
             }
         }
 
+        public float ApplyEmergencyLODBiasStrike()
+        {
+            float current = QualitySettings.lodBias;
+            float next = Mathf.Max(0.35f, current - 0.1f);
+            if (next < current)
+                QualitySettings.lodBias = next;
+
+            return QualitySettings.lodBias;
+        }
+
         /// <summary>
         /// Set quality preset and apply LOD bias immediately.
         /// </summary>
@@ -550,12 +464,13 @@ namespace Hecton8.World
         //  PRIVATE METHODS — DISTANCE CALCULATION
         // ══════════════════════════════════════════════════════════
 
-        private void ScheduleDistanceCalculationJob()
+        private void CalculateDistanceSlice()
         {
             if (_registeredLODGroups.Count == 0) return;
 
-            // Copy LOD group positions to NativeArray
-            float3 camPos = _cameraTransform.position;
+            EnsureDistanceScratchAllocated();
+            Vector3 cameraPosition = _cameraTransform.position;
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
             int count = ResolveHotPathLODGroupBatchCount();
             if (_lodHotPathCursor >= _registeredLODGroups.Count)
                 _lodHotPathCursor = 0;
@@ -566,19 +481,18 @@ namespace Hecton8.World
             for (int i = 0; i < count; i++)
             {
                 int lodGroupIndex = ResolveHotPathLODGroupIndex(_lodBatchStartIndex, i);
-                _lodGroupPositions[i] = _lodGroupTransforms[lodGroupIndex].position;
+                Transform lodTransform = _lodGroupTransforms[lodGroupIndex];
+                if (lodTransform == null)
+                {
+                    _lodGroupSquaredDistances[i] = float.MaxValue;
+                    continue;
+                }
+
+                _lodGroupSquaredDistances[i] = ResolveCameraDistanceSqr(
+                    cameraPosition,
+                    in cameraAup,
+                    lodTransform.position);
             }
-
-            // Schedule Burst-compiled job
-            var job = new DistanceCalculationJob
-            {
-                CameraPosition = camPos,
-                LODGroupPositions = _lodGroupPositions,
-                SquaredDistances = _lodGroupSquaredDistances
-            };
-
-            _distanceJobHandle = job.Schedule(count, MaxHotPathLODGroupsPerFrame);
-            _jobScheduled = true;
         }
 
         private void ApplyLODTransitions()
@@ -621,8 +535,38 @@ namespace Hecton8.World
         }
 
         // ══════════════════════════════════════════════════════════
-        //  BURST-COMPILED JOB
+        //  HOT-PATH DISTANCE CHEAT
         // ══════════════════════════════════════════════════════════
+
+        private static float ResolveCameraDistanceSqr(
+            Vector3 cameraPosition,
+            in AbsoluteUniversePosition cameraAup,
+            Vector3 objectPosition)
+        {
+            float3 delta = new float3(
+                objectPosition.x - cameraPosition.x,
+                objectPosition.y - cameraPosition.y,
+                objectPosition.z - cameraPosition.z);
+            float runtimeDistanceSqr = math.lengthsq(delta);
+            if (runtimeDistanceSqr <= AupDistanceThresholdSqr)
+                return runtimeDistanceSqr;
+
+            AbsoluteUniversePosition objectAup = AbsoluteUniversePosition.FromRuntimePosition(objectPosition);
+            double distanceSqr = AbsoluteUniversePosition.DistanceSq(in cameraAup, in objectAup);
+            return distanceSqr >= float.MaxValue ? float.MaxValue : (float)distanceSqr;
+        }
+
+        private void PublishLODPerformanceWarningIfNeeded(float elapsedMilliseconds)
+        {
+            if (elapsedMilliseconds <= LODSolveBudgetWarningMs || Time.frameCount < _nextLODPerformanceWarningFrame)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                LODSolveBudgetWarningHash,
+                LODSystemContextHash,
+                elapsedMilliseconds);
+            _nextLODPerformanceWarningFrame = Time.frameCount + LODPerformanceWarningCooldownFrames;
+        }
 
         private int ResolveHotPathLODGroupBatchCount()
         {
@@ -820,24 +764,6 @@ namespace Hecton8.World
             }
         }
 
-        /// <summary>
-        /// Burst-compiled job for calculating squared distances from camera to LOD groups.
-        /// Uses squared distance to avoid expensive sqrt operations.
-        /// </summary>
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct DistanceCalculationJob : IJobParallelFor
-        {
-            [ReadOnly] public float3 CameraPosition;
-            [ReadOnly] public NativeArray<float3> LODGroupPositions;
-            [WriteOnly] public NativeArray<float> SquaredDistances;
-
-            public void Execute(int index)
-            {
-                float3 delta = LODGroupPositions[index] - CameraPosition;
-                SquaredDistances[index] = math.lengthsq(delta);
-            }
-        }
-
         // ══════════════════════════════════════════════════════════
         //  EDITOR GIZMOS
         // ══════════════════════════════════════════════════════════
@@ -870,6 +796,7 @@ namespace Hecton8.World
             if (_mainCamera == null) return;
 
             Vector3 camPos = _mainCamera.transform.position;
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(camPos);
 
             // Draw transition distance spheres
             if (_showTransitionSpheres)
@@ -884,7 +811,7 @@ namespace Hecton8.World
                 if (lodGroup == null) continue;
 
                 Vector3 objPos = _lodGroupTransforms[i].position;
-                float sqrDist = _lodGroupSquaredDistances[i];
+                float sqrDist = ResolveCameraDistanceSqr(camPos, in cameraAup, objPos);
                 float dist = Mathf.Sqrt(sqrDist);
 
                 // Show current LOD level label

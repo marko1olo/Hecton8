@@ -61,7 +61,8 @@ namespace Hecton8.Core
         MovementSpeed = 12,
         ToolHeat01 = 13,
         FrostIntensity01 = 14,
-        Count = 15
+        WaterSurfaceY = 15,
+        Count = 16
     }
 
     /// <summary>

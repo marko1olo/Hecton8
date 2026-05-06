@@ -653,8 +653,7 @@ namespace Hecton8.Quest
                 ActivatedQuestIndices = _activatedQuestIndices,
                 CompletedQuestIndices = _completedQuestIndices
             };
-            JobHandle signalEvaluationHandle = job.Schedule();
-            signalEvaluationHandle.Complete();
+            job.Execute();
 
             bool graphMutation = _activatedQuestIndices.Length > 0 || _completedQuestIndices.Length > 0;
             for (int i = 0; i < _activatedQuestIndices.Length; i++)
@@ -888,6 +887,7 @@ namespace Hecton8.Quest
             switch (kind)
             {
                 case QuestSignalKind.ItemCollected:
+                case QuestSignalKind.CraftCompleted:
                 case QuestSignalKind.DiscoveryMade:
                 case QuestSignalKind.AudioLogFound:
                 case QuestSignalKind.SignalDecoded:
@@ -1322,8 +1322,7 @@ namespace Hecton8.Quest
                 GlobalPrerequisites = _globalPrerequisites,
                 Result = _checksumResult
             };
-            JobHandle checksumHandle = checksumJob.Schedule();
-            checksumHandle.Complete();
+            checksumJob.Execute();
             _stateChecksum = _checksumResult[0];
         }
 
@@ -1353,6 +1352,8 @@ namespace Hecton8.Quest
             {
                 case QuestTriggerType.OnItemCollected:
                     return QuestSignalKind.ItemCollected;
+                case QuestTriggerType.OnCraftCompleted:
+                    return QuestSignalKind.CraftCompleted;
                 case QuestTriggerType.OnDepthReached:
                     return QuestSignalKind.DepthReached;
                 case QuestTriggerType.OnBiomeEntered:
@@ -1376,6 +1377,8 @@ namespace Hecton8.Quest
             {
                 case QuestCompletionType.OnItemCollected:
                     return QuestSignalKind.ItemCollected;
+                case QuestCompletionType.OnCraftCompleted:
+                    return QuestSignalKind.CraftCompleted;
                 case QuestCompletionType.OnDepthReached:
                     return QuestSignalKind.DepthReached;
                 case QuestCompletionType.OnBiomeEntered:
@@ -1396,6 +1399,7 @@ namespace Hecton8.Quest
             switch (signalKind)
             {
                 case QuestSignalKind.ItemCollected:
+                case QuestSignalKind.CraftCompleted:
                 case QuestSignalKind.ItemLost:
                     return QuestStateBand.Item;
                 case QuestSignalKind.BiomeEntered:
@@ -1463,6 +1467,7 @@ namespace Hecton8.Quest
             switch (signalKind)
             {
                 case QuestSignalKind.ItemCollected:
+                case QuestSignalKind.CraftCompleted:
                 case QuestSignalKind.DiscoveryMade:
                 case QuestSignalKind.AudioLogFound:
                 case QuestSignalKind.SignalDecoded:
@@ -1685,6 +1690,7 @@ namespace Hecton8.Quest
                 switch ((QuestSignalKind)node.SignalKind)
                 {
                     case QuestSignalKind.ItemCollected:
+                    case QuestSignalKind.CraftCompleted:
                     case QuestSignalKind.DiscoveryMade:
                     case QuestSignalKind.AudioLogFound:
                     case QuestSignalKind.SignalDecoded:

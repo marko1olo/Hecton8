@@ -139,7 +139,8 @@ namespace Hecton8.Gameplay
 
         public virtual void OnSpawn()
         {
-            LogLifecycleDebug($"{GetType().Name}.OnSpawn");
+            if (lifecycleDebugLogging)
+                LogLifecycleDebug(nameof(OnSpawn));
             IsEquipped = false;
             _lowDurabilityWarningFired = false;
             _lastUseTime = float.NegativeInfinity;
@@ -163,7 +164,8 @@ namespace Hecton8.Gameplay
 
         public virtual void OnDespawn()
         {
-            LogLifecycleDebug($"{GetType().Name}.OnDespawn");
+            if (lifecycleDebugLogging)
+                LogLifecycleDebug(nameof(OnDespawn));
             if (IsEquipped) OnUnequip();
             UnregisterModularRuntime();
             IsEquipped = false;
@@ -247,10 +249,10 @@ namespace Hecton8.Gameplay
         public virtual string GetOperationalSummary()
         {
             string toolName = GetOperationalToolName();
-            if (!IsEquipped) return $"{toolName} // STANDBY";
-            if (IsBroken) return $"{toolName} // BROKEN";
-            if (_toolMetadata != null) return $"{toolName} // DUR {(int)CurrentDurability}/{(int)_toolMetadata.maxDurability}";
-            return $"{toolName} // READY";
+            if (!IsEquipped) return toolName + " // STANDBY";
+            if (IsBroken) return toolName + " // BROKEN";
+            if (_toolMetadata != null) return toolName + " // DUR " + (int)CurrentDurability + "/" + (int)_toolMetadata.maxDurability;
+            return toolName + " // READY";
         }
 
         public virtual void WriteOperationalSummary(FixedCharBuffer buffer)
@@ -509,7 +511,8 @@ namespace Hecton8.Gameplay
             if (_toolMetadata == null || !TryGetModularEquipment(out IModularEquipmentService service) || !_runtimeToolRegistered)
                 return false;
 
-            float requestedDrain = GetEnergyConsumption() * deltaTime;
+            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+            float requestedDrain = GetEnergyConsumption() * safeDeltaTime;
             if (requestedDrain <= 0f)
                 return true;
 
@@ -527,7 +530,8 @@ namespace Hecton8.Gameplay
                 return true;
 
             float batteryBefore = service.GetBatteryNormalized(_runtimeToolId, 0f);
-            service.ConsumeBattery(_runtimeToolId, remainingDrain);
+            float remainingDrainRate = safeDeltaTime > 0f ? remainingDrain / safeDeltaTime : 0f;
+            service.ConsumeBattery(_runtimeToolId, remainingDrainRate, safeDeltaTime);
             return batteryBefore + 0.0001f >= remainingDrain;
         }
 
@@ -630,6 +634,9 @@ namespace Hecton8.Gameplay
                 return;
 
             ModularEquipmentEngine runtime = ModularEquipmentEngine.EnsureRuntimeInstance();
+            if (runtime == null)
+                return;
+
             runtime.InitializeService();
 
             if (!TryGetModularEquipment(out IModularEquipmentService service))

@@ -725,7 +725,7 @@ namespace Hecton8.Editor.Validation
                 0, 4, 1, 5, 2, 6, 3, 7
             };
 
-            mesh.vertices = vertices;
+            mesh.SetVertices(vertices);
             mesh.SetIndices(indices, MeshTopology.Lines, 0);
             mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
             mesh.UploadMeshData(false);

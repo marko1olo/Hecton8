@@ -1,12 +1,9 @@
-# HECTON-8 EVENT BUS MAP
-Date: 2026-05-04
-Status: REFERENCE
+﻿# HECTON-8 EVENT BUS MAP
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Status:** PENDING VERIFICATION  
-**Scope:** Historical summary of the event-bus layer.  
-**Chronology Note:** The previous version carried an impossible future scan date. This rewrite removes that contradiction.
+Scope: source-backed orientation map for the event-bus layer.
 
 ---
 
@@ -30,6 +27,18 @@ The first-party queue-backed pattern now used by the migrated buses is:
 5. Cold-path string recovery, when still required for UI/save compatibility, uses hash-to-string dictionaries outside hot paths.
 
 This removes direct managed string-delegate fanout from the migrated buses and moves runtime dispatch into deterministic late-frame drains.
+
+## Five-Artery Mega-Bus Model
+
+The current architecture map classifies the first-party bus surface into exactly five arteries. This is an ownership summary over existing source queues, not a new dispatcher.
+
+| Artery | Scope | Representative lanes |
+|---|---|---|
+| Core | bootstrap, registry, save/load, localization, telemetry, object-pool diagnostics, scene bootstrap, mod registry | `BootstrapEvents`, `GlobalRegistry`, `SaveEvents`, `LocalizationEvents`, `GlobalTelemetryBus`, `ObjectPoolDiagnostics`, `SceneBootstrap`, `ModRegistryEvents` |
+| Env | atmosphere, weather, celestial, biome, acoustic, fluid, pressure, physics, depth, soundscape, random/seismic world pressure | `AtmosphereEvents`, `WeatherEvents`, `CelestialEvents`, `MapMagicBiomeEvents`, `BiomeMatrixEvents`, `AcousticZoneEvents`, `FluidFeedbackEvents`, `HighPressureEvents`, `FatalPressureImplosionEvents`, `PhysicsEventBus`, `DepthZoneEvents`, `SoundscapeEvents`, `RandomEventEvents` |
+| Player | interaction, crafting, scanner, PDA, inventory, tool state, player signals, notifications, Atlas signal UI-facing lanes | `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `PDAEvents`, `PDAIntrusionEvents`, `InventoryEvents`, `FlashlightEvents`, `LaserCutterEvents`, `PlayerSignalEvents`, `PlayerExpressionEvents`, `NotificationEvents`, `AtlasSignalEvents` |
+| Base | construction/base module state, submarine OS, power telemetry, airlock, base integrity, emergency relays, drone fleet telemetry | `ModuleStatusEvents`, `BaseAirlockEvents`, `BaseIntegrityEvents`, `HectonSubmarineOsEvents`, `PowerGridTelemetryEvents`, `EmergencyServiceRelayEvents`, `HectonDroneFleetEvents` |
+| AI | director, quest/progression, narrative/audio-log, first-hour/ending, Atlas-6 directives, ecosystem/fauna pressure | `DirectorAIEvents`, `QuestEvents`, `NarrativeEvents`, `AudioLogEvents`, `FirstHourEvents`, `EndingEvents`, `Atlas6Events`, `SargassumGlobalDragManager` |
 
 ## Queue-Backed Buses Verified In Code
 

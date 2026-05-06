@@ -247,6 +247,11 @@ namespace Hecton8.Editor
                 }.Schedule(PixelCount, 64);
                 handleScheduled = true;
 
+                const float plateauSourceAngle = 15f;
+                const float plateauTargetAngle = 3.5f;
+                const float cliffSourceAngle = 45f;
+                const float cliffTargetAngle = 52f;
+                const float cliffRampEndAngle = cliffSourceAngle + (cliffTargetAngle - cliffSourceAngle) * 0.25f;
                 handle = new HectonSandboxSlopeQuantizationJob
                 {
                     InputHeights01 = raw,
@@ -256,10 +261,11 @@ namespace Hecton8.Editor
                     CellSizeMeters = (float)ShelfPreviewCellSizeMeters,
                     LowWorldY = ShelfLowWorldY,
                     HighWorldY = ShelfHighWorldY,
-                    PlateauSourceAngleDegrees = 15f,
-                    PlateauTargetAngleDegrees = 3.5f,
-                    CliffSourceAngleDegrees = 45f,
-                    CliffTargetAngleDegrees = 80f,
+                    PlateauSourceGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(plateauSourceAngle),
+                    PlateauTargetGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(plateauTargetAngle),
+                    CliffSourceGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffSourceAngle),
+                    CliffRampEndGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffRampEndAngle),
+                    CliffTargetGradient = HectonSandboxAbyssalShelfMath.SlopeAngleDegreesToGradient(cliffTargetAngle),
                     Strength = 1f
                 }.Schedule(PixelCount, 64, handle);
 
@@ -289,7 +295,7 @@ namespace Hecton8.Editor
             return new HectonSandboxAbyssalShelfParams
             {
                 AupCellSizeMeters = ShelfAupCellSizeMeters,
-                DescentRadiusMeters = 17500.0,
+                DescentRadiusMeters = 15000.0,
                 PlateCellSizeMeters = 4200.0,
                 HighWorldY = ShelfHighWorldY,
                 LowWorldY = ShelfLowWorldY,
@@ -301,6 +307,11 @@ namespace Hecton8.Editor
                 DomainWarpMeters = 1450f,
                 DomainWarpFrequency = 0.00011f,
                 MacroExponentialFalloff = 3.1f,
+                ShelfRunMeters = 15000f,
+                ShelfTargetSlopeDegrees = 30f,
+                TrenchDepthMeters = 5000f,
+                TrenchWidthMeters = 780f,
+                TrenchSharpness = 2.4f,
                 IslandCenterRadiusMeters = 2600f,
                 IslandJunctionThreshold = 0.58f,
                 Seed = HectonSandboxAbyssalShelfMath.CombineWorldSeed(880031u, 0)
@@ -520,7 +531,13 @@ namespace Hecton8.Editor
             Texture2D texture = new Texture2D(Resolution, Resolution, TextureFormat.RGBA32, false, true);
             texture.SetPixelData(pixels, 0);
             texture.Apply(false, false);
-            File.WriteAllBytes(path, texture.EncodeToPNG());
+            byte[] pngBytes = texture.EncodeToPNG(); // COLD ALLOC: byte[] - editor-only PNG encode output - owner: ErosionTestHarness
+            using (FileStream stream = new FileStream(path, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                stream.Write(pngBytes, 0, pngBytes.Length);
+                stream.Flush(true);
+            }
+
             Object.DestroyImmediate(texture);
         }
 

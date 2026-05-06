@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -29,6 +30,7 @@ namespace Hecton8.Quest
         {
             public uint TargetHash;
             public Vector3 FallbackPosition;
+            public AbsoluteUniversePosition FallbackAup;
             public float HeightOffset;
             public bool HasFallbackPosition;
         }
@@ -222,10 +224,12 @@ namespace Hecton8.Quest
                 return;
 
             int activeQuestCount = questManager.CopyActiveQuestHashes(_activeQuestHashes);
-            Vector3 playerPosition = _playerTransform != null ? _playerTransform.position : Vector3.zero;
             bool hasPlayer = _playerTransform != null;
-            float maxDistanceSq = maxVisibleDistanceMeters * maxVisibleDistanceMeters;
-            float minDistanceSq = MinimumDistanceMeters * MinimumDistanceMeters;
+            AbsoluteUniversePosition playerAup = hasPlayer
+                ? AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position)
+                : default;
+            double maxDistanceSq = (double)maxVisibleDistanceMeters * maxVisibleDistanceMeters;
+            double minDistanceSq = (double)MinimumDistanceMeters * MinimumDistanceMeters;
 
             for (int i = 0; i < activeQuestCount && _visibleMarkerCount < MaxMarkers; i++)
             {
@@ -233,12 +237,18 @@ namespace Hecton8.Quest
                 if (questHash == 0u)
                     continue;
 
-                if (!TryResolveMarkerPosition(questManager, questHash, out Vector3 markerWorldPosition))
+                if (!TryResolveMarkerPosition(
+                        questManager,
+                        questHash,
+                        out Vector3 markerWorldPosition,
+                        out AbsoluteUniversePosition markerAup))
+                {
                     continue;
+                }
 
                 if (hasPlayer)
                 {
-                    float distanceSq = (markerWorldPosition - playerPosition).sqrMagnitude;
+                    double distanceSq = AbsoluteUniversePosition.DistanceSq(in markerAup, in playerAup);
                     if (distanceSq < minDistanceSq || distanceSq > maxDistanceSq)
                         continue;
                 }
@@ -247,9 +257,14 @@ namespace Hecton8.Quest
             }
         }
 
-        private bool TryResolveMarkerPosition(QuestManager questManager, uint questHash, out Vector3 markerWorldPosition)
+        private bool TryResolveMarkerPosition(
+            QuestManager questManager,
+            uint questHash,
+            out Vector3 markerWorldPosition,
+            out AbsoluteUniversePosition markerAup)
         {
             markerWorldPosition = default;
+            markerAup = default;
             if (!TryResolveMarkerCache(questManager, questHash, out QuestMarkerCache cache))
                 return false;
 
@@ -260,18 +275,20 @@ namespace Hecton8.Quest
                 if (atlasSignalSystem == null)
                     return false;
 
-                resolvedPosition = atlasSignalSystem.AtlasCorePosition;
+                resolvedPosition = atlasSignalSystem.AtlasCorePosition + (Vector3.up * cache.HeightOffset);
+                markerAup = AbsoluteUniversePosition.FromRuntimePosition(resolvedPosition);
             }
             else if (cache.HasFallbackPosition)
             {
                 resolvedPosition = cache.FallbackPosition;
+                markerAup = cache.FallbackAup;
             }
             else
             {
                 return false;
             }
 
-            markerWorldPosition = resolvedPosition + (Vector3.up * cache.HeightOffset);
+            markerWorldPosition = resolvedPosition;
             return true;
         }
 
@@ -291,12 +308,18 @@ namespace Hecton8.Quest
                 return false;
             }
 
+            float heightOffset = Mathf.Max(0f, markerHeightOffset);
+            Vector3 resolvedFallbackPosition = markerWorldPosition + (Vector3.up * heightOffset);
+            bool hasFallbackPosition = markerWorldPosition.sqrMagnitude > 0.0001f;
             cache = new QuestMarkerCache
             {
                 TargetHash = markerTargetHash,
-                FallbackPosition = markerWorldPosition,
-                HeightOffset = Mathf.Max(0f, markerHeightOffset),
-                HasFallbackPosition = markerWorldPosition.sqrMagnitude > 0.0001f
+                FallbackPosition = resolvedFallbackPosition,
+                FallbackAup = hasFallbackPosition
+                    ? AbsoluteUniversePosition.FromRuntimePosition(resolvedFallbackPosition)
+                    : default,
+                HeightOffset = heightOffset,
+                HasFallbackPosition = hasFallbackPosition
             };
 
             _markerCacheByQuestHash[questHash] = cache;
@@ -332,8 +355,8 @@ namespace Hecton8.Quest
                 5, 1, 4
             };
 
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             mesh.UploadMeshData(false);

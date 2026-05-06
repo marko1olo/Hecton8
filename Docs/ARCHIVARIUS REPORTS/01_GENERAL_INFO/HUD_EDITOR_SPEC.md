@@ -1,11 +1,11 @@
-# HUD EDITOR VISIBILITY SPEC — SuitHUDV4CanvasOverlay
-Date: 2026-05-04
-Status: REFERENCE
+﻿# HUD EDITOR VISIBILITY SPEC â€” SuitHUDV4CanvasOverlay
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 **Status:** PENDING VERIFICATION  
 **Target:** `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`  
-**Rule Basis:** AGENTS.md § [REQ] OnDrawGizmos/OnDrawGizmosSelected: `#if UNITY_EDITOR` only. [FORBID] Physics/Find/GetComponent in OnDrawGizmos — visualize cached data only.  
+**Rule Basis:** AGENTS.md Â§ [REQ] OnDrawGizmos/OnDrawGizmosSelected: `#if UNITY_EDITOR` only. [FORBID] Physics/Find/GetComponent in OnDrawGizmos â€” visualize cached data only.  
 **Mandates Followed:** AGENTS.md [RULE] MANDATE CONTEXTUAL INGESTION.
 
 ---
@@ -23,23 +23,23 @@ The Lead Architect sees a **gray void**. This spec defines how Agent THETA imple
 
 ## 2. TRANSFORM OFFSETS (Canonical)
 
-All offsets are **anchored to the Canvas root** (`HUD_V4_CanvasRoot`) with reference resolution `1600×900`.
+All offsets are **anchored to the Canvas root** (`HUD_V4_CanvasRoot`) with reference resolution `1600Ã—900`.
 
 | Element | Inspector Field | Default Value (pixels) | Anchor |
 |---------|----------------|------------------------|--------|
-| Root | — | Stretch (0,0,0,0) | Center |
+| Root | â€” | Stretch (0,0,0,0) | Center |
 | Header | `headerOffset` | `(0, -34)` | Top-Center |
 | Telemetry | `telemetryOffset` | `(-226, 126)` | Bottom-Right |
-| Telemetry Size | `telemetrySize` | `(184, 124)` | — |
+| Telemetry Size | `telemetrySize` | `(184, 124)` | â€” |
 | Gauge Cluster | `gaugeClusterOffset` | `(116, 110)` | Bottom-Left |
-| Gauge Cluster Size | `gaugeClusterSize` | `(300, 128)` | — |
+| Gauge Cluster Size | `gaugeClusterSize` | `(300, 128)` | â€” |
 | Status | `statusOffset` | `(0, 50)` | Bottom-Center |
 | Reticle | `reticleOffset` | `(0, 0)` | Center |
 | Quickbar | `quickbarOffset` | `(0, 94)` | Bottom-Center |
-| Quickbar Size | `quickbarSize` | `(244, 64)` | — |
+| Quickbar Size | `quickbarSize` | `(244, 64)` | â€” |
 
 ### Gauge Ring Sub-layout
-- `gaugeColumnSpacing` = `82` px (horizontal spacing between O₂ / HLT / PWR)
+- `gaugeColumnSpacing` = `82` px (horizontal spacing between Oâ‚‚ / HLT / PWR)
 - `gaugeRingSize` = `54` px (diameter of radial fill)
 - `gaugeRingThickness` = `6` px
 - `gaugeIconSize` = `(16, 16)` px
@@ -86,11 +86,11 @@ float ResolveProjectionCanvasWorldScale(Camera targetCamera, Vector2 referenceRe
     return (frustumHalfHeight * 2f) / referenceResolution.y;
 }
 ```
-- **Math:** `scale = (2 × tan(FOV/2) × planeDistance) / referenceResolution.y`
-- For `FOV = 60°, planeDistance = 0.5m, refRes.y = 900`:
-  - `tan(30°) ≈ 0.577`
-  - `frustumHalfHeight ≈ 0.289`
-  - `scale ≈ 0.00064` world-units per pixel
+- **Math:** `scale = (2 Ã— tan(FOV/2) Ã— planeDistance) / referenceResolution.y`
+- For `FOV = 60Â°, planeDistance = 0.5m, refRes.y = 900`:
+  - `tan(30Â°) â‰ˆ 0.577`
+  - `frustumHalfHeight â‰ˆ 0.289`
+  - `scale â‰ˆ 0.00064` world-units per pixel
 
 ### 3.3 Canvas Pose Update
 ```csharp
@@ -104,7 +104,7 @@ void UpdateProjectionCanvasPose(RectTransform canvasRect, Vector2 referenceResol
     canvasRect.localScale = new Vector3(expectedScale, expectedScale, expectedScale);
 }
 ```
-- Position: Camera forward × distance.
+- Position: Camera forward Ã— distance.
 - Rotation: Camera rotation (billboard-aligned).
 - Scale: Uniform `expectedScale`.
 
@@ -112,7 +112,7 @@ void UpdateProjectionCanvasPose(RectTransform canvasRect, Vector2 referenceResol
 
 ## 4. BLUEPRINT: EDITOR WIREFRAME PREVIEW
 
-Agent THETA shall add the following `#if UNITY_EDITOR` block to `SuitHUDV4CanvasOverlay.cs`. It must **only read cached serialized fields** — no `GetComponent`, no `FindObjectOfType`, no physics.
+Agent THETA shall add the following `#if UNITY_EDITOR` block to `SuitHUDV4CanvasOverlay.cs`. It must **only read cached serialized fields** â€” no `GetComponent`, no `FindObjectOfType`, no physics.
 
 ### 4.1 Wireframe Color Palette
 ```csharp
@@ -134,7 +134,7 @@ private void OnDrawGizmos()
     if (!enabled)
         return;
 
-    // ── 1. Resolve Camera & Projection Parameters ──
+    // â”€â”€ 1. Resolve Camera & Projection Parameters â”€â”€
     Camera cam = projectionCamera;
     if (cam == null)
     {
@@ -156,7 +156,7 @@ private void OnDrawGizmos()
     Vector3 right = cam.transform.right * frustumHalfWidth;
     Vector3 up = cam.transform.up * frustumHalfHeight;
 
-    // ── 2. Draw Projection Plane Frustum ──
+    // â”€â”€ 2. Draw Projection Plane Frustum â”€â”€
     Gizmos.color = _gizmoProjectionPlaneColor;
     Vector3[] frustumCorners = new Vector3[4];
     frustumCorners[0] = planeCenter - right - up; // BL
@@ -168,7 +168,7 @@ private void OnDrawGizmos()
     Gizmos.DrawLine(frustumCorners[2], frustumCorners[3]);
     Gizmos.DrawLine(frustumCorners[3], frustumCorners[0]);
 
-    // ── 3. Draw Canvas Bounds (screen-space mapped to world plane) ──
+    // â”€â”€ 3. Draw Canvas Bounds (screen-space mapped to world plane) â”€â”€
     Gizmos.color = _gizmoCanvasBoundsColor;
     float canvasHalfW = (refRes.x * worldScale) * 0.5f;
     float canvasHalfH = (refRes.y * worldScale) * 0.5f;
@@ -184,7 +184,7 @@ private void OnDrawGizmos()
     Gizmos.DrawLine(canvasCorners[2], canvasCorners[3]);
     Gizmos.DrawLine(canvasCorners[3], canvasCorners[0]);
 
-    // ── 4. Draw HUD Element Wireframes ──
+    // â”€â”€ 4. Draw HUD Element Wireframes â”€â”€
     DrawGizmoHudElement(planeCenter, cRight, cUp, headerOffset, new Vector2(620f, 84f), "HEADER");
     DrawGizmoHudElement(planeCenter, cRight, cUp, telemetryOffset, telemetrySize, "TELEMETRY");
     DrawGizmoHudElement(planeCenter, cRight, cUp, gaugeClusterOffset, gaugeClusterSize, "GAUGES");
@@ -250,7 +250,7 @@ private void DrawGizmoHudElement(
 ### 4.3 Implementation Notes for Agent THETA
 
 1. **No runtime cost:** The entire block is `#if UNITY_EDITOR`. It is stripped from builds.
-2. **No scene queries:** `projectionCamera` is a serialized field. If null, fallback to `SceneView.lastActiveSceneView.camera` — this is an Editor API, safe inside `#if UNITY_EDITOR`.
+2. **No scene queries:** `projectionCamera` is a serialized field. If null, fallback to `SceneView.lastActiveSceneView.camera` â€” this is an Editor API, safe inside `#if UNITY_EDITOR`.
 3. **No allocation in gizmo path:** All arrays are local stack-allocs inside the method. No `new` at field level.
 4. **Respects AGENTS.md:** No `GetComponent`, no `FindObjectOfType`, no physics, no mesh generation.
 5. **Color coding:**
@@ -262,14 +262,14 @@ private void DrawGizmoHudElement(
 
 ## 5. VERIFICATION CHECKLIST
 
-- [ ] Enter Editor → Select `Suit_HUD_Canvas` → Scene view shows cyan wireframe overlay.
-- [ ] Adjust `projectionPlaneDistance` → wireframe moves closer/farther from camera.
-- [ ] Adjust `overallScale` → wireframe bounds scale uniformly.
-- [ ] Adjust `headerOffset` / `telemetryOffset` → wireframe elements shift.
-- [ ] Enter Play Mode → gizmos do not appear in Game view (OnDrawGizmos is editor-only).
-- [ ] Build target → no compile errors from `OnDrawGizmos` block.
+- [ ] Enter Editor â†’ Select `Suit_HUD_Canvas` â†’ Scene view shows cyan wireframe overlay.
+- [ ] Adjust `projectionPlaneDistance` â†’ wireframe moves closer/farther from camera.
+- [ ] Adjust `overallScale` â†’ wireframe bounds scale uniformly.
+- [ ] Adjust `headerOffset` / `telemetryOffset` â†’ wireframe elements shift.
+- [ ] Enter Play Mode â†’ gizmos do not appear in Game view (OnDrawGizmos is editor-only).
+- [ ] Build target â†’ no compile errors from `OnDrawGizmos` block.
 
 ---
 
 *STATUS: PENDING VERIFICATION*  
-*Action: Agent THETA implements §4.2 into SuitHUDV4CanvasOverlay.cs.*
+*Action: Agent THETA implements Â§4.2 into SuitHUDV4CanvasOverlay.cs.*

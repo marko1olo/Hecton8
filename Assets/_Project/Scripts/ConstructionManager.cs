@@ -37,7 +37,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IGlobalRegistryHotSwapListener
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IGlobalRegistryHotSwapListener, IServiceHeartbeat
     {
         private const float SlowTickDeltaTime = 0.5f;
 
@@ -147,6 +147,12 @@ namespace Hecton8.Construction
         /// True once the logistics owner is registered in the global registry.
         /// </summary>
         public bool IsInitialized => _isInitialized && ReferenceEquals(GlobalRegistry.Logistics, this);
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => IsInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => IsInitialized;
 
         /// <summary>
         /// Registers the construction/logistics service with bootstrap-owned runtime systems.

@@ -14,10 +14,8 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9921)]
-    public sealed class PlayerSensoryManager : MonoBehaviour, IPlayerSensoryService, IUpdatable
+    public sealed class PlayerSensoryManager : MonoBehaviour, IPlayerSensoryService, IUpdatable, IServiceHeartbeat
     {
-        private static PlayerSensoryManager _instance;
-
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
@@ -35,6 +33,13 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
+
         internal Camera CachedPlayerCamera => _playerCamera;
         internal PlayerFlashlight CachedFlashlight => _flashlight;
         internal PlayerThrusterAudio CachedThrusterAudio => _thrusterAudio;
@@ -105,7 +110,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+            GlobalRegistry.ClearPlayerSensoryRuntime(null);
         }
 
         /// <summary>
@@ -113,8 +118,9 @@ namespace Hecton8.Core
         /// </summary>
         public static PlayerSensoryManager EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            PlayerSensoryManager runtime = GlobalRegistry.PlayerSensoryRuntime;
+            if (runtime != null)
+                return runtime;
 
             GameObject runtimeRoot = new GameObject("[PlayerSensoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player sensory service root - owner: PlayerSensoryManager
             return runtimeRoot.AddComponent<PlayerSensoryManager>();
@@ -134,7 +140,7 @@ namespace Hecton8.Core
             }
 
             EnsureSingletonOwnership();
-            if (_instance != this)
+            if (GlobalRegistry.PlayerSensoryRuntime != this)
                 return;
 
             _isInitialized = true;
@@ -175,19 +181,19 @@ namespace Hecton8.Core
             TryUnregisterUpdatable();
             TryUnregisterService();
 
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.ClearPlayerSensoryRuntime(this);
         }
 
         private void EnsureSingletonOwnership()
         {
-            if (_instance != null && _instance != this)
+            PlayerSensoryManager runtime = GlobalRegistry.PlayerSensoryRuntime;
+            if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterPlayerSensoryRuntime(this);
         }
 
         private void SyncSensoryContext()

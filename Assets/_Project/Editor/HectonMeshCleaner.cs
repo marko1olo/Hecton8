@@ -7,7 +7,6 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 
 public class HectonMeshCleaner : EditorWindow
 {
@@ -125,7 +124,7 @@ public class HectonMeshCleaner : EditorWindow
             if (!perMeshAnalysis.ContainsKey(meshFilterId)) continue;
             var a = perMeshAnalysis[meshFilterId];
             if (mf.sharedMesh == null || GetStableObjectId(mf.sharedMesh) != a.meshID ||
-                mf.sharedMesh.vertexCount != a.vertCount || mf.sharedMesh.triangles.Length / 3 != a.triCount)
+                mf.sharedMesh.vertexCount != a.vertCount || ResolveTriangleCount(mf.sharedMesh) != a.triCount)
             { FullReset("Mesh data changed"); return false; }
         }
         return true;
@@ -141,6 +140,40 @@ public class HectonMeshCleaner : EditorWindow
     private static ulong GetStableObjectId(UnityEngine.Object obj)
     {
         return obj != null ? EntityId.ToULong(obj.GetEntityId()) : 0UL;
+    }
+
+    private static long ResolveIndexCount(Mesh mesh)
+    {
+        if (mesh == null)
+            return 0L;
+
+        long indexCount = 0L;
+        for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+        {
+            indexCount += mesh.GetIndexCount(subMeshIndex);
+        }
+
+        return indexCount;
+    }
+
+    private static long ResolveTriangleCount(Mesh mesh)
+    {
+        return ResolveIndexCount(mesh) / 3L;
+    }
+
+    private static void CollectMeshTriangles(Mesh mesh, List<int> triangles)
+    {
+        triangles.Clear();
+        if (mesh == null)
+            return;
+
+        List<int> submeshTriangles = new List<int>();
+        for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+        {
+            submeshTriangles.Clear();
+            mesh.GetTriangles(submeshTriangles, subMeshIndex, true);
+            triangles.AddRange(submeshTriangles);
+        }
     }
 
     private string GetUniqueSaveName(MeshFilter mf)
@@ -196,7 +229,7 @@ public class HectonMeshCleaner : EditorWindow
                 bool r = mf.sharedMesh.isReadable;
                 int sc = mf.sharedMesh.subMeshCount;
                 EditorGUILayout.LabelField(
-                    $"  {(r ? "✓" : "✗")} {mf.gameObject.name}: {mf.sharedMesh.triangles.Length / 3} tris, {sc} submesh(es)" +
+                    $"  {(r ? "✓" : "✗")} {mf.gameObject.name}: {ResolveTriangleCount(mf.sharedMesh)} tris, {sc} submesh(es)" +
                     (r ? "" : " [NOT READABLE!]"), EditorStyles.miniLabel);
             }
             EditorGUI.indentLevel--;
@@ -316,7 +349,9 @@ public class HectonMeshCleaner : EditorWindow
         analysisReady = true;
         lastTime = EditorApplication.timeSinceStartup - t0;
 
-        int total = lodResults.Sum(r => r.hiddenTris);
+        int total = 0;
+        for (int i = 0; i < lodResults.Count; i++)
+            total += lodResults[i].hiddenTris;
         SetStatus($"Found {total} hidden tris across {lodResults.Count} meshes.", total > 0 ? MessageType.Info : MessageType.Warning);
         SceneView.RepaintAll();
     }
@@ -326,9 +361,11 @@ public class HectonMeshCleaner : EditorWindow
     private AnalysisResult AnalyzeMesh(MeshFilter mf)
     {
         Mesh mesh = mf.sharedMesh;
-        Vector3[] localVerts = mesh.vertices;
-        int[] tris = mesh.triangles;
-        int triCount = tris.Length / 3;
+        List<Vector3> localVerts = new List<Vector3>(mesh.vertexCount);
+        List<int> tris = new List<int>((int)global::System.Math.Min(ResolveIndexCount(mesh), int.MaxValue));
+        mesh.GetVertices(localVerts);
+        CollectMeshTriangles(mesh, tris);
+        int triCount = tris.Count / 3;
 
         // Build double-sided mesh for raycasting
         Mesh dsMesh = BuildDoubleSidedMesh(mesh);
@@ -348,8 +385,8 @@ public class HectonMeshCleaner : EditorWindow
         int layerMask = 1 << 31;
 
         // Pre-transform verts to world space
-        Vector3[] worldVerts = new Vector3[localVerts.Length];
-        for (int i = 0; i < localVerts.Length; i++)
+        Vector3[] worldVerts = new Vector3[localVerts.Count];
+        for (int i = 0; i < localVerts.Count; i++)
             worldVerts[i] = mf.transform.TransformPoint(localVerts[i]);
 
         HashSet<int> hiddenTris = new HashSet<int>();
@@ -439,12 +476,15 @@ public class HectonMeshCleaner : EditorWindow
     // ═══════════════════════════════════════════════════════════════════
     private static Mesh BuildDoubleSidedMesh(Mesh src)
     {
-        Vector3[] verts = src.vertices;
-        int[] tris = src.triangles;
-        int triCount = tris.Length;
+        List<Vector3> verts = new List<Vector3>(src.vertexCount);
+        List<int> tris = new List<int>((int)global::System.Math.Min(ResolveIndexCount(src), int.MaxValue));
+        src.GetVertices(verts);
+        CollectMeshTriangles(src, tris);
+        int triCount = tris.Count;
 
         int[] dsTris = new int[triCount * 2];
-        System.Array.Copy(tris, 0, dsTris, 0, triCount);
+        for (int i = 0; i < triCount; i++)
+            dsTris[i] = tris[i];
 
         // Reversed copy
         for (int i = 0; i < triCount; i += 3)
@@ -456,9 +496,9 @@ public class HectonMeshCleaner : EditorWindow
 
         Mesh ds = new Mesh();
         ds.hideFlags = HideFlags.HideAndDontSave;
-        if (verts.Length > 65535) ds.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        ds.vertices = verts;
-        ds.triangles = dsTris;
+        if (verts.Count > 65535) ds.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        ds.SetVertices(verts);
+        ds.SetTriangles(dsTris, 0, true);
         ds.RecalculateBounds();
         return ds;
     }
@@ -525,7 +565,8 @@ public class HectonMeshCleaner : EditorWindow
     private Mesh BuildCleanedMesh(Mesh source, PerMeshAnalysis analysis)
     {
         // Read all vertex data channels
-        Vector3[] srcVerts = source.vertices;
+        List<Vector3> srcVerts = new List<Vector3>(source.vertexCount);
+        source.GetVertices(srcVerts);
         Vector3[] srcNormals = source.normals;
         Vector2[] srcUV0 = source.uv;
         Vector2[] srcUV1 = source.uv2;
@@ -534,17 +575,18 @@ public class HectonMeshCleaner : EditorWindow
         Vector4[] srcTangents = source.tangents;
         Color[] srcColors = source.colors;
         Color32[] srcColors32 = source.colors32;
-        int[] allTris = source.triangles;
-        int totalTriCount = allTris.Length / 3;
+        List<int> allTris = new List<int>((int)global::System.Math.Min(ResolveIndexCount(source), int.MaxValue));
+        CollectMeshTriangles(source, allTris);
+        int totalTriCount = allTris.Count / 3;
 
-        bool hasNormals = srcNormals != null && srcNormals.Length == srcVerts.Length;
-        bool hasUV0 = srcUV0 != null && srcUV0.Length == srcVerts.Length;
-        bool hasUV1 = srcUV1 != null && srcUV1.Length == srcVerts.Length;
-        bool hasUV2 = srcUV2 != null && srcUV2.Length == srcVerts.Length;
-        bool hasUV3 = srcUV3 != null && srcUV3.Length == srcVerts.Length;
-        bool hasTangents = srcTangents != null && srcTangents.Length == srcVerts.Length;
-        bool hasColors = srcColors != null && srcColors.Length == srcVerts.Length;
-        bool hasColors32 = !hasColors && srcColors32 != null && srcColors32.Length == srcVerts.Length;
+        bool hasNormals = srcNormals != null && srcNormals.Length == srcVerts.Count;
+        bool hasUV0 = srcUV0 != null && srcUV0.Length == srcVerts.Count;
+        bool hasUV1 = srcUV1 != null && srcUV1.Length == srcVerts.Count;
+        bool hasUV2 = srcUV2 != null && srcUV2.Length == srcVerts.Count;
+        bool hasUV3 = srcUV3 != null && srcUV3.Length == srcVerts.Count;
+        bool hasTangents = srcTangents != null && srcTangents.Length == srcVerts.Count;
+        bool hasColors = srcColors != null && srcColors.Length == srcVerts.Count;
+        bool hasColors32 = !hasColors && srcColors32 != null && srcColors32.Length == srcVerts.Count;
 
         // ── Map each flat triangle index → submesh index ──
         int subMeshCount = source.subMeshCount;
@@ -596,7 +638,7 @@ public class HectonMeshCleaner : EditorWindow
                 // Trace loops
                 List<List<int>> loops = TraceLoops(newHoleEdges);
 
-                int extraVertBase = srcVerts.Length;
+                int extraVertBase = srcVerts.Count;
 
                 foreach (var loop in loops)
                 {
@@ -651,7 +693,7 @@ public class HectonMeshCleaner : EditorWindow
             foreach (int idx in keptPerSubmesh[s]) usedVerts.Add(idx);
         foreach (int idx in fillTris)
         {
-            if (idx < srcVerts.Length) usedVerts.Add(idx);
+            if (idx < srcVerts.Count) usedVerts.Add(idx);
             // Extra verts are always "used"
         }
 
@@ -668,7 +710,8 @@ public class HectonMeshCleaner : EditorWindow
         List<Color32> newColors32 = new List<Color32>();
 
         // Sort for deterministic output
-        List<int> sortedUsed = usedVerts.OrderBy(x => x).ToList();
+        List<int> sortedUsed = new List<int>(usedVerts);
+        sortedUsed.Sort();
         for (int i = 0; i < sortedUsed.Count; i++)
         {
             int old = sortedUsed[i];
@@ -687,7 +730,7 @@ public class HectonMeshCleaner : EditorWindow
         // Add extra verts (hole fill centroids)
         for (int i = 0; i < extraVerts.Count; i++)
         {
-            int oldIdx = srcVerts.Length + i;
+            int oldIdx = srcVerts.Count + i;
             remap[oldIdx] = newVerts.Count;
             newVerts.Add(extraVerts[i]);
             if (hasNormals) newNormals.Add(extraNormals[i]);
@@ -729,7 +772,13 @@ public class HectonMeshCleaner : EditorWindow
         if (hasUV3) result.SetUVs(3, newUV3List);
         if (hasTangents) result.SetTangents(newTangents);
         if (hasColors) result.SetColors(newColors);
-        if (hasColors32) result.SetColors(newColors32.Select(c => (Color)(Color32)c).ToList());
+        if (hasColors32)
+        {
+            List<Color> convertedColors = new List<Color>(newColors32.Count);
+            for (int i = 0; i < newColors32.Count; i++)
+                convertedColors.Add(newColors32[i]);
+            result.SetColors(convertedColors);
+        }
 
         result.subMeshCount = subMeshCount;
         for (int s = 0; s < subMeshCount; s++)
@@ -762,7 +811,7 @@ public class HectonMeshCleaner : EditorWindow
     /// Find boundary edges: edges used by exactly 1 triangle.
     /// skipTris: set of triangle indices to exclude (hidden ones). Null = include all.
     /// </summary>
-    private static HashSet<long> ComputeBoundaryEdges(int[] tris, int triCount, HashSet<int> skipTris)
+    private static HashSet<long> ComputeBoundaryEdges(IList<int> tris, int triCount, HashSet<int> skipTris)
     {
         Dictionary<long, int> edgeCount = new Dictionary<long, int>();
         for (int t = 0; t < triCount; t++)
@@ -945,9 +994,11 @@ public class HectonMeshCleaner : EditorWindow
         if (!showPreview || !analysisReady || previewSourceMesh == null || previewTarget == null) return;
         if (targetObject == null || GetStableObjectId(targetObject) != analyzedObjectEntityId) return;
 
-        Vector3[] verts = previewSourceMesh.vertices;
-        int[] tris = previewSourceMesh.triangles;
-        int triCount = tris.Length / 3;
+        List<Vector3> verts = new List<Vector3>(previewSourceMesh.vertexCount);
+        List<int> tris = new List<int>((int)global::System.Math.Min(ResolveIndexCount(previewSourceMesh), int.MaxValue));
+        previewSourceMesh.GetVertices(verts);
+        CollectMeshTriangles(previewSourceMesh, tris);
+        int triCount = tris.Count / 3;
 
         Handles.matrix = previewTarget.transform.localToWorldMatrix;
         Handles.color = hiddenColor;

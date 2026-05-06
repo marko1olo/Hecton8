@@ -1,6 +1,7 @@
-# Scatter Phase 1 Baseline Checklist
+﻿# Scatter Phase 1 Baseline Checklist
 
-Status: `ACTIVE`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Verification: `PENDING VERIFICATION`
 Scope: `WorldProceduralScatterDirector` baseline before any DOTS decision
 
@@ -10,7 +11,7 @@ This checklist exists to close `Phase 1 - Establish a Real Baseline` from `HECTO
 
 - This checklist defines required evidence, not current evidence.
 - Do not treat unchecked rows or older capture instructions as proof that scatter is healthy.
-- Current project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project truth starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 
 Do not skip steps.
 Do not report "BEFORE: N/A".

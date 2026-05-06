@@ -7,6 +7,9 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4150)]
     public sealed class WorldStreamingDirector : MonoBehaviour, ISlowTickable
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        , RuntimeWatchdog.IEmergencyResetTarget
+#endif
     {
         private const string DepthZoneSurfaceLabel = "Surface";
         private const string DepthZoneMidLabel = "Mid";
@@ -226,6 +229,9 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.WorldStreaming, this);
+#endif
             TryRegister();
         }
 
@@ -238,8 +244,41 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.WorldStreaming, this);
+#endif
             TryUnregister();
         }
+
+        private void OnDestroy()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.WorldStreaming, this);
+#endif
+        }
+
+        internal void ServiceEmergencyReset()
+        {
+            _smoothedSpeedSq = 0f;
+            _lastDepthZone = (DepthZone)(-1);
+            _lastMotionMode = (MotionMode)(-1);
+            _lastObjectsPerFrame = -1;
+            _lastTerrainPixelError = -1;
+            _lastTerrainBaseMapDistance = -1;
+            _lastTerrainDetailDistance = -1f;
+            _lastTerrainDetailDensity = -1f;
+            ResolveReferences();
+            RefreshRuntimeProfilesFromChunkProfile();
+            ClampSettings();
+            ApplyStreamingProfile(force: true);
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        void RuntimeWatchdog.IEmergencyResetTarget.ServiceEmergencyReset()
+        {
+            ServiceEmergencyReset();
+        }
+#endif
 
         private void TryRegister()
         {
@@ -262,6 +301,9 @@ namespace Hecton8.World
 
         public void SlowTick()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.WorldStreaming);
+#endif
             ApplyStreamingProfile(force: false);
         }
 

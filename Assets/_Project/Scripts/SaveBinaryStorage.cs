@@ -302,6 +302,7 @@ namespace Hecton8.SaveSystem
         private const ushort ModPayloadVersion = 1;
         private const ulong ModPayloadSectorPrefix = 0x4D50000000000000UL;
         private const ulong ModPayloadSectorMask = 0xFFFF000000000000UL;
+        internal const int IndexedSectorQuarantineHashCapacity = 16;
         private const string Lz4DllName = "liblz4";
         private const string NativeMemoryOwner = nameof(SaveBinaryStorage);
         private const string EntityStateWriteSourceStatesLabel = "indexedSectorEntityStateSourceStates";
@@ -312,7 +313,26 @@ namespace Hecton8.SaveSystem
         private const string EntityStateWriteResultLengthLabel = "indexedSectorEntityStateResultLength";
         private const string EntityStateWriteRadixCountsLabel = "indexedSectorEntityStateRadixCounts";
         private const string EntityStateWriteRadixOffsetsLabel = "indexedSectorEntityStateRadixOffsets";
+        private const string EntityStateWriteCompactStatesLabel = "indexedSectorEntityStateCompact16";
+        private const string PristineResetEmptySectorRecordsLabel = "indexedSectorPristineResetEmptyRecords";
+        private const uint SectorEntityStateCompact16Magic = 0xFA160016u;
+        private const uint SectorEntityStateTypeMask = 0xFF000000u;
+        private const uint SectorFaunaHibernationStateTypeMask = 0xF9000000u;
+        private const uint SectorWhaleFallStateTypeMask = 0xF8000000u;
+        private const uint SectorFaunaEggStateTypeMask = 0xF7000000u;
+        private const uint SectorFloraSpawnTimestampStateTypeMask = 0xFA000000u;
+        private const uint SectorCompactAxisMask = 0x3FFu;
+        private const float SectorCompactAxisScale = 1023f;
+        private const float SectorCompactDepthMinMeters = -8192f;
+        private const float SectorCompactDepthMaxMeters = 1024f;
+        private const float SectorCompactTimeQuantumSeconds = 1f;
+        private const uint SectorCompactTimeMaxEncoded = 0x00FFFFFFu;
         private static int s_indexedSectorQuarantineReported;
+        // COLD ALLOC: long[16] - quarantined indexed sector reset queue - owner: SaveBinaryStorage
+        private static readonly long[] s_indexedSectorQuarantineHashes = new long[IndexedSectorQuarantineHashCapacity];
+        // COLD ALLOC: object[1] - quarantine hash queue lock for background paging workers - owner: SaveBinaryStorage
+        private static readonly object s_indexedSectorQuarantineLock = new object();
+        private static int s_indexedSectorQuarantineHashCount;
         private static readonly uint _indexedSectorQuarantineWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.IndexedSectorQuarantine"));
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TokenizedPayloadHeaderSize)]
@@ -390,6 +410,7 @@ namespace Hecton8.SaveSystem
             public NativeArray<SectorEntityStateSortEntry> SortEntries;
             public NativeArray<SectorEntityStateSortEntry> RadixScratch;
             public NativeArray<EntityDataRecord> SortedEntityStates;
+            internal NativeArray<SectorCompactEntityStateRecord16> CompactStates;
             public NativeArray<byte> FileBytes;
             public NativeArray<int> ResultLength;
             public NativeArray<int> RadixCounts;
@@ -403,6 +424,7 @@ namespace Hecton8.SaveSystem
                 RegisterArray(SortEntries, EntityStateWriteSortEntriesLabel);
                 RegisterArray(RadixScratch, EntityStateWriteRadixScratchLabel);
                 RegisterArray(SortedEntityStates, EntityStateWriteSortedStatesLabel);
+                RegisterArray(CompactStates, EntityStateWriteCompactStatesLabel);
                 RegisterArray(FileBytes, EntityStateWriteFileBytesLabel);
                 RegisterArray(ResultLength, EntityStateWriteResultLengthLabel);
                 RegisterArray(RadixCounts, EntityStateWriteRadixCountsLabel);
@@ -423,6 +445,7 @@ namespace Hecton8.SaveSystem
                 UnregisterArray(SortEntries);
                 UnregisterArray(RadixScratch);
                 UnregisterArray(SortedEntityStates);
+                UnregisterArray(CompactStates);
                 UnregisterArray(FileBytes);
                 UnregisterArray(ResultLength);
                 UnregisterArray(RadixCounts);
@@ -449,6 +472,8 @@ namespace Hecton8.SaveSystem
                     RadixScratch.Dispose();
                 if (SortedEntityStates.IsCreated)
                     SortedEntityStates.Dispose();
+                if (CompactStates.IsCreated)
+                    CompactStates.Dispose();
                 if (FileBytes.IsCreated)
                     FileBytes.Dispose();
                 if (ResultLength.IsCreated)
@@ -474,6 +499,8 @@ namespace Hecton8.SaveSystem
                     disposeHandle = RadixScratch.Dispose(disposeHandle);
                 if (SortedEntityStates.IsCreated)
                     disposeHandle = SortedEntityStates.Dispose(disposeHandle);
+                if (CompactStates.IsCreated)
+                    disposeHandle = CompactStates.Dispose(disposeHandle);
                 if (FileBytes.IsCreated)
                     disposeHandle = FileBytes.Dispose(disposeHandle);
                 if (ResultLength.IsCreated)
@@ -522,6 +549,16 @@ namespace Hecton8.SaveSystem
         {
             public ulong SortKey;
             public EntityDataRecord Record;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+        internal struct SectorCompactEntityStateRecord16
+        {
+            public uint PackedSectorPosition;
+            public uint InstanceUid;
+            public ushort Quantity;
+            public ushort PackedAux;
+            public uint PackedState;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -620,16 +657,30 @@ namespace Hecton8.SaveSystem
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct CompressSectorEntityStateJob : IJob
+        private struct BuildCompactSectorEntityStatesJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<EntityDataRecord> SortedStates;
+            [WriteOnly] public NativeArray<SectorCompactEntityStateRecord16> CompactStates;
+            public long SectorHash;
+
+            public void Execute(int index)
+            {
+                EntityDataRecord sortedState = SortedStates[index];
+                CompactStates[index] = PackCompactEntityState16(in sortedState, SectorHash);
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private unsafe struct CompressSectorEntityStateJob : IJob
+        {
+            [ReadOnly] public NativeArray<SectorCompactEntityStateRecord16> CompactStates;
             public NativeArray<byte> FileBytes;
             public NativeArray<int> ResultLength;
             public long SectorHash;
 
             public void Execute()
             {
-                int recordCount = SortedStates.Length;
+                int recordCount = CompactStates.Length;
                 if (recordCount <= 0 || !FileBytes.IsCreated || FileBytes.Length <= UnsafeUtility.SizeOf<SectorEntityStateFileHeader>())
                 {
                     ResultLength[0] = 0;
@@ -637,8 +688,8 @@ namespace Hecton8.SaveSystem
                 }
 
                 byte* filePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(FileBytes);
-                byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(SortedStates);
-                int rawByteLength = recordCount * UnsafeUtility.SizeOf<EntityDataRecord>();
+                byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(CompactStates);
+                int rawByteLength = recordCount * UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>();
                 int compressedLength = SaveBinaryStorage.Lz4BlockCompress(
                     rawPtr,
                     rawByteLength,
@@ -656,11 +707,151 @@ namespace Hecton8.SaveSystem
                     CompressedSize = compressedLength,
                     DecompressedSize = rawByteLength,
                     RecordCount = (uint)recordCount,
-                    Checksum = 0u
+                    Checksum = SectorEntityStateCompact16Magic
                 };
                 UnsafeUtility.CopyStructureToPtr(ref header, filePtr);
                 ResultLength[0] = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>() + compressedLength;
             }
+        }
+
+        private static SectorCompactEntityStateRecord16 PackCompactEntityState16(in EntityDataRecord state, long sectorHash)
+        {
+            uint typeMask = (uint)state.InventoryHash & SectorEntityStateTypeMask;
+            bool hibernationState = typeMask == SectorFaunaHibernationStateTypeMask;
+            uint packedQuantity = hibernationState
+                ? (uint)math.clamp(state.Quantity, 1, ushort.MaxValue)
+                : (uint)math.max(1, state.Quantity);
+            ushort packedAux = typeMask == SectorFaunaHibernationStateTypeMask
+                ? PackCompactFaunaVitals(in state)
+                : (ushort)((packedQuantity >> 16) & 0xFFFFu);
+            uint packedState = PackCompactEntityStateValue(in state, typeMask);
+
+            return new SectorCompactEntityStateRecord16
+            {
+                PackedSectorPosition = PackCompactSectorPosition(in state.Position, sectorHash),
+                InstanceUid = state.InstanceUid,
+                Quantity = (ushort)(packedQuantity & 0xFFFFu),
+                PackedAux = packedAux,
+                PackedState = packedState
+            };
+        }
+
+        private static EntityDataRecord UnpackCompactEntityState16(in SectorCompactEntityStateRecord16 compactState, long sectorHash)
+        {
+            uint typeMask = compactState.PackedState & SectorEntityStateTypeMask;
+            AbsoluteUniversePosition position = UnpackCompactSectorPosition(compactState.PackedSectorPosition, sectorHash);
+            AbsoluteUniversePositionBlit128 packedPosition = position.ToAlignedBlit();
+            float integrity01 = 1f;
+
+            if (typeMask == SectorFaunaHibernationStateTypeMask)
+            {
+                UnpackCompactFaunaVitals(compactState.PackedAux, out integrity01, out float hunger01);
+                packedPosition.Reserved = PackCompactFaunaVitalsReserved(integrity01, hunger01);
+            }
+            else if (typeMask == SectorFaunaEggStateTypeMask || typeMask == SectorWhaleFallStateTypeMask)
+            {
+                integrity01 = UnpackCompactTimeSeconds(compactState.PackedState & SectorCompactTimeMaxEncoded);
+            }
+
+            return new EntityDataRecord
+            {
+                Position = packedPosition,
+                Quantity = ResolveCompactQuantity(in compactState, typeMask),
+                Integrity01 = integrity01,
+                InventoryHash = unchecked((int)compactState.PackedState),
+                InstanceUid = compactState.InstanceUid
+            };
+        }
+
+        private static int ResolveCompactQuantity(in SectorCompactEntityStateRecord16 compactState, uint typeMask)
+        {
+            if (typeMask == SectorFaunaHibernationStateTypeMask)
+                return math.max(1, compactState.Quantity);
+
+            uint quantity = ((uint)compactState.PackedAux << 16) | compactState.Quantity;
+            return (int)math.max(1u, quantity);
+        }
+
+        private static uint PackCompactEntityStateValue(in EntityDataRecord state, uint typeMask)
+        {
+            if (typeMask == SectorFaunaHibernationStateTypeMask)
+                return (uint)state.InventoryHash;
+
+            if (typeMask == SectorFaunaEggStateTypeMask || typeMask == SectorWhaleFallStateTypeMask)
+                return typeMask | PackCompactTimeSeconds(state.Integrity01);
+
+            if (typeMask == SectorFloraSpawnTimestampStateTypeMask)
+                return typeMask;
+
+            return (uint)state.InventoryHash;
+        }
+
+        private static uint PackCompactSectorPosition(in AbsoluteUniversePositionBlit128 alignedPosition, long sectorHash)
+        {
+            AbsoluteUniversePosition position = AbsoluteUniversePosition.FromAlignedBlit(in alignedPosition);
+            double3 absolute = position.ToAbsoluteDouble3();
+            int2 sector = UnpackSectorHash(sectorHash);
+            double sectorOriginX = (double)sector.x * PersistentWorldSectorEdgeLengthMeters;
+            double sectorOriginZ = (double)sector.y * PersistentWorldSectorEdgeLengthMeters;
+            float x01 = math.saturate((float)((absolute.x - sectorOriginX) / PersistentWorldSectorEdgeLengthMeters));
+            float z01 = math.saturate((float)((absolute.z - sectorOriginZ) / PersistentWorldSectorEdgeLengthMeters));
+            float y01 = math.saturate(((float)absolute.y - SectorCompactDepthMinMeters) / (SectorCompactDepthMaxMeters - SectorCompactDepthMinMeters));
+
+            uint x = (uint)math.round(x01 * SectorCompactAxisScale) & SectorCompactAxisMask;
+            uint y = (uint)math.round(y01 * SectorCompactAxisScale) & SectorCompactAxisMask;
+            uint z = (uint)math.round(z01 * SectorCompactAxisScale) & SectorCompactAxisMask;
+            return x | (y << 10) | (z << 20);
+        }
+
+        private static AbsoluteUniversePosition UnpackCompactSectorPosition(uint packedPosition, long sectorHash)
+        {
+            int2 sector = UnpackSectorHash(sectorHash);
+            float x01 = (packedPosition & SectorCompactAxisMask) / SectorCompactAxisScale;
+            float y01 = ((packedPosition >> 10) & SectorCompactAxisMask) / SectorCompactAxisScale;
+            float z01 = ((packedPosition >> 20) & SectorCompactAxisMask) / SectorCompactAxisScale;
+            double x = ((double)sector.x * PersistentWorldSectorEdgeLengthMeters) + (x01 * PersistentWorldSectorEdgeLengthMeters);
+            double y = math.lerp(SectorCompactDepthMinMeters, SectorCompactDepthMaxMeters, y01);
+            double z = ((double)sector.y * PersistentWorldSectorEdgeLengthMeters) + (z01 * PersistentWorldSectorEdgeLengthMeters);
+            return AbsoluteUniversePosition.FromAbsolutePosition(new double3(x, y, z));
+        }
+
+        private static ushort PackCompactFaunaVitals(in EntityDataRecord state)
+        {
+            float health01 = state.Integrity01;
+            float hunger01 = 0f;
+            ulong reserved = state.Position.Reserved;
+            if (reserved != 0UL)
+            {
+                health01 = math.asfloat((uint)(reserved >> 32));
+                hunger01 = math.asfloat((uint)reserved);
+            }
+
+            uint health = (uint)math.round(math.saturate(health01) * 255f);
+            uint hunger = (uint)math.round(math.saturate(hunger01) * 255f);
+            return (ushort)((health << 8) | hunger);
+        }
+
+        private static void UnpackCompactFaunaVitals(ushort packedVitals, out float health01, out float hunger01)
+        {
+            health01 = ((packedVitals >> 8) & 0xFF) * (1f / 255f);
+            hunger01 = (packedVitals & 0xFF) * (1f / 255f);
+        }
+
+        private static ulong PackCompactFaunaVitalsReserved(float health01, float hunger01)
+        {
+            uint packedHealth = math.asuint(math.saturate(health01));
+            uint packedHunger = math.asuint(math.saturate(hunger01));
+            return ((ulong)packedHealth << 32) | packedHunger;
+        }
+
+        private static uint PackCompactTimeSeconds(float timeSeconds)
+        {
+            return (uint)math.min(SectorCompactTimeMaxEncoded, (uint)math.round(math.max(0f, timeSeconds) / SectorCompactTimeQuantumSeconds));
+        }
+
+        private static float UnpackCompactTimeSeconds(uint packedTime)
+        {
+            return packedTime * SectorCompactTimeQuantumSeconds;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = IndexedSectorDirectoryHeaderSize)]
@@ -892,6 +1083,12 @@ namespace Hecton8.SaveSystem
         {
             byte value = 0;
             _ = xxHash3.Hash64(&value, 1L);
+            Interlocked.Exchange(ref s_indexedSectorQuarantineReported, 0);
+            lock (s_indexedSectorQuarantineLock)
+            {
+                Array.Clear(s_indexedSectorQuarantineHashes, 0, s_indexedSectorQuarantineHashes.Length);
+                s_indexedSectorQuarantineHashCount = 0;
+            }
         }
 
         internal static bool IsBinaryContainer(string absolutePath)
@@ -2409,6 +2606,64 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        internal static bool TryResetIndexedPersistentWorldSectorToPristine(
+            string absoluteSavePath,
+            long sectorHash,
+            int chunkSizeMeters,
+            out string error)
+        {
+            error = string.Empty;
+            if (string.IsNullOrEmpty(absoluteSavePath) || !File.Exists(absoluteSavePath))
+            {
+                error = "Pristine sector reset save path is invalid.";
+                return false;
+            }
+
+            string directory = Path.GetDirectoryName(absoluteSavePath);
+            if (string.IsNullOrEmpty(directory))
+            {
+                error = "Pristine sector reset directory is invalid.";
+                return false;
+            }
+
+            string tempOverridePath = Path.Combine(directory, sectorHash.ToString("X16") + ".reset.sectmp");
+            NativeArray<PersistentWorldDeltaRecord> emptySectorRecords =
+                new NativeArray<PersistentWorldDeltaRecord>(0, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            try
+            {
+                NativeMemorySentinel.RegisterNativeArray(
+                    emptySectorRecords,
+                    NativeMemoryOwner,
+                    PristineResetEmptySectorRecordsLabel,
+                    NativeAllocationLifetime.TransientArena);
+
+                if (!TryWriteIndexedPersistentWorldSectorOverride(tempOverridePath, sectorHash, emptySectorRecords, chunkSizeMeters, out error))
+                    return false;
+
+                if (TryCommitIndexedPersistentWorldSectorOverride(absoluteSavePath, tempOverridePath, out error))
+                    return true;
+            }
+            finally
+            {
+                if (emptySectorRecords.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(emptySectorRecords);
+                    emptySectorRecords.Dispose();
+                }
+            }
+
+            try
+            {
+                if (File.Exists(tempOverridePath))
+                    File.Delete(tempOverridePath);
+            }
+            catch
+            {
+            }
+
+            return false;
+        }
+
         internal static bool TryWriteIndexedPersistentWorldSectorOverride(
             string absolutePath,
             long sectorHash,
@@ -2612,7 +2867,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            int rawByteLength = checked(recordCount * UnsafeUtility.SizeOf<EntityDataRecord>());
+            int rawByteLength = checked(recordCount * UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>());
             int blockCount = math.max(1, (rawByteLength + BlockSizeBytes - 1) / BlockSizeBytes);
             int compressedCapacity = rawByteLength + (rawByteLength / 255) + 16 + (blockCount * StandardCompressedBlockHeaderBytes);
             int fileCapacity = UnsafeUtility.SizeOf<SectorEntityStateFileHeader>() + compressedCapacity;
@@ -2625,6 +2880,7 @@ namespace Hecton8.SaveSystem
                 writeHandle.SortEntries = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 writeHandle.RadixScratch = new NativeArray<SectorEntityStateSortEntry>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 writeHandle.SortedEntityStates = new NativeArray<EntityDataRecord>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                writeHandle.CompactStates = new NativeArray<SectorCompactEntityStateRecord16>(recordCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 writeHandle.FileBytes = new NativeArray<byte>(fileCapacity, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 writeHandle.ResultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 writeHandle.RadixCounts = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -2659,9 +2915,15 @@ namespace Hecton8.SaveSystem
                 Entries = writeHandle.SortEntries,
                 SortedStates = writeHandle.SortedEntityStates
             };
-            CompressSectorEntityStateJob compressJob = new CompressSectorEntityStateJob
+            BuildCompactSectorEntityStatesJob compactJob = new BuildCompactSectorEntityStatesJob
             {
                 SortedStates = writeHandle.SortedEntityStates,
+                CompactStates = writeHandle.CompactStates,
+                SectorHash = sectorHash
+            };
+            CompressSectorEntityStateJob compressJob = new CompressSectorEntityStateJob
+            {
+                CompactStates = writeHandle.CompactStates,
                 FileBytes = writeHandle.FileBytes,
                 ResultLength = writeHandle.ResultLength,
                 SectorHash = sectorHash
@@ -2672,7 +2934,8 @@ namespace Hecton8.SaveSystem
                 JobHandle buildHandle = buildJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)));
                 JobHandle sortHandle = sortJob.Schedule(buildHandle);
                 JobHandle extractHandle = extractJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)), sortHandle);
-                writeHandle.Handle = compressJob.Schedule(extractHandle);
+                JobHandle compactHandle = compactJob.Schedule(recordCount, math.min(64, math.max(1, recordCount)), extractHandle);
+                writeHandle.Handle = compressJob.Schedule(compactHandle);
             }
             catch (Exception ex)
             {
@@ -2776,7 +3039,18 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                int expectedByteLength = checked((int)header.RecordCount * UnsafeUtility.SizeOf<EntityDataRecord>());
+                bool compact16 = header.Checksum == SectorEntityStateCompact16Magic;
+                if (header.Checksum != 0u && !compact16)
+                {
+                    error = "Sector entity-state override format marker is unsupported.";
+                    return false;
+                }
+
+                int recordCount = checked((int)header.RecordCount);
+                int recordStride = compact16
+                    ? UnsafeUtility.SizeOf<SectorCompactEntityStateRecord16>()
+                    : UnsafeUtility.SizeOf<EntityDataRecord>();
+                int expectedByteLength = checked(recordCount * recordStride);
                 if (expectedByteLength != header.DecompressedSize)
                 {
                     error = "Sector entity-state override byte count does not match the record count.";
@@ -2798,13 +3072,22 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                entityStates = new EntityDataRecord[header.RecordCount];
-                fixed (EntityDataRecord* destinationPtr = entityStates)
+                entityStates = new EntityDataRecord[recordCount];
+                if (compact16)
                 {
-                    if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, entityStates.Length * UnsafeUtility.SizeOf<EntityDataRecord>(), rawPtr, decompressedLength))
+                    SectorCompactEntityStateRecord16* compactPtr = (SectorCompactEntityStateRecord16*)rawPtr;
+                    for (int i = 0; i < entityStates.Length; i++)
+                        entityStates[i] = UnpackCompactEntityState16(in compactPtr[i], sectorHash);
+                }
+                else
+                {
+                    fixed (EntityDataRecord* destinationPtr = entityStates)
                     {
-                        error = "Entity-state override copy exceeded destination bounds.";
-                        return false;
+                        if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, entityStates.Length * UnsafeUtility.SizeOf<EntityDataRecord>(), rawPtr, decompressedLength))
+                        {
+                            error = "Entity-state override copy exceeded destination bounds.";
+                            return false;
+                        }
                     }
                 }
 
@@ -2859,6 +3142,7 @@ namespace Hecton8.SaveSystem
         private static void ReportIndexedSectorQuarantine(long sectorHash, string primaryError, string backupError)
         {
             Interlocked.Exchange(ref s_indexedSectorQuarantineReported, 1);
+            RecordIndexedSectorQuarantineHash(sectorHash);
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _indexedSectorQuarantineWarningHash,
                 unchecked((uint)sectorHash),
@@ -2867,6 +3151,24 @@ namespace Hecton8.SaveSystem
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning($"[SaveBinaryStorage] QUARANTINED indexed sector 0x{sectorHash:X16}. Primary: {primaryError} Backup: {backupError}");
 #endif
+        }
+
+        private static void RecordIndexedSectorQuarantineHash(long sectorHash)
+        {
+            lock (s_indexedSectorQuarantineLock)
+            {
+                for (int i = 0; i < s_indexedSectorQuarantineHashCount; i++)
+                {
+                    if (s_indexedSectorQuarantineHashes[i] == sectorHash)
+                        return;
+                }
+
+                if (s_indexedSectorQuarantineHashCount >= s_indexedSectorQuarantineHashes.Length)
+                    return;
+
+                s_indexedSectorQuarantineHashes[s_indexedSectorQuarantineHashCount] = sectorHash;
+                s_indexedSectorQuarantineHashCount++;
+            }
         }
 
         internal static long ComputeModPayloadSectorHash(uint modHash, long pagedSectorHash)
@@ -2889,6 +3191,23 @@ namespace Hecton8.SaveSystem
         internal static bool ConsumeIndexedSectorQuarantineFlag()
         {
             return Interlocked.Exchange(ref s_indexedSectorQuarantineReported, 0) != 0;
+        }
+
+        internal static int CopyAndClearIndexedSectorQuarantineHashes(long[] destination)
+        {
+            if (destination == null || destination.Length <= 0)
+                return 0;
+
+            lock (s_indexedSectorQuarantineLock)
+            {
+                int copyCount = math.min(destination.Length, s_indexedSectorQuarantineHashCount);
+                for (int i = 0; i < copyCount; i++)
+                    destination[i] = s_indexedSectorQuarantineHashes[i];
+
+                Array.Clear(s_indexedSectorQuarantineHashes, 0, s_indexedSectorQuarantineHashCount);
+                s_indexedSectorQuarantineHashCount = 0;
+                return copyCount;
+            }
         }
 
         internal static bool TryCommitModPayloadSubSector(
@@ -2916,6 +3235,12 @@ namespace Hecton8.SaveSystem
             if (!payloadBytes.IsCreated || payloadLength < 0 || payloadLength > ModPayloadMaxBytes || payloadLength > payloadBytes.Length)
             {
                 error = "Mod payload exceeds the 16KB isolated sub-sector budget.";
+                return false;
+            }
+
+            if ((payloadLength & 1) != 0)
+            {
+                error = "Mod payload rejected: odd byte length.";
                 return false;
             }
 
@@ -3296,7 +3621,8 @@ namespace Hecton8.SaveSystem
             if (payloadHeader.Magic != ModPayloadMagic ||
                 payloadHeader.Version != ModPayloadVersion ||
                 payloadHeader.HeaderSize != ModPayloadHeaderSizeBytes ||
-                payloadHeader.PayloadLength > ModPayloadMaxBytes)
+                payloadHeader.PayloadLength > ModPayloadMaxBytes ||
+                (payloadHeader.PayloadLength & 1) != 0)
             {
                 error = "Mod payload header is invalid.";
                 return false;

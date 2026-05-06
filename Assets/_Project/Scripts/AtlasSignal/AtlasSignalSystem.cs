@@ -22,6 +22,8 @@
 // ============================================================================
 
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Stopwatch = System.Diagnostics.Stopwatch;
+using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -94,6 +96,8 @@ namespace Hecton8.AtlasSignal
         // ══════════════════════════════════════════════════════════
 
         private Transform _playerTransform;
+        private AbsoluteUniversePosition _atlasCoreAup;
+        private Vector3 _atlasCoreAupSource;
         private float _pulseTimer;
         private float _currentStrength;
         private float _lastPublishedStrength;
@@ -108,10 +112,15 @@ namespace Hecton8.AtlasSignal
         private bool _stage2LogQueued;
         private bool _stage3LogQueued;
         private bool _stage4LogQueued;
+        private bool _atlasCoreAupCached;
 
         private const int FormalDetectionRevealStage = 2;
         private const int IdentityRevealStage = 3;
         private const int FullDecodeRevealStage = 4;
+        private const double SlowTickBudgetMilliseconds = 0.2d;
+        private const float AtlasRevealPingDurationSeconds = 0.09f;
+        private const float AtlasRevealPingTransmission01 = 0.72f;
+        private const float AtlasRevealPingLowPassCutoffHz = 4200f;
         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
         private const string SignalFullyDecodedDiscoveryId = "atlas6_signal_fully_decoded";
         private const string SignalFirstDetectedLog = "[AtlasSignal] Signal first detected.";
@@ -121,6 +130,7 @@ namespace Hecton8.AtlasSignal
         private static readonly uint _AudioLogRuntimeMissingWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.AudioLogRuntimeMissing"));
         private static readonly uint _EncryptedLogFallbackWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.EncryptedLogFallback"));
         private static readonly uint _DuplicateRuntimeWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.DuplicateRuntime"));
+        private static readonly uint _SlowTickBudgetWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.SlowTickBudgetExceeded"));
         private static readonly uint _AtlasSignalContextHash = unchecked((uint)LocHash.Compute("AtlasSignalSystem"));
 
         private static readonly int _ShaderSignalStrength =
@@ -152,7 +162,9 @@ namespace Hecton8.AtlasSignal
             get
             {
                 if (_playerTransform == null) return Vector3.down;
-                return SignalStrengthSystem.CalculateDirectionToCore(_playerTransform.position, atlasCorePosWorld);
+                AbsoluteUniversePosition playerAup = ResolvePlayerAup();
+                AbsoluteUniversePosition coreAup = ResolveAtlasCoreAup();
+                return SignalStrengthSystem.CalculateDirectionToCore(in playerAup, in coreAup);
             }
         }
 
@@ -200,6 +212,19 @@ namespace Hecton8.AtlasSignal
 
         public void SlowTick()
         {
+            long solveStartTicks = Stopwatch.GetTimestamp();
+            try
+            {
+                SlowTickCore();
+            }
+            finally
+            {
+                PublishSlowTickBudgetIfNeeded(solveStartTicks);
+            }
+        }
+
+        private void SlowTickCore()
+        {
             if (_playerTransform == null)
             {
                 ResolvePlayer();
@@ -208,9 +233,11 @@ namespace Hecton8.AtlasSignal
 
             _pulseTimer += 0.5f; // SlowTick ~0.5s
 
-            float rawStrength = CalculateRawStrength();
+            AbsoluteUniversePosition playerAup = ResolvePlayerAup();
+            AbsoluteUniversePosition coreAup = ResolveAtlasCoreAup();
+            float rawStrength = CalculateRawStrength(in playerAup, in coreAup);
             int previousRevealStage = _maxRevealStageUnlocked;
-            int desiredRevealStage = ResolveDesiredRevealStage(ResolveCurrentDepthMeters());
+            int desiredRevealStage = ResolveDesiredRevealStage(ResolveCurrentDepthMeters(in playerAup));
             if (desiredRevealStage > _maxRevealStageUnlocked)
                 _maxRevealStageUnlocked = desiredRevealStage;
 
@@ -290,18 +317,36 @@ namespace Hecton8.AtlasSignal
             SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
         }
 
-        private float ResolveCurrentDepthMeters()
+        private AbsoluteUniversePosition ResolvePlayerAup()
+        {
+            return AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+        }
+
+        private AbsoluteUniversePosition ResolveAtlasCoreAup()
+        {
+            if (!_atlasCoreAupCached || _atlasCoreAupSource != atlasCorePosWorld)
+            {
+                _atlasCoreAupSource = atlasCorePosWorld;
+                _atlasCoreAup = AbsoluteUniversePosition.FromRuntimePosition(atlasCorePosWorld);
+                _atlasCoreAupCached = true;
+            }
+
+            return _atlasCoreAup;
+        }
+
+        private float ResolveCurrentDepthMeters(in AbsoluteUniversePosition playerAup)
         {
             BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
             if (biomeMatrixDirector != null)
                 return biomeMatrixDirector.CurrentDepthMeters;
 
-            return math.max(0f, -_playerTransform.position.y);
+            double absoluteY = playerAup.ToAbsoluteDouble3().y;
+            return math.max(0f, (float)-absoluteY);
         }
 
-        private float CalculateRawStrength()
+        private float CalculateRawStrength(in AbsoluteUniversePosition playerAup, in AbsoluteUniversePosition coreAup)
         {
-            return SignalStrengthSystem.CalculateStrength(_playerTransform.position, atlasCorePosWorld, maxSignalRange);
+            return SignalStrengthSystem.CalculateStrength(in playerAup, in coreAup, maxSignalRange);
         }
 
         private int ResolveDesiredRevealStage(float currentDepthMeters)
@@ -414,6 +459,13 @@ namespace Hecton8.AtlasSignal
 
             _pulseTimer = 0f;
             AtlasSignalEvents.RaisePulse(manifestedStrength);
+            ProceduralAudioEvents.RaiseAudioPingTriggered(
+                atlasCorePosWorld,
+                math.saturate(manifestedStrength),
+                AtlasRevealPingDurationSeconds,
+                AtlasRevealPingTransmission01,
+                AtlasRevealPingLowPassCutoffHz,
+                ProceduralAudioPingKind.Sonar);
 
             switch (revealStage)
             {
@@ -566,6 +618,19 @@ namespace Hecton8.AtlasSignal
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 
+        private static void PublishSlowTickBudgetIfNeeded(long solveStartTicks)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - solveStartTicks;
+            double elapsedMilliseconds = elapsedTicks * 1000d / Stopwatch.Frequency;
+            if (elapsedMilliseconds <= SlowTickBudgetMilliseconds)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _SlowTickBudgetWarningHash,
+                _AtlasSignalContextHash,
+                (float)elapsedMilliseconds);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ISaveable
         // ══════════════════════════════════════════════════════════
@@ -606,19 +671,26 @@ namespace Hecton8.AtlasSignal
         private const float StrengthBandThreeThreshold = 0.5f;
         private const float StrengthBandFourThreshold = 0.75f;
 
-        public static float CalculateStrength(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition, float maxRangeMeters)
+        public static float CalculateStrength(
+            in AbsoluteUniversePosition playerAup,
+            in AbsoluteUniversePosition coreAup,
+            float maxRangeMeters)
         {
-            float safeRange = math.max(0.001f, maxRangeMeters);
-            float distance = CalculateDistanceMeters(playerRuntimePosition, coreRuntimePosition);
-            if (distance >= safeRange)
+            double safeRange = math.max(0.001f, maxRangeMeters);
+            double safeRangeSq = safeRange * safeRange;
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
+            if (distanceSq >= safeRangeSq)
                 return 0f;
 
-            return math.saturate(1f - (distance / safeRange));
+            return math.saturate((float)(1d - distanceSq / safeRangeSq));
         }
 
-        public static int CalculateStrengthBand(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition, float maxRangeMeters)
+        public static int CalculateStrengthBand(
+            in AbsoluteUniversePosition playerAup,
+            in AbsoluteUniversePosition coreAup,
+            float maxRangeMeters)
         {
-            return StrengthToBand(CalculateStrength(playerRuntimePosition, coreRuntimePosition, maxRangeMeters));
+            return StrengthToBand(CalculateStrength(in playerAup, in coreAup, maxRangeMeters));
         }
 
         public static int StrengthToBand(float strength01)
@@ -636,18 +708,17 @@ namespace Hecton8.AtlasSignal
             return 4;
         }
 
-        public static float CalculateDistanceMeters(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition)
+        public static double CalculateDistanceSqMeters(
+            in AbsoluteUniversePosition playerAup,
+            in AbsoluteUniversePosition coreAup)
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerRuntimePosition);
-            AbsoluteUniversePosition coreAup = AbsoluteUniversePosition.FromRuntimePosition(coreRuntimePosition);
-            double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
-            return distanceSq > 0d ? (float)math.sqrt(distanceSq) : 0f;
+            return AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
         }
 
-        public static Vector3 CalculateDirectionToCore(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition)
+        public static Vector3 CalculateDirectionToCore(
+            in AbsoluteUniversePosition playerAup,
+            in AbsoluteUniversePosition coreAup)
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerRuntimePosition);
-            AbsoluteUniversePosition coreAup = AbsoluteUniversePosition.FromRuntimePosition(coreRuntimePosition);
             double3 delta = coreAup.ToAbsoluteDouble3() - playerAup.ToAbsoluteDouble3();
             double lengthSq = math.lengthsq(delta);
             if (lengthSq <= 0.000001d)

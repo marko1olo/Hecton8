@@ -82,6 +82,10 @@ namespace Hecton8.Physics
             public float Height;
             public float IsInAir;
             public float SimplifiedSubmersion;
+            public float3 BoundsCenterWS;
+            public float BoundsPadding0;
+            public float3 BoundsExtentsWS;
+            public float BoundsPadding1;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -167,6 +171,8 @@ namespace Hecton8.Physics
         [Header("── Water ─────────────────────────────────────")]
         [Tooltip("Y-координата поверхности воды (world space)")]
         [SerializeField] private float waterLevel = 5000f;
+        [SerializeField] private bool enableCinematicTideShift = true;
+        [SerializeField, Range(0f, 8f)] private float cinematicTideAmplitudeMeters = 2f;
 
         [Tooltip("Плотность воды (кг/м³). Пресная = 1000, Морская = 1025")]
         [SerializeField] private float waterDensity = 1000f;
@@ -286,6 +292,12 @@ namespace Hecton8.Physics
                 waterLevel = value;
                 PublishCurrentWaterLevelUniform();
             }
+        }
+
+        /// <summary>Cinematic surface water level consumed by shader/UI/physics bridges.</summary>
+        public float CurrentWaterLevelY
+        {
+            get { return ResolveCinematicWaterLevelY(); }
         }
 
         /// <summary>Плотность воды (кг/м³).</summary>
@@ -727,7 +739,7 @@ namespace Hecton8.Physics
         {
             using (ProfilerRegistry.PhysicsTick.Auto())
             {
-            PublishCurrentWaterLevelUniform();
+            float cinematicWaterLevel = PublishCurrentWaterLevelUniform();
 
             if (!TryDrainScheduledBuoyancyJob())
                 return;
@@ -758,7 +770,7 @@ namespace Hecton8.Physics
             }
 
             // ── 2. Gather (может уменьшить _objects.Count при очистке null) ──
-            GatherData();
+            GatherData(cinematicWaterLevel);
 
             // Пересчитываем count после очистки destroyed объектов
             count = _objects.Count;
@@ -779,8 +791,8 @@ namespace Hecton8.Physics
             _debugGiantWakeCurrent = new Vector3(_resolvedGiantWakeCurrent.x, _resolvedGiantWakeCurrent.y, _resolvedGiantWakeCurrent.z);
             ConsumeGpuAbyssalFlowReadbacks();
             ConsumeGpuBuoyancyReadbacks();
-            TryDispatchGpuAbyssalFlowField(weatherSnapshot);
-            TryDispatchGpuBuoyancySampling(weatherSnapshot, count);
+            TryDispatchGpuAbyssalFlowField(weatherSnapshot, cinematicWaterLevel);
+            TryDispatchGpuBuoyancySampling(weatherSnapshot, count, cinematicWaterLevel);
 
             JobHandle waveHandle = default;
             bool useGpuBuoyancy = enableGpuBuoyancySampling &&
@@ -792,6 +804,7 @@ namespace Hecton8.Physics
                 WaveQueryJob waveJob = new WaveQueryJob
                 {
                     PositionsWS = _positions,
+                    ObjParams = _params,
                     VerticalOffsets = _waveOffsets,
                     Wave0 = weatherSnapshot.Wave0,
                     Wave1 = weatherSnapshot.Wave1,
@@ -814,7 +827,7 @@ namespace Hecton8.Physics
                 resultForces     = _resultForces,
                 resultTorques    = _resultTorques,
 
-                waterLevel       = waterLevel,
+                waterLevel       = cinematicWaterLevel,
                 waterDensity     = waterDensity,
                 viscousDrag      = viscousDrag,
                 angularDragCoeff = angularDrag,
@@ -891,12 +904,12 @@ namespace Hecton8.Physics
         ///   only when the object is effectively above the waterline.
         ///   BuoyancyJob проверяет этот флаг и обнуляет силы, если true.
         /// </summary>
-        private void GatherData()
+        private void GatherData(float resolvedWaterLevel)
         {
             using (_gatherDataProfilerMarker.Auto())
             {
             WorldProceduralFieldSampler biomeFieldSampler = enableBiomeBuoyancyInfluence
-                ? WorldProceduralFieldSampler.ActiveRuntimeInstance
+                ? GlobalRegistry.ProceduralFieldSampler
                 : null;
 
             for (int i = _objects.Count - 1; i >= 0; i--)
@@ -1013,14 +1026,14 @@ namespace Hecton8.Physics
                         : waterDensity,
                     localCurrent = new float3(localCurrent.x, localCurrent.y, localCurrent.z),
                     buoyancyMultiplier = biomeBuoyancyMultiplier,
-                    isInAir = obj.ShouldSuppressFluid(waterLevel) ? (byte)1 : (byte)0,
+                    isInAir = obj.ShouldSuppressFluid(resolvedWaterLevel) ? (byte)1 : (byte)0,
                     simulationMode = simulationMode,
                     simplifiedSubmersion = simplifiedSubmersion,
                     useLocalFluidDensityOverride = obj.UseLocalFluidDensityOverride ? (byte)1 : (byte)0,
                     angularDragMultiplier = obj.RuntimeAngularDragMultiplier
                 };
 
-                ResourceDistributionDirector brineDirector = ResourceDistributionDirector.ActiveRuntimeInstance;
+                ResourceDistributionDirector brineDirector = GlobalRegistry.ResourceDistribution;
                 if (brineDirector != null &&
                     brineDirector.TrySampleBrineFluidDensity(com, out float localFluidDensity) &&
                     localFluidDensity > waterDensity + 0.01f)
@@ -1392,10 +1405,24 @@ namespace Hecton8.Physics
             return weatherService.GetRuntimeSnapshot();
         }
 
-        private void PublishCurrentWaterLevelUniform()
+        private float PublishCurrentWaterLevelUniform()
         {
-            Shader.SetGlobalFloat(_CurrentWaterLevelId, waterLevel);
-            Shader.SetGlobalFloat(_CurrentWaterLevelYId, waterLevel);
+            float cinematicWaterLevel = ResolveCinematicWaterLevelY();
+            Shader.SetGlobalFloat(_CurrentWaterLevelId, cinematicWaterLevel);
+            Shader.SetGlobalFloat(_CurrentWaterLevelYId, cinematicWaterLevel);
+            if (UIStateStore.IsInitialized)
+                UIStateStore.WriteValue(UIValueSlotId.WaterSurfaceY, cinematicWaterLevel, Time.unscaledTime);
+            return cinematicWaterLevel;
+        }
+
+        private float ResolveCinematicWaterLevelY()
+        {
+            if (!enableCinematicTideShift || cinematicTideAmplitudeMeters <= 0f)
+                return waterLevel;
+
+            float timeSeconds = Time.time;
+            float combinedWave = Mathf.Sin(timeSeconds) + Mathf.Sin(timeSeconds * 0.5f);
+            return waterLevel + combinedWave * cinematicTideAmplitudeMeters;
         }
 
         private void EnsureGpuBuoyancyBuffers(int capacity)
@@ -1511,7 +1538,7 @@ namespace Hecton8.Physics
             }
         }
 
-        private void TryDispatchGpuAbyssalFlowField(in WeatherRuntimeSnapshot weatherSnapshot)
+        private void TryDispatchGpuAbyssalFlowField(in WeatherRuntimeSnapshot weatherSnapshot, float resolvedWaterLevel)
         {
             if (!enableGpuAbyssalFlowField ||
                 abyssalFlowFieldCompute == null ||
@@ -1532,7 +1559,7 @@ namespace Hecton8.Physics
             if (_gpuAbyssalReadbackActive != null && _gpuAbyssalReadbackActive[slot])
                 return;
 
-            float3 flowCenter = ResolveAbyssalFlowCenter();
+            float3 flowCenter = ResolveAbyssalFlowCenter(resolvedWaterLevel);
             int heatSourceCount = CaptureAbyssalHeatSources(flowCenter);
             _debugAbyssalHeatSourceCount = heatSourceCount;
 
@@ -1582,8 +1609,8 @@ namespace Hecton8.Physics
                 math.length(weatherWindManaged),
                 resolvedWaveHeight,
                 weatherSnapshot.CurrentMeta.TimeAccumulator));
-            abyssalFlowFieldCompute.SetFloat(_AbyssalFlowSurfaceYId, waterLevel);
-            abyssalFlowFieldCompute.SetFloat(_AbyssalFlowThermoclineYId, waterLevel - AbyssalFlowThermoclineDepthMeters);
+            abyssalFlowFieldCompute.SetFloat(_AbyssalFlowSurfaceYId, resolvedWaterLevel);
+            abyssalFlowFieldCompute.SetFloat(_AbyssalFlowThermoclineYId, resolvedWaterLevel - AbyssalFlowThermoclineDepthMeters);
             abyssalFlowFieldCompute.SetInt(_AbyssalFlowHeatSourceCountId, heatSourceCount);
             abyssalFlowFieldCompute.SetInt(_AbyssalFlowWeatherStateMaskId, (int)weatherSnapshot.StateMask);
 
@@ -1652,12 +1679,12 @@ namespace Hecton8.Physics
             return sourceCount;
         }
 
-        private float3 ResolveAbyssalFlowCenter()
+        private float3 ResolveAbyssalFlowCenter(float resolvedWaterLevel)
         {
             Vector3 observerPosition = lodObserver.position;
             return new float3(
                 observerPosition.x,
-                math.min(observerPosition.y, waterLevel - 32f),
+                math.min(observerPosition.y, resolvedWaterLevel - 32f),
                 observerPosition.z);
         }
 
@@ -1666,7 +1693,7 @@ namespace Hecton8.Physics
             if (!enableGiantWakeCurrent || giantWakeCurrentStrength <= 0f)
                 return float3.zero;
 
-            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
             if (celestialEngine == null || !celestialEngine.TryGetAegirSkyDirection(out Vector3 directionManaged))
                 return float3.zero;
 
@@ -1765,7 +1792,9 @@ namespace Hecton8.Physics
                     Volume = buoyancyParams.volume,
                     Height = buoyancyParams.height,
                     IsInAir = buoyancyParams.isInAir != 0 ? 1f : 0f,
-                    SimplifiedSubmersion = buoyancyParams.simplifiedSubmersion != 0 ? 1f : 0f
+                    SimplifiedSubmersion = buoyancyParams.simplifiedSubmersion != 0 ? 1f : 0f,
+                    BoundsCenterWS = buoyancyParams.boundsCenter,
+                    BoundsExtentsWS = buoyancyParams.boundsExtents
                 };
             }
         }
@@ -1776,7 +1805,7 @@ namespace Hecton8.Physics
             shader.SetVector(waveBId, new Vector4(wave.Steepness, wave.PhaseOffset, wave.SpeedMultiplier, 0f));
         }
 
-        private void TryDispatchGpuBuoyancySampling(in WeatherRuntimeSnapshot weatherSnapshot, int count)
+        private void TryDispatchGpuBuoyancySampling(in WeatherRuntimeSnapshot weatherSnapshot, int count, float resolvedWaterLevel)
         {
             if (!enableGpuBuoyancySampling ||
                 gpuBuoyancyCompute == null ||
@@ -1804,7 +1833,7 @@ namespace Hecton8.Physics
             gpuBuoyancyCompute.SetBuffer(_gpuBuoyancyKernel, _GpuBuoyancyObjectDataId, _gpuBuoyancyParamBuffer);
             gpuBuoyancyCompute.SetBuffer(_gpuBuoyancyKernel, _GpuBuoyancyResultsId, _gpuBuoyancyResultBuffer);
             gpuBuoyancyCompute.SetInt(_GpuBuoyancyObjectCountId, count);
-            gpuBuoyancyCompute.SetVector(_GpuBuoyancyWaterParamsId, new Vector4(waterLevel, waterDensity, math.abs(UnityEngine.Physics.gravity.y), weatherSnapshot.CurrentMeta.TimeAccumulator));
+            gpuBuoyancyCompute.SetVector(_GpuBuoyancyWaterParamsId, new Vector4(resolvedWaterLevel, waterDensity, math.abs(UnityEngine.Physics.gravity.y), weatherSnapshot.CurrentMeta.TimeAccumulator));
             SetGpuWave(gpuBuoyancyCompute, _GpuBuoyancyWave0AId, _GpuBuoyancyWave0BId, weatherSnapshot.Wave0);
             SetGpuWave(gpuBuoyancyCompute, _GpuBuoyancyWave1AId, _GpuBuoyancyWave1BId, weatherSnapshot.Wave1);
             SetGpuWave(gpuBuoyancyCompute, _GpuBuoyancyWave2AId, _GpuBuoyancyWave2BId, weatherSnapshot.Wave2);
@@ -1869,6 +1898,7 @@ namespace Hecton8.Physics
             }
 
             if (waterDensity < 0.01f) waterDensity = 0.01f;
+            if (cinematicTideAmplitudeMeters < 0f) cinematicTideAmplitudeMeters = 0f;
             if (viscousDrag  < 0f)    viscousDrag  = 0f;
             if (angularDrag  < 0f)    angularDrag  = 0f;
             if (jobBatchSize < 1)     jobBatchSize = 1;
@@ -2033,6 +2063,7 @@ namespace Hecton8.Physics
         private const float TwoPi = 6.28318530718f;
 
         [ReadOnly] public NativeArray<float3> PositionsWS;
+        [ReadOnly] public NativeArray<BuoyancyParams> ObjParams;
         [WriteOnly] public NativeArray<float> VerticalOffsets;
 
         public GerstnerWaveComponent Wave0;
@@ -2042,7 +2073,29 @@ namespace Hecton8.Physics
 
         public void Execute(int index)
         {
-            float2 worldXZ = PositionsWS[index].xz;
+            float2 centerXZ = PositionsWS[index].xz;
+            float2 extentsXZ = new float2(0.05f, 0.05f);
+            if (index < ObjParams.Length)
+            {
+                BuoyancyParams buoyancyParams = ObjParams[index];
+                if (math.all(math.isfinite(buoyancyParams.boundsCenter)))
+                    centerXZ = buoyancyParams.boundsCenter.xz;
+
+                if (math.all(math.isfinite(buoyancyParams.boundsExtents)))
+                    extentsXZ = math.max(math.abs(buoyancyParams.boundsExtents.xz), new float2(0.05f, 0.05f));
+            }
+
+            float waveOffset =
+                SampleWaveHeight(centerXZ + new float2(-extentsXZ.x, -extentsXZ.y)) +
+                SampleWaveHeight(centerXZ + new float2( extentsXZ.x, -extentsXZ.y)) +
+                SampleWaveHeight(centerXZ + new float2(-extentsXZ.x,  extentsXZ.y)) +
+                SampleWaveHeight(centerXZ + new float2( extentsXZ.x,  extentsXZ.y));
+
+            VerticalOffsets[index] = ResolveFiniteFloatOrZero(waveOffset * 0.25f);
+        }
+
+        private float SampleWaveHeight(float2 worldXZ)
+        {
             float3 displacement = ComputeTotalDisplacement(worldXZ);
 
             float2 correctedXZ = worldXZ - displacement.xz;
@@ -2051,7 +2104,7 @@ namespace Hecton8.Physics
             correctedXZ = worldXZ - displacement.xz;
             displacement = ComputeTotalDisplacement(correctedXZ);
 
-            VerticalOffsets[index] = ResolveFiniteFloatOrZero(displacement.y);
+            return ResolveFiniteFloatOrZero(displacement.y);
         }
 
         private float3 ComputeTotalDisplacement(float2 worldXZ)

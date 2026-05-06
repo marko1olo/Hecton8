@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
-using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Burst;
@@ -63,11 +62,12 @@ namespace Hecton8.Caves
         private const float SphereVolumeFactor = 4f / 3f * math.PI;
         private const int LaserDebrisMinFragments = 3;
         private const int LaserDebrisMaxFragments = 5;
-        private const float LaserDebrisLifetimeSeconds = 4f;
+        private const float LaserDebrisLifetimeSeconds = 5f;
         private const int RecentCutHeatMax = 16;
-        private const float LaserCutHeatLifetimeSeconds = 1.35f;
+        private const float LaserCutHeatLifetimeSeconds = 2f;
         private const float LaserCutHeatRadiusScale = 1.6f;
         private const float LaserCutHeatStrength = 1f;
+        private const double CarveCommitWarningMs = 0.2d;
         private const byte DefaultMaterialId = 0;
         private const byte ThermalMeltMaterialId = 2;
         private const byte DeltaModeAdditive = 1 << 0;
@@ -81,10 +81,14 @@ namespace Hecton8.Caves
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly ProfilerMarker _carveScheduleProfilerMarker = new ProfilerMarker("H8.VoxelDelta.ScheduleCarve");
         private static readonly ProfilerMarker _carveCommitProfilerMarker = new ProfilerMarker("H8.VoxelDelta.CommitCarve");
+        private static readonly int _laserHitAupId = Shader.PropertyToID("_LaserHitAUP");
+        private static readonly int _laserHitHeatId = Shader.PropertyToID("_LaserHitHeat");
         private static readonly int _recentCutHeatCountId = Shader.PropertyToID("_HectonRecentCutHeatCount");
         private static readonly int _recentCutHeatPositionRadiusId = Shader.PropertyToID("_HectonRecentCutHeatPositionRadius");
         private static readonly int _recentCutHeatStrengthTimeId = Shader.PropertyToID("_HectonRecentCutHeatStrengthTime");
-        // COLD ALLOC: Vector4[16] - global laser cut heat stamp positions - owner: VoxelDeltaProcessor
+        private static readonly uint _CarveCommitWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.CarveCommitBudgetExceeded"));
+        private static readonly uint _CarveCommitTelemetryContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.TryCommitScheduledCarve"));
+        // COLD ALLOC: Vector4[16] - global laser cut heat stamp AUP positions - owner: VoxelDeltaProcessor
         private static readonly Vector4[] s_recentCutHeatPositionRadius = new Vector4[RecentCutHeatMax];
         // COLD ALLOC: Vector4[16] - global laser cut heat stamp strengths/lifetimes - owner: VoxelDeltaProcessor
         private static readonly Vector4[] s_recentCutHeatStrengthTime = new Vector4[RecentCutHeatMax];
@@ -130,6 +134,7 @@ namespace Hecton8.Caves
         private int _scheduledCarveWriteCount;
         private bool _scheduledCarveCommitPending;
         private int _scheduledCarveCommitIndex;
+        private bool _carveCommitWarningArmed;
         private int3 _scheduledCarveTouchedMinCell;
         private int3 _scheduledCarveTouchedMaxCell;
         private bool _scheduledCarveTouchedAnyCell;
@@ -1550,91 +1555,120 @@ namespace Hecton8.Caves
 
             using (_carveCommitProfilerMarker.Auto())
             {
-                if (_scheduledCarveRunning)
+                long commitStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
+                try
                 {
-                    if (!DispatcherJobSwap.TryComplete(ref _scheduledCarveHandle, false))
-                        return;
-
-                    _scheduledCarveRunning = false;
-                    _scheduledCarveCommitPending = true;
-                    ResetScheduledCarveCommitProgress();
-                }
-
-                HectonVoxelVolume volume = _scheduledCarveRequest.Volume;
-                if (volume == null || !volume.HasRuntimeData)
-                {
-                    ResetScheduledCarveState();
-                    return;
-                }
-
-                float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
-                int writeCount = math.min(_scheduledCarveWriteCount, _scheduledCarveWrites.Length);
-                int endIndex = math.min(_scheduledCarveCommitIndex + MaxScheduledCarveCommitWritesPerFrame, writeCount);
-                for (int i = _scheduledCarveCommitIndex; i < endIndex; i++)
-                {
-                    CarveCellWrite write = _scheduledCarveWrites[i];
-                    if (write.IsActive == 0)
-                        continue;
-
-                    int3 chunkCoord = FloorDiv(write.AbsoluteCell, ChunkResolution);
-                    ChunkAddress address = new ChunkAddress(chunkCoord, voxelSize);
-                    ChunkDeltaState state = GetOrCreateChunkState(chunkCoord, voxelSize);
-                    if (!TryComputeLocalCellIndex(write.AbsoluteCell, state.ChunkCoord, out uint localIndex))
-                        continue;
-
-                    half resolvedValue = BitsToHalf(write.SdfValueBits);
-                    if ((write.DeltaFlags & DeltaModeAdditive) != 0)
+                    if (_scheduledCarveRunning)
                     {
-                        float currentDensity;
-                        if (!TryResolveCurrentCellDensity(volume, in state, localIndex, write.AbsoluteCell, voxelSize, out currentDensity))
-                            currentDensity = 0f;
+                        if (!DispatcherJobSwap.TryComplete(ref _scheduledCarveHandle, false))
+                            return;
 
-                        resolvedValue = ClampToHalf(SmoothMaxExp(currentDensity, (float)resolvedValue, math.max(voxelSize, write.BlendStrength)));
+                        _scheduledCarveRunning = false;
+                        _scheduledCarveCommitPending = true;
+                        ResetScheduledCarveCommitProgress();
                     }
 
-                    SetCell(ref state, localIndex, resolvedValue, write.MaterialId, write.DeltaFlags);
-                    _chunkStates[address] = state;
-                    _scheduledCarveTouchedMinCell = math.min(_scheduledCarveTouchedMinCell, write.AbsoluteCell);
-                    _scheduledCarveTouchedMaxCell = math.max(_scheduledCarveTouchedMaxCell, write.AbsoluteCell);
-                    _scheduledCarveTouchedAnyCell = true;
-                    IncrementChunkWriteVersion(address);
-                    TryQueueCompaction(volume, address, in state, state.DirtyCellCount);
-                }
+                    HectonVoxelVolume volume = _scheduledCarveRequest.Volume;
+                    if (volume == null || !volume.HasRuntimeData)
+                    {
+                        ResetScheduledCarveState();
+                        return;
+                    }
 
-                _scheduledCarveCommitIndex = endIndex;
-                if (_scheduledCarveCommitIndex < writeCount)
-                    return;
+                    float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
+                    int writeCount = math.min(_scheduledCarveWriteCount, _scheduledCarveWrites.Length);
+                    int endIndex = math.min(_scheduledCarveCommitIndex + MaxScheduledCarveCommitWritesPerFrame, writeCount);
+                    for (int i = _scheduledCarveCommitIndex; i < endIndex; i++)
+                    {
+                        CarveCellWrite write = _scheduledCarveWrites[i];
+                        if (write.IsActive == 0)
+                            continue;
 
-                if (!_scheduledCarveTouchedAnyCell)
-                {
+                        int3 chunkCoord = FloorDiv(write.AbsoluteCell, ChunkResolution);
+                        ChunkAddress address = new ChunkAddress(chunkCoord, voxelSize);
+                        ChunkDeltaState state = GetOrCreateChunkState(chunkCoord, voxelSize);
+                        if (!TryComputeLocalCellIndex(write.AbsoluteCell, state.ChunkCoord, out uint localIndex))
+                            continue;
+
+                        half resolvedValue = BitsToHalf(write.SdfValueBits);
+                        if ((write.DeltaFlags & DeltaModeAdditive) != 0)
+                        {
+                            float currentDensity;
+                            if (!TryResolveCurrentCellDensity(volume, in state, localIndex, write.AbsoluteCell, voxelSize, out currentDensity))
+                                currentDensity = 0f;
+
+                            resolvedValue = ClampToHalf(SmoothMaxExp(currentDensity, (float)resolvedValue, math.max(voxelSize, write.BlendStrength)));
+                        }
+
+                        SetCell(ref state, localIndex, resolvedValue, write.MaterialId, write.DeltaFlags);
+                        _chunkStates[address] = state;
+                        _scheduledCarveTouchedMinCell = math.min(_scheduledCarveTouchedMinCell, write.AbsoluteCell);
+                        _scheduledCarveTouchedMaxCell = math.max(_scheduledCarveTouchedMaxCell, write.AbsoluteCell);
+                        _scheduledCarveTouchedAnyCell = true;
+                        IncrementChunkWriteVersion(address);
+                        TryQueueCompaction(volume, address, in state, state.DirtyCellCount);
+                    }
+
+                    _scheduledCarveCommitIndex = endIndex;
+                    if (_scheduledCarveCommitIndex < writeCount)
+                        return;
+
+                    if (!_scheduledCarveTouchedAnyCell)
+                    {
+                        ResetScheduledCarveState();
+                        return;
+                    }
+
+                    VoxelDynamicNavGridRuntime.QueueLocalizedSdfPatch(volume, _scheduledCarveTouchedMinCell, _scheduledCarveTouchedMaxCell, voxelSize);
+
+                    EnqueueVolumeRebuild(volume);
+                    float resolvedCarveRadius = ResolveCarveRadius(in _scheduledCarveRequest, volume);
+                    EmitCaveInDustDecal(in _scheduledCarveRequest, resolvedCarveRadius);
+                    bool emittedTransientLaserDebris = false;
+                    if ((_scheduledCarveRequest.SourceFlags & CarveSourceLaser) != 0 &&
+                        (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
+                        _scheduledCarveRequest.Shape != DeltaShapeBox)
+                    {
+                        PushRecentCutHeat(in _scheduledCarveRequest, resolvedCarveRadius);
+                        emittedTransientLaserDebris = EmitLaserCarveDebris(
+                            in _scheduledCarveRequest,
+                            resolvedCarveRadius);
+                    }
+
+                    if (!emittedTransientLaserDebris &&
+                        (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
+                        _scheduledCarveRequest.Shape != DeltaShapeBox)
+                    {
+                        EmitCarveDebris(in _scheduledCarveRequest, resolvedCarveRadius);
+                    }
+
                     ResetScheduledCarveState();
-                    return;
                 }
-
-                VoxelDynamicNavGridRuntime.QueueLocalizedSdfPatch(volume, _scheduledCarveTouchedMinCell, _scheduledCarveTouchedMaxCell, voxelSize);
-
-                EnqueueVolumeRebuild(volume);
-                float resolvedCarveRadius = ResolveCarveRadius(in _scheduledCarveRequest, volume);
-                bool emittedTransientLaserDebris = false;
-                if ((_scheduledCarveRequest.SourceFlags & CarveSourceLaser) != 0 &&
-                    (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
-                    _scheduledCarveRequest.Shape != DeltaShapeBox)
+                finally
                 {
-                    PushRecentCutHeat(in _scheduledCarveRequest, resolvedCarveRadius);
-                    emittedTransientLaserDebris = EmitLaserCarveDebris(
-                        in _scheduledCarveRequest,
-                        resolvedCarveRadius);
+                    PublishCarveCommitWarningIfNeeded(commitStartTimestamp);
                 }
-
-                if (!emittedTransientLaserDebris &&
-                    (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
-                    _scheduledCarveRequest.Shape != DeltaShapeBox)
-                {
-                    EmitCarveDebris(in _scheduledCarveRequest, resolvedCarveRadius);
-                }
-
-                ResetScheduledCarveState();
             }
+        }
+
+        private void PublishCarveCommitWarningIfNeeded(long startTimestamp)
+        {
+            long elapsedTicks = global::System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp;
+            double elapsedMs = elapsedTicks * 1000d / global::System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMs <= CarveCommitWarningMs)
+            {
+                _carveCommitWarningArmed = false;
+                return;
+            }
+
+            if (_carveCommitWarningArmed)
+                return;
+
+            _carveCommitWarningArmed = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _CarveCommitWarningHash,
+                _CarveCommitTelemetryContextHash,
+                (float)elapsedMs);
         }
 
         private void RequestRebuildsForLoadedState()
@@ -2244,14 +2278,33 @@ namespace Hecton8.Caves
                 Vector3 absoluteSpawnPosition = request.AbsoluteHitPoint + new Vector3(direction.x, direction.y, direction.z) * (spawnRadius * distance01);
                 Vector3 runtimeSpawnPosition = HectonFloatingOrigin.ToRuntimePosition(absoluteSpawnPosition);
                 Vector3 burstImpulse = new Vector3(direction.x, direction.y, direction.z) * math.lerp(carveDebrisImpulse * 0.55f, carveDebrisImpulse, impulse01);
-                Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(runtimeSpawnPosition);
-                float3 currentImpulse3 = new float3(sampledCurrent.x, sampledCurrent.y, sampledCurrent.z) * math.max(0.25f, carveDebrisImpulse * 0.35f);
-                Vector3 currentImpulse = math.all(math.isfinite(currentImpulse3))
-                    ? new Vector3(currentImpulse3.x, currentImpulse3.y, currentImpulse3.z)
-                    : Vector3.zero;
+                float3 currentImpulse3 = ResolveCinematicDebrisDriftImpulse(ref state, carveDebrisImpulse);
+                Vector3 currentImpulse = new Vector3(currentImpulse3.x, currentImpulse3.y, currentImpulse3.z);
                 Vector3 initialImpulse = burstImpulse + currentImpulse;
                 registry.TryRegisterDroppedItem(carveDebrisItem, 1, runtimeSpawnPosition, initialImpulse);
             }
+        }
+
+        private static void EmitCaveInDustDecal(in PendingCarveRequest request, float radius)
+        {
+            if ((request.DeltaFlags & DeltaModeAdditive) != 0 || radius <= 0f)
+                return;
+
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals == null)
+                return;
+
+            Vector3 impulseDirection = request.AbsoluteImpulseDirection;
+            if (impulseDirection.sqrMagnitude <= 0.0001f)
+                impulseDirection = Vector3.up;
+            else
+                impulseDirection.Normalize();
+
+            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(request.AbsoluteHitPoint);
+            fluidDecals.RegisterVoxelCaveInDust(
+                runtimeHitPoint,
+                impulseDirection,
+                math.saturate(radius / math.max(MaxCarveRadiusMeters, MinCarveRadiusMeters)));
         }
 
         private static float NextBurst01(ref uint state)
@@ -2268,6 +2321,17 @@ namespace Hecton8.Caves
             float angle = NextBurst01(ref state) * (math.PI * 2f);
             float radial = math.sqrt(math.max(0f, 1f - (z * z)));
             return new float3(radial * math.cos(angle), z, radial * math.sin(angle));
+        }
+
+        private static float3 ResolveCinematicDebrisDriftImpulse(ref uint state, float impulseMagnitude)
+        {
+            float angle = NextBurst01(ref state) * (math.PI * 2f);
+            float lateralStrength = math.lerp(0.12f, 0.34f, NextBurst01(ref state));
+            float sinkStrength = math.lerp(0.04f, 0.12f, NextBurst01(ref state));
+            float3 driftDirection = math.normalizesafe(
+                new float3(math.cos(angle) * lateralStrength, -sinkStrength, math.sin(angle) * lateralStrength),
+                new float3(0f, -1f, 0f));
+            return driftDirection * math.max(0.15f, impulseMagnitude * 0.22f);
         }
 
         private void EnsureScheduledCarveWriteCapacity(int requiredCount)
@@ -2347,13 +2411,15 @@ namespace Hecton8.Caves
             if (radius <= 0f)
                 return;
 
-            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(request.AbsoluteHitPoint);
+            Vector3 absoluteHitPoint = request.AbsoluteHitPoint;
             int slot = s_recentCutHeatCursor;
             s_recentCutHeatCursor = (slot + 1) % RecentCutHeatMax;
             s_recentCutHeatCount = math.min(s_recentCutHeatCount + 1, RecentCutHeatMax);
             float shaderRadius = math.max(radius * LaserCutHeatRadiusScale, MinRuntimeVoxelSize);
-            s_recentCutHeatPositionRadius[slot] = new Vector4(runtimeHitPoint.x, runtimeHitPoint.y, runtimeHitPoint.z, shaderRadius);
+            s_recentCutHeatPositionRadius[slot] = new Vector4(absoluteHitPoint.x, absoluteHitPoint.y, absoluteHitPoint.z, shaderRadius);
             s_recentCutHeatStrengthTime[slot] = new Vector4(LaserCutHeatStrength, Time.time, LaserCutHeatLifetimeSeconds, 0f);
+            Shader.SetGlobalVector(_laserHitAupId, s_recentCutHeatPositionRadius[slot]);
+            Shader.SetGlobalVector(_laserHitHeatId, s_recentCutHeatStrengthTime[slot]);
             Shader.SetGlobalVectorArray(_recentCutHeatPositionRadiusId, s_recentCutHeatPositionRadius);
             Shader.SetGlobalVectorArray(_recentCutHeatStrengthTimeId, s_recentCutHeatStrengthTime);
             Shader.SetGlobalInt(_recentCutHeatCountId, s_recentCutHeatCount);

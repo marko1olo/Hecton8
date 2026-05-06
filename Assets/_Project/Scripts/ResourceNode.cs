@@ -400,13 +400,15 @@ namespace Hecton8.Scavenging
                 return;
 
             Vector3 nodePosition = _cachedTransform != null ? _cachedTransform.position : transform.position;
-            Vector3 offset = nodePosition - playerTransform.position;
-            float radiusSqr = pulseRadiusMeters * pulseRadiusMeters;
-            float distanceSqr = offset.sqrMagnitude;
+            Vector3 playerPosition = playerTransform.position;
+            AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(nodePosition);
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            double radiusSqr = (double)pulseRadiusMeters * pulseRadiusMeters;
+            double distanceSqr = AbsoluteUniversePosition.DistanceSq(in nodeAup, in playerAup);
             if (distanceSqr > radiusSqr)
                 return;
 
-            float distanceMeters = Mathf.Sqrt(distanceSqr);
+            float distanceMeters = distanceSqr >= float.MaxValue ? float.MaxValue : (float)System.Math.Sqrt(System.Math.Max(0d, distanceSqr));
             float proximity = 1f - Mathf.Clamp01(distanceMeters / Mathf.Max(0.01f, pulseRadiusMeters));
             float resonance = resourceTemplate.AcousticResonance;
             float resonance01 = Mathf.InverseLerp(0.65f, 1.45f, resonance);
@@ -414,7 +416,12 @@ namespace Hecton8.Scavenging
             if (returnStrength <= 0.01f)
                 return;
 
-            SpectrumEvents.RaiseAcousticEchoReturned(new AcousticEchoEvent(nodePosition, distanceMeters, returnStrength, resonance));
+            SpectrumEvents.RaiseAcousticEchoReturned(new AcousticEchoEvent(
+                nodePosition,
+                distanceMeters,
+                returnStrength,
+                resonance,
+                resourceTemplate.AudioMaterialID));
         }
 
         void ISonarPingEventListener.OnSonarPingSent(float intensity)

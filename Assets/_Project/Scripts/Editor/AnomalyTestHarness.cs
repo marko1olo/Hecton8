@@ -17,7 +17,9 @@ namespace Hecton8.Editor
         private const int Resolution = 17;
         private const int PixelCount = Resolution * Resolution;
         private const int Center = Resolution / 2;
-        private const float ExpectedLipHeight = 8f;
+        private const float PerfectBowlStepMeters = 8f;
+        private const float ExpectedLipHeight = 64f;
+        private const int ExpectedBowlMaskedCells = (Resolution - 2) * (Resolution - 2);
         private const int CliffSdfWidth = 9;
         private const int CliffSdfHeight = 9;
         private const int CliffSdfDepth = 9;
@@ -102,7 +104,7 @@ namespace Hecton8.Editor
                     Width = Resolution,
                     Height = Resolution,
                     CellSizeMeters = 1f,
-                    MinimumDepthMeters = 1f,
+                    MinimumDepthMeters = 50f,
                     MaxFloodCells = PixelCount,
                     EqualHeightEpsilon = 0.000001f
                 };
@@ -126,7 +128,7 @@ namespace Hecton8.Editor
                 Assert.IsTrue(record.DeepestZ == Center, "Detected basin center Z is not exact.");
                 Assert.AreEqual(0f, record.DeepestHeight, "Detected basin depth is not exact.");
                 Assert.AreEqual(ExpectedLipHeight, record.LipHeight, "Detected basin lip height is not exact.");
-                Assert.IsTrue(record.CellCount == PixelCount, "Detected basin mask cell count is not exact.");
+                Assert.IsTrue(record.CellCount == ExpectedBowlMaskedCells, "Detected basin mask cell count is not exact.");
                 Assert.IsTrue(basinMask[Center + Center * Resolution] == 1, "Detected basin mask does not include the exact center.");
             }
             finally
@@ -414,7 +416,7 @@ namespace Hecton8.Editor
                 {
                     int dx = math.abs(x - Center);
                     int dz = math.abs(z - Center);
-                    heightmap[x + z * Resolution] = math.max(dx, dz);
+                    heightmap[x + z * Resolution] = math.max(dx, dz) * PerfectBowlStepMeters;
                 }
             }
         }

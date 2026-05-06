@@ -3060,8 +3060,8 @@ namespace Hecton8.World
                 1, 4, 2
             }; // COLD ALLOC: int[24] - fallback scavenger octahedron triangles - owner: SargassumGlobalDragManager
 
-            mesh.vertices = vertices;
-            mesh.triangles = triangles;
+            mesh.SetVertices(vertices);
+            mesh.SetTriangles(triangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
@@ -3754,10 +3754,10 @@ namespace Hecton8.World
                 new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f), new Vector2(0f, 1f)
             };
 
-            mesh.vertices = vertices;
-            mesh.normals = normals;
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
             mesh.uv = uv;
-            mesh.triangles = triangles;
+            mesh.SetTriangles(triangles, 0);
             mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
             return mesh;
         }

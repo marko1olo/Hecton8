@@ -1,6 +1,7 @@
-# CELESTIAL MECHANICS SPECIFICATION
+﻿# CELESTIAL MECHANICS SPECIFICATION
+Date: 2026-05-07
 
-STATUS: PENDING VERIFICATION
+Status: PENDING VERIFICATION
 
 Reason: this specification has static ledger, compile-contract, shader-import, and event-bus evidence, but PlayMode behavior, profiler allocation trace, and long-duration orbital drift are not proven. May 4 documentation sweep evidence supersedes the older warning-free compile line for current global build truth.
 

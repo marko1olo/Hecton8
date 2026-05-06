@@ -307,7 +307,9 @@ namespace Hecton8.Editor
                 MeshFilter meshFilter = renderers[i].GetComponent<MeshFilter>();
                 if (meshFilter == null || meshFilter.sharedMesh == null) continue;
 
-                totalTris += meshFilter.sharedMesh.triangles.Length / 3;
+                Mesh mesh = meshFilter.sharedMesh;
+                for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+                    totalTris += (int)(mesh.GetIndexCount(subMeshIndex) / 3u);
             }
 
             return totalTris;

@@ -19,7 +19,7 @@ namespace Hecton8.Environment
         private const float BiolumeSurgeDurationSeconds = 4f;
         private const int ThreadGroupSize = 64;
         private const int ParticleStride = 64;
-        private const int FrameConstantsStride = 96;
+        private const int FrameConstantsStride = 112;
         private const int ParticleFlagBubble = 1 << 0;
         private const int ParticleFlagDebris = 1 << 2;
         private const int ParticleFlagSnow = 1 << 3;
@@ -46,6 +46,7 @@ namespace Hecton8.Environment
             public Vector4 FlowFieldCenterCellSize;
             public Vector4 ShellParams;
             public Vector4 MetaParams;
+            public Vector4 CameraVelocityStretch;
         }
 
         private static class ShaderIds
@@ -135,6 +136,14 @@ namespace Hecton8.Environment
         [Tooltip("Shadow-casting mode for the marine-snow particle draw.")]
         [SerializeField] private ShadowCastingMode shadowCastingMode = ShadowCastingMode.Off;
 
+        [Header("Sprint Speed Lines")]
+        [Tooltip("Camera/player velocity where marine snow stretches into full sprint speed lines.")]
+        [SerializeField, Range(1f, 18f)] private float speedLineFullVelocity = 8f;
+        [Tooltip("Maximum billboard elongation applied to plankton at full sprint velocity.")]
+        [SerializeField, Range(1f, 18f)] private float speedLineMaxStretch = 7.5f;
+        [Tooltip("Blend sharpness for speed-line stretch so brief frame spikes do not flash the whole shell.")]
+        [SerializeField, Range(0.1f, 16f)] private float speedLineResponseSharpness = 7f;
+
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Biolume Surge Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [Tooltip("Temporary particle-population multiplier applied while the global biolume surge bit remains active.")]
         [SerializeField, Range(1f, 3f)] private float biolumeSurgeParticleMultiplier = 1.75f;
@@ -178,8 +187,11 @@ namespace Hecton8.Environment
         private float _lastSubmergeImpulse;
         private float _bubbleTrailMovement01;
         private float _bubbleTrailExhale01;
+        private float _speedLineIntensity;
+        private bool _hasLastCameraPositionWS;
         private Vector3 _flowFieldCenterWS;
         private Vector3 _lastUploadedFlowFieldCenterWS;
+        private Vector3 _lastCameraPositionWS;
         private RenderTexture _sonarGlowTexture;
         private int _sonarGlowWidth;
         private int _sonarGlowHeight;
@@ -228,6 +240,7 @@ namespace Hecton8.Environment
         {
             targetCamera = cameraTransform;
             _targetCameraComponent = cameraTransform != null ? cameraTransform.GetComponent<Camera>() : null;
+            ResetSpeedLineHistory();
         }
 
         /// <summary>
@@ -245,12 +258,21 @@ namespace Hecton8.Environment
             _lastDepth = math.max(0f, depth);
             _lastLightFactor = math.saturate(lightFactor);
             _lastSubmergeImpulse = math.saturate(submergeImpulse);
+            if (!active)
+                ResetSpeedLineHistory();
         }
 
         public void SetBubbleTrailState(float movement01, float exhale01)
         {
             _bubbleTrailMovement01 = math.saturate(movement01);
             _bubbleTrailExhale01 = math.saturate(exhale01);
+        }
+
+        private void ResetSpeedLineHistory()
+        {
+            _speedLineIntensity = 0f;
+            _hasLastCameraPositionWS = false;
+            _lastCameraPositionWS = Vector3.zero;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -264,6 +286,7 @@ namespace Hecton8.Environment
                 _lastUploadedFlowFieldCenterWS += runtimeOffset;
 
             _flowFieldUploadTimer = 0f;
+            ResetSpeedLineHistory();
 
             if (!_buffersReady || _bootstrapParticles == null)
                 return;
@@ -583,6 +606,8 @@ namespace Hecton8.Environment
             Vector3 cameraPosition = targetCamera.position;
             Vector3 cameraRight = targetCamera.right;
             Vector3 cameraUp = targetCamera.up;
+            Vector3 cameraVelocity = ResolveCameraVelocity(cameraPosition, dt);
+            float speedLineStretch = ResolveSpeedLineStretch(cameraVelocity, dt);
             float densityScale = _underwaterActive
                 ? math.saturate(_visualDensityScale + (_lastSubmergeImpulse * 0.35f))
                 : 0f;
@@ -603,7 +628,12 @@ namespace Hecton8.Environment
                     _activeParticleCount,
                     _flowFieldResolution,
                     Time.frameCount & 1023,
-                    activeFlag)
+                    activeFlag),
+                CameraVelocityStretch = new Vector4(
+                    cameraVelocity.x,
+                    cameraVelocity.y,
+                    cameraVelocity.z,
+                    speedLineStretch)
             };
 
             GraphicsBufferUploadUtility.UploadArray(_frameConstantsBuffer, _frameConstantsUpload, 1);
@@ -660,6 +690,34 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(ShaderIds.SonarGlowParamsId, sonarGlowParams);
             if (_sonarGlowTexture != null)
                 Shader.SetGlobalTexture(ShaderIds.SonarGlowTextureId, _sonarGlowTexture);
+        }
+
+        private Vector3 ResolveCameraVelocity(Vector3 cameraPosition, float dt)
+        {
+            Vector3 velocity = Vector3.zero;
+            if (_hasLastCameraPositionWS && dt > 0.0001f)
+                velocity = (cameraPosition - _lastCameraPositionWS) * (1f / dt);
+
+            _lastCameraPositionWS = cameraPosition;
+            _hasLastCameraPositionWS = true;
+            return velocity;
+        }
+
+        private float ResolveSpeedLineStretch(Vector3 cameraVelocity, float dt)
+        {
+            float targetIntensity = 0f;
+            if (_underwaterActive && dt > 0f)
+            {
+                float speed = cameraVelocity.magnitude;
+                float fullVelocity = math.max(1f, speedLineFullVelocity);
+                float startVelocity = fullVelocity * 0.72f;
+                float speed01 = math.saturate((speed - startVelocity) / math.max(0.01f, fullVelocity - startVelocity));
+                targetIntensity = speed01 * speed01 * (3f - 2f * speed01);
+            }
+
+            float blendT = math.saturate(1f - math.exp(-math.max(0.1f, speedLineResponseSharpness) * math.max(0f, dt)));
+            _speedLineIntensity = math.lerp(_speedLineIntensity, targetIntensity, blendT);
+            return math.lerp(1f, math.max(1f, speedLineMaxStretch), _speedLineIntensity);
         }
 
         private static Vector4 ResolveFlowSynchronyParams()
@@ -782,6 +840,7 @@ namespace Hecton8.Environment
             _sonarGlowClearKernel = -1;
             _sonarGlowAccumulateKernel = -1;
             _bootstrapParticles = null;
+            ResetSpeedLineHistory();
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)

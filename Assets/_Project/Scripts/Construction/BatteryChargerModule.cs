@@ -14,8 +14,9 @@ namespace Hecton8.Construction
     [DisallowMultipleComponent]
     [RequireComponent(typeof(PowerNode))]
     [AddComponentMenu("Hecton8/Construction/Battery Charger Module")]
-    public sealed class BatteryChargerModule : MonoBehaviour, IUpdatable, IPowerComponent, IInteractable, IPoolable
+    public sealed class BatteryChargerModule : MonoBehaviour, ISlowTickable, IPowerComponent, IInteractable, IPoolable
     {
+        private const float SlowTickDeltaSeconds = 0.5f;
         private const string EmptyPrompt = "Dock Tool";
         private const string ChargingPrompt = "Charging Tool";
         private const string ReadyPrompt = "Retrieve Tool";
@@ -110,7 +111,7 @@ namespace Hecton8.Construction
             RefreshDiagnostics();
         }
 
-        public void Tick(float deltaTime)
+        public void SlowTick()
         {
             if (_slottedTool == null || !_hasPower || GlobalRegistry.ModularEquipment == null)
             {
@@ -130,7 +131,7 @@ namespace Hecton8.Construction
             }
 
             _isCharging = true;
-            float nextBattery = Mathf.Clamp01(currentBattery + chargeRateNormalizedPerSecond * Mathf.Max(0f, deltaTime));
+            float nextBattery = Mathf.Clamp01(currentBattery + chargeRateNormalizedPerSecond * SlowTickDeltaSeconds);
             equipment.SetBattery(toolId, nextBattery);
             _debugBattery01 = nextBattery;
 
@@ -242,8 +243,8 @@ namespace Hecton8.Construction
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -251,7 +252,7 @@ namespace Hecton8.Construction
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 

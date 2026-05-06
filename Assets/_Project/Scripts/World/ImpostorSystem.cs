@@ -73,14 +73,19 @@ namespace Hecton8.World
         private const float CameraResolveRetryInterval = 1f;
         private const float DistantGeologyImpostorDistanceMeters = 5000f;
         private const int MaxHotPathImpostorsPerTick = 64;
+        private const float AupDistanceThresholdMeters = 50f;
+        private const float AupDistanceThresholdSqr = AupDistanceThresholdMeters * AupDistanceThresholdMeters;
         private static readonly int _baseMapId = Shader.PropertyToID("_BaseMap");
+        private static readonly int _legacyBaseMapId = Shader.PropertyToID("_Base_Map");
+        private static readonly int _impostorAlbedoAtlasId = Shader.PropertyToID("_ImpostorAlbedoAtlas");
         private static readonly int _baseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _mainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int _colorId = Shader.PropertyToID("_Color");
         private static readonly int _bumpMapId = Shader.PropertyToID("_BumpMap");
         private static readonly int _normalMapId = Shader.PropertyToID("_NormalMap");
-
-        private static ImpostorSystem _instance;
+        private static readonly int _legacyNormalMapId = Shader.PropertyToID("_Normal_Map");
+        private static readonly int _impostorNormalAtlasId = Shader.PropertyToID("_ImpostorNormalAtlas");
+        private static readonly int _normalStrengthId = Shader.PropertyToID("_NormalStrength");
 
         [Header("Impostor Configuration")]
         [SerializeField, Tooltip("Distance threshold for impostor activation.")]
@@ -109,6 +114,9 @@ namespace Hecton8.World
 
         [SerializeField, Tooltip("Fallback billboard shader assigned at authoring time. Used when source renderers do not expose a usable shared material.")]
         private Shader _fallbackBillboardShader;
+
+        [SerializeField, Tooltip("Silhouette-only atlas shader for geology HLOD cards beyond 5km. Assign this to prevent Shader.Find stripping in player builds.")]
+        private Shader _distantGeologyBillboardShader;
 
         private struct ImpostorInstance
         {
@@ -155,9 +163,9 @@ namespace Hecton8.World
         private bool _serviceRegistered;
 
         /// <summary>
-        /// Singleton instance. Null when the system is absent.
+        /// Registry-backed runtime instance. Null when the system is absent.
         /// </summary>
-        public static ImpostorSystem Instance => _instance;
+        public static ImpostorSystem Instance => GlobalRegistry.Impostors;
 
         /// <summary>
         /// Count of currently active impostor instances.
@@ -177,21 +185,19 @@ namespace Hecton8.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
         }
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            ImpostorSystem registered = GlobalRegistry.Impostors;
+            if (registered != null && registered != this)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[ImpostorSystem] Duplicate instance detected. Destroying duplicate.");
+                Debug.LogWarning("[ImpostorSystem] Duplicate registry owner detected. Destroying duplicate.");
 #endif
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
         }
 
         private void OnEnable()
@@ -220,8 +226,6 @@ namespace Hecton8.World
             _textureCache.Clear();
             _billboardRendererCache.Clear();
 
-            if (_instance == this)
-                _instance = null;
         }
 
         private void TryRegister()
@@ -275,6 +279,7 @@ namespace Hecton8.World
             float thresholdScale = ResolveThresholdScale();
             float thresholdScaleSqr = thresholdScale * thresholdScale;
             Vector3 cameraPosition = _cameraTransform.position;
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
             int batchCount = Mathf.Min(_activeImpostors.Count, MaxHotPathImpostorsPerTick);
             for (int processed = 0; processed < batchCount && _activeImpostors.Count > 0; processed++)
             {
@@ -298,7 +303,7 @@ namespace Hecton8.World
                     ? instance.OriginalTransform
                     : instance.OriginalObject.transform;
                 Vector3 originalPosition = originalTransform.position;
-                float sqrDistance = (originalPosition - cameraPosition).sqrMagnitude;
+                float sqrDistance = ResolveCameraDistanceSqr(cameraPosition, in cameraAup, originalPosition);
                 float activationDistanceSqr = instance.ActivationDistanceSqr * thresholdScaleSqr;
                 float deactivationDistanceSqr = instance.DeactivationDistanceSqr * thresholdScaleSqr;
 
@@ -330,6 +335,20 @@ namespace Hecton8.World
             }
         }
 
+        private static float ResolveCameraDistanceSqr(
+            Vector3 cameraPosition,
+            in AbsoluteUniversePosition cameraAup,
+            Vector3 objectPosition)
+        {
+            float runtimeDistanceSqr = (objectPosition - cameraPosition).sqrMagnitude;
+            if (runtimeDistanceSqr <= AupDistanceThresholdSqr)
+                return runtimeDistanceSqr;
+
+            AbsoluteUniversePosition objectAup = AbsoluteUniversePosition.FromRuntimePosition(objectPosition);
+            double distanceSqr = AbsoluteUniversePosition.DistanceSq(in cameraAup, in objectAup);
+            return distanceSqr >= float.MaxValue ? float.MaxValue : (float)distanceSqr;
+        }
+
         /// <summary>
         /// Registers a GameObject as an impostor candidate.
         /// </summary>
@@ -337,7 +356,7 @@ namespace Hecton8.World
         /// <param name="lodGroup">Optional source LODGroup for cached presentation bounds.</param>
         public void RegisterImpostorCandidate(GameObject obj, LODGroup lodGroup = null)
         {
-            RegisterImpostorCandidate(obj, lodGroup, _impostorDistanceThreshold);
+            RegisterImpostorCandidate(obj, lodGroup, _impostorDistanceThreshold, false);
         }
 
         /// <summary>
@@ -348,10 +367,10 @@ namespace Hecton8.World
         /// <param name="lodGroup">Optional source LODGroup for cached presentation bounds.</param>
         public void RegisterDistantGeologyImpostorCandidate(GameObject obj, LODGroup lodGroup = null)
         {
-            RegisterImpostorCandidate(obj, lodGroup, DistantGeologyImpostorDistanceMeters);
+            RegisterImpostorCandidate(obj, lodGroup, DistantGeologyImpostorDistanceMeters, true);
         }
 
-        private void RegisterImpostorCandidate(GameObject obj, LODGroup lodGroup, float activationDistanceMeters)
+        private void RegisterImpostorCandidate(GameObject obj, LODGroup lodGroup, float activationDistanceMeters, bool useDistantGeologyMaterial)
         {
             if (obj == null)
                 return;
@@ -367,7 +386,7 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!TryBuildImpostorData(obj, impostorID))
+            if (!TryBuildImpostorData(obj, impostorID, useDistantGeologyMaterial))
             {
                 _registeredCandidates.Remove(obj);
                 return;
@@ -502,7 +521,7 @@ namespace Hecton8.World
             return renderer != null;
         }
 
-        private bool TryBuildImpostorData(GameObject obj, EntityId impostorID)
+        private bool TryBuildImpostorData(GameObject obj, EntityId impostorID, bool useDistantGeologyMaterial)
         {
             if (obj == null)
                 return false;
@@ -512,7 +531,26 @@ namespace Hecton8.World
             Texture2D normalTexture = null;
             bool usesFallbackMaterial = false;
 
-            if (!TryResolvePrimaryMaterial(obj, out sourceMaterial, out albedoTexture, out normalTexture))
+            bool hasPrimaryMaterial = TryResolvePrimaryMaterial(obj, out sourceMaterial, out albedoTexture, out normalTexture);
+            if (useDistantGeologyMaterial)
+            {
+                Material geologyMaterial = BuildDistantGeologyBillboardMaterial(sourceMaterial, albedoTexture, normalTexture);
+                if (geologyMaterial == null)
+                    return false;
+
+                _textureCache[impostorID] = new ImpostorTextureData
+                {
+                    AlbedoTexture = albedoTexture,
+                    NormalTexture = normalTexture,
+                    ImpostorMaterial = geologyMaterial,
+                    UsesFallbackMaterial = false,
+                    IsLoaded = true
+                };
+
+                return true;
+            }
+
+            if (!hasPrimaryMaterial)
             {
                 sourceMaterial = BuildFallbackBillboardMaterial();
                 usesFallbackMaterial = sourceMaterial != null;
@@ -717,15 +755,20 @@ namespace Hecton8.World
                     continue;
 
                 sourceMaterial = sharedMaterial;
-                albedoTexture = TryResolveTexture(sharedMaterial, _baseMapId, _mainTexId);
-                normalTexture = TryResolveTexture(sharedMaterial, _bumpMapId, _normalMapId);
+                albedoTexture = TryResolveTexture(sharedMaterial, _impostorAlbedoAtlasId, _baseMapId, _legacyBaseMapId, _mainTexId);
+                normalTexture = TryResolveTexture(sharedMaterial, _impostorNormalAtlasId, _bumpMapId, _normalMapId, _legacyNormalMapId);
                 return true;
             }
 
             return false;
         }
 
-        private static Texture2D TryResolveTexture(Material material, int primaryPropertyId, int secondaryPropertyId)
+        private static Texture2D TryResolveTexture(
+            Material material,
+            int primaryPropertyId,
+            int secondaryPropertyId,
+            int tertiaryPropertyId,
+            int quaternaryPropertyId)
         {
             if (material == null)
                 return null;
@@ -736,7 +779,60 @@ namespace Hecton8.World
             if (material.HasProperty(secondaryPropertyId))
                 return material.GetTexture(secondaryPropertyId) as Texture2D;
 
+            if (material.HasProperty(tertiaryPropertyId))
+                return material.GetTexture(tertiaryPropertyId) as Texture2D;
+
+            if (material.HasProperty(quaternaryPropertyId))
+                return material.GetTexture(quaternaryPropertyId) as Texture2D;
+
             return null;
+        }
+
+        private Material BuildDistantGeologyBillboardMaterial(Material sourceMaterial, Texture2D albedoTexture, Texture2D normalTexture)
+        {
+            Shader shader = ResolveDistantGeologyBillboardShader();
+            if (shader == null)
+                return null;
+
+            // COLD ALLOC: Material[1] - distant geology atlas billboard material - owner: ImpostorSystem
+            Material material = new Material(shader);
+            material.enableInstancing = true;
+
+            Texture2D resolvedAlbedo = albedoTexture;
+            Texture2D resolvedNormal = normalTexture;
+            if (sourceMaterial != null)
+            {
+                if (resolvedAlbedo == null)
+                    resolvedAlbedo = TryResolveTexture(sourceMaterial, _impostorAlbedoAtlasId, _baseMapId, _legacyBaseMapId, _mainTexId);
+
+                if (resolvedNormal == null)
+                    resolvedNormal = TryResolveTexture(sourceMaterial, _impostorNormalAtlasId, _bumpMapId, _normalMapId, _legacyNormalMapId);
+            }
+
+            if (resolvedAlbedo != null && material.HasProperty(_baseMapId))
+                material.SetTexture(_baseMapId, resolvedAlbedo);
+
+            if (resolvedNormal != null && material.HasProperty(_normalMapId))
+                material.SetTexture(_normalMapId, resolvedNormal);
+
+            Color tint = Color.white;
+            if (sourceMaterial != null)
+            {
+                if (sourceMaterial.HasProperty(_baseColorId))
+                    tint = sourceMaterial.GetColor(_baseColorId);
+                else if (sourceMaterial.HasProperty(_colorId))
+                    tint = sourceMaterial.GetColor(_colorId);
+            }
+
+            if (material.HasProperty(_baseColorId))
+                material.SetColor(_baseColorId, tint);
+            else if (material.HasProperty(_colorId))
+                material.SetColor(_colorId, tint);
+
+            if (material.HasProperty(_normalStrengthId))
+                material.SetFloat(_normalStrengthId, resolvedNormal != null ? 0.65f : 0f);
+
+            return material;
         }
 
         private Material BuildFallbackBillboardMaterial()
@@ -764,6 +860,15 @@ namespace Hecton8.World
             RenderPipelineAsset renderPipeline = GraphicsSettings.currentRenderPipeline ?? GraphicsSettings.defaultRenderPipeline;
             Material defaultMaterial = renderPipeline != null ? renderPipeline.defaultMaterial : null;
             return defaultMaterial != null ? defaultMaterial.shader : null;
+        }
+
+        private Shader ResolveDistantGeologyBillboardShader()
+        {
+            if (_distantGeologyBillboardShader != null)
+                return _distantGeologyBillboardShader;
+
+            Shader shader = Shader.Find("Hecton8/Environment/Hecton_GeologyImpostorBillboard");
+            return shader != null ? shader : ResolveFallbackBillboardShader();
         }
 
         private static bool TryCalculateBillboardPresentation(

@@ -54,11 +54,21 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Returns the terrain-conforming seam target height with a controlled voxel overlap.
+        /// Returns signed terrain density. Zero is the exact MapMagic/voxel handoff plane.
+        /// Positive values are solid terrain below the seafloor; negative values are open space above it.
+        /// </summary>
+        public static float ComputeTerrainDensity(float terrainHeight, float sampleHeight)
+        {
+            return math.clamp(terrainHeight - sampleHeight, -50f, 50f);
+        }
+
+        /// <summary>
+        /// Returns the terrain-conforming seam target height. The overlap argument is kept for
+        /// legacy call compatibility; density ownership snaps to zero at the terrain plane.
         /// </summary>
         public static float ComputeTargetSnapHeight(float terrainHeight, float overlapMeters = TerrainOverlapMeters)
         {
-            return terrainHeight + math.max(0f, overlapMeters);
+            return terrainHeight;
         }
 
         /// <summary>

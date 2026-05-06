@@ -145,7 +145,8 @@ namespace Hecton8.Editor
                 Mesh mesh = meshFilters[i] != null ? meshFilters[i].sharedMesh : null;
                 if (mesh != null)
                 {
-                    totalTriangles += mesh.triangles.Length / 3;
+                    for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+                        totalTriangles += (int)(mesh.GetIndexCount(subMeshIndex) / 3);
                 }
                 RepairMesh(mesh);
             }
@@ -341,27 +342,26 @@ namespace Hecton8.Editor
             if (mesh == null)
                 return;
 
-            Vector3[] vertices = mesh.vertices ?? EmptyVertices;
-            if (vertices.Length <= 0)
+            int vertexCount = mesh.vertexCount;
+            if (vertexCount <= 0)
             {
-                mesh.normals = EmptyVertices;
+                mesh.SetNormals(EmptyVertices);
                 mesh.tangents = EmptyTangents;
                 EditorUtility.SetDirty(mesh);
                 return;
             }
 
-            Vector3[] normals = mesh.normals;
-            bool missingNormals = normals == null || normals.Length != vertices.Length;
+            bool missingNormals = !mesh.HasVertexAttribute(UnityEngine.Rendering.VertexAttribute.Normal);
             if (missingNormals)
                 mesh.RecalculateNormals();
 
             Vector4[] tangents = mesh.tangents;
             Vector2[] uv = mesh.uv ?? EmptyUv;
-            bool missingTangents = tangents == null || tangents.Length != vertices.Length;
-            if (missingTangents && uv.Length == vertices.Length)
+            bool missingTangents = tangents == null || tangents.Length != vertexCount;
+            if (missingTangents && uv.Length == vertexCount)
                 mesh.RecalculateTangents();
 
-            if (missingNormals || (missingTangents && uv.Length == vertices.Length))
+            if (missingNormals || (missingTangents && uv.Length == vertexCount))
                 EditorUtility.SetDirty(mesh);
         }
 

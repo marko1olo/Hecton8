@@ -1,6 +1,6 @@
-# BOOTSTRAP RUNTIME AUTHORITY TRUTH
+﻿# BOOTSTRAP RUNTIME AUTHORITY TRUTH
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: current source-backed truth for bootstrap ownership, init authority, and scene-start handoff
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Persistent_Object_Registry.txt`

@@ -9,10 +9,8 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9925)]
-    public sealed class EnvironmentRuntimeContextService : MonoBehaviour, IEnvironmentRuntimeContext, IUpdatable
+    public sealed class EnvironmentRuntimeContextService : MonoBehaviour, IEnvironmentRuntimeContext, IUpdatable, IServiceHeartbeat
     {
-        private static EnvironmentRuntimeContextService _instance;
-
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredContext;
@@ -22,6 +20,12 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
 
         /// <inheritdoc />
         public ConstructionManager ConstructionManager
@@ -56,7 +60,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+            GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(null);
         }
 
         /// <summary>
@@ -65,8 +69,9 @@ namespace Hecton8.Core
         /// <returns>Live environment context instance.</returns>
         public static EnvironmentRuntimeContextService EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            EnvironmentRuntimeContextService runtime = GlobalRegistry.EnvironmentRuntimeContextRuntime;
+            if (runtime != null)
+                return runtime;
 
             GameObject runtimeRoot = new GameObject("[EnvironmentRuntimeContextService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned environment runtime context root - owner: EnvironmentRuntimeContextService
             return runtimeRoot.AddComponent<EnvironmentRuntimeContextService>();
@@ -87,7 +92,7 @@ namespace Hecton8.Core
             }
 
             EnsureSingletonOwnership();
-            if (_instance != this)
+            if (GlobalRegistry.EnvironmentRuntimeContextRuntime != this)
                 return;
 
             _isInitialized = true;
@@ -129,8 +134,7 @@ namespace Hecton8.Core
             TryUnregisterUpdatable();
             TryUnregisterContext();
 
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(this);
         }
 
         internal HazardZoneManager EnsureHazardZoneManager()
@@ -152,13 +156,14 @@ namespace Hecton8.Core
 
         private void EnsureSingletonOwnership()
         {
-            if (_instance != null && _instance != this)
+            EnvironmentRuntimeContextService runtime = GlobalRegistry.EnvironmentRuntimeContextRuntime;
+            if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterEnvironmentRuntimeContextRuntime(this);
         }
 
         private void SyncEnvironmentContext()

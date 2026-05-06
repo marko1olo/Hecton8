@@ -735,16 +735,19 @@ float3 ResolvePlayerCurtainPartingForce(float3 positionCR, float3 velocityCR, fl
     if (facingGate <= 0.001)
         return float3(0.0, 0.0, 0.0);
 
-    float3 lateral = SafeNormalize(cross(float3(0.0, 1.0, 0.0), toPlayer));
+    float3 splitAxis = SafeNormalize(cross(boidForward, toPlayer));
+    float3 lateral = SafeNormalize(cross(splitAxis, toPlayer));
     if (dot(lateral, lateral) <= EPSILON)
         lateral = SafeNormalize(_PlayerRightWS);
+    if (dot(lateral, lateral) <= EPSILON)
+        lateral = SafeNormalize(cross(float3(0.0, 1.0, 0.0), toPlayer));
     if (dot(lateral, lateral) <= EPSILON)
         lateral = float3(1.0, 0.0, 0.0);
 
     float sideSign = dot(positionCR - playerPositionCR, lateral) >= 0.0 ? 1.0 : -1.0;
     float headlightGate = saturate(_HeadlightPanic * playerThreatGate);
     float panicGate = max(saturate(panicFromPlayer), headlightGate);
-    float strength = facingGate * playerThreatGate * max(0.18, panicGate) * max(_PanicWeight, 1.0) * 2.65;
+    float strength = facingGate * playerThreatGate * max(0.18, panicGate) * max(_PanicWeight, 1.0) * 4.2;
     return lateral * sideSign * strength;
 }
 

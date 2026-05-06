@@ -1,5 +1,6 @@
-# Code Health And Runtime Architecture
+﻿# Code Health And Runtime Architecture
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 ## Actual Runtime Shape
@@ -43,7 +44,7 @@ It also exposes the uncomfortable truth:
 - native `LateUpdate`
 - native `FixedUpdate`
 
-So the project’s “no Update in gameplay code” standard is partially aspirational, partially enforced, and partially bypassed.
+So the projectâ€™s â€œno Update in gameplay codeâ€ standard is partially aspirational, partially enforced, and partially bypassed.
 
 ## State-Truth Trust Problem
 
@@ -128,7 +129,7 @@ The project has strong local examples of disciplined allocation avoidance.
 Best visible example:
 - `SuitHUDV4CanvasOverlay.cs`
 
-The project also still carries too many risk surfaces for a full “zero-GC hot path” trust declaration:
+The project also still carries too many risk surfaces for a full â€œzero-GC hot pathâ€ trust declaration:
 - coroutine presence is widespread at project scale
 - native Unity loop usage still exists in important owners
 - large integration owners increase hidden allocation probability

@@ -1,5 +1,6 @@
-# 26 Legacy Docset Actuality And Update Queue
+﻿# 26 Legacy Docset Actuality And Update Queue
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 ## 2026-05-04 Supersession Note
@@ -92,7 +93,7 @@ They are dated audit snapshots, so rewriting them as current truth would destroy
 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_DEEP_FORENSIC_AUDIT.md` | keep as historical; superseded by later rechecks for counts |
 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_SUPREME_AUDITOR_REPORT.md` | keep as historical; superseded by later rechecks for counts |
 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` | keep as dated recheck; superseded by `2026-04-30` layers for counts |
-| `Docs/Legacy_Backlog/Что_и_как_исправляем_—_живой_план.md` | legacy reference; stale embedded counts should not be used as current evidence |
+| `Docs/Legacy_Backlog/Ð§Ñ‚Ð¾_Ð¸_ÐºÐ°Ðº_Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼_â€”_Ð¶Ð¸Ð²Ð¾Ð¹_Ð¿Ð»Ð°Ð½.md` | legacy reference; stale embedded counts should not be used as current evidence |
 
 Historical May 2 scale truth:
 

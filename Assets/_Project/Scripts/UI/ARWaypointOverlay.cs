@@ -46,7 +46,6 @@ namespace Hecton8.UI
         private static readonly List<RectTransform> s_directChildBuffer =
             new List<RectTransform>(32);
 
-        private static Sprite s_quadSprite;
         private static ARWaypointOverlay s_instance;
 
         private struct ExternalWaypoint
@@ -112,7 +111,6 @@ namespace Hecton8.UI
         private static void ResetStaticState()
         {
             s_instance = null;
-            s_quadSprite = null;
             s_overlayResolveBuffer.Clear();
             s_directChildBuffer.Clear();
         }
@@ -763,7 +761,7 @@ namespace Hecton8.UI
             rect.sizeDelta = new Vector2(width, height);
 
             Image image = go.GetComponent<Image>();
-            image.sprite = ResolveQuadSprite();
+            image.sprite = null;
             image.color = color;
             image.raycastTarget = false;
             return image;
@@ -895,18 +893,5 @@ namespace Hecton8.UI
             s_directChildBuffer.Clear();
         }
 
-        private static Sprite ResolveQuadSprite()
-        {
-            if (s_quadSprite != null)
-                return s_quadSprite;
-
-            s_quadSprite = Sprite.Create(
-                Texture2D.whiteTexture,
-                new Rect(0f, 0f, Texture2D.whiteTexture.width, Texture2D.whiteTexture.height),
-                new Vector2(0.5f, 0.5f),
-                100f);
-            s_quadSprite.name = "ARWaypointQuad";
-            return s_quadSprite;
-        }
     }
 }

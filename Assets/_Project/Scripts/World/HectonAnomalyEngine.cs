@@ -1,7 +1,7 @@
 using System;
+using Hecton8.Environment;
 using Unity.Burst;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -95,6 +95,9 @@ namespace Hecton8.World
     /// </summary>
     public static class HectonAnomalyEngine
     {
+        private const int SerialBasinDetectionCellThreshold = 2048;
+        private const int PillarEnvelopeBatchCount = 32768;
+
         /// <summary>
         /// Schedules closed basin detection against a heightmap.
         /// </summary>
@@ -144,19 +147,26 @@ namespace Hecton8.World
                 FloodHeap = floodHeap,
                 VisitedStamp = visitedStamp,
                 AcceptedCells = acceptedCells,
-                Settings = safeSettings
+                Settings = safeSettings,
+                ClearAndScanCandidates = cellCount <= SerialBasinDetectionCellThreshold ? (byte)1 : (byte)0
             };
 
 #if UNITY_EDITOR
             if (ShouldUseEditorDirectExecution(dependency))
             {
-                ExecuteClosedBasinDetectionDirect(ref scanJob, ref floodJob, cellCount);
+                if (floodJob.ClearAndScanCandidates != 0)
+                    floodJob.Execute();
+                else
+                    ExecuteClosedBasinDetectionDirect(ref scanJob, ref floodJob, cellCount);
                 return default;
             }
 #endif
 
+            if (floodJob.ClearAndScanCandidates != 0)
+                return floodJob.Schedule(dependency);
+
             JobHandle scanHandle = scanJob.Schedule(cellCount, 64, dependency);
-            return floodJob.Schedule(1, 1, scanHandle);
+            return floodJob.Schedule(scanHandle);
         }
 
         /// <summary>
@@ -215,7 +225,11 @@ namespace Hecton8.World
                 SdfOriginAup = sdfOriginAup
             };
 
-            return topCellJob.Schedule(safeSdfWidth * safeSdfDepth, 64, densityHandle);
+            return Unity.Jobs.IJobParallelForExtensions.Schedule(
+                topCellJob,
+                safeSdfWidth * safeSdfDepth,
+                64,
+                densityHandle);
         }
 
         /// <summary>
@@ -290,10 +304,56 @@ namespace Hecton8.World
                 NoiseFrequency = math.max(0.000001f, noiseFrequency)
             };
 
+            int safeSdfHeight = math.max(1, sdfHeight);
+            int radiusCells = ResolvePillarEnvelopeRadiusCells(job.RadiusMeters, job.EdgeWarpMeters, job.VoxelSizeMeters);
+            int diameter = checked(radiusCells * 2 + 1);
+            int laneCount = checked(diameter * safeSdfHeight * diameter);
+            return job.Schedule(laneCount, PillarEnvelopeBatchCount, dependency);
+        }
+
+        /// <summary>
+        /// Schedules injection of one selected chthonic pillar feature into a signed density field.
+        /// </summary>
+        public static JobHandle InjectSelectedMegaPillarSDF(
+            NativeArray<float> sdf,
+            NativeArray<AnomalyFeatureRecord> selectedFeature,
+            int sdfWidth,
+            int sdfHeight,
+            int sdfDepth,
+            float voxelSizeMeters,
+            double3 sdfOriginAup,
+            float radiusMeters,
+            float heightMeters = 1000f,
+            float edgeWarpMeters = 24f,
+            float noiseFrequency = 0.004f,
+            JobHandle dependency = default)
+        {
+            if (!selectedFeature.IsCreated || selectedFeature.Length <= 0)
+                throw new ArgumentException("Selected feature buffer is not valid.", nameof(selectedFeature));
+            ValidateSdfBuffer(sdf, sdfWidth, sdfHeight, sdfDepth);
+
             int safeSdfWidth = math.max(1, sdfWidth);
             int safeSdfHeight = math.max(1, sdfHeight);
             int safeSdfDepth = math.max(1, sdfDepth);
-            return job.Schedule(safeSdfWidth * safeSdfHeight * safeSdfDepth, 64, dependency);
+            var job = new InjectSelectedMegaPillarSDFJob
+            {
+                Sdf = sdf,
+                SelectedFeature = selectedFeature,
+                SdfWidth = safeSdfWidth,
+                SdfHeight = safeSdfHeight,
+                SdfDepth = safeSdfDepth,
+                VoxelSizeMeters = math.max(0.001f, voxelSizeMeters),
+                SdfOriginAup = sdfOriginAup,
+                RadiusMeters = math.max(0.001f, radiusMeters),
+                HeightMeters = math.max(0.001f, heightMeters),
+                EdgeWarpMeters = math.max(0f, edgeWarpMeters),
+                NoiseFrequency = math.max(0.000001f, noiseFrequency)
+            };
+
+            int radiusCells = ResolvePillarEnvelopeRadiusCells(job.RadiusMeters, job.EdgeWarpMeters, job.VoxelSizeMeters);
+            int diameter = checked(radiusCells * 2 + 1);
+            int laneCount = checked(diameter * diameter);
+            return job.Schedule(laneCount, PillarEnvelopeBatchCount, dependency);
         }
 
         /// <summary>
@@ -423,10 +483,11 @@ namespace Hecton8.World
         /// </summary>
         public static uint PackBiomeInfluenceCell(byte primaryBiomeId, byte secondaryBiomeId, byte blend255, byte flags)
         {
-            return (uint)primaryBiomeId |
-                   ((uint)secondaryBiomeId << 8) |
-                   ((uint)blend255 << 16) |
-                   ((uint)flags << 24);
+            return HectonBiomeVisualFamilyUtility.PackCellFromBiomeIds(
+                primaryBiomeId,
+                secondaryBiomeId,
+                blend255,
+                flags);
         }
 
         private static void ValidateTerrainSdfBuffers(
@@ -452,6 +513,13 @@ namespace Hecton8.World
                 throw new ArgumentException("SDF array is smaller than sdfWidth * sdfHeight * sdfDepth.", nameof(sdf));
         }
 
+        private static int ResolvePillarEnvelopeRadiusCells(float radiusMeters, float edgeWarpMeters, float voxelSizeMeters)
+        {
+            float safeVoxel = math.max(0.001f, voxelSizeMeters);
+            float maxRadius = math.max(0.001f, radiusMeters) + math.max(0f, edgeWarpMeters) + safeVoxel;
+            return math.max(0, (int)math.ceil(maxRadius / safeVoxel));
+        }
+
 #if UNITY_EDITOR
         private static bool ShouldUseEditorDirectExecution(JobHandle dependency)
         {
@@ -470,7 +538,7 @@ namespace Hecton8.World
             for (int i = 0; i < cellCount; i++)
                 scanJob.Execute(i);
 
-            floodJob.Execute(0);
+            floodJob.Execute();
         }
 
         private static void ExecuteRidgeFeatureDetectionDirect(
@@ -558,50 +626,48 @@ namespace Hecton8.World
     /// Burst flood-fill kernel that expands candidate minima to their spill lip and writes basin extents.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
-    public struct ClosedBasinFloodFillJob : IJobParallelFor
+    public struct ClosedBasinFloodFillJob : IJob
     {
         /// <summary>Input heightmap in meters.</summary>
         [ReadOnly]
-        [NativeDisableParallelForRestriction]
         public NativeArray<float> Heightmap;
 
         /// <summary>Candidate minima mask.</summary>
-        [ReadOnly]
-        [NativeDisableParallelForRestriction]
         public NativeArray<byte> CandidateMask;
 
         /// <summary>Output basin mask.</summary>
-        [NativeDisableParallelForRestriction]
         public NativeArray<byte> BasinMask;
 
         /// <summary>Output records indexed by candidate cell.</summary>
-        [NativeDisableParallelForRestriction]
         public NativeArray<AnomalyBasinRecord> BasinRecords;
 
         /// <summary>Binary min-heap scratch. Caller owns storage.</summary>
-        [NativeDisableParallelForRestriction]
         public NativeArray<int> FloodHeap;
 
         /// <summary>Visited stamp scratch. Caller owns storage.</summary>
-        [NativeDisableParallelForRestriction]
         public NativeArray<int> VisitedStamp;
 
         /// <summary>Accepted cell scratch. Caller owns storage.</summary>
-        [NativeDisableParallelForRestriction]
         public NativeArray<int> AcceptedCells;
 
         /// <summary>Detection settings.</summary>
         public AnomalyBasinDetectionSettings Settings;
 
-        /// <inheritdoc />
-        public void Execute(int index)
-        {
-            if (index != 0)
-                return;
+        /// <summary>When one, clears outputs and scans local minima inside this single job.</summary>
+        public byte ClearAndScanCandidates;
 
+        /// <inheritdoc />
+        public void Execute()
+        {
             int cellCount = Settings.Width * Settings.Height;
             int stamp = 1;
             int basinId = 1;
+
+            if (ClearAndScanCandidates != 0)
+                ClearAndScanLocalMinima(cellCount);
+
+            for (int i = 0; i < cellCount; i++)
+                VisitedStamp[i] = 0;
 
             for (int candidateIndex = 0; candidateIndex < cellCount; candidateIndex++)
             {
@@ -618,6 +684,55 @@ namespace Hecton8.World
 
                 basinId++;
                 BasinRecords[candidateIndex] = record;
+            }
+        }
+
+        private void ClearAndScanLocalMinima(int cellCount)
+        {
+            int width = Settings.Width;
+            int height = Settings.Height;
+            float epsilon = Settings.EqualHeightEpsilon;
+            for (int index = 0; index < cellCount; index++)
+            {
+                CandidateMask[index] = 0;
+                BasinMask[index] = 0;
+                BasinRecords[index] = default;
+
+                int x = index % width;
+                int z = index / width;
+                if (x <= 0 || z <= 0 || x >= width - 1 || z >= height - 1)
+                    continue;
+
+                float center = Heightmap[index];
+                if (!math.isfinite(center))
+                    continue;
+
+                bool hasHigherNeighbor = false;
+                bool rejected = false;
+                for (int dz = -1; dz <= 1 && !rejected; dz++)
+                {
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        if (dx == 0 && dz == 0)
+                            continue;
+
+                        int neighborIndex = index + dx + dz * width;
+                        float neighbor = Heightmap[neighborIndex];
+                        if (!math.isfinite(neighbor) ||
+                            neighbor < center - epsilon ||
+                            (math.abs(neighbor - center) <= epsilon && neighborIndex < index))
+                        {
+                            rejected = true;
+                            break;
+                        }
+
+                        if (neighbor > center + epsilon)
+                            hasHigherNeighbor = true;
+                    }
+                }
+
+                if (!rejected && hasHigherNeighbor)
+                    CandidateMask[index] = 1;
             }
         }
 
@@ -690,7 +805,7 @@ namespace Hecton8.World
             }
 
             nextStamp = stamp;
-            if (acceptedCount <= 0 || acceptedCount >= maxFloodCells)
+            if (acceptedCount <= 0 || (acceptedCount >= maxFloodCells && heapCount > 0 && !foundSpill))
                 return default;
 
             float depth = lipHeight - deepestHeight;

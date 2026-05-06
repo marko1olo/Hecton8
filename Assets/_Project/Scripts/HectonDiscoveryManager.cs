@@ -12,7 +12,6 @@ using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.AI;
 using Hecton.Localization;
 using Hecton8.Core;
-using Hecton8.Modding;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -57,14 +56,6 @@ namespace Hecton8.Gameplay
         //  PUBLIC PROPERTIES
         // ══════════════════════════════════════════════════════════
 
-        public static HectonDiscoveryManager Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            Instance = null;
-        }
-
         /// <summary>
         /// Последний корректно подтвержденный ID открытого биома.
         /// </summary>
@@ -94,17 +85,6 @@ namespace Hecton8.Gameplay
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-        }
-
         private void OnEnable()
         {
             TryRegisterService();
@@ -124,8 +104,6 @@ namespace Hecton8.Gameplay
             UnregisterFromScanEvents();
             TryUnregisterService();
 
-            if (Instance == this)
-                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -150,8 +128,6 @@ namespace Hecton8.Gameplay
             LogBiomeDiscovered(biomeName, biomeId, this);
 
             OnBiomeDiscovered?.Invoke(biomeId);
-            HectonEventBus.Publish(new BiomeDiscoveredEvent(biomeId, biomeName));
-
             NotificationEvents.PushInfo(string.Format(
                 ResolveLocalized(LocalizationKeys.DISCOVERY_NEW_BIOME, "NEW BIOME DISCOVERED: {0}"),
                 biomeName));
@@ -430,8 +406,6 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            LoreAcquiredEvent loreAcquiredEvent = new LoreAcquiredEvent(loreHash);
-            HectonEventBus.Publish(in loreAcquiredEvent);
         }
     }
 }

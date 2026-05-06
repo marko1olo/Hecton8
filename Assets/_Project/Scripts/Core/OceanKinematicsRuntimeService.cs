@@ -10,10 +10,8 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9926)]
-    public sealed class OceanKinematicsRuntimeService : MonoBehaviour, IHectonOceanKinematicsService, IUpdatable
+    public sealed class OceanKinematicsRuntimeService : MonoBehaviour, IHectonOceanKinematicsService, IUpdatable, IServiceHeartbeat
     {
-        private static OceanKinematicsRuntimeService _instance;
-
         // COLD ALLOC: List<IHectonOceanKinematics>[4] - registered ocean-kinematics providers ordered by runtime priority - owner: OceanKinematicsRuntimeService
         private readonly List<IHectonOceanKinematics> _providers = new List<IHectonOceanKinematics>(4);
 
@@ -24,6 +22,12 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
 
         /// <inheritdoc />
         public IHectonOceanKinematics ActiveProvider
@@ -38,7 +42,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+            GlobalRegistry.ClearOceanKinematicsRuntime(null);
         }
 
         /// <summary>
@@ -46,8 +50,9 @@ namespace Hecton8.Core
         /// </summary>
         public static OceanKinematicsRuntimeService EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
+            if (runtime != null)
+                return runtime;
 
             GameObject runtimeRoot = new GameObject("[OceanKinematicsRuntimeService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned ocean kinematics selector root - owner: OceanKinematicsRuntimeService
             return runtimeRoot.AddComponent<OceanKinematicsRuntimeService>();
@@ -67,7 +72,7 @@ namespace Hecton8.Core
             }
 
             EnsureSingletonOwnership();
-            if (_instance != this)
+            if (GlobalRegistry.OceanKinematicsRuntime != this)
                 return;
 
             _isInitialized = true;
@@ -89,10 +94,11 @@ namespace Hecton8.Core
         /// </summary>
         public static void UnregisterProvider(IHectonOceanKinematics provider)
         {
-            if (_instance == null)
+            OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
+            if (runtime == null)
                 return;
 
-            _instance.UnregisterProviderInternal(provider);
+            runtime.UnregisterProviderInternal(provider);
         }
 
         /// <inheritdoc />
@@ -130,8 +136,7 @@ namespace Hecton8.Core
             _providers.Clear();
             _activeProvider = null;
 
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.ClearOceanKinematicsRuntime(this);
         }
 
         private void RegisterProviderInternal(IHectonOceanKinematics provider)
@@ -156,13 +161,14 @@ namespace Hecton8.Core
 
         private void EnsureSingletonOwnership()
         {
-            if (_instance != null && _instance != this)
+            OceanKinematicsRuntimeService runtime = GlobalRegistry.OceanKinematicsRuntime;
+            if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterOceanKinematicsRuntime(this);
         }
 
         private void RefreshActiveProvider()

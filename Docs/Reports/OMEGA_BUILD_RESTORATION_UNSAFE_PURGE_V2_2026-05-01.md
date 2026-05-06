@@ -1,8 +1,8 @@
-# HECTON-8 OMEGA Build Restoration / Unsafe Purge V2
+﻿# HECTON-8 OMEGA Build Restoration / Unsafe Purge V2
 
-Date: 2026-05-01  
+Date: 2026-05-07
 Auditor: Codex  
-Status: OMEGA CLEARED for compile/source sweeps; final MCP console read is unavailable because Unity shut down the MCP HTTP server after the final compile. Runtime GC remains PENDING VERIFICATION until a play-mode GCMonitor capture is provided.
+Status: PENDING VERIFICATION
 
 ## Mandates Followed
 

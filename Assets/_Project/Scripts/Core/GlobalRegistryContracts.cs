@@ -891,6 +891,7 @@ namespace Hecton8.Core
         float GetBatteryNormalized(uint toolId, float fallback);
         void SetBattery(uint toolId, float normalizedBattery);
         void ConsumeBattery(uint toolId, float normalizedBatteryDelta);
+        void ConsumeBattery(uint toolId, float normalizedBatteryDrainRate, float deltaSeconds);
         void SetHeat(uint toolId, float normalizedHeat);
         void SetDurability(uint toolId, float normalizedDurability);
     }
@@ -1301,6 +1302,47 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Bootstrap-visible readiness state for registry-owned services.
+    /// </summary>
+    public enum ServiceHeartbeatState : byte
+    {
+        NotStarted = 0,
+        Booting = 1,
+        Ready = 2,
+        Degraded = 3,
+        Failed = 4,
+        Shutdown = 5
+    }
+
+    /// <summary>
+    /// Optional deterministic readiness contract polled by <see cref="Hecton8.Bootstrap.GameBootstrapper"/>.
+    /// Implementers must return cached state only; no hierarchy search or allocation is permitted.
+    /// </summary>
+    public interface IServiceHeartbeat
+    {
+        /// <summary>
+        /// Current service readiness state.
+        /// </summary>
+        ServiceHeartbeatState HeartbeatState { get; }
+
+        /// <summary>
+        /// True only when the service is safe for the next bootstrap layer to consume.
+        /// </summary>
+        bool IsServiceReady { get; }
+    }
+
+    /// <summary>
+    /// Explicit shutdown contract for registry-owned services with native or pooled memory.
+    /// </summary>
+    public interface IServiceShutdown
+    {
+        /// <summary>
+        /// Releases service-owned runtime state before registry slots are cleared.
+        /// </summary>
+        void OnServiceShutdown();
+    }
+
+    /// <summary>
     /// Unmanaged registry event payload drained by <see cref="SystemDispatcher"/>.
     /// Managed service references are carried by GlobalRegistry sidecar slots during dispatch only.
     /// </summary>
@@ -1439,6 +1481,14 @@ namespace Hecton8.Core
         GeologyTerrainSeamRuntime = 108,
         GeologyVoxelBridgeRuntime = 109,
         SargassumMicroFaunaRuntime = 110,
+        FloatingOriginRuntime = 111,
+        PDAIntrusionRuntime = 112,
+        CelestialEngineRuntime = 113,
+        VoxelEngineRuntime = 114,
+        BiomeMatrixRuntime = 115,
+        UnderwaterVisualsRuntime = 116,
+        DynamicDifficultyRuntime = 117,
+        ToolHapticsRuntime = 118,
         Unknown = 255
     }
 

@@ -1,6 +1,6 @@
-# CYRILLIC_SWEEP.md
-Date: 2026-04-28
-Status: REFERENCE
+﻿# CYRILLIC_SWEEP.md
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 **Date:** 2026-04-29  
@@ -31,8 +31,8 @@ The older report materially understated the scope.
 
 ### Fonts
 
-- `Assets/_Project/Art/Materials/Fonts/текст.ttf`
-- `Assets/_Project/Art/Materials/Fonts/цифры.ttf`
+- `Assets/_Project/Art/Materials/Fonts/Ñ‚ÐµÐºÑÑ‚.ttf`
+- `Assets/_Project/Art/Materials/Fonts/Ñ†Ð¸Ñ„Ñ€Ñ‹.ttf`
 
 ### Mesh assets
 
@@ -45,13 +45,13 @@ The older report materially understated the scope.
 
 ### Sandboxed or content folders
 
-- `Assets/_Project/Art/Models/Rocks/Rock 4 - УНИВЕРСАЛЬНЫЙ ВЫБОР/...`
-- `Assets/_Project/_PROLOGUE_CONTENT/Prefabs/облака гектон8.prefab`
+- `Assets/_Project/Art/Models/Rocks/Rock 4 - Ð£ÐÐ˜Ð’Ð•Ð Ð¡ÐÐ›Ð¬ÐÐ«Ð™ Ð’Ð«Ð‘ÐžÐ /...`
+- `Assets/_Project/_PROLOGUE_CONTENT/Prefabs/Ð¾Ð±Ð»Ð°ÐºÐ° Ð³ÐµÐºÑ‚Ð¾Ð½8.prefab`
 
 ### Text assets
 
-- `Assets/_Project/Data/план.txt`
-- `Assets/_Project/Data/текст.txt`
+- `Assets/_Project/Data/Ð¿Ð»Ð°Ð½.txt`
+- `Assets/_Project/Data/Ñ‚ÐµÐºÑÑ‚.txt`
 
 ---
 

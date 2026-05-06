@@ -1,6 +1,7 @@
-# Flora Next Dialog Prompt
+﻿# Flora Next Dialog Prompt
 
-Status: WORKING PROMPT
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
 Read only these files first and use them as the authoritative navigation set for flora work:

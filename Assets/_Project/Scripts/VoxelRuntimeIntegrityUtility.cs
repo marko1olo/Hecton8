@@ -1,3 +1,4 @@
+using Hecton8.World;
 using UnityEngine;
 
 internal static class VoxelRuntimeIntegrityUtility
@@ -22,8 +23,10 @@ internal static class VoxelRuntimeIntegrityUtility
         Vector3 observerPosition,
         float lodDistanceMeters)
     {
-        float distanceSq = (worldCenter - observerPosition).sqrMagnitude;
-        float thresholdSq = lodDistanceMeters * lodDistanceMeters;
+        AbsoluteUniversePosition worldCenterAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);
+        AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);
+        double distanceSq = AbsoluteUniversePosition.DistanceSq(in worldCenterAup, in observerAup);
+        double thresholdSq = (double)lodDistanceMeters * lodDistanceMeters;
         return distanceSq > thresholdSq ? 1 : 0;
     }
 

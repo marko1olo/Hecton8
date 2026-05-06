@@ -1,6 +1,7 @@
-# Hecton8: The 108-Biome Deep Sea Lore Matrix (Exhaustive Specification)
+﻿# Hecton8: The 108-Biome Deep Sea Lore Matrix (Exhaustive Specification)
 
-Status: LEGACY REFERENCE
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
 This is the definitive lore and geological specification for the 15km vertical terrain of Hecton8. It details 108 unique biomes across 27 depth tiers, distributed into four cardinal regions (North, South, East, West).
@@ -22,7 +23,7 @@ This is the definitive lore and geological specification for the 15km vertical t
 8. **WEST (Sand-Fan Deltas)**: Rippling waves of fine sediment. Tidal forces create complex, fractal patterns that change with every storm.
 
 ### TIER 3 (-300m to -600m): THE UPPER SHELF
-9. **NORTH (Basalt Steps)**: Massive hexagonal pillars resembling the Giant’s Causeway, but on a gargantuan scale. Deep crevices hide bioluminescent polyps.
+9. **NORTH (Basalt Steps)**: Massive hexagonal pillars resembling the Giantâ€™s Causeway, but on a gargantuan scale. Deep crevices hide bioluminescent polyps.
 10. **SOUTH (Meander-Basins)**: Serpentine channels carved into soft rock, filled with drifts of fine volcanic ash and the skeletons of surface creatures.
 11. **EAST (The Sharp Finned Ridges)**: Massive tectonic slabs pushed vertically, creating parallel "fins" like the spine of a gargantuan beast.
 12. **WEST (Coral-Porous Walls)**: Ancient, fossilized reef walls. The rock is honeycombed with millions of small, procedural holes and caverns.

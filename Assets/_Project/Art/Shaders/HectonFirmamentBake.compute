@@ -7,6 +7,7 @@ RWTexture2D<float4> _HectonAtmosphereScatteringLUT;
 
 float4 _HectonStarBakeParams;       // x=star count, y=cubemap resolution, z=world seed, w=intensity
 float4 _HectonStarDistribution;     // x=band half-width radians, y=band probability, z=core bias, w=halo gain
+float4 _HectonGalaxyArmShape;       // x=latitude compression
 float4 _HectonAtmosphereLutSize;    // x=width, y=height
 float4 _HectonRayleighBeta;         // xyz=scatter beta
 float4 _HectonMieBeta;              // xyz=extinction beta, w=anisotropy g
@@ -70,7 +71,7 @@ float HectonDustFbm(float3 direction)
     float norm = 0.0;
 
     [unroll]
-    for (int octave = 0; octave < 6; octave++)
+    for (int octave = 0; octave < 3; octave++)
     {
         sum += HectonValueNoise(p) * amplitude;
         norm += amplitude;
@@ -102,7 +103,7 @@ float3 HectonSampleDustLane(float3 direction)
     float density = lane * laneBreakup * lerp(0.36, 1.0, saturate(_HectonStarDistribution.y));
     float3 dustLow = float3(0.055, 0.025, 0.12);
     float3 dustHigh = float3(0.12, 0.68, 0.92);
-    return lerp(dustLow, dustHigh, saturate(pow(turbulence, 1.7))) * density * 0.38;
+    return lerp(dustLow, dustHigh, saturate(pow(saturate(turbulence), 1.7))) * density * 0.38;
 }
 
 float3 HectonSpectralColor(float classRoll)
@@ -122,25 +123,39 @@ float3 HectonDirectionFromBand(uint starId, uint seed)
     float latitudeRoll = HectonHash01(starId * 2891336453u + seed * 3u);
     float bandHalfWidth = max(_HectonStarDistribution.x, 0.001);
     float latitude = (latitudeRoll * 2.0 - 1.0) * bandHalfWidth;
+    float bandProbability = saturate(_HectonStarDistribution.y);
 
     float coreRoll = HectonHash01(starId * 1597334677u + seed * 5u);
     float corePull = pow(saturate(1.0 - coreRoll), max(_HectonStarDistribution.z, 0.001));
     latitude *= lerp(1.0, 0.22, corePull);
+    latitude *= lerp(1.0, 0.55, bandProbability);
 
     float cosLat = cos(latitude);
     float3 milkyWayDirection = normalize(float3(
         cos(longitude) * cosLat,
         sin(latitude),
         sin(longitude) * cosLat));
+    float latitudeCompression = clamp(_HectonGalaxyArmShape.x, 0.05, 1.0);
+    milkyWayDirection.y *= latitudeCompression;
+    milkyWayDirection = normalize(milkyWayDirection);
 
     float z = HectonHash01(starId * 3812015801u + seed * 7u) * 2.0 - 1.0;
     float a = HectonHash01(starId * 1103515245u + seed * 11u) * HECTON_PI * 2.0;
     float r = sqrt(saturate(1.0 - z * z));
     float3 isotropicDirection = float3(r * cos(a), z, r * sin(a));
 
-    float bandProbability = saturate(_HectonStarDistribution.y);
     float useBand = step(HectonHash01(starId * 3266489917u + seed * 13u), bandProbability);
     return normalize(lerp(isotropicDirection, milkyWayDirection, useBand));
+}
+
+float HectonEquatorialDensityBelt(float3 direction)
+{
+    float bandHalfWidth = max(_HectonStarDistribution.x, 0.001);
+    float latitude = abs(asin(clamp(direction.y, -1.0, 1.0)));
+    float normalizedLatitude = latitude / bandHalfWidth;
+    float belt = exp(-normalizedLatitude * normalizedLatitude);
+    float core = pow(saturate(1.0 - normalizedLatitude), max(_HectonStarDistribution.z, 0.001));
+    return saturate(max(belt, core));
 }
 
 void HectonDirectionToCubeFaceUv(float3 direction, out uint face, out float2 uv)
@@ -194,7 +209,7 @@ void ClearStarCubemap(uint3 dispatchThreadId : SV_DispatchThreadID)
     _BakedStarCubemap[dispatchThreadId] = float4(HECTON_NOIR_FLOOR + dust, 1.0);
 }
 
-[numthreads(128, 1, 1)]
+[numthreads(64, 1, 1)]
 void BakeSpectralStars(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
     uint starId = dispatchThreadId.x;
@@ -215,7 +230,10 @@ void BakeSpectralStars(uint3 dispatchThreadId : SV_DispatchThreadID)
     float classRoll = HectonHash01(starId * 2246822519u + seed * 17u);
     float magnitudeRoll = HectonHash01(starId * 668265263u + seed * 19u);
     float3 spectralColor = HectonSpectralColor(classRoll);
-    float brightness = intensity * lerp(0.18, 1.85, pow(saturate(1.0 - magnitudeRoll), 5.0));
+    float densityBelt = HectonEquatorialDensityBelt(direction);
+    float brightness = intensity
+        * lerp(0.18, 1.85, pow(saturate(1.0 - magnitudeRoll), 5.0))
+        * lerp(0.72, 1.38, densityBelt);
     float halo = brightness * saturate(_HectonStarDistribution.w);
 
     HectonWriteStar(face, pixel, resolution, spectralColor, brightness);

@@ -1,7 +1,7 @@
-# QUEST DAG Protocol
-Date: `2026-05-04`
+﻿# QUEST DAG Protocol
+Date: 2026-05-07
 
-Status: REFERENCE
+Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
 ## 2026-05-04 Current-State Boundary
@@ -169,9 +169,9 @@ Signal-driven activation already carries phase prerequisites through compiled no
 ```
 
 Current authored locks:
-- `quest_atlas_signal_detected` → `Abyssal`
-- `quest_atlas_signal_decoded` → `Thermal`
-- `quest_atlas_core_reached` → `Thermal`
+- `quest_atlas_signal_detected` â†’ `Abyssal`
+- `quest_atlas_signal_decoded` â†’ `Thermal`
+- `quest_atlas_core_reached` â†’ `Thermal`
 
 Rationale:
 - `quest_atlas_signal_detected` is gated behind deep-abandonment progression.

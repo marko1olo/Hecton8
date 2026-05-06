@@ -14,6 +14,7 @@ namespace Hecton8.Audio.Editor
     {
         private const string RendererPath = "Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs";
         private const string RingBufferPath = "Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs";
+        private const string BufferJobsPath = "Assets/_Project/Scripts/Audio/PlayerCriticalBufferJobs.cs";
         private const string SpatialAudioPath = "Assets/_Project/Scripts/SpatialAudioManager.cs";
         private const string OcclusionPath = "Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs";
 
@@ -28,7 +29,7 @@ namespace Hecton8.Audio.Editor
         }
 
         /// <summary>
-        /// Runs source-level assertions for SPSC, callback purity, Hermite wrapping, Sabine RT60, and bubble math.
+        /// Runs source-level assertions for SPSC, callback purity, Hermite wrapping, fake cave reverb, and critical psychoacoustic kernels.
         /// </summary>
         public static bool Run(out string report)
         {
@@ -38,6 +39,7 @@ namespace Hecton8.Audio.Editor
 
             string renderer = ReadAssetText(RendererPath, builder, ref failureCount);
             string ringBuffer = ReadAssetText(RingBufferPath, builder, ref failureCount);
+            string bufferJobs = ReadAssetText(BufferJobsPath, builder, ref failureCount);
             string spatialAudio = ReadAssetText(SpatialAudioPath, builder, ref failureCount);
             string occlusion = ReadAssetText(OcclusionPath, builder, ref failureCount);
 
@@ -46,6 +48,13 @@ namespace Hecton8.Audio.Editor
                 string onAudioFilterRead = ExtractMethodBody(renderer, "private void OnAudioFilterRead(float[] data, int channels)");
                 string produceAudioBlock = ExtractMethodBody(renderer, "private void ProduceAudioBlock(int frameCount)");
                 string publishSnapshot = ExtractMethodBody(renderer, "private void PublishAudioParameterSnapshot()");
+                string tryConsumePendingSonarTrigger = ExtractMethodBody(renderer, "private void TryConsumePendingSonarTrigger(long blockStartFrame, int frameCount)");
+                string updateCaveReverb = ExtractMethodBody(renderer, "private void UpdateCaveReverb(float deltaTime)");
+                string handleSonarPingSent = ExtractMethodBody(renderer, "private void HandleSonarPingSent(float intensity)");
+                string renderBubbleBlock = ExtractMethodBody(renderer, "private void RenderBubbleBlock(");
+                string renderTinnitusSample = ExtractMethodBody(renderer, "private static float RenderTinnitusSample(");
+                string renderHullStressBlock = ExtractMethodBody(renderer, "private void RenderHullStressBlock(");
+                string renderSonarBlock = ExtractMethodBody(renderer, "private void RenderSonarBlock(int frameCount, long blockStartFrame, double invSampleRate)");
                 string hermiteSampleRing = ExtractMethodBody(renderer, "private static float HermiteSampleRing(NativeArray<float> buffer, double cursor, int mask)");
                 string disposeBuffers = ExtractMethodBody(renderer, "private void DisposeBuffers(bool disposeSabineReverbDelay)");
                 string onDisable = ExtractMethodBody(renderer, "private void OnDisable()");
@@ -58,6 +67,9 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "diagnostics.OverflowDropCount = sampleRingBuffer.OverflowDropCount", "Audio diagnostics include overflow drop count", builder, ref failureCount);
                 AssertOccurrenceCount(produceAudioBlock, "Volatile.Read(ref _audioParameterSnapshotReadIndex)", 1, "Snapshot read occurs once per produced DSP block", builder, ref failureCount);
                 AssertContains(publishSnapshot, "Interlocked.Exchange(ref _audioParameterSnapshotReadIndex", "Main thread publishes inactive snapshot with Interlocked.Exchange", builder, ref failureCount);
+                AssertContains(renderer, "_workerSonarEchoTaps = new NativeArray<SonarEchoTap>", "Sonar echo taps have a worker-owned snapshot buffer", builder, ref failureCount);
+                AssertContains(tryConsumePendingSonarTrigger, "_workerSonarEchoTaps[tapIndex] = sourceTapBuffer[tapIndex]", "Sonar tap payload is copied once before block rendering", builder, ref failureCount);
+                AssertContains(renderSonarBlock, "NativeArray<SonarEchoTap> activeTapBuffer = _workerSonarEchoTaps", "Sonar render reads the worker tap snapshot, not the publish buffer", builder, ref failureCount);
 
                 AssertContains(onAudioFilterRead, "sampleRingBuffer.MixInterleavedInto(data, channels)", "OnAudioFilterRead remains SPSC transfer bridge", builder, ref failureCount);
                 AssertNotContains(onAudioFilterRead, "new ", "OnAudioFilterRead has no explicit allocation", builder, ref failureCount);
@@ -78,22 +90,32 @@ namespace Hecton8.Audio.Editor
                 AssertContains(hermiteSampleRing, "buffer[(baseIndex - 1) & mask]", "Hermite xm1 tap uses bitwise mask", builder, ref failureCount);
                 AssertContains(hermiteSampleRing, "buffer[(baseIndex + 2) & mask]", "Hermite x2 tap uses bitwise mask", builder, ref failureCount);
                 AssertContains(renderer, "SonarEchoMaximumDopplerRatio = 4f", "Sonar Doppler supports >3.0 guarded ratio", builder, ref failureCount);
+                AssertContains(renderer, "SonarGhostEchoTapCount = 3", "Synthetic sonar ghost echo count is fixed at three taps", builder, ref failureCount);
+                AssertNotContains(handleSonarPingSent, "Raycast", "Sonar ghost echo generation has no raycast call", builder, ref failureCount);
+                AssertContains(renderSonarBlock, "tap.LeftPanDeltaGain", "Sonar ghost echo stereo panning uses precomputed hash pan gains", builder, ref failureCount);
 
-                AssertContains(renderer, "HullStressFmBaseCarrierHertz = 80f", "Hull FM carrier base is 80 Hz", builder, ref failureCount);
-                AssertContains(renderer, "HullStressFmModulationIndexMinimum = 0.1f", "Hull FM modulation index minimum is 0.1", builder, ref failureCount);
-                AssertContains(renderer, "HullStressFmModulationIndexMaximum = 12f", "Hull FM modulation index maximum is 12", builder, ref failureCount);
-                AssertContains(renderer, "HullStressFmBaseCarrierHertz + modulator", "Hull FM carrier is modulated by stress/noise", builder, ref failureCount);
+                AssertContains(renderer, "HullGroanLoopPitchMinimum = 0.8f", "Hull stress loop minimum pitch is 0.8", builder, ref failureCount);
+                AssertContains(renderer, "HullGroanLoopPitchMaximum = 1.2f", "Hull stress loop maximum pitch is 1.2", builder, ref failureCount);
+                AssertContains(renderer, "UpdateHullGroanLoop(true, math.saturate", "Hull continuous groan is driven by authored 2D loop", builder, ref failureCount);
+                AssertNotContains(renderHullStressBlock, "CarrierAPhase", "Hull DSP block has no FM carrier A chain", builder, ref failureCount);
+                AssertNotContains(renderHullStressBlock, "ModulatorAPhase", "Hull DSP block has no FM modulator A chain", builder, ref failureCount);
+                AssertNotContains(renderHullStressBlock, "lowCarrierFm", "Hull DSP block has no low-carrier FM branch", builder, ref failureCount);
 
                 AssertContains(renderer, "PsychoacousticPressureReferenceDepthMeters = 500f", "Depth LPF uses 500 m pressure reference", builder, ref failureCount);
                 AssertContains(renderer, "PsychoacousticPressureMinimumCutoffHertz", "Depth LPF has intelligibility floor", builder, ref failureCount);
                 AssertContains(renderer, "openCutoff / math.max(pressureScalar, 1f)", "Depth LPF follows openCutoff / (1 + depth/reference)", builder, ref failureCount);
 
-                AssertContains(renderer, "private static void RenderMinnaertBubbleBurstKernel(", "Minnaert bubble burst producer kernel exists", builder, ref failureCount);
-                AssertContains(renderer, "_bubbleScratch", "Producer path injects bubble bursts into the reusable native scratch buffer", builder, ref failureCount);
-                AssertContains(renderer, "RenderMinnaertBubbleBurstKernel(", "Producer path injects bubble bursts through the Minnaert kernel", builder, ref failureCount);
-                AssertContains(renderer, "ResolveMinnaertFrequency", "Minnaert bubble frequency kernel exists", builder, ref failureCount);
-                AssertContains(renderer, "math.rcp(2f * math.PI * safeRadius) * root", "Minnaert formula uses 1/(2*pi*R)*sqrt term", builder, ref failureCount);
-                AssertContains(renderer, "RenderMinnaertBubbleSample", "Bubble burst sample kernel exists", builder, ref failureCount);
+                AssertContains(updateCaveReverb, "targetWetMix = insideCaveVolume ? FakeCaveReverbMix01 : FakeOpenWaterReverbMix01", "Cave reverb wet mix is the 0.8/0.2 fake volume switch", builder, ref failureCount);
+                AssertNotContains(updateCaveReverb, "TryGetCachedEnclosureSample", "Cave reverb does not use enclosure raycast fallback", builder, ref failureCount);
+                AssertNotContains(updateCaveReverb, "Raycast", "Cave reverb update has no raycast path", builder, ref failureCount);
+
+                AssertContains(renderBubbleBlock, "ToolCavitationMaximumGain", "Tool cavitation injects into the reusable bubble scratch buffer", builder, ref failureCount);
+                AssertContains(renderBubbleBlock, "HashSigned(sampleIndex ^ 0x7E5A3C91u)", "Tool cavitation uses deterministic hash white noise", builder, ref failureCount);
+                AssertNotContains(renderer, "ResolveMinnaertFrequency", "Minnaert frequency formula is absent from critical renderer", builder, ref failureCount);
+                AssertNotContains(renderer, "RenderMinnaert", "Minnaert bubble render kernel is absent from critical renderer", builder, ref failureCount);
+
+                AssertContains(renderer, "TinnitusCarrierHertz = 8000f", "O2 deprivation tinnitus carrier is 8 kHz", builder, ref failureCount);
+                AssertContains(renderTinnitusSample, "1f - math.exp(-TinnitusPlayerStressExponentialSharpness * playerStress)", "O2 tinnitus gain scales exponentially with player stress", builder, ref failureCount);
 
                 AssertContains(renderer, "BinauralWaterItdDelayRatio = 0.2326f", "Water/air ITD blend ratio exists", builder, ref failureCount);
                 AssertContains(renderer, "math.lerp(airItdSeconds, airItdSeconds * BinauralWaterItdDelayRatio", "Renderer blends ITD using WaterDensityMul", builder, ref failureCount);
@@ -102,6 +124,7 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(onDisable, "DisposeBuffers", "OnDisable does not dispose Sabine cache", builder, ref failureCount);
                 AssertContains(onDestroy, "DisposeBuffers(disposeSabineReverbDelay: true)", "OnDestroy owns final Sabine cache disposal", builder, ref failureCount);
                 AssertContains(disposeBuffers, "disposeSabineReverbDelay && _sabineReverbDelay.IsCreated", "Sabine dispose is gated to destroy path", builder, ref failureCount);
+                AssertNotContains(renderer, "UnityEngine.Random", "Critical renderer has no UnityEngine.Random call", builder, ref failureCount);
             }
 
             if (ringBuffer.Length > 0)
@@ -123,6 +146,14 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(mixInterleavedInto, "Complete(", "SPSC consumer bridge has no JobHandle.Complete", builder, ref failureCount);
             }
 
+            if (bufferJobs.Length > 0)
+            {
+                AssertContains(bufferJobs, "public static void Clear(NativeArray<float> buffer, int count)", "PlayerCriticalBufferJobs exposes cold Clear entry point", builder, ref failureCount);
+                AssertContains(bufferJobs, "[BurstCompile", "PlayerCriticalBufferJobs.Clear uses a Burst-compiled job", builder, ref failureCount);
+                AssertContains(bufferJobs, "IJobParallelFor", "PlayerCriticalBufferJobs.Clear uses parallel buffer clearing", builder, ref failureCount);
+                AssertContains(bufferJobs, "COLD SYNC JOB", "PlayerCriticalBufferJobs.Clear documents the cold Complete boundary", builder, ref failureCount);
+            }
+
             if (spatialAudio.Length > 0)
             {
                 AssertContains(spatialAudio, "ThreatBusDuckMaximumDb = -12f", "Threat/Bed mixer duck target is -12 dB", builder, ref failureCount);
@@ -130,14 +161,15 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatialAudio, "ThreatBusDuckReleaseSeconds = 0.3f", "Threat/Bed mixer duck release is 0.3 s", builder, ref failureCount);
                 AssertContains(spatialAudio, "WaterDensityMul = waterDensityMul", "Binaural telemetry publishes WaterDensityMul", builder, ref failureCount);
                 AssertContains(spatialAudio, "ItdSeconds = airItdSeconds", "Spatial telemetry publishes air ITD for renderer-side blend", builder, ref failureCount);
+                AssertContains(spatialAudio, "RefreshListenerCaveState", "Listener cave state is resolved by SpatialAudioManager", builder, ref failureCount);
+                AssertContains(spatialAudio, "HectonVoxelVolume", "Cave reverb state uses voxel-volume records", builder, ref failureCount);
+                AssertContains(spatialAudio, "localBounds.Contains", "Cave interior checks use local AABB bounds", builder, ref failureCount);
             }
 
             if (occlusion.Length > 0)
             {
-                AssertContains(occlusion, "EnclosureProbeSliceCount = EnclosureProbeCount", "Enclosure dispatch uses all six orthogonal rays per SlowTick", builder, ref failureCount);
-                AssertContains(occlusion, "RaycastCommand.ScheduleBatch", "Enclosure/occlusion probes use RaycastCommand batches", builder, ref failureCount);
-                AssertContains(occlusion, "SabineConstant * volume", "Sabine RT60 uses 0.161 * volume / absorption", builder, ref failureCount);
-                AssertContains(occlusion, "EquivalentAbsorptionArea", "Sabine total absorption is carried in enclosure result", builder, ref failureCount);
+                AssertContains(occlusion, "VoxelDensityHardLowPassCutoffHertz = 300f", "Solid voxel occlusion resolves to 300 Hz LPF floor", builder, ref failureCount);
+                AssertContains(occlusion, "ResolveVoxelDensityLowPassCutoff(normalizedDensity)", "Voxel density path drives source-specific LPF cutoff", builder, ref failureCount);
             }
 
             builder.Append("STATUS: ");

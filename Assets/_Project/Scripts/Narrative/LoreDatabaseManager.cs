@@ -27,26 +27,6 @@ namespace Hecton8.Narrative
     }
 
     /// <summary>
-    /// Typed lore acquisition event routed through the global modding event bus.
-    /// </summary>
-    internal readonly struct LoreAcquiredEvent
-    {
-        /// <summary>
-        /// Create one hashed lore acquisition payload.
-        /// </summary>
-        /// <param name="loreHash">Stable FNV-1a lore ID hash.</param>
-        public LoreAcquiredEvent(uint loreHash)
-        {
-            LoreHash = loreHash;
-        }
-
-        /// <summary>
-        /// Stable FNV-1a lore ID hash.
-        /// </summary>
-        public uint LoreHash { get; }
-    }
-
-    /// <summary>
     /// Packed unlock-mask constants for the 50 industrial lore records.
     /// </summary>
     internal static class IndustrialLoreBitMask
@@ -81,7 +61,7 @@ namespace Hecton8.Narrative
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-139)]
-    public sealed class LoreDatabaseManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener
+    public sealed class LoreDatabaseManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener, IAudioLogEventListener
     {
         private readonly struct LoreSeed
         {
@@ -159,8 +139,6 @@ namespace Hecton8.Narrative
             public LoreDeliveryMode DeliveryMode { get; }
         }
 
-        private static LoreDatabaseManager _instance;
-
         // COLD ALLOC: LoreSeed[50] — fixed industrial lore archive bank from survival spec — owner: LoreDatabaseManager
         private static readonly LoreSeed[] s_records =
         {
@@ -221,23 +199,11 @@ namespace Hecton8.Narrative
 
         private NativeArray<uint> _unlockedWords;
         private JobHandle _disposeHandle;
-        private HectonEventSubscription _loreAcquiredSubscription;
         private ISaveService _registeredSaveService;
         private bool _serviceRegistered;
         private bool _hotSwapListenerRegistered;
         private bool _recordLookupBuilt;
         private bool _recordLookupCollisionLogged;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
-        /// <summary>
-        /// Active lore database instance in the loaded scene.
-        /// </summary>
-        public static LoreDatabaseManager Instance => _instance;
 
         /// <summary>
         /// Save order for industrial lore persistence.
@@ -274,13 +240,6 @@ namespace Hecton8.Narrative
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             BuildLookupIfNeeded();
             EnsureUnlockStorage();
         }
@@ -292,8 +251,7 @@ namespace Hecton8.Narrative
             EnsureUnlockStorage();
             TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
-            if (_loreAcquiredSubscription == null)
-                _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, "narrative.lore-db");
+            AudioLogEvents.Register(this);
         }
 
         private void Start()
@@ -303,8 +261,7 @@ namespace Hecton8.Narrative
 
         private void OnDisable()
         {
-            _loreAcquiredSubscription?.Dispose();
-            _loreAcquiredSubscription = null;
+            AudioLogEvents.Unregister(this);
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
@@ -315,12 +272,7 @@ namespace Hecton8.Narrative
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
             TryUnregisterService();
-
-            if (_instance == this)
-                _instance = null;
-
-            _loreAcquiredSubscription?.Dispose();
-            _loreAcquiredSubscription = null;
+            AudioLogEvents.Unregister(this);
 
             if (_unlockedWords.IsCreated)
             {
@@ -758,9 +710,10 @@ namespace Hecton8.Narrative
             }
         }
 
-        private void HandleLoreAcquired(in LoreAcquiredEvent evt)
+        public void OnAudioLogEvent(in AudioLogEventPayload payload)
         {
-            UnlockByHashInternal(evt.LoreHash);
+            if (payload.Type == AudioLogEventType.Discovered)
+                UnlockByHashInternal(payload.LogHash);
         }
 
         private bool UnlockByHashInternal(uint logHash)

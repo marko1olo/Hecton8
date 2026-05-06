@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Mathematics;
@@ -85,15 +85,6 @@ namespace Hecton8.PDA
         private bool _serviceRegistered;
         private int _nextSequence = 1;
 
-        /// <summary>Live singleton instance for PDA marker consumers.</summary>
-        public static PDAMarkerRegistry Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            Instance = null;
-        }
-
         /// <summary>Raised after the marker collection changes.</summary>
         public event Action MarkersChanged;
 
@@ -105,17 +96,6 @@ namespace Hecton8.PDA
 
         /// <inheritdoc />
         public int LoadPriority => 210;
-
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(this);
-                return;
-            }
-
-            Instance = this;
-        }
 
         private void OnEnable()
         {
@@ -134,9 +114,6 @@ namespace Hecton8.PDA
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterService();
             UnregisterFromSaveManager();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         private void OnDestroy()
@@ -144,9 +121,6 @@ namespace Hecton8.PDA
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterService();
             UnregisterFromSaveManager();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         /// <summary>
@@ -233,6 +207,55 @@ namespace Hecton8.PDA
         }
 
         /// <summary>
+        /// Creates or updates a system-authored marker through its pre-resolved stable hash.
+        /// </summary>
+        public bool TryCreateOrUpdateMarker(uint markerHashId, string markerId, Vector3 position, MarkerIconType iconType, string title, out PDAMarkerSnapshot marker)
+        {
+            marker = default;
+            if (markerHashId == 0u || string.IsNullOrWhiteSpace(markerId))
+                return false;
+
+            string trimmedTitle = string.IsNullOrWhiteSpace(title) ? BuildDefaultTitle(iconType) : title.Trim();
+            if (_markerIndexByHash.TryGetValue(markerHashId, out int markerIndex))
+            {
+                MarkerRecord existing = _markers[markerIndex];
+                existing.title = trimmedTitle;
+                existing.positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+                existing.runtimePosition = position;
+                existing.iconType = iconType;
+                existing.visibleOnHud = true;
+                _markers[markerIndex] = existing;
+                marker = ToSnapshot(existing);
+                Hecton8.UI.PDAEvents.RaiseMarkerChanged(existing.markerHashId, _markers.Count);
+                MarkersChanged?.Invoke();
+                return true;
+            }
+
+            if (_markers.Count >= PDAMarkerRegistryDTO.MaxEntries)
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            MarkerRecord record = new MarkerRecord
+            {
+                markerHashId = markerHashId,
+                markerId = markerId,
+                title = trimmedTitle,
+                positionAup = positionAup,
+                runtimePosition = position,
+                iconType = iconType,
+                visibleOnHud = true
+            };
+
+            _markerIndexById[markerId] = _markers.Count;
+            _markerIndexByHash[record.markerHashId] = _markers.Count;
+            _markers.Add(record);
+            marker = ToSnapshot(record);
+            Hecton8.UI.PDAEvents.RaiseMarkerChanged(record.markerHashId, _markers.Count);
+            MarkersChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>
         /// Removes an existing PDA marker by stable identifier.
         /// </summary>
         public bool RemoveMarker(string markerId)
@@ -296,6 +319,25 @@ namespace Hecton8.PDA
         }
 
         /// <summary>
+        /// Updates HUD visibility through the stable marker hash.
+        /// </summary>
+        public bool SetMarkerHudVisibility(uint markerHashId, bool visibleOnHud)
+        {
+            if (markerHashId == 0u || !_markerIndexByHash.TryGetValue(markerHashId, out int markerIndex))
+                return false;
+
+            MarkerRecord record = _markers[markerIndex];
+            if (record.visibleOnHud == visibleOnHud)
+                return true;
+
+            record.visibleOnHud = visibleOnHud;
+            _markers[markerIndex] = record;
+            Hecton8.UI.PDAEvents.RaiseMarkerChanged(record.markerHashId, _markers.Count);
+            MarkersChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>
         /// Resolves a native marker hash into a current snapshot.
         /// </summary>
         public bool TryGetMarkerByHash(uint markerHashId, out PDAMarkerSnapshot marker)
@@ -341,7 +383,8 @@ namespace Hecton8.PDA
             marker = default;
             distance = 0f;
 
-            float bestDistanceSqr = float.MaxValue;
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            double bestDistanceSqr = double.MaxValue;
             bool found = false;
             for (int i = 0; i < _markers.Count; i++)
             {
@@ -349,7 +392,7 @@ namespace Hecton8.PDA
                 if (!candidate.visibleOnHud)
                     continue;
 
-                float distanceSqr = (candidate.runtimePosition - origin).sqrMagnitude;
+                double distanceSqr = AbsoluteUniversePosition.DistanceSq(in candidate.positionAup, in originAup);
                 if (distanceSqr >= bestDistanceSqr)
                     continue;
 
@@ -361,7 +404,7 @@ namespace Hecton8.PDA
             if (!found)
                 return false;
 
-            distance = Mathf.Sqrt(bestDistanceSqr);
+            distance = (float)Math.Sqrt(bestDistanceSqr);
             return true;
         }
 
@@ -480,8 +523,15 @@ namespace Hecton8.PDA
 
         private void TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+            if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            PDAMarkerRegistry registeredRuntime = Hecton8.Core.GlobalRegistry.PDAMarkers;
+            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            {
+                Destroy(this);
+                return;
+            }
 
             Hecton8.Core.GlobalRegistry.RegisterPDAMarkerRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.PDAMarkers, this);
@@ -506,7 +556,7 @@ namespace Hecton8.PDA
         private static uint ComputeMarkerHash(string markerId)
         {
             return !string.IsNullOrWhiteSpace(markerId)
-                ? unchecked((uint)LocHash.Compute(markerId))
+                ? QuestFlagHashKernel.ComputeStableHash(markerId)
                 : 0u;
         }
 

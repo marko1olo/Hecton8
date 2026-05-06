@@ -1,7 +1,7 @@
-# PROJECT ATLAS
+﻿# PROJECT ATLAS
 
-Version: 1.5.0
-Date: 2026-05-05
+Version: 1.5.2
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`, `PROJECT_LTS_Compatibility_Layer.txt`
@@ -56,9 +56,10 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project`: `1202`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1162`
-Observed first-party C# line count under `Assets/_Project/Scripts`: `551892`
+Observed first-party C# file count under `Assets/_Project`: `1211`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1170`
+Observed first-party C# line count under `Assets/_Project/Scripts` by `Get-Content.Count`: `650797`
+Observed first-party C# line count under `Assets/_Project/Scripts` by `Measure-Object -Line`: `559068`
 
 This is physical file count only.
 It does not imply quality, cohesion, or compile health.
@@ -117,6 +118,7 @@ Current active anchors include:
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
 - `ARCHITECTURE/DISPATCH_PIPELINE.md`
 - `ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
+- `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
 - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
 - `Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
@@ -178,8 +180,8 @@ Canonical entry files inside this bundle:
 
 ### 6.3 Current Live Console Truth
 
-Latest documentation sweep is `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
-Latest current MCP readback after the May 4 guard repair reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, and console error/warning entries `0`. The earlier May 4 sweep readback with `18` warnings during `01_MAIN_MENU` Play Mode transition is historical, not the current editor-console boundary.
+Latest documentation synchronization is `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`.
+Latest current MCP readback in that May 6 pass reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`, renderer `PC_Renderer`, and `37` render textures. The earlier May 4 sweep readback with `18` warnings during `01_MAIN_MENU` Play Mode transition is historical, not the current editor-console boundary.
 
 This is not Play Mode proof and not runtime certification.
 
@@ -204,7 +206,7 @@ Authority files for this boundary:
 
 These points were revalidated against current source in this pass:
 
-- `GlobalRegistryContracts.cs` now contains `33` direct public interfaces, not the older `19`, `27`, or `31` snapshots.
+- `GlobalRegistryContracts.cs` now contains `36` direct public interfaces, not the older `19`, `27`, `31`, `33`, or `34` snapshots.
 - `SpatialAudioManager` directly implements `IAudioService` and registers through `GlobalRegistry.RegisterAudioService(this)`.
 - `SuitHUDV4CanvasOverlay` is the direct first-party `IUIService` implementor found in current source scan.
 - current bootstrap authority is split across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap`; it is not a single-owner startup surface.
@@ -386,33 +388,34 @@ Mandates followed for this update:
 
 Current measured source and documentation surface:
 
-- `Assets/_Project`: `1202` C# files.
-- `Assets/_Project/Scripts`: `1162` C# files.
-- Script LOC by PowerShell line count: `551892`.
+- `Assets/_Project`: `1211` C# files.
+- `Assets/_Project/Scripts`: `1170` C# files.
+- Script LOC by PowerShell `Get-Content.Count` line count: `650797`.
+- Script LOC by PowerShell `Measure-Object -Line` line count: `559068`.
 - `.agents-skills`: `52` mandate files.
-- `Docs/**/*.md`: `422` markdown files.
-- Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `209`.
+- `Docs/**/*.md`: `436` markdown files.
+- Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `223`.
 - Active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports`: `162`.
-- Active `Docs/Reports/*.md`: `47`.
-- Scripts created today by filesystem timestamp: `71`.
-- Scripts modified today by filesystem timestamp: `209`.
-- Git-untracked entries before this Archivarius edit pass: `85`.
+- Active `Docs/Reports/*.md`: `61`.
+- Scripts created on `2026-05-06` by filesystem timestamp: `6`.
+- Scripts modified on `2026-05-06` by filesystem timestamp: `142`.
+- Git-untracked entries at the May 6 doc sync checkpoint: `15`.
 
 Current top-level `Assets/_Project/Scripts` ownership counts:
 
 | Folder | C# files |
 |---|---:|
-| `(root)` | `339` |
-| `Editor` | `162` |
+| `(root)` | `336` |
+| `Editor` | `166` |
 | `World` | `162` |
-| `Gameplay` | `112` |
-| `UI` | `80` |
+| `Gameplay` | `113` |
+| `UI` | `82` |
 | `Core` | `41` |
-| `Construction` | `31` |
+| `Construction` | `32` |
 | `Optimization` | `22` |
 | `ModdingAPI` | `21` |
 | `Visor` | `20` |
-| `Audio` | `18` |
+| `Audio` | `19` |
 | `Fauna` | `17` |
 
 Current SpaceEngine research authority:
@@ -466,17 +469,17 @@ Mandate sync result for today's additions:
 
 Interface health result from `GlobalRegistryContracts.cs`:
 
-- Current direct public interface count: `34`.
-- Interfaces with at least one direct implementor by source-line scan: `33`.
-- Ghost interface: `IRegistryEventListener` has `0` direct class/struct implementors and is marked for deletion or implementation.
+- Current direct public interface count: `36`.
+- Interfaces with at least one source-line implementation/reference scan hit: `36`.
+- Ghost interfaces by this static scan: `0`.
 
 Naming sweep result:
 
-- Non-ASCII path entries under `Assets/_Project` and `Docs`: `637`.
+- Non-ASCII path entries under `Assets/_Project` and `Docs`: `638`.
 - Non-ASCII path entries excluding archive/deprecated/obsolete folders: `575`.
 - Non-ASCII path entries under `Assets/_Project`: `570`.
-- Non-ASCII path entries under `Docs`: `67`.
-- Non-ASCII content files in active scan scope: `648`.
+- Non-ASCII path entries under `Docs`: `68`.
+- Non-ASCII content files in active scan scope: `646`.
 - Current active ledger: `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md`.
 
 Reality delta:
@@ -530,7 +533,7 @@ This is a source scan and CI candidate, not Unity Play Mode proof. Do not claim 
 
 STATUS: PENDING VERIFICATION
 
-## 2026-05-04 Atlas Delta
+## 2026-05-06 Atlas Delta
 
 Mandates followed for this update:
 
@@ -540,24 +543,28 @@ Mandates followed for this update:
 - `PHYS_Physics_Integrity_Determinism_ForceMode`
 - `DBG_Telemetry_Crash_Reporting_PostMortem`
 
-Current measured source surface:
+Current measured source/docs surface:
 
-- `Assets/_Project`: `1118` C# files.
-- `Assets/_Project/Scripts`: `1078` C# files.
-- Script LOC by PowerShell line count: `519952`.
+- `Assets/_Project`: `1211` C# files.
+- `Assets/_Project/Scripts`: `1170` C# files.
+- Script LOC by PowerShell `Get-Content.Count` line count: `650797`.
+- Script LOC by PowerShell `Measure-Object -Line` line count: `559068`.
+- Scripts directly under `Assets/_Project/Scripts`: `336`.
 - Strict `StartCoroutine(` hits under `Assets/_Project/Scripts`: `0`.
-- `Docs`: `595` non-meta files in the current filesystem view.
-- `Docs/ARCHIVARIUS REPORTS`: `119` non-meta files in the current filesystem view.
+- `Docs`: `865` non-meta files in the current filesystem view.
+- `Docs/ARCHIVARIUS REPORTS`: `120` non-meta files in the current filesystem view.
+- Full `Docs/**/*.md` markdown header debt: `0` missing `Date:`, `0` missing `Status:`.
+- Active non-report markdown header debt: `0`.
 
 These counts are orientation data only. They are not readiness metrics and should not drive task priority.
 
 Current active forensic reports to read before older atlas claims:
 
-1. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
-2. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-3. `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
-4. `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
-5. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+1. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
+2. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+3. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+4. `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
+5. `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
 6. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
 7. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
 8. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
@@ -582,3 +589,6 @@ Verification state:
 - GC/frame/memory: no fresh profiler or GCMonitor measurement.
 
 STATUS: PENDING VERIFICATION
+
+
+

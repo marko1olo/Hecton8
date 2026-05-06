@@ -896,7 +896,10 @@ namespace Hecton8.World
 
             DispatcherJobSwap.TryComplete(ref _samplingJobHandle, forceComplete: true);
             if (fieldSampler != null)
+            {
+                fieldSampler.MarkScatterSamplingJobCompleted();
                 fieldSampler.EndScatterSamplingFrame();
+            }
             _isSamplingJobRunning = false;
             ResetSamplingState();
         }
@@ -2218,7 +2221,8 @@ namespace Hecton8.World
             WorldZoneAnchor zone,
             WorldZoneAnchor.ZoneKind zoneKindHint,
             float depthMeters,
-            float slopeDegrees)
+            float slopeDegrees,
+            ulong biomeFamilyFlags)
         {
             if (depthMeters < runtimeRule.MinDepthMeters || depthMeters > runtimeRule.MaxDepthMeters)
                 return false;
@@ -2234,8 +2238,12 @@ namespace Hecton8.World
                 bool secondaryMatched = hasSecondaryBiome &&
                                         secondaryBiomeFamily != null &&
                                         MatchesPreferredBiomeFamily(runtimeRule.PreferredBiomeFamilies, secondaryBiomeFamily);
-                if (!primaryMatched && !secondaryMatched)
+                if (!primaryMatched &&
+                    !secondaryMatched &&
+                    !AllowsTectonicSpineRockBoulderOverride(runtimeRule.Family, slopeDegrees, biomeFamilyFlags))
+                {
                     return false;
+                }
             }
 
             if (!runtimeRule.StrictEnvelopeMapping &&
@@ -2276,6 +2284,37 @@ namespace Hecton8.World
             }
 
             return true;
+        }
+
+        private static bool AllowsTectonicSpineRockBoulderOverride(
+            WorldPrefabFamilyProfile family,
+            float slopeDegrees,
+            ulong biomeFamilyFlags)
+        {
+            return slopeDegrees >= 45f &&
+                   (((WorldProceduralFieldSampler.BiomeFamilyFlags)biomeFamilyFlags & WorldProceduralFieldSampler.BiomeFamilyFlags.Tectonic) != 0) &&
+                   IsRiftSideRockBoulderDomain(family);
+        }
+
+        private static bool IsRiftSideRockBoulderDomain(WorldPrefabFamilyProfile family)
+        {
+            if (family == null)
+                return false;
+
+            return family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.Rock ||
+                   family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.RockCluster ||
+                   family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.RockArch ||
+                   family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.Landmark;
+        }
+
+        private static float GetTectonicSpineRockBoulderScoreBonus(
+            in WorldProceduralFieldSampler.FieldSample sample,
+            WorldPrefabFamilyProfile family)
+        {
+            if (!AllowsTectonicSpineRockBoulderOverride(family, sample.slopeDegrees, sample.biomeFamilyFlags))
+                return 0f;
+
+            return Mathf.Lerp(0.24f, 0.42f, Mathf.Clamp01((sample.slopeDegrees - 45f) / 30f));
         }
 
         private static bool MatchesPreferredBiomeFamily(
@@ -3215,8 +3254,8 @@ namespace Hecton8.World
             }
 
             if (mapMagicBridge == null ||
-                !mapMagicBridge.TryGetHeight(runtimePosition.x, runtimePosition.z, out float terrainHeight) ||
-                !mapMagicBridge.TryGetNormal(runtimePosition.x, runtimePosition.z, Mathf.Max(1f, cellSize * 0.25f), out Vector3 terrainNormal) ||
+                !mapMagicBridge.TryGetHeightAUP(resolvedPosition, out float terrainHeight) ||
+                !mapMagicBridge.TryGetNormalAUP(resolvedPosition, Mathf.Max(1f, cellSize * 0.25f), out Vector3 terrainNormal) ||
                 !IsScatterSurfaceNormalSpawnable(terrainNormal))
             {
                 return false;
@@ -3236,25 +3275,43 @@ namespace Hecton8.World
 
         private static Vector3 ClampScatterUpVector(Vector3 normal, float maxTiltAngleDegrees)
         {
-            Vector3 safeNormal = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            float normalMagnitudeSqr = normal.sqrMagnitude;
+            Vector3 safeNormal = Vector3.up;
+            if (normalMagnitudeSqr > 0.0001f)
+            {
+                float normalInvMagnitude = 1f / Mathf.Sqrt(normalMagnitudeSqr);
+                safeNormal = new Vector3(
+                    normal.x * normalInvMagnitude,
+                    normal.y * normalInvMagnitude,
+                    normal.z * normalInvMagnitude);
+            }
+
             float safeMaxTilt = Mathf.Clamp(maxTiltAngleDegrees, 0f, 89.5f);
-            float angle = Vector3.Angle(Vector3.up, safeNormal);
-            if (angle <= safeMaxTilt)
+            float safeMaxTiltRadians = safeMaxTilt * Mathf.Deg2Rad;
+            float minUpDot = Mathf.Cos(safeMaxTiltRadians);
+            if (safeNormal.y >= minUpDot)
                 return safeNormal;
 
-            Vector3 axis = Vector3.Cross(Vector3.up, safeNormal);
-            if (axis.sqrMagnitude <= 0.000001f)
+            float horizontalMagnitudeSq = safeNormal.x * safeNormal.x + safeNormal.z * safeNormal.z;
+            if (horizontalMagnitudeSq <= 0.000001f)
                 return Vector3.up;
 
-            return Quaternion.AngleAxis(safeMaxTilt, axis.normalized) * Vector3.up;
+            float horizontalInvMagnitude = 1f / Mathf.Sqrt(horizontalMagnitudeSq);
+            float horizontalScale = Mathf.Sin(safeMaxTiltRadians);
+            return new Vector3(
+                safeNormal.x * horizontalInvMagnitude * horizontalScale,
+                minUpDot,
+                safeNormal.z * horizontalInvMagnitude * horizontalScale);
         }
 
         private static bool IsScatterSurfaceNormalSpawnable(Vector3 normal)
         {
-            if (normal.sqrMagnitude <= 0.0001f)
+            float normalMagnitudeSqr = normal.sqrMagnitude;
+            if (normalMagnitudeSqr <= 0.0001f || normal.y <= 0f)
                 return false;
 
-            return Vector3.Dot(normal.normalized, Vector3.up) >= ScatterMinimumSurfaceNormalUpDot;
+            float minimumUpDot = ScatterMinimumSurfaceNormalUpDot;
+            return normal.y * normal.y >= minimumUpDot * minimumUpDot * normalMagnitudeSqr;
         }
 
         private bool TryRegisterDesiredPlacement(ScatterPlacement placement)
@@ -7074,6 +7131,9 @@ namespace Hecton8.World
             bool needsPreviewRescue)
         {
             float value = rule != null ? Mathf.Clamp01(rule.minHeatmapValue) : 0f;
+            if (AllowsTectonicSpineRockBoulderOverride(family, sample.slopeDegrees, sample.biomeFamilyFlags))
+                value = Mathf.Min(value, 0.18f);
+
             if (!needsPreviewRescue)
                 return value;
 
@@ -7117,6 +7177,9 @@ namespace Hecton8.World
             bool needsPreviewRescue)
         {
             float value = rule != null ? Mathf.Max(0.1f, rule.densityScale) : 1f;
+            if (AllowsTectonicSpineRockBoulderOverride(family, sample.slopeDegrees, sample.biomeFamilyFlags))
+                value *= 1.85f;
+
             if (!needsPreviewRescue)
                 return value;
 
@@ -7435,7 +7498,39 @@ namespace Hecton8.World
                 placement.HasMacroZone,
                 placement.MacroZoneCoord,
                 supportsFinalVariant,
-                finalVariantActive);
+                finalVariantActive,
+                ShouldKeepScatterCollision(placement));
+        }
+
+        private static bool ShouldKeepScatterCollision(ScatterPlacement placement)
+        {
+            if (placement == null || placement.Family == null)
+                return false;
+
+            WorldPrefabFamilyProfile.ProceduralDomain domain = placement.Family.proceduralDomain;
+            if (domain == WorldPrefabFamilyProfile.ProceduralDomain.RockArch ||
+                domain == WorldPrefabFamilyProfile.ProceduralDomain.Landmark ||
+                domain == WorldPrefabFamilyProfile.ProceduralDomain.CaveEntrance ||
+                domain == WorldPrefabFamilyProfile.ProceduralDomain.RuinModule)
+            {
+                return true;
+            }
+
+            if (domain == WorldPrefabFamilyProfile.ProceduralDomain.Rock ||
+                domain == WorldPrefabFamilyProfile.ProceduralDomain.RockCluster)
+            {
+                return placement.Scale >= 1.1f;
+            }
+
+            if (domain == WorldPrefabFamilyProfile.ProceduralDomain.Kelp ||
+                domain == WorldPrefabFamilyProfile.ProceduralDomain.Plant ||
+                domain == WorldPrefabFamilyProfile.ProceduralDomain.Coral)
+            {
+                return placement.Scale >= 1.15f &&
+                       StableRandom01(placement.StableHash, placement.CellZ, placement.CellX) > 0.9f;
+            }
+
+            return false;
         }
 
         private static GameObject CreateScatterInstance(
@@ -11196,11 +11291,7 @@ namespace Hecton8.World
 
         private void HandleProceduralPlacementStateChanged()
         {
-            string reason = "placement-state";
-            if (proceduralStateRegistry != null)
-                reason = $"placement-state:{proceduralStateRegistry.DebugLastPlacementStateChangeReason}";
-
-            InvalidateScatterRefreshSample(reason);
+            InvalidateScatterRefreshSample("placement-state");
         }
 
 #if UNITY_EDITOR

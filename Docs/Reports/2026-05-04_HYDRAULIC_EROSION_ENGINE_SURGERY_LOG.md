@@ -1,7 +1,7 @@
-# Hydraulic Erosion Engine Surgery Log
+﻿# Hydraulic Erosion Engine Surgery Log
 
-Date: `2026-05-04`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Scope: standalone Burst hydraulic erosion, thermal slumping, MapMagic generator node, editor PNG harness.
 
 ## Mandates Followed

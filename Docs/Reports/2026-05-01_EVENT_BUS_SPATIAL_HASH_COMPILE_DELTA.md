@@ -1,6 +1,7 @@
-# Event Bus / Spatial Hash Compile Delta - 2026-05-01
+﻿# Event Bus / Spatial Hash Compile Delta - 2026-05-01
+Date: 2026-05-07
 
-Status: `PENDING VERIFICATION`
+Status: PENDING VERIFICATION
 
 ## Mandates Followed
 

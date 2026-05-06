@@ -1,6 +1,6 @@
-# BUILD DEPENDENCY GRAPH — HECTON-8 Bootstrapper Bloat Check
-Date: 2026-05-04
-Status: REFERENCE
+﻿# BUILD DEPENDENCY GRAPH â€” HECTON-8 Bootstrapper Bloat Check
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 **Date:** 2026-04-29  
@@ -23,36 +23,36 @@ Status: REFERENCE
 
 ```
 00_BOOTSTRAP scene
-│
-├── GameBootstrapper (MonoBehaviour, DefaultExecutionOrder -29980)
-│   ├── InitializeCoreLayer()
-│   │   ├── VRAMEnforcer.InitializeRuntimeBudget()          ← sets budgets (code only)
-│   │   ├── SystemDispatcher.EnsureRuntimeInstance()        ← code only
-│   │   ├── RenderDispatcher.EnsureRuntimeInstance()        ← code only
-│   │   ├── SceneInstantiationGate.EnsureRuntimeInstance()  ← code only
-│   │   ├── SceneRuntimeService.EnsureRuntimeInstance()     ← code only
-│   │   └── EquipmentInteractionHandler.EnsureRuntimeInstance() ← code only
-│   │
-│   ├── InitializeEnvironmentLayer()
-│   │   ├── GlobalPhysicsStateManager.EnsureRuntimeInstance()   ← code only
-│   │   ├── PhysicsApplySystem.EnsureRuntimeInstance()          ← code only
-│   │   ├── DebrisManager.EnsureRuntimeInstance()               ← code only
-│   │   ├── EnvironmentRuntimeContextService.EnsureRuntimeInstance() ← code only
-│   │   └── OceanKinematicsRuntimeService.EnsureRuntimeInstance()    ← code only
-│   │
-│   ├── InitializePlayerLayer()
-│   │   ├── InputManager.Instance validation                  ← existing singleton
-│   │   ├── InputDispatcher.EnsureRuntimeInstance()           ← code only
-│   │   ├── PlayerRuntimeContextService.EnsureRuntimeInstance() ← code only
-│   │   ├── PlayerInventoryManager.EnsureRuntimeInstance()    ← code only
-│   │   ├── PlayerSensoryManager.EnsureRuntimeInstance()      ← code only
-│   │   └── ContextualPhysicalIkRuntime.EnsureRuntimeInstance() ← code only
-│   │
-│   └── InitializeUILayer()
-│       └── (empty — no UI GlobalRegistry adapter yet)
-│
-└── BootstrapBiosErrorOverlay (emergency overlay, lazy-created on error only)
-    └── Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")  ← built-in asset
+â”‚
+â”œâ”€â”€ GameBootstrapper (MonoBehaviour, DefaultExecutionOrder -29980)
+â”‚   â”œâ”€â”€ InitializeCoreLayer()
+â”‚   â”‚   â”œâ”€â”€ VRAMEnforcer.InitializeRuntimeBudget()          â† sets budgets (code only)
+â”‚   â”‚   â”œâ”€â”€ SystemDispatcher.EnsureRuntimeInstance()        â† code only
+â”‚   â”‚   â”œâ”€â”€ RenderDispatcher.EnsureRuntimeInstance()        â† code only
+â”‚   â”‚   â”œâ”€â”€ SceneInstantiationGate.EnsureRuntimeInstance()  â† code only
+â”‚   â”‚   â”œâ”€â”€ SceneRuntimeService.EnsureRuntimeInstance()     â† code only
+â”‚   â”‚   â””â”€â”€ EquipmentInteractionHandler.EnsureRuntimeInstance() â† code only
+â”‚   â”‚
+â”‚   â”œâ”€â”€ InitializeEnvironmentLayer()
+â”‚   â”‚   â”œâ”€â”€ GlobalPhysicsStateManager.EnsureRuntimeInstance()   â† code only
+â”‚   â”‚   â”œâ”€â”€ PhysicsApplySystem.EnsureRuntimeInstance()          â† code only
+â”‚   â”‚   â”œâ”€â”€ DebrisManager.EnsureRuntimeInstance()               â† code only
+â”‚   â”‚   â”œâ”€â”€ EnvironmentRuntimeContextService.EnsureRuntimeInstance() â† code only
+â”‚   â”‚   â””â”€â”€ OceanKinematicsRuntimeService.EnsureRuntimeInstance()    â† code only
+â”‚   â”‚
+â”‚   â”œâ”€â”€ InitializePlayerLayer()
+â”‚   â”‚   â”œâ”€â”€ InputManager.Instance validation                  â† existing singleton
+â”‚   â”‚   â”œâ”€â”€ InputDispatcher.EnsureRuntimeInstance()           â† code only
+â”‚   â”‚   â”œâ”€â”€ PlayerRuntimeContextService.EnsureRuntimeInstance() â† code only
+â”‚   â”‚   â”œâ”€â”€ PlayerInventoryManager.EnsureRuntimeInstance()    â† code only
+â”‚   â”‚   â”œâ”€â”€ PlayerSensoryManager.EnsureRuntimeInstance()      â† code only
+â”‚   â”‚   â””â”€â”€ ContextualPhysicalIkRuntime.EnsureRuntimeInstance() â† code only
+â”‚   â”‚
+â”‚   â””â”€â”€ InitializeUILayer()
+â”‚       â””â”€â”€ (empty â€” no UI GlobalRegistry adapter yet)
+â”‚
+â””â”€â”€ BootstrapBiosErrorOverlay (emergency overlay, lazy-created on error only)
+    â””â”€â”€ Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")  â† built-in asset
 ```
 
 ---
@@ -113,13 +113,13 @@ These assets live in the project but are **NOT** forced into RAM by `GameBootstr
 
 | Dimension | Before | After | Delta |
 |-----------|--------|-------|-------|
-| Bootstrapper-forced heavy assets | Unknown | 0 confirmed | — |
-| `Resources.Load` calls in bootstrap | Unknown | 1 (built-in font only) | — |
-| Addressables loads in bootstrap | Unknown | 0 | — |
-| Prefab instantiations in bootstrap | Unknown | 0 | — |
+| Bootstrapper-forced heavy assets | Unknown | 0 confirmed | â€” |
+| `Resources.Load` calls in bootstrap | Unknown | 1 (built-in font only) | â€” |
+| Addressables loads in bootstrap | Unknown | 0 | â€” |
+| Prefab instantiations in bootstrap | Unknown | 0 | â€” |
 
 ---
 
-**MANDATES FOLLOWED:** AGENTS.md §Addressables (async only, no hard refs), §13 (Memory Lifetime), §Scene Flow (00_BOOTSTRAP → 01_MAIN_MENU → 02_HECTON_WORLD).
+**MANDATES FOLLOWED:** AGENTS.md Â§Addressables (async only, no hard refs), Â§13 (Memory Lifetime), Â§Scene Flow (00_BOOTSTRAP â†’ 01_MAIN_MENU â†’ 02_HECTON_WORLD).
 
-**STATUS:** ETA LEAK_MAPPED — Build Dependency slice complete.
+**STATUS:** ETA LEAK_MAPPED â€” Build Dependency slice complete.

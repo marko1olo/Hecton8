@@ -68,6 +68,7 @@ using UnityEngine.Rendering.Universal;
 using Unity.Mathematics;
 using Unity.Collections;
 using Hecton8.Atmosphere;
+using Hecton8.Modding;
 using Hecton8.World;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -75,6 +76,18 @@ using UnityEditor;
 
 namespace Hecton8.Celestial
 {
+    /// <summary>
+    /// Unmanaged Mega-Bus payload fired when a sky occluder starts a solar eclipse.
+    /// </summary>
+    public struct EclipseStartedEvent
+    {
+        public float OcclusionFactor;
+        public float SunElevationDegrees;
+        public float3 SunDirection;
+        public float3 AegirDirection;
+        public byte HasAegirDirection;
+    }
+
     /// <summary>
     /// Main-thread listener for deferred celestial events.
     /// </summary>
@@ -392,11 +405,10 @@ namespace Hecton8.Celestial
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3000)]  // v5.1: MUST tick AFTER UnderwaterVisuals(-4000)
-public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener
+public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener
     {
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
         private const float SurfaceCloudShadowCookieEpsilon = 0.0001f;
-        public static HectonCelestialEngine ActiveRuntimeInstance { get; private set; }
         private static AtmosphericLightingState _currentAtmosphericLightingState = AtmosphericLightingState.Default;
         private static bool _hasAtmosphericLightingState;
 
@@ -430,6 +442,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [SerializeField] private Texture2D _surfaceCloudShadowCookie;
         [SerializeField, Min(8f)] private float _surfaceCloudShadowCookieSize = 420f;
         [SerializeField, Min(0f)] private float _surfaceCloudShadowCookieScrollSpeed = 8f;
+
+        [Header("Aegir Ring Shadow Cookie")]
+        [Tooltip("Authored directional-light cookie with parallel ring-shadow stripes. Enabled only while Aegir is above the observer horizon.")]
+        [SerializeField] private Texture2D aegirRingShadowCookie;
+        [SerializeField, Min(8f)] private float aegirRingShadowCookieSize = 1800f;
+        [SerializeField, Range(-0.25f, 0.25f)] private float aegirRingShadowHorizonThreshold = 0.02f;
 
         [Header("═══ SKY COLOR PROFILES ═══")]
         [HideInInspector]
@@ -573,6 +591,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
         [Header("═══ ECLIPSE DETECTION ═══")]
         [SerializeField] private float eclipseAngularRadiusOverride;
+        [SerializeField] private bool useCinematicEclipseOccluderRadius = true;
+        [SerializeField, Range(0.05f, 5f)] private float cinematicEclipseOccluderRadiusDegrees = 1.15f;
         [SerializeField] private float eclipseHysteresisMargin = 0.5f;
         [SerializeField, Range(0.01f, 5f)] private float sunAngularRadiusDegrees = 0.27f;
         [SerializeField, Range(0.01f, 1f)] private float eclipseEventStartPenumbraThreshold = 0.5f;
@@ -591,6 +611,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [SerializeField] private Color planetShineColor = Color.HSVToRGB(0.75f, 0.2f, 0.9f);
         [SerializeField] private float planetShineNewMoonThreshold = 0.1f;
 
+        [Header("Moon Phase Shadows")]
+        [SerializeField] private bool enableMoonPhaseShadowModulation = true;
+        [SerializeField, Range(0f, 0.5f)] private float moonPhaseShadowStrength = 0.18f;
+        [SerializeField, Range(0.5f, 0.999f)] private float moonPhaseShadowStartDot = 0.82f;
+        [SerializeField, Range(0.5f, 0.999f)] private float moonPhaseShadowFullDot = 0.985f;
+
         [Header("═══ SHADER PARAMETERS ═══")]
         [SerializeField] private float equatorialRotationSpeed = 0.02f;
         [SerializeField] private float polarRotationMultiplier = 0.4f;
@@ -603,10 +629,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [SerializeField] private bool enableGpuFirmamentBake = true;
         [SerializeField, Range(256, 8192)] private int firmamentCubemapResolution = 8192;
         [SerializeField, Range(0.1f, 6f)] private float firmamentStarIntensity = 1.35f;
+        [SerializeField] private Texture2D starTwinkleNoiseLut;
         [SerializeField, Range(0.02f, 0.32f)] private float firmamentMilkyWayHalfWidthRadians = 0.11f;
         [SerializeField, Range(0f, 1f)] private float firmamentMilkyWayProbability = 0.76f;
         [SerializeField, Range(0.1f, 4f)] private float firmamentMilkyWayCoreBias = 1.8f;
         [SerializeField, Range(0f, 1f)] private float firmamentStarHaloGain = 0.35f;
+        [SerializeField, Range(0.05f, 1f)] private float firmamentLatitudeCompression = 0.42f;
         [SerializeField, Range(64, 512)] private int atmosphereScatteringLutWidth = 256;
         [SerializeField, Range(16, 128)] private int atmosphereScatteringLutHeight = 64;
         [SerializeField, Range(0f, 4f)] private float atmosphereScatteringDensity = 1f;
@@ -648,16 +676,22 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private float _resolvedStarMapSeed = 99173f;
         private float _lunarResonanceMultiplier = 1f;
         private float _currentPhase;
+        private float _moonPhaseShadowVisibility = 1f;
         private bool _isEclipseActive;
         private bool _lunarResonanceActive;
         private float _eclipseAngularRadius;
         private float _accumulatedOrbitalAngle;
         private float _currentBacklitFactor;
+        private Matrix4x4 _sunOrbitRotationMatrix = Matrix4x4.identity;
+        private Vector3 _resolvedSunForward = Vector3.forward;
 
         private double _rotationAccumulator;
         private float _rotationTimer;
         private float _rotationPhase;
         private float _gameTime;
+        private float _lastCelestialSlowTickTime;
+        private float _celestialTimelineAccumulator;
+        private int _nextCelestialTimelineWarningFrame;
         private float _debugCelestialTimeScale = 1f;
 
         private float _previousBlendForColors;
@@ -681,6 +715,9 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private Vector2 _cachedSunCookieOffset;
         private bool _sunCookieDefaultsCaptured;
         private Vector2 _surfaceCloudShadowCookieOffset;
+        private Vector2 _aegirRingShadowCookieOffset;
+        private Texture2D _runtimeAegirRingShadowCookie;
+        private bool _sunDirectionResolvedFromMatrix;
 
         private float3 _resolvedSunDirection;
         private float _penumbraFactor;
@@ -755,6 +792,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private float _surfaceWeatherStormEmissionMultiplier = 1f;
         private float _surfaceWeatherSkyLuminanceMultiplier = 1f;
         private bool _registeredToTickManager;
+        private bool _firmamentStartupBakeAttempted;
         private float _surfaceWeatherSunDiscMultiplier = 1f;
         private float _surfaceWeatherSunScatterMultiplier = 1f;
         private Color _surfaceWeatherCloudLitColor = Color.white;
@@ -772,12 +810,17 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private const float AtmosphereWeightBlendThreshold = 0.01f;
         private const int CelestialAtmosphereLutResolution = 64;
         private const int FirmamentStartupStarCount = 100000;
+        private const int FirmamentStarBakeThreads = 64;
+        private const float CelestialTimelineStepSeconds = 0.1f;
+        private const int CelestialTimelineMaxStepsPerSlowTick = 5;
         private const int FirmamentMinResolution = 256;
         private const int FirmamentMx350ResolutionCap = 2048;
         private const int FirmamentMidVramResolutionCap = 4096;
         private const int FirmamentHighVramResolutionCap = 8192;
         private const int FirmamentMx350MemoryCapMb = 3072;
         private const int FirmamentMidVramMemoryCapMb = 8192;
+        private const int AegirRingShadowGeneratedCookieResolution = 256;
+        private const float AegirRingShadowGeneratedLineMinLuma = 24f / 255f;
         private const int BestVisualDefaultsVersion = 5;
         private const float NightAtmosphereInscatterFloor = 0.001f;
 #if UNITY_EDITOR
@@ -793,6 +836,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         // ─────────────────────────────────────────────
 
         private static readonly int _ID_SunDirection       = Shader.PropertyToID("_SunDirection");
+        private static readonly int _ID_DirectionalLightColor = Shader.PropertyToID("_DirectionalLightColor");
         private static readonly int _ID_BacklitIntensity   = Shader.PropertyToID("_BacklitIntensity");
         private static readonly int _ID_EquatorialSpeed    = Shader.PropertyToID("_EquatorialSpeed");
         private static readonly int _ID_PolarMultiplier    = Shader.PropertyToID("_PolarMultiplier");
@@ -801,10 +845,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private static readonly int _ID_Blend              = Shader.PropertyToID("_Blend");
         private static readonly int _ID_StarIntensity      = Shader.PropertyToID("_StarIntensity");
         private static readonly int _ID_StarSeed           = Shader.PropertyToID("_StarSeed");
+        private static readonly int _ID_StarTwinkleLut     = Shader.PropertyToID("_StarTwinkleLUT");
         private static readonly int _ID_BakedStarCubemap   = Shader.PropertyToID("_BakedStarCubemap");
         private static readonly int _ID_BakedStarCubemapReady = Shader.PropertyToID("_BakedStarCubemapReady");
         private static readonly int _ID_HectonStarBakeParams = Shader.PropertyToID("_HectonStarBakeParams");
         private static readonly int _ID_HectonStarDistribution = Shader.PropertyToID("_HectonStarDistribution");
+        private static readonly int _ID_HectonGalaxyArmShape = Shader.PropertyToID("_HectonGalaxyArmShape");
         private static readonly int _ID_HectonAtmosphereScatteringLut = Shader.PropertyToID("_HectonAtmosphereScatteringLUT");
         private static readonly int _ID_HectonAtmosphereScatteringLutReady = Shader.PropertyToID("_HectonAtmosphereScatteringLUTReady");
         private static readonly int _ID_HectonAtmosphereLutSize = Shader.PropertyToID("_HectonAtmosphereLutSize");
@@ -820,6 +866,10 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private static readonly int _ID_HectonSkyOccluders = Shader.PropertyToID("_HectonSkyOccluders");
         private static readonly uint _FirmamentResolutionClampWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.FirmamentResolutionClamp"));
         private static readonly uint _FirmamentBakeContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.FirmamentBake"));
+        private static readonly uint _CelestialTimelineBudgetWarningHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.CelestialTimelineBudget"));
+        private static readonly uint _CelestialTimelineContextHash = unchecked((uint)LocHash.Compute("HectonCelestialEngine.SlowTick"));
+        private const double CelestialTimelineBudgetMilliseconds = 0.2d;
+        private const int CelestialTimelineWarningCooldownFrames = 30;
         private static readonly int _ID_FresnelSunDir      = Shader.PropertyToID("_FresnelSunDir");
         private static readonly int _ID_SunBacklitFactor   = Shader.PropertyToID("_SunBacklitFactor");
         private static readonly int _ID_GlobalRotation     = Shader.PropertyToID("_GlobalRotation");
@@ -977,10 +1027,14 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             }
 
             if (Application.isPlaying)
-                ActiveRuntimeInstance = this;
+            {
+                GlobalTelemetryBus.Initialize();
+                GlobalRegistry.RegisterCelestialEngineRuntime(this);
+            }
 
             ForceMandatedSkyMaterialReference();
             ValidateReferences();
+            EnsureAegirRingShadowCookieReady();
             EnsureCelestialAtmosphereLutReady();
             ResolveFirmamentBakeCompute();
             InitializeMaterialPropertyBlocks();
@@ -992,15 +1046,20 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             _currentBacklitFactor = 0f;
             _smoothedOcclusionFactor = 0f;
             _sunOcclusionFactor = 0f;
+            _moonPhaseShadowVisibility = 1f;
             _baseSunIntensityCaptured = false;
             _baseSunColorCaptured = false;
             _baseFlareValuesCaptured = false;
             _eclipseRadiusCalculated = false;
             _sunDiscRendererCached = false;
+            _sunDirectionResolvedFromMatrix = false;
 
             _rotationAccumulator = 0.0;
             _rotationTimer = 0f;
             _gameTime = 0f;
+            _lastCelestialSlowTickTime = 0f;
+            _celestialTimelineAccumulator = 0f;
+            _firmamentStartupBakeAttempted = false;
 
             _previousBlendForColors = -1f;
             _lastAppliedSkyZenith = default;
@@ -1020,14 +1079,16 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             SyncCrestPrimaryLight();
 
             ApplySkyboxMaterialOwnership(forceAssignment: true);
+            ApplyFirmamentStaticMaterialBindings(_skyMaterial);
 
             if (Application.isPlaying)
             {
                 BiomeMatrixEvents.Unregister(this);
                 BiomeMatrixEvents.Register(this);
                 TryRegisterToTickManager();
+                InitializeFirmamentBakeAtStartup();
 
-                BiomeMatrixDirector director = BiomeMatrixDirector.ActiveRuntimeInstance;
+                BiomeMatrixDirector director = GlobalRegistry.BiomeMatrix;
                 if (director != null)
                 {
                     _currentDepthMeters = Mathf.Max(0f, director.CurrentDepthMeters);
@@ -1051,12 +1112,13 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private void Start()
         {
             TryRegisterToTickManager();
+            InitializeFirmamentBakeAtStartup();
         }
 
         private void OnDisable()
         {
-            if (ActiveRuntimeInstance == this)
-                ActiveRuntimeInstance = null;
+            if (GlobalRegistry.CelestialEngine == this)
+                GlobalRegistry.UnregisterCelestialEngineRuntime(this);
 
             _editorPreviewDirty = false;
             _surfaceAtmosphericLightingState = AtmosphericLightingState.Default;
@@ -1070,6 +1132,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             ReleaseFirmamentBakeResources();
             RestoreCelestialTextureDefaults();
             RestoreSurfaceCloudShadowCookie();
+            ReleaseRuntimeAegirRingShadowCookie();
             RestoreSunDefaults();
             CleanupPlanetShineLight();
             TryUnregisterFromTickManager();
@@ -1090,8 +1153,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
         private void OnDestroy()
         {
-            if (ActiveRuntimeInstance == this)
-                ActiveRuntimeInstance = null;
+            if (GlobalRegistry.CelestialEngine == this)
+                GlobalRegistry.UnregisterCelestialEngineRuntime(this);
 
             if (_renderSettingsGuardAcquired)
             {
@@ -1102,6 +1165,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             ReleaseCelestialAtmosphereLut();
             ReleaseFirmamentBakeResources();
             RestoreSurfaceCloudShadowCookie();
+            ReleaseRuntimeAegirRingShadowCookie();
             TryUnregisterFromTickManager();
         }
 
@@ -1113,8 +1177,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterFromTickManager()
@@ -1122,7 +1186,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             if (!_registeredToTickManager)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
 
@@ -1139,7 +1203,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             if (!_editorPreviewDirty && !sunMoved)
                 return;
 
-            Tick(0f);
+                RunCelestialTimeline(0f);
             _editorPreviewDirty = false;
             SceneView.RepaintAll();
         }
@@ -1149,14 +1213,17 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             EnsureCelestialAtmosphereLutReady();
             CacheMoonRenderers();
             sunAngularRadiusDegrees = Mathf.Max(0.01f, sunAngularRadiusDegrees);
+            cinematicEclipseOccluderRadiusDegrees = Mathf.Max(0.01f, cinematicEclipseOccluderRadiusDegrees);
             eclipseEventStartPenumbraThreshold = Mathf.Clamp(eclipseEventStartPenumbraThreshold, 0.01f, 1f);
+            aegirRingShadowCookieSize = Mathf.Max(8f, aegirRingShadowCookieSize);
+            aegirRingShadowHorizonThreshold = Mathf.Clamp(aegirRingShadowHorizonThreshold, -0.25f, 0.25f);
             _editorPreviewDirty = true;
 
             if (Application.isPlaying)
                 return;
 
             InitializeMaterialPropertyBlocks();
-            Tick(0f);
+            RunCelestialTimeline(0f);
 
 #if UNITY_EDITOR
             EditorApplication.QueuePlayerLoopUpdate();
@@ -1212,7 +1279,48 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         // ITickable — MAIN LOOP
         // ─────────────────────────────────────────────
 
-        public void Tick(float deltaTime)
+        public void SlowTick()
+        {
+            long timelineStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+            float now = Time.time;
+            float elapsed = _lastCelestialSlowTickTime > 0f
+                ? Mathf.Clamp(now - _lastCelestialSlowTickTime, CelestialTimelineStepSeconds, CelestialTimelineStepSeconds * CelestialTimelineMaxStepsPerSlowTick)
+                : CelestialTimelineStepSeconds;
+            _lastCelestialSlowTickTime = now;
+            _celestialTimelineAccumulator = Mathf.Min(
+                _celestialTimelineAccumulator + elapsed,
+                CelestialTimelineStepSeconds * CelestialTimelineMaxStepsPerSlowTick);
+
+            int steps = 0;
+            while (_celestialTimelineAccumulator >= CelestialTimelineStepSeconds &&
+                   steps < CelestialTimelineMaxStepsPerSlowTick)
+            {
+                RunCelestialTimeline(CelestialTimelineStepSeconds);
+                _celestialTimelineAccumulator -= CelestialTimelineStepSeconds;
+                steps++;
+            }
+
+            PublishCelestialTimelineBudgetWarningIfNeeded(timelineStartTicks);
+        }
+
+        private void PublishCelestialTimelineBudgetWarningIfNeeded(long timelineStartTicks)
+        {
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - timelineStartTicks;
+            double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds <= CelestialTimelineBudgetMilliseconds ||
+                Time.frameCount < _nextCelestialTimelineWarningFrame)
+            {
+                return;
+            }
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _CelestialTimelineBudgetWarningHash,
+                _CelestialTimelineContextHash,
+                (float)elapsedMilliseconds);
+            _nextCelestialTimelineWarningFrame = Time.frameCount + CelestialTimelineWarningCooldownFrames;
+        }
+
+        private void RunCelestialTimeline(float deltaTime)
         {
             float celestialDeltaTime = deltaTime * Mathf.Max(0f, _debugCelestialTimeScale);
             _rotationAccumulator += (double)celestialDeltaTime;
@@ -1248,7 +1356,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             UpdateSkyboxBlend(sunElevation);
             UpdateStarIntensity(sunElevation);
             _resolvedStarMapSeed = ResolveStarMapSeed();
-            TryBakeFirmamentOnce();
             ResolveSkyColors(out _resolvedSkyZenith, out _resolvedSkyHorizon, out _resolvedSkyNadir);
             UpdateDynamicCelestialAtmosphere(sunElevation, false);
             UpdateGlobalShaderData();
@@ -1259,6 +1366,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             UpdateAegirMaterial();
             UpdateMoonMaterialOverrides();
             UpdatePlanetShine();
+            UpdateMoonPhaseShadowVisibility();
             UpdateDeepTextureResidencyState();
 
             // v5.1: ApplySunOcclusion is the LAST intensity writer.
@@ -1376,26 +1484,134 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             if (!TryResolveSunAdditionalLightData(out UniversalAdditionalLightData lightData))
                 return;
 
-            if (_surfaceCloudShadowCookie == null)
+            Texture2D selectedCookie = ResolveDirectionalShadowCookie(
+                deltaTime,
+                out Vector2 targetCookieSize,
+                out Vector2 targetCookieOffset);
+            if (selectedCookie == null)
+            {
+                if (_sunCookieDefaultsCaptured)
+                    RestoreSurfaceCloudShadowCookie();
                 return;
+            }
 
             CaptureSunCookieDefaults(lightData);
 
-            if (!ReferenceEquals(sunLight.cookie, _surfaceCloudShadowCookie))
-                sunLight.cookie = _surfaceCloudShadowCookie;
+            if (!ReferenceEquals(sunLight.cookie, selectedCookie))
+                sunLight.cookie = selectedCookie;
 
-            float cookieSize = Mathf.Max(8f, _surfaceCloudShadowCookieSize);
-            Vector2 targetCookieSize = new Vector2(cookieSize, cookieSize);
             if ((lightData.lightCookieSize - targetCookieSize).sqrMagnitude > SurfaceCloudShadowCookieEpsilon)
                 lightData.lightCookieSize = targetCookieSize;
 
+            if ((lightData.lightCookieOffset - targetCookieOffset).sqrMagnitude > SurfaceCloudShadowCookieEpsilon)
+                lightData.lightCookieOffset = targetCookieOffset;
+        }
+
+        private Texture2D ResolveDirectionalShadowCookie(
+            float deltaTime,
+            out Vector2 targetCookieSize,
+            out Vector2 targetCookieOffset)
+        {
+            if (IsAegirRingCookieVisible())
+            {
+                Texture2D ringCookie = ResolveAegirRingShadowCookie();
+                float ringSize = Mathf.Max(8f, aegirRingShadowCookieSize);
+                targetCookieSize = new Vector2(ringSize, ringSize);
+                targetCookieOffset = _aegirRingShadowCookieOffset;
+                return ringCookie;
+            }
+
+            if (_surfaceCloudShadowCookie == null)
+            {
+                targetCookieSize = Vector2.zero;
+                targetCookieOffset = Vector2.zero;
+                return null;
+            }
+
+            float cookieSize = Mathf.Max(8f, _surfaceCloudShadowCookieSize);
             Vector2 scrollDirection = ResolveSurfaceCloudShadowScrollDirection();
             _surfaceCloudShadowCookieOffset += scrollDirection * (Mathf.Max(0f, _surfaceCloudShadowCookieScrollSpeed) * Mathf.Max(0f, deltaTime));
             _surfaceCloudShadowCookieOffset.x = RepeatCookieOffset(_surfaceCloudShadowCookieOffset.x, cookieSize);
             _surfaceCloudShadowCookieOffset.y = RepeatCookieOffset(_surfaceCloudShadowCookieOffset.y, cookieSize);
 
-            if ((lightData.lightCookieOffset - _surfaceCloudShadowCookieOffset).sqrMagnitude > SurfaceCloudShadowCookieEpsilon)
-                lightData.lightCookieOffset = _surfaceCloudShadowCookieOffset;
+            targetCookieSize = new Vector2(cookieSize, cookieSize);
+            targetCookieOffset = _surfaceCloudShadowCookieOffset;
+            return _surfaceCloudShadowCookie;
+        }
+
+        private bool IsAegirRingCookieVisible()
+        {
+            if (ResolveAegirRingShadowCookie() == null)
+                return false;
+
+            if (!TryResolveAegirSkyDirection(out float3 toAegir))
+                return false;
+
+            return toAegir.y > aegirRingShadowHorizonThreshold;
+        }
+
+        private Texture2D ResolveAegirRingShadowCookie()
+        {
+            return aegirRingShadowCookie != null
+                ? aegirRingShadowCookie
+                : _runtimeAegirRingShadowCookie;
+        }
+
+        private void EnsureAegirRingShadowCookieReady()
+        {
+            if (aegirRingShadowCookie != null)
+            {
+                ReleaseRuntimeAegirRingShadowCookie();
+                return;
+            }
+
+            if (_runtimeAegirRingShadowCookie != null)
+                return;
+
+            int resolution = AegirRingShadowGeneratedCookieResolution;
+            _runtimeAegirRingShadowCookie = new Texture2D(
+                resolution,
+                resolution,
+                TextureFormat.RGBA32,
+                false,
+                true)
+            {
+                name = "__HectonAegirRingShadowCookie",
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.DontSave
+            }; // COLD ALLOC: Texture2D[256x256 RGBA32] - fallback Aegir parallel-line directional-light cookie when no authored asset is wired - owner: HectonCelestialEngine
+
+            float invResolution = 1f / Mathf.Max(1, resolution - 1);
+            for (int y = 0; y < resolution; y++)
+            {
+                for (int x = 0; x < resolution; x++)
+                {
+                    float u = x * invResolution;
+                    float primary = Mathf.Abs(Mathf.Sin((u * 13f + 0.17f) * Mathf.PI));
+                    float secondary = Mathf.Abs(Mathf.Sin((u * 29f + 0.41f) * Mathf.PI));
+                    float primaryLine = 1f - Mathf.SmoothStep(0.018f, 0.085f, primary);
+                    float secondaryLine = 1f - Mathf.SmoothStep(0.012f, 0.052f, secondary);
+                    float lineMask = Mathf.Clamp01(Mathf.Max(primaryLine, secondaryLine * 0.62f));
+                    byte luma = (byte)Mathf.RoundToInt(Mathf.Lerp(255f, AegirRingShadowGeneratedLineMinLuma * 255f, lineMask));
+                    _runtimeAegirRingShadowCookie.SetPixel(x, y, new Color32(luma, luma, luma, 255));
+                }
+            }
+
+            _runtimeAegirRingShadowCookie.Apply(false, true);
+        }
+
+        private void ReleaseRuntimeAegirRingShadowCookie()
+        {
+            if (_runtimeAegirRingShadowCookie == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(_runtimeAegirRingShadowCookie);
+            else
+                DestroyImmediate(_runtimeAegirRingShadowCookie);
+
+            _runtimeAegirRingShadowCookie = null;
         }
 
         private bool TryResolveSunAdditionalLightData(out UniversalAdditionalLightData lightData)
@@ -1426,6 +1642,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             _cachedSunCookieSize = lightData.lightCookieSize;
             _cachedSunCookieOffset = lightData.lightCookieOffset;
             _surfaceCloudShadowCookieOffset = _cachedSunCookieOffset;
+            _aegirRingShadowCookieOffset = Vector2.zero;
             _sunCookieDefaultsCaptured = true;
         }
 
@@ -1933,11 +2150,20 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             _lastAtmosphereBakeSkyNadir = default;
         }
 
+        private void InitializeFirmamentBakeAtStartup()
+        {
+            if (!Application.isPlaying || _firmamentStartupBakeAttempted)
+                return;
+
+            _firmamentStartupBakeAttempted = true;
+            _resolvedStarMapSeed = ResolveStarMapSeed();
+            TryBakeFirmamentOnce();
+        }
+
         private void TryBakeFirmamentOnce()
         {
             if (_firmamentBakeComplete)
             {
-                PublishFirmamentBakeGlobals();
                 return;
             }
 
@@ -1981,6 +2207,13 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                     Mathf.Clamp01(firmamentMilkyWayProbability),
                     Mathf.Max(0.001f, firmamentMilkyWayCoreBias),
                     Mathf.Clamp01(firmamentStarHaloGain)));
+            firmamentBakeCompute.SetVector(
+                _ID_HectonGalaxyArmShape,
+                new Vector4(
+                    Mathf.Clamp(firmamentLatitudeCompression, 0.05f, 1f),
+                    0f,
+                    0f,
+                    0f));
             firmamentBakeCompute.SetTexture(_firmamentClearKernel, _ID_BakedStarCubemap, _bakedStarCubemap);
             firmamentBakeCompute.SetTexture(_firmamentStarKernel, _ID_BakedStarCubemap, _bakedStarCubemap);
             firmamentBakeCompute.Dispatch(
@@ -1990,7 +2223,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 6);
             firmamentBakeCompute.Dispatch(
                 _firmamentStarKernel,
-                Mathf.CeilToInt(FirmamentStartupStarCount / 128f),
+                Mathf.CeilToInt((float)FirmamentStartupStarCount / FirmamentStarBakeThreads),
                 1,
                 1);
 
@@ -2162,17 +2395,37 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         {
             bool hasBakedStars = _firmamentBakeComplete && _bakedStarCubemap != null;
             bool hasAtmosphereLut = _firmamentBakeComplete && _atmosphereScatteringLutTexture != null;
+            Texture2D twinkleLut = starTwinkleNoiseLut != null ? starTwinkleNoiseLut : Texture2D.whiteTexture;
 
+            Shader.SetGlobalTexture(_ID_StarTwinkleLut, twinkleLut);
             Shader.SetGlobalTexture(_ID_BakedStarCubemap, hasBakedStars ? _bakedStarCubemap : null);
             Shader.SetGlobalFloat(_ID_BakedStarCubemapReady, hasBakedStars ? 1f : 0f);
             Shader.SetGlobalTexture(_ID_HectonAtmosphereScatteringLut, hasAtmosphereLut ? _atmosphereScatteringLutTexture : Texture2D.blackTexture);
             Shader.SetGlobalFloat(_ID_HectonAtmosphereScatteringLutReady, hasAtmosphereLut ? 1f : 0f);
+            ApplyFirmamentStaticMaterialBindings(_skyMaterial);
+        }
+
+        private void ApplyFirmamentStaticMaterialBindings(Material targetMaterial)
+        {
+            if (targetMaterial == null)
+                return;
+
+            bool hasBakedStars = _firmamentBakeComplete && _bakedStarCubemap != null;
+            bool hasAtmosphereLut = _firmamentBakeComplete && _atmosphereScatteringLutTexture != null;
+            Texture2D twinkleLut = starTwinkleNoiseLut != null ? starTwinkleNoiseLut : Texture2D.whiteTexture;
+
+            SetMaterialTexture(targetMaterial, _ID_StarTwinkleLut, twinkleLut);
+            SetMaterialTexture(targetMaterial, _ID_BakedStarCubemap, hasBakedStars ? _bakedStarCubemap : null);
+            SetMaterialFloat(targetMaterial, _ID_BakedStarCubemapReady, hasBakedStars ? 1f : 0f);
+            SetMaterialTexture(targetMaterial, _ID_HectonAtmosphereScatteringLut, hasAtmosphereLut ? _atmosphereScatteringLutTexture : Texture2D.blackTexture);
+            SetMaterialFloat(targetMaterial, _ID_HectonAtmosphereScatteringLutReady, hasAtmosphereLut ? 1f : 0f);
         }
 
         private void ReleaseFirmamentBakeResources()
         {
             Shader.SetGlobalTexture(_ID_BakedStarCubemap, null);
             Shader.SetGlobalFloat(_ID_BakedStarCubemapReady, 0f);
+            Shader.SetGlobalTexture(_ID_StarTwinkleLut, Texture2D.whiteTexture);
             Shader.SetGlobalTexture(_ID_HectonAtmosphereScatteringLut, Texture2D.blackTexture);
             Shader.SetGlobalFloat(_ID_HectonAtmosphereScatteringLutReady, 0f);
             Shader.SetGlobalVector(_ID_HectonEclipseWaterShadowParams, Vector4.zero);
@@ -2190,6 +2443,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             _firmamentBakedResolution = 0;
             _atmosphereScatteringBakedWidth = 0;
             _atmosphereScatteringBakedHeight = 0;
+            ApplyFirmamentStaticMaterialBindings(_skyMaterial);
         }
 
         private void ReleaseFirmamentStarCubemap()
@@ -2453,12 +2707,17 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             if (Mathf.Abs(RenderSettings.ambientIntensity - state.AmbientIntensity) >= 0.0001f)
                 RenderSettings.ambientIntensity = state.AmbientIntensity;
 
+            Color globalDirectionalColor = state.DirectionalLightColor * Mathf.Max(0f, state.SunIntensityMultiplier);
+            globalDirectionalColor.a = 1f;
+            Shader.SetGlobalColor(_ID_DirectionalLightColor, globalDirectionalColor);
+
             if (sunLight == null)
                 return;
 
+            HectonUnderwaterVisuals underwaterVisuals = GlobalRegistry.UnderwaterVisuals;
             bool allowSurfaceDirectionalLight =
-                HectonUnderwaterVisuals.ActiveRuntimeInstance == null ||
-                !HectonUnderwaterVisuals.ActiveRuntimeInstance.IsUnderwater;
+                underwaterVisuals == null ||
+                !underwaterVisuals.IsUnderwater;
 
             if (!allowSurfaceDirectionalLight)
                 return;
@@ -2771,6 +3030,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
         private float GetAegirAngularRadiusDegrees()
         {
+            if (eclipseAngularRadiusOverride > 0f)
+                return math.max(eclipseAngularRadiusOverride, 0.01f);
+
+            if (useCinematicEclipseOccluderRadius)
+                return math.max(cinematicEclipseOccluderRadiusDegrees, 0.01f);
+
             if (aegirObserverRelativeBody != null)
                 return math.max(aegirObserverRelativeBody.AngularDiameterDegrees * 0.5f, 0.01f);
 
@@ -2792,6 +3057,9 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
         private void ResolveSunDirection()
         {
+            if (_sunDirectionResolvedFromMatrix)
+                return;
+
             if (sunLight != null)
                 _resolvedSunDirection = -(float3)sunLight.transform.forward;
         }
@@ -2802,21 +3070,30 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
         private void UpdateSunPosition(float dt)
         {
-            if (sunLight == null) return;
+            if (sunLight == null)
+            {
+                _sunDirectionResolvedFromMatrix = false;
+                return;
+            }
 
             if (_atmosphereManager != null)
             {
                 _accumulatedOrbitalAngle = _atmosphereManager.SunAngle;
+                _sunDirectionResolvedFromMatrix = false;
                 return;
             }
 
             UpdateInternalOrbit(dt);
 
             float3 axis = math.normalizesafe((float3)sunOrbitAxis, new float3(1, 0, 0));
-            quaternion rotation = quaternion.AxisAngle(axis, math.radians(_accumulatedOrbitalAngle));
-            float3 sunForward = math.mul(rotation, new float3(0, 0, 1));
+            _sunOrbitRotationMatrix = BuildAxisAngleRotationMatrix(axis, math.radians(_accumulatedOrbitalAngle));
+            _resolvedSunForward = _sunOrbitRotationMatrix.MultiplyVector(Vector3.forward);
+            if (_resolvedSunForward.sqrMagnitude <= 0.0001f)
+                _resolvedSunForward = Vector3.forward;
 
-            sunLight.transform.rotation = Quaternion.LookRotation((Vector3)sunForward);
+            sunLight.transform.rotation = Quaternion.LookRotation(_resolvedSunForward);
+            _resolvedSunDirection = new float3(-_resolvedSunForward.x, -_resolvedSunForward.y, -_resolvedSunForward.z);
+            _sunDirectionResolvedFromMatrix = true;
         }
 
         private void UpdateInternalOrbit(float dt)
@@ -2824,6 +3101,29 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             float degreesPerSecond = 360f / math.max(orbitalPeriod, 1f);
             _accumulatedOrbitalAngle += degreesPerSecond * dt;
             _accumulatedOrbitalAngle %= 360f;
+        }
+
+        private static Matrix4x4 BuildAxisAngleRotationMatrix(float3 axis, float radians)
+        {
+            axis = math.normalizesafe(axis, new float3(1f, 0f, 0f));
+            float x = axis.x;
+            float y = axis.y;
+            float z = axis.z;
+            float sin = math.sin(radians);
+            float cos = math.cos(radians);
+            float oneMinusCos = 1f - cos;
+
+            Matrix4x4 matrix = Matrix4x4.identity;
+            matrix.m00 = oneMinusCos * x * x + cos;
+            matrix.m01 = oneMinusCos * x * y - sin * z;
+            matrix.m02 = oneMinusCos * x * z + sin * y;
+            matrix.m10 = oneMinusCos * y * x + sin * z;
+            matrix.m11 = oneMinusCos * y * y + cos;
+            matrix.m12 = oneMinusCos * y * z - sin * x;
+            matrix.m20 = oneMinusCos * z * x - sin * y;
+            matrix.m21 = oneMinusCos * z * y + sin * x;
+            matrix.m22 = oneMinusCos * z * z + cos;
+            return matrix;
         }
 
         private void UpdateSunVisualPosition()
@@ -2996,6 +3296,14 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 return;
 
             material.SetTexture(propertyId, texture);
+        }
+
+        private static void SetMaterialFloat(Material material, int propertyId, float value)
+        {
+            if (material == null || !material.HasProperty(propertyId))
+                return;
+
+            material.SetFloat(propertyId, value);
         }
 
         private static float GetMaterialFloat(Material material, int propertyId, float fallback)
@@ -3274,10 +3582,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             targetMaterial.SetFloat(_ID_NightBlend, _currentBlend);
             targetMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
             targetMaterial.SetFloat(_ID_StarSeed, _resolvedStarMapSeed);
-            targetMaterial.SetTexture(_ID_BakedStarCubemap, _firmamentBakeComplete ? _bakedStarCubemap : null);
-            targetMaterial.SetFloat(_ID_BakedStarCubemapReady, _firmamentBakeComplete && _bakedStarCubemap != null ? 1f : 0f);
-            targetMaterial.SetTexture(_ID_HectonAtmosphereScatteringLut, _firmamentBakeComplete ? _atmosphereScatteringLutTexture : Texture2D.blackTexture);
-            targetMaterial.SetFloat(_ID_HectonAtmosphereScatteringLutReady, _firmamentBakeComplete && _atmosphereScatteringLutTexture != null ? 1f : 0f);
             targetMaterial.SetFloat(_ID_SunElevation, sunElevationNormalized);
             targetMaterial.SetFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
             targetMaterial.SetFloat(_ID_PenumbraFactor, _penumbraFactor);
@@ -3472,7 +3776,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         /// </summary>
         private void ApplySunOcclusion()
         {
-            float visibility = 1.0f - _smoothedOcclusionFactor;
+            float visibility = (1.0f - _smoothedOcclusionFactor) * _moonPhaseShadowVisibility;
             bool skyOwnsPrimarySunDisc = _atmosphereManager != null;
 
             // ── Sun Light Intensity ──
@@ -3631,7 +3935,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             Shader.SetGlobalFloat(_ID_CelestialZenithTransparency, zenithTransparency);
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereBlendPower, atmosphereBlendPower);
             Shader.SetGlobalFloat(_ID_GameTime, _gameTime);
-            PublishFirmamentBakeGlobals();
             PublishOceanCelestialProjectionGlobals(aegirDirection);
             PublishCelestialAtmosphereLut();
         }
@@ -3641,8 +3944,15 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             float timeOfDay01 = _atmosphereManager != null
                 ? Mathf.Repeat(_atmosphereManager.TimeOfDay, 1f)
                 : Mathf.Repeat(_rotationPhase, 1f);
-            Quaternion skyRotation = Quaternion.AngleAxis(timeOfDay01 * 360f, Vector3.up);
-            Shader.SetGlobalMatrix(_ID_HectonSkyRotation, Matrix4x4.Rotate(skyRotation));
+            float skyAngleRad = timeOfDay01 * math.PI * 2f;
+            float skyCos = math.cos(skyAngleRad);
+            float skySin = math.sin(skyAngleRad);
+            Matrix4x4 skyRotation = Matrix4x4.identity;
+            skyRotation.m00 = skyCos;
+            skyRotation.m02 = skySin;
+            skyRotation.m20 = -skySin;
+            skyRotation.m22 = skyCos;
+            Shader.SetGlobalMatrix(_ID_HectonSkyRotation, skyRotation);
 
             int occluderCount = 0;
             if (aegirDirection.sqrMagnitude > 0.0001f)
@@ -3888,6 +4198,33 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             _planetShineLight.color = planetShineColor;
         }
 
+        private void UpdateMoonPhaseShadowVisibility()
+        {
+            if (!enableMoonPhaseShadowModulation || moonPhaseShadowStrength <= 0f)
+            {
+                _moonPhaseShadowVisibility = 1f;
+                return;
+            }
+
+            float bestAlignment = 0f;
+            for (int i = 0; i < _observerBodyCache.Count; i++)
+            {
+                ObserverRelativeCelestialBody body = _observerBodyCache[i];
+                if (!TryGetMoonDirection(body, out Vector3 moonDirection))
+                    continue;
+
+                float alignment = math.dot((float3)moonDirection, _resolvedSunDirection);
+                if (alignment > bestAlignment)
+                    bestAlignment = alignment;
+            }
+
+            float startDot = math.min(moonPhaseShadowStartDot, moonPhaseShadowFullDot);
+            float fullDot = math.max(moonPhaseShadowStartDot, moonPhaseShadowFullDot);
+            float phaseT = math.saturate((bestAlignment - startDot) / math.max(fullDot - startDot, 0.0001f));
+            phaseT = phaseT * phaseT * (3f - 2f * phaseT);
+            _moonPhaseShadowVisibility = 1f - phaseT * math.saturate(moonPhaseShadowStrength);
+        }
+
         // ─────────────────────────────────────────────
         // ECLIPSE DETECTION
         // ─────────────────────────────────────────────
@@ -3911,12 +4248,29 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             {
                 _isEclipseActive = true;
                 CelestialEvents.RaiseEclipseStarted();
+                PublishEclipseStartedMegaBus();
             }
             else if (!insideExitBand && _isEclipseActive)
             {
                 _isEclipseActive = false;
                 CelestialEvents.RaiseEclipseEnded();
             }
+        }
+
+        private void PublishEclipseStartedMegaBus()
+        {
+            EclipseStartedEvent eclipseEvent = default;
+            eclipseEvent.OcclusionFactor = _penumbraFactor;
+            eclipseEvent.SunElevationDegrees = _currentSunAngle;
+            eclipseEvent.SunDirection = _resolvedSunDirection;
+
+            if (TryResolveAegirSkyDirection(out float3 aegirDirection))
+            {
+                eclipseEvent.AegirDirection = aegirDirection;
+                eclipseEvent.HasAegirDirection = 1;
+            }
+
+            HectonEventBus.Publish(in eclipseEvent);
         }
 
         private void DetectLunarResonance()

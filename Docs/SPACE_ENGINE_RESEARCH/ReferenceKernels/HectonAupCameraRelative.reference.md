@@ -1,7 +1,7 @@
-# Hecton AUP Camera Relative Reference
+﻿# Hecton AUP Camera Relative Reference
 
-Date: 2026-05-05
-Status: REFERENCE
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Clean-room CPU conversion for camera-relative render positions. This is not SpaceEngine source.
 

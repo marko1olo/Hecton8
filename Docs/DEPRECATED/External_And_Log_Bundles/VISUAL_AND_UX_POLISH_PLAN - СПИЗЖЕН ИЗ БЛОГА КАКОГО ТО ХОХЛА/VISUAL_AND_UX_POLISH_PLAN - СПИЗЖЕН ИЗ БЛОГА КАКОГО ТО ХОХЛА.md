@@ -1,3 +1,6 @@
+Date: UNKNOWN_LEGACY
+Status: DEPRECATED
+
 🛸 HECTON-8: План по визуальной и технической полировке (Visual Juice)
 На базе анализа лучших решений соло-разработки (кейс Tiny Delivery / Artem Sinica)
 1. Техническая магия ландшафта (Terrain & Environment)

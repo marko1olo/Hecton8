@@ -159,6 +159,15 @@ namespace Hecton8.Environment
             _pendingEventCount++;
         }
 
+        public static void DropPendingAmbient()
+        {
+            DrainQueueImmediate(ref _pendingEvents);
+            DrainQueueImmediate(ref _nextFrameEvents);
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
+        }
+
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
@@ -226,6 +235,16 @@ namespace Hecton8.Environment
                 pendingCount = 0;
 
             return true;
+        }
+
+        private static void DrainQueueImmediate(ref NativeQueue<WeatherEventPayload> queue)
+        {
+            if (!queue.IsCreated)
+                return;
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         private static void PromoteNextFrameEventsIfFrontEmpty()

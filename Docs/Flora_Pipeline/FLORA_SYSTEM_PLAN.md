@@ -1,6 +1,7 @@
-# Flora System Plan
+﻿# Flora System Plan
 
-Status: `ACTIVE`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Verification: `PENDING VERIFICATION`
 
 This file is the compact implementation plan for the HECTON-8 flora pipeline. It exists so future dialogs can start from `/Docs` instead of scanning large legacy markdown files in the repo root.
@@ -9,7 +10,7 @@ This file is the compact implementation plan for the HECTON-8 flora pipeline. It
 
 - This plan is a current execution contract, not runtime certification.
 - Generated starter finals, texture request paths, and owner stack references require source/asset readback before surgery.
-- Current project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project truth starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 
 ## Read Order
 

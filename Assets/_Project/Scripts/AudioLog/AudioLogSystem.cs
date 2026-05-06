@@ -79,7 +79,9 @@ namespace Hecton8.Narrative
         private int _queueHead;
         private int _queueTail;
         private int _queueCount;
+        private float _atmosphericWarningTimer;
         private bool _isPlaying;
+        private bool _atmosphericWarningActive;
         private bool _registered;
         private bool _serviceRegistered;
 
@@ -95,6 +97,7 @@ namespace Hecton8.Narrative
         // ══════════════════════════════════════════════════════════
 
         public bool IsPlaying => _isPlaying;
+        public bool IsNarrativeQueueBlocked => _isPlaying || _atmosphericWarningActive;
         public AudioLogData CurrentLog => _currentLog;
         public int DiscoveredCount => _discoveredLogs.Count;
 
@@ -138,6 +141,7 @@ namespace Hecton8.Narrative
             }
 
             ClearPlaybackQueue();
+            ClearAtmosphericWarningBlocker();
         }
 
         private void OnDestroy()
@@ -153,6 +157,8 @@ namespace Hecton8.Narrative
 
         public void SlowTick()
         {
+            TickAtmosphericWarningBlocker();
+
             if (!_isPlaying || _currentLog == null)
                 return;
 
@@ -203,8 +209,7 @@ namespace Hecton8.Narrative
 
             // Также регистрируем в NarrativeDirector
             NarrativeEvents.RaiseDiscoveryMade(data.logId);
-            LoreAcquiredEvent loreAcquiredEvent = new LoreAcquiredEvent(discoveredHash);
-            HectonEventBus.Publish(in loreAcquiredEvent);
+            NarrativeEvents.RaiseAudioLogFound(data.logId);
 
             LogDiscovered(data.logId, displayTitle);
         }
@@ -220,7 +225,7 @@ namespace Hecton8.Narrative
             // Обнаруживаем если ещё не обнаружен
             DiscoverLog(data);
 
-            if (_isPlaying)
+            if (_isPlaying || _atmosphericWarningActive)
             {
                 EnqueuePlayback(data);
                 return;
@@ -262,6 +267,22 @@ namespace Hecton8.Narrative
 
             PlayLog(data);
             return true;
+        }
+
+        public void NotifyAtmosphericWarningStarted(float durationSeconds)
+        {
+            _atmosphericWarningActive = true;
+            _atmosphericWarningTimer = Mathf.Max(_atmosphericWarningTimer, Mathf.Max(0.5f, durationSeconds));
+        }
+
+        public void NotifyAtmosphericWarningCompleted()
+        {
+            if (!_atmosphericWarningActive)
+                return;
+
+            _atmosphericWarningActive = false;
+            _atmosphericWarningTimer = 0f;
+            TryStartNextQueuedLog();
         }
 
         /// <summary>
@@ -355,7 +376,7 @@ namespace Hecton8.Narrative
 
         private void TryStartNextQueuedLog()
         {
-            if (_isPlaying || _queueCount <= 0)
+            if (_isPlaying || _atmosphericWarningActive || _queueCount <= 0)
                 return;
 
             AudioLogData next = _queuedLogs[_queueHead];
@@ -365,6 +386,24 @@ namespace Hecton8.Narrative
 
             if (next != null)
                 PlayLog(next);
+        }
+
+        private void TickAtmosphericWarningBlocker()
+        {
+            if (!_atmosphericWarningActive)
+                return;
+
+            _atmosphericWarningTimer -= 0.5f; // SlowTick ~0.5s
+            if (_atmosphericWarningTimer > 0f)
+                return;
+
+            NotifyAtmosphericWarningCompleted();
+        }
+
+        private void ClearAtmosphericWarningBlocker()
+        {
+            _atmosphericWarningActive = false;
+            _atmosphericWarningTimer = 0f;
         }
 
         private void ClearPlaybackQueue()

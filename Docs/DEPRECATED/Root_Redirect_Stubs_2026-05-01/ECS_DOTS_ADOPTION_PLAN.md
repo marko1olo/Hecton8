@@ -1,4 +1,6 @@
 # Redirect Stub
+Date: 2026-05-01
+Status: DEPRECATED
 
 Canonical path moved to `Docs/Scatter_Runtime/ECS_DOTS_ADOPTION_PLAN.md`.
 

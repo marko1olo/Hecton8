@@ -1,7 +1,7 @@
-# Migratory Flora System
-Date: `2026-05-04`
+﻿# Migratory Flora System
+Date: 2026-05-07
 
-Status: REFERENCE
+Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
 ## 2026-05-04 Current-State Boundary

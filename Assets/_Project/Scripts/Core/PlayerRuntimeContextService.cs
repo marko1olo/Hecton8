@@ -16,10 +16,8 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9930)]
-    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IUpdatable
+    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IUpdatable, IServiceHeartbeat
     {
-        private static PlayerRuntimeContextService _instance;
-
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredContext;
@@ -50,6 +48,12 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
 
         /// <inheritdoc />
         public GameObject PlayerObject
@@ -214,7 +218,7 @@ namespace Hecton8.Core
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+            GlobalRegistry.ClearPlayerRuntimeContextRuntime(null);
         }
 
         /// <summary>
@@ -223,8 +227,9 @@ namespace Hecton8.Core
         /// <returns>Live player context instance.</returns>
         public static PlayerRuntimeContextService EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            PlayerRuntimeContextService runtime = GlobalRegistry.PlayerRuntimeContextRuntime;
+            if (runtime != null)
+                return runtime;
 
             GameObject runtimeRoot = new GameObject("[PlayerRuntimeContextService]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player runtime context root - owner: PlayerRuntimeContextService
             return runtimeRoot.AddComponent<PlayerRuntimeContextService>();
@@ -251,11 +256,12 @@ namespace Hecton8.Core
         public static bool TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext)
         {
             runtimeContext = null;
-            if (_instance == null)
+            PlayerRuntimeContextService runtime = GlobalRegistry.PlayerRuntimeContextRuntime;
+            if (runtime == null)
                 return false;
 
-            _instance.SyncPlayerContext();
-            runtimeContext = _instance._runtimeContext;
+            runtime.SyncPlayerContext();
+            runtimeContext = runtime._runtimeContext;
             return runtimeContext != null && runtimeContext.IsBound;
         }
 
@@ -293,7 +299,7 @@ namespace Hecton8.Core
             }
 
             EnsureSingletonOwnership();
-            if (_instance != this)
+            if (GlobalRegistry.PlayerRuntimeContextRuntime != this)
                 return;
 
             _isInitialized = true;
@@ -335,19 +341,19 @@ namespace Hecton8.Core
             TryUnregisterUpdatable();
             TryUnregisterContext();
 
-            if (_instance == this)
-                _instance = null;
+            GlobalRegistry.ClearPlayerRuntimeContextRuntime(this);
         }
 
         private void EnsureSingletonOwnership()
         {
-            if (_instance != null && _instance != this)
+            PlayerRuntimeContextService runtime = GlobalRegistry.PlayerRuntimeContextRuntime;
+            if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterPlayerRuntimeContextRuntime(this);
         }
 
         private void BindPlayerRoot(GameObject playerRoot)

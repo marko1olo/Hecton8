@@ -192,8 +192,7 @@ namespace Hecton8.Atmosphere
         private const byte SurfaceExecutionModeSurfaceSuppressed = 2;
         private const float TwoPi = 6.283185307179586f;
         private const float LightningFlashSeconds = 0.1f;
-        private const float ThunderDelayMinSeconds = 1f;
-        private const float ThunderDelayMaxSeconds = 3f;
+        private const float SpeedOfSoundMetersPerSecond = 343f;
 
         public SurfaceWeatherJobInput input;
         public NativeArray<SurfaceWeatherJobOutput> output;
@@ -248,6 +247,7 @@ namespace Hecton8.Atmosphere
             byte surfaceVfxActive = input.executionMode == SurfaceExecutionModeSurfaceActive ? (byte)1 : (byte)0;
             float localRainExposure = surfaceVfxActive != 0 ? math.saturate(result.currentLocalRainExposure) : 0f;
             float flashStrength = math.max(0f, result.lightningFlashStrength);
+            float lightningDirectionalLightMultiplier = math.lerp(1f, 5f, math.saturate(flashStrength));
 
             if (electricalActivity > 0.2f)
             {
@@ -295,7 +295,7 @@ namespace Hecton8.Atmosphere
                 skyLuminance = math.max(0f, state.skyLuminanceMultiplier + flashStrength * 0.22f),
                 sunDisc = math.max(0f, state.sunDiscMultiplier + flashStrength),
                 sunScatter = math.max(0f, state.sunScatterMultiplier + flashStrength * 0.35f),
-                sunMultiplier = math.max(0f, state.surfaceSunMultiplier + flashStrength * 0.45f),
+                sunMultiplier = math.max(0f, state.surfaceSunMultiplier) * lightningDirectionalLightMultiplier,
                 cloudSpeedMultiplier = state.cloudSpeedMultiplier * math.lerp(1f, gustMultiplier, 0.35f),
                 vfxPrecipitation = surfaceVfxActive != 0
                     ? math.saturate(state.precipitationIntensity * math.lerp(1f, gustMultiplier, 0.4f) * squallMultiplier * localRainExposure)
@@ -359,7 +359,7 @@ namespace Hecton8.Atmosphere
             float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
             float loudness = math.lerp(state.thunderVolumeNear, state.thunderVolumeFar, distanceT);
             float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
-            float thunderDelay = math.lerp(ThunderDelayMinSeconds, ThunderDelayMaxSeconds, NextRandom01(ref result.randomState));
+            float thunderDelay = thunderDistance / SpeedOfSoundMetersPerSecond;
 
             result.lightningFlashRemaining = flashDuration;
             result.lightningFlashStrength = flashBase * flashVariance;

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -324,7 +325,7 @@ namespace Hecton8.Physics
         [Tooltip("Maximum pooled spark particles reserved for submarine hull impacts.")]
         [SerializeField, Min(8)] private int hullImpactSparkMaxParticles = 192;
         [Tooltip("Maximum visual spark burst emitted at full impact severity.")]
-        [SerializeField, Range(1, 64)] private int hullImpactSparkMaxBurstCount = 34;
+        [SerializeField, Range(1, 64)] private int hullImpactSparkMaxBurstCount = 50;
         [Tooltip("Optional glowing scratch decal prefab. Falls back to the dent decal prefab when unset.")]
         [SerializeField] private DecalProjector hullImpactScratchDecalPrefab;
 
@@ -546,6 +547,7 @@ namespace Hecton8.Physics
 
             QueueImpactLocal(localPoint, impactSpeed, integrityDelta);
             QueueHullImpactDecalLocal(localPoint, localNormal, impactSpeed, severity01);
+            TriggerHullImpactCameraShake(severity01);
         }
 
         /// <summary>
@@ -587,6 +589,19 @@ namespace Hecton8.Physics
             Vector3 worldNormal = cachedTransform.TransformDirection(localNormalVector);
             SpawnHullImpactSparks(worldPoint, worldNormal, severity01);
             SpawnHullImpactScratchDecal(worldPoint, worldNormal, impactSpeed, severity01);
+        }
+
+        /// <summary>
+        /// Spawns a visual-only hull impact decal from an external kinematic sweep without mutating mesh data.
+        /// </summary>
+        public void QueueHullImpactDecalWorld(Vector3 worldPoint, Vector3 outwardNormal, float impactSpeed, float severity01)
+        {
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            float severity = math.saturate(severity01);
+            Vector3 normal = outwardNormal.sqrMagnitude > Epsilon ? outwardNormal.normalized : cachedTransform.up;
+            SpawnHullImpactScratchDecal(worldPoint, normal, impactSpeed, severity);
+            TriggerHullImpactCameraShake(severity);
         }
 
         internal static float DebugResolveHullImpactDentDecalSize(
@@ -662,6 +677,15 @@ namespace Hecton8.Physics
             projector.pivot = new Vector3(0f, 0f, projector.size.z * 0.5f);
             projector.fadeFactor = math.lerp(0.55f, 1f, math.saturate(severity01));
             pool.Despawn(projector, math.max(0.1f, dentDecalLifetimeSeconds));
+        }
+
+        private static void TriggerHullImpactCameraShake(float severity01)
+        {
+            CameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
+            if (cameraJuice == null)
+                return;
+
+            cameraJuice.TriggerSubmarineImpactShake(severity01);
         }
 
         private void EnsureHullImpactSparkParticles()

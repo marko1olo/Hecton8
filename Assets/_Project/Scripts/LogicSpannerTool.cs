@@ -61,8 +61,15 @@ namespace Hecton8.Gameplay
             base.OnDespawn();
         }
 
+        public override void OnEquip()
+        {
+            base.OnEquip();
+            ConnectionSplineBatchRenderer.SetLogisticsPathHighlightActive(true);
+        }
+
         public override void OnUnequip()
         {
+            ConnectionSplineBatchRenderer.SetLogisticsPathHighlightActive(false);
             ClearSelectionInternal();
             base.OnUnequip();
         }

@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Threading;
+using Hecton8.AI;
 using Hecton8.UI;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -16,11 +18,18 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9490)]
     public sealed class RuntimeWatchdog : MonoBehaviour, IUpdatable
     {
+        public interface IEmergencyResetTarget
+        {
+            void ServiceEmergencyReset();
+        }
+
         public enum RuntimeWatchdogLane : byte
         {
             DispatcherUpdate = 0,
             DispatcherLateFrame = 1,
             CrashTelemetry = 2,
+            FaunaDirector = 3,
+            WorldStreaming = 4,
             Worker0 = 16,
             Worker1 = 17,
             Worker2 = 18,
@@ -34,6 +43,7 @@ namespace Hecton8.Core
         private const int LaneCapacity = 32;
         private const int SampleIntervalFrames = 60;
         private const double StallThresholdSeconds = 5.0;
+        private const double FrozenServiceThresholdSeconds = 2.0;
         private const string DeadlockTraceFilePrefix = "runtime_watchdog_deadlock_";
         private const string DeadlockTraceFileExtension = ".txt";
 
@@ -45,6 +55,8 @@ namespace Hecton8.Core
         private static readonly double[] _lastChangeTimes = new double[LaneCapacity];
         // COLD ALLOC: bool[32] - active liveness lane mask - owner: RuntimeWatchdog
         private static readonly bool[] _activeLanes = new bool[LaneCapacity];
+        // COLD ALLOC: IEmergencyResetTarget[32] - frozen-service recovery callback table - owner: RuntimeWatchdog
+        private static readonly IEmergencyResetTarget[] _emergencyResetTargets = new IEmergencyResetTarget[LaneCapacity];
 
         private bool _registeredUpdatable;
         private int _nextSampleFrame;
@@ -56,6 +68,7 @@ namespace Hecton8.Core
             System.Array.Clear(_lastObservedCounters, 0, _lastObservedCounters.Length);
             System.Array.Clear(_lastChangeTimes, 0, _lastChangeTimes.Length);
             System.Array.Clear(_activeLanes, 0, _activeLanes.Length);
+            System.Array.Clear(_emergencyResetTargets, 0, _emergencyResetTargets.Length);
         }
 
         public static RuntimeWatchdog EnsureRuntimeInstance()
@@ -78,6 +91,33 @@ namespace Hecton8.Core
 
             _activeLanes[laneIndex] = true;
             Interlocked.Increment(ref _heartbeatCounters[laneIndex]);
+        }
+
+        internal static void RegisterEmergencyResetTarget(RuntimeWatchdogLane lane, IEmergencyResetTarget target)
+        {
+            int laneIndex = (int)lane;
+            if ((uint)laneIndex >= LaneCapacity || target == null)
+                return;
+
+            _emergencyResetTargets[laneIndex] = target;
+            _lastObservedCounters[laneIndex] = Volatile.Read(ref _heartbeatCounters[laneIndex]);
+            _lastChangeTimes[laneIndex] = Time.realtimeSinceStartupAsDouble;
+            _activeLanes[laneIndex] = true;
+        }
+
+        internal static void UnregisterEmergencyResetTarget(RuntimeWatchdogLane lane, IEmergencyResetTarget target)
+        {
+            int laneIndex = (int)lane;
+            if ((uint)laneIndex >= LaneCapacity)
+                return;
+
+            if (!ReferenceEquals(_emergencyResetTargets[laneIndex], target))
+                return;
+
+            _emergencyResetTargets[laneIndex] = null;
+            _activeLanes[laneIndex] = false;
+            _lastChangeTimes[laneIndex] = 0d;
+            _lastObservedCounters[laneIndex] = Volatile.Read(ref _heartbeatCounters[laneIndex]);
         }
 
         public void InitializeService()
@@ -155,16 +195,43 @@ namespace Hecton8.Core
                     continue;
                 }
 
-                if (now - lastChange < StallThresholdSeconds)
+                double thresholdSeconds = IsEmergencyResetLane(laneIndex)
+                    ? FrozenServiceThresholdSeconds
+                    : StallThresholdSeconds;
+                if (now - lastChange < thresholdSeconds)
                     continue;
 
                 CrashTelemetryBuffer.ReportRuntimeWatchdogStall(
                     unchecked((uint)laneIndex),
                     unchecked((uint)currentCounter));
+                if (IsEmergencyResetLane(laneIndex))
+                {
+                    ServiceEmergencyReset(laneIndex);
+                    _lastObservedCounters[laneIndex] = currentCounter;
+                    _lastChangeTimes[laneIndex] = now;
+                    continue;
+                }
+
                 WriteDeadlockTraceDump(laneIndex, currentCounter, now - lastChange);
                 Application.Quit(-1);
                 return;
             }
+        }
+
+        private static bool IsEmergencyResetLane(int laneIndex)
+        {
+            return laneIndex == (int)RuntimeWatchdogLane.FaunaDirector ||
+                   laneIndex == (int)RuntimeWatchdogLane.WorldStreaming;
+        }
+
+        private static void ServiceEmergencyReset(int laneIndex)
+        {
+            if ((uint)laneIndex >= LaneCapacity)
+                return;
+
+            IEmergencyResetTarget target = _emergencyResetTargets[laneIndex];
+            target?.ServiceEmergencyReset();
+            Interlocked.Increment(ref _heartbeatCounters[laneIndex]);
         }
 
         private static void WriteDeadlockTraceDump(int laneIndex, int counter, double stalledSeconds)
@@ -317,6 +384,8 @@ namespace Hecton8.Core
             DispatcherUpdate = 0,
             DispatcherLateFrame = 1,
             CrashTelemetry = 2,
+            FaunaDirector = 3,
+            WorldStreaming = 4,
             Worker0 = 16,
             Worker1 = 17,
             Worker2 = 18,

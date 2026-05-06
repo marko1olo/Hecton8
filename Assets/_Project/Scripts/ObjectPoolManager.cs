@@ -11,13 +11,14 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class ObjectPoolManager : MonoBehaviour
+    public sealed class ObjectPoolManager : MonoBehaviour, IServiceHeartbeat
     {
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
         private const uint PoolExhaustedReasonMissingPool = 1u;
         private const uint PoolExhaustedReasonExpandRejected = 2u;
         private const uint PoolExhaustedReasonEmptyPool = 3u;
         private const int DefaultWarmupInstantiationsPerFrame = 50;
+        private const int MaximumWarmupInstantiationsPerFrame = 50;
         private const int DefaultWarmupMinimumFrames = 60;
 
         [Header("── Warmup Presets ────────────────────────────")]
@@ -48,6 +49,12 @@ namespace Hecton8.Core
         /// True after scene-authored warmup presets have finished their frame-budgeted allocation pass.
         /// </summary>
         public bool AreWarmupPresetsCompleted => _warmupPresetsCompleted;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -181,7 +188,10 @@ namespace Hecton8.Core
             }
 
             _warmupPresetsStarted = true;
-            int instantiationBudget = Mathf.Max(1, instantiationsPerYield);
+            int instantiationBudget = Mathf.Clamp(
+                instantiationsPerYield,
+                1,
+                MaximumWarmupInstantiationsPerFrame);
             int minimumFrameBudget = Mathf.Max(1, minimumFrames);
             int frameInstantiations = 0;
             int yieldedFrames = 0;

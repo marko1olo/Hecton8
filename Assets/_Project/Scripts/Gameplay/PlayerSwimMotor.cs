@@ -28,8 +28,7 @@ namespace Hecton8.Gameplay
 
         public static Vector3 ApplyAnalyticalDrag(Vector3 velocity, float dragCoefficient, float bodyMass, float fixedDeltaTime)
         {
-            float dragAccelerationCoefficient = dragCoefficient / math.max(bodyMass, 0.0001f);
-            return HectonPlayerMotor.AnalyticalQuadraticDrag(velocity, dragAccelerationCoefficient, fixedDeltaTime);
+            return HectonPlayerMotor.AnalyticalQuadraticDrag(velocity, dragCoefficient, fixedDeltaTime);
         }
     }
 }

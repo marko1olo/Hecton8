@@ -17,7 +17,7 @@ namespace Hecton8.Progression
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Progression/Narrative Progression Bridge")]
-    public sealed class NarrativeProgressionBridge : MonoBehaviour, IBiomeMatrixEventListener, IScanEventListener, IBaseIntegrityEventListener
+    public sealed class NarrativeProgressionBridge : MonoBehaviour, IBiomeMatrixEventListener, IScanEventListener, IBaseIntegrityEventListener, IBaseAirlockEventListener
     {
         private const string ExitLifePodDiscoveryId = "first_hour_exit_lifepod";
         private const string AtlasSignalDiscoveryId = "atlas6_signal_identified";
@@ -26,10 +26,36 @@ namespace Hecton8.Progression
         private const string AtlasMarkerTitle = "ENCRYPTED SIGNAL SOURCE";
         private const string HullFailureDiscoveryId = "hull_failure_voice_log";
         private const string HullFailureLogId = "captain_last_broadcast";
+        private static readonly uint _atlasSignalDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(AtlasSignalDiscoveryId);
+        private static readonly uint _atlasSignalQuestHash = QuestFlagHashKernel.ComputeStableHash(AtlasSignalQuestId);
+        private static readonly uint _atlasMarkerHash = QuestFlagHashKernel.ComputeStableHash(AtlasMarkerId);
 
         [Header("First Hour AUP Gate")]
         [SerializeField] private Vector3 lifePodExitReferenceWorld = Vector3.zero;
         [SerializeField, Min(0f)] private float lifePodExitMinimumDistanceMeters = 0f;
+        [SerializeField] private uint lifePodAirlockHashId;
+        [SerializeField] private bool requireWetLifePodExit = true;
+
+        [Header("Biome Marker Discovery")]
+        [SerializeField] private BiomeMarkerRule[] biomeMarkerRules = new BiomeMarkerRule[0];
+
+#pragma warning disable 0649 // Unity serialization assigns marker authoring fields.
+        [System.Serializable]
+        private sealed class BiomeMarkerRule
+        {
+            public int biomeId;
+            public string requiredQuestId;
+            public string requiredDiscoveryId;
+            public string markerId;
+            public string title;
+            public Vector3 markerWorldPosition;
+            public MarkerIconType iconType = MarkerIconType.Objective;
+            public bool visibleOnHud = true;
+            [System.NonSerialized] public uint requiredQuestHash;
+            [System.NonSerialized] public uint requiredDiscoveryHash;
+            [System.NonSerialized] public uint markerHashId;
+        }
+#pragma warning restore 0649
 
         private static readonly char[] s_newArchiveDataMessage =
         {
@@ -39,11 +65,19 @@ namespace Hecton8.Progression
         private bool _exitLifePodIssued;
         private bool _atlasMarkerPublished;
         private bool _hullFailureIssued;
+        private uint _revealedBiomeMarkerMask;
         private int _lastBiomeMatrixId = int.MinValue;
+
+        private void Awake()
+        {
+            CacheRuleHashes();
+        }
 
         private void OnEnable()
         {
+            CacheRuleHashes();
             BiomeMatrixEvents.Register(this);
+            BaseAirlockEvents.Register(this);
             ScanEvents.Register(this);
             BaseIntegrityEvents.Register(this);
         }
@@ -52,6 +86,7 @@ namespace Hecton8.Progression
         {
             BaseIntegrityEvents.Unregister(this);
             ScanEvents.Unregister(this);
+            BaseAirlockEvents.Unregister(this);
             BiomeMatrixEvents.Unregister(this);
         }
 
@@ -59,6 +94,7 @@ namespace Hecton8.Progression
         {
             BaseIntegrityEvents.Unregister(this);
             ScanEvents.Unregister(this);
+            BaseAirlockEvents.Unregister(this);
             BiomeMatrixEvents.Unregister(this);
         }
 
@@ -67,13 +103,12 @@ namespace Hecton8.Progression
             if (profile == null)
                 return;
 
-            TryIssueExitLifePodDiscoveryFromAup();
-
             int biomeId = profile.matrixIndex;
             if (biomeId == _lastBiomeMatrixId)
                 return;
 
             _lastBiomeMatrixId = biomeId;
+            TryPublishBiomeMarkers(biomeId);
             TryPublishAtlasMarker(profile);
         }
 
@@ -103,7 +138,27 @@ namespace Hecton8.Progression
 
             AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
             if (audioLogs != null)
+            {
+                audioLogs.NotifyAtmosphericWarningStarted(0.7f);
                 audioLogs.TryPlayLogById(HullFailureLogId);
+            }
+        }
+
+        public void OnBaseAirlockEvent(in BaseAirlockEventPayload payload)
+        {
+            if (_exitLifePodIssued)
+                return;
+
+            if ((BaseAirlockEventType)payload.EventType != BaseAirlockEventType.EnvironmentChanged)
+                return;
+
+            if (lifePodAirlockHashId != 0u && payload.AirlockHashId != lifePodAirlockHashId)
+                return;
+
+            if (requireWetLifePodExit && payload.Dry)
+                return;
+
+            TryIssueExitLifePodDiscoveryFromAup();
         }
 
         private static bool IsSpeciesScan(in ScanEventPayload payload)
@@ -171,6 +226,7 @@ namespace Hecton8.Progression
                 return;
 
             if (markerRegistry.TryCreateOrUpdateMarker(
+                    _atlasMarkerHash,
                     AtlasMarkerId,
                     atlasSignal.AtlasCorePosition,
                     MarkerIconType.Objective,
@@ -184,12 +240,99 @@ namespace Hecton8.Progression
         private static bool HasAtlasLorePrerequisite()
         {
             HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
-            if (narrativeDirector != null && narrativeDirector.HasDiscovery(AtlasSignalDiscoveryId))
+            if (narrativeDirector != null && narrativeDirector.HasDiscovery(_atlasSignalDiscoveryHash))
                 return true;
 
             QuestManager questManager = GlobalRegistry.Quest;
             return questManager != null &&
-                   (questManager.IsActive(AtlasSignalQuestId) || questManager.IsCompleted(AtlasSignalQuestId));
+                   (questManager.IsActive(_atlasSignalQuestHash) || questManager.IsCompleted(_atlasSignalQuestHash));
         }
+
+        private void TryPublishBiomeMarkers(int biomeId)
+        {
+            if (biomeMarkerRules == null || biomeMarkerRules.Length == 0)
+                return;
+
+            PDAMarkerRegistry markerRegistry = GlobalRegistry.PDAMarkers;
+            if (markerRegistry == null)
+                return;
+
+            int ruleCount = Mathf.Min(biomeMarkerRules.Length, 32);
+            for (int i = 0; i < ruleCount; i++)
+            {
+                uint ruleMask = 1u << i;
+                if ((_revealedBiomeMarkerMask & ruleMask) != 0u)
+                    continue;
+
+                BiomeMarkerRule rule = biomeMarkerRules[i];
+                if (rule == null || rule.biomeId != biomeId || rule.markerHashId == 0u)
+                    continue;
+
+                if (!HasMarkerPrerequisite(rule))
+                    continue;
+
+                if (!markerRegistry.TryCreateOrUpdateMarker(
+                        rule.markerHashId,
+                        rule.markerId,
+                        rule.markerWorldPosition,
+                        rule.iconType,
+                        rule.title,
+                        out _))
+                {
+                    continue;
+                }
+
+                if (!rule.visibleOnHud)
+                    markerRegistry.SetMarkerHudVisibility(rule.markerHashId, false);
+
+                _revealedBiomeMarkerMask |= ruleMask;
+            }
+        }
+
+        private static bool HasMarkerPrerequisite(BiomeMarkerRule rule)
+        {
+            if (rule.requiredDiscoveryHash != 0u)
+            {
+                HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
+                if (narrativeDirector == null || !narrativeDirector.HasDiscovery(rule.requiredDiscoveryHash))
+                    return false;
+            }
+
+            if (rule.requiredQuestHash != 0u)
+            {
+                QuestManager questManager = GlobalRegistry.Quest;
+                if (questManager == null ||
+                    (!questManager.IsActive(rule.requiredQuestHash) && !questManager.IsCompleted(rule.requiredQuestHash)))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void CacheRuleHashes()
+        {
+            if (biomeMarkerRules == null || biomeMarkerRules.Length == 0)
+                return;
+
+            for (int i = 0; i < biomeMarkerRules.Length; i++)
+            {
+                BiomeMarkerRule rule = biomeMarkerRules[i];
+                if (rule == null)
+                    continue;
+
+                rule.requiredQuestHash = QuestFlagHashKernel.ComputeStableHash(rule.requiredQuestId);
+                rule.requiredDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(rule.requiredDiscoveryId);
+                rule.markerHashId = QuestFlagHashKernel.ComputeStableHash(rule.markerId);
+            }
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            CacheRuleHashes();
+        }
+#endif
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using Stopwatch = System.Diagnostics.Stopwatch;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -27,8 +28,12 @@ namespace Hecton8.Atmosphere
         private const float ExponentialBlendCompletion = 0.99f;
         private const float ResolveRetryInterval = 2f;
         private const float LightningFlashSeconds = 0.1f;
-        private const float ThunderDelayMinSeconds = 1f;
-        private const float ThunderDelayMaxSeconds = 3f;
+        private const float SpeedOfSoundMetersPerSecond = 343f;
+        private const float ScreenSpaceRainFrameTimeShedMs = 14f;
+        private const int SurfaceWeatherPerformanceWarningCooldownFrames = 30;
+        private const uint SurfaceWeatherSolveBudgetWarningHash = 0x53574657u;
+        private const uint SurfaceWeatherSolveBudgetContextHash = 0x53574654u;
+        private static readonly long SurfaceWeatherSolveBudgetWarningTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
 
         private enum SurfaceExecutionMode : byte
         {
@@ -154,18 +159,12 @@ namespace Hecton8.Atmosphere
             public float phaseB;
         }
 
-        private static HectonSurfaceWeatherDirector _instance;
         private static readonly int _RainIntensityId = Shader.PropertyToID("_RainIntensity");
         private static readonly int _CurrentWaterLevelYId = Shader.PropertyToID("_CurrentWaterLevelY");
         private static readonly int _GlobalWindId = Shader.PropertyToID("_GlobalWind");
         private static readonly int _ScreenSpaceRainParamsId = Shader.PropertyToID("_HectonScreenSpaceRainParams");
+        private static readonly int _ScreenSpaceRainEnabledId = Shader.PropertyToID("_HectonScreenSpaceRainEnabled");
         private static readonly int _LightningFlashId = Shader.PropertyToID("_HectonLightningFlash");
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
 
         [Header("Weather Profiles")]
         [Tooltip("Optional authored weather profiles. If empty, the built-in fallback library is used.")]
@@ -220,7 +219,7 @@ namespace Hecton8.Atmosphere
         [Tooltip("Optional explicit acoustic zone controller reference. If null, runtime resolve is used.")]
         [SerializeField] private AcousticZoneController acousticZoneController;
 
-        [Tooltip("Optional explicit local weather VFX rig reference. If null, a scene-local rig is created on demand.")]
+        [Tooltip("Optional authored local weather VFX rig reference. If null, the director keeps a shader-only weather fallback.")]
         [SerializeField] private SurfaceWeatherVfxRig weatherVfxRig;
 
         [Tooltip("Shared authored line-renderer material assigned to runtime-created weather VFX rigs.")]
@@ -265,11 +264,10 @@ namespace Hecton8.Atmosphere
         [SerializeField] private float _debugSquallMultiplier = 1f;
         [SerializeField] private float _debugLocalRainExposure = 1f;
         [SerializeField] private bool _debugIsSheltered;
+        [SerializeField] private bool _debugScreenSpaceRainShed;
 
         // COLD ALLOC: RuntimeWeatherProfile[5] - built-in fallback weather library for scenes without authored assets - owner: HectonSurfaceWeatherDirector
         private readonly RuntimeWeatherProfile[] _fallbackProfiles = new RuntimeWeatherProfile[5];
-        // COLD ALLOC: RaycastHit[8] - reusable shelter probe hits for local rain exposure checks - owner: HectonSurfaceWeatherDirector
-        private readonly RaycastHit[] _shelterHits = new RaycastHit[8];
         // COLD ALLOC: List<GameObject>[16] - root traversal buffer for cold-path scene-owned manager resolve - owner: HectonSurfaceWeatherDirector
         private readonly System.Collections.Generic.List<GameObject> _sceneRootBuffer = new System.Collections.Generic.List<GameObject>(16);
 
@@ -321,11 +319,17 @@ namespace Hecton8.Atmosphere
         private JobHandle _weatherJobHandle;
         private bool _weatherJobScheduled;
         private bool _weatherJobPrimed;
+        private NativeArray<RaycastCommand> _shelterRaycastCommands;
+        private NativeArray<RaycastHit> _shelterRaycastHits;
+        private JobHandle _shelterRaycastHandle;
+        private bool _shelterRaycastScheduled;
+        private bool _shelterRaycastPrimed;
+        private int _nextSurfaceWeatherPerformanceWarningFrame;
 
         /// <summary>
         /// Active surface weather director instance for the loaded world scene.
         /// </summary>
-        public static HectonSurfaceWeatherDirector Instance => _instance;
+        public static HectonSurfaceWeatherDirector Instance => GlobalRegistry.SurfaceWeather;
 
         /// <summary>
         /// Weather family currently targeted by the director.
@@ -347,15 +351,18 @@ namespace Hecton8.Atmosphere
         /// </summary>
         public bool IsSurfaceSuppressed => _executionMode == SurfaceExecutionMode.SurfaceSuppressed;
 
+        /// <summary>
+        /// Returns true when the single upward shelter probe blocks local screen-space rain.
+        /// </summary>
+        public bool IsLocallySheltered => _isLocallySheltered;
+
+        /// <summary>
+        /// Current local screen-space rain exposure after shelter blending.
+        /// </summary>
+        public float CurrentLocalRainExposure => _currentLocalRainExposure;
+
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             BuildFallbackProfiles();
             SeedRandom();
 #if UNITY_EDITOR
@@ -383,6 +390,7 @@ namespace Hecton8.Atmosphere
             TryUnregisterTickManagers();
 
             RefreshPlayerMovementSubscription(null);
+            TryCompleteShelterRaycast(forceComplete: true);
             _stormEquipmentPulseTimer = 0f;
             ClearWeatherBindings();
             TryUnregisterService();
@@ -396,13 +404,14 @@ namespace Hecton8.Atmosphere
             RefreshPlayerMovementSubscription(null);
             _stormEquipmentPulseTimer = 0f;
             DisposeWeatherMathBuffers();
+            DisposeShelterRaycastBuffers();
 
-            if (_instance == this)
-                _instance = null;
         }
 
         public void Tick(float deltaTime)
         {
+            long solveStartTicks = Stopwatch.GetTimestamp();
+
             TryRegisterTickManagers();
             TryResolveDependencies(false);
             InitializeRuntimeStateIfNeeded();
@@ -415,6 +424,7 @@ namespace Hecton8.Atmosphere
             ApplyWeatherBindings(deltaTime);
             UpdateDiagnostics();
             ScheduleWeatherMathJob(deltaTime);
+            PublishSurfaceWeatherSolveWarningIfNeeded(solveStartTicks);
         }
 
         public void SlowTick()
@@ -430,6 +440,7 @@ namespace Hecton8.Atmosphere
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            TryCompleteShelterRaycast(forceComplete: false);
             TryCompleteWeatherMathJob();
         }
 
@@ -516,9 +527,6 @@ namespace Hecton8.Atmosphere
             if (weatherVfxRig == null)
                 ResolveOwnedWeatherVfxRig();
 
-            if (weatherVfxRig == null)
-                weatherVfxRig = CreateRuntimeVfxRig();
-
             RefreshPlayerMovementSubscription();
             CacheOceanDefaults();
         }
@@ -591,7 +599,7 @@ namespace Hecton8.Atmosphere
             if (celestialEngine != null)
                 return;
 
-            celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            celestialEngine = GlobalRegistry.CelestialEngine;
         }
 
         private void ResolveOwnedWeatherVfxRig()
@@ -599,21 +607,6 @@ namespace Hecton8.Atmosphere
             Transform rigTransform = transform.Find("SurfaceWeatherVfxRig");
             if (rigTransform != null)
                 rigTransform.TryGetComponent(out weatherVfxRig);
-        }
-
-        private SurfaceWeatherVfxRig CreateRuntimeVfxRig()
-        {
-            if (!Application.isPlaying)
-                return null;
-
-            // COLD ALLOC: GameObject[1] - scene-local weather VFX rig for rain and lightning - owner: HectonSurfaceWeatherDirector
-            GameObject rigRoot = new GameObject("SurfaceWeatherVfxRig");
-            rigRoot.SetActive(false);
-            rigRoot.transform.SetParent(transform, false);
-            SurfaceWeatherVfxRig rig = rigRoot.AddComponent<SurfaceWeatherVfxRig>();
-            rig.ConfigureAuthoring(lightningBoltMaterial);
-            rigRoot.SetActive(true);
-            return rig;
         }
 
         private void RefreshPlayerMovementSubscription()
@@ -697,6 +690,60 @@ namespace Hecton8.Atmosphere
             _weatherJobOutput = default;
             _weatherJobScheduled = false;
             _weatherJobPrimed = false;
+        }
+
+        private void EnsureShelterRaycastBuffers()
+        {
+            if (_shelterRaycastCommands.IsCreated && _shelterRaycastHits.IsCreated)
+                return;
+
+            if (!_shelterRaycastCommands.IsCreated)
+            {
+                _shelterRaycastCommands = new NativeArray<RaycastCommand>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] - deferred screen-space rain shelter probe - owner: HectonSurfaceWeatherDirector
+                NativeMemorySentinel.RegisterNativeArray(
+                    _shelterRaycastCommands,
+                    nameof(HectonSurfaceWeatherDirector),
+                    nameof(_shelterRaycastCommands),
+                    NativeAllocationLifetime.Scene);
+            }
+
+            if (!_shelterRaycastHits.IsCreated)
+            {
+                _shelterRaycastHits = new NativeArray<RaycastHit>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] - deferred screen-space rain shelter hit - owner: HectonSurfaceWeatherDirector
+                NativeMemorySentinel.RegisterNativeArray(
+                    _shelterRaycastHits,
+                    nameof(HectonSurfaceWeatherDirector),
+                    nameof(_shelterRaycastHits),
+                    NativeAllocationLifetime.Scene);
+            }
+        }
+
+        private void DisposeShelterRaycastBuffers()
+        {
+            bool hadScheduledShelterRaycast = _shelterRaycastScheduled;
+            JobHandle disposeHandle = hadScheduledShelterRaycast ? _shelterRaycastHandle : default;
+            _shelterRaycastScheduled = false;
+            _shelterRaycastPrimed = false;
+
+            if (_shelterRaycastCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_shelterRaycastCommands);
+                if (hadScheduledShelterRaycast)
+                    disposeHandle = _shelterRaycastCommands.Dispose(disposeHandle);
+                else
+                    _shelterRaycastCommands.Dispose();
+                _shelterRaycastCommands = default;
+            }
+
+            if (_shelterRaycastHits.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_shelterRaycastHits);
+                if (hadScheduledShelterRaycast)
+                    disposeHandle = _shelterRaycastHits.Dispose(disposeHandle);
+                else
+                    _shelterRaycastHits.Dispose();
+                _shelterRaycastHits = default;
+            }
         }
 
         private void RunWeatherMathJobCold()
@@ -1025,6 +1072,10 @@ namespace Hecton8.Atmosphere
 
         private float ResolveSurfaceY(Vector3 followPosition)
         {
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            if (fluidEngine != null)
+                return fluidEngine.CurrentWaterLevelY;
+
             return playerMovement != null ? playerMovement.CurrentWaterSurfaceY : followPosition.y;
         }
 
@@ -1242,7 +1293,7 @@ namespace Hecton8.Atmosphere
 
         private void ConfigurePendingThunder(Vector3 strikePosition, Vector3 listenerPosition, float electricalActivity)
         {
-            float thunderDistance = Vector3.Distance(listenerPosition, strikePosition);
+            float thunderDistance = ResolveApproximateThunderDistanceMeters(strikePosition - listenerPosition);
             float minDistance = math.max(10f, _currentState.lightningStrikeDistanceMin);
             float maxDistance = math.max(minDistance, _currentState.lightningStrikeDistanceMax);
             float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
@@ -1250,12 +1301,23 @@ namespace Hecton8.Atmosphere
             float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
 
             _pendingThunderPosition = strikePosition;
-            _pendingThunderDelay = math.lerp(ThunderDelayMinSeconds, ThunderDelayMaxSeconds, NextRandom01());
+            _pendingThunderDelay = thunderDistance / SpeedOfSoundMetersPerSecond;
             _pendingThunderVolume = loudness * stormBoost;
             _pendingThunderPitch = math.lerp(
                 _currentState.thunderPitchMin,
                 _currentState.thunderPitchMax,
                 NextRandom01()) * math.lerp(0.94f, 1.02f, 1f - distanceT);
+        }
+
+        private static float ResolveApproximateThunderDistanceMeters(Vector3 delta)
+        {
+            float ax = math.abs(delta.x);
+            float ay = math.abs(delta.y);
+            float az = math.abs(delta.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.375f) + (min * 0.125f);
         }
 
         private static Vector2 RotateDirection(Vector2 direction, float angleRadians)
@@ -1346,35 +1408,69 @@ namespace Hecton8.Atmosphere
 
             Vector3 probeOrigin = occlusionOrigin.position;
             probeOrigin.y += shelterProbeOriginOffset;
-            bool blocked = IsShelterProbeBlocked(probeOrigin);
-            _targetLocalRainExposure = blocked ? 0f : 1f;
-            _isLocallySheltered = blocked;
+            ScheduleShelterRaycast(probeOrigin);
         }
 
-        private bool IsShelterProbeBlocked(Vector3 probeOrigin)
+        private void ScheduleShelterRaycast(Vector3 probeOrigin)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+            if (_shelterRaycastScheduled)
+                return;
+
+            EnsureShelterRaycastBuffers();
+            if (!_shelterRaycastCommands.IsCreated || !_shelterRaycastHits.IsCreated)
+                return;
+
+            QueryParameters queryParameters = new QueryParameters(
+                shelterOccluderMask.value,
+                false,
+                QueryTriggerInteraction.Ignore);
+            _shelterRaycastCommands[0] = new RaycastCommand(
                 probeOrigin,
                 Vector3.up,
-                _shelterHits,
-                shelterProbeHeight,
-                shelterOccluderMask,
-                QueryTriggerInteraction.Ignore);
+                queryParameters,
+                math.max(1f, shelterProbeHeight));
+            _shelterRaycastHits[0] = default;
+            _shelterRaycastHandle = RaycastCommand.ScheduleBatch(_shelterRaycastCommands, _shelterRaycastHits, 1, default);
+            _shelterRaycastScheduled = true;
 
-            for (int i = 0; i < hitCount; i++)
+            if (!_shelterRaycastPrimed)
             {
-                Collider hitCollider = _shelterHits[i].collider;
-                if (hitCollider == null)
-                    continue;
+                _targetLocalRainExposure = 1f;
+                _isLocallySheltered = false;
+            }
+        }
 
-                Transform hitTransform = hitCollider.transform;
-                if (_playerTransform != null && hitTransform != null && hitTransform.IsChildOf(_playerTransform))
-                    continue;
+        private void TryCompleteShelterRaycast(bool forceComplete)
+        {
+            if (!_shelterRaycastScheduled)
+                return;
 
-                return true;
+            if (!DispatcherJobSwap.TryComplete(ref _shelterRaycastHandle, forceComplete))
+                return;
+
+            _shelterRaycastScheduled = false;
+            _shelterRaycastPrimed = true;
+
+            bool blocked = false;
+            if (_shelterRaycastHits.IsCreated)
+            {
+                Collider hitCollider = _shelterRaycastHits[0].collider;
+                if (hitCollider != null)
+                {
+                    Transform hitTransform = hitCollider.transform;
+                    blocked = _playerTransform == null || hitTransform == null || !hitTransform.IsChildOf(_playerTransform);
+                }
             }
 
-            return false;
+            if (_executionMode == SurfaceExecutionMode.SurfaceSuppressed ||
+                ResolveCurrentDepth() > surfaceActivationDepth ||
+                (acousticZoneController != null && acousticZoneController.IsInterior))
+            {
+                blocked = true;
+            }
+
+            _targetLocalRainExposure = blocked ? 0f : 1f;
+            _isLocallySheltered = blocked;
         }
 
         private float ResolveGustMultiplier(in WeatherFrameState state)
@@ -1521,7 +1617,8 @@ namespace Hecton8.Atmosphere
 
         private void PublishWeatherShaderGlobals(float surfaceY, in SurfaceWeatherBindingSnapshot bindings, bool surfaceVfxActive)
         {
-            float rainIntensity = surfaceVfxActive ? math.saturate(bindings.vfxPrecipitation) : 0f;
+            bool shedScreenSpaceRain = Time.unscaledDeltaTime * 1000f > ScreenSpaceRainFrameTimeShedMs;
+            float rainIntensity = surfaceVfxActive && !shedScreenSpaceRain ? math.saturate(bindings.vfxPrecipitation) : 0f;
             float windSpeedMps = math.max(0f, bindings.targetWindSpeed / 3.6f);
             Vector2 windDirection = _currentState.windDirection;
             float windMagnitudeSq = windDirection.sqrMagnitude;
@@ -1533,6 +1630,7 @@ namespace Hecton8.Atmosphere
             Shader.SetGlobalFloat(_RainIntensityId, rainIntensity);
             Shader.SetGlobalFloat(_CurrentWaterLevelYId, surfaceY);
             Shader.SetGlobalVector(_GlobalWindId, new Vector4(windDirection.x * windSpeedMps, 0f, windDirection.y * windSpeedMps, windSpeedMps));
+            Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, rainIntensity > 0.0001f ? 1f : 0f);
             Shader.SetGlobalVector(
                 _ScreenSpaceRainParamsId,
                 new Vector4(
@@ -1541,13 +1639,32 @@ namespace Hecton8.Atmosphere
                     math.max(0.1f, bindings.localRainAreaScale),
                     math.saturate(bindings.localRainExposure)));
             Shader.SetGlobalFloat(_LightningFlashId, math.saturate(_lightningFlashStrength));
+            _debugScreenSpaceRainShed = shedScreenSpaceRain && surfaceVfxActive;
         }
 
         private static void PublishClearedWeatherShaderGlobals()
         {
             Shader.SetGlobalFloat(_RainIntensityId, 0f);
             Shader.SetGlobalFloat(_LightningFlashId, 0f);
+            Shader.SetGlobalFloat(_ScreenSpaceRainEnabledId, 0f);
             Shader.SetGlobalVector(_ScreenSpaceRainParamsId, Vector4.zero);
+        }
+
+        private void PublishSurfaceWeatherSolveWarningIfNeeded(long solveStartTicks)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - solveStartTicks;
+            if (elapsedTicks <= SurfaceWeatherSolveBudgetWarningTicks ||
+                Time.frameCount < _nextSurfaceWeatherPerformanceWarningFrame)
+            {
+                return;
+            }
+
+            double elapsedMilliseconds = elapsedTicks * 1000.0d / Stopwatch.Frequency;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                SurfaceWeatherSolveBudgetWarningHash,
+                SurfaceWeatherSolveBudgetContextHash,
+                (float)elapsedMilliseconds);
+            _nextSurfaceWeatherPerformanceWarningFrame = Time.frameCount + SurfaceWeatherPerformanceWarningCooldownFrames;
         }
 
         private void ApplyOceanState(in SurfaceWeatherBindingSnapshot bindings)
@@ -2268,7 +2385,7 @@ namespace Hecton8.Atmosphere
                 ResolveOwnedWeatherVfxRig();
 
             if (celestialEngine == null)
-                celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+                celestialEngine = GlobalRegistry.CelestialEngine;
         }
 
         private void Reset()

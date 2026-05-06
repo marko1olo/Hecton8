@@ -1,5 +1,6 @@
-# 2026-04-30 Codex Full Project Forensic Audit
+﻿# 2026-04-30 Codex Full Project Forensic Audit
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 This bundle is a full-project evidence-led audit of HECTON-8 as it exists in code, editor state, build settings, and current documentation.

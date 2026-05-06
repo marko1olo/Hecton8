@@ -1,4 +1,5 @@
-# 2026-05-03 Habitat Graph Anchor-State Hardening
+﻿# 2026-05-03 Habitat Graph Anchor-State Hardening
+Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 

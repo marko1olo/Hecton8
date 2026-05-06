@@ -102,6 +102,7 @@ namespace Hecton8.AI
         /// True while this predator is publishing a false PDA distress-beacon signal.
         /// </summary>
         public bool HasActiveEcholocationMimicry => _mimicSignalActive;
+        public uint PredatorSquadStateBits => _predatorSquadStateBits;
         public uint ThreatPredictionLoreHash => _faunaDataTemplate != null ? _faunaDataTemplate.FullLoreHash : 0u;
 
         /// <summary>
@@ -123,11 +124,11 @@ namespace Hecton8.AI
         private PredatorPackRole _currentPackRole;
         private bool _flankingManeuverDetected;
         
-        // --- Animator Hashes (Prime Directive #18) ---
-        private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
         private static readonly int _FaunaBiolumDimShaderId = Shader.PropertyToID("_FaunaBiolumDim");
         private static readonly int _DeathDitherFadeShaderId = Shader.PropertyToID("_DeathDitherFade");
         private static readonly int _CorpseBloatAgeShaderId = Shader.PropertyToID("_CorpseBloatAge01");
+        private static readonly int _CorpseBloatStartTimeShaderId = Shader.PropertyToID("_CorpseBloatStartTime");
+        private static readonly int _CorpseBloatDurationShaderId = Shader.PropertyToID("_CorpseBloatDuration");
         private const float SlowTickIntervalSeconds = 0.5f;
         private const int MaxSlowTicksPerDispatcherTick = 2;
         private const float AmbientCurrentInfluence = 0.22f;
@@ -186,15 +187,36 @@ namespace Hecton8.AI
         private const float LeviathanAttackTelegraphLowPassCutoffHz = 320f;
         private const float LeviathanAttackTelegraphPullbackSpeedScale = 0.28f;
         private const float LeviathanAttackTelegraphPullbackForceScale = 0.35f;
-        private const float LeviathanAttackBurstDurationSeconds = 0.28f;
+        private const float LeviathanAttackBurstDurationSeconds = 0.5f;
         private const float LeviathanAttackBurstMultiplier = 2.35f;
         private const float PredatorLungeCheatDistanceMultiplier = 1.35f;
+        private const float PredatorPhotophobiaDotThreshold = 0.95f;
+        private const float PredatorPhotophobiaDistanceMeters = 40f;
+        private const float PredatorPhotophobiaDistanceMetersSqr =
+            PredatorPhotophobiaDistanceMeters * PredatorPhotophobiaDistanceMeters;
+        private const float PredatorPhotophobiaStunSeconds = 3f;
+        private const float DirectorAmbushCooldownSeconds = 8f;
+        private const float DirectorAmbushBehindDistanceMeters = 65f;
+        private const float DirectorAmbushLateralDistanceMeters = 24f;
+        private const float DirectorHuntTargetDurationSeconds = 18f;
+        private const float DirectorVoxelRouteMaxDistanceMeters = 240f;
+        private const double DirectorVoxelRouteMaxDistanceMetersSqr =
+            DirectorVoxelRouteMaxDistanceMeters * DirectorVoxelRouteMaxDistanceMeters;
+        private const float AcousticPingLeviathanScatterRadiusMeters = 90f;
+        private const float AcousticPingLeviathanScatterDurationSeconds = 0.85f;
+        private const uint PredatorSquadStateHuntingBit = 1u << 0;
+        private const uint PredatorSquadStateFleeingBit = 1u << 1;
+        private const uint PredatorSquadStateFlankingBit = 1u << 2;
+        private const uint PredatorStateStunnedBit = 1u << 3;
+        internal const uint PredatorHuntingStateBits = PredatorSquadStateHuntingBit;
+        internal const uint HunterSquadHuntingFlankStateBits = PredatorSquadStateHuntingBit | PredatorSquadStateFlankingBit;
+        private const double LeviathanSectorScatterEdgeMeters = 1000.0;
         private const float AmbientWanderNoiseWeight = 0.18f;
         private const float AmbientWanderNoiseFrequency = 0.42f;
         private const float AmbientWanderNoiseSpatialScale = 0.013f;
         private const float PassiveFlashlightFleeDurationSeconds = 3f;
         private const float PassiveFlashlightDimSeconds = 3.5f;
-        private const float PassiveFlashlightBiolumDimMultiplier = 0.2f;
+        private const float PassiveFlashlightBiolumDimMultiplier = 0f;
         private const float PassiveFlashlightBiolumResponseSharpness = 12f;
         private const float CarrionLatchConsumeDistanceScale = 0.92f;
         private const float CarrionLatchTearingFrequency = 9.5f;
@@ -207,6 +229,8 @@ namespace Hecton8.AI
         private const byte FaunaPresentationBiolumMask = 1;
         private const byte FaunaPresentationDeathDitherMask = 2;
         private const byte FaunaPresentationCorpseBloatMask = 4;
+        private const byte FaunaPresentationCorpseBloatTimerMask = 8;
+        private const byte FaunaPresentationCorpseBloatDurationMask = 16;
         private const float BiolumFlashBangBlindDurationSeconds = 0.35f;
         private const float BiolumFlashBangShaderRadiusMeters = 42f;
         private const float LeviathanBreachHeightDeltaMeters = 50f;
@@ -317,6 +341,17 @@ namespace Hecton8.AI
         private float _lungeCheatDuration;
         private Vector3 _lungeCheatStartPosition;
         private Vector3 _lungeCheatTargetPosition;
+        private AbsoluteUniversePosition _lungeCheatStartAup;
+        private AbsoluteUniversePosition _lungeCheatTargetAup;
+        private uint _predatorSquadStateBits;
+        private float _predatorStunnedUntilTime;
+        private float _nextDirectorAmbushTime;
+        private int2 _leviathanScatterSector;
+        private bool _hasLeviathanScatterSector;
+        private Vector3 _directorHuntTargetPosition;
+        private AbsoluteUniversePosition _directorHuntTargetAup;
+        private float _directorHuntUntilTime;
+        private bool _hasDirectorHuntTarget;
         private float _passiveFlashlightDimUntilTime;
         private float _faunaBiolumDim01 = 1f;
         private float _deathDitherFade01;
@@ -465,9 +500,11 @@ namespace Hecton8.AI
             _utilityBrain.SetRuntimeActive(false);
             ResetDispatcherCadence();
             ClearVoxelPathGuidance();
+            ClearDirectorHuntTarget();
             ClearHibernationStarvationHuntCommand();
             ClearEcholocationMimicSignal();
             ClearPredatorLungeCheat();
+            ClearPredatorSquadState();
             ReleaseMimicOcclusionRuntimeOwner();
         }
 
@@ -484,9 +521,11 @@ namespace Hecton8.AI
             UnregisterOriginShiftListener();
             _utilityBrain.Dispose();
             ClearVoxelPathGuidance();
+            ClearDirectorHuntTarget();
             ClearHibernationStarvationHuntCommand();
             ClearEcholocationMimicSignal();
             ClearPredatorLungeCheat();
+            ClearPredatorSquadState();
             ReleaseMimicOcclusionRuntimeOwner();
             ReleaseFaunaPresentationMaterials();
         }
@@ -505,12 +544,15 @@ namespace Hecton8.AI
             _lastAppliedFaunaBiolumShader01 = -1f;
             _lastAppliedDeathDitherShader01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;
+            ClearPredatorSquadState();
+            ClearDirectorHuntTarget();
             ClearPredatorLungeCheat();
             ClearAttackTelegraphState();
             ClearCorpseLatchState();
             RestoreBaseRigidbodyPresentationState();
             ApplyBiolumPresentationLightScale(1f);
             ApplyFaunaPresentationShaderState(1f, 0f, 0f);
+            ResetCorpseBloatShaderTimer();
             _tier2HibernationRecordWritten = false;
             _tier2HibernationHandoffInProgress = false;
             _breachDragBypassUntilTime = 0f;
@@ -549,11 +591,14 @@ namespace Hecton8.AI
             _lastAppliedFaunaBiolumShader01 = -1f;
             _lastAppliedDeathDitherShader01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;
+            ClearPredatorSquadState();
+            ClearDirectorHuntTarget();
             ClearPredatorLungeCheat();
             ClearAttackTelegraphState();
             ClearCorpseLatchState();
             ApplyBiolumPresentationLightScale(1f);
             ApplyFaunaPresentationShaderState(1f, 0f, 0f);
+            ResetCorpseBloatShaderTimer();
             _playerNoiseEmitterTransform = null;
             _tier2HibernationHandoffInProgress = false;
             _breachDragBypassUntilTime = 0f;
@@ -589,7 +634,15 @@ namespace Hecton8.AI
         {
             FaunaPerceptionSnapshot snapshot = default;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            bool hasRuntimeContext = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                                     runtimeContext != null;
+            PlayerLookState lookState = hasRuntimeContext ? runtimeContext.LookState : default;
+            bool hasLookState = hasRuntimeContext &&
+                                (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                                math.lengthsq(lookState.AimForward) > 0.0001f;
+            Transform playerTransform = hasRuntimeContext && runtimeContext.PlayerTransform != null
+                ? runtimeContext.PlayerTransform
+                : playerContext != null ? playerContext.PlayerTransform : null;
             if (playerTransform == null)
             {
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _currentCullingPlayerTransform);
@@ -603,13 +656,15 @@ namespace Hecton8.AI
             if (playerTransform != null)
             {
                 snapshot.HasPlayer = true;
-                snapshot.PlayerPosition = playerTransform.position;
-                snapshot.PlayerForward = playerTransform.forward;
-                snapshot.HasPlayerForward = true;
+                snapshot.PlayerPosition = hasLookState ? (Vector3)lookState.EyePosition : playerTransform.position;
+                snapshot.PlayerForward = hasLookState ? (Vector3)lookState.AimForward : playerTransform.forward;
+                snapshot.HasPlayerForward = hasLookState || snapshot.PlayerForward.sqrMagnitude > 0.0001f;
                 EnsurePlayerNoiseEmitterBound(playerTransform);
             }
 
-            Rigidbody playerRigidbody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            Rigidbody playerRigidbody = hasRuntimeContext && runtimeContext.PlayerRigidbody != null
+                ? runtimeContext.PlayerRigidbody
+                : playerContext != null ? playerContext.PlayerRigidbody : null;
             if (playerRigidbody == null && playerTransform != null)
                 playerTransform.TryGetComponent(out playerRigidbody);
             if (playerRigidbody != null)
@@ -618,10 +673,14 @@ namespace Hecton8.AI
                 snapshot.PlayerVelocity = playerRigidbody.linearVelocity;
             }
 
-            PlayerFlashlight flashlight = playerContext != null ? playerContext.Flashlight : null;
+            PlayerFlashlight flashlight = hasRuntimeContext && runtimeContext.Flashlight != null
+                ? runtimeContext.Flashlight
+                : playerContext != null ? playerContext.Flashlight : null;
             snapshot.PlayerFlashlightOn = flashlight != null && flashlight.IsOn;
 
-            PlayerToolManager toolManager = playerContext != null ? playerContext.ToolManager : null;
+            PlayerToolManager toolManager = hasRuntimeContext && runtimeContext.ToolManager != null
+                ? runtimeContext.ToolManager
+                : playerContext != null ? playerContext.ToolManager : null;
             PlayerTool currentTool = toolManager != null ? toolManager.CurrentTool : null;
             if (currentTool != null)
             {
@@ -719,12 +778,14 @@ namespace Hecton8.AI
             float3 selfPosition = runtimeSelfPosition;
             CreatureUtilityEvaluation utilityEvaluation = EvaluateCognitionBrain(Time.frameCount, dt, selfPosition, out Transform attackTarget);
             ApplyCognitionEvaluation(in utilityEvaluation);
-            bool passiveFlashlightOverrideActive = TryApplyPassiveFlashlightReaction(selfPosition);
-            if (passiveFlashlightOverrideActive)
+            bool predatorStunnedActive = TryApplyPredatorPhotophobia(selfPosition, in perceptionSnapshot);
+            bool passiveFlashlightOverrideActive = !predatorStunnedActive && TryApplyPassiveFlashlightReaction(selfPosition);
+            if (predatorStunnedActive || passiveFlashlightOverrideActive)
                 attackTarget = null;
 
+            TryPublishLeviathanSectorEntryScatter(selfPosition);
             ApplyVoxelPathGuidance(selfPosition, utilityEvaluation.LegacyState);
-            bool ecologyOverrideActive = !passiveFlashlightOverrideActive && ApplyEcologyChainOverrides(selfPosition, dt);
+            bool ecologyOverrideActive = !predatorStunnedActive && !passiveFlashlightOverrideActive && ApplyEcologyChainOverrides(selfPosition, dt);
             if (ecologyOverrideActive)
                 attackTarget = null;
 
@@ -734,7 +795,7 @@ namespace Hecton8.AI
             UpdateProceduralStrikeIntent(_currentStateCache, attackTarget);
             UpdateProceduralHeadLookIntent();
             EmitLeviathanThreatPulse(in utilityEvaluation);
-            if (!ecologyOverrideActive && utilityEvaluation.ShouldAttack && attackTarget != null)
+            if (!predatorStunnedActive && !ecologyOverrideActive && utilityEvaluation.ShouldAttack && attackTarget != null)
             {
                 if (TryAdvanceAttackTelegraph(attackTarget))
                 {
@@ -765,14 +826,6 @@ namespace Hecton8.AI
                     float3 poiDir = math.normalizesafe((float3)_sensorSuite.currentEscapePOI - selfPosition, blendedAvoidanceDirection);
                     _cachedDesiredDirection = (Vector3)math.normalizesafe(math.lerp(blendedAvoidanceDirection, poiDir, 0.6f), poiDir);
                 }
-            }
-
-            if (_animator != null &&
-                _steeringEngine.maxSpeed > 0f &&
-                (_proceduralLeviathanSpineIk == null || !_proceduralLeviathanSpineIk.isActiveAndEnabled))
-            {
-                float movementIntensity = _rb.linearVelocity.magnitude / _steeringEngine.maxSpeed;
-                _animator.SetFloat(_HashSwimSpeed, movementIntensity);
             }
 
             // [REQ] Procedural Eye Tracking (The "Stare")
@@ -979,25 +1032,41 @@ namespace Hecton8.AI
                 return 0f;
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : directPlayerTransform;
-            PlayerFlashlight flashlight = playerContext != null ? playerContext.Flashlight : null;
+            bool hasRuntimeContext = PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                                     runtimeContext != null;
+            PlayerLookState lookState = hasRuntimeContext ? runtimeContext.LookState : default;
+            bool hasLookState = hasRuntimeContext &&
+                                (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u &&
+                                math.lengthsq(lookState.AimForward) > 0.0001f;
+            Transform playerTransform = hasRuntimeContext && runtimeContext.PlayerTransform != null
+                ? runtimeContext.PlayerTransform
+                : playerContext != null ? playerContext.PlayerTransform : directPlayerTransform;
+            PlayerFlashlight flashlight = hasRuntimeContext && runtimeContext.Flashlight != null
+                ? runtimeContext.Flashlight
+                : playerContext != null ? playerContext.Flashlight : null;
             if (playerTransform == null || flashlight == null || !flashlight.IsOn)
                 return 0f;
 
             Vector3 listenerPosition = (Vector3)selfPosition;
-            Vector3 toListener = listenerPosition - playerTransform.position;
-            float distance = toListener.magnitude;
-            if (distance <= 0.01f)
+            Vector3 lightPosition = hasLookState ? (Vector3)lookState.EyePosition : playerTransform.position;
+            Vector3 lightForward = hasLookState ? (Vector3)math.normalize(lookState.AimForward) : playerTransform.forward;
+            Vector3 toListener = listenerPosition - lightPosition;
+            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);
+            AbsoluteUniversePosition lightAup = AbsoluteUniversePosition.FromRuntimePosition(lightPosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in listenerAup, in lightAup);
+            if (distanceSq <= 0.0001d)
             {
                 lightPlayerTransform = playerTransform;
                 return 1f;
             }
 
             float range = _faunaDataTemplate.LightReactionRangeMeters;
-            if (distance > range)
+            double rangeSq = (double)range * range;
+            if (distanceSq > rangeSq)
                 return 0f;
 
-            float dot = Vector3.Dot(playerTransform.forward, toListener / distance);
+            float distance = Mathf.Sqrt((float)math.min(distanceSq, float.MaxValue));
+            float dot = Vector3.Dot(lightForward, toListener / distance);
             float dotThreshold = _faunaDataTemplate.LightReactionDotThreshold;
             if (dot < dotThreshold)
                 return 0f;
@@ -1052,7 +1121,8 @@ namespace Hecton8.AI
             if (ShouldPauseVoxelRouteConsumptionForOriginShift())
                 return;
 
-            if (!_sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 playerPosition))
+            if (!_sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 playerPosition) &&
+                !TryResolveDirectorHuntTarget(out playerPosition))
             {
                 ClearVoxelPathGuidance();
                 return;
@@ -1981,6 +2051,29 @@ namespace Hecton8.AI
             _voxelRouteTargetAup = default;
         }
 
+        private bool TryResolveDirectorHuntTarget(out Vector3 targetPosition)
+        {
+            if (!_hasDirectorHuntTarget || _cognitionTimeSeconds > _directorHuntUntilTime)
+            {
+                ClearDirectorHuntTarget();
+                targetPosition = default;
+                return false;
+            }
+
+            float3 runtimeTarget = _directorHuntTargetAup.ToRuntimeFloat3();
+            targetPosition = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
+            _directorHuntTargetPosition = targetPosition;
+            return true;
+        }
+
+        private void ClearDirectorHuntTarget()
+        {
+            _hasDirectorHuntTarget = false;
+            _directorHuntTargetPosition = default;
+            _directorHuntTargetAup = default;
+            _directorHuntUntilTime = 0f;
+        }
+
         private bool ShouldPauseVoxelRouteConsumptionForOriginShift()
         {
             return _voxelRouteOriginShiftRefreshActive ||
@@ -1999,6 +2092,7 @@ namespace Hecton8.AI
             {
                 RefreshVoxelRouteRuntimeCacheFromAup(in shiftData);
                 RefreshHibernationStarvationHuntTargetFromAup(in shiftData);
+                RefreshDirectorHuntTargetFromAup(in shiftData);
             }
             finally
             {
@@ -2084,6 +2178,19 @@ namespace Hecton8.AI
             _hibernationStarvationHuntTarget = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
         }
 
+        private void RefreshDirectorHuntTargetFromAup(in OriginShiftEventData shiftData)
+        {
+            if (!_hasDirectorHuntTarget)
+                return;
+
+            float3 committedOriginOffset = new float3(
+                shiftData.NewTotalOffset.x,
+                shiftData.NewTotalOffset.y,
+                shiftData.NewTotalOffset.z);
+            float3 runtimeTarget = AUPMath.ToRuntimeFloat3(in _directorHuntTargetAup, committedOriginOffset);
+            _directorHuntTargetPosition = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
+        }
+
         public void FixedTick(float fdt)
         {
             if (_isDead)
@@ -2101,6 +2208,17 @@ namespace Hecton8.AI
             if (_corpseLatchActive)
             {
                 ApplyCorpseLatchFixedStep();
+                return;
+            }
+
+            if (IsPredatorStunnedActive())
+            {
+                if (_rb != null)
+                {
+                    _rb.linearVelocity = Vector3.zero;
+                    _rb.angularVelocity = Vector3.zero;
+                }
+
                 return;
             }
 
@@ -2284,6 +2402,9 @@ namespace Hecton8.AI
 
         private bool TryAdvanceAttackTelegraph(Transform attackTarget)
         {
+            if (IsPredatorStunnedActive())
+                return false;
+
             if (!ShouldUseProceduralLeviathanPresentation())
                 return true;
 
@@ -2331,9 +2452,19 @@ namespace Hecton8.AI
                 return;
 
             Vector3 startPosition = _rb.position;
-            Vector3 toTarget = targetPosition - startPosition;
-            float distance = toTarget.magnitude;
-            Vector3 direction = distance > 0.001f ? toTarget / distance : transform.forward;
+            AbsoluteUniversePosition startAup = AbsoluteUniversePosition.FromRuntimePosition(startPosition);
+            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);
+            double3 startAbsolute = startAup.ToAbsoluteDouble3();
+            double3 targetAbsolute = targetAup.ToAbsoluteDouble3();
+            double3 toTargetAbsolute = targetAbsolute - startAbsolute;
+            double distanceSqr = math.max(0d, math.lengthsq(toTargetAbsolute));
+            double distance = math.sqrt(distanceSqr);
+            Vector3 direction = distance > 0.001d
+                ? new Vector3(
+                    (float)(toTargetAbsolute.x / distance),
+                    (float)(toTargetAbsolute.y / distance),
+                    (float)(toTargetAbsolute.z / distance))
+                : transform.forward;
             if (direction.sqrMagnitude <= 0.0001f)
                 direction = Vector3.forward;
 
@@ -2341,13 +2472,19 @@ namespace Hecton8.AI
                 ? _speciesProfile.attackRadius
                 : Mathf.Max(1f, _stateMachine.attackRadius);
             float lungeDistance = Mathf.Min(
-                Mathf.Max(distance, strikeRange * 0.55f),
+                Mathf.Max((float)Math.Min(distance, float.MaxValue), strikeRange * 0.55f),
                 strikeRange * PredatorLungeCheatDistanceMultiplier);
             _lungeCheatStartPosition = startPosition;
-            _lungeCheatTargetPosition = startPosition + direction * lungeDistance;
+            _lungeCheatStartAup = startAup;
+            double3 lungeTargetAbsolute = startAbsolute + new double3(direction.x, direction.y, direction.z) * lungeDistance;
+            _lungeCheatTargetAup = AbsoluteUniversePosition.FromAbsolutePosition(lungeTargetAbsolute);
+            float3 lungeTargetRuntime = _lungeCheatTargetAup.ToRuntimeFloat3();
+            _lungeCheatTargetPosition = new Vector3(lungeTargetRuntime.x, lungeTargetRuntime.y, lungeTargetRuntime.z);
             _lungeCheatStartTime = _cognitionTimeSeconds;
             _lungeCheatDuration = LeviathanAttackBurstDurationSeconds;
             _lungeCheatActive = true;
+            PublishLeviathanScatterPulse(_lungeCheatStartPosition, direction, AcousticPingLeviathanScatterRadiusMeters, AcousticPingLeviathanScatterDurationSeconds);
+            Hecton8.Systems.AI.DirectorAIEvents.RaiseThreatSpike(_lungeCheatStartPosition, 1f);
         }
 
         private bool TryApplyPredatorLungeCheatFixedStep()
@@ -2355,12 +2492,20 @@ namespace Hecton8.AI
             if (!_lungeCheatActive || _rb == null)
                 return false;
 
+            if (IsPredatorStunnedActive())
+            {
+                ClearPredatorLungeCheat();
+                return false;
+            }
+
             float duration = Mathf.Max(0.001f, _lungeCheatDuration);
             float t = Mathf.Clamp01((_cognitionTimeSeconds - _lungeCheatStartTime) / duration);
             float ease = t * t * (3f - 2f * t);
-            Vector3 nextPosition = Vector3.LerpUnclamped(_lungeCheatStartPosition, _lungeCheatTargetPosition, ease);
-            _rb.MovePosition(nextPosition);
-            _rb.linearVelocity = Vector3.zero;
+            double3 start = _lungeCheatStartAup.ToAbsoluteDouble3();
+            double3 target = _lungeCheatTargetAup.ToAbsoluteDouble3();
+            double3 nextAbsolute = start + ((target - start) * ease);
+            AbsoluteUniversePosition nextAup = AbsoluteUniversePosition.FromAbsolutePosition(nextAbsolute);
+            ApplyAupPresentationPosition(in nextAup);
             if (t >= 0.999f)
                 ClearPredatorLungeCheat();
 
@@ -2374,6 +2519,21 @@ namespace Hecton8.AI
             _lungeCheatDuration = 0f;
             _lungeCheatStartPosition = Vector3.zero;
             _lungeCheatTargetPosition = Vector3.zero;
+            _lungeCheatStartAup = default;
+            _lungeCheatTargetAup = default;
+        }
+
+        private void ApplyAupPresentationPosition(in AbsoluteUniversePosition position)
+        {
+            float3 runtimePosition = position.ToRuntimeFloat3();
+            Vector3 nextPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            transform.position = nextPosition;
+            if (_rb == null)
+                return;
+
+            _rb.position = nextPosition;
+            _rb.linearVelocity = Vector3.zero;
+            _rb.angularVelocity = Vector3.zero;
         }
 
         private void ApplyLeviathanAttackTelegraphMotion(ref Vector3 desiredDirection, ref float forceMultiplier, ref float speedMultiplier)
@@ -2444,6 +2604,88 @@ namespace Hecton8.AI
                 transmission01,
                 lowPassCutoffHz,
                 ProceduralAudioPingKind.LeviathanRoar);
+        }
+
+        private bool TryApplyPredatorPhotophobia(float3 selfPosition, in FaunaPerceptionSnapshot perceptionSnapshot)
+        {
+            bool currentlyStunned = IsPredatorStunnedActive();
+            if (_isDead || !IsApexPredator())
+                return currentlyStunned;
+
+            if (currentlyStunned)
+            {
+                ApplyPredatorStunnedPresentation();
+                return true;
+            }
+
+            if (!perceptionSnapshot.HasPlayer ||
+                !perceptionSnapshot.HasPlayerForward ||
+                !perceptionSnapshot.PlayerFlashlightOn)
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition predatorAup = AbsoluteUniversePosition.FromRuntimePosition((Vector3)selfPosition);
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(perceptionSnapshot.PlayerPosition);
+            double distanceSqr = AbsoluteUniversePosition.DistanceSq(in predatorAup, in playerAup);
+            if (distanceSqr > PredatorPhotophobiaDistanceMetersSqr || distanceSqr <= 0.0001d)
+                return false;
+
+            Vector3 playerForward = perceptionSnapshot.PlayerForward;
+            if (playerForward.sqrMagnitude <= 0.0001f)
+                return false;
+
+            double3 toPredatorAbsolute = predatorAup.ToAbsoluteDouble3() - playerAup.ToAbsoluteDouble3();
+            float inverseDistance = math.rsqrt(math.max(0.0001f, (float)Math.Min(distanceSqr, float.MaxValue)));
+            float3 toPredatorDirection = new float3(
+                (float)toPredatorAbsolute.x,
+                (float)toPredatorAbsolute.y,
+                (float)toPredatorAbsolute.z) * inverseDistance;
+            float3 playerForwardDirection = math.normalizesafe((float3)playerForward, new float3(0f, 0f, 1f));
+            float dot = math.dot(playerForwardDirection, toPredatorDirection);
+            if (dot <= PredatorPhotophobiaDotThreshold)
+                return false;
+
+            _predatorSquadStateBits |= PredatorStateStunnedBit;
+            _predatorSquadStateBits &= ~PredatorSquadStateHuntingBit;
+            _predatorStunnedUntilTime = _cognitionTimeSeconds + PredatorPhotophobiaStunSeconds;
+            ApplyPredatorStunnedPresentation();
+            return true;
+        }
+
+        private bool IsPredatorStunnedActive()
+        {
+            if ((_predatorSquadStateBits & PredatorStateStunnedBit) == 0u)
+                return false;
+
+            if (_cognitionTimeSeconds <= _predatorStunnedUntilTime)
+                return true;
+
+            _predatorSquadStateBits &= ~PredatorStateStunnedBit;
+            _predatorStunnedUntilTime = 0f;
+            return false;
+        }
+
+        private void ApplyPredatorStunnedPresentation()
+        {
+            ClearAttackTelegraphState();
+            ClearPredatorLungeCheat();
+            ClearProceduralStrikeIntent();
+            _attackBurstUntilTime = 0f;
+            _cachedDesiredDirection = Vector3.zero;
+            _stateMachine.currentForceMultiplier = 0f;
+            _stateMachine.currentSpeedMultiplier = 0f;
+            _stateMachine.currentState = AIState.Idle;
+            _currentStateCache = AIState.Idle;
+        }
+
+        private void ClearPredatorSquadState()
+        {
+            _predatorSquadStateBits = 0u;
+            _predatorStunnedUntilTime = 0f;
+            _nextDirectorAmbushTime = 0f;
+            _leviathanScatterSector = default;
+            _hasLeviathanScatterSector = false;
         }
 
         private bool TryApplyPassiveFlashlightReaction(float3 selfPosition)
@@ -2545,6 +2787,10 @@ namespace Hecton8.AI
                     propertyMask |= FaunaPresentationDeathDitherMask;
                 if (sourceMaterial.HasProperty(_CorpseBloatAgeShaderId))
                     propertyMask |= FaunaPresentationCorpseBloatMask;
+                if (sourceMaterial.HasProperty(_CorpseBloatStartTimeShaderId))
+                    propertyMask |= FaunaPresentationCorpseBloatTimerMask;
+                if (sourceMaterial.HasProperty(_CorpseBloatDurationShaderId))
+                    propertyMask |= FaunaPresentationCorpseBloatDurationMask;
                 if (propertyMask == 0)
                     continue;
 
@@ -2556,6 +2802,10 @@ namespace Hecton8.AI
                     runtimeMaterial.SetFloat(_DeathDitherFadeShaderId, 0f);
                 if ((propertyMask & FaunaPresentationCorpseBloatMask) != 0)
                     runtimeMaterial.SetFloat(_CorpseBloatAgeShaderId, 0f);
+                if ((propertyMask & FaunaPresentationCorpseBloatTimerMask) != 0)
+                    runtimeMaterial.SetFloat(_CorpseBloatStartTimeShaderId, -1f);
+                if ((propertyMask & FaunaPresentationCorpseBloatDurationMask) != 0)
+                    runtimeMaterial.SetFloat(_CorpseBloatDurationShaderId, DeathSpiralFadeDelaySeconds);
 
                 _faunaPresentationMaterialScratch[i] = runtimeMaterial;
                 _faunaPresentationOriginalMaterials.Add(sourceMaterial);
@@ -2665,6 +2915,40 @@ namespace Hecton8.AI
                 if (applyCorpseBloat && (propertyMask & FaunaPresentationCorpseBloatMask) != 0)
                     runtimeMaterial.SetFloat(_CorpseBloatAgeShaderId, resolvedCorpseBloatAge01);
             }
+        }
+
+        private void ResetCorpseBloatShaderTimer()
+        {
+            ApplyCorpseBloatShaderTimer(-1f);
+        }
+
+        private void ArmCorpseBloatShaderTimer()
+        {
+            ApplyCorpseBloatShaderTimer(Time.time);
+        }
+
+        private void ApplyCorpseBloatShaderTimer(float startTimeSeconds)
+        {
+            int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
+            if (runtimeMaterialCount <= 0)
+                return;
+
+            for (int i = 0; i < runtimeMaterialCount; i++)
+            {
+                Material runtimeMaterial = _faunaPresentationRuntimeMaterials[i];
+                if (runtimeMaterial == null)
+                    continue;
+
+                byte propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
+                if ((propertyMask & FaunaPresentationCorpseBloatMask) != 0)
+                    runtimeMaterial.SetFloat(_CorpseBloatAgeShaderId, 0f);
+                if ((propertyMask & FaunaPresentationCorpseBloatTimerMask) != 0)
+                    runtimeMaterial.SetFloat(_CorpseBloatStartTimeShaderId, startTimeSeconds);
+                if ((propertyMask & FaunaPresentationCorpseBloatDurationMask) != 0)
+                    runtimeMaterial.SetFloat(_CorpseBloatDurationShaderId, DeathSpiralFadeDelaySeconds);
+            }
+
+            _lastAppliedCorpseBloatShader01 = 0f;
         }
 
         private void ApplyBiolumPresentationLightScale(float scale01)
@@ -2910,11 +3194,57 @@ namespace Hecton8.AI
             if (pulseDirection.sqrMagnitude <= 0.0001f)
                 pulseDirection = Vector3.forward;
 
+            PublishLeviathanScatterPulse(transform.position, pulseDirection, 40f, 0.4f);
+        }
+
+        private void PublishLeviathanScatterPulse(Vector3 position, Vector3 direction, float radiusMeters, float durationSeconds)
+        {
+            if (!ShouldUseProceduralLeviathanPresentation())
+                return;
+
+            SargassumMicroFaunaBoids boidSystem = GlobalRegistry.SargassumMicroFauna;
+            if (boidSystem == null)
+                return;
+
+            Vector3 resolvedDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : transform.forward;
+            if (resolvedDirection.sqrMagnitude <= 0.0001f)
+                resolvedDirection = Vector3.forward;
+
             boidSystem.RegisterLeviathanThreatPulse(
-                transform.position,
-                pulseDirection,
-                40f,
-                0.4f);
+                position,
+                resolvedDirection,
+                radiusMeters,
+                durationSeconds);
+        }
+
+        private void TryPublishLeviathanSectorEntryScatter(float3 selfPosition)
+        {
+            if (!ShouldUseProceduralLeviathanPresentation())
+                return;
+
+            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition((Vector3)selfPosition);
+            double3 absolutePosition = selfAup.ToAbsoluteDouble3();
+            int2 sector = new int2(
+                (int)math.floor(absolutePosition.x / LeviathanSectorScatterEdgeMeters),
+                (int)math.floor(absolutePosition.z / LeviathanSectorScatterEdgeMeters));
+
+            if (_hasLeviathanScatterSector &&
+                _leviathanScatterSector.x == sector.x &&
+                _leviathanScatterSector.y == sector.y)
+            {
+                return;
+            }
+
+            _leviathanScatterSector = sector;
+            _hasLeviathanScatterSector = true;
+            Vector3 direction = _rb != null && _rb.linearVelocity.sqrMagnitude > 0.0001f
+                ? _rb.linearVelocity
+                : transform.forward;
+            PublishLeviathanScatterPulse(
+                (Vector3)selfPosition,
+                direction,
+                AcousticPingLeviathanScatterRadiusMeters,
+                AcousticPingLeviathanScatterDurationSeconds);
         }
 
         private bool ShouldUseProceduralLeviathanPresentation()
@@ -2963,11 +3293,158 @@ namespace Hecton8.AI
             _utilityBrain.RecordAuditoryStimulus(signal.Position, _cognitionTimeSeconds);
         }
 
+        internal void ApplyAcousticPingAggro(Vector3 sourcePosition, float intensity01, float durationSeconds)
+        {
+            if (_isDead || !IsApexPredator())
+                return;
+
+            Vector3 selfPosition = transform.position;
+            _predatorSquadStateBits |= PredatorSquadStateHuntingBit;
+            _predatorSquadStateBits &= ~(PredatorSquadStateFleeingBit | PredatorSquadStateFlankingBit);
+            _utilityBrain.RecordAuditoryStimulus(sourcePosition, _cognitionTimeSeconds);
+            if (!IsPredatorStunnedActive())
+            {
+                _utilityBrain.ApplyExternalState(AIState.Aggressive, _cognitionTimeSeconds);
+                ApplyDirectedStateOverride((float3)selfPosition, sourcePosition, AIState.Aggressive);
+            }
+
+            ForceDirectorHuntTarget(sourcePosition, Mathf.Max(1f, durationSeconds));
+            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
+            double3 directionAbsolute = sourceAup.ToAbsoluteDouble3() - selfAup.ToAbsoluteDouble3();
+            Vector3 direction = new Vector3(
+                (float)directionAbsolute.x,
+                (float)directionAbsolute.y,
+                (float)directionAbsolute.z);
+            if (direction.sqrMagnitude <= 0.0001f)
+                direction = transform.forward;
+            PublishLeviathanScatterPulse(selfPosition, direction, AcousticPingLeviathanScatterRadiusMeters, AcousticPingLeviathanScatterDurationSeconds);
+        }
+
+        internal void ApplyDirectorLineOfSight(bool hasLineOfSight, Vector3 playerPosition, Vector3 playerForward)
+        {
+            if (_isDead || (!_utilityBrain.IsActivePredator && !IsApexPredator()))
+                return;
+
+            if (hasLineOfSight)
+            {
+                _predatorSquadStateBits |= PredatorSquadStateHuntingBit;
+                _predatorSquadStateBits &= ~PredatorSquadStateFlankingBit;
+                ForceDirectorHuntTarget(playerPosition, DirectorHuntTargetDurationSeconds);
+                return;
+            }
+
+            if (IsPredatorStunnedActive())
+                return;
+
+            TryApplyDirectorAmbushReposition(playerPosition, playerForward);
+        }
+
+        internal void ForceDirectorHuntTarget(Vector3 targetPosition, float durationSeconds)
+        {
+            if (_isDead || (!_utilityBrain.IsActivePredator && !IsApexPredator()))
+                return;
+
+            _directorHuntTargetPosition = targetPosition;
+            _directorHuntTargetAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);
+            _directorHuntUntilTime = _cognitionTimeSeconds + Mathf.Max(0.5f, durationSeconds);
+            _hasDirectorHuntTarget = true;
+            _utilityBrain.RecordAuditoryStimulus(targetPosition, _cognitionTimeSeconds);
+            Vector3 selfPosition = transform.position;
+            if (!IsPredatorStunnedActive())
+            {
+                _utilityBrain.ApplyExternalState(AIState.Aggressive, _cognitionTimeSeconds);
+                ApplyDirectedStateOverride((float3)selfPosition, targetPosition, AIState.Aggressive);
+            }
+
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge != null &&
+                ResolveRuntimeAupDistanceSq(selfPosition, targetPosition) <= DirectorVoxelRouteMaxDistanceMetersSqr &&
+                vegetationBridge.TryBuildImmediateAbyssalVoxelRoute(selfPosition, targetPosition, _voxelRouteWaypoints, out int waypointCount))
+            {
+                _voxelRouteWaypointCount = waypointCount;
+                _voxelRouteTargetPosition = targetPosition;
+                _hasVoxelRouteTarget = waypointCount >= 2;
+                CacheVoxelRouteAupState(waypointCount, targetPosition);
+                _nextVoxelRouteRefreshTime = _cognitionTimeSeconds + VoxelRouteRefreshIntervalSeconds;
+            }
+        }
+
+        internal void ApplyHunterSquadDirective(Vector3 targetPosition, uint squadStateBits, int squadOrdinal, float durationSeconds)
+        {
+            if (_isDead || (!_utilityBrain.IsActivePredator && !IsApexPredator()))
+                return;
+
+            uint stunBits = _predatorSquadStateBits & PredatorStateStunnedBit;
+            uint sharedBits = squadStateBits & (PredatorSquadStateHuntingBit | PredatorSquadStateFleeingBit | PredatorSquadStateFlankingBit);
+            if (squadOrdinal > 0)
+                sharedBits |= PredatorSquadStateFlankingBit;
+            _predatorSquadStateBits = stunBits | sharedBits;
+
+            if ((_predatorSquadStateBits & PredatorSquadStateFleeingBit) == 0u)
+                ForceDirectorHuntTarget(targetPosition, durationSeconds);
+        }
+
+        private bool TryApplyDirectorAmbushReposition(Vector3 playerPosition, Vector3 playerForward)
+        {
+            if (_cognitionTimeSeconds < _nextDirectorAmbushTime)
+                return false;
+
+            Vector3 safeForward = playerForward.sqrMagnitude > 0.0001f ? playerForward.normalized : Vector3.forward;
+            Vector3 right = Vector3.Cross(Vector3.up, safeForward);
+            if (right.sqrMagnitude <= 0.0001f)
+                right = Vector3.right;
+            else
+                right.Normalize();
+
+            float side = ((_uniqueInstanceUid ^ unchecked((uint)ComputeStableSpeciesId())) & 1u) == 0u ? -1f : 1f;
+            Vector3 candidate = playerPosition -
+                                safeForward * DirectorAmbushBehindDistanceMeters +
+                                right * (DirectorAmbushLateralDistanceMeters * side);
+            Vector3 selfPosition = _rb != null ? _rb.position : transform.position;
+            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfPosition);
+            float3 selfRuntime = selfAup.ToRuntimeFloat3();
+            candidate.y = selfRuntime.y;
+
+            if (VoxelDynamicNavGridRuntime.TrySampleHybridNavigation((float3)candidate, out VoxelDynamicNavGridRuntime.HybridNavigationSample sample) &&
+                sample.Mode == VoxelDynamicNavGridRuntime.HybridNavigationMode.SolidVoxel)
+            {
+                return false;
+            }
+
+            AbsoluteUniversePosition candidateAup = AbsoluteUniversePosition.FromRuntimePosition(candidate);
+            ApplyAupPresentationPosition(in candidateAup);
+            ForceDirectorHuntTarget(playerPosition, DirectorHuntTargetDurationSeconds);
+            _predatorSquadStateBits |= PredatorSquadStateFlankingBit;
+            _predatorSquadStateBits &= ~PredatorSquadStateFleeingBit;
+            _nextDirectorAmbushTime = _cognitionTimeSeconds + DirectorAmbushCooldownSeconds;
+            return true;
+        }
+
         private static double ResolveRuntimeAupDistanceSq(Vector3 a, Vector3 b)
         {
             AbsoluteUniversePosition aupA = AbsoluteUniversePosition.FromRuntimePosition(a);
             AbsoluteUniversePosition aupB = AbsoluteUniversePosition.FromRuntimePosition(b);
             return AbsoluteUniversePosition.DistanceSq(in aupA, in aupB);
+        }
+
+        private static string ResolveScanRoleCategory(CreatureRoleType roleType)
+        {
+            switch (roleType)
+            {
+                case CreatureRoleType.Ambient:
+                    return "Ambient";
+                case CreatureRoleType.Territorial:
+                    return "Territorial";
+                case CreatureRoleType.Hunter:
+                    return "Hunter";
+                case CreatureRoleType.Leviathan:
+                    return "Leviathan";
+                case CreatureRoleType.DroneTrader:
+                    return "DroneTrader";
+                default:
+                    return "Fauna";
+            }
         }
 
         private void RaisePredationAudioPing(Vector3 killPosition, Transform preyRoot)
@@ -3303,6 +3780,8 @@ namespace Hecton8.AI
 
             if (_utilityBrain.IsActivePredator)
             {
+                _predatorSquadStateBits |= PredatorSquadStateFleeingBit;
+                _predatorSquadStateBits &= ~(PredatorSquadStateHuntingBit | PredatorSquadStateFlankingBit);
                 _utilityBrain.ForceRetreat(threatPosition, _cognitionTimeSeconds, 8f);
                 _stateMachine.currentState = AIState.Retreat;
                 return;
@@ -3318,6 +3797,8 @@ namespace Hecton8.AI
             if (_isDead)
                 return;
 
+            _predatorSquadStateBits |= PredatorSquadStateFleeingBit;
+            _predatorSquadStateBits &= ~(PredatorSquadStateHuntingBit | PredatorSquadStateFlankingBit);
             float retreatDuration = ResolveApexForcedRetreatDuration();
             _utilityBrain.ForceRetreat(rivalPosition, _cognitionTimeSeconds, retreatDuration);
             _utilityBrain.ApplyExternalState(AIState.ApexForcedRetreat, _cognitionTimeSeconds);
@@ -3379,8 +3860,10 @@ namespace Hecton8.AI
             ClearCorpseLatchState();
             ClearProceduralStrikeIntent();
             ClearVoxelPathGuidance();
+            ClearDirectorHuntTarget();
             ClearHibernationStarvationHuntCommand();
             ClearEcholocationMimicSignal();
+            ClearPredatorSquadState();
             UnregisterSpatialHandle();
             _utilityBrain.SetRuntimeActive(false);
 
@@ -3396,6 +3879,7 @@ namespace Hecton8.AI
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
             _lastAppliedCorpseBloatShader01 = -1f;
+            ArmCorpseBloatShaderTimer();
             _deathSpiralTorque = ResolveDeathSpiralTorque();
 
             if (_rb != null)
@@ -3435,16 +3919,13 @@ namespace Hecton8.AI
                 return;
 
             float age = Mathf.Max(0f, _cognitionTimeSeconds - _deathSpiralStartTime);
-            _corpseBloatAge01 = Mathf.Clamp01(age / DeathSpiralFadeDelaySeconds);
             float fadeAge = age - DeathSpiralFadeDelaySeconds;
-            if (fadeAge <= 0f)
-                ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, _corpseBloatAge01);
 
             if (fadeAge > 0f)
             {
                 _deathDitherFade01 = Mathf.Clamp01(fadeAge / DeathSpiralFadeDurationSeconds);
                 ApplyBiolumPresentationLightScale(1f - _deathDitherFade01);
-                ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, _corpseBloatAge01);
+                ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01, 0f);
             }
 
             if (_deathDitherFade01 < 0.999f)
@@ -3698,6 +4179,10 @@ namespace Hecton8.AI
             _stateMachine.currentTurnMultiplier = evaluation.TurnMultiplier;
             _currentPackRole = (PredatorPackRole)evaluation.PackRoleCode;
             _flankingManeuverDetected = evaluation.FlankingManeuverDetected;
+            if (_flankingManeuverDetected)
+                _predatorSquadStateBits |= PredatorSquadStateFlankingBit;
+            else
+                _predatorSquadStateBits &= ~PredatorSquadStateFlankingBit;
         }
 
         private void ResetStateCache()
@@ -3721,6 +4206,8 @@ namespace Hecton8.AI
             _hasForcedMigrationTarget = false;
             ClearEcholocationMimicSignal();
             ClearVoxelPathGuidance();
+            ClearDirectorHuntTarget();
+            ClearPredatorSquadState();
         }
 
         public bool SupportsAttackPattern(FaunaAttackPattern attackPattern)
@@ -3977,7 +4464,7 @@ namespace Hecton8.AI
                 ? _archetype.displayName
                 : gameObject.name;
             string fallbackCategory = _archetype != null
-                ? _archetype.roleType.ToString()
+                ? ResolveScanRoleCategory(_archetype.roleType)
                 : "Fauna";
             string fallbackSummary = _archetype != null && !string.IsNullOrWhiteSpace(_archetype.gameplayPurpose)
                 ? _archetype.gameplayPurpose

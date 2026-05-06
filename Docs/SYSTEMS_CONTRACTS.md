@@ -1,6 +1,6 @@
-# SYSTEMS_CONTRACTS.md
+﻿# SYSTEMS_CONTRACTS.md
 ## ENGINE SYSTEMS CONTRACTS
-Date: `2026-05-04`
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Verification: not runtime-measured in this pass
 Scope: Save, Steam, Audio, Telemetry, CI, Accessibility, Endgame

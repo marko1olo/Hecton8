@@ -1,4 +1,6 @@
 # NAMING_VIOLATIONS.md — CYRILLIC SWEEP
+Date: 2026-05-01
+Status: DEPRECATED
 
 **Audit Date:** 2026-04-28  
 **Scope:** `Assets/_Project/Scripts/**/*.cs`  

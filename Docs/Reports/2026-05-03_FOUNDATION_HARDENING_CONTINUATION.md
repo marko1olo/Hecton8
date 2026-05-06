@@ -1,4 +1,5 @@
-# 2026-05-03 Foundation Hardening Continuation
+﻿# 2026-05-03 Foundation Hardening Continuation
+Date: 2026-05-07
 
 Status: PENDING VERIFICATION
 
@@ -1093,7 +1094,7 @@ Mandates followed: `OPT_Zero_GC_Policy_AllocFree_Mandate`, `ARCH_Global_Registry
 This pass changed no runtime behavior. It fixed non-canonical cold-allocation documentation in the interaction/fabricator slice:
 
 ```csharp
-// COLD ALLOC: RaycastHit[1] — single-hit interaction probe buffer — owner: PlayerInteraction
+// COLD ALLOC: RaycastHit[1] â€” single-hit interaction probe buffer â€” owner: PlayerInteraction
 private readonly RaycastHit[] _raycastHits = new RaycastHit[1];
 ```
 

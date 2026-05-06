@@ -36,7 +36,7 @@
 
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
+using Hecton.Localization;
 using Hecton8.Dev;
 using UnityEngine;
 
@@ -44,7 +44,7 @@ namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)] // Тикает РАНЬШЕ всех
-    public sealed class GameTickManager : MonoBehaviour, IUpdatable, IFixedTickable
+    public sealed class GameTickManager : MonoBehaviour, IUpdatable, IFixedTickable, IServiceHeartbeat
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -54,6 +54,12 @@ namespace Hecton8.Core
         private static bool _isEditorExitingPlayMode;
 
         internal static GameTickManager ActiveRuntimeInstance { get; private set; }
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -97,6 +103,8 @@ namespace Hecton8.Core
 #endif
 
         internal float SlowTickIntervalSeconds => slowTickInterval;
+        internal string DebugTopSlowTickOwner => _debugTopSlowTickOwner;
+        internal string DebugLastSlowTickReport => _debugLastSlowTickReport;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -116,7 +124,6 @@ namespace Hecton8.Core
         [SerializeField] private bool enableSlowTickProfiling = true;
         [SerializeField] private float slowTickSpikeThresholdMs = 8f;
         [SerializeField] private float slowTickReportCooldownSeconds = 1.5f;
-        [SerializeField] private int slowTickTopEntries = 6;
         [SerializeField] private float _debugLastSlowTickDurationMs;
         [SerializeField] private float _debugTopSlowTickDurationMs;
         [SerializeField] private string _debugTopSlowTickOwner = "None";
@@ -136,10 +143,12 @@ namespace Hecton8.Core
 
         private float _slowTickAccumulator;
         private const int SlowTickProfilerCapacity = 8;
+        private const double SlowTickPerformanceWarningBudgetMs = 0.2d;
+        private static readonly uint _SlowTickBudgetWarningHash = unchecked((uint)LocHash.Compute("GameTickManager.SlowTickBudgetExceeded"));
+        private static readonly uint _GameTickManagerContextHash = unchecked((uint)LocHash.Compute(nameof(GameTickManager)));
         private readonly object[] _slowTickTopOwners = new object[SlowTickProfilerCapacity];
         private readonly double[] _slowTickTopDurationsMs = new double[SlowTickProfilerCapacity];
-        private readonly StringBuilder _slowTickReportBuilder = new StringBuilder(512);
-        private float _nextSlowTickReportTime;
+        private float _nextSlowTickTelemetryTime;
         private bool _loggedFirstUpdateExecution;
         private bool _loggedFirstSlowTickExecution;
         private bool _serviceRegistered;
@@ -543,7 +552,7 @@ namespace Hecton8.Core
             if (_slowTickTopOwners[0] != null)
             {
                 _debugTopSlowTickDurationMs = (float)_slowTickTopDurationsMs[0];
-                _debugTopSlowTickOwner = ResolveTickableLabel(_slowTickTopOwners[0]);
+                _debugTopSlowTickOwner = "Recorded";
             }
             else
             {
@@ -551,55 +560,22 @@ namespace Hecton8.Core
                 _debugTopSlowTickOwner = "None";
             }
 
-            if (totalMs < Mathf.Max(0.1f, slowTickSpikeThresholdMs))
+            float configuredThresholdMs = Mathf.Max(0.01f, slowTickSpikeThresholdMs);
+            double warningThresholdMs = configuredThresholdMs < SlowTickPerformanceWarningBudgetMs
+                ? configuredThresholdMs
+                : SlowTickPerformanceWarningBudgetMs;
+            if (totalMs <= warningThresholdMs)
                 return;
 
-            if (Time.unscaledTime < _nextSlowTickReportTime)
+            if (Time.unscaledTime < _nextSlowTickTelemetryTime)
                 return;
 
-            _slowTickReportBuilder.Clear();
-            _slowTickReportBuilder.Append("[TickProfiler] SlowTick spike total=");
-            _slowTickReportBuilder.Append(totalMs.ToString("0.00"));
-            _slowTickReportBuilder.Append("ms registered=");
-            _slowTickReportBuilder.Append(registeredCount);
-            _slowTickReportBuilder.Append(" top=");
-
-            int topCount = Mathf.Clamp(slowTickTopEntries, 1, SlowTickProfilerCapacity);
-            bool hasEntry = false;
-            for (int i = 0; i < topCount; i++)
-            {
-                object owner = _slowTickTopOwners[i];
-                if (owner == null || _slowTickTopDurationsMs[i] <= 0.001d)
-                    continue;
-
-                if (hasEntry)
-                    _slowTickReportBuilder.Append(" | ");
-
-                _slowTickReportBuilder.Append(ResolveTickableLabel(owner));
-                _slowTickReportBuilder.Append('=');
-                _slowTickReportBuilder.Append(_slowTickTopDurationsMs[i].ToString("0.00"));
-                _slowTickReportBuilder.Append("ms");
-                hasEntry = true;
-            }
-
-            if (!hasEntry)
-                _slowTickReportBuilder.Append("none");
-
-            _debugLastSlowTickReport = _slowTickReportBuilder.ToString();
-            _nextSlowTickReportTime = Time.unscaledTime + Mathf.Max(0.1f, slowTickReportCooldownSeconds);
-            UnityEngine.Debug.Log(_debugLastSlowTickReport, this);
-            RuntimeDiagnosticsTrace.WriteEvent("slowtick", _debugLastSlowTickReport);
-        }
-
-        private static string ResolveTickableLabel(object owner)
-        {
-            if (owner == null)
-                return "Null";
-
-            if (owner is Component component)
-                return component.GetType().Name;
-
-            return owner.GetType().Name;
+            _debugLastSlowTickReport = "Telemetry";
+            _nextSlowTickTelemetryTime = Time.unscaledTime + Mathf.Max(0.1f, slowTickReportCooldownSeconds);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _SlowTickBudgetWarningHash,
+                _GameTickManagerContextHash,
+                (float)totalMs);
         }
 
         // ══════════════════════════════════════════════════════════

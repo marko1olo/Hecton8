@@ -56,6 +56,16 @@ namespace Hecton8.AI
             ResidentSlotCapacity = 0;
         }
 
+        /// <summary>
+        /// Clears transient service readiness while preserving the resident slot contract owned by the director.
+        /// </summary>
+        public void Reset()
+        {
+            int residentSlotCapacity = ResidentSlotCapacity;
+            Shutdown();
+            Initialize(residentSlotCapacity);
+        }
+
         internal JobHandle ScheduleResidentDataOnlyLod(
             NativeArray<PoolSlotData> poolSlots,
             NativeArray<float3> linearVelocities,

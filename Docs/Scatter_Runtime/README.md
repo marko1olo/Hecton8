@@ -1,7 +1,7 @@
-# Scatter Runtime Docs
+﻿# Scatter Runtime Docs
 
-Date: `2026-05-02`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Purpose: canonical active bundle for scatter runtime refactor planning, baseline, and DOTS scope.
 

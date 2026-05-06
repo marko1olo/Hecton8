@@ -1,3 +1,5 @@
+Date: 2026-04-16
+
 **WARNING: LEGACY DOCUMENT.** This file is archived for historical reference and may contain outdated information or broken links.
 
 # AGENTS.md — HECTON-8 Codex System Instructions

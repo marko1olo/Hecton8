@@ -65,6 +65,7 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
             float4 _HectonPdaInventoryParallax;
+            float4 _HectonUiAnalogJitter;
 
             float Bayer4x4(float2 pixelCoord)
             {
@@ -110,7 +111,18 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
 
             half4 frag(Varyings input) : SV_Target
             {
+                float inventoryMask = saturate(_HectonPdaInventoryParallax.z);
                 float2 panelUv = input.uv + (input.uv - 0.5) * _HectonPdaInventoryParallax.xy;
+                float screenCenteredX = (input.positionCS.x / max(1.0, _ScaledScreenParams.x)) - 0.5;
+                panelUv.x += screenCenteredX * _HectonPdaInventoryParallax.x * inventoryMask * 0.08;
+
+                float analogStrength = saturate(_HectonUiAnalogJitter.x) * inventoryMask;
+                float2 analogCell = floor(input.uv * float2(113.0, 47.0));
+                float analogNoise = frac(sin(dot(analogCell, float2(12.9898, 78.233))) * 43758.5453);
+                float analogWave = sin(_Time.y * 100.0 + input.uv.y * 613.0 + analogNoise * 6.28318);
+                panelUv += float2(
+                    analogWave * (analogNoise - 0.5) * analogStrength * 0.006,
+                    analogWave * analogStrength * 0.0015);
                 panelUv = saturate(panelUv);
                 half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, panelUv);
                 half4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, panelUv);
@@ -119,7 +131,6 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                 float powerLevel = saturate(_PanelPowerLevel);
                 float3 emissive = screenSample.rgb * _Color.rgb * lerp(0.45, 1.0, powerLevel);
                 float alpha = max(screenSample.a, rgbAlpha) * _Color.a;
-                float inventoryMask = saturate(_HectonPdaInventoryParallax.z);
                 float scanCoord = frac(input.uv.y * max(1.0, _InventoryScanlineDensity) + _Time.y * 0.85);
                 float scanline = lerp(1.0, lerp(0.72, 1.08, step(0.5, scanCoord)), inventoryMask * _InventoryScanlineStrength);
                 emissive *= scanline;

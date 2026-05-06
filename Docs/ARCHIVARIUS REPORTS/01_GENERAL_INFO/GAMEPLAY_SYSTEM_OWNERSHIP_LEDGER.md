@@ -1,6 +1,6 @@
-# HECTON-8 GAMEPLAY SYSTEM OWNERSHIP LEDGER
+﻿# HECTON-8 GAMEPLAY SYSTEM OWNERSHIP LEDGER
 
-Date: 2026-04-29
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: broad source-backed owner inventory for major first-party gameplay domains
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
@@ -176,7 +176,7 @@ Deep dive already exists in `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`.
 Current interpretation:
 
 - submarine state is already split between runtime root and structural breach read model
-- older docs that describe “submarine system” as one owner are too coarse
+- older docs that describe â€œsubmarine systemâ€ as one owner are too coarse
 
 ## Cross-Cutting Save Participants Confirmed In This Pass
 
@@ -228,7 +228,7 @@ It is also split by persistence timing and save/load order.
 | GC | None. Documentation-only pass. |
 | Memory | None. Documentation-only pass. |
 | Cadence | None. Runtime code unchanged. |
-| Correctness | Improves whole-project navigation by replacing vague “system areas” with explicit current owners. |
+| Correctness | Improves whole-project navigation by replacing vague â€œsystem areasâ€ with explicit current owners. |
 
 ## Verdict
 

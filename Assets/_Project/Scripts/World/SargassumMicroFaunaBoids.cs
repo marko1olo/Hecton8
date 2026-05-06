@@ -1047,10 +1047,6 @@ namespace Hecton8.World
         [Tooltip("Maximum rigidbody candidates processed per leviathan shockwave without allocations.")]
         private int leviathanShockwaveHitCapacity = 12;
 
-        [SerializeField]
-        [Tooltip("Layer mask used when the leviathan supplements the vegetation spatial hash with a rigidbody overlap query.")]
-        private LayerMask leviathanShockwaveLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
         [Header("â”€â”€ Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField]
         [Tooltip("Shadow mode used for the indirect draw.")]
@@ -1197,7 +1193,6 @@ namespace Hecton8.World
         private BeaconNetworkSystem.BeaconSnapshot[] _formationBeaconSnapshots;
         private Collider[] _formationObstacleColliders;
         private SpatialQueryHit[] _leviathanShockwaveSpatialHits;
-        private Collider[] _leviathanShockwaveColliders;
         private Rigidbody[] _leviathanShockwaveRigidbodies;
         private NativeArray<StaticObstacleData> _staticObstacleCache;
         private NativeArray<float3> _leviathanPathScratchNative;
@@ -1664,7 +1659,7 @@ namespace Hecton8.World
                 _mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
 
             if (viewCamera == null && playerTransform != null)
-                viewCamera = playerContext != null && playerContext.PlayerCamera != null ? playerContext.PlayerCamera : playerTransform.GetComponent<Camera>();
+                viewCamera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(playerTransform);
 
             if (_playerFlashlight != null)
                 _flashlightOn = _playerFlashlight.IsOn;
@@ -1832,12 +1827,6 @@ namespace Hecton8.World
             {
                 // COLD ALLOC: SpatialQueryHit[leviathanShockwaveHitCapacity] - vegetation spatial-hash hit cache for leviathan shockwave debris pushes - owner: SargassumMicroFaunaBoids
                 _leviathanShockwaveSpatialHits = new SpatialQueryHit[leviathanShockwaveHitCapacity];
-            }
-
-            if (_leviathanShockwaveColliders == null || _leviathanShockwaveColliders.Length != leviathanShockwaveHitCapacity)
-            {
-                // COLD ALLOC: Collider[leviathanShockwaveHitCapacity] - fallback overlap buffer for leviathan shockwave rigidbody pushes - owner: SargassumMicroFaunaBoids
-                _leviathanShockwaveColliders = new Collider[leviathanShockwaveHitCapacity];
             }
 
             if (_leviathanShockwaveRigidbodies == null || _leviathanShockwaveRigidbodies.Length != leviathanShockwaveHitCapacity)
@@ -2896,6 +2885,10 @@ namespace Hecton8.World
             UpdateFragmentationState(playerPosition, playerVelocity, playerForward, playerSpeed, absoluteSimulationTime);
             UpdateSonarScatterState(simulationDt, absoluteSimulationTime);
             float fragmentation01 = ResolveFragmentationStrength01(absoluteSimulationTime);
+            AbsoluteUniversePosition fragmentationCenterAAup = AbsoluteUniversePosition.FromRuntimePosition(_fragmentationCenterAWS);
+            AbsoluteUniversePosition fragmentationCenterBAup = AbsoluteUniversePosition.FromRuntimePosition(_fragmentationCenterBWS);
+            double fragmentationDistanceSq = AbsoluteUniversePosition.DistanceSq(in fragmentationCenterAAup, in fragmentationCenterBAup);
+            float fragmentationHalfDistance = math.sqrt((float)math.min(fragmentationDistanceSq, (double)float.MaxValue)) * 0.5f;
             float sonarScatterStrength01 = absoluteSimulationTime < _sonarScatterExpireTime
                 ? Mathf.Clamp01(_sonarScatterStrength01)
                 : 0f;
@@ -3039,7 +3032,7 @@ namespace Hecton8.World
                 _fragmentationCenterBWS.x,
                 _fragmentationCenterBWS.y,
                 _fragmentationCenterBWS.z,
-                Mathf.Max(1f, Vector3.Distance(_fragmentationCenterAWS, _fragmentationCenterBWS) * 0.5f));
+                Mathf.Max(1f, fragmentationHalfDistance));
             frameConstants.SonarScatter0 = new float4(
                 _sonarScatterOriginWS.x,
                 _sonarScatterOriginWS.y,
@@ -3722,29 +3715,6 @@ namespace Hecton8.World
 
                     if (candidateTransform.TryGetComponent(out Rigidbody candidateBody))
                         TryAppendShockwaveBody(candidateBody, ref rigidbodyCount);
-                }
-            }
-
-            if (_leviathanShockwaveColliders != null)
-            {
-                int colliderCount = UnityEngine.Physics.OverlapSphereNonAlloc(
-                    _leviathanHeadPositionWS,
-                    leviathanShockwaveRadius,
-                    _leviathanShockwaveColliders,
-                    leviathanShockwaveLayers,
-                    QueryTriggerInteraction.Ignore);
-
-                for (int i = 0; i < colliderCount; i++)
-                {
-                    Collider hitCollider = _leviathanShockwaveColliders[i];
-                    if (hitCollider == null)
-                        continue;
-
-                    Rigidbody candidateBody = hitCollider.attachedRigidbody;
-                    if (candidateBody == null || candidateBody == _playerRigidbody)
-                        continue;
-
-                    TryAppendShockwaveBody(candidateBody, ref rigidbodyCount);
                 }
             }
 

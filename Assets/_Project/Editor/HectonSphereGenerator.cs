@@ -270,10 +270,10 @@ namespace Hecton.Editor
                 mesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
             }
 
-            mesh.vertices = vertices;
-            mesh.normals = normals;
-            mesh.uv = uvs;
-            mesh.triangles = triangles;
+            mesh.SetVertices(vertices);
+            mesh.SetNormals(normals);
+            mesh.SetUVs(0, uvs);
+            mesh.SetTriangles(triangles, 0, true);
 
             // Tangents for potential normal mapping
             mesh.RecalculateTangents();

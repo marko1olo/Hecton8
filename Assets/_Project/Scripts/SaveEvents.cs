@@ -12,7 +12,8 @@ namespace Hecton8.SaveSystem
         LoadStarted = 3,
         LoadCompleted = 4,
         LoadFailed = 5,
-        EmergencyBackupRestoreRequested = 6
+        EmergencyBackupRestoreRequested = 6,
+        MappedWriteStarted = 7
     }
 
     public struct SaveEventPayload
@@ -144,6 +145,11 @@ namespace Hecton8.SaveSystem
         public static void RaiseSaveFailed(string slot, string error)
         {
             Enqueue(SaveEventType.SaveFailed, slot, error);
+        }
+
+        public static void RaiseMappedWriteStarted(string slot)
+        {
+            Enqueue(SaveEventType.MappedWriteStarted, slot, default);
         }
 
         public static void RaiseLoadStarted(string slot)

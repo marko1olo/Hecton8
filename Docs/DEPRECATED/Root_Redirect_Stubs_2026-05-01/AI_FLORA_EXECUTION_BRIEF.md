@@ -1,4 +1,6 @@
 # Redirect Stub
+Date: 2026-05-01
+Status: DEPRECATED
 
 Canonical path moved to `Docs/Flora_Pipeline/AI_FLORA_EXECUTION_BRIEF.md`.
 

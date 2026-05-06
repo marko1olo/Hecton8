@@ -265,7 +265,7 @@ namespace Hecton8.Atmosphere
     [AddComponentMenu("Hecton/Atmosphere Manager")]
     [DefaultExecutionOrder(-6000)]  // v4.3: MUST tick before UnderwaterVisuals(-4000)
     [ExecuteAlways]
-    public class HectonAtmosphereManager : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener, IMapMagicBiomeEventListener
+    public class HectonAtmosphereManager : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener, IMapMagicBiomeEventListener
     {
         private const float VisualEnterUnderwaterDepth = 0.01f;
         private const float VisualExitUnderwaterDepth = 0.005f;
@@ -453,6 +453,10 @@ namespace Hecton8.Atmosphere
 
         private bool _registeredToTickManager;
         private bool _registeredAtmosphereRuntime;
+        private float _lastAtmosphereSlowTickTime;
+        private float _atmosphereTimelineAccumulator;
+        private const float AtmosphereTimelineStepSeconds = 0.1f;
+        private const int AtmosphereTimelineMaxStepsPerSlowTick = 5;
 
         private AtmosphereProfile _activeBiomeProfile;
         private AtmosphereProfile _activeMatrixProfile;
@@ -576,6 +580,8 @@ namespace Hecton8.Atmosphere
             InitializeAtmosphereValues();
             CachePlayerMovement();
             EnsureAegirRingShadowCookie();
+            _lastAtmosphereSlowTickTime = 0f;
+            _atmosphereTimelineAccumulator = 0f;
         }
 
         private void OnEnable()
@@ -671,6 +677,12 @@ namespace Hecton8.Atmosphere
 
         private void EnsureAegirRingShadowCookie()
         {
+            if (GlobalRegistry.CelestialEngine != null)
+            {
+                ReleaseAegirRingShadowCookie();
+                return;
+            }
+
             if (!_useAegirRingShadowCookie)
             {
                 ReleaseAegirRingShadowCookie();
@@ -742,8 +754,8 @@ namespace Hecton8.Atmosphere
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -751,7 +763,7 @@ namespace Hecton8.Atmosphere
             if (!_registeredToTickManager)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
         }
 
@@ -809,7 +821,7 @@ namespace Hecton8.Atmosphere
             if (!_editorPreviewDirty && !sunMoved)
                 return;
 
-            Tick(0f);
+            RunAtmosphereTimeline(0f);
             _editorPreviewDirty = false;
         }
 #endif
@@ -878,7 +890,7 @@ namespace Hecton8.Atmosphere
 
             _sunElevationDot = math.dot(-sunForward, new float3(0f, 1f, 0f));
 
-            if (!sunForward.Equals(_cachedShaderSunDirection))
+            if (math.any(math.abs(sunForward - _cachedShaderSunDirection) > 0.000001f))
             {
                 _cachedShaderSunDirection = sunForward;
                 Shader.SetGlobalVector(
@@ -967,7 +979,28 @@ namespace Hecton8.Atmosphere
 
         #region ══════════ ITickable ══════════
 
-        public void Tick(float deltaTime)
+        public void SlowTick()
+        {
+            float now = Time.time;
+            float elapsed = _lastAtmosphereSlowTickTime > 0f
+                ? Mathf.Clamp(now - _lastAtmosphereSlowTickTime, AtmosphereTimelineStepSeconds, AtmosphereTimelineStepSeconds * AtmosphereTimelineMaxStepsPerSlowTick)
+                : AtmosphereTimelineStepSeconds;
+            _lastAtmosphereSlowTickTime = now;
+            _atmosphereTimelineAccumulator = Mathf.Min(
+                _atmosphereTimelineAccumulator + elapsed,
+                AtmosphereTimelineStepSeconds * AtmosphereTimelineMaxStepsPerSlowTick);
+
+            int steps = 0;
+            while (_atmosphereTimelineAccumulator >= AtmosphereTimelineStepSeconds &&
+                   steps < AtmosphereTimelineMaxStepsPerSlowTick)
+            {
+                RunAtmosphereTimeline(AtmosphereTimelineStepSeconds);
+                _atmosphereTimelineAccumulator -= AtmosphereTimelineStepSeconds;
+                steps++;
+            }
+        }
+
+        private void RunAtmosphereTimeline(float deltaTime)
         {
             SyncWaterSurfaceFromPlayerMovement();
             AdvanceCycleTimer(deltaTime);
@@ -1030,17 +1063,15 @@ namespace Hecton8.Atmosphere
             float inclinationRad = math.radians(_orbitalInclination);
             float azimuthRad     = math.radians(_sunOrbitalYAngle);
 
-            quaternion qDaily       = quaternion.RotateX(dailyRad);
-            quaternion qInclination = quaternion.RotateZ(inclinationRad);
-            quaternion qAzimuth     = quaternion.RotateY(azimuthRad);
-
-            quaternion finalRotation = math.mul(
-                qAzimuth, math.mul(qInclination, qDaily));
-
-            _sunLight.transform.rotation = finalRotation;
-
-            Matrix4x4 rotationMatrix = Matrix4x4.Rotate(finalRotation);
+            Matrix4x4 rotationMatrix =
+                BuildAxisAngleRotationMatrix(new float3(0f, 1f, 0f), azimuthRad) *
+                BuildAxisAngleRotationMatrix(new float3(0f, 0f, 1f), inclinationRad) *
+                BuildAxisAngleRotationMatrix(new float3(1f, 0f, 0f), dailyRad);
             Vector3 sunForwardVector = rotationMatrix.MultiplyVector(Vector3.forward);
+            Vector3 sunUpVector = rotationMatrix.MultiplyVector(Vector3.up);
+            if (sunForwardVector.sqrMagnitude > 0.0001f)
+                _sunLight.transform.rotation = Quaternion.LookRotation(sunForwardVector, sunUpVector);
+
             float3 sunForward = new float3(sunForwardVector.x, sunForwardVector.y, sunForwardVector.z);
             _sunElevationDot = math.dot(-sunForward, new float3(0f, 1f, 0f));
 
@@ -1054,6 +1085,29 @@ namespace Hecton8.Atmosphere
             }
 
             PublishCycleShaderGlobals(normalized);
+        }
+
+        private static Matrix4x4 BuildAxisAngleRotationMatrix(float3 axis, float radians)
+        {
+            axis = math.normalizesafe(axis, new float3(1f, 0f, 0f));
+            float x = axis.x;
+            float y = axis.y;
+            float z = axis.z;
+            float sin = math.sin(radians);
+            float cos = math.cos(radians);
+            float oneMinusCos = 1f - cos;
+
+            Matrix4x4 matrix = Matrix4x4.identity;
+            matrix.m00 = oneMinusCos * x * x + cos;
+            matrix.m01 = oneMinusCos * x * y - sin * z;
+            matrix.m02 = oneMinusCos * x * z + sin * y;
+            matrix.m10 = oneMinusCos * y * x + sin * z;
+            matrix.m11 = oneMinusCos * y * y + cos;
+            matrix.m12 = oneMinusCos * y * z - sin * x;
+            matrix.m20 = oneMinusCos * z * x - sin * y;
+            matrix.m21 = oneMinusCos * z * y + sin * x;
+            matrix.m22 = oneMinusCos * z * z + cos;
+            return matrix;
         }
 
         private void PublishCycleShaderGlobals(float normalizedTime)
@@ -1258,7 +1312,7 @@ namespace Hecton8.Atmosphere
 
         private void PublishGiantAbyssLight()
         {
-            HectonCelestialEngine celestial = HectonCelestialEngine.ActiveRuntimeInstance;
+            HectonCelestialEngine celestial = GlobalRegistry.CelestialEngine;
             float3 aegirDirection = new float3(0f, 0f, 1f);
             float planetPhase = 0f;
             float eclipseBacklit = 0f;
@@ -1363,7 +1417,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             AtmosphereProfile secondary = ResolveMatrixAtmosphereProfile(_biomeInfluenceSecondaryProfile);
-            if (secondary == null || _currentBiomeInfluence.SecondaryBiomeId == 0)
+            if (secondary == null || _currentBiomeInfluence.Blend255 == 0)
             {
                 _currentValues.fogColor = primary.fogColor;
                 _currentValues.fogDensity = primary.fogDensity;
@@ -1424,7 +1478,7 @@ namespace Hecton8.Atmosphere
             in WorldProceduralFieldSampler.BiomeInfluenceCell influence,
             Vector3 samplePosition)
         {
-            byte nextPrimaryId = influence.PrimaryBiomeId;
+            byte nextPrimaryId = influence.PrimaryVisualFamilyId;
             if (!_hasStableBiomeInfluencePrimary ||
                 nextPrimaryId == _stableBiomeInfluencePrimaryId ||
                 _biomeInfluenceTransitionHysteresisMeters <= 0f)

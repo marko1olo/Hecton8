@@ -6,7 +6,6 @@
 using Hecton8.Core;
 using Hecton8.Audio;
 using Hecton8.Narrative;
-using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Sirenix.OdinInspector;
@@ -40,7 +39,6 @@ namespace Hecton8.Gameplay
         private const string RadiationFatigueDiscoveryId = "radiation_fatigue_advisory_30";
         private const string RadiationCriticalDiscoveryId = "radiation_critical_advisory";
         private const string LeviathanTraumaDiscoveryId = "leviathan_trauma_voice_log";
-        private const string RadShieldQuestId = "quest_rad_shield";
         private const string RadiationFatigueFallbackMessage = "CRITICAL ADVISORY // RADIATION LOAD 30 PERCENT";
         private const string RadiationCriticalFallbackMessage = "CRITICAL ADVISORY // RADIATION LOAD 70 PERCENT - RAD-SHIELD REQUIRED";
         private static readonly char[] s_radiationFatigueMessage =
@@ -204,7 +202,8 @@ namespace Hecton8.Gameplay
                 0.72f,
                 0.22f,
                 s_radiationFatigueMessage,
-                RadiationFatigueFallbackMessage);
+                RadiationFatigueFallbackMessage,
+                false);
 
             TryIssueRadiationAdvisory(
                 exposure01,
@@ -214,7 +213,8 @@ namespace Hecton8.Gameplay
                 1f,
                 0.3f,
                 s_radiationCriticalMessage,
-                RadiationCriticalFallbackMessage);
+                RadiationCriticalFallbackMessage,
+                true);
         }
 
         private void TryIssueRadiationAdvisory(
@@ -225,28 +225,25 @@ namespace Hecton8.Gameplay
             float glitchIntensity,
             float glitchDuration,
             char[] message,
-            string fallbackMessage)
+            string fallbackMessage,
+            bool blocksNarrativeQueue)
         {
             if (issued || exposure01 < threshold01)
                 return;
 
             issued = true;
 
-            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
-            if (narrativeDirector == null || !narrativeDirector.HasDiscovery(discoveryId))
-                NarrativeEvents.RaiseDiscoveryMade(discoveryId);
+            NarrativeEvents.RaiseDiscoveryMade(discoveryId);
 
-            ActivateRadShieldQuest();
+            if (blocksNarrativeQueue)
+            {
+                AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
+                if (audioLogs != null)
+                    audioLogs.NotifyAtmosphericWarningStarted(glitchDuration);
+            }
 
             PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(glitchIntensity, glitchDuration, 1f, Mathf.Clamp01(HealthPercent), true));
             ShowRadiationAdvisory(message, fallbackMessage);
-        }
-
-        private static void ActivateRadShieldQuest()
-        {
-            QuestManager questManager = GlobalRegistry.Quest;
-            if (questManager != null)
-                questManager.ActivateQuest(RadShieldQuestId);
         }
 
         private static void ShowRadiationAdvisory(char[] message, string fallbackMessage)

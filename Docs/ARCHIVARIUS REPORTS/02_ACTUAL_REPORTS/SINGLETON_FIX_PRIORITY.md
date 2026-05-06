@@ -1,6 +1,6 @@
-# SINGLETON ELIMINATION ROADMAP — HECTON-8
-Date: 2026-05-04
-Status: REFERENCE
+﻿# SINGLETON ELIMINATION ROADMAP â€” HECTON-8
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 
 ## Current-State Addendum (2026-04-29)
@@ -25,7 +25,7 @@ Status remains `PENDING VERIFICATION`.
 
 **Status:** PENDING VERIFICATION  
 **Authority:** CTO / Lead Architect  
-**Rule Basis:** AGENTS.md § PRIME DIRECTIVES — "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."  
+**Rule Basis:** AGENTS.md Â§ PRIME DIRECTIVES â€” "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."  
 **Source Violations:** `SINGLETON_VIOLATIONS.md` (101 first-party violations)  
 **Mandates Followed:** AGENTS.md [RULE] MANDATE CONTEXTUAL INGESTION, [RULE] ARCHITECTURE FIRST, [RULE] NO OPTIMISM.
 
@@ -39,7 +39,7 @@ Status remains `PENDING VERIFICATION`.
 
 ---
 
-## TIER 1 — CRITICAL (Thread Safety / Tick / Physics / AUP / Dispatch)
+## TIER 1 â€” CRITICAL (Thread Safety / Tick / Physics / AUP / Dispatch)
 
 **Rationale:** These systems are accessed from Burst jobs, native containers, physics callbacks, or origin-shift handlers. Awake-order races here cause deterministic crashes, not soft failures.
 
@@ -61,11 +61,11 @@ Status remains `PENDING VERIFICATION`.
 
 ---
 
-### TIER 1 — MIGRATION SNIPPETS (Actual GlobalRegistry API)
+### TIER 1 â€” MIGRATION SNIPPETS (Actual GlobalRegistry API)
 
 #### 1. GameTickManager
 ```csharp
-// BEFORE (SuitHUDV4CanvasOverlay.cs → AutoResolve)
+// BEFORE (SuitHUDV4CanvasOverlay.cs â†’ AutoResolve)
 GameTickManager.Instance.RegisterTickable(this); // FORBIDDEN overload
 
 // AFTER
@@ -210,9 +210,9 @@ _gameBootstrapper.ShowFatalError(msg);
 
 ---
 
-## TIER 2 — FUNCTIONAL (Gameplay Managers)
+## TIER 2 â€” FUNCTIONAL (Gameplay Managers)
 
-**Rationale:** These affect game state but do not sit on the thread-boundary. Can wait for next refactor sprint. Migrate in subsystem batches (Player → World → Economy).
+**Rationale:** These affect game state but do not sit on the thread-boundary. Can wait for next refactor sprint. Migrate in subsystem batches (Player â†’ World â†’ Economy).
 
 | # | Class | File | Blast Radius if Changed |
 |---|-------|------|------------------------|
@@ -247,7 +247,7 @@ _gameBootstrapper.ShowFatalError(msg);
 
 ---
 
-## TIER 3 — UI / VISUAL (Secondary Feedback)
+## TIER 3 â€” UI / VISUAL (Secondary Feedback)
 
 **Rationale:** These are presentation-only. Lowest blast radius. Merge or delete where possible.
 

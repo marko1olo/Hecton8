@@ -1,6 +1,6 @@
-# INTERFACE STRATEGY
+﻿# INTERFACE STRATEGY
 
-Date: 2026-04-29
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: ownership strategy for `GlobalRegistryContracts.cs` after source recheck
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
@@ -122,7 +122,7 @@ That proof was not established for `IRenderable`, `IAudioService`, or `IUIServic
 | P0 | purge ghost/fragmented claims from dependent docs | current source already disproves them |
 | P1 | keep one authoritative owner named for each registry-facing service contract | prevents drift and folklore |
 | P1 | when Unity evidence exists, add runtime occupancy notes separately from source ownership | avoids mixing static facts with live-state assumptions |
-| P2 | rerun interface audit after any `GlobalRegistryContracts.cs` expansion | current May 4 source count remains 33 direct public interfaces; older 19/27/31 snapshots are stale and coverage must be recounted before claims |
+| P2 | rerun interface audit after any `GlobalRegistryContracts.cs` expansion | current May 6 source count is 34 direct public interfaces; older 19/27/31/33 snapshots are stale and coverage must be recounted before claims |
 
 ## 5. Regression Model
 

@@ -213,8 +213,11 @@ namespace Hecton8.Core
         private const int DraftTerrainBaseMapResolutionBudget = 128;
         private const int BiomeMatrixLayerCount = 108;
         private const string TectonicSpineFamilyId = "biome.family.tectonic_spine";
-        private const float MatrixBiomeBorderBlendProbeMeters = 50f;
+        private const float MatrixBiomeBorderBlendProbeMeters = WorldProceduralFieldSampler.BiomeBorderOverlapMeters;
         private const float DistantTerrainShadowMaskUpdateIntervalSeconds = 2f;
+        private const float DistantTerrainShadowSolveBudgetWarningMilliseconds = 0.2f;
+        private const int DistantTerrainShadowPerformanceWarningCooldownFrames = 30;
+        private const int DistantTerrainShadowMaskMaxResolution = 256;
         private static readonly int _TerrainFadeDistanceId = Shader.PropertyToID("_FadeDistance");
         private static readonly int _TerrainFadeParamsId = Shader.PropertyToID("_HectonTerrainFadeParams");
         private static readonly int _TerrainFadeRuntimeOriginId = Shader.PropertyToID("_HectonTerrainFadeRuntimeOrigin");
@@ -222,6 +225,10 @@ namespace Hecton8.Core
         private static readonly int _DistantTerrainShadowMaskId = Shader.PropertyToID("_HectonDistantTerrainShadowMask");
         private static readonly int _DistantTerrainShadowRectId = Shader.PropertyToID("_HectonDistantTerrainShadowRect");
         private static readonly int _DistantTerrainShadowParamsId = Shader.PropertyToID("_HectonDistantTerrainShadowParams");
+        private static readonly uint _DistantTerrainShadowSolveWarningHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute("MapMagicBridge.DistantTerrainShadowSolveOverBudget"));
+        private static readonly uint _MapMagicBridgeTelemetryContextHash =
+            unchecked((uint)Hecton.Localization.LocHash.Compute(nameof(MapMagicBridge)));
 
         // ══════════════════════════════════════════════════════════
         //  RUNTIME AUTHORITY
@@ -292,7 +299,9 @@ namespace Hecton8.Core
         [SerializeField, Min(1f)] private float terrainFadeWidthMeters = 420f;
         [SerializeField, Range(0f, 1f)] private float terrainFadeNoirFogBlend = 0.85f;
         [SerializeField] private bool enableDistantTerrainShadowMask = true;
-        [SerializeField, Range(32, 128)] private int distantTerrainShadowMaskResolution = 64;
+        [SerializeField, Tooltip("Optional pre-rendered 256x256 canyon darkness mask. When assigned, runtime generation is bypassed.")]
+        private Texture2D distantTerrainShadowMaskOverride;
+        [SerializeField, Range(32, DistantTerrainShadowMaskMaxResolution)] private int distantTerrainShadowMaskResolution = 256;
         [SerializeField, Min(256f)] private float distantTerrainShadowMaskWorldSize = 4096f;
         [SerializeField, Min(1f)] private float distantTerrainShadowProbeDistanceMeters = 140f;
         [SerializeField, Min(1f)] private float distantTerrainShadowHeightScaleMeters = 90f;
@@ -360,6 +369,7 @@ namespace Hecton8.Core
         private int _distantTerrainShadowMaskCapacity;
         private int _distantTerrainShadowMaskAppliedResolution;
         private float _nextDistantTerrainShadowMaskUpdateTime = float.NegativeInfinity;
+        private int _nextDistantTerrainShadowPerformanceWarningFrame;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -380,6 +390,7 @@ namespace Hecton8.Core
         public float SandboxTectonicSpineStrength => sandboxTectonicSpineStrength;
         public float SandboxTectonicSpineFrequency => sandboxTectonicSpineFrequency;
         public float SandboxTectonicSpineRidgeSharpness => sandboxTectonicSpineRidgeSharpness;
+        public uint SandboxTectonicSpineSeed => unchecked((uint)sandboxTectonicSpineSeed);
         public bool EnableSandboxFakeCliffOverhangOffsets => enableSandboxFakeCliffOverhangOffsets;
 
         /// <summary>
@@ -563,6 +574,12 @@ namespace Hecton8.Core
                 return;
             }
 
+            if (distantTerrainShadowMaskOverride != null)
+            {
+                PublishDistantTerrainShadowMaskGlobals(runtimeCenter);
+                return;
+            }
+
             if (_distantTerrainShadowMask != null &&
                 Time.time < _nextDistantTerrainShadowMaskUpdateTime)
             {
@@ -570,7 +587,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            int resolution = Mathf.Clamp(distantTerrainShadowMaskResolution, 32, 128);
+            int resolution = Mathf.Clamp(distantTerrainShadowMaskResolution, 32, DistantTerrainShadowMaskMaxResolution);
             EnsureDistantTerrainShadowMaskCapacity(resolution);
             if (_distantTerrainShadowMask == null || _distantTerrainShadowPixels == null)
             {
@@ -583,27 +600,27 @@ namespace Hecton8.Core
             float minX = runtimeCenter.x - halfSize;
             float minZ = runtimeCenter.z - halfSize;
             float texelSize = worldSize / Mathf.Max(1, resolution);
-            float probeDistance = Mathf.Max(1f, distantTerrainShadowProbeDistanceMeters);
-            float heightScale = Mathf.Max(1f, distantTerrainShadowHeightScaleMeters);
+            float invWorldSize = 1f / worldSize;
             Vector2 lightDirection = ResolveDistantShadowDirectionXZ();
+            float cinematicRidgeScale = math.saturate(Mathf.Max(1f, distantTerrainShadowProbeDistanceMeters) / 16f);
+            float cinematicShadowCompression = math.saturate(24f / Mathf.Max(1f, distantTerrainShadowHeightScaleMeters));
+            long solveStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             int pixelIndex = 0;
 
             for (int z = 0; z < resolution; z++)
             {
                 float sampleZ = minZ + (z + 0.5f) * texelSize;
+                float normalizedZ = (sampleZ - runtimeCenter.z) * invWorldSize + 0.5f;
                 for (int x = 0; x < resolution; x++)
                 {
                     float sampleX = minX + (x + 0.5f) * texelSize;
-                    float occlusion = 0f;
-                    if (TryGetHeight(sampleX, sampleZ, out float centerHeight) &&
-                        TryGetHeight(
-                            sampleX - lightDirection.x * probeDistance,
-                            sampleZ - lightDirection.y * probeDistance,
-                            out float upLightHeight))
-                    {
-                        float blocker = math.max(0f, upLightHeight - centerHeight);
-                        occlusion = math.saturate(blocker / heightScale);
-                    }
+                    float normalizedX = (sampleX - runtimeCenter.x) * invWorldSize + 0.5f;
+                    float occlusion = ResolveCinematicDistantTerrainShadow01(
+                        normalizedX,
+                        normalizedZ,
+                        lightDirection,
+                        cinematicRidgeScale,
+                        cinematicShadowCompression);
 
                     byte packed = (byte)Mathf.Clamp(Mathf.RoundToInt(occlusion * 255f), 0, 255);
                     _distantTerrainShadowPixels[pixelIndex] = new Color32(packed, packed, packed, 255);
@@ -616,6 +633,43 @@ namespace Hecton8.Core
             _distantTerrainShadowMaskAppliedResolution = resolution;
             _nextDistantTerrainShadowMaskUpdateTime = Time.time + DistantTerrainShadowMaskUpdateIntervalSeconds;
             PublishDistantTerrainShadowMaskGlobals(runtimeCenter);
+            PublishDistantTerrainShadowSolveWarningIfNeeded(solveStartTicks);
+        }
+
+        private static float ResolveCinematicDistantTerrainShadow01(
+            float normalizedX,
+            float normalizedZ,
+            Vector2 lightDirection,
+            float ridgeScale,
+            float shadowCompression)
+        {
+            float centeredX = normalizedX - 0.5f;
+            float centeredZ = normalizedZ - 0.5f;
+            float directional = centeredX * lightDirection.x + centeredZ * lightDirection.y;
+            float cross = centeredX * lightDirection.y - centeredZ * lightDirection.x;
+            float broadShelf = math.saturate(0.52f + directional * math.lerp(1.04f, 1.48f, shadowCompression));
+            float ridgeBand = math.saturate(1f - math.abs(cross) * math.lerp(4.2f, 7.4f, ridgeScale));
+            float cellHash = math.frac((normalizedX * 173.31f + normalizedZ * 91.17f) * (normalizedX * 13.13f + normalizedZ * 7.71f + 0.17f));
+            float fracturedNoise = math.saturate((cellHash - 0.42f) * 0.18f);
+            return math.saturate(broadShelf * math.lerp(0.44f, 0.62f, shadowCompression) + ridgeBand * 0.30f + fracturedNoise);
+        }
+
+        private void PublishDistantTerrainShadowSolveWarningIfNeeded(long solveStartTicks)
+        {
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - solveStartTicks;
+            float elapsedMilliseconds = (float)(elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
+            if (elapsedMilliseconds <= DistantTerrainShadowSolveBudgetWarningMilliseconds ||
+                Time.frameCount < _nextDistantTerrainShadowPerformanceWarningFrame)
+            {
+                return;
+            }
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _DistantTerrainShadowSolveWarningHash,
+                _MapMagicBridgeTelemetryContextHash,
+                elapsedMilliseconds);
+            _nextDistantTerrainShadowPerformanceWarningFrame =
+                Time.frameCount + DistantTerrainShadowPerformanceWarningCooldownFrames;
         }
 
         private void EnsureDistantTerrainShadowMaskCapacity(int resolution)
@@ -648,7 +702,13 @@ namespace Hecton8.Core
 
         private void PublishDistantTerrainShadowMaskGlobals(Vector3 runtimeCenter)
         {
-            if (_distantTerrainShadowMask == null || _distantTerrainShadowMaskAppliedResolution <= 0)
+            Texture2D effectiveMask = distantTerrainShadowMaskOverride != null
+                ? distantTerrainShadowMaskOverride
+                : _distantTerrainShadowMask;
+            int effectiveResolution = distantTerrainShadowMaskOverride != null
+                ? Mathf.Min(distantTerrainShadowMaskOverride.width, distantTerrainShadowMaskOverride.height)
+                : _distantTerrainShadowMaskAppliedResolution;
+            if (effectiveMask == null || effectiveResolution <= 0)
             {
                 Shader.SetGlobalVector(_DistantTerrainShadowParamsId, Vector4.zero);
                 return;
@@ -656,13 +716,13 @@ namespace Hecton8.Core
 
             float worldSize = Mathf.Max(256f, distantTerrainShadowMaskWorldSize);
             float halfSize = worldSize * 0.5f;
-            Shader.SetGlobalTexture(_DistantTerrainShadowMaskId, _distantTerrainShadowMask);
+            Shader.SetGlobalTexture(_DistantTerrainShadowMaskId, effectiveMask);
             Shader.SetGlobalVector(
                 _DistantTerrainShadowRectId,
                 new Vector4(runtimeCenter.x - halfSize, runtimeCenter.z - halfSize, 1f / worldSize, 1f / worldSize));
             Shader.SetGlobalVector(
                 _DistantTerrainShadowParamsId,
-                new Vector4(Mathf.Clamp01(distantTerrainShadowStrength), _distantTerrainShadowMaskAppliedResolution, 1f, 0f));
+                new Vector4(Mathf.Clamp01(distantTerrainShadowStrength), effectiveResolution, 1f, 0f));
         }
 
         private static Vector2 ResolveDistantShadowDirectionXZ()
@@ -1236,10 +1296,34 @@ namespace Hecton8.Core
                 return false;
             }
 
+            float centerBlend01 = 0f;
+            if (secondaryBiomeId != 0 &&
+                secondaryBiomeId != primaryBiomeId &&
+                primaryWeight > 0.0001f &&
+                secondaryWeight > 0.0001f)
+            {
+                centerBlend01 = SmoothStep01(secondaryWeight / math.max(0.0001f, primaryWeight + secondaryWeight));
+            }
+
+            if (TryResolveMatrixBiomeBorderOverlap(
+                    x,
+                    z,
+                    primaryBiomeId,
+                    secondaryBiomeId,
+                    centerBlend01,
+                    out int borderSecondaryBiomeId,
+                    out float borderBlend01,
+                    out int borderSecondaryAlphamapLayer) &&
+                borderBlend01 > centerBlend01)
+            {
+                secondaryBiomeId = borderSecondaryBiomeId;
+                secondaryAlphamapLayer = borderSecondaryAlphamapLayer;
+                centerBlend01 = borderBlend01;
+            }
+
             if (secondaryBiomeId == 0 ||
                 secondaryBiomeId == primaryBiomeId ||
-                primaryWeight <= 0.0001f ||
-                secondaryWeight <= 0.0001f)
+                centerBlend01 <= 0.0001f)
             {
                 secondaryBiomeId = 0;
                 secondaryAlphamapLayer = -1;
@@ -1247,9 +1331,7 @@ namespace Hecton8.Core
                 return true;
             }
 
-            float normalizedBlend = secondaryWeight / math.max(0.0001f, primaryWeight + secondaryWeight);
-            float smoothBlend = SmoothStep01(normalizedBlend);
-            blend255 = (byte)Mathf.Clamp(Mathf.RoundToInt(smoothBlend * 255f), 0, 255);
+            blend255 = (byte)Mathf.Clamp(Mathf.RoundToInt(centerBlend01 * 255f), 0, 255);
             if (blend255 == 0)
             {
                 secondaryBiomeId = 0;
@@ -1257,6 +1339,105 @@ namespace Hecton8.Core
             }
 
             return true;
+        }
+
+        private bool TryResolveMatrixBiomeBorderOverlap(
+            float x,
+            float z,
+            int primaryBiomeId,
+            int centerSecondaryBiomeId,
+            float centerBlend01,
+            out int secondaryBiomeId,
+            out float blend01,
+            out int secondaryAlphamapLayer)
+        {
+            secondaryBiomeId = centerSecondaryBiomeId;
+            blend01 = centerBlend01;
+            secondaryAlphamapLayer = centerSecondaryBiomeId > 0 ? centerSecondaryBiomeId - 1 : -1;
+
+            float overlapMeters = Mathf.Max(1f, MatrixBiomeBorderBlendProbeMeters);
+            float stepMeters = overlapMeters * 0.25f;
+            bool found = false;
+
+            found |= TryResolveMatrixBiomeBorderProbe(x, z, 1f, 0f, stepMeters, overlapMeters, primaryBiomeId, ref secondaryBiomeId, ref blend01, ref secondaryAlphamapLayer);
+            found |= TryResolveMatrixBiomeBorderProbe(x, z, -1f, 0f, stepMeters, overlapMeters, primaryBiomeId, ref secondaryBiomeId, ref blend01, ref secondaryAlphamapLayer);
+            found |= TryResolveMatrixBiomeBorderProbe(x, z, 0f, 1f, stepMeters, overlapMeters, primaryBiomeId, ref secondaryBiomeId, ref blend01, ref secondaryAlphamapLayer);
+            found |= TryResolveMatrixBiomeBorderProbe(x, z, 0f, -1f, stepMeters, overlapMeters, primaryBiomeId, ref secondaryBiomeId, ref blend01, ref secondaryAlphamapLayer);
+
+            const float DiagonalInvLength = 0.70710678118f;
+            found |= TryResolveMatrixBiomeBorderProbe(x, z, DiagonalInvLength, DiagonalInvLength, stepMeters, overlapMeters, primaryBiomeId, ref secondaryBiomeId, ref blend01, ref secondaryAlphamapLayer);
+            found |= TryResolveMatrixBiomeBorderProbe(x, z, -DiagonalInvLength, DiagonalInvLength, stepMeters, overlapMeters, primaryBiomeId, ref secondaryBiomeId, ref blend01, ref secondaryAlphamapLayer);
+            found |= TryResolveMatrixBiomeBorderProbe(x, z, DiagonalInvLength, -DiagonalInvLength, stepMeters, overlapMeters, primaryBiomeId, ref secondaryBiomeId, ref blend01, ref secondaryAlphamapLayer);
+            found |= TryResolveMatrixBiomeBorderProbe(x, z, -DiagonalInvLength, -DiagonalInvLength, stepMeters, overlapMeters, primaryBiomeId, ref secondaryBiomeId, ref blend01, ref secondaryAlphamapLayer);
+
+            return found && secondaryBiomeId > 0 && secondaryBiomeId != primaryBiomeId && blend01 > 0.0001f;
+        }
+
+        private bool TryResolveMatrixBiomeBorderProbe(
+            float x,
+            float z,
+            float directionX,
+            float directionZ,
+            float stepMeters,
+            float overlapMeters,
+            int primaryBiomeId,
+            ref int secondaryBiomeId,
+            ref float blend01,
+            ref int secondaryAlphamapLayer)
+        {
+            bool found = false;
+            for (int step = 1; step <= 4; step++)
+            {
+                float distanceMeters = stepMeters * step;
+                float sampleX = x + directionX * distanceMeters;
+                float sampleZ = z + directionZ * distanceMeters;
+                if (!TrySampleTopMatrixBiomeLayers(
+                        sampleX,
+                        sampleZ,
+                        out int probePrimaryBiomeId,
+                        out int probeSecondaryBiomeId,
+                        out float probePrimaryWeight,
+                        out float probeSecondaryWeight,
+                        out int probePrimaryAlphamapLayer,
+                        out int probeSecondaryAlphamapLayer))
+                {
+                    continue;
+                }
+
+                int candidateBiomeId = 0;
+                int candidateAlphamapLayer = -1;
+                float candidateStrength = 0f;
+                if (probePrimaryBiomeId != primaryBiomeId)
+                {
+                    candidateBiomeId = probePrimaryBiomeId;
+                    candidateAlphamapLayer = probePrimaryAlphamapLayer;
+                    candidateStrength = math.saturate(probePrimaryWeight);
+                }
+                else if (probeSecondaryBiomeId != 0 &&
+                         probeSecondaryBiomeId != primaryBiomeId &&
+                         probeSecondaryWeight > 0.0001f)
+                {
+                    candidateBiomeId = probeSecondaryBiomeId;
+                    candidateAlphamapLayer = probeSecondaryAlphamapLayer;
+                    candidateStrength = math.saturate(probeSecondaryWeight);
+                }
+
+                if (candidateBiomeId == 0 || candidateBiomeId == primaryBiomeId)
+                    continue;
+
+                float candidateBlend =
+                    WorldProceduralFieldSampler.EvaluateBiomeBorderSmoothstepBlend01(distanceMeters, overlapMeters) *
+                    candidateStrength;
+                if (candidateBlend <= blend01)
+                    continue;
+
+                secondaryBiomeId = candidateBiomeId;
+                secondaryAlphamapLayer = candidateAlphamapLayer;
+                blend01 = candidateBlend;
+                found = true;
+            }
+
+            return found;
         }
 
         public bool TryGetMatrixBiomeId(

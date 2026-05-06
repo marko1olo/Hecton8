@@ -1,5 +1,6 @@
-# 23 Rendering Visual Stack And GPU Identity
+﻿# 23 Rendering Visual Stack And GPU Identity
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 Mandates followed:
@@ -62,7 +63,7 @@ Verdict:
 - Visual-system implementation reality: extremely high.
 - Render-stack uniqueness: very high.
 
-## 3. Visor is one of the project’s strongest and riskiest domains
+## 3. Visor is one of the projectâ€™s strongest and riskiest domains
 
 Evidence:
 - `HectonBiolumSSGIFeature.cs:16-18` is a real `ScriptableRendererFeature` with a dedicated compute path.
@@ -76,7 +77,7 @@ What is genuinely good:
 
 What is bad:
 - This is a lot of custom visual technology for the declared target hardware.
-- The more the project’s mood depends on custom render features, the more expensive every regression becomes.
+- The more the projectâ€™s mood depends on custom render features, the more expensive every regression becomes.
 - Visor is no longer a cosmetic layer. It is a major engineering surface.
 
 Verdict:
@@ -146,7 +147,7 @@ The same evidence also says this:
 - the visual stack is expensive to maintain
 - the Visor domain is a major risk concentrator
 - the RT/compute surface is already large
-- this project’s visual identity depends on custom systems that can easily outrun the MX350 target if discipline slips
+- this projectâ€™s visual identity depends on custom systems that can easily outrun the MX350 target if discipline slips
 
 This is not a repo with weak visuals.
 It is a repo whose visuals are strong enough to become one of the main delivery risks.

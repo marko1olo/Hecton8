@@ -1,6 +1,6 @@
-# Archivarius Reality Delta
+﻿# Archivarius Reality Delta
 
-Date: 2026-05-05
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: docset sync, source inventory, naming sweep, mandate sync, interface health, March-to-May terrain reality delta
 
@@ -17,17 +17,17 @@ Mandates followed:
 
 | Surface | Current count |
 |---|---:|
-| `Assets/_Project/**/*.cs` | `1202` |
-| `Assets/_Project/Scripts/**/*.cs` | `1162` |
-| `Assets/_Project/Scripts` line count | `551892` |
+| `Assets/_Project/**/*.cs` | `1206` |
+| `Assets/_Project/Scripts/**/*.cs` | `1165` |
+| `Assets/_Project/Scripts` line count | `643074` |
 | `.agents-skills` mandates | `52` |
-| `Docs/**/*.md` | `422` |
-| Active `Docs/**/*.md`, excluding archive/deprecated/obsolete | `209` |
+| `Docs/**/*.md` | `429` |
+| Active `Docs/**/*.md`, excluding archive/deprecated/obsolete | `216` |
 | Active non-report docs, excluding archive/deprecated/obsolete and `Docs/Reports` | `162` |
-| `Docs/Reports/*.md` | `47` |
-| Scripts created today by filesystem timestamp | `71` |
-| Scripts modified today by filesystem timestamp | `209` |
-| Git-untracked entries before this Archivarius pass | `85` |
+| `Docs/Reports/*.md` | `54` |
+| Scripts created on `2026-05-06` by filesystem timestamp | `6` |
+| Scripts modified on `2026-05-06` by filesystem timestamp | `142` |
+| Git-untracked entries at latest May 6 rescan | `15` |
 
 ## SpaceEngine And Planetary Terrain Authority
 

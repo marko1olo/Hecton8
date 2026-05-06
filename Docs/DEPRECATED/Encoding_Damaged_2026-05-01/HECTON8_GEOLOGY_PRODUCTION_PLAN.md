@@ -1,4 +1,6 @@
 # HECTON-8 Geology Production Plan
+Date: 2026-05-01
+Status: DEPRECATED
 
 ## Коротко
 Готовые geology-префабы не трогаем и не удаляем. Они остаются в проекте как fallback.

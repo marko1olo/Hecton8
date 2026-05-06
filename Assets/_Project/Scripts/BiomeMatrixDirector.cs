@@ -408,6 +408,8 @@ namespace Hecton8.Environment
         private void Awake()
         {
             ActiveRuntimeInstance = this;
+            if (Application.isPlaying)
+                GlobalRegistry.RegisterBiomeMatrixRuntime(this);
             ResolveReferences();
             EvaluateMatrix(forcePublish: true);
         }
@@ -451,6 +453,8 @@ namespace Hecton8.Environment
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+            if (GlobalRegistry.BiomeMatrix == this)
+                GlobalRegistry.UnregisterBiomeMatrixRuntime(this);
         }
 
 #if UNITY_EDITOR

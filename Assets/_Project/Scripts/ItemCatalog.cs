@@ -10,9 +10,11 @@
 using System;
 using System.Collections.Generic;
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Optimization;
+using Hecton8.World;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -62,6 +64,8 @@ namespace Hecton8.SaveSystem
             public int LastAccessFrame;
             public int DispatchRequestId;
             public uint DispatchAssetKey;
+            public AbsoluteUniversePosition LastAccessAup;
+            public bool HasLastAccessAup;
         }
 
         private readonly struct WorldPrefabGuidFallbackEntry
@@ -271,6 +275,7 @@ namespace Hecton8.SaveSystem
             if (_worldPrefabRuntimeLookup.TryGetValue(hashId, out WorldPrefabRuntimeRecord runtimeRecord))
             {
                 runtimeRecord.LastAccessFrame = Time.frameCount;
+                CaptureCurrentPlayerAup(ref runtimeRecord);
                 _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
 
                 if (runtimeRecord.LoadState == WorldPrefabLoadState.Loaded)
@@ -299,7 +304,7 @@ namespace Hecton8.SaveSystem
             if (dispatcher != null &&
                 dispatcher.Enqueue(dispatchAssetKey, AssetPriorityTier.Tier2Proximity, false, out int requestId))
             {
-                _worldPrefabRuntimeLookup[hashId] = new WorldPrefabRuntimeRecord
+                WorldPrefabRuntimeRecord queuedRecord = new WorldPrefabRuntimeRecord
                 {
                     PrefabReference = prefabReference,
                     LoadState = WorldPrefabLoadState.Queued,
@@ -307,11 +312,13 @@ namespace Hecton8.SaveSystem
                     DispatchRequestId = requestId,
                     DispatchAssetKey = dispatchAssetKey
                 };
+                CaptureCurrentPlayerAup(ref queuedRecord);
+                _worldPrefabRuntimeLookup[hashId] = queuedRecord;
                 return true;
             }
 
             AsyncOperationHandle<GameObject> handle = prefabReference.LoadAssetAsync<GameObject>();
-            _worldPrefabRuntimeLookup[hashId] = new WorldPrefabRuntimeRecord
+            WorldPrefabRuntimeRecord loadingRecord = new WorldPrefabRuntimeRecord
             {
                 PrefabReference = prefabReference,
                 Handle = handle,
@@ -320,6 +327,8 @@ namespace Hecton8.SaveSystem
                 DispatchRequestId = 0,
                 DispatchAssetKey = dispatchAssetKey
             };
+            CaptureCurrentPlayerAup(ref loadingRecord);
+            _worldPrefabRuntimeLookup[hashId] = loadingRecord;
 
             return true;
 #endif
@@ -354,6 +363,7 @@ namespace Hecton8.SaveSystem
                 return false;
 
             runtimeRecord.LastAccessFrame = Time.frameCount;
+            CaptureCurrentPlayerAup(ref runtimeRecord);
 
             if (!runtimeRecord.Handle.IsValid())
             {
@@ -518,6 +528,58 @@ namespace Hecton8.SaveSystem
                         candidateHashId = entry.Key;
                         oldestAccessFrame = runtimeRecord.LastAccessFrame;
                     }
+                }
+
+                enumerator.Dispose();
+
+                if (!foundCandidate || !_worldPrefabRuntimeLookup.TryGetValue(candidateHashId, out WorldPrefabRuntimeRecord candidateRecord))
+                    break;
+
+                ReleaseWorldPrefabRuntimeRecord(candidateHashId, candidateRecord);
+                evictedCount++;
+            }
+
+            return evictedCount;
+#endif
+        }
+
+        public int EvictWorldPrefabsBeyondPlayerAup(float maxDistanceMeters, int maxReleaseCount)
+        {
+#if !UNITY_ADDRESSABLES_EXIST
+            return 0;
+#else
+            if (maxDistanceMeters <= 0f || maxReleaseCount <= 0 || _worldPrefabRuntimeLookup == null || _worldPrefabRuntimeLookup.Count <= 0)
+                return 0;
+
+            if (!TryCaptureCurrentPlayerAup(out AbsoluteUniversePosition playerAup))
+                return 0;
+
+            double maxDistanceSq = (double)maxDistanceMeters * maxDistanceMeters;
+            int evictedCount = 0;
+
+            while (evictedCount < maxReleaseCount)
+            {
+                bool foundCandidate = false;
+                int candidateHashId = 0;
+                Dictionary<int, WorldPrefabRuntimeRecord>.Enumerator enumerator = _worldPrefabRuntimeLookup.GetEnumerator();
+                while (enumerator.MoveNext())
+                {
+                    KeyValuePair<int, WorldPrefabRuntimeRecord> entry = enumerator.Current;
+                    WorldPrefabRuntimeRecord runtimeRecord = entry.Value;
+                    if (runtimeRecord.LoadState != WorldPrefabLoadState.Loaded ||
+                        !runtimeRecord.Handle.IsValid() ||
+                        !runtimeRecord.HasLastAccessAup)
+                    {
+                        continue;
+                    }
+
+                    double distanceSq = AbsoluteUniversePosition.DistanceSq(in runtimeRecord.LastAccessAup, in playerAup);
+                    if (distanceSq <= maxDistanceSq)
+                        continue;
+
+                    foundCandidate = true;
+                    candidateHashId = entry.Key;
+                    break;
                 }
 
                 enumerator.Dispose();
@@ -741,6 +803,7 @@ namespace Hecton8.SaveSystem
                 runtimeRecord.Handle = runtimeRecord.PrefabReference.LoadAssetAsync<GameObject>();
                 runtimeRecord.LoadState = WorldPrefabLoadState.Loading;
                 runtimeRecord.LastAccessFrame = Time.frameCount;
+                CaptureCurrentPlayerAup(ref runtimeRecord);
                 _worldPrefabRuntimeLookup[hashId] = runtimeRecord;
             }
 
@@ -790,6 +853,27 @@ namespace Hecton8.SaveSystem
 
             runtimeRecord.DispatchRequestId = 0;
         }
+
+        private static void CaptureCurrentPlayerAup(ref WorldPrefabRuntimeRecord runtimeRecord)
+        {
+            if (!TryCaptureCurrentPlayerAup(out AbsoluteUniversePosition playerAup))
+                return;
+
+            runtimeRecord.LastAccessAup = playerAup;
+            runtimeRecord.HasLastAccessAup = true;
+        }
+
+        private static bool TryCaptureCurrentPlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                return false;
+
+            playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            return true;
+        }
 #endif
 
         private void AddLookupAlias(string id, ItemData item)
@@ -802,7 +886,7 @@ namespace Hecton8.SaveSystem
                 if (!ReferenceEquals(existing, item))
                 {
                     RecordAmbiguity(id, existing, item);
-                    Debug.LogWarning($"[ItemCatalog] Duplicate ID alias '{id}'. Skipping duplicate entry.", item);
+                    Debug.LogWarning("[ItemCatalog] Duplicate ID alias. Skipping duplicate entry.", item);
                 }
 
                 return;
@@ -892,7 +976,7 @@ namespace Hecton8.SaveSystem
                 if (!ReferenceEquals(existing, item))
                 {
                     RecordHashAmbiguity(hashId, existing, item);
-                    Debug.LogWarning($"[ItemCatalog] Duplicate hash alias '{hashId}' for '{item.PersistentId}'. Skipping duplicate entry.", item);
+                    Debug.LogWarning("[ItemCatalog] Duplicate hash alias. Skipping duplicate entry.", item);
                 }
 
                 return;

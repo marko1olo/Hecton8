@@ -1,6 +1,7 @@
-# Scatter Refactor Execution Plan
+﻿# Scatter Refactor Execution Plan
 
-Status: `ACTIVE`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 Verification: `PENDING VERIFICATION`
 Owner: `Codex`
 Scope: `WorldProceduralScatterDirector` follow-up against `Docs/Scatter_Runtime/SCATTER_REFACTORING_MANIFESTO_V2.md`
@@ -44,7 +45,7 @@ Still missing or incomplete:
 
 ## Execution Order
 
-### Phase 1 — Low-Risk Structural Fixes
+### Phase 1 â€” Low-Risk Structural Fixes
 
 Status: `IN PROGRESS`
 
@@ -58,7 +59,7 @@ Status: `IN PROGRESS`
 - [x] remove nested snapshot type from pipeline partial
 - [x] wire pipeline to use snapshot data only, not implicit future transform reads
 
-### Phase 2 — Diagnostics Extraction
+### Phase 2 â€” Diagnostics Extraction
 
 Status: `PENDING`
 
@@ -67,7 +68,7 @@ Status: `PENDING`
 - [ ] keep serialized debug inspector state in director until safe migration path exists
 - [ ] do not break inspector references
 
-### Phase 3 — Spawning/Reconcile Extraction
+### Phase 3 â€” Spawning/Reconcile Extraction
 
 Status: `PENDING`
 
@@ -76,7 +77,7 @@ Status: `PENDING`
 - [ ] avoid fake service wrapper with no ownership gain
 - [ ] preserve GPUI path and generated geology path
 
-### Phase 4 — Heuristics Extraction
+### Phase 4 â€” Heuristics Extraction
 
 Status: `PENDING`
 
@@ -86,7 +87,7 @@ Status: `PENDING`
 - [ ] keep zero-GC static methods only
 - [ ] leave stateful/runtime owner logic in director
 
-### Phase 5 — Dead Branch Cleanup
+### Phase 5 â€” Dead Branch Cleanup
 
 Status: `PENDING`
 
@@ -97,7 +98,7 @@ Status: `PENDING`
   - delete
 - [ ] do not keep two competing scatter architectures alive
 
-### Phase 6 — Verification
+### Phase 6 â€” Verification
 
 Status: `PENDING`
 
@@ -110,7 +111,7 @@ Status: `PENDING`
   - GC alloc
   - active placement count
 
-### Phase 7 — API / Ownership Gaps
+### Phase 7 â€” API / Ownership Gaps
 
 Status: `PENDING`
 

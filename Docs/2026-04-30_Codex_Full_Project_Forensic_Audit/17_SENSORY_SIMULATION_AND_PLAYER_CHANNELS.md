@@ -1,5 +1,6 @@
-# 17 Sensory Simulation And Player Channels
+﻿# 17 Sensory Simulation And Player Channels
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 Mandates followed:
@@ -40,7 +41,7 @@ Evidence:
 What is genuinely good:
 - This is a real authored-plus-procedural audio runtime.
 - Hull stress, active sonar, impact clang, thruster beds, heartbeat, binaural cues, and abyssal pressure coloration are encoded in code, not just in mood docs.
-- The project’s audio ambition is unusually concrete for a Unity game of this type.
+- The projectâ€™s audio ambition is unusually concrete for a Unity game of this type.
 
 What is bad:
 - `PlayerCriticalProceduralAudioRenderer` is an owner-monolith by any honest standard.
@@ -50,7 +51,7 @@ What is bad:
 Verdict:
 - Audio implementation reality: extremely high.
 - Runtime cleanliness: medium.
-- The game’s mood is genuinely being implemented in engineering terms, not merely described.
+- The gameâ€™s mood is genuinely being implemented in engineering terms, not merely described.
 
 ## 3. Atmosphere is a real simulation bridge
 
@@ -82,7 +83,7 @@ Evidence:
 - The folder also contains many custom URP features, not just MonoBehaviour glue.
 
 What is genuinely good:
-- This is one of the strongest proofs that the game’s player-facing identity is real.
+- This is one of the strongest proofs that the gameâ€™s player-facing identity is real.
 - Sonar, visor interference, HUD projection, screen-space features, and environmental visor state all exist as concrete runtime systems.
 - The stack understands hardware pressure, RT lifecycle, and adaptive behavior. That is serious engineering, not presentation scripting.
 
@@ -94,7 +95,7 @@ What is bad:
 Verdict:
 - Player-channel implementation reality: extremely high.
 - Technical fragility: medium-high.
-- This stack is one of the project’s clearest strengths and one of its most expensive maintenance zones.
+- This stack is one of the projectâ€™s clearest strengths and one of its most expensive maintenance zones.
 
 ## 5. Physics as a domain is weirdly absent and materially present
 

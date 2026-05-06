@@ -1,14 +1,14 @@
-# Habitat Logistics Graph
+﻿# Habitat Logistics Graph
 
-Date: `2026-04-30`  
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Purpose: canonical architecture contract for habitat logistics links, Bishop-frame pipe rendering, rupture buckling, and CSR adjacency rebuilds.
 
 2026-05-04 current-state boundary:
 
 - This is the habitat logistics architecture contract, not construction stress-test proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the May 3 habitat/foundation reports for dated implementation evidence.
+- Current project-state orientation starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the May 3 habitat/foundation reports for dated implementation evidence.
 - `HabitatGraphManager`, `BaseModule`, `BaseAirlock`, `ConstructionManager`, and pipe rendering remain active review surfaces for native lifetime, save/load restoration, graph rebuild storms, and authority boundaries.
 
 Supersedes: transient construction notes spread across dated audit bundles. Older one-shot construction writeups remain historical material, not architecture authority.
@@ -408,7 +408,7 @@ Current material variants:
 
 - socket forward authoring can still produce ugly handles if prefab sockets are misoriented
 - rupture buckling uses `position.z` phase, so world orientation affects crush wave pattern
-- support inference is proximity-based, not explicit “support pylon” taxonomy
+- support inference is proximity-based, not explicit â€œsupport pylonâ€ taxonomy
 - if rebuild cadence lags, visual rupture onset lags with it
 - if no downstream crack renderer binds the matrix cache, only authored decals / fluid aftermath appear
 

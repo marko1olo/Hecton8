@@ -106,8 +106,8 @@ namespace Hecton8.World
                     out primaryProfile,
                     out secondaryProfile);
 
-            _debugPrimaryBiomeId = influence.PrimaryBiomeId;
-            _debugSecondaryBiomeId = influence.SecondaryBiomeId;
+            _debugPrimaryBiomeId = influence.PrimaryVisualFamilyId;
+            _debugSecondaryBiomeId = influence.SecondaryVisualFamilyId;
             _debugBlend255 = influence.Blend255;
             _debugInfluenceFlags = influence.Flags;
 
@@ -116,12 +116,11 @@ namespace Hecton8.World
 
             bool sandboxOk = !requireSandboxProceduralTerrainOnly || _debugSandboxMode;
             bool terrainOk = _debugResolvedTerrainCount > 0;
-            bool influenceIdOk =
-                _debugPrimaryBiomeId == 0 || primaryProfile != null ||
-                ResolveCatalogProfile(_debugPrimaryBiomeId) != null;
-            bool secondaryIdOk =
-                _debugSecondaryBiomeId == 0 || secondaryProfile != null ||
-                ResolveCatalogProfile(_debugSecondaryBiomeId) != null;
+            bool influenceIdOk = !_debugSampledBiomeInfluence ||
+                (uint)_debugPrimaryBiomeId < HectonBiomeVisualFamilyUtility.VisualFamilyCount;
+            bool secondaryIdOk = !_debugSampledBiomeInfluence ||
+                _debugBlend255 == 0 ||
+                (uint)_debugSecondaryBiomeId < HectonBiomeVisualFamilyUtility.VisualFamilyCount;
             bool gpuGridOk = !requireGpuInfluenceGrid ||
                 (_debugGpuInfluenceGridCells > 0 &&
                  _debugGpuInfluenceBufferCapacity >= _debugGpuInfluenceGridCells);
@@ -157,12 +156,6 @@ namespace Hecton8.World
         {
             for (int i = 0; i < _terrainScratch.Length; i++)
                 _terrainScratch[i] = null;
-        }
-
-        private HectonBiomeMatrixProfile ResolveCatalogProfile(int matrixIndex)
-        {
-            HectonBiomeMatrixCatalog catalog = biomeMatrixDirector != null ? biomeMatrixDirector.MatrixCatalog : null;
-            return catalog != null ? catalog.GetByMatrixIndex(matrixIndex) : null;
         }
 
         private static bool ValidateCatalog(
@@ -242,9 +235,9 @@ namespace Hecton8.World
             if (fieldSampler == null)
                 return "FAIL:NoFieldSampler";
             if (!influenceIdOk)
-                return "FAIL:PrimaryBiomeId";
+                return "FAIL:PrimaryVisualFamilyId";
             if (!secondaryIdOk)
-                return "FAIL:SecondaryBiomeId";
+                return "FAIL:SecondaryVisualFamilyId";
             if (!scatterDirectorOk)
                 return "FAIL:NoScatterDirector";
             if (!gpuGridOk)

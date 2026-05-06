@@ -1,7 +1,7 @@
-# Legacy Backlog Docs
+﻿# Legacy Backlog Docs
 
-Date: `2026-04-17`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Purpose: collect older broad backlog/spec/history documents outside repo root while preserving access.
 
@@ -13,10 +13,10 @@ Purpose: collect older broad backlog/spec/history documents outside repo root wh
 
 ## Files
 
-- `беклог.txt`
-- `спецификации.txt`
-- `Полный_список_недоработок_и_план_разработки_—_Project_Submerge_(HECTON-8) - ЧИТАТЬ, рядом создать документ - что и как испарвляем, дианмично обновлять.md`
-- `Что_и_как_исправляем_—_живой_план.md`
+- `Ð±ÐµÐºÐ»Ð¾Ð³.txt`
+- `ÑÐ¿ÐµÑ†Ð¸Ñ„Ð¸ÐºÐ°Ñ†Ð¸Ð¸.txt`
+- `ÐŸÐ¾Ð»Ð½Ñ‹Ð¹_ÑÐ¿Ð¸ÑÐ¾Ðº_Ð½ÐµÐ´Ð¾Ñ€Ð°Ð±Ð¾Ñ‚Ð¾Ðº_Ð¸_Ð¿Ð»Ð°Ð½_Ñ€Ð°Ð·Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ¸_â€”_Project_Submerge_(HECTON-8) - Ð§Ð˜Ð¢ÐÐ¢Ð¬, Ñ€ÑÐ´Ð¾Ð¼ ÑÐ¾Ð·Ð´Ð°Ñ‚ÑŒ Ð´Ð¾ÐºÑƒÐ¼ÐµÐ½Ñ‚ - Ñ‡Ñ‚Ð¾ Ð¸ ÐºÐ°Ðº Ð¸ÑÐ¿Ð°Ñ€Ð²Ð»ÑÐµÐ¼, Ð´Ð¸Ð°Ð½Ð¼Ð¸Ñ‡Ð½Ð¾ Ð¾Ð±Ð½Ð¾Ð²Ð»ÑÑ‚ÑŒ.md`
+- `Ð§Ñ‚Ð¾_Ð¸_ÐºÐ°Ðº_Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼_â€”_Ð¶Ð¸Ð²Ð¾Ð¹_Ð¿Ð»Ð°Ð½.md`
 
 These are legacy planning/reference materials. They are not the main active execution contract.
 

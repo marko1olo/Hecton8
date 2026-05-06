@@ -1,6 +1,6 @@
-# HECTON-8 NARRATIVE / DISCOVERY / PROGRESSION SYSTEM MAP
+﻿# HECTON-8 NARRATIVE / DISCOVERY / PROGRESSION SYSTEM MAP
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: detailed source-backed map for narrative, discovery, directive, lore, scan-log, PDA knowledge, and progression runtime ownership
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `STRM_Persistent_Object_Registry.txt`, `DATA_Save_Persistence_Binary_Delta_Checksum.txt`, `PROG_Quest_State_Graph_Logic.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`
@@ -272,7 +272,7 @@ But it is not the same thing as:
 
 Current conclusion:
 
-- “quest system” is only one branch of progression
+- â€œquest systemâ€ is only one branch of progression
 - it is not the whole knowledge/narrative spine
 
 ## 6. Archive / Knowledge Surfaces

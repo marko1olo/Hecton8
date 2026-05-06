@@ -186,8 +186,9 @@ namespace Hecton8.EditorTools
             if (mesh == null)
                 return;
 
-            Vector3[] vertices = mesh.vertices;
-            if (vertices == null || vertices.Length == 0)
+            List<Vector3> vertices = new List<Vector3>(mesh.vertexCount);
+            mesh.GetVertices(vertices);
+            if (vertices.Count == 0)
             {
                 mesh.bounds = new Bounds(Vector3.zero, Vector3.one * 0.01f);
                 return;
@@ -195,7 +196,7 @@ namespace Hecton8.EditorTools
 
             bool changedVertices = false;
             int firstFiniteIndex = -1;
-            for (int i = 0; i < vertices.Length; i++)
+            for (int i = 0; i < vertices.Count; i++)
             {
                 if (IsFiniteVector3(vertices[i]))
                 {
@@ -205,7 +206,7 @@ namespace Hecton8.EditorTools
             }
 
             Vector3 fallbackVertex = firstFiniteIndex >= 0 ? vertices[firstFiniteIndex] : Vector3.zero;
-            for (int i = 0; i < vertices.Length; i++)
+            for (int i = 0; i < vertices.Count; i++)
             {
                 if (IsFiniteVector3(vertices[i]))
                     continue;
@@ -215,11 +216,11 @@ namespace Hecton8.EditorTools
             }
 
             if (changedVertices)
-                mesh.vertices = vertices;
+                mesh.SetVertices(vertices);
 
             Bounds bounds = new Bounds(fallbackVertex, Vector3.zero);
             bool hasFiniteVertex = firstFiniteIndex >= 0;
-            for (int i = 0; i < vertices.Length; i++)
+            for (int i = 0; i < vertices.Count; i++)
             {
                 Vector3 vertex = vertices[i];
                 if (!IsFiniteVector3(vertex))

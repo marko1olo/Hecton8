@@ -52,6 +52,18 @@ namespace Hecton8.World
         /// <summary>Pre-packed biome influence cell written for fissure candidates.</summary>
         public uint FissureInfluencePacked;
 
+        /// <summary>One when pillar candidates must sit on sandbox Voronoi tectonic boundaries.</summary>
+        public byte RequireTectonicBoundary;
+
+        /// <summary>Sandbox Voronoi tectonic frequency in reciprocal meters.</summary>
+        public float TectonicBoundaryFrequency;
+
+        /// <summary>Sandbox Voronoi tectonic seed.</summary>
+        public uint TectonicBoundarySeed;
+
+        /// <summary>Minimum sandbox Voronoi boundary mask required for pillar candidates.</summary>
+        public float MinimumTectonicBoundaryMask;
+
         /// <summary>Returns a bounded copy of the settings.</summary>
         public AnomalyRidgeDetectionSettings Sanitized()
         {
@@ -65,7 +77,14 @@ namespace Hecton8.World
                 MinimumPillarRidgeArms = math.clamp(MinimumPillarRidgeArms <= 0 ? 3 : MinimumPillarRidgeArms, 3, 8),
                 MinimumFissureDepthMeters = math.max(0f, MinimumFissureDepthMeters),
                 EqualHeightEpsilon = math.max(0.000001f, EqualHeightEpsilon),
-                FissureInfluencePacked = FissureInfluencePacked
+                FissureInfluencePacked = FissureInfluencePacked,
+                RequireTectonicBoundary = RequireTectonicBoundary != 0 ? (byte)1 : (byte)0,
+                TectonicBoundaryFrequency = math.max(0.0001f, TectonicBoundaryFrequency),
+                TectonicBoundarySeed = TectonicBoundarySeed,
+                MinimumTectonicBoundaryMask = math.clamp(
+                    MinimumTectonicBoundaryMask <= 0f ? 0.55f : MinimumTectonicBoundaryMask,
+                    0f,
+                    1f)
             };
         }
     }
@@ -190,7 +209,8 @@ namespace Hecton8.World
 
             if (localMaximum &&
                 pillarProminence >= Settings.MinimumPillarProminenceMeters &&
-                ridgeArms >= Settings.MinimumPillarRidgeArms)
+                ridgeArms >= Settings.MinimumPillarRidgeArms &&
+                IsAllowedTectonicPillarSite(x, z))
             {
                 FeatureRecords[index] = BuildRecord(
                     index,
@@ -258,6 +278,22 @@ namespace Hecton8.World
                 Strength01 = strength01,
                 BiomeInfluencePacked = biomeInfluencePacked
             };
+        }
+
+        private bool IsAllowedTectonicPillarSite(int x, int z)
+        {
+            if (Settings.RequireTectonicBoundary == 0)
+                return true;
+
+            double cellSize = Settings.CellSizeMeters;
+            float2 worldXZ = new float2(
+                (float)(Settings.OriginAup.x + x * cellSize),
+                (float)(Settings.OriginAup.z + z * cellSize));
+            float boundaryMask = WorldProceduralTerrainTectonicDisplacementJob.EvaluateTectonicBoundaryMask(
+                worldXZ,
+                Settings.TectonicBoundaryFrequency,
+                Settings.TectonicBoundarySeed);
+            return boundaryMask >= Settings.MinimumTectonicBoundaryMask;
         }
 
         private static bool AllFinite(
@@ -340,6 +376,43 @@ namespace Hecton8.World
             float diagonalA = math.min(northEast, southWest) - center;
             float diagonalB = math.min(northWest, southEast) - center;
             return math.max(math.max(northSouth, eastWest), math.max(diagonalA, diagonalB));
+        }
+    }
+
+    /// <summary>
+    /// Burst reduction job that keeps one strongest pillar candidate for bounded SDF injection.
+    /// </summary>
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    public struct SelectStrongestPillarFeatureJob : IJob
+    {
+        /// <summary>Detected feature records.</summary>
+        [ReadOnly] public NativeArray<AnomalyFeatureRecord> FeatureRecords;
+
+        /// <summary>Selected feature output. Index zero is written.</summary>
+        [WriteOnly] public NativeArray<AnomalyFeatureRecord> SelectedFeature;
+
+        /// <inheritdoc />
+        public void Execute()
+        {
+            if (!SelectedFeature.IsCreated || SelectedFeature.Length <= 0)
+                return;
+
+            AnomalyFeatureRecord best = default;
+            float bestStrength = -1f;
+            for (int i = 0; i < FeatureRecords.Length; i++)
+            {
+                AnomalyFeatureRecord record = FeatureRecords[i];
+                if (record.Valid == 0 || record.Kind != (byte)AnomalyFeatureKind.ChthonicPillar)
+                    continue;
+
+                if (record.Strength01 <= bestStrength)
+                    continue;
+
+                bestStrength = record.Strength01;
+                best = record;
+            }
+
+            SelectedFeature[0] = best;
         }
     }
 }

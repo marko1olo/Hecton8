@@ -11,6 +11,10 @@ Shader "Hecton8/World/WreckIndirectLit"
         _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1.0
         _Cutoff("Alpha Cutoff", Range(0, 1)) = 0.5
         _DepthBias("Depth Bias", Range(0, 0.01)) = 0.0
+        _WreckSiltStrength("Wreck Silt Strength", Range(0, 1)) = 0.36
+        _WreckRustStrength("Wreck Rust Strength", Range(0, 1)) = 0.82
+        _WreckSiltTint("Wreck Silt Tint", Color) = (0.23, 0.28, 0.26, 1)
+        _WreckRustTint("Heavy Orange Rust", Color) = (0.86, 0.28, 0.055, 1)
     }
 
     SubShader
@@ -36,6 +40,7 @@ Shader "Hecton8/World/WreckIndirectLit"
         #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 
         StructuredBuffer<float4x4> _HectonWreckMatrices;
+        StructuredBuffer<float> _HectonWreckAges;
         TEXTURE2D(_BaseMap);
         SAMPLER(sampler_BaseMap);
         TEXTURE2D(_MaskMap);
@@ -50,6 +55,10 @@ Shader "Hecton8/World/WreckIndirectLit"
             float _OcclusionStrength;
             float _Cutoff;
             float _DepthBias;
+            float _WreckSiltStrength;
+            float _WreckRustStrength;
+            float4 _WreckSiltTint;
+            float4 _WreckRustTint;
         CBUFFER_END
 
         struct Attributes
@@ -68,11 +77,17 @@ Shader "Hecton8/World/WreckIndirectLit"
             float3 viewDirWS : TEXCOORD2;
             float2 uv : TEXCOORD3;
             half fogFactor : TEXCOORD4;
+            half age01 : TEXCOORD5;
         };
 
         float4x4 ResolveWreckMatrix(uint instanceID)
         {
             return _HectonWreckMatrices[instanceID];
+        }
+
+        half ResolveWreckAge(uint instanceID)
+        {
+            return (half)saturate(_HectonWreckAges[instanceID]);
         }
 
         float3 SafeNormalize3(float3 value)
@@ -98,6 +113,7 @@ Shader "Hecton8/World/WreckIndirectLit"
             output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(output.positionWS));
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
+            output.age01 = ResolveWreckAge(input.instanceID);
             return output;
         }
 
@@ -155,6 +171,20 @@ Shader "Hecton8/World/WreckIndirectLit"
             half3 viewDirWS = SafeNormalize3(input.viewDirWS);
             half3 albedo = surface.rgb;
             HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
+            half edgeWearMask = saturate((1.0h - ambientOcclusion) * 0.7h + (1.0h - smoothness) * 0.35h);
+            HectonCoreLitApplyProceduralRustSilt(
+                input.positionWS,
+                normalWS,
+                normalWS,
+                edgeWearMask,
+                input.age01,
+                (half)_WreckSiltStrength,
+                (half)_WreckRustStrength,
+                half3(_WreckSiltTint.rgb),
+                half3(_WreckRustTint.rgb),
+                albedo,
+                metallic,
+                smoothness);
             half3 litColor = EvaluateWreckLighting(
                 input.positionWS,
                 normalWS,

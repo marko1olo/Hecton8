@@ -28,10 +28,12 @@ namespace NASAPunk.Visor
     {
         private const float BiosRecoveryClarityThreshold = 0.1f;
         private const float LowPowerBiosThreshold = 0.1f;
+        private const string HudPhosphorKeyword = "_HUD_PHOSPHOR_MODE";
         private const float RadiationFatigueMinimumScale = 0.65f;
         private const float RadiationFatigueScalePerSecond = 0.005f;
         private const float RadiationFatigueCriticalExposureSeconds = (1f - RadiationFatigueMinimumScale) / RadiationFatigueScalePerSecond;
         private static readonly List<VisorHUDController> s_activeControllers = new List<VisorHUDController>(2);
+        private static int s_hudPhosphorModeUserCount;
 
         public enum ProjectionMode
         {
@@ -122,6 +124,11 @@ namespace NASAPunk.Visor
         [Header("Pressure Flicker")]
         [SerializeField, Range(0f, 1f)] private float _pressureFlickerMaximum = 0.42f;
         [SerializeField, Range(0.25f, 12f)] private float _pressureFlickerBlendSharpness = 4.2f;
+
+        [Header("Pressure Lens Crack")]
+        [SerializeField, Range(0f, 8000f)] private float _pressureLensCrackStartDepthMeters = 4000f;
+        [SerializeField, Range(1f, 3000f)] private float _pressureLensCrackFullDepthRangeMeters = 900f;
+        [SerializeField, Range(0.25f, 12f)] private float _pressureLensCrackBlendSharpness = 2.6f;
 
         [Header("BIOS Recovery")]
         [SerializeField] private Color _biosRecoveryHudTint = new Color(0.16f, 1f, 0.22f, 0.18f);
@@ -215,9 +222,11 @@ namespace NASAPunk.Visor
         private float _hazardToxicLevel;
         private float _hazardGlitchLevel;
         private float _biosRecoveryModeBlend;
+        private float _pressureLensCrackIntensity;
         private float _thermalShockBiosRecoveryTimer;
         private float _submarinePowerNormalized = 1f;
         private bool _hasSubmarinePowerSnapshot;
+        private bool _hudPhosphorModeKeywordHeld;
         private TMP_FontAsset _activeTerminalBiosFont;
         private TMP_FontAsset _primaryHudFont;
         private TMP_FontAsset _queuedHudFont;
@@ -251,6 +260,7 @@ namespace NASAPunk.Visor
         private static readonly int ID_HazardToxicLevel = Shader.PropertyToID("_HazardToxicLevel");
         private static readonly int ID_HazardGlitchLevel = Shader.PropertyToID("_HazardGlitchLevel");
         private static readonly int ID_BiosRecoveryMode = Shader.PropertyToID("_BiosRecoveryMode");
+        private static readonly int ID_PressureLensCrackIntensity = Shader.PropertyToID("_PressureLensCrackIntensity");
         private static readonly int ID_ToolBatteryNormalized = Shader.PropertyToID("_ToolBatteryNormalized");
         private static readonly int ID_VisorCameraForwardWS = Shader.PropertyToID("_VisorCameraForwardWS");
         private static readonly int ID_VisorStrongestLightDirectionWS = Shader.PropertyToID("_VisorStrongestLightDirectionWS");
@@ -266,6 +276,14 @@ namespace NASAPunk.Visor
             _visorRenderer.enabled &&
             !_visorRenderer.forceRenderingOff &&
             _visorRenderer.gameObject.activeInHierarchy;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticRuntimeState()
+        {
+            s_activeControllers.Clear();
+            s_hudPhosphorModeUserCount = 0;
+            Shader.DisableKeyword(HudPhosphorKeyword);
+        }
 
         public static void CopyActiveControllersTo(List<VisorHUDController> results)
         {
@@ -376,6 +394,7 @@ namespace NASAPunk.Visor
             _biosFontSwapScheduler.Clear();
             _queuedHudFont = null;
             _biosFontModeApplied = false;
+            ReleaseHudPhosphorKeyword();
             HectonSubmarineOsEvents.Unregister(this);
             UnregisterRuntimeTick();
             ReleaseRT();
@@ -388,6 +407,7 @@ namespace NASAPunk.Visor
         private void OnDestroy()
         {
             HectonSubmarineOsEvents.Unregister(this);
+            ReleaseHudPhosphorKeyword();
             // Ensure RT is released on component destruction
             ReleaseRT();
         }
@@ -472,6 +492,7 @@ namespace NASAPunk.Visor
             DrainBiosFontSwapQueue();
             UpdateHypoxiaState(deltaTime);
             UpdatePressureFlickerState(deltaTime);
+            UpdatePressureLensCrackState(deltaTime);
             if (_materialPropertiesDirty)
                 ApplyMaterialProperties();
         }
@@ -519,6 +540,31 @@ namespace NASAPunk.Visor
         private void UnregisterActiveController()
         {
             s_activeControllers.Remove(this);
+        }
+
+        private void ApplyHudPhosphorKeyword(bool enabled)
+        {
+            if (_hudPhosphorModeKeywordHeld == enabled)
+                return;
+
+            _hudPhosphorModeKeywordHeld = enabled;
+            if (enabled)
+            {
+                if (s_hudPhosphorModeUserCount == 0)
+                    Shader.EnableKeyword(HudPhosphorKeyword);
+                s_hudPhosphorModeUserCount++;
+                return;
+            }
+
+            if (s_hudPhosphorModeUserCount > 0)
+                s_hudPhosphorModeUserCount--;
+            if (s_hudPhosphorModeUserCount == 0)
+                Shader.DisableKeyword(HudPhosphorKeyword);
+        }
+
+        private void ReleaseHudPhosphorKeyword()
+        {
+            ApplyHudPhosphorKeyword(false);
         }
 
         private void AutoResolveReferences(bool force)
@@ -638,6 +684,7 @@ namespace NASAPunk.Visor
             float hazardChromaticAberration = (_hazardRadiationLevel * 0.010f) + (_hazardGlitchLevel * 0.006f);
             float hazardStaticNoise = (_hazardGlitchLevel * 0.28f) + (_hazardToxicLevel * 0.18f);
             float biosRecoverySwitch = _biosRecoveryModeBlend >= 0.5f ? 1f : 0f;
+            ApplyHudPhosphorKeyword(biosRecoverySwitch > 0.5f || (_hasSubmarinePowerSnapshot && _submarinePowerNormalized < LowPowerBiosThreshold));
             float compositeHudIntensity = biosRecoverySwitch > 0.5f ? _biosRecoveryHudIntensity : _hudIntensity;
             Color compositeHudTint = biosRecoverySwitch > 0.5f ? _biosRecoveryHudTint : _hudTint;
             float compositeChromaticAberration = biosRecoverySwitch > 0.5f
@@ -678,6 +725,7 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_HazardToxicLevel, _hazardToxicLevel);
             _mpb.SetFloat(ID_HazardGlitchLevel, _hazardGlitchLevel);
             _mpb.SetFloat(ID_BiosRecoveryMode, biosRecoverySwitch);
+            _mpb.SetFloat(ID_PressureLensCrackIntensity, _pressureLensCrackIntensity);
             _mpb.SetFloat(ID_ToolBatteryNormalized, activeToolBatteryNormalized);
             _mpb.SetVector(ID_VisorCameraForwardWS, new Vector4(visorCameraForward.x, visorCameraForward.y, visorCameraForward.z, 1f));
             _mpb.SetVector(ID_VisorStrongestLightDirectionWS, strongestLightDirection);
@@ -1187,6 +1235,28 @@ namespace NASAPunk.Visor
                 _hudHullStressFlicker = nextFlicker;
                 _materialPropertiesDirty = true;
             }
+        }
+
+        private void UpdatePressureLensCrackState(float deltaTime)
+        {
+            float depth = ResolvePlayerDepthMeters();
+            float startDepth = Mathf.Max(0f, _pressureLensCrackStartDepthMeters);
+            float range = Mathf.Max(1f, _pressureLensCrackFullDepthRangeMeters);
+            float targetCrack = Mathf.Clamp01((depth - startDepth) / range);
+            targetCrack = targetCrack * targetCrack * (3f - 2f * targetCrack);
+            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _pressureLensCrackBlendSharpness) * Mathf.Max(0f, deltaTime));
+            if (UpdateSmoothedVisualChannel(ref _pressureLensCrackIntensity, targetCrack, blendT))
+                _materialPropertiesDirty = true;
+        }
+
+        private float ResolvePlayerDepthMeters()
+        {
+            if (_subscribedSurvivalSystem != null)
+                return Mathf.Max(0f, _subscribedSurvivalSystem.Depth);
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            return playerMovement != null ? Mathf.Max(0f, playerMovement.CurrentDepth) : 0f;
         }
 
         private static float ResolveHullStress01()

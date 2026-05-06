@@ -491,13 +491,17 @@ namespace Hecton8.World
         private const ulong PoolGuidMixSalt = 11400714819323198485UL;
         private const long PersistentMemoryBudgetBytes = 10485760L;
         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
+        private const string LocalizedSectorCorruptionMessage = "CRITICAL ERROR: LOCALIZED DATA CORRUPTION. TERRAIN RE-INITIALIZED.";
         private const string IndexedSectorPagingDesiredHashesLabel = "indexedSectorPagingDesiredSectorHashes";
         private const string IndexedSectorPagingLoadedRecordsLabel = "indexedSectorPagingLoadedSectorRecords";
         private const string SectorOverrideSnapshotRecordsLabel = "sectorOverrideSnapshotRecords";
         private const string SectorOverrideEntityStatesLabel = "sectorOverrideEntityStates";
         private const string SectorEntityStateAsyncWriteStatesLabel = "sectorEntityStateAsyncWriteStates";
         private static readonly int3 ApexFaunaTombstoneChunkId = new int3(int.MinValue, 0, 0);
-        private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.0015d));
+        private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
+        private static readonly long HydrationPerformanceWarningBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
+        private static readonly uint _hydrationApplyBudgetWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.HydrationApplyBudget"));
+        private static readonly uint _hydrationApplyContextHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.HydrationApply"));
         private static readonly uint _sectorEntityStateThrottleWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.EntityStateCompressionThrottle"));
         private static readonly uint _sectorEntityStateQueueOverflowWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.EntityStateCompressionQueueOverflow"));
         private static int _nextInstanceUidCounter;
@@ -520,6 +524,7 @@ namespace Hecton8.World
         [SerializeField] private int _debugHydratedRecordCount;
         [SerializeField] private int _debugSnapshotRecordCount;
         [SerializeField] private Vector3Int _debugPlayerChunk;
+        private int _lastHydrationBudgetTelemetryFrame = int.MinValue;
         private int _lastEntityStateThrottleTelemetryFrame = int.MinValue;
         private int _lastEntityStateQueueOverflowTelemetryFrame = int.MinValue;
 
@@ -594,6 +599,7 @@ namespace Hecton8.World
         private List<EntityDataRecord> _floraSpawnStateScratch;
         private List<SectorEntityStateWriteWork> _pendingEntityStateTempWrites;
         private List<long> _dueSectorOverrideCommitHashes;
+        private long[] _quarantinedSectorResetScratch;
         private Transform _playerTransform;
         private ItemCatalog _resolvedItemCatalog;
         private bool _tickRegistered;
@@ -798,6 +804,8 @@ namespace Hecton8.World
             _pendingEntityStateTempWrites = new List<SectorEntityStateWriteWork>(MaxPendingEntityStateTempWrites);
             // COLD ALLOC: List<long>[16] - due sector override commit queue - owner: PersistentWorldRegistry
             _dueSectorOverrideCommitHashes = new List<long>(16);
+            // COLD ALLOC: long[16] - indexed sector quarantine reset scratch - owner: PersistentWorldRegistry
+            _quarantinedSectorResetScratch = new long[SaveBinaryStorage.IndexedSectorQuarantineHashCapacity];
             // COLD ALLOC: List<IndexedSectorEntryInfo>[256] Ã¢â‚¬â€ cached v8 sector directory entries for paged restore Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
             // COLD ALLOC: Dictionary<long,SectorOverrideState>[32] Ã¢â‚¬â€ paged sector temp-override residency map Ã¢â‚¬â€ owner: PersistentWorldRegistry
@@ -1919,6 +1927,7 @@ namespace Hecton8.World
             NativeList<PersistentWorldDeltaRecord> loadedSectorRecords = default;
             PersistentWorldDeltaRecord[] stagedRecords = null;
             Dictionary<uint, EntityDataRecord> stagedEntityStates = null;
+            bool quarantinedSectorResetApplied = false;
 
             try
             {
@@ -1967,6 +1976,7 @@ namespace Hecton8.World
                     Debug.LogWarning($"[PersistentWorldRegistry] Indexed sector paging recovered with quarantine: {error}");
 #endif
                     await Awaitable.BackgroundThreadAsync();
+                    quarantinedSectorResetApplied = ResetQuarantinedIndexedSectorsToPristine();
                 }
 
                 if (!ApplySectorOverrides(desiredSectorHashes, loadedSectorRecords, out string overrideError))
@@ -1987,6 +1997,9 @@ namespace Hecton8.World
                     stagedRecords[i] = loadedSectorRecords[i];
 
                 await Awaitable.MainThreadAsync();
+                if (quarantinedSectorResetApplied)
+                    Hecton8.UI.NotificationEvents.PushCritical(LocalizedSectorCorruptionMessage);
+
                 await AwaitSectorPrefabPrewarmAsync(stagedRecords);
                 RestoreFromLoadedRecords(stagedRecords, scheduleHydration: false);
                 ApplyStagedEntityStates(stagedEntityStates);
@@ -2021,6 +2034,38 @@ namespace Hecton8.World
 
                 _indexedSectorPagingInFlight = false;
             }
+        }
+
+        private bool ResetQuarantinedIndexedSectorsToPristine()
+        {
+            int resetCount = SaveBinaryStorage.CopyAndClearIndexedSectorQuarantineHashes(_quarantinedSectorResetScratch);
+            if (resetCount <= 0 || string.IsNullOrEmpty(_indexedSectorSavePath))
+                return false;
+
+            bool resetApplied = false;
+            for (int i = 0; i < resetCount; i++)
+            {
+                long sectorHash = _quarantinedSectorResetScratch[i];
+                if (sectorHash == long.MinValue)
+                    continue;
+
+                if (!SaveBinaryStorage.TryResetIndexedPersistentWorldSectorToPristine(
+                        _indexedSectorSavePath,
+                        sectorHash,
+                        chunkSizeMeters,
+                        out string resetError))
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning($"[PersistentWorldRegistry] Pristine sector reset failed for 0x{sectorHash:X16}: {resetError}");
+#endif
+                    continue;
+                }
+
+                resetApplied = true;
+                _quarantinedSectorResetScratch[i] = long.MinValue;
+            }
+
+            return resetApplied;
         }
 
         private async Awaitable AwaitSectorPrefabPrewarmAsync(PersistentWorldDeltaRecord[] stagedRecords)
@@ -2454,23 +2499,19 @@ namespace Hecton8.World
             if (!TryEnsureItemLookup())
                 return false;
 
-            if (record.ItemPersistentIdHash != 0UL &&
-                _itemLookupByHash.TryGetValue(record.ItemPersistentIdHash, out ItemData resolvedItem) &&
+            ulong itemPersistentIdHash = record.ItemPersistentIdHash != 0UL
+                ? record.ItemPersistentIdHash
+                : ComputePersistentIdHash(in record.ItemPersistentId);
+
+            if (itemPersistentIdHash != 0UL &&
+                _itemLookupByHash.TryGetValue(itemPersistentIdHash, out ItemData resolvedItem) &&
                 resolvedItem != null)
             {
                 itemData = resolvedItem;
                 return true;
             }
 
-            if (_resolvedItemCatalog == null)
-                return false;
-
-            itemData = _resolvedItemCatalog.FindById(record.ItemPersistentId.ToString());
-            if (itemData == null)
-                return false;
-
-            _itemLookupByHash[record.ItemPersistentIdHash] = itemData;
-            return true;
+            return false;
         }
 
         private bool TryResolveItemData(ulong itemPersistentIdHash, out ItemData itemData)
@@ -3169,7 +3210,8 @@ namespace Hecton8.World
             if (!_entityStateByInstanceUid.IsCreated || radiusMeters <= 0f)
                 return 0f;
 
-            float radiusSq = radiusMeters * radiusMeters;
+            double radiusSq = (double)radiusMeters * radiusMeters;
+            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
             float bestInfluence01 = 0f;
             NativeHashMap<uint, EntityDataRecord>.Enumerator enumerator = _entityStateByInstanceUid.GetEnumerator();
             while (enumerator.MoveNext())
@@ -3183,12 +3225,11 @@ namespace Hecton8.World
                     continue;
 
                 AbsoluteUniversePosition whaleFallAup = AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
-                Vector3 whaleFallPosition = whaleFallAup.ToRuntimeFloat3();
-                float distanceSq = (whaleFallPosition - worldPosition).sqrMagnitude;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in whaleFallAup, in queryAup);
                 if (distanceSq > radiusSq)
                     continue;
 
-                float distance01 = 1f - math.saturate(distanceSq / math.max(0.001f, radiusSq));
+                float distance01 = 1f - math.saturate((float)(distanceSq / math.max(0.001d, radiusSq)));
                 float life01 = math.saturate((expireTimeSeconds - currentTimeSeconds) / WhaleFallDurationSeconds);
                 bestInfluence01 = math.max(bestInfluence01, distance01 * math.max(0.25f, life01));
             }
@@ -3319,8 +3360,8 @@ namespace Hecton8.World
                             in faunaAup,
                             GetFaunaHibernationLargeThreatFlag(in entityState),
                             GetFaunaHibernationPredatorFlag(in entityState),
-                            Time.time,
-                            StableRandom01(entityState.InstanceUid)));
+                            GetFaunaHibernationSleepStartTimeSeconds(in entityState),
+                            GetFaunaHibernationHunger01(in entityState)));
                         _entityStateByInstanceUid.Remove(entityState.InstanceUid);
                         restoredCount++;
                         consumedAnyFauna = true;
@@ -3861,6 +3902,12 @@ namespace Hecton8.World
 
             lastTelemetryFrame = frame;
             GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, scalarValue);
+        }
+
+        private static float StopwatchTicksToMilliseconds(long elapsedTicks)
+        {
+            long clampedTicks = elapsedTicks > 0L ? elapsedTicks : 0L;
+            return (float)((double)clampedTicks * 1000.0 / Stopwatch.Frequency);
         }
 
         private void DisposePendingEntityStateTempWritesDeferred()
@@ -4570,7 +4617,8 @@ namespace Hecton8.World
                 return false;
             }
 
-            long budgetDeadline = Stopwatch.GetTimestamp() + HydrationFrameBudgetTicks;
+            long burstStartTicks = Stopwatch.GetTimestamp();
+            long budgetDeadline = burstStartTicks + HydrationFrameBudgetTicks;
             int processedCount = 0;
             while (processedCount < MaxHydrationsPerFrame && _pendingHydrationReadIndex < _pendingHydrationRecords.Length)
             {
@@ -4599,8 +4647,23 @@ namespace Hecton8.World
                 }
             }
 
+            if (processedCount > 0)
+                PublishHydrationBudgetWarningIfNeeded(Stopwatch.GetTimestamp() - burstStartTicks);
+
             CompactPendingHydrationQueueIfDrained();
             return _pendingHydrationRecords.IsCreated && _pendingHydrationReadIndex < _pendingHydrationRecords.Length;
+        }
+
+        private void PublishHydrationBudgetWarningIfNeeded(long elapsedTicks)
+        {
+            if (elapsedTicks <= HydrationPerformanceWarningBudgetTicks)
+                return;
+
+            PublishSectorCompressionPerformanceWarning(
+                _hydrationApplyBudgetWarningHash,
+                _hydrationApplyContextHash,
+                StopwatchTicksToMilliseconds(elapsedTicks),
+                ref _lastHydrationBudgetTelemetryFrame);
         }
 
         private void CompactPendingHydrationQueueIfDrained()
@@ -5357,16 +5420,34 @@ namespace Hecton8.World
             return hash;
         }
 
+        internal static ulong ComputePersistentIdHash(in FixedString128Bytes value)
+        {
+            if (value.Length <= 0)
+                return 0UL;
+
+            ulong hash = FnvOffsetBasis64;
+            for (int i = 0; i < value.Length; i++)
+            {
+                byte current = value[i];
+                hash ^= current;
+                hash *= FnvPrime64;
+                hash ^= 0UL;
+                hash *= FnvPrime64;
+            }
+
+            return hash;
+        }
+
         private static bool UID_VALIDATE(in PersistentWorldItemRecord record)
         {
             if (record.ItemPersistentIdHash == 0UL)
                 return false;
 
-            string persistentId = record.ItemPersistentId.ToString();
-            if (string.IsNullOrEmpty(persistentId))
+            ulong computedPersistentIdHash = ComputePersistentIdHash(in record.ItemPersistentId);
+            if (computedPersistentIdHash == 0UL)
                 return false;
 
-            if (ComputePersistentIdHash(persistentId) != record.ItemPersistentIdHash)
+            if (computedPersistentIdHash != record.ItemPersistentIdHash)
                 return false;
 
             if (record.InstanceUid == 0u)

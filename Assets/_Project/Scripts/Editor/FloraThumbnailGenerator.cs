@@ -30,7 +30,7 @@ namespace Hecton8.EditorTools
                     continue;
 
                 string thumbnailPath = $"{ThumbnailRoot}/{Path.GetFileNameWithoutExtension(templatePath)}_Thumb.png";
-                File.WriteAllBytes(thumbnailPath, thumbnail.EncodeToPNG());
+                WritePngBytes(thumbnailPath, thumbnail.EncodeToPNG());
                 Object.DestroyImmediate(thumbnail);
             }
 
@@ -278,6 +278,13 @@ namespace Hecton8.EditorTools
             float alpha = Mathf.Clamp01(source.a);
             Color blended = Color.Lerp(destination, new Color(source.r, source.g, source.b, 1f), alpha);
             pixels[index] = blended;
+        }
+
+        private static void WritePngBytes(string thumbnailPath, byte[] pngBytes)
+        {
+            using FileStream stream = new FileStream(thumbnailPath, FileMode.Create, FileAccess.Write, FileShare.None);
+            stream.Write(pngBytes, 0, pngBytes.Length);
+            stream.Flush(true);
         }
     }
 }

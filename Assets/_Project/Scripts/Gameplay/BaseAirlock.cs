@@ -52,6 +52,9 @@ namespace Hecton8.Gameplay
         private const float MaxSignalWeldDeltaSeconds = 0.25f;
         private const int OverrideRaycastHitCapacity = 4;
         private const float MinOverrideRaycastDirectionSqr = 0.000001f;
+        private const float MinimumEnvironmentSnapshotTransitionSeconds = 1.5f;
+        private const float DryOceanRoarLowPassHz = 650f;
+        private const float WetOceanRoarLowPassHz = 22000f;
         private const string MissingInteriorSpawnPointMessage = "[BaseAirlock] Interior spawn point not set.";
         private const string MissingExteriorSpawnPointMessage = "[BaseAirlock] Exterior spawn point not set.";
         private const string InvalidInteriorSpawnPointPoseMessage = "[BaseAirlock] Interior spawn point pose is invalid.";
@@ -111,7 +114,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private AudioClip cycleEndSound;
 
         [Header("Cinematic Bulkhead")]
-        [Tooltip("Door mesh moved by emergency lockdown. Animator is intentionally bypassed.")]
+        [Tooltip("Door mesh moved by emergency lockdown. No controller-driven animation is used.")]
         [SerializeField] private Transform emergencyBulkheadDoorMesh;
 
         [Tooltip("Local-space offset applied from the authored open position when the emergency bulkhead seals.")]
@@ -131,7 +134,13 @@ namespace Hecton8.Gameplay
         [SerializeField] private AudioMixerSnapshot wetExteriorSnapshot;
 
         [Tooltip("Snapshot transition duration for wet/dry airlock transitions.")]
-        [SerializeField, Min(0.01f)] private float environmentSnapshotTransitionSeconds = 1.5f;
+        [SerializeField, Min(MinimumEnvironmentSnapshotTransitionSeconds)] private float environmentSnapshotTransitionSeconds = MinimumEnvironmentSnapshotTransitionSeconds;
+
+        [Tooltip("Optional mixer containing the exposed ocean-roar low-pass cutoff parameter.")]
+        [SerializeField] private AudioMixer environmentMixer;
+
+        [Tooltip("Exposed AudioMixer float parameter controlling ocean roar low-pass cutoff in Hz.")]
+        [SerializeField] private string oceanRoarLowPassCutoffParameter = "OceanRoarLowPassHz";
 
         [Header("── Events ─────────────────────────────────────")]
         [Tooltip("Fired when player environment changes. True = Dry (inside base), False = Wet (outside).")]
@@ -578,7 +587,6 @@ namespace Hecton8.Gameplay
 
             body.isKinematic = true;
             body.detectCollisions = false;
-            body.ResetCenterOfMass();
             body.transform.SetPositionAndRotation(position, rotation);
             body.PublishTransform();
             body.isKinematic = false;
@@ -607,10 +615,23 @@ namespace Hecton8.Gameplay
         private void TransitionAirlockAudioSnapshot(bool insideDryVolume)
         {
             AudioMixerSnapshot targetSnapshot = insideDryVolume ? dryInteriorSnapshot : wetExteriorSnapshot;
+            float transitionSeconds = Mathf.Max(MinimumEnvironmentSnapshotTransitionSeconds, environmentSnapshotTransitionSeconds);
+            ApplyOceanRoarLowPass(insideDryVolume);
+
             if (targetSnapshot == null)
                 return;
 
-            targetSnapshot.TransitionTo(Mathf.Max(0.01f, environmentSnapshotTransitionSeconds));
+            targetSnapshot.TransitionTo(transitionSeconds);
+        }
+
+        private void ApplyOceanRoarLowPass(bool insideDryVolume)
+        {
+            if (environmentMixer == null || string.IsNullOrEmpty(oceanRoarLowPassCutoffParameter))
+                return;
+
+            environmentMixer.SetFloat(
+                oceanRoarLowPassCutoffParameter,
+                insideDryVolume ? DryOceanRoarLowPassHz : WetOceanRoarLowPassHz);
         }
 
         private void CaptureBulkheadPose()
@@ -846,6 +867,8 @@ namespace Hecton8.Gameplay
         {
             if (cycleDuration < 0.5f) cycleDuration = 0.5f;
             if (maximumEqualizationSeconds < cycleDuration) maximumEqualizationSeconds = cycleDuration;
+            if (environmentSnapshotTransitionSeconds < MinimumEnvironmentSnapshotTransitionSeconds)
+                environmentSnapshotTransitionSeconds = MinimumEnvironmentSnapshotTransitionSeconds;
             RebuildLocalizedTextCache();
         }
 

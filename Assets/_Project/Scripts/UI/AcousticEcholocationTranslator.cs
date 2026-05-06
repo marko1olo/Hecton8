@@ -1,10 +1,12 @@
 using System;
 using Hecton.Localization;
+using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.AI;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
 using TMPro;
@@ -24,6 +26,15 @@ namespace Hecton8.UI
         private const int ListenerCapacity = 4;
         private static readonly IAcousticEcholocationBarkListener[] s_listeners = new IAcousticEcholocationBarkListener[ListenerCapacity]; // COLD ALLOC: IAcousticEcholocationBarkListener[4] - HUD bark listener registry - owner: AcousticEcholocationBarkEvents
         private static int s_listenerCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            for (int i = 0; i < ListenerCapacity; i++)
+                s_listeners[i] = null;
+
+            s_listenerCount = 0;
+        }
 
         public static void Register(IAcousticEcholocationBarkListener listener)
         {
@@ -122,7 +133,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Echolocation Translator")]
-    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener
+    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener, IPhysicsAcousticImpulseEventListener
     {
         private enum ContactClassification : byte
         {
@@ -145,8 +156,13 @@ namespace Hecton8.UI
         private const string DefaultClassificationPrefix = "CLASSIFICATION";
         private const string DefaultLeviathanClass = "UNKNOWN BIOMASS // LEVIATHAN";
         private const string DefaultWreckageClass = "WRECKAGE // ANCHOR RETURN";
+        private const string DefaultSoundWaveHeader = "[ACOUSTIC WAVE]";
+        private const string DefaultVisualSoundWaveText = "VISUAL SOUND WAVE // LEVIATHAN ROAR";
         private const string StorageCapacityHeader = "[FABRICATOR]";
         private const string StorageCapacityExceededText = "STORAGE CAPACITY EXCEEDED";
+        private const float HeavyFogAttenuationDistanceMeters = 18f;
+        private const float HeavyFogDensityThreshold = 0.035f;
+        private const float MinimumVisualSoundWaveVolume01 = 0.12f;
         private static readonly int ContactHeaderKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CONTACT_HEADER);
         private static readonly int ClassificationPrefixKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CLASSIFICATION_PREFIX);
         private static readonly int LeviathanClassKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CLASS_LEVIATHAN);
@@ -156,6 +172,9 @@ namespace Hecton8.UI
         private static readonly Color HeaderColor = new Color(0.72f, 0.96f, 0.88f, 0.96f);
         private static readonly Color ValueColor = new Color(0.86f, 0.98f, 0.92f, 0.96f);
         private static readonly Color AccentColor = new Color(0.38f, 0.92f, 0.88f, 0.18f);
+        private static readonly Color StorageBarkFrameColor = new Color(0.34f, 0.02f, 0.015f, 0.9f);
+        private static readonly Color StorageBarkHeaderColor = new Color(1f, 0.72f, 0.62f, 1f);
+        private static readonly Color StorageBarkValueColor = new Color(1f, 0.08f, 0.04f, 1f);
 
         // COLD ALLOC: SpatialQueryHit[24] — active-sonar leviathan classification buffer — owner: AcousticEcholocationTranslator
         private readonly SpatialQueryHit[] _bioformContacts = new SpatialQueryHit[MaxBioformContacts];
@@ -184,6 +203,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _classificationLabel;
         private bool _headerDirty = true;
         private bool _plainClassificationDirty = true;
+        private bool _storageCapacityBarkActive;
         private ContactClassification _lastRenderedClassification = ContactClassification.None;
         private int _lastRenderedDistanceMeters = int.MinValue;
 
@@ -191,13 +211,14 @@ namespace Hecton8.UI
         {
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
-            ResolveOwners();
+            ResolveAcousticOwners();
             EnsureUiBuilt();
             RefreshLocalizedCache();
             LocalizationEvents.RegisterLanguageListener(this);
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterSonarSnapshotListener(this);
             AcousticEcholocationBarkEvents.Register(this);
+            PhysicsEventBus.Register(this);
         }
 
         private void OnDisable()
@@ -206,6 +227,7 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarPingListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
             AcousticEcholocationBarkEvents.Unregister(this);
+            PhysicsEventBus.Unregister(this);
             UnregisterFromTickManager();
             ApplyRootAlpha(0f);
         }
@@ -216,6 +238,7 @@ namespace Hecton8.UI
             SpectrumEvents.UnregisterSonarPingListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
             AcousticEcholocationBarkEvents.Unregister(this);
+            PhysicsEventBus.Unregister(this);
             UnregisterFromTickManager();
         }
 
@@ -252,6 +275,7 @@ namespace Hecton8.UI
             ApplyRootAlpha(0f);
             _headerDirty = true;
             _plainClassificationDirty = true;
+            _storageCapacityBarkActive = false;
             _lastRenderedClassification = ContactClassification.None;
             _lastRenderedDistanceMeters = int.MinValue;
             UnregisterFromTickManager();
@@ -269,7 +293,7 @@ namespace Hecton8.UI
                 return;
 
             _pendingPing = false;
-            ResolveOwners();
+            ResolveAcousticOwners();
             EnsureUiBuilt();
             if (_classificationLabel == null || _headerLabel == null)
                 return;
@@ -288,6 +312,11 @@ namespace Hecton8.UI
         void ISonarSnapshotEventListener.OnSonarSnapshotUpdated(in SpatialSonarSnapshot snapshot)
         {
             HandleSonarSnapshotUpdated(snapshot);
+        }
+
+        void IPhysicsAcousticImpulseEventListener.OnAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        {
+            HandleAcousticImpulse(in impulseEvent);
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -310,19 +339,67 @@ namespace Hecton8.UI
 
         void IAcousticEcholocationBarkListener.OnStorageCapacityExceededBark()
         {
-            ResolveOwners();
+            ResolveAcousticOwners();
             EnsureUiBuilt();
             if (_classificationLabel == null || _headerLabel == null)
                 return;
 
             int headerLength = CopySpanToBuffer(StorageCapacityHeader.AsSpan(), _headerTextBuffer);
             _headerLabel.SetCharArray(_headerTextBuffer, 0, headerLength);
-            int messageLength = CopySpanToBuffer(StorageCapacityExceededText.AsSpan(), _classificationTextBuffer);
-            _classificationLabel.SetCharArray(_classificationTextBuffer, 0, messageLength);
+            if (CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+            {
+                try
+                {
+                    int messageLength = CopySpanToBuffer(StorageCapacityExceededText.AsSpan(), lease.Buffer);
+                    _classificationLabel.SetCharArray(lease.Buffer, 0, messageLength);
+                }
+                finally
+                {
+                    CharBufferPool.Release(in lease);
+                }
+            }
+            else
+            {
+                int messageLength = CopySpanToBuffer(StorageCapacityExceededText.AsSpan(), _classificationTextBuffer);
+                _classificationLabel.SetCharArray(_classificationTextBuffer, 0, messageLength);
+            }
 
             _visibleTimer = VisibleDuration;
             _fadeTimer = FadeDuration;
             _pulse01 = 1f;
+            _headerDirty = true;
+            _plainClassificationDirty = true;
+            _storageCapacityBarkActive = true;
+            _lastRenderedClassification = ContactClassification.None;
+            _lastRenderedDistanceMeters = int.MinValue;
+            ApplyVisualState(1f);
+            RegisterToTickManager();
+        }
+
+        private void HandleAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        {
+            if ((impulseEvent.Flags & AcousticImpulseFlags.Leviathan) == 0 ||
+                impulseEvent.Volume01 < MinimumVisualSoundWaveVolume01 ||
+                !ShouldRenderVisualSoundWave())
+            {
+                return;
+            }
+
+            ResolveAcousticOwners();
+            EnsureUiBuilt();
+            if (_classificationLabel == null || _headerLabel == null)
+                return;
+
+            int headerLength = CopySpanToBuffer(DefaultSoundWaveHeader.AsSpan(), _headerTextBuffer);
+            _headerLabel.SetCharArray(_headerTextBuffer, 0, headerLength);
+            int distanceMeters = ResolveRuntimeDistanceMeters(impulseEvent.RuntimePosition);
+            int waveTextLength = WriteVisualSoundWaveText(distanceMeters, impulseEvent.Volume01, _classificationTextBuffer);
+            _classificationLabel.SetCharArray(_classificationTextBuffer, 0, waveTextLength);
+
+            _storageCapacityBarkActive = false;
+            _visibleTimer = VisibleDuration;
+            _fadeTimer = FadeDuration;
+            _pulse01 = Mathf.Max(_pulse01, Mathf.Clamp01(impulseEvent.Volume01));
             _headerDirty = true;
             _plainClassificationDirty = true;
             _lastRenderedClassification = ContactClassification.None;
@@ -358,8 +435,10 @@ namespace Hecton8.UI
                 return false;
 
             float searchRadius = Mathf.Clamp(snapshot.NearestBioformDistanceMeters + 12f, 18f, 180f);
-            int contactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
-                transform.position,
+            Vector3 origin = ResolveClassificationOriginRuntimePosition();
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                in originAup,
                 searchRadius,
                 SpatialTargetKind.Bioform,
                 _bioformContacts);
@@ -385,7 +464,7 @@ namespace Hecton8.UI
             if (nearestDistanceSqr == float.MaxValue)
                 return false;
 
-            distanceMeters = Mathf.RoundToInt(Mathf.Sqrt(nearestDistanceSqr));
+            distanceMeters = RoundAupDistanceMeters(nearestDistanceSqr);
             return true;
         }
 
@@ -400,28 +479,45 @@ namespace Hecton8.UI
                 return false;
             }
 
-            float maxDistanceSqr = AnchorClassificationRadius * AnchorClassificationRadius;
-            float nearestDistanceSqr = float.MaxValue;
-            Vector3 origin = transform.position;
+            double maxDistanceSqr = (double)AnchorClassificationRadius * AnchorClassificationRadius;
+            double nearestDistanceSqr = double.PositiveInfinity;
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(ResolveClassificationOriginRuntimePosition());
             int limit = Mathf.Min(count, anchors.Length);
             for (int i = 0; i < limit; i++)
             {
-                float candidateDistanceSqr = (anchors[i] - origin).sqrMagnitude;
+                AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchors[i]);
+                double candidateDistanceSqr = AbsoluteUniversePosition.DistanceSq(in anchorAup, in originAup);
                 if (candidateDistanceSqr > maxDistanceSqr || candidateDistanceSqr >= nearestDistanceSqr)
                     continue;
 
                 nearestDistanceSqr = candidateDistanceSqr;
             }
 
-            if (nearestDistanceSqr == float.MaxValue)
+            if (double.IsPositiveInfinity(nearestDistanceSqr))
                 return false;
 
-            distanceMeters = Mathf.RoundToInt(Mathf.Sqrt(nearestDistanceSqr));
+            distanceMeters = RoundAupDistanceMeters(nearestDistanceSqr);
             return true;
+        }
+
+        private Vector3 ResolveClassificationOriginRuntimePosition()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerTransform != null)
+                return playerContext.PlayerTransform.position;
+
+            return transform != null ? transform.position : Vector3.zero;
+        }
+
+        private static int RoundAupDistanceMeters(double distanceSqr)
+        {
+            double distanceMeters = Math.Sqrt(Math.Max(0d, distanceSqr));
+            return distanceMeters >= int.MaxValue ? int.MaxValue : Mathf.RoundToInt((float)distanceMeters);
         }
 
         private void ShowClassification(ContactClassification classification, int distanceMeters)
         {
+            _storageCapacityBarkActive = false;
             ReadOnlySpan<char> classText = classification == ContactClassification.Leviathan
                 ? ResolveLocalizedSpan(LeviathanClassKeyHash, DefaultLeviathanClass.AsSpan())
                 : ResolveLocalizedSpan(WreckageClassKeyHash, DefaultWreckageClass.AsSpan());
@@ -496,6 +592,62 @@ namespace Hecton8.UI
                     localization.IsMadnessWhisperVisualActive());
         }
 
+        private static bool ShouldRenderVisualSoundWave()
+        {
+            LocalizationManager localization = GlobalRegistry.Localization;
+            if (ShouldUseStressMutation(localization))
+                return true;
+
+            HectonAtmosphereManager atmosphere = GlobalRegistry.Atmosphere;
+            if (atmosphere == null)
+                return false;
+
+            return atmosphere.CurrentFogAttenuationDistance <= HeavyFogAttenuationDistanceMeters ||
+                   atmosphere.CurrentFogDensity >= HeavyFogDensityThreshold;
+        }
+
+        private int ResolveRuntimeDistanceMeters(Vector3 runtimePosition)
+        {
+            Vector3 origin = transform != null ? transform.position : Vector3.zero;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerTransform != null)
+                origin = playerContext.PlayerTransform.position;
+
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in originAup, in targetAup);
+            double distanceMeters = Math.Sqrt(Math.Max(0d, distanceSq));
+            return distanceMeters >= int.MaxValue ? int.MaxValue : Mathf.RoundToInt((float)distanceMeters);
+        }
+
+        private static int WriteVisualSoundWaveText(int distanceMeters, float volume01, char[] buffer)
+        {
+            int cursor = AppendSpanToBuffer(DefaultVisualSoundWaveText.AsSpan(), buffer, 0);
+            cursor = AppendCharToBuffer(' ', buffer, cursor);
+            cursor = AppendCharToBuffer('/', buffer, cursor);
+            cursor = AppendCharToBuffer('/', buffer, cursor);
+            cursor = AppendCharToBuffer(' ', buffer, cursor);
+            if (cursor < buffer.Length &&
+                distanceMeters.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int distanceWritten))
+            {
+                cursor += distanceWritten;
+            }
+
+            cursor = AppendCharToBuffer('M', buffer, cursor);
+            cursor = AppendCharToBuffer(' ', buffer, cursor);
+            cursor = AppendCharToBuffer('/', buffer, cursor);
+            cursor = AppendCharToBuffer('/', buffer, cursor);
+            cursor = AppendCharToBuffer(' ', buffer, cursor);
+            int intensityPercent = Mathf.RoundToInt(Mathf.Clamp01(volume01) * 100f);
+            if (cursor < buffer.Length &&
+                intensityPercent.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int intensityWritten))
+            {
+                cursor += intensityWritten;
+            }
+
+            return AppendCharToBuffer('%', buffer, cursor);
+        }
+
         private int WriteClassificationText(ReadOnlySpan<char> classText, int distanceMeters, char[] buffer)
         {
             int cursor = AppendSpanToBuffer(ResolveLocalizedSpan(ClassificationPrefixKeyHash, DefaultClassificationPrefix.AsSpan()), buffer, 0);
@@ -547,13 +699,23 @@ namespace Hecton8.UI
         {
             ApplyRootAlpha(alpha);
             if (_background != null)
-                _background.color = new Color(FrameColor.r, FrameColor.g, FrameColor.b, Mathf.Lerp(0f, FrameColor.a, alpha));
+            {
+                Color frameColor = _storageCapacityBarkActive ? StorageBarkFrameColor : FrameColor;
+                _background.color = new Color(frameColor.r, frameColor.g, frameColor.b, Mathf.Lerp(0f, frameColor.a, alpha));
+            }
+
+            if (_headerLabel != null)
+                _headerLabel.color = _storageCapacityBarkActive ? StorageBarkHeaderColor : HeaderColor;
 
             if (_classificationLabel != null)
-                _classificationLabel.color = Color.Lerp(ValueColor, HeaderColor, _pulse01 * 0.45f);
+            {
+                Color baseValue = _storageCapacityBarkActive ? StorageBarkValueColor : ValueColor;
+                Color pulseValue = _storageCapacityBarkActive ? StorageBarkHeaderColor : HeaderColor;
+                _classificationLabel.color = Color.Lerp(baseValue, pulseValue, _pulse01 * 0.45f);
+            }
         }
 
-        private void ResolveOwners()
+        private void ResolveAcousticOwners()
         {
             if (_vegetationBridge == null)
                 _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
@@ -763,7 +925,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             font = LocalizedFontResolver.ResolveReadableFont(font);
-            ResolveOwners();
+            ResolveTerminalOwners();
             EnsureUiBuilt();
             SpectrumEvents.RegisterSonarPingListener(this);
         }
@@ -824,7 +986,7 @@ namespace Hecton8.UI
             if (intensity <= 0.001f)
                 return;
 
-            ResolveOwners();
+            ResolveTerminalOwners();
             EnsureUiBuilt();
             if (_consoleLabel == null || _overlayGroup == null)
                 return;
@@ -848,7 +1010,7 @@ namespace Hecton8.UI
             HandleSonarPingSent(intensity);
         }
 
-        private void ResolveOwners()
+        private void ResolveTerminalOwners()
         {
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);

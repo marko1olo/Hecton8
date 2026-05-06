@@ -1,8 +1,8 @@
-# Scatter DOTS Narrow Scope Spec
+﻿# Scatter DOTS Narrow Scope Spec
 
-Status: `ACTIVE`
+Status: PENDING VERIFICATION
 Verification: `PENDING VERIFICATION`
-Date: `2026-05-02`
+Date: 2026-05-07
 
 This document defines the only valid DOTS scope for scatter in HECTON-8.
 

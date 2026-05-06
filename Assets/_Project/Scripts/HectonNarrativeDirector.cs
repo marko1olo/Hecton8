@@ -8,6 +8,7 @@ using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 using Hecton8.Systems.AI;
 using Hecton8.Interaction;
@@ -24,8 +25,6 @@ namespace Hecton8.Gameplay
             public ushort Reserved0;
             public ushort Reserved1;
         }
-
-        private static HectonNarrativeDirector _instance;
 
         [Header("Settings")]
 #pragma warning disable CS0414 // slowTickRate reserved for future SlowTick throttling
@@ -52,8 +51,6 @@ namespace Hecton8.Gameplay
 #pragma warning disable CS0414
         private bool _rareDiscoveryRequested;
 #pragma warning restore CS0414
-
-        public static HectonNarrativeDirector Instance => _instance;
 
         public int SavePriority => 5;
         public int LoadPriority => 5;
@@ -100,13 +97,13 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            HectonNarrativeDirector activeRuntime = GlobalRegistry.NarrativeDirector;
+            if (activeRuntime != null && activeRuntime != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
             _narrativeNodesByHash = new Unity.Collections.NativeHashMap<uint, NarrativeNode>(128, Unity.Collections.Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,NarrativeNode>[128] - narrative hash lookup for discovery routing - owner: HectonNarrativeDirector
             NativeMemorySentinel.RegisterNativeHashMap(_narrativeNodesByHash, nameof(HectonNarrativeDirector), nameof(_narrativeNodesByHash), NativeAllocationLifetime.Scene);
             RebuildDiscoveryLookup();
@@ -148,9 +145,6 @@ namespace Hecton8.Gameplay
                 NativeMemorySentinel.UnregisterNativeHashMap(nameof(HectonNarrativeDirector), nameof(_narrativeNodesByHash));
                 _narrativeNodesByHash.Dispose();
             }
-
-            if (_instance == this)
-                _instance = null;
         }
 
         private void TryRegister()
@@ -186,7 +180,8 @@ namespace Hecton8.Gameplay
         public NarrativeDiscovery GetNearestUndiscoveredPOI(Vector3 center, float maxDistance)
         {
             NarrativeDiscovery nearest = null;
-            float minSqrDist = maxDistance * maxDistance;
+            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(center);
+            double minSqrDist = (double)maxDistance * maxDistance;
 
             for (int i = 0; i < _activePOIs.Count; i++)
             {
@@ -198,7 +193,8 @@ namespace Hecton8.Gameplay
                 if (discoveryHash != 0u && _discoveredHashLookup.Contains(discoveryHash))
                     continue;
 
-                float sqrDist = (poi.transform.position - center).sqrMagnitude;
+                AbsoluteUniversePosition poiAup = AbsoluteUniversePosition.FromRuntimePosition(poi.transform.position);
+                double sqrDist = AbsoluteUniversePosition.DistanceSq(in poiAup, in centerAup);
                 if (sqrDist < minSqrDist)
                 {
                     minSqrDist = sqrDist;
@@ -214,7 +210,8 @@ namespace Hecton8.Gameplay
             if (_playerTransform == null && !ResolvePlayerTransform())
                 return;
 
-            float depth = -_playerTransform.position.y;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+            float depth = Mathf.Max(0f, (float)-playerAup.ToAbsoluteDouble3().y);
             int newTier = CalculateDepthTier(depth);
 
             if (newTier <= currentDepthTier)
@@ -239,6 +236,11 @@ namespace Hecton8.Gameplay
                 return _discoveredHashLookup.Contains(discoveryHash);
 
             return !string.IsNullOrWhiteSpace(id) && _discoveredIdLookup.Contains(id);
+        }
+
+        public bool HasDiscovery(uint discoveryHash)
+        {
+            return discoveryHash != 0u && _discoveredHashLookup.Contains(discoveryHash);
         }
 
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
@@ -358,6 +360,10 @@ namespace Hecton8.Gameplay
         }
 
         void IDirectorAIEventListener.OnDirectorPredatorPressureChanged(bool pressureEnabled)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorThreatSpike(Vector3 position, float intensity)
         {
         }
 

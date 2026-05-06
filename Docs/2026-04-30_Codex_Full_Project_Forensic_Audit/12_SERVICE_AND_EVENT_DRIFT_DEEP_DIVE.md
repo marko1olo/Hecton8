@@ -1,10 +1,11 @@
-# Service And Event Drift Deep Dive
+﻿# Service And Event Drift Deep Dive
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 Purpose:
 - describe the current shape of service authority and event signaling in key runtime services
-- connect code reality to the project’s own mandates
+- connect code reality to the projectâ€™s own mandates
 
 ## Main Pattern
 
@@ -44,7 +45,7 @@ Current shape:
 - broad native surface and wide save participant registry
 
 Reading:
-- save architecture is one of the project’s real strengths
+- save architecture is one of the projectâ€™s real strengths
 - service identity still carries legacy singleton language and shape
 
 ### `ConstructionManager`
@@ -83,7 +84,7 @@ Current shape:
 - high implementation depth without native `Update()` sprawl
 
 Reading:
-- audio service is one of the project’s better examples of practical engineering
+- audio service is one of the projectâ€™s better examples of practical engineering
 - it still presents itself as both singleton-like and registry-driven
 
 ## Event Drift

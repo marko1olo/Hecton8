@@ -1,7 +1,7 @@
-# Documentation Governance
+﻿# Documentation Governance
 
-Date: `2026-05-05`
-Status: `PENDING VERIFICATION`
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 Purpose: prevent workspace documentation from collapsing back into root-level noise.
 
@@ -9,8 +9,9 @@ Current-state boundary:
 
 - This file defines documentation placement and authority order only.
 - It is not runtime proof and does not certify that every listed document is current by itself.
-- Current documentation sorting truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
-- Current project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, current source files, and fresh verification logs.
+- Current documentation synchronization truth starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`.
+- Current documentation sorting truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, amended by the May 6 synchronization pass.
+- Current project truth starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, current source files, and fresh verification logs.
 - Current warning-cleanup evidence starts at `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`; current Omega build warning classification is scoped in `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`.
 
 ## Authority Order
@@ -18,18 +19,19 @@ Current-state boundary:
 1. `../AGENTS.md`
 2. task-relevant `.agents-skills/*` mandates
 3. `Docs/README.md`
-4. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
-5. `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
-6. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
-7. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
-8. `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
-9. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
-10. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-11. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
-12. active execution docs under `Docs/`
-13. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
-14. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
-15. archive bundles under `Docs/_Archive/`
+4. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
+5. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
+6. `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
+7. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+8. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
+9. `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
+10. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+11. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+12. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+13. active execution docs under `Docs/`
+14. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
+15. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
+16. archive bundles under `Docs/_Archive/`
 
 ## What Belongs In Root
 

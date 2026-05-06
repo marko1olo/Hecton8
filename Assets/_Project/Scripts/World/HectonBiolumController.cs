@@ -42,7 +42,7 @@ namespace Hecton8.World
 
         [Header("── Eclipse Boost ────────────────────────────")]
         [Tooltip("Множитель во время затмения.")]
-        [SerializeField, Range(1f, 5f)] private float eclipseMultiplier = 1.5f;
+        [SerializeField, Range(1f, 5f)] private float eclipseMultiplier = 2f;
         [SerializeField, Min(0.01f)] private float eclipseMultiplierSmoothRate = 1.25f;
 
         [Header("── Signal Pulse ────────────────────────────")]
@@ -187,6 +187,7 @@ namespace Hecton8.World
             }
 
             ApplyShader();
+            ApplyLocalProxyLights();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -234,13 +235,25 @@ namespace Hecton8.World
         private void HandleEclipsePhase(bool active)
         {
             _eclipseActive = active;
-            _targetEclipseMultiplier = active ? Mathf.Max(1f, eclipseMultiplier) : 1f;
+            if (!active)
+                _targetEclipseMultiplier = 1f;
         }
 
         private void HandleEclipseBiolumMultiplier(float multiplier)
         {
             float localMax = Mathf.Max(1f, eclipseMultiplier * 3f);
-            _targetEclipseMultiplier = Mathf.Clamp(multiplier, 1f, localMax);
+            float clampedMultiplier = Mathf.Clamp(multiplier, 1f, localMax);
+            _targetEclipseMultiplier = clampedMultiplier;
+            if (clampedMultiplier >= Mathf.Max(1f, eclipseMultiplier) - 0.001f)
+            {
+                float previousMultiplier = Mathf.Max(0.001f, _currentEclipseMultiplier);
+                float baseIntensityWithoutEclipse = _currentIntensity / previousMultiplier;
+                _currentEclipseMultiplier = clampedMultiplier;
+                _currentIntensity = Mathf.Max(_currentIntensity, baseIntensityWithoutEclipse * clampedMultiplier);
+                _targetIntensity = Mathf.Max(_targetIntensity, baseIntensityWithoutEclipse * clampedMultiplier);
+                ApplyShader();
+                ApplyLocalProxyLights();
+            }
         }
 
         void IEclipseGameplayEventListener.OnEclipseGameplayPhaseChanged(bool active)

@@ -1,6 +1,6 @@
-# PERSISTENCE AND SCENE-SEARCH DRIFT
+﻿# PERSISTENCE AND SCENE-SEARCH DRIFT
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: current source-backed audit of runtime persistence surfaces outside the save-slot stack and runtime scene-search fallback paths outside bootstrap/editor
 Mandates followed: `STRM_Persistent_Object_Registry.txt`, `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`
@@ -34,7 +34,7 @@ It proves they exist and describes what they currently do.
 
 ## Detailed Evidence
 
-### PSD-01 — RebindingManager Is A Separate Persistence Stack
+### PSD-01 â€” RebindingManager Is A Separate Persistence Stack
 
 `RebindingManager` does not route through `SaveManager`.
 It owns its own persistence lane for binding overrides.
@@ -55,7 +55,7 @@ The real issue is architectural breadth:
 - save/load truth in the project is not only `SaveManager`
 - runtime persistence is split at least across save slots, input overrides, and meta profile
 
-### PSD-02 — GlobalProfileManager Is Another Separate Persistence Stack
+### PSD-02 â€” GlobalProfileManager Is Another Separate Persistence Stack
 
 `GlobalProfileManager` also bypasses `SaveManager`.
 It owns a global JSON profile stored under its own profile directory.
@@ -77,7 +77,7 @@ But it still matters because current runtime persistence is fragmented:
 
 Any doc that compresses all runtime persistence into `SaveManager` is incomplete.
 
-### PSD-03 — Cave AO Still Has Runtime Scene-Search Fallbacks
+### PSD-03 â€” Cave AO Still Has Runtime Scene-Search Fallbacks
 
 `HectonCaveVoxelAmbientOcclusionController` is not an editor utility.
 It is runtime code implementing:

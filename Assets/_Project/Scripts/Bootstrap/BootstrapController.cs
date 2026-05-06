@@ -10,18 +10,11 @@ namespace Hecton8.Bootstrap
     [DefaultExecutionOrder(-30000)]
     public sealed class BootstrapController : MonoBehaviour
     {
-        private static BootstrapController _instance;
         private bool _delegatedBoot;
-
-        /// <summary>
-        /// Legacy read-only compatibility accessor. Do not use for new systems.
-        /// </summary>
-        public static BootstrapController Instance => _instance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -39,9 +32,6 @@ namespace Hecton8.Bootstrap
 
         private void Awake()
         {
-            if (_instance == null)
-                _instance = this;
-
             DelegateBoot();
         }
 
@@ -52,8 +42,6 @@ namespace Hecton8.Bootstrap
 
         private void OnDestroy()
         {
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <summary>

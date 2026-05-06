@@ -1,5 +1,6 @@
-# Critical Action Queue
+﻿# Critical Action Queue
 
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 ## Priority 0
@@ -69,7 +70,7 @@ Minimum targets:
 1. Reverify major docs against current code and editor truth.
 Reason: documentation volume is high, but drift has already happened.
 
-2. Add explicit “reality status” headers to key docs.
+2. Add explicit â€œreality statusâ€ headers to key docs.
 Suggested values:
 - production
 - partial
@@ -87,7 +88,7 @@ Reason: this file is now the conceptual entry point. If it drifts, future agents
 - Do not keep adding managers into already overloaded roots.
 - Do not treat large files as harmless if they still absorb more responsibility.
 - Do not use docs as truth without code/editor cross-check.
-- Do not call the project “close” while verification truth, test truth, and authority truth are still fragmented.
+- Do not call the project â€œcloseâ€ while verification truth, test truth, and authority truth are still fragmented.
 
 ## 2026-05-01 Queue Delta
 

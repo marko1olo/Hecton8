@@ -13,7 +13,7 @@ namespace Hecton8.Power
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5500)]
-    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPowerGridService
+    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPowerGridService, IServiceHeartbeat
     {
         private static List<PowerGrid> _allGrids;
 
@@ -55,6 +55,12 @@ namespace Hecton8.Power
         private bool _slowTickFinalizationPending;
         private float _pendingWirelessToolDemandWattSeconds;
         private const float MaxPendingWirelessToolDemandWattSeconds = 4096f;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered;
 
         public BatteryRuntimeSnapshot BatterySnapshot => new BatteryRuntimeSnapshot
         {

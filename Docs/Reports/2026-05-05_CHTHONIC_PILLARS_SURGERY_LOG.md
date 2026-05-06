@@ -1,4 +1,6 @@
-# 2026-05-05 Chthonic Pillars Surgery Log
+﻿# 2026-05-05 Chthonic Pillars Surgery Log
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 ## Status
 
@@ -94,6 +96,7 @@ Completed:
 
 Blocked:
 
-- Unity compile/log path is also blocked by unrelated `HectonPlayerHealth.cs(130,99)` missing `RadiationFatigueCriticalExposureSeconds` and older `PlayerPDA` compile errors in the log.
+- Current source HAS `RadiationFatigueCriticalExposureSeconds` in `HectonPlayerHealth`; old missing-symbol and older `PlayerPDA` console claims are stale and must not be cited as current build truth.
 - MCP console access is unavailable; final `refresh_unity(wait_for_ready=true)` attempt timed out after 60 seconds and the Editor log tail only reports MCP WebSocket closure.
 - No profiler measurement exists yet for the 0.5ms MC budget.
+

@@ -248,9 +248,9 @@ namespace Hecton8.World
                 // COLD SYNC JOB: headless smoke tester synchronizes once after the scheduled Burst stress chain; no runtime Tick/Update path calls this method.
                 DispatcherJobSwap.TryComplete(ref finalReduceHandle, forceComplete: true);
 
-                shallowBiomeId = results[0].InfluenceCell.PrimaryBiomeId;
-                twilightBiomeId = results[1].InfluenceCell.PrimaryBiomeId;
-                hadalBiomeId = results[2].InfluenceCell.PrimaryBiomeId;
+                shallowBiomeId = ResolveSmokeMatrixId(matrices, results[0].PrimaryBiomeMatrixDataIndex);
+                twilightBiomeId = ResolveSmokeMatrixId(matrices, results[1].PrimaryBiomeMatrixDataIndex);
+                hadalBiomeId = ResolveSmokeMatrixId(matrices, results[2].PrimaryBiomeMatrixDataIndex);
                 twilightFlags = results[1].InfluenceCell.Flags;
                 VolumetricBiomeStressSummaryResult stressSummary = summary[0];
                 stressFailureCount = stressSummary.FailureCount;
@@ -290,6 +290,19 @@ namespace Hecton8.World
                 sentinelAfter,
                 sentinelDelta);
             return passed;
+        }
+
+        private static int ResolveSmokeMatrixId(
+            NativeArray<WorldProceduralFieldSampler.BiomeMatrixData> matrices,
+            int matrixDataIndex)
+        {
+            if (!matrices.IsCreated ||
+                (uint)matrixDataIndex >= (uint)matrices.Length)
+            {
+                return 0;
+            }
+
+            return matrices[matrixDataIndex].MatrixIndex;
         }
 
         public static void RunBatchmode()

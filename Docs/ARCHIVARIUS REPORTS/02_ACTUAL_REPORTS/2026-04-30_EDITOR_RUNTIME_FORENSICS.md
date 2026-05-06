@@ -1,6 +1,6 @@
-# EDITOR / RUNTIME FORENSICS
+﻿# EDITOR / RUNTIME FORENSICS
 
-Date: 2026-04-30
+Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: evidence-backed follow-up sweep for live console health, tick-adjacent UI mutation debt, coroutine-heavy verification stack, and false-positive `JobHandle.Complete()` accusations
 Mandates followed: `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `PHYS_Physics_Integrity_Determinism_ForceMode.txt`
@@ -83,7 +83,7 @@ It does not prove clean Play Mode, zero GC, frame-time stability, or memory rete
 
 ## Finding Details
 
-### ERF-01 — Scatter Preview Gizmo Console Spam
+### ERF-01 â€” Scatter Preview Gizmo Console Spam
 
 Current live exception path is editor-side, not gameplay-side.
 
@@ -102,7 +102,7 @@ Operational consequence:
 - editor console noise was real in the last verified session snapshot
 - current active docs must not claim clean console state
 
-### ERF-02 — Acoustic UI Mutation Debt
+### ERF-02 â€” Acoustic UI Mutation Debt
 
 `AcousticEcholocationTranslator.cs` is not just a passive helper.
 It contains three tick-registered presentation owners:
@@ -122,7 +122,7 @@ Within that surface, direct text mutation still exists:
 This is not yet profiler proof of frame hitching.
 It is source-backed violation debt against the zero-GC UI mandate because the affected surface is part of a tick-driven HUD/presentation chain.
 
-### ERF-03 — Diegetic PDA Visibility Toggle Debt
+### ERF-03 â€” Diegetic PDA Visibility Toggle Debt
 
 `DiegeticPDAController` is tick-driven and polls `PlayerPDA.IsOpen` in `Tick(float deltaTime)`.
 When state changes, it routes through `ApplyPresentationState(...)`, where:
@@ -133,7 +133,7 @@ When state changes, it routes through `ApplyPresentationState(...)`, where:
 This is lower severity than a per-frame `SetActive` loop because it is state-change gated.
 It is still architecture debt because the presentation path keeps a full object-activation toggle in a UI-facing controller.
 
-### ERF-04 — Coroutine-Heavy Verification Stack Still Wired
+### ERF-04 â€” Coroutine-Heavy Verification Stack Still Wired
 
 2026-05-01 correction: the heading is historical; the current source state is source-migrated.
 The current verifier/smoke layer no longer uses strict coroutine primitives in first-party runtime scripts outside `Editor/**`:

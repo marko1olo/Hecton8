@@ -1,6 +1,6 @@
-# HECTON-8 — ITEM ASSET GUID AUDIT
-Date: 2026-05-04
-Status: REFERENCE
+﻿# HECTON-8 â€” ITEM ASSET GUID AUDIT
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 **Status:** ETA SURGERY_PREPPED  
 **Purpose:** Hardcoded fallback table for Agent Gamma Addressables pre-warm queue.  
@@ -9,7 +9,7 @@ Status: REFERENCE
 
 ---
 
-## GUID TABLE — Dropped-Item World Prefabs
+## GUID TABLE â€” Dropped-Item World Prefabs
 
 | Prefab Name | GUID | Asset Path |
 |---|---|---|
@@ -28,10 +28,10 @@ Status: REFERENCE
 
 ---
 
-## USAGE — Addressables Fallback
+## USAGE â€” Addressables Fallback
 
 ```csharp
-// Gamma Addressables pre-warm fallback — inject into PersistentWorldRegistry
+// Gamma Addressables pre-warm fallback â€” inject into PersistentWorldRegistry
 // or ItemCatalog world-prefab resolution path.
 
 internal static class ItemAssetGuidFallbacks
@@ -62,6 +62,6 @@ internal static class ItemAssetGuidFallbacks
 - All `.meta` files parsed successfully. No GUID collisions detected.
 - All prefabs are under `Assets/_Project/` (first-party). No third-party tool prefabs exist in the dropped-item catalog.
 - Total scanned: **12 prefabs**.
-- Missing categories: Consumables, Materials, DataShards — no world prefabs found in current directory tree.
+- Missing categories: Consumables, Materials, DataShards â€” no world prefabs found in current directory tree.
 
 **STATUS:** ETA SURGERY_PREPPED

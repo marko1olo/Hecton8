@@ -1,13 +1,13 @@
-# HECTON-8 Audio DSP Pipeline
-Date: `2026-05-04`
+﻿# HECTON-8 Audio DSP Pipeline
+Date: 2026-05-07
 
-Status: REFERENCE
+Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
 2026-05-04 current-state boundary:
 
 - This is the first-party audio DSP architecture reference, not live mixer/profiler proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - `SpatialAudioManager` and `PlayerCriticalProceduralAudioRenderer` are source-backed owners; runtime pool state, console health, audio-thread cost, and zero-GC transport still require fresh Unity/profiler verification.
 
 ## Scope
@@ -122,7 +122,7 @@ Hull stress synthesis is finalized in the procedural renderer and follows the st
 ```text
 modFreq = lerp(5 Hz, 80 Hz, stress^2)
 modIndex = lerp(0.1, 12.0, stress)
-carrierFreq = 80 Hz + sin(modPhase * 2π) * modIndex * noise
+carrierFreq = 80 Hz + sin(modPhase * 2Ï€) * modIndex * noise
 output = tanh(raw * (1 + stress * 3))
 ```
 
@@ -169,14 +169,14 @@ Bubble chirps are generated as short decaying sine bursts while the plasma cutte
 
 ### Minnaert Frequency
 ```text
-f_bubble = (1 / (2πR)) * sqrt((3 * γ * P_ambient) / ρ_water)
+f_bubble = (1 / (2Ï€R)) * sqrt((3 * Î³ * P_ambient) / Ï_water)
 ```
 
 Where:
 - `R` = bubble radius in meters
-- `γ` = heat capacity ratio
-- `P_ambient = 101325 + ρ_water * g * depth`
-- `ρ_water` = water density
+- `Î³` = heat capacity ratio
+- `P_ambient = 101325 + Ï_water * g * depth`
+- `Ï_water` = water density
 
 ### Envelope
 Each spawned bubble uses:

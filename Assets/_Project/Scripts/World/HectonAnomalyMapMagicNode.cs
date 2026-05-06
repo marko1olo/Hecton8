@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using Den.Tools;
 using Den.Tools.Matrices;
 using Hecton8.Core;
@@ -39,14 +40,19 @@ namespace MapMagic.Nodes.MatrixGenerators
         private const uint CellCountWarningHash = 0x414E4343u;
         private const uint FloodClampWarningHash = 0x414E4643u;
         private const uint NoBasinWarningHash = 0x414E4E42u;
+        private const uint SolveBudgetWarningHash = 0x414E5342u;
         private const uint AnomalyNodeContextHash = 0x414E4F44u;
+        private const float ChthonicPillarTectonicBoundaryFrequency = 0.0065f;
+        private const uint ChthonicPillarTectonicBoundarySeed = 83117u;
+        private const float ChthonicPillarMinimumTectonicBoundaryMask = 0.55f;
+        private static readonly long SolvePerformanceWarningBudgetTicks = System.Math.Max(1L, Stopwatch.Frequency / 5000L);
 
         /// <summary>Input heightmap matrix.</summary>
         [Den.Tools.GUI.ValAttribute("Heightmap", "Inlet")]
         public readonly Inlet<MatrixWorld> heightIn = new Inlet<MatrixWorld>();
 
-        /// <summary>Brine pool basin mask output.</summary>
-        [Den.Tools.GUI.ValAttribute("Brine Mask", "Outlet")]
+        /// <summary>BrinePoolMask output used by MapMagic terrain texture swaps.</summary>
+        [Den.Tools.GUI.ValAttribute("BrinePoolMask", "Outlet")]
         public readonly Outlet<MatrixWorld> brineMaskOut = new Outlet<MatrixWorld>();
 
         /// <summary>Deepest basin point output.</summary>
@@ -60,6 +66,9 @@ namespace MapMagic.Nodes.MatrixGenerators
         /// <summary>Deep fissure candidate mask output.</summary>
         [Den.Tools.GUI.ValAttribute("Fissure Mask", "Outlet")]
         public readonly Outlet<MatrixWorld> fissureMaskOut = new Outlet<MatrixWorld>();
+
+        [System.NonSerialized] private IInlet<object>[] _inletCache;
+        [System.NonSerialized] private IOutlet<object>[] _outletCache;
 
         /// <summary>Fallback normalized height scale in meters when MatrixWorld does not specify Y size.</summary>
         [Den.Tools.GUI.ValAttribute("Height Scale")]
@@ -106,16 +115,30 @@ namespace MapMagic.Nodes.MatrixGenerators
         /// <inheritdoc />
         public IEnumerable<IInlet<object>> Inlets()
         {
-            yield return heightIn;
+            if (_inletCache == null)
+            {
+                // COLD ALLOC: IInlet<object>[1] - MapMagic port enumeration cache - owner: HectonAnomalyMapMagicNode
+                _inletCache = new IInlet<object>[1];
+                _inletCache[0] = heightIn;
+            }
+
+            return _inletCache;
         }
 
         /// <inheritdoc />
         public IEnumerable<IOutlet<object>> Outlets()
         {
-            yield return brineMaskOut;
-            yield return deepestPointsOut;
-            yield return pillarCoordinatesOut;
-            yield return fissureMaskOut;
+            if (_outletCache == null)
+            {
+                // COLD ALLOC: IOutlet<object>[4] - MapMagic port enumeration cache - owner: HectonAnomalyMapMagicNode
+                _outletCache = new IOutlet<object>[4];
+                _outletCache[0] = brineMaskOut;
+                _outletCache[1] = deepestPointsOut;
+                _outletCache[2] = pillarCoordinatesOut;
+                _outletCache[3] = fissureMaskOut;
+            }
+
+            return _outletCache;
         }
 
         /// <inheritdoc />
@@ -203,6 +226,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 };
                 PublishColdPathTelemetry(cellCount, settings.MaxFloodCells);
 
+                long solveStartTicks = Stopwatch.GetTimestamp();
                 JobHandle handle = HectonAnomalyEngine.ScheduleClosedBasinDetection(
                     heightmap,
                     basinMask,
@@ -229,7 +253,11 @@ namespace MapMagic.Nodes.MatrixGenerators
                     MinimumPillarRidgeArms = pillarRidgeArms,
                     MinimumFissureDepthMeters = fissureDepthMeters,
                     EqualHeightEpsilon = heightEpsilonMeters,
-                    FissureInfluencePacked = fissureInfluencePacked
+                    FissureInfluencePacked = fissureInfluencePacked,
+                    RequireTectonicBoundary = 1,
+                    TectonicBoundaryFrequency = ChthonicPillarTectonicBoundaryFrequency,
+                    TectonicBoundarySeed = ChthonicPillarTectonicBoundarySeed,
+                    MinimumTectonicBoundaryMask = ChthonicPillarMinimumTectonicBoundaryMask
                 };
                 handle = HectonAnomalyEngine.ScheduleRidgeFeatureDetection(
                     heightmap,
@@ -240,6 +268,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 
                 // COLD SYNC JOB: MapMagic Generate must publish concrete matrix and object products before returning.
                 handle.Complete();
+                PublishSolvePerformanceWarningIfNeeded(Stopwatch.GetTimestamp() - solveStartTicks);
 
                 if (stop != null && stop.stop)
                     return;
@@ -350,6 +379,15 @@ namespace MapMagic.Nodes.MatrixGenerators
 
             if (resolvedMaxFloodCells >= FloodCellTelemetryThreshold)
                 GlobalTelemetryBus.PublishPerformanceWarning(FloodClampWarningHash, AnomalyNodeContextHash, resolvedMaxFloodCells);
+        }
+
+        private static void PublishSolvePerformanceWarningIfNeeded(long elapsedTicks)
+        {
+            if (elapsedTicks <= SolvePerformanceWarningBudgetTicks)
+                return;
+
+            float elapsedMs = elapsedTicks * (1000f / Stopwatch.Frequency);
+            GlobalTelemetryBus.PublishPerformanceWarning(SolveBudgetWarningHash, AnomalyNodeContextHash, elapsedMs);
         }
 
         private static void RegisterTempJobBuffers(

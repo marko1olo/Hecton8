@@ -31,6 +31,7 @@ namespace Hecton8.Gameplay
         private const float PresentationVelocityLagSharpness = 5.5f;
         private const float PresentationVelocityLagBlend = 0.15f;
         private const float MountedDriveSkinWidth = 0.08f;
+        private const float SubmarineImpactDentStartSpeedMetersPerSecond = 8f;
         private const int EntanglementDensityProbeCount = 4;
         private const int MaxEntanglingFloraCount = 4;
         private const string EntanglementCriticalNotification = "PROPULSION ENTANGLED // CUT KELP TO RESTORE THRUST";
@@ -48,6 +49,11 @@ namespace Hecton8.Gameplay
         private const byte EntanglementStressHapticPriority = 2;
         private const byte EntanglementStressHapticMotorMask = 0b0011;
         private const byte EntanglementStressHapticBlendMode = 2;
+        private const float SubmarineImpactHapticDurationSeconds = 0.32f;
+        private const float SubmarineImpactHapticDecayRate = 4.2f;
+        private const byte SubmarineImpactHapticPriority = 3;
+        private const byte SubmarineImpactHapticMotorMask = 0b0011;
+        private const byte SubmarineImpactHapticBlendMode = 2;
         private const float CavitationShockwaveMinRadiusMeters = 15f;
 
         [Header("-- Preset ---------------------------")]
@@ -179,7 +185,9 @@ namespace Hecton8.Gameplay
         private VehicleMotor _vehicleMotor;
         private PlayerTransportFeelContract _transportFeelContract;
         private VehicleUpgradeModule _vehicleUpgradeModule;
+        private SubmarineStructuralGrid _submarineStructuralGrid;
         private CapsuleCollider _driveCapsule;
+        private bool _submarineStructuralGridResolved;
         private bool _registered;
         private bool _registeredOriginShiftListener;
         private bool _interactionColliderWasEnabled;
@@ -282,6 +290,7 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _vehicleUpgradeModule);
             ResolveAnchorCache();
             ResolveVehicleDriveReferences();
+            ResolveSubmarineStructuralGrid();
             BindPresetToFeelContract();
             RebuildPromptCache();
             EnsureLifecycleInitialized();
@@ -294,8 +303,10 @@ namespace Hecton8.Gameplay
             TryRegisterOriginShiftListener();
             ResolveAnchorCache();
             ResolveVehicleDriveReferences();
+            ResolveSubmarineStructuralGrid();
             BindPresetToFeelContract();
             ResolveVehicleUpgradeModule();
+            ToolHapticsRuntime.EnsureRuntimeInstance();
             RebuildPromptCache();
             EnsureLifecycleInitialized();
             ResetPlatformMotionCache();
@@ -969,7 +980,9 @@ namespace Hecton8.Gameplay
                 anchorPosition += _entanglementInstancePositions[i];
 
             anchorPosition /= trackedCount;
-            float tetherLength = Vector3.Distance(_transportBody.position, anchorPosition);
+            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(_transportBody.position);
+            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
+            float tetherLength = (float)math.sqrt(AbsoluteUniversePosition.DistanceSq(in bodyAup, in anchorAup));
             _vehicleMotor.BeginEntanglement(anchorPosition, tetherLength);
             NotifyEntanglementCritical();
 
@@ -1347,6 +1360,27 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void ResolveSubmarineStructuralGrid()
+        {
+            if (_submarineStructuralGridResolved)
+                return;
+
+            if (_submarineStructuralGrid != null)
+            {
+                _submarineStructuralGridResolved = true;
+                return;
+            }
+
+            if (TryGetComponent(out _submarineStructuralGrid))
+            {
+                _submarineStructuralGridResolved = true;
+                return;
+            }
+
+            _submarineStructuralGrid = GetComponentInParent<SubmarineStructuralGrid>();
+            _submarineStructuralGridResolved = true;
+        }
+
         private void BindPresetToFeelContract()
         {
             if (_transportFeelContract == null)
@@ -1433,7 +1467,50 @@ namespace Hecton8.Gameplay
             Vector3 impactPoint = _vehicleMotor.LastBlockingImpactPoint;
             Vector3 impactNormal = _vehicleMotor.LastBlockingImpactNormal;
             GlobalPhysicsStateManager.QueueKinematicImpact(_transportBody, impactPoint, impactNormal, impactSpeed);
+            QueueSubmarineImpactVisualFeedback(impactSpeed, impactPoint, impactNormal);
             ApplyTransportCollisionImpact(impactSpeed, impactPoint, impactNormal);
+        }
+
+        private void QueueSubmarineImpactVisualFeedback(float impactSpeed, Vector3 impactPoint, Vector3 impactNormal)
+        {
+            if (impactSpeed <= SubmarineImpactDentStartSpeedMetersPerSecond)
+                return;
+
+            float maximumImpactSpeed = preset != null
+                ? Mathf.Max(SubmarineImpactDentStartSpeedMetersPerSecond + 0.01f, preset.CollisionDamageMaxSpeed)
+                : SubmarineImpactDentStartSpeedMetersPerSecond + 16f;
+            float severity01 = Mathf.Clamp01(
+                (impactSpeed - SubmarineImpactDentStartSpeedMetersPerSecond) /
+                Mathf.Max(0.01f, maximumImpactSpeed - SubmarineImpactDentStartSpeedMetersPerSecond));
+
+            NotifySubmarineImpactHaptic(severity01);
+            ResolveSubmarineStructuralGrid();
+            if (_submarineStructuralGrid != null)
+            {
+                _submarineStructuralGrid.QueueHullImpactDecalWorld(
+                    impactPoint,
+                    impactNormal,
+                    impactSpeed,
+                    severity01);
+                return;
+            }
+
+            var cameraJuice = GlobalRegistry.CameraJuice;
+            if (cameraJuice != null)
+                cameraJuice.TriggerSubmarineImpactShake(severity01);
+        }
+
+        private static void NotifySubmarineImpactHaptic(float severity01)
+        {
+            float severity = math.saturate(severity01);
+            ToolHapticsRuntime.EnqueueCommand(
+                math.lerp(0.48f, 0.95f, severity),
+                math.lerp(0.18f, 0.46f, severity),
+                SubmarineImpactHapticDurationSeconds,
+                SubmarineImpactHapticDecayRate,
+                SubmarineImpactHapticPriority,
+                SubmarineImpactHapticMotorMask,
+                SubmarineImpactHapticBlendMode);
         }
 
         private void PrepareMountedKinematicBody()

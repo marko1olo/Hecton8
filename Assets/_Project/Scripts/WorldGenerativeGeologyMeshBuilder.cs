@@ -44,6 +44,11 @@ namespace Hecton8.World
 
     public static class WorldGenerativeGeologyMeshBuilder
     {
+        // COLD ALLOC: List<Vector3>[2048] - mesh source copy scratch for compound geology assembly - owner: WorldGenerativeGeologyMeshBuilder
+        private static readonly List<Vector3> s_sourceVertices = new List<Vector3>(2048);
+        // COLD ALLOC: List<int>[4096] - mesh source index scratch for compound geology assembly - owner: WorldGenerativeGeologyMeshBuilder
+        private static readonly List<int> s_sourceTriangles = new List<int>(4096);
+
         // ── Public entry point ────────────────────────────────────
 
         /// <summary>
@@ -1022,18 +1027,21 @@ namespace Hecton8.World
             if (mesh == null)
                 return;
 
-            Vector3[] sourceVertices = mesh.vertices;
-            int[] sourceTriangles = mesh.triangles;
+            s_sourceVertices.Clear();
+            s_sourceTriangles.Clear();
+            mesh.GetVertices(s_sourceVertices);
+            for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
+                mesh.GetTriangles(s_sourceTriangles, subMeshIndex);
             int baseIndex = verts.Count;
 
-            for (int i = 0; i < sourceVertices.Length; i++)
+            for (int i = 0; i < s_sourceVertices.Count; i++)
             {
-                Vector3 vertex = Vector3.Scale(sourceVertices[i], scale);
+                Vector3 vertex = Vector3.Scale(s_sourceVertices[i], scale);
                 verts.Add(rotation * vertex + offset);
             }
 
-            for (int i = 0; i < sourceTriangles.Length; i++)
-                tris.Add(baseIndex + sourceTriangles[i]);
+            for (int i = 0; i < s_sourceTriangles.Count; i++)
+                tris.Add(baseIndex + s_sourceTriangles[i]);
         }
 
         private static Mesh BuildMeshFromLists(List<Vector3> verts, List<int> tris)

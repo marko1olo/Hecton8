@@ -10,9 +10,11 @@ internal static class Program
     private const double AupCellSizeMeters = 5000.0;
     private const float HighWorldY = 2000f;
     private const float LowWorldY = -5000f;
+    private const float ShelfRunMeters = 15000f;
+    private const float ShelfTargetSlopeDegrees = 30f;
     private const float RequiredMinMeters = -4900f;
     private const float RequiredMaxMeters = 1900f;
-    private const float MaxAllowedSlopeDegrees = 86f;
+    private const float MaxAllowedSlopeDegrees = 62f;
     private const float AupDeterminismToleranceMeters = 0.0001f;
     private const float AupBoundaryContinuityToleranceMeters = 2f;
     private const double AupBoundaryProbeMeters = 0.25;
@@ -69,7 +71,7 @@ internal static class Program
         return new ShelfParams
         {
             AupCellSizeMeters = AupCellSizeMeters,
-            DescentRadiusMeters = 17500.0,
+            DescentRadiusMeters = ShelfRunMeters,
             PlateCellSizeMeters = 4200.0,
             HighWorldY = HighWorldY,
             LowWorldY = LowWorldY,
@@ -81,6 +83,11 @@ internal static class Program
             DomainWarpMeters = 1450f,
             DomainWarpFrequency = 0.00011f,
             MacroExponentialFalloff = 3.1f,
+            ShelfRunMeters = ShelfRunMeters,
+            ShelfTargetSlopeDegrees = ShelfTargetSlopeDegrees,
+            TrenchDepthMeters = 5000f,
+            TrenchWidthMeters = 780f,
+            TrenchSharpness = 2.4f,
             IslandCenterRadiusMeters = 2600f,
             IslandJunctionThreshold = 0.58f,
             Seed = CombineWorldSeed(880031u, 0)
@@ -162,9 +169,11 @@ internal static class Program
             MaxHeightMeters = sample.HeightMeters,
             MaxSlopeDegrees = sample.SlopeAngleDegrees,
             SlopeAngleSumDegrees = sample.SlopeAngleDegrees,
-            ActiveSlopeAngleSumDegrees = sample.SlopeAngleDegrees > 15f && sample.SlopeAngleDegrees < 58f ? sample.SlopeAngleDegrees : 0f,
+            ActiveSlopeAngleSumDegrees = sample.SlopeAngleDegrees > 15f && sample.SlopeAngleDegrees < 45f ? sample.SlopeAngleDegrees : 0f,
+            ActiveSlopeMinDegrees = sample.SlopeAngleDegrees > 15f && sample.SlopeAngleDegrees < 45f ? sample.SlopeAngleDegrees : float.MaxValue,
+            ActiveSlopeMaxDegrees = sample.SlopeAngleDegrees > 15f && sample.SlopeAngleDegrees < 45f ? sample.SlopeAngleDegrees : float.MinValue,
             Slope30SampleCount = (sample.Flags & 0x10) != 0 ? 1 : 0,
-            ActiveSlopeSampleCount = sample.SlopeAngleDegrees > 15f && sample.SlopeAngleDegrees < 58f ? 1 : 0
+            ActiveSlopeSampleCount = sample.SlopeAngleDegrees > 15f && sample.SlopeAngleDegrees < 45f ? 1 : 0
         };
     }
 
@@ -178,6 +187,8 @@ internal static class Program
         float maxSlope = 0f;
         float slopeSum = 0f;
         float activeSlopeSum = 0f;
+        float activeSlopeMin = float.MaxValue;
+        float activeSlopeMax = float.MinValue;
         int slope30Count = 0;
         int activeSlopeCount = 0;
 
@@ -192,6 +203,8 @@ internal static class Program
             maxSlope = MathF.Max(maxSlope, reduction.MaxSlopeDegrees);
             slopeSum += reduction.SlopeAngleSumDegrees;
             activeSlopeSum += reduction.ActiveSlopeAngleSumDegrees;
+            activeSlopeMin = MathF.Min(activeSlopeMin, reduction.ActiveSlopeMinDegrees);
+            activeSlopeMax = MathF.Max(activeSlopeMax, reduction.ActiveSlopeMaxDegrees);
             slope30Count += reduction.Slope30SampleCount;
             activeSlopeCount += reduction.ActiveSlopeSampleCount;
         }
@@ -215,14 +228,19 @@ internal static class Program
         int farChunkInvalid = CountInvalidChunk(FarChunkOriginMeters, FarChunkOriginMeters, ChunkAuditResolution, ChunkAuditSizeMeters, parameters);
         float averageSlope = slopeSum / Math.Max(1, reductions.Length);
         float averageActiveSlope = activeSlopeSum / Math.Max(1, activeSlopeCount);
+        float resolvedActiveSlopeMin = activeSlopeCount > 0 ? activeSlopeMin : 0f;
+        float resolvedActiveSlopeMax = activeSlopeCount > 0 ? activeSlopeMax : 0f;
         bool passed =
             reductions.Length == SampleCount &&
             invalidCount == 0 &&
             plateauCount > 0 &&
             slope30Count > 0 &&
+            activeSlopeCount > 0 &&
             minHeight <= RequiredMinMeters &&
             maxHeight >= RequiredMaxMeters &&
             maxSlope <= MaxAllowedSlopeDegrees &&
+            resolvedActiveSlopeMin >= 15f &&
+            resolvedActiveSlopeMax <= 45f &&
             averageActiveSlope >= 24f &&
             averageActiveSlope <= 42f &&
             aupDelta <= AupDeterminismToleranceMeters &&
@@ -242,6 +260,9 @@ internal static class Program
             MaxSlopeDegrees = maxSlope,
             AverageSlopeDegrees = averageSlope,
             AverageActiveSlopeDegrees = averageActiveSlope,
+            ActiveSlopeMinDegrees = resolvedActiveSlopeMin,
+            ActiveSlopeMaxDegrees = resolvedActiveSlopeMax,
+            ActiveSlopeSampleCount = activeSlopeCount,
             Slope30SampleCount = slope30Count,
             AupDeterminismDeltaMeters = aupDelta,
             AupBoundaryDeltaMeters = boundaryDelta,
@@ -272,6 +293,10 @@ internal static class Program
         float multiplied01 = base01 * (1f + MathF.Max(0f, parameters.RidgeMultiplier) * ridgeMask * ridgeAttenuation);
         float ridged01 = Saturate(multiplied01 + ridgeLift01);
         float heightMeters = parameters.LowWorldY + ridged01 * heightRange;
+        float trenchMask = MathF.Pow(Saturate(ridge.TrenchMask), MathF.Max(0.35f, parameters.TrenchSharpness));
+        float trenchDepth = MathF.Max(0f, parameters.TrenchDepthMeters);
+        float trenchDescentBias = SmoothStep(0.18f, 0.96f, macro01);
+        heightMeters -= trenchDepth * trenchMask * trenchDescentBias;
 
         if (heightMeters > 0f)
             heightMeters *= ridge.IslandMask;
@@ -400,14 +425,32 @@ internal static class Program
 
         float edgeWidth = MathF.Max(0.001f, parameters.RidgeWidthMeters);
         float junctionWidth = MathF.Max(0.001f, parameters.JunctionWidthMeters);
-        float edgeMask = 1f - SmoothStep(edgeWidth * 0.18f, edgeWidth, edgeDeltaMeters);
-        float junctionMask = 1f - SmoothStep(junctionWidth * 0.22f, junctionWidth, junctionDeltaMeters);
+        float branchNoise = FractalPerlinNoise(
+            new Float2((float)(warpedXZ.X * 0.00037), (float)(warpedXZ.Y * 0.00037)),
+            parameters.Seed ^ 0x31D9A7B5u);
+        float branchWidthScale = Lerp(0.58f, 1.42f, branchNoise);
+        float edgeMask = 1f - SmoothStep(edgeWidth * 0.10f, edgeWidth * branchWidthScale, edgeDeltaMeters);
+        float junctionWidthScale = Lerp(0.72f, 1.32f, branchNoise);
+        float junctionMask = 1f - SmoothStep(junctionWidth * 0.14f, junctionWidth * junctionWidthScale, junctionDeltaMeters);
         float forkNoise = FractalPerlinNoise(
             new Float2((float)(warpedXZ.X * 0.00021), (float)(warpedXZ.Y * 0.00021)),
             parameters.Seed ^ 0x51633E2Du);
         float irregularity = Lerp(0.86f, 1.14f, HashToUnitFloat(nearestHash ^ 0xA24BAED5u));
-        float branched = Saturate(edgeMask * 0.82f + junctionMask * 0.72f + forkNoise * 0.10f);
+        float forkLift = SmoothStep(0.38f, 0.92f, junctionMask + forkNoise * 0.28f);
+        float branched = Saturate(edgeMask * 0.76f + junctionMask * 0.82f + forkLift * 0.18f);
         float ridgeMask = Saturate(branched * irregularity);
+        float centerDistanceMeters = (float)(firstDistance * safePlateSize);
+        float trenchWidth = parameters.TrenchWidthMeters > 0.001f
+            ? parameters.TrenchWidthMeters
+            : edgeWidth * 0.58f;
+        trenchWidth = MathF.Max(1f, trenchWidth);
+        float centerMask = 1f - SmoothStep(trenchWidth * 0.12f, trenchWidth, centerDistanceMeters);
+        float lowCenterToken = MathF.Pow(1f - HashToUnitFloat(nearestHash ^ 0x6C8E9CF5u), 2.35f);
+        float trenchCandidate = SmoothStep(0.46f, 0.92f, lowCenterToken);
+        float trenchNoise = FractalPerlinNoise(
+            new Float2((float)(warpedXZ.X * 0.00043), (float)(warpedXZ.Y * 0.00043)),
+            parameters.Seed ^ 0x91E83B37u);
+        float trenchMask = Saturate(centerMask * trenchCandidate * Lerp(0.74f, 1.18f, trenchNoise));
         float islandNoise = FractalPerlinNoise(
             new Float2((float)(warpedXZ.X * 0.000083), (float)(warpedXZ.Y * 0.000083)),
             parameters.Seed ^ 0xDB4F0B91u);
@@ -423,7 +466,8 @@ internal static class Program
             RidgeMask = ridgeMask,
             EdgeMask = edgeMask,
             JunctionMask = junctionMask,
-            IslandMask = Saturate(MathF.Max(centerIsland, junctionIsland))
+            IslandMask = Saturate(MathF.Max(centerIsland, junctionIsland)),
+            TrenchMask = trenchMask
         };
     }
 
@@ -611,6 +655,12 @@ internal static class Program
         builder.Append(',');
         AppendJson(builder, "averageActiveSlopeDegrees", summary.AverageActiveSlopeDegrees);
         builder.Append(',');
+        AppendJson(builder, "activeSlopeMinDegrees", summary.ActiveSlopeMinDegrees);
+        builder.Append(',');
+        AppendJson(builder, "activeSlopeMaxDegrees", summary.ActiveSlopeMaxDegrees);
+        builder.Append(',');
+        AppendJson(builder, "activeSlopeSamples", summary.ActiveSlopeSampleCount);
+        builder.Append(',');
         AppendJson(builder, "slope30Samples", summary.Slope30SampleCount);
         builder.Append(',');
         AppendJson(builder, "aupDeltaMeters", summary.AupDeterminismDeltaMeters);
@@ -704,6 +754,11 @@ internal static class Program
         public float DomainWarpMeters;
         public float DomainWarpFrequency;
         public float MacroExponentialFalloff;
+        public float ShelfRunMeters;
+        public float ShelfTargetSlopeDegrees;
+        public float TrenchDepthMeters;
+        public float TrenchWidthMeters;
+        public float TrenchSharpness;
         public float IslandCenterRadiusMeters;
         public float IslandJunctionThreshold;
         public uint Seed;
@@ -715,6 +770,7 @@ internal static class Program
         public float EdgeMask;
         public float JunctionMask;
         public float IslandMask;
+        public float TrenchMask;
     }
 
     private struct AuditSample
@@ -737,6 +793,8 @@ internal static class Program
         public float MaxSlopeDegrees;
         public float SlopeAngleSumDegrees;
         public float ActiveSlopeAngleSumDegrees;
+        public float ActiveSlopeMinDegrees;
+        public float ActiveSlopeMaxDegrees;
         public int Slope30SampleCount;
         public int ActiveSlopeSampleCount;
     }
@@ -752,6 +810,9 @@ internal static class Program
         public float MaxSlopeDegrees;
         public float AverageSlopeDegrees;
         public float AverageActiveSlopeDegrees;
+        public float ActiveSlopeMinDegrees;
+        public float ActiveSlopeMaxDegrees;
+        public int ActiveSlopeSampleCount;
         public int Slope30SampleCount;
         public float AupDeterminismDeltaMeters;
         public float AupBoundaryDeltaMeters;

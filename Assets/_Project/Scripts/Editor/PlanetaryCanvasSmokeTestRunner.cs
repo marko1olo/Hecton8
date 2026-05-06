@@ -18,13 +18,14 @@ namespace Hecton8.Editor
 
         public static void RunPlanetaryCanvasSmoke()
         {
-            PlanetaryCanvasSmokeTester.Result result = PlanetaryCanvasSmokeTester.RunSlopeCavitySplatmapSmoke();
+            Hecton8.World.PlanetaryCanvasSmokeTester.Result result =
+                Hecton8.World.PlanetaryCanvasSmokeTester.RunSlopeCavitySplatmapSmoke();
             WriteReport(result);
             if (!result.Passed)
                 throw new InvalidOperationException("Planetary canvas smoke failed.");
         }
 
-        private static void WriteReport(PlanetaryCanvasSmokeTester.Result result)
+        private static void WriteReport(Hecton8.World.PlanetaryCanvasSmokeTester.Result result)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(ArtifactPath) ?? ".");
             var builder = new StringBuilder(384);

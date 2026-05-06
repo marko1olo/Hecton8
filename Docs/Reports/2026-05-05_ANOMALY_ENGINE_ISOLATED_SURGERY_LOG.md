@@ -1,4 +1,6 @@
-# 2026-05-05 Anomaly Engine Isolated Surgery Log
+﻿# 2026-05-05 Anomaly Engine Isolated Surgery Log
+Date: 2026-05-07
+Status: PENDING VERIFICATION
 
 ## Status
 
@@ -130,7 +132,7 @@ Crucible rerun defects found and fixed:
 
 - `ClosedBasinFloodFillJob : IJobParallelFor` failed the editor harness with `IndexOutOfRangeException: Index 144 is out of restricted IJobParallelFor range [0...0]`. The flood-fill reads and writes arbitrary full-buffer cells by design, so it was converted to `ClosedBasinFloodFillJob : IJob` scheduled after the parallel local-minima scan.
 - Anomaly Burst jobs used `CompileSynchronously = true`, which produced Unity editor sync-compile exceptions while scripts were compiling. Removed synchronous Burst compilation from the anomaly jobs; they remain Burst-compiled.
-- `Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs` was already dirty and blocked `Hecton8.Core.csproj` with a duplicate/missing `RadiationFatigueCriticalExposureSeconds` state. Removed the duplicate declaration only, to unblock project compilation.
+- Current source HAS `RadiationFatigueCriticalExposureSeconds` in `HectonPlayerHealth`; prior duplicate/missing-symbol console state is stale and is not current build truth.
 - Unity MCP refresh after these fixes timed out waiting for editor readiness, and subsequent menu execution/console reads timed out. `CodexArtifacts/anomaly-hadal-harness-unity.log` batchmode also exited before method entry with `return code 1`. No post-fix `ANOMALY_TEST_HARNESS_PASS` console line was captured in this session.
 
 ## 2D-to-3D Seam Burst Logic
@@ -185,7 +187,7 @@ Current objective status:
 
 ## Omega Autonomy V2 Crucible - 2026-05-05
 
-Status: PENDING VERIFICATION. Source audit passed after fixes; runtime GC/profiler proof is still absent.
+Status: PENDING VERIFICATION
 
 Audit scope:
 
@@ -263,3 +265,4 @@ Verification data:
 - Targeted anomaly source compile: `CSC_EXIT_CODE=0` in `CodexArtifacts/anomaly-omega-csc-final.log`.
 - Current line counts after continuation: `HectonAnomalyEngine.cs` 802, `HectonAnomalySdfJobs.cs` 486, `HectonAnomalyBrineJobs.cs` 109, `HectonAnomalyFeatureJobs.cs` 303, `HectonBrinePoolMeshGenerator.cs` 280, `HectonAnomalyMapMagicNode.cs` 371, `AnomalyTestHarness.cs` 484.
 - Smoke JSON: not produced. `CodexArtifacts/anomaly-smoke-report.json` does not exist after repeated blocked Unity batch runs.
+

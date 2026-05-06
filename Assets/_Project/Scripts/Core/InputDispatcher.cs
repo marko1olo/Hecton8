@@ -11,7 +11,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9990)]
-    public sealed class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable
+    public sealed class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat
     {
         private const int BufferedActionCapacity = 15;
         private const float DefaultBufferedActionMaxAgeSeconds = 0.25f;
@@ -61,6 +61,12 @@ namespace Hecton8.Core
         /// Returns true once the dispatcher is registered into <see cref="GlobalRegistry"/>.
         /// </summary>
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized;
 
         /// <summary>
         /// Returns true when the underlying player input map is active and safe for gameplay reads.
