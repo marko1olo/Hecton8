@@ -4,10 +4,10 @@ Date: 2026-05-07
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 
-2026-05-04 current-state boundary:
+2026-05-07 current-state boundary:
 
 - This is the UI zero-GC contract and source-oriented pattern reference, not profiler proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, then `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`, then `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`, `Docs/Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`, `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - Any claim of `0 B/frame` for HUD/PDA/menu paths still requires fresh GCMonitor or profiler capture.
 - Presentation/UI must not own gameplay state transitions without a logic-owned fallback.
 
@@ -24,6 +24,25 @@ This project does not push runtime HUD numbers into `TMP_Text.text`. Hot-path UI
 - The final text commit path is `TMP_Text.SetCharArray(buffer, 0, length)`. Any claimed equivalent zero-string API remains `PENDING VERIFICATION` until source and profiler evidence prove it does not allocate.
 - Static or localized fragments must be cached outside the hot path and appended as `ReadOnlySpan<char>` or copied from prevalidated static buffers.
 - A UI change that cannot prove this path remains `PENDING VERIFICATION`, regardless of visual correctness.
+- All HUD Canvas components must be split into Static and Dynamic to prevent full-screen vertex rebuilds on text changes.
+
+## May 7 Source Enforcement Scan
+
+Command:
+
+```powershell
+rg -n "\.text\s*=" Assets/_Project/Scripts/UI -g '*.cs'
+```
+
+Result:
+
+- matches: `0`
+- interpretation: no direct `.text =` assignment currently exists under `Assets/_Project/Scripts/UI`.
+- boundary: this does not prove `0 B/frame`; it only proves the direct TMP/Text assignment pattern is absent in the scanned UI folder at source-text time.
+
+Critical rule:
+
+- If this command returns any row in runtime UI code, the row is a `CRITICAL VIOLATION` until the write is replaced with `Span<char>` / `CharBufferPool` / `TMP_Text.SetCharArray(...)` or proven cold/editor-only by surrounding source.
 
 Relevant owners already in source:
 
@@ -66,6 +85,7 @@ Any HUD element that legitimately changes at 60 Hz must live on its own nested c
 - static canvas sorting order = `10`
 - low-cadence canvas sorting order = `20`
 - high-cadence canvas sorting order = `30`
+- every HUD root must separate static art, low-cadence telemetry, and high-cadence dynamic text into separate Canvas components
 
 This isolates reticle and warning dirty flags from the rest of the visor hierarchy so the full 1080p canvas does not rebuild when one tiny quad changes.
 

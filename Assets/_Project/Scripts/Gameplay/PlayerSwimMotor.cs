@@ -30,5 +30,26 @@ namespace Hecton8.Gameplay
         {
             return HectonPlayerMotor.AnalyticalQuadraticDrag(velocity, dragCoefficient, fixedDeltaTime);
         }
+
+        public static float ResolveBrineViscosityDragMultiplier(bool isSubmergedInBrine, float brineMultiplier)
+        {
+            return isSubmergedInBrine ? math.max(1f, brineMultiplier) : 1f;
+        }
+
+        public static Vector3 ApplyAnalyticalDrag(
+            Vector3 velocity,
+            float dragCoefficient,
+            float bodyMass,
+            float fixedDeltaTime,
+            Vector3 forward,
+            float crossSectionalAreaScale)
+        {
+            return HectonPlayerMotor.AnalyticalQuadraticDrag(
+                velocity,
+                dragCoefficient,
+                forward,
+                crossSectionalAreaScale,
+                fixedDeltaTime);
+        }
     }
 }

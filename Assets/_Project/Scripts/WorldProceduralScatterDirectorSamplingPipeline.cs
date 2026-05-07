@@ -132,8 +132,11 @@ namespace Hecton8.World
             int structureBudget = ResolveRuntimeBudget(structurePlacementsPerWindow, WorldStreamingLayer.Construction, 0, 2);
             int spawnStride = Mathf.Max(2, spawnCellStride);
             int spawnBudget = ResolveRuntimeBudget(spawnPlacementsPerWindow, WorldStreamingLayer.Fauna, 0, 2);
-            Vector3 runtimeCenter = playerTransform.position;
-            Vector3 absoluteCenter = ToAbsoluteScatterPosition(runtimeCenter);
+            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            float3 runtimeCenter3 = centerAup.ToRuntimeFloat3();
+            double3 absoluteCenter3 = centerAup.ToAbsoluteDouble3();
+            Vector3 runtimeCenter = new Vector3(runtimeCenter3.x, runtimeCenter3.y, runtimeCenter3.z);
+            Vector3 absoluteCenter = new Vector3((float)absoluteCenter3.x, (float)absoluteCenter3.y, (float)absoluteCenter3.z);
             int centerCellX = WorldToScatterCellIndex(absoluteCenter.x, cellSize);
             int centerCellZ = WorldToScatterCellIndex(absoluteCenter.z, cellSize);
             int cellDiameter = (radiusCells * 2) + 1;
@@ -415,7 +418,7 @@ namespace Hecton8.World
                     RegisterStringCount(sampledMatrixBiomeCounts, ResolveBiomeMatrixLabel(fieldSample.biomeProfile));
                     RegisterStringCount(sampledBiomeCounts, ResolveBiomeLabel(fieldSample.biomeFamily));
                     RegisterStringCount(sampledPatternCounts, GetPatternLabel(fieldSample.resolvedPattern));
-                    RegisterStringCount(sampledZoneCounts, fieldSample.zone != null ? fieldSample.zone.ZoneLabel : $"Synthetic:{fieldSample.resolvedZoneKind}");
+                    RegisterStringCount(sampledZoneCounts, fieldSample.zone != null ? fieldSample.zone.ZoneLabel : ResolveSamplingSyntheticZoneDebugLabel(fieldSample.resolvedZoneKind));
                 }
 #endif
                 WorldProceduralPatternProfile cellPatternProfile = ResolvePatternProfile(fieldSample.resolvedPattern, out _);
@@ -524,7 +527,9 @@ namespace Hecton8.World
                         if (collectDetailedDiagnostics)
                             heatPassedRules++;
 
-                        float normalizedHeat = deterministicClutter ? 1f : Mathf.InverseLerp(effectiveMinHeat, 1f, heat);
+                        float normalizedHeat = deterministicClutter
+                            ? 1f
+                            : math.saturate((heat - effectiveMinHeat) / math.max(0.0001f, 1f - effectiveMinHeat));
                         float spawnProbability = deterministicClutter
                             ? 1f
                             : Mathf.Clamp01(normalizedHeat * (0.45f + Mathf.Clamp(effectiveDensityScale, 0.1f, 4f) * 0.18f));
@@ -604,7 +609,7 @@ namespace Hecton8.World
                                 out float score))
                             continue;
 
-                        ScatterCandidate candidate = BuildCandidate(
+                        if (!TryBuildCandidate(
                             cellXIndex,
                             cellZIndex,
                             activeFieldSample,
@@ -612,7 +617,9 @@ namespace Hecton8.World
                             candidatePreview,
                             cellBiomeContextLabel,
                             heat,
-                            score);
+                            score,
+                            out ScatterCandidate candidate))
+                            continue;
 
                         if (needsRescueTracking)
                         {
@@ -1054,11 +1061,11 @@ namespace Hecton8.World
                 out float secondaryStructureBudgetScale,
                 out float secondarySpawnBudgetScale);
 
-            float t = biomeTransitionContext.SecondaryWeight;
-            groundBudgetScale = Mathf.Lerp(groundBudgetScale, secondaryGroundBudgetScale, t);
-            clusterBudgetScale = Mathf.Lerp(clusterBudgetScale, secondaryClusterBudgetScale, t);
-            structureBudgetScale = Mathf.Lerp(structureBudgetScale, secondaryStructureBudgetScale, t);
-            spawnBudgetScale = Mathf.Lerp(spawnBudgetScale, secondarySpawnBudgetScale, t);
+            float transitionWeight = math.saturate(biomeTransitionContext.SecondaryWeight);
+            groundBudgetScale = math.lerp(groundBudgetScale, secondaryGroundBudgetScale, transitionWeight);
+            clusterBudgetScale = math.lerp(clusterBudgetScale, secondaryClusterBudgetScale, transitionWeight);
+            structureBudgetScale = math.lerp(structureBudgetScale, secondaryStructureBudgetScale, transitionWeight);
+            spawnBudgetScale = math.lerp(spawnBudgetScale, secondarySpawnBudgetScale, transitionWeight);
         }
 
         private static float ResolveTransitionBiomeMatrixScoreUpperBound(
@@ -1366,7 +1373,10 @@ namespace Hecton8.World
                     biomeTransitionContext.SecondaryScoreContext,
                     secondaryLayerPreferredFamilyIndex,
                     patternScoreContext);
-                biomeMatrixScore = Mathf.Lerp(biomeMatrixScore, secondaryBiomeMatrixScore, biomeTransitionContext.SecondaryWeight);
+                biomeMatrixScore = math.lerp(
+                    biomeMatrixScore,
+                    secondaryBiomeMatrixScore,
+                    math.saturate(biomeTransitionContext.SecondaryWeight));
             }
 
             float scoreWithoutGeology = scoreBeforeBiomeMatrixAndGeology + biomeMatrixScore;
@@ -1794,7 +1804,7 @@ namespace Hecton8.World
         {
             if (collectDetailedDiagnostics)
             {
-                _debugZone = debugZone != null ? debugZone.ZoneLabel : $"Synthetic:{debugResolvedZoneKind}";
+                _debugZone = debugZone != null ? debugZone.ZoneLabel : ResolveSamplingSyntheticZoneDebugLabel(debugResolvedZoneKind);
                 _debugBiomeMatrixProfile = dominantBiomeProfile != null ? dominantBiomeProfile.biomeName : ResolveBiomeMatrixLabel(debugBiomeProfile);
                 _debugBiomeFamily = debugBiomeFamily != null ? debugBiomeFamily.familyLabel : "None";
                 _debugPattern = GetPatternLabel(debugPattern);
@@ -1867,6 +1877,33 @@ namespace Hecton8.World
             _debugSampleDominantBiomeCount = 0;
             _debugSampleDominantPatternCount = 0;
             _debugSampleDominantZoneCount = 0;
+        }
+
+        private static string ResolveSamplingSyntheticZoneDebugLabel(WorldZoneAnchor.ZoneKind zoneKind)
+        {
+            switch (zoneKind)
+            {
+                case WorldZoneAnchor.ZoneKind.Resources:
+                    return "Synthetic:Resources";
+                case WorldZoneAnchor.ZoneKind.Fabrication:
+                    return "Synthetic:Fabrication";
+                case WorldZoneAnchor.ZoneKind.Trial:
+                    return "Synthetic:Trial";
+                case WorldZoneAnchor.ZoneKind.Construction:
+                    return "Synthetic:Construction";
+                case WorldZoneAnchor.ZoneKind.Power:
+                    return "Synthetic:Power";
+                case WorldZoneAnchor.ZoneKind.Service:
+                    return "Synthetic:Service";
+                case WorldZoneAnchor.ZoneKind.Progression:
+                    return "Synthetic:Progression";
+                case WorldZoneAnchor.ZoneKind.Combat:
+                    return "Synthetic:Combat";
+                case WorldZoneAnchor.ZoneKind.Navigation:
+                    return "Synthetic:Navigation";
+                default:
+                    return "Synthetic:Generic";
+            }
         }
 #endif
     }

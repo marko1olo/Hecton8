@@ -15,6 +15,129 @@ It now also records the editor validation owner introduced for this pass:
 - menu path: `Hecton-8/Validate Content`
 - scope: `ItemData`, `FloraDataTemplate`, `FaunaDataTemplate`, `CreatureArchetypeData`, `ResourceNodeTemplate`, `BaseModuleTemplate`, data-folder prefabs, and referenced content prefabs
 
+## Orphaned Script Audit
+
+Command class:
+
+```powershell
+$scriptFiles = Get-ChildItem -Path Assets\_Project\Scripts -Recurse -Filter *.cs
+$prefabFiles = Get-ChildItem -Path Assets\_Project -Recurse -Filter *.prefab
+# For each script: scan other .cs files for filename token and prefab YAML for the script .meta GUID.
+```
+
+Current result:
+
+| Metric | Count |
+|---|---:|
+| `.cs` files scanned | `1192` |
+| `.prefab` YAML files scanned | `428` |
+| orphan candidates | `334` |
+
+Full candidate artifact:
+
+- `CodexArtifacts/2026-05-07_ORPHANED_SCRIPT_AUDIT.csv`
+
+Folder distribution:
+
+| Folder | Candidate count |
+|---|---:|
+| `Editor` | 124 |
+| `World` | 54 |
+| `Root` | 47 |
+| `UI` | 26 |
+| `Gameplay` | 15 |
+| `Visor` | 11 |
+| `Construction` | 10 |
+| `Interaction` | 8 |
+| `Audio` | 5 |
+| `ModdingAPI` | 4 |
+| `Core` | 4 |
+| `Optimization` | 3 |
+| `Power` | 3 |
+| `Dev` | 3 |
+| `Fauna` | 3 |
+| `Quest` | 2 |
+| `Data` | 2 |
+| `Compatibility` | 2 |
+| `Tools` | 2 |
+| `PDA` | 2 |
+| `Ecosystem` | 1 |
+| `Bootstrap` | 1 |
+| `Physics` | 1 |
+| `Networking` | 1 |
+
+Deletion-target interpretation:
+
+- These are deletion review targets, not automatic deletion authority.
+- Filename-token scans miss reflection, menu item entry points, Unity serialization by type, asmdef roots, and editor-only menu usage.
+- Editor scripts dominate the list; most require menu/CI usage review before deletion.
+- Runtime candidates need prefab, scene, Addressables, ScriptableObject, and code ownership checks before removal.
+
+First candidate slice from the full artifact:
+
+```text
+Assets/_Project/Scripts/AssemblyInfo.cs
+Assets/_Project/Scripts/AsyncLoadHelper.cs
+Assets/_Project/Scripts/Audio/AcousticReverbPresetTrigger.cs
+Assets/_Project/Scripts/Audio/AudioMaterialProfile.cs
+Assets/_Project/Scripts/Audio/Editor/AdvancedAcousticsSmokeTester.cs
+Assets/_Project/Scripts/Audio/Editor/AudioOmegaAutonomySmokeTester.cs
+Assets/_Project/Scripts/Audio/Editor/DSPThreadSafetySmokeTester.cs
+Assets/_Project/Scripts/BaseStressRuntimeSmokeTester.cs
+Assets/_Project/Scripts/Bootstrap/SceneGuard.cs
+Assets/_Project/Scripts/CaveFaunaContext.cs
+Assets/_Project/Scripts/CaveTypes.cs
+Assets/_Project/Scripts/Compatibility/AddressablesCompatibility.cs
+Assets/_Project/Scripts/Compatibility/LegacyStubs/DefaultFlowFieldProfile.cs
+Assets/_Project/Scripts/Construction/AutomataTemplate.cs
+Assets/_Project/Scripts/Construction/AutonomousExtractorJobs.cs
+Assets/_Project/Scripts/Construction/BatteryChargerModule.cs
+Assets/_Project/Scripts/Construction/HabitatStressJobs.cs
+Assets/_Project/Scripts/Construction/LogisticsPipeEvents.cs
+Assets/_Project/Scripts/Construction/RepairDroneEntity.cs
+Assets/_Project/Scripts/Construction/RepairStation.cs
+Assets/_Project/Scripts/Construction/VehicleDockingModule.cs
+Assets/_Project/Scripts/Core/BootstrapContracts/InputBindingServiceContracts.cs
+Assets/_Project/Scripts/Core/HectonUrpTextureRequirementsGuard.cs
+Assets/_Project/Scripts/Core/PowerGridRuntimeService.cs
+Assets/_Project/Scripts/Core/UnsafeArenaAllocator.cs
+Assets/_Project/Scripts/Data/BiomeContentPackContract.cs
+Assets/_Project/Scripts/Data/ScannerUpgradeTemplate.cs
+Assets/_Project/Scripts/DemoDoor.cs
+Assets/_Project/Scripts/Dev/CelestialCataclysmSmokeTester.cs
+Assets/_Project/Scripts/Dev/CelestialTimeLapseDebugger.cs
+Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs
+Assets/_Project/Scripts/Ecosystem/FaunaBrain.Ecosystem.cs
+Assets/_Project/Scripts/Editor/AbandonedHabitatModuleAuthoring.cs
+Assets/_Project/Scripts/Editor/AnomalySmokeBatchAutoRunner.cs
+Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs
+Assets/_Project/Scripts/Editor/AudioMixerSanitizer.cs
+Assets/_Project/Scripts/Editor/AutomationSmokeTestRunner.cs
+Assets/_Project/Scripts/Editor/BarterBootstrapAuthoring.cs
+Assets/_Project/Scripts/Editor/BarterCatalogValidator.cs
+Assets/_Project/Scripts/Editor/BiomeMatrixBootstrapAuthoring.cs
+Assets/_Project/Scripts/Editor/BiomeMatrixRuntimeVisualProfileAuthoring.cs
+Assets/_Project/Scripts/Editor/BiomeRegistryEditor.cs
+Assets/_Project/Scripts/Editor/BiomeTransitionSmokeTesterMenu.cs
+Assets/_Project/Scripts/Editor/BlackBoxBinaryReader.cs
+Assets/_Project/Scripts/Editor/BootstrapArchitectureValidator.cs
+Assets/_Project/Scripts/Editor/BootstrapPlayModeEntryGuard.cs
+Assets/_Project/Scripts/Editor/CodexPlayModeLauncher.cs
+Assets/_Project/Scripts/Editor/ConstructionCatalogValidator.cs
+Assets/_Project/Scripts/Editor/ContentSanityValidator.cs
+Assets/_Project/Scripts/Editor/CreatureRosterReportGenerator.cs
+Assets/_Project/Scripts/Editor/CrestMigrationBatch.cs
+Assets/_Project/Scripts/Editor/CrestMigrationTool.cs
+Assets/_Project/Scripts/Editor/CrestParityRunner.cs
+Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs
+Assets/_Project/Scripts/Editor/ErosionTestHarness.cs
+Assets/_Project/Scripts/Editor/FabricationBootstrapAuthoring.cs
+Assets/_Project/Scripts/Editor/FaunaArchetypeReportGenerator.cs
+Assets/_Project/Scripts/Editor/FaunaBiomeBootstrapAuthoring.cs
+Assets/_Project/Scripts/Editor/FaunaColliderValidator.cs
+Assets/_Project/Scripts/Editor/FaunaDataTemplateAuthoring.cs
+```
+
 ## Current Hash Authority
 
 The project does not use one universal serialized `HashID` field across all content types.

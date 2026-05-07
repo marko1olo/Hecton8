@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.AI;
+using Hecton8.Celestial;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -164,10 +165,16 @@ namespace Hecton8.World
                 for (int eventIndex = 0; eventIndex < safeEventCount; eventIndex++)
                 {
                     FloraCascadeEventPayload cascadeEvent = Events[eventIndex];
-                    float distance = math.distance(position, cascadeEvent.Center);
-                    if (distance > cascadeEvent.RadiusMeters)
+                    float radius = cascadeEvent.RadiusMeters;
+                    if (radius < 0f)
                         continue;
 
+                    float distanceSq = math.distancesq(position, cascadeEvent.Center);
+                    float radiusSq = radius * radius;
+                    if (distanceSq > radiusSq)
+                        continue;
+
+                    float distance = math.sqrt(distanceSq);
                     float activationTime = cascadeEvent.StartTimeSeconds + (distance / safeSpeed);
                     if (!found || activationTime < bestSeed)
                     {
@@ -1688,8 +1695,12 @@ namespace Hecton8.World
 
             _sedimentEmitParams.position = positionWS + Vector3.down * 0.18f;
             _sedimentEmitParams.velocity = planarVelocity * Mathf.Min(speed * (0.16f + _sedimentBurstRadius * 0.015f), 3.2f) + Vector3.up * (scooterBurst ? 0.38f : 0.22f);
-            _sedimentEmitParams.startSize = Mathf.Lerp(0.08f, 0.24f, Mathf.InverseLerp(_playerSedimentMinSpeed, _scooterSedimentMinSpeed * 2f, speed)) * burstRadiusScale;
-            _sedimentEmitParams.startLifetime = Mathf.Lerp(1.0f, 2.0f, Mathf.InverseLerp(_playerSedimentMinSpeed, _scooterSedimentMinSpeed * 2f, speed));
+            float sedimentSpeedEnd = _scooterSedimentMinSpeed * 2f;
+            float sedimentSpeed01 = sedimentSpeedEnd > _playerSedimentMinSpeed
+                ? math.saturate((speed - _playerSedimentMinSpeed) / (sedimentSpeedEnd - _playerSedimentMinSpeed))
+                : 0f;
+            _sedimentEmitParams.startSize = math.lerp(0.08f, 0.24f, sedimentSpeed01) * burstRadiusScale;
+            _sedimentEmitParams.startLifetime = math.lerp(1.0f, 2.0f, sedimentSpeed01);
             _sedimentEmitParams.startColor = scooterBurst
                 ? new Color(0.62f, 0.7f, 0.62f, 0.36f)
                 : new Color(0.55f, 0.6f, 0.54f, 0.28f);
@@ -1826,6 +1837,10 @@ namespace Hecton8.World
 
         private static float GetCurrentSimulationTimeSeconds()
         {
+            HectonCelestialEngine celestialEngine = GlobalRegistry.CelestialEngine;
+            if (celestialEngine != null)
+                return Mathf.Max(0f, celestialEngine.GameTime);
+
             return GlobalRegistry.Save != null
                 ? Mathf.Max(0f, GlobalRegistry.Save.CurrentPlayTimeSeconds)
                 : Time.realtimeSinceStartup;
@@ -3076,11 +3091,17 @@ namespace Hecton8.World
             for (int i = 0; i < _defensiveSporeBurstCount; i++)
             {
                 DefensiveSporeBurstState burst = _defensiveSporeBursts[i];
-                float distance = Vector3.Distance(playerPositionWS, burst.PositionWS);
-                if (distance > burst.Radius)
+                float radius = burst.Radius;
+                if (radius < 0f)
                     continue;
 
-                float exposure01 = (1f - Mathf.Clamp01(distance / Mathf.Max(0.001f, burst.Radius))) * burst.Intensity;
+                float radiusSq = radius * radius;
+                float distanceSq = (playerPositionWS - burst.PositionWS).sqrMagnitude;
+                if (distanceSq > radiusSq)
+                    continue;
+
+                float distance = Mathf.Sqrt(distanceSq);
+                float exposure01 = (1f - Mathf.Clamp01(distance / Mathf.Max(0.001f, radius))) * burst.Intensity;
                 if (exposure01 <= strongestExposure)
                     continue;
 
@@ -3584,11 +3605,13 @@ namespace Hecton8.World
 
         private static float3 ResolveReactiveFloraHalfExtents(HectonVegetationInstanceData instanceData, int instanceType)
         {
-            float width = Mathf.Lerp(0.45f, 2.2f, Mathf.Clamp01(Mathf.Abs(instanceData.WidthScale)));
+            float width01 = math.saturate(math.abs(instanceData.WidthScale));
+            float height01 = math.saturate(math.abs(instanceData.HeightScale));
+            float width = math.lerp(0.45f, 2.2f, width01);
             float height = instanceType == (int)HectonVegetationInstanceType.GiantKelp
-                ? Mathf.Lerp(2.4f, 10f, Mathf.Clamp01(Mathf.Abs(instanceData.HeightScale)))
-                : Mathf.Lerp(0.45f, 2.4f, Mathf.Clamp01(Mathf.Abs(instanceData.HeightScale)));
-            return new float3(width, Mathf.Max(0.35f, height * 0.5f), width);
+                ? math.lerp(2.4f, 10f, height01)
+                : math.lerp(0.45f, 2.4f, height01);
+            return new float3(width, math.max(0.35f, height * 0.5f), width);
         }
 
         private bool IsReactiveCascadeTemplate(HectonVegetationInstanceData instanceData)
@@ -4092,7 +4115,9 @@ namespace Hecton8.World
             TryAutoAssignWakeTrailSimulationCompute();
             if (_wakeTrailSimulationCompute == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[FloraInteractionManager] Missing wake trail compute shader. Expected Hecton_VegetationWakeTrailSim.compute.", this);
+#endif
                 _wakeTrailDisabled = true;
                 PublishWakeTrailGlobals();
                 return;

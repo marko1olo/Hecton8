@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.World;
 using Hecton.Localization;
+using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
@@ -129,7 +130,7 @@ namespace Hecton8.SaveSystem
                 && writer.WriteString(data.timestamp)
                 && writer.WriteDouble(data.totalPlayTime)
                 && WritePlayerStats(ref writer, data.playerStats)
-                && WriteInventory(ref writer, data.inventory)
+                && WriteInventory(ref writer, data)
                 && WriteWorldState(ref writer, data.worldState)
                 && WriteProceduralWorldState(ref writer, data.proceduralWorldState)
                 && WriteConstruction(ref writer, data.construction)
@@ -207,7 +208,7 @@ namespace Hecton8.SaveSystem
                 || !ReadProceduralLore(ref reader, out data.proceduralLore)
                 || !ReadAchievementRegistry(ref reader, out data.achievements)
                 || !ReadRunModifiers(ref reader, out data.runModifiers)
-                || !ReadResourceScarcity(ref reader, out data.resourceScarcity)
+                || !ReadResourceScarcity(ref reader, data.version, out data.resourceScarcity)
                 || !reader.ReadStruct(out data.environmentalStrain)
                 || !ReadEcosystemState(ref reader, data.version, out data.ecosystemState)
                 || !ReadExternalScavengerSites(ref reader, data.version, out data.externalScavengerSites)
@@ -254,6 +255,19 @@ namespace Hecton8.SaveSystem
             ApplyInventoryBiologicalDecay(ref data.inventory, data.playerStats.environmentTemperature);
             data.voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault();
             return true;
+        }
+
+        private static bool WriteInventory(ref BufferWriter writer, SaveData data)
+        {
+            if (data != null &&
+                data.hasInventoryShadowPayload &&
+                data.inventoryShadowPayload.IsCreated &&
+                data.inventoryShadowPayloadLength > 0)
+            {
+                return writer.WriteNativeBytes(data.inventoryShadowPayload, data.inventoryShadowPayloadLength);
+            }
+
+            return WriteInventory(ref writer, data != null ? data.inventory : default);
         }
 
         private static bool WriteInventory(ref BufferWriter writer, InventoryDTO value)
@@ -980,15 +994,21 @@ namespace Hecton8.SaveSystem
         private static bool WriteResourceScarcity(ref BufferWriter writer, ResourceScarcityDTO value)
         {
             return writer.WriteInt(value.entryCount)
+                && writer.WriteStructArray(value.itemHashIds)
                 && WriteStringArray(ref writer, value.itemIds)
                 && writer.WriteStructArray(value.collectedCounts);
         }
 
-        private static bool ReadResourceScarcity(ref BufferReader reader, out ResourceScarcityDTO value)
+        private static bool ReadResourceScarcity(ref BufferReader reader, int saveDataVersion, out ResourceScarcityDTO value)
         {
             value = default;
-            return reader.ReadInt(out value.entryCount)
-                && ReadStringArray(ref reader, out value.itemIds)
+            if (!reader.ReadInt(out value.entryCount))
+                return false;
+
+            if (saveDataVersion >= 60 && !reader.ReadStructArray(out value.itemHashIds))
+                return false;
+
+            return ReadStringArray(ref reader, out value.itemIds)
                 && reader.ReadStructArray(out value.collectedCounts);
         }
 
@@ -2045,6 +2065,33 @@ namespace Hecton8.SaveSystem
                 }
 
                 _cursor += byteCount;
+                return true;
+            }
+
+            public bool WriteNativeBytes(NativeArray<byte> source, int byteCount)
+            {
+                if (!source.IsCreated)
+                {
+                    Error = "Native source buffer is not initialized.";
+                    return false;
+                }
+
+                int safeByteCount = Math.Clamp(byteCount, 0, source.Length);
+                if (safeByteCount <= 0)
+                    return true;
+
+                if (!TryReserve(safeByteCount))
+                    return false;
+
+                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(source);
+                if (!UnsafeMemoryCopyGuard.TryMemCpy(_buffer + _cursor, _capacity - _cursor, sourcePtr, safeByteCount))
+                {
+                    Error = "Native shadow payload copy exceeded the raw buffer ceiling.";
+                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
+                    return false;
+                }
+
+                _cursor += safeByteCount;
                 return true;
             }
 

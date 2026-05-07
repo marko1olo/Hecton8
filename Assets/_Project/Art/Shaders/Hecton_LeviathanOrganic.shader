@@ -104,6 +104,13 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         float4 _HectonCreatureWoundOwnerSphere;
         float _GlobalOceanPanic;
         float4 _GlobalOceanPanicColor;
+        float4 _HectonSonarPrimaryPulse;
+        float4 _HectonSonarEchoPulse;
+        float4 _HectonSonarVisualParams;
+        float4 _HectonSonarEchoParams;
+        float4 _HectonSonarColor;
+        float _HectonSonarNoirHideDistance;
+        float _SonarActive;
 
         struct Attributes
         {
@@ -149,14 +156,26 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         float3 ApplyFaunaVertexPresentation(float3 positionOS, float3 normalOS)
         {
             float3 worldPos = TransformObjectToWorld(positionOS);
-            float tailMask = pow(saturate(-positionOS.z), max(_TailSwayMaskPower, 0.001));
-            float tailWave = sin(_Time.y * _TailSwaySpeed + worldPos.y * _TailSwayPhase);
+            float tailMaskBase = saturate(-positionOS.z);
+            float tailMaskSquared = tailMaskBase * tailMaskBase;
+            float tailMaskQuartic = tailMaskSquared * tailMaskSquared;
+            float tailMask = lerp(tailMaskBase, tailMaskQuartic, saturate((_TailSwayMaskPower - 1.0) * 0.33333334));
+            float tailWave = sin(_Time.y * _TailSwaySpeed + worldPos.y * _TailSwayPhase + worldPos.x * 13.37);
             positionOS.x += tailWave * _TailSwayStrength * tailMask;
 
             float timedBloat01 = saturate((_Time.y - _CorpseBloatStartTime) / max(_CorpseBloatDuration, 0.001)) * step(0.0, _CorpseBloatStartTime);
             float bloat01 = max(saturate(_CorpseBloatAge01), timedBloat01);
             positionOS += normalOS * (bloat01 * bloat01 * _CorpseBloatStrength);
             return positionOS;
+        }
+
+        float ApproximatePulseDistance(float3 a, float3 b)
+        {
+            float3 delta = abs(a - b);
+            float maxAxis = max(delta.x, max(delta.y, delta.z));
+            float minAxis = min(delta.x, min(delta.y, delta.z));
+            float midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375 + minAxis * 0.125;
         }
 
         half2 EvaluateWoundMask(float3 positionWS)
@@ -180,7 +199,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
                 float4 wound = _HectonCreatureWounds[woundIndex];
                 float woundRadius = max(wound.w, 0.001);
-                float woundDistance = distance(ownerLocalPosition, wound.xyz);
+                float woundDistance = ApproximatePulseDistance(ownerLocalPosition, wound.xyz);
                 half woundContribution = saturate(1.0h - (half)(woundDistance / woundRadius));
                 half coreContribution = saturate(1.0h - (half)(woundDistance / max(woundRadius * 0.45, 0.001)));
                 woundMask = max(woundMask, woundContribution * woundContribution);
@@ -200,10 +219,50 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             return (half)((hash & 255u) * (1.0 / 255.0));
         }
 
+        float EvaluateLeviathanSonarBand(float4 pulse, float4 parameters, float3 positionWS)
+        {
+            float active = saturate(_SonarActive) * saturate(parameters.w);
+            if (active <= 0.0001)
+                return 0.0;
+
+            float speed = max(parameters.x, 0.01);
+            float maxRadius = max(parameters.y, 0.01);
+            float bandWidth = max(parameters.z, 0.05);
+            float age = _Time.y - pulse.w;
+            if (age <= 0.0)
+                return 0.0;
+
+            float radius = age * speed;
+            float lifeMask = 1.0 - saturate((radius - maxRadius) / bandWidth);
+            if (lifeMask <= 0.0001)
+                return 0.0;
+
+            float distanceToPulse = ApproximatePulseDistance(positionWS, pulse.xyz);
+            float band = saturate(1.0 - abs(distanceToPulse - radius) / bandWidth);
+            band = band * band * (3.0 - 2.0 * band);
+            float cinematicFalloff = rcp(1.0 + distanceToPulse * 0.004);
+            return band * lifeMask * active * cinematicFalloff;
+        }
+
+        float EvaluateLeviathanSonarReveal(float3 positionWS)
+        {
+            float primary = EvaluateLeviathanSonarBand(_HectonSonarPrimaryPulse, _HectonSonarVisualParams, positionWS);
+            float echo = EvaluateLeviathanSonarBand(_HectonSonarEchoPulse, _HectonSonarEchoParams, positionWS) * 0.72;
+            return saturate(primary + echo);
+        }
+
+        void ClipLeviathanNoirSilhouette(float3 positionWS, float sonarReveal)
+        {
+            float hideEnabled = step(0.5, _HectonSonarNoirHideDistance);
+            float cameraDistance = ApproximatePulseDistance(_WorldSpaceCameraPos, positionWS);
+            float farNoirMask = hideEnabled * step(_HectonSonarNoirHideDistance, cameraDistance);
+            clip(lerp(1.0, sonarReveal - 0.012, farNoirMask));
+        }
+
         Varyings Vert(Attributes input)
         {
             Varyings output;
-            float3 deformedPositionOS = ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS);
+            float3 deformedPositionOS = HectonCoreLitSanitizePositionOS(ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS));
             VertexPositionInputs positionInputs = GetVertexPositionInputs(deformedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
             output.positionWS = positionInputs.positionWS;
@@ -222,6 +281,9 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half deathDitherFade = saturate((half)_DeathDitherFade);
             if (deathDitherFade > 0.001h)
                 clip((1.0h - deathDitherFade) - ResolveFaunaDither(input.positionCS));
+
+            float sonarReveal = EvaluateLeviathanSonarReveal(input.positionWS);
+            ClipLeviathanNoirSilhouette(input.positionWS, sonarReveal);
 
             half4 surface = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
             half4 packedMask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, input.uv);
@@ -254,7 +316,16 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half3 halfDir = HectonCoreLitSafeNormalize(lightDir + viewDirWS);
             half specularStrength = lerp(0.05h, 0.22h, metallic);
             half specularPower = lerp(24.0h, 112.0h, smoothness);
-            half specular = pow(saturate(dot(normalWS, halfDir)), specularPower) * smoothness * specularStrength;
+            half specularBase = saturate(dot(normalWS, halfDir));
+            half specular2 = specularBase * specularBase;
+            half specular4 = specular2 * specular2;
+            half specular8 = specular4 * specular4;
+            half specular16 = specular8 * specular8;
+            half specular32 = specular16 * specular16;
+            half specular64 = specular32 * specular32;
+            half specularLow = specular16 * specular8;
+            half specularHigh = specular64 * specular32 * specular16;
+            half specular = lerp(specularLow, specularHigh, saturate((specularPower - 24.0h) * (1.0h / 88.0h))) * smoothness * specularStrength;
             half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadow(input.positionWS, normalWS);
             color += (surface.rgb * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation * contactShadow);
 
@@ -275,13 +346,16 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half3 panicEmissionColor = lerp(_EmissionColor.rgb, _GlobalOceanPanicColor.rgb, oceanPanic);
             half panicBlink = lerp(1.0h, lerp(0.35h, 1.45h, (half)step(0.5, frac(_Time.y * 7.0 + input.positionWS.y * 0.03))), oceanPanic);
             half3 emission = ((panicEmissionColor * (_EmissionStrength * emissionMask) * panicBlink) + biolum) * faunaBiolumDim + woundEmission;
+            half sonarFresnelBase = saturate(1.0h - dot(normalWS, viewDirWS));
+            half sonarFresnel = sonarFresnelBase * sonarFresnelBase;
+            emission += half3(_HectonSonarColor.rgb) * ((half)sonarReveal * (0.65h + sonarFresnel * 1.8h));
             half3 finalColor = HectonCoreLitApplyNoirFog(color + caustics + emission + sss, input.fogFactor, input.positionWS);
             return half4(finalColor, 1.0h);
         }
 
         float4 GetShadowPositionHClip(Attributes input)
         {
-            float3 deformedPositionOS = ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS);
+            float3 deformedPositionOS = HectonCoreLitSanitizePositionOS(ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS));
             VertexPositionInputs positionInputs = GetVertexPositionInputs(deformedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
             float3 lightDirectionWS = _MainLightPosition.xyz;
@@ -304,6 +378,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             ENDHLSL
         }
 
@@ -321,12 +396,15 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             struct ShadowVaryings
             {
                 float4 positionCS : SV_POSITION;
+                float3 positionWS : TEXCOORD0;
             };
 
             ShadowVaryings ShadowVert(Attributes input)
             {
                 ShadowVaryings output;
+                float3 deformedPositionOS = HectonCoreLitSanitizePositionOS(ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS));
                 output.positionCS = GetShadowPositionHClip(input);
+                output.positionWS = TransformObjectToWorld(deformedPositionOS);
                 return output;
             }
 
@@ -336,6 +414,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
                 if (deathDitherFade > 0.001h)
                     clip((1.0h - deathDitherFade) - ResolveFaunaDither(input.positionCS));
 
+                float sonarReveal = EvaluateLeviathanSonarReveal(input.positionWS);
+                ClipLeviathanNoirSilhouette(input.positionWS, sonarReveal);
                 return 0.0h;
             }
             ENDHLSL

@@ -39,6 +39,7 @@ using System;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.World;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -1984,6 +1985,95 @@ namespace Hecton8.Core
             return job.Schedule(cellCount, batchCount, dependency);
         }
 
+        /// <summary>
+        /// Builds a positive rim-height overlay around brine basin edges for terrain height and normal-map blending.
+        /// </summary>
+        public static JobHandle ScheduleBrineBasinLipRidgeOverlay(
+            NativeArray<byte> basinMask,
+            NativeArray<float> lipOffsetMeters,
+            int width,
+            int height,
+            int falloffCells,
+            float lipHeightMeters,
+            JobHandle dependency = default)
+        {
+            if (!basinMask.IsCreated ||
+                !lipOffsetMeters.IsCreated ||
+                width <= 2 ||
+                height <= 2)
+            {
+                return dependency;
+            }
+
+            int cellCount = width * height;
+            if (basinMask.Length < cellCount || lipOffsetMeters.Length < cellCount)
+                return dependency;
+
+            var job = new BrineBasinLipRidgeOverlayJob
+            {
+                BasinMask = basinMask,
+                LipOffsetMeters = lipOffsetMeters,
+                Width = width,
+                Height = height,
+                FalloffCells = math.max(1, falloffCells),
+                LipHeightMeters = math.max(0f, lipHeightMeters)
+            };
+
+            int batchCount = math.max(1, math.min(64, cellCount / 16));
+            return job.Schedule(cellCount, batchCount, dependency);
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct BrineBasinLipRidgeOverlayJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<byte> BasinMask;
+            public NativeArray<float> LipOffsetMeters;
+            public int Width;
+            public int Height;
+            public int FalloffCells;
+            public float LipHeightMeters;
+
+            public void Execute(int index)
+            {
+                if (BasinMask[index] != 0)
+                {
+                    LipOffsetMeters[index] = 0f;
+                    return;
+                }
+
+                int x = index % Width;
+                int z = index / Width;
+                int radius = math.max(1, FalloffCells);
+                float best = 0f;
+                for (int dz = -radius; dz <= radius; dz++)
+                {
+                    int nz = z + dz;
+                    if ((uint)nz >= (uint)Height)
+                        continue;
+
+                    for (int dx = -radius; dx <= radius; dx++)
+                    {
+                        if (dx == 0 && dz == 0)
+                            continue;
+
+                        int nx = x + dx;
+                        if ((uint)nx >= (uint)Width)
+                            continue;
+
+                        int neighbor = nx + nz * Width;
+                        if (BasinMask[neighbor] == 0)
+                            continue;
+
+                        float distance = math.sqrt((float)((dx * dx) + (dz * dz)));
+                        float ridge = 1f - math.saturate((distance - 1f) / math.max(1f, radius));
+                        best = math.max(best, ridge);
+                    }
+                }
+
+                LipOffsetMeters[index] = best * LipHeightMeters;
+            }
+        }
+
         private static bool IsTectonicSpineFamilyId(string familyId)
         {
             return string.Equals(familyId, TectonicSpineFamilyId, StringComparison.OrdinalIgnoreCase);
@@ -2383,9 +2473,11 @@ namespace Hecton8.Core
                 return;
 
             _loggedMissingMapMagicBinding = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError(
                 "[MapMagicBridge] Missing MapMagicObject binding. Assign it explicitly or place MapMagicBridge on the same GameObject as MapMagicObject. Runtime scene-wide fallback search is forbidden.",
                 this);
+#endif
         }
 
         /// <summary>

@@ -154,7 +154,7 @@ namespace Hecton8.Dev
                     return;
                 }
 
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
 
                 if (cancellationToken.IsCancellationRequested || this == null)
                     return;
@@ -196,7 +196,7 @@ namespace Hecton8.Dev
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
             while (Time.realtimeSinceStartup < deadline)
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
         }
 
         private int GetExecutionCountForOffer(string offerId)

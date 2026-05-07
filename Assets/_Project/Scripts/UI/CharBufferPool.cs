@@ -22,6 +22,7 @@ namespace Hecton8.UI
         private static ushort _slotMask = 0xFFFF;
 
         internal static int AvailableSlotCount => CountAvailableSlots(_slotMask);
+        internal static int SlotCapacity => SlotLength;
 
         internal readonly struct Lease
         {
@@ -34,6 +35,16 @@ namespace Hecton8.UI
             public int SlotIndex { get; }
             public char[] Buffer { get; }
             public bool IsValid => SlotIndex >= 0 && Buffer != null;
+        }
+
+        public static void Prewarm()
+        {
+            for (int slotIndex = 0; slotIndex < SlotCount; slotIndex++)
+            {
+                char[] buffer = s_slots[slotIndex];
+                if (buffer.Length > 0)
+                    buffer[0] = '\0';
+            }
         }
 
         public static bool TryAcquire(out Lease lease)

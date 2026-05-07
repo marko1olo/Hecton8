@@ -82,9 +82,11 @@ namespace Hecton8.Crafting
 
         private string _cachedCraftText;
         private string _cachedCostSummary;
+        private int _requiredAnchoredBiomeFamilyHashId;
 
         private void OnEnable()
         {
+            RefreshRuntimeHashes();
             RebuildCache();
         }
 
@@ -104,6 +106,7 @@ namespace Hecton8.Crafting
             if (craftTime < 0.1f)
                 craftTime = 0.1f;
 
+            RefreshRuntimeHashes();
             RebuildCache();
         }
 #endif
@@ -155,6 +158,7 @@ namespace Hecton8.Crafting
         public string RequiredScanEntryId => string.IsNullOrWhiteSpace(requiredScanEntryId)
             ? string.Empty
             : requiredScanEntryId.Trim();
+        public int RequiredAnchoredBiomeFamilyHashId => _requiredAnchoredBiomeFamilyHashId;
 
         public bool IsUnlocked(ScanLogSystem scanLogSystem)
         {
@@ -237,6 +241,11 @@ namespace Hecton8.Crafting
             }
 
             _cachedCostSummary = sb.Length > 0 ? sb.ToString() : "-";
+        }
+
+        private void RefreshRuntimeHashes()
+        {
+            _requiredAnchoredBiomeFamilyHashId = LocHash.ComputeAsciiLowerInvariant(requiredAnchoredBiomeFamilyId);
         }
 
         private string ResolveLocalizedRecipeName(string fallback)

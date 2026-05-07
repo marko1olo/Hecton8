@@ -19,6 +19,7 @@ namespace Hecton8.Gameplay
         public float VisorGlitchBias;
         public int CurveLutOffset;
         public HazardType Type;
+        public byte RequiresToxicMudBroadphase;
     }
 
     internal struct HazardExposureJobResult
@@ -52,6 +53,8 @@ namespace Hecton8.Gameplay
         public int VolumeCount;
         public bool HasPlayerBounds;
         public bool HasVehicleBounds;
+        public bool PlayerToxicMudBroadphase;
+        public bool VehicleToxicMudBroadphase;
         public float3 PlayerCenter;
         public float3 PlayerHalfExtents;
         public float3 VehicleCenter;
@@ -65,7 +68,8 @@ namespace Hecton8.Gameplay
             {
                 HazardVolumeData volume = Volumes[i];
 
-                if (HasPlayerBounds)
+                bool requiresToxicMudBroadphase = volume.Type == HazardType.Toxicity && volume.RequiresToxicMudBroadphase != 0;
+                if (HasPlayerBounds && (!requiresToxicMudBroadphase || PlayerToxicMudBroadphase))
                 {
                     float playerContribution = EvaluateAabbSphereContribution(
                         PlayerCenter,
@@ -78,7 +82,7 @@ namespace Hecton8.Gameplay
                         AddContribution(ref result, volume.Type, playerContribution, volume.VisorGlitchBias, true);
                 }
 
-                if (HasVehicleBounds)
+                if (HasVehicleBounds && (!requiresToxicMudBroadphase || VehicleToxicMudBroadphase))
                 {
                     float vehicleContribution = EvaluateAabbSphereContribution(
                         VehicleCenter,
@@ -161,6 +165,12 @@ namespace Hecton8.Gameplay
             if (distSqr >= volume.Radius * volume.Radius)
                 return 0f;
 
+            if (volume.Type == HazardType.Toxicity && volume.RequiresToxicMudBroadphase != 0)
+            {
+                float normalizedDistanceSq = math.saturate(distSqr * volume.InvRadiusSqr);
+                return volume.Intensity * ResolveSquaredDefaultCurveSample(normalizedDistanceSq);
+            }
+
             float normalizedDistance = math.saturate(math.sqrt(distSqr) * volume.InvRadius);
             float attenuation = SampleIntensityCurve(curveLutSamples, curveLutSampleCount, volume.CurveLutOffset, normalizedDistance);
             return volume.Intensity * attenuation;
@@ -183,6 +193,12 @@ namespace Hecton8.Gameplay
         private static float ResolveDefaultCurveSample(float normalizedDistance)
         {
             float attenuation = 1f - (normalizedDistance * normalizedDistance);
+            return attenuation > 0f ? attenuation * attenuation : 0f;
+        }
+
+        private static float ResolveSquaredDefaultCurveSample(float normalizedDistanceSq)
+        {
+            float attenuation = 1f - math.saturate(normalizedDistanceSq);
             return attenuation > 0f ? attenuation * attenuation : 0f;
         }
     }
@@ -211,6 +227,7 @@ namespace Hecton8.Gameplay
         private const float ToxicClarityTransferScale = 1.35f;
         private const float MinResistance = 0.1f;
         private const float MaxProtectedResistance = 1000f;
+        private const float ConservativeAabbSphereFactor = 1.7320508f;
         private static readonly Vector3 DefaultPlayerBoundsSize = new Vector3(0.9f, 1.9f, 0.9f);
         private static readonly Vector3 DefaultTransportBoundsSize = new Vector3(2.2f, 1.6f, 3.8f);
         private static readonly string OverflowLogText = "[HazardZoneManager] Hazard registry capacity exceeded.";
@@ -302,7 +319,7 @@ namespace Hecton8.Gameplay
             int existingIndex = FindZoneIndex(id);
             if (existingIndex >= 0)
             {
-                HazardVolumeData data = BuildVolumeData(existingIndex, runtimePosition, intensity, radius, type, visorGlitchBias);
+                HazardVolumeData data = BuildVolumeData(existingIndex, id, runtimePosition, intensity, radius, type, visorGlitchBias);
                 WriteVolumeCurveLut(existingIndex, profile);
                 _volumes[existingIndex] = data;
                 UpdateSpatialEntry(existingIndex, id, in data);
@@ -315,7 +332,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            HazardVolumeData newData = BuildVolumeData(_activeCount, runtimePosition, intensity, radius, type, visorGlitchBias);
+            HazardVolumeData newData = BuildVolumeData(_activeCount, id, runtimePosition, intensity, radius, type, visorGlitchBias);
             _volumeIds[_activeCount] = id;
             _volumes[_activeCount] = newData;
             WriteVolumeCurveLut(_activeCount, profile);
@@ -741,15 +758,16 @@ namespace Hecton8.Gameplay
 
             _playerSurvival.TakeDamage(damageMagnitude);
             float nextIntegrityNormalized = _playerSurvival.IntegrityNormalized;
-            if (_playerTraumaDispatcher == null || Mathf.Abs(nextIntegrityNormalized - previousIntegrityNormalized) <= 0.0001f)
+            float integrityDeltaNormalized = math.abs(nextIntegrityNormalized - previousIntegrityNormalized);
+            if (_playerTraumaDispatcher == null || integrityDeltaNormalized <= 0.0001f)
                 return;
 
             DamageSignal signal = default;
             signal.magnitude = damageMagnitude;
             signal.localPoint = float3.zero;
             signal.damageType = (uint)DamageTypeMask.Parasite;
-            signal.integrityDelta = (byte)Mathf.Clamp(
-                Mathf.RoundToInt(Mathf.Abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
+            signal.integrityDelta = (byte)math.clamp(
+                (int)math.round(integrityDeltaNormalized * byte.MaxValue),
                 0,
                 byte.MaxValue);
             signal.depth = _playerSurvival.Depth;
@@ -763,7 +781,7 @@ namespace Hecton8.Gameplay
             if (_playerSurvival == null)
                 return 1f;
 
-            return Mathf.Clamp(
+            return math.clamp(
                 _playerSurvival.ResolveEnvironmentalResistance(HazardType.Toxicity),
                 MinResistance,
                 MaxProtectedResistance);
@@ -787,6 +805,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            bool playerToxicMudBroadphase = hasPlayerBounds && HectonBrineToxicMudGrid.ContainsAupXZ(playerCenter);
+            bool vehicleToxicMudBroadphase = hasVehicleBounds && HectonBrineToxicMudGrid.ContainsAupXZ(vehicleCenter);
+
             int candidateCount = CollectCandidateVolumes(
                 hasPlayerBounds,
                 playerCenter,
@@ -809,6 +830,8 @@ namespace Hecton8.Gameplay
                 VolumeCount = candidateCount,
                 HasPlayerBounds = hasPlayerBounds,
                 HasVehicleBounds = hasVehicleBounds,
+                PlayerToxicMudBroadphase = playerToxicMudBroadphase,
+                VehicleToxicMudBroadphase = vehicleToxicMudBroadphase,
                 PlayerCenter = playerCenter,
                 PlayerHalfExtents = playerHalfExtents,
                 VehicleCenter = vehicleCenter,
@@ -898,7 +921,7 @@ namespace Hecton8.Gameplay
             {
                 candidateCount = AppendCandidateVolumes(
                     playerCenter,
-                    math.max(MinHazardRadius, math.length(playerHalfExtents)),
+                    ResolveConservativeBroadphaseRadius(playerHalfExtents),
                     candidateCount);
             }
 
@@ -906,11 +929,17 @@ namespace Hecton8.Gameplay
             {
                 candidateCount = AppendCandidateVolumes(
                     vehicleCenter,
-                    math.max(MinHazardRadius, math.length(vehicleHalfExtents)),
+                    ResolveConservativeBroadphaseRadius(vehicleHalfExtents),
                     candidateCount);
             }
 
             return candidateCount;
+        }
+
+        private static float ResolveConservativeBroadphaseRadius(float3 halfExtents)
+        {
+            float maxExtent = math.cmax(math.abs(halfExtents));
+            return math.max(MinHazardRadius, maxExtent * ConservativeAabbSphereFactor);
         }
 
         private int AppendCandidateVolumes(float3 absoluteCenter, float queryRadius, int candidateCount)
@@ -944,6 +973,12 @@ namespace Hecton8.Gameplay
             if (distSqr >= volume.Radius * volume.Radius)
                 return 0f;
 
+            if (volume.Type == HazardType.Toxicity && volume.RequiresToxicMudBroadphase != 0)
+            {
+                float normalizedDistanceSq = math.saturate(distSqr * volume.InvRadiusSqr);
+                return volume.Intensity * ResolveSquaredVolumeCurveSample(normalizedDistanceSq);
+            }
+
             float normalizedDistance = math.saturate(math.sqrt(distSqr) * volume.InvRadius);
             float attenuation = ResolveVolumeCurveSample(normalizedDistance);
             if (Instance != null && Instance._volumeCurveLutSamples.IsCreated)
@@ -952,7 +987,7 @@ namespace Hecton8.Gameplay
             return volume.Intensity * attenuation;
         }
 
-        private HazardVolumeData BuildVolumeData(int volumeIndex, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias)
+        private HazardVolumeData BuildVolumeData(int volumeIndex, int volumeId, Vector3 runtimePosition, float intensity, float radius, HazardType type, float visorGlitchBias)
         {
             float safeRadius = radius > MinHazardRadius ? radius : MinHazardRadius;
             HazardVolumeData data = default;
@@ -960,10 +995,13 @@ namespace Hecton8.Gameplay
             data.Radius = safeRadius;
             data.InvRadius = 1f / safeRadius;
             data.InvRadiusSqr = 1f / (safeRadius * safeRadius);
-            data.Intensity = Mathf.Max(0f, intensity);
-            data.VisorGlitchBias = Mathf.Clamp(visorGlitchBias, 0f, 2f);
+            data.Intensity = math.max(0f, intensity);
+            data.VisorGlitchBias = math.clamp(visorGlitchBias, 0f, 2f);
             data.CurveLutOffset = volumeIndex * HazardZoneProfile.IntensityLutSampleCount;
             data.Type = type;
+            data.RequiresToxicMudBroadphase = HectonBrineToxicMudGrid.IsRegisteredCell(volumeId)
+                ? (byte)1
+                : (byte)0;
             return data;
         }
 
@@ -981,7 +1019,7 @@ namespace Hecton8.Gameplay
             }
 
             for (int i = 0; i < HazardZoneProfile.IntensityLutSampleCount; i++)
-                _volumeCurveLutSamples[lutOffset + i] = Mathf.Clamp01(bakedLut[i]);
+                _volumeCurveLutSamples[lutOffset + i] = math.saturate(bakedLut[i]);
         }
 
         private void CopyVolumeCurveLut(int sourceIndex, int targetIndex)
@@ -1015,19 +1053,25 @@ namespace Hecton8.Gameplay
             if (!_volumeCurveLutSamples.IsCreated)
                 return ResolveVolumeCurveSample(normalizedDistance);
 
-            float scaledIndex = Mathf.Clamp01(normalizedDistance) * (HazardZoneProfile.IntensityLutSampleCount - 1);
-            int sampleIndex = Mathf.FloorToInt(scaledIndex);
-            int nextIndex = Mathf.Min(HazardZoneProfile.IntensityLutSampleCount - 1, sampleIndex + 1);
+            float scaledIndex = math.saturate(normalizedDistance) * (HazardZoneProfile.IntensityLutSampleCount - 1);
+            int sampleIndex = (int)math.floor(scaledIndex);
+            int nextIndex = math.min(HazardZoneProfile.IntensityLutSampleCount - 1, sampleIndex + 1);
             float fraction = scaledIndex - sampleIndex;
             float a = _volumeCurveLutSamples[curveLutOffset + sampleIndex];
             float b = _volumeCurveLutSamples[curveLutOffset + nextIndex];
-            return Mathf.Lerp(a, b, fraction);
+            return math.lerp(a, b, fraction);
         }
 
         private static float ResolveVolumeCurveSample(float normalizedDistance)
         {
             float safeDistance = math.saturate(normalizedDistance);
             float attenuation = 1f - (safeDistance * safeDistance);
+            return attenuation > 0f ? attenuation * attenuation : 0f;
+        }
+
+        private static float ResolveSquaredVolumeCurveSample(float normalizedDistanceSq)
+        {
+            float attenuation = 1f - math.saturate(normalizedDistanceSq);
             return attenuation > 0f ? attenuation * attenuation : 0f;
         }
 
@@ -1132,7 +1176,7 @@ namespace Hecton8.Gameplay
             float clarityImpulse = NormalizeHazardClarityContribution(hazardType, intensity / resistance);
             float visorBias = math.max(_playerHazardGlitchBias[hazardIndex], _vehicleHazardGlitchBias[hazardIndex]);
             if (visorBias > 0.001f)
-                clarityImpulse = Mathf.Clamp01(clarityImpulse * visorBias);
+                clarityImpulse = math.saturate(clarityImpulse * visorBias);
 
             if (clarityImpulse <= 0.001f)
                 return;
@@ -1152,7 +1196,7 @@ namespace Hecton8.Gameplay
             if (_playerSurvival == null)
                 return 1f;
 
-            return Mathf.Clamp(
+            return math.clamp(
                 _playerSurvival.ResolveEnvironmentalResistance(hazardType),
                 MinResistance,
                 MaxProtectedResistance);

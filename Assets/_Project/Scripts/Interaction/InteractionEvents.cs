@@ -87,7 +87,7 @@ namespace Hecton8.Interaction
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        internal static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
@@ -497,9 +497,7 @@ namespace Hecton8.Interaction
 
         private static uint ComputeItemHash(ItemData item)
         {
-            return item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
-                ? unchecked((uint)LocHash.Compute(item.PersistentId))
-                : 0u;
+            return item != null ? unchecked((uint)item.PersistentHashId) : 0u;
         }
 
         private static uint ComputeInteractableHash(IInteractable target)

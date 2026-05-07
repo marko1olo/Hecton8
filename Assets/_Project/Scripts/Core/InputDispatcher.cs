@@ -1,8 +1,13 @@
 using Hecton8.Input;
+using System.Threading;
 using Hecton8.Tools;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+using UnityEngine.InputSystem.XR;
 
 namespace Hecton8.Core
 {
@@ -11,14 +16,33 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9990)]
-    public sealed class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat
+    public sealed class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat, IDispatcherRaycastReceiver
     {
         private const int BufferedActionCapacity = 15;
+        private const int XRInputStateCapacity = 2;
+        private const int XRLookAtCommandCapacity = 1;
+        private const int XRDeviceRescanIntervalFrames = 30;
+        private const int XRLookAtSelectionRequestId = 8801;
+        private const float XRLookAtSelectionDistanceMeters = 12f;
+        private const float XRLookAtSelectionDistanceSq = XRLookAtSelectionDistanceMeters * XRLookAtSelectionDistanceMeters;
+        private const float XRLookAtReuseOriginDriftMeters = 0.08f;
+        private const float XRLookAtReuseOriginDriftSq = XRLookAtReuseOriginDriftMeters * XRLookAtReuseOriginDriftMeters;
+        private const float XRLookAtReuseLateralDriftMeters = 0.12f;
+        private const float XRLookAtReuseLateralDriftSq = XRLookAtReuseLateralDriftMeters * XRLookAtReuseLateralDriftMeters;
+        private const float XRLookAtReuseForwardDot = 0.9992f;
+        private const float XRLookAtReuseForwardDotSq = XRLookAtReuseForwardDot * XRLookAtReuseForwardDot;
+        private const int XRLookAtReuseMaxFrames = 3;
         private const float DefaultBufferedActionMaxAgeSeconds = 0.25f;
         private const float LookHotSwapBlendDurationSeconds = 0.25f;
-        private const float LookBlendEpsilon = 0.0001f;
         private const float LookCurveDeadzone = 0.035f;
-        private const float LookCurveRange = 1f - LookCurveDeadzone;
+        private const float LookCurveDeadzoneSq = LookCurveDeadzone * LookCurveDeadzone;
+        private const float LookCurveRangeSq = 1f - LookCurveDeadzoneSq;
+        private const float XRAnalogNoiseFloor = 0.05f;
+        private const float XRAnalogNoiseFloorSq = XRAnalogNoiseFloor * XRAnalogNoiseFloor;
+        private const uint XRRuntimeFlagLookAtRayCommandEnabled = 1u << 0;
+        private static readonly QueryParameters XRLookAtEnabledQueryParameters = new QueryParameters(HectonLayerMasks.DefaultRaycastLayerMask, false, QueryTriggerInteraction.Ignore);
+        private static readonly QueryParameters XRLookAtDisabledQueryParameters = new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore);
+        private static readonly RaycastCommand DisabledXRLookAtRayCommand = new RaycastCommand(Vector3.zero, Vector3.forward, XRLookAtDisabledQueryParameters, 0.01f);
 
         private struct BufferedActionEntry
         {
@@ -29,18 +53,46 @@ namespace Hecton8.Core
 
         private InputManager _nativeInputManager;
         private Gamepad _cachedGamepad;
+        private XRController _cachedLeftXRController;
+        private XRController _cachedRightXRController;
+        private AxisControl _leftTriggerAxis;
+        private AxisControl _rightTriggerAxis;
+        private AxisControl _leftGripAxis;
+        private AxisControl _rightGripAxis;
+        private Vector2Control _leftJoystickAxis;
+        private Vector2Control _rightJoystickAxis;
+        private ButtonControl _leftTriggerButton;
+        private ButtonControl _rightTriggerButton;
+        private ButtonControl _leftGripButton;
+        private ButtonControl _rightGripButton;
+        private ButtonControl _leftJoystickButton;
+        private ButtonControl _rightJoystickButton;
+        private ButtonControl _leftPrimaryButton;
+        private ButtonControl _rightPrimaryButton;
+        private ButtonControl _leftSecondaryButton;
+        private ButtonControl _rightSecondaryButton;
+        private NativeArray<XRInputState> _xrInputStates;
+        private NativeArray<RaycastCommand> _xrLookAtRayCommands;
+        private RaycastHit _lastXRLookAtHit;
+        private Vector3 _lastXRLookAtRayOriginAup;
+        private Vector3 _lastXRLookAtRayDirection;
+        private Vector3 _lastXRLookAtHitPointAup;
+        private int _lastXRLookAtPhysicsQueryFrame = -1;
         private bool _registeredUpdatable;
         private bool _registeredInputService;
         private bool _isInitialized;
         private bool _subscribedToNativeInput;
         private bool _subscribedToDeviceChanges;
         private int _lastCapturedFrame = -1;
+        private int _nextXRDeviceRescanFrame;
+        private int _lastXRLookAtHitFrame = -1;
         private int _bufferWriteIndex;
         private Vector2 _pendingLookDelta;
         private uint _latchedActionBits;
         private float _appliedLowMotorSpeed;
         private float _appliedHighMotorSpeed;
         private float _lookBlendElapsed;
+        private uint _xrRuntimeFlags;
         private bool _lookBlendActive;
         private Vector2 _lookBlendFrom;
         private Vector2 _lastDeliveredLookDelta;
@@ -140,6 +192,7 @@ namespace Hecton8.Core
 
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
+            EnsureXRNativeBuffers();
             TryRegisterToDispatcher();
             _isInitialized = true;
             TryRegisterInputService();
@@ -153,6 +206,7 @@ namespace Hecton8.Core
 
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
+            EnsureXRNativeBuffers();
         }
 
         private void OnEnable()
@@ -161,6 +215,7 @@ namespace Hecton8.Core
 
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
+            EnsureXRNativeBuffers();
 
             if (_isInitialized)
             {
@@ -183,6 +238,7 @@ namespace Hecton8.Core
             TryUnregisterInputService();
 
             ClearFrameState();
+            DisposeXRNativeBuffers(default);
         }
 
         private void OnDestroy()
@@ -196,6 +252,7 @@ namespace Hecton8.Core
             TryUnregisterFromDispatcher();
 
             TryUnregisterInputService();
+            DisposeXRNativeBuffers(default);
         }
 
         /// <summary>
@@ -215,6 +272,31 @@ namespace Hecton8.Core
         public PlayerInputState GetState()
         {
             return _currentState;
+        }
+
+        /// <summary>
+        /// Returns the read-only OpenXR controller snapshot buffer: index 0 left, index 1 right.
+        /// </summary>
+        internal NativeArray<XRInputState>.ReadOnly GetXRInputStatesReadOnly()
+        {
+            return _xrInputStates.IsCreated ? _xrInputStates.AsReadOnly() : default;
+        }
+
+        /// <summary>
+        /// Returns the single-command eye/look ray buffer staged for menu and diegetic selection.
+        /// </summary>
+        internal NativeArray<RaycastCommand>.ReadOnly GetXRLookAtRayCommandsReadOnly()
+        {
+            return _xrLookAtRayCommands.IsCreated ? _xrLookAtRayCommands.AsReadOnly() : default;
+        }
+
+        /// <summary>
+        /// Returns the latest dispatcher-resolved XR look-at hit for O(1) menu selection.
+        /// </summary>
+        internal bool TryGetXRLookAtHit(out RaycastHit hit)
+        {
+            hit = _lastXRLookAtHit;
+            return _lastXRLookAtHitFrame == Time.frameCount;
         }
 
         /// <summary>
@@ -305,6 +387,7 @@ namespace Hecton8.Core
         {
             SubscribeToDeviceChanges();
             ResolveCachedGamepad();
+            ResolveCachedXRControllers();
         }
 
         private void SubscribeToNativeInput()
@@ -373,6 +456,9 @@ namespace Hecton8.Core
 
         private void HandleDeviceChange(InputDevice device, InputDeviceChange change)
         {
+            if (device is XRController xrController)
+                HandleXRDeviceChange(xrController, change);
+
             if (!(device is Gamepad gamepad))
                 return;
 
@@ -416,6 +502,150 @@ namespace Hecton8.Core
                 _cachedGamepad = gamepad;
                 break;
             }
+        }
+
+        private void HandleXRDeviceChange(XRController controller, InputDeviceChange change)
+        {
+            switch (change)
+            {
+                case InputDeviceChange.Added:
+                case InputDeviceChange.Reconnected:
+                case InputDeviceChange.Enabled:
+                case InputDeviceChange.ConfigurationChanged:
+                case InputDeviceChange.UsageChanged:
+                    ResolveCachedXRControllers();
+                    break;
+
+                case InputDeviceChange.Removed:
+                case InputDeviceChange.Disconnected:
+                case InputDeviceChange.Disabled:
+                    if (ReferenceEquals(_cachedLeftXRController, controller))
+                        ClearLeftXRController();
+                    if (ReferenceEquals(_cachedRightXRController, controller))
+                        ClearRightXRController();
+                    ResolveCachedXRControllers();
+                    break;
+            }
+        }
+
+        private void ResolveCachedXRControllers()
+        {
+            int frame = Time.frameCount;
+            if (_cachedLeftXRController != null && _cachedLeftXRController.added &&
+                _cachedRightXRController != null && _cachedRightXRController.added &&
+                frame < _nextXRDeviceRescanFrame)
+            {
+                return;
+            }
+
+            _nextXRDeviceRescanFrame = frame + XRDeviceRescanIntervalFrames;
+
+            XRController left = XRController.leftHand;
+            XRController right = XRController.rightHand;
+            if (!ReferenceEquals(_cachedLeftXRController, left))
+                BindLeftXRController(left);
+            if (!ReferenceEquals(_cachedRightXRController, right))
+                BindRightXRController(right);
+        }
+
+        private void BindLeftXRController(XRController controller)
+        {
+            _cachedLeftXRController = controller != null && controller.added ? controller : null;
+            ResolveXRControls(
+                _cachedLeftXRController,
+                ref _leftTriggerAxis,
+                ref _leftGripAxis,
+                ref _leftJoystickAxis,
+                ref _leftTriggerButton,
+                ref _leftGripButton,
+                ref _leftJoystickButton,
+                ref _leftPrimaryButton,
+                ref _leftSecondaryButton);
+        }
+
+        private void BindRightXRController(XRController controller)
+        {
+            _cachedRightXRController = controller != null && controller.added ? controller : null;
+            ResolveXRControls(
+                _cachedRightXRController,
+                ref _rightTriggerAxis,
+                ref _rightGripAxis,
+                ref _rightJoystickAxis,
+                ref _rightTriggerButton,
+                ref _rightGripButton,
+                ref _rightJoystickButton,
+                ref _rightPrimaryButton,
+                ref _rightSecondaryButton);
+        }
+
+        private void ClearLeftXRController()
+        {
+            _cachedLeftXRController = null;
+            _leftTriggerAxis = null;
+            _leftGripAxis = null;
+            _leftJoystickAxis = null;
+            _leftTriggerButton = null;
+            _leftGripButton = null;
+            _leftJoystickButton = null;
+            _leftPrimaryButton = null;
+            _leftSecondaryButton = null;
+        }
+
+        private void ClearRightXRController()
+        {
+            _cachedRightXRController = null;
+            _rightTriggerAxis = null;
+            _rightGripAxis = null;
+            _rightJoystickAxis = null;
+            _rightTriggerButton = null;
+            _rightGripButton = null;
+            _rightJoystickButton = null;
+            _rightPrimaryButton = null;
+            _rightSecondaryButton = null;
+        }
+
+        private static void ResolveXRControls(
+            XRController controller,
+            ref AxisControl triggerAxis,
+            ref AxisControl gripAxis,
+            ref Vector2Control joystickAxis,
+            ref ButtonControl triggerButton,
+            ref ButtonControl gripButton,
+            ref ButtonControl joystickButton,
+            ref ButtonControl primaryButton,
+            ref ButtonControl secondaryButton)
+        {
+            triggerAxis = controller != null ? TryGetAxisControl(controller, "trigger") : null;
+            gripAxis = controller != null ? TryGetAxisControl(controller, "grip") : null;
+            joystickAxis = controller != null ? TryGetVector2Control(controller, "thumbstick") : null;
+            if (joystickAxis == null && controller != null)
+                joystickAxis = TryGetVector2Control(controller, "primary2DAxis");
+
+            triggerButton = controller != null ? TryGetButtonControl(controller, "triggerPressed") : null;
+            gripButton = controller != null ? TryGetButtonControl(controller, "gripPressed") : null;
+            joystickButton = controller != null ? TryGetButtonControl(controller, "thumbstickClicked") : null;
+            if (joystickButton == null && controller != null)
+                joystickButton = TryGetButtonControl(controller, "primary2DAxisClick");
+            primaryButton = controller != null ? TryGetButtonControl(controller, "primaryButton") : null;
+            secondaryButton = controller != null ? TryGetButtonControl(controller, "secondaryButton") : null;
+        }
+
+        private static AxisControl TryGetAxisControl(XRController controller, string path)
+        {
+            InputControl control = controller.TryGetChildControl(path);
+            return control as AxisControl;
+        }
+
+        private static Vector2Control TryGetVector2Control(XRController controller, string path)
+        {
+            InputControl control = controller.TryGetChildControl(path);
+            return control as Vector2Control;
+        }
+
+        private static ButtonControl TryGetButtonControl(XRController controller, string path)
+        {
+            InputControl control = controller.TryGetChildControl(path);
+            return control as ButtonControl;
         }
 
         private void TryRegisterToDispatcher()
@@ -470,6 +700,7 @@ namespace Hecton8.Core
         private void CaptureState(float deltaTime = 0f)
         {
             EnsureInputBinding();
+            EnsureXRNativeBuffers();
 
             int currentFrame = Time.frameCount;
             if (_lastCapturedFrame == currentFrame)
@@ -497,7 +728,7 @@ namespace Hecton8.Core
 
                 state.MoveDelta = inputManager.MoveInput;
                 state.LookDelta = lookDelta;
-                state.VerticalDelta = Mathf.Clamp(inputManager.VerticalMovementInput, -1f, 1f);
+                state.VerticalDelta = math.clamp(inputManager.VerticalMovementInput, -1f, 1f);
                 state.ActionsBitmask = actionBits;
                 _lastDeliveredLookDelta = lookDelta;
             }
@@ -505,6 +736,255 @@ namespace Hecton8.Core
             _currentState = state;
             _pendingLookDelta = Vector2.zero;
             _latchedActionBits = 0u;
+            RefreshXRInputSnapshot();
+            StageXRLookAtRayCommand();
+        }
+
+        private void EnsureXRNativeBuffers()
+        {
+            if (!_xrInputStates.IsCreated)
+            {
+                _xrInputStates = new NativeArray<XRInputState>(XRInputStateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<XRInputState>[2] - OpenXR left/right frame cache - owner: InputDispatcher
+                NativeMemorySentinel.RegisterNativeArray(
+                    _xrInputStates,
+                    nameof(InputDispatcher),
+                    nameof(_xrInputStates),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_xrLookAtRayCommands.IsCreated)
+            {
+                _xrLookAtRayCommands = new NativeArray<RaycastCommand>(XRLookAtCommandCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] - XR eye/look selection command cache - owner: InputDispatcher
+                NativeMemorySentinel.RegisterNativeArray(
+                    _xrLookAtRayCommands,
+                    nameof(InputDispatcher),
+                    nameof(_xrLookAtRayCommands),
+                    NativeAllocationLifetime.Session);
+                DisableXRLookAtRayCommand(forceWrite: true);
+            }
+        }
+
+        private void DisposeXRNativeBuffers(JobHandle dependency)
+        {
+            if (_xrInputStates.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_xrInputStates);
+                _xrInputStates.Dispose(dependency);
+                _xrInputStates = default;
+            }
+
+            if (_xrLookAtRayCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_xrLookAtRayCommands);
+                _xrLookAtRayCommands.Dispose(dependency);
+                _xrLookAtRayCommands = default;
+            }
+
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private void RefreshXRInputSnapshot()
+        {
+            if (!_xrInputStates.IsCreated)
+                return;
+
+            ResolveCachedXRControllers();
+            _xrInputStates[0] = CaptureXRController(
+                0,
+                _cachedLeftXRController,
+                _leftTriggerAxis,
+                _leftGripAxis,
+                _leftJoystickAxis,
+                _leftTriggerButton,
+                _leftGripButton,
+                _leftJoystickButton,
+                _leftPrimaryButton,
+                _leftSecondaryButton);
+            _xrInputStates[1] = CaptureXRController(
+                1,
+                _cachedRightXRController,
+                _rightTriggerAxis,
+                _rightGripAxis,
+                _rightJoystickAxis,
+                _rightTriggerButton,
+                _rightGripButton,
+                _rightJoystickButton,
+                _rightPrimaryButton,
+                _rightSecondaryButton);
+        }
+
+        private static XRInputState CaptureXRController(
+            byte controllerIndex,
+            XRController controller,
+            AxisControl triggerAxis,
+            AxisControl gripAxis,
+            Vector2Control joystickAxis,
+            ButtonControl triggerButton,
+            ButtonControl gripButton,
+            ButtonControl joystickButton,
+            ButtonControl primaryButton,
+            ButtonControl secondaryButton)
+        {
+            XRInputState state = default;
+            state.Frame = Time.frameCount;
+            state.ControllerIndex = controllerIndex;
+            state.GripRotationWS = quaternion.identity;
+
+            if (controller == null || !controller.added)
+                return state;
+
+            state.Trigger = ApplyXRAnalogNoiseFloor(triggerAxis != null ? triggerAxis.ReadValue() : 0f);
+            state.Grip = ApplyXRAnalogNoiseFloor(gripAxis != null ? gripAxis.ReadValue() : 0f);
+            Vector2 joystick = joystickAxis != null ? joystickAxis.ReadValue() : Vector2.zero;
+            state.Joystick = ApplyXRJoystickNoiseFloor(joystick);
+            Vector3 position = controller.devicePosition != null ? controller.devicePosition.ReadValue() : Vector3.zero;
+            Quaternion rotation = controller.deviceRotation != null ? controller.deviceRotation.ReadValue() : Quaternion.identity;
+            state.GripPositionWS = new float3(position.x, position.y, position.z);
+            state.GripRotationWS = new quaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+            bool tracked = controller.isTracked != null && controller.isTracked.isPressed;
+            state.IsTracked = tracked ? (byte)1 : (byte)0;
+
+            uint buttons = 0u;
+            buttons |= IsPressed(triggerButton, state.Trigger) ? (uint)XRInputButton.Trigger : 0u;
+            buttons |= IsPressed(gripButton, state.Grip) ? (uint)XRInputButton.Grip : 0u;
+            buttons |= IsPressed(joystickButton, 0f) ? (uint)XRInputButton.JoystickClick : 0u;
+            buttons |= IsPressed(primaryButton, 0f) ? (uint)XRInputButton.Primary : 0u;
+            buttons |= IsPressed(secondaryButton, 0f) ? (uint)XRInputButton.Secondary : 0u;
+            state.ButtonsBitmask = buttons;
+            return state;
+        }
+
+        private static float ApplyXRAnalogNoiseFloor(float value)
+        {
+            float normalized = math.saturate(value);
+            return normalized < XRAnalogNoiseFloor ? 0f : normalized;
+        }
+
+        private static float2 ApplyXRJoystickNoiseFloor(Vector2 value)
+        {
+            float2 joystick = new float2(value.x, value.y);
+            return math.lengthsq(joystick) < XRAnalogNoiseFloorSq ? float2.zero : joystick;
+        }
+
+        private static bool IsPressed(ButtonControl button, float analogValue)
+        {
+            return (button != null && button.isPressed) || analogValue >= 0.5f;
+        }
+
+        private void StageXRLookAtRayCommand()
+        {
+            if (!_xrLookAtRayCommands.IsCreated)
+                return;
+
+            Transform viewTransform = ResolveLookAtViewTransform();
+            if (viewTransform == null)
+            {
+                DisableXRLookAtRayCommand();
+                return;
+            }
+
+            Vector3 origin = viewTransform.position;
+            Vector3 originAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(origin);
+            Vector3 direction = viewTransform.forward;
+            float3 direction3 = new float3(direction.x, direction.y, direction.z);
+            if (!math.all(math.isfinite(direction3)))
+            {
+                direction = Vector3.forward;
+                direction3 = new float3(0f, 0f, 1f);
+            }
+
+            if (TryReuseXRLookAtHit(in originAup, in direction3))
+            {
+                DisableXRLookAtRayCommand();
+                return;
+            }
+
+            Vector3 rayOrigin = HectonFloatingOrigin.ToRuntimePosition(originAup);
+            RaycastCommand command = default;
+            command.from = rayOrigin;
+            command.direction = direction;
+            command.distance = XRLookAtSelectionDistanceMeters;
+            command.queryParameters = XRLookAtEnabledQueryParameters;
+            if (SystemDispatcher.QueueDispatcherRaycast(this, XRLookAtSelectionRequestId, in command))
+            {
+                _xrLookAtRayCommands[0] = command;
+                _xrRuntimeFlags |= XRRuntimeFlagLookAtRayCommandEnabled;
+                _lastXRLookAtRayOriginAup = originAup;
+                _lastXRLookAtRayDirection = direction;
+                return;
+            }
+
+            DisableXRLookAtRayCommand(forceWrite: true);
+        }
+
+        private void DisableXRLookAtRayCommand(bool forceWrite = false)
+        {
+            if (!forceWrite && (_xrRuntimeFlags & XRRuntimeFlagLookAtRayCommandEnabled) == 0u)
+                return;
+
+            _xrLookAtRayCommands[0] = DisabledXRLookAtRayCommand;
+            _xrRuntimeFlags &= ~XRRuntimeFlagLookAtRayCommandEnabled;
+        }
+
+        private bool TryReuseXRLookAtHit(in Vector3 originAup, in float3 direction)
+        {
+            if (_lastXRLookAtPhysicsQueryFrame < 0)
+                return false;
+
+            if (Time.frameCount - _lastXRLookAtPhysicsQueryFrame > XRLookAtReuseMaxFrames)
+                return false;
+
+            float3 previousOriginAup = new float3(_lastXRLookAtRayOriginAup.x, _lastXRLookAtRayOriginAup.y, _lastXRLookAtRayOriginAup.z);
+            float3 currentOriginAup = new float3(originAup.x, originAup.y, originAup.z);
+            float3 originDelta = currentOriginAup - previousOriginAup;
+            if (math.lengthsq(originDelta) > XRLookAtReuseOriginDriftSq)
+                return false;
+
+            float3 previousDirection = new float3(_lastXRLookAtRayDirection.x, _lastXRLookAtRayDirection.y, _lastXRLookAtRayDirection.z);
+            if (math.dot(previousDirection, direction) < XRLookAtReuseForwardDot)
+                return false;
+
+            if (_lastXRLookAtHit.collider == null)
+            {
+                _lastXRLookAtHitFrame = Time.frameCount;
+                return true;
+            }
+
+            float3 hitPointAup = new float3(_lastXRLookAtHitPointAup.x, _lastXRLookAtHitPointAup.y, _lastXRLookAtHitPointAup.z);
+            float3 toHit = hitPointAup - currentOriginAup;
+            float hitDistanceSq = math.lengthsq(toHit);
+            if (hitDistanceSq <= 0.0001f || hitDistanceSq > XRLookAtSelectionDistanceSq)
+                return false;
+
+            float forwardDistance = math.dot(toHit, direction);
+            if (forwardDistance <= 0f || (forwardDistance * forwardDistance) < XRLookAtReuseForwardDotSq * hitDistanceSq)
+                return false;
+
+            float lateralDriftSq = math.max(0f, hitDistanceSq - (forwardDistance * forwardDistance));
+            if (lateralDriftSq > XRLookAtReuseLateralDriftSq)
+                return false;
+
+            _lastXRLookAtHitFrame = Time.frameCount;
+            return true;
+        }
+
+        private static Transform ResolveLookAtViewTransform()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return null;
+
+            if (playerContext.PlayerCamera != null)
+                return playerContext.PlayerCamera.transform;
+
+            return playerContext.PlayerTransform;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
         }
 
         private void BeginLookHotSwapBlend()
@@ -524,43 +1004,32 @@ namespace Hecton8.Core
                 ? math.saturate(_lookBlendElapsed / LookHotSwapBlendDurationSeconds)
                 : 1f;
             float eased = normalized * normalized * (3f - (2f * normalized));
-            Vector2 lookDelta = SlerpLookDelta(_lookBlendFrom, targetLookDelta, eased);
+            Vector2 lookDelta = BlendLookDeltaLinear(_lookBlendFrom, targetLookDelta, eased);
             if (normalized >= 1f)
                 _lookBlendActive = false;
 
             return lookDelta;
         }
 
-        private static Vector2 SlerpLookDelta(Vector2 from, Vector2 to, float t)
+        private static Vector2 BlendLookDeltaLinear(Vector2 from, Vector2 to, float t)
         {
             float2 fromDelta = new float2(from.x, from.y);
             float2 toDelta = new float2(to.x, to.y);
-            float fromMagnitude = math.length(fromDelta);
-            float toMagnitude = math.length(toDelta);
-
-            if (fromMagnitude <= LookBlendEpsilon || toMagnitude <= LookBlendEpsilon)
-                return Vector2.Lerp(from, to, t);
-
-            float2 fromNormal = fromDelta / fromMagnitude;
-            float2 toNormal = toDelta / toMagnitude;
-            float magnitude = math.lerp(fromMagnitude, toMagnitude, t);
-            quaternion fromRotation = quaternion.AxisAngle(new float3(0f, 0f, 1f), math.atan2(fromNormal.y, fromNormal.x));
-            quaternion toRotation = quaternion.AxisAngle(new float3(0f, 0f, 1f), math.atan2(toNormal.y, toNormal.x));
-            float3 blendedDirection = math.mul(math.slerp(fromRotation, toRotation, t), new float3(1f, 0f, 0f));
-            return new Vector2(blendedDirection.x * magnitude, blendedDirection.y * magnitude);
+            float2 blended = math.lerp(fromDelta, toDelta, t);
+            return new Vector2(blended.x, blended.y);
         }
 
         private static Vector2 ApplyQuadraticLookCurve(Vector2 lookDelta)
         {
             float2 raw = new float2(lookDelta.x, lookDelta.y);
-            float magnitude = math.length(raw);
-            if (magnitude <= LookCurveDeadzone)
+            float magnitudeSq = math.lengthsq(raw);
+            if (magnitudeSq <= LookCurveDeadzoneSq)
                 return Vector2.zero;
 
-            float normalized = math.saturate((magnitude - LookCurveDeadzone) / LookCurveRange);
-            float quadratic = normalized * normalized;
-            float gain = quadratic / math.max(normalized, LookBlendEpsilon);
-            return new Vector2(lookDelta.x * gain, lookDelta.y * gain);
+            float normalizedSq = math.saturate((magnitudeSq - LookCurveDeadzoneSq) / LookCurveRangeSq);
+            float gain = normalizedSq * normalizedSq;
+            float2 curved = raw * gain;
+            return new Vector2(curved.x, curved.y);
         }
 
         private void HandleLookInput(Vector2 lookDelta)
@@ -576,6 +1045,7 @@ namespace Hecton8.Core
 
         private void HandleInteractPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.Interact;
             OnInteract?.Invoke();
         }
@@ -602,12 +1072,14 @@ namespace Hecton8.Core
 
         private void HandlePrimaryActionPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.PrimaryFire;
             OnPrimaryAction?.Invoke();
         }
 
         private void HandleSecondaryActionPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.SecondaryFire;
             OnSecondaryAction?.Invoke();
         }
@@ -640,6 +1112,18 @@ namespace Hecton8.Core
         private void HandleSprintPressed()
         {
             _latchedActionBits |= (uint)PlayerInputAction.Sprint;
+        }
+
+        void IDispatcherRaycastReceiver.ConsumeDispatcherRaycastHit(int requestId, in RaycastHit hit)
+        {
+            if (requestId != XRLookAtSelectionRequestId)
+                return;
+
+            _lastXRLookAtHit = hit;
+            _lastXRLookAtHitFrame = Time.frameCount;
+            _lastXRLookAtPhysicsQueryFrame = Time.frameCount;
+            if (hit.collider != null)
+                _lastXRLookAtHitPointAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(hit.point);
         }
 
         private void DrainToolHaptics()
@@ -769,9 +1253,134 @@ namespace Hecton8.Core
             _lookBlendFrom = Vector2.zero;
             _lastDeliveredLookDelta = Vector2.zero;
             _currentState = default;
+            _lastXRLookAtHit = default;
+            _lastXRLookAtHitFrame = -1;
+            _lastXRLookAtRayOriginAup = Vector3.zero;
+            _lastXRLookAtRayDirection = Vector3.forward;
+            _lastXRLookAtHitPointAup = Vector3.zero;
+            _lastXRLookAtPhysicsQueryFrame = -1;
+            _xrRuntimeFlags = 0u;
 
             for (int i = 0; i < BufferedActionCapacity; i++)
                 _bufferedActions[i].Action = PlayerBufferedAction.None;
+
+            if (_xrInputStates.IsCreated)
+            {
+                for (int i = 0; i < _xrInputStates.Length; i++)
+                    _xrInputStates[i] = default;
+            }
+
+            if (_xrLookAtRayCommands.IsCreated)
+                DisableXRLookAtRayCommand(forceWrite: true);
+        }
+    }
+
+    /// <summary>
+    /// Main-thread stopwatch bridge from player intent capture to render completion.
+    /// </summary>
+    public static class InputLatencyTracker
+    {
+        private static long _pendingInputTimestamp;
+        private static int _pendingInputFrame;
+        private static float _lastCompletedLatencyMs;
+        private static uint _completedSequence;
+
+        public static uint CompletedSequence => _completedSequence;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _pendingInputTimestamp = 0L;
+            _pendingInputFrame = -1;
+            _lastCompletedLatencyMs = 0f;
+            _completedSequence = 0u;
+        }
+
+        public static void MarkInputCaptured()
+        {
+            long timestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+            if (_pendingInputTimestamp == 0L || Time.frameCount != _pendingInputFrame)
+            {
+                _pendingInputTimestamp = timestamp;
+                _pendingInputFrame = Time.frameCount;
+            }
+        }
+
+        public static void MarkRenderCompleted()
+        {
+            long inputTimestamp = _pendingInputTimestamp;
+            if (inputTimestamp <= 0L)
+                return;
+
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - inputTimestamp;
+            if (elapsedTicks <= 0L)
+            {
+                _pendingInputTimestamp = 0L;
+                _pendingInputFrame = -1;
+                return;
+            }
+
+            _lastCompletedLatencyMs = (float)(elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+            _completedSequence++;
+            _pendingInputTimestamp = 0L;
+            _pendingInputFrame = -1;
+        }
+
+        public static float SampleCompletedLatencyMs()
+        {
+            return _lastCompletedLatencyMs;
+        }
+    }
+
+    /// <summary>
+    /// Numeric debt counter for frame-deferred Awaitable continuations.
+    /// </summary>
+    public static class AwaitableDebtMonitor
+    {
+        public const int LatencyCrimeThreshold = 50;
+        private const int ReportCooldownFrames = 30;
+        private const uint LatencyCrimeWarningHash = 2752459530u;
+        private const uint AwaitableDebtContextHash = 3334278855u;
+        private static int _pendingNextFrameContinuations;
+        private static int _lastLatencyCrimeReportFrame = -ReportCooldownFrames;
+
+        public static int PendingNextFrameContinuations => Volatile.Read(ref _pendingNextFrameContinuations);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Volatile.Write(ref _pendingNextFrameContinuations, 0);
+            _lastLatencyCrimeReportFrame = -ReportCooldownFrames;
+        }
+
+        public static async Awaitable NextFrameAsync(CancellationToken cancellationToken = default)
+        {
+            Interlocked.Increment(ref _pendingNextFrameContinuations);
+            try
+            {
+                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _pendingNextFrameContinuations);
+            }
+        }
+
+        public static void AuditLatencyDebt(int pendingContinuationCount, float latencyMs)
+        {
+            if (pendingContinuationCount <= LatencyCrimeThreshold)
+                return;
+
+            int frame = Time.frameCount;
+            if (frame - _lastLatencyCrimeReportFrame < ReportCooldownFrames)
+                return;
+
+            _lastLatencyCrimeReportFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                LatencyCrimeWarningHash,
+                AwaitableDebtContextHash,
+                pendingContinuationCount);
+            CrashTelemetryBuffer.ReportLatencyCrime(pendingContinuationCount, latencyMs);
         }
     }
 }

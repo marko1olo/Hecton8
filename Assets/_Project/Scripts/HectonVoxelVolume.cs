@@ -185,6 +185,8 @@ namespace Hecton8.Caves
         private const float OrganicRootMoundMinimumOverlapMeters = 0.25f;
         private const float OrganicRootMoundSeabedProbeStepMeters = 0.5f;
         private const int OrganicRootMoundSeabedProbeSteps = 16;
+        private const string ColliderChunkRuntimeName = "ColliderChunk";
+        private const string ColliderChunkProxyRuntimeName = "ColliderChunkProxy";
 
         // COLD ALLOC: List<HectonVoxelVolume>[32] - scanner SDF raymarch candidates - owner: HectonVoxelVolume
         private static readonly List<HectonVoxelVolume> s_activePublishedVolumes = new List<HectonVoxelVolume>(32);
@@ -218,6 +220,7 @@ namespace Hecton8.Caves
         private int _terrainHoleHandleCount;
         private Transform _colliderChunkRoot;
         private MeshCollider[] _colliderChunkColliders = Array.Empty<MeshCollider>();
+        private BoxCollider[] _colliderChunkBakeProxies = Array.Empty<BoxCollider>();
         private Mesh[] _colliderChunkMeshes = Array.Empty<Mesh>();
         private Mesh[] _colliderChunkBakeMeshes = Array.Empty<Mesh>();
         private MeshRenderer _meshRenderer;
@@ -495,8 +498,9 @@ namespace Hecton8.Caves
                 return false;
             }
 
-            Vector3 direction = runtimeDirection.sqrMagnitude > 0.0001f
-                ? runtimeDirection.normalized
+            float runtimeDirectionLengthSq = runtimeDirection.sqrMagnitude;
+            Vector3 direction = runtimeDirectionLengthSq > 0.0001f
+                ? runtimeDirection * math.rsqrt(runtimeDirectionLengthSq)
                 : Vector3.forward;
             float step = Mathf.Max(0.05f, stepMeters);
             float previousDensity = 0f;
@@ -513,7 +517,7 @@ namespace Hecton8.Caves
                 {
                     float denom = Mathf.Max(0.0001f, density - previousDensity);
                     float t = hasPrevious ? Mathf.Clamp01(-previousDensity / denom) : 0f;
-                    Vector3 resolvedPoint = Vector3.Lerp(previousPosition, position, t);
+                    Vector3 resolvedPoint = previousPosition + (position - previousPosition) * t;
                     Vector3 normal = Vector3.up;
                     TrySampleSurfaceNormal(resolvedPoint, step, out normal);
                     hit = new VoxelSdfRaycastHit
@@ -567,7 +571,7 @@ namespace Hecton8.Caves
             if (gradient.sqrMagnitude <= 0.000001f)
                 return false;
 
-            surfaceNormal = (-gradient).normalized;
+            surfaceNormal = -gradient * math.rsqrt(gradient.sqrMagnitude);
             return true;
         }
 
@@ -655,13 +659,13 @@ namespace Hecton8.Caves
             float c011 = DecodePublishedDensityAt(x0, y1, z1);
             float c111 = DecodePublishedDensityAt(x1, y1, z1);
 
-            float c00 = Mathf.Lerp(c000, c100, tx);
-            float c10 = Mathf.Lerp(c010, c110, tx);
-            float c01 = Mathf.Lerp(c001, c101, tx);
-            float c11 = Mathf.Lerp(c011, c111, tx);
-            float c0 = Mathf.Lerp(c00, c10, ty);
-            float c1 = Mathf.Lerp(c01, c11, ty);
-            return Mathf.Lerp(c0, c1, tz);
+            float c00 = math.lerp(c000, c100, tx);
+            float c10 = math.lerp(c010, c110, tx);
+            float c01 = math.lerp(c001, c101, tx);
+            float c11 = math.lerp(c011, c111, tx);
+            float c0 = math.lerp(c00, c10, ty);
+            float c1 = math.lerp(c01, c11, ty);
+            return math.lerp(c0, c1, tz);
         }
 
         private float DecodePublishedDensityAt(int x, int y, int z)
@@ -755,6 +759,8 @@ namespace Hecton8.Caves
             {
                 // COLD ALLOC: MeshCollider[clampedCount] - pooled child collider registry for distributed voxel physics - owner: HectonVoxelVolume
                 MeshCollider[] newColliders = new MeshCollider[clampedCount];
+                // COLD ALLOC: BoxCollider[clampedCount] - temporary primitive safety proxies while PhysX bakes chunk meshes - owner: HectonVoxelVolume
+                BoxCollider[] newBakeProxies = new BoxCollider[clampedCount];
                 // COLD ALLOC: Mesh[clampedCount] - pooled collider meshes for distributed voxel physics - owner: HectonVoxelVolume
                 Mesh[] newMeshes = new Mesh[clampedCount];
                 // COLD ALLOC: Mesh[clampedCount] - staged collider bake meshes for front/back voxel physics publication - owner: HectonVoxelVolume
@@ -762,30 +768,57 @@ namespace Hecton8.Caves
                 for (int i = 0; i < _colliderChunkColliders.Length; i++)
                 {
                     newColliders[i] = _colliderChunkColliders[i];
+                    newBakeProxies[i] = i < _colliderChunkBakeProxies.Length ? _colliderChunkBakeProxies[i] : null;
                     newMeshes[i] = _colliderChunkMeshes[i];
                     newBakeMeshes[i] = _colliderChunkBakeMeshes[i];
                 }
 
                 _colliderChunkColliders = newColliders;
+                _colliderChunkBakeProxies = newBakeProxies;
                 _colliderChunkMeshes = newMeshes;
                 _colliderChunkBakeMeshes = newBakeMeshes;
             }
 
             for (int i = 0; i < clampedCount; i++)
             {
-                if (_colliderChunkColliders[i] != null)
-                    continue;
+                if (_colliderChunkColliders[i] == null)
+                {
+                    GameObject childObject = new GameObject(ColliderChunkRuntimeName);
+                    childObject.layer = HectonLayerMasks.VoxelCave;
+                    Transform child = childObject.transform;
+                    child.SetParent(_colliderChunkRoot, false);
+                    child.localPosition = Vector3.zero;
+                    child.localRotation = Quaternion.identity;
+                    child.localScale = Vector3.one;
 
-                GameObject childObject = new GameObject($"ColliderChunk_{i:D2}");
-                Transform child = childObject.transform;
-                child.SetParent(_colliderChunkRoot, false);
-                child.localPosition = Vector3.zero;
-                child.localRotation = Quaternion.identity;
-                child.localScale = Vector3.one;
+                    MeshCollider collider = childObject.AddComponent<MeshCollider>();
+                    collider.enabled = false;
+                    _colliderChunkColliders[i] = collider;
+                }
+                else
+                {
+                    _colliderChunkColliders[i].gameObject.layer = HectonLayerMasks.VoxelCave;
+                }
 
-                MeshCollider collider = childObject.AddComponent<MeshCollider>();
-                collider.enabled = false;
-                _colliderChunkColliders[i] = collider;
+                if (_colliderChunkBakeProxies[i] == null)
+                {
+                    GameObject proxyObject = new GameObject(ColliderChunkProxyRuntimeName); // COLD ALLOC: GameObject[1] - isolated async bake proxy collider - owner: HectonVoxelVolume
+                    proxyObject.layer = HectonLayerMasks.VoxelProxy;
+                    Transform proxyTransform = proxyObject.transform;
+                    proxyTransform.SetParent(_colliderChunkRoot, false);
+                    proxyTransform.localPosition = Vector3.zero;
+                    proxyTransform.localRotation = Quaternion.identity;
+                    proxyTransform.localScale = Vector3.one;
+
+                    BoxCollider proxy = proxyObject.AddComponent<BoxCollider>();
+                    proxy.enabled = false;
+                    proxy.isTrigger = false;
+                    _colliderChunkBakeProxies[i] = proxy;
+                }
+                else
+                {
+                    _colliderChunkBakeProxies[i].gameObject.layer = HectonLayerMasks.VoxelProxy;
+                }
             }
 
             if (!_colliderChunkRoot.gameObject.activeSelf)
@@ -804,6 +837,63 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Enables a primitive floor proxy while the chunk mesh is being baked by PhysX off-thread.
+        /// </summary>
+        internal void ConfigureColliderChunkBakeProxy(int index, Vector3 center, Vector3 size)
+        {
+            if (index < 0 || index >= _colliderChunkBakeProxies.Length)
+                return;
+
+            BoxCollider proxy = _colliderChunkBakeProxies[index];
+            if (proxy == null)
+                return;
+
+            proxy.center = center;
+            proxy.size = new Vector3(
+                math.max(0.01f, size.x),
+                math.max(0.01f, size.y),
+                math.max(0.01f, size.z));
+            proxy.enabled = true;
+        }
+
+        /// <summary>
+        /// Returns the isolated primitive bake proxy for deferred collider publication.
+        /// </summary>
+        internal BoxCollider GetColliderChunkBakeProxy(int index)
+        {
+            if (index < 0 || index >= _colliderChunkBakeProxies.Length)
+                return null;
+
+            return _colliderChunkBakeProxies[index];
+        }
+
+        /// <summary>
+        /// Disables the temporary PhysX bake proxy for one collider chunk.
+        /// </summary>
+        internal void DisableColliderChunkBakeProxy(int index)
+        {
+            if (index < 0 || index >= _colliderChunkBakeProxies.Length)
+                return;
+
+            BoxCollider proxy = _colliderChunkBakeProxies[index];
+            if (proxy != null)
+                proxy.enabled = false;
+        }
+
+        /// <summary>
+        /// Disables all temporary PhysX bake proxies owned by this volume.
+        /// </summary>
+        internal void DisableColliderChunkBakeProxies()
+        {
+            for (int i = 0; i < _colliderChunkBakeProxies.Length; i++)
+            {
+                BoxCollider proxy = _colliderChunkBakeProxies[i];
+                if (proxy != null)
+                    proxy.enabled = false;
+            }
+        }
+
+        /// <summary>
         /// Returns a reusable mesh instance for the requested collider chunk, creating it on first use only.
         /// </summary>
         public Mesh GetOrCreateColliderChunkMesh(int index)
@@ -815,11 +905,10 @@ namespace Hecton8.Caves
             if (mesh != null)
                 return mesh;
 
-            mesh = new Mesh
-            {
-                name = $"VoxelColliderChunk_{index:D2}_{name}"
-            };
-            mesh.MarkDynamic();
+            mesh = global::HectonVoxelEngine.AcquireVoxelPhysicsBakeMesh(name, index);
+            if (mesh == null)
+                return null;
+
             _colliderChunkMeshes[index] = mesh;
             return mesh;
         }
@@ -846,7 +935,7 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Publishes the staged collider mesh for the requested chunk and swaps the previous live mesh into the bake slot.
+        /// Queues a staged collider mesh upload for the requested chunk. The actual sharedMesh write is late-frame throttled.
         /// </summary>
         internal void PublishColliderChunkMesh(int index)
         {
@@ -863,10 +952,36 @@ namespace Hecton8.Caves
             if (collider == null || stagedMesh == null)
                 return;
 
+            global::HectonVoxelEngine.EnqueueDeferredVoxelColliderUpload(this, index);
+        }
+
+        /// <summary>
+        /// Performs the deferred staged collider mesh upload and swaps the previous live mesh into the bake slot.
+        /// </summary>
+        internal void CommitDeferredColliderChunkUpload(int index)
+        {
+            if (index < 0 ||
+                index >= _colliderChunkColliders.Length ||
+                index >= _colliderChunkMeshes.Length ||
+                index >= _colliderChunkBakeMeshes.Length)
+            {
+                return;
+            }
+
+            MeshCollider collider = _colliderChunkColliders[index];
+            Mesh stagedMesh = _colliderChunkBakeMeshes[index];
+            if (collider == null || stagedMesh == null)
+                return;
+
             Mesh previousLiveMesh = _colliderChunkMeshes[index];
+            collider.gameObject.SetActive(true);
+            collider.enabled = false;
             collider.sharedMesh = stagedMesh;
             _colliderChunkMeshes[index] = stagedMesh;
             _colliderChunkBakeMeshes[index] = previousLiveMesh;
+            collider.enabled = true;
+            DisableColliderChunkBakeProxy(index);
+            RefreshBakePresentation();
         }
 
         /// <summary>
@@ -916,6 +1031,7 @@ namespace Hecton8.Caves
                 {
                     collider.sharedMesh = null;
                     collider.enabled = false;
+                    DisableColliderChunkBakeProxy(i);
                     if (collider.gameObject.activeSelf)
                         collider.gameObject.SetActive(false);
                 }
@@ -1406,7 +1522,10 @@ namespace Hecton8.Caves
                     MagmaDeltaMaterialId);
 
                 if (organicManager != null && safeBurnRadius > 0f)
-                    BurnFloraAlongMagmaSegment(organicManager, start, end, Mathf.Sqrt(segmentLengthSq), safeBurnRadius);
+                {
+                    float segmentLengthApprox = math.cmax(math.abs(new float3(segment.x, segment.y, segment.z)));
+                    BurnFloraAlongMagmaSegment(organicManager, start, end, segmentLengthApprox, safeBurnRadius);
+                }
 
                 acceptedSegments++;
             }
@@ -1454,17 +1573,18 @@ namespace Hecton8.Caves
 
             for (int stampIndex = 0; stampIndex < clampedStampCount; stampIndex++)
             {
-                float angle = Hash01(stableSeed, stampIndex, 3) * Mathf.PI * 2f;
-                float radialDistance = Mathf.Sqrt(Hash01(stableSeed, stampIndex, 11)) * clampedScatterRadius;
+                int scatterOctant = (int)(Hash01(stableSeed, stampIndex, 3) * 7.999f);
+                float2 scatterDirection = ResolveSeismicScatterDirection(scatterOctant);
+                float radialDistance = Hash01(stableSeed, stampIndex, 11) * clampedScatterRadius;
                 float localX = Mathf.Clamp(
-                    localEpicenter.x + Mathf.Cos(angle) * radialDistance,
+                    localEpicenter.x + scatterDirection.x * radialDistance,
                     localBounds.min.x + _voxelSize,
                     localBounds.max.x - _voxelSize);
                 float localZ = Mathf.Clamp(
-                    localEpicenter.z + Mathf.Sin(angle) * radialDistance,
+                    localEpicenter.z + scatterDirection.y * radialDistance,
                     localBounds.min.z + _voxelSize,
                     localBounds.max.z - _voxelSize);
-                float craterRadius = Mathf.Lerp(minRadius, maxRadius, Hash01(stableSeed, stampIndex, 23));
+                float craterRadius = math.lerp(minRadius, maxRadius, Hash01(stableSeed, stampIndex, 23));
 
                 if (!TryResolveSeismicCollapseAnchor(
                         cachedTransform,
@@ -1520,17 +1640,20 @@ namespace Hecton8.Caves
             Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(absoluteEnd);
             Vector3 runtimeEpicenter = HectonFloatingOrigin.ToRuntimePosition(absoluteEpicenter);
             Vector3 line = runtimeEnd - runtimeStart;
-            float lineLength = line.magnitude;
-            if (lineLength <= 0.001f)
+            float lineLengthSq = line.sqrMagnitude;
+            if (lineLengthSq <= 0.000001f)
                 return false;
 
             Transform cachedTransform = transform;
-            Vector3 forward = line / lineLength;
+            float invLineLength = math.rsqrt(lineLengthSq);
+            float lineLength = lineLengthSq * invLineLength;
+            Vector3 forward = line * invLineLength;
             Vector3 right = Vector3.Cross(Vector3.up, forward);
-            if (right.sqrMagnitude <= 0.0001f)
+            float rightLengthSq = right.sqrMagnitude;
+            if (rightLengthSq <= 0.0001f)
                 right = Vector3.right;
             else
-                right.Normalize();
+                right *= math.rsqrt(rightLengthSq);
 
             float clampedDepth = Mathf.Max(_voxelSize, trenchDepth);
             float clampedSlope = Mathf.Max(0.05f, trenchSlope);
@@ -1539,17 +1662,17 @@ namespace Hecton8.Caves
             float lateralStep = Mathf.Max(_voxelSize * 0.85f, longitudinalStep * 0.5f);
             int longitudinalCount = Mathf.Clamp(Mathf.CeilToInt(lineLength / longitudinalStep) + 1, 2, 64);
             float epicenterFadeDistance = Mathf.Max(_voxelSize, lineLength * 0.5f + influenceRadius);
+            float epicenterFadeDistanceSq = epicenterFadeDistance * epicenterFadeDistance;
+            Vector3 runtimeStep = line / (longitudinalCount - 1);
+            Vector3 runtimeCenter = runtimeStart;
 
             for (int sampleIndex = 0; sampleIndex < longitudinalCount; sampleIndex++)
             {
-                float sampleT = longitudinalCount <= 1 ? 0f : sampleIndex / (float)(longitudinalCount - 1);
-                Vector3 runtimeCenter = Vector3.Lerp(runtimeStart, runtimeEnd, sampleT);
-
                 for (float lateral = -influenceRadius; lateral <= influenceRadius + 0.001f; lateral += lateralStep)
                 {
                     Vector3 runtimeColumn = runtimeCenter + right * lateral;
-                    float epicenterDistance = (runtimeColumn - runtimeEpicenter).magnitude;
-                    float epicenterDepth = clampedDepth * (1f - Mathf.Clamp01(epicenterDistance / epicenterFadeDistance));
+                    float epicenterDistanceSq = (runtimeColumn - runtimeEpicenter).sqrMagnitude;
+                    float epicenterDepth = clampedDepth * (1f - math.saturate(epicenterDistanceSq / epicenterFadeDistanceSq));
                     float cutDepth = Mathf.Max(0f, epicenterDepth - Mathf.Abs(lateral) * clampedSlope);
                     if (cutDepth <= 0.0001f)
                         continue;
@@ -1579,6 +1702,8 @@ namespace Hecton8.Caves
                     displacedVolumeCubicMeters += EstimateSeismicCraterDisplacedVolume(craterRadius, cutDepth);
                     appliedStampCount++;
                 }
+
+                runtimeCenter += runtimeStep;
             }
 
             return appliedStampCount > 0;
@@ -1592,6 +1717,21 @@ namespace Hecton8.Caves
                 return 0f;
 
             return Mathf.PI * depth * depth * (radius - depth / 3f);
+        }
+
+        private static float2 ResolveSeismicScatterDirection(int octant)
+        {
+            switch (octant & 7)
+            {
+                case 0: return new float2(1f, 0f);
+                case 1: return new float2(0.70710677f, 0.70710677f);
+                case 2: return new float2(0f, 1f);
+                case 3: return new float2(-0.70710677f, 0.70710677f);
+                case 4: return new float2(-1f, 0f);
+                case 5: return new float2(-0.70710677f, -0.70710677f);
+                case 6: return new float2(0f, -1f);
+                default: return new float2(0.70710677f, -0.70710677f);
+            }
         }
 
         /// <summary>
@@ -1625,7 +1765,7 @@ namespace Hecton8.Caves
             if (localDirection.sqrMagnitude < 0.0001f)
                 return false;
 
-            localDirection.Normalize();
+            localDirection *= math.rsqrt(localDirection.sqrMagnitude);
 
             Vector3 localStart = cachedTransform.InverseTransformPoint(runtimeHitPoint) + localDirection * (_voxelSize * 0.55f);
             if (!localBounds.Contains(localStart))
@@ -1748,7 +1888,7 @@ namespace Hecton8.Caves
             if (localDirection.sqrMagnitude < 0.0001f)
                 return false;
 
-            localDirection.Normalize();
+            localDirection *= math.rsqrt(localDirection.sqrMagnitude);
 
             Vector3 localStart = cachedTransform.InverseTransformPoint(runtimeHitPoint) + localDirection * (_voxelSize * 0.55f);
             if (!localBounds.Contains(localStart))
@@ -1854,8 +1994,9 @@ namespace Hecton8.Caves
             if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(this, preset, out Bounds localBounds))
                 return false;
 
-            Vector3 direction = absoluteDirection.sqrMagnitude > 0.0001f
-                ? absoluteDirection.normalized
+            float directionLengthSq = absoluteDirection.sqrMagnitude;
+            Vector3 direction = directionLengthSq > 0.0001f
+                ? absoluteDirection * math.rsqrt(directionLengthSq)
                 : Vector3.down;
             float resolvedLength = Mathf.Max(_voxelSize * 2f, lengthMeters);
             float resolvedRadius = Mathf.Max(_voxelSize * 0.75f, radiusMeters);
@@ -1866,20 +2007,23 @@ namespace Hecton8.Caves
             Vector3 tangentA = Vector3.Cross(direction, Vector3.up);
             if (tangentA.sqrMagnitude <= 0.0001f)
                 tangentA = Vector3.Cross(direction, Vector3.right);
-            tangentA.Normalize();
-            Vector3 tangentB = Vector3.Cross(direction, tangentA).normalized;
+            tangentA *= math.rsqrt(tangentA.sqrMagnitude);
+            Vector3 tangentB = Vector3.Cross(direction, tangentA);
+            tangentB *= math.rsqrt(tangentB.sqrMagnitude);
 
             bool modified = false;
+            Transform cachedTransform = transform;
             for (int stampIndex = 0; stampIndex < resolvedStampCount; stampIndex++)
             {
                 float t = resolvedStampCount <= 1 ? 0f : stampIndex / (float)(resolvedStampCount - 1);
                 float longitudinalOffset = (t - 0.5f) * resolvedLength;
-                float angle = Hash01(stableSeed, stampIndex, 41) * Mathf.PI * 2f;
+                int jitterOctant = (int)(Hash01(stableSeed, stampIndex, 41) * 7.999f);
+                float2 jitterDirection = ResolveSeismicScatterDirection(jitterOctant);
                 float radialScale = (Hash01(stableSeed, stampIndex, 53) * 2f) - 1f;
-                Vector3 jitter = (tangentA * Mathf.Cos(angle) + tangentB * Mathf.Sin(angle)) * (jitterAmplitude * radialScale);
+                Vector3 jitter = (tangentA * jitterDirection.x + tangentB * jitterDirection.y) * (jitterAmplitude * radialScale);
                 Vector3 absoluteSample = absoluteStart + direction * longitudinalOffset + jitter;
                 Vector3 runtimeSample = HectonFloatingOrigin.ToRuntimePosition(absoluteSample);
-                Vector3 localSample = transform.InverseTransformPoint(runtimeSample);
+                Vector3 localSample = cachedTransform.InverseTransformPoint(runtimeSample);
                 if (!localBounds.Contains(localSample))
                     continue;
 
@@ -2043,7 +2187,7 @@ namespace Hecton8.Caves
                         {
                             _rebuildQueued = true;
                             SetBakeState(VoxelBakeState.Pending);
-                            await Awaitable.NextFrameAsync();
+                            await AwaitableDebtMonitor.NextFrameAsync();
                             rescheduleNextFrame = true;
                         }
 
@@ -2056,14 +2200,16 @@ namespace Hecton8.Caves
                 if (_rebuildQueued && MatchesRuntimeStamp(expectedRuntimeStamp))
                 {
                     SetBakeState(VoxelBakeState.Pending);
-                    await Awaitable.NextFrameAsync();
+                    await AwaitableDebtMonitor.NextFrameAsync();
                     rescheduleNextFrame = true;
                 }
             }
             catch (Exception ex)
             {
                 SetBakeState(VoxelBakeState.Pending);
-                Debug.LogError($"[HectonVoxelVolume] Crater rebuild failed on '{name}': {ex.Message}", this);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(ex, this);
+#endif
             }
             finally
             {
@@ -2099,8 +2245,14 @@ namespace Hecton8.Caves
             _terrainHoleHandleCount = 0;
         }
 
+        private void OnEnable()
+        {
+            VoxelVolumeLeakSentinel.RegisterVolume(this);
+        }
+
         private void OnDestroy()
         {
+            VoxelVolumeLeakSentinel.FinalizeVolume(this);
             UnregisterPublishedVolume(this);
             _deltaProcessor?.UnregisterVolume(this);
             VoxelDynamicNavGridRuntime.UnregisterVolume(this);
@@ -2304,9 +2456,11 @@ namespace Hecton8.Caves
                 _deltaProcessor.ApplyImmediateAbsoluteBoxCrater(this, absoluteCenter, halfExtents, DefaultDeltaMaterialId);
             }
 
+            float majorHorizontalExtent = Mathf.Max(Mathf.Abs(halfExtents.x), Mathf.Abs(halfExtents.z));
+            float minorHorizontalExtent = Mathf.Min(Mathf.Abs(halfExtents.x), Mathf.Abs(halfExtents.z));
             float impulseRadius = Mathf.Max(
                 ResourceCraterClusterRadiusMeters,
-                Mathf.Sqrt((halfExtents.x * halfExtents.x) + (halfExtents.z * halfExtents.z)) * 1.35f);
+                (majorHorizontalExtent + minorHorizontalExtent * 0.5f) * 1.35f);
             float impulseMagnitude = Mathf.Clamp(clusterCount * 3f + halfExtents.y * 2f, 12f, 48f);
             ApplyCollapseImpulse(runtimeCenter, halfExtents, impulseRadius, impulseMagnitude);
 
@@ -2333,9 +2487,8 @@ namespace Hecton8.Caves
             state *= 3266489917u;
             state ^= state >> 16;
 
-            float angle = (state & 0x00FFFFFFu) * (Mathf.PI * 2f / 16777215f);
-            Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-            return direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
+            float2 direction = ResolveSeismicScatterDirection((int)(state & 7u));
+            return new Vector3(direction.x, 0f, direction.y);
         }
 
         private void ApplyCollapseImpulse(Vector3 runtimeCenter, Vector3 halfExtents, float impulseRadius, float impulseMagnitude)
@@ -2369,6 +2522,7 @@ namespace Hecton8.Caves
             }
 
             float safeRadius = Mathf.Max(1f, impulseRadius);
+            float safeRadiusSq = safeRadius * safeRadius;
             for (int i = 0; i < bodyCount; i++)
             {
                 Rigidbody body = _collapseImpulseBodies[i];
@@ -2378,24 +2532,32 @@ namespace Hecton8.Caves
 
                 Vector3 bodyCenter = body.worldCenterOfMass;
                 Vector3 inward = runtimeCenter - bodyCenter;
-                float distance = inward.magnitude;
-                if (distance > safeRadius)
+                float distanceSq = inward.sqrMagnitude;
+                if (distanceSq > safeRadiusSq)
                     continue;
 
-                if (distance > 0.0001f)
-                    inward /= distance;
+                float3 impulseDirection;
+                if (distanceSq > 0.0001f)
+                {
+                    float invDistance = math.rsqrt(distanceSq);
+                    impulseDirection = new float3(inward.x * invDistance, inward.y * invDistance, inward.z * invDistance);
+                }
                 else
-                    inward = Vector3.down;
+                {
+                    impulseDirection = new float3(0f, -1f, 0f);
+                }
 
-                inward.y -= CollapseImpulseVerticalBias;
-                if (inward.sqrMagnitude <= 0.0001f)
-                    inward = Vector3.down;
+                impulseDirection.y -= CollapseImpulseVerticalBias;
+                float impulseDirectionLengthSq = math.lengthsq(impulseDirection);
+                if (impulseDirectionLengthSq <= 0.0001f)
+                    impulseDirection = new float3(0f, -1f, 0f);
                 else
-                    inward.Normalize();
+                    impulseDirection *= math.rsqrt(impulseDirectionLengthSq);
 
-                float distance01 = 1f - Mathf.Clamp01(distance / safeRadius);
-                float resolvedImpulse = impulseMagnitude * Mathf.Pow(distance01, 0.65f);
-                PhysicsForceRouter.QueueForce(body, inward * resolvedImpulse, ForceMode.Impulse);
+                float distance01 = 1f - math.saturate(distanceSq / safeRadiusSq);
+                float resolvedImpulse = impulseMagnitude * distance01 * distance01;
+                Vector3 force = new Vector3(impulseDirection.x, impulseDirection.y, impulseDirection.z) * resolvedImpulse;
+                PhysicsForceRouter.QueueForce(body, force, ForceMode.Impulse);
             }
         }
 
@@ -2424,11 +2586,13 @@ namespace Hecton8.Caves
                 Mathf.CeilToInt(segmentLength / Mathf.Max(0.5f, burnRadius)),
                 1,
                 MaxMagmaVeinBurnSamplesPerSegment);
+            Vector3 segment = end - start;
+            Vector3 sampleStep = segment / sampleCount;
+            Vector3 samplePosition = start;
             for (int i = 0; i <= sampleCount; i++)
             {
-                float t = sampleCount > 0 ? i / (float)sampleCount : 0f;
-                Vector3 samplePosition = Vector3.LerpUnclamped(start, end, t);
                 organicManager.ApplyDefoliantDeadZone(samplePosition, burnRadius);
+                samplePosition += sampleStep;
             }
         }
 
@@ -2479,7 +2643,7 @@ namespace Hecton8.Caves
                 if ((existing.position - absolutePosition).sqrMagnitude > mergeDistance * mergeDistance)
                     continue;
 
-                existing.position = Vector3.Lerp(existing.position, absolutePosition, 0.5f);
+                existing.position = (existing.position + absolutePosition) * 0.5f;
                 existing.radius = Mathf.Max(existing.radius, clampedRadius);
                 existing.blendRadius = Mathf.Max(existing.blendRadius, blendRadius);
                 _craterStamps[i] = existing;
@@ -2621,16 +2785,19 @@ namespace Hecton8.Caves
 
         private bool HasSolidDensityPath(Vector3 startWorldPosition, Vector3 endWorldPosition)
         {
-            float pathLength = Vector3.Distance(startWorldPosition, endWorldPosition);
-            float sampleStep = Mathf.Max(_voxelSize * 0.75f, 0.5f);
-            int sampleCount = Mathf.Max(2, Mathf.CeilToInt(pathLength / sampleStep));
+            Vector3 pathDelta = endWorldPosition - startWorldPosition;
+            float dominantAxisLength = math.cmax(math.abs(new float3(pathDelta.x, pathDelta.y, pathDelta.z)));
+            float sampleStep = math.max(_voxelSize * 0.75f, 0.5f);
+            int sampleCount = math.max(2, (int)math.ceil(dominantAxisLength / sampleStep));
+            Vector3 sampleDelta = pathDelta / sampleCount;
+            Vector3 samplePosition = startWorldPosition;
 
             for (int i = 0; i <= sampleCount; i++)
             {
-                float t = sampleCount > 0 ? i / (float)sampleCount : 0f;
-                Vector3 samplePosition = Vector3.Lerp(startWorldPosition, endWorldPosition, t);
                 if (!TrySampleDensity(samplePosition, out float density) || density <= 0f)
                     return false;
+
+                samplePosition += sampleDelta;
             }
 
             return true;
@@ -2647,6 +2814,192 @@ namespace Hecton8.Caves
                 hash *= 2246822519u;
                 hash ^= hash >> 13;
                 return (hash & 0x00FFFFFFu) / 16777215f;
+            }
+        }
+    }
+}
+
+namespace Hecton8.World
+{
+    /// <summary>
+    /// Fixed-slot voxel lifecycle sentry. Tracks volumes that were explicitly
+    /// destroyed, then reports if Unity never finalizes them within 300 frames.
+    /// </summary>
+    internal static class VoxelVolumeLeakSentinel
+    {
+        private const int MaxTrackedVoxelVolumes = 512;
+        private const int FinalizeDeadlineFrames = 300;
+        private const byte StateFree = 0;
+        private const byte StateAlive = 1;
+        private const byte StateDestroyPending = 2;
+        private const byte StateReported = 3;
+        private static readonly uint _CriticalMemoryLeakHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CRITICAL_MEMORY_LEAK"));
+        private static readonly uint _VoxelVolumeLeakContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelVolumeLeakSentinel"));
+
+        // COLD ALLOC: HectonVoxelVolume[512] - fixed voxel lifecycle sentry slots - owner: VoxelVolumeLeakSentinel
+        private static readonly Hecton8.Caves.HectonVoxelVolume[] s_volumes = new Hecton8.Caves.HectonVoxelVolume[MaxTrackedVoxelVolumes];
+        // COLD ALLOC: int[512] - destroy-request frame stamps - owner: VoxelVolumeLeakSentinel
+        private static readonly int[] s_destroyRequestedFrame = new int[MaxTrackedVoxelVolumes];
+        // COLD ALLOC: byte[512] - slot state flags - owner: VoxelVolumeLeakSentinel
+        private static readonly byte[] s_state = new byte[MaxTrackedVoxelVolumes];
+        private static readonly LeakSentinelLateFrameDriver s_driver = new LeakSentinelLateFrameDriver();
+        private static bool s_driverRegistered;
+        private static int s_pendingDestroyCount;
+
+        internal static void RegisterVolume(Hecton8.Caves.HectonVoxelVolume volume)
+        {
+            if (volume == null)
+                return;
+
+            int slot = FindSlot(volume);
+            if (slot < 0)
+                slot = FindFreeSlot();
+
+            if (slot < 0)
+                return;
+
+            if (s_state[slot] == StateDestroyPending)
+                s_pendingDestroyCount--;
+
+            s_volumes[slot] = volume;
+            s_destroyRequestedFrame[slot] = 0;
+            s_state[slot] = StateAlive;
+        }
+
+        internal static void MarkDestroyRequested(Hecton8.Caves.HectonVoxelVolume volume)
+        {
+            if (volume == null)
+                return;
+
+            int slot = FindSlot(volume);
+            if (slot < 0)
+                slot = FindFreeSlot();
+
+            if (slot < 0)
+                return;
+
+            if (s_state[slot] != StateDestroyPending)
+                s_pendingDestroyCount++;
+
+            s_volumes[slot] = volume;
+            s_destroyRequestedFrame[slot] = UnityEngine.Time.frameCount;
+            s_state[slot] = StateDestroyPending;
+            EnsureDriverRegistered();
+        }
+
+        internal static void MarkReleasedToPool(Hecton8.Caves.HectonVoxelVolume volume)
+        {
+            FinalizeVolume(volume);
+        }
+
+        internal static void FinalizeVolume(Hecton8.Caves.HectonVoxelVolume volume)
+        {
+            int slot = FindSlot(volume);
+            if (slot < 0)
+                return;
+
+            if (s_state[slot] == StateDestroyPending)
+                s_pendingDestroyCount--;
+
+            s_volumes[slot] = null;
+            s_destroyRequestedFrame[slot] = 0;
+            s_state[slot] = StateFree;
+            TryUnregisterDriver();
+        }
+
+        private static void Pump()
+        {
+            if (s_pendingDestroyCount <= 0)
+            {
+                TryUnregisterDriver();
+                return;
+            }
+
+            int frame = UnityEngine.Time.frameCount;
+            for (int i = 0; i < MaxTrackedVoxelVolumes; i++)
+            {
+                if (s_state[i] != StateDestroyPending)
+                    continue;
+
+                Hecton8.Caves.HectonVoxelVolume volume = s_volumes[i];
+                if (volume == null)
+                {
+                    s_state[i] = StateFree;
+                    s_destroyRequestedFrame[i] = 0;
+                    s_pendingDestroyCount--;
+                    continue;
+                }
+
+                if (frame - s_destroyRequestedFrame[i] < FinalizeDeadlineFrames)
+                    continue;
+
+                s_state[i] = StateReported;
+                s_pendingDestroyCount--;
+                Hecton8.Core.GlobalTelemetryBus.PublishPerformanceWarning(
+                    _CriticalMemoryLeakHash,
+                    _VoxelVolumeLeakContextHash,
+                    unchecked((uint)i));
+            }
+
+            TryUnregisterDriver();
+        }
+
+        private static int FindSlot(Hecton8.Caves.HectonVoxelVolume volume)
+        {
+            if (volume == null)
+                return -1;
+
+            for (int i = 0; i < MaxTrackedVoxelVolumes; i++)
+            {
+                if (ReferenceEquals(s_volumes[i], volume))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static int FindFreeSlot()
+        {
+            for (int i = 0; i < MaxTrackedVoxelVolumes; i++)
+            {
+                if (s_state[i] == StateFree)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private static void EnsureDriverRegistered()
+        {
+            if (s_driverRegistered ||
+                !UnityEngine.Application.isPlaying ||
+                Hecton8.Core.GlobalRegistry.Dispatcher == null)
+            {
+                return;
+            }
+
+            Hecton8.Core.GlobalRegistry.RegisterLateFrameTickable(s_driver, Hecton8.Core.PriorityLayer.Environment);
+            s_driverRegistered = true;
+        }
+
+        private static void TryUnregisterDriver()
+        {
+            if (!s_driverRegistered ||
+                s_pendingDestroyCount > 0 ||
+                Hecton8.Core.GlobalRegistry.Dispatcher == null)
+            {
+                return;
+            }
+
+            Hecton8.Core.GlobalRegistry.UnregisterLateFrameTickable(s_driver, Hecton8.Core.PriorityLayer.Environment);
+            s_driverRegistered = false;
+        }
+
+        private sealed class LeakSentinelLateFrameDriver : Hecton8.Core.ILateFrameTickable
+        {
+            public void LateFrameTick()
+            {
+                Pump();
             }
         }
     }

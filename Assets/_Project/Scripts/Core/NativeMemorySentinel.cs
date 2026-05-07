@@ -29,19 +29,27 @@ namespace Hecton8.Core
         private const int MaxTrackedAllocations = 1024;
         private const int TempAllocationFrameThreshold = 1;
         private const int TempJobAllocationFrameThreshold = 4;
+        private const int MaxPersistentReallocationRecords = 128;
+        private const int PersistentReallocationThreshold = 3;
+        private const float PersistentReallocationWindowSeconds = 60f;
         private const string CriticalMemoryViolationPrefix = "CRITICAL_MEMORY_VIOLATION";
         private const string MemoryLeakDetectedPrefix = "MEMORY_LEAK_DETECTED";
         private const string StaleBufferCrimePrefix = "STALE_BUFFER_CRIME";
+        private const string PersistentFragmentationRiskPrefix = "PERSISTENT_FRAGMENTATION_RISK";
         private const string CriticalMemoryViolationRegistryCapacityMessage = "CRITICAL_MEMORY_VIOLATION: NativeMemorySentinel registry capacity exceeded.";
         private const string CriticalMemoryViolationSceneLeakMessage = "CRITICAL_MEMORY_VIOLATION: scene allocation survived unload.";
         private const string CriticalMemoryViolationUnsafeLeakMessage = "CRITICAL_MEMORY_VIOLATION: UnsafeUtility leak detector reported leaks.";
+        private const string CriticalMemoryViolationServiceShutdownLeakMessage = "CRITICAL_MEMORY_VIOLATION: native allocations survived service shutdown.";
         private const string MemoryLeakDetectedRetentionMessage = "MEMORY_LEAK_DETECTED: transient allocation exceeded legal frame window.";
         private const string StaleBufferCrimeRetentionMessage = "STALE_BUFFER_CRIME: TempJob allocation exceeded 4-frame legal window.";
+        private const string PersistentFragmentationRiskMessage = "PERSISTENT_FRAGMENTATION_RISK: persistent native allocation changed size more than 3 times in 60 seconds.";
+        private const string NativeLeakReapedMessage = "NATIVE_LEAK_REAPED: RuntimeWatchdog force-freed a scene native allocation.";
 
         private static readonly uint _nativeMemoryContextHash = unchecked((uint)LocHash.Compute(nameof(NativeMemorySentinel)));
         private static readonly uint _criticalMemoryViolationHash = unchecked((uint)LocHash.Compute(CriticalMemoryViolationPrefix));
         private static readonly uint _memoryLeakDetectedHash = unchecked((uint)LocHash.Compute(MemoryLeakDetectedPrefix));
         private static readonly uint _staleBufferCrimeHash = unchecked((uint)LocHash.Compute(StaleBufferCrimePrefix));
+        private static readonly uint _persistentFragmentationRiskHash = unchecked((uint)LocHash.Compute(PersistentFragmentationRiskPrefix));
 
         private struct NativeAllocationRecord
         {
@@ -50,15 +58,29 @@ namespace Hecton8.Core
             public long Bytes;
             public int AllocationFrame;
             public NativeAllocationLifetime Lifetime;
+            public Allocator Allocator;
             public bool LeakReported;
             public string Owner;
             public string Label;
             public string StackTrace;
         }
 
+        private struct PersistentReallocationRecord
+        {
+            public string Owner;
+            public string Label;
+            public long LastBytes;
+            public int ReallocationCount;
+            public float WindowStartTime;
+            public bool Reported;
+        }
+
         // COLD ALLOC: NativeAllocationRecord[1024] - persistent native allocation ownership registry - owner: NativeMemorySentinel
         private static readonly NativeAllocationRecord[] _records = new NativeAllocationRecord[MaxTrackedAllocations];
+        // COLD ALLOC: PersistentReallocationRecord[128] - persistent native allocation resize telemetry window - owner: NativeMemorySentinel
+        private static readonly PersistentReallocationRecord[] _persistentReallocationRecords = new PersistentReallocationRecord[MaxPersistentReallocationRecords];
         private static int _count;
+        private static int _persistentReallocationRecordCount;
         private static int _nextId = 1;
         private static long _trackedBytes;
         private static int _sceneLeakViolationCount;
@@ -92,8 +114,11 @@ namespace Hecton8.Core
         {
             for (int i = 0; i < _count; i++)
                 _records[i] = default;
+            for (int i = 0; i < _persistentReallocationRecordCount; i++)
+                _persistentReallocationRecords[i] = default;
 
             _count = 0;
+            _persistentReallocationRecordCount = 0;
             _nextId = 1;
             _trackedBytes = 0L;
             _sceneLeakViolationCount = 0;
@@ -370,7 +395,17 @@ namespace Hecton8.Core
                     string.Equals(existing.Owner, owner, StringComparison.Ordinal) &&
                     string.Equals(existing.Label, label, StringComparison.Ordinal);
                 if (pointerMatches || pointerlessOwnerMatches)
+                {
+                    if (existing.Bytes != bytes)
+                    {
+                        TrackPersistentReallocation(owner, label, bytes, existing.Lifetime);
+                        _trackedBytes += bytes - existing.Bytes;
+                        existing.Bytes = bytes;
+                        _records[i] = existing;
+                    }
+
                     return existing.Id;
+                }
             }
 
             int id = _nextId++;
@@ -386,6 +421,8 @@ namespace Hecton8.Core
                 return 0;
             }
 
+            TrackPersistentReallocation(owner, label, bytes, lifetime);
+
             _records[_count++] = new NativeAllocationRecord
             {
                 Id = id,
@@ -393,6 +430,7 @@ namespace Hecton8.Core
                 Bytes = bytes,
                 AllocationFrame = Application.isPlaying ? Time.frameCount : 0,
                 Lifetime = lifetime,
+                Allocator = ResolveAllocator(lifetime),
                 Owner = owner,
                 Label = label,
                 StackTrace = CaptureStackTrace()
@@ -556,6 +594,90 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Reports and force-frees scene-lifetime native arrays that survived a scene unload.
+        /// </summary>
+        public static int ReapSceneLifetimeLeaks(string context)
+        {
+            int reaped = 0;
+            for (int i = _count - 1; i >= 0; i--)
+            {
+                NativeAllocationRecord record = _records[i];
+                if (record.Lifetime != NativeAllocationLifetime.Scene)
+                    continue;
+
+                Interlocked.Increment(ref _sceneLeakViolationCount);
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _criticalMemoryViolationHash,
+                    _nativeMemoryContextHash,
+                    record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes);
+
+                if (record.Pointer == IntPtr.Zero)
+                {
+                    record.LeakReported = true;
+                    _records[i] = record;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+#endif
+                    continue;
+                }
+
+                Allocator allocator = (int)record.Allocator == 0
+                    ? Allocator.Persistent
+                    : record.Allocator;
+                UnsafeUtility.Free(record.Pointer.ToPointer(), allocator);
+                RuntimeWatchdog.ReportNativeLeakReaped(
+                    ComputeStableHash(record.Owner),
+                    ComputeStableHash(record.Label),
+                    record.Bytes);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(
+                    NativeLeakReapedMessage +
+                    " context=" + context +
+                    " owner=" + record.Owner +
+                    " label=" + record.Label +
+                    "\n" + record.StackTrace);
+#endif
+                RemoveAt(i);
+                reaped++;
+            }
+
+#if HECTON_FULL_NATIVE_LEAK_SCAN_ON_SCENE_UNLOAD
+            int unsafeLeakCount = UnsafeUtility.CheckForLeaks();
+            if (unsafeLeakCount > reaped)
+            {
+                Interlocked.Increment(ref _sceneLeakViolationCount);
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _criticalMemoryViolationHash,
+                    _nativeMemoryContextHash,
+                    unsafeLeakCount);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+#endif
+            }
+#endif
+            return reaped;
+        }
+
+        /// <summary>
+        /// Asserts that registry-owned services released every tracked native allocation before slot reset.
+        /// </summary>
+        public static bool AssertNoAllocationsAfterServiceShutdown(string context)
+        {
+            int activeCount = ActiveAllocationCount;
+            if (activeCount <= 0)
+                return true;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _criticalMemoryViolationHash,
+                _nativeMemoryContextHash,
+                activeCount);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError(CriticalMemoryViolationServiceShutdownLeakMessage);
+#endif
+            return false;
+        }
+
+        /// <summary>
         /// Reports Temp/TempJob native allocations that survived beyond their legal transient window.
         /// </summary>
         public static void AuditLongLivedTransientAllocations(int currentFrame)
@@ -613,7 +735,7 @@ namespace Hecton8.Core
 
         private static void HandleSceneUnloaded(Scene scene)
         {
-            ReportSceneLifetimeLeaks(scene.name);
+            RuntimeWatchdog.ReapNativeSceneLeaks(scene.name);
         }
 
         private static void RemoveAt(int index)
@@ -643,11 +765,122 @@ namespace Hecton8.Core
                 if (delta == 0L)
                     return;
 
+                TrackPersistentReallocation(owner, label, bytes, record.Lifetime);
                 record.Bytes = bytes;
                 _records[i] = record;
                 _trackedBytes += delta;
                 return;
             }
+        }
+
+        private static void TrackPersistentReallocation(
+            string owner,
+            string label,
+            long bytes,
+            NativeAllocationLifetime lifetime)
+        {
+            if (!IsPersistentLifetime(lifetime) || bytes <= 0L)
+                return;
+
+            float now = Application.isPlaying ? Time.unscaledTime : 0f;
+            int recordIndex = FindPersistentReallocationRecord(owner, label);
+            if (recordIndex < 0)
+            {
+                if (_persistentReallocationRecordCount >= MaxPersistentReallocationRecords)
+                    return;
+
+                _persistentReallocationRecords[_persistentReallocationRecordCount++] = new PersistentReallocationRecord
+                {
+                    Owner = owner,
+                    Label = label,
+                    LastBytes = bytes,
+                    ReallocationCount = 0,
+                    WindowStartTime = now,
+                    Reported = false
+                };
+                return;
+            }
+
+            PersistentReallocationRecord record = _persistentReallocationRecords[recordIndex];
+            if (record.LastBytes == bytes)
+                return;
+
+            if (now - record.WindowStartTime > PersistentReallocationWindowSeconds)
+            {
+                record.WindowStartTime = now;
+                record.ReallocationCount = 1;
+                record.Reported = false;
+            }
+            else
+            {
+                record.ReallocationCount++;
+            }
+
+            record.LastBytes = bytes;
+            if (!record.Reported && record.ReallocationCount > PersistentReallocationThreshold)
+            {
+                record.Reported = true;
+                uint allocationHash = ComputeOwnerLabelHash(owner, label);
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _persistentFragmentationRiskHash,
+                    allocationHash,
+                    record.ReallocationCount);
+                CrashTelemetryBuffer.ReportNativeFragmentationRisk(allocationHash, record.ReallocationCount, bytes);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(PersistentFragmentationRiskMessage);
+#endif
+            }
+
+            _persistentReallocationRecords[recordIndex] = record;
+        }
+
+        private static Allocator ResolveAllocator(NativeAllocationLifetime lifetime)
+        {
+            switch (lifetime)
+            {
+                case NativeAllocationLifetime.Temp:
+                    return Allocator.Temp;
+                case NativeAllocationLifetime.TempJob:
+                    return Allocator.TempJob;
+                default:
+                    return Allocator.Persistent;
+            }
+        }
+
+        private static uint ComputeStableHash(string value)
+        {
+            return string.IsNullOrEmpty(value)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(value));
+        }
+
+        private static int FindPersistentReallocationRecord(string owner, string label)
+        {
+            for (int i = 0; i < _persistentReallocationRecordCount; i++)
+            {
+                PersistentReallocationRecord record = _persistentReallocationRecords[i];
+                if (string.Equals(record.Owner, owner, StringComparison.Ordinal) &&
+                    string.Equals(record.Label, label, StringComparison.Ordinal))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private static bool IsPersistentLifetime(NativeAllocationLifetime lifetime)
+        {
+            return lifetime == NativeAllocationLifetime.Scene ||
+                   lifetime == NativeAllocationLifetime.Session ||
+                   lifetime == NativeAllocationLifetime.Permanent;
+        }
+
+        private static uint ComputeOwnerLabelHash(string owner, string label)
+        {
+            uint ownerHash = unchecked((uint)LocHash.Compute(owner ?? string.Empty));
+            uint labelHash = unchecked((uint)LocHash.Compute(label ?? string.Empty));
+            return ownerHash ^ (labelHash * 16777619u);
         }
 
         private static long EstimateNativeHashMapBytes<TKey, TValue>(int capacity)

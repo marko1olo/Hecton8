@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Ecosystem;
+using Hecton8.Physics;
 using Hecton8.Systems.AI;
 using Hecton8.UI;
 using Unity.Burst;
@@ -48,6 +49,10 @@ namespace Hecton8.World
         private const float CorpseSpawnInfluenceRadiusMeters = 100f;
         private const float MinimumCorpseDietInfluence01 = 0.001f;
         private const float CorpseSpawnSelectionScale = 2.6f;
+        private const float WhaleFallAcousticImpulseLifetimeSeconds = 600f;
+        private const float WhaleFallAcousticImpulseEnergyJoules = 28000f;
+        private const float WhaleFallAcousticImpulseVolume01 = 0.42f;
+        private const float WhaleFallAcousticImpulsePitchScale = 0.52f;
         private const int PredatorSpawnValidationHitCapacity = 64;
         private const int HibernationPopulationSyncsPerColdSolve = 8;
         private const int ApexTerritoryOverlapCandidateCapacity = 16;
@@ -359,6 +364,9 @@ namespace Hecton8.World
         private float _eclipsePredatorMigrationTimer;
         private float _eclipsePredatorMigrationIntensity01;
         private float _eclipsePredatorMigrationAccumulator;
+        private Vector3 _activeWhaleFallAcousticPosition;
+        private float _activeWhaleFallAcousticUntilTime;
+        private uint _activeWhaleFallAcousticUid;
 
         /// <summary>
         /// True once the runtime-native state is allocated and registered.
@@ -374,6 +382,13 @@ namespace Hecton8.World
         {
             AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);
             AbsoluteUniversePosition faunaAup = AbsoluteUniversePosition.FromRuntimePosition(faunaPosition);
+            return ResolveLogicalLodTier(in observerAup, in faunaAup);
+        }
+
+        internal FaunaLogicalLodTier ResolveLogicalLodTier(
+            in AbsoluteUniversePosition observerAup,
+            in AbsoluteUniversePosition faunaAup)
+        {
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in observerAup, in faunaAup);
 
             if (distanceSq < (LogicalLodFullSimDistanceMeters * LogicalLodFullSimDistanceMeters))
@@ -739,6 +754,10 @@ namespace Hecton8.World
                 _cachedPersistentWorldRegistry.TryCacheWhaleFallPoiState(uniqueInstanceUid, unchecked((int)(uniqueInstanceUid & 0x00FFFFFFu)), in whaleFallAup, Time.time);
             }
 
+            MigrationDirector.RegisterPredatorKillPoi(uniqueInstanceUid, worldPosition, Time.time);
+            _activeWhaleFallAcousticPosition = worldPosition;
+            _activeWhaleFallAcousticUid = uniqueInstanceUid;
+            _activeWhaleFallAcousticUntilTime = Time.time + WhaleFallAcousticImpulseLifetimeSeconds;
             ReportApexPredatorKilled(worldPosition, hostilityDelta);
         }
 
@@ -885,6 +904,7 @@ namespace Hecton8.World
             {
                 PublishFloraPredatorAupBuffer(playerPosition);
                 ScheduleApexTerritoryOverlap(playerPosition);
+                EmitWhaleFallAcousticImpulseSlowTick();
             }
             else
             {
@@ -902,6 +922,24 @@ namespace Hecton8.World
                 SyncPendingHibernatedFaunaPopulationRecords();
                 ScheduleSectorSolve();
             }
+        }
+
+        private void EmitWhaleFallAcousticImpulseSlowTick()
+        {
+            if (_activeWhaleFallAcousticUid == 0u || Time.time > _activeWhaleFallAcousticUntilTime)
+                return;
+
+            AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
+                _activeWhaleFallAcousticPosition,
+                Vector3.down,
+                WhaleFallAcousticImpulseEnergyJoules,
+                WhaleFallAcousticImpulseVolume01,
+                WhaleFallAcousticImpulsePitchScale,
+                math.max(CorpseSpawnInfluenceRadiusMeters, scavengerCorpseSearchRadiusMeters),
+                unchecked((int)(_activeWhaleFallAcousticUid & 0x7FFFFFFFu)),
+                0,
+                AcousticImpulseFlags.Leviathan);
+            PhysicsEventBus.NotifyAcousticImpulse(in impulseEvent);
         }
 
         public void LateFrameTick()
@@ -1708,8 +1746,8 @@ namespace Hecton8.World
 
                 if (hit.DistanceSqr < GlobalOceanPanicRadiusMetersSqr)
                 {
-                    float distance01 = Mathf.Sqrt(Mathf.Max(0f, hit.DistanceSqr)) / GlobalOceanPanicRadiusMeters;
-                    panic01 = math.max(panic01, 1f - distance01);
+                    float distanceSq01 = math.saturate(hit.DistanceSqr / GlobalOceanPanicRadiusMetersSqr);
+                    panic01 = math.max(panic01, 1f - distanceSq01);
                 }
 
                 if (uploadCount < FloraPredatorAupBufferCapacity)

@@ -32,6 +32,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Inventory;
     using Hecton8.Items;
     using Hecton8.Input;
+    using Hecton8.Interaction;
     using Hecton8.Physics;
     using Hecton8.Tools;
     using Hecton8.World;
@@ -563,7 +564,7 @@ namespace Hecton8.Gameplay
             {
                 int cursor = 0;
                 cursor = AppendLiteral(destination, cursor, "CELL SWAP // ");
-                cursor = AppendInt(destination, cursor, Mathf.Clamp(Mathf.RoundToInt(ResolveBatterySiphonProgress01() * 100f), 0, 100));
+                cursor = AppendInt(destination, cursor, math.clamp(Mathf.RoundToInt(ResolveBatterySiphonProgress01() * 100f), 0, 100));
                 cursor = AppendLiteral(destination, cursor, "%");
                 length = cursor;
                 return cursor > 0;
@@ -583,13 +584,13 @@ namespace Hecton8.Gameplay
                 cursor = AppendLiteral(destination, cursor, "SCANNER // ");
                 cursor = AppendLiteral(destination, cursor, DescribeScientificTarget(snapshot));
                 cursor = AppendLiteral(destination, cursor, " // ");
-                cursor = AppendInt(destination, cursor, Mathf.Clamp(Mathf.RoundToInt(snapshot.Progress01 * 100f), 0, 100));
+                cursor = AppendInt(destination, cursor, math.clamp(Mathf.RoundToInt(snapshot.Progress01 * 100f), 0, 100));
                 cursor = AppendLiteral(destination, cursor, "% // TEMP ");
                 cursor = AppendInt(destination, cursor, Mathf.RoundToInt(snapshot.TemperatureC));
                 cursor = AppendLiteral(destination, cursor, "C // SAL ");
                 cursor = AppendInt(destination, cursor, Mathf.RoundToInt(snapshot.SalinityPpt));
                 cursor = AppendLiteral(destination, cursor, " // TOX ");
-                cursor = AppendInt(destination, cursor, Mathf.Clamp(Mathf.RoundToInt(snapshot.Toxicity01 * 100f), 0, 100));
+                cursor = AppendInt(destination, cursor, math.clamp(Mathf.RoundToInt(snapshot.Toxicity01 * 100f), 0, 100));
                 cursor = AppendLiteral(destination, cursor, "%");
                 if (snapshot.HasAttractantTrace)
                 {
@@ -1247,7 +1248,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>
         /// Обрабатывает анимацию смены инструмента (state machine).
-        /// Использует Mathf.Lerp — zero GC, frame-independent.
+        /// Использует math.lerp — zero GC, frame-independent.
         /// </summary>
         private void ProcessSwapAnimation(float deltaTime)
         {
@@ -1276,9 +1277,9 @@ namespace Hecton8.Gameplay
                 // ── LOWERING: rest → lowered ──
                 case SwapState.Lowering:
                 {
-                    handAnchor.localPosition = Vector3.Lerp(
-                        _anchorRestPosition,
-                        _anchorLoweredPosition,
+                    handAnchor.localPosition = (Vector3)math.lerp(
+                        (float3)_anchorRestPosition,
+                        (float3)_anchorLoweredPosition,
                         _swapProgress);
 
                     if (_swapProgress >= 1f)
@@ -1292,9 +1293,9 @@ namespace Hecton8.Gameplay
                 // ── RAISING: lowered → rest ──
                 case SwapState.Raising:
                 {
-                    handAnchor.localPosition = Vector3.Lerp(
-                        _anchorLoweredPosition,
-                        _anchorRestPosition,
+                    handAnchor.localPosition = (Vector3)math.lerp(
+                        (float3)_anchorLoweredPosition,
+                        (float3)_anchorRestPosition,
                         _swapProgress);
 
                     if (_swapProgress >= 1f)
@@ -1348,6 +1349,8 @@ namespace Hecton8.Gameplay
             _currentInstance.transform.SetParent(handAnchor, false);
             _currentInstance.transform.localPosition = Vector3.zero;
             _currentInstance.transform.localRotation = Quaternion.identity;
+            if (_currentInstance.TryGetComponent(out PhysicalToolGripOffsets gripOffsets))
+                gripOffsets.TryApplyGripOffset(_currentInstance.transform, PhysicalHandSide.Right);
 
             // Получаем компонент PlayerTool
             if (_currentInstance.TryGetComponent(out PlayerTool tool))

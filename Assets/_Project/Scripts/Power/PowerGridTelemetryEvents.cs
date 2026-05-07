@@ -175,7 +175,7 @@ namespace Hecton8.Power
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        internal static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {

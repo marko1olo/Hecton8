@@ -455,6 +455,7 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: String[101] — localized recovery progress HUD cache — owner: LaserCutter
         private static string[] _recoveryProgressMessages;
         private static GameLanguage _recoveryProgressLanguage = (GameLanguage)(-1);
+        private static readonly int _LaserHitHeatId = Shader.PropertyToID("_LaserHitHeat");
 
         // ══════════════════════════════════════════════════════════
         //  EVENTS
@@ -801,7 +802,7 @@ namespace Hecton8.Gameplay
             if (_heatLevel >= 1f)
             {
                 _heatLevel = 1f;
-                SyncModularHeat(_heatLevel);
+                SyncHeatOutputs();
                 TriggerOverheatLockout();
                 return;
             }
@@ -834,7 +835,7 @@ namespace Hecton8.Gameplay
                 ApplyOpenWaterBoil(deltaTime);
             }
 
-            SyncModularHeat(_heatLevel);
+            SyncHeatOutputs();
             PublishHeat();
         }
 
@@ -878,7 +879,7 @@ namespace Hecton8.Gameplay
                       _heatLevel = math.min(_heatLevel, 0.8f);
                       ClearFlag(OverheatedState);
                       EnterCooldownState();
-                      SyncModularHeat(_heatLevel);
+                      SyncHeatOutputs();
                       PublishHeat();
                       ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
                   }
@@ -890,7 +891,7 @@ namespace Hecton8.Gameplay
                   {
                       _heatLevel = math.max(0f, _heatLevel - deltaTime * math.max(0f, cooldownRate));
                       EnterCooldownState();
-                      SyncModularHeat(_heatLevel);
+                      SyncHeatOutputs();
                       PublishHeat();
                   }
                   else
@@ -1014,6 +1015,12 @@ namespace Hecton8.Gameplay
                 _lastPublishedHeat = _heatLevel;
                 LaserCutterEvents.RaiseHeatChanged(_heatLevel, ResolveEventCutterId(), ResolveEventRootInstanceId());
             }
+        }
+
+        private void SyncHeatOutputs()
+        {
+            SyncModularHeat(_heatLevel);
+            Shader.SetGlobalFloat(_LaserHitHeatId, _heatLevel);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1576,6 +1583,7 @@ namespace Hecton8.Gameplay
             _lockoutSoundPlayed = false;
             _lastPublishedHeat = -1f;
             _secondaryLatched = false;
+            SyncHeatOutputs();
             ResetDeconstructState();
         }
 

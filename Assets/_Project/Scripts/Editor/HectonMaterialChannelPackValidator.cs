@@ -24,7 +24,10 @@ namespace Hecton8.EditorTools
             "Universal Render Pipeline/Lit",
             "Standard",
             "Hecton8/Environment/Hecton_DryZoneLit",
-            "Hecton8/Environment/Hecton_AbyssalVoxelRock"
+            "Hecton8/Environment/Hecton_AbyssalVoxelRock",
+            "Hecton8/World/WreckIndirectLit",
+            "Hecton8/World/ScatterIndirectLit",
+            "Hecton8/Fauna/LeviathanOrganic"
         };
 
         internal sealed class AuditResult

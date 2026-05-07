@@ -45,6 +45,14 @@ The source-level bus inventory is not one flat conceptual system. It is classifi
 
 This classification is an ownership map, not a new runtime dispatcher. `SystemDispatcher.LateUpdate()` remains the actual drain point and enforces the shared late-frame budget.
 
+Cross-domain authority rule:
+- Core, Env, Player, Base, and AI are the only documented first-party cross-domain arteries.
+- Direct `Action`, `Func`, `delegate`, C# `event`, or `UnityEvent` chains are legacy debt when they cross domain boundaries.
+- Local owner callbacks, async completion callbacks, and inspector-only UI bindings are not promoted into event-flow authority by this map.
+- `HectonEventBus` remains the managed modding boundary; it is not a replacement for queue-backed first-party lanes.
+
+Strict shedding budget: the five arteries share a hard `2.0ms` late-frame event dispatch ceiling. If the Core, Env, Player, Base, or AI artery cannot drain inside that budget, remaining queued payloads are retained for a later frame; unbounded drain is forbidden.
+
 Flush order visible in source:
 1. `ThreadSafeCommandQueue.DrainMainThread()`
 2. `ThreadSafeCommandQueue.FlushStorageReservationCommitResolvedEvents()`

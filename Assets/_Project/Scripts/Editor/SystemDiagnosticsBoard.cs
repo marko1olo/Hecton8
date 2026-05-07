@@ -43,7 +43,7 @@ namespace Hecton8.Editor
             public float Dt;
 
             [TableColumnWidth(72, Resizable = false)]
-            public float FixedDt;
+            public float LatencyMs;
 
             [TableColumnWidth(72, Resizable = false)]
             public float GpuMs;
@@ -147,7 +147,7 @@ namespace Hecton8.Editor
                 row.Frame = entry.FrameIndex;
                 row.Systems = ResolveSystemMask(entry.SystemMask);
                 row.Dt = entry.DeltaTime;
-                row.FixedDt = entry.FixedDeltaTime;
+                row.LatencyMs = entry.LatencyMs;
                 row.GpuMs = entry.GpuFrameTime;
                 row.ReservedMb = entry.MemoryUsedMb;
                 row.PlayerAup = entry.PlayerAup;

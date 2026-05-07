@@ -732,7 +732,7 @@ namespace Hecton8.Gameplay
             while (Time.realtimeSinceStartup < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
         }
 
@@ -760,7 +760,7 @@ namespace Hecton8.Gameplay
                 if (success)
                     return true;
 
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             Debug.LogWarning($"[TrialRangeSmoke] TIMEOUT {label} after {timeout:0.00}s");

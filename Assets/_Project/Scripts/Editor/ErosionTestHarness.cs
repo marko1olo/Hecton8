@@ -234,15 +234,16 @@ namespace Hecton8.Editor
                 NativeMemorySentinel.RegisterNativeArray(quantized, NativeMemoryOwner, ShelfQuantizedLabel, NativeAllocationLifetime.TempJob);
 
                 HectonSandboxAbyssalShelfParams parameters = CreateMacroShelfParameters();
+                AbsoluteUniversePosition previewOriginAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
+                    ShelfPreviewOriginMeters,
+                    ShelfPreviewOriginMeters,
+                    ShelfAupCellSizeMeters);
                 handle = new HectonSandboxAbyssalShelfBaseJob
                 {
                     OutputHeights01 = raw,
                     Parameters = parameters,
                     Width = Resolution,
-                    WorldOriginAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
-                        ShelfPreviewOriginMeters,
-                        ShelfPreviewOriginMeters,
-                        ShelfAupCellSizeMeters),
+                    WorldOriginAup = previewOriginAup,
                     CellSizeMeters = ShelfPreviewCellSizeMeters
                 }.Schedule(PixelCount, 64);
                 handleScheduled = true;
@@ -250,8 +251,16 @@ namespace Hecton8.Editor
                 const float plateauSourceAngle = 15f;
                 const float plateauTargetAngle = 3.5f;
                 const float cliffSourceAngle = 45f;
-                const float cliffTargetAngle = 52f;
-                const float cliffRampEndAngle = cliffSourceAngle + (cliffTargetAngle - cliffSourceAngle) * 0.25f;
+                double previewCenterX = previewOriginAup.GridX * (double)ShelfAupCellSizeMeters +
+                    previewOriginAup.LocalX +
+                    Resolution * ShelfPreviewCellSizeMeters * 0.5;
+                double previewCenterZ = previewOriginAup.GridZ * (double)ShelfAupCellSizeMeters +
+                    previewOriginAup.LocalZ +
+                    Resolution * ShelfPreviewCellSizeMeters * 0.5;
+                float cliffTargetAngle = HectonSandboxAbyssalShelfMath.EvaluateSlopeTargetAngleDegrees(
+                    new double2(previewCenterX, previewCenterZ),
+                    in parameters);
+                const float cliffRampEndAngle = 62f;
                 handle = new HectonSandboxSlopeQuantizationJob
                 {
                     InputHeights01 = raw,
@@ -306,6 +315,7 @@ namespace Hecton8.Editor
                 PlateUniformity = 0.78f,
                 DomainWarpMeters = 1450f,
                 DomainWarpFrequency = 0.00011f,
+                SlopeNoiseFrequency = 0.00003125f,
                 MacroExponentialFalloff = 3.1f,
                 ShelfRunMeters = 15000f,
                 ShelfTargetSlopeDegrees = 30f,

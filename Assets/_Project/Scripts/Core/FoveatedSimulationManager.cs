@@ -883,13 +883,14 @@ namespace Hecton8.Core
         private void DisposeNativeBuffers(JobHandle dependency)
         {
             MemoryBudgetTracker.Unregister(MemoryBudgetOwnerName);
-            DisposeNativeArray(ref _jobScorePositions, dependency);
-            DisposeNativeArray(ref _jobImportanceScores, dependency);
-            DisposeNativeArray(ref _jobTickRateCodes, dependency);
-            DisposeNativeArray(ref _jobInsideFrustumFlags, dependency);
-            DisposeNativeArray(ref _jobFromPositions, dependency);
-            DisposeNativeArray(ref _jobToPositions, dependency);
-            DisposeNativeArray(ref _jobAlphas, dependency);
+            JobHandle disposeHandle = dependency;
+            DisposeNativeArray(ref _jobScorePositions, ref disposeHandle);
+            DisposeNativeArray(ref _jobImportanceScores, ref disposeHandle);
+            DisposeNativeArray(ref _jobTickRateCodes, ref disposeHandle);
+            DisposeNativeArray(ref _jobInsideFrustumFlags, ref disposeHandle);
+            DisposeNativeArray(ref _jobFromPositions, ref disposeHandle);
+            DisposeNativeArray(ref _jobToPositions, ref disposeHandle);
+            DisposeNativeArray(ref _jobAlphas, ref disposeHandle);
             NativeMemorySentinel.UnregisterNativeQueue(nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommands));
             NativeMemorySentinel.UnregisterNativeQueue(nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastOwnerIndices));
             NativeMemorySentinel.UnregisterNativeQueue(nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommandIndices));
@@ -897,8 +898,9 @@ namespace Hecton8.Core
             DisposeNativeQueue(ref _pendingDeferredRaycastCommands);
             DisposeNativeQueue(ref _pendingDeferredRaycastOwnerIndices);
             DisposeNativeQueue(ref _pendingDeferredRaycastCommandIndices);
-            DisposeNativeList(ref _deferredRaycastCommands, dependency);
-            DisposeNativeArray(ref _deferredRaycastResults, dependency);
+            DisposeNativeList(ref _deferredRaycastCommands, ref disposeHandle);
+            DisposeNativeArray(ref _deferredRaycastResults, ref disposeHandle);
+            DispatcherJobSwap.TryComplete(ref disposeHandle, forceComplete: true);
 
             _jobScorePositions = default;
             _jobImportanceScores = default;
@@ -916,22 +918,22 @@ namespace Hecton8.Core
             _nativeMemoryBudgetRegistered = false;
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle dependency) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(dependency);
+            dependency = array.Dispose(dependency);
             array = default;
         }
 
-        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle dependency) where T : unmanaged
+        private static void DisposeNativeList<T>(ref NativeList<T> list, ref JobHandle dependency) where T : unmanaged
         {
             if (!list.IsCreated)
                 return;
 
-            list.Dispose(dependency);
+            dependency = list.Dispose(dependency);
             list = default;
         }
 

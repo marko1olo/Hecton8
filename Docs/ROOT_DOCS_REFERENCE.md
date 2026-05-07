@@ -1,6 +1,6 @@
 ﻿# Root Docs Reference
 
-Date: 2026-05-07
+Date: 2026-05-08
 Status: PENDING VERIFICATION
 
 Purpose: explain what still remains in repository root versus `Docs/` after the current documentation cleanup.
@@ -64,15 +64,28 @@ The repository root text surface is reduced to three active anchors plus `TERRAI
 Treat it as a compatibility mirror only.
 If new root text files appear, classify them before treating them as current authority.
 
-## 2026-05-06 Check
+## 2026-05-07 Check
 
 Root documentation anchors remain `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
 Root `TERRAIN_AND_BIOME_REALITY_MAP.md` is not active authority; use `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
 Root `BROKEN_PREFABS.md` is not active authority; it is a generated snapshot and must be summarized in a dated `Docs/Reports/` file before citation.
 Root `.log` files were moved to dated bundles under `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*/`.
 `.codex-artifacts/**` remains evidence artifact storage, not documentation authority.
-Latest documentation synchronization pass: `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`.
+Latest documentation synchronization pass: `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`.
+Latest final-inquisition proof boundary: `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`.
+Latest Project Atlas/source-count synchronization pass: `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`.
 Latest documentation sweep: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
 Latest documentation sorting map: `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
 Latest header/archive queue: `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`.
 Current root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files; only the three anchors listed above are active documentation authority.
+
+## 2026-05-08 Check
+
+Root documentation anchors remain `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+Root `TERRAIN_AND_BIOME_REALITY_MAP.md` is still not active authority; use `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
+Root `BROKEN_PREFABS.md` is still not active authority; it is a generated snapshot and must be summarized in a dated `Docs/Reports/` file before citation.
+Current root text scan saw `5` root `.md` files and `0` root `.txt`/`.log` files.
+Latest documentation synchronization pass: `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`.
+Latest active documentation manifest: `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`.
+Latest completed Core build evidence: `CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log`, `Build succeeded`, `48 Warning(s)`, `0 Error(s)`; later source writes were observed, so this is not stable-source proof.
+Latest Unity MCP editor-console proof: active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`.

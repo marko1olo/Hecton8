@@ -5,6 +5,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [MainTexture] _Base_Map ("Base Map", 2D) = "white" {}
         [NoScaleOffset] _Normal_Map ("Normal Map", 2D) = "bump" {}
         [NoScaleOffset] _Mask_Map ("Mask Map", 2D) = "white" {}
+        [NoScaleOffset] _HectonMicroNormalTex("Micro Normal 128", 2D) = "bump" {}
         [NoScaleOffset] _FreshRockAlbedoMap ("Fresh Rock Albedo Map", 2D) = "white" {}
         [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
         [NoScaleOffset] _SiltLayerMap ("Horizontal Silt Layer Map", 2D) = "white" {}
@@ -36,6 +37,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _RustStrength ("Procedural Rust Strength", Range(0, 1)) = 0.26
         _SiltTint ("Procedural Silt Tint", Color) = (0.31, 0.30, 0.25, 1)
         _RustTint ("Procedural Rust Tint", Color) = (0.47, 0.16, 0.06, 1)
+        _EnvironmentalWear("Environmental Wear", Range(0, 1)) = 0.0
+        _RustSaltColor("Rust/Salt Wear Color", Color) = (0.62, 0.35, 0.16, 1)
+        _MicroNormalStrength("Micro Normal Strength", Range(0, 1)) = 0.22
+        _MicroNormalTiling("Micro Normal Tiling", Range(4, 128)) = 56
+        _StormRainDripAmplitude("Storm Rain Drip Amplitude", Range(0, 0.025)) = 0.0025
+        _StormRainDripTiling("Storm Rain Drip Tiling", Range(0.5, 16)) = 4
+        _StormRainDripSpeed("Storm Rain Drip Speed", Range(0, 8)) = 1.6
         _ChunkDissolveFade ("Chunk Dissolve Fade", Range(0, 1)) = 1
         _ChunkDissolveGlitchStrength ("Chunk Dissolve Glitch Strength", Range(0, 1)) = 0.18
         _ChunkDissolvePhosphorTint ("Chunk Dissolve Phosphor Tint", Color) = (0.04, 0.82, 0.18, 1)
@@ -98,6 +106,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float4 _CurvatureWearTint;
             float4 _SiltTint;
             float4 _RustTint;
+            float4 _RustSaltColor;
             float4 _ChunkDissolvePhosphorTint;
             float4 _BiomeFamilySandTint;
             float4 _BiomeFamilyBasaltTint;
@@ -125,6 +134,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _ProceduralDirtAge;
             float _SiltStrength;
             float _RustStrength;
+            float _EnvironmentalWear;
+            float _MicroNormalStrength;
+            float _MicroNormalTiling;
+            float _StormRainDripAmplitude;
+            float _StormRainDripTiling;
+            float _StormRainDripSpeed;
             float _ChunkDissolveFade;
             float _ChunkDissolveGlitchStrength;
             float _FreshCutColorBoost;
@@ -158,18 +173,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         float4 _HectonNoirCaveAttenuation;
         float _SargassumCutMaskActive;
         float _HectonDamageVolumeActive;
-        float _HectonVoxelSSAOActive;
-        float4 _LaserHitAUP;
-        float4 _LaserHitHeat;
-        int _HectonRecentCutHeatCount;
         int _HectonScatterBiomeInfluenceGridCount;
         float4 _HectonScatterBiomeInfluenceGridOrigin;
         float4 _HectonScatterBiomeInfluenceGridParams;
         float3 _LightDirection;
 
-        #define HECTON_RECENT_CUT_HEAT_MAX 16
-        float4 _HectonRecentCutHeatPositionRadius[HECTON_RECENT_CUT_HEAT_MAX];
-        float4 _HectonRecentCutHeatStrengthTime[HECTON_RECENT_CUT_HEAT_MAX];
         StructuredBuffer<uint> _HectonScatterBiomeInfluenceGrid;
 
         TEXTURE2D(_Base_Map);
@@ -186,8 +194,6 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         SAMPLER(sampler_SiltLayerMap);
         TEXTURE3D(_BiomeFamilyTintVolume);
         SAMPLER(sampler_BiomeFamilyTintVolume);
-        TEXTURE2D(_HectonVoxelSSAOTex);
-        SAMPLER(sampler_HectonVoxelSSAOTex);
         TEXTURE2D(_SargassumCutMaskRT);
         SAMPLER(sampler_SargassumCutMaskRT);
         TEXTURE3D(_HectonDamageVolumeTex);
@@ -195,16 +201,19 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         struct Attributes
         {
+            HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
             float4 positionOS : POSITION;
             float3 normalOS : NORMAL;
             float4 color : COLOR;
             float4 bakedAmbientOcclusion : TEXCOORD1;
             float4 dirtyBlendUv2 : TEXCOORD2;
-            float3 absolutePositionWS : TEXCOORD3;
+            float4 absolutePositionWS : TEXCOORD3;
         };
 
         struct SurfaceVaryings
         {
+            HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
+            HECTON_CORE_LIT_DECLARE_VERTEX_OUTPUT_STEREO
             float4 positionCS : SV_POSITION;
             float3 positionWS : TEXCOORD0;
             half3 normalWS : TEXCOORD1;
@@ -216,17 +225,23 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half bakedAmbientOcclusion : TEXCOORD7;
             half freshCutBlend : TEXCOORD8;
             half4 terrainSplatColor : TEXCOORD9;
+            half xrNearClipFade : TEXCOORD10;
         };
 
         struct ClipVaryings
         {
+            HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
+            HECTON_CORE_LIT_DECLARE_VERTEX_OUTPUT_STEREO
             float4 positionCS : SV_POSITION;
             float3 positionWS : TEXCOORD0;
             half skirtAlpha : TEXCOORD1;
+            half xrNearClipFade : TEXCOORD2;
         };
 
         struct ShadowVaryings
         {
+            HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
+            HECTON_CORE_LIT_DECLARE_VERTEX_OUTPUT_STEREO
             float4 positionCS : SV_POSITION;
             float3 positionWS : TEXCOORD0;
             half3 normalWS : TEXCOORD1;
@@ -299,6 +314,14 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return positionWS + _HectonFloatingOriginOffset.xyz;
         }
 
+        half3 ResolveChunkBorderStitchedNormal(half3 normalWS, float currentAbsoluteHeight, float neighborBorderHeight, half edgeBlend)
+        {
+            half heightAgreement = saturate(1.0h - (half)abs(neighborBorderHeight - currentAbsoluteHeight) * 0.5h);
+            half stitch = saturate(edgeBlend * heightAgreement);
+            half3 neighborNormalWS = SafeNormalize3(lerp(normalWS, half3(0.0h, 1.0h, 0.0h), 0.35h));
+            return SafeNormalize3(lerp(normalWS, neighborNormalWS, stitch));
+        }
+
         half3 ResolveSharpTriplanarBlendWeights(half3 normalWS)
         {
             half3 blend = max(abs(normalWS), half3(0.0001h, 0.0001h, 0.0001h));
@@ -363,9 +386,9 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         {
             float3 safeNormalOS = normalize(input.normalOS + float3(0.0, 0.0001, 0.0));
             half seamMask = saturate(max((half)input.color.a, (half)input.dirtyBlendUv2.y));
-            float displacement = ResolveOrganicVertexDisplacement(input.absolutePositionWS, safeNormalOS, seamMask);
+            float displacement = ResolveOrganicVertexDisplacement(input.absolutePositionWS.xyz, safeNormalOS, seamMask);
             displacement += ResolveCaveMouthVertexDisplacement(
-                input.absolutePositionWS,
+                input.absolutePositionWS.xyz,
                 safeNormalOS,
                 saturate((half)input.color.a),
                 saturate((half)input.dirtyBlendUv2.y));
@@ -543,35 +566,17 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         half ResolveHorizontalSiltDust(float3 absolutePositionWS, half3 normalWS)
         {
-            half upward = pow(saturate((normalWS.y - 0.8h) * 5.0h), max((half)_HorizontalSiltDustSharpness, 1.0h));
+            half upward = smoothstep(0.7h, 0.9h, saturate(normalWS.y));
             half dustNoise = lerp(0.62h, 1.0h, (half)ValueNoise3(absolutePositionWS * max(_HorizontalSiltDustTiling, 0.01) + 71.9));
             return saturate(upward * dustNoise * (half)_HorizontalSiltDustStrength);
         }
 
-        void AccumulateCutHeatStamp(float3 positionAUP, float4 positionRadius, float4 strengthTime, inout half heatMask, inout half age01)
+        half3 RecalculateDisplacedNormalWS(float3 positionWS, half3 fallbackNormalWS)
         {
-            if (positionRadius.w <= 0.0 || strengthTime.x <= 0.0)
-                return;
-
-            float lifetime = max(strengthTime.z, 0.01);
-            float elapsed = _Time.y - strengthTime.y;
-            if (elapsed < 0.0 || elapsed >= lifetime)
-                return;
-
-            float radius = max(positionRadius.w, 0.05);
-            float distanceToStamp = length(positionAUP - positionRadius.xyz);
-            if (distanceToStamp >= radius)
-                return;
-
-            float radial = saturate(1.0 - distanceToStamp / radius);
-            radial *= radial;
-            float localAge01 = saturate(elapsed / lifetime);
-            float thermal = strengthTime.x * radial * (1.0 - localAge01);
-            if (thermal <= heatMask)
-                return;
-
-            heatMask = thermal;
-            age01 = localAge01;
+            float3 dpdx = ddx(positionWS);
+            float3 dpdy = ddy(positionWS);
+            half3 derivedNormalWS = SafeNormalize3((half3)cross(dpdy, dpdx));
+            return dot(derivedNormalWS, fallbackNormalWS) < 0.0h ? -derivedNormalWS : derivedNormalWS;
         }
 
         half3 SampleDominantAxisNormalAtUv(float2 uv, half dominantAxis, half3 baseNormalWS)
@@ -643,15 +648,6 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return coverage;
         }
 
-        half SampleVoxelAmbientOcclusion(float4 positionCS)
-        {
-            if (_HectonVoxelSSAOActive < 0.5)
-                return 1.0h;
-
-            float2 screenUV = saturate(positionCS.xy * _ScaledScreenParams.zw);
-            return SAMPLE_TEXTURE2D_LOD(_HectonVoxelSSAOTex, sampler_HectonVoxelSSAOTex, screenUV, 0).r;
-        }
-
         half ResolveNoirVoxelCaustic(float3 absolutePositionWS, half3 normalWS, float4 positionCS)
         {
             float waterDepth = max(0.0, _HectonNoirFogStratification.x - absolutePositionWS.y);
@@ -674,9 +670,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half layerA = (half)ValueNoise3(layerAInput);
             half layerB = (half)ValueNoise3(layerBInput);
             half causticRaw = pow(saturate(layerA * layerB), (half)max(_HectonNoirCausticsShape.x, 1.0));
-            half upFacingMask = saturate(normalWS.y * 1.25h);
-            half caveOcclusion = 1.0h - SampleVoxelAmbientOcclusion(positionCS);
-            half caveFade = saturate(1.0h - caveOcclusion * _HectonNoirCaveAttenuation.x);
+            half upFacingMask = (half)HectonCoreLitEvaluateCausticsUpMask(normalWS);
+            half caveFade = 1.0h;
             half strength = saturate((_HectonNoirCausticsLayerA.w + _HectonNoirCausticsLayerB.w) * depthFade);
             return lerp(1.0h, 1.0h + causticRaw * strength * caveFade, upFacingMask);
         }
@@ -701,31 +696,9 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half layerA = (half)ValueNoise3(layerASample);
             half layerB = (half)ValueNoise3(layerBSample);
             half causticRaw = pow(saturate(layerA * layerB), 3.0h);
-            half upFacingMask = saturate(normalWS.y * 0.9h + 0.1h);
+            half upFacingMask = (half)saturate(HectonCoreLitEvaluateCausticsUpMask(normalWS) * 0.72 + 0.1);
             half causticMask = saturate(_LocalCausticStrength * upFacingMask);
             return lerp(1.0h, 1.0h + causticRaw * _LocalCausticStrength, causticMask);
-        }
-
-        void EvaluateRecentCutHeat(float3 positionAUP, out half heatMask, out half age01)
-        {
-            heatMask = 0.0h;
-            age01 = 1.0h;
-
-            AccumulateCutHeatStamp(positionAUP, _LaserHitAUP, _LaserHitHeat, heatMask, age01);
-
-            [unroll]
-            for (int i = 0; i < HECTON_RECENT_CUT_HEAT_MAX; i++)
-            {
-                if (i >= _HectonRecentCutHeatCount)
-                    break;
-
-                AccumulateCutHeatStamp(
-                    positionAUP,
-                    _HectonRecentCutHeatPositionRadius[i],
-                    _HectonRecentCutHeatStrengthTime[i],
-                    heatMask,
-                    age01);
-            }
         }
 
         half3 EvaluateLighting(float3 positionWS, half3 normalWS, half3 viewDirWS, half3 albedo, half metallic, half smoothness, half occlusion, half localCausticMask)
@@ -765,46 +738,75 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         SurfaceVaryings Vert(Attributes input)
         {
             SurfaceVaryings output;
+            HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
+            HECTON_CORE_LIT_TRANSFER_INSTANCE_ID(input, output);
+            HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             float3 displacedPositionOS = ResolveVoxelPositionOS(input);
-            VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
+            float3 safeDisplacedPositionOS = HectonCoreLitSanitizePositionOS(displacedPositionOS);
+            VertexPositionInputs positionInputs = GetVertexPositionInputs(safeDisplacedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
-            output.normalWS = SafeNormalize3(normalInputs.normalWS);
+            output.normalWS = ResolveChunkBorderStitchedNormal(
+                SafeNormalize3(normalInputs.normalWS),
+                input.absolutePositionWS.y,
+                input.absolutePositionWS.w,
+                saturate((half)input.dirtyBlendUv2.w));
             output.positionWS = HectonCoreLitApplySubmarineCrushDepth(positionInputs.positionWS, output.normalWS);
+            output.positionWS = HectonCoreLitApplyStormRainDripVertexRipple(output.positionWS, output.normalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
             output.positionCS = TransformWorldToHClip(output.positionWS);
             output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(output.positionWS));
             output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
-            output.absolutePositionWS = input.absolutePositionWS;
+            output.absolutePositionWS = input.absolutePositionWS.xyz;
             output.curvature = saturate(input.dirtyBlendUv2.z);
             output.bakedAmbientOcclusion = HectonCoreLitResolveVertexAmbientOcclusion(input.bakedAmbientOcclusion.w);
             output.freshCutBlend = saturate(input.dirtyBlendUv2.x);
             output.terrainSplatColor = saturate((half4)input.color);
             output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
+            output.xrNearClipFade = (half)HectonCoreLitEvaluateXRNearClipFade(output.positionWS);
             return output;
         }
 
         ClipVaryings DepthVert(Attributes input)
         {
             ClipVaryings output;
+            HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
+            HECTON_CORE_LIT_TRANSFER_INSTANCE_ID(input, output);
+            HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             float3 displacedPositionOS = ResolveVoxelPositionOS(input);
-            VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
+            float3 safeDisplacedPositionOS = HectonCoreLitSanitizePositionOS(displacedPositionOS);
+            VertexPositionInputs positionInputs = GetVertexPositionInputs(safeDisplacedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
-            float3 normalWS = SafeNormalize3(normalInputs.normalWS);
+            float3 normalWS = ResolveChunkBorderStitchedNormal(
+                SafeNormalize3(normalInputs.normalWS),
+                input.absolutePositionWS.y,
+                input.absolutePositionWS.w,
+                saturate((half)input.dirtyBlendUv2.w));
             float3 crushedPositionWS = HectonCoreLitApplySubmarineCrushDepth(positionInputs.positionWS, normalWS);
+            crushedPositionWS = HectonCoreLitApplyStormRainDripVertexRipple(crushedPositionWS, normalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
             output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
             output.positionCS = ApplySkirtDepthBias(TransformWorldToHClip(crushedPositionWS), output.skirtAlpha);
             output.positionWS = crushedPositionWS;
+            output.xrNearClipFade = (half)HectonCoreLitEvaluateXRNearClipFade(output.positionWS);
             return output;
         }
 
         ShadowVaryings ShadowVert(Attributes input)
         {
             ShadowVaryings output;
+            HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
+            HECTON_CORE_LIT_TRANSFER_INSTANCE_ID(input, output);
+            HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             float3 displacedPositionOS = ResolveVoxelPositionOS(input);
-            VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
+            float3 safeDisplacedPositionOS = HectonCoreLitSanitizePositionOS(displacedPositionOS);
+            VertexPositionInputs positionInputs = GetVertexPositionInputs(safeDisplacedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
-            output.normalWS = SafeNormalize3(normalInputs.normalWS);
+            output.normalWS = ResolveChunkBorderStitchedNormal(
+                SafeNormalize3(normalInputs.normalWS),
+                input.absolutePositionWS.y,
+                input.absolutePositionWS.w,
+                saturate((half)input.dirtyBlendUv2.w));
             output.positionWS = HectonCoreLitApplySubmarineCrushDepth(positionInputs.positionWS, output.normalWS);
+            output.positionWS = HectonCoreLitApplyStormRainDripVertexRipple(output.positionWS, output.normalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
             output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
             output.positionCS = TransformWorldToHClip(ApplyShadowBias(output.positionWS, output.normalWS, _LightDirection));
             output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
@@ -838,19 +840,28 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
             #pragma multi_compile_fog
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile _ LOD_FADE_CROSSFADE
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             half4 Frag(SurfaceVaryings input) : SV_Target
             {
+                HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
+                HECTON_CORE_LIT_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                HectonCoreLitClipXRNearWallDither(input.xrNearClipFade, input.positionCS);
                 LODFadeCrossFade(input.positionCS);
                 ApplyChunkDissolveFade(input.positionCS);
+                bool xrFullQuality = HectonCoreLitShouldRunXRFullQuality(input.positionCS);
                 half skirtCoverage = ResolveSkirtCoverageMask(input.skirtAlpha);
                 half3 baseNormalWS = SafeNormalize3(input.normalWS);
+                baseNormalWS = RecalculateDisplacedNormalWS(input.positionWS, baseNormalWS);
                 float3 samplePositionWS = input.absolutePositionWS;
+                half vertexCaveAo = saturate(dot(input.terrainSplatColor.rgb, half3(0.3333h, 0.3333h, 0.3334h)));
                 float2 rockUv;
                 half rockDominantAxis;
                 ResolveDominantAxisProjection(samplePositionWS, baseNormalWS, rockUv, rockDominantAxis);
@@ -860,11 +871,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half cutMask = max(EvaluateGlobalCutMask(input.positionWS), EvaluateDamageVolumeMask(input.positionWS));
                 half freshCutMask = saturate(max(input.freshCutBlend, cutMask));
                 half scarMask = pow(saturate(cutMask), max(_CutScarSharpness, 0.5h));
-                half recentHeatMask;
-                half recentHeatAge01;
-                EvaluateRecentCutHeat(samplePositionWS, recentHeatMask, recentHeatAge01);
+                half recentHeatMask = 0.0h;
+                half recentHeatAge01 = 1.0h;
                 half3 boostedNormalWS = dominantNormalWS * lerp(1.0h, (half)_FreshCutNormalBoost, freshCutMask * 0.5h);
                 half3 normalWS = SafeNormalize3(baseNormalWS + boostedNormalWS);
+                normalWS = HectonCoreLitApplyTripleDetailMicroNormals(input.positionWS, normalWS, (half)_MicroNormalStrength, (half)_MicroNormalTiling, 2.0h);
                 half skirtBlend = 1.0h - skirtCoverage;
                 half curvature = saturate(input.curvature);
                 half curvatureContrast = max(_CurvatureContrast, 0.5h);
@@ -877,7 +888,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half3 freshAlbedo = baseSample.rgb * _Instance_Color.rgb * (half)_FreshCutColorBoost;
                 freshAlbedo = lerp(freshAlbedo, (half3)_CutScarColor.rgb, scarMask * 0.45h);
                 albedo = lerp(albedo, freshAlbedo, freshCutMask * 0.62h);
-                albedo = lerp(albedo, input.terrainSplatColor.rgb, saturate(input.terrainSplatColor.a) * 0.78h);
+                albedo *= lerp(1.0h, vertexCaveAo, saturate(input.terrainSplatColor.a) * 0.24h);
                 albedo = lerp(albedo, _SkirtSandTint.rgb, skirtBlend * 0.72h);
                 albedo = lerp(albedo, lerp(albedo, _CurvatureWearTint.rgb, 0.4h), convexMask * _CurvatureEdgeWearStrength);
                 albedo *= 1.0h - cavityMask * (_CurvatureCavityDarkenStrength * 0.32h);
@@ -889,7 +900,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
                 half metallic = 0.0h;
                 half smoothness = saturate(lerp(_Smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
-                half ambientOcclusion = saturate(input.bakedAmbientOcclusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
+                half ambientOcclusion = saturate(input.bakedAmbientOcclusion * vertexCaveAo * (1.0h - cavityMask * _CurvatureCavityDarkenStrength));
                 half caveMouthDistanceAo = saturate(max(input.terrainSplatColor.a, input.skirtAlpha));
                 ambientOcclusion *= 1.0h - caveMouthDistanceAo * 0.45h;
                 albedo *= 1.0h - caveMouthDistanceAo * 0.24h;
@@ -899,20 +910,24 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 albedo = lerp(albedo, siltAlbedo, horizontalDust);
                 smoothness = lerp(smoothness, min(smoothness, 0.22h), horizontalDust);
                 half localCausticMask = ResolveLocalLightCaustic(samplePositionWS, normalWS, input.positionCS);
-                HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
-                HectonCoreLitApplyProceduralRustSilt(
-                    samplePositionWS,
-                    normalWS,
-                    dominantNormalWS,
-                    convexMask,
-                    (half)_ProceduralDirtAge,
-                    (half)_SiltStrength,
-                    (half)_RustStrength,
-                    (half3)_SiltTint.rgb,
-                    (half3)_RustTint.rgb,
-                    albedo,
-                    metallic,
-                    smoothness);
+                if (xrFullQuality)
+                {
+                    HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
+                    HectonCoreLitApplyProceduralRustSilt(
+                        samplePositionWS,
+                        normalWS,
+                        dominantNormalWS,
+                        convexMask,
+                        (half)_ProceduralDirtAge,
+                        (half)_SiltStrength,
+                        (half)_RustStrength,
+                        (half3)_SiltTint.rgb,
+                        (half3)_RustTint.rgb,
+                        albedo,
+                        metallic,
+                        smoothness);
+                }
+                HectonCoreLitApplyEnvironmentalWear(samplePositionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
                 half dissolveMalfunction = ApplyChunkDissolveMalfunction(input.positionCS, samplePositionWS, albedo, smoothness);
                 half caveMouthPulse = ResolveCaveMouthPhosphorPulse(samplePositionWS, saturate(max(input.terrainSplatColor.a, input.skirtAlpha)));
                 albedo = lerp(albedo, (half3)_ChunkDissolvePhosphorTint.rgb, caveMouthPulse * 0.08h);
@@ -925,6 +940,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                     (thermalColor * thermalEmission) +
                     ((half3)_ChunkDissolvePhosphorTint.rgb * caveMouthPulse * 0.18h);
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
+                finalColor = HectonCoreLitApplyXRFoveatedResolve(finalColor, input.positionCS);
                 return half4(finalColor, skirtCoverage);
             }
             ENDHLSL
@@ -943,10 +959,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             HLSLPROGRAM
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
+            #pragma multi_compile_instancing
             #pragma multi_compile _ LOD_FADE_CROSSFADE
 
             half4 ShadowFrag(ShadowVaryings input) : SV_Target
             {
+                HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
+                HECTON_CORE_LIT_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 LODFadeCrossFade(input.positionCS);
                 ApplyChunkDissolveFade(input.positionCS);
                 half scarMask = pow(saturate(max(EvaluateGlobalCutMask(input.positionWS), EvaluateDamageVolumeMask(input.positionWS))), max(_CutScarSharpness, 0.5h));
@@ -975,10 +994,14 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             HLSLPROGRAM
             #pragma vertex DepthVert
             #pragma fragment DepthFrag
+            #pragma multi_compile_instancing
             #pragma multi_compile _ LOD_FADE_CROSSFADE
 
             half4 DepthFrag(ClipVaryings input) : SV_Target
             {
+                HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
+                HECTON_CORE_LIT_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                HectonCoreLitClipXRNearWallDither(input.xrNearClipFade, input.positionCS);
                 LODFadeCrossFade(input.positionCS);
                 ApplyChunkDissolveFade(input.positionCS);
                 ResolveSkirtCoverage(input.skirtAlpha, input.positionCS.xy);

@@ -39,6 +39,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
 using UnityEngine;
@@ -396,13 +397,11 @@ namespace Hecton8.AtlasSignal
         [SerializeField] private float anomalyRange = 500f;
 
         // ══════════════════════════════════════════════════════════
-        //  SINGLETON
+        //  GLOBAL REGISTRY COMPATIBILITY
         // ══════════════════════════════════════════════════════════
 
-        public static Atlas6DirectiveSystem Instance { get; private set; }
+        public static Atlas6DirectiveSystem Instance => Hecton8.Core.GlobalRegistry.Atlas6Directive;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -458,14 +457,17 @@ namespace Hecton8.AtlasSignal
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
+            Atlas6DirectiveSystem registeredRuntime = Hecton8.Core.GlobalRegistry.Atlas6Directive;
+            if (registeredRuntime != null && registeredRuntime != this)
+                Destroy(gameObject);
         }
 
         private void OnEnable()
         {
+            if (!TryRegisterService())
+                return;
+
             TryRegister();
-            TryRegisterService();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
@@ -491,9 +493,6 @@ namespace Hecton8.AtlasSignal
         {
             TryUnregister();
             TryUnregisterService();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -512,10 +511,13 @@ namespace Hecton8.AtlasSignal
             if (signal == null) return;
             if (!signal.IsDetected) return;
 
-            float distToCore = Vector3.Distance(_playerTransform.position, signal.AtlasCorePosition);
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+            AbsoluteUniversePosition coreAup = AbsoluteUniversePosition.FromRuntimePosition(signal.AtlasCorePosition);
+            double distanceToCoreSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
+            double anomalyRangeSq = (double)anomalyRange * anomalyRange;
 
             // Переход в Anomaly при приближении к ядру
-            if (distToCore < anomalyRange &&
+            if (distanceToCoreSq < anomalyRangeSq &&
                 _playerStatus != Atlas6PlayerStatus.Anomaly &&
                 _playerStatus != Atlas6PlayerStatus.Threat)
             {
@@ -554,13 +556,21 @@ namespace Hecton8.AtlasSignal
             _registered = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying || Instance != this)
-                return;
+            if (_serviceRegistered || !Application.isPlaying)
+                return true;
+
+            Atlas6DirectiveSystem registeredRuntime = Hecton8.Core.GlobalRegistry.Atlas6Directive;
+            if (registeredRuntime != null && registeredRuntime != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
 
             Hecton8.Core.GlobalRegistry.RegisterAtlas6DirectiveRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.Atlas6Directive, this);
+            return _serviceRegistered;
         }
 
         private void TryUnregisterService()
@@ -707,13 +717,17 @@ namespace Hecton8.AtlasSignal
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogDirectiveConflict()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[Atlas6] Directive conflict: Directive #2 (protect colony) impossible; colony dead.");
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogPlayerStatus(Atlas6PlayerStatus newStatus)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Atlas6] Player status: {newStatus}");
+#endif
         }
 
         private static string ResolveLocalized(string key, string fallback)

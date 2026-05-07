@@ -861,7 +861,9 @@ namespace Hecton8.UI
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogSaveSlotFailed(string slotName, Exception exception)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError($"[PauseMenuController] Save failed for '{slotName}': {exception.Message}");
+#endif
         }
 
         private void TryAcquireSaveStatusBuffer()
@@ -1037,7 +1039,7 @@ namespace Hecton8.UI
             if (_saveStatus != null)
                 ApplySaveStatusLiteral(message);
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError($"[PauseMenuController] {message}");
 #endif
         }

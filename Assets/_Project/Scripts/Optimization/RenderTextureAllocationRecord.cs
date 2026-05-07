@@ -2,6 +2,15 @@ using UnityEngine;
 
 namespace Hecton8.Optimization
 {
+    public enum RenderTextureOwnerCategory : byte
+    {
+        Other = 0,
+        Visor = 1,
+        Camera = 2,
+        PostFX = 3,
+        UI = 4
+    }
+
     /// <summary>
     /// Record of a RenderTexture allocation for lifecycle tracking.
     /// </summary>
@@ -16,6 +25,11 @@ namespace Hecton8.Optimization
         /// Owner component (MonoBehaviour).
         /// </summary>
         public Component Owner;
+
+        /// <summary>
+        /// Cached owner category. Resolved once at registration to keep SlowTick scans free of type-name work.
+        /// </summary>
+        public RenderTextureOwnerCategory OwnerCategory;
         
         /// <summary>
         /// RT width in pixels.

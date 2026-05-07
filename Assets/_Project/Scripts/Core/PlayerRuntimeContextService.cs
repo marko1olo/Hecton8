@@ -504,6 +504,15 @@ namespace Hecton8.Core
 
             PlayerMovementRuntimeState movementState = default;
             movementState.WorldPosition = _playerTransform.position;
+            movementState.PredictedWorldPosition = _playerMovement != null
+                ? _playerMovement.PredictedRuntimePosition
+                : movementState.WorldPosition + (velocity * 0.1f);
+            movementState.PredictedAup = _playerMovement != null
+                ? _playerMovement.PredictedAup
+                : Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(new Vector3(
+                    movementState.PredictedWorldPosition.x,
+                    movementState.PredictedWorldPosition.y,
+                    movementState.PredictedWorldPosition.z));
             movementState.Velocity = velocity;
             movementState.Forward = forward;
             movementState.CameraForward = cameraForward;

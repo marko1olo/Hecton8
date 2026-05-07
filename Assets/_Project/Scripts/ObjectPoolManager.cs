@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Dev;
 using UnityEngine;
+using Stopwatch = System.Diagnostics.Stopwatch;
 
 namespace Hecton8.Core
 {
@@ -18,9 +19,7 @@ namespace Hecton8.Core
         private const uint PoolExhaustedReasonMissingPool = 1u;
         private const uint PoolExhaustedReasonExpandRejected = 2u;
         private const uint PoolExhaustedReasonEmptyPool = 3u;
-        private const int DefaultWarmupInstantiationsPerFrame = 50;
-        private const int MaximumWarmupInstantiationsPerFrame = 50;
-        private const int DefaultWarmupMinimumFrames = 60;
+        private const double DefaultWarmupFrameBudgetMilliseconds = 8.0d;
 
         [Header("── Warmup Presets ────────────────────────────")]
         [Tooltip("Automatic warmup entries executed during Start.")]
@@ -101,8 +100,7 @@ namespace Hecton8.Core
                 return;
 
             _ = WarmupPresetsAsync(
-                DefaultWarmupInstantiationsPerFrame,
-                DefaultWarmupMinimumFrames,
+                DefaultWarmupFrameBudgetMilliseconds,
                 destroyCancellationToken);
         }
 
@@ -163,15 +161,13 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Allocates scene-authored pool presets over a fixed instantiation budget and minimum frame floor.
+        /// Allocates scene-authored pool presets over a hard main-thread time budget.
         /// </summary>
-        /// <param name="instantiationsPerYield">Maximum pooled instances created before yielding a frame.</param>
-        /// <param name="minimumFrames">Minimum number of frames to spread the warmup state machine across.</param>
+        /// <param name="frameBudgetMilliseconds">Main-thread time budget before yielding a frame.</param>
         /// <param name="cancellationToken">Bootstrap cancellation token.</param>
         /// <returns>True when every configured preset is complete.</returns>
         public async Awaitable<bool> WarmupPresetsAsync(
-            int instantiationsPerYield,
-            int minimumFrames,
+            double frameBudgetMilliseconds,
             CancellationToken cancellationToken)
         {
             if (_warmupPresetsCompleted)
@@ -182,20 +178,15 @@ namespace Hecton8.Core
                 while (!_warmupPresetsCompleted)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                    await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
                 }
 
                 return true;
             }
 
             _warmupPresetsStarted = true;
-            int instantiationBudget = Mathf.Clamp(
-                instantiationsPerYield,
-                1,
-                MaximumWarmupInstantiationsPerFrame);
-            int minimumFrameBudget = Mathf.Max(1, minimumFrames);
-            int frameInstantiations = 0;
-            int yieldedFrames = 0;
+            double frameBudget = Math.Max(0.1d, frameBudgetMilliseconds);
+            long frameStartTimestamp = Stopwatch.GetTimestamp();
 
             try
             {
@@ -221,26 +212,17 @@ namespace Hecton8.Core
                         GameObject instance = InstantiatePooled(entry.prefab, pool.prefabId, pool);
                         instance.SetActive(false);
                         pool.available.Enqueue(instance);
-                        frameInstantiations++;
 
-                        if (frameInstantiations < instantiationBudget)
+                        if (!HasWarmupFrameBudgetElapsed(frameStartTimestamp, frameBudget))
                             continue;
 
                         UpdateDiagnostics();
-                        frameInstantiations = 0;
-                        yieldedFrames++;
-                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                        await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
+                        frameStartTimestamp = Stopwatch.GetTimestamp();
                     }
                 }
 
                 UpdateDiagnostics();
-                while (yieldedFrames < minimumFrameBudget)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    yieldedFrames++;
-                    await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
-                }
-
                 _warmupPresetsCompleted = true;
                 return true;
             }
@@ -249,6 +231,59 @@ namespace Hecton8.Core
                 _warmupPresetsStarted = false;
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Pre-allocates one runtime pool over the same frame-budgeted path used by bootstrap presets.
+        /// </summary>
+        public async Awaitable<bool> WarmupPrefabAsync(
+            GameObject prefab,
+            int count,
+            double frameBudgetMilliseconds,
+            CancellationToken cancellationToken)
+        {
+            if (prefab == null)
+            {
+                LogWarmupNullPrefab();
+                return true;
+            }
+
+            if (count <= 0)
+                return true;
+
+            if (!TryGetPrefabRegistry(out PrefabRegistry registry))
+                return false;
+
+            double frameBudget = Math.Max(0.1d, frameBudgetMilliseconds);
+            long frameStartTimestamp = Stopwatch.GetTimestamp();
+            Pool pool = PreparePool(prefab, registry);
+            int existingCount = pool.available.Count;
+            int missingCount = count > existingCount ? count - existingCount : 0;
+            for (int instanceIndex = 0; instanceIndex < missingCount; instanceIndex++)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+
+                GameObject instance = InstantiatePooled(prefab, pool.prefabId, pool);
+                instance.SetActive(false);
+                pool.available.Enqueue(instance);
+
+                if (!HasWarmupFrameBudgetElapsed(frameStartTimestamp, frameBudget))
+                    continue;
+
+                UpdateDiagnostics();
+                await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
+                frameStartTimestamp = Stopwatch.GetTimestamp();
+            }
+
+            UpdateDiagnostics();
+            return true;
+        }
+
+        private static bool HasWarmupFrameBudgetElapsed(long frameStartTimestamp, double frameBudgetMilliseconds)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - frameStartTimestamp;
+            double elapsedMilliseconds = elapsedTicks * 1000.0d / Stopwatch.Frequency;
+            return elapsedMilliseconds > frameBudgetMilliseconds;
         }
 
         /// <summary>
@@ -706,22 +741,28 @@ namespace Hecton8.Core
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogWarmupNullPrefab()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[ObjectPoolManager] Warmup: prefab is null!");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogSpawnNullPrefab()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[ObjectPoolManager] Spawn: prefab is null!");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPoolExhausted(GameObject prefab, string reason)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             string prefabName = prefab != null ? prefab.name : "NullPrefab";
             string report = $"[ObjectPoolManager] '{prefabName}': {reason} Consider increasing Warmup count.";
             RuntimeDiagnosticsTrace.WriteEvent("pool", report);
             Debug.LogWarning(report);
+#endif
         }
 
         /// <summary>

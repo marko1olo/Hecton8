@@ -7,6 +7,8 @@ using UnityEngine.Animations;
 using UnityEngine.Playables;
 using Hecton8.Core;
 using Hecton8.Caves;
+using Hecton8.Interaction;
+using Hecton8.World;
 
 namespace Hecton8.Gameplay
 {
@@ -225,8 +227,8 @@ namespace Hecton8.Gameplay
                 out _);
 
             float maxReach = math.max(0.0001f, setup.UpperLength + setup.LowerLength - math.max(0.02f, setup.ReachSafetyMargin));
-            float distanceToTarget = math.distance(rootPosition, target.WorldPosition);
-            float extensionResistance01 = ContextualPhysicalIkMath.EvaluateExtensionResistance01(distanceToTarget, maxReach);
+            float distanceToTargetSq = math.lengthsq(target.WorldPosition - rootPosition);
+            float extensionResistance01 = ContextualPhysicalIkMath.EvaluateExtensionResistanceFromDistanceSq01(distanceToTargetSq, maxReach);
             if (extensionResistance01 > 0.0f)
             {
                 float3 targetDirection = ContextualPhysicalIkMath.SafeNormalize(target.WorldPosition - rootPosition, new float3(0.0f, 0.0f, 1.0f));
@@ -580,8 +582,14 @@ namespace Hecton8.Gameplay
         private const int SpineTargetCountPerChain = 3;
         private const float Tier0DistanceMax = 10.0f;
         private const float Tier1DistanceMax = 25.0f;
+        private const float Tier0DistanceMaxSq = Tier0DistanceMax * Tier0DistanceMax;
+        private const float Tier1DistanceMaxSq = Tier1DistanceMax * Tier1DistanceMax;
         private const int MaxRendererSearchDepth = 32;
         private const int MaxRendererSearchNodes = 512;
+        private const float PredictiveRepairLatchDistance = 0.3f;
+        private const float PredictiveRepairLatchDistanceSq = PredictiveRepairLatchDistance * PredictiveRepairLatchDistance;
+        private const float UpperArmVisibilityProxyRadius = 0.35f;
+        private const float UpperArmVisibilityProxyRadiusSq = UpperArmVisibilityProxyRadius * UpperArmVisibilityProxyRadius;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRig);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly int MuscleBulgeShaderId = Shader.PropertyToID("_MuscleBulge");
@@ -697,8 +705,34 @@ namespace Hecton8.Gameplay
         [Tooltip("World-space probe origin used for the right hand brace ray.")]
         [SerializeField] private Transform rightHandProbe;
 
-        [Tooltip("World-space probe origin used for forward tunnel-clearance detection.")]
-        [SerializeField] private Transform clearanceProbe;
+        [Header("Predictive Repair Latching")]
+        [Tooltip("Optional repair target that exposes AUP snap points for predictive hand IK latching.")]
+        [SerializeField] private MonoBehaviour predictiveRepairTargetBehaviour;
+
+        [Tooltip("Tracked left controller transform. Falls back to the left hand probe when unset.")]
+        [SerializeField] private Transform leftControllerProbe;
+
+        [Tooltip("Tracked right controller transform. Falls back to the right hand probe when unset.")]
+        [SerializeField] private Transform rightControllerProbe;
+
+        [Tooltip("Controller direction dot threshold required before predictive hand latching starts.")]
+        [SerializeField, Range(0.1f, 0.98f)] private float predictiveRepairDirectionDot = 0.72f;
+
+        [Tooltip("Blend sharpness for predictive repair latching; high values hide one-frame controller latency.")]
+        [SerializeField, Range(1.0f, 32.0f)] private float predictiveRepairBlendSharpness = 18.0f;
+
+        [Header("VR Arm Culling")]
+        [Tooltip("Disables upper-arm renderers after they remain outside the VR camera FOV for the hysteresis window.")]
+        [SerializeField] private bool enableUpperArmFovCulling;
+
+        [Tooltip("Upper-arm renderers that may be hidden in narrow-FOV VR to avoid elbow clipping.")]
+        [SerializeField] private Renderer[] upperArmRenderers;
+
+        [Tooltip("Seconds the upper arms must remain outside view before renderers are disabled.")]
+        [SerializeField, Range(0.05f, 1.0f)] private float upperArmCullHysteresisSeconds = 0.2f;
+
+        [Tooltip("Minimum camera-forward dot for upper-arm visibility.")]
+        [SerializeField, Range(-0.2f, 0.8f)] private float upperArmFovDotThreshold = 0.08f;
 
         [Tooltip("Terrain layers used for foot-placement raycasts.")]
         [SerializeField] private LayerMask groundMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
@@ -879,10 +913,24 @@ namespace Hecton8.Gameplay
         private HectonVoxelVolume[] _appendageVoxelVolumes;
         private Transform[] _appendageSurfaceNormalSources;
 
+        private IKinematicRepairTarget _predictiveRepairTarget;
+        private AbsoluteUniversePosition _previousLeftControllerAup;
+        private AbsoluteUniversePosition _previousRightControllerAup;
+        private Vector3 _predictiveLeftHandPosition;
+        private Vector3 _predictiveRightHandPosition;
+        private Vector3 _predictiveLeftHandNormal = Vector3.up;
+        private Vector3 _predictiveRightHandNormal = Vector3.up;
+        private float _predictiveLeftHandBlend;
+        private float _predictiveRightHandBlend;
+        private float _upperArmCullTimer;
         private Material _muscleBulgeMaterialInstance;
         private Material[] _muscleBulgeSharedMaterials;
         private Material _muscleBulgeOriginalMaterial;
         private float _muscleBulgeCurrent;
+        private float _cachedLeftLegReach;
+        private float _cachedRightLegReach;
+        private float _cachedLeftArmReach;
+        private float _cachedRightArmReach;
 
         private int _entitySlot = -1;
         private int _spineHandleStartIndex = BaseHandleCount;
@@ -893,6 +941,9 @@ namespace Hecton8.Gameplay
         private bool _registeredOriginShiftListener;
         private bool _muscleBulgeMaterialInitialized;
         private bool _attemptedMuscleBulgeRendererResolve;
+        private bool _hasPreviousLeftPredictiveControllerPose;
+        private bool _hasPreviousRightPredictiveControllerPose;
+        private bool _upperArmRenderersVisible = true;
 
         private void OnEnable()
         {
@@ -912,6 +963,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            SetUpperArmRenderersVisible(true);
             TryUnregisterOriginShiftListener();
             TryUnregisterFromRuntime();
             TearDownAnimationInjection();
@@ -920,6 +972,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            SetUpperArmRenderersVisible(true);
             TryUnregisterOriginShiftListener();
             TryUnregisterFromRuntime();
             TearDownAnimationInjection();
@@ -975,12 +1028,14 @@ namespace Hecton8.Gameplay
             CaptureSpineTargets();
             CaptureAppendageTargets();
             ApplyMuscleBulgeSignal(deltaTime);
+            CapturePredictiveRepairLatch(deltaTime);
+            TickUpperArmFovCulling(deltaTime);
 
             float3 rootPosition = ContextualPhysicalIkMath.ToFloat3(characterRoot.position);
-            float viewerDistance = hasViewerPosition
-                ? math.distance(rootPosition, viewerPosition)
+            float viewerDistanceSq = hasViewerPosition
+                ? math.lengthsq(rootPosition - viewerPosition)
                 : 0.0f;
-            ResolveThrottleState(frameIndex, _entitySlot, viewerDistance, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
+            ResolveThrottleState(frameIndex, _entitySlot, viewerDistanceSq, out int updateThisFrame, out byte throttleTier, out uint updateBitfield);
 
             entityState.IsActive = 1;
             entityState.EnableFootPlacement = enableFootPlacement ? 1 : 0;
@@ -993,11 +1048,16 @@ namespace Hecton8.Gameplay
             entityState.RightFootProbeOrigin = rightFootProbe != null ? ContextualPhysicalIkMath.ToFloat3(rightFootProbe.position) : entityState.RootPosition;
             entityState.LeftHandProbeOrigin = leftHandProbe != null ? ContextualPhysicalIkMath.ToFloat3(leftHandProbe.position) : entityState.RootPosition;
             entityState.RightHandProbeOrigin = rightHandProbe != null ? ContextualPhysicalIkMath.ToFloat3(rightHandProbe.position) : entityState.RootPosition;
-            entityState.ClearanceProbeOrigin = clearanceProbe != null ? ContextualPhysicalIkMath.ToFloat3(clearanceProbe.position) : entityState.RootPosition;
-            entityState.LeftLegReach = ComputeReach(leftUpperLeg, leftLowerLeg, leftFoot);
-            entityState.RightLegReach = ComputeReach(rightUpperLeg, rightLowerLeg, rightFoot);
-            entityState.LeftArmReach = ComputeReach(leftUpperArm, leftLowerArm, leftHand);
-            entityState.RightArmReach = ComputeReach(rightUpperArm, rightLowerArm, rightHand);
+            entityState.PredictiveLeftHandPosition = ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandPosition);
+            entityState.PredictiveRightHandPosition = ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandPosition);
+            entityState.PredictiveLeftHandNormal = ContextualPhysicalIkMath.ToFloat3(_predictiveLeftHandNormal);
+            entityState.PredictiveRightHandNormal = ContextualPhysicalIkMath.ToFloat3(_predictiveRightHandNormal);
+            entityState.LeftLegReach = _cachedLeftLegReach;
+            entityState.RightLegReach = _cachedRightLegReach;
+            entityState.LeftArmReach = _cachedLeftArmReach;
+            entityState.RightArmReach = _cachedRightArmReach;
+            entityState.PredictiveLeftHandBlend = _predictiveLeftHandBlend;
+            entityState.PredictiveRightHandBlend = _predictiveRightHandBlend;
             entityState.FootContactOffset = footContactOffset;
             entityState.HandContactOffset = handContactOffset;
             entityState.FootProbeDistanceScale = footProbeDistanceScale;
@@ -1020,10 +1080,245 @@ namespace Hecton8.Gameplay
             entityState.MaxComForward = maxComForward;
             entityState.MaxComVertical = maxComVertical;
             entityState.UpdateThisFrame = updateThisFrame;
-            entityState.ViewerDistance = viewerDistance;
+            entityState.ViewerDistanceSq = viewerDistanceSq;
             entityState.UpdateBitfield = updateBitfield;
             entityState.ThrottleTier = throttleTier;
             return true;
+        }
+
+        private void CapturePredictiveRepairLatch(float deltaTime)
+        {
+            Transform leftSource = leftControllerProbe != null ? leftControllerProbe : leftHandProbe;
+            Transform rightSource = rightControllerProbe != null ? rightControllerProbe : rightHandProbe;
+            Vector3 leftPosition = leftSource != null ? leftSource.position : Vector3.zero;
+            Vector3 rightPosition = rightSource != null ? rightSource.position : Vector3.zero;
+            AbsoluteUniversePosition leftAup = leftSource != null ? AbsoluteUniversePosition.FromRuntimePosition(leftPosition) : default;
+            AbsoluteUniversePosition rightAup = rightSource != null ? AbsoluteUniversePosition.FromRuntimePosition(rightPosition) : default;
+
+            Vector3 leftVelocity = Vector3.zero;
+            Vector3 rightVelocity = Vector3.zero;
+            float safeDeltaTime = math.max(deltaTime, 0.0001f);
+            if (_hasPreviousLeftPredictiveControllerPose && leftSource != null)
+                leftVelocity = ResolveAupVelocity(in leftAup, in _previousLeftControllerAup, safeDeltaTime);
+            if (_hasPreviousRightPredictiveControllerPose && rightSource != null)
+                rightVelocity = ResolveAupVelocity(in rightAup, in _previousRightControllerAup, safeDeltaTime);
+
+            if (leftSource != null)
+            {
+                _previousLeftControllerAup = leftAup;
+                _hasPreviousLeftPredictiveControllerPose = true;
+            }
+            else
+            {
+                _hasPreviousLeftPredictiveControllerPose = false;
+            }
+
+            if (rightSource != null)
+            {
+                _previousRightControllerAup = rightAup;
+                _hasPreviousRightPredictiveControllerPose = true;
+            }
+            else
+            {
+                _hasPreviousRightPredictiveControllerPose = false;
+            }
+
+            if (_predictiveRepairTarget != null && enableHandBracing)
+            {
+                ResolvePredictiveRepairLatch(
+                    leftSource,
+                    true,
+                    leftPosition,
+                    in leftAup,
+                    leftVelocity,
+                    safeDeltaTime,
+                    ref _predictiveLeftHandPosition,
+                    ref _predictiveLeftHandNormal,
+                    ref _predictiveLeftHandBlend);
+
+                ResolvePredictiveRepairLatch(
+                    rightSource,
+                    false,
+                    rightPosition,
+                    in rightAup,
+                    rightVelocity,
+                    safeDeltaTime,
+                    ref _predictiveRightHandPosition,
+                    ref _predictiveRightHandNormal,
+                    ref _predictiveRightHandBlend);
+            }
+            else
+            {
+                _predictiveLeftHandBlend = ContextualPhysicalIkMath.SmoothScalar(_predictiveLeftHandBlend, 0.0f, predictiveRepairBlendSharpness, safeDeltaTime);
+                _predictiveRightHandBlend = ContextualPhysicalIkMath.SmoothScalar(_predictiveRightHandBlend, 0.0f, predictiveRepairBlendSharpness, safeDeltaTime);
+            }
+
+        }
+
+        private void ResolvePredictiveRepairLatch(
+            Transform controllerSource,
+            bool isLeftHand,
+            Vector3 controllerPosition,
+            in AbsoluteUniversePosition controllerAup,
+            Vector3 controllerVelocity,
+            float deltaTime,
+            ref Vector3 predictivePosition,
+            ref Vector3 predictiveNormal,
+            ref float predictiveBlend)
+        {
+            if (controllerSource == null || _predictiveRepairTarget == null || !IsFiniteVector(controllerVelocity))
+            {
+                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                return;
+            }
+
+            if (!IsFiniteVector(controllerPosition))
+            {
+                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                return;
+            }
+
+            if (!_predictiveRepairTarget.TryResolveRepairSnapPoints(
+                    controllerPosition,
+                    out AbsoluteUniversePosition leftHandAup,
+                    out AbsoluteUniversePosition rightHandAup,
+                    out _))
+            {
+                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                return;
+            }
+
+            AbsoluteUniversePosition targetAup = isLeftHand ? leftHandAup : rightHandAup;
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in controllerAup, in targetAup);
+            if (distanceSq > PredictiveRepairLatchDistanceSq)
+            {
+                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                return;
+            }
+
+            float3 targetRuntime = targetAup.ToRuntimeFloat3();
+            float3 controllerRuntime = ContextualPhysicalIkMath.ToFloat3(controllerPosition);
+            float3 targetVector = targetRuntime - controllerRuntime;
+            float3 targetDirection = ContextualPhysicalIkMath.SafeNormalize(targetVector, new float3(0.0f, 0.0f, 1.0f));
+            float3 velocityDirection = ContextualPhysicalIkMath.SafeNormalize(ContextualPhysicalIkMath.ToFloat3(controllerVelocity), float3.zero);
+            float directionDot = math.dot(velocityDirection, targetDirection);
+            float requiredDot = math.saturate(predictiveRepairDirectionDot);
+            if (directionDot < requiredDot)
+            {
+                predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, 0.0f, predictiveRepairBlendSharpness, deltaTime);
+                return;
+            }
+
+            Vector3 fallbackNormal = (Vector3)ContextualPhysicalIkMath.SafeNormalize(controllerRuntime - targetRuntime, new float3(0.0f, 1.0f, 0.0f));
+            KinematicRepairTargetProbe probe = new KinematicRepairTargetProbe(
+                controllerAup,
+                targetAup,
+                (Vector3)velocityDirection,
+                fallbackNormal,
+                0.0f,
+                0);
+
+            if (_predictiveRepairTarget.TryResolveKinematicRepairSnap(in probe, out KinematicRepairSnapPoint snapPoint))
+            {
+                AbsoluteUniversePosition handAup = isLeftHand ? snapPoint.LeftHandAup : snapPoint.RightHandAup;
+                targetRuntime = handAup.ToRuntimeFloat3();
+                if (IsFiniteVector(snapPoint.SurfaceNormal) && snapPoint.SurfaceNormal.sqrMagnitude > 0.000001f)
+                    fallbackNormal = snapPoint.SurfaceNormal;
+            }
+
+            float range01 = math.saturate(1.0f - ((float)distanceSq / PredictiveRepairLatchDistanceSq));
+            float direction01 = math.saturate((directionDot - requiredDot) / math.max(1.0f - requiredDot, 0.0001f));
+            float targetBlend = range01 * direction01;
+            predictivePosition = (Vector3)targetRuntime;
+            predictiveNormal = fallbackNormal;
+            predictiveBlend = ContextualPhysicalIkMath.SmoothScalar(predictiveBlend, targetBlend, predictiveRepairBlendSharpness, deltaTime);
+        }
+
+        private static Vector3 ResolveAupVelocity(
+            in AbsoluteUniversePosition currentAup,
+            in AbsoluteUniversePosition previousAup,
+            float deltaTime)
+        {
+            float safeDeltaTime = math.max(deltaTime, 0.0001f);
+            float3 currentRuntime = currentAup.ToRuntimeFloat3();
+            float3 previousRuntime = previousAup.ToRuntimeFloat3();
+            float3 velocity = (currentRuntime - previousRuntime) / safeDeltaTime;
+            return math.all(math.isfinite(velocity)) ? (Vector3)velocity : Vector3.zero;
+        }
+
+        private void TickUpperArmFovCulling(float deltaTime)
+        {
+            if (!enableUpperArmFovCulling || upperArmRenderers == null || upperArmRenderers.Length == 0)
+            {
+                if (!_upperArmRenderersVisible)
+                    SetUpperArmRenderersVisible(true);
+                _upperArmCullTimer = 0.0f;
+                return;
+            }
+
+            Camera playerCamera = GlobalRegistry.Player != null ? GlobalRegistry.Player.PlayerCamera : null;
+            Transform cameraTransform = playerCamera != null ? playerCamera.transform : null;
+            if (cameraTransform == null)
+            {
+                if (!_upperArmRenderersVisible)
+                    SetUpperArmRenderersVisible(true);
+                _upperArmCullTimer = 0.0f;
+                return;
+            }
+
+            bool visible = IsAnyUpperArmRendererInViewCone(cameraTransform);
+            if (visible)
+            {
+                _upperArmCullTimer = 0.0f;
+                if (!_upperArmRenderersVisible)
+                    SetUpperArmRenderersVisible(true);
+                return;
+            }
+
+            _upperArmCullTimer += math.max(0.0f, deltaTime);
+            if (_upperArmCullTimer >= math.max(0.01f, upperArmCullHysteresisSeconds) && _upperArmRenderersVisible)
+                SetUpperArmRenderersVisible(false);
+        }
+
+        private bool IsAnyUpperArmRendererInViewCone(Transform cameraTransform)
+        {
+            float3 cameraPosition = ContextualPhysicalIkMath.ToFloat3(cameraTransform.position);
+            float3 cameraForward = ContextualPhysicalIkMath.ToFloat3(cameraTransform.forward);
+            float minimumForwardDot = math.max(0.0f, upperArmFovDotThreshold);
+            float minimumForwardDotSq = minimumForwardDot * minimumForwardDot;
+            for (int i = 0; i < upperArmRenderers.Length; i++)
+            {
+                Renderer renderer = upperArmRenderers[i];
+                if (renderer == null)
+                    continue;
+
+                float3 direction = ContextualPhysicalIkMath.ToFloat3(renderer.bounds.center) - cameraPosition;
+                float distanceSq = math.lengthsq(direction);
+                if (distanceSq <= UpperArmVisibilityProxyRadiusSq)
+                    return true;
+
+                float forwardDot = math.dot(cameraForward, direction);
+                if (forwardDot > 0.01f &&
+                    forwardDot * forwardDot >= minimumForwardDotSq * distanceSq)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void SetUpperArmRenderersVisible(bool visible)
+        {
+            if (upperArmRenderers == null)
+                return;
+
+            for (int i = 0; i < upperArmRenderers.Length; i++)
+            {
+                Renderer renderer = upperArmRenderers[i];
+                if (renderer != null)
+                    renderer.enabled = visible;
+            }
+
+            _upperArmRenderersVisible = visible;
         }
 
         private bool EnsureRuntimeInitialized()
@@ -1120,6 +1415,7 @@ namespace Hecton8.Gameplay
             RegisterNativeMemorySentinel();
             BindCoreHandles();
             BuildTwoBoneSetups();
+            CacheCoreReachLengths();
             BuildAppendageRuntimeData();
             BuildSpineRuntimeData();
             BuildSecondaryRuntimeData();
@@ -1201,6 +1497,14 @@ namespace Hecton8.Gameplay
                 RightHandHandleIndex,
                 3,
                 handLimbBlend);
+        }
+
+        private void CacheCoreReachLengths()
+        {
+            _cachedLeftLegReach = ComputeReach(leftUpperLeg, leftLowerLeg, leftFoot);
+            _cachedRightLegReach = ComputeReach(rightUpperLeg, rightLowerLeg, rightFoot);
+            _cachedLeftArmReach = ComputeReach(leftUpperArm, leftLowerArm, leftHand);
+            _cachedRightArmReach = ComputeReach(rightUpperArm, rightLowerArm, rightHand);
         }
 
         private void BuildAppendageRuntimeData()
@@ -1595,6 +1899,14 @@ namespace Hecton8.Gameplay
             _appendageSurfaceNormalSources = null;
             _spineHandleStartIndex = BaseHandleCount;
             _secondaryHandleStartIndex = BaseHandleCount;
+            _cachedLeftLegReach = 0.0f;
+            _cachedRightLegReach = 0.0f;
+            _cachedLeftArmReach = 0.0f;
+            _cachedRightArmReach = 0.0f;
+            _predictiveLeftHandBlend = 0.0f;
+            _predictiveRightHandBlend = 0.0f;
+            _hasPreviousLeftPredictiveControllerPose = false;
+            _hasPreviousRightPredictiveControllerPose = false;
             ReleaseMuscleBulgeMaterial();
             _runtimeInitialized = false;
         }
@@ -1644,6 +1956,8 @@ namespace Hecton8.Gameplay
             RebaseWorldSpaceFloat3Array(_spineTargets, offset);
             RebaseAppendageTargets(_appendageTargets, offset);
             RebaseSecondaryStates(_secondaryStates, offset);
+            _predictiveLeftHandPosition -= shiftOffset;
+            _predictiveRightHandPosition -= shiftOffset;
         }
 
         private static void RebaseWorldSpaceFloat3Array(NativeArray<float3> values, float3 shiftOffset)
@@ -1704,6 +2018,8 @@ namespace Hecton8.Gameplay
 
             if (rightArmParent == null && rightUpperArm != null)
                 rightArmParent = rightUpperArm.parent;
+
+            _predictiveRepairTarget = predictiveRepairTargetBehaviour as IKinematicRepairTarget;
 
             bool shouldAutoResolveMuscleBulgeRenderer = muscleBulgeRenderer == null &&
                 (!Application.isPlaying || !_attemptedMuscleBulgeRendererResolve);
@@ -1850,14 +2166,14 @@ namespace Hecton8.Gameplay
         private static void ResolveThrottleState(
             uint frameIndex,
             int entityId,
-            float viewerDistance,
+            float viewerDistanceSq,
             out int updateThisFrame,
             out byte throttleTier,
             out uint updateBitfield)
         {
             uint entityBits = (uint)math.max(0, entityId);
 
-            if (viewerDistance > Tier1DistanceMax)
+            if (viewerDistanceSq > Tier1DistanceMaxSq)
             {
                 throttleTier = 2;
                 updateBitfield = 0x3u;
@@ -1865,7 +2181,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (viewerDistance > Tier0DistanceMax)
+            if (viewerDistanceSq > Tier0DistanceMaxSq)
             {
                 throttleTier = 1;
                 updateBitfield = 0x1u;
@@ -1970,7 +2286,16 @@ namespace Hecton8.Gameplay
             if (first == null || second == null)
                 return 0.0f;
 
-            return Vector3.Distance(first.position, second.position);
+            Vector3 firstPosition = first.position;
+            Vector3 secondPosition = second.position;
+            float3 delta = ContextualPhysicalIkMath.ToFloat3(firstPosition - secondPosition);
+            return math.length(delta);
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
+                     float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
         }
 
         private static float3 ComputeLocalPoleOffset(Transform parent, Transform poleHint, Transform fallbackJoint)

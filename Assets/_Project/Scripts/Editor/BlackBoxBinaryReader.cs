@@ -29,7 +29,7 @@ namespace Hecton8.EditorTools
             public uint FrameIndex;
             public uint SystemMask;
             public float DeltaTime;
-            public float FixedDeltaTime;
+            public float LatencyMs;
             public float GpuFrameTime;
             public float MemoryUsedMb;
             public Vector3 PlayerAup;
@@ -141,7 +141,7 @@ namespace Hecton8.EditorTools
             entry.FrameIndex = reader.ReadUInt32();
             entry.SystemMask = reader.ReadUInt32();
             entry.DeltaTime = reader.ReadSingle();
-            entry.FixedDeltaTime = reader.ReadSingle();
+            entry.LatencyMs = reader.ReadSingle();
             entry.GpuFrameTime = reader.ReadSingle();
             entry.MemoryUsedMb = reader.ReadSingle();
             entry.PlayerAup = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle());

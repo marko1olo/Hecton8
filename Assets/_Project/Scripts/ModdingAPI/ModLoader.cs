@@ -52,7 +52,7 @@ namespace Hecton8.Modding
         private static bool _shutdownInvoked;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        internal static void ResetStaticState()
         {
             ShutdownLoadedMods();
             UninstallHooks();

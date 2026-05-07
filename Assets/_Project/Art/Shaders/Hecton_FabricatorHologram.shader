@@ -30,7 +30,7 @@ Shader "HECTON/UI/FabricatorHologram"
 
             Blend SrcAlpha One
             ZWrite Off
-            Cull Back
+            Cull Off
 
             HLSLPROGRAM
             #pragma vertex Vert

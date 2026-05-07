@@ -26,9 +26,12 @@ namespace Hecton8.Progression
         private const string AtlasMarkerTitle = "ENCRYPTED SIGNAL SOURCE";
         private const string HullFailureDiscoveryId = "hull_failure_voice_log";
         private const string HullFailureLogId = "captain_last_broadcast";
+        private const int MaxBiomeMarkerRules = 32;
         private static readonly uint _atlasSignalDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(AtlasSignalDiscoveryId);
         private static readonly uint _atlasSignalQuestHash = QuestFlagHashKernel.ComputeStableHash(AtlasSignalQuestId);
         private static readonly uint _atlasMarkerHash = QuestFlagHashKernel.ComputeStableHash(AtlasMarkerId);
+        private static readonly uint _atlasMarkerTitleHash = QuestFlagHashKernel.ComputeStableHash(AtlasMarkerTitle);
+        private static readonly uint _hullFailureLogHash = QuestFlagHashKernel.ComputeStableHash(HullFailureLogId);
 
         [Header("First Hour AUP Gate")]
         [SerializeField] private Vector3 lifePodExitReferenceWorld = Vector3.zero;
@@ -54,6 +57,7 @@ namespace Hecton8.Progression
             [System.NonSerialized] public uint requiredQuestHash;
             [System.NonSerialized] public uint requiredDiscoveryHash;
             [System.NonSerialized] public uint markerHashId;
+            [System.NonSerialized] public uint titleHashId;
         }
 #pragma warning restore 0649
 
@@ -67,6 +71,17 @@ namespace Hecton8.Progression
         private bool _hullFailureIssued;
         private uint _revealedBiomeMarkerMask;
         private int _lastBiomeMatrixId = int.MinValue;
+        // COLD ALLOC: int[32] - biome marker rule index buckets for event-time sector lookup - owner: NarrativeProgressionBridge
+        private readonly int[] _biomeRuleIndices = new int[MaxBiomeMarkerRules];
+        // COLD ALLOC: int[32] - biome IDs owning marker-rule buckets - owner: NarrativeProgressionBridge
+        private readonly int[] _biomeRuleBucketBiomeIds = new int[MaxBiomeMarkerRules];
+        // COLD ALLOC: int[32] - bucket start offsets into _biomeRuleIndices - owner: NarrativeProgressionBridge
+        private readonly int[] _biomeRuleBucketStarts = new int[MaxBiomeMarkerRules];
+        // COLD ALLOC: int[32] - bucket rule counts - owner: NarrativeProgressionBridge
+        private readonly int[] _biomeRuleBucketCounts = new int[MaxBiomeMarkerRules];
+        // COLD ALLOC: int[32] - transient boot-time bucket fill offsets - owner: NarrativeProgressionBridge
+        private readonly int[] _biomeRuleBucketWriteOffsets = new int[MaxBiomeMarkerRules];
+        private int _biomeRuleBucketCount;
 
         private void Awake()
         {
@@ -140,7 +155,7 @@ namespace Hecton8.Progression
             if (audioLogs != null)
             {
                 audioLogs.NotifyAtmosphericWarningStarted(0.7f);
-                audioLogs.TryPlayLogById(HullFailureLogId);
+                audioLogs.TryPlayLogByHash(_hullFailureLogHash);
             }
         }
 
@@ -163,17 +178,7 @@ namespace Hecton8.Progression
 
         private static bool IsSpeciesScan(in ScanEventPayload payload)
         {
-            if ((ScanEntryKind)payload.EntryKind != ScanEntryKind.Scannable)
-                return false;
-
-            if (!ScanEvents.TryResolveEntryMetadata(payload.EntryHash, out ScanEntryMetadata metadata))
-                return false;
-
-            string entryId = metadata.EntryId;
-            return !string.IsNullOrEmpty(entryId) &&
-                   (entryId.StartsWith("creature.", System.StringComparison.Ordinal) ||
-                    entryId.StartsWith("fauna.", System.StringComparison.Ordinal) ||
-                    entryId.StartsWith("species.", System.StringComparison.Ordinal));
+            return (ScanEntryKind)payload.EntryKind == ScanEntryKind.Scannable && payload.EntryHash != 0u;
         }
 
         private static void ShowNewArchiveDataMilestone()
@@ -227,9 +232,9 @@ namespace Hecton8.Progression
 
             if (markerRegistry.TryCreateOrUpdateMarker(
                     _atlasMarkerHash,
-                    AtlasMarkerId,
                     atlasSignal.AtlasCorePosition,
                     MarkerIconType.Objective,
+                    _atlasMarkerTitleHash,
                     AtlasMarkerTitle,
                     out _))
             {
@@ -257,15 +262,18 @@ namespace Hecton8.Progression
             if (markerRegistry == null)
                 return;
 
-            int ruleCount = Mathf.Min(biomeMarkerRules.Length, 32);
-            for (int i = 0; i < ruleCount; i++)
+            if (!TryResolveBiomeRuleBucket(biomeId, out int bucketStart, out int bucketCount))
+                return;
+
+            for (int bucketOffset = 0; bucketOffset < bucketCount; bucketOffset++)
             {
+                int i = _biomeRuleIndices[bucketStart + bucketOffset];
                 uint ruleMask = 1u << i;
                 if ((_revealedBiomeMarkerMask & ruleMask) != 0u)
                     continue;
 
                 BiomeMarkerRule rule = biomeMarkerRules[i];
-                if (rule == null || rule.biomeId != biomeId || rule.markerHashId == 0u)
+                if (rule == null || rule.markerHashId == 0u)
                     continue;
 
                 if (!HasMarkerPrerequisite(rule))
@@ -273,9 +281,9 @@ namespace Hecton8.Progression
 
                 if (!markerRegistry.TryCreateOrUpdateMarker(
                         rule.markerHashId,
-                        rule.markerId,
                         rule.markerWorldPosition,
                         rule.iconType,
+                        rule.titleHashId,
                         rule.title,
                         out _))
                 {
@@ -314,7 +322,10 @@ namespace Hecton8.Progression
         private void CacheRuleHashes()
         {
             if (biomeMarkerRules == null || biomeMarkerRules.Length == 0)
+            {
+                BuildBiomeRuleBuckets();
                 return;
+            }
 
             for (int i = 0; i < biomeMarkerRules.Length; i++)
             {
@@ -325,7 +336,109 @@ namespace Hecton8.Progression
                 rule.requiredQuestHash = QuestFlagHashKernel.ComputeStableHash(rule.requiredQuestId);
                 rule.requiredDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(rule.requiredDiscoveryId);
                 rule.markerHashId = QuestFlagHashKernel.ComputeStableHash(rule.markerId);
+                rule.titleHashId = QuestFlagHashKernel.ComputeStableHash(rule.title);
             }
+
+            BuildBiomeRuleBuckets();
+        }
+
+        private bool TryResolveBiomeRuleBucket(int biomeId, out int bucketStart, out int bucketCount)
+        {
+            for (int i = 0; i < _biomeRuleBucketCount; i++)
+            {
+                if (_biomeRuleBucketBiomeIds[i] != biomeId)
+                    continue;
+
+                bucketStart = _biomeRuleBucketStarts[i];
+                bucketCount = _biomeRuleBucketCounts[i];
+                return bucketCount > 0;
+            }
+
+            bucketStart = 0;
+            bucketCount = 0;
+            return false;
+        }
+
+        private void BuildBiomeRuleBuckets()
+        {
+            _biomeRuleBucketCount = 0;
+            for (int i = 0; i < MaxBiomeMarkerRules; i++)
+            {
+                _biomeRuleBucketBiomeIds[i] = 0;
+                _biomeRuleBucketStarts[i] = 0;
+                _biomeRuleBucketCounts[i] = 0;
+                _biomeRuleBucketWriteOffsets[i] = 0;
+                _biomeRuleIndices[i] = 0;
+            }
+
+            if (biomeMarkerRules == null || biomeMarkerRules.Length == 0)
+                return;
+
+            int ruleCount = Mathf.Min(biomeMarkerRules.Length, MaxBiomeMarkerRules);
+            for (int i = 0; i < ruleCount; i++)
+            {
+                BiomeMarkerRule rule = biomeMarkerRules[i];
+                if (rule == null || rule.markerHashId == 0u)
+                    continue;
+
+                int bucketIndex = ResolveOrCreateBiomeBucket(rule.biomeId);
+                if (bucketIndex < 0)
+                    continue;
+
+                _biomeRuleBucketCounts[bucketIndex]++;
+            }
+
+            int cursor = 0;
+            for (int i = 0; i < _biomeRuleBucketCount; i++)
+            {
+                _biomeRuleBucketStarts[i] = cursor;
+                cursor += _biomeRuleBucketCounts[i];
+                _biomeRuleBucketWriteOffsets[i] = 0;
+            }
+
+            for (int i = 0; i < ruleCount; i++)
+            {
+                BiomeMarkerRule rule = biomeMarkerRules[i];
+                if (rule == null || rule.markerHashId == 0u)
+                    continue;
+
+                int bucketIndex = ResolveBiomeBucket(rule.biomeId);
+                if (bucketIndex < 0)
+                    continue;
+
+                int writeIndex = _biomeRuleBucketStarts[bucketIndex] + _biomeRuleBucketWriteOffsets[bucketIndex];
+                if ((uint)writeIndex >= (uint)_biomeRuleIndices.Length)
+                    continue;
+
+                _biomeRuleIndices[writeIndex] = i;
+                _biomeRuleBucketWriteOffsets[bucketIndex]++;
+            }
+        }
+
+        private int ResolveOrCreateBiomeBucket(int biomeId)
+        {
+            int bucketIndex = ResolveBiomeBucket(biomeId);
+            if (bucketIndex >= 0)
+                return bucketIndex;
+
+            if (_biomeRuleBucketCount >= MaxBiomeMarkerRules)
+                return -1;
+
+            bucketIndex = _biomeRuleBucketCount;
+            _biomeRuleBucketBiomeIds[bucketIndex] = biomeId;
+            _biomeRuleBucketCount++;
+            return bucketIndex;
+        }
+
+        private int ResolveBiomeBucket(int biomeId)
+        {
+            for (int i = 0; i < _biomeRuleBucketCount; i++)
+            {
+                if (_biomeRuleBucketBiomeIds[i] == biomeId)
+                    return i;
+            }
+
+            return -1;
         }
 
 #if UNITY_EDITOR

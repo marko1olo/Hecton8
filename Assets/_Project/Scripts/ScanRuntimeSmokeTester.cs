@@ -180,7 +180,7 @@ namespace Hecton8.Gameplay
                 if (success)
                     return true;
 
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             Debug.LogWarning($"[ScanSmoke] TIMEOUT {label} after {timeout:0.00}s");
@@ -191,7 +191,7 @@ namespace Hecton8.Gameplay
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
             while (Time.realtimeSinceStartup < deadline)
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
         }
 
         private void AutoResolve()

@@ -1,18 +1,19 @@
 ﻿# QUALITY_GATES.md
 ## SECONDARY LAYER: QUALITY CONTROL
-Date: 2026-05-07
+Date: 2026-05-08
 Status: PENDING VERIFICATION
 Verification: PENDING VERIFICATION
 Apply only after production result exists.
 Source of truth for asset specs: PROCEDURAL_ASSET_PIPELINE.md
 Performance tooling: SYSTEMS_CONTRACTS.md (BenchmarkRunner.cs)
 
-2026-05-04 current-state boundary:
+2026-05-08 current-state boundary:
 
 - This is a gate/checklist contract, not evidence that any asset passed.
 - Do not fill or cite this document as proof without a real prefab/material/scatter profile and fresh validation output.
-- Current project truth starts at `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
-- Current May 4 post-repair source guard exits `0`; this is not asset-quality, Play Mode, profiler, or player-build proof.
+- Current project truth starts at `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`, `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`, `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`, `Docs/Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`, `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current May 8 full Core dependency build succeeds: `CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log`, `48 Warning(s)`, `0 Error(s)`, with `0` first-party `Assets/_Project` warning lines; later source writes were observed, so this is latest completed build evidence, not stable-source proof.
+- Current May 8 Unity MCP console readback returned `0` error/warning entries with active scene `00_BOOTSTRAP`, Play Mode off, and compiling false; the Core build and editor-console readback are still not asset-quality, Play Mode, profiler, GCMonitor, scene/prefab gameplay, or player-build proof.
 
 ---
 
@@ -84,10 +85,19 @@ Tooling: BenchmarkRunner.cs defined in SYSTEMS_CONTRACTS.md.
 | Metric     | Limit      | Blocks merge |
 |------------|------------|--------------|
 | Frame Time | <= 16.67ms | Yes          |
+| Per-system tick | <= 0.1ms | Yes          |
 | VRAM       | <= 1.6GB   | Yes          |
+| Half-Res VRAM cap | <= 1.6GB | Yes          |
 | SetPass    | <= 800     | Yes          |
 | GC Alloc   | 0          | Yes          |
 | Draw Calls | <= 1/type  | Yes          |
+
+CTO hard rules:
+
+- Any single runtime system tick above `0.1ms` is suspicious and blocks merge until a profiler trace proves the cost is cold, amortized, or moved out of the frame-critical lane.
+- Half-Res rendering modes do not get a larger memory budget; VRAM remains capped at `1.6GB`.
+- Synchronous `Physics.BakeMesh(...)` on the main thread is forbidden. Mesh baking must be asynchronous/job-bound or replaced by a cinematic collider fake for noncritical/distant geometry.
+- No manual checklist can override profiler, console, or PlayMode evidence.
 
 ### Test scene requirements
 [REQ] 3000 instances of one type on screen.

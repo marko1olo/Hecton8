@@ -65,15 +65,15 @@ $regNoUnreg = foreach ($f in $files) {
 
 | Metric | Count |
 |---|---:|
-| `.cs` files under `Assets/_Project/Scripts` | `1171` |
-| Files with native allocation tokens | `204` |
-| Native allocation token hits | `1116` |
-| Files with `NativeMemorySentinel.RegisterNative*` tokens | `170` |
-| `NativeMemorySentinel.RegisterNative*` token hits | `720` |
-| `NativeMemorySentinel.UnregisterNative*` token hits | `513` |
-| `NativeMemorySentinel.Unregister*` token hits | `523` |
-| `DisposeNative*` helper token hits | `489` |
-| Direct `.Dispose(` token hits | `944` |
+| `.cs` files under `Assets/_Project/Scripts` | `1173` |
+| Files with native allocation tokens | `206` |
+| Native allocation token hits | `1114` |
+| Files with `NativeMemorySentinel.RegisterNative*` tokens | `172` |
+| `NativeMemorySentinel.RegisterNative*` token hits | `732` |
+| `NativeMemorySentinel.UnregisterNative*` token hits | `528` |
+| `NativeMemorySentinel.Unregister*` token hits | `538` |
+| `DisposeNative*` helper token hits | `612` |
+| Direct `.Dispose(` token hits | `954` |
 | Naive same-file allocation-without-`.Dispose(` hits | `4` |
 | Naive register-without-unregister same-file hits | `3` |
 

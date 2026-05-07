@@ -5,6 +5,7 @@ using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -171,7 +172,7 @@ namespace Hecton8.Systems.AI
             {
                 EventType = ThreatSpikeEventType,
                 Position = position,
-                Value = Mathf.Clamp01(intensity)
+                Value = math.saturate(intensity)
             });
         }
 
@@ -330,12 +331,53 @@ namespace Hecton8.Systems.AI
     /// <summary>
     /// One Burst-built predator sight ray input. Managed brain references stay outside this native lane.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     internal struct PredatorSightRaycastInput
     {
         public float3 Origin;
         public float3 Target;
-        public float MaxDistance;
         public int LayerMask;
+    }
+
+    internal static class PredatorSpatialHashMath
+    {
+        public static int3 ResolveCellCoord(double3 absolutePosition, double cellSizeMeters)
+        {
+            double inverseCellSize = math.rcp(math.max(0.001d, cellSizeMeters));
+            return (int3)math.floor(absolutePosition * inverseCellSize);
+        }
+
+        public static int HashCell(int3 cell)
+        {
+            unchecked
+            {
+                uint hash = ((uint)cell.x * 73856093u) ^
+                            ((uint)cell.y * 19349663u) ^
+                            ((uint)cell.z * 83492791u);
+                hash ^= hash >> 16;
+                return (int)(hash & 0x7FFFFFFFu);
+            }
+        }
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    internal struct PredatorSpatialHashInsertJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<double3> AbsolutePositions;
+        public NativeArray<int3> CellCoords;
+        public NativeParallelMultiHashMap<int, int>.ParallelWriter CellOccupancy;
+        public int Count;
+        public double CellSizeMeters;
+
+        public void Execute(int index)
+        {
+            if (index >= Count)
+                return;
+
+            int3 cell = PredatorSpatialHashMath.ResolveCellCoord(AbsolutePositions[index], CellSizeMeters);
+            CellCoords[index] = cell;
+            CellOccupancy.Add(PredatorSpatialHashMath.HashCell(cell), index);
+        }
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -365,7 +407,7 @@ namespace Hecton8.Systems.AI
                 new Vector3(input.Origin.x, input.Origin.y, input.Origin.z),
                 new Vector3(direction.x, direction.y, direction.z),
                 new QueryParameters(input.LayerMask, false, QueryTriggerInteraction.Ignore, false),
-                math.min(input.MaxDistance, length));
+                length);
         }
     }
 
@@ -374,7 +416,7 @@ namespace Hecton8.Systems.AI
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4500)]
-    public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable, ILateFrameTickable, IEncounterDirectorService, ISonarPingEventListener, IAcousticPingEventListener
+    public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable, ILateFrameTickable, IEncounterDirectorService, ISonarPingEventListener, IAcousticPingEventListener, IElectromagneticPulseEventListener, IPhysicsAcousticImpulseEventListener
     {
         internal static HectonDirectorAI ActiveRuntimeInstance => GlobalRegistry.EncounterDirector as HectonDirectorAI;
 
@@ -418,28 +460,44 @@ namespace Hecton8.Systems.AI
         private readonly SpatialQueryHit[] _acousticPingPredatorContacts = new SpatialQueryHit[AcousticPingPredatorContactCapacity];
         // COLD ALLOC: SpatialQueryHit[10] - capped director LOS predator query contacts - owner: HectonDirectorAI
         private readonly SpatialQueryHit[] _predatorSightContacts = new SpatialQueryHit[PredatorSightMaxRaysPerFrame];
+        // COLD ALLOC: SpatialQueryHit[64] - director predator spatial hash contact mirror - owner: HectonDirectorAI
+        private readonly SpatialQueryHit[] _predatorSpatialContacts = new SpatialQueryHit[PredatorSpatialHashContactCapacity];
         // COLD ALLOC: FaunaBrain[10] - managed owner mirror for completed predator LOS rays - owner: HectonDirectorAI
         private readonly FaunaBrain[] _predatorSightBrains = new FaunaBrain[PredatorSightMaxRaysPerFrame];
         // COLD ALLOC: Vector3[10] - player-position mirror for completed predator LOS rays - owner: HectonDirectorAI
         private readonly Vector3[] _predatorSightPlayerPositions = new Vector3[PredatorSightMaxRaysPerFrame];
+        // COLD ALLOC: Vector3[10] - player-velocity mirror for dead-reckoned predator LOS guidance - owner: HectonDirectorAI
+        private readonly Vector3[] _predatorSightPlayerVelocities = new Vector3[PredatorSightMaxRaysPerFrame];
         // COLD ALLOC: Vector3[10] - player-forward mirror for completed predator LOS rays - owner: HectonDirectorAI
         private readonly Vector3[] _predatorSightPlayerForwards = new Vector3[PredatorSightMaxRaysPerFrame];
         private NativeArray<PredatorSightRaycastInput> _predatorSightInputs;
         private NativeArray<RaycastCommand> _predatorSightCommands;
         private NativeArray<RaycastHit> _predatorSightHits;
+        private NativeArray<double3> _predatorSpatialAbsolutePositions;
+        private NativeArray<int3> _predatorSpatialCellCoords;
+        private NativeParallelMultiHashMap<int, int> _predatorSpatialCellOccupancy;
         private JobHandle _predatorSightRaycastHandle;
+        private JobHandle _predatorSpatialHashBuildHandle;
         private const float SonarStressDecayPerSecond = 0.18f;
         private const float ActiveSonarLeviathanAggroRadiusMeters = 1000f;
         private const double ActiveSonarLeviathanAggroRadiusMetersSqr =
             ActiveSonarLeviathanAggroRadiusMeters * ActiveSonarLeviathanAggroRadiusMeters;
         private const float ActiveSonarLeviathanAggroDurationSeconds = 10f;
+        private const float ActiveSonarPingDebounceSeconds = 2f;
         private const float ActiveSonarBoidScatterRadiusMeters = 90f;
         private const float ActiveSonarBoidScatterDurationSeconds = 0.85f;
+        private const float PredatorAcousticDeafenedDurationSeconds = 8f;
+        private const float PredatorAcousticDeafeningImpulseEnergyJoules = 6400f;
         private const int AcousticPingPredatorContactCapacity = 64;
         private const int PredatorSightMaxRaysPerFrame = 10;
+        private const int PredatorSpatialHashContactCapacity = 64;
+        private const float PredatorSpatialHashCellSizeMeters = 50f;
+        private const float PredatorSpatialHashActiveChunkRadiusMeters = 500f;
+        private const float PredatorDeadZoneCullDistanceMeters = 250f;
+        private const double PredatorDeadZoneCullDistanceMetersSqr =
+            PredatorDeadZoneCullDistanceMeters * PredatorDeadZoneCullDistanceMeters;
         private const float PredatorSightScanRadiusMeters = 220f;
         private const float PredatorSightProbeOffsetMeters = 0.75f;
-        private const float PredatorSightHitToleranceMeters = 0.75f;
         private const float PredatorSightIntervalSeconds = 0.1f;
         private const float PredatorSightImmediateRevealRadiusMeters = 18f;
         private const double PredatorSightImmediateRevealRadiusMetersSqr =
@@ -467,14 +525,19 @@ namespace Hecton8.Systems.AI
         private bool _lateFrameRegistered;
         private bool _acousticPingSubscribed;
         private bool _predatorSightBuffersRegistered;
+        private bool _predatorSpatialHashBuffersRegistered;
         private bool _predatorSightJobScheduled;
+        private bool _predatorSpatialHashJobScheduled;
+        private bool _predatorSpatialHashReady;
         private float _resolveRetryTimer;
         private float _hunterSquadCooldown;
         private float _predatorSightCooldown;
+        private float _activeSonarPingDebounceTimer;
         private float _nextDirectorSolveWarningTime;
         private int _frameTimeHistoryCount;
         private int _frameTimeHistoryIndex;
         private int _predatorSightScheduledCount;
+        private int _predatorSpatialContactCount;
         private Vector3 _previousPlayerPosition;
         private bool _hasPreviousPlayerPosition;
         private float _recentSonarStress;
@@ -552,7 +615,11 @@ namespace Hecton8.Systems.AI
             _externalPeakHoldSeconds = 0f;
             _hunterSquadCooldown = 0f;
             _predatorSightCooldown = 0f;
+            _activeSonarPingDebounceTimer = 0f;
+            _predatorSpatialHashReady = false;
+            _predatorSpatialContactCount = 0;
             EnsurePredatorSightBuffersAllocated();
+            EnsurePredatorSpatialHashBuffersAllocated();
             SpectrumEvents.RegisterSonarPingListener(this);
             SubscribeAcousticPingEvents();
             PublishPredatorPressure(true);
@@ -584,11 +651,15 @@ namespace Hecton8.Systems.AI
             SpectrumEvents.UnregisterSonarPingListener(this);
             UnsubscribeAcousticPingEvents();
             CompletePredatorSightBatch(forceComplete: true);
+            CompletePredatorSpatialHashBuild(forceComplete: true);
             _recentSonarStress = 0f;
             _externalPeakPressure01 = 0f;
             _externalPeakHoldSeconds = 0f;
             _hunterSquadCooldown = 0f;
             _predatorSightCooldown = 0f;
+            _activeSonarPingDebounceTimer = 0f;
+            _predatorSpatialHashReady = false;
+            _predatorSpatialContactCount = 0;
         }
 
 #if UNITY_EDITOR
@@ -617,6 +688,8 @@ namespace Hecton8.Systems.AI
 
             CompletePredatorSightBatch(forceComplete: true);
             ReleasePredatorSightBuffers();
+            CompletePredatorSpatialHashBuild(forceComplete: true);
+            ReleasePredatorSpatialHashBuffers();
             _encounterDirector.Dispose();
         }
 
@@ -637,18 +710,21 @@ namespace Hecton8.Systems.AI
             FrameTimingManager.CaptureFrameTimings();
             float averageFrameTimeMs = UpdateFrameTimeAverage(deltaTime);
 
-            Vector3 playerPosition = playerTransform.position;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            float3 playerPosition3 = playerAup.ToRuntimeFloat3();
+            Vector3 playerPosition = new Vector3(playerPosition3.x, playerPosition3.y, playerPosition3.z);
             Vector3 playerVelocity = ResolvePlayerVelocity(playerPosition, deltaTime);
             Vector3 playerForward = ResolvePlayerForward();
             float surfaceWorldY = ResolveSurfaceWorldY(playerPosition);
-            float healthNormalized = survivalSystem != null ? Mathf.Clamp01(survivalSystem.IntegrityNormalized) : 1f;
-            float oxygenNormalized = survivalSystem != null ? Mathf.Clamp01(survivalSystem.OxygenNormalized) : 1f;
+            float healthNormalized = survivalSystem != null ? math.saturate(survivalSystem.IntegrityNormalized) : 1f;
+            float oxygenNormalized = survivalSystem != null ? math.saturate(survivalSystem.OxygenNormalized) : 1f;
             float sonarStress = UpdateSonarStress(deltaTime);
+            UpdateActiveSonarPingDebounce(deltaTime);
             float internalStress = ResolveInternalStress(healthNormalized, oxygenNormalized, sonarStress);
             float acousticThreatLevel = 0f;
             HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (vegetationBridge != null)
-                acousticThreatLevel = Mathf.Clamp01(vegetationBridge.GetThreatLevel(playerPosition));
+                acousticThreatLevel = math.saturate(vegetationBridge.GetThreatLevel(playerPosition));
             acousticThreatLevel = Mathf.Max(acousticThreatLevel, sonarStress);
             ApplyExternalPeakPressure(deltaTime, ref internalStress, ref acousticThreatLevel);
             UpdateHunterSquadPressure(deltaTime);
@@ -676,7 +752,7 @@ namespace Hecton8.Systems.AI
             };
 
             _encounterDirector.Advance(frameContext, faunaDirector, this);
-            SchedulePredatorSightChecks(deltaTime, playerPosition, playerForward);
+            SchedulePredatorSightBatch(deltaTime, playerPosition, playerVelocity, playerForward);
 
 #if UNITY_EDITOR
             _debugStressLevel = _encounterDirector.StressLevel;
@@ -699,12 +775,42 @@ namespace Hecton8.Systems.AI
             HandleAcousticPing(in pingEvent);
         }
 
+        public void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
+        {
+            HandlePredatorAcousticDeafening(
+                pulseEvent.RuntimePosition,
+                pulseEvent.RadiusMeters,
+                math.max(PredatorAcousticDeafenedDurationSeconds, pulseEvent.DurationSeconds));
+        }
+
+        public void OnAcousticImpulse(in AcousticImpulseEvent impulseEvent)
+        {
+            bool isLargeAcousticImpulse = (impulseEvent.Flags & AcousticImpulseFlags.Large) != 0;
+            if (isLargeAcousticImpulse)
+            {
+                float rangeVisibility01 = math.saturate(impulseEvent.RadiusMeters / ActiveSonarLeviathanAggroRadiusMeters);
+                HandleSonarPingSent(math.max(impulseEvent.Volume01, rangeVisibility01));
+                if ((impulseEvent.Flags & AcousticImpulseFlags.Critical) == 0)
+                    return;
+            }
+
+            if (impulseEvent.KineticEnergyJoules < PredatorAcousticDeafeningImpulseEnergyJoules)
+                return;
+
+            HandlePredatorAcousticDeafening(
+                impulseEvent.RuntimePosition,
+                impulseEvent.RadiusMeters,
+                PredatorAcousticDeafenedDurationSeconds);
+        }
+
         private void SubscribeAcousticPingEvents()
         {
             if (_acousticPingSubscribed || !Application.isPlaying)
                 return;
 
             PhysicsEventBus.Register((IAcousticPingEventListener)this);
+            PhysicsEventBus.Register((IElectromagneticPulseEventListener)this);
+            PhysicsEventBus.Register((IPhysicsAcousticImpulseEventListener)this);
             _acousticPingSubscribed = true;
         }
 
@@ -714,6 +820,8 @@ namespace Hecton8.Systems.AI
                 return;
 
             PhysicsEventBus.Unregister((IAcousticPingEventListener)this);
+            PhysicsEventBus.Unregister((IElectromagneticPulseEventListener)this);
+            PhysicsEventBus.Unregister((IPhysicsAcousticImpulseEventListener)this);
             _acousticPingSubscribed = false;
         }
 
@@ -722,6 +830,10 @@ namespace Hecton8.Systems.AI
             if (pingEvent.RadiusMeters <= 0f || pingEvent.Intensity01 <= 0f)
                 return;
 
+            if (_activeSonarPingDebounceTimer > 0f)
+                return;
+
+            _activeSonarPingDebounceTimer = ActiveSonarPingDebounceSeconds;
             AbsoluteUniversePosition pingAup = AbsoluteUniversePosition.FromRuntimePosition(pingEvent.RuntimePosition);
             int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
                 in pingAup,
@@ -742,6 +854,9 @@ namespace Hecton8.Systems.AI
 
                 AbsoluteUniversePosition brainAup = AbsoluteUniversePosition.FromRuntimePosition(_acousticPingPredatorContacts[i].Position);
                 if (AbsoluteUniversePosition.DistanceSq(in brainAup, in pingAup) > ActiveSonarLeviathanAggroRadiusMetersSqr)
+                    continue;
+
+                if (brain.ShouldIgnoreAcousticPing(pingEvent.EnergyJoules, pingEvent.Intensity01))
                     continue;
 
                 brain.ApplyAcousticPingAggro(
@@ -771,8 +886,48 @@ namespace Hecton8.Systems.AI
             }
         }
 
-        private void SchedulePredatorSightChecks(float deltaTime, Vector3 playerPosition, Vector3 playerForward)
+        private void HandlePredatorAcousticDeafening(Vector3 runtimePosition, float radiusMeters, float durationSeconds)
         {
+            if (radiusMeters <= 0f || durationSeconds <= 0f)
+                return;
+
+            AbsoluteUniversePosition pulseAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                in pulseAup,
+                radiusMeters,
+                SpatialTargetKind.Bioform,
+                _acousticPingPredatorContacts);
+
+            double radiusSq = (double)radiusMeters * radiusMeters;
+            for (int i = 0; i < contactCount; i++)
+            {
+                FaunaBrain brain = _acousticPingPredatorContacts[i].Owner as FaunaBrain;
+                if (brain == null ||
+                    brain.IsDead ||
+                    !brain.IsApexPredatorRuntime)
+                {
+                    continue;
+                }
+
+                AbsoluteUniversePosition brainAup = AbsoluteUniversePosition.FromRuntimePosition(_acousticPingPredatorContacts[i].Position);
+                if (AbsoluteUniversePosition.DistanceSq(in brainAup, in pulseAup) > radiusSq)
+                    continue;
+
+                brain.ApplyPredatorDeafening(runtimePosition, durationSeconds);
+            }
+        }
+
+        private void UpdateActiveSonarPingDebounce(float deltaTime)
+        {
+            if (_activeSonarPingDebounceTimer <= 0f)
+                return;
+
+            _activeSonarPingDebounceTimer = Mathf.Max(0f, _activeSonarPingDebounceTimer - deltaTime);
+        }
+
+        private void SchedulePredatorSightBatch(float deltaTime, Vector3 playerPosition, Vector3 playerVelocity, Vector3 playerForward)
+        {
+            CompletePredatorSpatialHashBuild(forceComplete: false);
             if (_predatorSightJobScheduled)
                 return;
 
@@ -783,65 +938,58 @@ namespace Hecton8.Systems.AI
             }
 
             EnsurePredatorSightBuffersAllocated();
-            if (!_predatorSightInputs.IsCreated)
+            EnsurePredatorSpatialHashBuffersAllocated();
+            if (!_predatorSightInputs.IsCreated || !_predatorSpatialCellOccupancy.IsCreated)
                 return;
 
             _predatorSightCooldown = PredatorSightIntervalSeconds;
             AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
-            int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
-                in playerAup,
-                PredatorSightScanRadiusMeters,
-                SpatialTargetKind.Bioform,
-                _predatorSightContacts);
+            if (!_predatorSpatialHashReady)
+            {
+                SchedulePredatorSpatialHashRefresh(in playerAup);
+                return;
+            }
 
             int requestCount = 0;
-            Vector3 safePlayerForward = playerForward.sqrMagnitude > 0.0001f ? playerForward.normalized : Vector3.forward;
+            Vector3 safePlayerForward = playerForward.sqrMagnitude > 0.0001f ? ResolveDominantAxisDirection(playerForward) : Vector3.forward;
             Vector3 playerProbe = playerPosition + Vector3.up * PredatorSightProbeOffsetMeters;
-            for (int i = 0; i < contactCount && requestCount < PredatorSightMaxRaysPerFrame; i++)
+            int3 playerCell = PredatorSpatialHashMath.ResolveCellCoord(playerAup.ToAbsoluteDouble3(), PredatorSpatialHashCellSizeMeters);
+            for (int z = -1; z <= 1 && requestCount < PredatorSightMaxRaysPerFrame; z++)
             {
-                FaunaBrain brain = _predatorSightContacts[i].Owner as FaunaBrain;
-                if (brain == null ||
-                    brain.IsDead ||
-                    (!brain.isAggressive && !brain.IsApexPredatorRuntime && !brain.UsesPackHuntBehavior))
+                for (int y = -1; y <= 1 && requestCount < PredatorSightMaxRaysPerFrame; y++)
                 {
-                    continue;
+                    for (int x = -1; x <= 1 && requestCount < PredatorSightMaxRaysPerFrame; x++)
+                    {
+                        int3 cell = playerCell + new int3(x, y, z);
+                        int hash = PredatorSpatialHashMath.HashCell(cell);
+                        if (!_predatorSpatialCellOccupancy.TryGetFirstValue(hash, out int contactIndex, out NativeParallelMultiHashMapIterator<int> iterator))
+                            continue;
+
+                        do
+                        {
+                            if (requestCount >= PredatorSightMaxRaysPerFrame ||
+                                contactIndex < 0 ||
+                                contactIndex >= _predatorSpatialContactCount ||
+                                !math.all(_predatorSpatialCellCoords[contactIndex] == cell))
+                            {
+                                continue;
+                            }
+
+                            ProcessPredatorSightContact(
+                                contactIndex,
+                                in playerAup,
+                                playerPosition,
+                                playerVelocity,
+                                safePlayerForward,
+                                playerProbe,
+                                ref requestCount);
+                        }
+                        while (_predatorSpatialCellOccupancy.TryGetNextValue(out contactIndex, ref iterator));
+                    }
                 }
-
-                AbsoluteUniversePosition predatorAup =
-                    AbsoluteUniversePosition.FromRuntimePosition(_predatorSightContacts[i].Position);
-                double predatorDistanceSqr = AbsoluteUniversePosition.DistanceSq(in predatorAup, in playerAup);
-                if (predatorDistanceSqr <= PredatorSightImmediateRevealRadiusMetersSqr)
-                {
-                    brain.ApplyDirectorLineOfSight(true, playerPosition, safePlayerForward);
-                    continue;
-                }
-
-                if (predatorDistanceSqr >= PredatorSightRearViewFakeMinDistanceMetersSqr &&
-                    IsPredatorBehindPlayerViewByAup(in playerAup, in predatorAup, safePlayerForward))
-                {
-                    brain.ApplyDirectorLineOfSight(false, playerPosition, safePlayerForward);
-                    continue;
-                }
-
-                Vector3 predatorProbe = _predatorSightContacts[i].Position + Vector3.up * PredatorSightProbeOffsetMeters;
-                Vector3 toPlayer = playerProbe - predatorProbe;
-                float distanceSqr = toPlayer.sqrMagnitude;
-                if (distanceSqr <= 0.25f)
-                    continue;
-
-                float distance = Mathf.Sqrt(distanceSqr);
-                _predatorSightInputs[requestCount] = new PredatorSightRaycastInput
-                {
-                    Origin = (float3)predatorProbe,
-                    Target = (float3)playerProbe,
-                    MaxDistance = distance,
-                    LayerMask = PredatorSightLayerMask
-                };
-                _predatorSightBrains[requestCount] = brain;
-                _predatorSightPlayerPositions[requestCount] = playerPosition;
-                _predatorSightPlayerForwards[requestCount] = safePlayerForward;
-                requestCount++;
             }
+
+            SchedulePredatorSpatialHashRefresh(in playerAup);
 
             if (requestCount <= 0)
                 return;
@@ -863,6 +1011,120 @@ namespace Hecton8.Systems.AI
             _predatorSightJobScheduled = true;
         }
 
+        private void ProcessPredatorSightContact(
+            int contactIndex,
+            in AbsoluteUniversePosition playerAup,
+            Vector3 playerPosition,
+            Vector3 playerVelocity,
+            Vector3 safePlayerForward,
+            Vector3 playerProbe,
+            ref int requestCount)
+        {
+            SpatialQueryHit contact = _predatorSpatialContacts[contactIndex];
+            FaunaBrain brain = contact.Owner as FaunaBrain;
+            if (brain == null ||
+                brain.IsDead ||
+                (!brain.isAggressive && !brain.IsApexPredatorRuntime && !brain.UsesPackHuntBehavior))
+            {
+                return;
+            }
+
+            AbsoluteUniversePosition predatorAup = AbsoluteUniversePosition.FromRuntimePosition(contact.Position);
+            double predatorDistanceSqr = AbsoluteUniversePosition.DistanceSq(in predatorAup, in playerAup);
+            bool outsideFrustum = IsPredatorBehindPlayerViewByAup(in playerAup, in predatorAup, safePlayerForward);
+            if (predatorDistanceSqr > PredatorDeadZoneCullDistanceMetersSqr && outsideFrustum)
+            {
+                brain.ApplyDirectorColdTickCull(true);
+                return;
+            }
+
+            brain.ApplyDirectorColdTickCull(false);
+            if (predatorDistanceSqr > (double)PredatorSightScanRadiusMeters * PredatorSightScanRadiusMeters)
+                return;
+
+            if (predatorDistanceSqr <= PredatorSightImmediateRevealRadiusMetersSqr)
+            {
+                brain.ApplyDirectorLineOfSight(true, playerPosition, safePlayerForward, playerVelocity);
+                return;
+            }
+
+            if (predatorDistanceSqr >= PredatorSightRearViewFakeMinDistanceMetersSqr && outsideFrustum)
+            {
+                brain.ApplyDirectorLineOfSight(false, playerPosition, safePlayerForward, playerVelocity);
+                return;
+            }
+
+            Vector3 predatorProbe = contact.Position + Vector3.up * PredatorSightProbeOffsetMeters;
+            Vector3 toPlayer = playerProbe - predatorProbe;
+            float distanceSqr = toPlayer.sqrMagnitude;
+            if (distanceSqr <= 0.25f)
+                return;
+
+            _predatorSightInputs[requestCount] = new PredatorSightRaycastInput
+                {
+                    Origin = (float3)predatorProbe,
+                    Target = (float3)playerProbe,
+                    LayerMask = PredatorSightLayerMask
+                };
+            _predatorSightBrains[requestCount] = brain;
+            _predatorSightPlayerPositions[requestCount] = playerPosition;
+            _predatorSightPlayerVelocities[requestCount] = playerVelocity;
+            _predatorSightPlayerForwards[requestCount] = safePlayerForward;
+            requestCount++;
+        }
+
+        private void SchedulePredatorSpatialHashRefresh(in AbsoluteUniversePosition playerAup)
+        {
+            if (_predatorSpatialHashJobScheduled || !_predatorSpatialAbsolutePositions.IsCreated)
+                return;
+
+            int contactCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                in playerAup,
+                PredatorSpatialHashActiveChunkRadiusMeters,
+                SpatialTargetKind.Bioform,
+                _predatorSpatialContacts);
+            _predatorSpatialContactCount = Mathf.Min(contactCount, PredatorSpatialHashContactCapacity);
+            for (int i = 0; i < _predatorSpatialContactCount; i++)
+            {
+                AbsoluteUniversePosition contactAup = AbsoluteUniversePosition.FromRuntimePosition(_predatorSpatialContacts[i].Position);
+                _predatorSpatialAbsolutePositions[i] = contactAup.ToAbsoluteDouble3();
+                _predatorSpatialCellCoords[i] = default;
+            }
+
+            for (int i = _predatorSpatialContactCount; i < PredatorSpatialHashContactCapacity; i++)
+            {
+                _predatorSpatialContacts[i] = default;
+                _predatorSpatialAbsolutePositions[i] = default;
+                _predatorSpatialCellCoords[i] = default;
+            }
+
+            _predatorSpatialCellOccupancy.Clear();
+            PredatorSpatialHashInsertJob insertJob = new PredatorSpatialHashInsertJob
+            {
+                AbsolutePositions = _predatorSpatialAbsolutePositions,
+                CellCoords = _predatorSpatialCellCoords,
+                CellOccupancy = _predatorSpatialCellOccupancy.AsParallelWriter(),
+                Count = _predatorSpatialContactCount,
+                CellSizeMeters = PredatorSpatialHashCellSizeMeters
+            };
+            _predatorSpatialHashBuildHandle = insertJob.Schedule(PredatorSpatialHashContactCapacity, 16);
+            _predatorSpatialHashJobScheduled = true;
+            _predatorSpatialHashReady = false;
+        }
+
+        private bool CompletePredatorSpatialHashBuild(bool forceComplete)
+        {
+            if (!_predatorSpatialHashJobScheduled)
+                return true;
+
+            if (!DispatcherJobSwap.TryComplete(ref _predatorSpatialHashBuildHandle, forceComplete))
+                return false;
+
+            _predatorSpatialHashJobScheduled = false;
+            _predatorSpatialHashReady = _predatorSpatialContactCount > 0;
+            return true;
+        }
+
         private static bool IsPredatorBehindPlayerViewByAup(
             in AbsoluteUniversePosition playerAup,
             in AbsoluteUniversePosition predatorAup,
@@ -878,8 +1140,26 @@ namespace Hecton8.Systems.AI
                 return false;
 
             float3 directionToPredator = runtimeDelta * math.rsqrt(distanceSqr);
-            float3 safeForward = math.normalizesafe((float3)playerForward, new float3(0f, 0f, 1f));
+            float3 safeForward = (float3)ResolveDominantAxisDirection(playerForward);
             return math.dot(safeForward, directionToPredator) <= PredatorSightRearViewDotThreshold;
+        }
+
+        private static Vector3 ResolveDominantAxisDirection(Vector3 direction)
+        {
+            if (direction.sqrMagnitude <= 0.0001f)
+                return Vector3.forward;
+
+            float absX = Mathf.Abs(direction.x);
+            float absY = Mathf.Abs(direction.y);
+            float absZ = Mathf.Abs(direction.z);
+
+            if (absX >= absY && absX >= absZ)
+                return direction.x < 0f ? Vector3.left : Vector3.right;
+
+            if (absY >= absZ)
+                return direction.y < 0f ? Vector3.down : Vector3.up;
+
+            return direction.z < 0f ? Vector3.back : Vector3.forward;
         }
 
         private bool CompletePredatorSightBatch(bool forceComplete)
@@ -898,14 +1178,12 @@ namespace Hecton8.Systems.AI
                     continue;
 
                 RaycastHit hit = _predatorSightHits[i];
-                PredatorSightRaycastInput input = _predatorSightInputs[i];
-                bool blocked = hit.collider != null &&
-                               hit.distance > 0f &&
-                               hit.distance + PredatorSightHitToleranceMeters < input.MaxDistance;
+                bool blocked = hit.collider != null;
                 brain.ApplyDirectorLineOfSight(
                     !blocked,
                     _predatorSightPlayerPositions[i],
-                    _predatorSightPlayerForwards[i]);
+                    _predatorSightPlayerForwards[i],
+                    _predatorSightPlayerVelocities[i]);
             }
 
             ClearPredatorSightMirrors(count);
@@ -921,6 +1199,7 @@ namespace Hecton8.Systems.AI
             {
                 _predatorSightBrains[i] = null;
                 _predatorSightPlayerPositions[i] = default;
+                _predatorSightPlayerVelocities[i] = default;
                 _predatorSightPlayerForwards[i] = default;
                 _predatorSightInputs[i] = default;
                 _predatorSightHits[i] = default;
@@ -970,6 +1249,91 @@ namespace Hecton8.Systems.AI
             _predatorSightBuffersRegistered = false;
         }
 
+        private void EnsurePredatorSpatialHashBuffersAllocated()
+        {
+            if (_predatorSpatialAbsolutePositions.IsCreated &&
+                _predatorSpatialCellCoords.IsCreated &&
+                _predatorSpatialCellOccupancy.IsCreated)
+            {
+                return;
+            }
+
+            if (!_predatorSpatialAbsolutePositions.IsCreated)
+            {
+                _predatorSpatialAbsolutePositions = new NativeArray<double3>(
+                    PredatorSpatialHashContactCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<double3>[64] - predator AUP spatial hash positions - owner: HectonDirectorAI
+            }
+
+            if (!_predatorSpatialCellCoords.IsCreated)
+            {
+                _predatorSpatialCellCoords = new NativeArray<int3>(
+                    PredatorSpatialHashContactCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int3>[64] - predator spatial hash cell coordinates - owner: HectonDirectorAI
+            }
+
+            if (!_predatorSpatialCellOccupancy.IsCreated)
+            {
+                _predatorSpatialCellOccupancy = new NativeParallelMultiHashMap<int, int>(
+                    PredatorSpatialHashContactCapacity,
+                    Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[64] - predator spatial occupancy buckets - owner: HectonDirectorAI
+            }
+
+            if (!_predatorSpatialHashBuffersRegistered)
+            {
+                NativeMemorySentinel.RegisterNativeArray(
+                    _predatorSpatialAbsolutePositions,
+                    nameof(HectonDirectorAI),
+                    nameof(_predatorSpatialAbsolutePositions),
+                    NativeAllocationLifetime.Scene);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _predatorSpatialCellCoords,
+                    nameof(HectonDirectorAI),
+                    nameof(_predatorSpatialCellCoords),
+                    NativeAllocationLifetime.Scene);
+                NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
+                    _predatorSpatialCellOccupancy,
+                    nameof(HectonDirectorAI),
+                    nameof(_predatorSpatialCellOccupancy),
+                    NativeAllocationLifetime.Scene);
+                _predatorSpatialHashBuffersRegistered = true;
+            }
+        }
+
+        private void ReleasePredatorSpatialHashBuffers()
+        {
+            CompletePredatorSpatialHashBuild(forceComplete: true);
+
+            if (_predatorSpatialAbsolutePositions.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_predatorSpatialAbsolutePositions);
+                _predatorSpatialAbsolutePositions.Dispose();
+                _predatorSpatialAbsolutePositions = default;
+            }
+
+            if (_predatorSpatialCellCoords.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_predatorSpatialCellCoords);
+                _predatorSpatialCellCoords.Dispose();
+                _predatorSpatialCellCoords = default;
+            }
+
+            if (_predatorSpatialCellOccupancy.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(
+                    nameof(HectonDirectorAI),
+                    nameof(_predatorSpatialCellOccupancy));
+                _predatorSpatialCellOccupancy.Dispose();
+                _predatorSpatialCellOccupancy = default;
+            }
+
+            _predatorSpatialHashBuffersRegistered = false;
+            _predatorSpatialHashReady = false;
+            _predatorSpatialContactCount = 0;
+        }
+
         private void PublishDirectorSolveBudgetIfNeeded(long solveStartTicks)
         {
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - solveStartTicks;
@@ -1017,7 +1381,7 @@ namespace Hecton8.Systems.AI
         /// </summary>
         public void ApplyExternalPeakPressure(float pressure01, float holdSeconds)
         {
-            float clampedPressure = Mathf.Clamp01(pressure01);
+            float clampedPressure = math.saturate(pressure01);
             if (clampedPressure <= 0f || holdSeconds <= 0f)
                 return;
 
@@ -1061,12 +1425,12 @@ namespace Hecton8.Systems.AI
             switch (newPhase)
             {
                 case EncounterPhase.Peak:
-                    DirectorAIEvents.RaiseEquipmentGlitchRequested(Mathf.Lerp(0.35f, 0.85f, _encounterDirector.IntensityLevel));
+                    DirectorAIEvents.RaiseEquipmentGlitchRequested(math.lerp(0.35f, 0.85f, _encounterDirector.IntensityLevel));
                     DirectorAIEvents.RaiseMissionTriggerRequested(eventPosition);
                     break;
 
                 case EncounterPhase.Decay:
-                    DirectorAIEvents.RaiseWeatherShiftRequested(Mathf.Lerp(0.2f, 0.6f, _encounterDirector.StressLevel));
+                    DirectorAIEvents.RaiseWeatherShiftRequested(math.lerp(0.2f, 0.6f, _encounterDirector.StressLevel));
                     break;
 
                 case EncounterPhase.Relax:
@@ -1194,13 +1558,13 @@ namespace Hecton8.Systems.AI
         private float ResolveInternalStress(float healthNormalized, float oxygenNormalized, float sonarStress)
         {
             if (survivalSystem == null)
-                return Mathf.Clamp01(Mathf.Max(Mathf.Max(1f - healthNormalized, 1f - oxygenNormalized), sonarStress));
+                return math.saturate(Mathf.Max(Mathf.Max(1f - healthNormalized, 1f - oxygenNormalized), sonarStress));
 
-            float pressureStress = Mathf.Clamp01(survivalSystem.PressureExposureSeverity01);
-            float thermalStress = Mathf.Clamp01(survivalSystem.ThermalStressSeverity01);
+            float pressureStress = math.saturate(survivalSystem.PressureExposureSeverity01);
+            float thermalStress = math.saturate(survivalSystem.ThermalStressSeverity01);
             float healthStress = 1f - healthNormalized;
             float oxygenStress = 1f - oxygenNormalized;
-            return Mathf.Clamp01(Mathf.Max(Mathf.Max(pressureStress, thermalStress), Mathf.Max(Mathf.Max(healthStress, oxygenStress), sonarStress)));
+            return math.saturate(Mathf.Max(Mathf.Max(pressureStress, thermalStress), Mathf.Max(Mathf.Max(healthStress, oxygenStress), sonarStress)));
         }
 
         private float UpdateSonarStress(float deltaTime)
@@ -1214,7 +1578,7 @@ namespace Hecton8.Systems.AI
 
         private void HandleSonarPingSent(float intensity)
         {
-            float clampedIntensity = Mathf.Clamp01(intensity);
+            float clampedIntensity = math.saturate(intensity);
             if (clampedIntensity <= 0f)
                 return;
 
@@ -1272,7 +1636,7 @@ namespace Hecton8.Systems.AI
         private Vector3 ResolveDeterministicOffsetPosition(Vector3 origin, uint seed, float radius)
         {
             float angle = EncounterDirector.HashToUnit01(seed ^ 0xA511E9B3u) * (Mathf.PI * 2f);
-            float distance = Mathf.Lerp(radius * 0.4f, radius, EncounterDirector.HashToUnit01(seed ^ 0x6C8E9CF5u));
+            float distance = math.lerp(radius * 0.4f, radius, EncounterDirector.HashToUnit01(seed ^ 0x6C8E9CF5u));
             Vector3 offset = new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
             return origin + offset;
         }

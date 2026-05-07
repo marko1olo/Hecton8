@@ -13,6 +13,8 @@ namespace Hecton8.World
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct SnapSDFToTerrainJob : Unity.Jobs.IJobParallelFor
     {
+        private const double TerrainSampleTruncationScale = AUPDeterminism.AUP_DETERMINISM_MULTIPLIER;
+
         /// <summary>Terrain heights in meters.</summary>
         [ReadOnly] public NativeArray<float> TerrainHeights;
 
@@ -64,13 +66,15 @@ namespace Hecton8.World
 
         private float SampleTerrainHeight(double absX, double absZ)
         {
+            absX = TruncateAupForTerrainSample(absX);
+            absZ = TruncateAupForTerrainSample(absZ);
             float tx = (float)((absX - TerrainOriginAup.x) / TerrainCellSizeMeters);
             float tz = (float)((absZ - TerrainOriginAup.z) / TerrainCellSizeMeters);
             tx = math.clamp(tx, 0f, TerrainWidth - 1f);
             tz = math.clamp(tz, 0f, TerrainDepth - 1f);
 
-            int x0 = (int)math.floor(tx);
-            int z0 = (int)math.floor(tz);
+            int x0 = (int)math.trunc(tx);
+            int z0 = (int)math.trunc(tz);
             int x1 = math.min(x0 + 1, TerrainWidth - 1);
             int z1 = math.min(z0 + 1, TerrainDepth - 1);
             float fx = tx - x0;
@@ -84,6 +88,11 @@ namespace Hecton8.World
             float hx1 = math.lerp(h01, h11, fx);
             return math.lerp(hx0, hx1, fz);
         }
+
+        private static double TruncateAupForTerrainSample(double value)
+        {
+            return math.trunc(value * TerrainSampleTruncationScale) / TerrainSampleTruncationScale;
+        }
     }
 
     /// <summary>
@@ -92,6 +101,8 @@ namespace Hecton8.World
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct SnapSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
     {
+        private const double TerrainSampleTruncationScale = AUPDeterminism.AUP_DETERMINISM_MULTIPLIER;
+
         /// <summary>Terrain heights in meters.</summary>
         [ReadOnly] public NativeArray<float> TerrainHeights;
 
@@ -157,7 +168,7 @@ namespace Hecton8.World
             double absZ = SdfOriginAup.z + z * (double)VoxelSizeMeters;
             float terrainHeight = SampleTerrainHeight(absX, absZ);
             float terrainY = (terrainHeight - (float)SdfOriginAup.y) / VoxelSizeMeters;
-            int lowerY = (int)math.floor(terrainY);
+            int lowerY = (int)math.trunc(terrainY);
             int upperY = lowerY + 1;
 
             WriteExactTerrainDensity(x, lowerY, z, terrainHeight);
@@ -176,13 +187,15 @@ namespace Hecton8.World
 
         private float SampleTerrainHeight(double absX, double absZ)
         {
+            absX = TruncateAupForTerrainSample(absX);
+            absZ = TruncateAupForTerrainSample(absZ);
             float tx = (float)((absX - TerrainOriginAup.x) / TerrainCellSizeMeters);
             float tz = (float)((absZ - TerrainOriginAup.z) / TerrainCellSizeMeters);
             tx = math.clamp(tx, 0f, TerrainWidth - 1f);
             tz = math.clamp(tz, 0f, TerrainDepth - 1f);
 
-            int x0 = (int)math.floor(tx);
-            int z0 = (int)math.floor(tz);
+            int x0 = (int)math.trunc(tx);
+            int z0 = (int)math.trunc(tz);
             int x1 = math.min(x0 + 1, TerrainWidth - 1);
             int z1 = math.min(z0 + 1, TerrainDepth - 1);
             float fx = tx - x0;
@@ -196,6 +209,11 @@ namespace Hecton8.World
             float hx1 = math.lerp(h01, h11, fx);
             return math.lerp(hx0, hx1, fz);
         }
+
+        private static double TruncateAupForTerrainSample(double value)
+        {
+            return math.trunc(value * TerrainSampleTruncationScale) / TerrainSampleTruncationScale;
+        }
     }
 
     /// <summary>
@@ -204,6 +222,7 @@ namespace Hecton8.World
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct SnapDualSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
     {
+        private const double TerrainSampleTruncationScale = AUPDeterminism.AUP_DETERMINISM_MULTIPLIER;
         /// <summary>Terrain heights in meters.</summary>
         [ReadOnly] public NativeArray<float> TerrainHeights;
 
@@ -235,10 +254,13 @@ namespace Hecton8.World
         [NativeDisableParallelForRestriction]
         public NativeArray<float> Sdf;
 
-        /// <summary>Second SDF density array written with the same seam lock.</summary>
-        // Shares the same lane-safety proof as Sdf: identical flat index, distinct NativeArray target.
+        /// <summary>Second SDF density array written only when an offline validation path explicitly requests it.</summary>
+        // Production seam locking writes one authoritative SDF field to avoid dual-write cache-line bouncing.
         [NativeDisableParallelForRestriction]
         public NativeArray<float> SecondarySdf;
+
+        /// <summary>Non-zero only for cold validation jobs that intentionally mirror the seam lock.</summary>
+        public byte WriteSecondary;
 
         /// <summary>SDF sample width.</summary>
         public int SdfWidth;
@@ -271,7 +293,7 @@ namespace Hecton8.World
             double absZ = SdfOriginAup.z + z * (double)VoxelSizeMeters;
             float terrainHeight = SampleTerrainHeight(absX, absZ);
             float terrainY = (terrainHeight - (float)SdfOriginAup.y) / VoxelSizeMeters;
-            int lowerY = (int)math.floor(terrainY);
+            int lowerY = (int)math.trunc(terrainY);
             int upperY = lowerY + 1;
 
             WriteExactTerrainDensity(x, lowerY, z, terrainHeight);
@@ -287,18 +309,26 @@ namespace Hecton8.World
             float absY = (float)(SdfOriginAup.y + y * (double)VoxelSizeMeters);
             float density = terrainHeight - absY;
             Sdf[index] = density;
-            SecondarySdf[index] = density;
+
+            if (WriteSecondary == 0)
+                return;
+
+            if (SecondarySdf.IsCreated &&
+                (uint)index < (uint)SecondarySdf.Length)
+                SecondarySdf[index] = density;
         }
 
         private float SampleTerrainHeight(double absX, double absZ)
         {
+            absX = TruncateAupForTerrainSample(absX);
+            absZ = TruncateAupForTerrainSample(absZ);
             float tx = (float)((absX - TerrainOriginAup.x) / TerrainCellSizeMeters);
             float tz = (float)((absZ - TerrainOriginAup.z) / TerrainCellSizeMeters);
             tx = math.clamp(tx, 0f, TerrainWidth - 1f);
             tz = math.clamp(tz, 0f, TerrainDepth - 1f);
 
-            int x0 = (int)math.floor(tx);
-            int z0 = (int)math.floor(tz);
+            int x0 = (int)math.trunc(tx);
+            int z0 = (int)math.trunc(tz);
             int x1 = math.min(x0 + 1, TerrainWidth - 1);
             int z1 = math.min(z0 + 1, TerrainDepth - 1);
             float fx = tx - x0;
@@ -311,6 +341,11 @@ namespace Hecton8.World
             float hx0 = math.lerp(h00, h10, fx);
             float hx1 = math.lerp(h01, h11, fx);
             return math.lerp(hx0, hx1, fz);
+        }
+
+        private static double TruncateAupForTerrainSample(double value)
+        {
+            return math.trunc(value * TerrainSampleTruncationScale) / TerrainSampleTruncationScale;
         }
     }
 
@@ -367,8 +402,8 @@ namespace Hecton8.World
             int rem = laneIndex - localZ * diameter * SdfHeight;
             int localYIndex = rem / diameter;
             int localX = rem - localYIndex * diameter;
-            int centerX = (int)math.round((pillarBaseAup.x - SdfOriginAup.x) / VoxelSizeMeters);
-            int centerZ = (int)math.round((pillarBaseAup.z - SdfOriginAup.z) / VoxelSizeMeters);
+            int centerX = (int)math.trunc((pillarBaseAup.x - SdfOriginAup.x) / VoxelSizeMeters);
+            int centerZ = (int)math.trunc((pillarBaseAup.z - SdfOriginAup.z) / VoxelSizeMeters);
             int x = centerX + localX - radiusCells;
             int z = centerZ + localZ - radiusCells;
             if (x < 0 || x >= SdfWidth || z < 0 || z >= SdfDepth)
@@ -382,14 +417,21 @@ namespace Hecton8.World
                 absY - (float)(pillarBaseAup.y + halfHeight),
                 absZ - (float)pillarBaseAup.z);
 
+            float radialSq = math.lengthsq(local.xz);
             if (math.abs(local.y) > halfHeight + VoxelSizeMeters ||
-                math.lengthsq(local.xz) > maxRadius * maxRadius)
+                radialSq > maxRadius * maxRadius)
                 return;
 
-            float3 noisePosition = new float3(absX, absY * 0.35f, absZ) * NoiseFrequency;
-            float warp = (AnomalySdfNoise.FastHashNoise3D(noisePosition) * 2f - 1f) * EdgeWarpMeters;
-            float warpedRadius = math.max(0.001f, RadiusMeters + warp);
-            float radial = math.length(local.xz) - warpedRadius;
+            float innerRadius = math.max(0f, RadiusMeters - EdgeWarpMeters - VoxelSizeMeters);
+            float radial = -math.max(VoxelSizeMeters, EdgeWarpMeters);
+            if (radialSq > innerRadius * innerRadius)
+            {
+                float3 noisePosition = new float3(absX, absY * 0.35f, absZ) * NoiseFrequency;
+                float warp = (AnomalySdfNoise.FastHashNoise3D(noisePosition) * 2f - 1f) * EdgeWarpMeters;
+                float warpedRadius = math.max(0.001f, RadiusMeters + warp);
+                radial = AnomalySdfNoise.FastMagnitude(radialSq) - warpedRadius;
+            }
+
             float vertical = math.abs(local.y) - halfHeight;
             int sdfIndex = x + localYIndex * SdfWidth + z * SdfWidth * SdfHeight;
             Sdf[sdfIndex] = math.max(Sdf[sdfIndex], -math.max(radial, vertical));
@@ -426,6 +468,8 @@ namespace Hecton8.World
         public int SdfDepth;
         public float VoxelSizeMeters;
         public double3 SdfOriginAup;
+        public double3 ChunkMinAup;
+        public double3 ChunkMaxAup;
         public float RadiusMeters;
         public float HeightMeters;
         public float EdgeWarpMeters;
@@ -441,7 +485,12 @@ namespace Hecton8.World
             if (record.Valid == 0 || record.Kind != (byte)AnomalyFeatureKind.ChthonicPillar)
                 return;
 
-            ExecuteLane(index, new double3(record.AupX, record.AupY, record.AupZ));
+            double3 pillarBaseAup = new double3(record.AupX, record.AupY, record.AupZ);
+            float boundsRadius = RadiusMeters + EdgeWarpMeters + VoxelSizeMeters;
+            if (!PillarAabbIntersectsChunk(pillarBaseAup, boundsRadius, HeightMeters, ChunkMinAup, ChunkMaxAup))
+                return;
+
+            ExecuteLane(index, pillarBaseAup);
         }
 
         private void ExecuteLane(int laneIndex, double3 pillarBaseAup)
@@ -455,8 +504,8 @@ namespace Hecton8.World
             int diameter = radiusCells * 2 + 1;
             int localZ = laneIndex / diameter;
             int localX = laneIndex - localZ * diameter;
-            int centerX = (int)math.round((pillarBaseAup.x - SdfOriginAup.x) / VoxelSizeMeters);
-            int centerZ = (int)math.round((pillarBaseAup.z - SdfOriginAup.z) / VoxelSizeMeters);
+            int centerX = (int)math.trunc((pillarBaseAup.x - SdfOriginAup.x) / VoxelSizeMeters);
+            int centerZ = (int)math.trunc((pillarBaseAup.z - SdfOriginAup.z) / VoxelSizeMeters);
             float centerY = (float)(pillarBaseAup.y + halfHeight);
             int x = centerX + localX - radiusCells;
             int z = centerZ + localZ - radiusCells;
@@ -473,16 +522,16 @@ namespace Hecton8.World
             if (radialSq > maxRadiusSq)
                 return;
 
-            float radialDistance = math.sqrt(radialSq);
-            float warpedRadius = RadiusMeters;
+            float radial = -math.max(VoxelSizeMeters, EdgeWarpMeters);
             if (radialSq > innerRadiusSq)
             {
+                float radialDistance = AnomalySdfNoise.FastMagnitude(radialSq);
                 float3 noisePosition = new float3(absX, 0f, absZ) * NoiseFrequency;
                 float warp = (AnomalySdfNoise.FastHashNoise3D(noisePosition) * 2f - 1f) * EdgeWarpMeters;
-                warpedRadius = math.max(0.001f, RadiusMeters + warp);
+                float warpedRadius = math.max(0.001f, RadiusMeters + warp);
+                radial = radialDistance - warpedRadius;
             }
 
-            float radial = radialDistance - warpedRadius;
             int zOffset = z * SdfWidth * SdfHeight;
             for (int sampleY = 0; sampleY < SdfHeight; sampleY++)
             {
@@ -495,6 +544,34 @@ namespace Hecton8.World
                 int sdfIndex = x + sampleY * SdfWidth + zOffset;
                 Sdf[sdfIndex] = math.max(Sdf[sdfIndex], -math.max(radial, vertical));
             }
+        }
+
+        private static bool PillarAabbIntersectsChunk(
+            double3 pillarBaseAup,
+            float radiusMeters,
+            float heightMeters,
+            double3 chunkMinAup,
+            double3 chunkMaxAup)
+        {
+            float radius = math.max(0.001f, radiusMeters);
+            float height = math.max(0.001f, heightMeters);
+            float3 pillarMin = new float3(
+                (float)pillarBaseAup.x - radius,
+                (float)pillarBaseAup.y,
+                (float)pillarBaseAup.z - radius);
+            float3 pillarMax = new float3(
+                (float)pillarBaseAup.x + radius,
+                (float)pillarBaseAup.y + height,
+                (float)pillarBaseAup.z + radius);
+            float3 chunkMin = new float3((float)chunkMinAup.x, (float)chunkMinAup.y, (float)chunkMinAup.z);
+            float3 chunkMax = new float3((float)chunkMaxAup.x, (float)chunkMaxAup.y, (float)chunkMaxAup.z);
+
+            return !(chunkMin.x > pillarMax.x ||
+                     chunkMax.x < pillarMin.x ||
+                     chunkMin.y > pillarMax.y ||
+                     chunkMax.y < pillarMin.y ||
+                     chunkMin.z > pillarMax.z ||
+                     chunkMax.z < pillarMin.z);
         }
     }
 
@@ -563,7 +640,7 @@ namespace Hecton8.World
                 (float)(abs.z - FissureTopAup.z));
             float along = math.clamp(math.dot(delta, direction), -HalfLengthMeters, HalfLengthMeters);
             float2 nearest = direction * along;
-            float horizontalDistance = math.length(delta - nearest);
+            float horizontalDistance = AnomalySdfNoise.FastMagnitude(math.lengthsq(delta - nearest));
             float horizontalSignedDistance = horizontalDistance - RadiusMeters;
             float depthBelowTop = (float)(FissureTopAup.y - abs.y);
             float verticalSignedDistance = math.max(-depthBelowTop, depthBelowTop - DepthMeters);
@@ -643,7 +720,7 @@ namespace Hecton8.World
             float gx = InputSdf[FlatIndex(x + 1, y, z)] - InputSdf[FlatIndex(x - 1, y, z)];
             float gy = InputSdf[FlatIndex(x, y + 1, z)] - InputSdf[FlatIndex(x, y - 1, z)];
             float gz = InputSdf[FlatIndex(x, y, z + 1)] - InputSdf[FlatIndex(x, y, z - 1)];
-            float horizontal = math.sqrt(gx * gx + gz * gz);
+            float horizontal = AnomalySdfNoise.FastMagnitude(gx * gx + gz * gz);
             float slope = horizontal / (math.abs(gy) + 0.0001f);
             if (slope < SlopeThreshold || horizontal < 0.0001f)
             {
@@ -722,6 +799,16 @@ namespace Hecton8.World
             }
 
             return math.saturate(sum * 1.0666667f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float FastMagnitude(float magnitudeSq)
+        {
+            float x = math.max(0f, magnitudeSq);
+            float safe = math.max(x, 0.000000000001f);
+            int estimateBits = (math.asint(safe) >> 1) + 0x1FBD1DF5;
+            float estimate = math.asfloat(estimateBits);
+            return math.select(0f, 0.5f * (estimate + safe / math.max(estimate, 0.000000000001f)), x > 0f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -165,6 +165,31 @@ The active `02_HECTON_WORLD` scene contains real gameplay systems plus obvious r
 That is normal during development.
 It is not acceptable as a long-term truth source for production confidence.
 
+## Cinematic Collider Fake Standard
+
+The gold standard for distant voxel collision is not more PhysX work. It is selective refusal to bake geometry the player cannot physically inspect.
+
+Rule:
+- near/interactable voxel chunks may enter the asynchronous physics bake chain.
+- distant, noninteractive, or presentation-only voxel chunks must prefer a cinematic collider fake: cheap primitive/proxy collider, hazard distance check, or no collider at all if gameplay cannot reach it.
+- synchronous `Physics.BakeMesh(...)` on the main thread is forbidden for runtime streaming.
+- any `Physics.BakeMesh(...)` path must prove it is asynchronous/job-bound, loading-screen-only, editor-only, or replaced by the fake path above.
+
+Current source scan:
+
+```powershell
+rg -n "Physics\.BakeMesh|BakeMesh" Assets/_Project/Scripts -g '*.cs'
+```
+
+Current review candidates:
+- `HectonWorldGenerator.cs:554` calls `Physics.BakeMesh(MeshEntityId, false)` inside the bake job struct path.
+- `HectonVoxelEngine.cs:3059` calls `UnityEngine.Physics.BakeMesh(MeshId, Convex)` inside `VoxelMeshBakeJob`.
+- `HectonBrinePoolMeshGenerator.cs:353` calls `global::UnityEngine.Physics.BakeMesh(MeshId, false)` inside a mesh bake job path.
+
+Static interpretation:
+- these are not automatically main-thread runtime defects from the text scan alone.
+- they remain hard audit points because the product rule is to skip mesh baking for distant/noncritical voxels and use a cinematic collider fake instead.
+
 ## What Is Ready, What Is Not
 
 Ready enough to keep and harden:

@@ -11,7 +11,7 @@ Purpose:
 Notable owner mass:
 - `HectonMapMagicVegetationBridge` ~15.7k lines
 - `WorldProceduralScatterDirector` ~11.7k lines
-- `HectonPlayerMovement` ~9.1k lines
+- `HectonPlayerMovement` ~9.2k lines
 - `SuitHUDV4CanvasOverlay` ~5.4k lines
 - `FaunaDirector` ~4.6k lines
 - `SpatialAudioManager` ~2.5k lines
@@ -102,7 +102,7 @@ For partial owners, the count below is the owner family, not only the root file.
 |---|---:|---:|---:|---:|---:|---|
 | `HectonMapMagicVegetationBridge` family | 15,605 | 12 | 13 | 10 | 547 | Class A: Platform |
 | `WorldProceduralScatterDirector` family | 16,873 | 7 | 3 | 11 | 108 | Class B: Orchestrator |
-| `HectonPlayerMovement.cs` | 9,148 | 0 | 0 | 15 | 0 | Class C: Stateful Core |
+| `HectonPlayerMovement.cs` | 9,236 | 0 | 0 | 15 | 0 | Class C: Stateful Core |
 
 ### Late Revalidation Notes
 
@@ -158,6 +158,14 @@ Risk statement:
 - Class B means sequencing authority. The file coordinates many domains but should not keep absorbing new domain state.
 
 ### Class C: Stateful Core Monolith - `HectonPlayerMovement`
+
+May 7 KCC surgery recheck:
+- physical line count command: `(Get-Content Assets\_Project\Scripts\HectonPlayerMovement.cs).Count`
+- physical result: `10571`
+- `Measure-Object -Line` proxy result: `9236`
+- disposition: `NOT DECOUPLED`; the file is still far above the 3000-line threshold requested for a successful decoupling claim.
+- allowed claim: direct `.Complete()` pressure in this file is still `0`; KCC scheduling risk is delegated to `HectonPlayerMotor`.
+- forbidden claim: do not describe `HectonPlayerMovement.cs` as `DECOUPLED` until the file is physically under `3000` lines and the extracted KCC owner has independent compile/runtime evidence.
 
 Why this class:
 - it is the player-state core: movement, water state, transport platform binding, KCC sweep scheduling, input cache, inventory load, audio impulses, origin shifts, environmental currents, hull stress, and transport bailout all share one file.

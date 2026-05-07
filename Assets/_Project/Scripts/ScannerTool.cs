@@ -558,6 +558,13 @@ namespace Hecton8.Gameplay
             PulseActive = true;
             PulseOrigin = origin;
             PulseStartTime = now;
+            HectonScannerProjectionState.Publish(
+                _cachedTransform.position,
+                _cachedTransform.forward,
+                _cachedTransform.up,
+                effectiveScanRadius,
+                Mathf.Min(1.25f, effectiveCooldown),
+                1f);
 
             if (pingClip != null && Hecton8.Core.GlobalRegistry.Audio != null)
             {
@@ -968,6 +975,15 @@ namespace Hecton8.Gameplay
 
                 if (meaningfulContact && MatchesMode(mode, resourceContact, structureContact, pickupContact, scannableContact, bioformContact))
                 {
+                    uint scanRenderFlags = HectonScanRenderFlags.None;
+                    if (resourceContact || pickupContact)
+                        scanRenderFlags |= HectonScanRenderFlags.Loot;
+                    if (resourceContact || structureContact || scannableContact)
+                        scanRenderFlags |= HectonScanRenderFlags.Environment;
+                    if (bioformContact)
+                        scanRenderFlags |= HectonScanRenderFlags.AiEntity;
+                    HectonScanRenderRegistry.MarkScanned(aggregate.transform, scanRenderFlags);
+
                     result.totalContacts++;
                     if (resourceContact) result.resourceContacts++;
                     if (structureContact) result.structureContacts++;

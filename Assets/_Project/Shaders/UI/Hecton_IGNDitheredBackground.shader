@@ -33,10 +33,13 @@ Shader "Hecton8/UI/IGNDitheredBackground"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ _HUD_PHOSPHOR_MODE
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct appdata_t
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 float4 vertex : POSITION;
                 half4 color : COLOR;
                 float2 texcoord : TEXCOORD0;
@@ -44,6 +47,8 @@ Shader "Hecton8/UI/IGNDitheredBackground"
 
             struct v2f
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 vertex : SV_POSITION;
                 half4 color : COLOR;
                 float2 texcoord : TEXCOORD0;
@@ -62,6 +67,9 @@ Shader "Hecton8/UI/IGNDitheredBackground"
             v2f vert(appdata_t input)
             {
                 v2f output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.vertex = TransformObjectToHClip(input.vertex.xyz);
                 output.texcoord = input.texcoord;
                 output.color = input.color * _Color;
@@ -74,15 +82,33 @@ Shader "Hecton8/UI/IGNDitheredBackground"
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
+            float2 ResolveTemporalIgnOffset()
+            {
+                float temporalPhase = fmod(floor(_Time.y * 60.0), 3.0);
+                return temporalPhase * float2(19.0, 47.0);
+            }
+
             half4 frag(v2f input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                float2 screenUv = input.screenPos.xy / max(input.screenPos.w, 0.0001);
+#if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+                screenUv = UnityStereoTransformScreenSpaceTex(screenUv);
+#endif
+                float threshold = InterleavedGradientNoise(floor(screenUv * _ScreenParams.xy) + ResolveTemporalIgnOffset());
+#if defined(_HUD_PHOSPHOR_MODE)
+                float coverage = saturate(input.color.a * _OpacityScale + _DitherBias);
+                float ditherAlpha = step(threshold, coverage);
+                clip(ditherAlpha - 0.5);
+                return half4(0.0, 1.0, 0.0, ditherAlpha);
+#else
                 half4 texel = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.texcoord);
                 half4 color = texel * input.color;
-                float2 screenUv = input.screenPos.xy / max(input.screenPos.w, 0.0001);
-                float threshold = InterleavedGradientNoise(floor(screenUv * _ScreenParams.xy));
                 float coverage = saturate(color.a * _OpacityScale + _DitherBias);
                 clip(coverage - threshold);
                 return half4(color.rgb, 1.0);
+#endif
             }
             ENDHLSL
         }

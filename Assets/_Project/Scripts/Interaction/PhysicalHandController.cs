@@ -1,13 +1,15 @@
 // ============================================================================
-// HECTON-8 � PhysicalHandController.cs
+// HECTON-8 - PhysicalHandController.cs
 // Heavy-object articulation hand proxy with zero-GC finger spherecast batching.
 // ============================================================================
 
 namespace Hecton8.Interaction
 {
     using System.Runtime.InteropServices;
+    using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Physics;
+    using Hecton8.Tools;
     using Hecton8.World;
     using Unity.Burst;
     using Unity.Collections;
@@ -54,9 +56,14 @@ namespace Hecton8.Interaction
         private const float VirtualHandMaxMass = 8f;
         private const float HeavyObjectMinimumVirtualMass = 1f;
         private const float VirtualSpringK = 300f;
+        private const float VirtualSpringRootApprox = 17.320508f;
+        private const float VirtualDampingScale = 1.8f;
+        private const float VirtualHandMaxMassSqrtApprox = 2.828427f;
         private const float VirtualHandLagMax = 0.4f;
         private const float GripWarnDistance = 0.4f;
         private const float GripBreakDistance = 0.8f;
+        private const float GripWarnDistanceSq = GripWarnDistance * GripWarnDistance;
+        private const float GripBreakDistanceSq = GripBreakDistance * GripBreakDistance;
         private const float MaxDeltaVelocity = 15f;
         private const float MaxDeltaAngularVelocity = 25f;
         private const float MaxObjectVelocity = 40f;
@@ -64,6 +71,11 @@ namespace Hecton8.Interaction
         private const float VelocityLeadFactor = 0.04f;
         private const float LinearNaturalFrequency = 12f;
         private const float AngularNaturalFrequency = 10f;
+        private const float TwoHandAngularDampingSharpness = 12f;
+        private const float MinimumBoundsSpan = 0.05f;
+        private const float HandWallRecoilMaxOffset = 0.18f;
+        private const float HandWallRecoilScale = 2.0f;
+        private const float HandWallRecoilDecay = 18f;
         private const float FingerCastRadius = 0.012f;
         private const float FingerCastLength = 0.09f;
         private const float FingerInterpolationSpeed = 18f;
@@ -71,6 +83,20 @@ namespace Hecton8.Interaction
         private const float MinimumDeltaTime = 0.0001f;
         private const float MaximumSafeDeltaTime = 0.02f;
         private const float RadiansPerDegree = 0.0174532925f;
+        private const int SuitOverlapCapacity = 8;
+        private const float HeavyTwoHandMassThreshold = 20f;
+        private const float TwoHandReleaseAngularVelocity = 4.5f;
+        private const float HapticDepthReferenceMeters = 1800f;
+        private const float HandContactHapticCooldownSeconds = 0.035f;
+        private const float HandDamageHapticCooldownSeconds = 0.12f;
+        private const byte LeftMotorMask = 0b0001;
+        private const byte RightMotorMask = 0b0010;
+        private const byte CriticalHapticPriority = 3;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const string InvalidMotionResetMessage = "[PhysicalHandController] NaN/Inf detected. Motion reset.";
+#endif
+        private const string NativeMemoryOwner = nameof(PhysicalHandController);
+        private const NativeAllocationLifetime FingerNativeMemoryLifetime = NativeAllocationLifetime.Session;
 
         private static readonly float3 DefaultThumbKnuckleOffset = new float3(-0.028f, -0.012f, 0.018f);
         private static readonly float3 DefaultIndexKnuckleOffset = new float3(-0.015f, -0.004f, 0.034f);
@@ -79,6 +105,10 @@ namespace Hecton8.Interaction
         private static readonly float3 DefaultLittleKnuckleOffset = new float3(0.03f, -0.008f, 0.026f);
         private static readonly float3 DefaultThumbDirection = math.normalize(new float3(-0.35f, -0.05f, 0.93f));
         private static readonly float3 DefaultFingerDirection = new float3(0f, 0f, 1f);
+        private static readonly float[] HapticPressureIntegrityLut =
+        {
+            1f, 0.93f, 0.84f, 0.73f, 0.62f, 0.51f, 0.39f, 0.28f
+        }; // COLD ALLOC: float[8] - depth/integrity haptic attenuation LUT - owner: PhysicalHandController
         [Header("-- References -------------------------")]
         [Tooltip("Optional authored swim blockout rig used to source a stable right-hand attachment.")]
         [SerializeField] private PlayerSwimBlockoutRig swimBlockoutRig;
@@ -102,6 +132,28 @@ namespace Hecton8.Interaction
         [Tooltip("Maximum curl angle applied to the distal finger segment.")]
         [SerializeField, Range(10f, 100f)] private float distalCurlDegrees = 42f;
 
+        [Header("-- VR Somatic Safety ------------------")]
+        [Tooltip("Physical hand side used for side-specific haptic routing and damage events.")]
+        [SerializeField] private PhysicalHandSide handSide = PhysicalHandSide.Right;
+
+        [Tooltip("Opt-in VR collision shell. Leave disabled for non-VR desktop rigs.")]
+        [SerializeField] private bool enableSuitCollisionShell;
+
+        [Tooltip("Layers considered crushing/scraping geometry for the physical hand shell.")]
+        [SerializeField] private LayerMask suitCollisionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+
+        [Tooltip("Radius in meters for the continuous speculative hand collision shell.")]
+        [SerializeField, Range(0.025f, 0.18f)] private float suitCollisionProbeRadius = 0.07f;
+
+        [Tooltip("Penetration depth that escalates a hand contact into a suit damage event.")]
+        [SerializeField, Range(0.005f, 0.08f)] private float suitCrushPenetrationThreshold = 0.025f;
+
+        [Tooltip("Routes physical hand scraping/crush contacts into controller haptics.")]
+        [SerializeField] private bool routeHandCollisionHaptics = true;
+
+        [Tooltip("VR-only heavy mass rule. When enabled, objects over 20kg require a second stabilizing hand.")]
+        [SerializeField] private bool requireTwoHandsForHeavyMass;
+
         [Header("-- Diagnostics -----------------------")]
 #pragma warning disable CS0414
         [SerializeField] private bool _debugIsGrabbing;
@@ -110,6 +162,8 @@ namespace Hecton8.Interaction
         [SerializeField] private float _debugSeparation;
         [SerializeField] private float _debugVirtualHandMass;
         [SerializeField] private string _debugGrabbedBodyName;
+        [SerializeField] private bool _debugSuitContact;
+        [SerializeField] private bool _debugRequiresTwoHands;
 #pragma warning restore CS0414
 
         private HeavyCarryInteractable _activeInteractable;
@@ -118,28 +172,41 @@ namespace Hecton8.Interaction
         private Transform _runtimeRoot;
         private Transform _runtimeGripPoint;
         private Transform _resolvedRightHandAttachment;
+        private Transform _resolvedOpposingHandAttachment;
         private ArticulationBody _runtimeHandBody;
         private Quaternion _previousControllerRotation = Quaternion.identity;
         private Quaternion _previousTargetLocalRotation = Quaternion.identity;
+        private Quaternion _grabBodyRotationOffset = Quaternion.identity;
         private Vector3 _previousControllerPosition;
         private Vector3 _virtualHandPosition;
         private Vector3 _virtualHandVelocity;
         private Vector3 _virtualHandTargetVelocity;
+        private Vector3 _handWallRecoilOffset;
+        private Vector3 _secondHandStabilizerPosition;
         private float _virtualHandMass;
         private float _cachedBodyDrag;
         private float _cachedBodyAngularDrag;
         private float _cachedBodyMaxAngularVelocity;
         private float _cachedBodyMaxLinearVelocity;
-        private float _currentSeparation;
+        private float _currentSeparationSq;
         private bool _isGrabbing;
         private bool _disconnectArmed;
         private bool _gripBroken;
         private bool _runtimeProxyCreated;
         private bool _rightHandAttachmentResolved;
+        private bool _opposingHandAttachmentResolved;
         private bool _fingerSegmentsResolved;
         private bool _hasPreviousControllerPose;
         private bool _fingerPoseScheduled;
+        private bool _suitCollisionShellCreated;
+        private bool _twoHandStabilized = true;
+        private bool _requiresTwoHandStabilization;
+        private bool _hasSecondHandStabilizerPose;
+        private bool _suitContactActive;
         private float _lastFingerPoseDeltaTime = MinimumDeltaTime;
+        private float _nextHandContactHapticTime;
+        private float _nextHandDamageHapticTime;
+        private int _lastSuitDamageFrame = -1;
         private JobHandle _fingerPoseHandle;
 
         private NativeArray<SpherecastCommand> _fingerCommands;
@@ -147,8 +214,15 @@ namespace Hecton8.Interaction
         private NativeArray<FingerPoseData> _fingerPoses;
         private NativeArray<FingerRayDefinition> _fingerRayDefinitions;
         private NativeArray<FingerRayRuntime> _fingerRayRuntime;
+        private Collider[] _suitOverlapResults;
         private Quaternion[] _baseFingerLocalRotations;
         private string _cachedGrabbedBodyName;
+        private Collider _activeBodyCollider;
+        private Transform _suitHandTransform;
+        private Rigidbody _suitHandBody;
+        private SphereCollider _suitHandCollider;
+        private Transform _cachedInteractionProbeColliderSource;
+        private Collider _cachedInteractionProbeCollider;
 
         /// <summary>True while a heavy rigidbody is actively being held by the physical hand proxy.</summary>
         public bool IsGrabbing => _isGrabbing && _activeBody != null;
@@ -156,11 +230,47 @@ namespace Hecton8.Interaction
         /// <summary>True when the grip auto-broke because separation exceeded the hard disconnect threshold.</summary>
         public bool GripBroken => _gripBroken;
 
-        /// <summary>Current world-space separation between the virtual hand target and the grabbed body center of mass.</summary>
-        public float CurrentSeparation => _currentSeparation;
+        /// <summary>Current squared world-space separation between the virtual hand target and the grabbed body center of mass.</summary>
+        public float CurrentSeparationSq => _currentSeparationSq;
 
         /// <summary>Current virtual hand mass used to introduce heavy-object lag.</summary>
         public float CurrentVirtualHandMass => _virtualHandMass;
+
+        /// <summary>Authored side used as haptic fallback when the probe collider has no side tag/layer.</summary>
+        public PhysicalHandSide HandSide => handSide;
+
+        /// <summary>True when the grabbed mass exceeds the VR two-hand stabilization threshold.</summary>
+        public bool RequiresTwoHandStabilization => _requiresTwoHandStabilization;
+
+        /// <summary>
+        /// Sets whether another physical hand is stabilizing the current heavy grab.
+        /// </summary>
+        public void SetTwoHandStabilized(bool stabilized)
+        {
+            _twoHandStabilized = stabilized || !_requiresTwoHandStabilization;
+            _hasSecondHandStabilizerPose = false;
+        }
+
+        /// <summary>
+        /// Sets the second hand pose used to damp angular velocity while stabilizing a heavy payload.
+        /// </summary>
+        public void SetTwoHandStabilizerPose(bool stabilized, Vector3 stabilizerWorldPosition)
+        {
+            _twoHandStabilized = stabilized || !_requiresTwoHandStabilization;
+            _hasSecondHandStabilizerPose = stabilized && IsFinite(stabilizerWorldPosition);
+            if (_hasSecondHandStabilizerPose)
+                _secondHandStabilizerPosition = stabilizerWorldPosition;
+        }
+
+        /// <summary>
+        /// Enables or disables the VR hand collision shell without affecting desktop carry logic.
+        /// </summary>
+        public void SetSuitCollisionShellEnabled(bool enabled)
+        {
+            enableSuitCollisionShell = enabled;
+            if (!enabled && _suitHandCollider != null)
+                _suitHandCollider.enabled = false;
+        }
 
         /// <summary>
         /// Resolves the current physical hand probe used by collider-driven diegetic controls.
@@ -191,6 +301,36 @@ namespace Hecton8.Interaction
         }
 
         /// <summary>
+        /// Resolves the collider that represents the physical hand probe for side-specific haptics.
+        /// </summary>
+        public bool TryGetInteractionProbeCollider(out Collider sourceCollider)
+        {
+            if (_suitHandCollider != null)
+            {
+                sourceCollider = _suitHandCollider;
+                return true;
+            }
+
+            Transform attachment = ResolveRightHandAttachment();
+            if (attachment == null)
+            {
+                sourceCollider = null;
+                _cachedInteractionProbeColliderSource = null;
+                _cachedInteractionProbeCollider = null;
+                return false;
+            }
+
+            if (!ReferenceEquals(_cachedInteractionProbeColliderSource, attachment))
+            {
+                _cachedInteractionProbeColliderSource = attachment;
+                attachment.TryGetComponent(out _cachedInteractionProbeCollider);
+            }
+
+            sourceCollider = _cachedInteractionProbeCollider;
+            return sourceCollider != null;
+        }
+
+        /// <summary>
         /// Attempts to begin a heavy-object grab session.
         /// </summary>
         /// <param name="interactable">Owning interactable marker.</param>
@@ -212,6 +352,8 @@ namespace Hecton8.Interaction
 
             _activeInteractable = interactable;
             _activeBody = body;
+            _activeBodyCollider = null;
+            body.TryGetComponent(out _activeBodyCollider);
             _cachedBodyDrag = body.linearDamping;
             _cachedBodyAngularDrag = body.angularDamping;
             _cachedBodyMaxAngularVelocity = body.maxAngularVelocity;
@@ -222,13 +364,19 @@ namespace Hecton8.Interaction
             _virtualHandTargetVelocity = Vector3.zero;
             _previousControllerPosition = _virtualHandPosition;
             _previousControllerRotation = _runtimeGripPoint != null ? _runtimeGripPoint.rotation : Quaternion.identity;
-            _previousTargetLocalRotation = _runtimeGripPoint != null ? _runtimeGripPoint.rotation : Quaternion.identity;
-            _currentSeparation = 0f;
+            Quaternion handRotation = _runtimeGripPoint != null ? _runtimeGripPoint.rotation : Quaternion.identity;
+            _grabBodyRotationOffset = ResolveGrabRotationOffset(handRotation, body.rotation);
+            _previousTargetLocalRotation = body.rotation;
+            _currentSeparationSq = 0f;
             _disconnectArmed = false;
             _gripBroken = false;
             _isGrabbing = true;
             _hasPreviousControllerPose = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _cachedGrabbedBodyName = body.name;
+#endif
+            _requiresTwoHandStabilization = requireTwoHandsForHeavyMass && body.mass > HeavyTwoHandMassThreshold;
+            _twoHandStabilized = !_requiresTwoHandStabilization;
 
             body.linearDamping = 0f;
             body.angularDamping = 0f;
@@ -269,14 +417,22 @@ namespace Hecton8.Interaction
 
             _activeInteractable = null;
             _activeBody = null;
+            _activeBodyCollider = null;
+            _grabBodyRotationOffset = Quaternion.identity;
             _disconnectArmed = false;
             _isGrabbing = false;
             _virtualHandMass = 0f;
             _virtualHandVelocity = Vector3.zero;
             _virtualHandTargetVelocity = Vector3.zero;
-            _currentSeparation = 0f;
+            _handWallRecoilOffset = Vector3.zero;
+            _currentSeparationSq = 0f;
             _hasPreviousControllerPose = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _cachedGrabbedBodyName = null;
+#endif
+            _requiresTwoHandStabilization = false;
+            _twoHandStabilized = true;
+            _hasSecondHandStabilizerPose = false;
             SyncDebugState();
         }
 
@@ -290,9 +446,12 @@ namespace Hecton8.Interaction
         {
             float dt = math.clamp(fixedDeltaTime, MinimumDeltaTime, MaximumSafeDeltaTime);
             _lastFingerPoseDeltaTime = dt;
+            if (IsFinite(controllerPosition) && IsFinite(controllerRotation))
+                StepSuitCollisionShell(controllerPosition, controllerRotation, dt);
 
             if (!IsGrabbing)
             {
+                DecayWallRecoilOffset(dt);
                 ApplyOpenHandPose(dt);
                 return;
             }
@@ -337,6 +496,8 @@ namespace Hecton8.Interaction
             EnsureRuntimeProxy();
             AllocatePersistentBuffers();
             ResolveFingerSegments();
+            if (enableSuitCollisionShell)
+                EnsureSuitCollisionShell();
             SyncDebugState();
         }
 
@@ -348,16 +509,9 @@ namespace Hecton8.Interaction
 
         private void OnDestroy()
         {
-            if (_fingerCommands.IsCreated)
-                _fingerCommands.Dispose(_fingerPoseHandle);
-            if (_fingerHits.IsCreated)
-                _fingerHits.Dispose(_fingerPoseHandle);
-            if (_fingerPoses.IsCreated)
-                _fingerPoses.Dispose(_fingerPoseHandle);
-            if (_fingerRayDefinitions.IsCreated)
-                _fingerRayDefinitions.Dispose(_fingerPoseHandle);
-            if (_fingerRayRuntime.IsCreated)
-                _fingerRayRuntime.Dispose(_fingerPoseHandle);
+            DisposePersistentBuffers();
+            if (_suitHandTransform != null)
+                Destroy(_suitHandTransform.gameObject);
         }
 
         private void EnsureRuntimeProxy()
@@ -416,21 +570,221 @@ namespace Hecton8.Interaction
             _runtimeProxyCreated = true;
         }
 
+        private void EnsureSuitCollisionShell()
+        {
+            EnsureRuntimeProxy();
+
+            if (_suitOverlapResults == null || _suitOverlapResults.Length != SuitOverlapCapacity)
+            {
+                // COLD ALLOC: Collider[8] - zero-GC physical hand suit contact overlap buffer - owner: PhysicalHandController
+                _suitOverlapResults = new Collider[SuitOverlapCapacity];
+            }
+
+            if (_suitCollisionShellCreated)
+            {
+                if (_suitHandCollider != null)
+                {
+                    _suitHandCollider.radius = math.max(0.001f, suitCollisionProbeRadius);
+                    _suitHandCollider.enabled = enableSuitCollisionShell;
+                }
+
+                return;
+            }
+
+            // COLD ALLOC: GameObject[1] - optional VR physical hand suit trigger shell - owner: PhysicalHandController
+            GameObject shellObject = new GameObject("[PhysicalHandSuitCollisionShell]");
+            shellObject.hideFlags = HideFlags.HideInHierarchy | HideFlags.DontSaveInEditor;
+            shellObject.layer = gameObject.layer;
+
+            _suitHandTransform = shellObject.transform;
+            Transform parent = _runtimeGripPoint != null ? _runtimeGripPoint : _runtimeRoot;
+            _suitHandTransform.position = parent != null ? parent.position : _cachedTransform.position;
+            _suitHandTransform.rotation = parent != null ? parent.rotation : _cachedTransform.rotation;
+
+            _suitHandBody = shellObject.AddComponent<Rigidbody>();
+            _suitHandBody.isKinematic = true;
+            _suitHandBody.useGravity = false;
+            _suitHandBody.detectCollisions = true;
+            _suitHandBody.interpolation = RigidbodyInterpolation.Interpolate;
+            _suitHandBody.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            _suitHandBody.maxDepenetrationVelocity = 3f;
+
+            _suitHandCollider = shellObject.AddComponent<SphereCollider>();
+            _suitHandCollider.isTrigger = false;
+            _suitHandCollider.radius = math.max(0.001f, suitCollisionProbeRadius);
+            _suitHandCollider.enabled = enableSuitCollisionShell;
+
+            _suitCollisionShellCreated = true;
+        }
+
+        private void StepSuitCollisionShell(Vector3 controllerPosition, Quaternion controllerRotation, float dt)
+        {
+            if (!enableSuitCollisionShell)
+            {
+                if (_suitHandCollider != null && _suitHandCollider.enabled)
+                    _suitHandCollider.enabled = false;
+
+                _suitContactActive = false;
+                return;
+            }
+
+            if (!_suitCollisionShellCreated)
+            {
+                _suitContactActive = false;
+                return;
+            }
+
+            if (_suitOverlapResults == null || _suitOverlapResults.Length == 0 || suitCollisionMask.value == 0)
+            {
+                _suitContactActive = false;
+                return;
+            }
+
+            float radius = math.max(0.001f, suitCollisionProbeRadius);
+            if (_suitHandBody != null)
+            {
+                _suitHandBody.MovePosition(controllerPosition);
+                _suitHandBody.MoveRotation(controllerRotation);
+            }
+            else if (_suitHandTransform != null)
+            {
+                _suitHandTransform.SetPositionAndRotation(controllerPosition, controllerRotation);
+            }
+            if (_suitHandCollider != null)
+            {
+                _suitHandCollider.radius = radius;
+                _suitHandCollider.enabled = true;
+            }
+
+            int hitCount = global::UnityEngine.Physics.OverlapSphereNonAlloc(
+                controllerPosition,
+                radius,
+                _suitOverlapResults,
+                suitCollisionMask.value,
+                QueryTriggerInteraction.Ignore);
+
+            float maxPenetration = 0f;
+            Vector3 contactPoint = controllerPosition;
+            Vector3 contactNormal = Vector3.up;
+            float3 wallRecoilOffset = float3.zero;
+            int sourceColliderInstanceId = 0;
+            for (int i = 0; i < hitCount; i++)
+            {
+                Collider hit = _suitOverlapResults[i];
+                _suitOverlapResults[i] = null;
+                if (hit == null ||
+                    !hit.enabled ||
+                    ReferenceEquals(hit, _suitHandCollider) ||
+                    (_activeBody != null && ReferenceEquals(hit.attachedRigidbody, _activeBody)))
+                {
+                    continue;
+                }
+
+                Bounds hitBounds = hit.bounds;
+                float3 deltaFromCenter = (float3)(controllerPosition - hitBounds.center);
+                float3 axisPenetration = (float3)hitBounds.extents + new float3(radius) - math.abs(deltaFromCenter);
+                float penetration = math.cmin(axisPenetration);
+                float3 normalAxis = ResolveDominantAxisNormal(deltaFromCenter, axisPenetration);
+                Vector3 normal = (Vector3)normalAxis;
+                Vector3 contact = controllerPosition - (Vector3)(normalAxis * radius);
+
+                if (penetration <= maxPenetration)
+                    continue;
+
+                maxPenetration = penetration;
+                contactPoint = contact;
+                contactNormal = normal;
+                wallRecoilOffset = normalAxis * math.min(HandWallRecoilMaxOffset, penetration * HandWallRecoilScale);
+                sourceColliderInstanceId = unchecked((int)EntityId.ToULong(hit.GetEntityId()));
+            }
+
+            _suitContactActive = maxPenetration > 0f;
+            if (!_suitContactActive)
+                return;
+
+            ApplyWallRecoilOffset((Vector3)wallRecoilOffset);
+
+            float crushThreshold = math.max(0.001f, suitCrushPenetrationThreshold);
+            float pressure01 = math.saturate(maxPenetration / crushThreshold);
+            float hapticScale = ResolveSuitCollisionHapticScale(pressure01);
+            float now = Time.time;
+            if (routeHandCollisionHaptics && now >= _nextHandContactHapticTime)
+            {
+                byte motorMask = handSide == PhysicalHandSide.Left ? LeftMotorMask : RightMotorMask;
+                float lowIntensity = handSide == PhysicalHandSide.Left ? hapticScale : hapticScale * 0.45f;
+                float highIntensity = handSide == PhysicalHandSide.Right ? hapticScale : hapticScale * 0.45f;
+                ToolHapticsRuntime.EnqueueCommand(
+                    lowIntensity,
+                    highIntensity,
+                    0.08f,
+                    7.5f,
+                    CriticalHapticPriority,
+                    motorMask,
+                    2);
+                PhysicsEventBus.NotifyAcousticImpulse(new AcousticImpulseEvent(
+                    contactPoint,
+                    contactNormal,
+                    math.lerp(4f, 28f, pressure01),
+                    math.saturate(0.12f + pressure01 * 0.38f),
+                    math.lerp(1.35f, 2.1f, pressure01),
+                    math.lerp(0.2f, 0.6f, pressure01),
+                    sourceColliderInstanceId,
+                    0,
+                    AcousticImpulseFlags.PlayerCollision));
+                _nextHandContactHapticTime = now + HandContactHapticCooldownSeconds;
+            }
+
+            int frame = Time.frameCount;
+            if (pressure01 < 1f ||
+                frame == _lastSuitDamageFrame ||
+                now < _nextHandDamageHapticTime)
+            {
+                return;
+            }
+
+            _lastSuitDamageFrame = frame;
+            _nextHandDamageHapticTime = now + HandDamageHapticCooldownSeconds;
+            AbsoluteUniversePosition contactAup = AbsoluteUniversePosition.FromRuntimePosition(contactPoint);
+            SuitDamageEvent damageEvent = new SuitDamageEvent(
+                handSide,
+                contactAup,
+                contactNormal,
+                pressure01,
+                sourceColliderInstanceId,
+                (uint)frame);
+            SuitDamageEvents.Publish(in damageEvent);
+            PhysicsEventBus.NotifyAcousticImpulse(new AcousticImpulseEvent(
+                contactPoint,
+                contactNormal,
+                math.lerp(35f, 180f, pressure01),
+                math.saturate(0.35f + pressure01 * 0.65f),
+                0.75f,
+                0.85f,
+                sourceColliderInstanceId,
+                0,
+                AcousticImpulseFlags.PlayerCollision | AcousticImpulseFlags.Critical));
+        }
+
         private void AllocatePersistentBuffers()
         {
             if (_fingerCommands.IsCreated)
                 return;
 
-            // COLD ALLOC: NativeArray<SpherecastCommand>[5] � persistent finger spherecast commands � owner: PhysicalHandController
+            // COLD ALLOC: NativeArray<SpherecastCommand>[5] - persistent finger spherecast commands - owner: PhysicalHandController
             _fingerCommands = new NativeArray<SpherecastCommand>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<RaycastHit>[5] � persistent finger spherecast results � owner: PhysicalHandController
+            NativeMemorySentinel.RegisterNativeArray(_fingerCommands, NativeMemoryOwner, nameof(_fingerCommands), FingerNativeMemoryLifetime);
+            // COLD ALLOC: NativeArray<RaycastHit>[5] - persistent finger spherecast results - owner: PhysicalHandController
             _fingerHits = new NativeArray<RaycastHit>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<FingerPoseData>[5] � persistent finger pose results � owner: PhysicalHandController
+            NativeMemorySentinel.RegisterNativeArray(_fingerHits, NativeMemoryOwner, nameof(_fingerHits), FingerNativeMemoryLifetime);
+            // COLD ALLOC: NativeArray<FingerPoseData>[5] - persistent finger pose results - owner: PhysicalHandController
             _fingerPoses = new NativeArray<FingerPoseData>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<FingerRayDefinition>[5] � persistent local finger ray definitions � owner: PhysicalHandController
+            NativeMemorySentinel.RegisterNativeArray(_fingerPoses, NativeMemoryOwner, nameof(_fingerPoses), FingerNativeMemoryLifetime);
+            // COLD ALLOC: NativeArray<FingerRayDefinition>[5] - persistent local finger ray definitions - owner: PhysicalHandController
             _fingerRayDefinitions = new NativeArray<FingerRayDefinition>(FingerCount, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<FingerRayRuntime>[5] � persistent world-space finger ray runtime data � owner: PhysicalHandController
+            NativeMemorySentinel.RegisterNativeArray(_fingerRayDefinitions, NativeMemoryOwner, nameof(_fingerRayDefinitions), FingerNativeMemoryLifetime);
+            // COLD ALLOC: NativeArray<FingerRayRuntime>[5] - persistent world-space finger ray runtime data - owner: PhysicalHandController
             _fingerRayRuntime = new NativeArray<FingerRayRuntime>(FingerCount, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeArray(_fingerRayRuntime, NativeMemoryOwner, nameof(_fingerRayRuntime), FingerNativeMemoryLifetime);
 
             _fingerRayDefinitions[0] = new FingerRayDefinition
             {
@@ -459,6 +813,35 @@ namespace Hecton8.Interaction
             };
         }
 
+        private void DisposePersistentBuffers()
+        {
+            bool deferDispose = _fingerPoseScheduled;
+            JobHandle disposeDependency = _fingerPoseHandle;
+
+            DisposeNativeArray(ref _fingerCommands, deferDispose, disposeDependency);
+            DisposeNativeArray(ref _fingerHits, deferDispose, disposeDependency);
+            DisposeNativeArray(ref _fingerPoses, deferDispose, disposeDependency);
+            DisposeNativeArray(ref _fingerRayDefinitions, deferDispose, disposeDependency);
+            DisposeNativeArray(ref _fingerRayRuntime, deferDispose, disposeDependency);
+
+            _fingerPoseScheduled = false;
+            _fingerPoseHandle = default;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, bool deferDispose, JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            if (deferDispose)
+                array.Dispose(dependency);
+            else
+                array.Dispose();
+
+            array = default;
+        }
+
         private void ResolveFingerSegments()
         {
             if (_fingerSegmentsResolved)
@@ -467,7 +850,7 @@ namespace Hecton8.Interaction
             int segmentCount = fingerSegments != null ? fingerSegments.Length : 0;
             if (segmentCount > 0)
             {
-                // COLD ALLOC: Quaternion[15] � cached authored finger local rotations � owner: PhysicalHandController
+                // COLD ALLOC: Quaternion[15] - cached authored finger local rotations - owner: PhysicalHandController
                 _baseFingerLocalRotations = new Quaternion[segmentCount];
                 for (int i = 0; i < segmentCount; i++)
                 {
@@ -499,6 +882,25 @@ namespace Hecton8.Interaction
 
             _rightHandAttachmentResolved = true;
             return _resolvedRightHandAttachment;
+        }
+
+        private Transform ResolveOpposingHandAttachment()
+        {
+            if (_opposingHandAttachmentResolved)
+                return _resolvedOpposingHandAttachment;
+
+            if (swimBlockoutRig == null)
+                swimBlockoutRig = GetComponentInChildren<PlayerSwimBlockoutRig>(true);
+
+            if (swimBlockoutRig != null)
+            {
+                _resolvedOpposingHandAttachment = handSide == PhysicalHandSide.Left
+                    ? swimBlockoutRig.RightHandAttachment
+                    : swimBlockoutRig.LeftHandAttachment;
+            }
+
+            _opposingHandAttachmentResolved = true;
+            return _resolvedOpposingHandAttachment;
         }
 
         private void CompleteScheduledFingerPose(float dt)
@@ -574,6 +976,12 @@ namespace Hecton8.Interaction
                 controllerVelocity = Vector3.zero;
 
             Vector3 effectiveControllerPosition = controllerPosition;
+            if (_handWallRecoilOffset.sqrMagnitude > 0.0000001f)
+            {
+                effectiveControllerPosition += _handWallRecoilOffset;
+                DecayWallRecoilOffset(dt);
+            }
+
             bool useVirtualMassLag = _activeBody != null && _activeBody.mass > HandMaxCarryMass && _virtualHandMass > MinimumDeltaTime;
             if (useVirtualMassLag)
                 effectiveControllerPosition += controllerVelocity * VelocityLeadFactor;
@@ -581,7 +989,7 @@ namespace Hecton8.Interaction
             Vector3 previousVirtualHandPosition = _virtualHandPosition;
             if (useVirtualMassLag)
             {
-                float damping = 2f * math.sqrt(math.max(_virtualHandMass * VirtualSpringK, MinimumDeltaTime)) * 0.9f;
+                float damping = ResolveVirtualHandDamping(_virtualHandMass);
                 Vector3 springForce = (effectiveControllerPosition - _virtualHandPosition) * VirtualSpringK;
                 Vector3 dampingForce = -_virtualHandVelocity * damping;
                 Vector3 netForce = springForce + dampingForce;
@@ -596,10 +1004,8 @@ namespace Hecton8.Interaction
                 _virtualHandPosition += _virtualHandVelocity * dt;
 
                 Vector3 lag = _virtualHandPosition - controllerPosition;
-                lag.x = Mathf.Clamp(lag.x, -VirtualHandLagMax, VirtualHandLagMax);
-                lag.y = Mathf.Clamp(lag.y, -VirtualHandLagMax, VirtualHandLagMax);
-                lag.z = Mathf.Clamp(lag.z, -VirtualHandLagMax, VirtualHandLagMax);
-                _virtualHandPosition = controllerPosition + lag;
+                float3 clampedLag = math.clamp((float3)lag, new float3(-VirtualHandLagMax), new float3(VirtualHandLagMax));
+                _virtualHandPosition = controllerPosition + (Vector3)clampedLag;
                 _virtualHandTargetVelocity = (_virtualHandPosition - previousVirtualHandPosition) / dt;
                 _virtualHandVelocity = IsFinite(_virtualHandTargetVelocity) ? _virtualHandTargetVelocity : Vector3.zero;
             }
@@ -640,7 +1046,7 @@ namespace Hecton8.Interaction
                 if (angleDegrees > 180f)
                     angleDegrees -= 360f;
 
-                angularVelocityDegrees = axis.normalized * (angleDegrees / dt);
+                angularVelocityDegrees = (Vector3)(math.normalizesafe((float3)axis, new float3(0f, 1f, 0f)) * (angleDegrees / dt));
             }
 
             ArticulationDrive xDrive = _runtimeHandBody.xDrive;
@@ -681,18 +1087,19 @@ namespace Hecton8.Interaction
             }
 
             Vector3 linearError = handPosition - bodyPosition;
-            _currentSeparation = linearError.magnitude;
+            float separationSq = ResolveAupDistanceSqAsFloat(handPosition, bodyPosition);
+            _currentSeparationSq = separationSq;
 
-            if (_currentSeparation > GripBreakDistance)
+            if (separationSq > GripBreakDistanceSq)
             {
                 BreakGrip(PhysicalHandGrabEndReason.GripBroken);
                 return;
             }
 
-            _disconnectArmed = _currentSeparation > GripWarnDistance;
+            _disconnectArmed = separationSq > GripWarnDistanceSq;
             float gainMultiplier = 1f;
             if (_disconnectArmed)
-                gainMultiplier = 1f - math.saturate((_currentSeparation - GripWarnDistance) / math.max(GripBreakDistance - GripWarnDistance, MinimumDeltaTime));
+                gainMultiplier = 1f - math.saturate((separationSq - GripWarnDistanceSq) / math.max(GripBreakDistanceSq - GripWarnDistanceSq, MinimumDeltaTime));
 
             Vector3 targetVelocity = IsFinite(_virtualHandTargetVelocity) ? _virtualHandTargetVelocity : Vector3.zero;
             Vector3 velocityError = targetVelocity - body.linearVelocity;
@@ -703,11 +1110,12 @@ namespace Hecton8.Interaction
             if (!IsFinite(acceleration))
                 acceleration = Vector3.zero;
 
-            Vector3 deltaVelocity = ClampMagnitude(acceleration * dt, MaxDeltaVelocity * gainMultiplier);
+            Vector3 deltaVelocity = ClampMagnitude(acceleration * dt, ResolveMaxDeltaVelocity(body, gainMultiplier));
             if (deltaVelocity.sqrMagnitude > 0.0000001f)
                 PhysicsForceRouter.QueueForce(body, deltaVelocity, ForceMode.VelocityChange);
 
-            Quaternion deltaRotation = handRotation * Quaternion.Inverse(body.rotation);
+            Quaternion targetBodyRotation = ResolveTargetBodyRotation(handRotation);
+            Quaternion deltaRotation = targetBodyRotation * Quaternion.Inverse(body.rotation);
             deltaRotation.ToAngleAxis(out float angleDegrees, out Vector3 axis);
             if (!IsFinite(axis) || axis.sqrMagnitude < 0.000001f)
             {
@@ -719,8 +1127,9 @@ namespace Hecton8.Interaction
                 angleDegrees -= 360f;
 
             float angleRadians = angleDegrees * RadiansPerDegree;
-            Vector3 angularError = axis.normalized * angleRadians;
-            Vector3 targetAngularVelocity = ResolveTargetAngularVelocityRadians(handRotation, dt);
+            Vector3 angularError = (Vector3)(math.normalizesafe((float3)axis, new float3(0f, 1f, 0f)) * angleRadians);
+            Vector3 targetAngularVelocity = ResolveTargetAngularVelocityRadians(targetBodyRotation, dt);
+            _previousTargetLocalRotation = targetBodyRotation;
             if (!IsFinite(targetAngularVelocity))
             {
                 EmergencyResetGrabbedBodyMotion(body, "SolveGrabbedBody.TargetAngularVelocity");
@@ -740,7 +1149,126 @@ namespace Hecton8.Interaction
             if (deltaAngularVelocity.sqrMagnitude > 0.0000001f)
                 PhysicsForceRouter.QueueTorque(body, deltaAngularVelocity, ForceMode.VelocityChange);
 
+            UpdateImplicitTwoHandStabilizer(body);
+            ApplyTwoHandMassScaleTorque(body, handPosition, gainMultiplier, dt);
             SyncDebugState();
+        }
+
+        private void ApplyTwoHandMassScaleTorque(Rigidbody body, Vector3 handPosition, float gainMultiplier, float dt)
+        {
+            if (!_requiresTwoHandStabilization || body == null)
+                return;
+
+            if (_twoHandStabilized)
+            {
+                ApplyTwoHandAngularVelocityDamping(body, handPosition, dt);
+                return;
+            }
+
+            Vector3 gravityDirection = UnityEngine.Physics.gravity;
+            if (gravityDirection.sqrMagnitude < 0.000001f)
+                gravityDirection = Vector3.down;
+
+            Vector3 lever = handPosition - body.worldCenterOfMass;
+            if (lever.sqrMagnitude < 0.000001f)
+                lever = body.transform.right;
+
+            float3 torqueAxis = math.cross(
+                math.normalizesafe((float3)lever, (float3)body.transform.right),
+                math.normalizesafe((float3)gravityDirection, new float3(0f, -1f, 0f)));
+            torqueAxis = math.normalizesafe(torqueAxis, (float3)body.transform.forward);
+
+            float load01 = math.saturate((body.mass - HeavyTwoHandMassThreshold) / math.max(MaxSupportedGrabMass - HeavyTwoHandMassThreshold, 1f));
+            Vector3 deltaAngularVelocity = ClampMagnitude(
+                (Vector3)(torqueAxis * (TwoHandReleaseAngularVelocity * load01 * math.max(gainMultiplier, 0.15f) * dt)),
+                MaxDeltaAngularVelocity * 0.35f);
+
+            if (deltaAngularVelocity.sqrMagnitude > 0.0000001f)
+                PhysicsForceRouter.QueueTorque(body, deltaAngularVelocity, ForceMode.VelocityChange);
+        }
+
+        private void UpdateImplicitTwoHandStabilizer(Rigidbody body)
+        {
+            if (!_requiresTwoHandStabilization || body == null)
+                return;
+
+            Transform opposingHand = ResolveOpposingHandAttachment();
+            if (opposingHand == null || !IsFinite(opposingHand.position))
+            {
+                _twoHandStabilized = false;
+                _hasSecondHandStabilizerPose = false;
+                return;
+            }
+
+            Bounds bodyBounds = ResolveActiveBodyBounds(body);
+            float maxExtent = math.max(MinimumBoundsSpan, math.cmax((float3)bodyBounds.extents));
+            float stabilizerRadius = (maxExtent * 2f) + math.max(0.08f, suitCollisionProbeRadius);
+            AbsoluteUniversePosition handAup = AbsoluteUniversePosition.FromRuntimePosition(opposingHand.position);
+            AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(bodyBounds.center);
+            bool withinStabilizerRange = AbsoluteUniversePosition.DistanceSq(in handAup, in bodyAup) <= stabilizerRadius * stabilizerRadius;
+            SetTwoHandStabilizerPose(withinStabilizerRange, opposingHand.position);
+        }
+
+        private void ApplyTwoHandAngularVelocityDamping(Rigidbody body, Vector3 primaryHandPosition, float dt)
+        {
+            if (!_hasSecondHandStabilizerPose || !IsFinite(primaryHandPosition) || !IsFinite(_secondHandStabilizerPosition))
+                return;
+
+            Bounds bodyBounds = ResolveActiveBodyBounds(body);
+            float3 extents = math.max((float3)bodyBounds.extents, new float3(MinimumBoundsSpan * 0.5f));
+            float boundsSpan = math.max(MinimumBoundsSpan, math.cmax(extents) * 2f);
+            float boundsSpanSq = boundsSpan * boundsSpan;
+            float handSpanSq = ResolveAupDistanceSqAsFloat(primaryHandPosition, _secondHandStabilizerPosition);
+            if (handSpanSq <= boundsSpanSq)
+                return;
+
+            float overSpan01 = math.saturate((handSpanSq - boundsSpanSq) / math.max(boundsSpanSq, MinimumDeltaTime));
+            float damping = math.saturate(overSpan01 * TwoHandAngularDampingSharpness * math.max(dt, MinimumDeltaTime));
+            Vector3 dampedAngularVelocity = (Vector3)math.lerp((float3)body.angularVelocity, float3.zero, damping);
+            if (IsFinite(dampedAngularVelocity))
+                body.angularVelocity = dampedAngularVelocity;
+        }
+
+        private Bounds ResolveActiveBodyBounds(Rigidbody body)
+        {
+            if (_activeBodyCollider != null && _activeBodyCollider.enabled)
+                return _activeBodyCollider.bounds;
+
+            return new Bounds(body.worldCenterOfMass, new Vector3(MinimumBoundsSpan, MinimumBoundsSpan, MinimumBoundsSpan));
+        }
+
+        private void ApplyWallRecoilOffset(Vector3 recoilOffset)
+        {
+            if (!IsFinite(recoilOffset))
+                return;
+
+            float3 combinedOffset = (float3)_handWallRecoilOffset + (float3)recoilOffset;
+            float offsetSq = math.lengthsq(combinedOffset);
+            float maxOffsetSq = HandWallRecoilMaxOffset * HandWallRecoilMaxOffset;
+            if (offsetSq > maxOffsetSq && offsetSq > 0.0000001f)
+                combinedOffset = math.normalizesafe(combinedOffset, float3.zero) * HandWallRecoilMaxOffset;
+
+            _handWallRecoilOffset = (Vector3)combinedOffset;
+        }
+
+        private void DecayWallRecoilOffset(float dt)
+        {
+            if (_handWallRecoilOffset.sqrMagnitude <= 0.0000001f)
+                return;
+
+            _handWallRecoilOffset = (Vector3)math.lerp(
+                (float3)_handWallRecoilOffset,
+                float3.zero,
+                math.saturate(dt * HandWallRecoilDecay));
+        }
+
+        private static float3 ResolveDominantAxisNormal(float3 deltaFromCenter, float3 axisPenetration)
+        {
+            if (axisPenetration.x <= axisPenetration.y && axisPenetration.x <= axisPenetration.z)
+                return new float3(deltaFromCenter.x >= 0f ? 1f : -1f, 0f, 0f);
+            if (axisPenetration.y <= axisPenetration.z)
+                return new float3(0f, deltaFromCenter.y >= 0f ? 1f : -1f, 0f);
+            return new float3(0f, 0f, deltaFromCenter.z >= 0f ? 1f : -1f);
         }
 
         private Vector3 ResolveTargetAngularVelocityRadians(Quaternion targetRotation, float dt)
@@ -756,7 +1284,7 @@ namespace Hecton8.Interaction
             if (angleDegrees > 180f)
                 angleDegrees -= 360f;
 
-            return axis.normalized * ((angleDegrees * RadiansPerDegree) / dt);
+            return (Vector3)(math.normalizesafe((float3)axis, new float3(0f, 1f, 0f)) * ((angleDegrees * RadiansPerDegree) / dt));
         }
 
         private void ScheduleFingerPoseBatch()
@@ -816,21 +1344,34 @@ namespace Hecton8.Interaction
             return math.lerp(HeavyObjectMinimumVirtualMass, VirtualHandMaxMass, massRatio);
         }
 
+        private static float ResolveVirtualHandDamping(float virtualMass)
+        {
+            float mass01 = math.saturate((virtualMass - HeavyObjectMinimumVirtualMass) / (VirtualHandMaxMass - HeavyObjectMinimumVirtualMass));
+            float shaped = mass01 * (1.42f - 0.42f * mass01);
+            float sqrtMassApprox = math.lerp(1f, VirtualHandMaxMassSqrtApprox, shaped);
+            return VirtualDampingScale * VirtualSpringRootApprox * sqrtMassApprox;
+        }
+
         private void SyncDebugState()
         {
             _debugIsGrabbing = IsGrabbing;
             _debugDisconnectArmed = _disconnectArmed;
             _debugGripBroken = _gripBroken;
-            _debugSeparation = _currentSeparation;
+            _debugSeparation = _currentSeparationSq;
             _debugVirtualHandMass = _virtualHandMass;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugGrabbedBodyName = _cachedGrabbedBodyName;
+#endif
+            _debugSuitContact = _suitContactActive;
+            _debugRequiresTwoHands = _requiresTwoHandStabilization;
         }
 
         private void FinalizeControllerPoseState(Vector3 controllerPosition, Quaternion controllerRotation)
         {
             _previousControllerPosition = controllerPosition;
             _previousControllerRotation = controllerRotation;
-            _previousTargetLocalRotation = _runtimeGripPoint != null ? _runtimeGripPoint.rotation : controllerRotation;
+            if (!IsGrabbing)
+                _previousTargetLocalRotation = controllerRotation;
             _hasPreviousControllerPose = true;
         }
 
@@ -856,15 +1397,66 @@ namespace Hecton8.Interaction
             if (sqrMagnitude <= maxMagnitudeSq || sqrMagnitude < 0.0000001f)
                 return value;
 
-            return value.normalized * maxMagnitude;
+            return (Vector3)(math.normalizesafe((float3)value, float3.zero) * maxMagnitude);
         }
 
         private static Vector3 ClampPerAxis(Vector3 value, float axisLimit)
         {
-            value.x = Mathf.Clamp(value.x, -axisLimit, axisLimit);
-            value.y = Mathf.Clamp(value.y, -axisLimit, axisLimit);
-            value.z = Mathf.Clamp(value.z, -axisLimit, axisLimit);
-            return value;
+            return (Vector3)math.clamp((float3)value, new float3(-axisLimit), new float3(axisLimit));
+        }
+
+        private static float ResolveMaxDeltaVelocity(Rigidbody body, float gainMultiplier)
+        {
+            float depenetrationVelocity = UnityEngine.Physics.defaultMaxDepenetrationVelocity;
+            if (body != null && math.isfinite(body.maxDepenetrationVelocity) && body.maxDepenetrationVelocity > 0f)
+                depenetrationVelocity = math.min(depenetrationVelocity, body.maxDepenetrationVelocity);
+            float safeDepenetrationVelocity = math.isfinite(depenetrationVelocity) && depenetrationVelocity > 0f
+                ? depenetrationVelocity
+                : MaxDeltaVelocity;
+            return math.max(0f, math.min(MaxDeltaVelocity * math.max(0f, gainMultiplier), safeDepenetrationVelocity));
+        }
+
+        private static float ResolveAupDistanceSqAsFloat(Vector3 a, Vector3 b)
+        {
+            AbsoluteUniversePosition aupA = AbsoluteUniversePosition.FromRuntimePosition(a);
+            AbsoluteUniversePosition aupB = AbsoluteUniversePosition.FromRuntimePosition(b);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in aupA, in aupB);
+            return math.isfinite((float)distanceSq)
+                ? math.min((float)distanceSq, float.MaxValue)
+                : float.MaxValue;
+        }
+
+        private Quaternion ResolveTargetBodyRotation(Quaternion handRotation)
+        {
+            Quaternion targetBodyRotation = handRotation * _grabBodyRotationOffset;
+            if (!IsFinite(targetBodyRotation))
+            {
+                _grabBodyRotationOffset = Quaternion.identity;
+                targetBodyRotation = handRotation;
+            }
+
+            return targetBodyRotation;
+        }
+
+        private static Quaternion ResolveGrabRotationOffset(Quaternion handRotation, Quaternion bodyRotation)
+        {
+            if (!IsFinite(handRotation) || !IsFinite(bodyRotation))
+                return Quaternion.identity;
+
+            quaternion handQ = ToMathematicsQuaternion(handRotation);
+            quaternion bodyQ = ToMathematicsQuaternion(bodyRotation);
+            quaternion offsetQ = math.normalize(math.mul(math.inverse(handQ), bodyQ));
+            return ToUnityQuaternion(offsetQ);
+        }
+
+        private static quaternion ToMathematicsQuaternion(Quaternion value)
+        {
+            return new quaternion(value.x, value.y, value.z, value.w);
+        }
+
+        private static Quaternion ToUnityQuaternion(quaternion value)
+        {
+            return new Quaternion(value.value.x, value.value.y, value.value.z, value.value.w);
         }
 
         private static bool IsFinite(Vector3 value)
@@ -879,6 +1471,30 @@ namespace Hecton8.Interaction
                      float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z) || float.IsInfinity(value.w));
         }
 
+        private static float ResolveSuitCollisionHapticScale(float pressure01)
+        {
+            float depth01 = 0f;
+            float integrity01 = 1f;
+            float pressureSeverity01 = 0f;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            {
+                depth01 = math.saturate(runtimeContext.MovementState.DepthMeters / HapticDepthReferenceMeters);
+                if ((runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasSurvival) != 0u)
+                {
+                    integrity01 = math.saturate(runtimeContext.SurvivalState.IntegrityNormalized);
+                    pressureSeverity01 = math.saturate(runtimeContext.SurvivalState.PressureExposureSeverity01);
+                }
+            }
+
+            float numb01 = math.saturate(math.max(depth01, pressureSeverity01) * math.lerp(1.35f, 0.85f, integrity01));
+            float sample = math.saturate(math.max(pressure01, numb01));
+            float scaled = sample * (HapticPressureIntegrityLut.Length - 1);
+            int index = math.clamp((int)math.floor(scaled), 0, HapticPressureIntegrityLut.Length - 1);
+            int nextIndex = math.min(index + 1, HapticPressureIntegrityLut.Length - 1);
+            float fraction = scaled - index;
+            return math.saturate(pressure01 * math.lerp(HapticPressureIntegrityLut[index], HapticPressureIntegrityLut[nextIndex], fraction));
+        }
+
         private void EmergencyResetGrabbedBodyMotion(Rigidbody body, string context)
         {
             if (body != null)
@@ -889,10 +1505,10 @@ namespace Hecton8.Interaction
 
             _virtualHandVelocity = Vector3.zero;
             _virtualHandTargetVelocity = Vector3.zero;
-            _currentSeparation = 0f;
+            _currentSeparationSq = 0f;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[PhysicalHandController] NaN/Inf detected in {context}. Motion reset.");
+            Debug.LogError(InvalidMotionResetMessage);
 #endif
         }
 

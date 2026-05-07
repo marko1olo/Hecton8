@@ -141,7 +141,6 @@ These systems were explicitly moved off mid-tick `Complete()` patterns and into 
 - `HectonFluidEngine`: buoyancy force readback moved from `FixedTick()` to `PostFixedTick()`.
 - `LODSystemManager`: distance-job completion moved from `Tick()` to `LateFrameTick()`.
 
-These are the reference before/after cases for future audits. If a system schedules work in a gameplay lane and consumes it in that same lane on a later frame, it still violates the contract.
 
 2026-05-01 caveat:
 

@@ -1600,6 +1600,17 @@ namespace Hecton8.Atmosphere
             if (clip == null)
                 return;
 
+            if (audioManager is SpatialAudioManager spatialAudioManager)
+            {
+                spatialAudioManager.PlayWeatherAtPoint(
+                    clip,
+                    _pendingThunderPosition,
+                    _pendingThunderVolume,
+                    _pendingThunderPitch,
+                    audioManager.AmbientGroup);
+                return;
+            }
+
             audioManager.PlayAtPoint(
                 clip,
                 _pendingThunderPosition,

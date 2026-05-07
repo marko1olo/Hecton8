@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Interaction;
+using Hecton8.Tools;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
@@ -19,6 +20,11 @@ namespace Hecton8.UI
         private const uint PhysicalPanelToolId = 0x50414E4Cu;
         private const float MinimumDeltaTime = 0.0001f;
         private const int RegistryInitialCapacity = 64;
+        private const byte LeftMotorMask = 0b0001;
+        private const byte RightMotorMask = 0b0010;
+        private const byte MicroHapticPriority = 1;
+        private const string LeftHandTag = "LeftHand";
+        private const string RightHandTag = "RightHand";
 
         private static readonly Dictionary<Collider, IPhysicalPanelButtonReceiver> _receiversByCollider = new Dictionary<Collider, IPhysicalPanelButtonReceiver>(RegistryInitialCapacity); // COLD ALLOC: Dictionary<Collider,IPhysicalPanelButtonReceiver>[64] - collider to physical panel button registry - owner: PhysicalPanelButton
 
@@ -47,6 +53,22 @@ namespace Hecton8.UI
         private float releaseSpeed = 14f;
         [SerializeField, Range(0.02f, 1f), Tooltip("Minimum seconds between queued button signals.")]
         private float signalCooldownSeconds = 0.18f;
+
+        [Header("Haptics")]
+        [SerializeField, Tooltip("Routes physical finger presses into the hand-specific haptic command queue.")]
+        private bool emitPressHaptics = true;
+        [SerializeField, Tooltip("Optional layers treated as left-hand finger sources before falling back to the controller hand side.")]
+        private LayerMask leftHandSourceLayers;
+        [SerializeField, Tooltip("Optional layers treated as right-hand finger sources before falling back to the controller hand side.")]
+        private LayerMask rightHandSourceLayers;
+        [SerializeField, Range(0f, 0.4f), Tooltip("Low-frequency micro pulse amplitude for a button press.")]
+        private float pressHapticLowFrequency = 0.06f;
+        [SerializeField, Range(0f, 0.6f), Tooltip("High-frequency micro pulse amplitude for a button press.")]
+        private float pressHapticHighFrequency = 0.18f;
+        [SerializeField, Range(0.01f, 0.12f), Tooltip("Micro pulse duration in seconds.")]
+        private float pressHapticDurationSeconds = 0.035f;
+        [SerializeField, Range(0f, 80f), Tooltip("Optional sinusoidal carrier for tactile switch texture.")]
+        private float pressHapticFrequencyHz = 54f;
 
         [Header("Diegetic Audio")]
         [SerializeField, Tooltip("Optional short mechanical click routed through the world-space audio pool.")]
@@ -154,7 +176,12 @@ namespace Hecton8.UI
         /// <param name="handForward">Runtime-space hand forward vector.</param>
         /// <param name="interactionSignals">Authoritative interaction signal queue.</param>
         /// <returns>True when the hand press was accepted by this button.</returns>
-        public bool TryQueueHandPress(Vector3 handPosition, Vector3 handForward, IInteractionSignalService interactionSignals)
+        public bool TryQueueHandPress(
+            Vector3 handPosition,
+            Vector3 handForward,
+            IInteractionSignalService interactionSignals,
+            Collider handSourceCollider,
+            PhysicalHandSide fallbackHandSide)
         {
             if (activationVolume == null || interactionSignals == null || !interactionSignals.IsInitialized)
                 return false;
@@ -165,7 +192,7 @@ namespace Hecton8.UI
                 return true;
 
             Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(handPosition);
-            Vector3 safeDirection = handForward.sqrMagnitude > 0.0001f ? handForward.normalized : transform.forward;
+            Vector3 safeDirection = (Vector3)math.normalizesafe((float3)handForward, (float3)transform.forward);
             InteractionPacket packet = new InteractionPacket(
                 PhysicalPanelToolId,
                 (float3)absoluteHitPoint,
@@ -188,7 +215,18 @@ namespace Hecton8.UI
                 return false;
 
             _nextSignalTime = now + signalCooldownSeconds;
+            EmitPressHaptic(handSourceCollider, fallbackHandSide);
             return true;
+        }
+
+        bool IPhysicalPanelButtonReceiver.TryQueueHandPress(
+            Vector3 handPosition,
+            Vector3 handForward,
+            IInteractionSignalService interactionSignals,
+            Collider handSourceCollider,
+            PhysicalHandSide fallbackHandSide)
+        {
+            return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide);
         }
 
         /// <inheritdoc />
@@ -203,6 +241,37 @@ namespace Hecton8.UI
                 PlayDiegeticClick(runtimeHitPoint);
                 _pressDispatched = true;
             }
+        }
+
+        private void EmitPressHaptic(Collider handSourceCollider, PhysicalHandSide fallbackHandSide)
+        {
+            if (!emitPressHaptics)
+                return;
+
+            byte motorMask = ResolveHapticMotorMask(handSourceCollider, fallbackHandSide);
+            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                pressHapticLowFrequency,
+                pressHapticHighFrequency,
+                pressHapticDurationSeconds,
+                pressHapticFrequencyHz,
+                MicroHapticPriority,
+                motorMask);
+        }
+
+        private byte ResolveHapticMotorMask(Collider handSourceCollider, PhysicalHandSide fallbackHandSide)
+        {
+            if (handSourceCollider != null)
+            {
+                GameObject sourceObject = handSourceCollider.gameObject;
+                int sourceLayerBit = 1 << sourceObject.layer;
+                if ((leftHandSourceLayers.value & sourceLayerBit) != 0 || sourceObject.CompareTag(LeftHandTag))
+                    return LeftMotorMask;
+
+                if ((rightHandSourceLayers.value & sourceLayerBit) != 0 || sourceObject.CompareTag(RightHandTag))
+                    return RightMotorMask;
+            }
+
+            return fallbackHandSide == PhysicalHandSide.Left ? LeftMotorMask : RightMotorMask;
         }
 
         private void ResolveReferences()
@@ -228,6 +297,7 @@ namespace Hecton8.UI
                 return;
 
             _receiversByCollider[activationVolume] = this;
+            PhysicalHandReceiverRegistry.Register(activationVolume, this);
         }
 
         private void UnregisterCollider()
@@ -235,6 +305,7 @@ namespace Hecton8.UI
             if (activationVolume == null)
                 return;
 
+            PhysicalHandReceiverRegistry.Unregister(activationVolume, this);
             if (_receiversByCollider.TryGetValue(activationVolume, out IPhysicalPanelButtonReceiver receiver) &&
                 ReferenceEquals(receiver, this))
             {
@@ -371,6 +442,10 @@ namespace Hecton8.UI
 
             if (pressDepthMeters < 0.001f)
                 pressDepthMeters = 0.001f;
+            pressHapticLowFrequency = math.clamp(pressHapticLowFrequency, 0f, 0.4f);
+            pressHapticHighFrequency = math.clamp(pressHapticHighFrequency, 0f, 0.6f);
+            pressHapticDurationSeconds = math.clamp(pressHapticDurationSeconds, 0.01f, 0.12f);
+            pressHapticFrequencyHz = math.clamp(pressHapticFrequencyHz, 0f, 80f);
         }
 #endif
     }

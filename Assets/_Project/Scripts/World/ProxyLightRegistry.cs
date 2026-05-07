@@ -110,15 +110,23 @@ namespace Hecton8.World
         private const float BrownoutIntensityFloor = 0.14f;
         private const float BrownoutIntensityCeiling = 0.72f;
         private const float BrownoutFlickerFrequency = 47.3f;
+        private const float BrownoutBiasPadeK = 0.32f;
         private const float TwoPi = 6.28318530718f;
 
         private static NativeParallelHashMap<int, ProxyLightData> _lightsByKey;
+        private static NativeParallelHashMap<int, int> _slotByKey;
         private static NativeArray<int> _keys;
+        private static NativeQueue<int> _freeProxyLightSlots;
         private static int _keyCount;
+        private static int _registeredCount;
 
-        public static bool IsInitialized => _lightsByKey.IsCreated && _keys.IsCreated;
+        public static bool IsInitialized =>
+            _lightsByKey.IsCreated &&
+            _slotByKey.IsCreated &&
+            _keys.IsCreated &&
+            _freeProxyLightSlots.IsCreated;
 
-        public static int RegisteredCount => _keyCount;
+        public static int RegisteredCount => _registeredCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -133,10 +141,15 @@ namespace Hecton8.World
 
             Shutdown();
             _lightsByKey = new NativeParallelHashMap<int, ProxyLightData>(MaxProxyLights, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,ProxyLightData>[128] - proxy light registry storage - owner: ProxyLightRegistry
+            _slotByKey = new NativeParallelHashMap<int, int>(MaxProxyLights, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,int>[128] - proxy light key-to-slot recycling map - owner: ProxyLightRegistry
             _keys = new NativeArray<int>(MaxProxyLights, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[128] - proxy light key iteration buffer - owner: ProxyLightRegistry
+            _freeProxyLightSlots = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[128] - O(1) recycled proxy light slot IDs - owner: ProxyLightRegistry
             NativeMemorySentinel.RegisterNativeParallelHashMap(_lightsByKey, nameof(ProxyLightRegistry), nameof(_lightsByKey), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeParallelHashMap(_slotByKey, nameof(ProxyLightRegistry), nameof(_slotByKey), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_keys, nameof(ProxyLightRegistry), nameof(_keys), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeQueue(_freeProxyLightSlots, MaxProxyLights, nameof(ProxyLightRegistry), nameof(_freeProxyLightSlots), NativeAllocationLifetime.Session);
             _keyCount = 0;
+            _registeredCount = 0;
         }
 
         public static bool RegisterOrUpdate(int key, in ProxyLightData data)
@@ -150,20 +163,41 @@ namespace Hecton8.World
                 return false;
 
             EnsureInitialized();
-            bool existed = _lightsByKey.ContainsKey(key);
+            bool existed = _slotByKey.TryGetValue(key, out int slot);
             if (!existed)
             {
-                if (_keyCount >= MaxProxyLights)
+                if (!TryAcquireProxyLightSlot(out slot))
                     return false;
 
-                _keys[_keyCount++] = key;
+                _keys[slot] = key;
+                if (!_slotByKey.TryAdd(key, slot))
+                {
+                    _keys[slot] = 0;
+                    _freeProxyLightSlots.Enqueue(slot);
+                    return false;
+                }
             }
             else
             {
                 _lightsByKey.Remove(key);
             }
 
-            return _lightsByKey.TryAdd(key, resolvedData);
+            if (_lightsByKey.TryAdd(key, resolvedData))
+            {
+                if (!existed)
+                    _registeredCount++;
+
+                return true;
+            }
+
+            if (!existed)
+            {
+                _slotByKey.Remove(key);
+                _keys[slot] = 0;
+                _freeProxyLightSlots.Enqueue(slot);
+            }
+
+            return false;
         }
 
         public static void Unregister(int key)
@@ -171,20 +205,23 @@ namespace Hecton8.World
             if (!IsInitialized || key == 0)
                 return;
 
+            if (!_slotByKey.TryGetValue(key, out int slot))
+            {
+                _lightsByKey.Remove(key);
+                return;
+            }
+
             if (!_lightsByKey.Remove(key))
                 return;
 
-            for (int i = 0; i < _keyCount; i++)
+            _slotByKey.Remove(key);
+            if ((uint)slot < MaxProxyLights)
             {
-                if (_keys[i] != key)
-                    continue;
-
-                int lastIndex = _keyCount - 1;
-                _keys[i] = _keys[lastIndex];
-                _keys[lastIndex] = 0;
-                _keyCount = lastIndex;
-                return;
+                _keys[slot] = 0;
+                _freeProxyLightSlots.Enqueue(slot);
             }
+
+            _registeredCount = math.max(0, _registeredCount - 1);
         }
 
         public static int GetVisibleLightsBatch(
@@ -246,10 +283,16 @@ namespace Hecton8.World
                 return;
 
             _lightsByKey.Clear();
+            _slotByKey.Clear();
+            while (_freeProxyLightSlots.TryDequeue(out _))
+            {
+            }
+
             for (int i = 0; i < _keyCount; i++)
                 _keys[i] = 0;
 
             _keyCount = 0;
+            _registeredCount = 0;
         }
 
         public static void Shutdown()
@@ -260,15 +303,51 @@ namespace Hecton8.World
                 _lightsByKey.Dispose();
             }
 
+            if (_slotByKey.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(ProxyLightRegistry), nameof(_slotByKey));
+                _slotByKey.Dispose();
+            }
+
             if (_keys.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_keys);
                 _keys.Dispose();
             }
 
+            if (_freeProxyLightSlots.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProxyLightRegistry), nameof(_freeProxyLightSlots));
+                _freeProxyLightSlots.Dispose();
+            }
+
             _lightsByKey = default;
+            _slotByKey = default;
             _keys = default;
+            _freeProxyLightSlots = default;
             _keyCount = 0;
+            _registeredCount = 0;
+        }
+
+        private static bool TryAcquireProxyLightSlot(out int slot)
+        {
+            while (_freeProxyLightSlots.TryDequeue(out int recycledSlot))
+            {
+                if ((uint)recycledSlot < MaxProxyLights && _keys[recycledSlot] == 0)
+                {
+                    slot = recycledSlot;
+                    return true;
+                }
+            }
+
+            if (_keyCount >= MaxProxyLights)
+            {
+                slot = -1;
+                return false;
+            }
+
+            slot = _keyCount++;
+            return true;
         }
 
         private static bool IsValid(in ProxyLightData data)
@@ -292,11 +371,18 @@ namespace Hecton8.World
 
             float phase = (data.LastUpdateUnscaledTime * BrownoutFlickerFrequency) + (data.ShadowPhase01 * TwoPi);
             float flickerWave = math.abs(math.sin(phase) * math.sin((phase * 0.37f) + 1.618f));
-            float brownoutFlicker01 = math.pow(math.saturate(flickerWave), 0.35f);
+            float brownoutFlicker01 = FastBrownoutBias01(flickerWave);
             float supplyScalar = math.lerp(0.55f, 1f, math.saturate(supplyRatio));
             float intensityScalar = math.lerp(BrownoutIntensityFloor, BrownoutIntensityCeiling, brownoutFlicker01) * supplyScalar;
             data.Intensity = math.saturate(data.Intensity * intensityScalar);
             data.PowerFlicker01 = math.saturate(data.PowerFlicker01 * intensityScalar);
+        }
+
+        private static float FastBrownoutBias01(float value)
+        {
+            float x = math.saturate(value);
+            float denominator = x + (BrownoutBiasPadeK * (1f - x));
+            return denominator > 0.000001f ? x / denominator : 0f;
         }
 
         private static bool TryResolvePowerGridBrownout(out bool brownoutActive, out float supplyRatio)

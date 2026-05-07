@@ -34,6 +34,8 @@ namespace Hecton8.Optimization
         
         private int _totalRentCalls;
         private int _totalReuseCount;
+        private int _lastScreenWidth;
+        private int _lastScreenHeight;
         private bool _registeredService;
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -65,6 +67,7 @@ namespace Hecton8.Optimization
         
         private void OnEnable()
         {
+            CaptureScreenSetup();
             if (TryRegisterService())
                 SceneManager.sceneUnloaded += HandleSceneUnloaded;
         }
@@ -93,6 +96,7 @@ namespace Hecton8.Optimization
         /// <returns>RenderTexture instance (pooled or new).</returns>
         public RenderTexture Rent(int width, int height, RenderTextureFormat format, Component owner)
         {
+            DefragForCurrentScreenIfNeeded();
             ulong key = CalculateRTKey(width, height, format);
             Dictionary<ulong, Queue<RenderTexture>> pool = GetPoolForFormat(format);
             
@@ -152,6 +156,17 @@ namespace Hecton8.Optimization
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[RTPool] Return called with null RenderTexture");
 #endif
+                return;
+            }
+
+            DefragForCurrentScreenIfNeeded();
+            if (rt.width != _lastScreenWidth || rt.height != _lastScreenHeight)
+            {
+                RenderTextureLifecycleTracker mismatchLifecycle = GlobalRegistry.RenderTextureLifecycle;
+                if (mismatchLifecycle != null)
+                    mismatchLifecycle.RegisterDisposal(rt);
+
+                rt.Release();
                 return;
             }
             
@@ -222,6 +237,27 @@ namespace Hecton8.Optimization
             };
         }
 
+        private void CaptureScreenSetup()
+        {
+            _lastScreenWidth = Mathf.Max(1, Screen.width);
+            _lastScreenHeight = Mathf.Max(1, Screen.height);
+        }
+
+        private void DefragForCurrentScreenIfNeeded()
+        {
+            int currentWidth = Mathf.Max(1, Screen.width);
+            int currentHeight = Mathf.Max(1, Screen.height);
+            if (currentWidth == _lastScreenWidth && currentHeight == _lastScreenHeight)
+                return;
+
+            _lastScreenWidth = currentWidth;
+            _lastScreenHeight = currentHeight;
+            DiscardOffResolutionPoolEntries(_poolR8);
+            DiscardOffResolutionPoolEntries(_poolRG16);
+            DiscardOffResolutionPoolEntries(_poolRGBA16);
+            DiscardOffResolutionPoolEntries(_poolRGBA32);
+        }
+
         private bool TryRegisterService()
         {
             if (_registeredService)
@@ -280,6 +316,35 @@ namespace Hecton8.Optimization
                 total += enumerator.Current.Value.Count;
 
             return total;
+        }
+
+        private void DiscardOffResolutionPoolEntries(Dictionary<ulong, Queue<RenderTexture>> pool)
+        {
+            Dictionary<ulong, Queue<RenderTexture>>.Enumerator enumerator = pool.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                Queue<RenderTexture> queue = enumerator.Current.Value;
+                int count = queue.Count;
+                for (int i = 0; i < count; i++)
+                {
+                    RenderTexture rt = queue.Dequeue();
+                    if (rt == null)
+                        continue;
+
+                    if (rt.width == _lastScreenWidth && rt.height == _lastScreenHeight)
+                    {
+                        queue.Enqueue(rt);
+                        continue;
+                    }
+
+                    RenderTextureLifecycleTracker lifecycle = GlobalRegistry.RenderTextureLifecycle;
+                    if (lifecycle != null)
+                        lifecycle.RegisterDisposal(rt);
+
+                    rt.Release();
+                    Destroy(rt);
+                }
+            }
         }
         
         private void HandleSceneUnloaded(Scene scene)

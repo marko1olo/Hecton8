@@ -1004,7 +1004,9 @@ namespace Hecton8.Atmosphere
         {
             SyncWaterSurfaceFromPlayerMovement();
             AdvanceCycleTimer(deltaTime);
-            RotateSun();
+            bool skipWindDirectionMatrix = SystemDispatcher.IsLateFrameAmbientEventSheddingActive;
+            if (!skipWindDirectionMatrix)
+                RotateSun();
             TickEclipseTimer(deltaTime);
 
             EnvironmentState resolved = ResolveState();
@@ -1063,14 +1065,15 @@ namespace Hecton8.Atmosphere
             float inclinationRad = math.radians(_orbitalInclination);
             float azimuthRad     = math.radians(_sunOrbitalYAngle);
 
-            Matrix4x4 rotationMatrix =
-                BuildAxisAngleRotationMatrix(new float3(0f, 1f, 0f), azimuthRad) *
-                BuildAxisAngleRotationMatrix(new float3(0f, 0f, 1f), inclinationRad) *
-                BuildAxisAngleRotationMatrix(new float3(1f, 0f, 0f), dailyRad);
-            Vector3 sunForwardVector = rotationMatrix.MultiplyVector(Vector3.forward);
-            Vector3 sunUpVector = rotationMatrix.MultiplyVector(Vector3.up);
+            float4x4 rotationMatrix = math.mul(
+                math.mul(
+                    BuildAxisAngleRotationMatrix(new float3(0f, 1f, 0f), azimuthRad),
+                    BuildAxisAngleRotationMatrix(new float3(0f, 0f, 1f), inclinationRad)),
+                BuildAxisAngleRotationMatrix(new float3(1f, 0f, 0f), dailyRad));
+            float3 sunForwardMath = math.mul(rotationMatrix, new float4(0f, 0f, 1f, 0f)).xyz;
+            Vector3 sunForwardVector = new Vector3(sunForwardMath.x, sunForwardMath.y, sunForwardMath.z);
             if (sunForwardVector.sqrMagnitude > 0.0001f)
-                _sunLight.transform.rotation = Quaternion.LookRotation(sunForwardVector, sunUpVector);
+                _sunLight.transform.forward = sunForwardVector;
 
             float3 sunForward = new float3(sunForwardVector.x, sunForwardVector.y, sunForwardVector.z);
             _sunElevationDot = math.dot(-sunForward, new float3(0f, 1f, 0f));
@@ -1087,7 +1090,7 @@ namespace Hecton8.Atmosphere
             PublishCycleShaderGlobals(normalized);
         }
 
-        private static Matrix4x4 BuildAxisAngleRotationMatrix(float3 axis, float radians)
+        private static float4x4 BuildAxisAngleRotationMatrix(float3 axis, float radians)
         {
             axis = math.normalizesafe(axis, new float3(1f, 0f, 0f));
             float x = axis.x;
@@ -1097,17 +1100,21 @@ namespace Hecton8.Atmosphere
             float cos = math.cos(radians);
             float oneMinusCos = 1f - cos;
 
-            Matrix4x4 matrix = Matrix4x4.identity;
-            matrix.m00 = oneMinusCos * x * x + cos;
-            matrix.m01 = oneMinusCos * x * y - sin * z;
-            matrix.m02 = oneMinusCos * x * z + sin * y;
-            matrix.m10 = oneMinusCos * y * x + sin * z;
-            matrix.m11 = oneMinusCos * y * y + cos;
-            matrix.m12 = oneMinusCos * y * z - sin * x;
-            matrix.m20 = oneMinusCos * z * x - sin * y;
-            matrix.m21 = oneMinusCos * z * y + sin * x;
-            matrix.m22 = oneMinusCos * z * z + cos;
-            return matrix;
+            float m00 = oneMinusCos * x * x + cos;
+            float m01 = oneMinusCos * x * y - sin * z;
+            float m02 = oneMinusCos * x * z + sin * y;
+            float m10 = oneMinusCos * y * x + sin * z;
+            float m11 = oneMinusCos * y * y + cos;
+            float m12 = oneMinusCos * y * z - sin * x;
+            float m20 = oneMinusCos * z * x - sin * y;
+            float m21 = oneMinusCos * z * y + sin * x;
+            float m22 = oneMinusCos * z * z + cos;
+
+            return new float4x4(
+                new float4(m00, m10, m20, 0f),
+                new float4(m01, m11, m21, 0f),
+                new float4(m02, m12, m22, 0f),
+                new float4(0f, 0f, 0f, 1f));
         }
 
         private void PublishCycleShaderGlobals(float normalizedTime)

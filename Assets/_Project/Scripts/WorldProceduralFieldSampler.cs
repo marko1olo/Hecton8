@@ -2469,10 +2469,10 @@ namespace Hecton8.World
 
             value *= placementMode switch
             {
-                WorldPrefabFamilyProfile.PlacementMode.Landmark => Mathf.Lerp(0.8f, 1.2f, output.LandmarkBias),
+                WorldPrefabFamilyProfile.PlacementMode.Landmark => math.lerp(0.8f, 1.2f, math.saturate(output.LandmarkBias)),
                 WorldPrefabFamilyProfile.PlacementMode.Cluster => 1.05f,
                 WorldPrefabFamilyProfile.PlacementMode.Patch => 1.08f,
-                WorldPrefabFamilyProfile.PlacementMode.SpawnAnchor => Mathf.Lerp(0.85f, 1.15f, output.HazardBias),
+                WorldPrefabFamilyProfile.PlacementMode.SpawnAnchor => math.lerp(0.85f, 1.15f, math.saturate(output.HazardBias)),
                 _ => 1f
             };
 
@@ -2976,7 +2976,7 @@ namespace Hecton8.World
 
             float secondaryMultiplier = ResolveBiomeBuoyancyMultiplier(secondaryProfile);
             float blend = influence.Blend255 * (1f / 255f);
-            buoyancyMultiplier = Mathf.Lerp(primaryMultiplier, secondaryMultiplier, Mathf.Clamp01(blend));
+            buoyancyMultiplier = math.lerp(primaryMultiplier, secondaryMultiplier, math.saturate(blend));
             return true;
         }
 
@@ -3188,17 +3188,17 @@ namespace Hecton8.World
                 shelterBias,
                 landmarkBias);
             patternShapedValue = Mathf.Clamp01(patternShapedValue + biomeMatrixBonus * 0.92f);
-            value = Mathf.Lerp(value, patternShapedValue, ResolvePatternFieldBlend(sample.seafloorSource, sample.zone));
+            value = math.lerp(value, patternShapedValue, math.saturate(ResolvePatternFieldBlend(sample.seafloorSource, sample.zone)));
             value = ApplyManagedTectonicSpineSteepSlopeHeatBias(value, channel, sample);
 
             if (family != null)
             {
                 value *= family.placementMode switch
                 {
-                    WorldPrefabFamilyProfile.PlacementMode.Landmark => Mathf.Lerp(0.8f, 1.2f, landmarkBias),
+                    WorldPrefabFamilyProfile.PlacementMode.Landmark => math.lerp(0.8f, 1.2f, math.saturate(landmarkBias)),
                     WorldPrefabFamilyProfile.PlacementMode.Cluster => 1.05f,
                     WorldPrefabFamilyProfile.PlacementMode.Patch => 1.08f,
-                    WorldPrefabFamilyProfile.PlacementMode.SpawnAnchor => Mathf.Lerp(0.85f, 1.15f, hazardBias),
+                    WorldPrefabFamilyProfile.PlacementMode.SpawnAnchor => math.lerp(0.85f, 1.15f, math.saturate(hazardBias)),
                     _ => 1f
                 };
             }
@@ -3721,8 +3721,8 @@ namespace Hecton8.World
             if (availableDrop <= 0f)
                 return centerHeight;
 
-            float slope01 = Mathf.InverseLerp(thresholdDegrees, 78f, slopeDegrees);
-            float drop = Mathf.Min(Mathf.Max(0f, maxDropMeters), availableDrop * Mathf.Lerp(0.35f, 0.75f, slope01));
+            float slope01 = math.saturate((slopeDegrees - thresholdDegrees) / math.max(0.0001f, 78f - thresholdDegrees));
+            float drop = Mathf.Min(Mathf.Max(0f, maxDropMeters), availableDrop * math.lerp(0.35f, 0.75f, math.saturate(slope01)));
             return centerHeight - drop;
         }
 
@@ -3730,7 +3730,7 @@ namespace Hecton8.World
         {
             float broad = EvaluateNoise01(x + 311.1f, z - 177.4f, fieldNoiseScale * 0.55f);
             float detail = EvaluateNoise01(x - 91.6f, z + 441.2f, detailNoiseScale * 0.7f);
-            float depth = Mathf.Lerp(70f, 240f, (broad * 0.7f) + (detail * 0.3f));
+            float depth = math.lerp(70f, 240f, math.saturate((broad * 0.7f) + (detail * 0.3f)));
             return Mathf.Clamp(depth, 40f, 320f);
         }
 
@@ -4211,7 +4211,7 @@ namespace Hecton8.World
             {
                 float familyBias = ContainsFamilyFlags(zoneData.DominantFamilyDataIndex, zone != null ? zone.DominantBiomeFamily : null, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass);
                 if (!TryGetBiomeMatrixData(zoneData.DominantMatrixDataIndex, out BiomeMatrixData biomeData))
-                    return Mathf.Lerp(0.25f, 1f, familyBias);
+                    return math.lerp(0.25f, 1f, math.saturate(familyBias));
 
                 float rugged = Mathf.Clamp01((biomeData.LandmarkStrength + biomeData.RoutePressure) / 10f);
                 return Mathf.Clamp01((rugged * 0.65f) + (familyBias * 0.35f));
@@ -4223,7 +4223,7 @@ namespace Hecton8.World
             HectonBiomeMatrixProfile biome = zone.DominantMatrixBiome;
             float fallbackFamilyBias = ContainsFamilyFlags(-1, zone.DominantBiomeFamily, BiomeFamilyFlags.Rift | BiomeFamilyFlags.Granite | BiomeFamilyFlags.Tectonic | BiomeFamilyFlags.Volcanic | BiomeFamilyFlags.Glass);
             if (biome == null)
-                return Mathf.Lerp(0.25f, 1f, fallbackFamilyBias);
+                return math.lerp(0.25f, 1f, math.saturate(fallbackFamilyBias));
 
             float fallbackRugged = Mathf.Clamp01((biome.landmarkStrength + biome.routePressure) / 10f);
             return Mathf.Clamp01((fallbackRugged * 0.65f) + (fallbackFamilyBias * 0.35f));

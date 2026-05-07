@@ -11,6 +11,7 @@ using Hecton8.Visor;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -120,7 +121,7 @@ namespace Hecton8.UI
             if (parent == null)
                 return ReadOnlySpan<Transform>.Empty;
 
-            int childCount = Mathf.Min(parent.childCount, s_childSnapshotBuffer.Length);
+            int childCount = math.min(parent.childCount, s_childSnapshotBuffer.Length);
             for (int i = 0; i < childCount; i++)
                 s_childSnapshotBuffer[i] = parent.GetChild(i);
 
@@ -252,7 +253,7 @@ namespace Hecton8.UI
             }
 
             if (_pulse01 > 0f)
-                _pulse01 = Mathf.Max(0f, _pulse01 - (dt * PulseDecaySharpness));
+                _pulse01 = math.max(0f, _pulse01 - (dt * PulseDecaySharpness));
 
             if (_visibleTimer > 0f)
             {
@@ -263,9 +264,9 @@ namespace Hecton8.UI
 
             if (_fadeTimer > 0f)
             {
-                _fadeTimer = Mathf.Max(0f, _fadeTimer - dt);
+                _fadeTimer = math.max(0f, _fadeTimer - dt);
                 float alpha = FadeDuration > 0.0001f
-                    ? Mathf.Clamp01(_fadeTimer / FadeDuration)
+                    ? math.saturate(_fadeTimer / FadeDuration)
                     : 0f;
                 ApplyVisualState(alpha);
                 if (_fadeTimer > 0f)
@@ -284,7 +285,7 @@ namespace Hecton8.UI
         private void HandleSonarPingSent(float intensity)
         {
             _pendingPing = true;
-            _pulse01 = Mathf.Max(_pulse01, Mathf.Clamp01(intensity));
+            _pulse01 = math.max(_pulse01, math.saturate(intensity));
         }
 
         private void HandleSonarSnapshotUpdated(SpatialSonarSnapshot snapshot)
@@ -399,7 +400,7 @@ namespace Hecton8.UI
             _storageCapacityBarkActive = false;
             _visibleTimer = VisibleDuration;
             _fadeTimer = FadeDuration;
-            _pulse01 = Mathf.Max(_pulse01, Mathf.Clamp01(impulseEvent.Volume01));
+            _pulse01 = math.max(_pulse01, math.saturate(impulseEvent.Volume01));
             _headerDirty = true;
             _plainClassificationDirty = true;
             _lastRenderedClassification = ContactClassification.None;
@@ -482,7 +483,7 @@ namespace Hecton8.UI
             double maxDistanceSqr = (double)AnchorClassificationRadius * AnchorClassificationRadius;
             double nearestDistanceSqr = double.PositiveInfinity;
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(ResolveClassificationOriginRuntimePosition());
-            int limit = Mathf.Min(count, anchors.Length);
+            int limit = math.min(count, anchors.Length);
             for (int i = 0; i < limit; i++)
             {
                 AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchors[i]);
@@ -535,7 +536,7 @@ namespace Hecton8.UI
 
             _visibleTimer = VisibleDuration;
             _fadeTimer = FadeDuration;
-            _pulse01 = Mathf.Max(_pulse01, 1f);
+            _pulse01 = math.max(_pulse01, 1f);
             ApplyVisualState(1f);
             RegisterToTickManager();
         }
@@ -638,7 +639,7 @@ namespace Hecton8.UI
             cursor = AppendCharToBuffer('/', buffer, cursor);
             cursor = AppendCharToBuffer('/', buffer, cursor);
             cursor = AppendCharToBuffer(' ', buffer, cursor);
-            int intensityPercent = Mathf.RoundToInt(Mathf.Clamp01(volume01) * 100f);
+            int intensityPercent = (int)math.round(math.saturate(volume01) * 100f);
             if (cursor < buffer.Length &&
                 intensityPercent.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int intensityWritten))
             {
@@ -701,7 +702,7 @@ namespace Hecton8.UI
             if (_background != null)
             {
                 Color frameColor = _storageCapacityBarkActive ? StorageBarkFrameColor : FrameColor;
-                _background.color = new Color(frameColor.r, frameColor.g, frameColor.b, Mathf.Lerp(0f, frameColor.a, alpha));
+                _background.color = new Color(frameColor.r, frameColor.g, frameColor.b, math.lerp(0f, frameColor.a, alpha));
             }
 
             if (_headerLabel != null)
@@ -711,7 +712,12 @@ namespace Hecton8.UI
             {
                 Color baseValue = _storageCapacityBarkActive ? StorageBarkValueColor : ValueColor;
                 Color pulseValue = _storageCapacityBarkActive ? StorageBarkHeaderColor : HeaderColor;
-                _classificationLabel.color = Color.Lerp(baseValue, pulseValue, _pulse01 * 0.45f);
+                float pulseBlend = math.saturate(_pulse01 * 0.45f);
+                _classificationLabel.color = new Color(
+                    math.lerp(baseValue.r, pulseValue.r, pulseBlend),
+                    math.lerp(baseValue.g, pulseValue.g, pulseBlend),
+                    math.lerp(baseValue.b, pulseValue.b, pulseBlend),
+                    math.lerp(baseValue.a, pulseValue.a, pulseBlend));
             }
         }
 
@@ -953,7 +959,7 @@ namespace Hecton8.UI
             {
                 case SequenceState.Typing:
                     _visibleCharacterProgress += dt * CharacterRevealRate;
-                    int visibleCharacters = Mathf.Min(_visibleCharacterTarget, Mathf.FloorToInt(_visibleCharacterProgress));
+                    int visibleCharacters = math.min(_visibleCharacterTarget, (int)math.floor(_visibleCharacterProgress));
                     if (_consoleLabel.maxVisibleCharacters != visibleCharacters)
                         _consoleLabel.maxVisibleCharacters = visibleCharacters;
 
@@ -971,7 +977,7 @@ namespace Hecton8.UI
                     break;
 
                 case SequenceState.Fade:
-                    _overlayGroup.alpha = Mathf.Lerp(_overlayGroup.alpha, 0f, 1f - Mathf.Exp(-FadeSharpness * dt));
+                    _overlayGroup.alpha = math.lerp(_overlayGroup.alpha, 0f, math.saturate(FadeSharpness * dt));
                     if (_overlayGroup.alpha <= HiddenAlphaCutoff)
                     {
                         HideOverlay();
@@ -1020,7 +1026,7 @@ namespace Hecton8.UI
         {
             float integrity01 = _survivalSystem != null ? _survivalSystem.IntegrityNormalized : 0f;
             float energy01 = _survivalSystem != null ? _survivalSystem.EnergyNormalized : 0f;
-            float hullStress01 = _survivalSystem != null ? Mathf.Clamp01(1f - integrity01) : 1f;
+            float hullStress01 = _survivalSystem != null ? math.saturate(1f - integrity01) : 1f;
             string hullStatus = ResolveIntegrityStatus(integrity01);
             string powerStatus = energy01 >= 0.25f ? DefaultStatusOk : DefaultStatusDegraded;
             string linkStatus = hullStress01 <= 0.18f ? DefaultStatusOk : DefaultStatusDegraded;
@@ -1373,8 +1379,8 @@ namespace Hecton8.UI
             ref CaptionSlot slot = ref _slots[slotIndex];
             slot.Active = true;
             slot.Age = 0f;
-            slot.Duration = Mathf.Max(MinDuration, request.DurationSeconds > 0f ? request.DurationSeconds : DefaultDuration);
-            slot.Intensity = Mathf.Clamp01(request.Intensity);
+            slot.Duration = math.max(MinDuration, request.DurationSeconds > 0f ? request.DurationSeconds : DefaultDuration);
+            slot.Intensity = math.saturate(request.Intensity);
             slot.WorldPosition = request.WorldPosition;
             string captionText = request.CaptionText;
             if (slot.Label != null &&
@@ -1539,11 +1545,11 @@ namespace Hecton8.UI
                 return;
 
             Vector2 direction = ResolveScreenDirection(slot.WorldPosition);
-            float radius = Mathf.Lerp(RadiusMin, RadiusMax, slot.Intensity);
+            float radius = math.lerp(RadiusMin, RadiusMax, slot.Intensity);
             slot.Root.anchoredPosition = direction * radius + new Vector2(0f, VerticalBias);
 
-            float remaining01 = 1f - Mathf.Clamp01(slot.Age / Mathf.Max(MinDuration, slot.Duration));
-            slot.Group.alpha = Mathf.Sin(remaining01 * Mathf.PI * 0.5f);
+            float remaining01 = 1f - math.saturate(slot.Age / math.max(MinDuration, slot.Duration));
+            slot.Group.alpha = math.sin(remaining01 * math.PI * 0.5f);
         }
 
         private Vector2 ResolveScreenDirection(Vector3 worldPosition)
@@ -1560,11 +1566,11 @@ namespace Hecton8.UI
             if (local.z < 0f)
                 planar = -planar;
 
-            float magnitude = planar.magnitude;
-            if (magnitude <= 0.0001f)
+            float magnitudeSq = planar.sqrMagnitude;
+            if (magnitudeSq <= 0.0001f)
                 return Vector2.up;
 
-            return planar / magnitude;
+            return planar * math.rsqrt(magnitudeSq);
         }
 
         private void HideAllSlots()
@@ -1614,7 +1620,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(captionText) || destination == null || destination.Length == 0)
                 return 0;
 
-            return Mathf.Min(captionText.Length, destination.Length);
+            return math.min(captionText.Length, destination.Length);
         }
 
         private static bool IsCaptionTruncated(string captionText, int displayLength, char[] destination)

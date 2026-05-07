@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.AtlasSignal;
 using Hecton8.Building;
 using Hecton8.Core;
@@ -12,6 +13,7 @@ using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Hecton.Localization;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Economy
@@ -32,6 +34,8 @@ namespace Hecton8.Economy
         private const int KnownClustersPerResource = 4;
         private const int MaxSectorExtractionRecords = 64;
         private const float SectorEdgeLengthMeters = 1000f;
+        private const float InverseSectorEdgeLengthMeters = 1f / SectorEdgeLengthMeters;
+        private const int SectorsPerAupCell = 5;
         private const string DefaultTitaniumDirectiveItemId = "Data_TitaniumScrap";
         private const int TitaniumHoardingThresholdUnits = 500;
         private const float TitaniumHoardingIngredientMultiplier = 4f;
@@ -69,13 +73,15 @@ namespace Hecton8.Economy
         }
 #pragma warning restore 0649
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct ResourceClusterRecord
         {
             public int ItemHashId;
             public int ObservationCount;
-            public Vector3 Position;
+            public AbsoluteUniversePosition PositionAup;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct SectorExtractionRecord
         {
             public int ItemHashId;
@@ -121,6 +127,12 @@ namespace Hecton8.Economy
         private bool _registeredSlowTickable;
         private bool _serviceRegistered;
         private int _cachedDirectiveCount;
+        private int _runtimeVersion;
+
+        /// <summary>
+        /// Monotonic cache key incremented when sector extraction or scarcity totals mutate.
+        /// </summary>
+        public int RuntimeVersion => _runtimeVersion;
 
         /// <summary>
         /// Save priority keeps scarcity state in the world band before player inventory consumers.
@@ -196,7 +208,7 @@ namespace Hecton8.Economy
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                float ingredientMultiplier = GetIngredientMultiplier(cost.item.PersistentId);
+                float ingredientMultiplier = GetIngredientMultiplier(cost.item.PersistentHashId);
                 weightedSum += ingredientMultiplier * cost.amount;
                 totalIngredientUnits += cost.amount;
             }
@@ -208,14 +220,13 @@ namespace Hecton8.Economy
         }
 
         /// <summary>
-        /// Returns the current scarcity multiplier for a single resource item.
+        /// Returns the current scarcity multiplier for a single resource item hash.
         /// </summary>
-        public float GetIngredientMultiplier(string itemId)
+        public float GetIngredientMultiplier(int itemHashId)
         {
-            if (string.IsNullOrWhiteSpace(itemId))
+            if (itemHashId == 0)
                 return 1f;
 
-            int itemHashId = LocHash.Compute(itemId);
             if (!_collectedByItemHash.TryGetValue(itemHashId, out int collectedCount) || collectedCount <= 0)
                 return 1f;
 
@@ -231,10 +242,16 @@ namespace Hecton8.Economy
         /// </summary>
         public float GetSectorSpawnRateScalar(int itemHashId, Vector3 worldPosition)
         {
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return GetSectorSpawnRateScalar(itemHashId, in positionAup);
+        }
+
+        public float GetSectorSpawnRateScalar(int itemHashId, in AbsoluteUniversePosition worldPosition)
+        {
             if (inflationProfile == null || itemHashId == 0)
                 return 1f;
 
-            return inflationProfile.EvaluateSpawnRateScalar(itemHashId, GetSectorExtractedUnits(itemHashId, worldPosition));
+            return inflationProfile.EvaluateSpawnRateScalar(itemHashId, GetSectorExtractedUnits(itemHashId, in worldPosition));
         }
 
         /// <summary>
@@ -242,10 +259,16 @@ namespace Hecton8.Economy
         /// </summary>
         public float GetSectorValueScalar(int itemHashId, Vector3 worldPosition)
         {
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return GetSectorValueScalar(itemHashId, in positionAup);
+        }
+
+        public float GetSectorValueScalar(int itemHashId, in AbsoluteUniversePosition worldPosition)
+        {
             if (inflationProfile == null || itemHashId == 0)
                 return 1f;
 
-            return inflationProfile.EvaluateValueScalar(itemHashId, GetSectorExtractedUnits(itemHashId, worldPosition));
+            return inflationProfile.EvaluateValueScalar(itemHashId, GetSectorExtractedUnits(itemHashId, in worldPosition));
         }
 
         /// <summary>
@@ -253,10 +276,16 @@ namespace Hecton8.Economy
         /// </summary>
         public float GetSectorCraftInflationScalar(int itemHashId, Vector3 worldPosition)
         {
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return GetSectorCraftInflationScalar(itemHashId, in positionAup);
+        }
+
+        public float GetSectorCraftInflationScalar(int itemHashId, in AbsoluteUniversePosition worldPosition)
+        {
             if (inflationProfile == null || itemHashId == 0)
                 return 0f;
 
-            return inflationProfile.EvaluateCraftInflationScalar(itemHashId, GetSectorExtractedUnits(itemHashId, worldPosition));
+            return inflationProfile.EvaluateCraftInflationScalar(itemHashId, GetSectorExtractedUnits(itemHashId, in worldPosition));
         }
 
         /// <summary>
@@ -267,18 +296,29 @@ namespace Hecton8.Economy
             return ResolveInflatedIngredientAmount(itemHashId, baseAmount, worldPosition, 0);
         }
 
+        public int ResolveInflatedIngredientAmount(int itemHashId, int baseAmount, in AbsoluteUniversePosition worldPosition)
+        {
+            return ResolveInflatedIngredientAmount(itemHashId, baseAmount, in worldPosition, 0);
+        }
+
         /// <summary>
         /// Resolves the inflated ingredient amount using sector extraction and accessible-storage hoarding pressure.
         /// </summary>
         public int ResolveInflatedIngredientAmount(int itemHashId, int baseAmount, Vector3 worldPosition, int accessibleUnits)
         {
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return ResolveInflatedIngredientAmount(itemHashId, baseAmount, in positionAup, accessibleUnits);
+        }
+
+        public int ResolveInflatedIngredientAmount(int itemHashId, int baseAmount, in AbsoluteUniversePosition worldPosition, int accessibleUnits)
+        {
             if (itemHashId == 0 || baseAmount <= 0)
                 return Mathf.Max(0, baseAmount);
 
             float multiplier = Mathf.Max(
-                1f + GetSectorCraftInflationScalar(itemHashId, worldPosition),
+                1f + GetSectorCraftInflationScalar(itemHashId, in worldPosition),
                 ResolveHoardingIngredientMultiplier(itemHashId, accessibleUnits));
-            return Mathf.Max(baseAmount, Mathf.CeilToInt(baseAmount * multiplier));
+            return Mathf.Max(baseAmount, (int)math.ceil(baseAmount * multiplier));
         }
 
         private static float ResolveHoardingIngredientMultiplier(int itemHashId, int accessibleUnits)
@@ -295,27 +335,27 @@ namespace Hecton8.Economy
         {
             if ((InteractionEventType)payload.EventType != InteractionEventType.ItemCollected ||
                 payload.Quantity <= 0 ||
-                !InteractionEvents.TryResolveItem(in payload, out ItemData item) ||
-                item == null)
+                payload.ItemHashId == 0u)
             {
                 return;
             }
 
-            if (!item.isRawResource && item.category != ItemCategory.Material)
-                return;
-
-            int itemHashId = payload.ItemHashId != 0u
-                ? unchecked((int)payload.ItemHashId)
-                : LocHash.Compute(item.PersistentId);
+            int itemHashId = unchecked((int)payload.ItemHashId);
             if (itemHashId == 0)
                 return;
+
+            if (InteractionEvents.TryResolveItem(in payload, out ItemData item) &&
+                item != null &&
+                !item.isRawResource &&
+                item.category != ItemCategory.Material)
+            {
+                return;
+            }
 
             if (_collectedByItemHash.TryGetValue(itemHashId, out int currentCount))
                 _collectedByItemHash[itemHashId] = currentCount + payload.Quantity;
             else
                 _collectedByItemHash[itemHashId] = payload.Quantity;
-
-            _itemIdsByHash[itemHashId] = item.PersistentId;
 
             if (InteractionEvents.TryResolveInteractor(in payload, out Transform interactor) &&
                 interactor != null)
@@ -325,6 +365,10 @@ namespace Hecton8.Economy
                 AccumulateSectorExtraction(itemHashId, position, payload.Quantity);
             }
 
+            unchecked
+            {
+                _runtimeVersion++;
+            }
             EvaluateScarcityDirectives();
         }
 
@@ -345,9 +389,8 @@ namespace Hecton8.Economy
                     break;
 
                 int itemHashId = enumerator.Current.Key;
-                if (!_itemIdsByHash.TryGetValue(itemHashId, out string itemId) || string.IsNullOrWhiteSpace(itemId))
-                    continue;
-
+                _itemIdsByHash.TryGetValue(itemHashId, out string itemId);
+                dto.itemHashIds[dto.entryCount] = itemHashId;
                 dto.itemIds[dto.entryCount] = itemId;
                 dto.collectedCounts[dto.entryCount] = Mathf.Max(0, enumerator.Current.Value);
                 dto.entryCount++;
@@ -366,17 +409,20 @@ namespace Hecton8.Economy
                 return;
 
             ResourceScarcityDTO dto = data.resourceScarcity;
-            if (dto.itemIds == null || dto.collectedCounts == null || dto.entryCount <= 0)
+            if (dto.collectedCounts == null || dto.entryCount <= 0)
                 return;
 
-            int count = Mathf.Min(dto.entryCount, dto.itemIds.Length, dto.collectedCounts.Length);
+            int hashCapacity = dto.itemHashIds != null ? dto.itemHashIds.Length : 0;
+            int itemIdCapacity = dto.itemIds != null ? dto.itemIds.Length : 0;
+            int count = Mathf.Min(
+                dto.entryCount,
+                Mathf.Min(Mathf.Max(hashCapacity, itemIdCapacity), dto.collectedCounts.Length));
             for (int i = 0; i < count; i++)
             {
-                string itemId = dto.itemIds[i];
-                if (string.IsNullOrWhiteSpace(itemId))
-                    continue;
-
-                int itemHashId = LocHash.Compute(itemId);
+                string itemId = i < itemIdCapacity ? dto.itemIds[i] : null;
+                int itemHashId = i < hashCapacity ? dto.itemHashIds[i] : 0;
+                if (itemHashId == 0 && !string.IsNullOrWhiteSpace(itemId))
+                    itemHashId = LocHash.Compute(itemId);
                 if (itemHashId == 0)
                     continue;
 
@@ -385,7 +431,13 @@ namespace Hecton8.Economy
                     continue;
 
                 _collectedByItemHash[itemHashId] = collectedCount;
-                _itemIdsByHash[itemHashId] = itemId;
+                if (!string.IsNullOrWhiteSpace(itemId))
+                    _itemIdsByHash[itemHashId] = itemId;
+            }
+
+            unchecked
+            {
+                _runtimeVersion++;
             }
         }
 
@@ -403,7 +455,9 @@ namespace Hecton8.Economy
                 return;
 
             Transform playerTransform = GlobalRegistry.Player != null ? GlobalRegistry.Player.PlayerTransform : null;
-            Vector3 playerPosition = playerTransform != null ? playerTransform.position : Vector3.zero;
+            AbsoluteUniversePosition playerAup = playerTransform != null
+                ? AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position)
+                : default;
             for (int definitionIndex = 0; definitionIndex < _cachedDirectiveCount; definitionIndex++)
             {
                 int itemHashId = _directiveItemHashes[definitionIndex];
@@ -414,7 +468,7 @@ namespace Hecton8.Economy
                 uint markerTargetHash = _directiveMarkerTargetHashes[definitionIndex];
                 Vector3 markerWorldPosition = default;
                 if (markerTargetHash == 0u)
-                    TryResolveNearestKnownCluster(itemHashId, playerPosition, out markerWorldPosition);
+                    TryResolveNearestKnownCluster(itemHashId, in playerAup, out markerWorldPosition);
 
                 bool shouldActivate = inventory.CountTotal(itemHashId) < Mathf.Max(0, _directiveCriticalThresholds[definitionIndex]);
                 if (!questManager.UpsertProceduralDirective(
@@ -440,9 +494,7 @@ namespace Hecton8.Economy
 
         private int ResolveDirectiveItemHash(DirectiveResourceDefinition definition)
         {
-            return definition.item != null && !string.IsNullOrWhiteSpace(definition.item.PersistentId)
-                ? LocHash.Compute(definition.item.PersistentId)
-                : 0;
+            return definition.item != null ? definition.item.PersistentHashId : 0;
         }
 
         private string ResolveDirectiveTitle(DirectiveResourceDefinition definition)
@@ -469,6 +521,7 @@ namespace Hecton8.Economy
             if (definitionIndex < 0)
                 return;
 
+            AbsoluteUniversePosition worldAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
             int sliceStart = definitionIndex * KnownClustersPerResource;
             int bestSlot = -1;
             double bestDistanceSq = double.MaxValue;
@@ -485,11 +538,10 @@ namespace Hecton8.Economy
                 if (record.ItemHashId != itemHashId)
                     continue;
 
-                double distanceSq = ResolveAupDistanceSq(record.Position, worldPosition);
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in record.PositionAup, in worldAup);
                 if (distanceSq < 64d)
                 {
                     record.ObservationCount++;
-                    record.Position = Vector3.Lerp(record.Position, worldPosition, 1f / Mathf.Max(1, record.ObservationCount));
                     _knownClusters[slot] = record;
                     return;
                 }
@@ -508,11 +560,11 @@ namespace Hecton8.Economy
             {
                 ItemHashId = itemHashId,
                 ObservationCount = 1,
-                Position = worldPosition
+                PositionAup = worldAup
             };
         }
 
-        private bool TryResolveNearestKnownCluster(int itemHashId, Vector3 origin, out Vector3 clusterPosition)
+        private bool TryResolveNearestKnownCluster(int itemHashId, in AbsoluteUniversePosition originAup, out Vector3 clusterPosition)
         {
             clusterPosition = default;
             int definitionIndex = FindDirectiveDefinitionIndex(itemHashId);
@@ -529,7 +581,7 @@ namespace Hecton8.Economy
                 if (record.ItemHashId != itemHashId)
                     continue;
 
-                double distanceSq = ResolveAupDistanceSq(record.Position, origin);
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in record.PositionAup, in originAup);
                 if (distanceSq >= bestDistanceSq)
                     continue;
 
@@ -540,7 +592,7 @@ namespace Hecton8.Economy
             if (bestSlot < 0)
                 return false;
 
-            clusterPosition = _knownClusters[bestSlot].Position;
+            clusterPosition = ToRuntimePosition(in _knownClusters[bestSlot].PositionAup);
             return true;
         }
 
@@ -596,10 +648,16 @@ namespace Hecton8.Economy
 
         private int GetSectorExtractedUnits(int itemHashId, Vector3 worldPosition)
         {
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return GetSectorExtractedUnits(itemHashId, in positionAup);
+        }
+
+        private int GetSectorExtractedUnits(int itemHashId, in AbsoluteUniversePosition worldPosition)
+        {
             if (itemHashId == 0)
                 return 0;
 
-            int sectorKey = PackSectorKey(worldPosition);
+            int sectorKey = PackSectorKey(in worldPosition);
             for (int i = 0; i < _sectorExtractionRecords.Length; i++)
             {
                 SectorExtractionRecord record = _sectorExtractionRecords[i];
@@ -652,20 +710,25 @@ namespace Hecton8.Economy
         private static int PackSectorKey(Vector3 runtimePosition)
         {
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            var absolutePosition = aup.ToAbsoluteDouble3();
-            int sectorX = (int)Math.Floor(absolutePosition.x / SectorEdgeLengthMeters);
-            int sectorZ = (int)Math.Floor(absolutePosition.z / SectorEdgeLengthMeters);
+            return PackSectorKey(in aup);
+        }
+
+        private static int PackSectorKey(in AbsoluteUniversePosition aup)
+        {
+            int localSectorX = math.clamp((int)(aup.LocalX * InverseSectorEdgeLengthMeters), 0, SectorsPerAupCell - 1);
+            int localSectorZ = math.clamp((int)(aup.LocalZ * InverseSectorEdgeLengthMeters), 0, SectorsPerAupCell - 1);
+            int sectorX = unchecked((int)(aup.GridX * SectorsPerAupCell + localSectorX));
+            int sectorZ = unchecked((int)(aup.GridZ * SectorsPerAupCell + localSectorZ));
             unchecked
             {
                 return (sectorX * 73856093) ^ (sectorZ * 19349663);
             }
         }
 
-        private static double ResolveAupDistanceSq(Vector3 fromRuntimePosition, Vector3 toRuntimePosition)
+        private static Vector3 ToRuntimePosition(in AbsoluteUniversePosition position)
         {
-            AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromRuntimePosition);
-            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntimePosition);
-            return AbsoluteUniversePosition.DistanceSq(in fromAup, in toAup);
+            float3 runtime = position.ToRuntimeFloat3();
+            return new Vector3(runtime.x, runtime.y, runtime.z);
         }
 
         private void CacheDirectiveDefinitions()
@@ -703,7 +766,7 @@ namespace Hecton8.Economy
                         Mathf.Max(0f, definition.markerHeightOffset),
                         definition.phaseGate);
 
-                    if (string.Equals(definition.item.PersistentId, DefaultTitaniumDirectiveItemId, StringComparison.Ordinal))
+                    if (itemHashId == _TitaniumDirectiveHashId)
                         hasTitaniumDirective = true;
 
                     writeIndex++;

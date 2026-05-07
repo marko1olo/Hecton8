@@ -456,7 +456,7 @@ public class HectonPlayerSpawner : MonoBehaviour
             // Каждые 16 точек — отдаём кадр Unity (плавный loading screen)
             if ((spiralIndex & 15) == 0)
             {
-                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                await AwaitableDebtMonitor.NextFrameAsync(ct);
             }
         }
 
@@ -538,7 +538,7 @@ public class HectonPlayerSpawner : MonoBehaviour
             // Каждые 16 точек — yield для плавности
             if ((spiralIndex & 15) == 0)
             {
-                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                await AwaitableDebtMonitor.NextFrameAsync(ct);
             }
         }
 

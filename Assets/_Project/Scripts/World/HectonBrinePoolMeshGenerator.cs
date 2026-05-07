@@ -24,7 +24,10 @@ namespace Hecton8.World
         private const int MaxGeneratedBrinePools = 32;
         private const string BrineToxicityLayerName = "BrineToxicity";
         private const string BrinePoolObjectName = "BrinePool";
+        private const float BrineSurfaceNormalTile = 64f;
         private static readonly int BrineToxicityLayer = LayerMask.NameToLayer(BrineToxicityLayerName);
+        private static readonly int BrineNormalTileId = Shader.PropertyToID("_BrineNormalTile");
+        private static readonly int BrineNormalPanSpeedId = Shader.PropertyToID("_BrineNormalPanSpeed");
 
         [Header("Rendering")]
         [Tooltip("Material assigned to generated flat brine pool surfaces.")]
@@ -138,6 +141,7 @@ namespace Hecton8.World
             for (int i = 0; i < _activePools.Count; i++)
             {
                 ActiveBrinePool pool = _activePools[i];
+                HectonBrineToxicMudGrid.UnregisterCell(pool.HazardId);
                 HectonHazardManager.Unregister(pool.HazardId);
                 if (pool.GameObject == null)
                     continue;
@@ -202,17 +206,18 @@ namespace Hecton8.World
             MeshFilter meshFilter = poolObject.AddComponent<MeshFilter>();
             MeshRenderer meshRenderer = poolObject.AddComponent<MeshRenderer>();
             if (brineMaterial != null)
+            {
+                ConfigureBrineMaterial(brineMaterial);
                 meshRenderer.sharedMaterial = brineMaterial;
+            }
 
             Mesh poolMesh = EnsureSharedPoolMesh();
             meshFilter.sharedMesh = poolMesh;
             CreateFogVolume(poolObject.transform, poolMesh);
 
-            BoxCollider collider = poolObject.AddComponent<BoxCollider>();
-            collider.isTrigger = true;
-            collider.center = new Vector3(0f, -colliderDepthMeters * 0.5f, 0f);
-            collider.size = new Vector3(1f, math.max(0.01f, colliderDepthMeters), 1f);
-            // Cinematic hazard fake: HazardZoneManager owns toxic incursion checks; the collider remains as disabled authoring fallback.
+            MeshCollider collider = poolObject.AddComponent<MeshCollider>();
+            collider.sharedMesh = poolMesh;
+            // Cinematic hazard fake: HazardZoneManager owns toxic incursion checks; the baked collider remains as disabled authoring fallback.
             collider.enabled = false;
             poolObject.AddComponent<ToxinHazard>();
             return poolObject;
@@ -258,9 +263,9 @@ namespace Hecton8.World
             Vector2[] uvs =
             {
                 new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(0f, 1f),
-                new Vector2(1f, 1f)
+                new Vector2(BrineSurfaceNormalTile, 0f),
+                new Vector2(0f, BrineSurfaceNormalTile),
+                new Vector2(BrineSurfaceNormalTile, BrineSurfaceNormalTile)
             };
             // COLD ALLOC: Vector3[4] - one-time shared brine quad normals - owner: HectonBrinePoolMeshGenerator
             Vector3[] normals =
@@ -277,6 +282,12 @@ namespace Hecton8.World
             mesh.SetNormals(normals);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
+            JobHandle bakeHandle = new BrinePoolMeshBakeJob
+            {
+                MeshId = mesh.GetEntityId()
+            }.Schedule();
+            // COLD SYNC JOB: one-time shared brine quad bake before MeshCollider fallback assignment; not a frame tick path.
+            bakeHandle.Complete();
             _sharedPoolMesh = mesh;
             return mesh;
         }
@@ -298,8 +309,18 @@ namespace Hecton8.World
         {
             float sizeX = math.max(cellSizeMeters, (poolBounds.MaxX - poolBounds.MinX + 1) * cellSizeMeters);
             float sizeZ = math.max(cellSizeMeters, (poolBounds.MaxZ - poolBounds.MinZ + 1) * cellSizeMeters);
-            float radius = math.sqrt(sizeX * sizeX + sizeZ * sizeZ) * 0.5f;
+            float radius = math.sqrt((sizeX * sizeX) + (sizeZ * sizeZ)) * 0.5f;
+            HectonBrineToxicMudGrid.RegisterCell(hazardId, runtimeCenter, sizeX, sizeZ, colliderDepthMeters);
             HectonHazardManager.Register(hazardId, runtimeCenter, hazardIntensity, radius, HazardType.Toxicity, hazardVisorGlitchBias);
+        }
+
+        private static void ConfigureBrineMaterial(Material material)
+        {
+            if (material.HasProperty(BrineNormalTileId))
+                material.SetFloat(BrineNormalTileId, BrineSurfaceNormalTile);
+
+            if (material.HasProperty(BrineNormalPanSpeedId))
+                material.SetVector(BrineNormalPanSpeedId, new Vector4(0.012f, 0.004f, -0.006f, 0.009f));
         }
 
         private static int ResolveBrinePhysicsLayer()
@@ -321,6 +342,17 @@ namespace Hecton8.World
         {
             public GameObject GameObject;
             public int HazardId;
+        }
+
+        private struct BrinePoolMeshBakeJob : IJob
+        {
+            public EntityId MeshId;
+
+            public void Execute()
+            {
+                if (EntityId.ToULong(MeshId) != 0ul)
+                    global::UnityEngine.Physics.BakeMesh(MeshId, false);
+            }
         }
     }
 }

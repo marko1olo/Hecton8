@@ -196,7 +196,6 @@ CPU-visible path:
 
 1. GPU writes the aggregate mask.
 2. `AsyncGPUReadback.Request(_gpuAbyssalAggregateBuffer)` is queued into a 3-slot ring.
-3. On later fixed ticks, completed requests are consumed.
 4. If bit 5 is present, `GlobalWeatherDirector.RegisterBiolumeSurge(4f)` is called.
 
 This keeps audio/VFX signaling asynchronous and avoids a main-thread stall.

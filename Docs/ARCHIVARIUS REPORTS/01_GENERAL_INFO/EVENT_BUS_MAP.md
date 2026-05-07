@@ -32,6 +32,13 @@ This removes direct managed string-delegate fanout from the migrated buses and m
 
 The current architecture map classifies the first-party bus surface into exactly five arteries. This is an ownership summary over existing source queues, not a new dispatcher.
 
+Authority rule:
+
+- `Core`, `Env`, `Player`, `Base`, and `AI` are the only documented first-party cross-domain communication arteries.
+- Any direct `Action`, `Func`, C# `event`, `delegate`, or `UnityEvent` chain that crosses a domain boundary is legacy debt unless this document explicitly marks it as local, inspector-only, or modding-only.
+- Local callbacks inside a single owner are not a Mega-Bus lane and must not be documented as cross-domain authority.
+- `HectonEventBus` remains a separate managed modding boundary; it is not the first-party bus authority for gameplay systems.
+
 | Artery | Scope | Representative lanes |
 |---|---|---|
 | Core | bootstrap, registry, save/load, localization, telemetry, object-pool diagnostics, scene bootstrap, mod registry | `BootstrapEvents`, `GlobalRegistry`, `SaveEvents`, `LocalizationEvents`, `GlobalTelemetryBus`, `ObjectPoolDiagnostics`, `SceneBootstrap`, `ModRegistryEvents` |
@@ -100,6 +107,7 @@ Primary first-party event files currently tied to this topology:
 ## Open Risk
 
 - `HectonEventBus` remains a separate managed typed bus and is not replaced by these queue lanes.
-- Multiple older static `Action<T>` buses still exist outside this migrated set.
+- Current source scan found one static `Action`-typed callback property in `SaveThumbnailSystem.cs`; it is an async GPU readback bridge, not a documented cross-domain bus lane.
+- Instance-level `Action`, `delegate`, and `UnityEvent` surfaces still exist across the script tree and remain owner-by-owner leak/debt audit candidates when they cross domain boundaries.
 - Current reachable editor readback is not compile-clean proof. Latest visible console slice shows package-side MCP `ManageAsset` failures on `ResourceNodeTemplate_*` assets, not first-party event-bus compile errors.
 - Runtime wiring, subscriber completeness, and teardown behavior still remain `PENDING VERIFICATION`.

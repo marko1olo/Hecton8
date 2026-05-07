@@ -271,6 +271,7 @@ namespace Hecton8.World
                 PlateUniformity = 0.78f,
                 DomainWarpMeters = 1450f,
                 DomainWarpFrequency = 0.00011f,
+                SlopeNoiseFrequency = 0.00003125f,
                 MacroExponentialFalloff = 3.1f,
                 ShelfRunMeters = ShelfRunMeters,
                 ShelfTargetSlopeDegrees = ShelfTargetSlopeDegrees,

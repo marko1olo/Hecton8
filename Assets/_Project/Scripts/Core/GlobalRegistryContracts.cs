@@ -711,6 +711,189 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Diegetic scanner-interference sink used by cold-path memory recovery flows.
+    /// </summary>
+    public interface IScannerInterferenceUiSink
+    {
+        /// <summary>
+        /// Enables or disables the scanner interference overlay without text churn.
+        /// </summary>
+        void SetScannerInterferenceActive(bool active);
+    }
+
+    /// <summary>
+    /// Authored VR chest socket identifiers exposed through the somatic provider contract.
+    /// </summary>
+    public enum VRSomaticChestSocketId : byte
+    {
+        PDA = 0,
+        FlareTool = 1
+    }
+
+    /// <summary>
+    /// Immutable AUP-backed chest socket pose.
+    /// </summary>
+    public readonly struct VRSomaticChestSocketPose
+    {
+        public VRSomaticChestSocketPose(
+            AbsoluteUniversePosition socketAup,
+            Vector3 runtimePosition,
+            Quaternion runtimeRotation)
+        {
+            SocketAup = socketAup;
+            RuntimePosition = runtimePosition;
+            RuntimeRotation = runtimeRotation;
+        }
+
+        public AbsoluteUniversePosition SocketAup { get; }
+        public Vector3 RuntimePosition { get; }
+        public Quaternion RuntimeRotation { get; }
+    }
+
+    /// <summary>
+    /// Immutable near-field head contact state emitted by the VR somatic provider.
+    /// </summary>
+    public readonly struct VRSomaticCollisionState
+    {
+        public VRSomaticCollisionState(
+            bool hasContact,
+            AbsoluteUniversePosition contactAup,
+            Vector3 runtimePoint,
+            Vector3 runtimeNormal,
+            float distanceMeters,
+            float intensity01,
+            float impactSpeedMetersPerSecond)
+        {
+            HasContact = hasContact;
+            ContactAup = contactAup;
+            RuntimePoint = runtimePoint;
+            RuntimeNormal = runtimeNormal;
+            DistanceMeters = distanceMeters;
+            Intensity01 = intensity01;
+            ImpactSpeedMetersPerSecond = impactSpeedMetersPerSecond;
+        }
+
+        public bool HasContact { get; }
+        public AbsoluteUniversePosition ContactAup { get; }
+        public Vector3 RuntimePoint { get; }
+        public Vector3 RuntimeNormal { get; }
+        public float DistanceMeters { get; }
+        public float Intensity01 { get; }
+        public float ImpactSpeedMetersPerSecond { get; }
+    }
+
+    /// <summary>
+    /// Immutable frame snapshot for VR somatic suit systems.
+    /// </summary>
+    public readonly struct VRSomaticSnapshot
+    {
+        public VRSomaticSnapshot(
+            bool isActive,
+            AbsoluteUniversePosition headAup,
+            Vector3 headRuntimePosition,
+            Quaternion headRuntimeRotation,
+            Quaternion visorHudWorldRotation,
+            float playerStress01,
+            float oxygen01,
+            float depthMeters,
+            float nearFieldCollision01,
+            float condensation01)
+        {
+            IsActive = isActive;
+            HeadAup = headAup;
+            HeadRuntimePosition = headRuntimePosition;
+            HeadRuntimeRotation = headRuntimeRotation;
+            VisorHudWorldRotation = visorHudWorldRotation;
+            PlayerStress01 = playerStress01;
+            Oxygen01 = oxygen01;
+            DepthMeters = depthMeters;
+            NearFieldCollision01 = nearFieldCollision01;
+            Condensation01 = condensation01;
+        }
+
+        public static VRSomaticSnapshot Inactive => new VRSomaticSnapshot(
+            false,
+            default,
+            Vector3.zero,
+            Quaternion.identity,
+            Quaternion.identity,
+            0f,
+            1f,
+            0f,
+            0f,
+            0f);
+
+        public bool IsActive { get; }
+        public AbsoluteUniversePosition HeadAup { get; }
+        public Vector3 HeadRuntimePosition { get; }
+        public Quaternion HeadRuntimeRotation { get; }
+        public Quaternion VisorHudWorldRotation { get; }
+        public float PlayerStress01 { get; }
+        public float Oxygen01 { get; }
+        public float DepthMeters { get; }
+        public float NearFieldCollision01 { get; }
+        public float Condensation01 { get; }
+    }
+
+    /// <summary>
+    /// VR-only somatic suit bridge. PC/console callers must depend on this interface and receive the dummy provider.
+    /// </summary>
+    public interface IVRSomaticProvider
+    {
+        bool IsActive { get; }
+        VRSomaticSnapshot CurrentSnapshot { get; }
+
+        void BindRig(
+            Transform hmdTransform,
+            Transform visorHudRoot,
+            Transform pdaChestSocket,
+            Transform flareToolChestSocket,
+            AudioSource breathingSource,
+            AudioLowPassFilter breathingLowPassFilter);
+
+        bool TryGetChestSocket(VRSomaticChestSocketId socketId, out VRSomaticChestSocketPose socketPose);
+        bool TryGetNearFieldCollision(out VRSomaticCollisionState collisionState);
+    }
+
+    /// <summary>
+    /// PC/console null-object provider. It never touches XR APIs, physics jobs, shaders, audio, or haptics.
+    /// </summary>
+    public sealed class PcVRSomaticProvider : IVRSomaticProvider
+    {
+        // COLD ALLOC: PcVRSomaticProvider[1] - null-object fallback for GlobalRegistry.VRSomatic - owner: GlobalRegistry
+        public static readonly PcVRSomaticProvider Shared = new PcVRSomaticProvider();
+
+        private PcVRSomaticProvider()
+        {
+        }
+
+        public bool IsActive => false;
+        public VRSomaticSnapshot CurrentSnapshot => VRSomaticSnapshot.Inactive;
+
+        public void BindRig(
+            Transform hmdTransform,
+            Transform visorHudRoot,
+            Transform pdaChestSocket,
+            Transform flareToolChestSocket,
+            AudioSource breathingSource,
+            AudioLowPassFilter breathingLowPassFilter)
+        {
+        }
+
+        public bool TryGetChestSocket(VRSomaticChestSocketId socketId, out VRSomaticChestSocketPose socketPose)
+        {
+            socketPose = default;
+            return false;
+        }
+
+        public bool TryGetNearFieldCollision(out VRSomaticCollisionState collisionState)
+        {
+            collisionState = default;
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Registry-backed AR waypoint projection service. Static callers route through
     /// <see cref="GlobalRegistry"/> instead of owning a local singleton.
     /// </summary>
@@ -1205,6 +1388,12 @@ namespace Hecton8.Core
         bool IsCompleted(string questId);
 
         /// <summary>
+        /// Returns true when the native quest flag bit is set for the supplied stable flag hash.
+        /// </summary>
+        /// <param name="flagId">Stable quest flag hash.</param>
+        bool GetFlag(uint flagId);
+
+        /// <summary>
         /// Resolves the authored quest identifier from a stable quest hash.
         /// </summary>
         /// <param name="questHash">Stable quest hash.</param>
@@ -1517,6 +1706,7 @@ namespace Hecton8.Core
         DynamicDifficultyRuntime = 117,
         ToolHapticsRuntime = 118,
         ARWaypointRuntime = 119,
+        VRSomaticProvider = 120,
         Unknown = 255
     }
 
@@ -1536,6 +1726,22 @@ namespace Hecton8.Core
             GlobalRegistryServiceSlot serviceSlot,
             object previousService,
             object currentService);
+    }
+
+    /// <summary>
+    /// Ref-forwarding hot-swap hook for systems that cache service pointers and must rebind during the registry event.
+    /// </summary>
+    public interface IGlobalRegistryHotSwapRefListener
+    {
+        /// <summary>
+        /// Called before the compatibility hot-swap notification with a mutable local current-service reference.
+        /// Implementers should update cached service fields here instead of polling <see cref="GlobalRegistry"/> per frame.
+        /// </summary>
+        /// <param name="serviceSlot">Registry slot that changed.</param>
+        /// <param name="currentService">Current service instance, or null when the slot was cleared.</param>
+        void OnGlobalRegistryServiceRebound(
+            GlobalRegistryServiceSlot serviceSlot,
+            ref object currentService);
     }
 
     /// <summary>

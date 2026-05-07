@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
@@ -426,12 +427,13 @@ namespace Hecton8.Core
         /// </summary>
         public static void Shutdown()
         {
-            JobHandle noDependency = default;
-            DisposeNativeArray(ref _states, noDependency);
-            DisposeNativeArray(ref _valueSlots, noDependency);
-            DisposeNativeArray(ref _historyStates, noDependency);
-            DisposeNativeArray(ref _pdaLogEventHashes, noDependency);
-            DisposeNativeArray(ref _pdaLogEventTimestamps, noDependency);
+            JobHandle disposeHandle = default;
+            DisposeNativeArray(ref _states, ref disposeHandle);
+            DisposeNativeArray(ref _valueSlots, ref disposeHandle);
+            DisposeNativeArray(ref _historyStates, ref disposeHandle);
+            DisposeNativeArray(ref _pdaLogEventHashes, ref disposeHandle);
+            DisposeNativeArray(ref _pdaLogEventTimestamps, ref disposeHandle);
+            DispatcherJobSwap.TryComplete(ref disposeHandle, forceComplete: true);
 
             _pdaLogWriteIndex = 0;
             _pdaLogCount = 0;
@@ -439,13 +441,13 @@ namespace Hecton8.Core
             _historyCount = 0;
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, ref JobHandle dependency) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose(dependency);
+            dependency = array.Dispose(dependency);
             array = default;
         }
 

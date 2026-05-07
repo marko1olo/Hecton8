@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -339,7 +339,7 @@ namespace Hecton8.World
             PersistentWorldDeltaRecord tombstone = FromRecord(in record, chunkSizeMeters);
             if ((record.Flags & PersistentWorldItemFlags.ResourceNodeDestroyed) == 0)
                 tombstone.ItemPersistentIdHash = 0UL;
-            tombstone.Quantity = 1;
+            tombstone.Quantity = (ushort)math.clamp(record.Quantity > 0 ? record.Quantity : 1, 1, ushort.MaxValue);
             tombstone.ItemFlags = (byte)(record.Flags | PersistentWorldItemFlags.Deleted);
             return tombstone;
         }
@@ -398,6 +398,48 @@ namespace Hecton8.World
         public bool IsDeleted => ((PersistentWorldItemFlags)ItemFlags & PersistentWorldItemFlags.Deleted) != 0;
 
         public bool IsValid => InstanceUid != 0u && (IsDeleted || Quantity > 0);
+    }
+
+    [BurstCompile]
+    internal struct TombstoneDecayCollectJob : IJob
+    {
+        [ReadOnly]
+        public NativeArray<PersistentWorldCompactDeltaRecord> DeltaRecords;
+        public NativeList<int> ExpiredDeltaIndices;
+        public int CurrentDay;
+        public int Threshold;
+        public int TimeToLiveDays;
+
+        public void Execute()
+        {
+            ExpiredDeltaIndices.Clear();
+            int tombstoneCount = 0;
+            for (int i = 0; i < DeltaRecords.Length; i++)
+            {
+                if (DeltaRecords[i].IsDeleted)
+                    tombstoneCount++;
+            }
+
+            if (tombstoneCount <= Threshold)
+                return;
+
+            for (int i = DeltaRecords.Length - 1; i >= 0 && tombstoneCount > Threshold; i--)
+            {
+                PersistentWorldCompactDeltaRecord compactRecord = DeltaRecords[i];
+                if (!compactRecord.IsDeleted)
+                    continue;
+
+                int tombstoneDay = compactRecord.Quantity > 0 ? compactRecord.Quantity : 1;
+                if (CurrentDay - tombstoneDay <= TimeToLiveDays)
+                    continue;
+
+                if (ExpiredDeltaIndices.Length >= ExpiredDeltaIndices.Capacity)
+                    return;
+
+                ExpiredDeltaIndices.AddNoResize(i);
+                tombstoneCount--;
+            }
+        }
     }
 
     [DisallowMultipleComponent]
@@ -497,8 +539,13 @@ namespace Hecton8.World
         private const string SectorOverrideSnapshotRecordsLabel = "sectorOverrideSnapshotRecords";
         private const string SectorOverrideEntityStatesLabel = "sectorOverrideEntityStates";
         private const string SectorEntityStateAsyncWriteStatesLabel = "sectorEntityStateAsyncWriteStates";
+        private const int TombstoneDecayThreshold = 1024;
+        private const int TombstoneTimeToLiveDays = 3;
+        private const double TombstoneInGameDaySeconds = 86400d;
+        private const float TombstoneDecayFrostTickSeconds = 5f;
+        private const int MaxTombstoneDecayAppliesPerLateFrame = 128;
         private static readonly int3 ApexFaunaTombstoneChunkId = new int3(int.MinValue, 0, 0);
-        private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
+        private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 333L);
         private static readonly long HydrationPerformanceWarningBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
         private static readonly uint _hydrationApplyBudgetWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.HydrationApplyBudget"));
         private static readonly uint _hydrationApplyContextHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.HydrationApply"));
@@ -577,6 +624,7 @@ namespace Hecton8.World
         private NativeHashMap<ulong, ushort> _deltaItemIndexByHash;
         private NativeList<ulong> _deltaItemHashes;
         private NativeParallelMultiHashMap<uint, PersistentWorldCompactDeltaRecord> _deltaRecordsByChunk;
+        private NativeList<int> _tombstoneDecayExpiredIndices;
         private NativeList<PersistentWorldDeltaRecord> _saveSnapshotDeltas;
         private NativeArray<PoolSlotData> _poolSlotData;
         private NativeHashMap<ulong, int> _guidToPoolIndex;
@@ -625,6 +673,12 @@ namespace Hecton8.World
         private List<SaveBinaryStorage.IndexedSectorEntryInfo> _indexedSectorDirectory;
         private Dictionary<long, SectorOverrideState> _sectorOverrideStates;
         private HashSet<int> _residentWorldPrefabHashes;
+        private JobHandle _tombstoneDecaySweepHandle;
+        private float _nextTombstoneDecaySweepTime;
+        private int _tombstoneDecayApplyCursor;
+        private int _tombstoneDecayCurrentDay;
+        private bool _tombstoneDecaySweepScheduled;
+        private bool _tombstoneDecayApplyPending;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -633,6 +687,15 @@ namespace Hecton8.World
         }
 
         public static PersistentWorldRegistry Instance => GlobalRegistry.PersistentWorldRegistry;
+
+        internal bool TryGetIndexedSaveHealth(out string absolutePath, out long currentSectorHash)
+        {
+            absolutePath = _indexedSectorSavePath;
+            currentSectorHash = _playerSectorValid
+                ? PackSectorHash(_currentPlayerSector)
+                : InvalidPagedSectorHash;
+            return _indexedSectorPagingEnabled && !string.IsNullOrEmpty(absolutePath);
+        }
 
         /// <summary>
         /// Returns true when a sandboxed mod command targets protected runtime space near the active player core.
@@ -762,6 +825,8 @@ namespace Hecton8.World
             _deltaItemHashes = new NativeList<ulong>(maxTrackedItems, Allocator.Persistent);
             // COLD ALLOC: NativeParallelMultiHashMap<uint,PersistentWorldCompactDeltaRecord>[maxTrackedItems] â€” chunk-hash to compact delta lookup â€” owner: PersistentWorldRegistry
             _deltaRecordsByChunk = new NativeParallelMultiHashMap<uint, PersistentWorldCompactDeltaRecord>(maxTrackedItems, Allocator.Persistent);
+            // COLD ALLOC: NativeList<int>[maxTrackedItems] - FrostTick tombstone decay candidate indices - owner: PersistentWorldRegistry
+            _tombstoneDecayExpiredIndices = new NativeList<int>(maxTrackedItems, Allocator.Persistent);
             // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[maxTrackedItems] â€” immutable save snapshot for background binary writes â€” owner: PersistentWorldRegistry
             _saveSnapshotDeltas = new NativeList<PersistentWorldDeltaRecord>(maxTrackedItems, Allocator.Persistent);
             // COLD ALLOC: NativeArray<PoolSlotData>[maxTrackedItems] â€” persistent hydration slot state store â€” owner: PersistentWorldRegistry
@@ -831,6 +896,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            CompleteTombstoneDecayBeforeDeltaMutation();
             CancelHydrationSession(clearQueue: false);
             TryUnregisterRuntimeLoops();
             TryUnregisterService();
@@ -847,6 +913,7 @@ namespace Hecton8.World
             DehydrateAll(syncTransformsBackToRecords: false);
             DrainPendingEntityStateTempWrites(int.MaxValue);
             DisposePendingEntityStateTempWritesDeferred();
+            CompleteTombstoneDecayBeforeDeltaMutation();
             UnregisterNativeMemorySentinelAllocations();
 
             if (_records.IsCreated)
@@ -890,6 +957,9 @@ namespace Hecton8.World
 
             if (_deltaRecordsByChunk.IsCreated)
                 _deltaRecordsByChunk.Dispose();
+
+            if (_tombstoneDecayExpiredIndices.IsCreated)
+                _tombstoneDecayExpiredIndices.Dispose();
 
             if (_saveSnapshotDeltas.IsCreated)
                 _saveSnapshotDeltas.Dispose();
@@ -962,10 +1032,16 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             DrainPendingEntityStateTempWrites(MaxEntityStateTempWriteCompletionsPerTick);
+            CompleteTombstoneDecaySweepIfReady(MaxTombstoneDecayAppliesPerLateFrame, forceComplete: false);
+            if (_tombstoneDecayApplyPending)
+                ApplyCollectedTombstoneDecay(MaxTombstoneDecayAppliesPerLateFrame);
         }
 
         public void SlowTick()
         {
+            float now = Time.unscaledTime;
+            ScheduleTombstoneDecaySweepIfDue(now);
+
             if (!WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform) || _playerTransform == null)
                 return;
 
@@ -1426,7 +1502,7 @@ namespace Hecton8.World
                 ItemPersistentIdHash = 0UL,
                 InstanceUid = instanceUid,
                 PackedLocalPosition = 0u,
-                Quantity = 1,
+                Quantity = (ushort)ResolveTombstoneDayIndex(),
                 ItemFlags = (byte)PersistentWorldItemFlags.Deleted,
                 Reserved = 0
             };
@@ -1567,7 +1643,7 @@ namespace Hecton8.World
         {
             uint state = instanceUid != 0u ? instanceUid : 0xA511E9B3u;
             float angle = NextScatter01(ref state) * (math.PI * 2f);
-            float radius = math.sqrt(NextScatter01(ref state)) * DropScatterRadiusMeters;
+            float radius = NextScatter01(ref state) * DropScatterRadiusMeters;
             float lift = math.lerp(DropScatterMinLiftMeters, DropScatterMaxLiftMeters, NextScatter01(ref state));
 
             Vector3 offset;
@@ -1674,6 +1750,11 @@ namespace Hecton8.World
 
         internal void RestoreFromLoadedRecords(PersistentWorldDeltaRecord[] loadedRecords, bool scheduleHydration = true)
         {
+            CompleteTombstoneDecayBeforeDeltaMutation();
+            if (_tombstoneDecayExpiredIndices.IsCreated)
+                _tombstoneDecayExpiredIndices.Clear();
+            _tombstoneDecayApplyCursor = 0;
+            _tombstoneDecayApplyPending = false;
             CancelHydrationSession(clearQueue: true);
             DehydrateAll(syncTransformsBackToRecords: false);
             if (!_indexedSectorPagingEnabled)
@@ -1690,6 +1771,7 @@ namespace Hecton8.World
             _deltaItemIndexByHash.Clear();
             _deltaItemHashes.Clear();
             _deltaRecordsByChunk.Clear();
+            _tombstoneDecayExpiredIndices.Clear();
             _saveSnapshotDeltas.Clear();
             _playerChunkValid = false;
             _hasLastHydrationScanAup = false;
@@ -1981,13 +2063,17 @@ namespace Hecton8.World
 
                 if (!ApplySectorOverrides(desiredSectorHashes, loadedSectorRecords, out string overrideError))
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError($"[PersistentWorldRegistry] Sector override merge failed: {overrideError}");
+#endif
                     return;
                 }
 
                 if (!TryLoadSectorEntityStateOverrides(desiredSectorHashes, out stagedEntityStates, out string entityStateError))
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError($"[PersistentWorldRegistry] Sector entity-state restore failed: {entityStateError}");
+#endif
                     return;
                 }
 
@@ -2096,7 +2182,7 @@ namespace Hecton8.World
                    !_resolvedItemCatalog.AreWorldPrefabsReadyNonAlloc(_worldPrefabPrewarmHashScratch))
             {
                 _resolvedItemCatalog.PumpWorldPrefabDispatchTickets();
-                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
             }
         }
 
@@ -2737,7 +2823,7 @@ namespace Hecton8.World
                                             unchecked((uint)pendingEntityStateWrites),
                                             MaxPendingEntityStateTempWrites,
                                             ref _lastEntityStateThrottleTelemetryFrame);
-                                        await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
                                         await Awaitable.BackgroundThreadAsync();
                                     }
                                 }
@@ -2814,7 +2900,7 @@ namespace Hecton8.World
                     if (pendingEntityStateWrites > 0 && string.IsNullOrEmpty(failureMessage))
                     {
                         await Awaitable.MainThreadAsync();
-                        await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
                         await Awaitable.BackgroundThreadAsync();
                     }
                 }
@@ -2831,7 +2917,9 @@ namespace Hecton8.World
             {
                 DisposeEntityStateWriteWorkDeferred(entityStateWriteWork);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(failureMessage);
+#endif
                 return false;
             }
 
@@ -3138,7 +3226,9 @@ namespace Hecton8.World
 
                     if (!SaveBinaryStorage.TryCommitIndexedPersistentWorldSectorOverride(_indexedSectorSavePath, state.TempPath, out string error))
                     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         Debug.LogError($"[PersistentWorldRegistry] Sector override commit failed for 0x{sectorHash:X16}: {error}");
+#endif
                     }
                     else if (!string.IsNullOrEmpty(state.EntityStateTempPath) && File.Exists(state.EntityStateTempPath))
                     {
@@ -3623,9 +3713,9 @@ namespace Hecton8.World
                             continue;
                         }
 
-                        float distance = Mathf.Sqrt(distanceSq);
-                        float moveDistance = Mathf.Min(stepMeters, distance);
-                        Vector3 migratedPosition = currentPosition + (toAttractor / distance) * moveDistance;
+                        float invDistance = math.rsqrt(distanceSq);
+                        float moveScalar = math.min(stepMeters * invDistance, 1f);
+                        Vector3 migratedPosition = currentPosition + toAttractor * moveScalar;
                         AbsoluteUniversePosition migratedAup = AbsoluteUniversePosition.FromRuntimePosition(migratedPosition);
                         state.Position = migratedAup.ToAlignedBlit();
                         _entityStateScratch.Add(state);
@@ -4592,7 +4682,7 @@ namespace Hecton8.World
                     if (!TryProcessHydrationBurst())
                         break;
 
-                    await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
                 }
             }
             catch (OperationCanceledException)
@@ -4793,8 +4883,10 @@ namespace Hecton8.World
 
                 if (drainedCount >= maxDrainCount && _dehydrateQueue.TryDequeue(out _))
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError(
                         $"[PersistentWorldRegistry] ResetPoolSlots dehydrate queue drain exceeded watchdog. recordCount={_records.Length}");
+#endif
 
                     while (_dehydrateQueue.TryDequeue(out _))
                     {
@@ -4840,6 +4932,7 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeHashMap(_deltaItemIndexByHash, MemoryBudgetOwnerName, nameof(_deltaItemIndexByHash), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeList(_deltaItemHashes, MemoryBudgetOwnerName, nameof(_deltaItemHashes), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_deltaRecordsByChunk, MemoryBudgetOwnerName, nameof(_deltaRecordsByChunk), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeList(_tombstoneDecayExpiredIndices, MemoryBudgetOwnerName, nameof(_tombstoneDecayExpiredIndices), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeList(_saveSnapshotDeltas, MemoryBudgetOwnerName, nameof(_saveSnapshotDeltas), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_poolSlotData, MemoryBudgetOwnerName, nameof(_poolSlotData), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeHashMap(_guidToPoolIndex, MemoryBudgetOwnerName, nameof(_guidToPoolIndex), NativeAllocationLifetime.Session);
@@ -4865,6 +4958,7 @@ namespace Hecton8.World
             NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_deltaItemIndexByHash));
             NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, nameof(_deltaItemHashes));
             NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(MemoryBudgetOwnerName, nameof(_deltaRecordsByChunk));
+            NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, nameof(_tombstoneDecayExpiredIndices));
             NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, nameof(_saveSnapshotDeltas));
             NativeMemorySentinel.UnregisterNativeArray(_poolSlotData);
             NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_guidToPoolIndex));
@@ -4891,6 +4985,7 @@ namespace Hecton8.World
                 GetNativeHashMapBytes(_deltaItemIndexByHash) +
                 GetNativeListBytes(_deltaItemHashes) +
                 GetNativeParallelMultiHashMapBytes(_deltaRecordsByChunk) +
+                GetNativeListBytes(_tombstoneDecayExpiredIndices) +
                 GetNativeListBytes(_saveSnapshotDeltas) +
                 GetNativeArrayBytes(_poolSlotData) +
                 GetNativeHashMapBytes(_guidToPoolIndex) +
@@ -4946,6 +5041,7 @@ namespace Hecton8.World
 
         private void UpsertDeltaRecord(in PersistentWorldItemRecord record)
         {
+            CompleteTombstoneDecayBeforeDeltaMutation();
             if (!_deltaRecords.IsCreated || !_deltaRecordIndexByEntityId.IsCreated || record.InstanceUid == 0u)
                 return;
 
@@ -4976,6 +5072,7 @@ namespace Hecton8.World
 
         private void RemoveDeltaRecord(uint instanceUid)
         {
+            CompleteTombstoneDecayBeforeDeltaMutation();
             if (!_deltaRecords.IsCreated || !_deltaRecordIndexByEntityId.IsCreated || instanceUid == 0u)
                 return;
 
@@ -5364,11 +5461,15 @@ namespace Hecton8.World
 
         private void UpsertDeletedTombstone(in PersistentWorldItemRecord record)
         {
+            CompleteTombstoneDecayBeforeDeltaMutation();
+
             RegisterDeletedInstanceUid(record.InstanceUid);
             if (!_deltaRecords.IsCreated || !_deltaRecordIndexByEntityId.IsCreated || record.InstanceUid == 0u)
                 return;
 
-            if (!TryBuildCompactDeltaRecord(in record, out PersistentWorldCompactDeltaRecord compactRecord))
+            PersistentWorldItemRecord tombstoneRecord = record;
+            tombstoneRecord.Quantity = tombstoneRecord.Quantity > 1 ? tombstoneRecord.Quantity : ResolveTombstoneDayIndex();
+            if (!TryBuildCompactDeltaRecord(in tombstoneRecord, out PersistentWorldCompactDeltaRecord compactRecord))
                 return;
 
             if (_deltaRecordIndexByEntityId.TryGetValue(record.InstanceUid, out int deltaIndex))
@@ -5382,6 +5483,139 @@ namespace Hecton8.World
 
             _deltaRecordIndexByEntityId.TryAdd(record.InstanceUid, _deltaRecords.Length);
             _deltaRecords.AddNoResize(compactRecord);
+        }
+
+        private void ScheduleTombstoneDecaySweepIfDue(float now)
+        {
+            if (_tombstoneDecaySweepScheduled ||
+                _tombstoneDecayApplyPending ||
+                !_deltaRecords.IsCreated ||
+                !_tombstoneDecayExpiredIndices.IsCreated ||
+                now < _nextTombstoneDecaySweepTime)
+            {
+                return;
+            }
+
+            _nextTombstoneDecaySweepTime = now + TombstoneDecayFrostTickSeconds;
+            _tombstoneDecayApplyCursor = 0;
+            _tombstoneDecayCurrentDay = ResolveTombstoneDayIndex();
+            TombstoneDecayCollectJob decayJob = new TombstoneDecayCollectJob
+            {
+                DeltaRecords = _deltaRecords.AsArray(),
+                ExpiredDeltaIndices = _tombstoneDecayExpiredIndices,
+                CurrentDay = _tombstoneDecayCurrentDay,
+                Threshold = TombstoneDecayThreshold,
+                TimeToLiveDays = TombstoneTimeToLiveDays
+            };
+            _tombstoneDecaySweepHandle = decayJob.Schedule();
+            _tombstoneDecaySweepScheduled = true;
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private void CompleteTombstoneDecayBeforeDeltaMutation()
+        {
+            CompleteTombstoneDecaySweepIfReady(int.MaxValue, forceComplete: true);
+            if (_tombstoneDecayApplyPending)
+                ApplyCollectedTombstoneDecay(int.MaxValue);
+        }
+
+        private void CompleteTombstoneDecaySweepIfReady(int maxApplies, bool forceComplete)
+        {
+            if (!_tombstoneDecaySweepScheduled)
+                return;
+
+            if (!forceComplete && !_tombstoneDecaySweepHandle.IsCompleted)
+                return;
+
+            if (forceComplete)
+            {
+                DispatcherJobSwap.TryComplete(ref _tombstoneDecaySweepHandle, forceComplete: true);
+            }
+            else
+            {
+                DispatcherJobSwap.TryComplete(ref _tombstoneDecaySweepHandle, forceComplete: false);
+            }
+
+            _tombstoneDecaySweepScheduled = false;
+            _tombstoneDecayApplyPending = true;
+            ApplyCollectedTombstoneDecay(math.max(1, maxApplies));
+        }
+
+        private void ApplyCollectedTombstoneDecay(int maxApplies)
+        {
+            if (!_tombstoneDecayExpiredIndices.IsCreated ||
+                !_deltaRecords.IsCreated ||
+                !_deltaRecordIndexByEntityId.IsCreated ||
+                _tombstoneDecayExpiredIndices.Length <= 0)
+            {
+                _tombstoneDecayApplyCursor = 0;
+                _tombstoneDecayApplyPending = false;
+                return;
+            }
+
+            int appliedCount = 0;
+            while (_tombstoneDecayApplyCursor < _tombstoneDecayExpiredIndices.Length && appliedCount < maxApplies)
+            {
+                int deltaIndex = _tombstoneDecayExpiredIndices[_tombstoneDecayApplyCursor++];
+                if ((uint)deltaIndex >= (uint)_deltaRecords.Length)
+                    continue;
+
+                PersistentWorldCompactDeltaRecord compactRecord = _deltaRecords[deltaIndex];
+                if (!compactRecord.IsDeleted)
+                    continue;
+
+                int tombstoneDay = compactRecord.Quantity > 0 ? compactRecord.Quantity : 1;
+                if (_tombstoneDecayCurrentDay - tombstoneDay <= TombstoneTimeToLiveDays)
+                    continue;
+
+                RemoveDeltaRecordAtSwapBack(deltaIndex, in compactRecord);
+                appliedCount++;
+            }
+
+            if (appliedCount > 0)
+                RebuildDeltaChunkLookup();
+
+            if (_tombstoneDecayApplyCursor < _tombstoneDecayExpiredIndices.Length)
+                return;
+
+            _tombstoneDecayExpiredIndices.Clear();
+            _tombstoneDecayApplyCursor = 0;
+            _tombstoneDecayApplyPending = false;
+        }
+
+        private void RemoveDeltaRecordAtSwapBack(int deltaIndex, in PersistentWorldCompactDeltaRecord compactRecord)
+        {
+            if (deltaIndex < 0 || deltaIndex >= _deltaRecords.Length)
+                return;
+
+            if (TryResolveDeltaRecord(compactRecord, out PersistentWorldDeltaRecord expandedRecord) &&
+                expandedRecord.IsResourceNodeDestroyed &&
+                expandedRecord.ItemPersistentIdHash != 0UL &&
+                _resourceNodeTombstoneIds.IsCreated)
+            {
+                _resourceNodeTombstoneIds.Remove(expandedRecord.ItemPersistentIdHash);
+            }
+
+            UnregisterDeletedInstanceUid(compactRecord.InstanceUid);
+            _deltaRecordIndexByEntityId.Remove(compactRecord.InstanceUid);
+
+            int lastIndex = _deltaRecords.Length - 1;
+            PersistentWorldCompactDeltaRecord lastRecord = _deltaRecords[lastIndex];
+            _deltaRecords.RemoveAtSwapBack(deltaIndex);
+            if (deltaIndex < lastIndex)
+            {
+                _deltaRecordIndexByEntityId.Remove(lastRecord.InstanceUid);
+                _deltaRecordIndexByEntityId.TryAdd(lastRecord.InstanceUid, deltaIndex);
+            }
+        }
+
+        private static int ResolveTombstoneDayIndex()
+        {
+            double playSeconds = GlobalRegistry.Save != null
+                ? GlobalRegistry.Save.CurrentPlayTimeSeconds
+                : Time.timeAsDouble;
+            int day = (int)math.floor(math.max(0d, playSeconds) / TombstoneInGameDaySeconds);
+            return math.clamp(day, 1, ushort.MaxValue);
         }
 
         private bool TryFindRecordIndexByInstanceUid(uint instanceUid, out int recordIndex)
@@ -5475,7 +5709,9 @@ namespace Hecton8.World
             uint sequence = unchecked((uint)Interlocked.Increment(ref _nextInstanceUidCounter));
             if (sequence == 0u || sequence > InstanceUidCounterMask)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[PersistentWorldRegistry] Exhausted 24-bit persistent item instance UID counter.");
+#endif
                 return false;
             }
 
@@ -5510,7 +5746,9 @@ namespace Hecton8.World
                     sequence = 1u;
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError($"[PersistentWorldRegistry] Failed to reserve resource-node tombstone UID. tombstoneId={tombstoneId:X16}");
+#endif
             return false;
         }
 
@@ -5540,7 +5778,9 @@ namespace Hecton8.World
                     sequence = 1u;
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError($"[PersistentWorldRegistry] Failed to reserve resource-node metamorphosis UID. tombstoneId={tombstoneId:X16}");
+#endif
             return false;
         }
 

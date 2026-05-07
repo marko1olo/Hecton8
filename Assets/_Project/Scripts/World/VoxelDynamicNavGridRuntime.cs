@@ -38,10 +38,12 @@ namespace Hecton8.World
         private const float DynamicObstacleChunkSizeMeters = 16f;
         private const double PartialClearanceDilationBudgetMilliseconds = 1.0d;
         private const int NavGridIndexMask = 0x0FFF;
+        private const int ToxicBodySafeNodeSearchRadiusCells = 4;
         private const int DynamicClearanceFallbackScheduleCount = 1;
         private const float DynamicClearanceWarningCooldownSeconds = 5f;
         private const int MaxPersistentDynamicObstacleCount = 512;
         private const int DirtyVolumeQueueCapacity = 32;
+        private const int DeferredDirtyVolumeQueueCapacity = 16;
         private const int PendingObstacleClearQueueCapacity = 16;
         private const int PureVoidScanBlockSize = 64;
         private const float PersistentObstacleMergeDistanceMeters = 2f;
@@ -54,6 +56,8 @@ namespace Hecton8.World
         private static readonly Dictionary<int, VolumeRecord> _records = new Dictionary<int, VolumeRecord>(16);
         // COLD ALLOC: List<DirtyVolumeRequest>(32) - temporary dirty-volume spill buffer while consuming queue entries - owner: VoxelDynamicNavGridRuntime
         private static readonly List<DirtyVolumeRequest> _dirtyRequestSpill = new List<DirtyVolumeRequest>(32);
+        // COLD ALLOC: List<DeferredDirtyVolumeRequest>(16) - slow-tick delayed voxel nav rebuild markers for chthonic pillar volumes - owner: VoxelDynamicNavGridRuntime
+        private static readonly List<DeferredDirtyVolumeRequest> _deferredDirtyVolumes = new List<DeferredDirtyVolumeRequest>(16);
         // COLD ALLOC: List<PortalNode>(128) - rebuilt macro portal graph nodes spanning all active navgrid chunks - owner: VoxelDynamicNavGridRuntime
         private static readonly List<PortalNode> _portalGraphNodes = new List<PortalNode>(128);
         // COLD ALLOC: List<RouteNodeState>(128) - reusable portal A* node state scratch - owner: VoxelDynamicNavGridRuntime
@@ -489,6 +493,13 @@ namespace Hecton8.World
             public int RuntimeStamp;
         }
 
+        private struct DeferredDirtyVolumeRequest
+        {
+            public HectonVoxelVolume Volume;
+            public int RuntimeStamp;
+            public int RemainingSlowTicks;
+        }
+
         private struct DynamicObstacleClearRequest
         {
             public float3 Center;
@@ -642,6 +653,69 @@ namespace Hecton8.World
                 RuntimeStamp = volume.RuntimeStamp
             });
             _dirtyVolumeQueueCount++;
+        }
+
+        internal static void QueueDeferredDirtyVolume(HectonVoxelVolume volume, int slowTickDelay)
+        {
+            if (volume == null)
+                return;
+
+            if (slowTickDelay <= 0)
+            {
+                QueueDirtyVolume(volume);
+                return;
+            }
+
+            EnsureInitialized();
+            int runtimeStamp = volume.RuntimeStamp;
+            for (int i = 0; i < _deferredDirtyVolumes.Count; i++)
+            {
+                DeferredDirtyVolumeRequest request = _deferredDirtyVolumes[i];
+                if (!ReferenceEquals(request.Volume, volume))
+                    continue;
+
+                request.RuntimeStamp = runtimeStamp;
+                request.RemainingSlowTicks = math.max(request.RemainingSlowTicks, slowTickDelay);
+                _deferredDirtyVolumes[i] = request;
+                return;
+            }
+
+            if (_deferredDirtyVolumes.Count >= DeferredDirtyVolumeQueueCapacity)
+            {
+                QueueDirtyVolume(volume);
+                return;
+            }
+
+            _deferredDirtyVolumes.Add(new DeferredDirtyVolumeRequest
+            {
+                Volume = volume,
+                RuntimeStamp = runtimeStamp,
+                RemainingSlowTicks = slowTickDelay
+            });
+        }
+
+        internal static void TickDeferredDirtyVolumes()
+        {
+            for (int i = _deferredDirtyVolumes.Count - 1; i >= 0; i--)
+            {
+                DeferredDirtyVolumeRequest request = _deferredDirtyVolumes[i];
+                HectonVoxelVolume volume = request.Volume;
+                if (volume == null || !volume.MatchesRuntimeStamp(request.RuntimeStamp))
+                {
+                    _deferredDirtyVolumes.RemoveAt(i);
+                    continue;
+                }
+
+                request.RemainingSlowTicks--;
+                if (request.RemainingSlowTicks > 0)
+                {
+                    _deferredDirtyVolumes[i] = request;
+                    continue;
+                }
+
+                _deferredDirtyVolumes.RemoveAt(i);
+                QueueDirtyVolume(volume);
+            }
         }
 
         internal static void QueueLocalizedSdfPatch(HectonVoxelVolume volume, int3 minAbsoluteCell, int3 maxAbsoluteCell, float voxelSize)
@@ -1309,6 +1383,97 @@ namespace Hecton8.World
             return true;
         }
 
+        internal static bool TryResolveNearestSafeNode(Vector3 runtimePosition, out Vector3 safeRuntimePosition)
+        {
+            safeRuntimePosition = default;
+            float3 worldPosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(worldPosition)))
+                return false;
+
+            float bestDistanceSq = float.MaxValue;
+            float3 bestPosition = float3.zero;
+            bool found = false;
+            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                VolumeRecord record = enumerator.Current.Value;
+                if (record == null ||
+                    !record.Current.IsCreated ||
+                    record.Dimensions.x <= 0 ||
+                    record.Dimensions.y <= 0 ||
+                    record.Dimensions.z <= 0 ||
+                    record.CellSize <= 0f)
+                {
+                    continue;
+                }
+
+                float safeCellSize = math.max(record.CellSize, 0.0001f);
+                float3 local = (worldPosition - record.Origin) / safeCellSize;
+                int3 centerCell = new int3(
+                    math.clamp((int)math.floor(local.x), 0, math.max(0, record.Dimensions.x - 1)),
+                    math.clamp((int)math.floor(local.y), 0, math.max(0, record.Dimensions.y - 1)),
+                    math.clamp((int)math.floor(local.z), 0, math.max(0, record.Dimensions.z - 1)));
+                int searchRadius = math.min(
+                    ToxicBodySafeNodeSearchRadiusCells,
+                    math.max(record.Dimensions.x, math.max(record.Dimensions.y, record.Dimensions.z)));
+
+                for (int radius = 0; radius <= searchRadius; radius++)
+                {
+                    for (int z = -radius; z <= radius; z++)
+                    {
+                        for (int y = -radius; y <= radius; y++)
+                        {
+                            for (int x = -radius; x <= radius; x++)
+                            {
+                                if (math.max(math.abs(x), math.max(math.abs(y), math.abs(z))) != radius)
+                                    continue;
+
+                                int3 candidate = centerCell + new int3(x, y, z);
+                                if (candidate.x < 0 ||
+                                    candidate.y < 0 ||
+                                    candidate.z < 0 ||
+                                    candidate.x >= record.Dimensions.x ||
+                                    candidate.y >= record.Dimensions.y ||
+                                    candidate.z >= record.Dimensions.z)
+                                {
+                                    continue;
+                                }
+
+                                int flatIndex = candidate.x +
+                                                (candidate.y * record.Dimensions.x) +
+                                                (candidate.z * record.Dimensions.x * record.Dimensions.y);
+                                if (flatIndex < 0 ||
+                                    flatIndex >= record.Current.Length ||
+                                    record.Current[flatIndex] != OpenCell)
+                                {
+                                    continue;
+                                }
+
+                                float3 candidatePosition = record.Origin +
+                                                           ((new float3(candidate.x, candidate.y, candidate.z) + 0.5f) * safeCellSize);
+                                float distanceSq = math.lengthsq(candidatePosition - worldPosition);
+                                if (distanceSq >= bestDistanceSq)
+                                    continue;
+
+                                bestDistanceSq = distanceSq;
+                                bestPosition = candidatePosition;
+                                found = true;
+                            }
+                        }
+                    }
+
+                    if (found)
+                        break;
+                }
+            }
+
+            if (!found || !math.all(math.isfinite(bestPosition)))
+                return false;
+
+            safeRuntimePosition = new Vector3(bestPosition.x, bestPosition.y, bestPosition.z);
+            return true;
+        }
+
         internal static HybridNavigationMode SampleHybridNavigationMode(float3 worldPosition)
         {
             return TrySampleHybridNavigation(worldPosition, out HybridNavigationSample sample)
@@ -1485,6 +1650,7 @@ namespace Hecton8.World
         {
             _records.Clear();
             _dirtyRequestSpill.Clear();
+            _deferredDirtyVolumes.Clear();
             _portalGraphNodes.Clear();
             _routeNodeScratch.Clear();
             _routeOpenSetScratch.Clear();

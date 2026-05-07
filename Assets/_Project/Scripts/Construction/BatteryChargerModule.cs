@@ -3,6 +3,7 @@ using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Power;
 using Hecton8.Tools;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -131,7 +132,7 @@ namespace Hecton8.Construction
             }
 
             _isCharging = true;
-            float nextBattery = Mathf.Clamp01(currentBattery + chargeRateNormalizedPerSecond * SlowTickDeltaSeconds);
+            float nextBattery = math.saturate(currentBattery + chargeRateNormalizedPerSecond * SlowTickDeltaSeconds);
             equipment.SetBattery(toolId, nextBattery);
             _debugBattery01 = nextBattery;
 

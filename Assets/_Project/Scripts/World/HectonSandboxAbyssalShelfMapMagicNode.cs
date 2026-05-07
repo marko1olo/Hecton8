@@ -46,6 +46,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Plate Uniformity")] public float plateUniformity = 0.78f;
         [Den.Tools.GUI.ValAttribute("Warp m")] public float domainWarpMeters = 1450f;
         [Den.Tools.GUI.ValAttribute("Warp Frequency")] public float domainWarpFrequency = 0.00011f;
+        [Den.Tools.GUI.ValAttribute("Slope Noise Frequency")] public float slopeNoiseFrequency = 0.00003125f;
         [Den.Tools.GUI.ValAttribute("Trench Depth m")] public float trenchDepthMeters = 5000f;
         [Den.Tools.GUI.ValAttribute("Trench Width m")] public float trenchWidthMeters = 780f;
         [Den.Tools.GUI.ValAttribute("Trench Sharpness")] public float trenchSharpness = 2.4f;
@@ -126,6 +127,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                     PlateUniformity = math.saturate(plateUniformity),
                     DomainWarpMeters = math.max(0f, domainWarpMeters),
                     DomainWarpFrequency = math.max(0.000001f, domainWarpFrequency),
+                    SlopeNoiseFrequency = math.max(0.000001f, slopeNoiseFrequency),
                     MacroExponentialFalloff = math.max(0.1f, macroExponentialFalloff),
                     ShelfRunMeters = math.max(1f, shelfRunMeters),
                     ShelfTargetSlopeDegrees = math.clamp(shelfTargetSlopeDegrees, 1f, 75f),
@@ -154,9 +156,19 @@ namespace MapMagic.Nodes.MatrixGenerators
                 {
                     float plateauTargetAngle = math.clamp(plateauTargetAngleDegrees, 1f, 60f);
                     float plateauSourceAngle = math.clamp(plateauSourceAngleDegrees, plateauTargetAngle + 0.001f, 45f);
-                    float cliffSourceAngle = math.clamp(cliffSourceAngleDegrees, plateauSourceAngle + 0.001f, 88f);
-                    float cliffTargetAngle = math.clamp(cliffTargetAngleDegrees, cliffSourceAngle + 0.001f, 62f);
-                    float cliffRampEndAngle = math.min(89f, cliffSourceAngle + math.max(1f, cliffTargetAngle - cliffSourceAngle) * 0.25f);
+                    float cliffSourceAngle = math.clamp(cliffSourceAngleDegrees, plateauSourceAngle + 0.001f, 62f);
+                    double centerAupX = worldOriginAup.GridX * (double)AbsoluteUniversePosition.CellSizeMeters +
+                        worldOriginAup.LocalX +
+                        dst.worldSize.x * 0.5;
+                    double centerAupZ = worldOriginAup.GridZ * (double)AbsoluteUniversePosition.CellSizeMeters +
+                        worldOriginAup.LocalZ +
+                        dst.worldSize.z * 0.5;
+                    float noisyCliffTargetAngle = HectonSandboxAbyssalShelfMath.EvaluateSlopeTargetAngleDegrees(
+                        new double2(centerAupX, centerAupZ),
+                        in parameters);
+                    float cliffTargetLimit = math.min(math.max(22f, cliffTargetAngleDegrees), 62f);
+                    float cliffTargetAngle = math.clamp(math.min(noisyCliffTargetAngle, cliffTargetLimit), 22f, 38f);
+                    float cliffRampEndAngle = math.min(89f, cliffSourceAngle + math.max(1f, 62f - cliffSourceAngle));
                     var quantizeJob = new HectonSandboxSlopeQuantizationJob
                     {
                         InputHeights01 = rawHeights,

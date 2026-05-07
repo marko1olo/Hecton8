@@ -1,7 +1,7 @@
-# PROJECT ATLAS
+﻿# PROJECT ATLAS
 
-Version: 1.5.2
-Date: 2026-05-07
+Version: 1.5.7
+Date: 2026-05-08
 Status: PENDING VERIFICATION
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`, `PROJECT_LTS_Compatibility_Layer.txt`
@@ -56,13 +56,26 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project`: `1212`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1171`
-Observed first-party C# line count under `Assets/_Project/Scripts` by `Get-Content.Count`: `651253`
-Observed first-party C# line count under `Assets/_Project/Scripts` by `Measure-Object -Line`: `559502`
+Observed first-party C# file count under `Assets/_Project`: `1247`
+Observed first-party C# physical line count under `Assets/_Project`: `691068`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1206`
+Observed first-party C# physical line count under `Assets/_Project/Scripts`: `675775`
+Line-count method: PowerShell over `System.IO.StreamReader.ReadLine()` for every matched file.
+
+SOURCE DRIFT DETECTED: previous same-day Atlas scan recorded `1233` / `1192` C# files and `667771` script physical lines; current May 8 manifest snapshot records `1247` / `1206` C# files and `675775` script physical lines.
+
+MASSIVE REFACTOR DETECTED: same-day script line-count delta exceeds `500` lines. Treat all earlier May 7 source-count claims as superseded by this timestamped snapshot unless a newer report states otherwise.
 
 This is physical file count only.
 It does not imply quality, cohesion, or compile health.
+
+Current build-master compile state:
+
+- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` failed.
+- Latest completed Core dependency build succeeded with `48 Warning(s)` and `0 Error(s)`; later source writes were observed, so this is not stable-source proof.
+- Latest build artifact: `CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log`.
+- Latest Unity MCP editor-console readback returned `0` error/warning entries on active scene `00_BOOTSTRAP`; this is not Play Mode or profiler proof.
+- Latest current-state report: `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`.
 
 ## 4. External / Package Surface
 
@@ -206,7 +219,7 @@ Authority files for this boundary:
 
 These points were revalidated against current source in this pass:
 
-- `GlobalRegistryContracts.cs` now contains `37` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, or `36` snapshots.
+- `GlobalRegistryContracts.cs` now contains `39` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, `36`, `37`, or `38` snapshots.
 - `SpatialAudioManager` directly implements `IAudioService` and registers through `GlobalRegistry.RegisterAudioService(this)`.
 - `SuitHUDV4CanvasOverlay` is the direct first-party `IUIService` implementor found in current source scan.
 - current bootstrap authority is split across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap`; it is not a single-owner startup surface.
@@ -388,33 +401,35 @@ Mandates followed for this update:
 
 Current measured source and documentation surface:
 
-- `Assets/_Project`: `1212` C# files.
-- `Assets/_Project/Scripts`: `1171` C# files.
-- Script LOC by PowerShell `Get-Content.Count` line count: `651253`.
-- Script LOC by PowerShell `Measure-Object -Line` line count: `559502`.
+- `Assets/_Project`: `1233` C# files, `683064` physical lines.
+- `Assets/_Project/Scripts`: `1192` C# files, `667771` physical lines.
+- Script LOC method: PowerShell `System.IO.StreamReader.ReadLine()` over every `*.cs` file.
+- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+19` files under `Assets/_Project`, `+19` files under `Assets/_Project/Scripts`, and `+11093` script physical lines.
+- MASSIVE REFACTOR DETECTED: the same-day script line delta is greater than `500`.
 - `.agents-skills`: `52` mandate files.
-- `Docs/**/*.md`: `436` markdown files.
-- Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `223`.
-- Active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports`: `162`.
-- Active `Docs/Reports/*.md`: `61`.
-- Scripts created on `2026-05-06` by filesystem timestamp: `6`.
-- Scripts modified on `2026-05-06` by filesystem timestamp: `142`.
+- `Docs/**/*.md`: `443` markdown files.
+- Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `230`.
+- Active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports`: `163`.
+- Active `Docs/Reports/*.md`: `67`.
+- Scripts created on `2026-05-07` by filesystem timestamp: `23`.
+- Scripts modified on `2026-05-07` by filesystem timestamp: `197`.
 - Git-untracked entries at the May 6 doc sync checkpoint: `15`.
 
 Current top-level `Assets/_Project/Scripts` ownership counts:
 
 | Folder | C# files |
 |---|---:|
-| `(root)` | `336` |
-| `Editor` | `166` |
-| `World` | `162` |
-| `Gameplay` | `113` |
-| `UI` | `82` |
-| `Core` | `41` |
-| `Construction` | `32` |
+| `(root)` | `337` |
+| `Editor` | `167` |
+| `World` | `163` |
+| `Gameplay` | `114` |
+| `UI` | `85` |
+| `Core` | `42` |
+| `Construction` | `34` |
 | `Optimization` | `22` |
+| `Interaction` | `22` |
+| `Visor` | `22` |
 | `ModdingAPI` | `21` |
-| `Visor` | `20` |
 | `Audio` | `19` |
 | `Fauna` | `17` |
 
@@ -469,7 +484,7 @@ Mandate sync result for today's additions:
 
 Interface health result from `GlobalRegistryContracts.cs`:
 
-- Current direct public interface count: `37`.
+- Current direct public interface count: `38`.
 - Interfaces with at least one source-line implementation/reference scan hit: not recounted after the 37th contract slot appeared.
 - Ghost interfaces by this static scan: `PENDING VERIFICATION`.
 
@@ -545,15 +560,16 @@ Mandates followed for this update:
 
 Current measured source/docs surface:
 
-- `Assets/_Project`: `1212` C# files.
-- `Assets/_Project/Scripts`: `1171` C# files.
-- Script LOC by PowerShell `Get-Content.Count` line count: `651253`.
-- Script LOC by PowerShell `Measure-Object -Line` line count: `559502`.
-- Scripts directly under `Assets/_Project/Scripts`: `336`.
+- `Assets/_Project`: `1233` C# files, `683064` physical lines.
+- `Assets/_Project/Scripts`: `1192` C# files, `667771` physical lines.
+- Script LOC method: PowerShell `System.IO.StreamReader.ReadLine()` over every `*.cs` file.
+- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+19` files under `Assets/_Project`, `+19` files under `Assets/_Project/Scripts`, and `+11093` script physical lines.
+- MASSIVE REFACTOR DETECTED: the same-day script line delta is greater than `500`.
+- Scripts directly under `Assets/_Project/Scripts`: `337`.
 - Strict `StartCoroutine(` hits under `Assets/_Project/Scripts`: `0`.
-- `Docs`: `865` non-meta files in the current filesystem view.
+- `Docs`: `871` non-meta files in the current filesystem view.
 - `Docs/ARCHIVARIUS REPORTS`: `120` non-meta files in the current filesystem view.
-- Full `Docs/**/*.md` markdown header debt: `0` missing `Date:`, `0` missing `Status:`.
+- Active non-obsolete `Docs/**/*.md` markdown header debt: `0` missing `Date:`, `0` missing `Status:`.
 - Active non-report markdown header debt: `0`.
 
 These counts are orientation data only. They are not readiness metrics and should not drive task priority.
@@ -589,6 +605,4 @@ Verification state:
 - GC/frame/memory: no fresh profiler or GCMonitor measurement.
 
 STATUS: PENDING VERIFICATION
-
-
 

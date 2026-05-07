@@ -218,7 +218,8 @@ namespace Hecton8.World
                 return;
 
             Vector3 playerPosition = playerTransform != null ? playerTransform.position : transform.position;
-            float requestDistanceSq = requestDistance * requestDistance;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            double requestDistanceSq = (double)requestDistance * requestDistance;
             for (int i = 0; i < holeCount; i++)
             {
                 TerrainHoleStreamingRecord hole = holes[i];
@@ -229,7 +230,7 @@ namespace Hecton8.World
                 long requestKey = hole.HoleId != 0
                     ? hole.HoleId
                     : BuildHoleKey(absoluteHolePosition, hole.Radius);
-                float distanceSq = (hole.Position - playerPosition).sqrMagnitude;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in absoluteHolePosition, in playerAup);
                 if (distanceSq > requestDistanceSq && !_activeVolumes.ContainsKey(requestKey))
                     continue;
 
@@ -239,7 +240,7 @@ namespace Hecton8.World
                     HoleId = hole.HoleId,
                     AbsolutePosition = absoluteHolePosition,
                     Radius = Mathf.Max(4f, hole.Radius),
-                    Priority = distanceSq,
+                    Priority = (float)Math.Min(distanceSq, float.MaxValue),
                     Seed = BuildHoleSeed(absoluteHolePosition, hole.Radius)
                 };
                 _desiredRequests[request.Key] = request;
@@ -279,7 +280,8 @@ namespace Hecton8.World
                 return;
 
             Vector3 playerPosition = playerTransform != null ? playerTransform.position : transform.position;
-            float retentionDistanceSq = retentionDistance * retentionDistance;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            double retentionDistanceSq = (double)retentionDistance * retentionDistance;
             _keyScratch.Clear();
             Dictionary<long, GameObject>.Enumerator enumerator = _activeVolumes.GetEnumerator();
             while (enumerator.MoveNext())
@@ -291,7 +293,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                if ((ResolveRuntimePosition(in request) - playerPosition).sqrMagnitude > retentionDistanceSq)
+                if (AbsoluteUniversePosition.DistanceSq(in request.AbsolutePosition, in playerAup) > retentionDistanceSq)
                     _keyScratch.Add(key);
             }
 

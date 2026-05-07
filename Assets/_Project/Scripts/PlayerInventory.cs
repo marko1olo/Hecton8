@@ -6,6 +6,7 @@
 namespace Hecton8.Inventory
 {
     using System;
+    using System.Runtime.InteropServices;
     using Hecton.Localization;
     using Hecton8.Audio;
     using Hecton8.Core;
@@ -47,9 +48,16 @@ namespace Hecton8.Inventory
         private const float RadioactiveHalfLifeBaseSeconds = 1800f;
         private const float Ln2 = 0.6931471805599453f;
         private const float KineticDamageThresholdG = 50f;
+        private const float InventoryLoadMinimumMovementMultiplier = 0.5f;
         private const string RadixSortBufferMismatchLog = "[PlayerInventory] Critical radix sort buffer mismatch. Sorting bypassed.";
+        private const string RadixSortEntriesTempLabel = "RadixSortEntriesTemp";
+        private const string RadixSortScratchTempLabel = "RadixSortScratchTemp";
+        private const string RadixSortCountsTempLabel = "RadixSortCountsTemp";
         private const string NativeMemoryOwner = nameof(PlayerInventory);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const int InventoryShadowBufferBytes = 16 * 1024;
+        private const uint Fnv1a32Offset = 2166136261u;
+        private const uint Fnv1a32Prime = 16777619u;
         internal const ushort DegradedQualityMilliThreshold = 250;
         private const byte ItemGeneticsSupportedFlagsMask = (byte)(
             ItemGeneticFlags.Glow |
@@ -78,19 +86,11 @@ namespace Hecton8.Inventory
             Harvestable = 1 << 3
         }
 
-        private struct InventorySortEntry : IComparable<InventorySortEntry>
+        [StructLayout(LayoutKind.Sequential, Size = 16)]
+        private struct InventorySortEntry
         {
             public ulong PackedKey;
             public int OriginalIndex;
-
-            public int CompareTo(InventorySortEntry other)
-            {
-                int packedKeyCompare = PackedKey.CompareTo(other.PackedKey);
-                if (packedKeyCompare != 0)
-                    return packedKeyCompare;
-
-                return OriginalIndex.CompareTo(other.OriginalIndex);
-            }
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -241,7 +241,7 @@ namespace Hecton8.Inventory
                     ushort currentQualityMilli = QualityMilli[anchorIndex] > 0 ? QualityMilli[anchorIndex] : DefaultQuality;
                     float currentQuality = math.clamp(currentQualityMilli / 1000f, 0f, 1f);
                     float halfLifeSeconds = safeBaseHalfLifeSeconds / math.max(0.001f, radiationSv);
-                    float decayFactor = math.exp(-(Ln2 / halfLifeSeconds) * DeltaSeconds);
+                    float decayFactor = ApproximateExpNegPositiveInput((Ln2 / halfLifeSeconds) * DeltaSeconds);
                     float nextQuality = math.clamp(currentQuality * decayFactor, 0f, 1f);
                     ushort nextQualityMilli = (ushort)math.clamp((int)math.round(nextQuality * 1000f), 0, 1000);
 
@@ -503,15 +503,13 @@ namespace Hecton8.Inventory
         private NativeArray<float> _massUnitMassSnapshot;
         private NativeArray<float> _massUnitVolumeSnapshot;
         private NativeArray<float> _massUnitRadiationSnapshot;
-        private NativeArray<InventorySortEntry> _sortEntriesNative;
-        private NativeArray<InventorySortEntry> _sortScratchNative;
-        private NativeArray<int> _sortRadixCounts;
         private NativeArray<float3> _derivedMassVolumeScratch;
         private NativeArray<int> _radioactiveConversionAnchors;
         private NativeArray<int> _radioactiveHalfLifeCounters;
         private NativeArray<float> _thermalRunawayByAnchor;
         private NativeArray<int2> _thermalRunawayPairs;
         private NativeArray<int> _thermalRunawayCounters;
+        private NativeArray<byte> _inventoryShadowBuffer;
         private ItemPlacement[] _sortBuffer;
         private ItemPlacement[] _sortedPlacements;
         private JobHandle _massVolumeJobHandle;
@@ -519,6 +517,7 @@ namespace Hecton8.Inventory
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private bool _massVolumeJobScheduled;
+        private bool _massCacheDirty = true;
         private int _massVolumeJobInventoryVersion;
         private ulong _playerImpactBodyId;
         private TraumaDispatcher _traumaDispatcher;
@@ -527,14 +526,22 @@ namespace Hecton8.Inventory
         private InventoryDTO _pendingInventoryDto;
         private uint _inventoryDirtyRevision = 1u;
         private uint _pendingInventorySaveRevision;
+        private uint _inventoryShadowHash;
+        private uint _lastCommittedInventoryShadowHash;
+        private uint _pendingInventoryShadowHash;
+        private int _inventoryShadowPayloadLength;
         private bool _isDirty = true;
         private bool _hasCommittedInventoryDto;
         private bool _hasPendingInventoryCommit;
+        private bool _inventoryShadowValid;
+        private bool _hasCommittedInventoryShadowHash;
 
         public float TotalWeight { get; private set; }
         public float TotalMassKg { get; private set; }
         public float TotalVolumeM3 { get; private set; }
         public float TotalRadiationSv { get; private set; }
+        public float CachedInventoryLoad01 { get; private set; }
+        public float CachedMaxSwimSpeedMultiplier { get; private set; } = 1f;
         public bool HasPressurizedContainerProtection => _pressurizedContainerProtectionCount > 0;
         public InventoryGrid Grid => _grid;
         public ItemCatalog ItemCatalog => itemCatalog;
@@ -601,15 +608,13 @@ namespace Hecton8.Inventory
             _massUnitMassSnapshot = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - SlowTick mass job mass snapshot - owner: PlayerInventory
             _massUnitVolumeSnapshot = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - SlowTick mass job volume snapshot - owner: PlayerInventory
             _massUnitRadiationSnapshot = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - SlowTick mass job radiation snapshot - owner: PlayerInventory
-            _sortEntriesNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort input scratch â€” owner: PlayerInventory
-            _sortScratchNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort output scratch â€” owner: PlayerInventory
-            _sortRadixCounts = new NativeArray<int>(256, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[256] â€” radix bucket counts reused by inventory sorting â€” owner: PlayerInventory
-            _derivedMassVolumeScratch = new NativeArray<float3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float3[1] — Burst-derived mass/volume/radiation totals scratch — owner: PlayerInventory
+            _derivedMassVolumeScratch = new NativeArray<float3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float3[1] - Burst-derived mass/volume/radiation totals scratch - owner: PlayerInventory
             _radioactiveConversionAnchors = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[columns * rows] — radioactive half-life conversion anchor scratch — owner: PlayerInventory
             _radioactiveHalfLifeCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — radioactive half-life changed/conversion counters — owner: PlayerInventory
             _thermalRunawayByAnchor = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] — reactive chemistry thermal runaway cache — owner: PlayerInventory
             _thermalRunawayPairs = new NativeArray<int2>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int2[columns * rows] — reactive chemistry explosion pair scratch — owner: PlayerInventory
             _thermalRunawayCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — reactive chemistry pair/change counters — owner: PlayerInventory
+            _inventoryShadowBuffer = new NativeArray<byte>(InventoryShadowBufferBytes, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: byte[16KB] - persistent inventory dehydration shadow payload - owner: PlayerInventory
             RegisterNativeMemorySentinel();
             _sortBuffer = new ItemPlacement[columns * rows];
             // COLD ALLOC: ItemPlacement[columns * rows] — placement reorder buffer — owner: PlayerInventory
@@ -663,15 +668,13 @@ namespace Hecton8.Inventory
             DisposeNativeArray(ref _massUnitMassSnapshot);
             DisposeNativeArray(ref _massUnitVolumeSnapshot);
             DisposeNativeArray(ref _massUnitRadiationSnapshot);
-            DisposeNativeArray(ref _sortEntriesNative);
-            DisposeNativeArray(ref _sortScratchNative);
-            DisposeNativeArray(ref _sortRadixCounts);
             DisposeNativeArray(ref _derivedMassVolumeScratch);
             DisposeNativeArray(ref _radioactiveConversionAnchors);
             DisposeNativeArray(ref _radioactiveHalfLifeCounters);
             DisposeNativeArray(ref _thermalRunawayByAnchor);
             DisposeNativeArray(ref _thermalRunawayPairs);
             DisposeNativeArray(ref _thermalRunawayCounters);
+            DisposeNativeArray(ref _inventoryShadowBuffer);
 
         }
 
@@ -694,15 +697,13 @@ namespace Hecton8.Inventory
             NativeMemorySentinel.RegisterNativeArray(_massUnitMassSnapshot, NativeMemoryOwner, nameof(_massUnitMassSnapshot), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_massUnitVolumeSnapshot, NativeMemoryOwner, nameof(_massUnitVolumeSnapshot), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_massUnitRadiationSnapshot, NativeMemoryOwner, nameof(_massUnitRadiationSnapshot), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_sortEntriesNative, NativeMemoryOwner, nameof(_sortEntriesNative), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_sortScratchNative, NativeMemoryOwner, nameof(_sortScratchNative), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_sortRadixCounts, NativeMemoryOwner, nameof(_sortRadixCounts), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_derivedMassVolumeScratch, NativeMemoryOwner, nameof(_derivedMassVolumeScratch), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_radioactiveConversionAnchors, NativeMemoryOwner, nameof(_radioactiveConversionAnchors), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_radioactiveHalfLifeCounters, NativeMemoryOwner, nameof(_radioactiveHalfLifeCounters), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_thermalRunawayByAnchor, NativeMemoryOwner, nameof(_thermalRunawayByAnchor), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_thermalRunawayPairs, NativeMemoryOwner, nameof(_thermalRunawayPairs), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_thermalRunawayCounters, NativeMemoryOwner, nameof(_thermalRunawayCounters), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_inventoryShadowBuffer, NativeMemoryOwner, nameof(_inventoryShadowBuffer), NativeMemoryLifetime);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
@@ -712,6 +713,21 @@ namespace Hecton8.Inventory
 
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose(default);
+            array = default;
+        }
+
+        private static void RegisterTempJobArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+        }
+
+        private static void DisposeTempJobArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
             array = default;
         }
 
@@ -971,7 +987,8 @@ namespace Hecton8.Inventory
                 ApplyInventoryReactiveChemistry();
                 ApplyInventoryDepthPressureCrush();
                 DispatchInventoryRadiationTrauma();
-                ScheduleInventoryMassRecomputeJob();
+                if (_massCacheDirty)
+                    ScheduleInventoryMassRecomputeJob();
             }
         }
 
@@ -1220,6 +1237,10 @@ namespace Hecton8.Inventory
             if (data == null)
                 return;
 
+            if (_isDirty || !_inventoryShadowValid)
+                RefreshInventoryShadowBufferFromRuntime();
+
+            AttachInventoryShadowPayload(data);
             ref InventoryDTO dto = ref data.inventory;
             if (!_isDirty && _hasCommittedInventoryDto)
             {
@@ -1228,9 +1249,21 @@ namespace Hecton8.Inventory
                 return;
             }
 
-            PopulateInventoryDtoFromRuntime(ref dto);
-            _pendingInventoryDto = dto;
+            if (_hasCommittedInventoryShadowHash &&
+                _inventoryShadowValid &&
+                _inventoryShadowHash == _lastCommittedInventoryShadowHash &&
+                _hasCommittedInventoryDto)
+            {
+                dto = _lastCommittedInventoryDto;
+                _isDirty = false;
+                _hasPendingInventoryCommit = false;
+                return;
+            }
+
+            PopulateInventoryDtoFromRuntime(ref _pendingInventoryDto);
+            dto = _pendingInventoryDto;
             _pendingInventorySaveRevision = _inventoryDirtyRevision;
+            _pendingInventoryShadowHash = _inventoryShadowHash;
             _hasPendingInventoryCommit = true;
         }
 
@@ -1271,6 +1304,128 @@ namespace Hecton8.Inventory
             dto.cellCount = cellIndex;
         }
 
+        private void RefreshInventoryShadowBufferFromRuntime()
+        {
+            if (!_inventoryShadowBuffer.IsCreated)
+            {
+                _inventoryShadowPayloadLength = 0;
+                _inventoryShadowHash = 0u;
+                _inventoryShadowValid = false;
+                return;
+            }
+
+            PopulateInventoryDtoFromRuntime(ref _pendingInventoryDto);
+            int offset = 0;
+            uint hash = Fnv1a32Offset;
+            int count = math.min(_pendingInventoryDto.cellCount, InventoryDTO.MaxCells);
+            WriteInventoryShadowInt(ref offset, ref hash, count);
+
+            WriteInventoryShadowInt(ref offset, ref hash, count);
+            for (int i = 0; i < count; i++)
+                WriteInventoryShadowInt(ref offset, ref hash, _pendingInventoryDto.itemHashIds[i]);
+
+            WriteInventoryShadowInt(ref offset, ref hash, count);
+            for (int i = 0; i < count; i++)
+                WriteInventoryShadowUInt(ref offset, ref hash, _pendingInventoryDto.packedCellCoordinates[i]);
+
+            WriteInventoryShadowInt(ref offset, ref hash, count);
+            for (int i = 0; i < count; i++)
+                WriteInventoryShadowUShort(ref offset, ref hash, _pendingInventoryDto.stackCounts[i]);
+
+            WriteInventoryShadowInt(ref offset, ref hash, count);
+            for (int i = 0; i < count; i++)
+                WriteInventoryShadowUShort(ref offset, ref hash, _pendingInventoryDto.itemStateFlags[i]);
+
+            WriteInventoryShadowInt(ref offset, ref hash, count);
+            for (int i = 0; i < count; i++)
+                WriteInventoryShadowByte(ref offset, ref hash, _pendingInventoryDto.itemGeneticsWords[i]);
+
+            WriteInventoryShadowInt(ref offset, ref hash, count);
+            for (int i = 0; i < count; i++)
+                WriteInventoryShadowUShort(ref offset, ref hash, _pendingInventoryDto.qualityMilli[i]);
+
+            WriteInventoryShadowInt(ref offset, ref hash, count);
+            for (int i = 0; i < count; i++)
+                WriteInventoryShadowUInt(ref offset, ref hash, _pendingInventoryDto.lastUpdateUnixSeconds[i]);
+
+            WriteInventoryShadowUInt(ref offset, ref hash, math.asuint(_pendingInventoryDto.totalWeight));
+            WriteInventoryShadowInt(ref offset, ref hash, _pendingInventoryDto.gridColumns);
+            WriteInventoryShadowInt(ref offset, ref hash, _pendingInventoryDto.gridRows);
+
+            _inventoryShadowPayloadLength = offset;
+            _inventoryShadowHash = hash;
+            _inventoryShadowValid = true;
+        }
+
+        private void AttachInventoryShadowPayload(SaveData data)
+        {
+            if (data == null || !_inventoryShadowValid || !_inventoryShadowBuffer.IsCreated)
+                return;
+
+            data.inventoryShadowPayload = _inventoryShadowBuffer;
+            data.inventoryShadowPayloadLength = _inventoryShadowPayloadLength;
+            data.inventoryShadowPayloadHash = _inventoryShadowHash;
+            data.hasInventoryShadowPayload = _inventoryShadowPayloadLength > 0;
+        }
+
+        private void CommitCurrentInventoryShadowHash()
+        {
+            RefreshInventoryShadowBufferFromRuntime();
+            _lastCommittedInventoryShadowHash = _inventoryShadowHash;
+            _hasCommittedInventoryShadowHash = _inventoryShadowValid;
+        }
+
+        private static void CopyInventoryDto(ref InventoryDTO destination, in InventoryDTO source)
+        {
+            destination.EnsureCapacity();
+            destination.cellCount = math.clamp(source.cellCount, 0, InventoryDTO.MaxCells);
+            destination.gridColumns = source.gridColumns;
+            destination.gridRows = source.gridRows;
+            destination.totalWeight = source.totalWeight;
+
+            for (int i = 0; i < InventoryDTO.MaxCells; i++)
+            {
+                bool active = i < destination.cellCount;
+                destination.itemHashIds[i] = active && source.itemHashIds != null && i < source.itemHashIds.Length ? source.itemHashIds[i] : 0;
+                destination.packedCellCoordinates[i] = active && source.packedCellCoordinates != null && i < source.packedCellCoordinates.Length ? source.packedCellCoordinates[i] : 0u;
+                destination.stackCounts[i] = active && source.stackCounts != null && i < source.stackCounts.Length ? source.stackCounts[i] : (ushort)0;
+                destination.itemStateFlags[i] = active && source.itemStateFlags != null && i < source.itemStateFlags.Length ? source.itemStateFlags[i] : (ushort)0;
+                destination.itemGeneticsWords[i] = active && source.itemGeneticsWords != null && i < source.itemGeneticsWords.Length ? source.itemGeneticsWords[i] : (byte)0;
+                destination.qualityMilli[i] = active && source.qualityMilli != null && i < source.qualityMilli.Length ? source.qualityMilli[i] : (ushort)0;
+                destination.lastUpdateUnixSeconds[i] = active && source.lastUpdateUnixSeconds != null && i < source.lastUpdateUnixSeconds.Length ? source.lastUpdateUnixSeconds[i] : 0u;
+            }
+        }
+
+        private void WriteInventoryShadowInt(ref int offset, ref uint hash, int value)
+        {
+            WriteInventoryShadowUInt(ref offset, ref hash, unchecked((uint)value));
+        }
+
+        private void WriteInventoryShadowUShort(ref int offset, ref uint hash, ushort value)
+        {
+            WriteInventoryShadowByte(ref offset, ref hash, (byte)value);
+            WriteInventoryShadowByte(ref offset, ref hash, (byte)(value >> 8));
+        }
+
+        private void WriteInventoryShadowUInt(ref int offset, ref uint hash, uint value)
+        {
+            WriteInventoryShadowByte(ref offset, ref hash, (byte)value);
+            WriteInventoryShadowByte(ref offset, ref hash, (byte)(value >> 8));
+            WriteInventoryShadowByte(ref offset, ref hash, (byte)(value >> 16));
+            WriteInventoryShadowByte(ref offset, ref hash, (byte)(value >> 24));
+        }
+
+        private void WriteInventoryShadowByte(ref int offset, ref uint hash, byte value)
+        {
+            if ((uint)offset >= (uint)_inventoryShadowBuffer.Length)
+                return;
+
+            _inventoryShadowBuffer[offset] = value;
+            offset++;
+            hash ^= value;
+            hash *= Fnv1a32Prime;
+        }
+
         public void NotifyMappedInventoryWriteCommitted()
         {
             if (!_hasPendingInventoryCommit)
@@ -1278,13 +1433,15 @@ namespace Hecton8.Inventory
 
             if (_pendingInventorySaveRevision == _inventoryDirtyRevision)
             {
-                _lastCommittedInventoryDto = _pendingInventoryDto;
+                CopyInventoryDto(ref _lastCommittedInventoryDto, in _pendingInventoryDto);
                 _hasCommittedInventoryDto = true;
+                _lastCommittedInventoryShadowHash = _pendingInventoryShadowHash;
+                _hasCommittedInventoryShadowHash = _inventoryShadowValid;
                 _isDirty = false;
             }
 
-            _pendingInventoryDto = default;
             _pendingInventorySaveRevision = 0u;
+            _pendingInventoryShadowHash = 0u;
             _hasPendingInventoryCommit = false;
         }
 
@@ -1313,6 +1470,7 @@ namespace Hecton8.Inventory
                 _hasCommittedInventoryDto = true;
                 _hasPendingInventoryCommit = false;
                 _isDirty = false;
+                CommitCurrentInventoryShadowHash();
                 NotifyInventoryChanged(markDirty: false);
                 return;
             }
@@ -1365,6 +1523,7 @@ namespace Hecton8.Inventory
             _hasCommittedInventoryDto = true;
             _hasPendingInventoryCommit = false;
             _isDirty = false;
+            CommitCurrentInventoryShadowHash();
             NotifyInventoryChanged(markDirty: false);
         }
 
@@ -1380,22 +1539,41 @@ namespace Hecton8.Inventory
             if (!TryValidateRadixSortBuffers(count))
                 return;
 
-            for (int i = 0; i < count; i++)
-                _sortEntriesNative[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
-
-            JobHandle sortHandle = new InventoryRadixSortJob
+            NativeArray<InventorySortEntry> sortEntries = default;
+            NativeArray<InventorySortEntry> sortScratch = default;
+            NativeArray<int> sortCounts = default;
+            try
             {
-                Entries = _sortEntriesNative,
-                Scratch = _sortScratchNative,
-                Counts = _sortRadixCounts,
-                Count = count
-            }.Schedule();
+                sortEntries = new NativeArray<InventorySortEntry>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                sortScratch = new NativeArray<InventorySortEntry>(count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                sortCounts = new NativeArray<int>(256, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                RegisterTempJobArray(sortEntries, RadixSortEntriesTempLabel);
+                RegisterTempJobArray(sortScratch, RadixSortScratchTempLabel);
+                RegisterTempJobArray(sortCounts, RadixSortCountsTempLabel);
 
-            // COLD SYNC JOB: explicit user sort command; no Tick/SlowTick barrier.
-            DispatcherJobSwap.TryComplete(ref sortHandle, forceComplete: true);
+                for (int i = 0; i < count; i++)
+                    sortEntries[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
 
-            for (int i = 0; i < count; i++)
-                _sortedPlacements[i] = _sortBuffer[_sortEntriesNative[i].OriginalIndex];
+                JobHandle sortHandle = new InventoryRadixSortJob
+                {
+                    Entries = sortEntries,
+                    Scratch = sortScratch,
+                    Counts = sortCounts,
+                    Count = count
+                }.Schedule();
+
+                // COLD SYNC JOB: explicit user sort command; no Tick/SlowTick barrier.
+                DispatcherJobSwap.TryComplete(ref sortHandle, forceComplete: true);
+
+                for (int i = 0; i < count; i++)
+                    _sortedPlacements[i] = _sortBuffer[sortEntries[i].OriginalIndex];
+            }
+            finally
+            {
+                DisposeTempJobArray(ref sortCounts);
+                DisposeTempJobArray(ref sortScratch);
+                DisposeTempJobArray(ref sortEntries);
+            }
 
             _grid.Clear();
             ClearNativeArray(_stackCounts);
@@ -1426,27 +1604,20 @@ namespace Hecton8.Inventory
                 }
             }
 
-            NotifyInventoryChanged();
+            NotifyInventoryChanged(massDirty: false);
         }
 
         private bool TryValidateRadixSortBuffers(int itemCount)
         {
-            if (!_sortEntriesNative.IsCreated ||
-                !_sortScratchNative.IsCreated ||
-                !_sortRadixCounts.IsCreated ||
-                _sortBuffer == null ||
+            if (_sortBuffer == null ||
                 _sortedPlacements == null ||
-                itemCount > _sortEntriesNative.Length ||
-                itemCount > _sortScratchNative.Length ||
                 itemCount > _sortBuffer.Length ||
                 itemCount > _sortedPlacements.Length)
             {
                 return false;
             }
 
-            bool lengthMismatch = _sortEntriesNative.Length != _sortScratchNative.Length ||
-                                  _sortEntriesNative.Length != _sortBuffer.Length ||
-                                  _sortEntriesNative.Length != _sortedPlacements.Length;
+            bool lengthMismatch = _sortBuffer.Length != _sortedPlacements.Length;
             if (!lengthMismatch)
                 return true;
 
@@ -1490,7 +1661,7 @@ namespace Hecton8.Inventory
 
             MoveAnchorState(sourceAnchorIndex, destinationAnchorIndex, targetAnchorIndex >= 0);
 
-            NotifyInventoryChanged();
+            NotifyInventoryChanged(massDirty: false);
             return true;
         }
 
@@ -1943,12 +2114,20 @@ namespace Hecton8.Inventory
             };
         }
 
-        private void NotifyInventoryChanged(bool markDirty = true)
+        private void NotifyInventoryChanged(bool markDirty = true, bool massDirty = true)
         {
             if (markDirty)
+            {
                 MarkInventoryDirty();
+                RefreshInventoryShadowBufferFromRuntime();
+            }
 
-            RefreshDerivedMassAndSurvivalLoad();
+            if (massDirty)
+                MarkMassCacheDirty();
+
+            if (_massCacheDirty)
+                RefreshDerivedMassAndSurvivalLoad();
+
             PublishEncumbranceChanged();
             InventoryVersion++;
             InventoryEvents.NotifyInventoryChanged();
@@ -1966,16 +2145,20 @@ namespace Hecton8.Inventory
             }
         }
 
+        private void MarkMassCacheDirty()
+        {
+            _massCacheDirty = true;
+        }
+
         private void PublishEncumbranceChanged()
         {
             float carryCapacityKg = ResolveCarryCapacityKilograms();
-            float load01 = math.saturate(TotalMassKg / carryCapacityKg);
-            UIStateStore.WriteInventoryLoadState(TotalMassKg, carryCapacityKg, load01, Time.unscaledTime);
+            UIStateStore.WriteInventoryLoadState(TotalMassKg, carryCapacityKg, CachedInventoryLoad01, Time.unscaledTime);
             InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
                 this,
                 TotalMassKg,
                 carryCapacityKg,
-                load01));
+                CachedInventoryLoad01));
         }
 
         private float ResolveCarryCapacityKilograms()
@@ -2054,7 +2237,7 @@ namespace Hecton8.Inventory
             }
 
             if (changed)
-                NotifyInventoryChanged();
+                NotifyInventoryChanged(massDirty: false);
         }
 
         private void RefreshDerivedMassAndSurvivalLoad()
@@ -2083,6 +2266,8 @@ namespace Hecton8.Inventory
 
                 ApplyDerivedMassTotals(_derivedMassVolumeScratch[0]);
             }
+
+            _massCacheDirty = false;
         }
 
         private void ApplyDerivedMassTotals(float3 totals)
@@ -2094,14 +2279,18 @@ namespace Hecton8.Inventory
             if (survival != null)
                 survival.SetWeight(TotalMassKg);
 
+            float carryCapacityKg = ResolveCarryCapacityKilograms();
+            CachedInventoryLoad01 = math.saturate(TotalMassKg / carryCapacityKg);
+            CachedMaxSwimSpeedMultiplier = math.lerp(1f, InventoryLoadMinimumMovementMultiplier, CachedInventoryLoad01);
             HectonPlayerMovement movement = TryResolveMovementLoadSink();
             if (movement != null)
-                movement.ApplyRuntimeInventoryMassLoad(TotalMassKg, ResolveCarryCapacityKilograms());
+                movement.ApplyRuntimeInventoryMassLoad(TotalMassKg, carryCapacityKg, CachedMaxSwimSpeedMultiplier, CachedInventoryLoad01);
         }
 
         private void ScheduleInventoryMassRecomputeJob()
         {
             if (_massVolumeJobScheduled ||
+                !_massCacheDirty ||
                 !_derivedMassVolumeScratch.IsCreated)
             {
                 return;
@@ -2175,6 +2364,7 @@ namespace Hecton8.Inventory
                 _derivedMassVolumeScratch.Length > 0)
             {
                 ApplyDerivedMassTotals(_derivedMassVolumeScratch[0]);
+                _massCacheDirty = false;
             }
 
             return true;
@@ -2946,7 +3136,7 @@ namespace Hecton8.Inventory
             }
 
             float ambientTemperature = survival != null ? survival.EnvironmentTemperature : 2f;
-            float tempFactor = math.exp((ambientTemperature - 4f) * 0.05f);
+            float tempFactor = ApproximateExpSigned((ambientTemperature - 4f) * 0.05f);
             uint elapsedSeconds = nowTimestamp >= lastTimestamp ? nowTimestamp - lastTimestamp : 0u;
             float currentQuality = math.clamp((_qualityMilli[anchorIndex] > 0 ? _qualityMilli[anchorIndex] : DefaultQualityMilli) / 1000f, 0f, 1f);
             float decayedQuality = math.clamp(currentQuality - (elapsedSeconds * 0.001f * tempFactor), 0f, 1f);
@@ -2973,6 +3163,20 @@ namespace Hecton8.Inventory
 
                 reservations[i] = default;
             }
+        }
+
+        private static float ApproximateExpNegPositiveInput(float x)
+        {
+            x = math.max(0f, x);
+            float x2 = x * x;
+            return math.saturate(1f / (1f + x + (0.48f * x2) + (0.235f * x2 * x)));
+        }
+
+        private static float ApproximateExpSigned(float x)
+        {
+            return x < 0f
+                ? ApproximateExpNegPositiveInput(-x)
+                : 1f / ApproximateExpNegPositiveInput(math.min(x, 4f));
         }
 
         private bool IsValidCraftReservation(in CraftReservation reservation)

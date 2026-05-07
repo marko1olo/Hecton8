@@ -63,9 +63,15 @@ namespace Hecton8.Gameplay
         private float _runtimeInventoryLoadRatio;
         private const float TwoPi = 2f * math.PI;
         private const float LocalGravityOverrideBlendSeconds = 1f;
+        private const float VrComfortGravityTransitionSeconds = 1f;
+        private const float VrComfortGravityTransitionTargetEpsilon = 0.015f;
+        private const float VrHorizonLockReturnSeconds = 0.5f;
         private const float MinLocalGravitySqr = 0.000001f;
         private const float LocalGravityRetargetEpsilonSqr = 0.0001f;
         private const string DefaultWaterEntrySplashClipPath = "Assets/_Project/Audio/Movement/dive_splash.wav";
+        private static readonly int VrComfortSignalsId = Shader.PropertyToID("_HectonVrComfortSignals");
+        private static readonly int VrComfortSwayId = Shader.PropertyToID("_HectonVrComfortSway");
+        private static readonly int VrComfortMotionId = Shader.PropertyToID("_HectonVrComfortMotion");
         private const int CrestBodySampleCount = 5;
         private const int CrestSampleCenter = 0;
         private const int CrestSampleHead = 1;
@@ -519,6 +525,8 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 0.35f)] private float externalEnvironmentalDragHoldTime = 0.12f;
         [Tooltip("How quickly external environmental drag blends toward the requested multiplier and recovers after release.")]
         [SerializeField, Range(1f, 24f)] private float externalEnvironmentalDragBlendSpeed = 9f;
+        [Tooltip("Instant analytical drag multiplier applied while the player is submerged in generated toxic brine.")]
+        [SerializeField, Range(1f, 8f)] private float brineViscosityDragMultiplier = 4f;
         [Header("Parasite Latch Physics")]
         [Tooltip("How long parasite COM and harvester pull stay active without refresh before recovering to neutral.")]
         [SerializeField, Range(0f, 0.35f)] private float parasiteLatchInfluenceHoldTime = 0.14f;
@@ -724,6 +732,40 @@ namespace Hecton8.Gameplay
         [SerializeField] private float pitchMin = -85f;
         [SerializeField] private float pitchMax = 85f;
 
+        [Header("VR Comfort Locomotion")]
+        [SerializeField, Tooltip("Allows VR comfort rules in editor or desktop test sessions without an active XR device.")]
+        private bool vrComfortAllowDesktopPreview;
+        [SerializeField, Tooltip("Fallback if SettingsManager is not registered. SettingsManager still owns the persisted player option.")]
+        private bool vrComfortModeDefaultEnabled = true;
+        [SerializeField, Tooltip("Fallback snap-turn option if SettingsManager is not registered.")]
+        private bool vrSnapTurnDefaultEnabled = true;
+        [SerializeField, Range(15f, 60f)]
+        private float vrSnapTurnDegrees = 30f;
+        [SerializeField, Range(0.25f, 0.98f)]
+        private float vrSnapTurnThreshold = 0.72f;
+        [SerializeField, Range(0.01f, 0.6f)]
+        private float vrSnapTurnRearmThreshold = 0.28f;
+        [SerializeField, Range(15f, 180f)]
+        private float vrSmoothTurnDegreesPerSecond = 90f;
+        [SerializeField, Range(0f, 0.35f)]
+        private float vrSmoothTurnDeadzone = 0.08f;
+        [SerializeField, Range(0f, 1f)]
+        private float vrHeadRelativeSwimBiasDefault = 0.55f;
+        [SerializeField, Tooltip("Fallback horizon-lock option if SettingsManager is not registered.")]
+        private bool vrHorizonLockDefaultEnabled = true;
+        [SerializeField, Range(0f, 1f)]
+        private float vrManualRollInputThreshold = 0.65f;
+        [SerializeField, Range(0f, 1f)]
+        private float vrCameraLocalMotionSuppression = 1f;
+        [SerializeField, Range(1f, 20f)]
+        private float vrComfortVignetteSharpness = 8f;
+        [SerializeField, Range(0.5f, 20f)]
+        private float vrComfortVisualDecaySharpness = 10f;
+        [SerializeField, Range(0.25f, 12f)]
+        private float vrComfortHighSpeedMetersPerSecond = 5.25f;
+        [SerializeField, Range(15f, 360f)]
+        private float vrComfortYawRateReference = 120f;
+
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  INSPECTOR Ã¢â‚¬â€ SWIM VERTICAL DEFAULTS
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -774,6 +816,16 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.05f, 0.8f)] private float dryInteriorFootProbeHeight = 0.24f;
         [Tooltip("Maximum distance used by each dry-interior foot-support raycast.")]
         [SerializeField, Range(0.1f, 1.6f)] private float dryInteriorFootProbeDistance = 0.7f;
+        [Tooltip("Forward Burst ray range used to resolve hand IK repair snap points on interactables.")]
+        [SerializeField, Range(0.2f, 3f)] private float kinematicRepairTargetProbeRange = 1.65f;
+        [Tooltip("Surface offset applied to KCC hand IK repair snap points.")]
+        [SerializeField, Range(0f, 0.2f)] private float kinematicRepairTargetSurfaceOffset = 0.06f;
+
+        private const double KinematicRepairProbeAupReuseDistanceSq = 0.0144d;
+        private const float KinematicRepairProbeDirectionReuseDot = 0.9962f;
+        private const int KinematicRepairProbeMaxAupGateSkips = 2;
+        private const uint KinematicRepairStateHasSnapBit = 1u << 0;
+        private const uint KinematicRepairStateHasProbeCullAnchorBit = 1u << 1;
 
         [Header("Exosuit Locomotion")]
         [Tooltip("Extra grounded walk force multiplier while an exosuit transport owns locomotion.")]
@@ -1007,6 +1059,12 @@ namespace Hecton8.Gameplay
         private bool _resolvedUnderwaterVisuals;
         private int _playerColliderInstanceId;
         private int _instanceId;
+        private KinematicRepairTargetProbe _lastKinematicRepairProbe;
+        private KinematicRepairSnapPoint _lastKinematicRepairSnapPoint;
+        private AbsoluteUniversePosition _lastKinematicRepairProbeCullAup;
+        private Vector3 _lastKinematicRepairProbeCullDirection = Vector3.forward;
+        private int _kinematicRepairProbeAupGateSkipCount;
+        private uint _kinematicRepairStateBits;
         private float _nextSargassumEntanglementAudioTime = float.NegativeInfinity;
         private float _basePlayerHeight;
         private float _baseCapsuleHeight;
@@ -1079,6 +1137,27 @@ namespace Hecton8.Gameplay
         private Vector2 _cachedMoveInput;
         private Vector2 _pendingLookInput;
         private float _cachedVerticalInput;
+        private float _currentRenderDeltaTime = 0.0166667f;
+        private bool _vrSnapTurnArmed = true;
+        private float _vrComfortVignette01;
+        private float _vrComfortVisualBounce01;
+        private float _vrComfortPeripheralBlur01;
+        private float _vrComfortKickSignal01;
+        private Vector2 _vrComfortSway;
+        private Vector2 _vrComfortMotionVector;
+        private float _vrComfortVelocitySq01;
+        private float _vrHorizonRollDampedDegrees;
+        private bool _vrHorizonRollDampingInitialized;
+        private bool _vrComfortGravityScaleInitialized;
+        private float _vrComfortGravityScaleCurrent;
+        private float _vrComfortGravityScaleStart;
+        private float _vrComfortGravityScaleTarget;
+        private float _vrComfortGravityScaleTimer;
+        private bool _vrComfortActiveCached;
+        private bool _vrSnapTurnEnabledCached = true;
+        private bool _vrHorizonLockEnabledCached = true;
+        private bool _vrComfortVignetteEnabledCached = true;
+        private float _vrHeadRelativeSwimBiasCached = 0.55f;
 
         private float _cameraYaw;
         private float _cameraPitch;
@@ -1368,7 +1447,14 @@ namespace Hecton8.Gameplay
         /// <param name="newSuit">Suit data to apply. Null is rejected with a warning.</param>
         public void SetSuit(SuitData newSuit)
         {
-            if (newSuit == null) { Debug.LogWarning("[HectonPlayerMovement] null suit.", this); return; }
+            if (newSuit == null)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[HectonPlayerMovement] null suit.", this);
+#endif
+                return;
+            }
+
             currentSuitData = newSuit;
             ApplySuitToRigidbody();
             EnsureJuiceProcessor();
@@ -1455,6 +1541,13 @@ namespace Hecton8.Gameplay
             SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplier(totalMassKg, carryCapacityKg));
         }
 
+        public void ApplyRuntimeInventoryMassLoad(float totalMassKg, float carryCapacityKg, float cachedMovementMultiplier, float cachedLoad01)
+        {
+            _runtimeInventoryLoadRatio = ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg);
+            _runtimeInventoryLoad01 = math.saturate(cachedLoad01);
+            SetRuntimeInventoryLoadMovementMultiplier(cachedMovementMultiplier);
+        }
+
         /// <summary>Normalized 0-1 inventory mass load consumed by HUD and locomotion penalties.</summary>
         public float InventoryLoad01 => _runtimeInventoryLoad01;
 
@@ -1488,6 +1581,12 @@ namespace Hecton8.Gameplay
             : (_rb != null ? HectonPlayerMotor.SafeVelocity(_rb.linearVelocity) : Vector3.zero);
         /// <summary>Current physics world velocity used by predictive streaming and runtime telemetry.</summary>
         public Vector3 CurrentWorldVelocity => _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.linearVelocity) : Vector3.zero;
+        /// <summary>Authoritative player AUP from the locomotion snapshot.</summary>
+        public AbsoluteUniversePosition CurrentAup => _playerState.AbsolutePosition;
+        /// <summary>Dead-reckoned player AUP at +0.1 seconds for low-rate AI steering.</summary>
+        public AbsoluteUniversePosition PredictedAup => _playerState.PredictedAbsolutePosition;
+        /// <summary>Dead-reckoned runtime position at +0.1 seconds for low-rate AI steering.</summary>
+        public float3 PredictedRuntimePosition => _playerState.PredictedRuntimePosition;
         /// <summary>Effective water surface Y from Crest or the serialized fallback.</summary>
         public float CurrentWaterSurfaceY => EffectiveWaterSurfaceY;
         /// <summary>Current depth below the effective water surface in metres.</summary>
@@ -1525,6 +1624,16 @@ namespace Hecton8.Gameplay
         internal float CurrentAbyssalShearDrainMultiplier => math.max(1f, _abyssalShearDrainMultiplier);
         internal Vector3 CurrentAbyssalFlowWeatherCurrent => _abyssalFlowWeatherCurrent;
         internal bool HasActiveTowCable => ResolveHeavyTowWinchRuntime() && _heavyTowWinch != null && _heavyTowWinch.HasActiveTow;
+
+        internal bool TryGetKinematicRepairSnap(
+            out KinematicRepairTargetProbe probe,
+            out KinematicRepairSnapPoint snapPoint)
+        {
+            probe = _lastKinematicRepairProbe;
+            snapPoint = _lastKinematicRepairSnapPoint;
+            return (_kinematicRepairStateBits & KinematicRepairStateHasSnapBit) != 0u &&
+                   snapPoint.ColliderInstanceId != 0;
+        }
 
         internal bool TryGetActiveTransportPlatform(out ITransportPlatform transportPlatform)
         {
@@ -1751,7 +1860,8 @@ namespace Hecton8.Gameplay
             if (sqrMagnitude <= 0.0001f || acceleration <= 0.0001f)
                 return;
 
-            QueueEnvironmentalForce(toSource.normalized * (math.max(_rb.mass, 0.0001f) * acceleration));
+            float invMagnitude = math.rsqrt(sqrMagnitude);
+            QueueEnvironmentalForce(toSource * (invMagnitude * math.max(_rb.mass, 0.0001f) * acceleration));
 
             float clampedLockDuration = math.max(0f, lockDuration);
             if (clampedLockDuration <= 0.0001f)
@@ -1790,12 +1900,52 @@ namespace Hecton8.Gameplay
             float clampedSeverity = math.saturate(severity);
             StartWipeout(
                 math.max(clampedSeverity, 0.65f),
-                math.max(_rb != null ? _rb.linearVelocity.magnitude : 0f, wipeoutBailoutSpeedThreshold),
-                _cachedTransform != null ? _cachedTransform.position : Vector3.zero,
+                ResolveBailoutSpeed(),
+                ResolvePlayerAupRuntimePosition(),
                 Vector3.up,
                 null,
                 true,
                 worldImpulse);
+        }
+
+        private float ResolveBailoutSpeed()
+        {
+            float threshold = math.max(wipeoutBailoutSpeedThreshold, 0f);
+            if (_rb == null)
+                return threshold;
+
+            Vector3 linearVelocity = _rb.linearVelocity;
+            float speedSq = linearVelocity.sqrMagnitude;
+            float thresholdSq = threshold * threshold;
+            return speedSq > thresholdSq
+                ? math.max(threshold, ApproximateVectorMagnitude(linearVelocity))
+                : threshold;
+        }
+
+        private Vector3 ResolvePlayerAupRuntimePosition()
+        {
+            float3 runtime3 = _playerState.AbsolutePosition.ToRuntimeFloat3();
+            return new Vector3(runtime3.x, runtime3.y, runtime3.z);
+        }
+
+        private static float ApproximateVectorMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (0.375f * mid) + (0.125f * min);
+        }
+
+        private static float ApproximatePlanarMagnitude(float x, float z)
+        {
+            float ax = math.abs(x);
+            float az = math.abs(z);
+            float max = math.max(ax, az);
+            float min = math.min(ax, az);
+            return max + (0.375f * min);
         }
 
 
@@ -2023,6 +2173,11 @@ namespace Hecton8.Gameplay
             _rb.MoveRotation(rotation);
         }
 
+        private int ResolveKccSweepLayerMask()
+        {
+            return groundLayers.value & ~HectonLayerMasks.VoxelProxyLayerMask;
+        }
+
         private bool TrySweepGatedMotorDisplacement(Vector3 displacement, float skinWidth, out RaycastHit blockingHit)
         {
             blockingHit = default;
@@ -2035,7 +2190,7 @@ namespace Hecton8.Gameplay
             BuildFixedFrameSweepCapsule(out Vector3 point1, out Vector3 point2, out float radius);
             bool movedWithoutBlock = _playerMotor.TrySweepGatedMove(
                 displacement,
-                groundLayers,
+                ResolveKccSweepLayerMask(),
                 skinWidth,
                 point1,
                 point2,
@@ -2804,6 +2959,17 @@ namespace Hecton8.Gameplay
             _cachedMoveInput = Vector2.zero;
             _pendingLookInput = Vector2.zero;
             _cachedVerticalInput = 0f;
+            _vrSnapTurnArmed = true;
+            _vrComfortVignette01 = 0f;
+            _vrComfortVisualBounce01 = 0f;
+            _vrComfortPeripheralBlur01 = 0f;
+            _vrComfortKickSignal01 = 0f;
+            _vrComfortSway = Vector2.zero;
+            _vrComfortMotionVector = Vector2.zero;
+            _vrComfortVelocitySq01 = 0f;
+            _vrHorizonRollDampingInitialized = false;
+            _vrComfortGravityScaleInitialized = false;
+            ApplyVrComfortShaderSignals(false, 0f, 0f, 0f, Vector2.zero, 0f, Vector2.zero);
             _underwaterSomaticPhase = 0f;
             _underwaterSomaticWeight = 0f;
             _underwaterSomaticPitchOffset = 0f;
@@ -2993,7 +3159,9 @@ namespace Hecton8.Gameplay
         {
             float totalMassKg = _inventoryLoadSource != null ? _inventoryLoadSource.TotalMassKg : 0f;
             float carryCapacityKg = ResolveInventoryCarryCapacityKg();
-            ApplyRuntimeInventoryMassLoad(totalMassKg, carryCapacityKg);
+            float cachedLoad01 = _inventoryLoadSource != null ? _inventoryLoadSource.CachedInventoryLoad01 : 0f;
+            float cachedMovementMultiplier = _inventoryLoadSource != null ? _inventoryLoadSource.CachedMaxSwimSpeedMultiplier : 1f;
+            ApplyRuntimeInventoryMassLoad(totalMassKg, carryCapacityKg, cachedMovementMultiplier, cachedLoad01);
             InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
                 _inventoryLoadSource,
                 totalMassKg,
@@ -3052,7 +3220,7 @@ namespace Hecton8.Gameplay
             return swimForce;
         }
 
-        private static float ResolveInventoryLoadMovementMultiplierFromLoad(float load01)
+        internal static float ResolveInventoryLoadMovementMultiplierFromLoad(float load01)
         {
             return math.lerp(1f, InventoryLoadMinimumMovementMultiplier, math.saturate(load01));
         }
@@ -4397,7 +4565,19 @@ namespace Hecton8.Gameplay
 
         private float ResolveExternalEnvironmentalDragMultiplier()
         {
-            return math.max(1f, _externalEnvironmentalDragCurrentMultiplier);
+            float multiplier = math.max(1f, _externalEnvironmentalDragCurrentMultiplier);
+            multiplier = math.max(
+                multiplier,
+                PlayerSwimMotor.ResolveBrineViscosityDragMultiplier(
+                    IsSubmergedInGeneratedBrine(),
+                    brineViscosityDragMultiplier));
+
+            return multiplier;
+        }
+
+        private bool IsSubmergedInGeneratedBrine()
+        {
+            return _rb != null && HectonBrineToxicMudGrid.ContainsRuntimeSubmergedPosition(_rb.position);
         }
 
         private float ResolveExternalEnvironmentalSpeedMultiplier()
@@ -5189,6 +5369,8 @@ namespace Hecton8.Gameplay
 
             using (_tickProfilerMarker.Auto())
             {
+                _currentRenderDeltaTime = math.max(0.0001f, deltaTime);
+                RefreshVrComfortSettingsCache();
                 PrepareRenderTickDependencies();
                 if (_activeSonarPingCooldownTimer > 0f)
                 {
@@ -5204,6 +5386,10 @@ namespace Hecton8.Gameplay
                     _inputH = 0f; _inputV = 0f; _inputVertical = 0f; _mouseXDelta = 0f;
                     SetSprintingState(false);
                     _inputCleared = true;
+                    _lastKinematicRepairProbe = default;
+                    _lastKinematicRepairSnapPoint = default;
+                    _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
+                    ResetKinematicRepairProbeReuseGate();
                     Cursor.lockState = CursorLockMode.None;
                     Cursor.visible = true;
                     UpdateRenderInterpolationState();
@@ -5211,6 +5397,7 @@ namespace Hecton8.Gameplay
                     _juiceOutput = _juiceProcessor.Process(in _juiceInput, suit);
                     UpdateUnderwaterSomaticCameraOffsets(deltaTime);
                     ApplyCameraState();
+                    UpdateVrComfortSignals(deltaTime, 0f, 0f);
                     return;
                 }
 
@@ -5277,6 +5464,8 @@ namespace Hecton8.Gameplay
                     _jumpBufferTimer = 0f;
                 }
 
+                ConsumeKinematicRepairTargetProbe();
+                ScheduleKinematicRepairTargetProbe();
                 UpdateRenderInterpolationState();
                 _feedbackVelocity = ResolveFeedbackVelocity(_renderInterpolatedLinearVelocity);
                 _velocity = _feedbackVelocity;
@@ -5286,6 +5475,7 @@ namespace Hecton8.Gameplay
                     _velocity.z * _velocity.z);
                 float renderCameraYaw = CameraYaw;
                 float yawDelta = Mathf.DeltaAngle(_prevYawForMomentum, renderCameraYaw);
+                UpdateVrComfortSignals(deltaTime, currentSpeed, yawDelta);
 
                 if (_swimPresentationController != null)
                 {
@@ -5399,6 +5589,10 @@ namespace Hecton8.Gameplay
             _queuedExternalKinematicVelocityChange = Vector3.zero;
             _velocity = Vector3.zero;
             _feedbackVelocity = Vector3.zero;
+            _lastKinematicRepairProbe = default;
+            _lastKinematicRepairSnapPoint = default;
+            _kinematicRepairStateBits &= ~KinematicRepairStateHasSnapBit;
+            ResetKinematicRepairProbeReuseGate();
 
             if (_playerMotor != null)
                 _playerMotor.SetLinearVelocity(Vector3.zero);
@@ -5436,7 +5630,7 @@ namespace Hecton8.Gameplay
             _juiceInput.hasMovementInput = _inputH != 0f || _inputV != 0f || _inputVertical != 0f;
             _juiceInput.inputH = _inputH;
             _juiceInput.mouseXDelta = _mouseXDelta;
-            _juiceInput.horizontalSpeed = math.sqrt(_velocity.x * _velocity.x + _velocity.z * _velocity.z);
+            _juiceInput.horizontalSpeed = ApproximatePlanarMagnitude(_velocity.x, _velocity.z);
             _juiceInput.verticalVelocity = _velocity.y;
             _juiceInput.wasGroundedLastFrame = _wasGroundedLastFrame;
             _juiceInput.deltaTime = deltaTime;
@@ -5444,10 +5638,7 @@ namespace Hecton8.Gameplay
 
             // v7.0 additions
             _juiceInput.depth = _currentDepth;
-            _juiceInput.swimSpeed = math.sqrt(
-                _velocity.x * _velocity.x +
-                _velocity.y * _velocity.y +
-                _velocity.z * _velocity.z);
+            _juiceInput.swimSpeed = ApproximateVectorMagnitude(_velocity);
             _juiceInput.cameraPitch = _cameraPitch;
             _juiceInput.swimVerticalInput = _inputVertical;
             _juiceInput.heavyCarryLoad = ResolveHeavyCarryLoad01();
@@ -5482,27 +5673,86 @@ namespace Hecton8.Gameplay
         {
             float squeeze01 = ResolveFatalPressureSqueeze01();
             float lookSensitivityScale = math.lerp(1f, fatalPressureLookSensitivityFloor, squeeze01);
-            float scaledLookX = lookDelta.x * mouseSensitivity * lookSensitivityScale;
             float scaledLookY = lookDelta.y * mouseSensitivity * lookSensitivityScale;
 
+            if (_vrComfortActiveCached)
+            {
+                ApplyVrComfortLookInput(lookDelta, scaledLookY, squeeze01);
+                return;
+            }
+
+            float scaledLookX = lookDelta.x * mouseSensitivity * lookSensitivityScale;
             _mouseXDelta = lookDelta.x * lookSensitivityScale;
+            ApplyCameraYawDelta(scaledLookX);
+            _cameraPitch -= scaledLookY;
+            ApplyFatalPressureLookClamp(squeeze01);
+        }
+
+        private void ApplyVrComfortLookInput(
+            Vector2 lookDelta,
+            float scaledLookY,
+            float squeeze01)
+        {
+            float lookX = lookDelta.x;
+            float absLookX = math.abs(lookX);
+
+            if (_vrSnapTurnEnabledCached)
+            {
+                if (absLookX <= vrSnapTurnRearmThreshold)
+                    _vrSnapTurnArmed = true;
+
+                if (_vrSnapTurnArmed && absLookX >= vrSnapTurnThreshold)
+                {
+                    float yawDelta = math.sign(lookX) * math.max(1f, vrSnapTurnDegrees);
+                    ApplyCameraYawDelta(yawDelta);
+                    _mouseXDelta = yawDelta;
+                    _vrSnapTurnArmed = false;
+                    _vrComfortKickSignal01 = math.max(_vrComfortKickSignal01, 0.55f);
+                }
+                else
+                {
+                    _mouseXDelta = 0f;
+                }
+            }
+            else
+            {
+                float turnAxis = ResolveVrSmoothTurnAxis(lookX);
+                float turnDelta = turnAxis * turnAxis * math.sign(turnAxis) * math.max(1f, vrSmoothTurnDegreesPerSecond) * _currentRenderDeltaTime;
+                ApplyCameraYawDelta(turnDelta);
+                _mouseXDelta = turnDelta;
+            }
+
+            _cameraPitch -= scaledLookY;
+            ApplyFatalPressureLookClamp(squeeze01);
+        }
+
+        private float ResolveVrSmoothTurnAxis(float rawAxis)
+        {
+            float absAxis = math.abs(rawAxis);
+            float deadzone = math.saturate(vrSmoothTurnDeadzone);
+            if (absAxis <= deadzone)
+                return 0f;
+
+            float normalized = (absAxis - deadzone) / math.max(1f - deadzone, 0.0001f);
+            return math.sign(rawAxis) * math.saturate(normalized);
+        }
+
+        private void ApplyCameraYawDelta(float yawDegrees)
+        {
             if (TryGetActiveTransportPlatformTransform(out _))
             {
                 Quaternion basisRotation = ResolveTransportPlatformBasisRotation();
                 Quaternion platformYawDelta =
                     basisRotation *
-                    Quaternion.AngleAxis(scaledLookX, Vector3.up) *
+                    Quaternion.AngleAxis(yawDegrees, Vector3.up) *
                     Quaternion.Inverse(basisRotation);
                 Quaternion rotatedWorldYaw = platformYawDelta * ResolveWorldYawRotation(_cameraYaw);
                 _cameraYaw = ExtractWorldYaw(rotatedWorldYaw * Vector3.forward, _cameraYaw);
             }
             else
             {
-                _cameraYaw += scaledLookX;
+                _cameraYaw += yawDegrees;
             }
-
-            _cameraPitch -= scaledLookY;
-            ApplyFatalPressureLookClamp(squeeze01);
         }
 
         private float ResolveFatalPressureSqueeze01()
@@ -5543,7 +5793,7 @@ namespace Hecton8.Gameplay
                 ? math.saturate(math.max(_smoothedImmersionRatio, _waterImmersionRatio))
                 : 0f;
             float thrustIntent = math.saturate(math.max(
-                math.sqrt(_inputH * _inputH + _inputV * _inputV),
+                ApproximatePlanarMagnitude(_inputH, _inputV),
                 math.abs(_inputVertical)));
             thrustIntent = math.max(thrustIntent, math.saturate(ResolveActiveTransportBoost01()));
 
@@ -5570,7 +5820,7 @@ namespace Hecton8.Gameplay
 
             Vector3 velocity = HectonPlayerMotor.SafeVelocity(_feedbackVelocity);
             float speedSq = velocity.sqrMagnitude;
-            float speed = speedSq > 0.000001f ? math.sqrt(speedSq) : 0f;
+            float speed = speedSq > 0.000001f ? ApproximateVectorMagnitude(velocity) : 0f;
             float speed01 = math.saturate(speed / math.max(underwaterSomaticReferenceSpeed, 0.01f));
             float speedPresence = math.saturate(speed / 0.35f);
             float targetWeight = immersion * thrustIntent * speedPresence;
@@ -5643,6 +5893,185 @@ namespace Hecton8.Gameplay
             _underwaterSomaticFatigueBreathCooldownTimer = math.max(0.2f, fatigueCadenceCooldown);
         }
 
+        private bool ResolveVrComfortModeEnabled(SettingsManager settings)
+        {
+            bool requested = settings != null ? settings.VrComfortModeEnabled : vrComfortModeDefaultEnabled;
+            if (!requested)
+                return false;
+
+            return vrComfortAllowDesktopPreview || IsVrRuntimeActive();
+        }
+
+        private static bool IsVrRuntimeActive()
+        {
+            return UnityEngine.XR.XRSettings.enabled && UnityEngine.XR.XRSettings.isDeviceActive;
+        }
+
+        private void RefreshVrComfortSettingsCache()
+        {
+            SettingsManager settings = GlobalRegistry.Settings;
+            _vrComfortActiveCached = ResolveVrComfortModeEnabled(settings);
+            _vrSnapTurnEnabledCached = settings != null ? settings.VrSnapTurnEnabled : vrSnapTurnDefaultEnabled;
+            _vrHorizonLockEnabledCached = settings != null ? settings.VrHorizonLockEnabled : vrHorizonLockDefaultEnabled;
+            _vrComfortVignetteEnabledCached = settings == null || settings.VrComfortVignetteEnabled;
+            _vrHeadRelativeSwimBiasCached = math.saturate(settings != null ? settings.VrHeadRelativeSwimBias : vrHeadRelativeSwimBiasDefault);
+            if (!_vrComfortActiveCached)
+                _vrSnapTurnArmed = true;
+        }
+
+        private float ResolveVrSwimmingReferenceYawDegrees()
+        {
+            if (!_vrComfortActiveCached)
+                return _bodyYaw;
+
+            return math.lerp(_bodyYaw, _cameraYaw, _vrHeadRelativeSwimBiasCached);
+        }
+
+        private bool ShouldVrHorizonLockRoll()
+        {
+            if (!_vrComfortActiveCached || !_vrHorizonLockEnabledCached || _isWalking)
+                return false;
+
+            bool manualRollIntent = math.abs(_inputH) >= vrManualRollInputThreshold && math.abs(_inputV) <= 0.25f;
+            return !manualRollIntent;
+        }
+
+        private float ResolveVrHorizonRoll(float rawRollDegrees, bool horizonLockActive, float deltaTime)
+        {
+            if (!horizonLockActive)
+            {
+                _vrHorizonRollDampedDegrees = rawRollDegrees;
+                _vrHorizonRollDampingInitialized = true;
+                return rawRollDegrees;
+            }
+
+            if (!_vrHorizonRollDampingInitialized)
+            {
+                _vrHorizonRollDampedDegrees = rawRollDegrees;
+                _vrHorizonRollDampingInitialized = true;
+            }
+
+            _vrHorizonRollDampedDegrees = SlerpRollDegrees(
+                _vrHorizonRollDampedDegrees,
+                0f,
+                math.max(0f, deltaTime),
+                VrHorizonLockReturnSeconds);
+            return _vrHorizonRollDampedDegrees;
+        }
+
+        private static float SlerpRollDegrees(float currentDegrees, float targetDegrees, float deltaTime, float duration)
+        {
+            float t = math.saturate(deltaTime / math.max(0.0001f, duration));
+            quaternion current = quaternion.AxisAngle(new float3(0f, 0f, 1f), math.radians(currentDegrees));
+            quaternion target = quaternion.AxisAngle(new float3(0f, 0f, 1f), math.radians(targetDegrees));
+            quaternion resolved = math.slerp(current, target, t);
+            float3 up = math.mul(resolved, new float3(0f, 1f, 0f));
+            return math.degrees(math.atan2(-up.x, up.y));
+        }
+
+        private void RegisterVrComfortVisualBounce(float intensity01)
+        {
+            float clamped = math.saturate(intensity01);
+            _vrComfortVisualBounce01 = math.max(_vrComfortVisualBounce01, clamped);
+            _vrComfortKickSignal01 = math.max(_vrComfortKickSignal01, clamped * 0.65f);
+        }
+
+        private void UpdateVrComfortSignals(float deltaTime, float currentSpeed, float yawDeltaDegrees)
+        {
+            bool active = _vrComfortActiveCached;
+            float safeDeltaTime = math.max(0.0001f, deltaTime);
+            float settleT = ResolveLinearBlendT(math.max(0.5f, vrComfortVisualDecaySharpness), safeDeltaTime);
+
+            if (!active)
+            {
+                _vrComfortVignette01 = math.lerp(_vrComfortVignette01, 0f, settleT);
+                _vrComfortVisualBounce01 = math.lerp(_vrComfortVisualBounce01, 0f, settleT);
+                _vrComfortPeripheralBlur01 = math.lerp(_vrComfortPeripheralBlur01, 0f, settleT);
+                _vrComfortKickSignal01 = math.lerp(_vrComfortKickSignal01, 0f, settleT);
+                _vrComfortVelocitySq01 = math.lerp(_vrComfortVelocitySq01, 0f, settleT);
+                _vrComfortSway.x = math.lerp(_vrComfortSway.x, 0f, settleT);
+                _vrComfortSway.y = math.lerp(_vrComfortSway.y, 0f, settleT);
+                _vrComfortMotionVector.x = math.lerp(_vrComfortMotionVector.x, 0f, settleT);
+                _vrComfortMotionVector.y = math.lerp(_vrComfortMotionVector.y, 0f, settleT);
+                ApplyVrComfortShaderSignals(
+                    false,
+                    _vrComfortVignette01,
+                    _vrComfortVisualBounce01,
+                    _vrComfortPeripheralBlur01,
+                    _vrComfortSway,
+                    _vrComfortVelocitySq01,
+                    _vrComfortMotionVector);
+                return;
+            }
+
+            float yawRate = math.abs(yawDeltaDegrees) / safeDeltaTime;
+            float yawRate01 = math.saturate(yawRate / math.max(1f, vrComfortYawRateReference));
+            float speedReference = math.max(0.25f, vrComfortHighSpeedMetersPerSecond);
+            float speed01 = math.saturate(currentSpeed / speedReference);
+            float velocitySq = _velocity.x * _velocity.x + _velocity.y * _velocity.y + _velocity.z * _velocity.z;
+            float velocitySq01 = math.saturate(velocitySq / (speedReference * speedReference));
+            float thrusterIntent = math.saturate(math.max(math.abs(_inputVertical), ResolveActiveTransportBoost01()));
+            float targetBlur = speed01 * thrusterIntent;
+            float targetVignette = _vrComfortVignetteEnabledCached
+                ? math.max(_vrComfortKickSignal01, math.max(velocitySq01, math.max(yawRate01, targetBlur * 0.85f)))
+                : 0f;
+
+            float vignetteT = ResolveLinearBlendT(math.max(1f, vrComfortVignetteSharpness), safeDeltaTime);
+            _vrComfortVignette01 = math.lerp(_vrComfortVignette01, targetVignette, vignetteT);
+            _vrComfortPeripheralBlur01 = math.lerp(_vrComfortPeripheralBlur01, targetBlur, vignetteT);
+            _vrComfortVisualBounce01 = math.lerp(_vrComfortVisualBounce01, 0f, settleT);
+            _vrComfortKickSignal01 = math.lerp(_vrComfortKickSignal01, 0f, settleT);
+            _vrComfortVelocitySq01 = math.lerp(_vrComfortVelocitySq01, velocitySq01, vignetteT);
+
+            Vector3 localVelocity = _cachedTransform != null
+                ? _cachedTransform.InverseTransformDirection(_feedbackVelocity)
+                : _feedbackVelocity;
+            float invSpeed = currentSpeed > 0.0001f ? 1f / currentSpeed : 0f;
+            float targetSwayX = -math.clamp(localVelocity.x * invSpeed, -1f, 1f) * 0.35f;
+            float targetSwayY = -math.clamp(localVelocity.y * invSpeed, -1f, 1f) * 0.22f;
+            _vrComfortSway.x = math.lerp(_vrComfortSway.x, targetSwayX, vignetteT);
+            _vrComfortSway.y = math.lerp(_vrComfortSway.y, targetSwayY, vignetteT);
+            float targetMotionX = math.clamp(localVelocity.x * invSpeed, -1f, 1f);
+            float targetMotionY = math.clamp(localVelocity.y * invSpeed, -1f, 1f);
+            _vrComfortMotionVector.x = math.lerp(_vrComfortMotionVector.x, targetMotionX, vignetteT);
+            _vrComfortMotionVector.y = math.lerp(_vrComfortMotionVector.y, targetMotionY, vignetteT);
+
+            ApplyVrComfortShaderSignals(
+                true,
+                _vrComfortVignette01,
+                _vrComfortVisualBounce01,
+                _vrComfortPeripheralBlur01,
+                _vrComfortSway,
+                _vrComfortVelocitySq01,
+                _vrComfortMotionVector);
+        }
+
+        private static void ApplyVrComfortShaderSignals(
+            bool active,
+            float vignette01,
+            float bounce01,
+            float peripheralBlur01,
+            Vector2 sway,
+            float velocitySq01,
+            Vector2 motionVector)
+        {
+            Shader.SetGlobalVector(
+                VrComfortSignalsId,
+                new Vector4(
+                    math.saturate(vignette01),
+                    math.saturate(bounce01),
+                    math.saturate(peripheralBlur01),
+                    active ? 1f : 0f));
+            Shader.SetGlobalVector(VrComfortSwayId, new Vector4(sway.x, sway.y, math.saturate(velocitySq01), 0f));
+            Shader.SetGlobalVector(
+                VrComfortMotionId,
+                new Vector4(
+                    math.clamp(motionVector.x, -1f, 1f),
+                    math.clamp(motionVector.y, -1f, 1f),
+                    math.saturate(velocitySq01),
+                    active ? 1f : 0f));
+        }
+
         private void ApplyCameraState()
         {
             if (_cameraRig == null)
@@ -5655,6 +6084,9 @@ namespace Hecton8.Gameplay
             finalPitch = math.clamp(finalPitch, pitchMin - 5f, pitchMax + 5f);
             float finalYaw = CameraYaw + _underwaterSomaticYawOffset;
             float finalRoll = _juiceOutput.rollOffset + sargassumRollOffset + _heavyTowCameraRollOffset;
+            bool vrComfortActive = _vrComfortActiveCached;
+            bool horizonLockActive = ShouldVrHorizonLockRoll();
+            finalRoll = ResolveVrHorizonRoll(finalRoll, horizonLockActive, _currentRenderDeltaTime);
 
             if (_activeTransportPlatform != null && _activeTransportPlatform.InheritPlatformRotation && TryGetActiveTransportPlatformTransform(out _))
             {
@@ -5667,9 +6099,12 @@ namespace Hecton8.Gameplay
             }
 
             Vector3 finalPos;
-            finalPos.x = _cameraBaseLocalPos.x + _juiceOutput.localPositionOffset.x + sargassumLocalOffset.x + _heavyTowCameraLocalOffset.x;
-            finalPos.y = _cameraBaseLocalPos.y + _juiceOutput.localPositionOffset.y + sargassumLocalOffset.y + _heavyTowCameraLocalOffset.y;
-            finalPos.z = _cameraBaseLocalPos.z + _juiceOutput.localPositionOffset.z + sargassumLocalOffset.z + _heavyTowCameraLocalOffset.z;
+            float localMotionScale = vrComfortActive ? 1f - math.saturate(vrCameraLocalMotionSuppression) : 1f;
+            finalPos.x = _cameraBaseLocalPos.x + (_juiceOutput.localPositionOffset.x + sargassumLocalOffset.x + _heavyTowCameraLocalOffset.x) * localMotionScale;
+            finalPos.y = vrComfortActive
+                ? _cameraBaseLocalPos.y
+                : _cameraBaseLocalPos.y + (_juiceOutput.localPositionOffset.y + sargassumLocalOffset.y + _heavyTowCameraLocalOffset.y) * localMotionScale;
+            finalPos.z = _cameraBaseLocalPos.z + (_juiceOutput.localPositionOffset.z + sargassumLocalOffset.z + _heavyTowCameraLocalOffset.z) * localMotionScale;
 
             float targetFov = baseFov + _juiceOutput.fovOffset;
             float pressureSqueeze01 = ResolveFatalPressureSqueeze01();
@@ -5687,7 +6122,19 @@ namespace Hecton8.Gameplay
                 FieldOfViewSharpness = 8f
             };
 
+            _cameraRig.SetAupAnchor(ResolveVrAupAnchor());
             _cameraRig.SetLocomotionState(cameraState);
+        }
+
+        private Transform ResolveVrAupAnchor()
+        {
+            if (!_vrComfortActiveCached || _activeTransportPlatform == null || !_activeTransportPlatform.IsTransportPlatformActive)
+                return null;
+
+            if (_activeTransportPlatform is ISubmarineRuntimeContext)
+                return _activeTransportPlatform.PlatformTransform;
+
+            return null;
         }
 
         private static bool IsGameplayInputBlockedByMenu()
@@ -5726,6 +6173,42 @@ namespace Hecton8.Gameplay
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  FixedTick Ã¢â‚¬â€ PHYSICS
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+
+        private float ResolveVrComfortGravityScale(float targetGravityScale, float fixedDeltaTime)
+        {
+            if (!_vrComfortActiveCached)
+            {
+                _vrComfortGravityScaleInitialized = false;
+                return targetGravityScale;
+            }
+
+            if (!_vrComfortGravityScaleInitialized)
+            {
+                _vrComfortGravityScaleCurrent = targetGravityScale;
+                _vrComfortGravityScaleStart = targetGravityScale;
+                _vrComfortGravityScaleTarget = targetGravityScale;
+                _vrComfortGravityScaleTimer = VrComfortGravityTransitionSeconds;
+                _vrComfortGravityScaleInitialized = true;
+                return targetGravityScale;
+            }
+
+            if (math.abs(targetGravityScale - _vrComfortGravityScaleTarget) > VrComfortGravityTransitionTargetEpsilon)
+            {
+                _vrComfortGravityScaleStart = _vrComfortGravityScaleCurrent;
+                _vrComfortGravityScaleTarget = targetGravityScale;
+                _vrComfortGravityScaleTimer = 0f;
+            }
+
+            _vrComfortGravityScaleTimer = math.min(
+                VrComfortGravityTransitionSeconds,
+                _vrComfortGravityScaleTimer + math.max(0f, fixedDeltaTime));
+            float t = math.smoothstep(
+                0f,
+                1f,
+                _vrComfortGravityScaleTimer / math.max(0.0001f, VrComfortGravityTransitionSeconds));
+            _vrComfortGravityScaleCurrent = math.lerp(_vrComfortGravityScaleStart, _vrComfortGravityScaleTarget, t);
+            return _vrComfortGravityScaleCurrent;
+        }
 
         private Vector3 ResolveBlendedLocalGravity(float fixedDeltaTime)
         {
@@ -5797,6 +6280,8 @@ namespace Hecton8.Gameplay
 
             using (_fixedTickProfilerMarker.Auto())
             {
+                RefreshVrComfortSettingsCache();
+
                 if (_transportEvaLockTicks > 0)
                     _transportEvaLockTicks--;
 
@@ -6050,14 +6535,10 @@ namespace Hecton8.Gameplay
             RefreshSurfaceBreachLock(physicsImmersion);
             UpdateSurfaceDiveCommitTimer(fixedDeltaTime, activeTransportPreset);
 
-            if (exosuitActive || groundedOnShore)
-            {
-                _gravityScale = exosuitActive ? exosuitNegativeBuoyancyScale : 1f;
-            }
-            else
-            {
-                _gravityScale = 1f - math.saturate(physicsImmersion * gravityFadeRate);
-            }
+            float targetGravityScale = exosuitActive
+                ? exosuitNegativeBuoyancyScale
+                : groundedOnShore ? 1f : 1f - math.saturate(physicsImmersion * gravityFadeRate);
+            _gravityScale = ResolveVrComfortGravityScale(targetGravityScale, fixedDeltaTime);
 
             if (_gravityScale > 0.001f)
             {
@@ -6661,23 +7142,24 @@ namespace Hecton8.Gameplay
             if (velocitySqr <= 0.0001f || flowSqr <= 0.0001f)
                 return;
 
-            float invVelocity = 1f / math.sqrt(velocitySqr);
-            float invFlow = 1f / math.sqrt(flowSqr);
+            float invVelocity = math.rsqrt(velocitySqr);
+            float invFlow = math.rsqrt(flowSqr);
             float flowAlignment = Vector3.Dot(velocity * invVelocity, _abyssalFlowWeatherCurrent * invFlow);
             if (flowAlignment >= 0f)
                 return;
 
             float opposition01 = math.saturate(-flowAlignment);
-            float flowSpeed = math.sqrt(flowSqr);
-            float flowStrength01 = math.saturate(flowSpeed / math.max(abyssalCounterDriveFlowThreshold, 0.01f));
+            float flowThreshold = math.max(abyssalCounterDriveFlowThreshold, 0.01f);
+            float flowStrength01 = math.saturate(flowSqr / (flowThreshold * flowThreshold));
             float shear01 = opposition01 * flowStrength01 * math.saturate(depthT);
             if (shear01 <= 0.0001f)
                 return;
 
-            const float invLogFour = 0.7213475f;
-            float logarithmicCapT = math.saturate(math.log(1f + (shear01 * 3f)) * invLogFour);
+            float logarithmicCapT = shear01 * (2f - shear01);
             _abyssalShearSpeedMultiplier = math.lerp(1f, abyssalCurrentShearMaxSpeedMultiplier, logarithmicCapT);
-            _abyssalShearDrainMultiplier = math.pow(1f + shear01, math.max(1f, abyssalCurrentShearDrainExponent));
+            _abyssalShearDrainMultiplier = ResolveAbyssalShearDrainMultiplierApprox(
+                shear01,
+                abyssalCurrentShearDrainExponent);
 
             if (_survivalSystem == null)
                 return;
@@ -6688,6 +7170,19 @@ namespace Hecton8.Gameplay
 
             _survivalSystem.DrainOxygen(abyssalCurrentShearOxygenDrainPerSecond * extraDrain * fixedDeltaTime);
             _survivalSystem.DrainEnergy(abyssalCurrentShearEnergyDrainPerSecond * extraDrain * fixedDeltaTime);
+        }
+
+        private static float ResolveAbyssalShearDrainMultiplierApprox(float shear01, float exponent)
+        {
+            float x = math.saturate(shear01);
+            float e = math.clamp(exponent, 1f, 6f);
+            float x2 = x * x;
+            float x3 = x2 * x;
+            float x4 = x3 * x;
+            float c2 = 0.5f * e * (e - 1f);
+            float c3 = 0.16666667f * e * (e - 1f) * (e - 2f);
+            float c4 = 0.04166667f * e * (e - 1f) * (e - 2f) * (e - 3f);
+            return math.max(1f, 1f + (e * x) + (c2 * x2) + (c3 * x3) + (c4 * x4));
         }
 
         private void UpdateAbyssalCounterDriveEnergyMultiplier(Vector3 abyssalNoisyFlow, float depthT, PlayerTransportPreset transportPreset)
@@ -6973,8 +7468,8 @@ namespace Hecton8.Gameplay
 
             StartWipeout(
                 1f,
-                math.max(_rb.linearVelocity.magnitude, wipeoutBailoutSpeedThreshold),
-                _cachedTransform.position,
+                ResolveBailoutSpeed(),
+                ResolvePlayerAupRuntimePosition(),
                 Vector3.up,
                 transportLifecycleOwner,
                 true,
@@ -7324,8 +7819,8 @@ namespace Hecton8.Gameplay
 
             StartWipeout(
                 1f,
-                math.max(_rb.linearVelocity.magnitude, wipeoutBailoutSpeedThreshold),
-                _cachedTransform.position,
+                ResolveBailoutSpeed(),
+                ResolvePlayerAupRuntimePosition(),
                 Vector3.up,
                 transportLifecycleOwner,
                 transportLifecycleOwner != null,
@@ -7384,20 +7879,18 @@ namespace Hecton8.Gameplay
                 return;
 
             _velocity = ResolveHydrodynamicReferenceVelocity(_rb.linearVelocity);
-            float speed = math.sqrt(
-                _velocity.x * _velocity.x +
-                _velocity.y * _velocity.y +
-                _velocity.z * _velocity.z);
-            if (speed <= 0.01f)
+            float speedSq = _velocity.sqrMagnitude;
+            if (speedSq <= 0.0001f)
                 return;
 
+            float speed = ApproximateVectorMagnitude(_velocity);
             float dampingScale = wipeoutRecoveryDrag * math.lerp(0.75f, 1.25f, _wipeoutSeverity);
             float dampingForceMagnitude = dampingScale * speed * _rb.mass;
             float maxDampingForce = speed * _rb.mass * 0.9f / math.max(fixedDeltaTime, 0.0001f);
             if (dampingForceMagnitude > maxDampingForce)
                 dampingForceMagnitude = maxDampingForce;
 
-            float invSpeed = 1f / speed;
+            float invSpeed = math.rsqrt(speedSq);
             _forceVector.x = -_velocity.x * invSpeed * dampingForceMagnitude;
             _forceVector.y = -_velocity.y * invSpeed * dampingForceMagnitude;
             _forceVector.z = -_velocity.z * invSpeed * dampingForceMagnitude;
@@ -7451,7 +7944,7 @@ namespace Hecton8.Gameplay
                 radius,
                 velocity / speed,
                 speed * fixedDeltaTime,
-                groundLayers,
+                ResolveKccSweepLayerMask(),
                 wipeoutSweepSkinWidth,
                 _playerColliderInstanceId);
         }
@@ -8351,15 +8844,34 @@ namespace Hecton8.Gameplay
             if (Vector3.Dot(planarForward, -wallNormal) < 0.35f)
                 return;
 
-            PhysicsForceRouter.QueueForce(_rb, wallNormal * wallKickVelocityChange, ForceMode.VelocityChange);
+            Vector3 currentVelocity = HectonPlayerMotor.SafeVelocity(_rb.linearVelocity);
+            float inwardNormalSpeed = math.max(0f, -Vector3.Dot(currentVelocity, wallNormal));
+            if (inwardNormalSpeed > 0f)
+                _playerMotor.SetLinearVelocity(currentVelocity + (wallNormal * inwardNormalSpeed));
+
+            float3 wallNormal3 = math.normalizesafe(new float3(wallNormal.x, wallNormal.y, wallNormal.z), new float3(0f, 1f, 0f));
+            float3 deltaVelocity3 = wallNormal3 * (wallKickVelocityChange + inwardNormalSpeed);
+            float3 tangentLeak3 = deltaVelocity3 - math.project(deltaVelocity3, wallNormal3);
+            deltaVelocity3 -= tangentLeak3;
+            Vector3 outwardVelocityChange = new Vector3(deltaVelocity3.x, deltaVelocity3.y, deltaVelocity3.z);
+            PhysicsForceRouter.QueueForce(_rb, outwardVelocityChange, ForceMode.VelocityChange);
             DrainWallKickResources();
             _isGrounded = false;
             _isAirborne = true;
             _wasGroundedLastFrame = false;
             _wallKickCooldownTimer = math.max(0f, wallKickCooldown);
 
-            if (_juiceProcessor != null && currentSuitData != null)
-                _juiceProcessor.RegisterCollisionImpulse(wallKickVelocityChange, currentSuitData);
+            float outwardVelocityChangeSqr = outwardVelocityChange.sqrMagnitude;
+            if (_vrComfortActiveCached)
+            {
+                float wallKickReference = math.max(0.01f, wallKickVelocityChange * 1.5f);
+                RegisterVrComfortVisualBounce(math.saturate(outwardVelocityChangeSqr / (wallKickReference * wallKickReference)));
+            }
+            else if (_juiceProcessor != null && currentSuitData != null)
+            {
+                float outwardVelocityChangeMagnitude = outwardVelocityChangeSqr * math.rsqrt(math.max(0.000001f, outwardVelocityChangeSqr));
+                _juiceProcessor.RegisterCollisionImpulse(outwardVelocityChangeMagnitude, currentSuitData);
+            }
 
             if (jumpIntent)
                 ConsumeJumpRequest();
@@ -8408,7 +8920,11 @@ namespace Hecton8.Gameplay
             float reductionT = math.saturate(velocityReduction01);
             float scrapeT = math.max(reductionT, math.max(angleT, speedT));
 
-            if (_juiceProcessor != null && currentSuitData != null)
+            if (_vrComfortActiveCached)
+            {
+                RegisterVrComfortVisualBounce(scrapeT);
+            }
+            else if (_juiceProcessor != null && currentSuitData != null)
             {
                 float cameraSpeed = math.max(
                     currentSuitData.collisionShakeThreshold + 0.01f,
@@ -8429,7 +8945,8 @@ namespace Hecton8.Gameplay
                 math.saturate(scrapeT * 0.35f),
                 math.max(0f, suitScrapeAcousticLifetimeSeconds),
                 FieldTargetRole.Generic,
-                0);
+                0,
+                scrapeT * 120f);
             PhysicsEventBus.NotifyAcousticPing(in scrapePing);
         }
 
@@ -8566,7 +9083,14 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Collider groundCollider = _groundHit.collider;
+            RaycastHit audioHit = _groundHit;
+            if (_playerMotor != null &&
+                _playerMotor.TryGetRecentBatchedFootstepHit(2, out RaycastHit batchedFootstepHit))
+            {
+                audioHit = batchedFootstepHit;
+            }
+
+            Collider groundCollider = audioHit.collider;
             if (groundCollider == null)
                 return;
 
@@ -8581,12 +9105,89 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 fallbackPosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
-            Vector3 playPosition = HectonPlayerMotor.SafeVelocity(_groundHit.point, fallbackPosition);
+            Vector3 playPosition = HectonPlayerMotor.SafeVelocity(audioHit.point, fallbackPosition);
             audioManager.PlayAtPoint(
                 baseFloorMetalFootstepClip,
                 playPosition,
                 baseFloorMetalFootstepVolume,
                 baseFloorMetalFootstepPitch);
+        }
+
+        private void ConsumeKinematicRepairTargetProbe()
+        {
+            if (_playerMotor == null)
+                return;
+
+            if (!_playerMotor.TryConsumeKinematicRepairSnap(
+                    out KinematicRepairTargetProbe probe,
+                    out KinematicRepairSnapPoint snapPoint))
+            {
+                return;
+            }
+
+            _lastKinematicRepairProbe = probe;
+            _lastKinematicRepairSnapPoint = snapPoint;
+            _kinematicRepairStateBits |= KinematicRepairStateHasSnapBit;
+        }
+
+        private void ScheduleKinematicRepairTargetProbe()
+        {
+            if (_playerMotor == null ||
+                playerCamera == null ||
+                kinematicRepairTargetProbeRange <= 0.05f)
+            {
+                return;
+            }
+
+            Transform cameraTransform = playerCamera;
+            Vector3 cameraForward = HectonPlayerMotor.SafeVelocity(cameraTransform.forward, Vector3.forward);
+            AbsoluteUniversePosition playerAup = _playerState.AbsolutePosition;
+            if (ShouldReuseKinematicRepairProbe(in playerAup, cameraForward))
+                return;
+
+            if (!_playerMotor.ScheduleKinematicRepairTargetProbe(
+                cameraTransform.position,
+                cameraForward,
+                kinematicRepairTargetProbeRange,
+                HectonLayerMasks.StrictInteractionLayerMask,
+                kinematicRepairTargetSurfaceOffset))
+            {
+                return;
+            }
+
+            _lastKinematicRepairProbeCullAup = playerAup;
+            _lastKinematicRepairProbeCullDirection = cameraForward;
+            _kinematicRepairProbeAupGateSkipCount = 0;
+            _kinematicRepairStateBits |= KinematicRepairStateHasProbeCullAnchorBit;
+        }
+
+        private bool ShouldReuseKinematicRepairProbe(in AbsoluteUniversePosition playerAup, Vector3 rayDirection)
+        {
+            uint requiredBits = KinematicRepairStateHasSnapBit | KinematicRepairStateHasProbeCullAnchorBit;
+            if ((_kinematicRepairStateBits & requiredBits) != requiredBits ||
+                _kinematicRepairProbeAupGateSkipCount >= KinematicRepairProbeMaxAupGateSkips)
+            {
+                return false;
+            }
+
+            double movedSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in _lastKinematicRepairProbeCullAup);
+            if (movedSq > KinematicRepairProbeAupReuseDistanceSq)
+                return false;
+
+            float directionDot = math.dot((float3)rayDirection, (float3)_lastKinematicRepairProbeCullDirection);
+            if (directionDot < KinematicRepairProbeDirectionReuseDot)
+                return false;
+
+            _kinematicRepairProbeAupGateSkipCount++;
+            return true;
+        }
+
+        private void ResetKinematicRepairProbeReuseGate()
+        {
+            _lastKinematicRepairProbeCullAup = default;
+            _lastKinematicRepairProbeCullDirection = Vector3.forward;
+            _kinematicRepairProbeAupGateSkipCount = 0;
+            _kinematicRepairStateBits &= ~KinematicRepairStateHasProbeCullAnchorBit;
         }
 
         private static bool TryResolveImpactAudioMaterialId(Collider collider, out byte materialId)
@@ -8900,7 +9501,7 @@ namespace Hecton8.Gameplay
         private void SwimPhysics(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
             _velocity = _rb.linearVelocity;
-            if (TryResolveHeavyBrineSinkMultiplier(_cachedTransform.position, out float brineSinkMultiplier))
+            if (TryResolveHeavyBrineSinkMultiplier(ResolvePlayerAupRuntimePosition(), out float brineSinkMultiplier))
             {
                 bool thrusterActive = math.abs(_inputVertical) > 0.01f || ResolveActiveTransportPropulsionForce() > 0.01f;
                 Vector3 brineVelocity = HectonPlayerMotor.ResolveBuoyancyInversionVelocity(
@@ -8922,10 +9523,7 @@ namespace Hecton8.Gameplay
                 ApplyMotorLinearVelocity(_velocity);
             }
 
-            float speed = math.sqrt(
-                _velocity.x * _velocity.x +
-                _velocity.y * _velocity.y +
-                _velocity.z * _velocity.z);
+            float speedSq = _velocity.sqrMagnitude;
             bool isSurfaceSwim = _isSurfaceSwimming;
             bool hasSurfaceDiveIntent = isSurfaceSwim && HasCommittedSurfaceDive(transportPreset);
             float shoreSwimBlend = isSurfaceSwim ? _shoreBuoyancyBlend : 1f;
@@ -8950,12 +9548,18 @@ namespace Hecton8.Gameplay
             effectiveDragCoeff *= math.lerp(1f, crushDepthDragMultiplier, _hullStressIntensity);
 
             // Ã¢â€â‚¬Ã¢â€â‚¬ Quadratic drag Ã¢â€â‚¬Ã¢â€â‚¬
-            if (speed > 0.01f && _surfaceBreachFluidDragBypassTimer <= 0f)
+            if (speedSq > 0.0001f && _surfaceBreachFluidDragBypassTimer <= 0f)
             {
-                Vector3 dampedVelocity = PlayerSwimMotor.ApplyAnalyticalDrag(_velocity, effectiveDragCoeff, _rb.mass, fixedDeltaTime);
+                Vector3 bodyForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
+                Vector3 dampedVelocity = PlayerSwimMotor.ApplyAnalyticalDrag(
+                    _velocity,
+                    effectiveDragCoeff,
+                    _rb.mass,
+                    fixedDeltaTime,
+                    bodyForward,
+                    1f);
                 ApplyMotorVelocityChange(dampedVelocity - _velocity);
                 _velocity = dampedVelocity;
-                speed = _velocity.magnitude;
             }
 
             // Ã¢â€â‚¬Ã¢â€â‚¬ Swim thrust Ã¢â€â‚¬Ã¢â€â‚¬
@@ -9001,7 +9605,7 @@ namespace Hecton8.Gameplay
             float hullStressTurnScale = ResolveHullStressTurnResponsivenessScale(transportPreset);
             transportStrafeInputScale *= hullStressTurnScale;
 
-            float bodyYawRad = _bodyYaw * DEG_TO_RAD;
+            float bodyYawRad = ResolveVrSwimmingReferenceYawDegrees() * DEG_TO_RAD;
             float pitchRad = _cameraPitch * DEG_TO_RAD;
 
             float sinBodyYaw = math.sin(bodyYawRad);
@@ -9220,9 +9824,13 @@ namespace Hecton8.Gameplay
             {
                 float densityRange = math.max(1f - sargassumRestDensityThreshold, 0.0001f);
                 float densityT = math.saturate((_sargassumFieldDensity01 - sargassumRestDensityThreshold) / densityRange);
-                float speed = _rb != null ? _rb.linearVelocity.magnitude : 0f;
-                float stillnessT = 1f - math.saturate(speed / math.max(sargassumRestMaxSpeed, 0.01f));
-                float inputIntent = math.max(math.sqrt(_inputH * _inputH + _inputV * _inputV), math.abs(_inputVertical));
+                float maxRestSpeed = math.max(sargassumRestMaxSpeed, 0.01f);
+                float speedSq = _rb != null ? _rb.linearVelocity.sqrMagnitude : 0f;
+                float stillnessT = 1f - math.saturate(speedSq / (maxRestSpeed * maxRestSpeed));
+                float absInputH = math.abs(_inputH);
+                float absInputV = math.abs(_inputV);
+                float planarInputIntent = math.max(absInputH, absInputV) + (0.375f * math.min(absInputH, absInputV));
+                float inputIntent = math.max(planarInputIntent, math.abs(_inputVertical));
                 float inputCalmT = 1f - math.saturate(inputIntent / math.max(sargassumRestMaxInputIntent, 0.01f));
                 float headDepth = GetHeadDepthBelowSurface(EffectiveWaterSurfaceY);
                 float breathingT = 1f - math.saturate(headDepth / math.max(sargassumRestMaxHeadDepth, 0.0001f));
@@ -9381,7 +9989,9 @@ namespace Hecton8.Gameplay
             float currentInfluenceScale = ResolveTransportAmbientCurrentInfluenceScale(transportPreset);
             if (currentInfluenceScale <= 0f) return;
 
-            Vector3 currentPosition = _cachedTransform.position;
+            AbsoluteUniversePosition playerAup = _playerState.AbsolutePosition;
+            float3 currentPosition3 = playerAup.ToRuntimeFloat3();
+            Vector3 currentPosition = new Vector3(currentPosition3.x, currentPosition3.y, currentPosition3.z);
             float shoreCurrentScale = _isSurfaceSwimming
                 ? math.lerp(0.15f, 1f, _shoreBuoyancyBlend)
                 : 1f;
@@ -9413,7 +10023,11 @@ namespace Hecton8.Gameplay
                 ambientCurrentZ += _abyssalThermalFlowVelocityWS.z * thermalCurrentScale;
             }
 
-            ApplyAbyssalFlowAdvection(currentPosition, fixedDeltaTime, currentInfluenceScale, shoreCurrentScale);
+            ApplyAbyssalFlowAdvection(
+                in playerAup,
+                fixedDeltaTime,
+                currentInfluenceScale,
+                shoreCurrentScale);
 
             float crestFlowForceX = 0f;
             float crestFlowForceZ = 0f;
@@ -9421,7 +10035,7 @@ namespace Hecton8.Gameplay
             {
                 float inputDriftScale = ResolveCrestFlowInputAttenuation(fixedDeltaTime);
                 float modeDriftScale = _isSurfaceSwimming ? _shoreBuoyancyBlend * shoreCurrentScale : 0.8f;
-                float planarInputMagnitude = math.sqrt(_inputH * _inputH + _inputV * _inputV);
+                float planarInputMagnitude = ApproximatePlanarMagnitude(_inputH, _inputV);
                 bool surfaceIdleDrift = _isSurfaceSwimming && planarInputMagnitude <= crestFlowIdleInputThreshold && math.abs(_inputVertical) <= crestFlowIdleInputThreshold;
                 if (surfaceIdleDrift)
                     modeDriftScale *= crestFlowSurfaceIdleBoost;
@@ -9442,7 +10056,7 @@ namespace Hecton8.Gameplay
         }
 
         private void ApplyAbyssalFlowAdvection(
-            Vector3 currentPosition,
+            in AbsoluteUniversePosition playerAup,
             float fixedDeltaTime,
             float currentInfluenceScale,
             float shoreCurrentScale)
@@ -9454,7 +10068,6 @@ namespace Hecton8.Gameplay
 
             if (bridge != null && _waterImmersionRatio > 0.001f)
             {
-                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(currentPosition);
                 float3 runtimePosition3 = playerAup.ToRuntimeFloat3();
                 Vector3 flowSamplePosition = new Vector3(runtimePosition3.x, runtimePosition3.y, runtimePosition3.z);
                 if (bridge.TrySampleAbyssalFlow(flowSamplePosition, out Vector3 sampledFlow))
@@ -9465,10 +10078,14 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            float blendT = ResolveLinearBlendT(math.max(abyssalFlowAdvectionSharpness, 0.01f), fixedDeltaTime);
-            Vector3 previousAdvectionVelocity = _abyssalFlowAdvectionVelocityWS;
-            _abyssalFlowAdvectionVelocityWS = Vector3.Lerp(previousAdvectionVelocity, targetAdvectionVelocity, blendT);
-            Vector3 flowVelocityChange = _abyssalFlowAdvectionVelocityWS - previousAdvectionVelocity;
+            float blendT = math.saturate(math.max(abyssalFlowAdvectionSharpness, 0.01f) * fixedDeltaTime);
+            Vector3 playerVelocity = _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.linearVelocity) : Vector3.zero;
+            float3 playerVelocity3 = new float3(playerVelocity.x, playerVelocity.y, playerVelocity.z);
+            float3 targetFlowVelocity3 = new float3(targetAdvectionVelocity.x, targetAdvectionVelocity.y, targetAdvectionVelocity.z);
+            float3 resolvedVelocity3 = math.lerp(playerVelocity3, targetFlowVelocity3, blendT);
+            float3 flowVelocityChange3 = resolvedVelocity3 - playerVelocity3;
+            Vector3 flowVelocityChange = new Vector3(flowVelocityChange3.x, flowVelocityChange3.y, flowVelocityChange3.z);
+            _abyssalFlowAdvectionVelocityWS = flowVelocityChange;
             if (flowVelocityChange.sqrMagnitude > 0.000001f)
                 QueueEnvironmentalVelocityChange(flowVelocityChange);
         }
@@ -9476,7 +10093,7 @@ namespace Hecton8.Gameplay
         private float ResolveCrestFlowInputAttenuation(float fixedDeltaTime)
         {
             float desiredScale = 1f;
-            float planarInputMagnitude = math.sqrt(_inputH * _inputH + _inputV * _inputV);
+            float planarInputMagnitude = ApproximatePlanarMagnitude(_inputH, _inputV);
             float verticalInputMagnitude = math.abs(_inputVertical);
             Vector3 flowVelocity = EffectiveWaterFlowVelocity;
             float flowSqrMagnitude = flowVelocity.x * flowVelocity.x + flowVelocity.z * flowVelocity.z;
@@ -9495,11 +10112,11 @@ namespace Hecton8.Gameplay
 
                     if (desiredSqrMagnitude > 0.0001f)
                     {
-                        float desiredInvMagnitude = 1f / math.sqrt(desiredSqrMagnitude);
+                        float desiredInvMagnitude = math.rsqrt(desiredSqrMagnitude);
                         desiredX *= desiredInvMagnitude;
                         desiredZ *= desiredInvMagnitude;
 
-                        float flowInvMagnitude = 1f / math.sqrt(flowSqrMagnitude);
+                        float flowInvMagnitude = math.rsqrt(flowSqrMagnitude);
                         float flowDirX = flowVelocity.x * flowInvMagnitude;
                         float flowDirZ = flowVelocity.z * flowInvMagnitude;
                         float alignment = math.clamp(desiredX * flowDirX + desiredZ * flowDirZ, -1f, 1f);
@@ -9761,6 +10378,20 @@ namespace Hecton8.Gameplay
             if (pitchMin < -89.9f) pitchMin = -89.9f;
             if (pitchMax > 89.9f) pitchMax = 89.9f;
             if (pitchMin > pitchMax) pitchMin = pitchMax;
+            vrSnapTurnDegrees = math.clamp(vrSnapTurnDegrees, 15f, 60f);
+            vrSnapTurnThreshold = math.clamp(vrSnapTurnThreshold, 0.25f, 0.98f);
+            vrSnapTurnRearmThreshold = math.clamp(vrSnapTurnRearmThreshold, 0.01f, 0.6f);
+            if (vrSnapTurnRearmThreshold >= vrSnapTurnThreshold)
+                vrSnapTurnRearmThreshold = math.max(0.01f, vrSnapTurnThreshold * 0.5f);
+            vrSmoothTurnDegreesPerSecond = math.clamp(vrSmoothTurnDegreesPerSecond, 15f, 180f);
+            vrSmoothTurnDeadzone = math.clamp(vrSmoothTurnDeadzone, 0f, 0.35f);
+            vrHeadRelativeSwimBiasDefault = math.saturate(vrHeadRelativeSwimBiasDefault);
+            vrManualRollInputThreshold = math.saturate(vrManualRollInputThreshold);
+            vrCameraLocalMotionSuppression = math.saturate(vrCameraLocalMotionSuppression);
+            vrComfortVignetteSharpness = math.clamp(vrComfortVignetteSharpness, 1f, 20f);
+            vrComfortVisualDecaySharpness = math.clamp(vrComfortVisualDecaySharpness, 0.5f, 20f);
+            vrComfortHighSpeedMetersPerSecond = math.clamp(vrComfortHighSpeedMetersPerSecond, 0.25f, 12f);
+            vrComfortYawRateReference = math.clamp(vrComfortYawRateReference, 15f, 360f);
             if (playerHeight < 0.5f) playerHeight = 0.5f;
             if (baseFov < 30f) baseFov = 30f;
             if (baseFov > 120f) baseFov = 120f;
@@ -9999,6 +10630,8 @@ namespace Hecton8.Gameplay
             if (externalEnvironmentalDragHoldTime < 0f) externalEnvironmentalDragHoldTime = 0f;
             if (externalEnvironmentalDragHoldTime > 0.35f) externalEnvironmentalDragHoldTime = 0.35f;
             if (externalEnvironmentalDragBlendSpeed < 1f) externalEnvironmentalDragBlendSpeed = 1f;
+            if (brineViscosityDragMultiplier < 1f) brineViscosityDragMultiplier = 1f;
+            if (brineViscosityDragMultiplier > 8f) brineViscosityDragMultiplier = 8f;
             if (parasiteLatchInfluenceHoldTime < 0f) parasiteLatchInfluenceHoldTime = 0f;
             if (parasiteLatchInfluenceHoldTime > 0.35f) parasiteLatchInfluenceHoldTime = 0.35f;
             if (parasiteLatchInfluenceBlendSpeed < 1f) parasiteLatchInfluenceBlendSpeed = 1f;

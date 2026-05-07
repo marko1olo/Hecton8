@@ -64,11 +64,14 @@ namespace Hecton8.SaveSystem
         private static Vector3 _lastCapturePosition;
         private static Quaternion _lastCaptureRotation;
         private static int _requestSequence;
+        private static NativeArray<byte> _readbackRgbaBuffer;
+        private static bool _thumbnailWriteInProgress;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             ClearCache();
+            DisposeReadbackBuffer();
             _cachedCaptureCamera = null;
             _pendingRequest = default;
             _inflightRequest = default;
@@ -78,6 +81,7 @@ namespace Hecton8.SaveSystem
             _lastCapturePosition = default;
             _lastCaptureRotation = default;
             _requestSequence = 0;
+            _thumbnailWriteInProgress = false;
         }
 
         internal static int CaptureWidth => Width;
@@ -100,7 +104,7 @@ namespace Hecton8.SaveSystem
         /// </summary>
         public static void CaptureThumbnail(string slotName, Camera overrideCamera = null)
         {
-            if (string.IsNullOrEmpty(slotName) || !TryResolveCaptureCamera(overrideCamera, out Camera captureCamera))
+            if (string.IsNullOrEmpty(slotName) || _thumbnailWriteInProgress || !TryResolveCaptureCamera(overrideCamera, out Camera captureCamera))
                 return;
 
             if ((_hasPendingRequest && string.Equals(_pendingRequest.SlotName, slotName, StringComparison.OrdinalIgnoreCase)) ||
@@ -286,27 +290,28 @@ namespace Hecton8.SaveSystem
 
             if (request.hasError)
             {
-                Debug.LogError($"[SaveThumbnailSystem] AsyncGPUReadback failed for '{inflightRequest.SlotName}'.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[SaveThumbnailSystem] AsyncGPUReadback failed.");
+#endif
                 return;
             }
 
-            NativeArray<byte> readbackData = request.GetData<byte>();
             int expectedLength = Width * Height * 4;
+            NativeArray<byte> readbackData = request.GetData<byte>();
             if (!readbackData.IsCreated || readbackData.Length < expectedLength)
             {
-                Debug.LogError($"[SaveThumbnailSystem] AsyncGPUReadback returned invalid thumbnail data for '{inflightRequest.SlotName}'.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[SaveThumbnailSystem] AsyncGPUReadback returned invalid thumbnail data.");
+#endif
                 return;
             }
 
-            // COLD ALLOC: NativeArray<byte>[Width * Height * 4] - persistent GPU readback staging buffer for background JPG write - owner: SaveThumbnailSystem
-            NativeArray<byte> persistentRgba = new NativeArray<byte>(expectedLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(
-                persistentRgba,
-                NativeMemoryOwner,
-                "thumbnailReadbackRgba",
-                NativeAllocationLifetime.TransientArena);
-            NativeArray<byte>.Copy(readbackData, persistentRgba, expectedLength);
-            _ = PersistThumbnailAsync(inflightRequest.SlotName, persistentRgba, Width, Height);
+            if (!EnsureReadbackBuffer(expectedLength))
+                return;
+
+            NativeArray<byte>.Copy(readbackData, _readbackRgbaBuffer, expectedLength);
+            _thumbnailWriteInProgress = true;
+            _ = PersistThumbnailAsync(inflightRequest.SlotName, _readbackRgbaBuffer, Width, Height);
         }
 
         private static async Awaitable PersistThumbnailAsync(string slotName, NativeArray<byte> rgbaBytes, int width, int height)
@@ -365,7 +370,7 @@ namespace Hecton8.SaveSystem
 
                 File.Move(tempPath, path);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 try
                 {
@@ -377,16 +382,42 @@ namespace Hecton8.SaveSystem
                 }
 
                 await Awaitable.MainThreadAsync();
-                Debug.LogError($"[SaveThumbnailSystem] Failed to persist thumbnail for '{slotName}': {ex.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[SaveThumbnailSystem] Failed to persist thumbnail.");
+#endif
             }
             finally
             {
-                if (rgbaBytes.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(rgbaBytes);
-                    rgbaBytes.Dispose();
-                }
+                _thumbnailWriteInProgress = false;
             }
+        }
+
+        private static bool EnsureReadbackBuffer(int byteLength)
+        {
+            if (_readbackRgbaBuffer.IsCreated && _readbackRgbaBuffer.Length >= byteLength)
+                return true;
+
+            DisposeReadbackBuffer();
+            if (byteLength <= 0)
+                return false;
+
+            _readbackRgbaBuffer = new NativeArray<byte>(byteLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[Width * Height * 4] - persistent thumbnail GPU readback shadow buffer - owner: SaveThumbnailSystem
+            NativeMemorySentinel.RegisterNativeArray(
+                _readbackRgbaBuffer,
+                NativeMemoryOwner,
+                nameof(_readbackRgbaBuffer),
+                NativeAllocationLifetime.Session);
+            return true;
+        }
+
+        private static void DisposeReadbackBuffer()
+        {
+            if (!_readbackRgbaBuffer.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_readbackRgbaBuffer);
+            _readbackRgbaBuffer.Dispose();
+            _readbackRgbaBuffer = default;
         }
 
         private static string ResolveExistingThumbnailPath(string slotName)

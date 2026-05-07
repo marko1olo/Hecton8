@@ -86,6 +86,41 @@ namespace Hecton.Localization
                 return hash;
             }
         }
+
+        /// <summary>
+        /// Compute a byte-wise ASCII FNV-1a hash while folding A-Z to a-z without allocating.
+        /// </summary>
+        public static int ComputeAsciiLowerInvariant(string value)
+        {
+            return string.IsNullOrEmpty(value)
+                ? 0
+                : unchecked((int)ComputeAsciiLowerInvariant(value.AsSpan()));
+        }
+
+        /// <summary>
+        /// Compute a byte-wise ASCII FNV-1a hash while folding A-Z to a-z without allocating.
+        /// </summary>
+        public static uint ComputeAsciiLowerInvariant(ReadOnlySpan<char> value)
+        {
+            if (value.Length == 0)
+                return 0u;
+
+            unchecked
+            {
+                uint hash = FnvOffsetBasis;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    char current = value[i];
+                    if ((uint)(current - 'A') <= 'Z' - 'A')
+                        current = (char)(current + ('a' - 'A'));
+
+                    hash ^= (byte)current;
+                    hash *= FnvPrime;
+                }
+
+                return hash;
+            }
+        }
     }
 
     /// <summary>

@@ -1,10 +1,12 @@
 using Hecton8.Gameplay;
+using System.Runtime.InteropServices;
 
 namespace Hecton8.World
 {
     /// <summary>
     /// Immutable sonar contact summary used by visor and PDA spectrum surfaces.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct SpatialSonarSnapshot
     {
         /// <summary>

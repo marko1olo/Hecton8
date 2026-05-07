@@ -37,7 +37,7 @@ namespace Hecton8.SaveSystem
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
-        private static readonly long LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
+        private static readonly long LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 333L);
         private const float SafeAupSnapSphereRadiusMeters = 0.45f;
         private const float SafeAupSnapCastStartHeightMeters = 12f;
         private const float SafeAupSnapCastDistanceMeters = 96f;
@@ -132,8 +132,8 @@ namespace Hecton8.SaveSystem
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
-        private bool _compressionThrottleArmed;
-        private int _compressionThrottleReleaseSlowTick;
+        private bool _compressionThrottleLateFrameArmed;
+        private int _compressionThrottleReleaseFrame;
         private int _slowTickSequence;
         private long _lastSaveCompressionPipelineTicks;
         private LoadingScreenController _cachedLoadingScreenController;
@@ -367,6 +367,10 @@ namespace Hecton8.SaveSystem
 
         public void LateFrameTick()
         {
+            if (!_compressionThrottleLateFrameArmed || Time.frameCount < _compressionThrottleReleaseFrame)
+                return;
+
+            _compressionThrottleLateFrameArmed = false;
         }
 
         private void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
@@ -662,9 +666,8 @@ namespace Hecton8.SaveSystem
 
                 string tempPath = GetTempSaveFilePath(slotName);
                 if (divergenceSnapshotTimer.ElapsedTicks > PreCompressionYieldBudgetTicks)
-                    await Awaitable.NextFrameAsync();
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync();
 
-                await AwaitCompressionThrottleWindowAsync();
                 SaveEvents.RaiseMappedWriteStarted(slotName);
                 await Awaitable.BackgroundThreadAsync();
 
@@ -733,32 +736,14 @@ namespace Hecton8.SaveSystem
                 $"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.");
         }
 
-        private async Awaitable AwaitCompressionThrottleWindowAsync()
-        {
-            if (!_compressionThrottleArmed)
-                return;
-
-            if (!_slowTickRegistered)
-            {
-                _compressionThrottleArmed = false;
-                return;
-            }
-
-            int releaseSlowTick = _compressionThrottleReleaseSlowTick;
-            while (Application.isPlaying && _slowTickSequence == releaseSlowTick)
-                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
-
-            _compressionThrottleArmed = false;
-        }
-
         private void RegisterCompressionPipelineElapsed(long elapsedTicks)
         {
             _lastSaveCompressionPipelineTicks = elapsedTicks > 0L ? elapsedTicks : 0L;
             if (elapsedTicks <= CompressionThrottleBudgetTicks)
                 return;
 
-            _compressionThrottleReleaseSlowTick = _slowTickSequence;
-            _compressionThrottleArmed = true;
+            _compressionThrottleReleaseFrame = Time.frameCount + 1;
+            _compressionThrottleLateFrameArmed = true;
         }
 
         private void NotifyMappedInventoryWritesCommitted()
@@ -1223,7 +1208,7 @@ namespace Hecton8.SaveSystem
                     saveable.LoadFromSaveData(data);
                     if (i + 1 < _saveableCount && Stopwatch.GetTimestamp() >= loadApplyDeadlineTicks)
                     {
-                        await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
                         loadApplyDeadlineTicks = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks;
                     }
                 }

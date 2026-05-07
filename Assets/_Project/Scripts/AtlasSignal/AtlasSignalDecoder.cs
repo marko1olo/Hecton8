@@ -23,6 +23,7 @@ using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.AtlasSignal
@@ -52,6 +53,14 @@ namespace Hecton8.AtlasSignal
         [Tooltip("Progress added per second while the decode window is open.")]
         [SerializeField, Range(0.01f, 2f)] private float unpackSpeed = 0.2f;
 
+        [Header("Spectrogram Gate")]
+        [SerializeField] private bool requireSpectrogramWaveMatch = true;
+        [SerializeField, Range(10f, 2000f)] private float targetCarrierFrequencyHz = 113f;
+        [SerializeField, Range(0f, 1f)] private float targetCarrierPhase01 = 0.375f;
+        [SerializeField, Range(0.01f, 240f)] private float frequencyToleranceHz = 18f;
+        [SerializeField, Range(0.001f, 0.5f)] private float phaseTolerance01 = 0.075f;
+        [SerializeField, Range(0f, 1f)] private float waveMatchUnlockThreshold01 = 0.92f;
+
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
@@ -71,6 +80,9 @@ namespace Hecton8.AtlasSignal
         private bool _serviceRegistered;
         private bool _decodeWindowOpen;
         private float _decodeProgress;
+        private float _submittedCarrierFrequencyHz;
+        private float _submittedCarrierPhase01;
+        private float _waveMatch01;
 
         // Pre-cached phase messages — zero GC
         private static readonly string[] PhaseMessages =
@@ -90,6 +102,10 @@ namespace Hecton8.AtlasSignal
         public bool IsFullyDecoded => _fullyDecoded;
         internal bool IsDecodeWindowOpen => _decodeWindowOpen;
         internal float CurrentDecodeProgress => _decodeProgress;
+        public float CurrentWaveMatch01 => _waveMatch01;
+        public float TargetCarrierFrequencyHz => targetCarrierFrequencyHz;
+        public float TargetCarrierPhase01 => targetCarrierPhase01;
+        public bool IsSpectrogramWaveMatched => !requireSpectrogramWaveMatch || _waveMatch01 >= waveMatchUnlockThreshold01;
         public string CurrentMessage => _currentPhase < PhaseMessages.Length
             ? PhaseMessages[_currentPhase]
             : string.Empty;
@@ -291,12 +307,31 @@ namespace Hecton8.AtlasSignal
             return _decodeWindowOpen && AdvanceDecodeProgress(dt);
         }
 
+        public float SubmitWaveMatch(float carrierFrequencyHz, float carrierPhase01)
+        {
+            _submittedCarrierFrequencyHz = math.max(0f, carrierFrequencyHz);
+            _submittedCarrierPhase01 = math.frac(carrierPhase01);
+            _waveMatch01 = SignalBeaconMath.EvaluateSineWaveMatch(
+                targetCarrierFrequencyHz,
+                targetCarrierPhase01,
+                _submittedCarrierFrequencyHz,
+                _submittedCarrierPhase01,
+                frequencyToleranceHz,
+                phaseTolerance01);
+
+            return _waveMatch01;
+        }
+
         private bool AdvanceDecodeProgress(float dt)
         {
             if (_fullyDecoded || !_decodeWindowOpen)
                 return false;
 
-            _decodeProgress = Mathf.Clamp01(_decodeProgress + (Mathf.Max(0f, unpackSpeed) * Mathf.Max(0f, dt)));
+            if (requireSpectrogramWaveMatch && _waveMatch01 < waveMatchUnlockThreshold01)
+                return false;
+
+            float matchScale = requireSpectrogramWaveMatch ? math.max(waveMatchUnlockThreshold01, _waveMatch01) : 1f;
+            _decodeProgress = Mathf.Clamp01(_decodeProgress + (Mathf.Max(0f, unpackSpeed) * Mathf.Max(0f, dt) * matchScale));
             if (_decodeProgress < 1f)
                 return false;
 

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -212,10 +213,12 @@ namespace Hecton8.Physics
             public bool WasSleepingBeforeDistanceSleep;
             public bool InterpolationSuspendedForOriginShift;
             public bool CollisionDetectionOverriddenForOriginShift;
+            public bool SafeTeleportSpeculativeCcdActive;
             public bool KinematicModeBeforeDistanceSleep;
             public bool DetectCollisionsBeforeDistanceSleep;
             public RigidbodyInterpolation InterpolationModeBeforeOriginShift;
             public CollisionDetectionMode CollisionDetectionModeBeforeOriginShift;
+            public int SafeTeleportSpeculativeFixedTicksRemaining;
             public Vector3 SnapshotPositionBeforeOriginShift;
             public Quaternion SnapshotRotationBeforeOriginShift;
             public Vector3 LastValidLinearVelocity;
@@ -226,10 +229,12 @@ namespace Hecton8.Physics
             public Quaternion BaseInertiaTensorRotation;
             public float BaseAngularDamping;
             public float HydrodynamicSubmersionFactor;
+            public float LastAppliedAddedMassSubmersionFactor;
             public float FixedInterpolationAlphaBeforeOriginShift;
             public float ColliderLodOutOfRangeSeconds;
             public bool HasColliderLodSink;
             public bool ColliderLodDistanceGateOpen;
+            public bool IsFullySubmerged;
             public bool HasAddedMassBaseline;
             public bool AddedMassTensorApplied;
         }
@@ -275,14 +280,20 @@ namespace Hecton8.Physics
         private const float ColliderLodSimplifyHysteresisSeconds = 5f;
         private const float AddedMassAngularDampingScale = 0.35f;
         private const float AddedMassInertiaTensorScale = 0.35f;
+        private const float AddedMassFullySubmergedThreshold = 0.999f;
+        private const float AddedMassFullySubmergedAngularDampingMultiplier = 1f + AddedMassAngularDampingScale;
+        private const float AddedMassFullySubmergedInertiaTensorMultiplier = 1f + AddedMassInertiaTensorScale;
+        private const float AddedMassSubmersionEpsilon = 0.0001f;
         private const float OriginShiftContinuousCcdSpeedMetersPerSecond = 20f;
         private const float KineticAnomalyAccelerationMetersPerSecondSq = 100f;
         private const float AupJitterThresholdMeters = 0.05f;
         private const float AupJitterThresholdMetersSq = AupJitterThresholdMeters * AupJitterThresholdMeters;
         private const int AupJitterSentinelFrameInterval = 60;
+        private const int SafeTeleportSpeculativeFixedTickHold = 3;
         private const double FarKinematicSleepDistanceSq = FarKinematicSleepDistanceMeters * FarKinematicSleepDistanceMeters;
         private const double ColliderLodCompoundToSimpleDistanceSq = ColliderLodCompoundToSimpleDistanceMeters * ColliderLodCompoundToSimpleDistanceMeters;
         private const double ColliderLodSimpleToCompoundDistanceSq = ColliderLodSimpleToCompoundDistanceMeters * ColliderLodSimpleToCompoundDistanceMeters;
+        private static readonly uint _nanRecoverySystemHash = unchecked((uint)LocHash.Compute(nameof(GlobalPhysicsStateManager)));
 
         // COLD ALLOC: Rigidbody[512 initial] â€” authoritative tracked rigidbody registry â€” owner: GlobalPhysicsStateManager
         private Rigidbody[] _trackedBodies = new Rigidbody[MaxTrackedBodies];
@@ -314,6 +325,16 @@ namespace Hecton8.Physics
         private Transform _playerTransform;
 
         internal static GlobalPhysicsStateManager ActiveRuntimeInstance { get; private set; }
+        private static int _cachedWaterLevelFrame = -1;
+        private static float _cachedWaterLevelBaseY;
+        private static float _cachedWaterLevelAmplitude;
+        private static bool _cachedWaterLevelTidesEnabled;
+        private static float _cachedCurrentWaterLevelY;
+
+        /// <summary>
+        /// Frame-stable cinematic water level. Consumers read this instead of recomputing tide sine waves.
+        /// </summary>
+        public static float CachedCurrentWaterLevelY => _cachedCurrentWaterLevelY;
 
         /// <inheritdoc />
         public ServiceHeartbeatState HeartbeatState => _isInitialized ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
@@ -325,6 +346,42 @@ namespace Hecton8.Physics
         private static void ResetStaticState()
         {
             ActiveRuntimeInstance = null;
+            _cachedWaterLevelFrame = -1;
+            _cachedWaterLevelBaseY = 0f;
+            _cachedWaterLevelAmplitude = 0f;
+            _cachedWaterLevelTidesEnabled = false;
+            _cachedCurrentWaterLevelY = 0f;
+        }
+
+        public static float ResolveFrameCachedCurrentWaterLevelY(
+            float baseWaterLevelY,
+            bool tidesEnabled,
+            float tideAmplitudeMeters,
+            float timeSeconds)
+        {
+            int frame = Time.frameCount;
+            float safeAmplitude = math.max(0f, tideAmplitudeMeters);
+            if (_cachedWaterLevelFrame == frame &&
+                math.abs(_cachedWaterLevelBaseY - baseWaterLevelY) <= 0.0001f &&
+                math.abs(_cachedWaterLevelAmplitude - safeAmplitude) <= 0.0001f &&
+                _cachedWaterLevelTidesEnabled == tidesEnabled)
+            {
+                return _cachedCurrentWaterLevelY;
+            }
+
+            float resolvedWaterLevelY = baseWaterLevelY;
+            if (tidesEnabled && safeAmplitude > 0f)
+            {
+                float combinedWave = math.sin(timeSeconds) + math.sin(timeSeconds * 0.5f);
+                resolvedWaterLevelY += combinedWave * safeAmplitude;
+            }
+
+            _cachedWaterLevelFrame = frame;
+            _cachedWaterLevelBaseY = baseWaterLevelY;
+            _cachedWaterLevelAmplitude = safeAmplitude;
+            _cachedWaterLevelTidesEnabled = tidesEnabled;
+            _cachedCurrentWaterLevelY = resolvedWaterLevelY;
+            return resolvedWaterLevelY;
         }
 
         internal static void RegisterTrackedBody(Rigidbody body)
@@ -365,6 +422,14 @@ namespace Hecton8.Physics
                 return;
 
             manager.ResetTrackedBodiesForSafeTeleportInternal();
+        }
+
+        internal static void ArmSafeTeleportSpeculativeCcdForSafeTeleport()
+        {
+            if (!TryGetRuntimeManager(out GlobalPhysicsStateManager manager))
+                return;
+
+            manager.ArmSafeTeleportSpeculativeCcdForSafeTeleportInternal();
         }
 
         internal static void UnregisterTrackedBody(Rigidbody body)
@@ -542,6 +607,7 @@ namespace Hecton8.Physics
         public void PostFixedTick(float fixedDeltaTime)
         {
             ApplyAupJitterSentinel();
+            TickSafeTeleportSpeculativeCcdGuards();
         }
 
         private void OnDisable()
@@ -893,6 +959,65 @@ namespace Hecton8.Physics
             }
         }
 
+        private void ArmSafeTeleportSpeculativeCcdForSafeTeleportInternal()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            ArmSafeTeleportSpeculativeCcd(playerBody);
+
+            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
+            Rigidbody hullBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            if (!ReferenceEquals(hullBody, playerBody))
+                ArmSafeTeleportSpeculativeCcd(hullBody);
+        }
+
+        private void ArmSafeTeleportSpeculativeCcd(Rigidbody body)
+        {
+            if (body == null)
+                return;
+
+            RegisterTrackedBodyInternal(body);
+            int bodyIndex = FindTrackedBodyIndex(body);
+            if (bodyIndex < 0)
+                return;
+
+            RigidbodyState bodyState = _bodyStates[bodyIndex];
+            bodyState.SafeTeleportSpeculativeCcdActive = true;
+            bodyState.SafeTeleportSpeculativeFixedTicksRemaining = SafeTeleportSpeculativeFixedTickHold;
+            body.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
+            body.PublishTransform();
+            _bodyStates[bodyIndex] = bodyState;
+        }
+
+        private void TickSafeTeleportSpeculativeCcdGuards()
+        {
+            for (int i = _trackedBodyCount - 1; i >= 0; i--)
+            {
+                RigidbodyState bodyState = _bodyStates[i];
+                if (!bodyState.SafeTeleportSpeculativeCcdActive)
+                    continue;
+
+                Rigidbody body = _trackedBodies[i];
+                if (body == null)
+                {
+                    RemoveTrackedBodyAt(i);
+                    continue;
+                }
+
+                if (bodyState.SafeTeleportSpeculativeFixedTicksRemaining > 0)
+                {
+                    bodyState.SafeTeleportSpeculativeFixedTicksRemaining--;
+                    _bodyStates[i] = bodyState;
+                    continue;
+                }
+
+                body.collisionDetectionMode = CollisionDetectionMode.Discrete;
+                bodyState.SafeTeleportSpeculativeCcdActive = false;
+                bodyState.SafeTeleportSpeculativeFixedTicksRemaining = 0;
+                _bodyStates[i] = bodyState;
+            }
+        }
+
         private void RegisterTrackedBodyInternal(Rigidbody body)
         {
             if (body == null)
@@ -962,6 +1087,7 @@ namespace Hecton8.Physics
             RigidbodyState bodyState = _bodyStates[bodyIndex];
             CaptureAddedMassBaseline(body, ref bodyState);
             bodyState.HydrodynamicSubmersionFactor = math.saturate(submersionFactor);
+            bodyState.IsFullySubmerged = bodyState.HydrodynamicSubmersionFactor >= AddedMassFullySubmergedThreshold;
             _bodyStates[bodyIndex] = bodyState;
         }
 
@@ -1366,8 +1492,17 @@ namespace Hecton8.Physics
                     : bodyState.HasLastValidPosition
                         ? _lastValidPositions[i]
                         : float3.zero;
+                Vector3 invalidRuntimePosition = new Vector3(position.x, position.y, position.z);
+                Vector3 recoveredRuntimePosition = RuntimeWatchdog.ReportRigidbodyNanRecovery(
+                    _nanRecoverySystemHash,
+                    invalidRuntimePosition,
+                    new Vector3(lastValidPosition.x, lastValidPosition.y, lastValidPosition.z));
+                lastValidPosition = new float3(
+                    recoveredRuntimePosition.x,
+                    recoveredRuntimePosition.y,
+                    recoveredRuntimePosition.z);
 
-                body.position = new Vector3(lastValidPosition.x, lastValidPosition.y, lastValidPosition.z);
+                body.position = recoveredRuntimePosition;
                 if (math.any(rotationNaNMask))
                     body.rotation = Quaternion.identity;
                 body.linearVelocity = Vector3.zero;
@@ -1376,10 +1511,10 @@ namespace Hecton8.Physics
                 bodyState.LastValidLinearVelocity = Vector3.zero;
                 bodyState.LastValidAngularVelocity = Vector3.zero;
                 bodyState.HasLastValidPosition = true;
+                bodyState.LastValidAup = AbsoluteUniversePosition.FromRuntimePosition(recoveredRuntimePosition);
+                bodyState.HasLastValidAup = true;
                 _lastValidPositions[i] = lastValidPosition;
                 _bodyStates[i] = bodyState;
-
-                CrashTelemetryBuffer.ReportNanPhysicsRecovery();
             }
         }
 
@@ -1527,7 +1662,7 @@ namespace Hecton8.Physics
                 RigidbodyState bodyState = _bodyStates[i];
                 CaptureAddedMassBaseline(body, ref bodyState);
                 float submersionFactor = math.saturate(bodyState.HydrodynamicSubmersionFactor);
-                if (submersionFactor <= 0.0001f)
+                if (submersionFactor <= AddedMassSubmersionEpsilon)
                 {
                     if (bodyState.AddedMassTensorApplied)
                         RestoreAddedMassBaseline(body, ref bodyState);
@@ -1536,12 +1671,25 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                float multiplier = 1f + (AddedMassAngularDampingScale * submersionFactor);
-                float inertiaMultiplier = 1f + (AddedMassInertiaTensorScale * submersionFactor);
+                if (bodyState.AddedMassTensorApplied &&
+                    math.abs(bodyState.LastAppliedAddedMassSubmersionFactor - submersionFactor) <= AddedMassSubmersionEpsilon)
+                {
+                    _bodyStates[i] = bodyState;
+                    continue;
+                }
+
+                bool isFullySubmerged = bodyState.IsFullySubmerged;
+                float multiplier = isFullySubmerged
+                    ? AddedMassFullySubmergedAngularDampingMultiplier
+                    : 1f + (AddedMassAngularDampingScale * submersionFactor);
+                float inertiaMultiplier = isFullySubmerged
+                    ? AddedMassFullySubmergedInertiaTensorMultiplier
+                    : 1f + (AddedMassInertiaTensorScale * submersionFactor);
                 body.angularDamping = bodyState.BaseAngularDamping * multiplier;
                 body.inertiaTensor = bodyState.BaseInertiaTensor * inertiaMultiplier;
                 body.inertiaTensorRotation = bodyState.BaseInertiaTensorRotation;
                 bodyState.AddedMassTensorApplied = true;
+                bodyState.LastAppliedAddedMassSubmersionFactor = submersionFactor;
                 _bodyStates[i] = bodyState;
             }
         }
@@ -1568,6 +1716,7 @@ namespace Hecton8.Physics
                 body.inertiaTensorRotation = bodyState.BaseInertiaTensorRotation;
             body.angularDamping = math.max(0f, bodyState.BaseAngularDamping);
             bodyState.AddedMassTensorApplied = false;
+            bodyState.LastAppliedAddedMassSubmersionFactor = 0f;
         }
 
         private void RemoveTrackedBodyAt(int bodyIndex)

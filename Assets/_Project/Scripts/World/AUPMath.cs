@@ -6,6 +6,14 @@ using Unity.Mathematics;
 namespace Hecton8.World
 {
     /// <summary>
+    /// Shared deterministic AUP constants for terrain, KCC, and MapMagic handoff math.
+    /// </summary>
+    public static class AUPDeterminism
+    {
+        public const int AUP_DETERMINISM_MULTIPLIER = 1000;
+    }
+
+    /// <summary>
     /// Burst-safe Absolute Universe Position math shared by simulation systems.
     /// </summary>
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

@@ -161,7 +161,7 @@ namespace Hecton8.Dev
                     saveManager.DeleteSave(currentSlot);
                     if (runHeaderMagicCorruptionPass)
                         saveManager.DeleteSave(headerMagicSlot);
-                    await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
                 }
 
                 if (!await RunRecoveryScenarioAsync(currentSlot, RecoveryCorruptionMode.ProtectedSectorChecksum))
@@ -293,7 +293,7 @@ namespace Hecton8.Dev
                 if (saveManager != null)
                     return true;
 
-                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
             }
 
             FailRecovery("SaveManager not found before save recovery smoke execution.");
@@ -304,7 +304,7 @@ namespace Hecton8.Dev
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
             while (Time.realtimeSinceStartup < deadline)
-                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);
         }
 
         private static string BuildHeaderMagicSlotName(string slotName)

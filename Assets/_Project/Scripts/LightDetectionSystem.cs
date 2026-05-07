@@ -1,4 +1,5 @@
 using Hecton8.Gameplay;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -18,13 +19,15 @@ namespace Hecton8.AI
                 return 0f;
 
             Vector3 toListener = listenerPosition - playerTransform.position;
-            float distance = toListener.magnitude;
-            if (distance <= 0.01f)
+            float distanceSqr = toListener.sqrMagnitude;
+            if (distanceSqr <= 0.0001f)
                 return 1f;
 
-            Vector3 direction = toListener / distance;
-            float facing01 = Mathf.Clamp01(Vector3.Dot(playerTransform.forward, direction));
-            float heatBoost = Mathf.Lerp(0f, 0.08f, Mathf.Clamp01(flashlight.HeatLevel));
+            float inverseDistance = math.rsqrt(math.max(distanceSqr, 0.0001f));
+            float3 direction = (float3)toListener * inverseDistance;
+            float3 forward = math.normalizesafe((float3)playerTransform.forward, new float3(0f, 0f, 1f));
+            float facing01 = math.saturate(math.dot(forward, direction));
+            float heatBoost = math.lerp(0f, 0.08f, math.saturate(flashlight.HeatLevel));
 
             float beamRange;
             float beamWeight;
@@ -44,9 +47,12 @@ namespace Hecton8.AI
                     break;
             }
 
-            float distance01 = 1f - Mathf.InverseLerp(beamRange * 0.35f, beamRange, distance);
+            float nearDistance = beamRange * 0.35f;
+            float nearDistanceSqr = nearDistance * nearDistance;
+            float beamRangeSqr = beamRange * beamRange;
+            float distance01 = 1f - math.saturate((distanceSqr - nearDistanceSqr) / math.max(0.0001f, beamRangeSqr - nearDistanceSqr));
             float beam01 = (0.3f + (facing01 * 0.7f) + heatBoost) * beamWeight * distance01;
-            return Mathf.Clamp01(beam01);
+            return math.saturate(beam01);
         }
     }
 }

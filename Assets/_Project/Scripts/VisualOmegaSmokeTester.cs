@@ -17,7 +17,7 @@ namespace Hecton8.Dev
     public sealed class VisualOmegaSmokeTester : MonoBehaviour
     {
         private const string TesterName = "VisualOmegaSmokeTester";
-        private const int ExpectedCheckCount = 14;
+        private const int ExpectedCheckCount = 32;
 
         [Header("Execution")]
         [Tooltip("Runs the cold source audit once when the component starts.")]
@@ -33,19 +33,25 @@ namespace Hecton8.Dev
         [SerializeField] private int _debugCheckCount;
         [Tooltip("Number of failed checks in the last source audit.")]
         [SerializeField] private int _debugFailureCount;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         [Tooltip("Last JSON smoke result emitted by the audit.")]
         [SerializeField] private string _debugLastJson = string.Empty;
+#endif
 #pragma warning restore CS0414
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         // COLD ALLOC: StringBuilder[1024] - source-audit issue buffer - owner: VisualOmegaSmokeTester
         private readonly StringBuilder _issueBuilder = new StringBuilder(1024);
         // COLD ALLOC: StringBuilder[512] - source-audit JSON report - owner: VisualOmegaSmokeTester
         private readonly StringBuilder _jsonBuilder = new StringBuilder(512);
+#endif
 
         private void Start()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (runOnStart)
                 RunSmokePass();
+#endif
         }
 
         /// <summary>
@@ -53,10 +59,15 @@ namespace Hecton8.Dev
         /// </summary>
         public static void RunBatchModeSmokeTest()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             VisualOmegaSmokeTester tester = new GameObject(TesterName).AddComponent<VisualOmegaSmokeTester>();
             bool pass = tester.RunSmokePass();
             if (Application.isBatchMode)
                 Application.Quit(pass ? 0 : 1);
+#else
+            if (Application.isBatchMode)
+                Application.Quit(1);
+#endif
         }
 
         /// <summary>
@@ -65,6 +76,7 @@ namespace Hecton8.Dev
         [ContextMenu("Run Visual Omega Smoke Pass")]
         public bool RunSmokePass()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _issueBuilder.Clear();
             _debugCheckCount = 0;
             _debugFailureCount = 0;
@@ -78,6 +90,14 @@ namespace Hecton8.Dev
             string voxelStreamingSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs");
             string volumetricComputeSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute");
             string retinaShaderSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_RetinaDistortion.shader");
+            string causticsProjectorSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Visor/CausticsProjectorManager.cs");
+            string underwaterVisualsSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/HectonUnderwaterVisuals.cs");
+            string shadowGuardSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Core/HectonUrpShadowBudgetGuard.cs");
+            string coreLitSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl");
+            string suitVisorSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/SuitVisor.shader");
+            string visorFluidFeatureSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Visor/HectonVisorFluidDistortionFeature.cs");
+            string visorFluidShaderSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader");
+            string scooterShaftSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_ScooterVolumetricShafts.shader");
 
             CheckContains(flashlightSource, "NativeMemorySentinel.RegisterNativeArray(", "flashlight-nativearray-registered");
             CheckContains(flashlightSource, "nameof(_occupancyVolume)", "flashlight-occupancy-sentinel-owner");
@@ -93,6 +113,27 @@ namespace Hecton8.Dev
             CheckNotContains(voxelStreamingSource, "$\"VoxelCave_", "voxel-streaming-hotpath-string-purged");
             CheckContains(volumetricComputeSource, "clamp((int)round(_HectonVolumetricShadowParams.x), 1, 7)", "volumetric-shadow-step-cap-mx350");
             CheckContains(retinaShaderSource, "_QUALITY_MX350", "retina-mx350-mode-toggle");
+            CheckNotContains(causticsProjectorSource, "TrySampleWaveKinematics", "caustics-ocean-kinematics-sample-purged");
+            CheckContains(causticsProjectorSource, "ResolveFakeWaveCoupling", "caustics-alu-wave-coupling");
+            CheckContains(causticsProjectorSource, "CausticsPublishBudgetWarningMilliseconds", "caustics-performance-warning-budget");
+            CheckNotContains(underwaterVisualsSource, "RaycastNonAlloc", "bottom-silt-raycast-purged");
+            CheckContains(underwaterVisualsSource, "ResolveFakeBottomSiltDistance", "bottom-silt-alu-distance-fake");
+            CheckContains(underwaterVisualsSource, "GlobalRegistry.MapMagic", "bottom-silt-mapmagic-registry-slot");
+            CheckContains(shadowGuardSource, "EnforceSceneShadowDictatorshipCold", "shadow-dictatorship-scene-enforced");
+            CheckContains(shadowGuardSource, "IsAllowedForwardSpotlightCold", "shadow-dictatorship-forward-spot-only");
+            CheckNotContains(shadowGuardSource, "nearestIndexB", "shadow-dictatorship-single-forward-spot");
+            CheckContains(coreLitSource, "HectonCoreLitEvaluateAdditionalLightContactShadow", "additional-lights-screen-space-contact-shadow");
+            CheckContains(coreLitSource, "for (int stepIndex = 0; stepIndex < 4; stepIndex++)", "contact-shadow-four-steps");
+            CheckContains(coreLitSource, "HectonCoreLitEvaluateCausticsSceneDepthFade", "caustics-scene-depth-fade");
+            CheckContains(coreLitSource, "HectonCoreLitSanitizePositionOS", "shader-aup-nan-sentinel");
+            CheckContains(suitVisorSource, "glareDepthVisibility", "hud-glare-depth-occlusion");
+            CheckContains(suitVisorSource, "foveatedQuantized", "visor-foveated-dither");
+            CheckContains(visorFluidFeatureSource, "ThermalDistortionCullSpeedMetersPerSecond = 15f", "thermal-distortion-speed-cull");
+            CheckContains(visorFluidShaderSource, "_HectonThermalDistortionMotionCull", "thermal-distortion-shader-cull-uniform");
+            CheckContains(scooterShaftSource, "for (int stepIndex = 0; stepIndex < 4; stepIndex++)", "scooter-contact-shadow-four-steps");
+
+            if (_debugCheckCount != ExpectedCheckCount)
+                AddIssue("visual-omega-check-count-mismatch");
 
             _debugLastPass = _debugFailureCount == 0;
             _debugLastJson = BuildJsonReport();
@@ -100,8 +141,15 @@ namespace Hecton8.Dev
                 Debug.Log(_debugLastJson, this);
 
             return _debugLastPass;
+#else
+            _debugLastPass = false;
+            _debugCheckCount = 0;
+            _debugFailureCount = 1;
+            return false;
+#endif
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void CheckContains(string source, string requiredToken, string checkName)
         {
             _debugCheckCount++;
@@ -153,5 +201,6 @@ namespace Hecton8.Dev
             string fullPath = Path.Combine(projectRoot, relativePath);
             return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
         }
+#endif
     }
 }

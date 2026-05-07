@@ -24,12 +24,18 @@ namespace Hecton8.Optimization
         private const float ColdReleaseIntervalSeconds = 1f;
         private const float DistantChunkReleaseDistanceMeters = 1500f;
         private const float DistantChunkReleaseDistanceSq = DistantChunkReleaseDistanceMeters * DistantChunkReleaseDistanceMeters;
+        private const float HardReaperIntervalSeconds = 600f;
+        private const float HardReaperTravelDistanceMeters = 3000f;
+        private const float HardReaperTravelDistanceSq = HardReaperTravelDistanceMeters * HardReaperTravelDistanceMeters;
+        private const float HardReaperGlitchDurationSeconds = 0.5f;
         private const int MaxColdDistantChunkReleases = 8;
+        private const int MaxHardReaperEvictions = 64;
         private const double ColdTickWarningMilliseconds = 0.2d;
         private const float ColdTickWarningCooldownSeconds = 5f;
         private static readonly uint _AssetLifecycleContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor"));
         private static readonly uint _ColdTickOverBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.ColdTickOverBudget"));
         private static readonly uint _DoubleReleaseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.DoubleRelease"));
+        private static readonly uint _HardReaperSweepWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AssetLifecycleGovernor.HardReaperSweep"));
         private static readonly float[] _retryBackoffSeconds = { 5f, 15f, 60f };
 
         [Header("Asset Registry")]
@@ -45,8 +51,20 @@ namespace Hecton8.Optimization
         private long _frameSequence;
         private float _nextColdReleaseTime;
         private float _nextColdTickWarningTime;
+        private float _nextHardReaperTime;
+        private bool _hasHardReaperAnchor;
+        private AbsoluteUniversePosition _lastHardReaperAup;
         private Texture2D _checkerboardTexture;
         private Material _checkerboardMaterial;
+        private AsyncOperation _hardReaperUnloadOperation;
+        private System.Action<AsyncOperation> _hardReaperUnloadCompletedCallback;
+        private bool _hardReaperAsyncWindowActive;
+        private bool _hardReaperUnloadComplete;
+        private bool _hardReaperBundleCacheCleanComplete;
+#if UNITY_ADDRESSABLES_EXIST
+        private AsyncOperationHandle<bool> _hardReaperCleanBundleCacheHandle;
+        private System.Action<AsyncOperationHandle<bool>> _hardReaperCleanBundleCacheCompletedCallback;
+#endif
 
         // COLD ALLOC: Dictionary<uint, AssetRecord>[512] - global asset residency registry - owner: AssetLifecycleGovernor
         private readonly Dictionary<uint, AssetRecord> _registry = new Dictionary<uint, AssetRecord>(512);
@@ -68,6 +86,11 @@ namespace Hecton8.Optimization
         private void Awake()
         {
             _registry.EnsureCapacity(Mathf.Max(1, maxRegistryCapacity));
+            _nextHardReaperTime = Time.unscaledTime + HardReaperIntervalSeconds;
+            _hardReaperUnloadCompletedCallback = HandleHardReaperUnloadCompleted;
+#if UNITY_ADDRESSABLES_EXIST
+            _hardReaperCleanBundleCacheCompletedCallback = HandleHardReaperCleanBundleCacheCompleted;
+#endif
             EnsureFallbackAssets();
         }
 
@@ -84,6 +107,7 @@ namespace Hecton8.Optimization
 
         private void OnDisable()
         {
+            SetHardReaperScannerInterferenceActive(false);
             TryUnregister();
             TryUnregisterService();
         }
@@ -120,6 +144,7 @@ namespace Hecton8.Optimization
                 DrainPendingReleaseQueue(maxDeferredReleasesPerFrame);
                 PumpRetries();
                 ReleaseDistantChunkAddressables(MaxColdDistantChunkReleases);
+                EvaluateHardMemoryReaper(now);
             }
             finally
             {
@@ -353,6 +378,11 @@ namespace Hecton8.Optimization
             return evictions;
         }
 
+        internal void ForceHardMemoryReaperSweep()
+        {
+            ExecuteHardMemoryReaper(Time.unscaledTime);
+        }
+
         internal void MarkLoadFailed(uint key, string error)
         {
             if (!_registry.TryGetValue(key, out AssetRecord record))
@@ -530,6 +560,131 @@ namespace Hecton8.Optimization
 
                 ExecuteReleaseFlow(key);
             }
+        }
+
+        private void EvaluateHardMemoryReaper(float now)
+        {
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return;
+
+            if (!_hasHardReaperAnchor)
+            {
+                _lastHardReaperAup = playerAup;
+                _hasHardReaperAnchor = true;
+                _nextHardReaperTime = now + HardReaperIntervalSeconds;
+                return;
+            }
+
+            double travelDistanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in _lastHardReaperAup);
+            if (now < _nextHardReaperTime && travelDistanceSq < HardReaperTravelDistanceSq)
+                return;
+
+            _lastHardReaperAup = playerAup;
+            ExecuteHardMemoryReaper(now);
+        }
+
+        private void ExecuteHardMemoryReaper(float now)
+        {
+            _nextHardReaperTime = now + HardReaperIntervalSeconds;
+            if (_hardReaperAsyncWindowActive)
+                return;
+
+            _hardReaperAsyncWindowActive = true;
+            _hardReaperUnloadComplete = false;
+            _hardReaperBundleCacheCleanComplete = true;
+            SetHardReaperScannerInterferenceActive(true);
+            SystemDispatcher.RequestVisualStaticGlitch(HardReaperGlitchDurationSeconds);
+            ForceDrainPendingReleaseQueue();
+            int evicted = EvictLowestPriorityUnusedAssets(MaxHardReaperEvictions, AssetPriorityTier.Tier6Speculative);
+            evicted += ReleaseDistantChunkAddressables(MaxHardReaperEvictions);
+            PurgeAddressableCachesAsync();
+            _hardReaperUnloadOperation = Resources.UnloadUnusedAssets();
+            if (_hardReaperUnloadOperation != null && _hardReaperUnloadCompletedCallback != null)
+                _hardReaperUnloadOperation.completed += _hardReaperUnloadCompletedCallback;
+            else
+                _hardReaperUnloadComplete = true;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _HardReaperSweepWarningHash,
+                _AssetLifecycleContextHash,
+                evicted);
+
+            TryCompleteHardReaperAsyncWindow();
+        }
+
+        private void PurgeAddressableCachesAsync()
+        {
+#if UNITY_ADDRESSABLES_EXIST
+            if (_hardReaperCleanBundleCacheHandle.IsValid())
+            {
+                if (!_hardReaperCleanBundleCacheHandle.IsDone)
+                {
+                    _hardReaperBundleCacheCleanComplete = false;
+                    return;
+                }
+
+                Addressables.Release(_hardReaperCleanBundleCacheHandle);
+                _hardReaperCleanBundleCacheHandle = default;
+            }
+
+            _hardReaperCleanBundleCacheHandle = Addressables.CleanBundleCache();
+            if (_hardReaperCleanBundleCacheHandle.IsValid() && _hardReaperCleanBundleCacheCompletedCallback != null)
+            {
+                _hardReaperBundleCacheCleanComplete = false;
+                _hardReaperCleanBundleCacheHandle.Completed += _hardReaperCleanBundleCacheCompletedCallback;
+                return;
+            }
+
+            _hardReaperBundleCacheCleanComplete = true;
+#endif
+        }
+
+        private void HandleHardReaperUnloadCompleted(AsyncOperation operation)
+        {
+            if (!ReferenceEquals(operation, _hardReaperUnloadOperation))
+                return;
+
+            _hardReaperUnloadComplete = true;
+            _hardReaperUnloadOperation = null;
+            TryCompleteHardReaperAsyncWindow();
+        }
+
+#if UNITY_ADDRESSABLES_EXIST
+        private void HandleHardReaperCleanBundleCacheCompleted(AsyncOperationHandle<bool> handle)
+        {
+            if (_hardReaperCleanBundleCacheHandle.IsValid() &&
+                _hardReaperCleanBundleCacheHandle.Equals(handle))
+            {
+                Addressables.Release(_hardReaperCleanBundleCacheHandle);
+                _hardReaperCleanBundleCacheHandle = default;
+            }
+            else if (handle.IsValid())
+            {
+                Addressables.Release(handle);
+            }
+
+            _hardReaperBundleCacheCleanComplete = true;
+            TryCompleteHardReaperAsyncWindow();
+        }
+#endif
+
+        private void TryCompleteHardReaperAsyncWindow()
+        {
+            if (!_hardReaperAsyncWindowActive ||
+                !_hardReaperUnloadComplete ||
+                !_hardReaperBundleCacheCleanComplete)
+            {
+                return;
+            }
+
+            _hardReaperAsyncWindowActive = false;
+            SetHardReaperScannerInterferenceActive(false);
+        }
+
+        private static void SetHardReaperScannerInterferenceActive(bool active)
+        {
+            if (GlobalRegistry.UI is IScannerInterferenceUiSink scannerInterference)
+                scannerInterference.SetScannerInterferenceActive(active);
         }
 
         private bool ExecuteReleaseFlow(uint key)

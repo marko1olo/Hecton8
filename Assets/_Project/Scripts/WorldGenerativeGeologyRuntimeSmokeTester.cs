@@ -316,7 +316,7 @@ namespace Hecton8.Dev
                 if (passed)
                     return true;
 
-                await Awaitable.NextFrameAsync(cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
             }
 
             Fail($"{label} timed out.");
@@ -329,7 +329,7 @@ namespace Hecton8.Dev
             while (Time.realtimeSinceStartup < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
             }
         }
 

@@ -1,6 +1,7 @@
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.World;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -63,6 +64,7 @@ namespace Hecton8.UI
     /// <summary>
     /// Event payload emitted by diegetic panel hit processing.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct DiegeticPanelInputEvent
     {
         /// <summary>
@@ -120,9 +122,27 @@ namespace Hecton8.UI
         private const string PhosphorDecayShaderPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_PDA_PhosphorDecay.shader";
         private const float MinCanvasExtent = 0.0001f;
         private const float MatrixRefreshInterval = 0.25f;
+        private const float FarPanelDistanceSq = 25f;
+        private const float MediumPanelDistanceSq = 4f;
+        private const float NearPanelDistanceSq = 0.64f;
         private const int MaxInputEventsPerTick = 4;
         private const int InputEventCapacity = 16;
         private const int InputEventMask = InputEventCapacity - 1;
+
+        /// <summary>
+        /// Physical panel interaction policy.
+        /// </summary>
+        public enum PanelInteractionMode : byte
+        {
+            /// <summary>Use only the central interaction ray.</summary>
+            RaycastOnly = 0,
+
+            /// <summary>Use only fingertip-to-surface distance checks.</summary>
+            PhysicalFingerOnly = 1,
+
+            /// <summary>Use fingertips when present, with desktop ray fallback when no fingertips are bound.</summary>
+            HybridPreferFinger = 2
+        }
 
         private static readonly int _MainTexId = Shader.PropertyToID("_MainTex");
         private static readonly int _BaseMapId = Shader.PropertyToID("_BaseMap");
@@ -145,6 +165,7 @@ namespace Hecton8.UI
             PlayerInRange = 1 << 7,
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct PanelData
         {
             public float4x4 LocalToWorld;
@@ -154,7 +175,7 @@ namespace Hecton8.UI
             public int ReferenceWidth;
             public int ReferenceHeight;
             public PanelStateFlags StateFlags;
-            public float DistToCamera;
+            public float DistToCameraSq;
             public float LastInteractTime;
         }
 
@@ -200,9 +221,6 @@ namespace Hecton8.UI
         private int panelId = 1;
 
         [Header("── Interaction ────────────────────────────")]
-        [SerializeField, Tooltip("Layer mask used for the panel collider hit query.")]
-        private LayerMask interactionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
         [SerializeField, Tooltip("Maximum world-space distance for cursor interaction.")]
         private float maxInteractionDistance = 2.75f;
 
@@ -220,6 +238,25 @@ namespace Hecton8.UI
 
         [SerializeField, Tooltip("Seconds between panel distance and RT-tier refresh passes.")]
         private float distanceRefreshInterval = MatrixRefreshInterval;
+
+        [Header("Physical Finger Input")]
+        [SerializeField, Tooltip("VR interaction mode. PhysicalFingerOnly disables gaze/ray input entirely.")]
+        private PanelInteractionMode interactionMode = PanelInteractionMode.HybridPreferFinger;
+
+        [SerializeField, Tooltip("Tracked fingertip transforms used for physical finger-to-surface PDA input. Index 0/1 are normally left/right index tips.")]
+        private Transform[] fingertipTransforms = new Transform[2];
+
+        [SerializeField, Tooltip("Allows desktop ray fallback when no fingertip transforms are bound and XR is not active.")]
+        private bool allowDesktopRayFallbackWithoutFingers = true;
+
+        [SerializeField, Min(0.001f), Tooltip("Maximum absolute panel-local Z distance that counts as a finger press.")]
+        private float fingerPressDistance = 0.025f;
+
+        [SerializeField, Min(0.001f), Tooltip("Release hysteresis distance. Must be equal or larger than press distance.")]
+        private float fingerReleaseDistance = 0.045f;
+
+        [SerializeField, Min(0.001f), Tooltip("Maximum panel-local Z distance that keeps the physical cursor hovering over the panel.")]
+        private float fingerHoverDistance = 0.08f;
 
         [Header("── Render Texture ────────────────────────")]
         [SerializeField, Tooltip("Enables the RT-backed panel path for physical screen meshes.")]
@@ -266,11 +303,8 @@ namespace Hecton8.UI
         [SerializeField, Range(0f, 0.3f), Tooltip("Small unscaled flicker amount synchronized with panel power.")]
         private float proxyLightFlicker = 0.06f;
 
-        // COLD ALLOC: RaycastHit[1] — bounded panel hit buffer — owner: DiegeticPanelController
         // COLD ALLOC: DiegeticPanelInputEvent[16] — fixed panel input ring buffer — owner: DiegeticPanelController
         private readonly DiegeticPanelInputEvent[] _inputEvents = new DiegeticPanelInputEvent[InputEventCapacity];
-        // COLD ALLOC: List[4] - cached panel collider set for zero-GC hit validation - owner: DiegeticPanelController
-        private readonly System.Collections.Generic.List<Collider> _panelColliderCache = new System.Collections.Generic.List<Collider>(4);
 
         private PanelData _panelData;
         private RectTransform _resolvedPanelRect;
@@ -285,7 +319,6 @@ namespace Hecton8.UI
         private Canvas _cachedGraphicRaycasterCanvas;
         private IPanelInteractable _panelInteractable;
         private IPanelPowerSource _panelPowerSource;
-        private IInteractionSignalService _interactionSignals;
         private IInputService _input;
         private RenderTexture _panelRenderTexture;
         private RenderTexture _phosphorFrontTexture;
@@ -294,6 +327,7 @@ namespace Hecton8.UI
         private int2 _activeRenderResolution;
         private int2 _fixedRenderResolution;
         private bool _retainRenderTextureOnDisable;
+        private bool _presentationPausedByOwner;
         private float _refreshTimer;
         private float _cameraRetryTimer;
         private float _appliedDepthFadeRange = -1f;
@@ -302,6 +336,7 @@ namespace Hecton8.UI
         private bool _lateFrameRegistered;
         private bool _renderPipelineHookRegistered;
         private bool _wasPressedLastFrame;
+        private bool _fingerPressedLastFrame;
         private bool _cursorVisible;
         private bool _cursorVisibilityInitialized;
         private bool _cursorStateInitialized;
@@ -314,10 +349,11 @@ namespace Hecton8.UI
         private int _appliedCanvasLayer = int.MinValue;
         private int _proxyLightKey;
         private bool _proxyLightRegistered;
-        private ulong _raycastRequesterId;
         private float2 _clampedCanvasPosition;
+        private float2 _lastFingerCanvasPosition;
         private float3 _smoothedCursorWorld;
-        private Collider _cachedPanelColliderRoot;
+        private float3 _lastFingerLocalHit;
+        private int _activeFingerIndex = -1;
 
         /// <summary>
         /// Returns the current RT assigned to the panel camera, if any.
@@ -331,7 +367,6 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _raycastRequesterId = EntityId.ToULong(gameObject.GetEntityId());
             _proxyLightKey = unchecked((int)EntityId.ToULong(gameObject.GetEntityId()));
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
             ResolveInterfaces();
@@ -362,6 +397,8 @@ namespace Hecton8.UI
             UnregisterRenderPipelineHook();
             UnregisterProxyLight();
             _wasPressedLastFrame = false;
+            _fingerPressedLastFrame = false;
+            _activeFingerIndex = -1;
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
             SetCursorVisible(false);
@@ -383,10 +420,45 @@ namespace Hecton8.UI
             if (!EnsureRuntimeState())
                 return;
 
+            if (_presentationPausedByOwner)
+            {
+                SetCursorVisible(false);
+                ClearHoverState();
+                if (panelCamera != null && panelCamera.enabled)
+                    panelCamera.enabled = false;
+                return;
+            }
+
             RefreshPanelData(forceRefresh: false);
             RefreshDistanceAndRenderTexture(deltaTime);
             ApplyPowerLevel();
             UpdateProxyLightRegistration();
+
+            if (TryResolveFingerInteraction(
+                    out float2 fingerCanvasPos,
+                    out float3 fingerLocalHit,
+                    out DiegeticPanelInputEventType fingerEventType,
+                    out bool showFingerCursor))
+            {
+                _panelData.StateFlags |= PanelStateFlags.CursorOver | PanelStateFlags.PlayerInRange;
+                _panelData.LastInteractTime = Time.unscaledTime;
+                _clampedCanvasPosition = fingerCanvasPos;
+
+                if (showFingerCursor)
+                    UpdateCursor(fingerLocalHit, deltaTime);
+                else
+                    SetCursorVisible(false);
+
+                QueueInputEvent(fingerCanvasPos, fingerEventType);
+                DispatchInputEvents();
+                return;
+            }
+
+            if (!CanUseDesktopPlaneFallback())
+            {
+                ClearHoverState();
+                return;
+            }
 
             if (!TryResolveRay(out float3 rayOriginWs, out float3 rayDirectionWs))
             {
@@ -394,13 +466,20 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!TryResolveHit(rayOriginWs, rayDirectionWs, out RaycastHit hit) || !IsPanelCollider(hit.collider))
+            if (!IsRayOriginWithinAupInteractionRange(rayOriginWs))
             {
                 ClearHoverState();
                 return;
             }
 
-            if (!TryProjectHitToCanvas(hit.point, out float2 canvasPos, out float3 localHit))
+            if (!TryProjectRayToPanel(
+                    rayOriginWs,
+                    rayDirectionWs,
+                    maxInteractionDistance,
+                    rayDirectionIsNormalized: true,
+                    out float2 canvasPos,
+                    out float3 localHit,
+                    out _))
             {
                 ClearHoverState();
                 return;
@@ -411,13 +490,16 @@ namespace Hecton8.UI
             _clampedCanvasPosition = canvasPos;
 
             UpdateCursor(localHit, deltaTime);
-            QueueInputEvents(canvasPos);
+            QueueInputEventsFromInputState(canvasPos);
             DispatchInputEvents();
         }
 
         /// <inheritdoc />
         public void LateFrameTick()
         {
+            if (_presentationPausedByOwner)
+                return;
+
             if (enablePhosphorDecay && _panelRenderTexture != null)
                 ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: false);
         }
@@ -441,6 +523,9 @@ namespace Hecton8.UI
         /// </summary>
         public void ForceRefreshRenderTexture()
         {
+            if (_presentationPausedByOwner)
+                return;
+
             EnsureRenderTexture(forceRefresh: true);
         }
 
@@ -467,6 +552,41 @@ namespace Hecton8.UI
 
             float3 localPoint = new float3(localXY.x, localXY.y, surfaceOffset);
             worldPosition = math.transform(_panelData.LocalToWorld, localPoint);
+            return true;
+        }
+
+        /// <summary>
+        /// Projects a world-space selection ray onto the physical panel without using a physics raycast.
+        /// </summary>
+        /// <param name="worldRayOrigin">Ray origin in world space.</param>
+        /// <param name="worldRayDirection">Ray direction in world space.</param>
+        /// <param name="maxDistance">Maximum accepted plane-intersection distance in meters.</param>
+        /// <param name="canvasPosition">Resolved canvas-space pixel coordinate.</param>
+        /// <param name="worldHitPosition">Resolved world-space panel hit position.</param>
+        /// <returns>True when the ray intersects the panel bounds.</returns>
+        public bool TryProjectRayToCanvas(
+            Vector3 worldRayOrigin,
+            Vector3 worldRayDirection,
+            float maxDistance,
+            out float2 canvasPosition,
+            out Vector3 worldHitPosition)
+        {
+            RefreshPanelData(forceRefresh: false);
+
+            canvasPosition = float2.zero;
+            worldHitPosition = default;
+
+            if (!TryProjectRayToPanel(
+                    (float3)worldRayOrigin,
+                    (float3)worldRayDirection,
+                    maxDistance,
+                    rayDirectionIsNormalized: false,
+                    out canvasPosition,
+                    out _,
+                    out float3 worldHit))
+                return false;
+
+            worldHitPosition = worldHit;
             return true;
         }
 
@@ -544,6 +664,26 @@ namespace Hecton8.UI
             ReleaseRenderTexture();
         }
 
+        internal void SetPresentationPaused(bool paused)
+        {
+            if (_presentationPausedByOwner == paused)
+                return;
+
+            _presentationPausedByOwner = paused;
+            if (panelCamera != null)
+                panelCamera.enabled = !paused && enableRenderTexturePresentation;
+
+            if (paused)
+            {
+                SetCursorVisible(false);
+                ClearHoverState();
+                return;
+            }
+
+            if (isActiveAndEnabled)
+                EnsureRenderTexture(forceRefresh: true);
+        }
+
         internal Canvas TargetCanvas => targetCanvas;
 
         internal Camera PanelCamera => panelCamera;
@@ -577,6 +717,11 @@ namespace Hecton8.UI
             ResolveInterfaces();
         }
 
+        internal void OverrideInteractionMode(PanelInteractionMode mode)
+        {
+            interactionMode = mode;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -588,6 +733,9 @@ namespace Hecton8.UI
             cursorHoverOffset = Mathf.Max(0f, cursorHoverOffset);
             cursorSmoothingSpeed = Mathf.Max(0.1f, cursorSmoothingSpeed);
             distanceRefreshInterval = Mathf.Max(0.1f, distanceRefreshInterval);
+            fingerPressDistance = Mathf.Max(0.001f, fingerPressDistance);
+            fingerReleaseDistance = Mathf.Max(fingerPressDistance, fingerReleaseDistance);
+            fingerHoverDistance = Mathf.Max(fingerReleaseDistance, fingerHoverDistance);
             depthFadeRange = Mathf.Max(0.001f, depthFadeRange);
 
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
@@ -608,9 +756,6 @@ namespace Hecton8.UI
 
             if (panelCollider == null)
                 panelCollider = GetComponent<Collider>();
-
-            if (!ReferenceEquals(_cachedPanelColliderRoot, panelCollider))
-                RebuildPanelColliderCache();
 
             _resolvedPanelRect = panelRect;
             _resolvedPanelTransform = _resolvedPanelRect != null ? _resolvedPanelRect.transform : transform;
@@ -671,7 +816,6 @@ namespace Hecton8.UI
 
         private void RefreshServices()
         {
-            _interactionSignals = GlobalRegistry.InteractionSignals;
             _input = GlobalRegistry.Input;
         }
 
@@ -769,6 +913,13 @@ namespace Hecton8.UI
 
         private void RefreshDistanceAndRenderTexture(float deltaTime)
         {
+            if (_presentationPausedByOwner)
+            {
+                if (panelCamera != null && panelCamera.enabled)
+                    panelCamera.enabled = false;
+                return;
+            }
+
             _refreshTimer -= deltaTime;
             if (_refreshTimer > 0f)
                 return;
@@ -779,17 +930,22 @@ namespace Hecton8.UI
             if (resolvedCamera == null)
                 return;
 
-            float3 panelOrigin = _panelData.LocalToWorld.c3.xyz;
-            _panelData.DistToCamera = math.distance(panelOrigin, resolvedCamera.transform.position);
+            Vector3 panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
+            Vector3 cameraPosition = resolvedCamera.transform.position;
+            _panelData.DistToCameraSq = ResolveAupDistanceSqClamped(panelOrigin, cameraPosition);
             EnsureRenderTexture(forceRefresh: false);
         }
 
         private void EnsureRenderTexture(bool forceRefresh)
         {
-            if (!enableRenderTexturePresentation || panelCamera == null)
+            if (!enableRenderTexturePresentation || panelCamera == null || _presentationPausedByOwner)
+            {
+                if (panelCamera != null && panelCamera.enabled)
+                    panelCamera.enabled = false;
                 return;
+            }
 
-            int2 requiredResolution = DetermineRenderResolution(_panelData.DistToCamera);
+            int2 requiredResolution = DetermineRenderResolutionFromDistanceSq(_panelData.DistToCameraSq);
             if (!forceRefresh &&
                 _panelRenderTexture != null &&
                 requiredResolution.x == _activeRenderResolution.x &&
@@ -821,31 +977,32 @@ namespace Hecton8.UI
             };
             _panelRenderTexture.Create();
             panelCamera.targetTexture = _panelRenderTexture;
+            panelCamera.enabled = true;
             _activeRenderResolution = requiredResolution;
             EnsurePhosphorResources();
 
             ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: true);
         }
 
-        private int2 DetermineRenderResolution(float distanceToCamera)
+        private int2 DetermineRenderResolutionFromDistanceSq(float distanceToCameraSq)
         {
             if (_fixedRenderResolution.x > 0 && _fixedRenderResolution.y > 0)
                 return _fixedRenderResolution;
 
             if (_isMx350Tier)
             {
-                if (distanceToCamera > 5f)
+                if (distanceToCameraSq > FarPanelDistanceSq)
                     return new int2(128, 64);
-                if (distanceToCamera > 2f)
+                if (distanceToCameraSq > MediumPanelDistanceSq)
                     return new int2(256, 128);
                 return new int2(512, 256);
             }
 
-            if (distanceToCamera > 5f)
+            if (distanceToCameraSq > FarPanelDistanceSq)
                 return new int2(256, 128);
-            if (distanceToCamera > 2f)
+            if (distanceToCameraSq > MediumPanelDistanceSq)
                 return new int2(512, 256);
-            if (distanceToCamera > 0.8f)
+            if (distanceToCameraSq > NearPanelDistanceSq)
                 return new int2(1024, 512);
             return new int2(2048, 1024);
         }
@@ -1083,34 +1240,73 @@ namespace Hecton8.UI
             Transform originTransform = rayOrigin != null ? rayOrigin : resolvedCamera.transform;
             Transform directionTransform = rayDirectionSource != null ? rayDirectionSource : resolvedCamera.transform;
             rayOriginWs = originTransform.position;
-            rayDirectionWs = math.normalizesafe(directionTransform.forward);
+            rayDirectionWs = directionTransform.forward;
             return math.lengthsq(rayDirectionWs) > 0.0001f;
         }
 
-        private bool TryResolveHit(float3 rayOriginWs, float3 rayDirectionWs, out RaycastHit hit)
+        private bool IsRayOriginWithinAupInteractionRange(float3 rayOriginWs)
         {
-            hit = default;
-
-            if (_interactionSignals == null || !_interactionSignals.IsInitialized)
-                RefreshServices();
-
-            if (_interactionSignals == null || !_interactionSignals.IsInitialized)
-                return false;
-
-            return _interactionSignals.TryRaycastPrimary(
-                _raycastRequesterId,
-                rayOriginWs,
-                rayDirectionWs,
-                maxInteractionDistance,
-                interactionMask.value,
-                QueryTriggerInteraction.Collide,
-                out hit);
+            float maxDistance = math.max(0.001f, maxInteractionDistance);
+            double maxDistanceSq = (double)maxDistance * maxDistance;
+            Vector3 panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
+            return ResolveAupDistanceSq((Vector3)rayOriginWs, panelOrigin) <= maxDistanceSq;
         }
 
-        private bool TryProjectHitToCanvas(Vector3 worldHitPoint, out float2 canvasPos, out float3 localHit)
+        private static float ResolveAupDistanceSqClamped(Vector3 runtimePositionA, Vector3 runtimePositionB)
         {
-            localHit = math.transform(_panelData.WorldToLocal, worldHitPoint);
+            double distanceSq = ResolveAupDistanceSq(runtimePositionA, runtimePositionB);
+            return distanceSq >= float.MaxValue ? float.MaxValue : (float)distanceSq;
+        }
 
+        private static double ResolveAupDistanceSq(Vector3 runtimePositionA, Vector3 runtimePositionB)
+        {
+            AbsoluteUniversePosition a = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionA);
+            AbsoluteUniversePosition b = AbsoluteUniversePosition.FromRuntimePosition(runtimePositionB);
+            return AbsoluteUniversePosition.DistanceSq(in a, in b);
+        }
+
+        private bool TryProjectRayToPanel(
+            float3 rayOriginWs,
+            float3 rayDirectionWs,
+            float maxDistance,
+            bool rayDirectionIsNormalized,
+            out float2 canvasPos,
+            out float3 localHit,
+            out float3 worldHit)
+        {
+            canvasPos = float2.zero;
+            localHit = float3.zero;
+            worldHit = float3.zero;
+
+            float3 rayDirection = rayDirectionWs;
+            float directionLengthSq = math.lengthsq(rayDirection);
+            if (directionLengthSq <= 0.0001f)
+                return false;
+
+            if (!rayDirectionIsNormalized)
+                rayDirection *= math.rsqrt(directionLengthSq);
+
+            float3 panelNormal = _panelData.LocalToWorld.c2.xyz;
+            if (math.lengthsq(panelNormal) <= 0.0001f)
+                panelNormal = new float3(0f, 0f, 1f);
+
+            float3 panelOrigin = _panelData.LocalToWorld.c3.xyz;
+            float denom = math.dot(rayDirection, panelNormal);
+            if (math.abs(denom) < 0.01f)
+                return false;
+
+            float planeDistance = math.dot(panelOrigin - rayOriginWs, panelNormal) / denom;
+            float maxDistanceSafe = math.max(0.001f, maxDistance);
+            if (planeDistance < 0f || planeDistance * planeDistance > maxDistanceSafe * maxDistanceSafe)
+                return false;
+
+            worldHit = rayOriginWs + rayDirection * planeDistance;
+            localHit = math.transform(_panelData.WorldToLocal, worldHit);
+            return TryProjectLocalHitToCanvas(localHit, out canvasPos);
+        }
+
+        private bool TryProjectLocalHitToCanvas(float3 localHit, out float2 canvasPos)
+        {
             float2 safeCanvasSize = math.max(_panelData.CanvasSize, new float2(MinCanvasExtent, MinCanvasExtent));
             float2 uv = new float2(
                 (localHit.x + _panelData.HalfSize.x) / safeCanvasSize.x,
@@ -1127,6 +1323,105 @@ namespace Hecton8.UI
                 uv.x * _panelData.ReferenceWidth,
                 uv.y * _panelData.ReferenceHeight);
             return true;
+        }
+
+        private bool TryResolveFingerInteraction(
+            out float2 canvasPos,
+            out float3 localHit,
+            out DiegeticPanelInputEventType eventType,
+            out bool showCursor)
+        {
+            canvasPos = float2.zero;
+            localHit = float3.zero;
+            eventType = DiegeticPanelInputEventType.None;
+            showCursor = false;
+
+            if (interactionMode == PanelInteractionMode.RaycastOnly)
+                return false;
+
+            if (!HasAnyFingertipTransform())
+            {
+                if (_fingerPressedLastFrame)
+                    return ResolveFingerRelease(out canvasPos, out localHit, out eventType);
+
+                return false;
+            }
+
+            float pressDistance = math.max(0.001f, fingerPressDistance);
+            float releaseDistance = math.max(pressDistance, fingerReleaseDistance);
+            float hoverDistance = math.max(releaseDistance, fingerHoverDistance);
+            int bestIndex = -1;
+            float bestDistance = float.MaxValue;
+            float3 bestLocalHit = float3.zero;
+
+            for (int i = 0; i < fingertipTransforms.Length; i++)
+            {
+                Transform fingertip = fingertipTransforms[i];
+                if (fingertip == null)
+                    continue;
+
+                float3 candidateLocalHit = math.transform(_panelData.WorldToLocal, fingertip.position);
+                if (!IsInsidePanelXY(candidateLocalHit.xy))
+                    continue;
+
+                float surfaceDistance = math.abs(candidateLocalHit.z);
+                if (surfaceDistance <= hoverDistance && surfaceDistance < bestDistance)
+                {
+                    bestDistance = surfaceDistance;
+                    bestIndex = i;
+                    bestLocalHit = candidateLocalHit;
+                }
+            }
+
+            if (bestIndex < 0)
+            {
+                if (_fingerPressedLastFrame)
+                    return ResolveFingerRelease(out canvasPos, out localHit, out eventType);
+
+                _activeFingerIndex = -1;
+                return false;
+            }
+
+            bool heldFinger = _fingerPressedLastFrame && (_activeFingerIndex < 0 || _activeFingerIndex == bestIndex);
+            bool pressedNow = bestDistance <= pressDistance || (heldFinger && bestDistance <= releaseDistance);
+            if (!TryProjectLocalHitToCanvas(bestLocalHit, out canvasPos))
+            {
+                if (_fingerPressedLastFrame)
+                    return ResolveFingerRelease(out canvasPos, out localHit, out eventType);
+
+                return false;
+            }
+
+            localHit = bestLocalHit;
+            showCursor = true;
+            _activeFingerIndex = bestIndex;
+            _lastFingerCanvasPosition = canvasPos;
+            _lastFingerLocalHit = localHit;
+
+            eventType = pressedNow
+                ? (_fingerPressedLastFrame ? DiegeticPanelInputEventType.Hold : DiegeticPanelInputEventType.Down)
+                : DiegeticPanelInputEventType.Hover;
+
+            _fingerPressedLastFrame = pressedNow;
+            return true;
+        }
+
+        private bool ResolveFingerRelease(out float2 canvasPos, out float3 localHit, out DiegeticPanelInputEventType eventType)
+        {
+            canvasPos = _lastFingerCanvasPosition;
+            localHit = _lastFingerLocalHit;
+            eventType = DiegeticPanelInputEventType.Up;
+            _fingerPressedLastFrame = false;
+            _activeFingerIndex = -1;
+            return true;
+        }
+
+        private bool IsInsidePanelXY(float2 localXY)
+        {
+            return localXY.x >= -_panelData.HalfSize.x &&
+                   localXY.x <= _panelData.HalfSize.x &&
+                   localXY.y >= -_panelData.HalfSize.y &&
+                   localXY.y <= _panelData.HalfSize.y;
         }
 
         private void UpdateCursor(float3 localHit, float deltaTime)
@@ -1149,7 +1444,7 @@ namespace Hecton8.UI
             }
             else
             {
-                float alpha = 1f - math.exp(-cursorSmoothingSpeed * math.max(0.0001f, deltaTime));
+                float alpha = FastDecayBlend(cursorSmoothingSpeed, math.max(0.0001f, deltaTime));
                 _smoothedCursorWorld = math.lerp(_smoothedCursorWorld, cursorTargetWorld, alpha);
             }
 
@@ -1163,7 +1458,19 @@ namespace Hecton8.UI
             SetCursorVisible(true);
         }
 
-        private void QueueInputEvents(float2 canvasPos)
+        private static float FastDecayBlend(float sharpness, float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return 0f;
+
+            float x = math.max(0f, sharpness) * deltaTime;
+            if (x >= 3.5f)
+                return 1f;
+
+            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
+        }
+
+        private void QueueInputEventsFromInputState(float2 canvasPos)
         {
             DiegeticPanelInputEventType eventType = DiegeticPanelInputEventType.Hover;
 
@@ -1185,6 +1492,14 @@ namespace Hecton8.UI
             {
                 _wasPressedLastFrame = false;
             }
+
+            QueueInputEvent(canvasPos, eventType);
+        }
+
+        private void QueueInputEvent(float2 canvasPos, DiegeticPanelInputEventType eventType)
+        {
+            if (eventType == DiegeticPanelInputEventType.None)
+                return;
 
             EnqueueInputEvent(new DiegeticPanelInputEvent
             {
@@ -1229,6 +1544,8 @@ namespace Hecton8.UI
         {
             _panelData.StateFlags &= ~(PanelStateFlags.CursorOver | PanelStateFlags.PlayerInRange);
             _wasPressedLastFrame = false;
+            _fingerPressedLastFrame = false;
+            _activeFingerIndex = -1;
             _inputEventHead = 0;
             _inputEventTail = 0;
             _inputEventCount = 0;
@@ -1236,29 +1553,35 @@ namespace Hecton8.UI
             SetCursorVisible(false);
         }
 
-        private bool IsPanelCollider(Collider collider)
+        private bool CanUseDesktopPlaneFallback()
         {
-            if (collider == null || panelCollider == null)
+            if (interactionMode == PanelInteractionMode.RaycastOnly)
+                return true;
+
+            if (interactionMode == PanelInteractionMode.PhysicalFingerOnly)
                 return false;
 
-            for (int i = 0; i < _panelColliderCache.Count; i++)
+            if (HasAnyFingertipTransform())
+                return false;
+
+            if (UnityEngine.XR.XRSettings.enabled)
+                return false;
+
+            return allowDesktopRayFallbackWithoutFingers;
+        }
+
+        private bool HasAnyFingertipTransform()
+        {
+            if (fingertipTransforms == null)
+                return false;
+
+            for (int i = 0; i < fingertipTransforms.Length; i++)
             {
-                if (ReferenceEquals(_panelColliderCache[i], collider))
+                if (fingertipTransforms[i] != null)
                     return true;
             }
 
             return false;
-        }
-
-        private void RebuildPanelColliderCache()
-        {
-            _cachedPanelColliderRoot = panelCollider;
-            _panelColliderCache.Clear();
-
-            if (panelCollider == null)
-                return;
-
-            panelCollider.GetComponentsInChildren(true, _panelColliderCache);
         }
 
         private Camera ResolveInteractionCamera()

@@ -63,10 +63,10 @@ namespace Hecton8.Caves
         private const int LaserDebrisMinFragments = 3;
         private const int LaserDebrisMaxFragments = 5;
         private const float LaserDebrisLifetimeSeconds = 5f;
-        private const int RecentCutHeatMax = 16;
         private const float LaserCutHeatLifetimeSeconds = 2f;
         private const float LaserCutHeatRadiusScale = 1.6f;
         private const float LaserCutHeatStrength = 1f;
+        private const int RecentCutHeatMax = 16;
         private const double CarveCommitWarningMs = 0.2d;
         private const byte DefaultMaterialId = 0;
         private const byte ThermalMeltMaterialId = 2;
@@ -81,20 +81,19 @@ namespace Hecton8.Caves
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly ProfilerMarker _carveScheduleProfilerMarker = new ProfilerMarker("H8.VoxelDelta.ScheduleCarve");
         private static readonly ProfilerMarker _carveCommitProfilerMarker = new ProfilerMarker("H8.VoxelDelta.CommitCarve");
-        private static readonly int _laserHitAupId = Shader.PropertyToID("_LaserHitAUP");
-        private static readonly int _laserHitHeatId = Shader.PropertyToID("_LaserHitHeat");
-        private static readonly int _recentCutHeatCountId = Shader.PropertyToID("_HectonRecentCutHeatCount");
-        private static readonly int _recentCutHeatPositionRadiusId = Shader.PropertyToID("_HectonRecentCutHeatPositionRadius");
-        private static readonly int _recentCutHeatStrengthTimeId = Shader.PropertyToID("_HectonRecentCutHeatStrengthTime");
         private static readonly uint _CarveCommitWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.CarveCommitBudgetExceeded"));
         private static readonly uint _CarveCommitTelemetryContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("VoxelDeltaProcessor.TryCommitScheduledCarve"));
-        // COLD ALLOC: Vector4[16] - global laser cut heat stamp AUP positions - owner: VoxelDeltaProcessor
+        private static readonly int _laserHitAupId = Shader.PropertyToID("_LaserHitAup");
+        private static readonly int _laserHitHeatId = Shader.PropertyToID("_LaserHitHeat");
+        private static readonly int _recentCutHeatPositionRadiusId = Shader.PropertyToID("_HectonRecentCutHeatPositionRadius");
+        private static readonly int _recentCutHeatStrengthTimeId = Shader.PropertyToID("_HectonRecentCutHeatStrengthTime");
+        private static readonly int _recentCutHeatCountId = Shader.PropertyToID("_HectonRecentCutHeatCount");
+        // COLD ALLOC: Vector4[16] - shader heat ring position-radius upload - owner: VoxelDeltaProcessor
         private static readonly Vector4[] s_recentCutHeatPositionRadius = new Vector4[RecentCutHeatMax];
-        // COLD ALLOC: Vector4[16] - global laser cut heat stamp strengths/lifetimes - owner: VoxelDeltaProcessor
+        // COLD ALLOC: Vector4[16] - shader heat ring strength-time upload - owner: VoxelDeltaProcessor
         private static readonly Vector4[] s_recentCutHeatStrengthTime = new Vector4[RecentCutHeatMax];
         private static int s_recentCutHeatCursor;
         private static int s_recentCutHeatCount;
-
         [Header("Debris Aftermath")]
         [Tooltip("Optional dropped-item payload spawned from carved voxel mass. Leave empty to disable persistent debris aftermath.")]
         [SerializeField] private ItemData carveDebrisItem;
@@ -146,7 +145,6 @@ namespace Hecton8.Caves
         private JobHandle _scheduledCompactionHandle;
         private bool _scheduledCompactionRunning;
         private ScheduledCompactionRequest _scheduledCompactionRequest;
-
         public int SavePriority => 40;
 
         public int LoadPriority => 30;
@@ -207,6 +205,7 @@ namespace Hecton8.Caves
             _registeredVolumes.Clear();
             DisposeChunkStates();
             DisposeCompactedChunkStates();
+            ResetRecentCutHeatState();
         }
 
         /// <summary>
@@ -1597,7 +1596,7 @@ namespace Hecton8.Caves
                             if (!TryResolveCurrentCellDensity(volume, in state, localIndex, write.AbsoluteCell, voxelSize, out currentDensity))
                                 currentDensity = 0f;
 
-                            resolvedValue = ClampToHalf(SmoothMaxExp(currentDensity, (float)resolvedValue, math.max(voxelSize, write.BlendStrength)));
+                            resolvedValue = ClampToHalf(SmoothMaxQuadratic(currentDensity, (float)resolvedValue, math.max(voxelSize, write.BlendStrength)));
                         }
 
                         SetCell(ref state, localIndex, resolvedValue, write.MaterialId, write.DeltaFlags);
@@ -2231,13 +2230,12 @@ namespace Hecton8.Caves
             return UnsafeUtility.As<ushort, half>(ref bits);
         }
 
-        private static float SmoothMaxExp(float a, float b, float k)
+        private static float SmoothMaxQuadratic(float a, float b, float k)
         {
-            k = math.max(k, 0.0001f);
-            float maxValue = math.max(a, b);
-            float expA = math.exp(-math.clamp(k * (maxValue - a), 0f, 60f));
-            float expB = math.exp(-math.clamp(k * (maxValue - b), 0f, 60f));
-            return maxValue + math.log(expA + expB) / k;
+            float width = math.max(k, 0.0001f);
+            float blend = math.max(0f, width - math.abs(a - b));
+            float smoothLift = (blend * blend) * (0.25f / width);
+            return math.max(a, b) + smoothLift;
         }
 
         private float ResolveCarveRadius(in PendingCarveRequest request, HectonVoxelVolume volume)
@@ -2403,6 +2401,13 @@ namespace Hecton8.Caves
                         seed != 0u ? seed : 1u,
                         requestedFragments,
                         LaserDebrisLifetimeSeconds);
+        }
+
+        private static void ResetRecentCutHeatState()
+        {
+            s_recentCutHeatCursor = 0;
+            s_recentCutHeatCount = 0;
+            Shader.SetGlobalInt(_recentCutHeatCountId, 0);
         }
 
         private static void PushRecentCutHeat(in PendingCarveRequest request, float radius)

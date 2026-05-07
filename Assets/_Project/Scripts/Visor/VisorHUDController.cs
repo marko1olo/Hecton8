@@ -9,7 +9,9 @@ using Hecton8.Tools;
 using Hecton8.UI;
 using Hecton8.World;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -28,6 +30,10 @@ namespace NASAPunk.Visor
     {
         private const float BiosRecoveryClarityThreshold = 0.1f;
         private const float LowPowerBiosThreshold = 0.1f;
+        private const int RuntimeHudCompositeMaxWidth = 1280;
+        private const int RuntimeHudCompositeMaxHeight = 720;
+        private const float HelmetScissorNormalizedInsetX = 0.045f;
+        private const float HelmetScissorNormalizedInsetY = 0.04f;
         private const string HudPhosphorKeyword = "_HUD_PHOSPHOR_MODE";
         private const float RadiationFatigueMinimumScale = 0.65f;
         private const float RadiationFatigueScalePerSecond = 0.005f;
@@ -142,18 +148,23 @@ namespace NASAPunk.Visor
         [Header("Pose Lock")]
         [SerializeField] private bool _syncToReferenceCamera = true;
         [SerializeField] private bool _syncPoseInEditMode = false;
-        [SerializeField] private Vector3 _visorLocalOffset = new Vector3(0f, 0f, 0.3f);
+        [SerializeField] private Vector3 _visorLocalOffset = new Vector3(0f, 0f, 0.05f);
         [SerializeField] private Vector3 _visorLocalEulerOffset = Vector3.zero;
         [SerializeField] private Vector3 _visorLocalScale = new Vector3(1f, 1f, 0.6f);
         [SerializeField] private Vector3 _hudCameraLocalOffset = Vector3.zero;
         [SerializeField] private Vector3 _hudCameraLocalEulerOffset = Vector3.zero;
-        [SerializeField] private float _minimumVisorForwardOffset = 0.02f;
+        [SerializeField] private float _minimumVisorForwardOffset = 0.05f;
         [SerializeField] private bool _enforceNearClipSafeOffset = false;
 
         private const float AutoResolveRetryInterval = 1f;
 
         private RenderTexture _hudRT;
         private MaterialPropertyBlock _mpb;
+        private CommandBuffer _hudScissorBeginCommandBuffer;
+        private CommandBuffer _hudScissorEndCommandBuffer;
+        private Camera _hudScissorCamera;
+        private int _hudScissorWidth = -1;
+        private int _hudScissorHeight = -1;
         private bool _ownsRuntimeTexture;
         // COLD ALLOC: LabelSwapScheduler[1] — staged BIOS HUD font swap queue — owner: VisorHUDController
         private readonly LabelSwapScheduler _biosFontSwapScheduler = new LabelSwapScheduler();
@@ -231,6 +242,7 @@ namespace NASAPunk.Visor
         private TMP_FontAsset _primaryHudFont;
         private TMP_FontAsset _queuedHudFont;
         private bool _biosFontModeApplied;
+        private float _appliedVRBrownoutIntensity = -1f;
 
         private uint _glitchRngState = 1u;
 
@@ -264,6 +276,7 @@ namespace NASAPunk.Visor
         private static readonly int ID_ToolBatteryNormalized = Shader.PropertyToID("_ToolBatteryNormalized");
         private static readonly int ID_VisorCameraForwardWS = Shader.PropertyToID("_VisorCameraForwardWS");
         private static readonly int ID_VisorStrongestLightDirectionWS = Shader.PropertyToID("_VisorStrongestLightDirectionWS");
+        private static readonly int ID_HectonVRBrownoutIntensity = Shader.PropertyToID("_HectonVRBrownoutIntensity");
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
@@ -283,6 +296,7 @@ namespace NASAPunk.Visor
             s_activeControllers.Clear();
             s_hudPhosphorModeUserCount = 0;
             Shader.DisableKeyword(HudPhosphorKeyword);
+            Shader.SetGlobalFloat(ID_HectonVRBrownoutIntensity, 0f);
         }
 
         public static void CopyActiveControllersTo(List<VisorHUDController> results)
@@ -391,6 +405,8 @@ namespace NASAPunk.Visor
             _thermalShockBiosRecoveryTimer = 0f;
             _submarinePowerNormalized = 1f;
             _hasSubmarinePowerSnapshot = false;
+            _appliedVRBrownoutIntensity = -1f;
+            Shader.SetGlobalFloat(ID_HectonVRBrownoutIntensity, 0f);
             _biosFontSwapScheduler.Clear();
             _queuedHudFont = null;
             _biosFontModeApplied = false;
@@ -408,6 +424,7 @@ namespace NASAPunk.Visor
         {
             HectonSubmarineOsEvents.Unregister(this);
             ReleaseHudPhosphorKeyword();
+            DisposeHudScissorCommandBuffers();
             // Ensure RT is released on component destruction
             ReleaseRT();
         }
@@ -685,6 +702,7 @@ namespace NASAPunk.Visor
             float hazardStaticNoise = (_hazardGlitchLevel * 0.28f) + (_hazardToxicLevel * 0.18f);
             float biosRecoverySwitch = _biosRecoveryModeBlend >= 0.5f ? 1f : 0f;
             ApplyHudPhosphorKeyword(biosRecoverySwitch > 0.5f || (_hasSubmarinePowerSnapshot && _submarinePowerNormalized < LowPowerBiosThreshold));
+            ApplyVRBrownoutState(biosRecoverySwitch);
             float compositeHudIntensity = biosRecoverySwitch > 0.5f ? _biosRecoveryHudIntensity : _hudIntensity;
             Color compositeHudTint = biosRecoverySwitch > 0.5f ? _biosRecoveryHudTint : _hudTint;
             float compositeChromaticAberration = biosRecoverySwitch > 0.5f
@@ -731,6 +749,23 @@ namespace NASAPunk.Visor
             _mpb.SetVector(ID_VisorStrongestLightDirectionWS, strongestLightDirection);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = false;
+        }
+
+        private void ApplyVRBrownoutState(float biosRecoverySwitch)
+        {
+            float powerBrownout = 0f;
+            if (_hasSubmarinePowerSnapshot)
+            {
+                float threshold = Mathf.Max(0.001f, LowPowerBiosThreshold);
+                powerBrownout = Mathf.Clamp01((threshold - _submarinePowerNormalized) / threshold);
+            }
+
+            float brownoutIntensity = Mathf.Max(Mathf.Clamp01(biosRecoverySwitch), powerBrownout);
+            if (Mathf.Approximately(_appliedVRBrownoutIntensity, brownoutIntensity))
+                return;
+
+            _appliedVRBrownoutIntensity = brownoutIntensity;
+            Shader.SetGlobalFloat(ID_HectonVRBrownoutIntensity, brownoutIntensity);
         }
 
         private Vector3 ResolveVisorCameraForward()
@@ -826,7 +861,7 @@ namespace NASAPunk.Visor
             }
 
             float t = 1f - Mathf.Exp(-Mathf.Max(0.1f, _waterRunoffRecoverySpeed) * deltaTime);
-            float nextIntensity = Mathf.Lerp(_waterRunoffIntensity, 0f, t);
+            float nextIntensity = math.lerp(_waterRunoffIntensity, 0f, t);
             if (!Mathf.Approximately(nextIntensity, _waterRunoffIntensity))
             {
                 _waterRunoffIntensity = nextIntensity;
@@ -995,7 +1030,7 @@ namespace NASAPunk.Visor
         private void UpdateCondensationState(float deltaTime)
         {
             float pressureBlendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _criticalPressureCondensationBlendSpeed) * deltaTime);
-            float blendedPressureCondensation = Mathf.Lerp(
+            float blendedPressureCondensation = math.lerp(
                 _criticalPressureCondensation,
                 _criticalPressureCondensationTarget,
                 pressureBlendT);
@@ -1015,7 +1050,7 @@ namespace NASAPunk.Visor
             if (!Mathf.Approximately(targetColdCondensation, _coldCondensationTarget))
                 _coldCondensationTarget = targetColdCondensation;
 
-            float blendedColdCondensation = Mathf.Lerp(
+            float blendedColdCondensation = math.lerp(
                 _coldCondensation,
                 _coldCondensationTarget,
                 pressureBlendT);
@@ -1046,7 +1081,7 @@ namespace NASAPunk.Visor
             }
 
             float t = 1f - Mathf.Exp(-Mathf.Max(0.1f, _condensationShockRecoverySpeed) * deltaTime);
-            float nextIntensity = Mathf.Lerp(_condensationShockIntensity, 0f, t);
+            float nextIntensity = math.lerp(_condensationShockIntensity, 0f, t);
             if (!Mathf.Approximately(nextIntensity, _condensationShockIntensity))
             {
                 _condensationShockIntensity = nextIntensity;
@@ -1076,7 +1111,7 @@ namespace NASAPunk.Visor
                 _screenFrostTarget = target;
 
             float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _screenFrostBlendSpeed) * deltaTime);
-            float blendedFrost = Mathf.Lerp(_screenFrostStrength, _screenFrostTarget, blendT);
+            float blendedFrost = math.lerp(_screenFrostStrength, _screenFrostTarget, blendT);
             if (!Mathf.Approximately(blendedFrost, _screenFrostStrength))
             {
                 _screenFrostStrength = blendedFrost;
@@ -1107,7 +1142,7 @@ namespace NASAPunk.Visor
             }
 
             float t = 1f - Mathf.Exp(-Mathf.Max(0.1f, _interferenceDistortionRecoverySpeed) * deltaTime);
-            float nextIntensity = Mathf.Lerp(_interferenceDistortionIntensity, 0f, t);
+            float nextIntensity = math.lerp(_interferenceDistortionIntensity, 0f, t);
             if (!Mathf.Approximately(nextIntensity, _interferenceDistortionIntensity))
             {
                 _interferenceDistortionIntensity = nextIntensity;
@@ -1122,14 +1157,14 @@ namespace NASAPunk.Visor
             float targetStaticNoise = fatigue01 * Mathf.Max(0f, _structuralFatigueStaticNoiseMax);
             float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _structuralFatigueBlendSharpness) * deltaTime);
 
-            float nextChromaticAberration = Mathf.Lerp(_structuralFatigueChromaticAberration, targetChromaticAberration, blendT);
+            float nextChromaticAberration = math.lerp(_structuralFatigueChromaticAberration, targetChromaticAberration, blendT);
             if (!Mathf.Approximately(nextChromaticAberration, _structuralFatigueChromaticAberration))
             {
                 _structuralFatigueChromaticAberration = nextChromaticAberration;
                 _materialPropertiesDirty = true;
             }
 
-            float nextStaticNoise = Mathf.Lerp(_structuralFatigueStaticNoise, targetStaticNoise, blendT);
+            float nextStaticNoise = math.lerp(_structuralFatigueStaticNoise, targetStaticNoise, blendT);
             if (!Mathf.Approximately(nextStaticNoise, _structuralFatigueStaticNoise))
             {
                 _structuralFatigueStaticNoise = nextStaticNoise;
@@ -1208,7 +1243,7 @@ namespace NASAPunk.Visor
             }
 
             float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _hypoxiaBlendSharpness) * deltaTime);
-            float nextHypoxia = Mathf.Lerp(_hudHypoxiaLevel, targetHypoxia, blendT);
+            float nextHypoxia = math.lerp(_hudHypoxiaLevel, targetHypoxia, blendT);
             if (!Mathf.Approximately(nextHypoxia, _hudHypoxiaLevel))
             {
                 _hudHypoxiaLevel = nextHypoxia;
@@ -1229,7 +1264,7 @@ namespace NASAPunk.Visor
         {
             float targetFlicker = ResolveHullStress01() * Mathf.Clamp01(_pressureFlickerMaximum);
             float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _pressureFlickerBlendSharpness) * deltaTime);
-            float nextFlicker = Mathf.Lerp(_hudHullStressFlicker, targetFlicker, blendT);
+            float nextFlicker = math.lerp(_hudHullStressFlicker, targetFlicker, blendT);
             if (!Mathf.Approximately(nextFlicker, _hudHullStressFlicker))
             {
                 _hudHullStressFlicker = nextFlicker;
@@ -1276,7 +1311,7 @@ namespace NASAPunk.Visor
 
         private static bool UpdateSmoothedVisualChannel(ref float current, float target, float blendT)
         {
-            float nextValue = Mathf.Lerp(current, target, blendT);
+            float nextValue = math.lerp(current, target, blendT);
             if (Mathf.Approximately(nextValue, current))
                 return false;
 
@@ -1496,6 +1531,8 @@ namespace NASAPunk.Visor
             float clampedScale = Mathf.Clamp(effectiveRenderScale, 0.1f, 1f);
             targetWidth = Mathf.Max(32, Mathf.RoundToInt(baseWidth * clampedScale));
             targetHeight = Mathf.Max(32, Mathf.RoundToInt(baseHeight * clampedScale));
+            targetWidth = Mathf.Min(RuntimeHudCompositeMaxWidth, targetWidth);
+            targetHeight = Mathf.Min(RuntimeHudCompositeMaxHeight, targetHeight);
         }
 
         private float QuantizeAdaptiveScale(float scale)
@@ -1517,7 +1554,10 @@ namespace NASAPunk.Visor
             EnsurePropertyBlock();
 
             if (_hudCamera != null)
+            {
                 _hudCamera.targetTexture = _projectionMode == ProjectionMode.Disabled ? null : _hudRT;
+                ConfigureHudScissorCommandBuffers();
+            }
 
             if (_visorRenderer == null)
                 return;
@@ -1533,6 +1573,8 @@ namespace NASAPunk.Visor
 
         private void ReleaseRT()
         {
+            ReleaseHudScissorCommandBuffers();
+
             if (_hudCamera != null)
             {
                 _hudCamera.targetTexture = null;
@@ -1551,6 +1593,86 @@ namespace NASAPunk.Visor
             _cachedRTWidth = -1;
             _cachedRTHeight = -1;
             _cachedEffectiveRenderScale = -1f;
+        }
+
+        private void ConfigureHudScissorCommandBuffers()
+        {
+            if (_hudCamera == null || _projectionMode == ProjectionMode.Disabled || _hudRT == null)
+            {
+                ReleaseHudScissorCommandBuffers();
+                return;
+            }
+
+            int width = Mathf.Max(1, _hudRT.width);
+            int height = Mathf.Max(1, _hudRT.height);
+            if (_hudScissorCamera == _hudCamera && _hudScissorWidth == width && _hudScissorHeight == height)
+                return;
+
+            ReleaseHudScissorCommandBuffers();
+            EnsureHudScissorCommandBuffers();
+
+            Rect scissorRect = ResolveHudScissorRect(width, height);
+            _hudScissorBeginCommandBuffer.Clear();
+            _hudScissorBeginCommandBuffer.EnableScissorRect(scissorRect);
+            _hudScissorEndCommandBuffer.Clear();
+            _hudScissorEndCommandBuffer.DisableScissorRect();
+
+            _hudCamera.AddCommandBuffer(CameraEvent.BeforeForwardOpaque, _hudScissorBeginCommandBuffer);
+            _hudCamera.AddCommandBuffer(CameraEvent.AfterEverything, _hudScissorEndCommandBuffer);
+            _hudScissorCamera = _hudCamera;
+            _hudScissorWidth = width;
+            _hudScissorHeight = height;
+        }
+
+        private void EnsureHudScissorCommandBuffers()
+        {
+            if (_hudScissorBeginCommandBuffer == null)
+                _hudScissorBeginCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor Begin" };
+
+            if (_hudScissorEndCommandBuffer == null)
+                _hudScissorEndCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor End" };
+        }
+
+        private static Rect ResolveHudScissorRect(int width, int height)
+        {
+            float insetX = Mathf.Floor(width * HelmetScissorNormalizedInsetX);
+            float insetY = Mathf.Floor(height * HelmetScissorNormalizedInsetY);
+            float scissorWidth = Mathf.Max(1f, width - insetX - insetX);
+            float scissorHeight = Mathf.Max(1f, height - insetY - insetY);
+            return new Rect(insetX, insetY, scissorWidth, scissorHeight);
+        }
+
+        private void ReleaseHudScissorCommandBuffers()
+        {
+            if (_hudScissorCamera != null)
+            {
+                if (_hudScissorBeginCommandBuffer != null)
+                    _hudScissorCamera.RemoveCommandBuffer(CameraEvent.BeforeForwardOpaque, _hudScissorBeginCommandBuffer);
+
+                if (_hudScissorEndCommandBuffer != null)
+                    _hudScissorCamera.RemoveCommandBuffer(CameraEvent.AfterEverything, _hudScissorEndCommandBuffer);
+            }
+
+            _hudScissorCamera = null;
+            _hudScissorWidth = -1;
+            _hudScissorHeight = -1;
+        }
+
+        private void DisposeHudScissorCommandBuffers()
+        {
+            ReleaseHudScissorCommandBuffers();
+
+            if (_hudScissorBeginCommandBuffer != null)
+            {
+                _hudScissorBeginCommandBuffer.Release();
+                _hudScissorBeginCommandBuffer = null;
+            }
+
+            if (_hudScissorEndCommandBuffer != null)
+            {
+                _hudScissorEndCommandBuffer.Release();
+                _hudScissorEndCommandBuffer = null;
+            }
         }
 
         private void ReleaseOwnedRuntimeTexture()

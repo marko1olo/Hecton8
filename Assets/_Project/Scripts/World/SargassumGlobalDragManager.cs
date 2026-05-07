@@ -51,6 +51,10 @@ namespace Hecton8.World
         private const byte CollapseChunkBurstSpawnedFlag = 1 << 0;
         private const int EntanglementStrainEventCapacity = 16;
         private const int MassiveDisplacementEventCapacity = 16;
+        private const int DebrisPetrificationTimerCapacity = 128;
+        private const int DebrisPetrificationDisableBudgetPerSlowTick = 16;
+        private const float DebrisPetrificationDelaySeconds = 4f;
+        private const float DebrisPetrificationSlowTickSeconds = 0.5f;
 
         internal struct SargassumFieldSample
         {
@@ -143,6 +147,12 @@ namespace Hecton8.World
             public float RadiusWS;
             public float RemainingTime;
             public uint Seed;
+        }
+
+        private struct DebrisTimer
+        {
+            public int Slot;
+            public float RemainingSeconds;
         }
 
         private struct DensitySourceData
@@ -243,6 +253,11 @@ namespace Hecton8.World
         private static int _pendingMassiveDisplacementCount;
         private static int _nextFrameMassiveDisplacementCount;
         private static bool _isDispatchingEvents;
+        private NativeQueue<DebrisTimer> _debrisPetrificationTimers;
+        // COLD ALLOC: Rigidbody[128] - managed handles for queued debris petrification timers - owner: SargassumGlobalDragManager
+        private readonly Rigidbody[] _debrisPetrificationBodies = new Rigidbody[DebrisPetrificationTimerCapacity];
+        private int _debrisPetrificationTimerCount;
+        private int _debrisPetrificationCursor;
 
         public static int PendingEventCount =>
             _pendingEntanglementStrainCount +
@@ -1045,6 +1060,7 @@ namespace Hecton8.World
             ClearSinkTexture();
             ClearScavengerHosts();
             ReleaseDensityBuildStorage();
+            ReleaseDebrisPetrificationStorage();
 
             if (!Application.isPlaying)
             {
@@ -1072,6 +1088,7 @@ namespace Hecton8.World
             ReleaseSinkTexture();
             ReleaseScavengerResources();
             ReleaseDensityBuildStorage();
+            ReleaseDebrisPetrificationStorage();
             Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
             Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
             Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
@@ -1086,6 +1103,7 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            ProcessDebrisPetrificationTimers();
             ResolveBridge();
             RebuildDensityField();
             EvaluateBuoyancyCollapseZones();
@@ -1988,15 +2006,19 @@ namespace Hecton8.World
                 if (chunkInstance.TryGetComponent(out SargassumCollapseChunk collapseChunk))
                 {
                     collapseChunk.ActivateChunk(linearVelocity, angularVelocity, uniformScale, collapseChunkLifetime, 0);
+                    if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
+                        ScheduleDebrisPetrification(chunkRigidbody);
                 }
                 else
                 {
                     chunkInstance.transform.localScale = chunkInstance.transform.localScale * uniformScale;
                     if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
                     {
+                        chunkRigidbody.detectCollisions = true;
                         chunkRigidbody.isKinematic = false;
                         chunkRigidbody.WakeUp();
                         WriteSafeVelocities(chunkRigidbody, linearVelocity, angularVelocity);
+                        ScheduleDebrisPetrification(chunkRigidbody);
                     }
 
                     poolManager.Despawn(chunkInstance, collapseChunkLifetime);
@@ -2073,15 +2095,19 @@ namespace Hecton8.World
                 if (chunkInstance.TryGetComponent(out SargassumCollapseChunk collapseChunk))
                 {
                     collapseChunk.ActivateChunk(linearVelocity, angularVelocity, uniformScale, collapseChunkLifetime * 0.7f, fragmentDepth);
+                    if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
+                        ScheduleDebrisPetrification(chunkRigidbody);
                 }
                 else
                 {
                     chunkInstance.transform.localScale = chunkInstance.transform.localScale * uniformScale;
                     if (chunkInstance.TryGetComponent(out Rigidbody chunkRigidbody))
                     {
+                        chunkRigidbody.detectCollisions = true;
                         chunkRigidbody.isKinematic = false;
                         chunkRigidbody.WakeUp();
                         WriteSafeVelocities(chunkRigidbody, linearVelocity, angularVelocity);
+                        ScheduleDebrisPetrification(chunkRigidbody);
                     }
 
                     poolManager.Despawn(chunkInstance, collapseChunkLifetime * 0.7f);
@@ -3769,6 +3795,125 @@ namespace Hecton8.World
 
             body.linearVelocity = HectonPlayerMotor.SafeVelocity(linearVelocity, body.linearVelocity);
             body.angularVelocity = HectonPlayerMotor.SafeVelocity(angularVelocity, body.angularVelocity);
+        }
+
+        private void ScheduleDebrisPetrification(Rigidbody body)
+        {
+            if (body == null)
+                return;
+
+            if (!EnsureDebrisPetrificationStorage())
+            {
+                ApplyDebrisPetrification(body);
+                return;
+            }
+
+            if (_debrisPetrificationTimerCount >= DebrisPetrificationTimerCapacity)
+            {
+                ApplyDebrisPetrification(body);
+                return;
+            }
+
+            int slot = FindDebrisPetrificationSlot();
+            if (slot < 0)
+            {
+                ApplyDebrisPetrification(body);
+                return;
+            }
+
+            _debrisPetrificationBodies[slot] = body;
+            _debrisPetrificationTimers.Enqueue(new DebrisTimer
+            {
+                Slot = slot,
+                RemainingSeconds = DebrisPetrificationDelaySeconds
+            });
+            _debrisPetrificationTimerCount++;
+        }
+
+        private bool EnsureDebrisPetrificationStorage()
+        {
+            if (_debrisPetrificationTimers.IsCreated)
+                return true;
+
+            _debrisPetrificationTimers = new NativeQueue<DebrisTimer>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DebrisTimer>[128] - slow-tick debris petrification timers - owner: SargassumGlobalDragManager
+            NativeMemorySentinel.RegisterNativeQueue(
+                _debrisPetrificationTimers,
+                DebrisPetrificationTimerCapacity,
+                nameof(SargassumGlobalDragManager),
+                nameof(_debrisPetrificationTimers),
+                NativeAllocationLifetime.Scene);
+            return _debrisPetrificationTimers.IsCreated;
+        }
+
+        private int FindDebrisPetrificationSlot()
+        {
+            for (int i = 0; i < DebrisPetrificationTimerCapacity; i++)
+            {
+                int slot = (_debrisPetrificationCursor + i) % DebrisPetrificationTimerCapacity;
+                if (_debrisPetrificationBodies[slot] != null)
+                    continue;
+
+                _debrisPetrificationCursor = (slot + 1) % DebrisPetrificationTimerCapacity;
+                return slot;
+            }
+
+            return -1;
+        }
+
+        private void ProcessDebrisPetrificationTimers()
+        {
+            if (!_debrisPetrificationTimers.IsCreated || _debrisPetrificationTimerCount <= 0)
+                return;
+
+            int scanBudget = _debrisPetrificationTimerCount;
+            int disableBudget = DebrisPetrificationDisableBudgetPerSlowTick;
+            while (scanBudget-- > 0 && _debrisPetrificationTimerCount > 0 && !_debrisPetrificationTimers.IsEmpty())
+            {
+                if (!_debrisPetrificationTimers.TryDequeue(out DebrisTimer timer))
+                    return;
+
+                _debrisPetrificationTimerCount--;
+                timer.RemainingSeconds -= DebrisPetrificationSlowTickSeconds;
+                if (timer.RemainingSeconds > 0f || disableBudget <= 0)
+                {
+                    _debrisPetrificationTimers.Enqueue(timer);
+                    _debrisPetrificationTimerCount++;
+                    continue;
+                }
+
+                if ((uint)timer.Slot < (uint)_debrisPetrificationBodies.Length)
+                {
+                    ApplyDebrisPetrification(_debrisPetrificationBodies[timer.Slot]);
+                    _debrisPetrificationBodies[timer.Slot] = null;
+                    disableBudget--;
+                }
+            }
+        }
+
+        private static void ApplyDebrisPetrification(Rigidbody body)
+        {
+            if (body == null)
+                return;
+
+            body.linearVelocity = Vector3.zero;
+            body.angularVelocity = Vector3.zero;
+            body.isKinematic = true;
+            body.detectCollisions = false;
+            body.Sleep();
+        }
+
+        private void ReleaseDebrisPetrificationStorage()
+        {
+            if (_debrisPetrificationTimers.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_debrisPetrificationTimers));
+                _debrisPetrificationTimers.Dispose();
+                _debrisPetrificationTimers = default;
+            }
+
+            Array.Clear(_debrisPetrificationBodies, 0, _debrisPetrificationBodies.Length);
+            _debrisPetrificationTimerCount = 0;
+            _debrisPetrificationCursor = 0;
         }
 
         private static uint BuildDeterministicAnchorSeed(Vector3 anchorWS, Vector3 driftOffset, uint salt)

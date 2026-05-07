@@ -60,7 +60,7 @@ namespace Hecton8.Bootstrap
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        internal static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {

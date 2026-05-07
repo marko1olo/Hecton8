@@ -101,7 +101,7 @@ namespace Hecton8.Dev
                         return;
                     }
 
-                    await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
                 }
 
                 LogisticsNetworkGraph.DistributionSummary summary = graph.GetScheduledDistributionSummary();

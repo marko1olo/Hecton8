@@ -68,16 +68,16 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(offsetToTarget)))
                 return;
 
-            Vector3 targetRuntimePosition = _hullRigidbody.position + new Vector3(offsetToTarget.x, offsetToTarget.y, offsetToTarget.z);
-            if (!IsFinite(targetRuntimePosition))
+            Vector3 hullPosition = _hullRigidbody.position;
+            Vector3 nextRuntimePosition = ResolveStationKeepingStepNoSqrt(hullPosition, offsetToTarget, ResolvePositionStepMeters(fixedDeltaTime));
+            if (!IsFinite(nextRuntimePosition))
                 return;
 
             _hullRigidbody.linearVelocity = Vector3.zero;
             _hullRigidbody.angularVelocity = Vector3.zero;
 
-            float positionStep = Mathf.Max(0.01f, positionLockSpeedMetersPerSecond) * fixedDeltaTime;
             float rotationStep = Mathf.Max(1f, rotationLockDegreesPerSecond) * fixedDeltaTime;
-            _hullRigidbody.MovePosition(Vector3.MoveTowards(_hullRigidbody.position, targetRuntimePosition, positionStep));
+            _hullRigidbody.MovePosition(nextRuntimePosition);
             _hullRigidbody.MoveRotation(Quaternion.RotateTowards(_hullRigidbody.rotation, _targetRotation, rotationStep));
         }
 
@@ -124,6 +124,38 @@ namespace Hecton8.Gameplay
 
             if (_submarineCore != null)
                 _hullRigidbody = _submarineCore.HullRigidbody;
+        }
+
+        private float ResolvePositionStepMeters(float fixedDeltaTime)
+        {
+            float safeDeltaTime = math.max(0f, fixedDeltaTime);
+            float authoredStep = math.max(0.01f, positionLockSpeedMetersPerSecond) * safeDeltaTime;
+            float hullMass = _hullRigidbody != null ? math.max(1f, _hullRigidbody.mass) : 1f;
+            float maxThrusterForce = _submarineCore != null
+                ? math.max(1f, _submarineCore.MaxThrust)
+                : hullMass * math.max(0.01f, positionLockSpeedMetersPerSecond);
+            float thrusterAcceleration = maxThrusterForce / hullMass;
+            float thrusterLimitedStep = 0.5f * thrusterAcceleration * safeDeltaTime * safeDeltaTime;
+            return math.max(0.001f, math.min(authoredStep, thrusterLimitedStep));
+        }
+
+        private static Vector3 ResolveStationKeepingStepNoSqrt(Vector3 currentPosition, float3 offsetToTarget, float maxStepMeters)
+        {
+            float safeStep = math.max(0f, maxStepMeters);
+            float stepSq = safeStep * safeStep;
+            float offsetSq = math.lengthsq(offsetToTarget);
+            float3 current3 = new float3(currentPosition.x, currentPosition.y, currentPosition.z);
+            if (offsetSq <= stepSq)
+            {
+                float3 snapped3 = current3 + offsetToTarget;
+                return new Vector3(snapped3.x, snapped3.y, snapped3.z);
+            }
+
+            float3 absOffset = math.abs(offsetToTarget);
+            float l1Distance = math.max(0.0001f, absOffset.x + absOffset.y + absOffset.z);
+            float stepT = math.saturate(safeStep / l1Distance);
+            float3 next3 = current3 + (offsetToTarget * stepT);
+            return new Vector3(next3.x, next3.y, next3.z);
         }
 
         private void TryRegister()

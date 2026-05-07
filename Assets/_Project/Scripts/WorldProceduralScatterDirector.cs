@@ -8,6 +8,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Environment;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using Unity.Profiling;
@@ -24,6 +25,7 @@ namespace Hecton8.World
     {
         private const float StartupScatterStabilizationDelaySeconds = 2f;
         private const int MaxRegisteredScatterDirectors = 4;
+        private const string TectonicSpineBiomeFamilyId = "biome.family.tectonic_spine";
 
         internal static WorldProceduralScatterDirector ActiveRuntimeInstance => GlobalRegistry.ProceduralScatter;
         // COLD ALLOC: RegistryBucket<WorldProceduralScatterDirector>[4] - active scatter directors for bootstrap lookup without scene scans - owner: WorldProceduralScatterDirector
@@ -56,7 +58,7 @@ namespace Hecton8.World
                     return 1f;
 
                 WorldChunkStreamingProfile.LayerProfile layerProfile = chunkStreamingProfile.GetLayerProfileOrDefault(WorldStreamingLayer.Fauna);
-                return Mathf.Lerp(0.7f, 1.45f, Mathf.Clamp01(layerProfile.maxActivationsPerTick / 24f));
+                return math.lerp(0.7f, 1.45f, math.saturate(layerProfile.maxActivationsPerTick / 24f));
             }
         }
         private const string ScatterRootName = "__PROCEDURAL_SCATTER_WORLD";
@@ -1207,12 +1209,14 @@ namespace Hecton8.World
             _bootstrapRuntimeState.Failed = true;
             TryEnsureTickRegistration();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!string.IsNullOrWhiteSpace(reason))
             {
                 UnityEngine.Debug.LogWarning(
                     $"[WorldScatter] Scene bootstrap failed and scatter fallback was enabled. Reason: {reason}",
                     this);
             }
+#endif
 
             RefreshRuntimeStreamingSettings();
             RequestScatterRefresh("scene-bootstrap-failed");
@@ -2190,7 +2194,7 @@ namespace Hecton8.World
                    string.Equals(family.familyId, "biome.family.abyssal_silt", System.StringComparison.OrdinalIgnoreCase);
         }
 
-        private ScatterCandidate BuildCandidate(
+        private bool TryBuildCandidate(
             int cellXIndex,
             int cellZIndex,
             in WorldProceduralFieldSampler.FieldSample fieldSample,
@@ -2198,8 +2202,10 @@ namespace Hecton8.World
             in ScatterCandidatePreview preview,
             string biomeContextLabel,
             float heat,
-            float score)
+            float score,
+            out ScatterCandidate candidate)
         {
+            candidate = default;
             WorldPrefabFamilyProfile family = runtimeRule.Family;
             WorldProceduralPlacementRule rule = runtimeRule.Rule;
             WorldStreamingLayer streamingLayer = runtimeRule.StreamingLayer;
@@ -2208,6 +2214,9 @@ namespace Hecton8.World
             bool supportsFinalVariant = runtimeRule.SupportsFinalVariant;
 
             ScatterPlacement placement = GetPooledPlacement();
+            if (placement == null)
+                return false;
+
             placement.Initialize(
                 ComposePlacementKey(cellXIndex, cellZIndex, runtimeRule.RuleIdHash, preview.HeightLayerIndex),
                 preview.StableHash,
@@ -2244,7 +2253,8 @@ namespace Hecton8.World
                 1f,
                 false);
 
-            return new ScatterCandidate(placement, family, rule, runtimeRule.HeatmapChannel, heat, score);
+            candidate = new ScatterCandidate(placement, family, rule, runtimeRule.HeatmapChannel, heat, score);
+            return true;
         }
 
         private static bool MatchesScatter(
@@ -2330,6 +2340,22 @@ namespace Hecton8.World
                    IsRiftSideRockBoulderDomain(family);
         }
 
+        private static bool AllowsTectonicSpineRockBoulderOverride(
+            WorldPrefabFamilyProfile family,
+            float slopeDegrees,
+            bool isTectonicSpineBiome)
+        {
+            return slopeDegrees >= 45f &&
+                   isTectonicSpineBiome &&
+                   IsRiftSideRockBoulderDomain(family);
+        }
+
+        private static bool IsTectonicSpineBiomeFamily(HectonBiomeFamilyProfile biomeFamily)
+        {
+            return biomeFamily != null &&
+                   string.Equals(biomeFamily.familyId, TectonicSpineBiomeFamilyId, StringComparison.OrdinalIgnoreCase);
+        }
+
         private static bool IsRiftSideRockBoulderDomain(WorldPrefabFamilyProfile family)
         {
             if (family == null)
@@ -2348,7 +2374,7 @@ namespace Hecton8.World
             if (!AllowsTectonicSpineRockBoulderOverride(family, sample.slopeDegrees, sample.biomeFamilyFlags))
                 return 0f;
 
-            return Mathf.Lerp(0.24f, 0.42f, Mathf.Clamp01((sample.slopeDegrees - 45f) / 30f));
+            return math.lerp(0.24f, 0.42f, math.saturate((sample.slopeDegrees - 45f) / 30f));
         }
 
         private static bool MatchesPreferredBiomeFamily(
@@ -3013,9 +3039,11 @@ namespace Hecton8.World
             if (!_loggedMissingPrefabRegistry)
             {
                 _loggedMissingPrefabRegistry = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogError(
                     "[WorldScatter] PrefabRegistry not initialized. Scatter create/warmup path aborted.",
                     this);
+#endif
             }
 
             return false;
@@ -3238,6 +3266,15 @@ namespace Hecton8.World
                 yawDegrees,
                 ref resolvedPosition,
                 ref rotation);
+            if (!snappedToTerrain)
+            {
+                snappedToTerrain = TrySnapRiftSideDebrisPlacementToMapMagicTerrain(
+                    placement,
+                    yawDegrees,
+                    ref resolvedPosition,
+                    ref rotation);
+            }
+
             if (!snappedToTerrain &&
                 placement.Rule != null &&
                 EnsureEnvironmentalVegetationBridgeResolved() &&
@@ -3307,22 +3344,85 @@ namespace Hecton8.World
             return true;
         }
 
+        private bool TrySnapRiftSideDebrisPlacementToMapMagicTerrain(
+            ScatterPlacement placement,
+            float yawDegrees,
+            ref Vector3 resolvedPosition,
+            ref Quaternion rotation)
+        {
+            if (placement == null ||
+                placement.FieldSource != WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight ||
+                !AllowsTectonicSpineRockBoulderOverride(placement.Family, placement.SlopeDegrees, placement.IsTectonicSpineBiome))
+            {
+                return false;
+            }
+
+            if (mapMagicBridge == null &&
+                !WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge))
+            {
+                return false;
+            }
+
+            if (mapMagicBridge == null ||
+                !mapMagicBridge.TryGetHeightAUP(resolvedPosition, out float terrainHeight))
+            {
+                return false;
+            }
+
+            Vector3 softenedSlopeUp = ResolveRiftSideDebrisFakeUpVector(
+                placement.SlopeDegrees,
+                placement.StableHash,
+                yawDegrees);
+            float maxTiltAngleDegrees = placement.Rule != null
+                ? math.min(62f, placement.Rule.maxTiltAngleDegrees)
+                : 62f;
+            Vector3 clampedUp = ClampScatterUpVector(softenedSlopeUp, maxTiltAngleDegrees);
+            float wrappedYawDegrees = yawDegrees - math.floor(yawDegrees / 360f) * 360f;
+            Quaternion alignRotation = Quaternion.FromToRotation(Vector3.up, clampedUp);
+            Quaternion yawRotation = Quaternion.AngleAxis(wrappedYawDegrees, clampedUp);
+            Vector3 runtimePosition = ToRuntimeScatterPosition(resolvedPosition);
+            runtimePosition.y = terrainHeight + surfaceYOffset;
+            resolvedPosition = ToAbsoluteScatterPosition(runtimePosition);
+            rotation = yawRotation * alignRotation;
+            return true;
+        }
+
+        private static Vector3 ResolveRiftSideDebrisFakeUpVector(
+            float slopeDegrees,
+            int stableHash,
+            float yawDegrees)
+        {
+            float fakeAzimuthDegrees = yawDegrees + (stableHash & 31) * 11.25f;
+            float fakeAzimuthRadians = math.radians(fakeAzimuthDegrees);
+            math.sincos(fakeAzimuthRadians, out float azimuthSin, out float azimuthCos);
+            float slopeRadians = math.radians(math.clamp(slopeDegrees, 45f, 62f));
+            math.sincos(slopeRadians, out float slopeSin, out float slopeCos);
+            float scaledUpX = azimuthCos * slopeSin * 0.5f;
+            float scaledUpY = math.lerp(1f, slopeCos, 0.5f);
+            float scaledUpZ = azimuthSin * slopeSin * 0.5f;
+            float invMagnitude = math.rsqrt(math.max(0.0001f, scaledUpX * scaledUpX + scaledUpY * scaledUpY + scaledUpZ * scaledUpZ));
+            return new Vector3(
+                scaledUpX * invMagnitude,
+                scaledUpY * invMagnitude,
+                scaledUpZ * invMagnitude);
+        }
+
         private static Vector3 ClampScatterUpVector(Vector3 normal, float maxTiltAngleDegrees)
         {
             float normalMagnitudeSqr = normal.sqrMagnitude;
             Vector3 safeNormal = Vector3.up;
             if (normalMagnitudeSqr > 0.0001f)
             {
-                float normalInvMagnitude = 1f / Mathf.Sqrt(normalMagnitudeSqr);
+                float normalInvMagnitude = math.rsqrt(normalMagnitudeSqr);
                 safeNormal = new Vector3(
                     normal.x * normalInvMagnitude,
                     normal.y * normalInvMagnitude,
                     normal.z * normalInvMagnitude);
             }
 
-            float safeMaxTilt = Mathf.Clamp(maxTiltAngleDegrees, 0f, 89.5f);
-            float safeMaxTiltRadians = safeMaxTilt * Mathf.Deg2Rad;
-            float minUpDot = Mathf.Cos(safeMaxTiltRadians);
+            float safeMaxTilt = math.clamp(maxTiltAngleDegrees, 0f, 89.5f);
+            float safeMaxTiltRadians = math.radians(safeMaxTilt);
+            float minUpDot = math.cos(safeMaxTiltRadians);
             if (safeNormal.y >= minUpDot)
                 return safeNormal;
 
@@ -3330,8 +3430,8 @@ namespace Hecton8.World
             if (horizontalMagnitudeSq <= 0.000001f)
                 return Vector3.up;
 
-            float horizontalInvMagnitude = 1f / Mathf.Sqrt(horizontalMagnitudeSq);
-            float horizontalScale = Mathf.Sin(safeMaxTiltRadians);
+            float horizontalInvMagnitude = math.rsqrt(horizontalMagnitudeSq);
+            float horizontalScale = math.sin(safeMaxTiltRadians);
             return new Vector3(
                 safeNormal.x * horizontalInvMagnitude * horizontalScale,
                 minUpDot,
@@ -3425,8 +3525,23 @@ namespace Hecton8.World
                 }
                 else
                 {
-                    bucket = new List<ScatterPlacement>(8);
-                    _gridPlacementBuckets.Add(bucket);
+#if UNITY_EDITOR
+                    if (!Application.isPlaying)
+                    {
+                        // COLD ALLOC: editor-only scene preview can exceed runtime bucket sizing without affecting player streaming GC.
+                        bucket = new List<ScatterPlacement>(8);
+                        _gridPlacementBuckets.Add(bucket);
+                    }
+                    else
+#endif
+                    {
+                        _memory.GridPlacementNativeOverflowed = true;
+                        _memory.TryRegisterGridPlacement(placement);
+                        float overflowSpacing = placement.EffectiveSpacing;
+                        if (overflowSpacing > _maxRegisteredPlacementSpacingMeters)
+                            _maxRegisteredPlacementSpacingMeters = overflowSpacing;
+                        return;
+                    }
                 }
 
                 _gridPlacementBucketCount++;
@@ -3557,7 +3672,7 @@ namespace Hecton8.World
                 return clampedBudget;
 
             WorldChunkStreamingProfile.LayerProfile layerProfile = chunkStreamingProfile.GetLayerProfileOrDefault(layer);
-            float densityScale = Mathf.Lerp(0.7f, 1.45f, Mathf.Clamp01(layerProfile.maxActivationsPerTick / 24f));
+            float densityScale = math.lerp(0.7f, 1.45f, math.saturate(layerProfile.maxActivationsPerTick / 24f));
             int scaledBudget = Mathf.RoundToInt(clampedBudget * densityScale);
             return Mathf.Clamp(scaledBudget, minValue, maxValue);
         }
@@ -7676,7 +7791,7 @@ namespace Hecton8.World
             float angle = Mathf.Abs(stableHash % 360) * Mathf.Deg2Rad;
             int familyHash = GetPreferredFamilyInstanceId(family);
             float radiusT = StableRandom01(stableHash, stableHash >> 4, familyHash);
-            float radius = baseRadius * Mathf.Lerp(0.18f, 1f, radiusT);
+            float radius = baseRadius * math.lerp(0.18f, 1f, math.saturate(radiusT));
             Vector3 offset = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
             return origin + offset;
         }

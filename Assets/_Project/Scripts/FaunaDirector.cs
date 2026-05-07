@@ -66,10 +66,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IAcousticPingEventListener
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        , RuntimeWatchdog.IEmergencyResetTarget
-#endif
+    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IAcousticPingEventListener, RuntimeWatchdog.IEmergencyResetTarget
     {
         private const int CreaturePoolMinimumReserve = 8;
         private const int CreaturePoolBurstReserveMultiplier = 2;
@@ -103,6 +100,8 @@ namespace Hecton8.AI
         private const int AcousticPanicCommandIndexMask = AcousticPanicCommandCapacity - 1;
         private const float AcousticPingBoidPanicRadiusMeters = 100f;
         private const float AcousticPingBoidPanicDurationSeconds = 3f;
+        private const uint ActiveCreatureFlagPredator = 1u << 0;
+        private const uint ActiveCreatureFlagHasBrain = 1u << 1;
         private const string MaxHibernatedFaunaStatesWarning = "[FaunaDirector] Max hibernated fauna states reached. Extra residents were not saved.";
         private static readonly string[] ThermalHabitatTokens = { "thermal", "brine", "heat", "furnace", "volcanic", "chemical" };
         private static readonly string[] CaveHabitatTokens = { "cave", "nest", "ambush", "rift", "pocket", "burrow", "crevice" };
@@ -116,6 +115,7 @@ namespace Hecton8.AI
         /// Ð—Ð°Ð¿Ð¸ÑÑŒ Ð¾Ð± Ð°ÐºÑ‚Ð¸Ð²Ð½Ð¾Ð¼ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ðµ. Struct â€” zero GC Ð¿Ñ€Ð¸ Ñ…Ñ€Ð°Ð½ÐµÐ½Ð¸Ð¸ Ð² List.
         /// Ð¥Ñ€Ð°Ð½Ð¸Ñ‚ Ð¼Ð¸Ð½Ð¸Ð¼ÑƒÐ¼ Ð´Ð°Ð½Ð½Ñ‹Ñ… Ð´Ð»Ñ culling Ð¸ accounting.
         /// </summary>
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct ActiveCreature
         {
             /// <summary>Ð¡ÑÑ‹Ð»ÐºÐ° Ð½Ð° GameObject (Ð¸Ð· Ð¿ÑƒÐ»Ð°).</summary>
@@ -123,6 +123,7 @@ namespace Hecton8.AI
 
             /// <summary>ÐšÑÑˆÐ¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ñ‹Ð¹ Transform (avoid GetComponent per frame).</summary>
             public Transform transform;
+            public FaunaBrain brain;
 
             /// <summary>Ð˜Ð½Ð´ÐµÐºÑ Ð² FaunaBiomeData.possibleCreatures (Ð´Ð»Ñ counting).</summary>
             public int creatureTypeIndex;
@@ -145,6 +146,7 @@ namespace Hecton8.AI
             /// <summary>Ð¯Ð²Ð»ÑÐµÑ‚ÑÑ Ð»Ð¸ ÑÑ‚Ð¾ ÑÑƒÑ‰ÐµÑÑ‚Ð²Ð¾ ÐºÑ€ÑƒÐ¿Ð½Ð¾Ð¹ ÑƒÐ³Ñ€Ð¾Ð·Ð¾Ð¹ Ð±Ð¾Ð»ÑŒÑˆÐ¾Ð³Ð¾ ÑƒÑ‡Ð°ÑÑ‚ÐºÐ° Ð²Ð¾Ð´Ñ‹.</summary>
             public bool isLargeThreat;
             public bool isPredator;
+            public uint watchdogFlags;
 
             /// <summary>Ð˜Ð½Ð´ÐµÐºÑ Ñ€ÐµÐ·Ð¸Ð´ÐµÐ½Ñ‚Ð½Ð¾Ð³Ð¾ ÑÐ»Ð¾Ñ‚Ð° Ð´ÐµÐ³Ð¸Ð´Ñ€Ð°Ñ‚Ð°Ñ†Ð¸Ð¸.</summary>
             public uint uniqueInstanceUid;
@@ -606,9 +608,7 @@ namespace Hecton8.AI
 
             GlobalRegistry.Save?.Register(this);
             TryRegisterFaunaSimulationService();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
-#endif
             SubscribeAcousticPingEvents();
 
             if (GlobalRegistry.Dispatcher == null)
@@ -657,9 +657,7 @@ namespace Hecton8.AI
                 return;
 
             GlobalRegistry.Save?.Unregister(this);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
-#endif
             TryUnregisterFaunaSimulationService();
             UnsubscribeAcousticPingEvents();
             CompleteResidentDataOnlySimulation(forceComplete: false);
@@ -684,9 +682,7 @@ namespace Hecton8.AI
             if (Application.isPlaying)
                 GlobalRegistry.Save?.Unregister(this);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeWatchdog.UnregisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
-#endif
             TryUnregisterFaunaSimulationService();
             UnsubscribeAcousticPingEvents();
 
@@ -716,9 +712,7 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             InitializeDehydrationResidencyState();
             TryRegisterFaunaSimulationService();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeWatchdog.RegisterEmergencyResetTarget(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector, this);
-#endif
             SubscribeAcousticPingEvents();
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -737,7 +731,7 @@ namespace Hecton8.AI
             }
         }
 
-        internal void ServiceEmergencyReset()
+        public void ServiceEmergencyReset()
         {
             DespawnAll();
             ResetDehydrationResidencyState();
@@ -746,13 +740,6 @@ namespace Hecton8.AI
             _runtimeSettingsDirty = true;
             _nextRuntimeSettingsRefreshTime = 0f;
         }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        void RuntimeWatchdog.IEmergencyResetTarget.ServiceEmergencyReset()
-        {
-            ServiceEmergencyReset();
-        }
-#endif
 
         private void TryRegisterFaunaSimulationService()
         {
@@ -792,11 +779,13 @@ namespace Hecton8.AI
         /// <param name="deltaTime">Scaled frame delta supplied by <see cref="SystemDispatcher"/>.</param>
         public void Tick(float deltaTime)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            long watchdogSampleTimestamp = RuntimeWatchdog.BeginFaunaArterySample();
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.FaunaDirector);
-#endif
             if (deltaTime <= 0f)
+            {
+                RuntimeWatchdog.EndFaunaArterySample(watchdogSampleTimestamp);
                 return;
+            }
 
             DrainAcousticPanicCommands();
 
@@ -805,6 +794,7 @@ namespace Hecton8.AI
             {
                 if (_playerTransform != null)
                     ScheduleResidentDataOnlySimulation(_playerTransform.position, deltaTime);
+                RuntimeWatchdog.EndFaunaArterySample(watchdogSampleTimestamp);
                 return;
             }
 
@@ -816,6 +806,7 @@ namespace Hecton8.AI
 
             if (_playerTransform != null)
                 ScheduleResidentDataOnlySimulation(_playerTransform.position, deltaTime);
+            RuntimeWatchdog.EndFaunaArterySample(watchdogSampleTimestamp);
         }
 
         public void LateFrameTick()
@@ -1386,6 +1377,7 @@ namespace Hecton8.AI
                         spawnMacroZone,
                         isLargeThreat,
                         selectedEntry.isPredator,
+                        ai,
                         uniqueInstanceUid,
                         out ActiveCreature record))
                 {
@@ -2378,6 +2370,15 @@ namespace Hecton8.AI
             return GlobalRegistry.EcosystemDirector as EcosystemDirector;
         }
 
+        private static uint BuildActiveCreatureWatchdogFlags(bool isPredator, FaunaBrain brain)
+        {
+            uint flags = brain != null ? ActiveCreatureFlagHasBrain : 0u;
+            if (isPredator)
+                flags |= ActiveCreatureFlagPredator;
+
+            return flags;
+        }
+
         private bool TryBuildActiveCreatureRecord(
             GameObject instance,
             GameObject prefabSource,
@@ -2388,6 +2389,7 @@ namespace Hecton8.AI
             WorldMacroZoneCoordinate macroZoneCoord,
             bool isLargeThreat,
             bool isPredator,
+            FaunaBrain brain,
             uint uniqueInstanceUid,
             out ActiveCreature record)
         {
@@ -2406,6 +2408,7 @@ namespace Hecton8.AI
             {
                 gameObject = instance,
                 transform = instance.transform,
+                brain = brain,
                 creatureTypeIndex = creatureTypeIndex,
                 biomeIndex = biomeIndex,
                 prefabSource = prefabSource,
@@ -2414,6 +2417,7 @@ namespace Hecton8.AI
                 macroZoneCoord = macroZoneCoord,
                 isLargeThreat = isLargeThreat,
                 isPredator = isPredator,
+                watchdogFlags = BuildActiveCreatureWatchdogFlags(isPredator, brain),
                 uniqueInstanceUid = uniqueInstanceUid,
                 dehydrationSlotIndex = slotIndex
             };
@@ -2606,6 +2610,7 @@ namespace Hecton8.AI
                 {
                     gameObject = instance,
                     transform = instance.transform,
+                    brain = ai,
                     creatureTypeIndex = state.creatureTypeIndex,
                     biomeIndex = state.biomeIndex,
                     prefabSource = state.prefabSource,
@@ -2614,6 +2619,7 @@ namespace Hecton8.AI
                     macroZoneCoord = state.macroZoneCoord,
                     isLargeThreat = state.isLargeThreat,
                     isPredator = state.isPredator,
+                    watchdogFlags = BuildActiveCreatureWatchdogFlags(state.isPredator, ai),
                     uniqueInstanceUid = state.uniqueInstanceUid,
                     dehydrationSlotIndex = slotIndex
                 };
@@ -3708,6 +3714,32 @@ namespace Hecton8.AI
         /// <summary>ÐšÐ¾Ð»Ð¸Ñ‡ÐµÑÑ‚Ð²Ð¾ Ð°ÐºÑ‚Ð¸Ð²Ð½Ñ‹Ñ… ÑÑƒÑ‰ÐµÑÑ‚Ð² Ð² Ð¼Ð¸Ñ€Ðµ.</summary>
         public int ActiveCreatureCount => _activeCreatures != null ? _activeCreatures.Count : 0;
 
+        internal int ApplyEmergencyColdTickCull()
+        {
+            if (_activeCreatures == null || _activeCreatures.Count <= 0)
+                return 0;
+
+            int culledCount = 0;
+            for (int i = _activeCreatures.Count - 1; i >= 0; i--)
+            {
+                ActiveCreature creature = _activeCreatures[i];
+                if ((creature.watchdogFlags & ActiveCreatureFlagPredator) != 0u ||
+                    (creature.watchdogFlags & ActiveCreatureFlagHasBrain) == 0u)
+                {
+                    continue;
+                }
+
+                FaunaBrain ai = creature.brain;
+                if (ai == null)
+                    continue;
+
+                ai.ApplyDirectorColdTickCull(true);
+                culledCount++;
+            }
+
+            return culledCount;
+        }
+
         internal bool TrySpawnEncounterThreat(
             EncounterThreatClass threatClass,
             Vector3 spawnPosition,
@@ -3820,6 +3852,7 @@ namespace Hecton8.AI
                     spawnMacroZone,
                     selectedEntry.isLargeThreat,
                     selectedEntry.isPredator,
+                    ai,
                     uniqueInstanceUid,
                     out ActiveCreature record))
             {
@@ -4364,6 +4397,7 @@ namespace Hecton8.AI
                         default,
                         false,
                         selectedEntry.isPredator,
+                        ai,
                         BuildStandardFaunaInstanceUid(selectedEntry.speciesId, biomeIdx, spawnChunk, spawnPos),
                         out record))
                 {

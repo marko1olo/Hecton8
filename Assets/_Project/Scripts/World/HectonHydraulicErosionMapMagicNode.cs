@@ -27,9 +27,12 @@ namespace MapMagic.Nodes.MatrixGenerators
         private const string HeightALabel = "heightA";
         private const string HeightBLabel = "heightB";
         private const string SedimentLabel = "sediment";
+        private const string SiltLabel = "silt";
         private const string WearLabel = "wear";
         private const int FullDropletTelemetryThreshold = 1000000;
         private const int DraftDropletTelemetryThreshold = 250000;
+        private const int MinDropletsPerScheduleSlice = 100;
+        private const int MaxDropletsPerScheduleSlice = 1000;
         private const int CellCountTelemetryThreshold = 1048576;
         private const float BarrierStallTelemetryThresholdMs = 25f;
         private const uint DropletBudgetWarningHash = 0x48594544u;
@@ -51,8 +54,8 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Eroded Height", "Outlet")]
         public readonly Outlet<MatrixWorld> erodedHeightOut = new Outlet<MatrixWorld>();
 
-        /// <summary>Strictly normalized sediment deposition output.</summary>
-        [Den.Tools.GUI.ValAttribute("Sediment Mask", "Outlet")]
+        /// <summary>Strictly normalized bottom-channel silt deposition output.</summary>
+        [Den.Tools.GUI.ValAttribute("Silt Mask", "Outlet")]
         public readonly Outlet<MatrixWorld> sedimentMaskOut = new Outlet<MatrixWorld>();
 
         /// <summary>Strictly normalized hydraulic erosion-depth output.</summary>
@@ -85,6 +88,10 @@ namespace MapMagic.Nodes.MatrixGenerators
         /// <summary>Independent erosion partition edge size in pixels.</summary>
         [Den.Tools.GUI.ValAttribute("Sub Grid")]
         public int subGridSize = 32;
+
+        /// <summary>Scheduler operation budget used to derive droplets per sliced four-phase pass.</summary>
+        [Den.Tools.GUI.ValAttribute("Max Ops/Slice")]
+        public int maxOperationsPerSlice = 1400;
 
         /// <summary>Spawn bias for slight depressions.</summary>
         [Den.Tools.GUI.ValAttribute("Depression Spawn")]
@@ -249,6 +256,7 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float> heightA = default;
             NativeArray<float> heightB = default;
             NativeArray<float> sediment = default;
+            NativeArray<float> silt = default;
             NativeArray<float> wear = default;
             JobHandle handle = default;
             bool handleScheduled = false;
@@ -258,8 +266,9 @@ namespace MapMagic.Nodes.MatrixGenerators
                 heightA = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 heightB = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 sediment = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                silt = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 wear = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                RegisterTempJobBuffers(heightA, heightB, sediment, wear);
+                RegisterTempJobBuffers(heightA, heightB, sediment, silt, wear);
 
                 for (int i = 0; i < cellCount; i++)
                     heightA[i] = math.saturate(src.arr[i]);
@@ -304,12 +313,23 @@ namespace MapMagic.Nodes.MatrixGenerators
                     HeightScaleMeters = heightScaleMeters,
                     SedimentaryFlatSlopeDegrees = sedimentaryFlatSlopeDegrees,
                     SpawnCandidateCount = math.max(12, spawnCandidateCount),
-                    MinWater = 0.01f
+                    MinWater = 0.01f,
+                    DropletIndexOffset = 0
                 };
 
                 using (ErosionScheduleProfilerMarker.Auto())
                 {
-                    handle = HydraulicErosionScheduler.ScheduleFourPhase(ref erosionJob, 1, default);
+                    int currentOperations = ResolveCurrentOperations(
+                        cellCount,
+                        sedimentaryFlatSmoothingIterations,
+                        enableThermalSlumping ? thermalIterations : 0,
+                        canyonWallStrength > 0f && canyonWallMaxLift01 > 0f);
+                    int dropletsPerSlice = ResolveDropletsPerSlice(maxOperationsPerSlice, currentOperations);
+                    handle = HydraulicErosionScheduler.ScheduleFourPhaseSliced(
+                        ref erosionJob,
+                        dropletsPerSlice,
+                        1,
+                        default);
                     handleScheduled = true;
                 }
                 NativeArray<float> current = heightA;
@@ -402,6 +422,22 @@ namespace MapMagic.Nodes.MatrixGenerators
 
                 if (stop == null || !stop.stop)
                 {
+                    handle = new ErodedChannelSiltMaskJob
+                    {
+                        Heights01 = current,
+                        Sediment01 = sediment,
+                        Wear01 = wear,
+                        SiltMask01 = silt,
+                        Width = width,
+                        Height = height,
+                        DepressionStrength = 192f,
+                        SedimentStrength = 1f,
+                        WearStrength = 1f
+                    }.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
+                }
+
+                if (stop == null || !stop.stop)
+                {
                     using (MaskNormalizeProfilerMarker.Auto())
                     {
                         handle = new NormalizeMaskInPlaceJob
@@ -413,6 +449,12 @@ namespace MapMagic.Nodes.MatrixGenerators
                         handle = new NormalizeMaskInPlaceJob
                         {
                             Mask = wear,
+                            Count = cellCount
+                        }.Schedule(handle);
+
+                        handle = new NormalizeMaskInPlaceJob
+                        {
+                            Mask = silt,
                             Count = cellCount
                         }.Schedule(handle);
                     }
@@ -431,7 +473,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                     return;
 
                 CopyNativeToMatrix(current, eroded.arr);
-                CopyNativeToMatrix(sediment, sedimentMask.arr);
+                CopyNativeToMatrix(silt, sedimentMask.arr);
                 CopyNativeToMatrix(wear, wearMask.arr);
 
                 data.SetProgress(this, Complexity);
@@ -447,6 +489,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 DisposeTracked(ref heightA);
                 DisposeTracked(ref heightB);
                 DisposeTracked(ref sediment);
+                DisposeTracked(ref silt);
                 DisposeTracked(ref wear);
             }
         }
@@ -458,15 +501,37 @@ namespace MapMagic.Nodes.MatrixGenerators
             return (float)((deltaTicks * 1000.0) / Stopwatch.Frequency);
         }
 
+        private static int ResolveDropletsPerSlice(int maxOperations, int currentOperations)
+        {
+            int maxOps = math.max(MinDropletsPerScheduleSlice, maxOperations);
+            int currentOps = math.max(0, currentOperations);
+            return math.clamp(maxOps - currentOps, MinDropletsPerScheduleSlice, MaxDropletsPerScheduleSlice);
+        }
+
+        private static int ResolveCurrentOperations(
+            int cellCount,
+            int flatIterations,
+            int thermalSlumpIterations,
+            bool canyonWallPass)
+        {
+            int cellDebt = math.clamp(cellCount / 4096, 0, 96);
+            int flatDebt = math.max(0, flatIterations) * 64;
+            int thermalDebt = math.max(0, thermalSlumpIterations) * 96;
+            int canyonDebt = canyonWallPass ? 128 : 0;
+            return cellDebt + flatDebt + thermalDebt + canyonDebt;
+        }
+
         private static void RegisterTempJobBuffers(
             NativeArray<float> heightA,
             NativeArray<float> heightB,
             NativeArray<float> sediment,
+            NativeArray<float> silt,
             NativeArray<float> wear)
         {
             NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(silt, NativeMemoryOwner, SiltLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
         }
 

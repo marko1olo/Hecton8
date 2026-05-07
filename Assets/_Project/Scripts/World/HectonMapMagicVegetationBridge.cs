@@ -2842,7 +2842,7 @@ namespace Hecton8.World
         public bool TrySampleTerrainSlopeDegrees(Vector3 position, float sampleDistance, out float slopeDegrees)
         {
             slopeDegrees = 0f;
-            float resolvedSampleDistance = Mathf.Max(0.5f, sampleDistance);
+            float resolvedSampleDistance = math.max(0.5f, sampleDistance);
             if (!TryGetCachedTerrainHeight(position.x, position.z, out float centerHeight) ||
                 !TryGetCachedTerrainHeight(position.x + resolvedSampleDistance, position.z, out float heightPosX) ||
                 !TryGetCachedTerrainHeight(position.x - resolvedSampleDistance, position.z, out float heightNegX) ||
@@ -2854,9 +2854,29 @@ namespace Hecton8.World
 
             float gradientX = (heightPosX - heightNegX) / (resolvedSampleDistance * 2f);
             float gradientZ = (heightPosZ - heightNegZ) / (resolvedSampleDistance * 2f);
-            float gradientMagnitude = Mathf.Sqrt((gradientX * gradientX) + (gradientZ * gradientZ));
-            slopeDegrees = Mathf.Atan(gradientMagnitude) * Mathf.Rad2Deg;
+            float gradientMagnitude = FastGradientMagnitude((gradientX * gradientX) + (gradientZ * gradientZ));
+            slopeDegrees = FastAtanDegreesPositive(gradientMagnitude);
             return true;
+        }
+
+        private static float FastGradientMagnitude(float magnitudeSq)
+        {
+            float x = math.max(0f, magnitudeSq);
+            float safe = math.max(x, 0.000000000001f);
+            int estimateBits = (math.asint(safe) >> 1) + 0x1FBD1DF5;
+            float estimate = math.asfloat(estimateBits);
+            return math.select(0f, 0.5f * (estimate + safe / math.max(estimate, 0.000000000001f)), x > 0f);
+        }
+
+        private static float FastAtanDegreesPositive(float value)
+        {
+            float x = math.max(0f, value);
+            float reciprocal = 1f / math.max(x, 0.000001f);
+            bool useReciprocal = x > 1f;
+            float y = math.select(x, reciprocal, useReciprocal);
+            float radians = y / (1f + 0.280872f * y * y);
+            radians = math.select(radians, 1.5707964f - radians, useReciprocal);
+            return radians * 57.29578f;
         }
 
         /// <summary>
@@ -4560,8 +4580,8 @@ namespace Hecton8.World
                 }
             }
 
-            float nearestDistance = math.sqrt(math.max(0f, nearestDistanceSq));
-            float secondNearestDistance = math.sqrt(math.max(nearestDistanceSq, secondNearestDistanceSq));
+            float nearestDistance = FastGradientMagnitude(math.max(0f, nearestDistanceSq));
+            float secondNearestDistance = FastGradientMagnitude(math.max(nearestDistanceSq, secondNearestDistanceSq));
             float ringSeparation = math.saturate((secondNearestDistance - nearestDistance) * 1.8f);
             float microVariation = SampleValueNoise((worldX * 1.13f) + 7.31f, (worldZ * 1.13f) + 11.79f, seed ^ 0xC13FA9A9u);
             return math.saturate((ringSeparation * 0.72f) + (microVariation * 0.28f));
@@ -4577,7 +4597,7 @@ namespace Hecton8.World
             uint cellSeed = BuildCellSeed(cellX, cellZ, seed ^ 0x51ED270Bu);
             float2 jitter = new float2(Hash01(cellSeed), Hash01(cellSeed ^ 0xA24BAEDCu));
             float2 delta = cellFraction - jitter;
-            float cellular = 1f - math.saturate(math.sqrt(math.lengthsq(delta)) * 1.15f);
+            float cellular = 1f - math.saturate(FastGradientMagnitude(math.lengthsq(delta)) * 1.15f);
             float broad = SampleValueNoise(worldX * 0.21f, worldZ * 0.21f, seed ^ 0x9E3779B9u);
             float detail = SampleValueNoise((worldX * 0.83f) + 19.37f, (worldZ * 0.83f) + 41.11f, seed ^ 0x68E31DA4u);
             return math.saturate((cellular * 0.5f) + (broad * 0.3f) + (detail * 0.2f));
@@ -6469,9 +6489,9 @@ namespace Hecton8.World
             float sample10 = threatGrid[(cellZ * resolution) + nextCellX];
             float sample01 = threatGrid[(nextCellZ * resolution) + cellX];
             float sample11 = threatGrid[(nextCellZ * resolution) + nextCellX];
-            float sampleX0 = Mathf.Lerp(sample00, sample10, fracX);
-            float sampleX1 = Mathf.Lerp(sample01, sample11, fracX);
-            return Mathf.Lerp(sampleX0, sampleX1, fracZ);
+            float sampleX0 = math.lerp(sample00, sample10, fracX);
+            float sampleX1 = math.lerp(sample01, sample11, fracX);
+            return math.lerp(sampleX0, sampleX1, fracZ);
         }
 
         private static int ComputeThreatGridCellIndex(float3 position, float3 gridCenter, float cellSize, int resolution)

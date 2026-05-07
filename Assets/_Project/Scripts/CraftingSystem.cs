@@ -317,7 +317,7 @@ namespace Hecton8.Crafting
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int itemHashId = LocHash.Compute(cost.item.PersistentId);
+                int itemHashId = cost.item.PersistentHashId;
                 int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
                 if (itemHashId == 0 || adjustedAmount <= 0)
                     continue;
@@ -414,7 +414,7 @@ namespace Hecton8.Crafting
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int childHashId = LocHash.Compute(cost.item.PersistentId);
+                int childHashId = cost.item.PersistentHashId;
                 int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
                 if (childHashId == 0 || adjustedAmount <= 0)
                     continue;
@@ -481,7 +481,7 @@ namespace Hecton8.Crafting
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int itemHashId = LocHash.Compute(cost.item.PersistentId);
+                int itemHashId = cost.item.PersistentHashId;
                 int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
                 if (itemHashId == 0 || adjustedAmount <= 0)
                     continue;
@@ -542,7 +542,7 @@ namespace Hecton8.Crafting
                 if (amount <= 0 || entry.Item == null)
                     continue;
 
-                int itemHashId = LocHash.Compute(entry.Item.PersistentId);
+                int itemHashId = entry.Item.PersistentHashId;
                 if (itemHashId == 0)
                     continue;
 

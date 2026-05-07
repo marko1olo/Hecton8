@@ -30,6 +30,18 @@ namespace Hecton8.World
     }
 
     /// <summary>
+    /// Compact shader-visible flora genetics byte. Bit layout is fixed by the biodiversity rendering contract.
+    /// </summary>
+    [System.Flags]
+    public enum HectonVegetationGeneticTraits : byte
+    {
+        None = 0,
+        Poisonous = 1 << 0,
+        Edible = 1 << 1,
+        EmitsLight = 1 << 2
+    }
+
+    /// <summary>
     /// Vegetation type consumed by the indirect vegetation shader.
     /// </summary>
     public enum HectonVegetationInstanceType
@@ -165,11 +177,27 @@ namespace Hecton8.World
         internal const byte BiomeLayerBitShift = 4;
         internal const byte BiomeLayerBitMask = 0x30;
         internal const byte BiomeLayerValueMask = 0x03;
+        internal const int RuntimeFlagValueMask = 0xFF;
+        internal const int GeneticTraitBitShift = 8;
+        internal const int GeneticTraitValueMask = 0xFF;
+        internal const int PackedRuntimeAndTraitMask = 0xFFFF;
 
         internal static float Encode(byte biomeLayer, byte runtimeFlags)
         {
+            return Encode(biomeLayer, runtimeFlags, 0);
+        }
+
+        internal static float Encode(byte biomeLayer, byte runtimeFlags, byte geneticTraits)
+        {
             byte packedFlags = MergeBiomeLayer(runtimeFlags, biomeLayer);
-            return packedFlags;
+            return packedFlags | ((geneticTraits & GeneticTraitValueMask) << GeneticTraitBitShift);
+        }
+
+        internal static float WithRuntimeFlags(float existingPackedValue, byte runtimeFlags)
+        {
+            byte biomeLayer = ExtractBiomeLayer(existingPackedValue);
+            byte geneticTraits = ExtractGeneticTraits(existingPackedValue);
+            return Encode(biomeLayer, runtimeFlags, geneticTraits);
         }
 
         internal static byte MergeBiomeLayer(byte runtimeFlags, byte biomeLayer)
@@ -183,10 +211,28 @@ namespace Hecton8.World
             return (byte)((ExtractPackedFlags(runtimeFlags) & BiomeLayerBitMask) >> BiomeLayerBitShift);
         }
 
+        internal static byte ExtractGeneticTraits(float runtimeFlags)
+        {
+            return (byte)((ExtractPackedRuntimeAndTraits(runtimeFlags) >> GeneticTraitBitShift) & GeneticTraitValueMask);
+        }
+
+        internal static bool HasGeneticTrait(float runtimeFlags, HectonVegetationGeneticTraits trait)
+        {
+            return (ExtractGeneticTraits(runtimeFlags) & (byte)trait) != 0;
+        }
+
         internal static byte ExtractPackedFlags(float runtimeFlags)
         {
+            return (byte)(ExtractPackedRuntimeAndTraits(runtimeFlags) & RuntimeFlagValueMask);
+        }
+
+        internal static int ExtractPackedRuntimeAndTraits(float runtimeFlags)
+        {
             int roundedValue = Mathf.RoundToInt(runtimeFlags);
-            return (byte)Mathf.Clamp(roundedValue, 0, byte.MaxValue);
+            if (roundedValue <= 0)
+                return 0;
+
+            return roundedValue > PackedRuntimeAndTraitMask ? PackedRuntimeAndTraitMask : roundedValue;
         }
     }
 

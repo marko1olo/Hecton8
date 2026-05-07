@@ -243,6 +243,7 @@ namespace Hecton8.World
             teardownDependency = DisposeOriginShiftBuffers(teardownDependency);
             teardownDependency = DisposeFarUnloadBuffers(teardownDependency);
             JobHandle.ScheduleBatchedJobs();
+            DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
             DisposeAcousticDensityMap();
             _farUnloadHandleScratch.Clear();
             if (_queryHandles.IsCreated)

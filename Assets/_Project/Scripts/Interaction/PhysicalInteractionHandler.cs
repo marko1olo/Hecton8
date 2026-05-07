@@ -9,6 +9,8 @@ namespace Hecton8.Interaction
     using Hecton8.Gameplay;
     using Hecton8.Items;
     using Hecton8.UI;
+    using Hecton8.World;
+    using Unity.Mathematics;
     using UnityEngine;
 
     /// <summary>
@@ -20,7 +22,12 @@ namespace Hecton8.Interaction
         /// <summary>
         /// Attempts to queue a physical hand press through the interaction signal service.
         /// </summary>
-        bool TryQueueHandPress(Vector3 handPosition, Vector3 handForward, IInteractionSignalService interactionSignals);
+        bool TryQueueHandPress(
+            Vector3 handPosition,
+            Vector3 handForward,
+            IInteractionSignalService interactionSignals,
+            Collider handSourceCollider,
+            PhysicalHandSide fallbackHandSide);
     }
 
     /// <summary>
@@ -127,11 +134,14 @@ namespace Hecton8.Interaction
         [Tooltip("How much the heaviest draggable cargo trails behind the anchor instead of sitting on a perfect distance ring.")]
         [SerializeField, Range(0f, 1f)] private float heavyCarryRearLagDistance = 0.24f;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+
         [Header("── Diagnostics ──────────────────")]
 #pragma warning disable CS0414
         [SerializeField] private string _debugState = "Idle";
         [SerializeField] private string _debugTargetName;
 #pragma warning restore CS0414
+#endif
 
         private Transform _cachedTransform;
         private Camera _playerCamera;
@@ -179,8 +189,8 @@ namespace Hecton8.Interaction
                 if (!IsDraggingHeavyObject)
                     return 0f;
 
-                float massRange = Mathf.Max(heavyCarryMaxMass - heavyCarryMinMass, 0.01f);
-                return Mathf.Clamp01((_activeHeavyCarryMass - heavyCarryMinMass) / massRange);
+                float massRange = math.max(heavyCarryMaxMass - heavyCarryMinMass, 0.01f);
+                return math.saturate((_activeHeavyCarryMass - heavyCarryMinMass) / massRange);
             }
         }
 
@@ -269,6 +279,14 @@ namespace Hecton8.Interaction
             ClearActiveState();
         }
 
+        /// <summary>
+        /// Hard external release hook for tactile systems that detect invalid hand constraints.
+        /// </summary>
+        public void ForceRelease()
+        {
+            CancelActiveInteraction();
+        }
+
         public void Tick(float deltaTime)
         {
             TickPhysicalPanelButtons();
@@ -339,6 +357,10 @@ namespace Hecton8.Interaction
             if (interactionSignals == null || !interactionSignals.IsInitialized)
                 return;
 
+            Collider handSourceCollider = null;
+            PhysicalHandSide handSide = _physicalHandController.HandSide;
+            _physicalHandController.TryGetInteractionProbeCollider(out handSourceCollider);
+
             int hitCount = Physics.OverlapSphereNonAlloc(
                 handPosition,
                 panelButtonProbeRadius,
@@ -356,10 +378,11 @@ namespace Hecton8.Interaction
                 if (candidate == null)
                     continue;
 
-                if (!PhysicalPanelButton.TryResolve(candidate, out IPhysicalPanelButtonReceiver button))
+                if (!PhysicalHandReceiverRegistry.TryResolve(candidate, out IPhysicalPanelButtonReceiver button) &&
+                    !PhysicalPanelButton.TryResolve(candidate, out button))
                     continue;
 
-                button.TryQueueHandPress(handPosition, handForward, interactionSignals);
+                button.TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, handSide);
             }
         }
 
@@ -416,8 +439,10 @@ namespace Hecton8.Interaction
             }
 
             _state = InteractionState.PullingPocketItem;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugState = "PullingPocketItem";
             CacheDebugTargetName(_activeBehaviour);
+#endif
             return true;
         }
 
@@ -470,16 +495,19 @@ namespace Hecton8.Interaction
             _activeHeavyCarryMass = carryBody.mass;
 
             _state = InteractionState.DraggingHeavyObject;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugState = "DraggingHeavyObject";
             CacheDebugTargetName(_activeBehaviour);
+#endif
             return true;
         }
 
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void CacheDebugTargetName(MonoBehaviour behaviour)
         {
             _debugTargetName = behaviour != null ? behaviour.name : null;
         }
+#endif
 
         private bool EnsurePhysicalHandController()
         {
@@ -498,8 +526,8 @@ namespace Hecton8.Interaction
             _stateTimer += deltaTime;
 
             float duration = pickupDuration > 0.01f ? pickupDuration : 0.01f;
-            float progress = Mathf.Clamp01(_stateTimer / duration);
-            _activeTargetTransform.localScale = Vector3.Lerp(_activeOriginalLocalScale, _activeTargetLocalScale, progress);
+            float progress = math.saturate(_stateTimer / duration);
+            _activeTargetTransform.localScale = (Vector3)math.lerp((float3)_activeOriginalLocalScale, (float3)_activeTargetLocalScale, progress);
 
             if (_activeBody == null && interactionAnchor != null)
             {
@@ -551,8 +579,9 @@ namespace Hecton8.Interaction
                     return;
                 }
 
-                Vector3 fallbackSeparation = interactionAnchor.position - _activeBody.worldCenterOfMass;
-                if (fallbackSeparation.sqrMagnitude > heavyCarryBreakDistance * heavyCarryBreakDistance)
+                AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(interactionAnchor.position);
+                AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(_activeBody.worldCenterOfMass);
+                if (AbsoluteUniversePosition.DistanceSq(in anchorAup, in bodyAup) > heavyCarryBreakDistance * heavyCarryBreakDistance)
                 {
                     CancelActiveInteraction();
                     return;
@@ -624,8 +653,10 @@ namespace Hecton8.Interaction
             _activeCollider = null;
             _activeHeavyCarry = null;
             _activeHeavyCarryMass = 0f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugState = "Idle";
             _debugTargetName = null;
+#endif
         }
 
         /// <summary>
@@ -636,7 +667,7 @@ namespace Hecton8.Interaction
             if (!IsDraggingHeavyObject)
                 return 1f;
 
-            return Mathf.Lerp(lightHeavyCarryForceMultiplier, maxHeavyCarryForceMultiplier, HeavyCarryLoad01);
+            return math.lerp(lightHeavyCarryForceMultiplier, maxHeavyCarryForceMultiplier, HeavyCarryLoad01);
         }
 
         /// <summary>
@@ -647,18 +678,18 @@ namespace Hecton8.Interaction
             if (!IsDraggingHeavyObject)
                 return 1f;
 
-            return Mathf.Lerp(lightHeavyCarrySpeedMultiplier, maxHeavyCarrySpeedMultiplier, HeavyCarryLoad01);
+            return math.lerp(lightHeavyCarrySpeedMultiplier, maxHeavyCarrySpeedMultiplier, HeavyCarryLoad01);
         }
 
         private float ResolveHeavyCarryFollowSpeed(float separationDistance)
         {
-            float loadSpeedMultiplier = Mathf.Lerp(
+            float loadSpeedMultiplier = math.lerp(
                 lightHeavyCarryFollowSpeedMultiplier,
                 maxHeavyCarryFollowSpeedMultiplier,
                 HeavyCarryLoad01);
 
-            float catchUpRatio = Mathf.Clamp01(separationDistance / Mathf.Max(heavyCarryDistance, 0.01f));
-            float catchUpMultiplier = Mathf.Lerp(1f, heavyCarryCatchUpSpeedMultiplier, catchUpRatio);
+            float catchUpRatio = math.saturate(separationDistance / math.max(heavyCarryDistance, 0.01f));
+            float catchUpMultiplier = math.lerp(1f, heavyCarryCatchUpSpeedMultiplier, catchUpRatio);
             return heavyCarryMoveSpeed * loadSpeedMultiplier * catchUpMultiplier;
         }
 
@@ -676,11 +707,11 @@ namespace Hecton8.Interaction
                 if (planarForward.sqrMagnitude < 0.0001f)
                     planarForward = Vector3.forward;
 
-                planarForward.Normalize();
+                planarForward = (Vector3)math.normalizesafe((float3)planarForward, new float3(0f, 0f, 1f));
 
                 float load = HeavyCarryLoad01;
-                float carriedDistance = Mathf.Max(0.1f, heavyCarryDistance - load * heavyCarryRearLagDistance);
-                float pitchOffset = Mathf.Clamp(interactionAnchor.forward.y, -1f, 1f) * heavyCarryMaxVerticalPitchOffset * heavyCarryPitchInfluence;
+                float carriedDistance = math.max(0.1f, heavyCarryDistance - load * heavyCarryRearLagDistance);
+                float pitchOffset = math.clamp(interactionAnchor.forward.y, -1f, 1f) * heavyCarryMaxVerticalPitchOffset * heavyCarryPitchInfluence;
 
                 offset = planarForward * carriedDistance;
                 offset.y = heavyCarryVerticalOffset + pitchOffset - load * heavyCarryLoadSag;

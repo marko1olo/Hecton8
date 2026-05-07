@@ -63,6 +63,8 @@ Shader "Hecton8/BoidFishInstanced"
         _VatInstancePhaseScale ("VAT Instance Phase Scale", Float) = 0.25
         _VatPositionScale ("VAT Position Scale", Float) = 1
         _VatNormalBlend ("VAT Normal Blend", Range(0, 1)) = 1
+        _VatSpeedReference ("VAT Speed Reference", Float) = 6
+        _FinStretchStrength ("Fin Stretch Strength", Range(0, 0.35)) = 0.16
         
         [Header(Color Variation)]
         _ColorVariance ("Color Hue Variance", Float) = 0.05
@@ -74,6 +76,10 @@ Shader "Hecton8/BoidFishInstanced"
         _BiolumStrength ("Biolum Strength", Range(0, 4)) = 0.42
         _BiolumPulseAmplitude ("Biolum Pulse Amplitude", Range(0, 1)) = 0.18
         _BiolumNightResponse ("Biolum Night Response", Range(0, 2)) = 1.0
+        _BiolumSpotScale ("Biolum Spot Scale", Float) = 18
+        _BiolumSpotThreshold ("Biolum Spot Threshold", Range(0, 1)) = 0.72
+        _AggressiveGlowStrength ("Aggressive Glow Strength", Range(0, 4)) = 0.8
+        _LodDitherKeep01 ("LOD Dither Keep 01", Range(0, 1)) = 1
 
         [Header(Parasite Drones)]
         _ParasiteBaseColor ("Parasite Base Color", Color) = (0.32, 0.35, 0.42, 1.0)
@@ -159,6 +165,8 @@ Shader "Hecton8/BoidFishInstanced"
                 float  _VatInstancePhaseScale;
                 float  _VatPositionScale;
                 float  _VatNormalBlend;
+                float  _VatSpeedReference;
+                float  _FinStretchStrength;
                 
                 // Color variation
                 float  _ColorVariance;
@@ -168,6 +176,10 @@ Shader "Hecton8/BoidFishInstanced"
                 float  _BiolumStrength;
                 float  _BiolumPulseAmplitude;
                 float  _BiolumNightResponse;
+                float  _BiolumSpotScale;
+                float  _BiolumSpotThreshold;
+                float  _AggressiveGlowStrength;
+                float  _LodDitherKeep01;
                 float4 _ParasiteBaseColor;
                 float4 _ParasiteGlowColor;
                 float  _ParasiteGlowStrength;
@@ -189,6 +201,15 @@ Shader "Hecton8/BoidFishInstanced"
             SAMPLER(sampler_VatPositionTex);
             TEXTURE2D(_VatNormalTex);
             SAMPLER(sampler_VatNormalTex);
+            TEXTURE2D(_HectonCausticsTextureA);
+            SAMPLER(sampler_HectonCausticsTextureA);
+            TEXTURE2D(_BlueNoiseTex);
+            SAMPLER(sampler_BlueNoiseTex);
+            float4 _HectonCausticsTextureParams;
+            float4 _BlueNoiseTex_TexelSize;
+
+            #define BOID_FLAG_CONSUMED 8u
+            #define BOID_FLAG_MUTATION_AGGRESSIVE 16u
 
             // ══════════════════════════════════════════════════════
             //  VERTEX / FRAGMENT STRUCTURES
@@ -209,6 +230,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float  colorBlend : TEXCOORD2;   // belly/back blend factor
                 float  instanceRand : TEXCOORD3; // per-instance random [0..1]
                 float  aliveMask : TEXCOORD4;
+                float  aggressiveMask : TEXCOORD5;
             };
 
             // ══════════════════════════════════════════════════════
@@ -261,13 +283,65 @@ Shader "Hecton8/BoidFishInstanced"
             // ══════════════════════════════════════════════════════
 
             /// <summary>
-            /// Simple hash for per-instance variation.
-            /// Returns value in [0..1]. Deterministic for same ID.
-            /// Cost: 3 ALU (multiply, frac).
+            /// Integer hash for per-instance variation. Returns [0..1].
             /// </summary>
+            uint HashUInt(uint value)
+            {
+                value ^= value >> 16;
+                value *= 0x7feb352du;
+                value ^= value >> 15;
+                value *= 0x846ca68bu;
+                value ^= value >> 16;
+                return value;
+            }
+
             float InstanceRandom(uint id)
             {
-                return frac(sin(float(id) * 127.1 + 311.7) * 43758.5453);
+                return (float)(HashUInt(id) & 0x00ffffffu) * (1.0 / 16777216.0);
+            }
+
+            float HashTile2(float2 value)
+            {
+                uint2 cell = (uint2)floor(abs(value) * 4096.0);
+                return InstanceRandom(cell.x ^ (cell.y * 0x9e3779b9u));
+            }
+
+            half3 ApplyInstanceHueShift(half3 color, half hueShift)
+            {
+                half amount = saturate(abs(hueShift));
+                half3 positiveShift = color.gbr;
+                half3 negativeShift = color.brg;
+                half3 shifted = hueShift >= 0.0h ? positiveShift : negativeShift;
+                return saturate(lerp(color, shifted, amount));
+            }
+
+            float ResolveBiolumSpotNoise(float2 uv)
+            {
+                float2 tiledUv = frac(uv);
+                if (_HectonCausticsTextureParams.x > 0.5)
+                    return SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, tiledUv).r;
+
+                return HashTile2(tiledUv);
+            }
+
+            float ResolveInterleavedDither(float2 pixel)
+            {
+                uint2 p = (uint2)pixel;
+                uint hash = HashUInt(p.x ^ (p.y * 0x27d4eb2du) ^ 0x9e3779b9u);
+                return (float)(hash & 255u) * (1.0 / 255.0);
+            }
+
+            float ResolveBlueNoiseDither(float4 positionCS)
+            {
+                float2 pixel = floor(positionCS.xy);
+                if (_BlueNoiseTex_TexelSize.z > 0.0001 && _BlueNoiseTex_TexelSize.w > 0.0001)
+                {
+                    float2 temporalOffset = frac(_Time.y * float2(0.75487766, 0.56984029));
+                    float2 blueNoiseUv = frac(pixel * _BlueNoiseTex_TexelSize.xy + temporalOffset);
+                    return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUv).r;
+                }
+
+                return ResolveInterleavedDither(pixel);
             }
 
             float2 ResolveVatFrameUv(uint vertexID, float frameIndex)
@@ -301,9 +375,11 @@ Shader "Hecton8/BoidFishInstanced"
             //  VERTEX SHADER
             // ══════════════════════════════════════════════════════
 
-            Varyings vert(Attributes input, uint instanceID : SV_InstanceID, uint vertexID : SV_VertexID)
+            Varyings vert(Attributes input, uint rawInstanceID : SV_InstanceID, uint vertexID : SV_VertexID)
             {
                 Varyings output;
+
+                uint instanceID = rawInstanceID;
 
                 // ══════════════════════════════════════════════════
                 //  1. READ BOID DATA
@@ -313,9 +389,13 @@ Shader "Hecton8/BoidFishInstanced"
                 float3 boidPos = boid.position;
                 float3 boidVel = boid.velocity * saturate(_VelocitySleepScale);
                 float  speed   = length(boidVel);
-                bool   isConsumed = (boid.stateFlags & 8u) != 0u;
+                bool   isConsumed = (boid.stateFlags & BOID_FLAG_CONSUMED) != 0u;
+                float  aggressiveMask = (boid.stateFlags & BOID_FLAG_MUTATION_AGGRESSIVE) != 0u ? 1.0 : 0.0;
+                float  aggressiveSpeedScale = lerp(1.0, 2.0, aggressiveMask);
+                float  velocityAnim01 = saturate(speed / max(_VatSpeedReference, 0.001));
                 float  consumed01 = isConsumed ? saturate(boid.panic) : 0.0;
                 float  aliveMask = consumed01 < 0.999 ? 1.0 : 0.0;
+                float  aupPhase = boidPos.x * 13.37;
                 float  consumedScale = 1.0 - consumed01;
 
                 // ══════════════════════════════════════════════════
@@ -349,7 +429,8 @@ Shader "Hecton8/BoidFishInstanced"
                 if (useVat)
                 {
                     float safeFrameCount = max(_VatFrameCount, 1.0);
-                    float vatPhase = frac((_Time.y * max(_VatPlaybackSpeed, 0.0)) + (float(instanceID) * max(_VatInstancePhaseScale, 0.0)));
+                    float vatMotionSpeed = max(_VatPlaybackSpeed, 0.0) * velocityAnim01 * aggressiveSpeedScale;
+                    float vatPhase = frac((_Time.y * vatMotionSpeed) + (float(instanceID) * max(_VatInstancePhaseScale, 0.0)) + aupPhase * 0.15915494);
                     float vatFrame = vatPhase * safeFrameCount;
                     float vatFrameFloor = floor(vatFrame);
                     float vatFrameCeil = fmod(vatFrameFloor + 1.0, safeFrameCount);
@@ -369,8 +450,9 @@ Shader "Hecton8/BoidFishInstanced"
                     tailFactor = pow(tailFactor, _TailPower);
 
                     // Phase with body wave component
-                    float freqAdjusted = _TailFrequency + speed * _TailSpeedInfluence;
+                    float freqAdjusted = (_TailFrequency + speed * _TailSpeedInfluence) * velocityAnim01 * aggressiveSpeedScale;
                     float phase = _Time.y * freqAdjusted 
+                                + aupPhase
                                 + float(instanceID) * _TailPhaseVariance;
                     
                     // Body wave: phase varies along Z for S-curve
@@ -390,13 +472,18 @@ Shader "Hecton8/BoidFishInstanced"
                     localPos.y += cos(wavePhase * 0.7) * ampAdjusted * 0.3 * tailFactor;
                 }
 
+                float finMask = saturate(abs(localPos.x) * 1.8 + saturate(localPos.y) * 0.25) * saturate(1.0 - abs(localPos.z) * 0.35);
+                float finStretch = 1.0 + ((InstanceRandom(instanceID ^ 0x6c8e9cf5u) - 0.5) * 2.0) * _FinStretchStrength * finMask;
+                localPos.x *= finStretch;
+
                 // ══════════════════════════════════════════════════
                 //  4. SCALE
                 // ══════════════════════════════════════════════════
 
                 // Per-instance size variation (±15%)
-                float scaleVariation = 0.85 + instRand * 0.3;
-                localPos *= _FishScale * scaleVariation * consumedScale;
+                float aupScaleJitter = 1.0 + frac(boidPos.x) * 0.2;
+                float scaleVariation = 0.95 + instRand * 0.1;
+                localPos *= _FishScale * scaleVariation * aupScaleJitter * consumedScale;
 
                 // ══════════════════════════════════════════════════
                 //  5. ROTATION (LookRotation from velocity)
@@ -415,6 +502,7 @@ Shader "Hecton8/BoidFishInstanced"
                 output.normalWS   = normalize(worldNrm);
                 output.uv         = TRANSFORM_TEX(input.uv, _BaseMap);
                 output.aliveMask  = aliveMask;
+                output.aggressiveMask = aggressiveMask;
 
                 // Belly blend: vertices below local Y center → belly color
                 output.colorBlend = saturate(-input.positionOS.y - _BellyBlend);
@@ -429,19 +517,14 @@ Shader "Hecton8/BoidFishInstanced"
             half4 frag(Varyings input) : SV_Target
             {
                 clip(input.aliveMask - 0.5);
+                clip(_LodDitherKeep01 - ResolveBlueNoiseDither(input.positionCS));
                 // ── Texture sample ──
                 half4 texColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
 
                 // ── Per-instance color variation ──
                 // Slight hue shift using instance random
-                half3 baseCol = _BaseColor.rgb;
-                
-                // Hue shift via RGB rotation (cheap approximation)
                 half hueShift = (input.instanceRand - 0.5) * _ColorVariance;
-                baseCol.r += hueShift;
-                baseCol.g -= hueShift * 0.5;
-                baseCol.b += hueShift * 0.3;
-                baseCol = saturate(baseCol);
+                half3 baseCol = ApplyInstanceHueShift(_BaseColor.rgb, hueShift);
 
                 // ── Belly/back color blend ──
                 half parasiteMode = saturate(_ParasiteMode);
@@ -478,8 +561,13 @@ Shader "Hecton8/BoidFishInstanced"
                 half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
                 half globalOceanPanic = saturate((half)_GlobalOceanPanic);
                 biolumColor = lerp(biolumColor, (half3)_GlobalOceanPanicColor.rgb, globalOceanPanic);
+                biolumColor = lerp(biolumColor, half3(1.0h, 0.08h, 0.03h), saturate(input.aggressiveMask));
+                half spotNoise = ResolveBiolumSpotNoise(input.uv * max(_BiolumSpotScale, 0.001) + input.instanceRand * half2(13.17h, 31.73h));
+                half spotMask = step((half)_BiolumSpotThreshold, spotNoise);
                 half biolumMask = saturate(0.28h + (1.0h - input.colorBlend) * 0.34h + (1.0h - lighting) * 0.22h);
-                color += biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.6h + globalOceanPanic * 0.45h) * nightFactor * biolumPulse * biolumMask);
+                half spottedBiolumMask = saturate(biolumMask + spotMask * 0.75h);
+                color += biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.6h + globalOceanPanic * 0.45h) * nightFactor * biolumPulse * spottedBiolumMask);
+                color += half3(1.0h, 0.05h, 0.02h) * (_AggressiveGlowStrength * saturate(input.aggressiveMask) * spotMask * nightFactor);
 
                 half parasitePulse = 1.0h + sin((_Time.y * _SargassumBiolumPhaseMultiplier * 1.65h) + input.instanceRand * 9.7h + input.uv.x * 12.0h) * 0.35h;
                 half parasiteMask = saturate(0.35h + (1.0h - abs(input.normalWS.y)) * 0.45h + input.uv.x * 0.2h);

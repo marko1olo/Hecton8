@@ -1,4 +1,6 @@
 using System;
+using System.Runtime.InteropServices;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -29,8 +31,23 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// OpenXR controller button bits exposed through the frame-cached XR input snapshot.
+    /// </summary>
+    [Flags]
+    internal enum XRInputButton : uint
+    {
+        None = 0u,
+        Trigger = 1u << 0,
+        Grip = 1u << 1,
+        JoystickClick = 1u << 2,
+        Primary = 1u << 3,
+        Secondary = 1u << 4,
+    }
+
+    /// <summary>
     /// Zero-allocation player input snapshot captured once at the start of each frame.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct PlayerInputState
     {
         /// <summary>
@@ -61,6 +78,48 @@ namespace Hecton8.Core
         public readonly bool HasAction(PlayerInputAction action)
         {
             return (ActionsBitmask & (uint)action) != 0u;
+        }
+    }
+
+    /// <summary>
+    /// Blittable OpenXR controller state captured once per dispatcher frame.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct XRInputState
+    {
+        /// <summary>Frame that produced this snapshot.</summary>
+        public int Frame;
+
+        /// <summary>Controller slot: 0 left, 1 right.</summary>
+        public byte ControllerIndex;
+
+        /// <summary>Non-zero when the OpenXR controller reports a tracked pose.</summary>
+        public byte IsTracked;
+
+        /// <summary>Trigger axis normalized to 0..1.</summary>
+        public float Trigger;
+
+        /// <summary>Grip axis normalized to 0..1.</summary>
+        public float Grip;
+
+        /// <summary>Primary joystick or primary 2D axis value.</summary>
+        public float2 Joystick;
+
+        /// <summary>Grip-pose position in runtime world space.</summary>
+        public float3 GripPositionWS;
+
+        /// <summary>Grip-pose rotation in runtime world space.</summary>
+        public quaternion GripRotationWS;
+
+        /// <summary>Cached OpenXR button flags.</summary>
+        public uint ButtonsBitmask;
+
+        /// <summary>
+        /// Returns true when the cached XR snapshot contains the requested button flag.
+        /// </summary>
+        public readonly bool HasButton(XRInputButton button)
+        {
+            return (ButtonsBitmask & (uint)button) != 0u;
         }
     }
 }

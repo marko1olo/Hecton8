@@ -95,6 +95,13 @@ namespace Hecton8.Construction
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            Shutdown();
+            EnsureVisitCapacity(InitialNodeCapacity);
+            EnsureSuppressionCapacity(InitialNodeCapacity);
+        }
+
+        internal static void Shutdown()
+        {
             JobHandle teardownDependency = CancelPendingSortForTeardown();
             teardownDependency = DisposeNativeArray(ref _edgeOffsets, teardownDependency);
             teardownDependency = DisposeNativeArray(ref _edgeDestinations, teardownDependency);
@@ -105,15 +112,14 @@ namespace Hecton8.Construction
             teardownDependency = DisposeNativeArray(ref _sortedCount, teardownDependency);
             teardownDependency = DisposeNativeArray(ref _visitMarks, teardownDependency);
             teardownDependency = DisposeNativeArray(ref _suppressedEdgeSources, teardownDependency);
-            DisposeNativeArray(ref _suppressedEdgeDestinations, teardownDependency);
+            teardownDependency = DisposeNativeArray(ref _suppressedEdgeDestinations, teardownDependency);
             JobHandle.ScheduleBatchedJobs();
+            DispatcherJobSwap.TryComplete(ref teardownDependency, forceComplete: true);
             _activeNodes.Clear();
             _scheduledSortedCount = 0;
             _scheduledNodeCount = 0;
             _lastProcessedFrame = -1;
             _visitStamp = 1;
-            EnsureVisitCapacity(InitialNodeCapacity);
-            EnsureSuppressionCapacity(InitialNodeCapacity);
         }
 
         internal static void Register(LogisticsPipeNode node)

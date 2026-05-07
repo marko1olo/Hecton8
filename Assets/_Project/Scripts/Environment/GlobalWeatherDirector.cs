@@ -85,6 +85,7 @@ namespace Hecton8.Environment
         private static readonly int _GlobalWindVectorId = Shader.PropertyToID("_HectonGlobalWindVector");
         private static readonly int _GlobalWindId = Shader.PropertyToID("_GlobalWind");
         private static readonly int _WeatherIntensityId = Shader.PropertyToID("_HectonWeatherIntensity");
+        private static readonly int _WeatherStateMaskId = Shader.PropertyToID("_HectonWeatherStateMask");
         private static readonly int _NoirFogLutId = Shader.PropertyToID("_NoirFogLUT");
         private static readonly int _NoirFogLutParamsId = Shader.PropertyToID("_HectonNoirFogLutParams");
         private static readonly int _NoirFogLutBlendId = Shader.PropertyToID("_HectonNoirFogLutBlend");
@@ -304,6 +305,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_GlobalWindVectorId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalWindId, Vector4.zero);
             Shader.SetGlobalFloat(_WeatherIntensityId, 0f);
+            Shader.SetGlobalInt(_WeatherStateMaskId, 0);
             Shader.SetGlobalTexture(_NoirFogLutId, Texture2D.blackTexture);
             Shader.SetGlobalVector(_NoirFogLutParamsId, Vector4.zero);
             Shader.SetGlobalFloat(_NoirFogLutBlendId, 0f);
@@ -556,6 +558,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_GlobalWindVectorId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, 0f));
             Shader.SetGlobalVector(_GlobalWindId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, math.length(windVector)));
             Shader.SetGlobalFloat(_WeatherIntensityId, _weatherIntensity);
+            Shader.SetGlobalInt(_WeatherStateMaskId, (int)_runtimeSnapshot.StateMask);
             PublishNoirFogShaderState();
 
             if (fluidEngine != null && math.lengthsq(currentVector - _lastAppliedCurrentVector) > CurrentSyncEpsilonSq)

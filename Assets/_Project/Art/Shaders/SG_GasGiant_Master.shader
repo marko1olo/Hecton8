@@ -187,6 +187,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             #pragma target 3.5
             #pragma multi_compile _ DOTS_INSTANCING_ON
             #pragma multi_compile_instancing
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+            #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
+            #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -679,6 +682,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             #pragma target 3.5
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+            #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
+            #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -732,6 +738,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             #pragma target 3.5
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+            #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
+            #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -794,6 +803,9 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
             #pragma vertex MetaVert
             #pragma fragment MetaFrag
             #pragma target 3.5
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+            #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
+            #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/MetaInput.hlsl"

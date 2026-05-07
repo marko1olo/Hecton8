@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Interaction;
+using Unity.Mathematics;
 using UnityEngine;
 using Stopwatch = System.Diagnostics.Stopwatch;
 
@@ -133,10 +134,13 @@ namespace Hecton8.Modding
     /// </summary>
     public static class HectonEventBus
     {
-        private const int MaxDispatchDepth = 4;
+        private const int MaxEventDispatchDepth = 5;
+        private const uint ManagedEventCascadeBreakerSubjectHash = 0x45564450u; // EVDP
+        private const uint ManagedEventCascadeBreakerFallbackHash = 0x43415343u; // CASC
         private const string RecursiveCascadeCriticalMessage = "[HectonEventBus] RECURSIVE_CASCADE_CRITICAL: dispatch recursion depth exceeded; payload dropped.";
         private const string ModStallWarningMessage = "[HectonEventBus] STALL_WARNING: mod callback exceeded 2.0ms.";
         private const string ModStallDisableReason = "Event callback exceeded 2.0ms watchdog for 3 consecutive frames.";
+        private const string ModCallbackExceptionDisableReason = "Event callback exception.";
         private static readonly long _modCallbackWatchdogTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.002d));
         // COLD ALLOC: List<IResettableEventChannel>[32] — typed event channel registry for play-session resets — owner: HectonEventBus
         private static readonly List<IResettableEventChannel> _channels = new List<IResettableEventChannel>(32);
@@ -144,8 +148,10 @@ namespace Hecton8.Modding
         private static readonly NativeQueueBridge _nativeQueueBridge = new NativeQueueBridge();
         // COLD ALLOC: NativePayloadChannel[1] - immutable byte-span bridge for native payload copies - owner: HectonEventBus
         private static readonly NativePayloadChannel _nativePayloadChannel = new NativePayloadChannel();
-        private static int _dispatchDepth;
+        private static int _eventDepthCounter;
         private static int _lastCascadeWarningFrame;
+        private static int _lastCascadeTelemetryFrame;
+        private static bool _eventCascadeDropActive;
         private static bool _nativeQueueBindingsInstalled;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -155,8 +161,10 @@ namespace Hecton8.Modding
                 _channels[i].Reset();
 
             _nativePayloadChannel.Reset();
-            _dispatchDepth = 0;
+            _eventDepthCounter = 0;
             _lastCascadeWarningFrame = 0;
+            _lastCascadeTelemetryFrame = 0;
+            _eventCascadeDropActive = false;
             _nativeQueueBindingsInstalled = false;
         }
 
@@ -176,7 +184,9 @@ namespace Hecton8.Modding
 
             if (handler == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonEventBus] Cannot subscribe a null handler.");
+#endif
                 return null;
             }
 
@@ -219,7 +229,9 @@ namespace Hecton8.Modding
         {
             if (handler == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonEventBus] Cannot subscribe a null native payload handler.");
+#endif
                 return null;
             }
 
@@ -245,7 +257,9 @@ namespace Hecton8.Modding
 
             if (evt == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonEventBus] Cannot publish a null event instance.");
+#endif
                 return null;
             }
 
@@ -318,10 +332,11 @@ namespace Hecton8.Modding
             _nativePayloadChannel.DisableSubscriber(subscriberId);
         }
 
-        private static bool TryEnterDispatch()
+        private static bool TryEnterDispatch(uint eventHash)
         {
-            if (_dispatchDepth >= MaxDispatchDepth)
+            if (_eventCascadeDropActive || _eventDepthCounter >= MaxEventDispatchDepth)
             {
+                _eventCascadeDropActive = true;
                 if (ModExecutionScope.HasActiveMod)
                 {
                     string currentModId = ModExecutionScope.CurrentModId;
@@ -329,19 +344,27 @@ namespace Hecton8.Modding
                     ModLoader.DisableManagedMod(currentModId, "Dispatch recursion depth exceeded.");
                 }
 
-                ReportRecursiveCascadeCritical();
+                ReportRecursiveCascadeCritical(eventHash);
                 return false;
             }
 
-            _dispatchDepth++;
+            _eventDepthCounter++;
             return true;
         }
 
-        private static void ReportRecursiveCascadeCritical()
+        private static void ReportRecursiveCascadeCritical(uint eventHash)
         {
             CrashTelemetryBuffer.ReportRecursiveCascadeCritical();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             int frame = Time.frameCount;
+            if (_lastCascadeTelemetryFrame != frame)
+            {
+                _lastCascadeTelemetryFrame = frame;
+                GlobalTelemetryBus.PublishCatastrophicCascadePrevented(
+                    ManagedEventCascadeBreakerSubjectHash,
+                    eventHash != 0u ? eventHash : ManagedEventCascadeBreakerFallbackHash,
+                    math.max(1, _eventDepthCounter));
+            }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_lastCascadeWarningFrame == frame)
                 return;
 
@@ -352,8 +375,11 @@ namespace Hecton8.Modding
 
         private static void ExitDispatch()
         {
-            if (_dispatchDepth > 0)
-                _dispatchDepth--;
+            if (_eventDepthCounter > 0)
+                _eventDepthCounter--;
+
+            if (_eventDepthCounter == 0)
+                _eventCascadeDropActive = false;
         }
 
         private static bool IsSequentialNativePayload<TPayload>()
@@ -462,7 +488,7 @@ namespace Hecton8.Modding
 
             internal void Publish(in TPayload payload)
             {
-                if (!HectonEventBus.TryEnterDispatch())
+                if (!HectonEventBus.TryEnterDispatch(_eventHash))
                     return;
 
                 _dispatchDepth++;
@@ -513,9 +539,11 @@ namespace Hecton8.Modding
                             entry.Handler = null;
                             _subscriptions[i] = entry;
                             _needsCompaction = true;
-                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Unmanaged event callback threw '{ex.Message}'.");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Unmanaged event callback threw '{ex.Message}'.");
                             Debug.LogError("[HectonEventBus] Unmanaged subscriber threw during payload dispatch.");
+#else
+                            ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
 #endif
                         }
                     }
@@ -623,7 +651,7 @@ namespace Hecton8.Modding
 
             internal void Publish(HectonNativeEventKind eventKind, ReadOnlySpan<byte> payload)
             {
-                if (!HectonEventBus.TryEnterDispatch())
+                if (!HectonEventBus.TryEnterDispatch((uint)eventKind))
                     return;
 
                 _dispatchDepth++;
@@ -674,9 +702,11 @@ namespace Hecton8.Modding
                             entry.Handler = null;
                             _subscriptions[i] = entry;
                             _needsCompaction = true;
-                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Native event callback threw '{ex.Message}'.");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Native event callback threw '{ex.Message}'.");
                             Debug.LogError("[HectonEventBus] Native subscriber threw during payload dispatch.");
+#else
+                            ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
 #endif
                         }
                     }
@@ -792,7 +822,7 @@ namespace Hecton8.Modding
 
             internal void Publish(TEvent evt)
             {
-                if (!HectonEventBus.TryEnterDispatch())
+                if (!HectonEventBus.TryEnterDispatch(_eventHash))
                     return;
 
                 _dispatchDepth++;
@@ -841,9 +871,11 @@ namespace Hecton8.Modding
                             entry.Handler = null;
                             _subscriptions[i] = entry;
                             _needsCompaction = true;
-                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Event callback threw '{ex.Message}'.");
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Event callback threw '{ex.Message}'.");
                             Debug.LogError("[HectonEventBus] Subscriber threw during managed payload dispatch.");
+#else
+                            ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
 #endif
                         }
                     }

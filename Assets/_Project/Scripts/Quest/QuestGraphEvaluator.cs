@@ -126,13 +126,6 @@ namespace Hecton8.Quest
             }
 
             uint itemHash = payload.ItemHashId;
-            if (itemHash == 0u &&
-                InteractionEvents.TryResolveItem(in payload, out ItemData item) &&
-                item != null)
-            {
-                itemHash = QuestFlagHashKernel.ComputeStableHash(item.PersistentId);
-            }
-
             if (itemHash == 0u)
                 return;
 
@@ -218,10 +211,7 @@ namespace Hecton8.Quest
             if ((CraftingEventType)payload.EventType != CraftingEventType.CraftCompleted)
                 return;
 
-            if (!CraftingEvents.TryResolveItem(in payload, out ItemData resultItem) || resultItem == null)
-                return;
-
-            uint itemHash = QuestFlagHashKernel.ComputeStableHash(resultItem.PersistentId);
+            uint itemHash = payload.ResultItemHashId;
             if (itemHash == 0u)
                 return;
 

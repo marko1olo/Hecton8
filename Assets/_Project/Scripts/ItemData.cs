@@ -157,6 +157,8 @@ namespace Hecton8.Items
         [Tooltip("Direct salvage outputs. Recycling reads this authored table once; no recursive recipe expansion is performed.")]
         [SerializeField] private DeconstructYieldEntry[] deconstructYields = new DeconstructYieldEntry[0];
 
+        private int _persistentHashId;
+        private int _legacyNameHashId;
         private GameLanguage _cachedLanguage = (GameLanguage)(-1);
         private string _cachedItemName = string.Empty;
         private string _cachedDescription = string.Empty;
@@ -243,6 +245,8 @@ namespace Hecton8.Items
         /// Stable content identifier used by persistence-facing systems.
         /// </summary>
         public string PersistentId => string.IsNullOrWhiteSpace(stableId) ? name : stableId;
+        public int PersistentHashId => _persistentHashId;
+        public int LegacyNameHashId => _legacyNameHashId;
         public uint VulnerabilityMask => autoResolvePhysicalMetadata
             ? ItemPhysicalMetadataUtility.ResolveDefaultVulnerabilityMask(category, resourceFamily, PersistentId)
             : vulnerabilityMask;
@@ -292,16 +296,18 @@ namespace Hecton8.Items
             if (string.IsNullOrEmpty(id))
                 return false;
 
-            string persistentId = PersistentId;
-            if (string.Equals(persistentId, id, System.StringComparison.Ordinal))
-                return true;
+            return MatchesPersistentHash(LocHash.Compute(id));
+        }
 
-            return !string.Equals(name, persistentId, System.StringComparison.Ordinal) &&
-                   string.Equals(name, id, System.StringComparison.Ordinal);
+        public bool MatchesPersistentHash(int hashId)
+        {
+            return hashId != 0 &&
+                   (hashId == _persistentHashId || hashId == _legacyNameHashId);
         }
 
         private void OnEnable()
         {
+            RefreshPersistentHash();
             InvalidateLocalizedCache();
             EnsureLocalizedCache();
         }
@@ -315,6 +321,8 @@ namespace Hecton8.Items
             {
                 return;
             }
+
+            RefreshPersistentHash();
 
             if (width < 1)
                 width = 1;
@@ -350,6 +358,12 @@ namespace Hecton8.Items
             EnsureLocalizedCache();
         }
 #endif
+
+        private void RefreshPersistentHash()
+        {
+            _persistentHashId = LocHash.Compute(PersistentId);
+            _legacyNameHashId = LocHash.Compute(name);
+        }
 
         /// <summary>
         /// Returns the cached interaction prompt.

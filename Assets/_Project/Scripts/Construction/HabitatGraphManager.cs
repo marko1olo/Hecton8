@@ -69,6 +69,7 @@ namespace Hecton8.Construction
         internal const int MaxSiegeTargetCount = 64;
         private const float SiegeVulnerableIntegrityThreshold01 = 0.72f;
         private static readonly int CarbonFilterItemHashId = LocHash.Compute("Data_CarbonFilter");
+        private static readonly uint RuptureCascadeEventHash = unchecked((uint)LocHash.Compute("HabitatGraphManager.RuptureCascade"));
         private const string NativeMemoryOwner = nameof(HabitatGraphManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
@@ -539,6 +540,9 @@ namespace Hecton8.Construction
                 if (!baseModule.TryConsumePendingRuptureCascadeFailure())
                     continue;
 
+                if (!SystemDispatcher.TryConsumeBaseStressCascadeEvent(ResolveNodeIslandId(nodeIndex), RuptureCascadeEventHash))
+                    continue;
+
                 MarkNodeRuptured(nodeIndex);
                 RuptureConnectedEdges(nodeIndex);
                 topologyChanged = true;
@@ -569,6 +573,7 @@ namespace Hecton8.Construction
                 if (sourceNodeId != 0u)
                     MarkRuptureCascadeApplied(sourceNodeId);
 
+                int sourceIslandId = ResolveNodeIslandId(nodeIndex);
                 int edgeStart = _edgeOffsets[nodeIndex];
                 int edgeEnd = _edgeOffsets[nodeIndex + 1];
                 for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
@@ -592,9 +597,20 @@ namespace Hecton8.Construction
                         continue;
                     }
 
+                    if (!SystemDispatcher.TryConsumeBaseStressCascadeEvent(sourceIslandId, RuptureCascadeEventHash))
+                        continue;
+
                     neighborModule.ApplyRuptureCascadeStress(RuptureCascadeNeighborStressMultiplier);
                 }
             }
+        }
+
+        private int ResolveNodeIslandId(int nodeIndex)
+        {
+            if (nodeIndex < 0 || nodeIndex >= _nodeCount)
+                return 0;
+
+            return _nodes[nodeIndex].NetworkId;
         }
 
         private bool HasUnseveredRuntimeEdge(int sourceIndex, int destinationIndex)
@@ -1322,6 +1338,7 @@ namespace Hecton8.Construction
             for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
                 _traversalVisited[nodeIndex] = 0;
 
+            int componentIslandOrdinal = 0;
             for (int startNodeIndex = 0; startNodeIndex < _nodeCount; startNodeIndex++)
             {
                 if (_traversalVisited[startNodeIndex] != 0)
@@ -1359,10 +1376,12 @@ namespace Hecton8.Construction
 
                 bool componentLowPower = componentDraw > componentSupply + 0.001f &&
                                          PowerGridManager.ResolveProjectedBrownoutTier(componentSupply, componentDraw) != LogisticsBrownoutTier.None;
+                byte componentIslandId = (byte)math.min(componentIslandOrdinal, byte.MaxValue);
                 for (int queueIndex = 0; queueIndex < queueTail; queueIndex++)
                 {
                     int componentNodeIndex = _anchorTraversalQueue[queueIndex];
                     LogisticsNetworkGraph.LogisticsNode node = _nodes[componentNodeIndex];
+                    node.NetworkId = componentIslandId;
                     if (componentLowPower)
                         node.Flags |= LogisticsNodeFlags.Brownout;
                     else
@@ -1374,6 +1393,8 @@ namespace Hecton8.Construction
                     if (baseModule != null)
                         baseModule.SetAmbientLightsBrownout(componentLowPower);
                 }
+
+                componentIslandOrdinal++;
             }
         }
 

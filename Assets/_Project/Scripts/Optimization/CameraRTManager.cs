@@ -92,7 +92,7 @@ namespace Hecton8.Optimization
             
             // Query all Camera-owned RTs (zero-GC)
             _cameraRTs.Clear();
-            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory("Camera", _cameraRTs);
+            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.Camera, _cameraRTs);
             
             // Calculate total Camera RT memory (zero-GC loop)
             long totalBytes = 0L;

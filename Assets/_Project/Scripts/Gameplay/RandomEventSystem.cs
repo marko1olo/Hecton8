@@ -20,6 +20,10 @@
 //   • Никаких new/LINQ в SlowTick.
 // ============================================================================
 
+using System.Threading;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+using System.Collections.Generic;
+#endif
 using Hecton.Localization;
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
@@ -363,11 +367,12 @@ namespace Hecton8.Gameplay
         {
             PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
                 payload.EpicenterWS,
-                Mathf.Max(payload.ImpulseRadiusMeters, payload.ImpulseRadiusMeters * 4f),
-                Mathf.Clamp01(payload.ImpulseMagnitude / 48f),
+                math.max(payload.ImpulseRadiusMeters, payload.ImpulseRadiusMeters * 4f),
+                math.saturate(payload.ImpulseMagnitude / 48f),
                 8f,
                 FieldTargetRole.HazardProbe,
-                0));
+                0,
+                payload.ImpulseMagnitude * 1000f));
             EnsureInitialized();
             if (_pendingSeismicShockwaveCount + _nextFrameSeismicShockwaveCount >= PendingSeismicShockwaveCapacity)
                 return;
@@ -737,6 +742,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0.5f, 12f)] private float meteorWaterImpactDurationSeconds = 5.5f;
         [SerializeField, Range(0f, 1f)] private float meteorWaterImpactEnvelopeThreshold = 0.18f;
         [SerializeField] private GameObject meteorWaterSplashPrefab;
+        [SerializeField, Range(0, 32)] private int meteorWaterSplashPoolWarmupCount = 8;
         [SerializeField, Range(0f, 8f)] private float meteorWaterSplashPrefabLifetimeSeconds = 6f;
 
         [Header("Solar EMP Flare")]
@@ -755,10 +761,17 @@ namespace Hecton8.Gameplay
         private readonly Rigidbody[] _seismicBodyBuffer = new Rigidbody[48];
         private bool _registered;
         private bool _registeredRuntime;
+        private uint _eventRandomState = 0xA341316Cu;
         private float _meteorSeed = 99173f;
         private int _meteorLastBoomIndex = -1;
         private const float MeteorWaterPlaneY = 0f;
         private const float MeteorThunderSoundSpeedMetersPerSecond = 343f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const string MeteorSplashQuadVfxTypeName = "MeteorSplashQuadVfx";
+        private static readonly List<MonoBehaviour> _meteorSplashValidationScratch = new List<MonoBehaviour>(8);
+#endif
+#endif
         private bool _pendingMeteorWaterBoom;
         private Vector3 _pendingMeteorWaterBoomPosition;
         private float _pendingMeteorWaterBoomTimer;
@@ -900,11 +913,31 @@ namespace Hecton8.Gameplay
             => _eventTimers[(int)type] > 0f;
 
         public float GetEventTimeRemaining(RandomEventType type)
-            => Mathf.Max(0f, _eventTimers[(int)type]);
+            => math.max(0f, _eventTimers[(int)type]);
 
         public static float EvaluateMeteorFlashForSmoke(float eventAgeSeconds, float seed, float flashRate)
         {
             return RandomEventMeteorMath.EvaluateMeteorFlash(eventAgeSeconds, seed, flashRate);
+        }
+
+        public async Awaitable<bool> WarmMeteorSplashPoolAsync(
+            ObjectPoolManager objectPoolManager,
+            double frameBudgetMilliseconds,
+            CancellationToken cancellationToken)
+        {
+            if (objectPoolManager == null ||
+                meteorWaterSplashPrefab == null ||
+                meteorWaterSplashPoolWarmupCount <= 0)
+            {
+                return true;
+            }
+
+            ValidateMeteorSplashPrefabForCinematicFake(meteorWaterSplashPrefab);
+            return await objectPoolManager.WarmupPrefabAsync(
+                meteorWaterSplashPrefab,
+                meteorWaterSplashPoolWarmupCount,
+                frameBudgetMilliseconds,
+                cancellationToken);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -915,7 +948,7 @@ namespace Hecton8.Gameplay
         {
             if (IsEventActive(RandomEventType.BiolumStorm)) return;
             if (depth < 1000f) return;
-            if (UnityEngine.Random.value > biolumStormChance) return;
+            if (NextEventRandom01() > biolumStormChance) return;
 
             StartEvent(RandomEventType.BiolumStorm, biolumStormDuration, 0.8f);
             Shader.SetGlobalFloat(_ShaderBiolumStorm, 1f);
@@ -928,7 +961,7 @@ namespace Hecton8.Gameplay
         {
             if (IsEventActive(RandomEventType.ThermalEruption)) return;
             if (depth < 3000f) return; // Только в рифтовых зонах
-            if (UnityEngine.Random.value > thermalEruptionChance) return;
+            if (NextEventRandom01() > thermalEruptionChance) return;
 
             StartEvent(RandomEventType.ThermalEruption, thermalEruptionDuration, 1f);
             NotificationEvents.PushWarning(ResolveLocalized(
@@ -943,7 +976,7 @@ namespace Hecton8.Gameplay
         private void TryTriggerFaunaMigration()
         {
             if (IsEventActive(RandomEventType.FaunaMigration)) return;
-            if (UnityEngine.Random.value > faunaMigrationChance) return;
+            if (NextEventRandom01() > faunaMigrationChance) return;
 
             StartEvent(RandomEventType.FaunaMigration, faunaMigrationDuration, 0.5f);
             NotificationEvents.PushInfo(ResolveLocalized(
@@ -955,7 +988,7 @@ namespace Hecton8.Gameplay
         {
             if (IsEventActive(RandomEventType.HectonOSGlitch)) return;
             if (depth < 500f) return;
-            if (UnityEngine.Random.value > glitchChance) return;
+            if (NextEventRandom01() > glitchChance) return;
 
             StartEvent(RandomEventType.HectonOSGlitch, glitchDuration, 0.6f);
             Shader.SetGlobalFloat(_ShaderGlitchActive, 1f);
@@ -977,7 +1010,7 @@ namespace Hecton8.Gameplay
             }
 
             float resolvedChance = caveCollapseChance * settings.collapseChanceMultiplier;
-            if (UnityEngine.Random.value > Mathf.Clamp(resolvedChance, 0f, 1f)) return;
+            if (NextEventRandom01() > math.saturate(resolvedChance)) return;
             if (!TryExecuteSeismicShockwave(playerPosition, targetVolume, settings, out SeismicShockwaveEvent seismicEvent))
                 return;
 
@@ -991,7 +1024,7 @@ namespace Hecton8.Gameplay
         private void TryTriggerMeteorShower()
         {
             if (IsEventActive(RandomEventType.MeteorShower)) return;
-            if (UnityEngine.Random.value > meteorShowerChance) return;
+            if (NextEventRandom01() > meteorShowerChance) return;
 
             BeginMeteorShower();
             StartEvent(RandomEventType.MeteorShower, meteorShowerDuration, meteorShowerIntensity);
@@ -1004,7 +1037,7 @@ namespace Hecton8.Gameplay
         private void TryTriggerSolarFlare()
         {
             if (IsEventActive(RandomEventType.SolarFlare)) return;
-            if (UnityEngine.Random.value > solarFlareChance) return;
+            if (NextEventRandom01() > solarFlareChance) return;
 
             StartEvent(RandomEventType.SolarFlare, solarFlareDuration, solarFlareIntensity);
             NotificationEvents.PushWarning("SOLAR FLARE - ELECTROMAGNETIC PULSE DETECTED. BASE POWER COLLAPSE EXPECTED.");
@@ -1044,14 +1077,18 @@ namespace Hecton8.Gameplay
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogEventStarted(RandomEventType type, float duration, float intensity)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[RandomEvent] Started");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogEventEnded(RandomEventType type)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[RandomEvent] Ended");
+#endif
         }
 
         private bool ResolveSurvivalSystem()
@@ -1076,19 +1113,46 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
+        private uint NextEventRandomState()
+        {
+            uint state = _eventRandomState;
+            if (state == 0u)
+                state = 0xA341316Cu;
+
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            _eventRandomState = state != 0u ? state : 0x9E3779B9u;
+            return _eventRandomState;
+        }
+
+        private float NextEventRandom01()
+        {
+            return (NextEventRandomState() & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private int NextEventRandomRange(int minInclusive, int maxExclusive)
+        {
+            int span = maxExclusive - minInclusive;
+            if (span <= 0)
+                return minInclusive;
+
+            return minInclusive + (int)(NextEventRandomState() % (uint)span);
+        }
+
         private void BeginMeteorShower()
         {
-            _meteorSeed = UnityEngine.Random.Range(1, 16777215);
+            _meteorSeed = NextEventRandomRange(1, 16777215);
             _meteorLastBoomIndex = -1;
-            PublishMeteorShowerGlobals(0f, Mathf.Clamp01(meteorShowerIntensity), 1f);
+            PublishMeteorShowerGlobals(0f, math.saturate(meteorShowerIntensity), 1f);
         }
 
         private void PublishMeteorShowerMegaBus()
         {
             MeteorShowerEvent meteorEvent = default;
-            meteorEvent.DurationSeconds = Mathf.Max(0f, meteorShowerDuration);
-            meteorEvent.Intensity = Mathf.Clamp01(meteorShowerIntensity);
-            meteorEvent.Seed = Mathf.RoundToInt(_meteorSeed);
+            meteorEvent.DurationSeconds = math.max(0f, meteorShowerDuration);
+            meteorEvent.Intensity = math.saturate(meteorShowerIntensity);
+            meteorEvent.Seed = (int)math.round(_meteorSeed);
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
@@ -1110,12 +1174,12 @@ namespace Hecton8.Gameplay
         private void TickMeteorShowerEvent(float dt)
         {
             float remaining = GetEventTimeRemaining(RandomEventType.MeteorShower);
-            float safeDuration = Mathf.Max(0.01f, meteorShowerDuration);
-            float eventAge = Mathf.Max(0f, safeDuration - remaining);
-            float fadeWindow = Mathf.Max(0.01f, meteorShowerFadeSeconds);
-            float fadeIn = Mathf.Clamp01(eventAge / fadeWindow);
-            float fadeOut = Mathf.Clamp01(remaining / fadeWindow);
-            float envelope = Mathf.Clamp01(meteorShowerIntensity) * Mathf.Min(fadeIn, fadeOut);
+            float safeDuration = math.max(0.01f, meteorShowerDuration);
+            float eventAge = math.max(0f, safeDuration - remaining);
+            float fadeWindow = math.max(0.01f, meteorShowerFadeSeconds);
+            float fadeIn = math.saturate(eventAge / fadeWindow);
+            float fadeOut = math.saturate(remaining / fadeWindow);
+            float envelope = math.saturate(meteorShowerIntensity) * math.min(fadeIn, fadeOut);
             float flash = EvaluateMeteorFlashForSmoke(eventAge, _meteorSeed, meteorShowerFlashRate);
             _debugMeteorFlash = flash;
             PublishMeteorShowerGlobals(eventAge, envelope, flash);
@@ -1128,27 +1192,28 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalVector(
                 _ShaderMeteorShowerParams,
                 new Vector4(
-                    Mathf.Clamp01(intensity),
+                    math.saturate(intensity),
                     _meteorSeed,
-                    Mathf.Clamp01(flash),
-                    Mathf.Max(0f, eventAge)));
+                    math.saturate(flash),
+                    math.max(0f, eventAge)));
             Shader.SetGlobalVector(
                 _ShaderMeteorShowerDirection,
                 new Vector4(
                     skyDirection.x,
                     skyDirection.y,
-                    Mathf.Max(0.02f, meteorShowerStreakLength),
-                    Mathf.Max(0.0005f, meteorShowerStreakWidth)));
+                    math.max(0.02f, meteorShowerStreakLength),
+                    math.max(0.0005f, meteorShowerStreakWidth)));
         }
 
         private Vector2 ResolveMeteorSkyDirection()
         {
             Vector2 direction = meteorShowerSkyDirection;
-            float magnitudeSqr = direction.sqrMagnitude;
+            float2 direction2 = new float2(direction.x, direction.y);
+            float magnitudeSqr = math.lengthsq(direction2);
             if (magnitudeSqr < 0.0001f)
                 direction = new Vector2(-0.82f, -0.38f);
             else
-                direction /= Mathf.Sqrt(magnitudeSqr);
+                direction = new Vector2(direction2.x, direction2.y) * math.rsqrt(magnitudeSqr);
 
             return direction;
         }
@@ -1158,7 +1223,7 @@ namespace Hecton8.Gameplay
             if (flash < meteorBoomFlashThreshold || envelope <= 0.001f)
                 return;
 
-            int boomIndex = Mathf.FloorToInt(eventAge * Mathf.Max(0.1f, meteorShowerFlashRate));
+            int boomIndex = (int)math.floor(eventAge * math.max(0.1f, meteorShowerFlashRate));
             if (boomIndex == _meteorLastBoomIndex)
                 return;
 
@@ -1172,23 +1237,23 @@ namespace Hecton8.Gameplay
             Vector3 sourcePosition = ResolveMeteorBoomPosition(playerTransform.position, boomIndex);
             spatialAudioManager.PlayMeteorShowerBoom(
                 sourcePosition,
-                Mathf.Clamp01(flash * envelope * meteorBoomIntensity),
+                math.saturate(flash * envelope * meteorBoomIntensity),
                 meteorBoomLowPassCutoffHz);
             TryPublishMeteorWaterImpact(sourcePosition, playerTransform.position, flash, envelope);
         }
 
         private Vector3 ResolveMeteorBoomPosition(Vector3 playerPosition, int boomIndex)
         {
-            float angle = RandomEventMeteorMath.Hash01(unchecked((uint)boomIndex), unchecked((uint)Mathf.RoundToInt(_meteorSeed))) * Mathf.PI * 2f;
-            Vector3 horizontal = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            float angle = RandomEventMeteorMath.Hash01(unchecked((uint)boomIndex), unchecked((uint)(int)math.round(_meteorSeed))) * math.PI * 2f;
+            Vector3 horizontal = new Vector3(math.cos(angle), 0f, math.sin(angle));
             return playerPosition
-                 + horizontal * Mathf.Max(0f, meteorBoomHorizontalOffsetMeters)
-                 + Vector3.up * Mathf.Max(4f, meteorBoomVerticalOffsetMeters);
+                 + horizontal * math.max(0f, meteorBoomHorizontalOffsetMeters)
+                 + Vector3.up * math.max(4f, meteorBoomVerticalOffsetMeters);
         }
 
         private void TryPublishMeteorWaterImpact(Vector3 meteorSourcePosition, Vector3 observerPosition, float flash, float envelope)
         {
-            float impactEnvelope = Mathf.Clamp01(flash * envelope);
+            float impactEnvelope = math.saturate(flash * envelope);
             if (impactEnvelope < meteorWaterImpactEnvelopeThreshold)
                 return;
 
@@ -1197,8 +1262,8 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 impactPosition = new Vector3(meteorSourcePosition.x, seaLevelY, meteorSourcePosition.z);
-            float radius = Mathf.Max(4f, meteorWaterImpactRadiusMeters);
-            float duration = Mathf.Max(0.5f, meteorWaterImpactDurationSeconds);
+            float radius = math.max(4f, meteorWaterImpactRadiusMeters);
+            float duration = math.max(0.5f, meteorWaterImpactDurationSeconds);
             PublishMeteorWaterImpactGlobals(impactPosition, radius, duration, impactEnvelope);
             PublishMeteorSplashFeedback(impactPosition, radius, impactEnvelope);
             SpawnMeteorWaterSplashPrefab(impactPosition);
@@ -1212,7 +1277,7 @@ namespace Hecton8.Gameplay
         private static void PublishMeteorSplashFeedback(Vector3 impactPosition, float radius, float intensity)
         {
             Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(impactPosition);
-            float clampedIntensity = Mathf.Clamp01(intensity);
+            float clampedIntensity = math.saturate(intensity);
             SplashEvent splashEvent = new SplashEvent
             {
                 RuntimePosition = new float3(impactPosition.x, impactPosition.y, impactPosition.z),
@@ -1221,8 +1286,8 @@ namespace Hecton8.Gameplay
                     absoluteUniversePosition.y,
                     absoluteUniversePosition.z),
                 SurfaceNormal = new float3(0f, 1f, 0f),
-                ImpactSpeedMetersPerSecond = Mathf.Lerp(18f, 54f, clampedIntensity),
-                KineticEnergyJoules = radius * radius * Mathf.Lerp(480f, 3200f, clampedIntensity),
+                ImpactSpeedMetersPerSecond = math.lerp(18f, 54f, clampedIntensity),
+                KineticEnergyJoules = radius * radius * math.lerp(480f, 3200f, clampedIntensity),
                 SubmersionFactor = 1f,
                 SampleIndex = -1
             };
@@ -1243,12 +1308,59 @@ namespace Hecton8.Gameplay
                 pool.Despawn(instance, meteorWaterSplashPrefabLifetimeSeconds);
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void ValidateMeteorSplashPrefabForCinematicFake(GameObject prefab)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (prefab == null)
+                return;
+
+            if (prefab.GetComponentInChildren<ParticleSystem>(true) != null)
+            {
+                Debug.LogWarning(
+                    "[RandomEventSystem] Meteor splash prefab contains ParticleSystem. Replace with MeteorSplashQuadVfx two-quad DrawMeshInstanced fake.",
+                    prefab);
+            }
+
+            if (!HasMeteorSplashQuadVfx(prefab))
+            {
+                Debug.LogWarning(
+                    "[RandomEventSystem] Meteor splash prefab has no MeteorSplashQuadVfx. Splash pool is prewarmed, but the asset is not the two-quad cinematic fake.",
+                    prefab);
+            }
+#endif
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static bool HasMeteorSplashQuadVfx(GameObject prefab)
+        {
+            if (prefab == null)
+                return false;
+
+            _meteorSplashValidationScratch.Clear();
+            prefab.GetComponentsInChildren(true, _meteorSplashValidationScratch);
+            for (int i = 0; i < _meteorSplashValidationScratch.Count; i++)
+            {
+                MonoBehaviour behaviour = _meteorSplashValidationScratch[i];
+                if (behaviour != null && behaviour.GetType().Name == MeteorSplashQuadVfxTypeName)
+                {
+                    _meteorSplashValidationScratch.Clear();
+                    return true;
+                }
+            }
+
+            _meteorSplashValidationScratch.Clear();
+            return false;
+        }
+#endif
+
         private void QueueMeteorWaterBoom(Vector3 impactPosition, Vector3 observerPosition, float intensity)
         {
             _pendingMeteorWaterBoom = true;
             _pendingMeteorWaterBoomPosition = impactPosition;
             _pendingMeteorWaterBoomTimer = ResolveMeteorThunderDelaySeconds(impactPosition, observerPosition);
-            _pendingMeteorWaterBoomIntensity = Mathf.Clamp01(intensity * meteorBoomIntensity);
+            _pendingMeteorWaterBoomIntensity = math.saturate(intensity * meteorBoomIntensity);
         }
 
         private static float ResolveMeteorThunderDelaySeconds(Vector3 impactPosition, Vector3 observerPosition)
@@ -1256,7 +1368,7 @@ namespace Hecton8.Gameplay
             AbsoluteUniversePosition impactAup = AbsoluteUniversePosition.FromRuntimePosition(impactPosition);
             AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in impactAup, in observerAup);
-            double distanceMeters = math.sqrt(math.max(0d, distanceSq));
+            double distanceMeters = distanceSq * math.rsqrt(math.max(0.000001d, distanceSq));
             return (float)(distanceMeters / MeteorThunderSoundSpeedMetersPerSecond);
         }
 
@@ -1273,7 +1385,7 @@ namespace Hecton8.Gameplay
             if (!_pendingMeteorWaterBoom)
                 return;
 
-            _pendingMeteorWaterBoomTimer -= Mathf.Max(0f, dt);
+            _pendingMeteorWaterBoomTimer -= math.max(0f, dt);
             if (_pendingMeteorWaterBoomTimer > 0f)
                 return;
 
@@ -1298,10 +1410,10 @@ namespace Hecton8.Gameplay
         {
             Shader.SetGlobalVector(
                 _ShaderMeteorWaterImpactPosition,
-                new Vector4(impactPosition.x, impactPosition.y, impactPosition.z, Mathf.Clamp01(intensity)));
+                new Vector4(impactPosition.x, impactPosition.y, impactPosition.z, math.saturate(intensity)));
             Shader.SetGlobalVector(
                 _ShaderMeteorWaterImpactParams,
-                new Vector4(Mathf.Max(0f, radius), Mathf.Max(0f, duration), Time.time, Mathf.Clamp01(intensity)));
+                new Vector4(math.max(0f, radius), math.max(0f, duration), Time.time, math.saturate(intensity)));
         }
 
         private bool TryResolveSeismicContext(
@@ -1325,7 +1437,7 @@ namespace Hecton8.Gameplay
             if (voxelEngine == null || !voxelEngine.TryGetNearestActiveVolume(playerPosition, out targetVolume) || targetVolume == null)
                 return false;
 
-            float maxTargetRadius = Mathf.Max(4f, seismicTargetRadius);
+            float maxTargetRadius = math.max(4f, seismicTargetRadius);
             if (IsAupDistanceGreater(targetVolume.generationPosition, playerPosition, maxTargetRadius))
                 return false;
 
@@ -1364,7 +1476,7 @@ namespace Hecton8.Gameplay
             if (targetVolume == null)
                 return false;
 
-            int stampCount = UnityEngine.Random.Range(settings.stampCountMin, settings.stampCountMax + 1);
+            int stampCount = NextEventRandomRange(settings.stampCountMin, settings.stampCountMax + 1);
             uint stableSeed = unchecked(((uint)Time.frameCount * 2654435761u) ^ (uint)targetVolume.RuntimeStamp);
             if (!targetVolume.TryApplySeismicShockwave(
                     playerPosition,
@@ -1382,7 +1494,7 @@ namespace Hecton8.Gameplay
             ApplySeismicImpulse(playerPosition, settings.impulseRadius, settings.impulseMagnitude);
             Vector3 epicenterAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(playerPosition);
             Vector3 trenchDirection = ResolveSeismicEventLineDirection(epicenterAup, stableSeed);
-            float halfTrenchLength = Mathf.Max(2f, settings.impulseRadius * 0.5f);
+            float halfTrenchLength = math.max(2f, settings.impulseRadius * 0.5f);
             seismicEvent = new SeismicShockwaveEvent(
                 playerPosition,
                 settings.impulseRadius,
@@ -1395,8 +1507,8 @@ namespace Hecton8.Gameplay
 
         private static Vector3 ResolveSeismicEventLineDirection(Vector3 absoluteEpicenter, uint stableSeed)
         {
-            uint seedA = unchecked((uint)Mathf.RoundToInt(absoluteEpicenter.x * 0.25f));
-            uint seedB = unchecked((uint)Mathf.RoundToInt(absoluteEpicenter.z * 0.25f));
+            uint seedA = unchecked((uint)(int)math.round(absoluteEpicenter.x * 0.25f));
+            uint seedB = unchecked((uint)(int)math.round(absoluteEpicenter.z * 0.25f));
             uint state = seedA * 747796405u + seedB * 2891336453u + stableSeed;
             state ^= state >> 16;
             state *= 2246822519u;
@@ -1404,24 +1516,23 @@ namespace Hecton8.Gameplay
             state *= 3266489917u;
             state ^= state >> 16;
 
-            float angle = (state & 0x00FFFFFFu) * (Mathf.PI * 2f / 16777215f);
-            Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
-            return direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
+            float angle = (state & 0x00FFFFFFu) * (math.PI * 2f / 16777215f);
+            return new Vector3(math.cos(angle), 0f, math.sin(angle));
         }
 
         private void ApplySeismicImpulse(Vector3 epicenter, float radius, float impulseMagnitude)
         {
-            int overlapCapacity = Mathf.Clamp(seismicOverlapCapacity, 16, _seismicOverlapBuffer.Length);
+            int overlapCapacity = math.clamp(seismicOverlapCapacity, 16, _seismicOverlapBuffer.Length);
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 epicenter,
-                Mathf.Max(1f, radius),
+                math.max(1f, radius),
                 _seismicOverlapBuffer,
                 HectonLayerMasks.DefaultRaycastLayerMask,
                 QueryTriggerInteraction.Ignore);
             if (hitCount <= 0)
                 return;
 
-            int uniqueCapacity = Mathf.Clamp(seismicUniqueBodyCapacity, 16, _seismicBodyBuffer.Length);
+            int uniqueCapacity = math.clamp(seismicUniqueBodyCapacity, 16, _seismicBodyBuffer.Length);
             int uniqueBodyCount = 0;
             for (int hitIndex = 0; hitIndex < hitCount && hitIndex < overlapCapacity; hitIndex++)
             {
@@ -1452,7 +1563,7 @@ namespace Hecton8.Gameplay
                     break;
             }
 
-            float safeRadius = Mathf.Max(1f, radius);
+            float safeRadius = math.max(1f, radius);
             for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
             {
                 Rigidbody body = _seismicBodyBuffer[bodyIndex];
@@ -1466,18 +1577,27 @@ namespace Hecton8.Gameplay
 
                 if (distance <= 0.0001f)
                     direction = Vector3.up;
-                direction.y = Mathf.Max(direction.y, 0.25f);
-                direction.Normalize();
+                float3 impulseDirection = new float3(direction.x, math.max(direction.y, 0.25f), direction.z);
+                float impulseDirectionLengthSq = math.lengthsq(impulseDirection);
+                if (impulseDirectionLengthSq <= 0.0001f)
+                {
+                    direction = Vector3.up;
+                }
+                else
+                {
+                    impulseDirection *= math.rsqrt(impulseDirectionLengthSq);
+                    direction = new Vector3(impulseDirection.x, impulseDirection.y, impulseDirection.z);
+                }
 
-                float distance01 = 1f - Mathf.Clamp01(distance / safeRadius);
-                float resolvedImpulse = impulseMagnitude * Mathf.Pow(distance01, 0.65f);
+                float distance01 = 1f - math.saturate(distance / safeRadius);
+                float resolvedImpulse = impulseMagnitude * math.pow(distance01, 0.65f);
                 PhysicsForceRouter.QueueForce(body, direction * resolvedImpulse, ForceMode.Impulse);
             }
         }
 
         private static bool IsAupDistanceGreater(Vector3 runtimeA, Vector3 runtimeB, float thresholdMeters)
         {
-            float safeThreshold = Mathf.Max(0f, thresholdMeters);
+            float safeThreshold = math.max(0f, thresholdMeters);
             AbsoluteUniversePosition aupA = AbsoluteUniversePosition.FromRuntimePosition(runtimeA);
             AbsoluteUniversePosition aupB = AbsoluteUniversePosition.FromRuntimePosition(runtimeB);
             return AbsoluteUniversePosition.DistanceSq(in aupA, in aupB) > (double)safeThreshold * safeThreshold;
@@ -1493,7 +1613,7 @@ namespace Hecton8.Gameplay
             AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntime);
             double3 delta = toAup.ToAbsoluteDouble3() - fromAup.ToAbsoluteDouble3();
             double distanceSq = math.dot(delta, delta);
-            double resolvedDistance = math.sqrt(math.max(0d, distanceSq));
+            double resolvedDistance = distanceSq * math.rsqrt(math.max(0.000001d, distanceSq));
             distance = resolvedDistance > float.MaxValue ? float.MaxValue : (float)resolvedDistance;
             direction = resolvedDistance > 0.0001d
                 ? new Vector3(

@@ -31,7 +31,8 @@ namespace Hecton8.Core
         DroneFleetStatus = 11,
         ModCriticalMemoryEviction = 12,
         PerformanceWarning = 13,
-        BootstrapDuration = 14
+        BootstrapDuration = 14,
+        CatastrophicCascadePrevented = 15
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -166,6 +167,11 @@ namespace Hecton8.Core
             Publish(TelemetryEventType.ItemCrafted, ComputeHash(itemPersistentId), 0u, 1f, default);
         }
 
+        public static void PublishItemCrafted(uint itemHashId)
+        {
+            Publish(TelemetryEventType.ItemCrafted, itemHashId, 0u, 1f, default);
+        }
+
         public static void PublishBootstrapDependencyCycle(string serviceId, string dependencyId)
         {
             Publish(
@@ -270,6 +276,19 @@ namespace Hecton8.Core
         public static void PublishPerformanceWarning(uint warningHash, uint contextHash, float scalarValue)
         {
             Publish(TelemetryEventType.PerformanceWarning, warningHash, contextHash, scalarValue, default);
+        }
+
+        /// <summary>
+        /// Publishes a BaseEvents cascade breaker trip using numeric IslandID/event hashes only.
+        /// </summary>
+        public static void PublishCatastrophicCascadePrevented(uint islandId, uint eventHash, int droppedCount)
+        {
+            Publish(
+                TelemetryEventType.CatastrophicCascadePrevented,
+                islandId,
+                eventHash,
+                math.max(1f, droppedCount),
+                default);
         }
 
         /// <summary>

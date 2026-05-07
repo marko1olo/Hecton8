@@ -118,6 +118,11 @@ Shader "HECTON/Terrain/TerrainMaster"
         float4 _HectonDistantTerrainShadowRect;
         float4 _HectonDistantTerrainShadowParams;
 
+        float3 HectonTerrainSanitizePositionOS(float3 positionOS)
+        {
+            return all(isfinite(positionOS)) ? positionOS : float3(0.0, 0.0, 0.0);
+        }
+
         // -------------------------------------------------------------
         // Texture array slice: vertex alpha selects biome, vertex red slope selects material offset.
         // -------------------------------------------------------------
@@ -235,13 +240,17 @@ Shader "HECTON/Terrain/TerrainMaster"
             return HectonResolveTerrainNormalOffsetAtUv(uv, dominantAxis, normalWS, strength, slice);
         }
 
-        float2 HectonResolveTerrainBumpOffset(half3 viewDirectionWS, half dominantAxis, half height01)
+        float2 HectonResolveTerrainBumpOffset(half3 viewDirectionWS, half3 normalWS, half dominantAxis, half height01)
         {
             half strength = saturate((half)_BumpOffsetStrength);
             if (strength <= 0.0001h)
                 return float2(0.0, 0.0);
 
             half3 viewDir = normalize(viewDirectionWS);
+            strength *= saturate(dot(viewDir, normalize(normalWS)) * 4.0h);
+            if (strength <= 0.0001h)
+                return float2(0.0, 0.0);
+
             float2 projectedView;
             half axisDepth;
             if (dominantAxis < 0.5h)
@@ -445,6 +454,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma multi_compile_fragment _ _REFLECTION_PROBE_BLENDING
             #pragma multi_compile_fragment _ _REFLECTION_PROBE_BOX_PROJECTION
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
+            #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             // Fog
             #pragma multi_compile_fog
             // GPU instancing
@@ -492,7 +502,8 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
-                VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
+                float3 safePositionOS = HectonTerrainSanitizePositionOS(IN.positionOS.xyz);
+                VertexPositionInputs posInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs   nrmInputs = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
 
                 OUT.positionCS = posInputs.positionCS;
@@ -535,7 +546,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 float2 offsetTerrainUv = terrainUv;
                 [branch]
                 if (_BumpOffsetStrength > 0.0001)
-                    offsetTerrainUv += HectonResolveTerrainBumpOffset((half3)viewDirectionWS, terrainDominantAxis, terrainHeightSample.a);
+                    offsetTerrainUv += HectonResolveTerrainBumpOffset((half3)viewDirectionWS, (half3)IN.normalWS, terrainDominantAxis, terrainHeightSample.a);
 
                 half4 terrainSample = terrainHeightSample;
                 [branch]
@@ -725,7 +736,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
-                float3 posWS = TransformObjectToWorld(IN.positionOS.xyz);
+                float3 posWS = TransformObjectToWorld(HectonTerrainSanitizePositionOS(IN.positionOS.xyz));
                 float3 nrmWS = TransformObjectToWorldNormal(IN.normalOS);
 
                 #if defined(_CASTING_PUNCTUAL_LIGHT_SHADOW)
@@ -794,7 +805,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
-                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
+                OUT.positionCS = TransformObjectToHClip(HectonTerrainSanitizePositionOS(IN.positionOS.xyz));
                 return OUT;
             }
 
@@ -855,7 +866,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
-                VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
+                VertexPositionInputs posInputs = GetVertexPositionInputs(HectonTerrainSanitizePositionOS(IN.positionOS.xyz));
                 VertexNormalInputs   nrmInputs = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
 
                 OUT.positionCS = posInputs.positionCS;

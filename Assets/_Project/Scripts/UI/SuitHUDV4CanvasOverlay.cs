@@ -29,7 +29,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, ISceneBootstrapEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, IScannerInterferenceUiSink, ISceneBootstrapEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener
     {
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
@@ -94,7 +94,6 @@ namespace Hecton8.UI
         private const byte CriticalMaskHealth = 1 << 2;
         private const float ToolDepletedWarningDurationSeconds = 2.25f;
         private const float SavingProgressFadeSpeed = 6.5f;
-        private const float SavingProgressSpinDegreesPerSecond = 260f;
         private const float SavingProgressVisibleEpsilon = 0.001f;
         private const float SavingProgressMinimumVisibleSeconds = 0.35f;
         private const float SavingProgressHapticCooldownSeconds = 0.5f;
@@ -106,6 +105,8 @@ namespace Hecton8.UI
         private const float JitterFrequencyRadians = 23f;
         private const float DiegeticHudDistanceMeters = 0.5f;
         private const float DiegeticHudWorldScale = 0.0005f;
+        private const float HelmetScissorInsetPixelsX = 48f;
+        private const float HelmetScissorInsetPixelsY = 36f;
         private const float ProjectionNearClipSafetyPaddingMeters = 0.05f;
         private const float ProjectionPosePositionTolerance = 0.0001f;
         private const float ProjectionPoseScaleTolerance = 0.000001f;
@@ -113,6 +114,8 @@ namespace Hecton8.UI
         private const string ThreatChevronShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const string DitheredUiBackgroundShaderPath = "Assets/_Project/Shaders/UI/Hecton_IGNDitheredBackground.shader";
         private const string DitheredUiBackgroundShaderName = "Hecton8/UI/IGNDitheredBackground";
+        private const string DataRecPulseShaderPath = "Assets/_Project/Shaders/UI/Hecton_DataRecPulse.shader";
+        private const string DataRecPulseShaderName = "Hecton8/UI/DataRecPulse";
         private const int HudPerformanceWarningCooldownFrames = 30;
         private const string WorldGeometrySortingLayer = "WorldGeometry";
         private const int MaxThreatChevronCount = 4;
@@ -346,6 +349,7 @@ namespace Hecton8.UI
         [SerializeField, Range(8f, 36f)] private float reticleLineLength = 22f;
         [SerializeField, Range(1f, 6f)] private float reticleLineThickness = 2f;
         [SerializeField, Range(4f, 24f)] private float reticleBracketLength = 10f;
+        private const float ReticleSquaredSpeedSpreadScale = 0.125f;
 
         [Header("Gauge Ring Controls")]
         [SerializeField] private float gaugeColumnSpacing = 82f;
@@ -443,6 +447,7 @@ namespace Hecton8.UI
         private RectTransform _root;
         private RectTransform _ornamentRoot;
         private CanvasGroup _rootCanvasGroup;
+        private RectMask2D _rootScissorMask;
         private CanvasGroup _ornamentCanvasGroup;
         private RectTransform _headerRoot;
         private RectTransform _reticleRoot;
@@ -538,6 +543,7 @@ namespace Hecton8.UI
         private float _displayOxygen01 = 1f;
         private float _displayHealth01 = 1f;
         private float _displayPower01 = 1f;
+        private float _targetPower01 = 1f;
         private float _reticleSpreadPixels;
         private float _appliedReticleSpreadPixels = float.NaN;
         private float _lastDepth;
@@ -611,15 +617,16 @@ namespace Hecton8.UI
         private float _toolDepletedWarningTimer;
         private float _savingProgressAlpha;
         private float _savingProgressTargetAlpha;
-        private float _savingProgressSpinDegrees;
         private float _savingProgressHideNotBeforeTime;
         private float _threatChevronPulseTime;
+        private float _scannerInterferencePhase;
         private float _jitterTime;
         private int _nextHudPerformanceWarningFrame;
         private int _toolDepletedVersion;
         private int _toolDepletedHashId;
         private int _corruptionFrameVersion;
         private bool _savingProgressHidePending;
+        private bool _scannerInterferenceActive;
         private bool _biosRecoveryMode;
         private Transform _defaultCanvasParent;
         private int _defaultCanvasSiblingIndex = -1;
@@ -675,6 +682,7 @@ namespace Hecton8.UI
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private Material _ditheredUiBackgroundMaterial;
         private Material _acousticRadarMaterial;
+        private Material _savingProgressDataPulseMaterial;
         private Texture2D _acousticRadarTexture;
         private int _acousticRadarResolution;
         private float _acousticRadarPeakIntensity;
@@ -842,10 +850,10 @@ namespace Hecton8.UI
                 Color32 vertexColor)
             {
                 int startIndex = vertexHelper.currentVertCount;
-                Vector2 outerA = new Vector2(Mathf.Cos(angleA), Mathf.Sin(angleA)) * outerRadius;
-                Vector2 outerB = new Vector2(Mathf.Cos(angleB), Mathf.Sin(angleB)) * outerRadius;
-                Vector2 innerA = new Vector2(Mathf.Cos(angleA), Mathf.Sin(angleA)) * innerRadius;
-                Vector2 innerB = new Vector2(Mathf.Cos(angleB), Mathf.Sin(angleB)) * innerRadius;
+                Vector2 outerA = new Vector2(math.cos(angleA), math.sin(angleA)) * outerRadius;
+                Vector2 outerB = new Vector2(math.cos(angleB), math.sin(angleB)) * outerRadius;
+                Vector2 innerA = new Vector2(math.cos(angleA), math.sin(angleA)) * innerRadius;
+                Vector2 innerB = new Vector2(math.cos(angleB), math.sin(angleB)) * innerRadius;
 
                 UIVertex vertex = UIVertex.simpleVert;
                 vertex.color = vertexColor;
@@ -930,6 +938,7 @@ namespace Hecton8.UI
             TryRegisterRuntimeTick();
             EnsureDitheredUiBackgroundRuntimeResources();
             EnsureAcousticRadarRuntimeResources();
+            EnsureSavingProgressPulseRuntimeResources();
             EnsureThreatChevronRuntimeResources();
         }
 
@@ -959,7 +968,6 @@ namespace Hecton8.UI
             _toolDepletedWarningTimer = 0f;
             _savingProgressTargetAlpha = 0f;
             _savingProgressAlpha = 0f;
-            _savingProgressSpinDegrees = 0f;
             _savingProgressHideNotBeforeTime = 0f;
             _savingProgressHidePending = false;
             _traumaGlitchIntensity = 0f;
@@ -974,6 +982,7 @@ namespace Hecton8.UI
             _threatChevronVisibleCount = 0;
             DisposeDitheredUiBackgroundRuntimeResources();
             DisposeAcousticRadarRuntimeResources();
+            DisposeSavingProgressPulseRuntimeResources();
             DisposeThreatChevronRuntimeResources();
             DisposeScannerHologramRuntimeResources();
 
@@ -987,6 +996,7 @@ namespace Hecton8.UI
             UnregisterHudProxyLight();
             DisposeDitheredUiBackgroundRuntimeResources();
             DisposeAcousticRadarRuntimeResources();
+            DisposeSavingProgressPulseRuntimeResources();
             DisposeThreatChevronRuntimeResources();
             DisposeScannerHologramRuntimeResources();
         }
@@ -1219,6 +1229,7 @@ namespace Hecton8.UI
             _threatChevronPulseTime += Mathf.Max(0f, deltaTime);
             RefreshVisuals(deltaTime, refreshMediumCadence, refreshSlowCadence);
             PublishHudSolveWarningIfNeeded(hudSolveStartTimestamp);
+            RuntimeWatchdog.MarkHudCanvasUpdated(targetCanvas);
         }
 
         private void PublishHudSolveWarningIfNeeded(long startTimestamp)
@@ -1281,6 +1292,7 @@ namespace Hecton8.UI
                 UpdateProjectionCanvasPose(targetCanvas.transform as RectTransform, ResolveUiReferenceResolution());
 
             float unscaledDeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            _displayPower01 = DampHudValue(_displayPower01, _targetPower01, BatteryGaugeDamping, unscaledDeltaTime);
             RenderScannerHologram(unscaledDeltaTime);
             RenderThreatChevrons();
 
@@ -1301,8 +1313,8 @@ namespace Hecton8.UI
             _jitterTime += unscaledDeltaTime;
             float amplitude = JitterAmplitudePixels * jitterStrength;
             Vector2 jitterOffset = new Vector2(
-                Mathf.Sin(_jitterTime * JitterFrequencyRadians) * amplitude,
-                Mathf.Sin(_jitterTime * (JitterFrequencyRadians * 0.73f)) * amplitude * 0.58f);
+                math.sin(_jitterTime * JitterFrequencyRadians) * amplitude,
+                math.sin(_jitterTime * (JitterFrequencyRadians * 0.73f)) * amplitude * 0.58f);
             _root.anchoredPosition = _rootBaseAnchoredPosition + jitterOffset;
         }
 
@@ -1323,6 +1335,23 @@ namespace Hecton8.UI
 
             if (eventType == SaveEventType.SaveCompleted || eventType == SaveEventType.SaveFailed)
                 RequestSavingProgressHide();
+        }
+
+        public void SetScannerInterferenceActive(bool active)
+        {
+            if (_scannerInterferenceActive == active)
+                return;
+
+            _scannerInterferenceActive = active;
+            if (active)
+            {
+                _scannerInterferencePhase = 0f;
+                SetScannerFlatHologramVisible(true);
+                return;
+            }
+
+            if (!HasActiveScannerHologramSnapshot())
+                SetScannerFlatHologramVisible(false);
         }
 
         private void BeginSavingProgressMappedWrite()
@@ -1820,7 +1849,9 @@ namespace Hecton8.UI
             Transform cameraTransform = projectionCamera.transform;
             float projectionDistance = ResolveProjectionPlaneDistance();
             Vector3 expectedPosition = cameraTransform.position + cameraTransform.forward * projectionDistance;
-            if ((canvasRect.position - expectedPosition).sqrMagnitude > ProjectionPosePositionTolerance)
+            Vector3 poseDelta = canvasRect.position - expectedPosition;
+            float3 poseDelta3 = new float3(poseDelta.x, poseDelta.y, poseDelta.z);
+            if (math.lengthsq(poseDelta3) > ProjectionPosePositionTolerance)
                 return false;
 
             if (Quaternion.Angle(canvasRect.rotation, cameraTransform.rotation) > 0.01f)
@@ -1991,6 +2022,56 @@ namespace Hecton8.UI
             EnsureDitheredUiBackgroundRuntimeResources();
             if (_ditheredUiBackgroundMaterial != null && image.material != _ditheredUiBackgroundMaterial)
                 image.material = _ditheredUiBackgroundMaterial;
+        }
+
+        private void EnsureSavingProgressPulseRuntimeResources()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            Shader dataPulseShader = null;
+#if UNITY_EDITOR
+            dataPulseShader = AssetDatabase.LoadAssetAtPath<Shader>(DataRecPulseShaderPath);
+#endif
+            if (dataPulseShader == null)
+                dataPulseShader = Shader.Find(DataRecPulseShaderName);
+
+            if (_savingProgressDataPulseMaterial == null && dataPulseShader != null)
+            {
+                _savingProgressDataPulseMaterial = new Material(dataPulseShader)
+                {
+                    name = "HUD_DataRecPulse_Runtime"
+                }; // COLD ALLOC: Material[1] - shader-time DATA save lamp pulse - owner: SuitHUDV4CanvasOverlay
+            }
+
+            if (_savingProgressDataLamp != null &&
+                _savingProgressDataPulseMaterial != null &&
+                _savingProgressDataLamp.material != _savingProgressDataPulseMaterial)
+            {
+                _savingProgressDataLamp.material = _savingProgressDataPulseMaterial;
+            }
+
+            if (_savingProgressDataNeedle != null &&
+                _savingProgressDataPulseMaterial != null &&
+                _savingProgressDataNeedle.material != _savingProgressDataPulseMaterial)
+            {
+                _savingProgressDataNeedle.material = _savingProgressDataPulseMaterial;
+            }
+        }
+
+        private void DisposeSavingProgressPulseRuntimeResources()
+        {
+            if (_savingProgressDataLamp != null && _savingProgressDataLamp.material == _savingProgressDataPulseMaterial)
+                _savingProgressDataLamp.material = null;
+
+            if (_savingProgressDataNeedle != null && _savingProgressDataNeedle.material == _savingProgressDataPulseMaterial)
+                _savingProgressDataNeedle.material = null;
+
+            if (_savingProgressDataPulseMaterial != null)
+            {
+                Destroy(_savingProgressDataPulseMaterial);
+                _savingProgressDataPulseMaterial = null;
+            }
         }
 
         private void EnsureAcousticRadarRuntimeResources()
@@ -2249,13 +2330,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (!Application.isPlaying ||
-                _toolManager == null ||
-                !(_toolManager.CurrentTool is ScannerTool scanner) ||
-                !scanner.TryGetScientificScanSnapshot(out ScannerTool.ScientificScanSnapshot snapshot) ||
-                (snapshot.Fragment == null && snapshot.ProxyMeshIndex < 0))
+            if (!TryGetActiveScannerHologramSnapshot(out ScannerTool.ScientificScanSnapshot snapshot))
             {
-                SetScannerFlatHologramVisible(false);
+                RenderScannerInterference(deltaTime);
                 return;
             }
 
@@ -2263,13 +2340,17 @@ namespace Hecton8.UI
 
             float progress01 = Mathf.Clamp01(snapshot.Progress01);
             Vector2 size = ResolveScannerFlatHologramSize();
-            float pulsePixels = Mathf.Sin(_scannerHologramAnimationTime * 5.2f) * Mathf.Max(0f, scannerHologramPulsePixels);
-            float jitterPixels = Mathf.Sin(_scannerHologramAnimationTime * 23.0f + progress01 * 5.0f) * Mathf.Max(0f, scannerHologramJitterPixels);
+            float pulsePixels = math.sin(_scannerHologramAnimationTime * 5.2f) * Mathf.Max(0f, scannerHologramPulsePixels);
+            float jitterPixels = math.sin(_scannerHologramAnimationTime * 23.0f + progress01 * 5.0f) * Mathf.Max(0f, scannerHologramJitterPixels);
             _scannerFlatHologramRoot.anchoredPosition = scannerHologramOffsetPixels + new Vector2(jitterPixels, pulsePixels * 0.18f);
             _scannerFlatHologramRoot.sizeDelta = size + (Vector2.one * pulsePixels);
             _scannerFlatHologramRoot.localEulerAngles = Vector3.zero;
 
-            Color hologramColor = Color.Lerp(scannerHologramScanStartColor, scannerHologramScanCompleteColor, progress01);
+            Color hologramColor = new Color(
+                math.lerp(scannerHologramScanStartColor.r, scannerHologramScanCompleteColor.r, progress01),
+                math.lerp(scannerHologramScanStartColor.g, scannerHologramScanCompleteColor.g, progress01),
+                math.lerp(scannerHologramScanStartColor.b, scannerHologramScanCompleteColor.b, progress01),
+                math.lerp(scannerHologramScanStartColor.a, scannerHologramScanCompleteColor.a, progress01));
             float glitchAmount = Mathf.Clamp01((_stressPulseIntensity * 0.45f) + (_traumaGlitchIntensity * 0.55f));
             Color bodyColor = hologramColor;
             bodyColor.a *= 0.44f + glitchAmount * 0.18f;
@@ -2283,7 +2364,61 @@ namespace Hecton8.UI
             lineColor.a = Mathf.Clamp01(0.35f + progress01 * 0.5f + glitchAmount * 0.15f);
             _scannerFlatHologramScanline.color = lineColor;
             _scannerFlatHologramScanline.rectTransform.anchoredPosition = new Vector2(
-                Mathf.Lerp(size.x * -0.42f, size.x * 0.42f, progress01),
+                math.lerp(size.x * -0.42f, size.x * 0.42f, progress01),
+                0f);
+
+            SetScannerFlatHologramVisible(true);
+        }
+
+        private bool HasActiveScannerHologramSnapshot()
+        {
+            return TryGetActiveScannerHologramSnapshot(out _);
+        }
+
+        private bool TryGetActiveScannerHologramSnapshot(out ScannerTool.ScientificScanSnapshot snapshot)
+        {
+            snapshot = default;
+            if (!Application.isPlaying ||
+                _toolManager == null ||
+                !(_toolManager.CurrentTool is ScannerTool scanner) ||
+                !scanner.TryGetScientificScanSnapshot(out snapshot))
+            {
+                return false;
+            }
+
+            return snapshot.Fragment != null || snapshot.ProxyMeshIndex >= 0;
+        }
+
+        private void RenderScannerInterference(float deltaTime)
+        {
+            if (!_scannerInterferenceActive)
+            {
+                SetScannerFlatHologramVisible(false);
+                return;
+            }
+
+            _scannerInterferencePhase += Mathf.Max(0f, deltaTime);
+            Vector2 size = ResolveScannerFlatHologramSize();
+            float pulsePixels = math.sin(_scannerInterferencePhase * 31.0f) * Mathf.Max(1f, scannerHologramPulsePixels);
+            float jitterPixels = math.sin(_scannerInterferencePhase * 71.0f) * Mathf.Max(1f, scannerHologramJitterPixels);
+            _scannerFlatHologramRoot.anchoredPosition = scannerHologramOffsetPixels + new Vector2(jitterPixels, pulsePixels * 0.35f);
+            _scannerFlatHologramRoot.sizeDelta = size + (Vector2.one * math.abs(pulsePixels));
+            _scannerFlatHologramRoot.localEulerAngles = Vector3.zero;
+
+            float band01 = 0.5f + (0.5f * math.sin(_scannerInterferencePhase * 43.0f));
+            Color bodyColor = scannerHologramScanStartColor;
+            bodyColor.a = Mathf.Clamp01(0.34f + band01 * 0.24f);
+            _scannerFlatHologramBody.color = bodyColor;
+
+            Color coreColor = scannerHologramScanCompleteColor;
+            coreColor.a = Mathf.Clamp01(0.54f + band01 * 0.28f);
+            _scannerFlatHologramCore.color = coreColor;
+
+            Color lineColor = scannerHologramScanCompleteColor;
+            lineColor.a = Mathf.Clamp01(0.64f + band01 * 0.28f);
+            _scannerFlatHologramScanline.color = lineColor;
+            _scannerFlatHologramScanline.rectTransform.anchoredPosition = new Vector2(
+                math.lerp(size.x * -0.45f, size.x * 0.45f, band01),
                 0f);
 
             SetScannerFlatHologramVisible(true);
@@ -2335,7 +2470,7 @@ namespace Hecton8.UI
             {
                 _threatChevronSingleDrawMirror[0] = _threatChevronMatrixMirror[visibleIndex];
                 float alpha01 = Mathf.Clamp01(_threatChevronAlphaMirror[visibleIndex]);
-                float pulse01 = 0.74f + (0.26f * (0.5f + (0.5f * Mathf.Sin((_threatChevronPulseTime * threatChevronFlickerFrequency * 0.75f) + (visibleIndex * 0.91f)))));
+                float pulse01 = 0.74f + (0.26f * (0.5f + (0.5f * math.sin((_threatChevronPulseTime * threatChevronFlickerFrequency * 0.75f) + (visibleIndex * 0.91f)))));
                 alpha01 *= pulse01;
                 Color chevronColor = threatChevronColor;
                 chevronColor.a *= alpha01;
@@ -2414,7 +2549,17 @@ namespace Hecton8.UI
         {
             matrix = default;
             alpha01 = 0f;
-            Vector3 localThreatPosition = cameraTransform.InverseTransformPoint(threatState.WorldPosition);
+            Vector3 cameraPosition = cameraTransform.position;
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
+            AbsoluteUniversePosition threatAup = AbsoluteUniversePosition.FromRuntimePosition(threatState.WorldPosition);
+            float3 threatRelative = AbsoluteUniversePosition.ToCameraRelativeFloat3(in threatAup, in cameraAup);
+            float3 cameraForwardF3 = new float3(cameraTransform.forward.x, cameraTransform.forward.y, cameraTransform.forward.z);
+            float3 cameraRightF3 = new float3(cameraTransform.right.x, cameraTransform.right.y, cameraTransform.right.z);
+            float3 cameraUpF3 = new float3(cameraTransform.up.x, cameraTransform.up.y, cameraTransform.up.z);
+            Vector3 localThreatPosition = new Vector3(
+                math.dot(threatRelative, cameraRightF3),
+                math.dot(threatRelative, cameraUpF3),
+                math.dot(threatRelative, cameraForwardF3));
             bool behind = localThreatPosition.z <= 0.001f;
             if (behind)
             {
@@ -2429,20 +2574,28 @@ namespace Hecton8.UI
             float projectionScale = projectionDistance / Mathf.Max(0.001f, localThreatPosition.z);
             Vector2 projectedPlanePosition = new Vector2(localThreatPosition.x * projectionScale, localThreatPosition.y * projectionScale);
             Vector2 clampedPlanePosition = ClampToThreatBounds(projectedPlanePosition, safeHalfWidth, safeHalfHeight);
-            Vector2 direction2D = clampedPlanePosition.normalized;
-            if (direction2D.sqrMagnitude <= 0.000001f)
+            float2 direction2DF3 = new float2(clampedPlanePosition.x, clampedPlanePosition.y);
+            float direction2DLengthSq = math.lengthsq(direction2DF3);
+            if (direction2DLengthSq <= 0.000001f)
                 return false;
+            direction2DF3 *= math.rsqrt(direction2DLengthSq);
+            Vector2 direction2D = new Vector2(direction2DF3.x, direction2DF3.y);
 
             Vector3 worldPosition =
-                cameraTransform.position +
+                cameraPosition +
                 (cameraTransform.forward * projectionDistance) +
                 (cameraTransform.right * clampedPlanePosition.x) +
                 (cameraTransform.up * clampedPlanePosition.y);
 
-            Vector3 threatDirection = (threatState.WorldPosition - cameraTransform.position).normalized;
-            float signedAngleDegrees = Mathf.Atan2(
-                Vector3.Dot(Vector3.Cross(cameraTransform.forward, threatDirection), cameraTransform.up),
-                Vector3.Dot(cameraTransform.forward, threatDirection)) * Mathf.Rad2Deg;
+            float3 threatDirectionF3 = threatRelative;
+            float threatDirectionLengthSq = math.lengthsq(threatDirectionF3);
+            if (threatDirectionLengthSq > 0.000001f)
+                threatDirectionF3 *= math.rsqrt(threatDirectionLengthSq);
+            else
+                threatDirectionF3 = cameraForwardF3;
+            float signedAngleDegrees = math.atan2(
+                math.dot(math.cross(cameraForwardF3, threatDirectionF3), cameraUpF3),
+                math.dot(cameraForwardF3, threatDirectionF3)) * 57.2957795f;
             float rollDegrees = Mathf.Atan2(direction2D.y, direction2D.x) * Mathf.Rad2Deg;
             Quaternion worldRotation = cameraTransform.rotation * Quaternion.Euler(0f, 0f, rollDegrees);
             float behindFade = behind ? 0.35f : 1f;
@@ -2450,8 +2603,8 @@ namespace Hecton8.UI
             float edgeDistance01 = Mathf.Clamp01(Mathf.Max(
                 Mathf.Abs(clampedPlanePosition.x) / Mathf.Max(0.0001f, safeHalfWidth),
                 Mathf.Abs(clampedPlanePosition.y) / Mathf.Max(0.0001f, safeHalfHeight)));
-            float edgeFade = Mathf.Lerp(0.72f, 1f, edgeDistance01);
-            float threatScale = Mathf.Lerp(0.72f, 1.15f, Mathf.Clamp01(threatState.Threat01)) * behindFade;
+            float edgeFade = math.lerp(0.72f, 1f, edgeDistance01);
+            float threatScale = math.lerp(0.72f, 1.15f, Mathf.Clamp01(threatState.Threat01)) * behindFade;
             float rotationScaleBias = 1f + (Mathf.Abs(signedAngleDegrees) / 180f) * 0.04f;
             Vector3 worldScale = new Vector3(
                 chevronScaleWorld * threatScale * rotationScaleBias,
@@ -2477,7 +2630,7 @@ namespace Hecton8.UI
             if (_acousticRadarOverlay.material != _acousticRadarMaterial)
                 _acousticRadarOverlay.material = _acousticRadarMaterial;
 
-            float overlayOpacity = Mathf.Clamp01(acousticRadarOpacity * Mathf.Lerp(0.2f, 1f, _acousticRadarPeakIntensity));
+            float overlayOpacity = Mathf.Clamp01(acousticRadarOpacity * math.lerp(0.2f, 1f, _acousticRadarPeakIntensity));
             bool visible = overlayOpacity > 0.001f && _acousticRadarPeakIntensity > 0.001f;
             _acousticRadarOverlay.enabled = visible;
             if (!visible)
@@ -2538,7 +2691,14 @@ namespace Hecton8.UI
             int[] triangles,
             int triangleOffset)
         {
-            Vector2 direction = (end - start).normalized;
+            Vector2 delta = end - start;
+            float2 directionF2 = new float2(delta.x, delta.y);
+            float directionLengthSq = math.lengthsq(directionF2);
+            if (directionLengthSq > 0.000001f)
+                directionF2 *= math.rsqrt(directionLengthSq);
+            else
+                directionF2 = float2.zero;
+            Vector2 direction = new Vector2(directionF2.x, directionF2.y);
             Vector2 normal = new Vector2(-direction.y, direction.x) * (thickness * 0.5f);
 
             vertices[vertexOffset + 0] = start + normal;
@@ -2789,6 +2949,27 @@ namespace Hecton8.UI
 
                 _hasAppliedRootVisibility = false;
             }
+
+            EnsureRootScissorMask();
+        }
+
+        private void EnsureRootScissorMask()
+        {
+            if (_root == null)
+                return;
+
+            if (_rootScissorMask == null)
+                _rootScissorMask = _root.GetComponent<RectMask2D>();
+
+            if (_rootScissorMask == null)
+                _rootScissorMask = _root.gameObject.AddComponent<RectMask2D>();
+
+            _rootScissorMask.padding = new Vector4(
+                HelmetScissorInsetPixelsX,
+                HelmetScissorInsetPixelsY,
+                HelmetScissorInsetPixelsX,
+                HelmetScissorInsetPixelsY);
+            _rootScissorMask.softness = Vector2Int.zero;
         }
 
         private static CanvasGroup EnsureCanvasGroup(RectTransform target)
@@ -2949,7 +3130,7 @@ namespace Hecton8.UI
 
         private void UpdateSavingProgressHud(float deltaTime)
         {
-            if (_savingProgressCanvasGroup == null || _savingProgressIconRoot == null)
+            if (_savingProgressCanvasGroup == null)
                 return;
 
             if (_savingProgressHidePending && Time.unscaledTime >= _savingProgressHideNotBeforeTime)
@@ -2969,23 +3150,11 @@ namespace Hecton8.UI
 
             if (nextAlpha <= SavingProgressVisibleEpsilon)
                 return;
-
-            _savingProgressSpinDegrees = Mathf.Repeat(
-                _savingProgressSpinDegrees + (SavingProgressSpinDegreesPerSecond * safeDeltaTime),
-                360f);
-            _savingProgressIconRoot.localEulerAngles = new Vector3(0f, 0f, -_savingProgressSpinDegrees);
-
-            if (_savingProgressDataLamp != null)
-            {
-                Color lampColor = _savingProgressDataLamp.color;
-                lampColor.a = nextAlpha * (0.25f + (0.75f * (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 18f))));
-                _savingProgressDataLamp.color = lampColor;
-            }
         }
 
         private static bool IsBlinkVisible(float elapsedTime, float frequency)
         {
-            return Mathf.Sin(elapsedTime * frequency) >= 0f;
+            return math.sin(elapsedTime * frequency) >= 0f;
         }
 
         private void RefreshVisuals(float dt, bool refreshMediumCadence, bool refreshSlowCadence)
@@ -3040,10 +3209,10 @@ namespace Hecton8.UI
                 _corruptionFrameVersion++;
 
             float targetTemp = EstimateTemperature(depth);
-            _displayTemperature = Mathf.Lerp(_displayTemperature, targetTemp, 1f - Mathf.Exp(-4f * dt));
+            _displayTemperature = math.lerp(_displayTemperature, targetTemp, ApproximateOneMinusExpNeg(4f * dt));
             _displayOxygen01 = DampHudValue(_displayOxygen01, oxygen, OxygenGaugeDamping, dt);
             _displayHealth01 = DampHudValue(_displayHealth01, health, HealthGaugeDamping, dt);
-            _displayPower01 = DampHudValue(_displayPower01, power, BatteryGaugeDamping, dt);
+            _targetPower01 = power;
             UpdateHudProxyLightRegistration(_displayPower01, _displayOxygen01, stressPulse);
             float depthDelta = depth - _lastDepth;
             _lastDepth = depth;
@@ -3200,8 +3369,8 @@ namespace Hecton8.UI
             }
 
             Color oxygenAccent = pulsedPrimary;
-            Color healthAccent = Color.Lerp(pulsedPrimary, pulsedDim, 0.24f);
-            Color energyAccent = Color.Lerp(pulsedPrimary, pulsedWarning, 0.28f);
+            Color healthAccent = LerpColor(pulsedPrimary, pulsedDim, 0.24f);
+            Color energyAccent = LerpColor(pulsedPrimary, pulsedWarning, 0.28f);
 
             UpdateGauge(ref _oxygenGauge, _displayOxygen01, oxygenCurrent, oxygenAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 401, dt, OxygenGaugeDamping, shouldRefreshGaugeText);
             UpdateGauge(ref _healthGauge, _displayHealth01, healthCurrent, healthAccent, pulsedDim, pulsedWarning, localizedRtl, hullStressWhisperBuffer, hullStressWhisperLength, hullStressWhisperVersion, corruptedMode, displayCorruptionIntensity, _corruptionFrameVersion, 503, dt, HealthGaugeDamping, shouldRefreshGaugeText);
@@ -3463,19 +3632,19 @@ namespace Hecton8.UI
         private static Color ResolveLoadBaseColor(Color primary, Color dim, Color warning, float load01)
         {
             if (load01 <= 0.8f)
-                return Alpha(Color.Lerp(dim, primary, Mathf.Clamp01(load01 * 0.65f)), 0.72f);
+                return Alpha(LerpColor(dim, primary, math.saturate(load01 * 0.65f)), 0.72f);
 
             return Alpha(warning, 0.95f);
         }
 
         private static Color32 ResolveLoadMassPulseColor(Color warning, float phase)
         {
-            float pulse = 0.5f + (0.5f * Mathf.Sin(phase));
+            float pulse = 0.5f + (0.5f * math.sin(phase));
             Color32 warning32 = warning;
             byte greenBase = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Max(96f, warning32.g * 0.55f)), 0, 255);
-            byte green = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(greenBase, 168f, pulse)), 0, 255);
-            byte blue = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(12f, 28f, pulse * 0.35f)), 0, 255);
-            byte alpha = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(224f, 255f, pulse)), 0, 255);
+            byte green = (byte)Mathf.Clamp(Mathf.RoundToInt(math.lerp(greenBase, 168f, pulse)), 0, 255);
+            byte blue = (byte)Mathf.Clamp(Mathf.RoundToInt(math.lerp(12f, 28f, pulse * 0.35f)), 0, 255);
+            byte alpha = (byte)Mathf.Clamp(Mathf.RoundToInt(math.lerp(224f, 255f, pulse)), 0, 255);
             return new Color32(255, green, blue, alpha);
         }
 
@@ -3588,13 +3757,13 @@ namespace Hecton8.UI
                 return targetValue;
 
             float interpolation = Mathf.Clamp01(Mathf.Max(0f, dampFactor) * Mathf.Max(0f, dt));
-            return Mathf.Lerp(displayValue, targetValue, interpolation);
+            return math.lerp(displayValue, targetValue, interpolation);
         }
 
         private static float ResolveOxygenWarningBlinkAlpha()
         {
-            float blink01 = Mathf.Abs(Mathf.Sin(Time.frameCount * 0.1f));
-            return Mathf.Lerp(0.18f, 1f, blink01);
+            float blink01 = Mathf.Abs(math.sin(Time.unscaledTime * 5f));
+            return math.lerp(0.18f, 1f, blink01);
         }
 
         public void OnLocalizationCorruptionVisualStateChanged(in LocalizationEventPayload payload)
@@ -3677,7 +3846,7 @@ namespace Hecton8.UI
         private float EstimateTemperature(float depth)
         {
             float depth01 = Mathf.Clamp01(depth / 1450f);
-            float estimated = Mathf.Lerp(13.5f, 2.4f, depth01 * depth01 * (3f - 2f * depth01));
+            float estimated = math.lerp(13.5f, 2.4f, depth01 * depth01 * (3f - 2f * depth01));
             if (underwaterVisuals != null)
                 estimated -= (1f - underwaterVisuals.CurrentLightFactor) * 0.8f;
             return estimated;
@@ -4125,6 +4294,7 @@ namespace Hecton8.UI
             _savingProgressDataLamp = CreateImage("DataRecLamp", _savingProgressIconRoot, new Color(1f, 0.08f, 0.02f, 0.95f));
             Anchor(_savingProgressDataLamp.rectTransform, new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-4f, -4f), new Vector2(6f, 6f));
             _savingProgressDataLamp.raycastTarget = false;
+            EnsureSavingProgressPulseRuntimeResources();
 
             _savingProgressCanvasGroup = EnsureCanvasGroup(_savingProgressRoot);
             ApplySavingProgressCanvasState(0f);
@@ -4428,6 +4598,21 @@ namespace Hecton8.UI
         {
             color.a = alpha;
             return color;
+        }
+
+        private static Color LerpColor(Color a, Color b, float t)
+        {
+            return new Color(
+                math.lerp(a.r, b.r, t),
+                math.lerp(a.g, b.g, t),
+                math.lerp(a.b, b.b, t),
+                math.lerp(a.a, b.a, t));
+        }
+
+        private static float ApproximateOneMinusExpNeg(float x)
+        {
+            x = math.max(0f, x);
+            return math.saturate((x * (6f + x)) / (6f + (4f * x) + (x * x)));
         }
 
         private static void SetMetricIntTemplateIfChanged(
@@ -5173,7 +5358,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            Color proxyColor = Color.Lerp(hudProxyLightColor, hudProxyLightStressColor, oxygenStress01).linear;
+            Color proxyColor = LerpColor(hudProxyLightColor, hudProxyLightStressColor, oxygenStress01).linear;
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition((Vector3)runtimePosition);
             float now = Time.unscaledTime;
             ProxyLightData lightData = ProxyLightData.CreateUiPanel(
@@ -5209,20 +5394,20 @@ namespace Hecton8.UI
             float targetStress = rawStress <= stressPulseStartThreshold
                 ? 0f
                 : Mathf.InverseLerp(stressPulseStartThreshold, 1f, rawStress);
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, stressPulseBlendSpeed) * dt);
-            _stressPulseIntensity = Mathf.Lerp(_stressPulseIntensity, targetStress, blendT);
+            float blendT = ApproximateOneMinusExpNeg(Mathf.Max(0.01f, stressPulseBlendSpeed) * dt);
+            _stressPulseIntensity = math.lerp(_stressPulseIntensity, targetStress, blendT);
             if (_stressPulseIntensity <= 0.001f)
             {
                 _stressPulseIntensity = 0f;
                 return 0f;
             }
 
-            float frequency = Mathf.Lerp(stressPulseFrequencyMin, stressPulseFrequencyMax, _stressPulseIntensity);
+            float frequency = math.lerp(stressPulseFrequencyMin, stressPulseFrequencyMax, _stressPulseIntensity);
             _stressPulsePhase += dt * frequency * Mathf.PI * 2f;
             if (_stressPulsePhase >= Mathf.PI * 2f)
                 _stressPulsePhase -= Mathf.PI * 2f;
 
-            float wave = 0.5f + 0.5f * Mathf.Sin(_stressPulsePhase);
+            float wave = 0.5f + 0.5f * math.sin(_stressPulsePhase);
             return _stressPulseIntensity * wave;
         }
 
@@ -5231,8 +5416,8 @@ namespace Hecton8.UI
             if (pulseStrength <= 0.0001f)
                 return baseColor;
 
-            Color pulsedColor = Color.Lerp(baseColor, warningColor, pulseStrength * warningBlend);
-            return Color.Lerp(pulsedColor, Color.white, pulseStrength * brightnessBoost);
+            Color pulsedColor = LerpColor(baseColor, warningColor, pulseStrength * warningBlend);
+            return LerpColor(pulsedColor, Color.white, pulseStrength * brightnessBoost);
         }
 
         private void ApplyStaticStyleIfNeeded(Color primary, Color secondary, Color dim, Color warning)
@@ -5339,15 +5524,25 @@ namespace Hecton8.UI
             if (_reticleRoot == null || _reticleH == null || _reticleV == null || _reticleBracketLeft == null || _reticleBracketRight == null)
                 return;
 
-            float movementSpeed = playerMovement != null
-                ? playerMovement.InterpolatedLinearVelocity.magnitude
-                : 0f;
-            movementSpeed = Mathf.Max(0f, ReadHeadlessUIValue(UIValueSlotId.MovementSpeed, movementSpeed));
-            float velocityContribution = Mathf.Clamp(movementSpeed * reticleVelocityFactor, 0f, 36f);
+            float movementSpeedSq = 0f;
+            if (playerMovement != null)
+            {
+                Vector3 movementVelocity = playerMovement.InterpolatedLinearVelocity;
+                movementSpeedSq = math.lengthsq(new float3(movementVelocity.x, movementVelocity.y, movementVelocity.z));
+            }
+
+            float headlessMovementSpeed = ReadHeadlessUIValue(UIValueSlotId.MovementSpeed, -1f);
+            if (headlessMovementSpeed >= 0f)
+            {
+                headlessMovementSpeed = math.max(0f, headlessMovementSpeed);
+                movementSpeedSq = headlessMovementSpeed * headlessMovementSpeed;
+            }
+
+            float velocityContribution = math.min(math.max(0f, movementSpeedSq) * reticleVelocityFactor * ReticleSquaredSpeedSpreadScale, 36f);
             float heatContribution = Mathf.Clamp01(ReadHeadlessUIValue(UIValueSlotId.ToolHeat01, ResolveReticleHeat01())) * reticleHeatSpread;
             float targetSpread = Mathf.Max(0f, reticleBaseSpread + velocityContribution + heatContribution);
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, reticleSpreadBlendSpeed) * Mathf.Max(dt, 0.016f));
-            _reticleSpreadPixels = Mathf.Lerp(_reticleSpreadPixels, targetSpread, blendT);
+            float blendT = ApproximateOneMinusExpNeg(Mathf.Max(0.01f, reticleSpreadBlendSpeed) * Mathf.Max(dt, 0.016f));
+            _reticleSpreadPixels = math.lerp(_reticleSpreadPixels, targetSpread, blendT);
 
             if (Mathf.Abs(_appliedReticleSpreadPixels - _reticleSpreadPixels) <= 0.05f)
                 return;
@@ -6088,9 +6283,7 @@ namespace Hecton8.UI
         {
             float scaleX = screenWidth / Mathf.Max(1f, referenceResolution.x);
             float scaleY = screenHeight / Mathf.Max(1f, referenceResolution.y);
-            float logWidth = Mathf.Log(Mathf.Max(0.0001f, scaleX), 2f);
-            float logHeight = Mathf.Log(Mathf.Max(0.0001f, scaleY), 2f);
-            float blendedScale = Mathf.Pow(2f, Mathf.Lerp(logWidth, logHeight, matchWidthOrHeight));
+            float blendedScale = math.lerp(scaleX, scaleY, matchWidthOrHeight);
             return Mathf.Clamp(blendedScale, minimumScale, maximumScale);
         }
 

@@ -154,7 +154,6 @@ writeOffset = originalLength
 newFileLength = originalLength + overrideCompressedSize
 ```
 
-The block is copied to EOF. The old region becomes reclaimable slack. Defrag later compacts it.
 
 ## Atomic Header / Directory Update
 
@@ -246,7 +245,6 @@ Rules:
 
 Dirty-sector commit may create holes when a block relocates to EOF.
 
-Those holes are reclaimed later by indexed defrag. Dirty commit does **not** compact synchronously.
 
 ## Async Dehydration Pipeline
 

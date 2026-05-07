@@ -19,10 +19,13 @@
 // ============================================================================
 
 using Hecton.Localization;
+using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 using UnityEngine.Events;
@@ -46,7 +49,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Renderer))]
     [AddComponentMenu("Hecton/Gameplay/Base Airlock")]
-    public sealed class BaseAirlock : MonoBehaviour, IInteractable, ITickable, IUpdatable, global::Hecton8.Interaction.IInteractionSignalConsumer, global::Hecton8.Interaction.IInteractionVulnerabilitySource, ILocalizationLanguageChangedListener
+    public sealed class BaseAirlock : MonoBehaviour, IInteractable, ITickable, IUpdatable, global::Hecton8.Interaction.IInteractionSignalConsumer, global::Hecton8.Interaction.IInteractionVulnerabilitySource, ILocalizationLanguageChangedListener, global::Hecton8.Interaction.IKinematicRepairTarget
     {
         private const float DefaultWeldOverrideDurationSeconds = 5f;
         private const float MaxSignalWeldDeltaSeconds = 0.25f;
@@ -55,6 +58,12 @@ namespace Hecton8.Gameplay
         private const float MinimumEnvironmentSnapshotTransitionSeconds = 1.5f;
         private const float DryOceanRoarLowPassHz = 650f;
         private const float WetOceanRoarLowPassHz = 22000f;
+        private const float InteriorPressureKPa = 101.325f;
+        private const float PressureWhistleStartDeltaKPa = 450f;
+        private const float PressureWhistleFullDeltaKPa = 2200f;
+        private const int PressureWhistleFrameMask = 15;
+        private const float RepairHandHalfSpanMeters = 0.14f;
+        private const float RepairHandVerticalBiasMeters = 0.04f;
         private const string MissingInteriorSpawnPointMessage = "[BaseAirlock] Interior spawn point not set.";
         private const string MissingExteriorSpawnPointMessage = "[BaseAirlock] Exterior spawn point not set.";
         private const string InvalidInteriorSpawnPointPoseMessage = "[BaseAirlock] Interior spawn point pose is invalid.";
@@ -180,6 +189,7 @@ namespace Hecton8.Gameplay
         private float _bulkheadSlideTarget01;
         private bool _bulkheadPoseCaptured;
         private bool _bulkheadClangPlayed;
+        private int _pressureWhistleFrameOffset;
 
         // Cached references
         private Transform _cachedTransform;
@@ -243,6 +253,7 @@ namespace Hecton8.Gameplay
 
             CacheOwningModule();
             CaptureBulkheadPose();
+            _pressureWhistleFrameOffset = unchecked((int)EntityId.ToULong(GetEntityId())) & PressureWhistleFrameMask;
         }
 
         private void OnEnable()
@@ -309,6 +320,7 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             AdvanceBulkheadSlide(deltaTime);
+            EmitPressureDifferentialWhistle();
 
             if (_state != AirlockState.Cycling)
                 return;
@@ -390,6 +402,87 @@ namespace Hecton8.Gameplay
             if (_weldOverrideProgressSeconds >= requiredSeconds)
                 ForceEmergencyOverride();
 
+            return true;
+        }
+
+        public bool TryResolveRepairSnapPoints(
+            Vector3 runtimeHitPoint,
+            out AbsoluteUniversePosition leftHandAup,
+            out AbsoluteUniversePosition rightHandAup,
+            out Quaternion toolRotation)
+        {
+            leftHandAup = default;
+            rightHandAup = default;
+            toolRotation = Quaternion.identity;
+            if (!IsFinite(runtimeHitPoint))
+                return false;
+
+            Transform airlockTransform = _cachedTransform != null ? _cachedTransform : transform;
+            Vector3 right = airlockTransform.right;
+            Vector3 up = airlockTransform.up;
+            Vector3 forward = airlockTransform.forward;
+            if (!IsFinite(right) || right.sqrMagnitude <= 0.000001f)
+                right = Vector3.right;
+            else
+                right.Normalize();
+
+            if (!IsFinite(up) || up.sqrMagnitude <= 0.000001f)
+                up = Vector3.up;
+            else
+                up.Normalize();
+
+            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
+                forward = Vector3.forward;
+            else
+                forward.Normalize();
+
+            Vector3 handCenter = runtimeHitPoint + up * RepairHandVerticalBiasMeters;
+            leftHandAup = AbsoluteUniversePosition.FromRuntimePosition(handCenter - right * RepairHandHalfSpanMeters);
+            rightHandAup = AbsoluteUniversePosition.FromRuntimePosition(handCenter + right * RepairHandHalfSpanMeters);
+            toolRotation = Quaternion.LookRotation(forward, up);
+            return IsFinite(toolRotation);
+        }
+
+        public bool TryResolveKinematicRepairSnap(
+            in global::Hecton8.Interaction.KinematicRepairTargetProbe probe,
+            out global::Hecton8.Interaction.KinematicRepairSnapPoint snapPoint)
+        {
+            snapPoint = default;
+            float3 runtimeHit = probe.HitAup.ToRuntimeFloat3();
+            Vector3 runtimeHitPoint = new Vector3(runtimeHit.x, runtimeHit.y, runtimeHit.z);
+            if (!TryResolveRepairSnapPoints(
+                    runtimeHitPoint,
+                    out AbsoluteUniversePosition leftHandAup,
+                    out AbsoluteUniversePosition rightHandAup,
+                    out Quaternion toolRotation))
+            {
+                return false;
+            }
+
+            float3 leftRuntime = leftHandAup.ToRuntimeFloat3();
+            float3 rightRuntime = rightHandAup.ToRuntimeFloat3();
+            Vector3 runtimeAnchor = new Vector3(
+                (leftRuntime.x + rightRuntime.x) * 0.5f,
+                (leftRuntime.y + rightRuntime.y) * 0.5f,
+                (leftRuntime.z + rightRuntime.z) * 0.5f);
+            if (!IsFinite(runtimeAnchor))
+                runtimeAnchor = runtimeHitPoint;
+
+            Vector3 surfaceNormal = IsFinite(probe.HitNormal) && probe.HitNormal.sqrMagnitude > 0.000001f
+                ? probe.HitNormal.normalized
+                : toolRotation * Vector3.forward;
+            snapPoint = new global::Hecton8.Interaction.KinematicRepairSnapPoint
+            {
+                AnchorAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeAnchor),
+                LeftHandAup = leftHandAup,
+                RightHandAup = rightHandAup,
+                RuntimePosition = runtimeAnchor,
+                SurfaceNormal = surfaceNormal,
+                ToolRotation = toolRotation,
+                HitDistance = math.max(0f, probe.HitDistance),
+                Blend = 1f,
+                ColliderInstanceId = probe.ColliderInstanceId
+            };
             return true;
         }
 
@@ -696,6 +789,34 @@ namespace Hecton8.Gameplay
                 GlobalRegistry.Audio.PlayAtPoint(emergencyBulkheadClangSound, _cachedTransform.position, 1f, 0.92f);
         }
 
+        private void EmitPressureDifferentialWhistle()
+        {
+            if (!_emergencyLockedDown && _bulkheadSlide01 < 0.5f)
+                return;
+
+            if (((Time.frameCount + _pressureWhistleFrameOffset) & PressureWhistleFrameMask) != 0)
+                return;
+
+            CacheOwningModule();
+            if (owningModule == null)
+                return;
+
+            float pressureDifferentialKPa = math.abs(owningModule.ResolveExternalPressureDeltaKPa());
+            if (pressureDifferentialKPa < PressureWhistleStartDeltaKPa)
+                return;
+
+            float intensity01 = math.saturate(
+                (pressureDifferentialKPa - PressureWhistleStartDeltaKPa) /
+                math.max(1f, PressureWhistleFullDeltaKPa - PressureWhistleStartDeltaKPa));
+            ProceduralAudioEvents.RaiseAudioPingTriggered(
+                _cachedTransform.position,
+                intensity01,
+                math.lerp(0.035f, 0.11f, intensity01),
+                math.lerp(0.18f, 0.52f, intensity01),
+                math.lerp(6200f, 12800f, intensity01),
+                ProceduralAudioPingKind.MechanicalWhirr);
+        }
+
         /// <summary>
         /// Updates the status light color using MaterialPropertyBlock.
         /// Zero GC: uses cached MaterialPropertyBlock and Shader.PropertyToID.
@@ -718,7 +839,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveWeldOverrideDurationSeconds()
         {
-            return Mathf.Max(0.1f, weldOverrideDurationSeconds);
+            return math.max(0.1f, weldOverrideDurationSeconds);
         }
 
         private float ResolveEqualizationDurationSeconds()
@@ -728,15 +849,15 @@ namespace Hecton8.Gameplay
                 ? owningModule.ResolveExternalPressureDeltaKPa()
                 : 0f;
             float equalizationSeconds = airlockVolumeM3 *
-                                        Mathf.Sqrt(Mathf.Max(0f, pressureDeltaKPa)) /
-                                        Mathf.Max(0.01f, equalizationFlowM3PerSqrtKPaSecond);
+                                        math.sqrt(math.max(0f, pressureDeltaKPa)) /
+                                        math.max(0.01f, equalizationFlowM3PerSqrtKPaSecond);
             if (!float.IsFinite(equalizationSeconds))
                 equalizationSeconds = cycleDuration;
 
-            return Mathf.Clamp(
-                Mathf.Max(cycleDuration, equalizationSeconds),
+            return math.clamp(
+                math.max(cycleDuration, equalizationSeconds),
                 cycleDuration,
-                Mathf.Max(cycleDuration, maximumEqualizationSeconds));
+                math.max(cycleDuration, maximumEqualizationSeconds));
         }
 
         private void CaptureCycleInputLock()
@@ -764,9 +885,9 @@ namespace Hecton8.Gameplay
             if (signal.PowerDelivered <= 0f || !float.IsFinite(signal.PowerDelivered))
                 return 0f;
 
-            float sourcePower = Mathf.Max(0.001f, signal.Source.Power);
+            float sourcePower = math.max(0.001f, signal.Source.Power);
             float deltaSeconds = signal.PowerDelivered / sourcePower;
-            return Mathf.Clamp(deltaSeconds, 0f, MaxSignalWeldDeltaSeconds);
+            return math.clamp(deltaSeconds, 0f, MaxSignalWeldDeltaSeconds);
         }
 
         private bool IsOverrideWeldRaycastValid(in global::Hecton8.Interaction.InteractionSignal signal)
@@ -779,7 +900,7 @@ namespace Hecton8.Gameplay
             if (direction.sqrMagnitude <= MinOverrideRaycastDirectionSqr)
                 return false;
 
-            float range = Mathf.Max(0f, signal.Source.Range);
+            float range = math.max(0f, signal.Source.Range);
             if (range <= 0f)
                 return false;
 

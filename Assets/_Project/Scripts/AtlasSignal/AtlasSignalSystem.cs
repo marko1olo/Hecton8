@@ -16,7 +16,7 @@
 //   • Интегрируется с HectonDirectorAI (narrative beat).
 //
 // ZERO GC:
-//   • ISlowTickable — таймер без Update().
+//   • ISlowTickable — timer without per-frame polling.
 //   • Никаких new/LINQ в hot path.
 //   • Shader.SetGlobalFloat для визуального отклика биолюминесценции.
 // ============================================================================
@@ -29,6 +29,7 @@ using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
+using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
@@ -113,6 +114,9 @@ namespace Hecton8.AtlasSignal
         private bool _stage3LogQueued;
         private bool _stage4LogQueued;
         private bool _atlasCoreAupCached;
+        private uint _stage2EncryptedLogHash;
+        private uint _stage3EncryptedLogHash;
+        private uint _stage4EncryptedLogHash;
 
         private const int FormalDetectionRevealStage = 2;
         private const int IdentityRevealStage = 3;
@@ -181,6 +185,7 @@ namespace Hecton8.AtlasSignal
 
         private void OnEnable()
         {
+            CacheEncryptedLogHashes();
             TryRegisterService();
             TryRegister();
 
@@ -542,74 +547,99 @@ namespace Hecton8.AtlasSignal
 
         private void TryQueueEncryptedLog(int revealStage)
         {
-            string logId;
+            uint logHash;
+            string fallbackLogId;
             switch (revealStage)
             {
                 case 2:
                     if (_stage2LogQueued)
                         return;
                     _stage2LogQueued = true;
-                    logId = stage2EncryptedLogId;
+                    logHash = _stage2EncryptedLogHash;
+                    fallbackLogId = stage2EncryptedLogId;
                     break;
 
                 case 3:
                     if (_stage3LogQueued)
                         return;
                     _stage3LogQueued = true;
-                    logId = stage3EncryptedLogId;
+                    logHash = _stage3EncryptedLogHash;
+                    fallbackLogId = stage3EncryptedLogId;
                     break;
 
                 case 4:
                     if (_stage4LogQueued)
                         return;
                     _stage4LogQueued = true;
-                    logId = stage4EncryptedLogId;
+                    logHash = _stage4EncryptedLogHash;
+                    fallbackLogId = stage4EncryptedLogId;
                     break;
 
                 default:
                     return;
             }
 
-            if (string.IsNullOrWhiteSpace(logId))
+            if (logHash == 0u)
                 return;
 
             AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
-            if (audioLogs != null && audioLogs.TryPlayLogById(logId))
-                return;
+            if (audioLogs != null)
+            {
+                if (audioLogs.TryPlayLogByHash(logHash))
+                    return;
+
+                if ((audioLogs.GetRecoveredEncryptedBits(logHash) & 0xFu) != 0xFu)
+                    return;
+            }
 
             GlobalTelemetryBus.PublishPerformanceWarning(
                 audioLogs == null ? _AudioLogRuntimeMissingWarningHash : _EncryptedLogFallbackWarningHash,
                 _AtlasSignalContextHash,
                 revealStage);
-            NarrativeEvents.RaiseDiscoveryMade(logId);
+            NarrativeEvents.RaiseDiscoveryMade(fallbackLogId);
+        }
+
+        private void CacheEncryptedLogHashes()
+        {
+            _stage2EncryptedLogHash = QuestFlagHashKernel.ComputeStableHash(stage2EncryptedLogId);
+            _stage3EncryptedLogHash = QuestFlagHashKernel.ComputeStableHash(stage3EncryptedLogId);
+            _stage4EncryptedLogHash = QuestFlagHashKernel.ComputeStableHash(stage4EncryptedLogId);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogSignalFirstDetected()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log(SignalFirstDetectedLog);
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogSignalPulse()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (Time.time < _nextSignalLogTime)
                 return;
 
             _nextSignalLogTime = Time.time + 5f;
             Debug.Log(SignalPulseLog);
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogSignalDecoded()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log(SignalDecodedLog);
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogRevealStageUnlocked()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log(RevealStageUnlockedLog);
+#endif
         }
 
         private static string ResolveLocalized(string key, string fallback)

@@ -4,11 +4,20 @@ Shader "Hecton8/World/ScatterIndirectLit"
     {
         _BaseMap("Base Map", 2D) = "white" {}
         _MaskMap("Mask Map", 2D) = "white" {}
+        [NoScaleOffset] _HectonMicroNormalTex("Micro Normal 128", 2D) = "bump" {}
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
         _Metallic("Metallic Scale", Range(0, 1)) = 0.0
         _Smoothness("Smoothness Scale", Range(0, 1)) = 0.35
         _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1.0
+        _EnvironmentalWear("Environmental Wear", Range(0, 1)) = 0.0
+        _RustSaltColor("Rust/Salt Wear Color", Color) = (0.62, 0.35, 0.16, 1)
+        _MicroNormalStrength("Micro Normal Strength", Range(0, 1)) = 0.24
+        _MicroNormalTiling("Micro Normal Tiling", Range(4, 128)) = 52
+        _StochasticTilingStrength("Stochastic Tiling Strength", Range(0, 1)) = 0.55
+        _StormRainDripAmplitude("Storm Rain Drip Amplitude", Range(0, 0.025)) = 0.003
+        _StormRainDripTiling("Storm Rain Drip Tiling", Range(0.5, 16)) = 5
+        _StormRainDripSpeed("Storm Rain Drip Speed", Range(0, 8)) = 1.8
         _DepthBias("Depth Bias", Range(0, 0.01)) = 0.0
     }
 
@@ -50,9 +59,17 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float4 _BaseMap_ST;
             float4 _BaseColor;
             float4 _EmissionColor;
+            float4 _RustSaltColor;
             float _Metallic;
             float _Smoothness;
             float _OcclusionStrength;
+            float _EnvironmentalWear;
+            float _MicroNormalStrength;
+            float _MicroNormalTiling;
+            float _StochasticTilingStrength;
+            float _StormRainDripAmplitude;
+            float _StormRainDripTiling;
+            float _StormRainDripSpeed;
             float _DepthBias;
         CBUFFER_END
 
@@ -107,17 +124,18 @@ Shader "Hecton8/World/ScatterIndirectLit"
             BuildScatterBasis(normalWS, rotation, scale, rightWS, upWS, forwardWS);
 
             float3 localPosition = input.positionOS.xyz;
-            float3 resolvedPositionWS = positionWS + rightWS * localPosition.x + upWS * localPosition.y + forwardWS * localPosition.z;
+            float3 resolvedPositionWS = HectonCoreLitSanitizePositionWS(
+                positionWS + rightWS * localPosition.x + upWS * localPosition.y + forwardWS * localPosition.z);
             float3 resolvedNormalWS = normalize(
                 normalize(rightWS) * input.normalOS.x +
                 normalize(upWS) * input.normalOS.y +
                 normalize(forwardWS) * input.normalOS.z);
 
-            output.positionWS = resolvedPositionWS;
+            output.positionWS = HectonCoreLitApplyStormRainDripVertexRipple(resolvedPositionWS, resolvedNormalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
             output.normalWS = resolvedNormalWS;
-            output.positionCS = TransformWorldToHClip(resolvedPositionWS);
+            output.positionCS = TransformWorldToHClip(output.positionWS);
             output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(output.positionCS, _DepthBias, 1.0);
-            output.viewDirWS = HectonCoreLitSafeNormalize(GetWorldSpaceViewDir(resolvedPositionWS));
+            output.viewDirWS = HectonCoreLitSafeNormalize(GetWorldSpaceViewDir(output.positionWS));
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
             return output;
@@ -125,12 +143,12 @@ Shader "Hecton8/World/ScatterIndirectLit"
 
         half4 SampleSurface(float2 uv)
         {
-            return SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, uv) * _BaseColor;
+            return HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), uv, uv * 0.031, (half)_StochasticTilingStrength) * _BaseColor;
         }
 
         half4 SamplePackedMask(float2 uv)
         {
-            return SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, uv);
+            return HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), uv, uv * 0.031, (half)_StochasticTilingStrength);
         }
 
         half3 EvaluateLighting(
@@ -163,18 +181,22 @@ Shader "Hecton8/World/ScatterIndirectLit"
         {
             half4 surface = SampleSurface(input.uv);
             half4 packedMask = SamplePackedMask(input.uv);
-            half metallic = saturate(packedMask.r * _Metallic);
-            half ambientOcclusion = saturate(lerp(1.0h, packedMask.g, _OcclusionStrength));
-            half smoothness = saturate(packedMask.b * _Smoothness);
-            half emissionMask = saturate(packedMask.a);
+            HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
+            half metallic = decodedMask.metallic;
+            half ambientOcclusion = decodedMask.occlusion;
+            half smoothness = decodedMask.smoothness;
+            half emissionMask = decodedMask.emissionMask;
             half3 normalWS = normalize(input.normalWS);
+            normalWS = HectonCoreLitApplyTripleDetailMicroNormals(input.positionWS, normalWS, (half)_MicroNormalStrength, (half)_MicroNormalTiling, 2.0h);
             half3 viewDirWS = normalize(input.viewDirWS);
+            half3 albedo = surface.rgb;
+            HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
 
             half3 litColor = EvaluateLighting(
                 input.positionWS,
                 normalWS,
                 viewDirWS,
-                surface.rgb,
+                albedo,
                 metallic,
                 smoothness,
                 ambientOcclusion);
@@ -201,6 +223,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
                 normalize(rightWS) * input.normalOS.x +
                 normalize(upWS) * input.normalOS.y +
                 normalize(forwardWS) * input.normalOS.z);
+            resolvedPositionWS = HectonCoreLitApplyStormRainDripVertexRipple(resolvedPositionWS, resolvedNormalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
 
             float3 lightDirectionWS = _MainLightPosition.xyz;
             float4 positionCS = TransformWorldToHClip(ApplyShadowBias(resolvedPositionWS, resolvedNormalWS, lightDirectionWS));
@@ -222,6 +245,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
+            #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             ENDHLSL
         }
 

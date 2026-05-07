@@ -92,7 +92,7 @@ namespace Hecton8.Optimization
             
             // Query all UI-owned RTs (zero-GC)
             _uiRTs.Clear();
-            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory("UI", _uiRTs);
+            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.UI, _uiRTs);
             
             // Calculate total UI RT memory (zero-GC loop)
             long totalBytes = 0L;

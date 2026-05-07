@@ -26,6 +26,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -42,6 +43,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float _HectonVisorFluidEdgeFadeExponent;
                 float _HectonVisorFluidSpeed;
                 float4 _HectonVisorFluidLocalVelocity;
+                float _HectonThermalDistortionMotionCull;
                 float _HectonVisorFluidAmbientLight;
                 float _HectonVisorFluidDustStrength;
                 float _HectonVisorFluidAmbientDustResponse;
@@ -60,11 +62,14 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 uint vertexID : SV_VertexID;
             };
 
             struct Varyings
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float2 screenUV : TEXCOORD0;
             };
@@ -72,12 +77,24 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
                 output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
             #if UNITY_UV_STARTS_AT_TOP
                 output.screenUV.y = 1.0 - output.screenUV.y;
             #endif
                 return output;
+            }
+
+            float2 ResolveXRStereoScreenUV(float2 screenUV)
+            {
+#if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+                return UnityStereoTransformScreenSpaceTex(screenUV);
+#else
+                return screenUV;
+#endif
             }
 
             float Hash21(float2 p)
@@ -259,6 +276,9 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                float2 screenUV = ResolveXRStereoScreenUV(input.screenUV);
                 float wetness = saturate(_HectonVisorFluidWetness);
                 float hullStress = saturate(_HectonVisorFluidHullStress);
                 float intensity = saturate(_HectonVisorFluidIntensity);
@@ -266,24 +286,25 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float2 flowDirection = float2(
                     _HectonVisorFluidLocalVelocity.x * _HectonVisorFluidLateralStreakStrength,
                     -1.0 - abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength);
-                float dropletMask = ComputeDropletMask(input.screenUV, flowDirection, wetness, hullStress);
-                float edgeMask = ComputeVisorEdgeMask(input.screenUV);
-                float dustMask = ComputeDustMask(input.screenUV, edgeMask);
-                float combinedMask = saturate(dropletMask * edgeMask * intensity);
+                float dropletMask = ComputeDropletMask(screenUV, flowDirection, wetness, hullStress);
+                float edgeMask = ComputeVisorEdgeMask(screenUV);
+                float dustMask = ComputeDustMask(screenUV, edgeMask);
+                float thermalMotionCull = saturate(_HectonThermalDistortionMotionCull);
+                float combinedMask = saturate(dropletMask * edgeMask * intensity * (1.0 - thermalMotionCull));
 
-                float2 refractedUV = saturate(input.screenUV + ComputeRefractionOffset(input.screenUV, combinedMask, wetness, hullStress));
+                float2 refractedUV = saturate(screenUV + ComputeRefractionOffset(screenUV, combinedMask, wetness, hullStress));
                 half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, refractedUV);
                 if (glitchAmount > 0.001)
                 {
                     float2 chromaOffset = float2(
-                        (Fbm(input.screenUV * float2(91.0, 47.0) + _Time.y * 3.2) - 0.5) * 0.0035 * glitchAmount,
-                        (ValueNoise(input.screenUV * float2(53.0, 29.0) - _Time.y * 2.4) - 0.5) * 0.0018 * glitchAmount);
+                        (Fbm(screenUV * float2(91.0, 47.0) + _Time.y * 3.2) - 0.5) * 0.0035 * glitchAmount,
+                        (ValueNoise(screenUV * float2(53.0, 29.0) - _Time.y * 2.4) - 0.5) * 0.0018 * glitchAmount);
                     half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV + chromaOffset)).r;
                     half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV - chromaOffset)).b;
                     color.r = red;
                     color.b = blue;
 
-                    float staticNoise = saturate(ValueNoise(input.screenUV * _ScreenParams.xy * 0.08 + _Time.y * 18.0) - 0.68) * glitchAmount;
+                    float staticNoise = saturate(ValueNoise(screenUV * _ScreenParams.xy * 0.08 + _Time.y * 18.0) - 0.68) * glitchAmount;
                     color.rgb += staticNoise * half3(0.055, 0.08, 0.1);
                 }
                 half sheen = (half)saturate(combinedMask * (0.08 + wetness * 0.06 + hullStress * 0.05));
@@ -293,21 +314,21 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 color.rgb += dustTint * (half)(dustMask * 0.18);
 
                 float rainIntensity = saturate(_RainIntensity);
-                RainOverlayResult rainOverlay = ComputeScreenSpaceRain(input.screenUV, rainIntensity);
+                RainOverlayResult rainOverlay = ComputeScreenSpaceRain(screenUV, rainIntensity);
                 float rainMask = rainOverlay.mask;
-                half3 rainRefracted = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(input.screenUV + rainOverlay.normalOffset)).rgb;
+                half3 rainRefracted = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(screenUV + rainOverlay.normalOffset)).rgb;
                 half3 rainTint = half3(0.48h, 0.58h, 0.68h);
                 color.rgb = lerp(color.rgb, rainRefracted, (half)(rainMask * 0.36));
                 color.rgb = lerp(color.rgb, color.rgb * (1.0h - (half)(rainIntensity * 0.08)), (half)rainIntensity);
                 color.rgb += rainTint * (half)(rainMask * 0.22);
                 float lightningFlash = saturate(_HectonLightningFlash);
-                float2 lightningCenter = input.screenUV * 2.0 - 1.0;
+                float2 lightningCenter = screenUV * 2.0 - 1.0;
                 float whiteVignette = smoothstep(0.18, 1.15, dot(lightningCenter, lightningCenter));
                 color.rgb += (half)lightningFlash * half3(1.0h, 1.0h, 1.0h) * (half)(0.10 + whiteVignette * 0.72);
 
                 float stormVoltage = saturate(rainIntensity * 0.72 + lightningFlash);
-                float bandSeed = Hash21(floor(input.screenUV * float2(11.0, 19.0)));
-                float voltageBand = abs(frac(input.screenUV.y * 22.0 - _Time.y * 3.1 + bandSeed) - 0.5);
+                float bandSeed = Hash21(floor(screenUV * float2(11.0, 19.0)));
+                float voltageBand = abs(frac(screenUV.y * 22.0 - _Time.y * 3.1 + bandSeed) - 0.5);
                 float voltagePulse = smoothstep(0.035, 0.0, voltageBand) * stormVoltage;
                 color.rgb += half3(0.025h, 0.045h, 0.065h) * (half)voltagePulse;
                 return color;

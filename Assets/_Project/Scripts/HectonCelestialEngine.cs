@@ -596,6 +596,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [SerializeField] private float eclipseHysteresisMargin = 0.5f;
         [SerializeField, Range(0.01f, 5f)] private float sunAngularRadiusDegrees = 0.27f;
         [SerializeField, Range(0.01f, 1f)] private float eclipseEventStartPenumbraThreshold = 0.5f;
+        [SerializeField, Range(-0.1f, 0.1f)] private float eclipseAegirHorizonCullThreshold = -0.015f;
 
         [Header("Lunar Resonance")]
         [SerializeField, Range(0.5f, 15f)] private float lunarResonanceAlignmentDegrees = 5f;
@@ -682,7 +683,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         private float _eclipseAngularRadius;
         private float _accumulatedOrbitalAngle;
         private float _currentBacklitFactor;
-        private Matrix4x4 _sunOrbitRotationMatrix = Matrix4x4.identity;
+        private float4x4 _sunOrbitRotationMatrix = float4x4.identity;
         private Vector3 _resolvedSunForward = Vector3.forward;
 
         private double _rotationAccumulator;
@@ -717,6 +718,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         private Vector2 _surfaceCloudShadowCookieOffset;
         private Vector2 _aegirRingShadowCookieOffset;
         private Texture2D _runtimeAegirRingShadowCookie;
+        private bool _aegirRingShadowCookieBound;
         private bool _sunDirectionResolvedFromMatrix;
 
         private float3 _resolvedSunDirection;
@@ -1490,12 +1492,15 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
                 out Vector2 targetCookieOffset);
             if (selectedCookie == null)
             {
-                if (_sunCookieDefaultsCaptured)
+                if (_aegirRingShadowCookieBound)
+                    DetachAegirRingShadowCookie();
+                else if (_sunCookieDefaultsCaptured)
                     RestoreSurfaceCloudShadowCookie();
                 return;
             }
 
             CaptureSunCookieDefaults(lightData);
+            _aegirRingShadowCookieBound = ReferenceEquals(selectedCookie, ResolveAegirRingShadowCookie());
 
             if (!ReferenceEquals(sunLight.cookie, selectedCookie))
                 sunLight.cookie = selectedCookie;
@@ -1685,7 +1690,19 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
                 _sunAdditionalLightData.lightCookieOffset = _cachedSunCookieOffset;
             }
 
+            _aegirRingShadowCookieBound = false;
             _sunCookieDefaultsCaptured = false;
+        }
+
+        private void DetachAegirRingShadowCookie()
+        {
+            if (sunLight != null && ReferenceEquals(sunLight.cookie, ResolveAegirRingShadowCookie()))
+                sunLight.cookie = null;
+
+            _aegirRingShadowCookieBound = false;
+
+            if (_sunCookieDefaultsCaptured)
+                RestoreSurfaceCloudShadowCookie();
         }
 
         private void EnsureCelestialAtmosphereLutReady()
@@ -3087,11 +3104,13 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
 
             float3 axis = math.normalizesafe((float3)sunOrbitAxis, new float3(1, 0, 0));
             _sunOrbitRotationMatrix = BuildAxisAngleRotationMatrix(axis, math.radians(_accumulatedOrbitalAngle));
-            _resolvedSunForward = _sunOrbitRotationMatrix.MultiplyVector(Vector3.forward);
-            if (_resolvedSunForward.sqrMagnitude <= 0.0001f)
+            float3 resolvedSunForward = math.mul(_sunOrbitRotationMatrix, new float4(0f, 0f, 1f, 0f)).xyz;
+            if (math.lengthsq(resolvedSunForward) <= 0.0001f)
                 _resolvedSunForward = Vector3.forward;
+            else
+                _resolvedSunForward = new Vector3(resolvedSunForward.x, resolvedSunForward.y, resolvedSunForward.z);
 
-            sunLight.transform.rotation = Quaternion.LookRotation(_resolvedSunForward);
+            sunLight.transform.forward = _resolvedSunForward;
             _resolvedSunDirection = new float3(-_resolvedSunForward.x, -_resolvedSunForward.y, -_resolvedSunForward.z);
             _sunDirectionResolvedFromMatrix = true;
         }
@@ -3103,7 +3122,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
             _accumulatedOrbitalAngle %= 360f;
         }
 
-        private static Matrix4x4 BuildAxisAngleRotationMatrix(float3 axis, float radians)
+        private static float4x4 BuildAxisAngleRotationMatrix(float3 axis, float radians)
         {
             axis = math.normalizesafe(axis, new float3(1f, 0f, 0f));
             float x = axis.x;
@@ -3113,17 +3132,21 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
             float cos = math.cos(radians);
             float oneMinusCos = 1f - cos;
 
-            Matrix4x4 matrix = Matrix4x4.identity;
-            matrix.m00 = oneMinusCos * x * x + cos;
-            matrix.m01 = oneMinusCos * x * y - sin * z;
-            matrix.m02 = oneMinusCos * x * z + sin * y;
-            matrix.m10 = oneMinusCos * y * x + sin * z;
-            matrix.m11 = oneMinusCos * y * y + cos;
-            matrix.m12 = oneMinusCos * y * z - sin * x;
-            matrix.m20 = oneMinusCos * z * x - sin * y;
-            matrix.m21 = oneMinusCos * z * y + sin * x;
-            matrix.m22 = oneMinusCos * z * z + cos;
-            return matrix;
+            float m00 = oneMinusCos * x * x + cos;
+            float m01 = oneMinusCos * x * y - sin * z;
+            float m02 = oneMinusCos * x * z + sin * y;
+            float m10 = oneMinusCos * y * x + sin * z;
+            float m11 = oneMinusCos * y * y + cos;
+            float m12 = oneMinusCos * y * z - sin * x;
+            float m20 = oneMinusCos * z * x - sin * y;
+            float m21 = oneMinusCos * z * y + sin * x;
+            float m22 = oneMinusCos * z * z + cos;
+
+            return new float4x4(
+                new float4(m00, m10, m20, 0f),
+                new float4(m01, m11, m21, 0f),
+                new float4(m02, m12, m22, 0f),
+                new float4(0f, 0f, 0f, 1f));
         }
 
         private void UpdateSunVisualPosition()
@@ -4082,8 +4105,11 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         {
             _currentBacklitFactor = 0f;
 
-            if (!TryResolveAegirSkyDirection(out float3 playerToGiant))
+            if (!TryResolveAegirSkyDirection(out float3 playerToGiant) ||
+                !IsAegirAboveEclipseHorizon(playerToGiant))
+            {
                 return;
+            }
 
             float3 playerToSun = _resolvedSunDirection;
 
@@ -4325,7 +4351,8 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
             bool hasOccluder = false;
             float3 toSun = _resolvedSunDirection;
 
-            if (TryResolveAegirSkyDirection(out float3 toAegir))
+            if (TryResolveAegirSkyDirection(out float3 toAegir) &&
+                IsAegirAboveEclipseHorizon(toAegir))
             {
                 hasOccluder = true;
                 EvaluateSunOccluder(
@@ -4360,6 +4387,11 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
             }
 
             return hasOccluder;
+        }
+
+        private bool IsAegirAboveEclipseHorizon(float3 toAegir)
+        {
+            return math.isfinite(toAegir.y) && toAegir.y > eclipseAegirHorizonCullThreshold;
         }
 
         private void EvaluateSunOccluder(

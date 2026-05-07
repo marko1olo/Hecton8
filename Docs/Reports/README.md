@@ -1,6 +1,6 @@
 # Reports
 
-Date: 2026-05-07
+Date: 2026-05-08
 Status: PENDING VERIFICATION
 
 Purpose: canonical drop zone for new reports, audits, and validation writeups that are still active.
@@ -18,6 +18,14 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 
 ## Current High-Authority Reports
 
+- `2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
+- `2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`
+- `2026-05-07_OMEGA_FINAL_INQUISITION.md`
+- `2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`
+- `2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`
+- `2026-05-07_OMEGA_HEAVENS_SHADER_AVALANCHE.md`
+- `2026-05-07_AUTONOMOUS_ERROR_WARNING_CLEANUP.md`
+- `2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md`
 - `2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`
 - `2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`
 - `2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`
@@ -54,17 +62,35 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 - `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
 - `DOOMSDAY_FLAW_REPORT.md`
 
-`2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md` is the latest Project Atlas/source-count synchronization report.
-It records the current May 7 source inventory: `Assets/_Project/**/*.cs` `1212`, `Assets/_Project/Scripts/**/*.cs` `1171`, `Assets/_Project/Scripts` line count `651253` by `Get-Content.Count`, `559502` by `Measure-Object -Line`, and `GlobalRegistryContracts.cs` direct public interfaces `37`. It also records stale-symbol source proof for `itemGeneticsWords`, `MinimumDensity`, and `MaximumDensity`, and keeps runtime verification `PENDING`.
+`2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` is the latest documentation synchronization boundary.
+It supersedes conflicting May 7 source-count and build-blocker statements. It records `Docs/**/*.md` `444`, active markdown `231`, direct `Docs/Reports/*.md` `68`, active header debt `0`, `Assets/_Project/**/*.cs` `1247`, `Assets/_Project/Scripts/**/*.cs` `1206`, project physical lines `691068`, script physical lines `675775`, and `GlobalRegistryContracts.cs` direct public interfaces `40`. Latest completed full Core dependency build is `CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log`: `Build succeeded`, `48 Warning(s)`, `0 Error(s)`, with `0` first-party `Assets/_Project` warning lines. Unity MCP editor state is ready on active scene `00_BOOTSTRAP`, Play Mode off, compiling false, and console error/warning readback returned `0` entries. Source writes were observed after that build, so it is latest completed evidence, not stable-source proof. This is not Play Mode, profiler, GCMonitor, player-build, or memory-retention proof.
+
+`2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json` is the current machine-readable active documentation manifest.
+It lists `231` active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. Its source counts are orientation only because source churn continued during the pass.
+
+`2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md` is the previous main documentation synchronization boundary.
+It supersedes conflicting May 7 numeric counters after the final inquisition runtime patch and build-master recheck. It records `Docs/**/*.md` `443`, active markdown `230`, direct `Docs/Reports/*.md` `67`, active markdown header debt `0`, `Assets/_Project/**/*.cs` `1233`, `Assets/_Project/Scripts/**/*.cs` `1192`, project physical lines last observed `683064`, script physical lines last observed `667771`, and `GlobalRegistryContracts.cs` direct public interfaces `39`. It also records that source line counts were moving during the pass. Latest build-master `dotnet build Hecton8.Core.csproj --no-restore` failed with `2 Error(s)` in `HectonVoxelEngine.cs` due missing `GlobalRegistry.PlayerRigidbody` and `GlobalRegistry.PlayerMovement`; earlier same-day successful Core logs are historical only.
+
+`2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md` is the latest final-inquisition fallback compile/MCP boundary.
+It records editor-only scanner changes, its then-current `PENDING FINAL UNITY PROOF` status, repeated MCP console failure, and fallback Core build evidence. Read the main documentation refresh first for the latest documentation counters and latest successful console retry.
+
+`2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md` is the previous same-day live-churn boundary.
+It remains useful for churn methodology, but its numeric counters are superseded by `2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md` where they conflict.
+
+`2026-05-07_AUTONOMOUS_ERROR_WARNING_CLEANUP.md` is the latest autonomous compile-repair and documentation addendum.
+It records the current first-party compile cleanup around bootstrap warmup API drift, procedural audio duplicate helper drift, crash telemetry stale monitor references, missing repair/XR source inclusion, wreck decal value types, obsolete Unity 6 API warnings, and `PhysicalHandController` native-buffer sentinel/deferred-disposal repair. Evidence is isolated `Hecton8.Core` and `Hecton8.Editor` builds at `0 Warning(s)` / `0 Error(s)`, full Core dependency graph `0 Error(s)` with vendor/dependency warnings, full Editor graph `0 Warning(s)` / `0 Error(s)`, and Unity-style `Assembly-CSharp` compile `0 Error(s)` with one vendor/editor warning in `Crest.Helpers.Editor.csproj`. That report left MCP console proof pending because Unity MCP returned `ping not answered`; the later main documentation refresh records the current successful console retry.
+
+`2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md` is the previous Project Atlas/source-count synchronization report.
+It remains useful for Project Atlas/source-count methodology, but its numeric source counters are superseded by `2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md` when they conflict. It also records stale-symbol source proof for `itemGeneticsWords`, `MinimumDensity`, and `MaximumDensity`, and keeps runtime verification `PENDING`.
 
 `2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md` is the current static documentation integrity report.
-It records physical markdown under `Docs` `436`, active markdown excluding archive/deprecated/obsolete `223`, active non-report markdown `162`, active report markdown `61`, non-meta files under `Docs` `865`, hallucination-pattern scan results, deprecated stub state, five-artery Mega-Bus synchronization, zero-GC UI doctrine, native collection leak/lifecycle audit status, and the diff artifact path. It is not Play Mode, profiler, console-clean compile, or runtime leak proof.
+It records the earlier May 7 static documentation integrity sweep. Its numeric counters are superseded by `2026-05-07_LIVE_CHURN_CONTINUATION_SYNC.md` when they conflict. It remains authority for hallucination-pattern scan results, deprecated stub state, cinematic-cheat ledger inclusion, five-artery Mega-Bus synchronization, zero-GC UI doctrine, native collection leak/lifecycle audit status, and the diff artifact path. It is not Play Mode, profiler, console-clean compile, current-source whole-project build, or runtime leak proof.
 
 `2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json` is the machine-readable active documentation manifest.
-It lists `223` active markdown files with parsed `Date`, `Status`, title, and byte-size fields.
+It lists `230` active markdown files with parsed `Date`, `Status`, title, byte-size, and `requiresRuntimeProof` fields. Its source count fields were restamped by the main documentation refresh and remain compile-only evidence, not Unity runtime proof.
 
 `2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` is the previous broad documentation synchronization report.
-Read the May 7 synchronization reports first for current counters. The May 6 report remains historical editor-state/source-documentation evidence.
+Read the May 8 synchronization report first for current counters. The May 6 report remains historical editor-state/source-documentation evidence.
 
 `2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json` is a previous machine-readable active documentation manifest.
 It is superseded by `2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`.

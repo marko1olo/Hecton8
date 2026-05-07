@@ -40,6 +40,7 @@ namespace Hecton8.Inventory
         [SerializeField] private byte audioMaterialId;
         [SerializeField] private byte physicsMaterialTag;
         [SerializeField] private ushort _reserved0;
+        [SerializeField] private uint blueprintQuestFlagId;
         [SerializeField] private float massKg;
         [SerializeField] private float volumeM3;
 
@@ -56,7 +57,8 @@ namespace Hecton8.Inventory
             byte audioMaterialId,
             byte physicsMaterialTag,
             float massKg,
-            float volumeM3)
+            float volumeM3,
+            uint blueprintQuestFlagId = 0u)
         {
             this.hashID = hashID;
             this.categoryMask = categoryMask;
@@ -70,6 +72,7 @@ namespace Hecton8.Inventory
             this.audioMaterialId = audioMaterialId;
             this.physicsMaterialTag = physicsMaterialTag;
             _reserved0 = 0;
+            this.blueprintQuestFlagId = blueprintQuestFlagId;
             this.massKg = massKg;
             this.volumeM3 = volumeM3;
         }
@@ -83,6 +86,7 @@ namespace Hecton8.Inventory
         public ushort IconAtlasIndex => iconAtlasIndex;
         public ushort HlodSilhouetteIndex => hlodSilhouetteIndex;
         public uint VulnerabilityMask => vulnerabilityMask;
+        public uint BlueprintQuestFlagId => blueprintQuestFlagId;
         public byte AudioMaterialId => audioMaterialId;
         public byte PhysicsMaterialTag => physicsMaterialTag;
         public float MassKg => massKg;
@@ -185,6 +189,30 @@ namespace Hecton8.Inventory
         public static bool TryGetTemplate(int hashID, out ItemTemplate template)
         {
             return TryGetTemplate(unchecked((uint)hashID), out template);
+        }
+
+        public static bool IsBlueprintViewable(uint hashID)
+        {
+            return TryGetTemplate(hashID, out ItemTemplate template) &&
+                   IsBlueprintViewable(in template);
+        }
+
+        public static bool IsBlueprintViewable(int hashID)
+        {
+            return IsBlueprintViewable(unchecked((uint)hashID));
+        }
+
+        public static bool IsBlueprintViewable(in ItemTemplate template)
+        {
+            if (!template.IsValid)
+                return false;
+
+            uint requiredFlag = template.BlueprintQuestFlagId;
+            if (requiredFlag == 0u)
+                return true;
+
+            IQuestSystem questSystem = GlobalRegistry.QuestSystem;
+            return questSystem != null && questSystem.GetFlag(requiredFlag);
         }
 
         public static void Clear()

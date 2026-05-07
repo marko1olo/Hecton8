@@ -255,7 +255,7 @@ namespace Hecton8.Dev
                     return true;
                 }
 
-                await Awaitable.NextFrameAsync(cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
             }
 
             Debug.LogWarning($"[UISmoke] TIMEOUT {label} after {timeout:0.00}s");
@@ -268,7 +268,7 @@ namespace Hecton8.Dev
             while (Time.realtimeSinceStartup < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
             }
         }
 

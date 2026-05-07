@@ -1,6 +1,6 @@
 # 2026-05-07 Brutal Synchronization Report
 Date: 2026-05-07
-Status: PENDING VERIFICATION
+Status: PENDING VERIFICATION (BLOCKED BY MCP)
 Scope: documentation synchronization pass across active `Docs` and source-backed project counts.
 
 Mandates followed:
@@ -15,7 +15,7 @@ Mandates followed:
 
 Requested terminal status `ARCHIVE SYNCHRONIZED VERIFIED` is rejected.
 `AGENTS.md` requires status to remain `PENDING VERIFICATION` unless user-provided runtime logs prove the state.
-This pass changed documentation only. No Unity Play Mode, profiler, console-clean compile, or runtime leak dump is claimed.
+This pass changed documentation only. No Unity Play Mode, profiler, console-clean compile, or runtime leak dump is claimed. The later build-master recheck currently reports a Core compile failure.
 
 ## Source Count Evidence
 
@@ -35,15 +35,15 @@ $contracts = 'Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs'
 $ifaceAll = (rg -n '^\s*public\s+interface\s+' $contracts | Measure-Object).Count
 ```
 
-Observed values:
+Observed values after the final stable file-count recheck:
 
-- `Assets/_Project`: `1212` C# files.
-- `Assets/_Project/Scripts`: `1171` C# files.
-- `Assets/_Project/Scripts` by `Get-Content.Count`: `651253` lines.
-- `Assets/_Project/Scripts` by `Measure-Object -Line`: `559502` lines.
-- `GlobalRegistryContracts.cs`: `37` public interfaces.
+- `Assets/_Project`: `1233` C# files.
+- `Assets/_Project/Scripts`: `1192` C# files.
+- `Assets/_Project/Scripts` by `System.IO.StreamReader.ReadLine()`: `667771` lines.
+- `Assets/_Project/Scripts` by `Measure-Object -Line`: `573698` lines.
+- `GlobalRegistryContracts.cs`: `39` public interfaces.
 
-Boundary: source files were modified by another process during this pass. The stamped line count is the last observed count at `2026-05-07 04:47:30 +04:00`; source-count stability remains `PENDING VERIFICATION`.
+Boundary: source files were modified during the same May 7 documentation window. File count now reads `1233` / `1192`; latest script line count reads `667771` physical lines and `39` interfaces. This is still a timestamped source snapshot, not runtime or long-window stability proof. Source-count stability remains `PENDING VERIFICATION`.
 
 ## Documentation Count Evidence
 
@@ -64,24 +64,30 @@ $docsActive = @($docsAllMd | Where-Object {
 })
 ```
 
-Observed after this pass:
+Observed after the final May 7 recheck:
 
-- Physical markdown under `Docs`: `436`.
-- Active markdown excluding archive/deprecated/obsolete: `223`.
-- Active non-report markdown: `162`.
+- Physical markdown under `Docs`: `437`.
+- Active markdown excluding archive/deprecated/obsolete: `224`.
+- Active non-report markdown: `163`.
 - Active report markdown: `61`.
-- Non-meta files under `Docs`: `865`.
+- Non-meta files under `Docs`: `866`.
+- Root markdown files: `5`.
+- Root `.txt` files: `0`.
+- Root `.log` files: `0`.
+- Text/log evidence files under `Docs/DEPRECATED/External_And_Log_Bundles`: `151`.
+- Full `Docs/**/*.md` header debt after archive/report metadata normalization: `0`.
 
 ## Objective Results
 
 | Objective | Result |
 |---|---|
-| Active markdown `Date:` headers | Rechecked for `Date: 2026-05-07`. |
-| Active markdown `Status:` headers | Nine report files lacked a header-level `Status:`. Header status inserted as `Status: PENDING VERIFICATION`. |
+| Active markdown `Date:` headers | Rechecked for `Date: 2026-05-07`; current active misses `0`. |
+| Active markdown `Status:` headers | Rechecked for present status headers; current active misses `0`. Today reports containing `timed out` or `ping not answered` are forced to `PENDING VERIFICATION (BLOCKED BY MCP)`. |
 | Stale compile claims | No active doc asserts the old absence of `itemGeneticsWords`, `MinimumDensity`, or `MaximumDensity`. Source contains all three symbols. |
 | Deprecated flat redirects | No root-level `FLORA_SYSTEM_PLAN.md` or flat `Docs/FLORA_SYSTEM_PLAN.md` remains. Deprecated redirect stub is already under `Docs/DEPRECATED/Root_Redirect_Stubs_2026-05-01/`. Canonical `Docs/Flora_Pipeline/FLORA_SYSTEM_PLAN.md` is retained. |
 | Atlas count sync | `PROJECT_ATLAS.md` updated to current physical file/line/interface counts. |
 | JSON manifest | `Docs/Reports/2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json` generated. |
+| Cinematic cheat ledger | `Docs/ARCHITECTURE/CINEMATIC_CHEATS_LEDGER.md` added as an active architecture document for source-backed visual-fake decisions. |
 | Conceptual system map | DOTS remains `Experimental Seam`; Physics remains `Active/Transitional`. |
 | Event flow map | `EVENT_FLOW_MAP.md`, `EVENT_BUS_MAP.md`, and `SYSTEM_INTERCONNECT_MATRIX.md` state the five arteries: Core, Env, Player, Base, AI. |
 | UI zero-GC doctrine | `ZERO_GC_UI_PIPELINE.md` now explicitly forbids `.ToString()` helper laundering and requires `Span<char>`/`TryFormat`/`TMP_Text.SetCharArray`. |
@@ -121,9 +127,20 @@ Complete docs diff is exported to:
 
 - `CodexArtifacts/2026-05-07_BRUTAL_SYNCHRONIZATION_DOCS_DIFF.patch`
 
+## Build Artifact Boundary
+
+The latest opened build-master artifact `CodexArtifacts/2026-05-07_BUILD_MASTER_CORE_BUILD.log` reports:
+
+- `Build FAILED.`
+- `55 Warning(s)`
+- `2 Error(s)`
+- active blockers: `HectonVoxelEngine.cs(4143,47)` missing `GlobalRegistry.PlayerRigidbody`; `HectonVoxelEngine.cs(4144,62)` missing `GlobalRegistry.PlayerMovement`
+
+Older successful Core logs are scoped evidence for older source states. They are not proof for the current source, and they are not Play Mode, GCMonitor, profiler, scene/prefab, memory-retention, or player-build proof.
+
 ## Verdict
 
 Documentation was synchronized against the current static filesystem/source scan.
 Runtime correctness remains unproven.
 
-STATUS: PENDING VERIFICATION
+Status: PENDING VERIFICATION (BLOCKED BY MCP)

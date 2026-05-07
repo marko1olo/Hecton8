@@ -414,7 +414,7 @@ namespace Hecton8.AI
                 float age01 = 1f - math.saturate(age / safeMaxAge);
                 float3 toMemory = slot.xyz - currentPosition;
                 float distanceWeight = math.rsqrt(math.max(math.lengthsq(toMemory), 1f));
-                float candidateWeight = math.pow(age01, 2f) * distanceWeight;
+                float candidateWeight = age01 * age01 * distanceWeight;
                 if (candidateWeight <= bestWeight)
                     continue;
 
@@ -449,11 +449,14 @@ namespace Hecton8.AI
     /// </summary>
     public struct CreatureUtilityBrain
     {
+        private const float MetabolicTickIntervalSeconds = 5f;
+
         private CreatureArchetypeData _archetype;
         private FaunaSpeciesProfile _speciesProfile;
         private FaunaDataTemplate _dataTemplate;
         private int _slot;
         private bool _initialized;
+        private float _metabolicTickAccumulator;
 
         public PredatorUtilityState CurrentStateMask { get; private set; }
         public bool UsesPredatorRole => IsPredatorArchetype(_archetype, _speciesProfile);
@@ -506,6 +509,7 @@ namespace Hecton8.AI
             HungerScore = 0f;
             AggressionScore = 0f;
             FearScore = 0f;
+            _metabolicTickAccumulator = 0f;
             if (_initialized)
             {
                 RegisterSpeciesTuning();
@@ -581,6 +585,15 @@ namespace Hecton8.AI
             if (!_initialized)
                 Initialize(context.SelfPosition, _speciesProfile, _archetype, _dataTemplate);
 
+            float dispatcherDeltaTime = math.max(0f, dt);
+            _metabolicTickAccumulator += dispatcherDeltaTime;
+            float metabolicDeltaTime = 0f;
+            if (_metabolicTickAccumulator >= MetabolicTickIntervalSeconds)
+            {
+                metabolicDeltaTime = _metabolicTickAccumulator;
+                _metabolicTickAccumulator = 0f;
+            }
+
             float3 fallbackForward = (float3)context.SelfForward;
             float acousticPingStrength01 = 0f;
             float acousticTransmission01 = 0f;
@@ -590,8 +603,7 @@ namespace Hecton8.AI
             {
                 hasNoisePlayerTarget = true;
                 noisePlayerPosition = playerNoise.Position;
-                float movementSpeed = math.sqrt(math.max(0f, playerNoise.MovementSpeedSqr));
-                float movement01 = math.saturate(movementSpeed / 8.5f);
+                float movement01 = math.saturate(math.max(0f, playerNoise.MovementSpeedSqr) / (8.5f * 8.5f));
                 float tool01 = math.saturate(playerNoise.ToolUseNoise01);
                 float transport01 = math.saturate(playerNoise.TransportBoost01 * math.max(1f, playerNoise.TransportSignature));
                 float flashlight01 = playerNoise.FlashlightOn ? 0.2f : 0f;
@@ -665,7 +677,8 @@ namespace Hecton8.AI
             input.HealthNormalized = math.saturate(context.HealthNormalized);
             input.FearPressure01 = math.saturate(context.FearPressure01);
             input.FleeHealthThreshold = math.saturate(context.FleeHealthThreshold);
-            input.DeltaTime = math.max(0f, dt);
+            input.DeltaTime = dispatcherDeltaTime;
+            input.MetabolicDeltaTime = metabolicDeltaTime;
             input.CurrentTime = currentTime;
             input.AcousticPingStrength01 = acousticPingStrength01;
             input.AcousticTransmission01 = acousticTransmission01;

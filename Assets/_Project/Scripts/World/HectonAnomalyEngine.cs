@@ -30,6 +30,9 @@ namespace Hecton8.World
         /// <summary>Height epsilon used for plateau and lip comparisons.</summary>
         public float EqualHeightEpsilon;
 
+        /// <summary>Maximum heap/neighbor operations allowed in one interruptible flood-fill slice.</summary>
+        public int MaxFloodFillOperationsPerSlice;
+
         /// <summary>Returns a bounded copy of the settings.</summary>
         public AnomalyBasinDetectionSettings Sanitized()
         {
@@ -40,7 +43,8 @@ namespace Hecton8.World
                 CellSizeMeters = math.max(0.001f, CellSizeMeters),
                 MinimumDepthMeters = math.max(0f, MinimumDepthMeters),
                 MaxFloodCells = math.max(8, MaxFloodCells),
-                EqualHeightEpsilon = math.max(0.000001f, EqualHeightEpsilon)
+                EqualHeightEpsilon = math.max(0.000001f, EqualHeightEpsilon),
+                MaxFloodFillOperationsPerSlice = math.max(64, MaxFloodFillOperationsPerSlice == 0 ? 512 : MaxFloodFillOperationsPerSlice)
             };
         }
     }
@@ -88,6 +92,24 @@ namespace Hecton8.World
 
         /// <summary>One when the record is valid.</summary>
         public byte Valid;
+    }
+
+    /// <summary>
+    /// Serializable continuation state for the interruptible closed-basin flood fill.
+    /// </summary>
+    public struct AnomalyBasinFloodFillState
+    {
+        public int CandidateIndex;
+        public int Stamp;
+        public int BasinId;
+        public int SeedIndex;
+        public int HeapCount;
+        public int AcceptedCount;
+        public int Phase;
+        public float LipHeight;
+        public float DeepestHeight;
+        public byte FoundSpill;
+        public byte Initialized;
     }
 
     /// <summary>
@@ -167,6 +189,64 @@ namespace Hecton8.World
 
             JobHandle scanHandle = scanJob.Schedule(cellCount, 64, dependency);
             return floodJob.Schedule(scanHandle);
+        }
+
+        /// <summary>
+        /// Schedules one interruptible closed-basin flood-fill slice against an already-scanned candidate mask.
+        /// </summary>
+        public static JobHandle ScheduleClosedBasinFloodFillSlice(
+            NativeArray<float> heightmap,
+            NativeArray<byte> basinMask,
+            NativeArray<AnomalyBasinRecord> basinRecords,
+            NativeArray<byte> candidateMask,
+            NativeArray<int> floodHeap,
+            NativeArray<int> visitedStamp,
+            NativeArray<int> acceptedCells,
+            NativeQueue<AnomalyBasinFloodFillState> pendingStates,
+            NativeQueue<AnomalyBasinFloodFillState> deferredStates,
+            NativeArray<int> sliceStatus,
+            AnomalyBasinDetectionSettings settings,
+            JobHandle dependency = default)
+        {
+            AnomalyBasinDetectionSettings safeSettings = settings.Sanitized();
+            int cellCount = checked(safeSettings.Width * safeSettings.Height);
+            if (heightmap.Length < cellCount)
+                throw new ArgumentException("Heightmap length is smaller than Width * Height.", nameof(heightmap));
+            if (basinMask.Length < cellCount)
+                throw new ArgumentException("Basin mask length is smaller than Width * Height.", nameof(basinMask));
+            if (basinRecords.Length < cellCount)
+                throw new ArgumentException("Basin records length is smaller than Width * Height.", nameof(basinRecords));
+            if (candidateMask.Length < cellCount)
+                throw new ArgumentException("Candidate mask length is smaller than Width * Height.", nameof(candidateMask));
+            if (floodHeap.Length < cellCount)
+                throw new ArgumentException("Flood heap length is smaller than Width * Height.", nameof(floodHeap));
+            if (visitedStamp.Length < cellCount)
+                throw new ArgumentException("Visited stamp length is smaller than Width * Height.", nameof(visitedStamp));
+            if (acceptedCells.Length < cellCount)
+                throw new ArgumentException("Accepted cells length is smaller than Width * Height.", nameof(acceptedCells));
+            if (!pendingStates.IsCreated)
+                throw new ArgumentException("Pending flood-fill state queue is not created.", nameof(pendingStates));
+            if (!deferredStates.IsCreated)
+                throw new ArgumentException("Deferred flood-fill state queue is not created.", nameof(deferredStates));
+            if (!sliceStatus.IsCreated || sliceStatus.Length < 2)
+                throw new ArgumentException("Slice status requires at least two integer slots.", nameof(sliceStatus));
+
+            var job = new ClosedBasinFloodFillSliceJob
+            {
+                Heightmap = heightmap,
+                CandidateMask = candidateMask,
+                BasinMask = basinMask,
+                BasinRecords = basinRecords,
+                FloodHeap = floodHeap,
+                VisitedStamp = visitedStamp,
+                AcceptedCells = acceptedCells,
+                PendingStates = pendingStates,
+                DeferredStates = deferredStates,
+                SliceStatus = sliceStatus,
+                Settings = safeSettings
+            };
+
+            return job.Schedule(dependency);
         }
 
         /// <summary>
@@ -304,6 +384,17 @@ namespace Hecton8.World
                 NoiseFrequency = math.max(0.000001f, noiseFrequency)
             };
 
+            double3 chunkMinAup = sdfOriginAup;
+            double3 chunkMaxAup = ResolveSdfChunkMaxAup(
+                sdfOriginAup,
+                job.SdfWidth,
+                job.SdfHeight,
+                job.SdfDepth,
+                job.VoxelSizeMeters);
+            float boundsRadius = job.RadiusMeters + job.EdgeWarpMeters + job.VoxelSizeMeters;
+            if (!PillarAabbIntersectsChunk(pillarBaseAup, boundsRadius, job.HeightMeters, chunkMinAup, chunkMaxAup))
+                return dependency;
+
             int safeSdfHeight = math.max(1, sdfHeight);
             int radiusCells = ResolvePillarEnvelopeRadiusCells(job.RadiusMeters, job.EdgeWarpMeters, job.VoxelSizeMeters);
             int diameter = checked(radiusCells * 2 + 1);
@@ -349,6 +440,13 @@ namespace Hecton8.World
                 EdgeWarpMeters = math.max(0f, edgeWarpMeters),
                 NoiseFrequency = math.max(0.000001f, noiseFrequency)
             };
+            job.ChunkMinAup = sdfOriginAup;
+            job.ChunkMaxAup = ResolveSdfChunkMaxAup(
+                sdfOriginAup,
+                job.SdfWidth,
+                job.SdfHeight,
+                job.SdfDepth,
+                job.VoxelSizeMeters);
 
             int radiusCells = ResolvePillarEnvelopeRadiusCells(job.RadiusMeters, job.EdgeWarpMeters, job.VoxelSizeMeters);
             int diameter = checked(radiusCells * 2 + 1);
@@ -518,6 +616,39 @@ namespace Hecton8.World
             float safeVoxel = math.max(0.001f, voxelSizeMeters);
             float maxRadius = math.max(0.001f, radiusMeters) + math.max(0f, edgeWarpMeters) + safeVoxel;
             return math.max(0, (int)math.ceil(maxRadius / safeVoxel));
+        }
+
+        private static double3 ResolveSdfChunkMaxAup(double3 sdfOriginAup, int sdfWidth, int sdfHeight, int sdfDepth, float voxelSizeMeters)
+        {
+            double safeVoxel = math.max(0.001f, voxelSizeMeters);
+            return new double3(
+                sdfOriginAup.x + math.max(0, sdfWidth - 1) * safeVoxel,
+                sdfOriginAup.y + math.max(0, sdfHeight - 1) * safeVoxel,
+                sdfOriginAup.z + math.max(0, sdfDepth - 1) * safeVoxel);
+        }
+
+        private static bool PillarAabbIntersectsChunk(
+            double3 pillarBaseAup,
+            float radiusMeters,
+            float heightMeters,
+            double3 chunkMinAup,
+            double3 chunkMaxAup)
+        {
+            double radius = math.max(0.001f, radiusMeters);
+            double height = math.max(0.001f, heightMeters);
+            double minX = pillarBaseAup.x - radius;
+            double maxX = pillarBaseAup.x + radius;
+            double minY = pillarBaseAup.y;
+            double maxY = pillarBaseAup.y + height;
+            double minZ = pillarBaseAup.z - radius;
+            double maxZ = pillarBaseAup.z + radius;
+
+            return maxX >= chunkMinAup.x &&
+                   minX <= chunkMaxAup.x &&
+                   maxY >= chunkMinAup.y &&
+                   minY <= chunkMaxAup.y &&
+                   maxZ >= chunkMinAup.z &&
+                   minZ <= chunkMaxAup.z;
         }
 
 #if UNITY_EDITOR
@@ -967,6 +1098,364 @@ namespace Hecton8.World
         {
             for (int i = 0; i < cellCount; i++)
                 VisitedStamp[i] = 0;
+        }
+    }
+
+    /// <summary>
+    /// Burst flood-fill slice that defers active basin state instead of monopolizing a worker on huge basins.
+    /// </summary>
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
+    public struct ClosedBasinFloodFillSliceJob : IJob
+    {
+        [ReadOnly] public NativeArray<float> Heightmap;
+        public NativeArray<byte> CandidateMask;
+        public NativeArray<byte> BasinMask;
+        public NativeArray<AnomalyBasinRecord> BasinRecords;
+        public NativeArray<int> FloodHeap;
+        public NativeArray<int> VisitedStamp;
+        public NativeArray<int> AcceptedCells;
+        public NativeQueue<AnomalyBasinFloodFillState> PendingStates;
+        public NativeQueue<AnomalyBasinFloodFillState> DeferredStates;
+        public NativeArray<int> SliceStatus;
+        public AnomalyBasinDetectionSettings Settings;
+
+        public void Execute()
+        {
+            int operationBudget = math.max(64, Settings.MaxFloodFillOperationsPerSlice);
+            int operations = 0;
+            AnomalyBasinFloodFillState state;
+            if (!PendingStates.TryDequeue(out state) || state.Initialized == 0)
+            {
+                state = new AnomalyBasinFloodFillState
+                {
+                    CandidateIndex = 0,
+                    Stamp = 1,
+                    BasinId = 1,
+                    Phase = 0,
+                    Initialized = 1
+                };
+            }
+
+            int cellCount = Settings.Width * Settings.Height;
+            SliceStatus[0] = 0;
+            while (state.CandidateIndex < cellCount)
+            {
+                if (state.Phase == 0)
+                {
+                    if (!TryStartNextCandidate(ref state, ref operations, operationBudget, cellCount))
+                    {
+                        Defer(state, operations);
+                        return;
+                    }
+
+                    if (state.CandidateIndex >= cellCount)
+                        break;
+                }
+
+                if (state.Phase == 1)
+                {
+                    if (!TryContinueFlood(ref state, ref operations, operationBudget))
+                    {
+                        Defer(state, operations);
+                        return;
+                    }
+
+                    FinalizeCandidate(ref state);
+                    state.CandidateIndex++;
+                    state.Phase = 0;
+                }
+            }
+
+            SliceStatus[0] = 2;
+            SliceStatus[1] = operations;
+        }
+
+        private bool TryStartNextCandidate(
+            ref AnomalyBasinFloodFillState state,
+            ref int operations,
+            int operationBudget,
+            int cellCount)
+        {
+            while (state.CandidateIndex < cellCount)
+            {
+                if (++operations >= operationBudget)
+                    return false;
+
+                int candidateIndex = state.CandidateIndex;
+                if (CandidateMask[candidateIndex] == 0 || BasinMask[candidateIndex] != 0)
+                {
+                    state.CandidateIndex++;
+                    continue;
+                }
+
+                int stamp = math.max(1, state.Stamp);
+                if (!NextStamp(ref stamp))
+                {
+                    stamp = 1;
+                    for (int i = 0; i < cellCount; i++)
+                        VisitedStamp[i] = 0;
+                }
+
+                float deepestHeight = Heightmap[candidateIndex];
+                state.Stamp = stamp;
+                state.SeedIndex = candidateIndex;
+                state.HeapCount = 0;
+                state.AcceptedCount = 0;
+                state.LipHeight = deepestHeight;
+                state.DeepestHeight = deepestHeight;
+                state.FoundSpill = 0;
+                state.Phase = 1;
+                MarkVisited(candidateIndex, stamp);
+                HeapPush(ref state.HeapCount, candidateIndex);
+                return true;
+            }
+
+            return true;
+        }
+
+        private bool TryContinueFlood(ref AnomalyBasinFloodFillState state, ref int operations, int operationBudget)
+        {
+            int width = Settings.Width;
+            int height = Settings.Height;
+            int cellCount = width * height;
+            int maxFloodCells = math.min(Settings.MaxFloodCells, cellCount);
+            float epsilon = Settings.EqualHeightEpsilon;
+
+            while (state.HeapCount > 0 && state.AcceptedCount < maxFloodCells)
+            {
+                if (++operations >= operationBudget)
+                    return false;
+
+                int cellIndex = HeapPop(ref state.HeapCount);
+                float cellHeight = Heightmap[cellIndex];
+                AcceptedCells[state.AcceptedCount++] = cellIndex;
+                state.LipHeight = math.max(state.LipHeight, cellHeight);
+
+                if (cellHeight > state.DeepestHeight + epsilon &&
+                    HasUnvisitedLowerNeighbor(cellIndex, cellHeight, state.Stamp, epsilon))
+                {
+                    state.LipHeight = cellHeight;
+                    state.FoundSpill = 1;
+                    break;
+                }
+
+                int x = cellIndex % width;
+                int z = cellIndex / width;
+                for (int dz = -1; dz <= 1; dz++)
+                {
+                    int nz = z + dz;
+                    if (nz < 0 || nz >= height)
+                        continue;
+
+                    for (int dx = -1; dx <= 1; dx++)
+                    {
+                        if (dx == 0 && dz == 0)
+                            continue;
+
+                        int nx = x + dx;
+                        if (nx < 0 || nx >= width)
+                            continue;
+
+                        int neighborIndex = nx + nz * width;
+                        if (VisitedStamp[neighborIndex] == state.Stamp || BasinMask[neighborIndex] != 0)
+                            continue;
+
+                        float neighborHeight = Heightmap[neighborIndex];
+                        if (!math.isfinite(neighborHeight))
+                            continue;
+
+                        MarkVisited(neighborIndex, state.Stamp);
+                        HeapPush(ref state.HeapCount, neighborIndex);
+                    }
+                }
+            }
+
+            return true;
+        }
+
+        private void FinalizeCandidate(ref AnomalyBasinFloodFillState state)
+        {
+            int width = Settings.Width;
+            int height = Settings.Height;
+            int cellCount = width * height;
+            int maxFloodCells = math.min(Settings.MaxFloodCells, cellCount);
+            float epsilon = Settings.EqualHeightEpsilon;
+            int seedIndex = state.SeedIndex;
+
+            if (state.AcceptedCount <= 0 || (state.AcceptedCount >= maxFloodCells && state.HeapCount > 0 && state.FoundSpill == 0))
+            {
+                BasinRecords[seedIndex] = default;
+                return;
+            }
+
+            float depth = state.LipHeight - state.DeepestHeight;
+            if (depth + epsilon < Settings.MinimumDepthMeters)
+            {
+                BasinRecords[seedIndex] = default;
+                return;
+            }
+
+            int deepestIndex = seedIndex;
+            int deepestX = seedIndex % width;
+            int deepestZ = seedIndex / width;
+            int minX = width;
+            int minZ = height;
+            int maxX = 0;
+            int maxZ = 0;
+            int maskedCount = 0;
+            float deepestHeight = state.DeepestHeight;
+            float maskThreshold = state.FoundSpill != 0 ? state.LipHeight - epsilon : state.LipHeight + epsilon;
+
+            for (int i = 0; i < state.AcceptedCount; i++)
+            {
+                int cellIndex = AcceptedCells[i];
+                float cellHeight = Heightmap[cellIndex];
+                if (cellHeight > state.LipHeight + epsilon || cellHeight >= maskThreshold)
+                    continue;
+
+                int x = cellIndex % width;
+                int z = cellIndex / width;
+                BasinMask[cellIndex] = 1;
+                minX = math.min(minX, x);
+                minZ = math.min(minZ, z);
+                maxX = math.max(maxX, x);
+                maxZ = math.max(maxZ, z);
+                maskedCount++;
+
+                if (cellHeight < deepestHeight - epsilon)
+                {
+                    deepestHeight = cellHeight;
+                    deepestIndex = cellIndex;
+                    deepestX = x;
+                    deepestZ = z;
+                }
+            }
+
+            if (maskedCount <= 0)
+            {
+                BasinRecords[seedIndex] = default;
+                return;
+            }
+
+            float cellSize = Settings.CellSizeMeters;
+            BasinRecords[seedIndex] = new AnomalyBasinRecord
+            {
+                BasinId = state.BasinId,
+                DeepestIndex = deepestIndex,
+                DeepestX = deepestX,
+                DeepestZ = deepestZ,
+                MinX = minX,
+                MinZ = minZ,
+                MaxX = maxX,
+                MaxZ = maxZ,
+                CellCount = maskedCount,
+                DeepestHeight = deepestHeight,
+                LipHeight = state.LipHeight,
+                AreaMetersSq = maskedCount * cellSize * cellSize,
+                Valid = 1
+            };
+            state.BasinId++;
+        }
+
+        private void Defer(AnomalyBasinFloodFillState state, int operations)
+        {
+            DeferredStates.Enqueue(state);
+            SliceStatus[0] = 1;
+            SliceStatus[1] = operations;
+        }
+
+        private bool HasUnvisitedLowerNeighbor(int cellIndex, float cellHeight, int stamp, float epsilon)
+        {
+            int width = Settings.Width;
+            int height = Settings.Height;
+            int x = cellIndex % width;
+            int z = cellIndex / width;
+
+            for (int dz = -1; dz <= 1; dz++)
+            {
+                int nz = z + dz;
+                if (nz < 0 || nz >= height)
+                    continue;
+
+                for (int dx = -1; dx <= 1; dx++)
+                {
+                    if (dx == 0 && dz == 0)
+                        continue;
+
+                    int nx = x + dx;
+                    if (nx < 0 || nx >= width)
+                        continue;
+
+                    int neighborIndex = nx + nz * width;
+                    if (VisitedStamp[neighborIndex] == stamp)
+                        continue;
+
+                    float neighborHeight = Heightmap[neighborIndex];
+                    if (math.isfinite(neighborHeight) && neighborHeight < cellHeight - epsilon)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void HeapPush(ref int heapCount, int index)
+        {
+            int heapIndex = heapCount++;
+            FloodHeap[heapIndex] = index;
+
+            while (heapIndex > 0)
+            {
+                int parent = (heapIndex - 1) >> 1;
+                if (Heightmap[FloodHeap[parent]] <= Heightmap[index])
+                    break;
+
+                FloodHeap[heapIndex] = FloodHeap[parent];
+                heapIndex = parent;
+            }
+
+            FloodHeap[heapIndex] = index;
+        }
+
+        private int HeapPop(ref int heapCount)
+        {
+            int result = FloodHeap[0];
+            int last = FloodHeap[--heapCount];
+            if (heapCount <= 0)
+                return result;
+
+            int heapIndex = 0;
+            while (true)
+            {
+                int left = heapIndex * 2 + 1;
+                if (left >= heapCount)
+                    break;
+
+                int right = left + 1;
+                int child = right < heapCount && Heightmap[FloodHeap[right]] < Heightmap[FloodHeap[left]] ? right : left;
+                if (Heightmap[FloodHeap[child]] >= Heightmap[last])
+                    break;
+
+                FloodHeap[heapIndex] = FloodHeap[child];
+                heapIndex = child;
+            }
+
+            FloodHeap[heapIndex] = last;
+            return result;
+        }
+
+        private void MarkVisited(int index, int stamp)
+        {
+            VisitedStamp[index] = stamp;
+        }
+
+        private static bool NextStamp(ref int stamp)
+        {
+            if (stamp == int.MaxValue)
+                return false;
+
+            stamp++;
+            return true;
         }
     }
 

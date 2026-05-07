@@ -82,6 +82,8 @@ namespace Hecton8.Gameplay
     public static class ScanEvents
     {
         private const int PendingEventCapacity = 16;
+        private const double WreckSignalDebounceSeconds = 5.0d;
+        public const byte WreckSignalReservedMarker = 1;
 
         // COLD ALLOC: RegistryBucket<IScanEventListener>[16] - scan event listener registry drained on dispatcher LateUpdate - owner: ScanEvents
         private static readonly RegistryBucket<IScanEventListener> _listeners = new RegistryBucket<IScanEventListener>(16);
@@ -91,6 +93,7 @@ namespace Hecton8.Gameplay
         private static NativeQueue<ScanEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static double _nextWreckSignalTime;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
@@ -116,6 +119,7 @@ namespace Hecton8.Gameplay
             _entryMetadataByHash.Clear();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _nextWreckSignalTime = 0.0d;
             _isDispatching = false;
         }
 
@@ -209,6 +213,27 @@ namespace Hecton8.Gameplay
                 EventType = (ushort)ScanEventType.ScanTriggered,
                 EntryKind = (byte)ScanEntryKind.Unknown,
                 Reserved = 0
+            });
+        }
+
+        public static bool RaiseWreckSignalPing(float3 center, float radius)
+        {
+            double now = UnityEngine.Time.unscaledTimeAsDouble;
+            if (now < _nextWreckSignalTime)
+                return false;
+
+            _nextWreckSignalTime = now + WreckSignalDebounceSeconds;
+            return Enqueue(new ScanEventPayload
+            {
+                Position = center,
+                Radius = radius,
+                EntryHash = 0u,
+                TitleHash = 0u,
+                CategoryHash = 0u,
+                SummaryHash = 0u,
+                EventType = (ushort)ScanEventType.ScanTriggered,
+                EntryKind = (byte)ScanEntryKind.Scannable,
+                Reserved = WreckSignalReservedMarker
             });
         }
 

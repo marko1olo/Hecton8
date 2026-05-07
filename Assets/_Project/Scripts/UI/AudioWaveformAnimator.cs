@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.UI
@@ -92,7 +93,7 @@ namespace Hecton8.UI
             {
                 _cueTimer -= deltaTime;
                 _noisePhase += deltaTime * Mathf.Lerp(waveformSpeedMin, waveformSpeedMax, targetAmplitude);
-                _amplitude = Mathf.Lerp(_amplitude, targetAmplitude, 1f - Mathf.Exp(-decaySharpness * deltaTime));
+                _amplitude = math.lerp(_amplitude, targetAmplitude, FastDecayBlend(decaySharpness, deltaTime));
             }
             else
             {
@@ -116,6 +117,18 @@ namespace Hecton8.UI
             }
 
             ApplyOptionalCueText(textBuffer, textStart, textLength);
+        }
+
+        private static float FastDecayBlend(float sharpness, float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return 0f;
+
+            float x = math.max(0f, sharpness) * deltaTime;
+            if (x >= 3.5f)
+                return 1f;
+
+            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
         }
 
         private void EnsureWaveformTargets()

@@ -1,17 +1,17 @@
 ﻿# SYSTEMS_CONTRACTS.md
 ## ENGINE SYSTEMS CONTRACTS
-Date: 2026-05-07
+Date: 2026-05-08
 Status: PENDING VERIFICATION
 Verification: not runtime-measured in this pass
 Scope: Save, Steam, Audio, Telemetry, CI, Accessibility, Endgame
 
-Current-state boundary, 2026-05-04:
+Current-state boundary, 2026-05-08:
 
 - This file is a contracts and target-behavior document, not a proof that every listed file/class exists or is production-ready.
-- Current source-backed system ownership starts from `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current source-backed system ownership starts from `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`, `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`, `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`, `Docs/Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`, `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - Current save implementation authority is `SaveManager.cs` / `SaveBinaryStorage.cs`; versioning and migration requirements below remain contractual.
 - Current audio service authority is `SpatialAudioManager` plus procedural audio owners; older `UnderwaterAudioProcessor.cs` naming below is a target contract unless source confirms a concrete owner.
-- No line in this document is a clean-console, zero-GC, Steam, CI, or accessibility verification claim without a fresh runtime/log artifact. May 4 dotnet compile evidence is compile-only: Core, Editor, DOTS, and PlayModeTests builds all returned `0 Warning(s)` / `0 Error(s)`; latest warning-cleanup Unity console readback after clear/script refresh returned `0` error/warning entries, but no bounded Play Mode run was captured; May 4 post-repair foundation guard scan exits `0` as source-gate evidence only.
+- No line in this document is a zero-GC, Steam, CI, accessibility, or Play Mode verification claim without a fresh runtime/log artifact. Latest May 8 completed full Core dependency build is compile-clean but warning-bearing: `CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log`, `Build succeeded`, `48 Warning(s)`, `0 Error(s)`, with `0` first-party `Assets/_Project` warning lines; later source writes were observed, so this is latest completed build evidence, not stable-source proof. Unity MCP editor-console readback returned `0` error/warning entries with active scene `00_BOOTSTRAP`, Play Mode off, and compiling false; no bounded Play Mode run was captured.
 
 These systems are developed separately from asset pipeline work.
 [FORBID] Use this document as primary source for asset generation.

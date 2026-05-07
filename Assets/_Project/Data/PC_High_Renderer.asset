@@ -110,7 +110,8 @@ MonoBehaviour:
   - {fileID: -4438276556181502662}
   - {fileID: 5318849925799663161}
   - {fileID: -8819836769844018346}
-  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c239d6e6b8d359d04956c384f42fa59985
+  - {fileID: 8465884984933540169}
+  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1afb2b45d40b3759c73a85dbb5fc1268c239d6e6b8d359d04956c384f42fa5998549e146248add7c75
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -190,6 +191,25 @@ MonoBehaviour:
     edgeStreakStrength: 0.46
     hullStressContribution: 0.8
     edgeFadeExponent: 1.35
+--- !u!114 &8465884984933540169
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd51d08180ac4679bed75a6b4cc8e888, type: 3}
+  m_Name: HectonVRBrownoutFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonVRBrownoutFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 86f624d8b2fb47b3bed4961b51bf2cbc, type: 3}
+    injectionPoint: 550
+    worldBlurTexelRadius: 1.65
+    scanlineStrength: 0.55
+    ditherStrength: 0.85
 --- !u!114 &-8819836769844018346
 MonoBehaviour:
   m_ObjectHideFlags: 0

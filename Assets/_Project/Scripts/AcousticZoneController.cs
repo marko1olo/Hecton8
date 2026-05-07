@@ -110,7 +110,7 @@ namespace Hecton8.Audio
         public static int PendingCount => _pendingZoneChangeCount + _nextFrameZoneChangeCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        internal static void ResetStaticState()
         {
             if (_pendingZoneChanges.IsCreated)
             {

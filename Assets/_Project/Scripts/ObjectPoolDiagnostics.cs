@@ -170,7 +170,7 @@ namespace Hecton8.Core
         private static int _lastDataBusSaturationWarningFrame = -1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        internal static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {

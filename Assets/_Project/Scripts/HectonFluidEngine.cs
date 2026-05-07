@@ -1417,12 +1417,11 @@ namespace Hecton8.Physics
 
         private float ResolveCinematicWaterLevelY()
         {
-            if (!enableCinematicTideShift || cinematicTideAmplitudeMeters <= 0f)
-                return waterLevel;
-
-            float timeSeconds = Time.time;
-            float combinedWave = Mathf.Sin(timeSeconds) + Mathf.Sin(timeSeconds * 0.5f);
-            return waterLevel + combinedWave * cinematicTideAmplitudeMeters;
+            return GlobalPhysicsStateManager.ResolveFrameCachedCurrentWaterLevelY(
+                waterLevel,
+                enableCinematicTideShift,
+                cinematicTideAmplitudeMeters,
+                Time.time);
         }
 
         private void EnsureGpuBuoyancyBuffers(int capacity)

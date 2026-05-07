@@ -663,21 +663,23 @@ namespace Hecton8.World
             uint state = Mix(0x43504854u, pillarId);
             float angleA = Next01(ref state) * math.PI * 2f;
             float angleB = angleA + (math.PI * 0.73f);
+            float3 normalA = new float3(math.cos(angleA), 0f, math.sin(angleA));
+            float3 normalB = new float3(math.cos(angleB), 0f, math.sin(angleB));
 
             AbsoluteUniversePosition geodeAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                baseAbsolute.x + math.cos(angleA) * safeRadius,
+                baseAbsolute.x + normalA.x * safeRadius,
                 baseAbsolute.y + safeHeight * 0.22f,
-                baseAbsolute.z + math.sin(angleA) * safeRadius));
+                baseAbsolute.z + normalA.z * safeRadius));
             AbsoluteUniversePosition rareOreAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                baseAbsolute.x + math.cos(angleB) * safeRadius,
+                baseAbsolute.x + normalB.x * safeRadius,
                 baseAbsolute.y + safeHeight * 0.62f,
-                baseAbsolute.z + math.sin(angleB) * safeRadius));
+                baseAbsolute.z + normalB.z * safeRadius));
 
             int spawned = 0;
-            if (TrySpawnDeepMantleGeodeAtAup(geodeAup, safeRadius, pillarId))
+            if (TrySpawnDeepMantleGeodeAtPillarSurfaceAup(geodeAup, safeRadius, pillarId, normalA))
                 spawned++;
 
-            if (TrySpawnRarePillarOreAtAup(rareOreAup, safeRadius, pillarId ^ 0x524F5245u))
+            if (TrySpawnRarePillarOreAtPillarSurfaceAup(rareOreAup, safeRadius, pillarId ^ 0x524F5245u, normalB))
                 spawned++;
 
             return spawned;
@@ -738,6 +740,94 @@ namespace Hecton8.World
             Vector3 surfaceNormal = spawnPosition - runtimePosition;
             if (surfaceNormal.sqrMagnitude <= 0.000001f)
                 surfaceNormal = Vector3.up;
+            Quaternion rotation = ResolveSurfaceRotation(surfaceNormal, yawDegrees);
+            GameObject instance = pool.Spawn(_runtimePrefab, spawnPosition, rotation);
+            if (instance == null)
+                return false;
+
+            if (!instance.TryGetComponent(out ResourceNode node))
+            {
+                pool.Despawn(instance);
+                return false;
+            }
+
+            node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
+            node.RefreshRuntimeSpatialRegistration();
+            sectorState.ActiveNodes.Add(node);
+            _debugLastAcceptedTemplateHash = template.StableHashId;
+            return true;
+        }
+
+        private bool TrySpawnDeepMantleGeodeAtPillarSurfaceAup(
+            AbsoluteUniversePosition positionAup,
+            float sourceRadiusMeters,
+            uint sourceId,
+            float3 surfaceNormalAup)
+        {
+            EnsureRuntimePool();
+
+            if (!Application.isPlaying ||
+                _residentSectors == null ||
+                !_runtimePoolReady ||
+                _runtimePrefab == null ||
+                !TryResolveDeepMantleGeodeTemplate(out ResourceNodeTemplate template))
+            {
+                return false;
+            }
+
+            return TrySpawnPillarSurfaceResourceAtAup(positionAup, sourceRadiusMeters, sourceId, surfaceNormalAup, template);
+        }
+
+        private bool TrySpawnRarePillarOreAtPillarSurfaceAup(
+            AbsoluteUniversePosition positionAup,
+            float sourceRadiusMeters,
+            uint sourceId,
+            float3 surfaceNormalAup)
+        {
+            EnsureRuntimePool();
+
+            if (!Application.isPlaying ||
+                _residentSectors == null ||
+                !_runtimePoolReady ||
+                _runtimePrefab == null ||
+                !TryResolvePressureDiamondTemplate(out ResourceNodeTemplate template))
+            {
+                return false;
+            }
+
+            return TrySpawnPillarSurfaceResourceAtAup(positionAup, sourceRadiusMeters, sourceId, surfaceNormalAup, template);
+        }
+
+        private bool TrySpawnPillarSurfaceResourceAtAup(
+            AbsoluteUniversePosition positionAup,
+            float sourceRadiusMeters,
+            uint sourceId,
+            float3 surfaceNormalAup,
+            ResourceNodeTemplate template)
+        {
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool == null || template == null)
+                return false;
+
+            float3 safeNormal = math.normalizesafe(surfaceNormalAup, new float3(0f, 1f, 0f));
+            Vector3 surfaceNormal = new Vector3(safeNormal.x, safeNormal.y, safeNormal.z);
+            Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
+            float spawnOffset = math.max(template.SpawnOffsetMeters, math.max(0.25f, sourceRadiusMeters) * 0.08f);
+            Vector3 spawnPosition = runtimePosition + surfaceNormal * spawnOffset;
+            ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(spawnPosition);
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
+                return false;
+
+            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            int2 sector = QuantizeSector(in spawnAup);
+            long sectorKey = ComposeSectorKey(sector);
+            SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
+            if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
+                return false;
+
+            uint yawSeed = SeedSectorCandidate(sector, template.StableHashId, (int)(sourceId & 0x7FFFFFFFu));
+            float yawDegrees = Next01(ref yawSeed) * 360f;
             Quaternion rotation = ResolveSurfaceRotation(surfaceNormal, yawDegrees);
             GameObject instance = pool.Spawn(_runtimePrefab, spawnPosition, rotation);
             if (instance == null)

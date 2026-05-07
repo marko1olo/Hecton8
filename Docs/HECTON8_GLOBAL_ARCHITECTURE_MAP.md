@@ -1,6 +1,6 @@
 # HECTON-8 Global Architecture Map
 
-Date: 2026-05-07
+Date: 2026-05-08
 Status: PENDING VERIFICATION
 Scope: source-backed architecture map only, not a profiler capture and not a build-certification report
 
@@ -13,27 +13,31 @@ Mandates followed:
 - `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `AGENTS.md`
 
-## 2026-05-06 Current-State Boundary
+## 2026-05-08 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this map as current project truth.
+- Read `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`, `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`, `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`, `Docs/Reports/2026-05-07_FINAL_INQUISITION_NATIVE_SCANNER.md`, `Docs/Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`, `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this map as current project truth.
 - This map is source-backed architecture orientation, not Play Mode proof, profiler proof, console certification, or scene/prefab wiring proof.
 - Line counts and interface counts are orientation data only; source files and fresh verification logs win.
 
 ## 1. Scope
 
 - Audit target: `Assets/_Project/**/*.cs`
-- Current first-party `.cs` inventory under `Assets/_Project`: `1212`
-- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1171`
-- Current script line count under `Assets/_Project/Scripts`: `651121`
-- Average lines per script: `551.99`
-- Scripts still living directly in `Assets/_Project/Scripts` root: `336`
+- Current first-party `.cs` inventory under `Assets/_Project`: `1247`
+- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1206`
+- Current script physical line count under `Assets/_Project/Scripts` by `System.IO.StreamReader.ReadLine()`: `675775`
+- Current script line count under `Assets/_Project/Scripts` by `Measure-Object -Line`: `580769`
+- Average lines per script by `Measure-Object -Line`: `481.57`
+- Scripts still living directly in `Assets/_Project/Scripts` root: `337`
 
 This file replaces the older generated map whose `808`-script snapshot and some interface conclusions are no longer true.
 
-2026-05-06 correction:
-- Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, earlier May 2 `489893`, and May 2 `1087/1047/571562/317` snapshots.
-- Current `GlobalRegistryContracts.cs` contains `36` direct public interfaces.
+2026-05-08 correction:
+- Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, earlier May 2 `489893`, May 2 `1087/1047/571562/317`, May 6 `651121/552119`, and earlier May 7 `651253/559502`, `651810/560025`, `652238/560372`, `652787/560848`, `655363/563210`, and `667771` snapshots.
+- Current `GlobalRegistryContracts.cs` contains `40` direct public interfaces.
 - Older interface coverage ratios in this document are stale orientation only; re-open `GlobalRegistryContracts.cs` and implementors before making interface-completion claims.
+- Current completed full Core dependency build succeeded with `48 Warning(s)` and `0 Error(s)` in `CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log`; later source writes were observed, so this is latest completed build evidence, not stable-source proof.
+- Current Unity MCP editor-console readback returned `0` error/warning entries on active scene `00_BOOTSTRAP`.
+- This architecture map is not a Play Mode, profiler, GCMonitor, memory-retention, or player-build certificate.
 
 ## 2. Runtime Topology
 
@@ -96,33 +100,25 @@ Current direct damage contract owner confirmed by source scan:
 - `Hecton8.Core.IDamageReceiver` -> `Gameplay/HabitatIntegrityManager`
 
 This is materially different from older documents that claimed `IAudioService` was ghost, `IUIService` was directly multi-owned, or `IDamageReceiver` had two current implementers.
-It also supersedes older interface-count claims. Current direct public interface count is `36`; coverage must be rechecked from source before being used as proof.
+It also supersedes older interface-count claims. Current direct public interface count is `39`; coverage must be rechecked from source before being used as proof.
 
 ## 4. Event Architecture
 
-Current project uses mixed event styles.
+Current project documentation authority uses the five-artery Mega-Bus classification:
 
-Queue-backed deferred buses confirmed by source:
+- Core
+- Env
+- Player
+- Base
+- AI
 
-- `SaveEvents`
-- `QuestEvents`
-- `ScanEvents`
-- `NarrativeEvents`
-- `AudioLogEvents`
+Cross-domain authority is documented in `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/EVENT_BUS_MAP.md` and `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`.
 
-Direct static delegate buses still present:
+Current rule:
 
-- `InteractionEvents`
-- `CraftingEvents`
-- `PDAEvents`
-- `FlashlightEvents`
-- `RandomEventEvents`
-- `HectonSubmarineOsEvents`
-
-Meaning:
-
-- event architecture is not uniform
-- migration toward deferred `NativeQueue` buses is real, but incomplete
+- Direct `Action`, `Func`, C# `event`, `delegate`, or `UnityEvent` chains are legacy debt when they cross domain boundaries.
+- Local owner callbacks and async completion callbacks do not become event architecture authority by appearing in code.
+- Source scan found one static `Action`-typed GPU readback callback bridge in `SaveThumbnailSystem.cs`; it is not a first-party cross-domain bus lane.
 
 ## 5. Current Editor Readback
 
@@ -158,16 +154,16 @@ It is not proof of stable play-mode behavior, shipping build health, or zero-GC 
 
 Largest current first-party owners by line count:
 
-- `WorldProceduralScatterDirector.cs` - `11701`
-- `HectonPlayerMovement.cs` - `9982`
+- `WorldProceduralScatterDirector.cs` - `11778`
+- `HectonPlayerMovement.cs` - `10571`
+- `HectonVoxelEngine.cs` - `6751`
 - `World/HectonMapMagicVegetationBridge.cs` - `6640`
-- `HectonUnderwaterVisuals.cs` - `6529`
-- `HectonVoxelEngine.cs` - `6108`
-- `UI/SuitHUDV4CanvasOverlay.cs` - `6051`
-- `World/PersistentWorldRegistry.cs` - `5532`
-- `SaveBinaryStorage.cs` - `5524`
-- `Audio/PlayerCriticalProceduralAudioRenderer.cs` - `5421`
-- `WorldProceduralFieldSampler.cs` - `5079`
+- `HectonUnderwaterVisuals.cs` - `6553`
+- `UI/SuitHUDV4CanvasOverlay.cs` - `6220`
+- `Audio/PlayerCriticalProceduralAudioRenderer.cs` - `6047`
+- `SaveBinaryStorage.cs` - `5743`
+- `World/PersistentWorldRegistry.cs` - `5646`
+- `WorldProceduralFieldSampler.cs` - `5100`
 
 These are not cosmetic complaints.
 They are risk multipliers because runtime ownership, visuals, simulation, and integration pressure accumulate inside very large files.
@@ -176,7 +172,7 @@ They are risk multipliers because runtime ownership, visuals, simulation, and in
 
 - bootstrap ownership is split between `GameBootstrapper` and `SceneBootstrap`
 - event architecture is mixed between queue-backed and direct static buses
-- root-folder ownership is still noisy with `325` scripts in `Assets/_Project/Scripts`
+- root-folder ownership is still noisy with `337` scripts in `Assets/_Project/Scripts`
 - codebase health is stronger than some old reports claimed, but file-size concentration and ownership spread remain real
 
 ## 8. Regression Model

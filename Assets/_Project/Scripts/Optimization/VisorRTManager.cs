@@ -92,7 +92,7 @@ namespace Hecton8.Optimization
             
             // Query all Visor-owned RTs (zero-GC)
             _visorRTs.Clear();
-            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory("Visor", _visorRTs);
+            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.Visor, _visorRTs);
             
             // Calculate total Visor RT memory (zero-GC loop)
             long totalBytes = 0L;

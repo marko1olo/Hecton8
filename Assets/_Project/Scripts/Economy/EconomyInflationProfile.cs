@@ -78,7 +78,7 @@ namespace Hecton8.Economy
                 if (candidate.item == null)
                     continue;
 
-                if (LocHash.Compute(candidate.item.PersistentId) != itemHashId)
+                if (candidate.item.PersistentHashId != itemHashId)
                     continue;
 
                 rule = candidate;

@@ -385,7 +385,7 @@ namespace Hecton8.Tools
                     return;
                 }
 
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             LogVerification($"FAIL {label}: timeout after {_actionTimeout:0.00}s");
@@ -397,7 +397,7 @@ namespace Hecton8.Tools
             while (Time.realtimeSinceStartup < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Optimization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Burst;
@@ -400,11 +401,12 @@ namespace Hecton8.World
                     float3 sideAWs = TransformPoint(instanceMatrix, instanceWidth, instanceHeight * 0.5f, 0f) + GlobalOffset;
                     float3 sideBWs = TransformPoint(instanceMatrix, -instanceWidth, instanceHeight * 0.5f, 0f) + GlobalOffset;
 
-                    float radius = math.max(
-                        math.distance(centerWs, rootWs),
+                    float radiusSq = math.max(
+                        math.lengthsq(centerWs - rootWs),
                         math.max(
-                            math.distance(centerWs, topWs),
-                            math.max(math.distance(centerWs, sideAWs), math.distance(centerWs, sideBWs))));
+                            math.lengthsq(centerWs - topWs),
+                            math.max(math.lengthsq(centerWs - sideAWs), math.lengthsq(centerWs - sideBWs))));
+                    float radius = radiusSq * math.rsqrt(math.max(radiusSq, 0.000001f));
                     if (!IsSphereVisible(centerWs, math.max(0.25f, radius)))
                     {
                         VisibilityMask[index] = 0;
@@ -449,11 +451,14 @@ namespace Hecton8.World
                     float4 lightPosition = HeadlightPositionsWs[headlightIndex];
                     float lightRange = math.max(0.1f, lightPosition.w);
                     float3 toSample = samplePositionWs - lightPosition.xyz;
-                    float sampleDistance = math.length(toSample);
-                    if (sampleDistance >= lightRange || sampleDistance <= 0.0001f)
+                    float sampleDistanceSq = math.lengthsq(toSample);
+                    float lightRangeSq = lightRange * lightRange;
+                    if (sampleDistanceSq >= lightRangeSq || sampleDistanceSq <= 0.00000001f)
                         continue;
 
-                    float3 sampleDirection = toSample / sampleDistance;
+                    float invSampleDistance = math.rsqrt(sampleDistanceSq);
+                    float sampleDistance = sampleDistanceSq * invSampleDistance;
+                    float3 sampleDirection = toSample * invSampleDistance;
                     float4 directionData = HeadlightDirectionsWs[headlightIndex];
                     float3 lightDirection = math.normalizesafe(directionData.xyz);
                     float innerCos = directionData.w;
@@ -1482,9 +1487,13 @@ namespace Hecton8.World
             _cullingCompute.SetVector(_CameraPositionId, cameraPosition);
             _cullingCompute.SetVector(_CameraForwardId, cameraForward);
             _cullingCompute.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
-            _cullingCompute.SetFloat(_LodNearDistanceId, _nearLodDistance);
-            _cullingCompute.SetFloat(_LodFarDistanceId, _farLodDistance);
-            _cullingCompute.SetFloat(_LodTransitionRangeId, _lodTransitionRange);
+            float brgLodDistanceScalar = VRAMPressureMonitor.BrgLodDistanceScalar;
+            float brgNearLodDistance = Mathf.Max(0.01f, _nearLodDistance * brgLodDistanceScalar);
+            float brgFarLodDistance = Mathf.Max(brgNearLodDistance, _farLodDistance * brgLodDistanceScalar);
+            float brgLodTransitionRange = Mathf.Max(0.01f, _lodTransitionRange * brgLodDistanceScalar);
+            _cullingCompute.SetFloat(_LodNearDistanceId, brgNearLodDistance);
+            _cullingCompute.SetFloat(_LodFarDistanceId, brgFarLodDistance);
+            _cullingCompute.SetFloat(_LodTransitionRangeId, brgLodTransitionRange);
             _cullingCompute.SetFloat(_PeripheralCullDotId, Mathf.Clamp(_peripheralCullDot, -1f, 1f));
             _cullingCompute.SetFloat(_PeripheralCullDistanceId, Mathf.Max(0f, _peripheralCullDistance));
             _cullingCompute.SetFloat(_OcclusionDepthBiasId, _occlusionDepthBias);
@@ -1526,9 +1535,9 @@ namespace Hecton8.World
                 _cullingCompute.SetVector(_CameraPositionId, cameraPosition);
                 _cullingCompute.SetVector(_CameraForwardId, cameraForward);
                 _cullingCompute.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
-                _cullingCompute.SetFloat(_LodNearDistanceId, _nearLodDistance);
-                _cullingCompute.SetFloat(_LodFarDistanceId, _farLodDistance);
-                _cullingCompute.SetFloat(_LodTransitionRangeId, _lodTransitionRange);
+                _cullingCompute.SetFloat(_LodNearDistanceId, brgNearLodDistance);
+                _cullingCompute.SetFloat(_LodFarDistanceId, brgFarLodDistance);
+                _cullingCompute.SetFloat(_LodTransitionRangeId, brgLodTransitionRange);
                 _cullingCompute.SetFloat(_PeripheralCullDotId, Mathf.Clamp(_peripheralCullDot, -1f, 1f));
                 _cullingCompute.SetFloat(_PeripheralCullDistanceId, Mathf.Max(0f, _peripheralCullDistance));
                 _cullingCompute.SetInt(_DarknessCullEnabledId, _enableDarknessCulling ? 1 : 0);
@@ -1598,7 +1607,7 @@ namespace Hecton8.World
             ReleaseDepthPyramidTexture();
             _depthPyramidWidth = targetWidth;
             _depthPyramidHeight = targetHeight;
-            _depthPyramidMipCount = Mathf.FloorToInt(Mathf.Log(Mathf.Max(targetWidth, targetHeight), 2f)) + 1;
+            _depthPyramidMipCount = ResolveMipCountNoLog(targetWidth, targetHeight);
 
             _depthPyramidTexture = new RenderTexture(targetWidth, targetHeight, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear)
             {
@@ -1611,6 +1620,28 @@ namespace Hecton8.World
                 wrapMode = TextureWrapMode.Clamp
             }; // COLD ALLOC: RenderTexture[targetWidth x targetHeight] - vegetation Hi-Z depth pyramid for compute occlusion - owner: HectonIndirectVegetationRenderer
             _depthPyramidTexture.Create();
+        }
+
+        private static int ResolveMipCountNoLog(int width, int height)
+        {
+            int size = math.max(1, math.max(width, height));
+            int count = 1;
+            count += size >= 2 ? 1 : 0;
+            count += size >= 4 ? 1 : 0;
+            count += size >= 8 ? 1 : 0;
+            count += size >= 16 ? 1 : 0;
+            count += size >= 32 ? 1 : 0;
+            count += size >= 64 ? 1 : 0;
+            count += size >= 128 ? 1 : 0;
+            count += size >= 256 ? 1 : 0;
+            count += size >= 512 ? 1 : 0;
+            count += size >= 1024 ? 1 : 0;
+            count += size >= 2048 ? 1 : 0;
+            count += size >= 4096 ? 1 : 0;
+            count += size >= 8192 ? 1 : 0;
+            count += size >= 16384 ? 1 : 0;
+            count += size >= 32768 ? 1 : 0;
+            return count;
         }
 
         private void EnsureGpuIndirectResources(int instanceCount, Mesh nearMesh, Mesh farMesh)
@@ -1957,20 +1988,20 @@ namespace Hecton8.World
             float encodedWidthScale = instanceData.WidthScale < 0f ? 1f : Mathf.Clamp01(instanceData.WidthScale);
             if (instanceType < 0.5f)
             {
-                instanceHeight = Mathf.Lerp(0.35f, 1.4f, encodedHeightScale);
-                instanceWidth = Mathf.Lerp(0.65f, 1.25f, encodedWidthScale);
+                instanceHeight = math.lerp(0.35f, 1.4f, encodedHeightScale);
+                instanceWidth = math.lerp(0.65f, 1.25f, encodedWidthScale);
                 return;
             }
 
             if (instanceType < 1.5f)
             {
-                instanceHeight = Mathf.Lerp(10f, 20f, encodedHeightScale);
-                instanceWidth = Mathf.Lerp(0.55f, 1.6f, encodedWidthScale);
+                instanceHeight = math.lerp(10f, 20f, encodedHeightScale);
+                instanceWidth = math.lerp(0.55f, 1.6f, encodedWidthScale);
                 return;
             }
 
-            instanceHeight = Mathf.Lerp(0.75f, 2.4f, encodedHeightScale);
-            instanceWidth = Mathf.Lerp(0.75f, 1.35f, encodedWidthScale);
+            instanceHeight = math.lerp(0.75f, 2.4f, encodedHeightScale);
+            instanceWidth = math.lerp(0.75f, 1.35f, encodedWidthScale);
         }
 
         private static Vector3 TransformPoint(Matrix4x4 matrixValue, float x, float y, float z)
@@ -1996,22 +2027,28 @@ namespace Hecton8.World
             {
                 Vector4 lightPosition = _scooterHeadlightPositionsWs[headlightIndex];
                 float lightRange = Mathf.Max(0.1f, lightPosition.w);
-                Vector3 toSample = samplePositionWS - new Vector3(lightPosition.x, lightPosition.y, lightPosition.z);
-                float sampleDistance = toSample.magnitude;
-                if (sampleDistance >= lightRange || sampleDistance <= 0.0001f)
+                float3 toSample = new float3(
+                    samplePositionWS.x - lightPosition.x,
+                    samplePositionWS.y - lightPosition.y,
+                    samplePositionWS.z - lightPosition.z);
+                float sampleDistanceSq = math.lengthsq(toSample);
+                float lightRangeSq = lightRange * lightRange;
+                if (sampleDistanceSq >= lightRangeSq || sampleDistanceSq <= 0.00000001f)
                     continue;
 
-                Vector3 sampleDirection = toSample / sampleDistance;
+                float invSampleDistance = math.rsqrt(sampleDistanceSq);
+                float sampleDistance = sampleDistanceSq * invSampleDistance;
+                float3 sampleDirection = toSample * invSampleDistance;
                 Vector4 directionData = _scooterHeadlightDirectionsWs[headlightIndex];
-                Vector3 lightDirection = new Vector3(directionData.x, directionData.y, directionData.z).normalized;
+                float3 lightDirection = math.normalizesafe(new float3(directionData.x, directionData.y, directionData.z));
                 float innerCos = directionData.w;
                 float outerCos = _scooterHeadlightConeData[headlightIndex].x;
                 float coneRange = Mathf.Max(innerCos - outerCos, 0.0001f);
-                float coneAttenuation = Mathf.Clamp01((Vector3.Dot(lightDirection, sampleDirection) - outerCos) / coneRange);
+                float coneAttenuation = math.saturate((math.dot(lightDirection, sampleDirection) - outerCos) / coneRange);
                 if (coneAttenuation <= 0.0001f)
                     continue;
 
-                float rangeAttenuation = Mathf.Clamp01(1f - sampleDistance * _scooterHeadlightConeData[headlightIndex].z);
+                float rangeAttenuation = math.saturate(1f - sampleDistance * _scooterHeadlightConeData[headlightIndex].z);
                 rangeAttenuation *= rangeAttenuation;
                 float intensity = _scooterHeadlightColors[headlightIndex].w * _scooterHeadlightConeData[headlightIndex].y;
                 if (coneAttenuation * rangeAttenuation * intensity >= 0.02f)
@@ -2064,10 +2101,13 @@ namespace Hecton8.World
                                     _cpuCullingData.IsCreated &&
                                     _cpuCullingMatrices.Length >= _instanceCount &&
                                     _cpuCullingData.Length >= _instanceCount;
-            float lodTransition = Mathf.Max(_lodTransitionRange, 0.01f);
-            float lod0MaxDistance = Mathf.Max(_nearLodDistance, 0.01f) + lodTransition;
-            float lod1MinDistance = Mathf.Max(0f, _nearLodDistance - lodTransition);
-            float lod1MaxDistance = Mathf.Max(_farLodDistance, _nearLodDistance) + lodTransition;
+            float brgLodDistanceScalar = VRAMPressureMonitor.BrgLodDistanceScalar;
+            float lodTransition = Mathf.Max(_lodTransitionRange * brgLodDistanceScalar, 0.01f);
+            float nearLodDistance = Mathf.Max(_nearLodDistance * brgLodDistanceScalar, 0.01f);
+            float farLodDistance = Mathf.Max(nearLodDistance, _farLodDistance * brgLodDistanceScalar);
+            float lod0MaxDistance = nearLodDistance + lodTransition;
+            float lod1MinDistance = Mathf.Max(0f, nearLodDistance - lodTransition);
+            float lod1MaxDistance = farLodDistance + lodTransition;
             Vector4 floatingOffset = ResolveVegetationFloatingOffset();
 
             if (!enableCpuCulling)

@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Physics;
@@ -24,13 +23,15 @@ namespace Hecton8.Tools
         private const float PhysicsImpulseHapticMinimumVolume = 0.08f;
         private const float PhysicsImpulseHapticDurationSeconds = 0.12f;
         private const float PhysicsImpulseHapticDecayRate = 4.2f;
+        private const float HapticDebounceWindowSeconds = 0.05f;
         internal const byte PriorityCritical = 3;
-        private const float TwoPi = 6.28318530718f;
 
         private NativeArray<HapticCommand> _frontBuffer;
         private NativeArray<HapticCommand> _backBuffer;
         private int _frontCount;
         private int _backCount;
+        private float _nextLeftHapticCommandTime;
+        private float _nextRightHapticCommandTime;
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _serviceRegistered;
@@ -143,7 +144,7 @@ namespace Hecton8.Tools
                 command.BaseLowFreqIntensity = math.saturate(command.BaseLowFreqIntensity * decayFactor);
                 command.BaseHighFreqIntensity = math.saturate(command.BaseHighFreqIntensity * decayFactor);
                 float wave = command.FrequencyHz > 0.001f
-                    ? 0.5f + (0.5f * math.sin(command.ElapsedSeconds * command.FrequencyHz * TwoPi))
+                    ? ResolveHapticTriangleWave(command.ElapsedSeconds, command.FrequencyHz)
                     : 1f;
                 command.LowFreqIntensity = math.saturate(command.BaseLowFreqIntensity * wave);
                 command.HighFreqIntensity = math.saturate(command.BaseHighFreqIntensity * wave);
@@ -162,6 +163,21 @@ namespace Hecton8.Tools
             }
 
             _frontCount = compactedCount;
+        }
+
+        private static float ResolveHapticDecayFactor(float decayRate, float deltaTime)
+        {
+            float x = math.min(math.max(0f, decayRate) * math.max(0f, deltaTime), 3f);
+            float x2 = x * x;
+            return math.saturate(math.rcp(1f + x + (0.5f * x2)));
+        }
+
+        private static float ResolveHapticTriangleWave(float elapsedSeconds, float frequencyHz)
+        {
+            float phase = math.max(0f, elapsedSeconds) * math.max(0f, frequencyHz);
+            float shiftedPhase = phase + 0.25f;
+            float cycle = shiftedPhase - math.floor(shiftedPhase);
+            return 1f - math.abs((cycle * 2f) - 1f);
         }
 
         public void LateFrameTick()
@@ -269,14 +285,6 @@ namespace Hecton8.Tools
                 0f);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float ResolveHapticDecayFactor(float decayRate, float deltaTime)
-        {
-            float x = math.clamp(math.max(0f, decayRate) * math.max(0f, deltaTime), 0f, 3f);
-            float x2 = x * x;
-            return math.rcp(1f + x + (0.5f * x2));
-        }
-
         private void EnsureBuffers()
         {
             if (!_frontBuffer.IsCreated)
@@ -380,6 +388,25 @@ namespace Hecton8.Tools
                 : 0f;
             if ((resolvedLow <= 0f && resolvedHigh <= 0f) || resolvedDuration <= 0f)
                 return;
+
+            float now = Time.unscaledTime;
+            bool blocksLeft = (motorMask & LeftMotorMask) != 0 && now < _nextLeftHapticCommandTime;
+            bool blocksRight = (motorMask & RightMotorMask) != 0 && now < _nextRightHapticCommandTime;
+            if (blocksLeft && blocksRight)
+                return;
+
+            if (blocksLeft)
+                motorMask = (byte)(motorMask & ~LeftMotorMask);
+            if (blocksRight)
+                motorMask = (byte)(motorMask & ~RightMotorMask);
+            if (motorMask == 0)
+                return;
+
+            float nextCommandTime = now + HapticDebounceWindowSeconds;
+            if ((motorMask & LeftMotorMask) != 0)
+                _nextLeftHapticCommandTime = nextCommandTime;
+            if ((motorMask & RightMotorMask) != 0)
+                _nextRightHapticCommandTime = nextCommandTime;
 
             _backBuffer[_backCount++] = new HapticCommand
             {

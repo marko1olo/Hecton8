@@ -137,7 +137,7 @@ namespace Hecton8.Tools
                 while (_isTransitioning && Time.unscaledTime < deadline)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    await Awaitable.NextFrameAsync(cancellationToken);
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
                 }
 
                 if (_isTransitioning)

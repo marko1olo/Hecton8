@@ -61,6 +61,9 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
             #pragma fragment Frag
             #pragma target 3.5
             #pragma multi_compile_instancing
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+            #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
+            #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Hecton_CelestialAtmosphere.hlsl"

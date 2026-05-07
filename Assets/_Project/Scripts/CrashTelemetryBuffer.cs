@@ -69,7 +69,6 @@ namespace Hecton8.Core
 
         private static readonly string[] _GcAllocCandidates = { "GC Allocated In Frame" };
 
-        private static readonly WaitCallback _backgroundExportCallback = ExecuteBackgroundExport;
         private static readonly WaitCallback _backgroundLiveTelemetryCallback = ExecuteBackgroundLiveTelemetryWrite;
         private static readonly uint _audioOverflowDropWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CrashTelemetry.AudioOverflowDrop"));
         private static readonly uint _audioOverflowBufferContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CrashTelemetry.NativeAudioFrameRingBuffer"));
@@ -112,6 +111,8 @@ namespace Hecton8.Core
             AudioOverflowDropWarning = 1u << 19,
             BootPerfWarning = 1u << 20,
             CriticalPerformanceSpike = 1u << 21,
+            LatencyCrime = 1u << 22,
+            NativeFragmentationRisk = 1u << 23,
         }
 
         [Flags]
@@ -127,6 +128,7 @@ namespace Hecton8.Core
             EventBus = 1u << 6,
             Save = 1u << 7,
             Audio = 1u << 8,
+            Input = 1u << 9,
         }
 
         private enum ExportReason : uint
@@ -149,6 +151,8 @@ namespace Hecton8.Core
             AudioOverflowDropWarning = 15u,
             BootPerfWarning = 16u,
             CriticalPerformanceSpike = 17u,
+            LatencyCrime = 18u,
+            NativeFragmentationRisk = 19u,
         }
 
         [StructLayout(LayoutKind.Sequential, Size = CrashExportHeaderSizeBytes)]
@@ -169,7 +173,7 @@ namespace Hecton8.Core
             [FieldOffset(8)]
             public float DeltaTime;
             [FieldOffset(12)]
-            public float FixedDeltaTime;
+            public float LatencyMs;
             [FieldOffset(16)]
             public float GpuFrameTime;
             [FieldOffset(20)]
@@ -244,7 +248,7 @@ namespace Hecton8.Core
         private HectonSurvivalSystem _survivalSystem;
         private float _playerResolveCooldown;
         private float _nextOriginShiftTelemetryTime;
-        private float _lastFixedDeltaTime;
+        private float _lastLatencyMs;
         private long _writeCursor;
         private uint _stickyErrorFlags;
         private bool _runtimeRegistered;
@@ -284,7 +288,7 @@ namespace Hecton8.Core
             public readonly uint FrameIndex;
             public readonly uint SystemMask;
             public readonly float DeltaTime;
-            public readonly float FixedDeltaTime;
+            public readonly float LatencyMs;
             public readonly float GpuFrameTime;
             public readonly float MemoryUsedMb;
             public readonly Vector3 PlayerAup;
@@ -298,7 +302,7 @@ namespace Hecton8.Core
                 uint frameIndex,
                 uint systemMask,
                 float deltaTime,
-                float fixedDeltaTime,
+                float latencyMs,
                 float gpuFrameTime,
                 float memoryUsedMb,
                 Vector3 playerAup,
@@ -311,7 +315,7 @@ namespace Hecton8.Core
                 FrameIndex = frameIndex;
                 SystemMask = systemMask;
                 DeltaTime = deltaTime;
-                FixedDeltaTime = fixedDeltaTime;
+                LatencyMs = latencyMs;
                 GpuFrameTime = gpuFrameTime;
                 MemoryUsedMb = memoryUsedMb;
                 PlayerAup = playerAup;
@@ -523,6 +527,40 @@ namespace Hecton8.Core
                 writeSynchronously: false);
         }
 
+        /// <summary>
+        /// Records an input-to-screen latency debt marker with pending Awaitable debt as a packed numeric payload.
+        /// </summary>
+        public static void ReportLatencyCrime(int pendingContinuationCount, float latencyMs)
+        {
+            uint flags = (uint)ErrorBits.LatencyCrime;
+            OrRuntimeFaultFlags(unchecked((int)flags));
+
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteLatencyCrimeTelemetry(pendingContinuationCount, latencyMs);
+            instance.TryExportSnapshot(
+                ExportReason.LatencyCrime,
+                flags,
+                writeSynchronously: false);
+        }
+
+        /// <summary>
+        /// Records a persistent-native-buffer reallocation churn marker without retaining managed stack strings.
+        /// </summary>
+        public static void ReportNativeFragmentationRisk(uint allocationHash, int reallocationCount, long bytes)
+        {
+            uint flags = (uint)ErrorBits.NativeFragmentationRisk;
+            OrRuntimeFaultFlags(unchecked((int)flags));
+
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteNativeFragmentationRiskTelemetry(allocationHash, reallocationCount, bytes);
+        }
+
         public static void ReportAudioOverflowDropWarning(int overflowDropCount, int bufferedFrames, int writableFrames)
         {
             OrRuntimeFaultFlags((int)ErrorBits.AudioOverflowDropWarning);
@@ -663,7 +701,7 @@ namespace Hecton8.Core
                     entry.FrameIndex,
                     entry.SystemMask,
                     entry.DeltaTime,
-                    entry.FixedDeltaTime,
+                    entry.LatencyMs,
                     entry.GpuFrameTime,
                     entry.MemoryUsedMb,
                     new Vector3(entry.PlayerAup.x, entry.PlayerAup.y, entry.PlayerAup.z),
@@ -751,8 +789,17 @@ namespace Hecton8.Core
                 uint systemMask = SampleSystemMask();
                 uint activeChunkCount = SampleActiveChunkCount();
                 uint playerVelocityPacked = SamplePlayerVelocityPacked();
-                uint gcAllocBytes = unchecked((uint)Mathf.Max(0, ReadIntValue(_gcAllocRecorder)));
+                uint gcAllocBytes = unchecked((uint)math.max(0, ReadIntValue(_gcAllocRecorder)));
                 uint errorFlags = BuildErrorFlags(dt, reservedMemoryMb, playerAup, hasPlayer);
+                float latencyMs = InputLatencyTracker.SampleCompletedLatencyMs();
+                int pendingAwaitableContinuations = AwaitableDebtMonitor.PendingNextFrameContinuations;
+                if (pendingAwaitableContinuations > AwaitableDebtMonitor.LatencyCrimeThreshold)
+                {
+                    errorFlags |= (uint)ErrorBits.LatencyCrime;
+                    systemMask |= (uint)SystemBits.Input;
+                }
+
+                AwaitableDebtMonitor.AuditLatencyDebt(pendingAwaitableContinuations, latencyMs);
                 OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
                 uint threadedFaultFlags = unchecked((uint)Interlocked.Exchange(ref _threadedFaultFlags, 0));
                 uint runtimeFaultFlags = unchecked((uint)Interlocked.Exchange(ref _runtimeFaultFlags, 0));
@@ -780,7 +827,8 @@ namespace Hecton8.Core
                 entry.FrameIndex = frameIndex;
                 entry.SystemMask = systemMask;
                 entry.DeltaTime = dt;
-                entry.FixedDeltaTime = _lastFixedDeltaTime;
+                _lastLatencyMs = latencyMs;
+                entry.LatencyMs = latencyMs;
                 entry.GpuFrameTime = gpuFrameTime;
                 entry.MemoryUsedMb = reservedMemoryMb;
                 entry.PlayerAup = playerAup;
@@ -799,7 +847,7 @@ namespace Hecton8.Core
                 {
                     _stickyErrorFlags |= errorFlags;
                     bool forceSynchronousExport =
-                        (errorFlags & ((uint)ErrorBits.NanPhysics | (uint)ErrorBits.CriticalPerformanceSpike)) != 0u;
+                        (errorFlags & (uint)ErrorBits.NanPhysics) != 0u;
                     ExportReason exportReason = (errorFlags & (uint)ErrorBits.CriticalPerformanceSpike) != 0u
                         ? ExportReason.CriticalPerformanceSpike
                         : ExportReason.ErrorFlags;
@@ -809,12 +857,12 @@ namespace Hecton8.Core
         }
 
         /// <summary>
-        /// Caches the fixed-step delta so it can be emitted alongside frame telemetry.
+        /// Receives the fixed-step tick; the 64-byte black box keeps this slot for input latency.
         /// </summary>
         /// <param name="fdt">Fixed delta passed by <see cref="GameTickManager"/>.</param>
         public void FixedTick(float fdt)
         {
-            _lastFixedDeltaTime = fdt;
+            _ = fdt;
         }
 
         private void WriteBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds, bool isPerfWarning)
@@ -827,7 +875,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Bootstrap;
             entry.DeltaTime = 0f;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)elapsedMilliseconds;
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = float3.zero;
@@ -862,7 +910,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.OriginShift;
             entry.DeltaTime = 0f;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = shift3;
@@ -887,7 +935,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = SamplePlayerPosition(out _);
@@ -917,7 +965,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physics;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = math.max(0f, accelerationMetersPerSecondSq);
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = absolutePosition;
@@ -954,7 +1002,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physics | (uint)SystemBits.OriginShift;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = 0f;
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = recoveredAup;
@@ -981,7 +1029,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = SamplePlayerPosition(out _);
@@ -1006,7 +1054,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = elapsedMilliseconds > float.MaxValue
                 ? float.MaxValue
                 : (float)math.max(0d, elapsedMilliseconds);
@@ -1023,6 +1071,56 @@ namespace Hecton8.Core
             _writeCursor++;
         }
 
+        private void WriteLatencyCrimeTelemetry(int pendingContinuationCount, float latencyMs)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Input | (uint)SystemBits.EventBus;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = math.max(0f, latencyMs);
+            entry.GpuFrameTime = ReadMilliseconds(_frameTimeRecorder);
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)math.max(0, pendingContinuationCount));
+            entry.ErrorFlags = (uint)ErrorBits.LatencyCrime;
+            entry.ExportReason = (uint)ExportReason.LatencyCrime;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = unchecked((uint)math.max(0, pendingContinuationCount));
+            entry.SubsystemHeatPacked = PackFloatToMilliseconds(latencyMs);
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
+        private void WriteNativeFragmentationRiskTelemetry(uint allocationHash, int reallocationCount, long bytes)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            TelemetryEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.EventBus;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
+            entry.GpuFrameTime = 0f;
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)math.max(0, reallocationCount));
+            entry.ErrorFlags = (uint)ErrorBits.NativeFragmentationRisk;
+            entry.ExportReason = (uint)ExportReason.NativeFragmentationRisk;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = allocationHash;
+            entry.SubsystemHeatPacked = PackBytesToMegabytes(bytes);
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
         private void WriteAudioOverflowDropTelemetry(int overflowDropCount, int bufferedFrames, int writableFrames)
         {
             uint frameIndex = unchecked((uint)Time.frameCount);
@@ -1033,7 +1131,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Audio;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = SamplePlayerPosition(out _);
@@ -1063,7 +1161,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Bootstrap;
             entry.DeltaTime = (float)math.max(0d, bootElapsedSeconds);
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)math.max(0d, activeStepElapsedMilliseconds);
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = new float3((int)activeStep, (int)longestStep, (float)math.max(0d, LongestStepMillisecondsSafe()));
@@ -1181,7 +1279,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Bootstrap;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = SamplePlayerPosition(out _);
@@ -1205,7 +1303,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = usageRatio > float.MaxValue ? float.MaxValue : (float)usageRatio;
             entry.MemoryUsedMb = reservedBytes * (1f / (1024f * 1024f));
             entry.PlayerAup = SamplePlayerPosition(out _);
@@ -1230,7 +1328,7 @@ namespace Hecton8.Core
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physics;
             entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
-            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.LatencyMs = _lastLatencyMs;
             entry.GpuFrameTime = math.max(0f, correctionMeters);
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = ToAbsoluteUniversePosition(runtimePosition);
@@ -1252,6 +1350,15 @@ namespace Hecton8.Core
 
             long megabytes = bytes / (1024L * 1024L);
             return megabytes >= uint.MaxValue ? uint.MaxValue : (uint)megabytes;
+        }
+
+        private static uint PackFloatToMilliseconds(float milliseconds)
+        {
+            if (!math.isfinite(milliseconds) || milliseconds <= 0f)
+                return 0u;
+
+            float scaled = milliseconds * 1000f;
+            return scaled >= uint.MaxValue ? uint.MaxValue : (uint)scaled;
         }
 
         private static double LongestStepMillisecondsSafe()
@@ -1474,7 +1581,7 @@ namespace Hecton8.Core
         {
             HectonVoxelEngine voxelEngine = HectonVoxelEngine.ActiveRuntimeInstance;
             return voxelEngine != null
-                ? unchecked((uint)Mathf.Max(0, voxelEngine.ActiveVolumeCount))
+                ? unchecked((uint)math.max(0, voxelEngine.ActiveVolumeCount))
                 : 0u;
         }
 
@@ -1809,7 +1916,7 @@ namespace Hecton8.Core
             record.Version = LiveTelemetryVersion;
             record.FrameIndex = frameIndex;
             record.ActiveChunkCount = activeChunkCount;
-            record.GcAllocBytes = unchecked((uint)Mathf.Max(0, ReadIntValue(_gcAllocRecorder)));
+            record.GcAllocBytes = unchecked((uint)math.max(0, ReadIntValue(_gcAllocRecorder)));
             record.CpuFrameTimeMs = ReadMilliseconds(_frameTimeRecorder);
             record.DeltaTime = dt;
             record.ReservedMemoryMb = reservedMemoryMb;
@@ -1913,7 +2020,7 @@ namespace Hecton8.Core
                         return;
                     }
 
-                    ThreadPool.UnsafeQueueUserWorkItem(_backgroundExportCallback, this);
+                    QueueDedicatedBackgroundExport();
                     exportQueued = true;
                 }
             }
@@ -2007,6 +2114,16 @@ namespace Hecton8.Core
         private void PreparePendingExportMetadata(uint triggerFrame)
         {
             _pendingExportPath = _crashTelemetryPath;
+        }
+
+        private void QueueDedicatedBackgroundExport()
+        {
+            Thread exportThread = new Thread(ExecuteBackgroundExport)
+            {
+                IsBackground = true,
+                Name = "H8.BlackBoxExport"
+            };
+            exportThread.Start(this);
         }
 
         private static void ExecuteBackgroundExport(object state)

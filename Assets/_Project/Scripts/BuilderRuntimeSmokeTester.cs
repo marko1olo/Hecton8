@@ -262,7 +262,7 @@ namespace Hecton8.Dev
                     _nextWaitHeartbeatAt = Time.realtimeSinceStartup + 0.25f;
                 }
 
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             LogVerbose($"WAIT_COMPLETE phase={phase}");

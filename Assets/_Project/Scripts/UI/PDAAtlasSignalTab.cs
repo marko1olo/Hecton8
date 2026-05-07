@@ -91,6 +91,9 @@ namespace Hecton8.UI
         private float _pulseCountdown;
         private bool _signalDetected;
         private bool _atlasTelemetryVisible;
+        private bool _signalBeaconContact;
+        private float _beaconStrength01;
+        private float _beaconStatic01;
         private bool _dirty;
         private int _lastCountdownSeconds = int.MinValue;
         private int _lastStrengthDisplayMode = int.MinValue;
@@ -152,6 +155,8 @@ namespace Hecton8.UI
         private const string DirectionUnavailableLabel = "НАПРАВЛЕНИЕ: —";
         private const string DirectionDataErrorLabel = "НАПРАВЛЕНИЕ: ОШИБКА ДАННЫХ";
         private const string DirectionUnstableLabel = "НАПРАВЛЕНИЕ: ПЕЛЕНГ ЕЩЁ НЕ УДЕРЖИВАЕТСЯ";
+        private const string SignalBeaconContactMessage = "AUP SIGNAL CONTACT\n\nTriangulated carrier strength is active.\nUse sonar breadcrumbs to locate the source.";
+        private const string SignalBeaconStaticMessage = "AUP SIGNAL CONTACT\n\nCave interference is corrupting the carrier.\nStatic shader gain is elevated.";
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -446,10 +451,21 @@ namespace Hecton8.UI
         {
             AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
             AtlasSignalDecoder decoder = Hecton8.Core.GlobalRegistry.AtlasSignalDecoder;
+            _signalBeaconContact = SignalBeaconRegistry.TryGetDominantTelemetry(out _beaconStrength01, out _beaconStatic01) &&
+                                   _beaconStrength01 > 0f;
             _atlasTelemetryVisible = CanRevealAtlasTelemetry(sys);
             bool hasReadableContact = HasReadableAtlasContact(sys);
 
-            if (_atlasTelemetryVisible)
+            if (_signalBeaconContact)
+            {
+                _atlasTelemetryVisible = true;
+                _currentStrength = _beaconStrength01;
+                _signalDetected = true;
+                _currentPhase = decoder != null
+                    ? decoder.CurrentPhase
+                    : Mathf.Clamp(SignalStrengthSystem.StrengthToBand(_currentStrength), 0, 3);
+            }
+            else if (_atlasTelemetryVisible)
             {
                 _currentStrength = sys != null ? sys.CurrentStrength : 0f;
                 _signalDetected = hasReadableContact;
@@ -550,6 +566,13 @@ namespace Hecton8.UI
                 return;
             }
 
+            if (_signalBeaconContact)
+            {
+                SetLabelText(_messageLabel, _beaconStatic01 > 0.5f ? SignalBeaconStaticMessage : SignalBeaconContactMessage);
+                SetLabelColor(_messageLabel, _beaconStatic01 > 0.5f ? colorWarning : colorText);
+                return;
+            }
+
             int messageIndex = Mathf.Clamp(_currentPhase, 0, MessageTexts.Length - 1);
             SetLabelText(_messageLabel, MessageTexts[messageIndex]);
             SetLabelColor(_messageLabel, _currentPhase >= 4 ? colorPhase4 : _currentPhase >= 2 ? colorText : colorDim);
@@ -561,6 +584,13 @@ namespace Hecton8.UI
 
             AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
             int revealStage = sys != null ? sys.CurrentRevealStage : 0;
+
+            if (_signalBeaconContact)
+            {
+                SetLabelText(_directionLabel, DirectionUnstableLabel);
+                SetLabelColor(_directionLabel, colorDim);
+                return;
+            }
 
             if (!_signalDetected)
             {

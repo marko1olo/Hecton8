@@ -18,6 +18,38 @@ using UnityEngine;
 namespace Hecton8.World
 {
     /// <summary>
+    /// Zero-allocation hand IK snap target resolved from the active indirect-flora lanes.
+    /// </summary>
+    public readonly struct FloraHarvestInteractionPoint
+    {
+        public readonly uint InstanceUid;
+        public readonly AbsoluteUniversePosition AnchorAup;
+        public readonly Vector3 RuntimePosition;
+        public readonly Vector3 SurfaceNormal;
+        public readonly HarvestableTemplate.MaterialClass MaterialClass;
+        public readonly int TemplateIndex;
+        public readonly float BlendWeight;
+
+        public FloraHarvestInteractionPoint(
+            uint instanceUid,
+            AbsoluteUniversePosition anchorAup,
+            Vector3 runtimePosition,
+            Vector3 surfaceNormal,
+            HarvestableTemplate.MaterialClass materialClass,
+            int templateIndex,
+            float blendWeight)
+        {
+            InstanceUid = instanceUid;
+            AnchorAup = anchorAup;
+            RuntimePosition = runtimePosition;
+            SurfaceNormal = surfaceNormal;
+            MaterialClass = materialClass;
+            TemplateIndex = templateIndex;
+            BlendWeight = blendWeight;
+        }
+    }
+
+    /// <summary>
     /// Runtime owner for indirect-flora harvest health, destruction, debris, and yield routing.
     /// </summary>
     [DisallowMultipleComponent]
@@ -58,6 +90,8 @@ namespace Hecton8.World
         private const float TitanRootMoundRadiusMeters = 5f;
         private const float TitanRootMoundStrengthMeters = 2.25f;
         private const float TitanRootMoundMatureThreshold01 = 0.999f;
+        private const float HighSpeedFloraSnapMinimumSpeedMetersPerSecond = 10f;
+        private const int HighSpeedFloraSnapMaxInstancesPerEvent = 4;
         private const byte FloraRuntimeFlagHasParasite = (byte)HectonVegetationRuntimeFlags.Parasite;
         private const byte FloraRuntimeFlagDead = 1 << 6;
         private const int DefaultCorpseNodeCapacity = 96;
@@ -1880,6 +1914,89 @@ namespace Hecton8.World
             return found;
         }
 
+        public bool TryResolveNearestHarvestInteractionPoint(
+            Vector3 handRuntimePosition,
+            float searchRadius,
+            uint toolCapabilityMask,
+            out FloraHarvestInteractionPoint interactionPoint)
+        {
+            interactionPoint = default;
+            if (vegetationBridge == null)
+                vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+
+            if (searchRadius <= 0f || vegetationBridge == null || _templateDescriptors.Length <= 0)
+                return false;
+
+            RefreshActiveCachesIfNeeded(force: false);
+            if (!TryResolveNearestHarvestTarget(
+                handRuntimePosition,
+                Mathf.Max(MinimumSearchRadius, searchRadius),
+                toolCapabilityMask,
+                out bool underwater,
+                out int activeIndex,
+                out uint instanceUid,
+                out HarvestableTemplate.MaterialClass materialClass,
+                out int templateIndex,
+                out _,
+                out Vector3 instancePosition))
+            {
+                return false;
+            }
+
+            NativeArray<HectonVegetationInstanceData> metadata = underwater ? _underwaterMetadata : _surfaceMetadata;
+            NativeArray<int> types = underwater ? _underwaterTypes : _surfaceTypes;
+            if (!metadata.IsCreated ||
+                !types.IsCreated ||
+                activeIndex < 0 ||
+                activeIndex >= metadata.Length ||
+                activeIndex >= types.Length)
+            {
+                return false;
+            }
+
+            Vector3 snapPosition = ResolveHarvestSnapPosition(
+                handRuntimePosition,
+                instancePosition,
+                metadata[activeIndex],
+                types[activeIndex]);
+            Vector3 normal = handRuntimePosition - snapPosition;
+            if (normal.sqrMagnitude <= 0.0001f)
+                normal = Vector3.up;
+            else
+                normal.Normalize();
+
+            interactionPoint = new FloraHarvestInteractionPoint(
+                instanceUid,
+                AbsoluteUniversePosition.FromRuntimePosition(snapPosition),
+                snapPosition,
+                normal,
+                materialClass,
+                templateIndex,
+                1f);
+            return true;
+        }
+
+        public int ApplyHighSpeedKelpForestSnap(Vector3 runtimePosition, Vector3 velocity, float radiusMeters)
+        {
+            float speedSq = velocity.sqrMagnitude;
+            if (radiusMeters <= 0f ||
+                speedSq < HighSpeedFloraSnapMinimumSpeedMetersPerSecond * HighSpeedFloraSnapMinimumSpeedMetersPerSecond)
+            {
+                return 0;
+            }
+
+            if (vegetationBridge == null)
+                vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+
+            if (vegetationBridge == null)
+                return 0;
+
+            RefreshActiveCachesIfNeeded(force: false);
+            Vector3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
+            float radiusSq = radiusMeters * radiusMeters;
+            return ApplyHighSpeedKelpForestSnapInLane(universePosition, radiusSq, HighSpeedFloraSnapMaxInstancesPerEvent);
+        }
+
         internal int CollectNearestConsumableFlora(
             Vector3 runtimePosition,
             float searchRadius,
@@ -2027,6 +2144,95 @@ namespace Hecton8.World
             }
 
             return activeIndex >= 0 && instanceUid != 0u && templateIndex >= 0;
+        }
+
+        private int ApplyHighSpeedKelpForestSnapInLane(Vector3 universePosition, float radiusSq, int maxSnaps)
+        {
+            NativeArray<Matrix4x4> matrices = _underwaterMatrices;
+            NativeArray<HectonVegetationInstanceData> metadata = _underwaterMetadata;
+            NativeArray<int> types = _underwaterTypes;
+            NativeArray<int> semanticTypes = _underwaterSemanticTypes;
+            NativeArray<uint> instanceUids = _underwaterInstanceUids;
+            NativeArray<byte> materialClasses = _underwaterMaterialClasses;
+            NativeArray<Unity.Mathematics.half> health = _underwaterHealth;
+            int count = _underwaterCount;
+            if (!matrices.IsCreated ||
+                !metadata.IsCreated ||
+                !types.IsCreated ||
+                !semanticTypes.IsCreated ||
+                !instanceUids.IsCreated ||
+                !materialClasses.IsCreated ||
+                !health.IsCreated ||
+                count <= 0 ||
+                maxSnaps <= 0)
+            {
+                return 0;
+            }
+
+            int safeCount = math.min(
+                count,
+                math.min(
+                    matrices.Length,
+                    math.min(
+                        metadata.Length,
+                        math.min(types.Length, math.min(semanticTypes.Length, math.min(instanceUids.Length, math.min(materialClasses.Length, health.Length)))))));
+            int snappedCount = 0;
+            for (int i = 0; i < safeCount && snappedCount < maxSnaps; i++)
+            {
+                uint candidateUid = instanceUids[i];
+                if (candidateUid == 0u ||
+                    (float)health[i] <= 0.0001f ||
+                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(candidateUid)) ||
+                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(candidateUid)))
+                {
+                    continue;
+                }
+
+                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
+                if (materialClass != HarvestableTemplate.MaterialClass.Kelp)
+                    continue;
+
+                HectonVegetationInstanceData instanceMetadata = metadata[i];
+                int templateIndex = ResolveTemplateIndex(instanceMetadata, materialClass);
+                if (templateIndex < 0)
+                    continue;
+
+                Vector3 rootPosition = ExtractTranslation(matrices[i]);
+                float distanceSq = ResolveHarvestDistanceSq(
+                    universePosition,
+                    rootPosition,
+                    instanceMetadata,
+                    types[i],
+                    radiusSq,
+                    KelpRadiusBias);
+                if (distanceSq > radiusSq)
+                    continue;
+
+                ApplyPassiveDecomposition(true, i, candidateUid, materialClass, templateIndex, rootPosition);
+                snappedCount++;
+            }
+
+            return snappedCount;
+        }
+
+        private static Vector3 ResolveHarvestSnapPosition(
+            Vector3 handRuntimePosition,
+            Vector3 rootPosition,
+            HectonVegetationInstanceData metadata,
+            int typeId)
+        {
+            HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)typeId;
+            if (vegetationType == HectonVegetationInstanceType.GiantKelp)
+            {
+                float kelpHeight = Mathf.Lerp(10f, 20f, Mathf.Clamp01(Mathf.Abs(metadata.HeightScale)));
+                Vector3 top = rootPosition + Vector3.up * Mathf.Max(0.5f, kelpHeight + KelpRadiusBias);
+                return ClosestPointOnSegment(rootPosition, top, handRuntimePosition);
+            }
+
+            float verticalBias = vegetationType == HectonVegetationInstanceType.Sargassum
+                ? Mathf.Lerp(0.18f, 0.85f, Mathf.Clamp01(Mathf.Abs(metadata.HeightScale)))
+                : Mathf.Lerp(0.12f, 0.65f, Mathf.Clamp01(Mathf.Abs(metadata.HeightScale)));
+            return rootPosition + Vector3.up * verticalBias;
         }
 
         private bool TryResolveNearestConsumableFloraInLane(
@@ -2556,7 +2762,7 @@ namespace Hecton8.World
                 return;
 
             HectonVegetationInstanceData flaggedMetadata = metadata[activeIndex];
-            flaggedMetadata.RuntimeFlags = runtimeFlags;
+            flaggedMetadata.RuntimeFlags = HectonVegetationRuntimeFlagEncoding.WithRuntimeFlags(flaggedMetadata.RuntimeFlags, runtimeFlags);
             metadata[activeIndex] = flaggedMetadata;
         }
 

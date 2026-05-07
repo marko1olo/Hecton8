@@ -5,6 +5,7 @@ using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.UI;
+using Hecton8.World;
 using NASAPunk.Visor;
 using Unity.Mathematics;
 using UnityEngine;
@@ -34,6 +35,8 @@ namespace Hecton8.Core
     public struct PlayerMovementRuntimeState
     {
         public float3 WorldPosition;
+        public float3 PredictedWorldPosition;
+        public AbsoluteUniversePosition PredictedAup;
         public float3 Velocity;
         public float3 Forward;
         public float3 CameraForward;

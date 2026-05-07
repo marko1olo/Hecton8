@@ -2169,7 +2169,8 @@ namespace Hecton8.Construction
                     1f,
                     DroneRelayPingLifetimeSeconds,
                     FieldTargetRole.BioformAggressive,
-                    hit.SpeciesId);
+                    hit.SpeciesId,
+                    DroneRelayPingRadiusMeters * 48f);
                 PhysicsEventBus.NotifyAcousticPing(in pingEvent);
                 return;
             }

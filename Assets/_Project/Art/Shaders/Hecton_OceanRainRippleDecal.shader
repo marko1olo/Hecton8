@@ -29,6 +29,7 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -46,11 +47,14 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 float3 positionOS : POSITION;
             };
 
             struct Varyings
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
             };
@@ -81,6 +85,9 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.positionWS = TransformObjectToWorld(input.positionOS);
                 output.positionCS = TransformWorldToHClip(output.positionWS);
                 return output;
@@ -88,6 +95,8 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float rain = saturate(_RainIntensity);
                 float surfaceFade = saturate(1.0 - abs(input.positionWS.y - _CurrentWaterLevelY) * 4.0);
                 float2 wind = _GlobalWind.xz;

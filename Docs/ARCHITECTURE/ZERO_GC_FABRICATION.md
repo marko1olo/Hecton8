@@ -83,7 +83,6 @@ for (int index = 0; index < recipeCostCount; index++)
 
 Current authored recipes are one-hop ingredient graphs, so a flat contiguous check is sufficient and cheaper than building an explicit dependency DAG every time.
 
-If recursive intermediate fabrication is introduced later, the same flattened representation can be expanded into an in-degree table and processed with Kahn's algorithm without changing the inventory-count seam.
 
 ## Physical craft output
 

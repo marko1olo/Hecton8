@@ -6,6 +6,7 @@ using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Interaction
@@ -144,7 +145,7 @@ namespace Hecton8.Interaction
             if (requesterId == 0UL || range <= 0f || direction.sqrMagnitude < MinDirectionSqr)
                 return hasCompletedHit;
 
-            Vector3 normalizedDirection = direction.normalized;
+            Vector3 normalizedDirection = (Vector3)math.normalizesafe((float3)direction, new float3(0f, 0f, 1f));
             QueuePrimaryRaycast(requesterId, origin, normalizedDirection, range, layerMask, queryTriggerInteraction);
             return hasCompletedHit;
         }
@@ -542,7 +543,7 @@ namespace Hecton8.Interaction
             if (direction.sqrMagnitude < MinDirectionSqr)
                 direction = Vector3.forward;
             else
-                direction.Normalize();
+                direction = (Vector3)math.normalizesafe((float3)direction, new float3(0f, 0f, 1f));
 
             int layerMask = BuildHitArbitrationLayerMask(targetCollider.gameObject.layer);
             Vector3 castOrigin = runtimeHitPoint - direction * AttachedFloraArbitrationRadiusMeters;
@@ -622,7 +623,7 @@ namespace Hecton8.Interaction
 
         private static void SortHitArbitrationHitsByDistance(int hitCount)
         {
-            int safeCount = Mathf.Clamp(hitCount, 0, _hitArbitrationHits.Length);
+            int safeCount = math.clamp(hitCount, 0, _hitArbitrationHits.Length);
             for (int i = 1; i < safeCount; i++)
             {
                 RaycastHit key = _hitArbitrationHits[i];

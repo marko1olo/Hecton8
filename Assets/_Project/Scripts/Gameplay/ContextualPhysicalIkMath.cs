@@ -166,6 +166,16 @@ namespace Hecton8.Gameplay
             return math.saturate((distanceToTarget - threshold) / falloff);
         }
 
+        public static float EvaluateExtensionResistanceFromDistanceSq01(float distanceToTargetSq, float maxReach)
+        {
+            float safeMaxReach = math.max(0.0001f, maxReach);
+            float threshold = safeMaxReach * 0.98f;
+            float thresholdSq = threshold * threshold;
+            float maxReachSq = safeMaxReach * safeMaxReach;
+            float falloffSq = math.max(0.0001f, maxReachSq - thresholdSq);
+            return math.saturate((distanceToTargetSq - thresholdSq) / falloffSq);
+        }
+
         public static float EvaluateMuscleTension(float3 restPosition, float3 targetPosition, float maxReach)
         {
             float safeMaxReach = math.max(0.0001f, maxReach);

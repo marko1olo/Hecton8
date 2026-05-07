@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Narrative;
+using Hecton.Localization;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -784,11 +785,14 @@ namespace Hecton8.SaveSystem
         private static bool EnsureResourceScarcity(ref ResourceScarcityDTO dto, List<string> steps)
         {
             bool changed = false;
+            int previousHashCapacity = dto.itemHashIds != null ? dto.itemHashIds.Length : 0;
             int previousItemCapacity = dto.itemIds != null ? dto.itemIds.Length : 0;
             int previousCountCapacity = dto.collectedCounts != null ? dto.collectedCounts.Length : 0;
 
             dto.EnsureCapacity();
-            if (dto.itemIds.Length != previousItemCapacity || dto.collectedCounts.Length != previousCountCapacity)
+            if (dto.itemHashIds.Length != previousHashCapacity ||
+                dto.itemIds.Length != previousItemCapacity ||
+                dto.collectedCounts.Length != previousCountCapacity)
             {
                 changed = true;
                 steps.Add("resource scarcity capacity repaired");
@@ -797,7 +801,7 @@ namespace Hecton8.SaveSystem
             int clampedEntryCount = math.clamp(
                 dto.entryCount,
                 0,
-                math.min(dto.itemIds.Length, dto.collectedCounts.Length));
+                math.min(dto.itemHashIds.Length, math.min(dto.itemIds.Length, dto.collectedCounts.Length)));
 
             if (clampedEntryCount != dto.entryCount)
             {
@@ -808,6 +812,13 @@ namespace Hecton8.SaveSystem
 
             for (int i = 0; i < dto.entryCount; i++)
             {
+                if (dto.itemHashIds[i] == 0 && !string.IsNullOrWhiteSpace(dto.itemIds[i]))
+                {
+                    dto.itemHashIds[i] = LocHash.Compute(dto.itemIds[i]);
+                    changed = true;
+                    steps.Add("resource scarcity hash repaired");
+                }
+
                 if (dto.collectedCounts[i] < 0)
                 {
                     dto.collectedCounts[i] = 0;

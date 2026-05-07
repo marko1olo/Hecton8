@@ -56,7 +56,8 @@ namespace Hecton8.World
             float neighborAverage = (west + east + south + north) * 0.25f;
             float cavity = math.saturate((neighborAverage - center) * safeHeightScale * math.max(0f, CavityStrength));
             float sediment = math.saturate(ReadSediment(index) * math.max(0f, SedimentStrength));
-            float silt = math.saturate(math.max(cavity, sediment) * (1f - rock));
+            float channelBottom = math.smoothstep(0.02f, 0.22f, cavity);
+            float silt = math.saturate(sediment * channelBottom * (1f - rock));
             float sand = math.saturate((1f - rock) * (1f - silt));
 
             float total = math.max(0.0001f, sand + rock + silt);

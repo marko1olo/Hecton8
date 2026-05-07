@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
@@ -46,7 +47,7 @@ namespace Hecton8.Core
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct AupDriftCheckJob : IJobParallelFor
         {
-            [ReadOnly] public NativeArray<float3> RuntimePositions;
+            [ReadOnly] public NativeArray<double3> RuntimePositions;
             [ReadOnly] public NativeArray<double3> TrackedAbsolutePositions;
             public double3 CurrentTotalOffset;
             public double MaxDeltaSq;
@@ -84,7 +85,8 @@ namespace Hecton8.Core
         private const float ShiftDeadzoneReleaseMeters = 4500f;
         private const float OutwardMotionSpeedEpsilon = 0.05f;
         private const int DriftCheckEntityCapacity = 2;
-        private const double DriftCheckThresholdSq = 0.000001d;
+        private const float DriftCheckThresholdMeters = 0.001f;
+        private const double DriftCheckThresholdSq = (double)DriftCheckThresholdMeters * DriftCheckThresholdMeters;
         private const int PostShiftUnloadUnusedAssetsMinimumFrames = 300;
 
         private static OriginShiftEventData _lastShiftEvent;
@@ -103,6 +105,7 @@ namespace Hecton8.Core
         private bool _physicsPauseActive;
         private bool _shiftDeadzoneArmed = true;
         private bool _hasPreviousAnchorPosition;
+        private bool _sceneRebaseTickLockHeld;
         private bool _postShiftUnloadUnusedAssetsRunning;
         private SimulationMode _physicsSimulationModeBeforeShift = SimulationMode.FixedUpdate;
         private bool _driftCheckScheduled;
@@ -118,7 +121,7 @@ namespace Hecton8.Core
         private Rigidbody _anchorRigidbody;
         private CriticalAupTracker _playerDriftTracker;
         private CriticalAupTracker _submarineDriftTracker;
-        private NativeArray<float3> _driftCheckRuntimePositions;
+        private NativeArray<double3> _driftCheckRuntimePositions;
         private NativeArray<double3> _driftCheckAbsolutePositions;
         private NativeArray<byte> _driftCheckInvalidMask;
         private JobHandle _driftCheckHandle;
@@ -228,6 +231,23 @@ namespace Hecton8.Core
                 origin._physicsResumeFrame = Time.frameCount + 1;
         }
 
+        internal static bool TryFlushInitialSceneRebaseBeforeTicks()
+        {
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin;
+            if (origin == null)
+                return true;
+
+            if (origin._isShiftInProgress || origin._physicsPauseActive)
+                return false;
+
+            if (origin._pendingLoadedScenes.Count > 0 || origin._shiftTargetsDirty)
+                origin.ProcessPendingSceneSynchronization();
+
+            return origin._pendingLoadedScenes.Count == 0 &&
+                   !origin._shiftTargetsDirty &&
+                   !origin._sceneRebaseTickLockHeld;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -235,6 +255,7 @@ namespace Hecton8.Core
             _originShiftListeners.Clear();
             Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
             Shader.SetGlobalVector(_TotalUniverseOffsetId, Vector4.zero);
+            HectonXRRuntimeState.ResetShaderGlobals();
         }
 
         /// <summary>
@@ -382,7 +403,7 @@ namespace Hecton8.Core
                     break;
                 }
 
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
                 origin = GlobalRegistry.FloatingOrigin;
             }
 
@@ -422,6 +443,7 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ReleaseSceneRebaseTickLock();
             TryUnregister();
             UnsubscribeSceneEvents();
             DisposeShiftTargetAccessArray();
@@ -496,7 +518,7 @@ namespace Hecton8.Core
             }
 
             Vector3 anchorPosition = _anchor.position;
-            float anchorDistanceSqr = anchorPosition.sqrMagnitude;
+            float anchorDistanceSqr = VectorLengthSq(anchorPosition);
             if (anchorDistanceSqr <= ShiftDeadzoneReleaseMeters * ShiftDeadzoneReleaseMeters)
                 _shiftDeadzoneArmed = true;
 
@@ -526,7 +548,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            if (shiftOffset.sqrMagnitude <= 0.0001f)
+            if (VectorLengthSq(shiftOffset) <= 0.0001f)
                 return;
 
             if (_isShiftInProgress)
@@ -548,7 +570,10 @@ namespace Hecton8.Core
             _isShiftInProgress = true;
             bool trackedBodiesPrepared = false;
             bool trackedBodiesFinalized = false;
+            bool xrPoseLockActive = false;
             int gen0CollectionCountBeforeShift = GC.CollectionCount(0);
+            HectonXRRuntimeState.BeginOriginShiftPoseLock();
+            xrPoseLockActive = HectonXRRuntimeState.IsXRActive;
             PausePhysicsForShift();
             try
             {
@@ -586,6 +611,8 @@ namespace Hecton8.Core
 
                 CrashTelemetryBuffer.ReportOriginShift(shiftOffset, _shiftSequence);
                 PublishGlobalOffsets();
+                HectonXRRuntimeState.EndOriginShiftPoseLock(_shiftSequence, fixedInterpolationAlpha);
+                xrPoseLockActive = false;
                 ResyncCriticalEntityTrackersAfterShift();
                 PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
                 trackedBodiesFinalized = true;
@@ -607,6 +634,9 @@ namespace Hecton8.Core
             }
             finally
             {
+                if (xrPoseLockActive)
+                    HectonXRRuntimeState.EndOriginShiftPoseLock(_shiftSequence, ResolveFixedInterpolationAlpha());
+
                 if (trackedBodiesPrepared && !trackedBodiesFinalized)
                     PhysicsApplySystem.FinalizeTrackedBodiesAfterOriginShift();
 
@@ -636,7 +666,7 @@ namespace Hecton8.Core
             _postShiftUnloadUnusedAssetsRunning = true;
             try
             {
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
 
                 if (GC.CollectionCount(0) != gen0CollectionCountBeforeShift)
@@ -672,6 +702,7 @@ namespace Hecton8.Core
                 origin.PausePhysicsForShift();
 
             PhysicsApplySystem.ResetTrackedBodiesForSafeTeleport();
+            PhysicsApplySystem.ArmSafeTeleportSpeculativeCcdForSafeTeleport();
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             playerContext?.PlayerMovement?.ResetKinematicTransientStateForTeleport();
@@ -730,7 +761,7 @@ namespace Hecton8.Core
                         break;
                     }
 
-                    await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                    await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
                 }
             }
             finally
@@ -768,7 +799,7 @@ namespace Hecton8.Core
                 if (watchdog++ > ShiftStabilityWatchdogFrames)
                     break;
 
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
             }
         }
 
@@ -981,7 +1012,7 @@ namespace Hecton8.Core
             if (!IsFiniteVector(runtimePosition) || !math.all(math.isfinite(tracker.AbsolutePosition)))
                 return writeIndex;
 
-            _driftCheckRuntimePositions[writeIndex] = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            _driftCheckRuntimePositions[writeIndex] = new double3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             _driftCheckAbsolutePositions[writeIndex] = tracker.AbsolutePosition;
             return writeIndex + 1;
         }
@@ -1008,7 +1039,7 @@ namespace Hecton8.Core
                 return false;
 
             Vector3 forcedShiftOffset = ResolveForcedDriftShiftOffset();
-            if (forcedShiftOffset.sqrMagnitude <= 0.0001f)
+            if (VectorLengthSq(forcedShiftOffset) <= 0.0001f)
                 forcedShiftOffset = _anchor.position;
 
             if (!IsFiniteVector(forcedShiftOffset))
@@ -1017,7 +1048,7 @@ namespace Hecton8.Core
                 return false;
             }
 
-            CrashTelemetryBuffer.ReportAupJitterCorrection(forcedShiftOffset, math.sqrt((float)DriftCheckThresholdSq));
+            CrashTelemetryBuffer.ReportAupJitterCorrection(forcedShiftOffset, DriftCheckThresholdMeters);
             _shiftDeadzoneArmed = false;
             BeginShiftWorld(forcedShiftOffset);
             return true;
@@ -1048,8 +1079,11 @@ namespace Hecton8.Core
             }
 
             double3 expectedRuntime = tracker.AbsolutePosition - new double3(TotalOffset.x, TotalOffset.y, TotalOffset.z);
+            if (!math.all(math.isfinite(expectedRuntime)) || math.lengthsq(expectedRuntime) <= 0.0001d)
+                return false;
+
             float3 expectedRuntime3 = new float3((float)expectedRuntime.x, (float)expectedRuntime.y, (float)expectedRuntime.z);
-            if (!math.all(math.isfinite(expectedRuntime3)) || math.lengthsq(expectedRuntime3) <= 0.0001f)
+            if (!math.all(math.isfinite(expectedRuntime3)))
                 return false;
 
             shiftOffset = new Vector3(expectedRuntime3.x, expectedRuntime3.y, expectedRuntime3.z);
@@ -1076,7 +1110,7 @@ namespace Hecton8.Core
                 return;
 
             DisposeDriftCheckState();
-            _driftCheckRuntimePositions = new NativeArray<float3>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _driftCheckRuntimePositions = new NativeArray<double3>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _driftCheckAbsolutePositions = new NativeArray<double3>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _driftCheckInvalidMask = new NativeArray<byte>(DriftCheckEntityCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
@@ -1217,11 +1251,13 @@ namespace Hecton8.Core
 
             _previousAnchorPosition = anchorPosition;
             _hasPreviousAnchorPosition = true;
-            if (anchorPosition.sqrMagnitude <= 0.0001f)
+            if (VectorLengthSq(anchorPosition) <= 0.0001f)
                 return false;
 
-            Vector3 radialDirection = anchorPosition.normalized;
-            float radialVelocity = Vector3.Dot(radialDirection, anchorVelocity);
+            float3 anchorPosition3 = new float3(anchorPosition.x, anchorPosition.y, anchorPosition.z);
+            float3 anchorVelocity3 = new float3(anchorVelocity.x, anchorVelocity.y, anchorVelocity.z);
+            float3 radialDirection = anchorPosition3 * math.rsqrt(math.lengthsq(anchorPosition3));
+            float radialVelocity = math.dot(radialDirection, anchorVelocity3);
             return radialVelocity > OutwardMotionSpeedEpsilon;
         }
 
@@ -1230,6 +1266,7 @@ namespace Hecton8.Core
             Vector4 offset = new Vector4(TotalOffset.x, TotalOffset.y, TotalOffset.z, 0f);
             Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, offset);
             Shader.SetGlobalVector(_TotalUniverseOffsetId, offset);
+            HectonXRRuntimeState.PublishOriginShiftState(_shiftSequence, ResolveFixedInterpolationAlpha());
         }
 
         private void TryRegister()
@@ -1274,6 +1311,24 @@ namespace Hecton8.Core
             _sceneEventsSubscribed = false;
         }
 
+        private void AcquireSceneRebaseTickLock()
+        {
+            if (_sceneRebaseTickLockHeld)
+                return;
+
+            SystemDispatcher.RequestOriginShiftBootstrapLock();
+            _sceneRebaseTickLockHeld = true;
+        }
+
+        private void ReleaseSceneRebaseTickLock()
+        {
+            if (!_sceneRebaseTickLockHeld)
+                return;
+
+            _sceneRebaseTickLockHeld = false;
+            SystemDispatcher.ReleaseOriginShiftBootstrapLock();
+        }
+
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             _shiftTargetsDirty = true;
@@ -1305,6 +1360,8 @@ namespace Hecton8.Core
             }
 
             RebuildShiftTargetCache();
+            if (_pendingLoadedScenes.Count == 0 && !_shiftTargetsDirty)
+                ReleaseSceneRebaseTickLock();
         }
 
         private void ProcessPendingSceneSynchronization()
@@ -1312,22 +1369,30 @@ namespace Hecton8.Core
             if (_isShiftInProgress || _physicsPauseActive)
                 return;
 
-            if (_pendingLoadedScenes.Count > 0)
+            try
             {
-                Vector3 committedTotalOffset = TotalOffset;
-                for (int i = 0; i < _pendingLoadedScenes.Count; i++)
+                if (_pendingLoadedScenes.Count > 0)
                 {
-                    Scene loadedScene = _pendingLoadedScenes[i];
-                    if (!loadedScene.IsValid() || !loadedScene.isLoaded)
-                        continue;
+                    Vector3 committedTotalOffset = TotalOffset;
+                    for (int i = 0; i < _pendingLoadedScenes.Count; i++)
+                    {
+                        Scene loadedScene = _pendingLoadedScenes[i];
+                        if (!loadedScene.IsValid() || !loadedScene.isLoaded)
+                            continue;
 
-                    ApplyCommittedOffsetToLoadedScene(loadedScene, committedTotalOffset);
+                        ApplyCommittedOffsetToLoadedScene(loadedScene, committedTotalOffset);
+                    }
+
+                    _pendingLoadedScenes.Clear();
                 }
 
-                _pendingLoadedScenes.Clear();
+                TryPrepareShiftTargets();
             }
-
-            TryPrepareShiftTargets();
+            finally
+            {
+                if (_pendingLoadedScenes.Count == 0 && !_shiftTargetsDirty)
+                    ReleaseSceneRebaseTickLock();
+            }
         }
 
         private void QueuePendingLoadedScene(Scene scene)
@@ -1342,6 +1407,7 @@ namespace Hecton8.Core
             }
 
             _pendingLoadedScenes.Add(scene);
+            AcquireSceneRebaseTickLock();
         }
 
         private void RemovePendingLoadedScene(Scene scene)
@@ -1356,11 +1422,14 @@ namespace Hecton8.Core
 
                 _pendingLoadedScenes.RemoveAt(i);
             }
+
+            if (_pendingLoadedScenes.Count == 0 && !_shiftTargetsDirty)
+                ReleaseSceneRebaseTickLock();
         }
 
         private void ApplyCommittedOffsetToLoadedScene(Scene scene, Vector3 committedTotalOffset)
         {
-            if (!IsFiniteVector(committedTotalOffset) || committedTotalOffset.sqrMagnitude <= 0.0001f)
+            if (!IsFiniteVector(committedTotalOffset) || VectorLengthSq(committedTotalOffset) <= 0.0001f)
                 return;
 
             _sceneRootObjects.Clear();
@@ -1387,6 +1456,13 @@ namespace Hecton8.Core
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float VectorLengthSq(Vector3 value)
+        {
+            float3 value3 = new float3(value.x, value.y, value.z);
+            return math.lengthsq(value3);
         }
 
 #if UNITY_EDITOR

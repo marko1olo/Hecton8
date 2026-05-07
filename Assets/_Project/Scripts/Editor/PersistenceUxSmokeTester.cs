@@ -35,6 +35,9 @@ namespace Hecton8.Dev
             string captureFeature = ReadProjectFile("Assets/_Project/Scripts/SaveThumbnailCaptureFeature.cs");
             string loadingScreen = ReadProjectFile("Assets/_Project/Scripts/UI/LoadingScreenController.cs");
             string suitHud = ReadProjectFile("Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs");
+            string dataRecPulseShader = ReadProjectFile("Assets/_Project/Shaders/UI/Hecton_DataRecPulse.shader");
+            string playerInventory = ReadProjectFile("Assets/_Project/Scripts/PlayerInventory.cs");
+            string saveBinaryPayloadCodec = ReadProjectFile("Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs");
             string saveBinaryStorage = ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs");
             string persistentWorldRegistry = ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs");
             string unsafeMemoryCopyGuard = ReadProjectFile("Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs");
@@ -55,8 +58,15 @@ namespace Hecton8.Dev
 
             bool savingHudPass =
                 ContainsAll(saveManager, "SaveEvents.RaiseMappedWriteStarted(slotName);") &&
-                ContainsAll(suitHud, "ISaveEventListener", "SavingProgressRoot", "SaveEventType.MappedWriteStarted", "SaveEventType.SaveCompleted", "_savingProgressTargetAlpha") &&
+                ContainsAll(suitHud, "ISaveEventListener", "SavingProgressRoot", "SaveEventType.MappedWriteStarted", "SaveEventType.SaveCompleted", "_savingProgressTargetAlpha", "DataRecPulseShaderName") &&
+                ContainsAll(dataRecPulseShader, "Shader \"Hecton8/UI/DataRecPulse\"", "sin(_Time.y * _PulseSpeed)") &&
                 ContainsAll(suitHud, "SavingProgressMinimumVisibleSeconds", "_savingProgressHidePending", "BeginSavingProgressMappedWrite", "EmitSavingProgressHapticPulse", "ToolHapticsRuntime.EnqueueSinusoidalCommand", "RequestSavingProgressHide");
+
+            bool savingHudShaderPulsePass =
+                ContainsAll(dataRecPulseShader, "_SweepIntensity", "sincos(phase", "rsqrt(radiusSq)", "dot(dir, sweepDir)") &&
+                ContainsAll(suitHud, "_savingProgressDataNeedle.material = _savingProgressDataPulseMaterial") &&
+                !ContainsAll(suitHud, "SavingProgressSpinDegreesPerSecond", "_savingProgressIconRoot.localEulerAngles") &&
+                SourceIndex(dataRecPulseShader, "atan2(") == int.MaxValue;
 
             bool corruptionDialogPass =
                 ContainsAll(saveBinaryStorage, "ConsumeIndexedSectorQuarantineFlag", "ReportIndexedSectorQuarantine", "TryResetIndexedPersistentWorldSectorToPristine") &&
@@ -73,6 +83,10 @@ namespace Hecton8.Dev
                 ContainsAll(saveBinaryStorage, "MemoryMappedFile.CreateFromFile", "UnsafeMemoryCopyGuard.SafeCopy") &&
                 ContainsAll(unsafeMemoryCopyGuard, "UnsafeUtility.MemCpy");
 
+            bool inventoryShadowBufferPass =
+                ContainsAll(playerInventory, "_inventoryShadowBuffer", "RefreshInventoryShadowBufferFromRuntime", "Fnv1a32Offset", "CommitCurrentInventoryShadowHash") &&
+                ContainsAll(saveBinaryPayloadCodec, "WriteNativeBytes", "NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr", "data.hasInventoryShadowPayload");
+
             bool tombstoneLoadOrderPass =
                 ContainsAll(saveManager, "persistentWorldRegistryForLoad?.PreloadTombstonesFromLoadedRecords(loadedWorldDeltas);") &&
                 SourceIndex(saveManager, "PreloadTombstonesFromLoadedRecords(loadedWorldDeltas);") <
@@ -84,13 +98,21 @@ namespace Hecton8.Dev
                 ContainsAll(saveBinaryStorage, "payloadLength & 1", "Mod payload rejected: odd byte length.", "PayloadLength & 1");
 
             bool hydrationTimeSlicePass =
-                ContainsAll(saveManager, "LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L)", "await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);") &&
-                ContainsAll(persistentWorldRegistry, "HydrationFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L)", "TryProcessHydrationBurst", "await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);") &&
+                ContainsAll(saveManager, "LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 333L)", "await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);") &&
+                ContainsAll(persistentWorldRegistry, "HydrationFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 333L)", "TryProcessHydrationBurst", "await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: destroyCancellationToken);") &&
                 ContainsAll(persistentWorldRegistry, "HydrationPerformanceWarningBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 5000L)", "PublishHydrationBudgetWarningIfNeeded", "GlobalTelemetryBus.PublishPerformanceWarning");
 
             bool hydrationGcPurgePass =
                 ContainsAll(persistentWorldRegistry, "ComputePersistentIdHash(in record.ItemPersistentId)", "ComputePersistentIdHash(in FixedString128Bytes value)") &&
                 !ContainsAll(persistentWorldRegistry, "TryResolveItemData(in PersistentWorldItemRecord record", "ItemPersistentId.ToString()");
+
+            bool registryMigrationRsqrtPass =
+                ContainsAll(persistentWorldRegistry, "float invDistance = math.rsqrt(distanceSq);", "float moveScalar = math.min(stepMeters * invDistance, 1f);") &&
+                SourceIndex(persistentWorldRegistry, "Mathf.Sqrt(distanceSq)") == int.MaxValue;
+
+            bool deterministicScatterCheapRadiusPass =
+                ContainsAll(persistentWorldRegistry, "float radius = NextScatter01(ref state) * DropScatterRadiusMeters;") &&
+                SourceIndex(persistentWorldRegistry, "math.sqrt(NextScatter01(ref state))") == int.MaxValue;
 
             bool asyncDehydrationPipelinePass =
                 ContainsAll(saveBinaryStorage, "BuildSectorEntityStateSortEntriesJob", "CompressSectorEntityStateJob", "BurstCompile", "xxHash3");
@@ -101,14 +123,18 @@ namespace Hecton8.Dev
                         loadingStagePass &&
                         safeAupSnapPass &&
                         savingHudPass &&
+                        savingHudShaderPulsePass &&
                         corruptionDialogPass &&
                         seedConsistencyPass &&
                         inventoryFullWritePass &&
                         unsafeMappedWritePass &&
+                        inventoryShadowBufferPass &&
                         tombstoneLoadOrderPass &&
                         modPayloadSidecarPass &&
                         hydrationTimeSlicePass &&
                         hydrationGcPurgePass &&
+                        registryMigrationRsqrtPass &&
+                        deterministicScatterCheapRadiusPass &&
                         asyncDehydrationPipelinePass &&
                         writeAllBytesPurgedPass;
 
@@ -118,14 +144,18 @@ namespace Hecton8.Dev
                 loadingStagePass,
                 safeAupSnapPass,
                 savingHudPass,
+                savingHudShaderPulsePass,
                 corruptionDialogPass,
                 seedConsistencyPass,
                 inventoryFullWritePass,
                 unsafeMappedWritePass,
+                inventoryShadowBufferPass,
                 tombstoneLoadOrderPass,
                 modPayloadSidecarPass,
                 hydrationTimeSlicePass,
                 hydrationGcPurgePass,
+                registryMigrationRsqrtPass,
+                deterministicScatterCheapRadiusPass,
                 asyncDehydrationPipelinePass,
                 writeAllBytesPurgedPass,
                 rewrittenOffset,
@@ -275,14 +305,18 @@ namespace Hecton8.Dev
             bool loadingStagePass,
             bool safeAupSnapPass,
             bool savingHudPass,
+            bool savingHudShaderPulsePass,
             bool corruptionDialogPass,
             bool seedConsistencyPass,
             bool inventoryFullWritePass,
             bool unsafeMappedWritePass,
+            bool inventoryShadowBufferPass,
             bool tombstoneLoadOrderPass,
             bool modPayloadSidecarPass,
             bool hydrationTimeSlicePass,
             bool hydrationGcPurgePass,
+            bool registryMigrationRsqrtPass,
+            bool deterministicScatterCheapRadiusPass,
             bool asyncDehydrationPipelinePass,
             bool writeAllBytesPurgedPass,
             int inventoryRewriteOffset,
@@ -301,14 +335,18 @@ namespace Hecton8.Dev
                 .Append("\"loadingStagePass\":").Append(loadingStagePass ? "true" : "false").Append(',')
                 .Append("\"safeAupSnapPass\":").Append(safeAupSnapPass ? "true" : "false").Append(',')
                 .Append("\"savingHudPass\":").Append(savingHudPass ? "true" : "false").Append(',')
+                .Append("\"savingHudShaderPulsePass\":").Append(savingHudShaderPulsePass ? "true" : "false").Append(',')
                 .Append("\"corruptionDialogPass\":").Append(corruptionDialogPass ? "true" : "false").Append(',')
                 .Append("\"seedConsistencyPass\":").Append(seedConsistencyPass ? "true" : "false").Append(',')
                 .Append("\"inventoryFullWritePass\":").Append(inventoryFullWritePass ? "true" : "false").Append(',')
                 .Append("\"unsafeMappedWritePass\":").Append(unsafeMappedWritePass ? "true" : "false").Append(',')
+                .Append("\"inventoryShadowBufferPass\":").Append(inventoryShadowBufferPass ? "true" : "false").Append(',')
                 .Append("\"tombstoneLoadOrderPass\":").Append(tombstoneLoadOrderPass ? "true" : "false").Append(',')
                 .Append("\"modPayloadSidecarPass\":").Append(modPayloadSidecarPass ? "true" : "false").Append(',')
                 .Append("\"hydrationTimeSlicePass\":").Append(hydrationTimeSlicePass ? "true" : "false").Append(',')
                 .Append("\"hydrationGcPurgePass\":").Append(hydrationGcPurgePass ? "true" : "false").Append(',')
+                .Append("\"registryMigrationRsqrtPass\":").Append(registryMigrationRsqrtPass ? "true" : "false").Append(',')
+                .Append("\"deterministicScatterCheapRadiusPass\":").Append(deterministicScatterCheapRadiusPass ? "true" : "false").Append(',')
                 .Append("\"asyncDehydrationPipelinePass\":").Append(asyncDehydrationPipelinePass ? "true" : "false").Append(',')
                 .Append("\"writeAllBytesPurgedPass\":").Append(writeAllBytesPurgedPass ? "true" : "false").Append(',')
                 .Append("\"inventoryRewriteOffset\":").Append(inventoryRewriteOffset).Append(',')

@@ -42,11 +42,17 @@ namespace Hecton8.UI
         private const string MotionBlurKey = "Hecton_MotionBlur";
         private const string TextureQualityKey = "Hecton_TextureQuality";
         private const string GraphicsPresetKey = "Hecton_GraphicsPreset";
+        private const string VrComfortModeKey = "Hecton_VRComfortMode";
+        private const string VrSnapTurnKey = "Hecton_VRSnapTurn";
+        private const string VrHorizonLockKey = "Hecton_VRHorizonLock";
+        private const string VrComfortVignetteKey = "Hecton_VRComfortVignette";
+        private const string VrHeadRelativeSwimBiasKey = "Hecton_VRHeadRelativeSwimBias";
 
         private const float DefaultVolume = 0.8f;
         private const int DefaultQualityLevel = 2; // Medium (Surface)
         private const int DefaultGraphicsPreset = 2; // High
         private const float DefaultFOV = 75f;
+        private const float DefaultVrHeadRelativeSwimBias = 0.55f;
 
         // ══════════════════════════════════════════════════════════
         // REGISTRY CACHE
@@ -132,6 +138,11 @@ namespace Hecton8.UI
         private bool _cachedMotionBlur;
         private int _cachedTextureQuality = -1;
         private int _cachedGraphicsPreset = DefaultGraphicsPreset;
+        private bool _cachedVrComfortMode = true;
+        private bool _cachedVrSnapTurn = true;
+        private bool _cachedVrHorizonLock = true;
+        private bool _cachedVrComfortVignette = true;
+        private float _cachedVrHeadRelativeSwimBias = DefaultVrHeadRelativeSwimBias;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -465,6 +476,92 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
+        /// Gets or sets whether VR comfort locomotion rules are allowed to engage when an XR runtime is active.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
+        public bool VrComfortModeEnabled
+        {
+            get => _cachedVrComfortMode;
+            set
+            {
+                if (_cachedVrComfortMode == value)
+                    return;
+
+                _cachedVrComfortMode = value;
+                SaveBool(VrComfortModeKey, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether VR turning uses 30-degree snap turns instead of smooth yaw.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
+        public bool VrSnapTurnEnabled
+        {
+            get => _cachedVrSnapTurn;
+            set
+            {
+                if (_cachedVrSnapTurn == value)
+                    return;
+
+                _cachedVrSnapTurn = value;
+                SaveBool(VrSnapTurnKey, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether underwater VR roll is horizon-locked unless explicit manual tilt is present.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
+        public bool VrHorizonLockEnabled
+        {
+            get => _cachedVrHorizonLock;
+            set
+            {
+                if (_cachedVrHorizonLock == value)
+                    return;
+
+                _cachedVrHorizonLock = value;
+                SaveBool(VrHorizonLockKey, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets whether the visor applies comfort blinders during aggressive VR motion.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
+        public bool VrComfortVignetteEnabled
+        {
+            get => _cachedVrComfortVignette;
+            set
+            {
+                if (_cachedVrComfortVignette == value)
+                    return;
+
+                _cachedVrComfortVignette = value;
+                SaveBool(VrComfortVignetteKey, value);
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets swimming reference blend: 0=controller/body forward, 1=head/camera forward.
+        /// Automatically persisted to PlayerPrefs.
+        /// </summary>
+        public float VrHeadRelativeSwimBias
+        {
+            get => _cachedVrHeadRelativeSwimBias;
+            set
+            {
+                float clamped = Mathf.Clamp01(value);
+                if (Mathf.Approximately(_cachedVrHeadRelativeSwimBias, clamped))
+                    return;
+
+                _cachedVrHeadRelativeSwimBias = clamped;
+                SaveFloat(VrHeadRelativeSwimBiasKey, clamped);
+            }
+        }
+
+        /// <summary>
         /// Gets or sets master volume (0-1, converted to dB for AudioMixer).
         /// Automatically persisted to PlayerPrefs.
         /// </summary>
@@ -574,6 +671,11 @@ namespace Hecton8.UI
                 PlayerPrefs.DeleteKey(MotionBlurKey);
                 PlayerPrefs.DeleteKey(TextureQualityKey);
                 PlayerPrefs.DeleteKey(GraphicsPresetKey);
+                PlayerPrefs.DeleteKey(VrComfortModeKey);
+                PlayerPrefs.DeleteKey(VrSnapTurnKey);
+                PlayerPrefs.DeleteKey(VrHorizonLockKey);
+                PlayerPrefs.DeleteKey(VrComfortVignetteKey);
+                PlayerPrefs.DeleteKey(VrHeadRelativeSwimBiasKey);
                 PlayerPrefs.Save();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -597,6 +699,11 @@ namespace Hecton8.UI
             Bloom = true;
             MotionBlur = false;
             TextureQuality = 2; // High
+            VrComfortModeEnabled = true;
+            VrSnapTurnEnabled = true;
+            VrHorizonLockEnabled = true;
+            VrComfortVignetteEnabled = true;
+            VrHeadRelativeSwimBias = DefaultVrHeadRelativeSwimBias;
             _cachedGraphicsPreset = DefaultGraphicsPreset;
             SaveInt(GraphicsPresetKey, _cachedGraphicsPreset);
             ApplyWorldQualityPreset(_cachedGraphicsPreset);
@@ -712,6 +819,11 @@ namespace Hecton8.UI
             _cachedMotionBlur = LoadBool(MotionBlurKey, false);
             _cachedTextureQuality = ValidateTextureQuality(LoadInt(TextureQualityKey, 2));
             _cachedGraphicsPreset = ValidateGraphicsPreset(LoadInt(GraphicsPresetKey, DefaultGraphicsPreset));
+            _cachedVrComfortMode = LoadBool(VrComfortModeKey, true);
+            _cachedVrSnapTurn = LoadBool(VrSnapTurnKey, true);
+            _cachedVrHorizonLock = LoadBool(VrHorizonLockKey, true);
+            _cachedVrComfortVignette = LoadBool(VrComfortVignetteKey, true);
+            _cachedVrHeadRelativeSwimBias = Mathf.Clamp01(LoadFloat(VrHeadRelativeSwimBiasKey, DefaultVrHeadRelativeSwimBias));
 
         }
 

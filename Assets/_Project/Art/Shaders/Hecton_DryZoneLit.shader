@@ -102,17 +102,19 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
             #pragma multi_compile_fog
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 
-            float4 _ModuleAmbienceData[64];
-            float4 _ModuleWaterLevels[64];
+            StructuredBuffer<float4> _HectonModuleAmbienceDataBuffer;
+            StructuredBuffer<float4> _HectonModuleWaterLevelsBuffer;
             int _ModuleWaterLevelCount;
             float _BaseVoltage;
             float _BaseVoltageFlickerSpeed;
@@ -163,6 +165,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
 
             struct Attributes
             {
+                HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
                 float2 uv : TEXCOORD0;
@@ -170,12 +173,15 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
 
             struct Varyings
             {
+                HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
+                HECTON_CORE_LIT_DECLARE_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 half3 normalWS : TEXCOORD1;
                 half3 viewDirWS : TEXCOORD2;
                 float2 uv : TEXCOORD3;
                 half fogFactor : TEXCOORD4;
+                half xrNearClipFade : TEXCOORD5;
             };
 
             half3 SafeNormalize3(half3 value)
@@ -284,14 +290,14 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 [loop]
                 for (int i = 0; i < count; i++)
                 {
-                    float4 centerRadius = _ModuleAmbienceData[i];
+                    float4 centerRadius = _HectonModuleAmbienceDataBuffer[i];
                     float radius = max(centerRadius.w, 0.001);
                     float3 delta = positionWS - centerRadius.xyz;
                     float distanceSq = dot(delta, delta);
                     if (distanceSq > radius * radius || distanceSq >= bestDistanceSq)
                         continue;
 
-                    float4 floodAndFlicker = _ModuleWaterLevels[i];
+                    float4 floodAndFlicker = _HectonModuleWaterLevelsBuffer[i];
                     bestDistanceSq = distanceSq;
                     waterY = floodAndFlicker.x;
                     level01 = (half)saturate(floodAndFlicker.y);
@@ -369,7 +375,11 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
+                HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
+                HECTON_CORE_LIT_TRANSFER_INSTANCE_ID(input, output);
+                HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                float3 safePositionOS = HectonCoreLitSanitizePositionOS(input.positionOS.xyz);
+                VertexPositionInputs positionInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
@@ -377,6 +387,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(positionInputs.positionWS));
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
+                output.xrNearClipFade = (half)HectonCoreLitEvaluateXRNearClipFade(output.positionWS);
                 return output;
             }
 
@@ -415,6 +426,10 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
+                HECTON_CORE_LIT_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+                HectonCoreLitClipXRNearWallDither(input.xrNearClipFade, input.positionCS);
+                bool xrFullQuality = HectonCoreLitShouldRunXRFullQuality(input.positionCS);
                 half moduleFloodLevel01;
                 float moduleWaterY;
                 half moduleFlicker01;
@@ -434,8 +449,11 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half smoothness = saturate(_Smoothness);
                 half3 normalWS = SafeNormalize3(input.normalWS);
                 half3 albedo = albedoSample.rgb;
-                HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
-                ApplyInteriorCondensation(input.positionWS, input.uv, normalWS, moduleCondensationDepth01, albedo, smoothness);
+                if (xrFullQuality)
+                {
+                    HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
+                    ApplyInteriorCondensation(input.positionWS, input.uv, normalWS, moduleCondensationDepth01, albedo, smoothness);
+                }
                 ApplyModuleWaterline(moduleFloodLevel01, moduleSubmerged01, albedo, smoothness);
                 float parasitePulse = 1.0;
                 float thermalGrowthMask = 0.0;
@@ -476,6 +494,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     emission += parasiteEmissionMask * _ParasiteOverlayEmissionColor.rgb * parasiteEmission;
                 }
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
+                finalColor = HectonCoreLitApplyXRFoveatedResolve(finalColor, input.positionCS);
                 return half4(finalColor, coverage);
             }
             ENDHLSL

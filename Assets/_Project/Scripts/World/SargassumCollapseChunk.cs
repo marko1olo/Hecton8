@@ -172,6 +172,7 @@ namespace Hecton8.World
         {
             if (chunkRigidbody != null)
             {
+                chunkRigidbody.detectCollisions = true;
                 chunkRigidbody.isKinematic = false;
                 chunkRigidbody.WakeUp();
                 chunkRigidbody.linearDamping = activeDrag;
@@ -255,6 +256,7 @@ namespace Hecton8.World
             _remainingLifetime = 0f;
             if (chunkRigidbody != null)
             {
+                chunkRigidbody.detectCollisions = true;
                 chunkRigidbody.isKinematic = false;
                 chunkRigidbody.linearVelocity = Vector3.zero;
                 chunkRigidbody.angularVelocity = Vector3.zero;
@@ -293,6 +295,7 @@ namespace Hecton8.World
             TryUnregister();
             if (chunkRigidbody != null)
             {
+                chunkRigidbody.detectCollisions = true;
                 chunkRigidbody.linearVelocity = Vector3.zero;
                 chunkRigidbody.angularVelocity = Vector3.zero;
                 chunkRigidbody.linearDamping = _defaultLinearDamping;

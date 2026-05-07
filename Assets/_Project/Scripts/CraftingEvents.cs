@@ -115,7 +115,7 @@ namespace Hecton8.Crafting
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        internal static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
@@ -345,8 +345,9 @@ namespace Hecton8.Crafting
         /// </summary>
         public static void RaiseCraftCompleted(ItemData resultItem)
         {
-            if (resultItem != null)
-                GlobalTelemetryBus.PublishItemCrafted(resultItem.PersistentId);
+            uint resultItemHash = ComputeItemHash(resultItem);
+            if (resultItemHash != 0u)
+                GlobalTelemetryBus.PublishItemCrafted(resultItemHash);
 
             if (!TryReserveReferenceSlot(out int referenceSlot))
                 return;
@@ -359,7 +360,7 @@ namespace Hecton8.Crafting
             {
                 FabricatorHashId = 0u,
                 RecipeHashId = 0u,
-                ResultItemHashId = ComputeItemHash(resultItem),
+                ResultItemHashId = resultItemHash,
                 ReferenceSlot = referenceSlot,
                 EventType = (ushort)CraftingEventType.CraftCompleted
             });
@@ -610,9 +611,7 @@ namespace Hecton8.Crafting
 
         private static uint ComputeItemHash(ItemData item)
         {
-            return item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
-                ? unchecked((uint)LocHash.Compute(item.PersistentId))
-                : 0u;
+            return item != null ? unchecked((uint)item.PersistentHashId) : 0u;
         }
     }
 }

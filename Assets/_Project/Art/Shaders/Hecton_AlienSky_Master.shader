@@ -180,12 +180,16 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             #pragma fragment SkyFrag
             #pragma target 3.5
             #pragma multi_compile_instancing
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+            #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
+            #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Hecton_CelestialAtmosphere.hlsl"
 
             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
             TEXTURE2D(_StarTwinkleLUT);     SAMPLER(sampler_StarTwinkleLUT);
+            TEXTURE2D(_HectonCausticsTextureA); SAMPLER(sampler_HectonCausticsTextureA);
             TEXTURECUBE(_BakedStarCubemap); SAMPLER(sampler_BakedStarCubemap);
 
             CBUFFER_START(UnityPerMaterial)
@@ -288,7 +292,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             float4 _HectonSkyOccluders[8];
             float4 _MeteorShowerParams;     // x=intensity, y=seed, z=synced flash, w=event age
             float4 _MeteorShowerDirection;  // xy=sky UV travel direction, z=streak length, w=streak width
+            float4 _HectonCausticsTextureParams;
             float _HectonFreezeFrameDither;
+            float _GamePaused;
 
             static const half  HALF_ZERO = 0.0h;
             static const half  HALF_ONE  = 1.0h;
@@ -361,6 +367,11 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return lerp(lerp(a, b, f.x), lerp(c, d, f.x), f.y);
             }
 
+            float HectonSkyAnimationTime()
+            {
+                return _GameTime * (1.0 - saturate(_GamePaused));
+            }
+
             float3 ApplyAegirLensing(float3 viewDir, float3 aegirDir, out half lensMask)
             {
                 float viewDot = saturate(dot(viewDir, aegirDir));
@@ -396,14 +407,17 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 uv.y = saturate(viewDir.y * 0.5 + 0.5);
 
                 float2 noiseUv = uv * _AuroraScale.xy;
-                noiseUv.x += _GameTime * (float)_AuroraSpeed;
-                noiseUv.y += _GameTime * (float)_AuroraSpeed * 0.37;
+                float animationTime = HectonSkyAnimationTime();
+                noiseUv.x += animationTime * (float)_AuroraSpeed;
+                noiseUv.y += animationTime * (float)_AuroraSpeed * 0.37;
 
-                float n0 = HectonSkyValueNoise(noiseUv);
-                float n1 = HectonSkyValueNoise(noiseUv * 2.13 + 17.3) * 0.5;
-                float n2 = HectonSkyValueNoise(noiseUv * 4.07 + 41.7) * 0.25;
+                float causticNoise = SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, frac(noiseUv * 0.071)).r;
+                float useCausticNoise = step(0.5, _HectonCausticsTextureParams.x);
+                float n0 = lerp(HectonSkyValueNoise(noiseUv), causticNoise, useCausticNoise);
+                float n1 = lerp(HectonSkyValueNoise(noiseUv * 2.13 + 17.3), SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, frac(noiseUv * 0.151 + 0.37)).r, useCausticNoise) * 0.5;
+                float n2 = lerp(HectonSkyValueNoise(noiseUv * 4.07 + 41.7), SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, frac(noiseUv * 0.293 + 0.71)).r, useCausticNoise) * 0.25;
                 float noise = saturate((n0 + n1 + n2) * (1.0 / 1.75));
-                float curtainPhase = uv.x * 18.0 + noise * 3.0 + _GameTime * (float)_AuroraSpeed * 5.0;
+                float curtainPhase = uv.x * 18.0 + noise * 3.0 + animationTime * (float)_AuroraSpeed * 5.0;
                 half curtain = pow(
                     saturate(1.0h - abs((half)frac(curtainPhase) - 0.5h) * 2.0h),
                     3.0h);
@@ -500,7 +514,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 float projY = max(V.y, HORIZON_CLAMP);
                 float2 skyUV = V.xz / projY;
                 skyUV *= tiling;
-                skyUV += _WindDirection.xy * _GameTime * speedMult;
+                skyUV += _WindDirection.xy * HectonSkyAnimationTime() * speedMult;
                 return skyUV;
             }
 
@@ -509,7 +523,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 float projY = max(V.y, HORIZON_CLAMP);
                 float2 skyUV = V.xz / projY;
                 skyUV *= tiling;
-                skyUV += _WindDirection.xy * _GameTime * speedMult;
+                skyUV += _WindDirection.xy * HectonSkyAnimationTime() * speedMult;
                 skyUV += V.xz * _CirrusParallaxStrength;
                 return skyUV;
             }
@@ -520,8 +534,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 uv.x = atan2(V.z, V.x) * (0.5 / 3.14159265) + 0.5;
                 uv.y = V.y * 0.5 + 0.5;
                 uv *= _CelestialTransmittanceTiling.xy;
-                uv.x += _WindDirection.x * _GameTime * _CelestialTransmittanceScrollSpeed;
-                uv.y += _WindDirection.y * _GameTime * (_CelestialTransmittanceScrollSpeed * 0.25);
+                float animationTime = HectonSkyAnimationTime();
+                uv.x += _WindDirection.x * animationTime * _CelestialTransmittanceScrollSpeed;
+                uv.y += _WindDirection.y * animationTime * (_CelestialTransmittanceScrollSpeed * 0.25);
                 return uv;
             }
 
@@ -547,7 +562,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 TEXTURE2D_PARAM(flowTex, flowSampler),
                 float2 baseUV)
             {
-                float time = _GameTime * (float)_FlowCycleSpeed;
+                float time = HectonSkyAnimationTime() * (float)_FlowCycleSpeed;
                 float phase1 = frac(time + 0.5);
 
                 half4 sample0 = SAMPLE_TEXTURE2D(flowTex, flowSampler, baseUV);
@@ -724,7 +739,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     half atmosphereTwinkle = saturate(_AtmosphereDensity);
                     float twinkleSpeed = (float)_StarTwinkleSpeed *
                         (1.0 + (float)horizonTwinkle * 2.4 + (float)atmosphereTwinkle * 3.1);
-                    float quantizedTwinkleTime = floor(_GameTime * twinkleSpeed * lerp(3.0, 8.0, (float)horizonTwinkle));
+                    float animationTime = HectonSkyAnimationTime();
+                    float quantizedTwinkleTime = floor(animationTime * twinkleSpeed * lerp(3.0, 8.0, (float)horizonTwinkle));
                     float twinkleLutU = frac(
                         dot(starCell, float2(0.00390625, 0.0078125))
                         + quantizedTwinkleTime * 0.03125
@@ -735,7 +751,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                         float2(twinkleLutU, 0.5)).r;
                     half flicker = 0.72h
                         + (0.18h + 0.26h * horizonTwinkle * atmosphereTwinkle)
-                            * (half)sin(_GameTime * twinkleSpeed + starPhase)
+                            * (half)sin(animationTime * twinkleSpeed + starPhase)
                         + (half)((noiseTwinkle - 0.5) * (float)atmosphereTwinkle * (0.18 + (float)horizonTwinkle * 0.24));
                     flicker = saturate(flicker);
 

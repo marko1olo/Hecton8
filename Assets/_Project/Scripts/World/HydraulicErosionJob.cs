@@ -49,6 +49,39 @@ namespace Hecton8.World
 
             return handle;
         }
+
+        /// <summary>
+        /// Schedules deterministic droplet batches so one erosion kernel never owns an unbounded droplet budget.
+        /// </summary>
+        /// <param name="job">Caller-owned erosion job configuration.</param>
+        /// <param name="dropletsPerSlice">Maximum droplets assigned to one four-phase pass.</param>
+        /// <param name="innerLoopBatchCount">Batch count for sub-grid jobs.</param>
+        /// <param name="dependency">Upstream job dependency.</param>
+        /// <returns>Combined handle for all scheduled slices.</returns>
+        public static JobHandle ScheduleFourPhaseSliced(
+            ref HydraulicErosionJob job,
+            int dropletsPerSlice,
+            int innerLoopBatchCount,
+            JobHandle dependency)
+        {
+            int originalDropletCount = math.max(0, job.DropletCount);
+            int originalDropletIndexOffset = job.DropletIndexOffset;
+            int safeDropletsPerSlice = math.max(1, dropletsPerSlice);
+            if (originalDropletCount <= safeDropletsPerSlice)
+                return ScheduleFourPhase(ref job, innerLoopBatchCount, dependency);
+
+            JobHandle handle = dependency;
+            for (int dropletOffset = 0; dropletOffset < originalDropletCount; dropletOffset += safeDropletsPerSlice)
+            {
+                job.DropletCount = math.min(safeDropletsPerSlice, originalDropletCount - dropletOffset);
+                job.DropletIndexOffset = originalDropletIndexOffset + dropletOffset;
+                handle = ScheduleFourPhase(ref job, innerLoopBatchCount, handle);
+            }
+
+            job.DropletCount = originalDropletCount;
+            job.DropletIndexOffset = originalDropletIndexOffset;
+            return handle;
+        }
     }
 
     /// <summary>
@@ -140,6 +173,9 @@ namespace Hecton8.World
 
         /// <summary>Number of simulated droplets across all sub-grids.</summary>
         public int DropletCount;
+
+        /// <summary>Deterministic global droplet id offset for sliced scheduling.</summary>
+        public int DropletIndexOffset;
 
         /// <summary>Maximum per-droplet integration steps.</summary>
         public int MaxLifetime;
@@ -244,7 +280,7 @@ namespace Hecton8.World
             for (int localDroplet = 0; localDroplet < dropletsForSubGrid; localDroplet++)
             {
                 SimulateDroplet(
-                    dropletStart + localDroplet,
+                    DropletIndexOffset + dropletStart + localDroplet,
                     motionMinX,
                     motionMinZ,
                     motionMaxX,
@@ -379,7 +415,7 @@ namespace Hecton8.World
                     break;
                 }
 
-                speed = math.sqrt(speedSquared);
+                speed = FastSpeedMagnitude(speedSquared);
                 water *= 1f - safeEvaporation;
                 position = nextPosition;
 
@@ -390,6 +426,16 @@ namespace Hecton8.World
                     break;
                 }
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastSpeedMagnitude(float speedSquared)
+        {
+            float x = math.max(0f, speedSquared);
+            float safe = math.max(x, 0.000000000001f);
+            int estimateBits = (math.asint(safe) >> 1) + 0x1FBD1DF5;
+            float estimate = math.asfloat(estimateBits);
+            return math.select(0f, 0.5f * (estimate + safe / math.max(estimate, 0.000000000001f)), x > 0f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -532,10 +578,22 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float ResolveSlopeDegrees(float2 gradient01)
         {
-            float worldGradient = math.length(gradient01) *
+            float worldGradient = FastSpeedMagnitude(math.lengthsq(gradient01)) *
                                   math.max(0.001f, HeightScaleMeters) /
                                   math.max(0.001f, CellSizeMeters);
-            return math.degrees(math.atan(worldGradient));
+            return FastAtanDegreesPositive(worldGradient);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastAtanDegreesPositive(float value)
+        {
+            float x = math.max(0f, value);
+            float reciprocal = 1f / math.max(x, 0.000001f);
+            bool useReciprocal = x > 1f;
+            float y = math.select(x, reciprocal, useReciprocal);
+            float radians = y / (1f + 0.280872f * y * y);
+            radians = math.select(radians, 1.5707964f - radians, useReciprocal);
+            return radians * 57.29578f;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -550,7 +608,7 @@ namespace Hecton8.World
                 for (int ox = -1; ox <= 1; ox++)
                 {
                     float2 cellCenter = new float2(centerX + ox + 0.5f, centerZ + oz + 0.5f);
-                    float distance = math.length(cellCenter - position);
+                    float distance = FastSpeedMagnitude(math.lengthsq(cellCenter - position));
                     totalWeight += math.saturate(1f - distance * 0.6666667f);
                 }
             }
@@ -567,7 +625,7 @@ namespace Hecton8.World
                     int z = centerZ + oz;
                     int index = z * Width + x;
                     float2 cellCenter = new float2(x + 0.5f, z + 0.5f);
-                    float weight = math.saturate(1f - math.length(cellCenter - position) * 0.6666667f) / totalWeight;
+                    float weight = math.saturate(1f - FastSpeedMagnitude(math.lengthsq(cellCenter - position)) * 0.6666667f) / totalWeight;
                     float requested = amount * weight;
                     float current = math.saturate(Heightmap[index]);
                     float actual = math.min(current, requested);
@@ -596,7 +654,7 @@ namespace Hecton8.World
                 for (int ox = -2; ox <= 2; ox++)
                 {
                     float2 cellCenter = new float2(centerX + ox + 0.5f, centerZ + oz + 0.5f);
-                    float distance = math.length(cellCenter - position);
+                    float distance = FastSpeedMagnitude(math.lengthsq(cellCenter - position));
                     totalWeight += math.saturate(1f - distance * 0.28f);
                 }
             }
@@ -610,7 +668,7 @@ namespace Hecton8.World
                 {
                     int index = (centerZ + oz) * Width + centerX + ox;
                     float2 cellCenter = new float2(centerX + ox + 0.5f, centerZ + oz + 0.5f);
-                    float weight = math.saturate(1f - math.length(cellCenter - position) * 0.28f) / totalWeight;
+                    float weight = math.saturate(1f - FastSpeedMagnitude(math.lengthsq(cellCenter - position)) * 0.28f) / totalWeight;
                     float deposit = amount * weight;
                     Heightmap[index] = math.saturate(Heightmap[index] + deposit);
                     if (SedimentMask.IsCreated)
@@ -844,10 +902,32 @@ namespace Hecton8.World
             float back = math.saturate(InputHeights01[index - Width]);
             float forward = math.saturate(InputHeights01[index + Width]);
             float2 gradient = new float2((right - left) * 0.5f, (forward - back) * 0.5f);
-            float worldGradient = math.length(gradient) *
+            float worldGradient = FastMagnitude(math.lengthsq(gradient)) *
                                   math.max(0.001f, HeightScaleMeters) /
                                   math.max(0.001f, CellSizeMeters);
-            return math.degrees(math.atan(worldGradient));
+            return FastAtanDegreesPositive(worldGradient);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastAtanDegreesPositive(float value)
+        {
+            float x = math.max(0f, value);
+            float reciprocal = 1f / math.max(x, 0.000001f);
+            bool useReciprocal = x > 1f;
+            float y = math.select(x, reciprocal, useReciprocal);
+            float radians = y / (1f + 0.280872f * y * y);
+            radians = math.select(radians, 1.5707964f - radians, useReciprocal);
+            return radians * 57.29578f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FastMagnitude(float magnitudeSq)
+        {
+            float x = math.max(0f, magnitudeSq);
+            float safe = math.max(x, 0.000000000001f);
+            int estimateBits = (math.asint(safe) >> 1) + 0x1FBD1DF5;
+            float estimate = math.asfloat(estimateBits);
+            return math.select(0f, 0.5f * (estimate + safe / math.max(estimate, 0.000000000001f)), x > 0f);
         }
     }
 
@@ -916,6 +996,66 @@ namespace Hecton8.World
 
             float lift = math.min(math.max(0f, MaxLift01), channelDelta * math.max(0f, Strength));
             OutputHeights01[index] = math.saturate(center + lift);
+        }
+    }
+
+    /// <summary>
+    /// Builds a bottom-only silt paint mask from hydraulic deposit and carved-channel evidence.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct ErodedChannelSiltMaskJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<float> Heights01;
+        [ReadOnly] public NativeArray<float> Sediment01;
+        [ReadOnly] public NativeArray<float> Wear01;
+        [WriteOnly] public NativeArray<float> SiltMask01;
+
+        public int Width;
+        public int Height;
+        public float DepressionStrength;
+        public float SedimentStrength;
+        public float WearStrength;
+
+        public void Execute(int index)
+        {
+            int safeWidth = math.max(1, Width);
+            int safeHeight = math.max(1, Height);
+            if ((uint)index >= (uint)SiltMask01.Length || (uint)index >= (uint)(safeWidth * safeHeight))
+                return;
+
+            int x = index % safeWidth;
+            int z = index / safeWidth;
+            int maxX = safeWidth - 1;
+            int maxZ = safeHeight - 1;
+
+            float center = ReadHeight(index);
+            float west = ReadHeight(math.max(0, x - 1) + z * safeWidth);
+            float east = ReadHeight(math.min(maxX, x + 1) + z * safeWidth);
+            float south = ReadHeight(x + math.max(0, z - 1) * safeWidth);
+            float north = ReadHeight(x + math.min(maxZ, z + 1) * safeWidth);
+            float neighborAverage = (west + east + south + north) * 0.25f;
+            float depression = math.saturate((neighborAverage - center) * math.max(1f, DepressionStrength));
+            float channelBottom = math.smoothstep(0.012f, 0.18f, depression);
+            float deposit = math.saturate(ReadOptional(Sediment01, index) * math.max(0f, SedimentStrength));
+            float wear = math.saturate(ReadOptional(Wear01, index) * math.max(0f, WearStrength));
+            float carved = math.smoothstep(0.035f, 0.44f, wear);
+            SiltMask01[index] = math.saturate(deposit * channelBottom * carved);
+        }
+
+        private float ReadHeight(int index)
+        {
+            if ((uint)index >= (uint)Heights01.Length)
+                return 0f;
+
+            return math.saturate(Heights01[index]);
+        }
+
+        private static float ReadOptional(NativeArray<float> source, int index)
+        {
+            if (!source.IsCreated || (uint)index >= (uint)source.Length)
+                return 0f;
+
+            return math.saturate(source[index]);
         }
     }
 

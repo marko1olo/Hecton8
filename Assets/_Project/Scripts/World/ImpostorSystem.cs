@@ -39,6 +39,8 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Gameplay;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -278,8 +280,7 @@ namespace Hecton8.World
 
             float thresholdScale = ResolveThresholdScale();
             float thresholdScaleSqr = thresholdScale * thresholdScale;
-            Vector3 cameraPosition = _cameraTransform.position;
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
+            AbsoluteUniversePosition cameraAup = ResolveViewerAup(_cameraTransform);
             int batchCount = Mathf.Min(_activeImpostors.Count, MaxHotPathImpostorsPerTick);
             for (int processed = 0; processed < batchCount && _activeImpostors.Count > 0; processed++)
             {
@@ -303,7 +304,7 @@ namespace Hecton8.World
                     ? instance.OriginalTransform
                     : instance.OriginalObject.transform;
                 Vector3 originalPosition = originalTransform.position;
-                float sqrDistance = ResolveCameraDistanceSqr(cameraPosition, in cameraAup, originalPosition);
+                float sqrDistance = ResolveCameraDistanceSqr(in cameraAup, originalPosition);
                 float activationDistanceSqr = instance.ActivationDistanceSqr * thresholdScaleSqr;
                 float deactivationDistanceSqr = instance.DeactivationDistanceSqr * thresholdScaleSqr;
 
@@ -336,14 +337,9 @@ namespace Hecton8.World
         }
 
         private static float ResolveCameraDistanceSqr(
-            Vector3 cameraPosition,
             in AbsoluteUniversePosition cameraAup,
             Vector3 objectPosition)
         {
-            float runtimeDistanceSqr = (objectPosition - cameraPosition).sqrMagnitude;
-            if (runtimeDistanceSqr <= AupDistanceThresholdSqr)
-                return runtimeDistanceSqr;
-
             AbsoluteUniversePosition objectAup = AbsoluteUniversePosition.FromRuntimePosition(objectPosition);
             double distanceSqr = AbsoluteUniversePosition.DistanceSq(in cameraAup, in objectAup);
             return distanceSqr >= float.MaxValue ? float.MaxValue : (float)distanceSqr;
@@ -694,9 +690,35 @@ namespace Hecton8.World
 
             Transform billboardTransform = billboardObject.transform;
             Vector3 billboardPosition = originalPosition + instance.BillboardCenterOffset;
-            Quaternion billboardRotation = Quaternion.LookRotation(-_cameraTransform.forward, _cameraTransform.up);
+            AbsoluteUniversePosition billboardAup = AbsoluteUniversePosition.FromRuntimePosition(billboardPosition);
+            AbsoluteUniversePosition cameraAup = ResolveViewerAup(_cameraTransform);
+            float3 cameraDeltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in cameraAup, in billboardAup);
+            Vector3 cameraDelta = new Vector3(cameraDeltaAup.x, 0f, cameraDeltaAup.z);
+            if (cameraDelta.sqrMagnitude <= 0.0001f)
+                cameraDelta = billboardTransform.forward;
+            if (cameraDelta.sqrMagnitude <= 0.0001f)
+                cameraDelta = Vector3.forward;
+
+            Quaternion billboardRotation = Quaternion.LookRotation(cameraDelta.normalized, Vector3.up);
             billboardTransform.SetPositionAndRotation(billboardPosition, billboardRotation);
             billboardTransform.localScale = instance.BillboardScale;
+        }
+
+        private static AbsoluteUniversePosition ResolveViewerAup(Transform cameraTransform)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement != null)
+                return playerMovement.CurrentAup;
+
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            {
+                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                    return movementState.PredictedAup;
+            }
+
+            return AbsoluteUniversePosition.FromRuntimePosition(cameraTransform.position);
         }
 
         private float ResolveThresholdScale()
@@ -724,9 +746,9 @@ namespace Hecton8.World
             if (scaler == null)
                 return qualityScale;
 
-            float renderScale = Mathf.Clamp01(scaler.CurrentRenderScale);
-            float adaptiveScale = Mathf.Lerp(
-                Mathf.Clamp(_minAdaptiveThresholdMultiplier, 0.1f, 1f),
+            float renderScale = math.saturate(scaler.CurrentRenderScale);
+            float adaptiveScale = math.lerp(
+                math.clamp(_minAdaptiveThresholdMultiplier, 0.1f, 1f),
                 1f,
                 renderScale);
 
@@ -867,8 +889,13 @@ namespace Hecton8.World
             if (_distantGeologyBillboardShader != null)
                 return _distantGeologyBillboardShader;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Shader shader = Shader.Find("Hecton8/Environment/Hecton_GeologyImpostorBillboard");
-            return shader != null ? shader : ResolveFallbackBillboardShader();
+            if (shader != null)
+                return shader;
+#endif
+
+            return ResolveFallbackBillboardShader();
         }
 
         private static bool TryCalculateBillboardPresentation(

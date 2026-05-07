@@ -92,7 +92,7 @@ namespace Hecton8.Optimization
             
             // Query all PostFX-owned RTs (zero-GC)
             _postFXRTs.Clear();
-            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory("PostFX", _postFXRTs);
+            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory(RenderTextureOwnerCategory.PostFX, _postFXRTs);
             
             // Calculate total PostFX RT memory (zero-GC loop)
             long totalBytes = 0L;

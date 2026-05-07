@@ -195,6 +195,13 @@ namespace Hecton8.Quest
                    _stateManager.IsQuestCompleted(questHash);
         }
 
+        public bool GetFlag(uint flagId)
+        {
+            return flagId != 0u &&
+                   _stateManager != null &&
+                   _stateManager.GetFlag(flagId);
+        }
+
         public void UpdateDepth(float depthMeters)
         {
             _graphEvaluator?.UpdateDepth(depthMeters);

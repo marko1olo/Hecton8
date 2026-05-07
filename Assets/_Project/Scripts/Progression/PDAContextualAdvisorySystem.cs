@@ -7,6 +7,7 @@ using Hecton8.Modding;
 using Hecton8.PDA;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Progression
@@ -490,7 +491,7 @@ namespace Hecton8.Progression
 
             if (_survivalSystem.IsBeyondSafeDepth)
             {
-                _deepExposureSeconds += 0.5f * Mathf.Lerp(1f, 2f, _survivalSystem.PressureExposureSeverity01);
+                _deepExposureSeconds += 0.5f * math.lerp(1f, 2f, _survivalSystem.PressureExposureSeverity01);
                 if (_deepExposureSeconds >= PressureExposureDurationSeconds ||
                     _survivalSystem.PressureExposureSeverity01 >= PressureExposureEmergencySeverity)
                 {
@@ -507,7 +508,7 @@ namespace Hecton8.Progression
         {
             if (_survivalSystem.IsInColdStress)
             {
-                _coldStressExposureSeconds += 0.5f * Mathf.Lerp(1f, 2f, _survivalSystem.ColdStressSeverity01);
+                _coldStressExposureSeconds += 0.5f * math.lerp(1f, 2f, _survivalSystem.ColdStressSeverity01);
                 if (!_coldStressLatched && _coldStressExposureSeconds >= ColdStressExposureDurationSeconds)
                 {
                     _coldStressLatched = true;
@@ -524,7 +525,7 @@ namespace Hecton8.Progression
 
             if (_survivalSystem.IsInHeatStress)
             {
-                _heatStressExposureSeconds += 0.5f * Mathf.Lerp(1f, 2f, _survivalSystem.HeatStressSeverity01);
+                _heatStressExposureSeconds += 0.5f * math.lerp(1f, 2f, _survivalSystem.HeatStressSeverity01);
                 if (!_heatStressLatched && _heatStressExposureSeconds >= HeatStressExposureDurationSeconds)
                 {
                     _heatStressLatched = true;

@@ -99,6 +99,7 @@ namespace Hecton8.AI
         public float FearPressure01;
         public float FleeHealthThreshold;
         public float DeltaTime;
+        public float MetabolicDeltaTime;
         public float CurrentTime;
         public float AcousticPingStrength01;
         public float AcousticTransmission01;
@@ -1771,8 +1772,9 @@ namespace Hecton8.AI
                 UnpackDriveChannels(core.QuantizedDrives, out float hunger, out float aggression, out float fear, out float threatLevel);
                 float fatigue = UnpackSingleDrive(core.QuantizedFatigue);
                 float dt = math.max(0f, input.DeltaTime);
-                hunger = math.clamp(hunger + (HungerRate * dt), 0f, 1f);
-                fatigue = math.clamp(fatigue + (FatigueRate * dt), 0f, 1f);
+                float metabolicDt = math.max(0f, input.MetabolicDeltaTime);
+                hunger = math.clamp(hunger + (HungerRate * metabolicDt), 0f, 1f);
+                fatigue = math.clamp(fatigue + (FatigueRate * metabolicDt), 0f, 1f);
                 aggression = math.clamp(input.AggressionWeight, 0f, 1f);
                 float ambientThreat = AmbientThreats[slot];
                 fear = math.clamp((fear * math.exp(FearDecayLogK * dt)) + (ambientThreat * dt), 0f, 1f);

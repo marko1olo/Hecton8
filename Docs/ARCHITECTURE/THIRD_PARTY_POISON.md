@@ -52,7 +52,6 @@ Contract:
 - Gameplay samples ocean height, displacement, normals, and flow through `IHectonOceanKinematics`.
 - Gameplay resolves the service from `GlobalRegistry.OceanKinematics`.
 - Crest-specific `OceanRenderer` and collision-provider ownership remains inside the adapter layer.
-- Missing Crest bindings fail fast with explicit errors during runtime initialization instead of null-reference drift later.
 
 ### MapMagic
 

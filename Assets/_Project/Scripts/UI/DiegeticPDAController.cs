@@ -1,6 +1,8 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -50,8 +52,15 @@ namespace Hecton8.UI
         private bool reparentTabletToHandAnchorOnAwake = true;
         [SerializeField, Tooltip("Disables the physical tablet object when the PDA is closed.")]
         private bool hideTabletWhenClosed = true;
-        [SerializeField, Tooltip("Fixed PDA render-texture resolution retained across panel disable/enable so the tablet screen does not churn allocations.")]
-        private Vector2Int tabletRenderTextureResolution = new Vector2Int(1024, 512);
+        [SerializeField, Tooltip("Fixed PDA render-texture resolution retained across panel disable/enable. VR cap is 512x512.")]
+        private Vector2Int tabletRenderTextureResolution = new Vector2Int(512, 512);
+        [SerializeField, Tooltip("Optional anchor used for PDA camera visibility and AUP distance checks. Defaults to the tablet root.")]
+        private Transform pdaVisibilityAnchor;
+        [SerializeField, Min(0.5f), Tooltip("Maximum AUP-safe camera distance before the PDA screen camera is paused.")]
+        private float activeCameraDistanceMeters = 6f;
+        [SerializeField, Range(-0.2f, 0.8f), Tooltip("Minimum camera-forward dot against camera-to-PDA direction before the PDA RT is allowed to update.")]
+        private float cameraFrustumDotThreshold = 0.08f;
+        private const bool PausePanelCameraWhenCulled = true;
 
         // COLD ALLOC: GameObject[8] — diegetic PDA tab routing cache — owner: DiegeticPDAController
         [SerializeField] private GameObject[] configuredTabs = new GameObject[8];
@@ -67,9 +76,11 @@ namespace Hecton8.UI
         private bool _registeredToTickManager;
         private bool _uiConfigured;
         private bool _lastOpenState;
+        private bool _lastPresentationActive;
         private bool _tabletVisibilityInitialized;
         private bool _tabletVisible;
         private GameObject _cachedTabletRoot;
+        private Camera _visibilityCamera;
         private Canvas _panelCanvas;
         private GraphicRaycaster _panelGraphicRaycaster;
         private EventSystem _eventSystem;
@@ -100,6 +111,7 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             _uiConfigured = false;
             ClearPointerState();
+            ApplyPresentationCullState(false, false, force: true);
             DisposeRuntimeScreenMaterial();
         }
 
@@ -124,11 +136,13 @@ namespace Hecton8.UI
             bool openState = PlayerPDA.IsOpen;
             if (openState != _lastOpenState)
                 ApplyPresentationState(openState, force: true);
+
+            ApplyPresentationCullState(openState, IsPdaVisibleToCamera(openState), force: false);
         }
 
         public void ReceiveCanvasInput(in DiegeticPanelInputEvent inputEvent)
         {
-            if (!PlayerPDA.IsOpen || !EnsureUiInteractionState())
+            if (!PlayerPDA.IsOpen || !_lastPresentationActive || !EnsureUiInteractionState())
                 return;
 
             _panelGraphicRaycaster.enabled = true;
@@ -293,14 +307,19 @@ namespace Hecton8.UI
 
             EnsureTabRoutingCache(diegeticPanelRoot.transform);
             playerPda.ConfigureUI(diegeticPanelRoot, diegeticPanelCanvasGroup, configuredTabs);
+            bool openState = PlayerPDA.IsOpen;
+            bool presentationActive = IsPdaVisibleToCamera(openState);
+            ApplyPresentationCullState(openState, presentationActive, force: true);
             if (diegeticPanel != null)
             {
                 diegeticPanel.OverridePanelInteractable(this);
-                diegeticPanel.OverrideFixedRenderTextureResolution(tabletRenderTextureResolution, retainOnDisable: true);
+                diegeticPanel.OverrideInteractionMode(DiegeticPanelController.PanelInteractionMode.HybridPreferFinger);
+                diegeticPanel.OverrideFixedRenderTextureResolution(SanitizeTabletResolution(tabletRenderTextureResolution), retainOnDisable: true);
                 diegeticPanel.OverridePhosphorDecay(true, 0.85f);
                 diegeticPanel.OverridePanelPresentation(ResolveTabletScreenMaterial(), tabletScreenRenderer);
             }
-            if (diegeticPanel != null)
+
+            if (diegeticPanel != null && presentationActive)
                 diegeticPanel.ForceRefreshRenderTexture();
 
             _uiConfigured = true;
@@ -327,6 +346,7 @@ namespace Hecton8.UI
                 return;
 
             _lastOpenState = openState;
+            bool presentationActive = IsPdaVisibleToCamera(openState);
 
             if (tabletRoot != null && hideTabletWhenClosed)
                 SetTabletVisible(openState);
@@ -334,18 +354,88 @@ namespace Hecton8.UI
             if (diegeticPanel != null && diegeticPanel.enabled != openState)
                 diegeticPanel.enabled = openState;
 
-            if (diegeticPanelCanvasGroup != null)
-            {
-                diegeticPanelCanvasGroup.alpha = openState ? 1f : 0f;
-                diegeticPanelCanvasGroup.interactable = openState;
-                diegeticPanelCanvasGroup.blocksRaycasts = openState;
-            }
+            ApplyPresentationCullState(openState, presentationActive, force: true);
 
             if (!openState)
                 ClearPointerState();
 
-            if (openState && diegeticPanel != null)
+            if (openState && presentationActive && diegeticPanel != null)
                 diegeticPanel.ForceRefreshRenderTexture();
+        }
+
+        private void ApplyPresentationCullState(bool openState, bool visibleToCamera, bool force)
+        {
+            bool presentationActive = openState && visibleToCamera;
+            if (!force && _lastPresentationActive == presentationActive)
+                return;
+
+            _lastPresentationActive = presentationActive;
+
+            if (diegeticPanel != null && PausePanelCameraWhenCulled)
+                diegeticPanel.SetPresentationPaused(!presentationActive);
+
+            if (diegeticPanelCanvasGroup != null)
+            {
+                diegeticPanelCanvasGroup.alpha = presentationActive ? 1f : 0f;
+                diegeticPanelCanvasGroup.interactable = presentationActive;
+                diegeticPanelCanvasGroup.blocksRaycasts = presentationActive;
+            }
+
+            if (!presentationActive)
+                ClearPointerState();
+        }
+
+        private bool IsPdaVisibleToCamera(bool openState)
+        {
+            if (!openState)
+                return false;
+
+            Camera camera = ResolveVisibilityCamera();
+            if (camera == null)
+                return false;
+
+            Transform cameraTransform = camera.transform;
+            Transform anchor = ResolveVisibilityAnchor();
+            if (cameraTransform == null || anchor == null)
+                return false;
+
+            Vector3 cameraPosition = cameraTransform.position;
+            Vector3 anchorPosition = anchor.position;
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
+            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
+            double maxDistanceSq = (double)activeCameraDistanceMeters * activeCameraDistanceMeters;
+            if (AbsoluteUniversePosition.DistanceSq(in cameraAup, in anchorAup) > maxDistanceSq)
+                return false;
+
+            float3 toPda = (float3)(anchorPosition - cameraPosition);
+            float distanceSq = math.lengthsq(toPda);
+            if (distanceSq <= 0.0001f)
+                return true;
+
+            float3 directionToPda = toPda * math.rsqrt(distanceSq);
+            float cameraDot = math.dot((float3)cameraTransform.forward, directionToPda);
+            return cameraDot >= cameraFrustumDotThreshold;
+        }
+
+        private Transform ResolveVisibilityAnchor()
+        {
+            if (pdaVisibilityAnchor != null)
+                return pdaVisibilityAnchor;
+
+            if (tabletRoot != null)
+                return tabletRoot.transform;
+
+            return transform;
+        }
+
+        private Camera ResolveVisibilityCamera()
+        {
+            if (_visibilityCamera != null && _visibilityCamera.isActiveAndEnabled)
+                return _visibilityCamera;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            _visibilityCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            return _visibilityCamera != null && _visibilityCamera.isActiveAndEnabled ? _visibilityCamera : null;
         }
 
         private void RebuildTabletVisibilityCache()
@@ -542,5 +632,21 @@ namespace Hecton8.UI
             Destroy(_runtimeTabletScreenMaterial);
             _runtimeTabletScreenMaterial = null;
         }
+
+        private static Vector2Int SanitizeTabletResolution(Vector2Int resolution)
+        {
+            return new Vector2Int(
+                Mathf.Clamp(resolution.x, 64, 512),
+                Mathf.Clamp(resolution.y, 64, 512));
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            tabletRenderTextureResolution = SanitizeTabletResolution(tabletRenderTextureResolution);
+            activeCameraDistanceMeters = Mathf.Max(0.5f, activeCameraDistanceMeters);
+            cameraFrustumDotThreshold = Mathf.Clamp(cameraFrustumDotThreshold, -0.2f, 0.8f);
+        }
+#endif
     }
 }

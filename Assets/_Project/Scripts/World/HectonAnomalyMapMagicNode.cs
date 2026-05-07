@@ -28,6 +28,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         private const string NativeMemoryOwner = nameof(HectonAnomalyMapMagicNode);
         private const string HeightLabel = "anomalyHeightmap";
         private const string BasinMaskLabel = "anomalyBasinMask";
+        private const string BasinLipMaskLabel = "anomalyBasinLipMask";
         private const string CandidateMaskLabel = "anomalyCandidateMask";
         private const string BasinRecordsLabel = "anomalyBasinRecords";
         private const string FeatureRecordsLabel = "anomalyFeatureRecords";
@@ -54,6 +55,10 @@ namespace MapMagic.Nodes.MatrixGenerators
         /// <summary>BrinePoolMask output used by MapMagic terrain texture swaps.</summary>
         [Den.Tools.GUI.ValAttribute("BrinePoolMask", "Outlet")]
         public readonly Outlet<MatrixWorld> brineMaskOut = new Outlet<MatrixWorld>();
+
+        /// <summary>Positive basin-edge lip overlay output used by MapMagic height and normal-map blends.</summary>
+        [Den.Tools.GUI.ValAttribute("BrineLipRidgeMask", "Outlet")]
+        public readonly Outlet<MatrixWorld> brineLipRidgeOut = new Outlet<MatrixWorld>();
 
         /// <summary>Deepest basin point output.</summary>
         [Den.Tools.GUI.ValAttribute("Deepest Points", "Outlet")]
@@ -106,6 +111,14 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Epsilon")]
         public float heightEpsilonMeters = 0.01f;
 
+        /// <summary>Positive rim height exported around accepted basin masks.</summary>
+        [Den.Tools.GUI.ValAttribute("Brine Lip Height")]
+        public float brineLipHeightMeters = 1.25f;
+
+        /// <summary>Cell falloff width for the exported basin lip ridge overlay.</summary>
+        [Den.Tools.GUI.ValAttribute("Brine Lip Falloff")]
+        public int brineLipFalloffCells = 2;
+
         /// <inheritdoc />
         public float Complexity => math.max(1f, maxFloodCells / 8192f);
 
@@ -130,12 +143,13 @@ namespace MapMagic.Nodes.MatrixGenerators
         {
             if (_outletCache == null)
             {
-                // COLD ALLOC: IOutlet<object>[4] - MapMagic port enumeration cache - owner: HectonAnomalyMapMagicNode
-                _outletCache = new IOutlet<object>[4];
+                // COLD ALLOC: IOutlet<object>[5] - MapMagic port enumeration cache - owner: HectonAnomalyMapMagicNode
+                _outletCache = new IOutlet<object>[5];
                 _outletCache[0] = brineMaskOut;
                 _outletCache[1] = deepestPointsOut;
                 _outletCache[2] = pillarCoordinatesOut;
                 _outletCache[3] = fissureMaskOut;
+                _outletCache[4] = brineLipRidgeOut;
             }
 
             return _outletCache;
@@ -152,12 +166,14 @@ namespace MapMagic.Nodes.MatrixGenerators
                 return;
 
             MatrixWorld brineMask = new MatrixWorld(src.rect, src.worldPos, src.worldSize);
+            MatrixWorld brineLipRidgeMask = new MatrixWorld(src.rect, src.worldPos, src.worldSize);
             MatrixWorld fissureMaskMatrix = new MatrixWorld(src.rect, src.worldPos, src.worldSize);
             TransitionsList deepestPoints = new TransitionsList();
             TransitionsList pillarCoordinates = new TransitionsList();
             if (!enabled)
             {
                 data.StoreProduct(brineMaskOut, brineMask);
+                data.StoreProduct(brineLipRidgeOut, brineLipRidgeMask);
                 data.StoreProduct(deepestPointsOut, deepestPoints);
                 data.StoreProduct(pillarCoordinatesOut, pillarCoordinates);
                 data.StoreProduct(fissureMaskOut, fissureMaskMatrix);
@@ -170,6 +186,7 @@ namespace MapMagic.Nodes.MatrixGenerators
             if (cellCount <= 0 || width * height > cellCount)
             {
                 data.StoreProduct(brineMaskOut, brineMask);
+                data.StoreProduct(brineLipRidgeOut, brineLipRidgeMask);
                 data.StoreProduct(deepestPointsOut, deepestPoints);
                 data.StoreProduct(pillarCoordinatesOut, pillarCoordinates);
                 data.StoreProduct(fissureMaskOut, fissureMaskMatrix);
@@ -178,6 +195,7 @@ namespace MapMagic.Nodes.MatrixGenerators
 
             NativeArray<float> heightmap = default;
             NativeArray<byte> basinMask = default;
+            NativeArray<float> basinLipMask = default;
             NativeArray<byte> candidateMask = default;
             NativeArray<AnomalyBasinRecord> basinRecords = default;
             NativeArray<AnomalyFeatureRecord> featureRecords = default;
@@ -191,6 +209,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 // COLD ALLOC: NativeArray anomaly buffers[cellCount] — MapMagic graph product generation — owner: HectonAnomalyMapMagicNode
                 heightmap = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 basinMask = new NativeArray<byte>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                basinLipMask = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 candidateMask = new NativeArray<byte>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 basinRecords = new NativeArray<AnomalyBasinRecord>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 featureRecords = new NativeArray<AnomalyFeatureRecord>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -201,6 +220,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 RegisterTempJobBuffers(
                     heightmap,
                     basinMask,
+                    basinLipMask,
                     candidateMask,
                     basinRecords,
                     featureRecords,
@@ -265,6 +285,14 @@ namespace MapMagic.Nodes.MatrixGenerators
                     fissureMask,
                     ridgeSettings,
                     handle);
+                handle = MapMagicBridge.ScheduleBrineBasinLipRidgeOverlay(
+                    basinMask,
+                    basinLipMask,
+                    width,
+                    height,
+                    brineLipFalloffCells,
+                    brineLipHeightMeters,
+                    handle);
 
                 // COLD SYNC JOB: MapMagic Generate must publish concrete matrix and object products before returning.
                 handle.Complete();
@@ -274,6 +302,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                     return;
 
                 CopyMaskToMatrix(basinMask, brineMask.arr);
+                CopyHeightOffsetToMatrix(basinLipMask, brineLipRidgeMask.arr, resolvedHeightScale);
                 CopyMaskToMatrix(fissureMask, fissureMaskMatrix.arr);
                 CopyDeepestPoints(basinRecords, src, resolvedHeightScale, deepestPoints);
                 CopyPillarCoordinates(featureRecords, pillarCoordinates);
@@ -287,6 +316,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (deepestPoints.count == 0)
                     GlobalTelemetryBus.PublishPerformanceWarning(NoBasinWarningHash, AnomalyNodeContextHash, cellCount);
                 data.StoreProduct(brineMaskOut, brineMask);
+                data.StoreProduct(brineLipRidgeOut, brineLipRidgeMask);
                 data.StoreProduct(deepestPointsOut, deepestPoints);
                 data.StoreProduct(pillarCoordinatesOut, pillarCoordinates);
                 data.StoreProduct(fissureMaskOut, fissureMaskMatrix);
@@ -295,6 +325,7 @@ namespace MapMagic.Nodes.MatrixGenerators
             {
                 DisposeTracked(ref heightmap);
                 DisposeTracked(ref basinMask);
+                DisposeTracked(ref basinLipMask);
                 DisposeTracked(ref candidateMask);
                 DisposeTracked(ref basinRecords);
                 DisposeTracked(ref featureRecords);
@@ -310,6 +341,14 @@ namespace MapMagic.Nodes.MatrixGenerators
             int count = math.min(source.Length, destination != null ? destination.Length : 0);
             for (int i = 0; i < count; i++)
                 destination[i] = source[i] != 0 ? 1f : 0f;
+        }
+
+        private static void CopyHeightOffsetToMatrix(NativeArray<float> sourceMeters, float[] destination, float heightScaleMeters)
+        {
+            int count = math.min(sourceMeters.Length, destination != null ? destination.Length : 0);
+            float invHeightScale = 1f / math.max(0.001f, heightScaleMeters);
+            for (int i = 0; i < count; i++)
+                destination[i] = math.max(0f, sourceMeters[i]) * invHeightScale;
         }
 
         private static void CopyDeepestPoints(
@@ -393,6 +432,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static void RegisterTempJobBuffers(
             NativeArray<float> heightmap,
             NativeArray<byte> basinMask,
+            NativeArray<float> basinLipMask,
             NativeArray<byte> candidateMask,
             NativeArray<AnomalyBasinRecord> basinRecords,
             NativeArray<AnomalyFeatureRecord> featureRecords,
@@ -403,6 +443,7 @@ namespace MapMagic.Nodes.MatrixGenerators
         {
             NativeMemorySentinel.RegisterNativeArray(heightmap, NativeMemoryOwner, HeightLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(basinLipMask, NativeMemoryOwner, BasinLipMaskLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(candidateMask, NativeMemoryOwner, CandidateMaskLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(featureRecords, NativeMemoryOwner, FeatureRecordsLabel, NativeAllocationLifetime.TempJob);

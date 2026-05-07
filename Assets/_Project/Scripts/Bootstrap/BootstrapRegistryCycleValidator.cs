@@ -1,6 +1,9 @@
 using System;
 using Hecton8.Core;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Bootstrap
 {
@@ -43,6 +46,7 @@ namespace Hecton8.Bootstrap
             GlobalRegistryServiceSlot.RenderDispatcher,
             GlobalRegistryServiceSlot.Scene,
             GlobalRegistryServiceSlot.InteractionSignals,
+            GlobalRegistryServiceSlot.FloatingOriginRuntime,
             GlobalRegistryServiceSlot.PhysicsStateManager,
             GlobalRegistryServiceSlot.Physics,
             GlobalRegistryServiceSlot.Debris,
@@ -67,7 +71,8 @@ namespace Hecton8.Bootstrap
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.RenderDispatcher, GlobalRegistryServiceSlot.Dispatcher),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Scene, GlobalRegistryServiceSlot.Dispatcher),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.InteractionSignals, GlobalRegistryServiceSlot.Dispatcher),
-            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PhysicsStateManager, GlobalRegistryServiceSlot.Dispatcher),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.FloatingOriginRuntime, GlobalRegistryServiceSlot.Dispatcher),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PhysicsStateManager, GlobalRegistryServiceSlot.FloatingOriginRuntime),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Physics, GlobalRegistryServiceSlot.Dispatcher),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Physics, GlobalRegistryServiceSlot.PhysicsStateManager),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Debris, GlobalRegistryServiceSlot.ObjectPool),
@@ -96,6 +101,7 @@ namespace Hecton8.Bootstrap
             new GlobalRegistryServiceSlot[_startupNodes.Length];
         private static readonly int[] _inDegreeScratch = new int[_startupNodes.Length];
         private static readonly int[] _queueScratch = new int[_startupNodes.Length];
+        private static readonly int[] _nodeIndexScratch = new int[256];
 
         /// <summary>
         /// Number of registry slots in the startup validation graph.
@@ -108,6 +114,20 @@ namespace Hecton8.Bootstrap
         public static bool TryValidateStartupGraph(GlobalRegistryServiceSlot[] executionOrder, out int executionOrderCount)
         {
             return TryBuildExecutionOrder(_startupNodes, _startupEdges, executionOrder, out executionOrderCount);
+        }
+
+        /// <summary>
+        /// Builds the canonical startup execution order or aborts play mode on a circular graph.
+        /// </summary>
+        public static bool TryBuildStartupExecutionOrderOrThrow(
+            GlobalRegistryServiceSlot[] executionOrder,
+            out int executionOrderCount)
+        {
+            if (TryValidateStartupGraph(executionOrder, out executionOrderCount))
+                return true;
+
+            HaltEditorPlayModeForCriticalCycle();
+            throw new CriticalBootException("[BootstrapRegistryCycleValidator] Circular registry dependency graph.");
         }
 
         /// <summary>
@@ -151,14 +171,19 @@ namespace Hecton8.Bootstrap
             executionOrderCount = 0;
             Array.Clear(_inDegreeScratch, 0, nodeCount);
             Array.Clear(_queueScratch, 0, nodeCount);
+            for (int i = 0; i < _nodeIndexScratch.Length; i++)
+                _nodeIndexScratch[i] = -1;
+
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                _nodeIndexScratch[(int)(byte)nodes[nodeIndex]] = nodeIndex;
 
             int queueHead = 0;
             int queueTail = 0;
 
             for (int edgeIndex = 0; edgeIndex < edges.Length; edgeIndex++)
             {
-                int sourceIndex = IndexOf(nodes, edges[edgeIndex].Source);
-                int dependencyIndex = IndexOf(nodes, edges[edgeIndex].Dependency);
+                int sourceIndex = ResolveNodeIndex(edges[edgeIndex].Source);
+                int dependencyIndex = ResolveNodeIndex(edges[edgeIndex].Dependency);
                 if (sourceIndex < 0 || dependencyIndex < 0)
                     return false;
 
@@ -178,10 +203,10 @@ namespace Hecton8.Bootstrap
 
                 for (int edgeIndex = 0; edgeIndex < edges.Length; edgeIndex++)
                 {
-                    if (IndexOf(nodes, edges[edgeIndex].Dependency) != dependencyIndex)
+                    if (ResolveNodeIndex(edges[edgeIndex].Dependency) != dependencyIndex)
                         continue;
 
-                    int sourceIndex = IndexOf(nodes, edges[edgeIndex].Source);
+                    int sourceIndex = ResolveNodeIndex(edges[edgeIndex].Source);
                     _inDegreeScratch[sourceIndex]--;
                     if (_inDegreeScratch[sourceIndex] == 0)
                         _queueScratch[queueTail++] = sourceIndex;
@@ -194,6 +219,11 @@ namespace Hecton8.Bootstrap
             ReportCycle(nodes, edges, _inDegreeScratch);
             executionOrderCount = 0;
             return false;
+        }
+
+        private static int ResolveNodeIndex(GlobalRegistryServiceSlot serviceSlot)
+        {
+            return _nodeIndexScratch[(int)(byte)serviceSlot];
         }
 
         private static int IndexOf(GlobalRegistryServiceSlot[] nodes, GlobalRegistryServiceSlot serviceSlot)
@@ -228,6 +258,14 @@ namespace Hecton8.Bootstrap
             }
 
             Debug.LogError("[BootstrapRegistryCycleValidator] Circular registry dependency detected. Edge details emitted to GlobalTelemetryBus.");
+#endif
+        }
+
+        private static void HaltEditorPlayModeForCriticalCycle()
+        {
+#if UNITY_EDITOR
+            if (Application.isPlaying)
+                EditorApplication.isPlaying = false;
 #endif
         }
 

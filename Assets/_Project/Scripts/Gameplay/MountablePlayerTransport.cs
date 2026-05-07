@@ -55,6 +55,7 @@ namespace Hecton8.Gameplay
         private const byte SubmarineImpactHapticMotorMask = 0b0011;
         private const byte SubmarineImpactHapticBlendMode = 2;
         private const float CavitationShockwaveMinRadiusMeters = 15f;
+        private const float HighSpeedKelpSnapThresholdMetersPerSecond = 10f;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -279,6 +280,8 @@ namespace Hecton8.Gameplay
 
         /// <inheritdoc />
         public bool InheritPlatformRotation => false;
+
+        internal VehicleMotor BoundVehicleMotor => _vehicleMotor;
 
         private void Awake()
         {
@@ -966,6 +969,12 @@ namespace Hecton8.Gameplay
                 return false;
 
             Vector3 sampleCenter = _transportBody.position + direction * math.max(1f, entanglementProbeLengthMeters * 0.5f);
+            if (speed > HighSpeedKelpSnapThresholdMetersPerSecond &&
+                destructibleOrganicManager.ApplyHighSpeedKelpForestSnap(sampleCenter, velocity, entanglementCaptureRadius) > 0)
+            {
+                return false;
+            }
+
             int trackedCount = destructibleOrganicManager.CollectNearestConsumableFlora(
                 sampleCenter,
                 entanglementCaptureRadius,

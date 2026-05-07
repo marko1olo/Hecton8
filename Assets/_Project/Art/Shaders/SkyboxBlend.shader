@@ -34,6 +34,9 @@ Shader "Hecton/SkyboxBlend"
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 3.0
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
+            #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
+            #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 

@@ -19,20 +19,24 @@ namespace Hecton8.Optimization
         private const float RamWarningFraction = 0.75f;
         private const float RamEmergencyFraction = 0.90f;
         private const long SoftVramPressureBytes = 1600L * 1024L * 1024L;
-        private const long ForcedHalfResolutionVramBytes = 1600L * 1024L * 1024L;
+        private const long ForcedHalfResolutionVramBytes = 1400L * 1024L * 1024L;
+        private const long VRForcedHalfResolutionVramBytes = 1200L * 1024L * 1024L;
         private const long RedZoneVramPressureBytes = 1800L * 1024L * 1024L;
         private const long RestoreFullResolutionVramBytes = 1200L * 1024L * 1024L;
+        private const long VRRestoreFullResolutionVramBytes = 900L * 1024L * 1024L;
+        private const long LODAggressionVramBytes = 1700L * 1024L * 1024L;
+        private const float LODAggressionMultiplier = 0.5f;
         private const long MinimumHardwareHeadroomBytes = 200L * 1024L * 1024L;
         private const int WorldPrefabEvictionIdleFrames = 180;
 
         [Header("VRAM Pressure Thresholds")]
-        [Tooltip("Preventive mip downgrade threshold: 1.6 GB against the 1.8 GB MX350 ceiling.")]
+        [Tooltip("Preventive mip downgrade threshold: 1.6 GB against the 1.8 GB MX350 ceiling. Forced half-res begins at 1.4 GB, or 1.2 GB while XR is active.")]
         [SerializeField, Range(0.5f, 1f)] private float warningVramFraction = DefaultWarningVramFraction;
 
         [Tooltip("Emergency eviction threshold against the 1.8 GB MX350 ceiling.")]
         [SerializeField, Range(0.5f, 1f)] private float emergencyVramFraction = 0.95f;
 
-        [Tooltip("Recovery threshold that restores the baseline mip residency.")]
+        [Tooltip("Recovery threshold that restores the baseline mip residency. XR recovery is hard-gated at 0.9 GB to prevent mip thrash.")]
         [SerializeField, Range(0.25f, 1f)] private float restoreVramFraction = DefaultRestoreFraction;
 
         [Tooltip("Frames between pressure samples. 90 frames is the streaming mandate cadence.")]
@@ -46,6 +50,10 @@ namespace Hecton8.Optimization
         private int _framesUntilSample;
         private int _baselineMipLimit;
         private int _activeMipLimit;
+        private float _baselineLodBias;
+        private bool _lodAggressionActive;
+
+        internal static float BrgLodDistanceScalar { get; private set; } = 1f;
 
         internal bool HasSample { get; private set; }
         internal float VramPressureFactor { get; private set; }
@@ -57,8 +65,10 @@ namespace Hecton8.Optimization
 
         private void Awake()
         {
+            BrgLodDistanceScalar = 1f;
             _baselineMipLimit = QualitySettings.globalTextureMipmapLimit;
             _activeMipLimit = _baselineMipLimit;
+            _baselineLodBias = QualitySettings.lodBias;
             _framesUntilSample = Mathf.Max(1, sampleIntervalFrames);
         }
 
@@ -75,12 +85,18 @@ namespace Hecton8.Optimization
 
         private void OnDisable()
         {
+            if (_lodAggressionActive)
+                BrgLodDistanceScalar = 1f;
+
             TryUnregister();
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            if (_lodAggressionActive)
+                BrgLodDistanceScalar = 1f;
+
             TryUnregister();
             TryUnregisterService();
         }
@@ -174,6 +190,7 @@ namespace Hecton8.Optimization
 
             ApplyStreamingMipBudget(monitor, thresholds);
             ApplyMipBias();
+            ApplyLodAggression();
             RunPressureEviction(governor, monitor);
         }
 
@@ -199,14 +216,17 @@ namespace Hecton8.Optimization
         {
             int targetMipLimit = _activeMipLimit;
             bool softVramPressure = IsSoftVramPressureActive();
+            long forcedMipThresholdBytes = ResolveForcedMipDropThresholdBytes();
+            long restoreMipThresholdBytes = ResolveFullResolutionRestoreThresholdBytes();
+            bool allowFractionRestore = !HectonXRRuntimeState.IsXRActive;
 
-            if (LastUsedVramBytes >= ForcedHalfResolutionVramBytes)
+            if (LastUsedVramBytes >= forcedMipThresholdBytes)
                 targetMipLimit = Mathf.Max(_baselineMipLimit, 1);
-            else if (LastUsedVramBytes <= RestoreFullResolutionVramBytes)
+            else if (LastUsedVramBytes <= restoreMipThresholdBytes)
                 targetMipLimit = _baselineMipLimit;
             else if (softVramPressure)
                 targetMipLimit = Mathf.Max(_baselineMipLimit, 1);
-            else if (VramPressureFactor <= restoreVramFraction)
+            else if (allowFractionRestore && VramPressureFactor <= restoreVramFraction)
                 targetMipLimit = _baselineMipLimit;
 
             if (targetMipLimit == _activeMipLimit)
@@ -219,9 +239,48 @@ namespace Hecton8.Optimization
             _activeMipLimit = targetMipLimit;
         }
 
+        private void ApplyLodAggression()
+        {
+            bool shouldCollapseLods = LastUsedVramBytes >= LODAggressionVramBytes;
+            bool shouldRestoreLods = LastUsedVramBytes <= ResolveFullResolutionRestoreThresholdBytes() ||
+                                     (!HectonXRRuntimeState.IsXRActive && VramPressureFactor <= restoreVramFraction);
+
+            if (shouldCollapseLods)
+            {
+                float targetLodBias = Mathf.Max(0.05f, _baselineLodBias * LODAggressionMultiplier);
+                if (!_lodAggressionActive || !Mathf.Approximately(QualitySettings.lodBias, targetLodBias))
+                    QualitySettings.lodBias = targetLodBias;
+
+                BrgLodDistanceScalar = LODAggressionMultiplier;
+                _lodAggressionActive = true;
+                return;
+            }
+
+            if (!_lodAggressionActive || !shouldRestoreLods)
+                return;
+
+            QualitySettings.lodBias = _baselineLodBias;
+            BrgLodDistanceScalar = 1f;
+            _lodAggressionActive = false;
+        }
+
         private bool IsSoftVramPressureActive()
         {
             return LastUsedVramBytes >= SoftVramPressureBytes || VramPressureFactor >= warningVramFraction;
+        }
+
+        private static long ResolveForcedMipDropThresholdBytes()
+        {
+            return HectonXRRuntimeState.IsXRActive
+                ? VRForcedHalfResolutionVramBytes
+                : ForcedHalfResolutionVramBytes;
+        }
+
+        private static long ResolveFullResolutionRestoreThresholdBytes()
+        {
+            return HectonXRRuntimeState.IsXRActive
+                ? VRRestoreFullResolutionVramBytes
+                : RestoreFullResolutionVramBytes;
         }
 
         private void RunPressureEviction(AssetLifecycleGovernor governor, VRAMMonitor monitor)
@@ -242,6 +301,9 @@ namespace Hecton8.Optimization
             bool redZoneVramPressure = LastUsedVramBytes >= RedZoneVramPressureBytes || VramPressureFactor >= 1f;
             if (redZoneVramPressure || VramPressureFactor >= emergencyVramFraction || RamPressureFactor >= RamEmergencyFraction)
             {
+                if (redZoneVramPressure)
+                    SystemDispatcher.RequestVisualStaticGlitch();
+
                 if (governor != null)
                 {
                     governor.ForceDrainPendingReleaseQueue();

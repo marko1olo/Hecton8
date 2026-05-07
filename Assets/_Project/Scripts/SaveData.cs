@@ -22,6 +22,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Narrative;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.SaveSystem
@@ -45,12 +46,16 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 59; // v59: Inventory item genetics persist as byte flags.
+        public const int CurrentVersion = 60; // v60: Resource scarcity persists item hashes without runtime ID string dependency.
 
         // ─────────────────────── DTO Sections ────────────────────
 
         public PlayerStatsDTO playerStats;
         public InventoryDTO inventory;
+        [NonSerialized] internal NativeArray<byte> inventoryShadowPayload;
+        [NonSerialized] internal int inventoryShadowPayloadLength;
+        [NonSerialized] internal uint inventoryShadowPayloadHash;
+        [NonSerialized] internal bool hasInventoryShadowPayload;
         public WorldStateDTO worldState;
         public ProceduralWorldStateDTO proceduralWorldState;
         public ConstructionDTO construction;
@@ -847,7 +852,9 @@ namespace Hecton8.SaveSystem
     {
         public const int AupPositionEncodingVersion = 1;
 
+        public uint markerHashId;
         public string markerId;
+        public uint titleHashId;
         public string title;
         public int iconType;
         public float posX;
@@ -1000,11 +1007,24 @@ namespace Hecton8.SaveSystem
         public const int MaxTrackedResources = 96;
 
         public int entryCount;
+        public int[] itemHashIds;
         public string[] itemIds;
         public int[] collectedCounts;
 
         public void EnsureCapacity()
         {
+            if (itemHashIds == null || itemHashIds.Length != MaxTrackedResources)
+            {
+                int[] replacement = new int[MaxTrackedResources];
+                if (itemHashIds != null)
+                {
+                    int copyCount = itemHashIds.Length < replacement.Length ? itemHashIds.Length : replacement.Length;
+                    Array.Copy(itemHashIds, replacement, copyCount);
+                }
+
+                itemHashIds = replacement;
+            }
+
             if (itemIds == null || itemIds.Length != MaxTrackedResources)
             {
                 string[] replacement = new string[MaxTrackedResources];

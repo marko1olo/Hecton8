@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Inventory;
+using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.World;
 using Unity.Collections;
@@ -33,13 +34,24 @@ namespace Hecton8.Gameplay
 
         private const float MinVectorMagnitudeSq = 0.000001f;
         private const int MaxSlideSweepIterations = 2;
-        private const int ScheduledSweepCommandCount = 1;
-        private const int ScheduledSweepMaxHits = 8;
+        private const int ScheduledLocomotionSweepCommandIndex = 0;
+        private const int ScheduledFootstepProbeCommandIndex = 1;
+        private const int ScheduledSweepCommandCount = 2;
+        private const int ScheduledSweepMaxHitsPerCommand = 8;
+        private const int ScheduledSweepMaxHits = ScheduledSweepCommandCount * ScheduledSweepMaxHitsPerCommand;
+        private const int KinematicRepairTargetCommandCount = 1;
+        private const int KinematicRepairTargetResultCount = 1;
+        private const int KinematicRepairTargetMinCommandsPerJob = 1;
+        private const float ScheduledFootstepProbeDistance = 0.9f;
+        private const float KinematicRepairTargetMinDistance = 0.05f;
         private const float DenormalVelocityFlushThresholdMetersPerSecond = 0.001f;
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
         private const float WakeSiltEmissionCooldownSeconds = 0.35f;
         private const float WallSlideTelemetryMaxNormalY = 0.75f;
+        private const float VoxelProxySlideDistanceRetain = 0.82f;
+        private const float VoxelProxySlideVelocityRetain = 0.72f;
+        private const float VoxelProxyGlideFallbackSpeedRetain = 0.35f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const double SweepSolveTelemetryBudgetMilliseconds = 0.2d;
 #endif
@@ -77,6 +89,14 @@ namespace Hecton8.Gameplay
         private float _lastWallSlideVelocityReduction01;
         private int _lastWallSlidePhysicsFrame = -1;
         private bool _lastWallSlideIsVoxel;
+        private RaycastHit _lastBatchedFootstepHit;
+        private int _lastBatchedFootstepPhysicsFrame = -1;
+        private bool _kinematicRepairTargetProbePending;
+        private bool _kinematicRepairSnapReady;
+        private float _kinematicRepairProbeSurfaceOffset;
+        private AbsoluteUniversePosition _kinematicRepairProbeOriginAup;
+        private KinematicRepairTargetProbe _kinematicRepairTargetProbe;
+        private KinematicRepairSnapPoint _kinematicRepairSnapPoint;
 
         /// <inheritdoc />
         public Rigidbody Body => _body;
@@ -150,6 +170,46 @@ namespace Hecton8.Gameplay
             velocityReduction01 = _lastWallSlideVelocityReduction01;
             isVoxelWall = _lastWallSlideIsVoxel;
             return true;
+        }
+
+        /// <summary>Returns the latest support hit produced by the locomotion capsulecast batch.</summary>
+        public bool TryGetRecentBatchedFootstepHit(int maxPhysicsFrameAge, out RaycastHit hit)
+        {
+            hit = default;
+            if (_lastBatchedFootstepPhysicsFrame < 0)
+                return false;
+
+            int age = PhysicsFrame.Current - _lastBatchedFootstepPhysicsFrame;
+            if (age < 0 || age > math.max(0, maxPhysicsFrameAge))
+                return false;
+
+            if (GetHitColliderInstanceId(in _lastBatchedFootstepHit) == 0)
+                return false;
+
+            hit = _lastBatchedFootstepHit;
+            return true;
+        }
+
+        /// <summary>Consumes the most recent hand IK repair snap resolved by the Burst raycast lane.</summary>
+        public bool TryConsumeKinematicRepairSnap(out KinematicRepairSnapPoint snapPoint)
+        {
+            return TryConsumeKinematicRepairSnap(out _, out snapPoint);
+        }
+
+        /// <summary>Consumes the most recent repair probe and snap point pair.</summary>
+        public bool TryConsumeKinematicRepairSnap(
+            out KinematicRepairTargetProbe probe,
+            out KinematicRepairSnapPoint snapPoint)
+        {
+            probe = default;
+            snapPoint = default;
+            if (!_kinematicRepairSnapReady)
+                return false;
+
+            _kinematicRepairSnapReady = false;
+            probe = _kinematicRepairTargetProbe;
+            snapPoint = _kinematicRepairSnapPoint;
+            return snapPoint.ColliderInstanceId != 0;
         }
 
         /// <summary>Binds authoritative body references owned by the locomotion controller.</summary>
@@ -424,7 +484,7 @@ namespace Hecton8.Gameplay
             if (!IsFiniteNonZero(displacement))
                 return true;
 
-            float distance = displacement.magnitude;
+            float distance = math.length((float3)displacement);
             if (distance <= 0.0001f)
                 return true;
 
@@ -458,13 +518,13 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Analytical quadratic drag solve. Stable for variable fixed steps and cannot reverse velocity.
+        /// Quadratic drag solve. Stable for variable fixed steps and cannot reverse velocity.
         /// </summary>
         public static Vector3 AnalyticalQuadraticDrag(Vector3 velocity, Vector3 dragCoefficient, float dt)
         {
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             float3 drag3 = new float3(dragCoefficient.x, dragCoefficient.y, dragCoefficient.z);
-            float speedMag = math.length(velocity3);
+            float speedMag = ApproximateSpeedMagnitude(velocity3);
             if (speedMag < DenormalVelocityFlushThresholdMetersPerSecond)
                 return Vector3.zero;
 
@@ -480,13 +540,47 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static Vector3 AnalyticalQuadraticDrag(Vector3 velocity, float dragCoefficient, float dt)
         {
-            float speed = velocity.magnitude;
-            if (speed < DenormalVelocityFlushThresholdMetersPerSecond)
+            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+            float speedSq = math.lengthsq(velocity3);
+            if (speedSq < DenormalVelocityFlushThresholdMetersPerSecond * DenormalVelocityFlushThresholdMetersPerSecond)
                 return Vector3.zero;
 
+            float speed = ApproximateSpeedMagnitude(velocity3);
             float safeDt = math.max(dt, 0.0001f);
             float denominator = 1f + math.max(0f, dragCoefficient) * speed * safeDt;
-            return SafeVelocity(velocity / math.max(denominator, 0.001f), velocity);
+            float3 result = velocity3 / math.max(denominator, 0.001f);
+            return SafeVelocity(new Vector3(result.x, result.y, result.z), velocity);
+        }
+
+        /// <summary>
+        /// Directional analytical drag with a cross-sectional forward area term.
+        /// </summary>
+        public static Vector3 AnalyticalQuadraticDrag(
+            Vector3 velocity,
+            float dragCoefficient,
+            Vector3 forward,
+            float crossSectionalAreaScale,
+            float dt)
+        {
+            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
+            float speedSq = math.lengthsq(velocity3);
+            if (speedSq < DenormalVelocityFlushThresholdMetersPerSecond * DenormalVelocityFlushThresholdMetersPerSecond)
+                return Vector3.zero;
+
+            float speed = ApproximateSpeedMagnitude(velocity3);
+            float3 velocityDirection = math.normalizesafe(velocity3);
+            Vector3 safeForwardVector = SafeNormal(forward, Vector3.forward);
+            float3 safeForward = math.normalizesafe(
+                new float3(safeForwardVector.x, safeForwardVector.y, safeForwardVector.z),
+                new float3(0f, 0f, 1f));
+            float forwardExposure = math.max(0.2f, math.abs(math.dot(velocityDirection, safeForward)));
+            float lateralExposure = math.max(0.2f, 1f - forwardExposure);
+            float directionalCrossSection = math.max(forwardExposure, lateralExposure * 2.75f);
+            float areaScale = math.max(0.01f, crossSectionalAreaScale) * directionalCrossSection;
+            float safeDt = math.max(dt, 0.0001f);
+            float denominator = 1f + math.max(0f, dragCoefficient) * areaScale * speed * safeDt;
+            float3 result = velocity3 / math.max(denominator, 0.001f);
+            return SafeVelocity(new Vector3(result.x, result.y, result.z), velocity);
         }
 
         /// <summary>Clears transient runtime state.</summary>
@@ -497,6 +591,8 @@ namespace Hecton8.Gameplay
             ResetHydrodynamicAddedMassState();
             if (_scheduledSweepPending)
                 DispatcherJobSwap.TryComplete(ref _nativeState.ScheduledSweepHandle, forceComplete: true);
+            if (_kinematicRepairTargetProbePending)
+                DispatcherJobSwap.TryComplete(ref _nativeState.KinematicRepairTargetHandle, forceComplete: true);
 
             _scheduledSweepPending = false;
             _scheduledSweepResultReady = false;
@@ -504,6 +600,12 @@ namespace Hecton8.Gameplay
             _scheduledSweepBlockingHit = default;
             _scheduledSweepResolvedPosition = _body != null ? _body.position : Vector3.zero;
             _scheduledSweepBlockedSpeed = 0f;
+            _lastBatchedFootstepHit = default;
+            _lastBatchedFootstepPhysicsFrame = -1;
+            _kinematicRepairTargetProbePending = false;
+            _kinematicRepairSnapReady = false;
+            _kinematicRepairTargetProbe = default;
+            _kinematicRepairSnapPoint = default;
         }
 
         /// <summary>
@@ -520,7 +622,7 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Schedules an asynchronous capsule sweep batch for a future locomotion integration window.
+        /// Schedules a jobified capsule sweep batch for the LateFrame locomotion integration window.
         /// This is the Burst/job seam used by high-speed locomotion probes. Consumption is intentionally deferred.
         /// </summary>
         public bool ScheduleCapsuleSweepBatch(
@@ -550,13 +652,23 @@ namespace Hecton8.Gameplay
                 SelfColliderInstanceId = selfColliderInstanceId
             };
 
-            _nativeState.ScheduledSweepCommands[0] = new CapsulecastCommand(
+            QueryParameters sweepQuery = new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore);
+            float safeRadius = math.max(0.01f, capsuleRadius);
+            _nativeState.ScheduledSweepCommands[ScheduledLocomotionSweepCommandIndex] = new CapsulecastCommand(
                 capsulePoint1,
                 capsulePoint2,
-                math.max(0.01f, capsuleRadius),
+                safeRadius,
                 direction,
-                new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore),
+                sweepQuery,
                 distance + skinWidth);
+
+            _nativeState.ScheduledSweepCommands[ScheduledFootstepProbeCommandIndex] = new CapsulecastCommand(
+                capsulePoint1,
+                capsulePoint2,
+                safeRadius,
+                Vector3.down,
+                sweepQuery,
+                math.max(ScheduledFootstepProbeDistance, skinWidth + 0.05f));
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long scheduleBudgetStart = BeginSweepBudgetSample();
@@ -567,7 +679,7 @@ namespace Hecton8.Gameplay
                     _nativeState.ScheduledSweepCommands,
                     _nativeState.ScheduledSweepResults,
                     1,
-                    ScheduledSweepMaxHits,
+                    ScheduledSweepMaxHitsPerCommand,
                     default);
                 _scheduledSweepPending = true;
             }
@@ -575,6 +687,55 @@ namespace Hecton8.Gameplay
             EndSweepBudgetSample(scheduleBudgetStart, _sweepScheduleBudgetWarningHash);
 #endif
 
+            return true;
+        }
+
+        /// <summary>
+        /// Schedules a forward interactable ray for physical hand IK repair targets. Results are consumed in LateFrame.
+        /// </summary>
+        public bool ScheduleKinematicRepairTargetProbe(
+            Vector3 origin,
+            Vector3 direction,
+            float distance,
+            int layerMask,
+            float surfaceOffset)
+        {
+            if (_kinematicRepairTargetProbePending ||
+                distance <= KinematicRepairTargetMinDistance ||
+                layerMask == 0 ||
+                !IsFiniteNonZero(direction))
+            {
+                return false;
+            }
+
+            float3 origin3 = new float3(origin.x, origin.y, origin.z);
+            if (!math.all(math.isfinite(origin3)))
+                return false;
+
+            EnsureKinematicRepairTargetState();
+            Vector3 safeDirection = SafeNormal(direction, Vector3.forward);
+            _kinematicRepairProbeSurfaceOffset = math.max(0f, surfaceOffset);
+            _kinematicRepairProbeOriginAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            _nativeState.KinematicRepairTargetCommands[0] = new RaycastCommand
+            {
+                from = origin,
+                direction = safeDirection,
+                distance = distance,
+                queryParameters = new QueryParameters
+                {
+                    layerMask = layerMask,
+                    hitTriggers = QueryTriggerInteraction.Ignore,
+                    hitBackfaces = false,
+                    hitMultipleFaces = false
+                }
+            };
+
+            _nativeState.KinematicRepairTargetHandle = RaycastCommand.ScheduleBatch(
+                _nativeState.KinematicRepairTargetCommands,
+                _nativeState.KinematicRepairTargetResults,
+                KinematicRepairTargetMinCommandsPerJob,
+                default);
+            _kinematicRepairTargetProbePending = true;
             return true;
         }
 
@@ -616,6 +777,7 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             CompleteScheduledSweepInLateFrameSwapWindow();
+            CompleteKinematicRepairTargetProbeInLateFrameSwapWindow();
         }
 
         private static bool IsFiniteNonZero(Vector3 value)
@@ -677,16 +839,29 @@ namespace Hecton8.Gameplay
         private static bool IsVoxelWallHit(in RaycastHit hit)
         {
             Collider hitCollider = hit.collider;
-            return hitCollider != null && hitCollider.gameObject.layer == HectonLayerMasks.VoxelCave;
+            if (hitCollider == null)
+                return false;
+
+            int hitLayer = hitCollider.gameObject.layer;
+            return hitLayer == HectonLayerMasks.VoxelCave;
+        }
+
+        private static bool IsVoxelProxyHit(in RaycastHit hit)
+        {
+            Collider hitCollider = hit.collider;
+            return hitCollider != null && hitCollider.gameObject.layer == HectonLayerMasks.VoxelProxy;
         }
 
         private float ResolveSlideBlockedSpeed(Vector3 intendedDisplacement, Vector3 slideDisplacement, Vector3 wallNormal)
         {
             Vector3 previousVelocity = _body != null ? SafeVelocity(_body.linearVelocity) : Vector3.zero;
             Vector3 projectedVelocity = ProjectVelocityOnCollisionPlane(previousVelocity, wallNormal);
-            float velocityBlockedSpeed = (previousVelocity - projectedVelocity).magnitude;
-            float rejectedSpeed = (intendedDisplacement - slideDisplacement).magnitude / math.max(Time.fixedDeltaTime, 0.0001f);
-            return math.max(velocityBlockedSpeed, rejectedSpeed);
+            float velocityBlockedSpeedSq = math.lengthsq((float3)(previousVelocity - projectedVelocity));
+            float inverseFixedDeltaTime = 1f / math.max(Time.fixedDeltaTime, 0.0001f);
+            float rejectedSpeedSq = math.lengthsq((float3)(intendedDisplacement - slideDisplacement)) *
+                                    inverseFixedDeltaTime *
+                                    inverseFixedDeltaTime;
+            return math.sqrt(math.max(velocityBlockedSpeedSq, rejectedSpeedSq));
         }
 
         private static float ResolveProjectionAngleDegrees(Vector3 intendedDisplacement, Vector3 projectedDisplacement)
@@ -700,7 +875,7 @@ namespace Hecton8.Gameplay
                 return 90f;
 
             float invMagnitude = 1f / math.sqrt(intendedSqr * projectedSqr);
-            float dot = math.clamp(Vector3.Dot(intendedDisplacement, projectedDisplacement) * invMagnitude, -1f, 1f);
+            float dot = math.clamp(math.dot((float3)intendedDisplacement, (float3)projectedDisplacement) * invMagnitude, -1f, 1f);
             return math.degrees(math.acos(dot));
         }
 
@@ -752,7 +927,8 @@ namespace Hecton8.Gameplay
             AbsoluteUniversePosition emitAup = AbsoluteUniversePosition.FromRuntimePosition(emitPosition);
             float3 runtimeFromAup = emitAup.ToRuntimeFloat3();
             Vector3 aupRuntimePosition = new Vector3(runtimeFromAup.x, runtimeFromAup.y, runtimeFromAup.z);
-            float intensity01 = math.saturate((math.sqrt(speedSq) - WakeSiltEmissionSpeedThresholdMetersPerSecond) / 8f);
+            float approximateSpeed = ApproximateSpeedMagnitude(new float3(velocity.x, velocity.y, velocity.z));
+            float intensity01 = math.saturate((approximateSpeed - WakeSiltEmissionSpeedThresholdMetersPerSecond) / 8f);
             fluidDecals.RegisterWakeSilt(aupRuntimePosition, velocity, intensity01);
             _wakeSiltEmissionCooldown = WakeSiltEmissionCooldownSeconds;
         }
@@ -777,6 +953,15 @@ namespace Hecton8.Gameplay
             return math.all(math.isfinite(velocity3)) ? velocity : fallback;
         }
 
+        private static float ApproximateSpeedMagnitude(float3 velocity)
+        {
+            float3 absolute = math.abs(velocity);
+            float maxComponent = math.cmax(absolute);
+            float minComponent = math.cmin(absolute);
+            float midComponent = absolute.x + absolute.y + absolute.z - maxComponent - minComponent;
+            return maxComponent + (midComponent * 0.375f) + (minComponent * 0.125f);
+        }
+
         private static Vector3 SafeNormal(Vector3 value, Vector3 fallback)
         {
             float sqrMagnitude = value.sqrMagnitude;
@@ -792,7 +977,7 @@ namespace Hecton8.Gameplay
         {
             Vector3 safeVelocity = SafeVelocity(velocity);
             Vector3 safeNormal = SafeNormal(hitNormal, Vector3.up);
-            float normalVelocity = Vector3.Dot(safeVelocity, safeNormal);
+            float normalVelocity = math.dot((float3)safeVelocity, (float3)safeNormal);
             Vector3 projectedVelocity = safeVelocity - (safeNormal * normalVelocity);
             return SafeVelocity(projectedVelocity, Vector3.zero);
         }
@@ -836,9 +1021,19 @@ namespace Hecton8.Gameplay
             _nativeState.EnsureScheduledSweepState(ScheduledSweepCommandCount, ScheduledSweepMaxHits);
         }
 
+        private void EnsureKinematicRepairTargetState()
+        {
+            _nativeState.EnsureKinematicRepairTargetState(
+                KinematicRepairTargetCommandCount,
+                KinematicRepairTargetResultCount);
+        }
+
         private void DisposeScheduledSweepState()
         {
             _nativeState.DisposeScheduledSweepState(_scheduledSweepPending, _nativeState.ScheduledSweepHandle);
+            _nativeState.DisposeKinematicRepairTargetState(
+                _kinematicRepairTargetProbePending,
+                _nativeState.KinematicRepairTargetHandle);
 
             _scheduledSweepPending = false;
             _scheduledSweepResultReady = false;
@@ -846,6 +1041,12 @@ namespace Hecton8.Gameplay
             _scheduledSweepBlockingHit = default;
             _scheduledSweepResolvedPosition = _body != null ? _body.position : Vector3.zero;
             _scheduledSweepBlockedSpeed = 0f;
+            _lastBatchedFootstepHit = default;
+            _lastBatchedFootstepPhysicsFrame = -1;
+            _kinematicRepairTargetProbePending = false;
+            _kinematicRepairSnapReady = false;
+            _kinematicRepairTargetProbe = default;
+            _kinematicRepairSnapPoint = default;
         }
 
         private void TryRegisterPostFixedTick()
@@ -920,13 +1121,18 @@ namespace Hecton8.Gameplay
             _scheduledSweepBlockedSpeed = 0f;
             _scheduledSweepResolvedPosition = _body != null ? _body.position : _scheduledSweepState.StartPosition;
 
+            ConsumeScheduledFootstepProbe();
+
             float nearestDistance = float.MaxValue;
             int nearestIndex = -1;
-            for (int i = 0; i < ScheduledSweepMaxHits; i++)
+            for (int i = 0; i < ScheduledSweepMaxHitsPerCommand; i++)
             {
                 RaycastHit hit = _nativeState.ScheduledSweepResults[i];
                 int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
                 if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
+                    continue;
+
+                if (IsVoxelProxyHit(in hit))
                     continue;
 
                 if (hit.distance < nearestDistance)
@@ -946,20 +1152,36 @@ namespace Hecton8.Gameplay
 
             _scheduledSweepWasBlocked = true;
             _scheduledSweepBlockingHit = _nativeState.ScheduledSweepResults[nearestIndex];
+            bool isVoxelProxy = IsVoxelProxyHit(in _scheduledSweepBlockingHit);
+            Vector3 safeNormal = SafeNormal(_scheduledSweepBlockingHit.normal, Vector3.up);
             float safeDistance = math.max(0f, _scheduledSweepBlockingHit.distance - _scheduledSweepState.SkinWidth);
             float penetrationDepth = math.max(0f, _scheduledSweepState.SkinWidth - _scheduledSweepBlockingHit.distance);
+            Vector3 intendedDisplacement = _scheduledSweepState.Direction * _scheduledSweepState.Distance;
+            float displacementIntoWall = math.dot((float3)intendedDisplacement, (float3)safeNormal);
+            Vector3 projectedDisplacement = intendedDisplacement - (safeNormal * displacementIntoWall);
+            Vector3 resolvedDisplacement = _scheduledSweepState.Direction * safeDistance;
+            if (isVoxelProxy)
+            {
+                float remainingDistance = math.max(0f, _scheduledSweepState.Distance - safeDistance);
+                Vector3 slideRemainder = SafeVelocity(projectedDisplacement, Vector3.zero);
+                if (slideRemainder.sqrMagnitude > MinVectorMagnitudeSq)
+                    slideRemainder = SafeNormal(slideRemainder, Vector3.zero) * remainingDistance * VoxelProxySlideDistanceRetain;
+                resolvedDisplacement += slideRemainder;
+            }
+
             _scheduledSweepResolvedPosition = _scheduledSweepState.StartPosition +
-                (_scheduledSweepState.Direction * safeDistance) +
-                (_scheduledSweepBlockingHit.normal * penetrationDepth);
+                resolvedDisplacement +
+                (safeNormal * penetrationDepth);
 
             Vector3 previousVelocity = _body != null ? _body.linearVelocity : Vector3.zero;
-            Vector3 projectedVelocity = ProjectVelocityOnCollisionPlane(previousVelocity, _scheduledSweepBlockingHit.normal);
-            _scheduledSweepBlockedSpeed = (previousVelocity - projectedVelocity).magnitude;
+            Vector3 projectedVelocity = ProjectVelocityOnCollisionPlane(previousVelocity, safeNormal);
+            _scheduledSweepBlockedSpeed = math.sqrt(math.lengthsq((float3)(previousVelocity - projectedVelocity)));
+            if (isVoxelProxy)
+            {
+                float fallbackSpeed = _scheduledSweepState.Distance / math.max(Time.fixedDeltaTime, 0.0001f);
+                projectedVelocity = ResolveVoxelProxySlideVelocity(projectedVelocity, projectedDisplacement, fallbackSpeed);
+            }
 
-            Vector3 safeNormal = SafeNormal(_scheduledSweepBlockingHit.normal, Vector3.up);
-            Vector3 intendedDisplacement = _scheduledSweepState.Direction * _scheduledSweepState.Distance;
-            float displacementIntoWall = Vector3.Dot(intendedDisplacement, safeNormal);
-            Vector3 projectedDisplacement = intendedDisplacement - (safeNormal * displacementIntoWall);
             if (safeNormal.y < WallSlideTelemetryMaxNormalY)
             {
                 float slideAngleDegrees = ResolveProjectionAngleDegrees(intendedDisplacement, projectedDisplacement);
@@ -977,6 +1199,109 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EndSweepBudgetSample(consumeBudgetStart, _sweepConsumeBudgetWarningHash);
 #endif
+        }
+
+        private static Vector3 ResolveVoxelProxySlideVelocity(Vector3 projectedVelocity, Vector3 projectedDisplacement, float fallbackSpeed)
+        {
+            Vector3 safeProjectedVelocity = SafeVelocity(projectedVelocity, Vector3.zero);
+            if (safeProjectedVelocity.sqrMagnitude > MinVectorMagnitudeSq)
+                return safeProjectedVelocity * VoxelProxySlideVelocityRetain;
+
+            Vector3 safeProjectedDisplacement = SafeVelocity(projectedDisplacement, Vector3.zero);
+            if (safeProjectedDisplacement.sqrMagnitude <= MinVectorMagnitudeSq)
+                return Vector3.zero;
+
+            float glideSpeed = math.max(0f, fallbackSpeed) * VoxelProxyGlideFallbackSpeedRetain;
+            if (glideSpeed <= DenormalVelocityFlushThresholdMetersPerSecond)
+                return Vector3.zero;
+
+            return SafeNormal(safeProjectedDisplacement, Vector3.zero) * glideSpeed;
+        }
+
+        private void ConsumeScheduledFootstepProbe()
+        {
+            _lastBatchedFootstepHit = default;
+            _lastBatchedFootstepPhysicsFrame = -1;
+
+            float nearestDistance = float.MaxValue;
+            int nearestIndex = -1;
+            int startIndex = ScheduledFootstepProbeCommandIndex * ScheduledSweepMaxHitsPerCommand;
+            int endIndex = startIndex + ScheduledSweepMaxHitsPerCommand;
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                RaycastHit hit = _nativeState.ScheduledSweepResults[i];
+                int hitColliderInstanceId = GetHitColliderInstanceId(in hit);
+                if (hitColliderInstanceId == 0 || hitColliderInstanceId == _scheduledSweepState.SelfColliderInstanceId)
+                    continue;
+
+                if (hit.distance < nearestDistance)
+                {
+                    nearestDistance = hit.distance;
+                    nearestIndex = i;
+                }
+            }
+
+            if (nearestIndex < 0)
+                return;
+
+            _lastBatchedFootstepHit = _nativeState.ScheduledSweepResults[nearestIndex];
+            _lastBatchedFootstepPhysicsFrame = PhysicsFrame.Current;
+        }
+
+        private void CompleteKinematicRepairTargetProbeInLateFrameSwapWindow()
+        {
+            if (!_kinematicRepairTargetProbePending)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _nativeState.KinematicRepairTargetHandle, forceComplete: false))
+                return;
+
+            _kinematicRepairTargetProbePending = false;
+            _kinematicRepairSnapReady = false;
+            _kinematicRepairTargetProbe = default;
+            _kinematicRepairSnapPoint = default;
+
+            RaycastHit hit = _nativeState.KinematicRepairTargetResults[0];
+            int colliderInstanceId = GetHitColliderInstanceId(in hit);
+            if (colliderInstanceId == 0 || hit.distance <= KinematicRepairTargetMinDistance)
+                return;
+
+            RaycastCommand command = _nativeState.KinematicRepairTargetCommands[0];
+            if (hit.distance > command.distance)
+                return;
+
+            Vector3 rayDirection = SafeNormal(command.direction, Vector3.forward);
+            if (math.dot((float3)hit.normal, (float3)rayDirection) >= 0f)
+                return;
+
+            Vector3 safeNormal = SafeNormal(hit.normal, -rayDirection);
+            Vector3 fallbackPoint = command.from + (rayDirection * hit.distance);
+            Vector3 hitPoint = SafeVelocity(hit.point, fallbackPoint);
+            Vector3 snapRuntimePosition = hitPoint + (safeNormal * _kinematicRepairProbeSurfaceOffset);
+            AbsoluteUniversePosition snapAup = AbsoluteUniversePosition.FromRuntimePosition(snapRuntimePosition);
+            AbsoluteUniversePosition hitAup = AbsoluteUniversePosition.FromRuntimePosition(hitPoint);
+            Vector3 toolUp = math.abs(math.dot((float3)safeNormal, new float3(0f, 1f, 0f))) > 0.95f ? Vector3.forward : Vector3.up;
+            _kinematicRepairTargetProbe = new KinematicRepairTargetProbe(
+                _kinematicRepairProbeOriginAup,
+                hitAup,
+                rayDirection,
+                safeNormal,
+                hit.distance,
+                colliderInstanceId);
+
+            _kinematicRepairSnapPoint = new KinematicRepairSnapPoint
+            {
+                AnchorAup = snapAup,
+                LeftHandAup = snapAup,
+                RightHandAup = snapAup,
+                RuntimePosition = snapRuntimePosition,
+                SurfaceNormal = safeNormal,
+                ToolRotation = Quaternion.LookRotation(-safeNormal, toolUp),
+                HitDistance = hit.distance,
+                Blend = 1f,
+                ColliderInstanceId = colliderInstanceId
+            };
+            _kinematicRepairSnapReady = true;
         }
 
         private int ResolveSelfColliderInstanceId()

@@ -172,6 +172,13 @@ namespace Hecton8.Crafting
 
         /// <summary>Transform игрока для проверки дистанции.</summary>
         private Transform _playerTransform;
+        private HectonPlayerMovement _playerMovement;
+        private bool _playerMovementLookupAttempted;
+        private AbsoluteUniversePosition _fabricatorAup;
+        private bool _fabricatorAupCached;
+        private BaseModule _thermalHostAupSource;
+        private AbsoluteUniversePosition _thermalHostAup;
+        private bool _thermalHostAupCached;
 
         /// <summary>
         /// Кэшированный PowerNode на этом же GameObject.
@@ -398,8 +405,10 @@ namespace Hecton8.Crafting
             MarkRecipeCacheDirty();
             _activeCraftPowerMultiplier = 1f;
             _sparkProxyLightKey = unchecked((int)EntityId.ToULong(GetEntityId()) ^ 0x4641424C);
+            _errorFeedbackBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - fabricator error emission property staging - owner: Fabricator
             ToolHapticsRuntime.EnsureRuntimeInstance();
             EnsureCraftingScratch();
+            CacheFabricatorAup();
         }
 
         private void Start()
@@ -419,6 +428,7 @@ namespace Hecton8.Crafting
             SubscribeToScanLog();
             MarkRecipeCacheDirty();
             ApplyEmergencyPowerLock(s_emergencyPowerLockActive);
+            CacheFabricatorAup();
         }
 
         private void OnDisable()
@@ -460,9 +470,12 @@ namespace Hecton8.Crafting
         public void Interact(Transform interactor)
         {
             _playerTransform = interactor;
+            _playerMovement = null;
+            _playerMovementLookupAttempted = false;
 
             if (_playerInventory == null && interactor != null)
                 interactor.TryGetComponent(out _playerInventory);
+            TryCachePlayerMovement(interactor);
 
             CraftingEvents.RaiseFabricatorOpened(this);
             InteractionEvents.RaiseInteractionStarted(this, interactor);
@@ -562,8 +575,9 @@ namespace Hecton8.Crafting
 
             int itemHashId = ComputeItemHash(cost.item);
             ResourceScarcityDirector scarcityDirector = GlobalRegistry.ResourceScarcity;
+            CacheFabricatorAup();
             return scarcityDirector != null
-                ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, transform.position, CountAccessibleItem(cost.item))
+                ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, in _fabricatorAup, CountAccessibleItem(cost.item))
                 : cost.amount;
         }
 
@@ -1016,6 +1030,8 @@ namespace Hecton8.Crafting
                 return;
 
             thermalHostModule = GetComponentInParent<BaseModule>();
+            _thermalHostAupCached = false;
+            _thermalHostAupSource = null;
         }
 
         private bool PassesBiomeLock(RecipeData recipe)
@@ -1029,7 +1045,7 @@ namespace Hecton8.Crafting
             if (thermalHostModule == null || thermalHostModule.IsUnmoored || thermalHostModule.IsDetachedDebris)
                 return false;
 
-            Vector3 samplePosition = thermalHostModule.transform.position;
+            Vector3 samplePosition = ResolveThermalHostRuntimePosition();
             WorldProceduralFieldSampler sampler = WorldProceduralFieldSampler.ActiveRuntimeInstance;
             if (sampler != null &&
                 sampler.TrySampleBiomeInfluence(
@@ -1049,6 +1065,19 @@ namespace Hecton8.Crafting
                 matrixDirector.CurrentProfile != null ? matrixDirector.CurrentProfile.matrixIndex : 0);
         }
 
+        private Vector3 ResolveThermalHostRuntimePosition()
+        {
+            if (!_thermalHostAupCached || !ReferenceEquals(_thermalHostAupSource, thermalHostModule))
+            {
+                _thermalHostAup = AbsoluteUniversePosition.FromRuntimePosition(thermalHostModule.transform.position);
+                _thermalHostAupSource = thermalHostModule;
+                _thermalHostAupCached = true;
+            }
+
+            float3 runtime = _thermalHostAup.ToRuntimeFloat3();
+            return new Vector3(runtime.x, runtime.y, runtime.z);
+        }
+
         private static bool MatchesRecipeBiomeLock(RecipeData recipe, HectonBiomeMatrixProfile profile, int biomeId)
         {
             if (recipe == null || profile == null)
@@ -1057,20 +1086,17 @@ namespace Hecton8.Crafting
             if (recipe.requiredAnchoredBiomeMatrixId > 0 && biomeId == recipe.requiredAnchoredBiomeMatrixId)
                 return true;
 
-            string requiredFamilyId = recipe.requiredAnchoredBiomeFamilyId;
-            if (string.IsNullOrWhiteSpace(requiredFamilyId))
+            int requiredFamilyHashId = recipe.RequiredAnchoredBiomeFamilyHashId;
+            if (requiredFamilyHashId == 0)
                 return false;
 
-            if (!string.IsNullOrEmpty(profile.familyId) &&
-                string.Equals(profile.familyId, requiredFamilyId, System.StringComparison.OrdinalIgnoreCase))
+            if (profile.FamilyHashId == requiredFamilyHashId)
             {
                 return true;
             }
 
             HectonBiomeFamilyProfile family = profile.familyProfile;
-            return family != null &&
-                   !string.IsNullOrEmpty(family.familyId) &&
-                   string.Equals(family.familyId, requiredFamilyId, System.StringComparison.OrdinalIgnoreCase);
+            return family != null && family.FamilyHashId == requiredFamilyHashId;
         }
 
         private float ResolveCraftTemperatureDeltaCelsius()
@@ -1454,7 +1480,7 @@ namespace Hecton8.Crafting
 
         private static int ComputeItemHash(ItemData item)
         {
-            return item == null ? 0 : LocHash.Compute(item.PersistentId);
+            return item != null ? item.PersistentHashId : 0;
         }
 
         private bool TryAccumulateNetworkCost(int itemHashId, int amount)
@@ -1616,10 +1642,49 @@ namespace Hecton8.Crafting
 
         private bool IsPlayerInRange()
         {
-            if (_playerTransform == null) return false;
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return false;
 
-            float sqrDist = (_playerTransform.position - transform.position).sqrMagnitude;
-            return sqrDist <= maxUseDistance * maxUseDistance;
+            CacheFabricatorAup();
+            double maxUseDistanceSq = (double)maxUseDistance * maxUseDistance;
+            return AbsoluteUniversePosition.DistanceSq(in playerAup, in _fabricatorAup) <= maxUseDistanceSq;
+        }
+
+        private void CacheFabricatorAup()
+        {
+            if (_fabricatorAupCached)
+                return;
+
+            _fabricatorAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            _fabricatorAupCached = true;
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (_playerMovement != null)
+            {
+                playerAup = _playerMovement.CurrentAup;
+                return true;
+            }
+
+            TryCachePlayerMovement(_playerTransform);
+            if (_playerMovement != null)
+            {
+                playerAup = _playerMovement.CurrentAup;
+                return true;
+            }
+
+            playerAup = default;
+            return false;
+        }
+
+        private void TryCachePlayerMovement(Transform interactor)
+        {
+            if (_playerMovementLookupAttempted || interactor == null)
+                return;
+
+            interactor.TryGetComponent(out _playerMovement);
+            _playerMovementLookupAttempted = true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1654,10 +1719,11 @@ namespace Hecton8.Crafting
 
         private static void RaiseFabricatorProgressHaptics(float progress)
         {
-            float finalPulse01 = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.9f, 1f, progress));
-            float lowFrequencyIntensity = Mathf.Clamp01(Mathf.Lerp(0.12f, 0.3f, progress) + finalPulse01 * 0.35f);
-            float highFrequencyIntensity = Mathf.Clamp01(0.025f + finalPulse01 * 0.05f);
-            float pulseFrequencyHz = Mathf.Lerp(18f, 30f, finalPulse01);
+            float finalPulseT = math.saturate((progress - 0.9f) * 10f);
+            float finalPulse01 = finalPulseT * finalPulseT * (3f - (2f * finalPulseT));
+            float lowFrequencyIntensity = math.saturate(math.lerp(0.12f, 0.3f, progress) + finalPulse01 * 0.35f);
+            float highFrequencyIntensity = math.saturate(0.025f + finalPulse01 * 0.05f);
+            float pulseFrequencyHz = math.lerp(18f, 30f, finalPulse01);
             ToolHapticsRuntime.EnqueueSinusoidalCommand(
                 lowFrequencyIntensity,
                 highFrequencyIntensity,
@@ -1771,16 +1837,16 @@ namespace Hecton8.Crafting
                 source.clip = fabricationWeldingLoopClip;
 
             source.loop = true;
-            source.volume = Mathf.Clamp01(intensity * 0.18f) * Mathf.Clamp01(fabricationWeldingLoopMaxVolume);
+            source.volume = math.saturate(intensity * 0.18f) * math.saturate(fabricationWeldingLoopMaxVolume);
 
             float now = Time.unscaledTime;
             if (now >= _weldingLoopNextPitchUpdateTime)
             {
                 _weldingLoopPitchSeed = (_weldingLoopPitchSeed * 1664525u) + 1013904223u;
-                float randomTilt = Mathf.Lerp(0.96f, 1.04f, (_weldingLoopPitchSeed & 0x00FFFFFFu) * (1f / 16777215f));
-                float pitch01 = Mathf.Clamp01(intensity * 0.25f);
-                _weldingLoopPitch = Mathf.Clamp(
-                    Mathf.Lerp(fabricationWeldingLoopMinPitch, fabricationWeldingLoopMaxPitch, pitch01) * randomTilt,
+                float randomTilt = math.lerp(0.96f, 1.04f, (_weldingLoopPitchSeed & 0x00FFFFFFu) * (1f / 16777215f));
+                float pitch01 = math.saturate(intensity * 0.25f);
+                _weldingLoopPitch = math.clamp(
+                    math.lerp(fabricationWeldingLoopMinPitch, fabricationWeldingLoopMaxPitch, pitch01) * randomTilt,
                     fabricationWeldingLoopMinPitch,
                     fabricationWeldingLoopMaxPitch);
                 _weldingLoopNextPitchUpdateTime = now + Mathf.Max(0.01f, fabricationWeldingLoopPitchUpdateSeconds);
@@ -1813,8 +1879,6 @@ namespace Hecton8.Crafting
                 return;
             }
 
-            if (_errorFeedbackBlock == null)
-                _errorFeedbackBlock = new MaterialPropertyBlock();
             Color color = errorEmissionColor * Mathf.Clamp01(intensity);
             for (int index = 0; index < errorFeedbackRenderers.Length; index++)
             {
@@ -2122,8 +2186,8 @@ namespace Hecton8.Crafting
             if (ReferenceEquals(recipe.resultItem, resultItem))
                 return true;
 
-            return !string.IsNullOrWhiteSpace(recipe.resultItem.PersistentId) &&
-                   string.Equals(recipe.resultItem.PersistentId, resultItem.PersistentId, System.StringComparison.Ordinal);
+            return recipe.resultItem.PersistentHashId != 0 &&
+                   recipe.resultItem.PersistentHashId == resultItem.PersistentHashId;
         }
 
         private static void RegisterActiveFabricator(Fabricator fabricator)

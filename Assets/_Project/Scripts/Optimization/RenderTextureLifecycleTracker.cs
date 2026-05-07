@@ -60,10 +60,12 @@ namespace Hecton8.Optimization
             get
             {
                 long total = 0;
-                foreach (var kvp in _allocations)
+                Dictionary<EntityId, RenderTextureAllocationRecord>.Enumerator enumerator = _allocations.GetEnumerator();
+                while (enumerator.MoveNext())
                 {
-                    if (!kvp.Value.IsDisposed)
-                        total += kvp.Value.MemoryBytes;
+                    RenderTextureAllocationRecord record = enumerator.Current.Value;
+                    if (!record.IsDisposed)
+                        total += record.MemoryBytes;
                 }
                 return total;
             }
@@ -135,6 +137,7 @@ namespace Hecton8.Optimization
                 // Update existing record
                 var existing = _allocations[instanceID];
                 existing.Owner = owner;
+                existing.OwnerCategory = ClassifyOwner(owner);
                 existing.AllocationTime = Time.time;
                 existing.AllocationStackTrace = allocationStackTrace;
                 existing.IsDisposed = false;
@@ -146,6 +149,7 @@ namespace Hecton8.Optimization
             {
                 RenderTexture = rt,
                 Owner = owner,
+                OwnerCategory = ClassifyOwner(owner),
                 Width = rt.width,
                 Height = rt.height,
                 Format = rt.format,
@@ -189,23 +193,35 @@ namespace Hecton8.Optimization
 
             ClearReportBuckets();
             
-            foreach (var kvp in _allocations)
+            Dictionary<EntityId, RenderTextureAllocationRecord>.Enumerator enumerator = _allocations.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                if (kvp.Value.IsDisposed)
+                RenderTextureAllocationRecord record = enumerator.Current.Value;
+                if (record.IsDisposed)
                     continue;
-                
-                var ownerName = kvp.Value.Owner != null ? kvp.Value.Owner.GetType().Name : "Unknown";
-                
-                if (ownerName.Contains("Visor") || ownerName.Contains("HUD"))
-                    _reportVisorRTs.Add(kvp.Value);
-                else if (ownerName.Contains("Camera"))
-                    _reportCameraRTs.Add(kvp.Value);
-                else if (ownerName.Contains("PostFX") || ownerName.Contains("Volume"))
-                    _reportPostFXRTs.Add(kvp.Value);
-                else if (ownerName.Contains("UI") || ownerName.Contains("Canvas"))
-                    _reportUIRTs.Add(kvp.Value);
-                else
-                    _reportOtherRTs.Add(kvp.Value);
+
+                switch (record.OwnerCategory)
+                {
+                    case RenderTextureOwnerCategory.Visor:
+                        _reportVisorRTs.Add(record);
+                        break;
+
+                    case RenderTextureOwnerCategory.Camera:
+                        _reportCameraRTs.Add(record);
+                        break;
+
+                    case RenderTextureOwnerCategory.PostFX:
+                        _reportPostFXRTs.Add(record);
+                        break;
+
+                    case RenderTextureOwnerCategory.UI:
+                        _reportUIRTs.Add(record);
+                        break;
+
+                    default:
+                        _reportOtherRTs.Add(record);
+                        break;
+                }
             }
             
             AppendCategoryReport(reportBuilder, "Visor", _reportVisorRTs);
@@ -223,11 +239,13 @@ namespace Hecton8.Optimization
         {
             results.Clear();
             
-            foreach (var kvp in _allocations)
+            Dictionary<EntityId, RenderTextureAllocationRecord>.Enumerator enumerator = _allocations.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                if (kvp.Value.Owner == null && !kvp.Value.IsDisposed && Time.time - kvp.Value.AllocationTime > 10f)
+                RenderTextureAllocationRecord record = enumerator.Current.Value;
+                if (record.Owner == null && !record.IsDisposed && Time.time - record.AllocationTime > 10f)
                 {
-                    results.Add(kvp.Value);
+                    results.Add(record);
                 }
             }
         }
@@ -240,41 +258,26 @@ namespace Hecton8.Optimization
         /// <param name="results">Pre-allocated list for zero-GC query.</param>
         public void GetAllocationsByCategory(string category, List<RenderTextureAllocationRecord> results)
         {
+            GetAllocationsByCategory(ResolveCategory(category), results);
+        }
+
+        /// <summary>
+        /// Returns list of RenderTextures filtered by cached owner category.
+        /// </summary>
+        /// <param name="category">Cached owner category.</param>
+        /// <param name="results">Pre-allocated list for zero-GC query.</param>
+        public void GetAllocationsByCategory(RenderTextureOwnerCategory category, List<RenderTextureAllocationRecord> results)
+        {
             results.Clear();
-            
-            foreach (var kvp in _allocations)
+
+            Dictionary<EntityId, RenderTextureAllocationRecord>.Enumerator enumerator = _allocations.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                if (kvp.Value.IsDisposed)
+                RenderTextureAllocationRecord record = enumerator.Current.Value;
+                if (record.IsDisposed || record.OwnerCategory != category)
                     continue;
-                
-                var ownerName = kvp.Value.Owner != null ? kvp.Value.Owner.GetType().Name : "Unknown";
-                
-                bool matches = false;
-                
-                switch (category)
-                {
-                    case "Visor":
-                        matches = ownerName.Contains("Visor") || ownerName.Contains("HUD");
-                        break;
-                    case "Camera":
-                        matches = ownerName.Contains("Camera");
-                        break;
-                    case "PostFX":
-                        matches = ownerName.Contains("PostFX") || ownerName.Contains("Volume");
-                        break;
-                    case "UI":
-                        matches = ownerName.Contains("UI") || ownerName.Contains("Canvas");
-                        break;
-                    case "Other":
-                        matches = !ownerName.Contains("Visor") && !ownerName.Contains("HUD") &&
-                                  !ownerName.Contains("Camera") &&
-                                  !ownerName.Contains("PostFX") && !ownerName.Contains("Volume") &&
-                                  !ownerName.Contains("UI") && !ownerName.Contains("Canvas");
-                        break;
-                }
-                
-                if (matches)
-                    results.Add(kvp.Value);
+
+                results.Add(record);
             }
         }
         
@@ -338,8 +341,9 @@ namespace Hecton8.Optimization
             if (_leakQueryResults.Count > 0)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                foreach (var leak in _leakQueryResults)
+                for (int i = 0; i < _leakQueryResults.Count; i++)
                 {
+                    RenderTextureAllocationRecord leak = _leakQueryResults[i];
                     Debug.LogError($"[LifecycleTracker] RT LEAK DETECTED: {leak.RenderTexture.name} ({leak.Width}x{leak.Height} {leak.Format}) - Owner destroyed but RT not disposed. Allocation time: {leak.AllocationTime:F2}s\n{leak.AllocationStackTrace}");
                 }
 #endif
@@ -361,14 +365,18 @@ namespace Hecton8.Optimization
                 return;
             
             long totalMemory = 0;
-            foreach (var record in records)
+            for (int i = 0; i < records.Count; i++)
+            {
+                RenderTextureAllocationRecord record = records[i];
                 totalMemory += record.MemoryBytes;
+            }
             
             builder.Append("--- ").Append(category).Append(" (").Append(records.Count).Append(" RTs, ")
                    .Append((totalMemory / (1024f * 1024f)).ToString("0.00")).AppendLine(" MB) ---");
             
-            foreach (var record in records)
+            for (int i = 0; i < records.Count; i++)
             {
+                RenderTextureAllocationRecord record = records[i];
                 builder.Append("  ").Append(record.RenderTexture.name).Append(" (")
                        .Append(record.Width).Append("x").Append(record.Height).Append(" ")
                        .Append(record.Format).Append(", ")
@@ -377,6 +385,45 @@ namespace Hecton8.Optimization
             }
             
             builder.AppendLine();
+        }
+
+        private static RenderTextureOwnerCategory ResolveCategory(string category)
+        {
+            switch (category)
+            {
+                case "Visor":
+                    return RenderTextureOwnerCategory.Visor;
+
+                case "Camera":
+                    return RenderTextureOwnerCategory.Camera;
+
+                case "PostFX":
+                    return RenderTextureOwnerCategory.PostFX;
+
+                case "UI":
+                    return RenderTextureOwnerCategory.UI;
+
+                default:
+                    return RenderTextureOwnerCategory.Other;
+            }
+        }
+
+        private static RenderTextureOwnerCategory ClassifyOwner(Component owner)
+        {
+            if (owner == null)
+                return RenderTextureOwnerCategory.Other;
+
+            string ownerTypeName = owner.GetType().Name;
+            if (ownerTypeName.Contains("Visor") || ownerTypeName.Contains("HUD"))
+                return RenderTextureOwnerCategory.Visor;
+            if (ownerTypeName.Contains("Camera"))
+                return RenderTextureOwnerCategory.Camera;
+            if (ownerTypeName.Contains("PostFX") || ownerTypeName.Contains("Volume"))
+                return RenderTextureOwnerCategory.PostFX;
+            if (ownerTypeName.Contains("UI") || ownerTypeName.Contains("Canvas"))
+                return RenderTextureOwnerCategory.UI;
+
+            return RenderTextureOwnerCategory.Other;
         }
     }
 }

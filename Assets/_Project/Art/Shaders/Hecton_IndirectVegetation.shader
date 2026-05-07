@@ -75,6 +75,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ HECTON_GPU_INDIRECT
             #pragma shader_feature_local _QUALITY_MX350 _QUALITY_HIGH
+            #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -260,6 +261,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half cascadeSeed : TEXCOORD17;
                 half growth01 : TEXCOORD18;
                 half health01 : TEXCOORD19;
+                half geneticTraits : TEXCOORD20;
+                half spatialPulseOffset : TEXCOORD21;
             };
 
             float Hash21(float2 value)
@@ -581,6 +584,67 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 instanceWidth = lerp(0.75, 1.35, saturate(widthScale));
             }
 
+            float4 ResolveAupGeneticHash(float3 aup)
+            {
+                float3 quantizedAup = floor(aup * 0.03125);
+                return float4(
+                    Hash31(quantizedAup + float3(11.17, 29.31, 47.53)),
+                    Hash31(quantizedAup + float3(59.83, 7.19, 101.41)),
+                    Hash31(quantizedAup + float3(131.03, 17.61, 3.73)),
+                    Hash31(quantizedAup + float3(5.47, 89.23, 43.11)));
+            }
+
+            void ResolveAupGeneticShape(
+                float3 aup,
+                float instanceType,
+                out float heightMultiplier,
+                out float widthMultiplier,
+                out float2 leanDirection,
+                out float leanMeters)
+            {
+                float4 genetics = ResolveAupGeneticHash(aup);
+                float tallRange = instanceType < 0.5 ? 0.16 : (instanceType < 1.5 ? 0.24 : 0.18);
+                float wideRange = instanceType < 0.5 ? 0.13 : (instanceType < 1.5 ? 0.20 : 0.15);
+                heightMultiplier = lerp(1.0 - tallRange, 1.0 + tallRange, genetics.x);
+                widthMultiplier = lerp(1.0 - wideRange, 1.0 + wideRange, genetics.y);
+
+                float2 rawLean = genetics.xy * 2.0 - 1.0;
+                leanDirection = SafeNormalize2(rawLean + float2(0.001, -0.001));
+                float maxLean = instanceType < 0.5 ? 0.08 : (instanceType < 1.5 ? 0.85 : 0.22);
+                leanMeters = (genetics.z * 2.0 - 1.0) * maxLean * lerp(0.35, 1.0, genetics.w);
+            }
+
+            float DecodeGeneticTraits(float runtimeFlags)
+            {
+                float packed = floor(max(runtimeFlags, 0.0));
+                return fmod(floor(packed / 256.0), 256.0);
+            }
+
+            half HasGeneticTrait(half geneticTraits, half traitBit)
+            {
+                return (half)step(0.5h, fmod(floor(geneticTraits / traitBit), 2.0h));
+            }
+
+            float ResolveSpatialHashPulseOffset(float3 positionWS)
+            {
+                const float cellSizeMeters = 24.0;
+                float2 spatialCell = floor(positionWS.xz / cellSizeMeters);
+                return Hash21(spatialCell + float2(17.31, 91.77)) * 6.28318;
+            }
+
+            half3 ResolveSeasonalColorDrift(half3 color, half biomeLayer, float3 positionWS)
+            {
+                half season01 = (half)frac(max(_HectonSeasonCycle, _SeasonCycle));
+                half shelfMask = 1.0h - step(2.5h, biomeLayer);
+                half spatialBias = (half)Hash21(floor(positionWS.xz * 0.0025));
+                half bloom = 0.5h + 0.5h * sin((season01 + spatialBias * 0.035h) * 6.28318h);
+                half decay = 0.5h + 0.5h * cos(((season01 - 0.72h) + spatialBias * 0.025h) * 6.28318h);
+                half3 bloomTint = half3(0.90h, 1.08h, 1.02h);
+                half3 decayTint = half3(1.08h, 0.91h, 0.72h);
+                half3 drifted = color * lerp(half3(1.0h, 1.0h, 1.0h), bloomTint, bloom * 0.08h * shelfMask);
+                return drifted * lerp(half3(1.0h, 1.0h, 1.0h), decayTint, decay * 0.11h * shelfMask);
+            }
+
             float ResolveLodAlpha(float distanceToCamera, float passMode)
             {
                 float nearDistance = max(_HectonLodNearDistance, 0.01);
@@ -615,7 +679,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float3 cameraDelta = positionWS - _WorldSpaceCameraPos;
                 float distanceSq = dot(cameraDelta, cameraDelta);
                 half fade = (half)(1.0 - smoothstep(fadeStart * fadeStart, farDistance * farDistance, distanceSq));
-                return (half)step(ResolveVegetationBlueNoise(positionCS), fade);
+                fade = (half)(ceil(saturate(fade) * 4.0) * 0.25);
+                return (half)step((half)InterleavedGradientNoise(floor(positionCS.xy)), fade);
             }
 
             float ResolveInteractionDistance()
@@ -1085,7 +1150,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 HectonVegetationInstanceData instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
                 float3 floatingOriginOffsetWS = _GlobalFloatingOffset.xyz;
-                float3 originWS = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0)) + floatingOriginOffsetWS;
+                float3 stableAupSeed = TransformPoint(instanceMatrix, float3(0.0, 0.0, 0.0));
+                float3 originWS = stableAupSeed + floatingOriginOffsetWS;
                 float distanceToCamera = distance(originWS, _WorldSpaceCameraPos);
                 float lodAlpha = ResolveLodAlpha(distanceToCamera, _HectonLodPassMode);
 
@@ -1100,6 +1166,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 float entropyProgress = ResolveOrganicEntropyProgress(encodedHeightScale, encodedWidthScale, timeValue);
                 float parasiteMask = ResolveParasiteMask(instanceData.RuntimeFlags);
                 float biomeLayer = ResolveBiomeLayer(instanceData.RuntimeFlags);
+                float geneticTraits = DecodeGeneticTraits(instanceData.RuntimeFlags);
                 float wiltSuppression = lerp(1.0, 0.18, entropyProgress);
                 float heightScale = saturate(abs(encodedHeightScale));
                 float widthScale = ResolveOrganicWidthScale(encodedWidthScale, entropyProgress);
@@ -1116,7 +1183,20 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                 float instanceHeight;
                 float instanceWidth;
+                float aupHeightMultiplier;
+                float aupWidthMultiplier;
+                float2 aupLeanDirection;
+                float aupLeanMeters;
+                ResolveAupGeneticShape(
+                    stableAupSeed,
+                    instanceType,
+                    aupHeightMultiplier,
+                    aupWidthMultiplier,
+                    aupLeanDirection,
+                    aupLeanMeters);
                 ResolveInstanceShape(instanceType, heightScale, widthScale, instanceHeight, instanceWidth);
+                instanceHeight *= aupHeightMultiplier;
+                instanceWidth *= aupWidthMultiplier;
 
                 float3 localPosition = input.positionOS.xyz;
                 float3 baseNormalWS = TransformDirection(instanceMatrix, input.normalOS);
@@ -1142,6 +1222,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 }
 
                 localPosition.y *= growthHeightScale;
+                localPosition.xz += aupLeanDirection * (aupLeanMeters * heightMask * heightMask * growthHeightScale);
 
                 float3 basePositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS + floatingOriginOffsetWS;
                 float2 fallbackCurrentVector = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : _HectonVegetationCurrentVector.xz;
@@ -1346,6 +1427,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 output.cascadeSeed = _HectonFloraPhaseSeeds[sourceInstanceIndex];
                 output.growth01 = growth01;
                 output.health01 = normalizedHealth;
+                output.geneticTraits = geneticTraits;
+                output.spatialPulseOffset = (half)ResolveSpatialHashPulseOffset(renderOriginWS);
                 return output;
             }
 
@@ -1395,6 +1478,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                 half3 gradientColor = lerp(baseColor, tipColor, input.heightMask);
                 gradientColor = lerp(_SeedlingColor.rgb, gradientColor, input.growth01);
+                gradientColor = ResolveSeasonalColorDrift(gradientColor, input.biomeLayer, input.positionWS);
                 half gradientLuma = dot(gradientColor, half3(0.299h, 0.587h, 0.114h));
                 half3 decayColor = lerp(half3(gradientLuma, gradientLuma, gradientLuma), half3(0.32h, 0.29h, 0.24h), 0.55h);
                 gradientColor = lerp(gradientColor, decayColor, input.entropyProgress * 0.92h);
@@ -1477,7 +1561,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 finalColor += edgeBloom * mainLight.color * (1.45h * sunVisibility);
                 half agitatedWeight = saturate(1.0h - abs(input.runtimeState - 1.0h));
                 half dyingWeight = saturate(1.0h - abs(input.runtimeState - 2.0h));
-                half pulsePhase = (_Time.y * max(0.01h, input.pulseFrequency) * 6.28318h) + input.positionWS.x * 0.07h + input.positionWS.z * 0.05h + input.heightMask * 3.1h;
+                half pulsePhase = (_Time.y * max(0.01h, input.pulseFrequency) * 6.28318h) + input.spatialPulseOffset + input.heightMask * 3.1h;
                 half pulseStrength = lerp(0.68h, 1.34h, 0.5h + 0.5h * sin(pulsePhase));
                 half stateEmissionScale = lerp(1.0h, 1.18h, agitatedWeight);
                 stateEmissionScale = lerp(stateEmissionScale, 0.28h, dyingWeight);
@@ -1494,8 +1578,11 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half cascadeEmissionScale = 1.0h + ResolveCascadeEmissionScale(input.cascadeSeed);
                 half flashBangScale = ResolveBiolumFlashBangBoost(input.positionWS);
                 half flashlightPhotophobia = HectonCoreLitResolveFlashlightPhotophobia(input.positionWS);
+                half hasTraitByte = step(0.5h, input.geneticTraits);
+                half emitsLightTrait = HasGeneticTrait(input.geneticTraits, 4.0h);
+                half geneticEmissionGate = lerp(1.0h, emitsLightTrait, hasTraitByte);
                 half3 biolumEmission = input.biolumColor.rgb *
-                    (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * distanceBiolumDimming * distanceBiolumPixelGate * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale * flashBangScale * flashlightPhotophobia);
+                    (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * distanceBiolumDimming * distanceBiolumPixelGate * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale * flashBangScale * flashlightPhotophobia * geneticEmissionGate);
                 biolumEmission *= saturate(input.growth01) * saturate(input.health01);
                 half3 decayTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(0.92h, 0.84h, 0.68h), decaySeasonWeight * 0.22h);
                 finalColor *= decayTint;

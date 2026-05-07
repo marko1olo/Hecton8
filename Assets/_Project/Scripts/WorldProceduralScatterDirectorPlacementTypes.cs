@@ -58,6 +58,7 @@ namespace Hecton8.World
                 CachedBiomeProfileLabel = biomeProfile != null ? biomeProfile.biomeName : "None";
                 CachedBiomeFamilyLabel = biomeFamily != null ? biomeFamily.familyLabel : "None";
                 CachedPatternLabel = GetPatternLabel(pattern);
+                IsTectonicSpineBiome = IsTectonicSpineBiomeFamily(biomeFamily);
                 StreamingLayer = streamingLayer;
                 GeologyProfile = geologyProfile;
                 Variant = variant;
@@ -111,6 +112,7 @@ namespace Hecton8.World
                 CachedBiomeProfileLabel = null;
                 CachedBiomeFamilyLabel = null;
                 CachedPatternLabel = null;
+                IsTectonicSpineBiome = false;
                 StreamingLayer = default;
                 GeologyProfile = null;
                 Variant = null;
@@ -256,6 +258,7 @@ namespace Hecton8.World
             public string CachedBiomeProfileLabel { get; private set; }
             public string CachedBiomeFamilyLabel { get; private set; }
             public string CachedPatternLabel { get; private set; }
+            public bool IsTectonicSpineBiome { get; private set; }
             public WorldStreamingLayer StreamingLayer { get; private set; }
             public WorldGenerativeGeologyProfile GeologyProfile { get; private set; }
             public WorldPrefabFamilyProfile.VariantEntry Variant { get; private set; }

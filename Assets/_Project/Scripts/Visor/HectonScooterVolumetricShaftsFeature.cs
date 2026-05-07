@@ -1,6 +1,8 @@
 using System;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -24,6 +26,7 @@ namespace Hecton8.Visor
         private const string AutoExposureComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_NoirAutoExposure.compute";
         private const int HistogramBinCount = 64;
         private const float ExposureStateDefaultMultiplier = 1f;
+        private const float ThermalHazeMotionCullSpeedMetersPerSecondSq = 225f;
         private static readonly Color DefaultNoirLiftFloor = new Color(0.01f, 0.012f, 0.016f, 1f);
 
         private static bool IsUnsupportedCameraType(CameraType cameraType)
@@ -162,6 +165,9 @@ namespace Hecton8.Visor
 
         private sealed class ShaftsPass : ScriptableRenderPass, IDisposable
         {
+            private const int HalfResContactDepthPassIndex = 4;
+            private const float ExposureFixedDeltaSeconds = 1f / 60f;
+
             private sealed class ExposureClearPassData
             {
                 internal ComputeShader computeShader;
@@ -316,6 +322,12 @@ namespace Hecton8.Visor
                 TextureDesc blurDesc = new TextureDesc(shaftDesc);
                 blurDesc.name = "_HectonScooterVolumetricShaftsBlur";
 
+                TextureDesc halfResDepthDesc = new TextureDesc(shaftDesc);
+                halfResDepthDesc.name = "_HectonHalfResContactDepth";
+                halfResDepthDesc.colorFormat = GraphicsFormat.R32_SFloat;
+                halfResDepthDesc.clearColor = Color.white;
+                halfResDepthDesc.filterMode = FilterMode.Point;
+
                 TextureDesc compositeDesc = new TextureDesc(sourceDesc);
                 compositeDesc.name = "_HectonScooterVolumetricShaftsComposite";
                 compositeDesc.clearBuffer = false;
@@ -325,6 +337,7 @@ namespace Hecton8.Visor
 
                 TextureHandle shaftsTexture = renderGraph.CreateTexture(shaftDesc);
                 TextureHandle blurTexture = renderGraph.CreateTexture(blurDesc);
+                TextureHandle halfResDepthTexture = renderGraph.CreateTexture(halfResDepthDesc);
                 TextureHandle compositeTexture = renderGraph.CreateTexture(compositeDesc);
 
                 BufferHandle histogramHandle = default;
@@ -395,7 +408,7 @@ namespace Hecton8.Visor
                         passData.minEv = Mathf.Min(_settings.minEv, _settings.maxEv - 0.01f);
                         passData.maxEv = Mathf.Max(_settings.maxEv, passData.minEv + 0.01f);
                         passData.adaptationRate = Mathf.Max(0.01f, _settings.exposureAdaptationRate);
-                        passData.deltaTime = Mathf.Max(0.0001f, Time.unscaledDeltaTime);
+                        passData.deltaTime = ExposureFixedDeltaSeconds;
                         passData.maxDeltaPerFrame = Mathf.Clamp(_settings.evMaxDeltaPerFrame, 0.05f, 0.5f);
 
                         builder.UseBuffer(histogramHandle, AccessFlags.Read);
@@ -418,6 +431,29 @@ namespace Hecton8.Visor
                 UpdateMaterialParameters(_blurHorizontalMaterial, _settings, 1f, exposureAvailable);
                 UpdateMaterialParameters(_blurVerticalMaterial, _settings, 2f, exposureAvailable);
                 UpdateMaterialParameters(_compositeMaterial, _settings, 3f, exposureAvailable);
+
+                using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Half-Res Contact Depth", out var passData, _profilingSampler))
+                {
+                    passData.source = sourceTexture;
+                    passData.destination = halfResDepthTexture;
+                    passData.exposureState = exposureStateHandle;
+                    passData.material = _raymarchMaterial;
+
+                    builder.UseTexture(sourceTexture, AccessFlags.Read);
+                    builder.UseTexture(depthTexture, AccessFlags.Read);
+                    builder.UseTexture(halfResDepthTexture, AccessFlags.Write);
+                    builder.AllowGlobalStateModification(true);
+                    builder.SetGlobalTextureAfterPass(halfResDepthTexture, ShaderConstants.HalfResDepthTextureId);
+
+                    builder.SetRenderFunc(static (FullscreenPassData data, UnsafeGraphContext context) =>
+                    {
+                        CommandBuffer cmd = CommandBufferHelpers.GetNativeCommandBuffer(context.cmd);
+                        const RenderBufferLoadAction LoadAction = RenderBufferLoadAction.DontCare;
+                        const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
+
+                        Blitter.BlitCameraTexture(cmd, data.source, data.destination, LoadAction, StoreAction, data.material, HalfResContactDepthPassIndex);
+                    });
+                }
 
                 using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Radial Shafts", out var passData, _profilingSampler))
                 {
@@ -501,6 +537,7 @@ namespace Hecton8.Visor
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(shaftsTexture, AccessFlags.Read);
+                    builder.UseTexture(halfResDepthTexture, AccessFlags.Read);
                     builder.UseTexture(compositeTexture, AccessFlags.Write);
                     if (exposureAvailable)
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read);
@@ -612,7 +649,7 @@ namespace Hecton8.Visor
             material.SetFloat(ShaderConstants.MaxRayDistanceId, Mathf.Max(1f, settings.maxRayDistance));
                 material.SetFloat(ShaderConstants.ScatteringAnisotropyId, Mathf.Clamp(settings.scatteringAnisotropy, 0f, 0.95f));
                 material.SetFloat(ShaderConstants.DensityId, Mathf.Max(0f, settings.density));
-                material.SetFloat(ShaderConstants.BlueNoiseJitterId, Mathf.Clamp01(settings.blueNoiseJitter));
+                material.SetFloat(ShaderConstants.BlueNoiseJitterId, math.saturate(settings.blueNoiseJitter));
                 material.SetFloat(ShaderConstants.BilateralDepthSigmaId, Mathf.Max(0.01f, settings.bilateralDepthSigma));
                 material.SetFloat(ShaderConstants.ShaftIntensityId, Mathf.Max(0f, settings.shaftIntensity));
                 material.SetFloat(ShaderConstants.BiolumPatternScaleId, Mathf.Max(0.001f, settings.biolumPatternScale));
@@ -621,11 +658,11 @@ namespace Hecton8.Visor
                 material.SetFloat(ShaderConstants.SiltNoiseScaleId, Mathf.Max(0.001f, settings.siltNoiseScale));
                 material.SetFloat(ShaderConstants.SiltFloorBoostId, Mathf.Max(0f, settings.siltFloorBoost));
                 material.SetFloat(ShaderConstants.SiltDriftSpeedId, Mathf.Max(0f, settings.siltDriftSpeed));
-                material.SetFloat(ShaderConstants.ContactShadowStrengthId, Mathf.Clamp01(settings.contactShadowStrength));
+                material.SetFloat(ShaderConstants.ContactShadowStrengthId, math.saturate(settings.contactShadowStrength));
                 material.SetFloat(ShaderConstants.ContactShadowStepsId, Mathf.Clamp(settings.contactShadowSteps, 4, 8));
                 material.SetFloat(ShaderConstants.ContactShadowBiasId, Mathf.Max(0.001f, settings.contactShadowBias));
                 material.SetFloat(ShaderConstants.ContactShadowMaxDistanceId, Mathf.Max(0.1f, settings.contactShadowMaxDistance));
-                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStrengthId, Mathf.Clamp01(settings.contactShadowStrength));
+                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStrengthId, math.saturate(settings.contactShadowStrength));
                 Shader.SetGlobalFloat(ShaderConstants.ContactShadowStepsId, Mathf.Clamp(settings.contactShadowSteps, 4, 8));
                 Shader.SetGlobalFloat(ShaderConstants.ContactShadowBiasId, Mathf.Max(0.001f, settings.contactShadowBias));
                 Shader.SetGlobalFloat(ShaderConstants.ContactShadowMaxDistanceId, Mathf.Max(0.1f, settings.contactShadowMaxDistance));
@@ -643,13 +680,28 @@ namespace Hecton8.Visor
                 material.SetFloat(ShaderConstants.LensGhostScaleId, Mathf.Max(0.001f, settings.lensGhostScale));
                 material.SetFloat(ShaderConstants.LensChromaticAberrationId, Mathf.Max(0f, settings.lensChromaticAberration));
                 material.SetFloat(ShaderConstants.LensEdgeWeightId, Mathf.Max(0f, settings.lensEdgeWeight));
-                material.SetFloat(ShaderConstants.LensDirtIntensityId, Mathf.Clamp01(settings.lensDirtIntensity));
-                material.SetFloat(ShaderConstants.CondensationIntensityId, Mathf.Clamp01(settings.condensationIntensity));
-                material.SetFloat(ShaderConstants.ThermalHazeIntensityId, Mathf.Max(0f, settings.thermalHazeIntensity));
+                material.SetFloat(ShaderConstants.LensDirtIntensityId, math.saturate(settings.lensDirtIntensity));
+                material.SetFloat(ShaderConstants.CondensationIntensityId, math.saturate(settings.condensationIntensity));
+                material.SetFloat(ShaderConstants.ThermalHazeIntensityId, ResolveThermalHazeIntensity(settings));
                 material.SetFloat(ShaderConstants.ThermalHazeScaleId, Mathf.Max(0.001f, settings.thermalHazeScale));
                 material.SetFloat(ShaderConstants.HasExposureStateId, exposureAvailable ? 1f : 0f);
                 material.SetFloat(ShaderConstants.HasBlueNoiseTextureId, settings.blueNoiseTexture != null ? 1f : 0f);
                 material.SetTexture(ShaderConstants.BlueNoiseTextureId, settings.blueNoiseTexture);
+            }
+
+            private static float ResolveThermalHazeIntensity(FeatureSettings settings)
+            {
+                float intensity = Mathf.Max(0f, settings.thermalHazeIntensity);
+                if (intensity <= 0f)
+                    return 0f;
+
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+                Vector3 velocity = playerMovement != null
+                    ? playerMovement.InterpolatedLinearVelocity
+                    : (playerContext != null && playerContext.PlayerRigidbody != null ? playerContext.PlayerRigidbody.linearVelocity : Vector3.zero);
+
+                return velocity.sqrMagnitude > ThermalHazeMotionCullSpeedMetersPerSecondSq ? 0f : intensity;
             }
 
             private static Color ResolveNoirLiftColor(Color configured)
@@ -715,6 +767,7 @@ namespace Hecton8.Visor
             internal static readonly int HasBlueNoiseTextureId = Shader.PropertyToID("_HectonHasBlueNoiseTex");
             internal static readonly int HasExposureStateId = Shader.PropertyToID("_HectonHasExposureState");
             internal static readonly int ShaftTextureId = Shader.PropertyToID("_HectonShaftsTexture");
+            internal static readonly int HalfResDepthTextureId = Shader.PropertyToID("_HectonHalfResDepthTexture");
             internal static readonly int HeadlightVolumetricsTextureId = Shader.PropertyToID("_HectonHeadlightVolumetrics");
         }
 
@@ -736,9 +789,11 @@ namespace Hecton8.Visor
                 settings.autoExposureComputeShader = AssetDatabase.LoadAssetAtPath<ComputeShader>(AutoExposureComputeAssetPath);
 #endif
 
-            Shader shader = settings != null && settings.shader != null
-                ? settings.shader
-                : Shader.Find("Hidden/Hecton8/ScooterVolumetricShafts");
+            Shader shader = settings != null ? settings.shader : null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (shader == null)
+                shader = Shader.Find("Hidden/Hecton8/ScooterVolumetricShafts");
+#endif
 
             _pass ??= new ShaftsPass();
             RecreateMaterial(ref _raymarchMaterial, shader);

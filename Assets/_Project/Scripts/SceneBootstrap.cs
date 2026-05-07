@@ -27,7 +27,7 @@
 //
 // ZERO-GC ASYNC:
 //   • Unity 6 Awaitable API вместо Task/Task.Run.
-//   • Awaitable.NextFrameAsync вместо Task.Yield.
+//   • Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync вместо Task.Yield.
 //   • Awaitable.WaitForSecondsAsync вместо Task.Delay.
 //   • Никаких лямбда-замыканий в горячих путях.
 //
@@ -179,7 +179,7 @@ namespace Hecton8.Bootstrap
         /// Param: описание ошибки.
         /// </summary>
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
+        internal static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
@@ -740,7 +740,7 @@ namespace Hecton8.Bootstrap
                     Fail("Critical singletons missing! Bootstrap aborted.");
                     return false;
                 }
-                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
                 ct.ThrowIfCancellationRequested();
 
                 // ── STEP 2: Async Warmup пулов ───────────────
@@ -758,7 +758,7 @@ namespace Hecton8.Bootstrap
                 }
                 else
                 {
-                    await Awaitable.NextFrameAsync(cancellationToken: ct);
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
                     ct.ThrowIfCancellationRequested();
                 }
 
@@ -975,7 +975,7 @@ namespace Hecton8.Bootstrap
         /// Предсоздаёт объекты в пуле для устранения хитчей
         /// при первом спавне. Работает batch'ами по
         /// <see cref="WarmupBatchSize"/> инстансов, вызывая
-        /// <c>await Awaitable.NextFrameAsync()</c> между ними — это позволяет
+        /// <c>await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync()</c> между ними — это позволяет
         /// Unity отрисовать кадр загрузочного экрана.
         /// </summary>
         private async Awaitable WarmupPoolsAsync(CancellationToken ct)
@@ -1013,7 +1013,7 @@ namespace Hecton8.Bootstrap
                     SetStep($"Warming Pool: {label} ({created}/{entry.count})");
 
                     // Отдаём кадр Unity для отрисовки loading screen
-                    await Awaitable.NextFrameAsync(cancellationToken: ct);
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
                     ct.ThrowIfCancellationRequested();
                 }
 
@@ -1487,7 +1487,7 @@ namespace Hecton8.Bootstrap
                     return;
                 }
 
-                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
             }
 
             Log("  Scatter prime reached pass limit. Remaining startup placements will finish after activation.");
@@ -1501,7 +1501,7 @@ namespace Hecton8.Bootstrap
             if (governor != null)
                 governor.ForceDrainPendingReleaseQueue();
 
-            await Awaitable.NextFrameAsync(cancellationToken: ct);
+            await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
             ct.ThrowIfCancellationRequested();
 
             VRAMPressureMonitor pressureMonitor = Hecton8.Core.GlobalRegistry.VRAMPressure;
@@ -1547,7 +1547,7 @@ namespace Hecton8.Bootstrap
                    ReferenceEquals(ActiveInstance, this) &&
                    !registry.AreResidentWorldPrefabPoolsReady())
             {
-                await Awaitable.NextFrameAsync(cancellationToken: ct);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: ct);
                 ct.ThrowIfCancellationRequested();
             }
 

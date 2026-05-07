@@ -41,6 +41,32 @@ Interpretation:
 - The visual stack is not small.
 - More importantly, it is not centered in one shader folder. It is spread across runtime owners, Visor features, world simulation, and RT governance.
 
+## 1.1 Shader Variant Manifest
+
+Source command:
+
+```powershell
+rg -n "#pragma\s+skip_variants" Assets/_Project/Art/Shaders -g '*.shader'
+```
+
+Exact active `#pragma skip_variants` rows:
+
+| Shader | Line | Skip variants |
+|---|---:|---|
+| `Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader` | 849 | `POINT POINT_COOKIE _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH DIRLIGHTMAP_COMBINED DYNAMICLIGHTMAP_ON LIGHTMAP_ON LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK` |
+| `Assets/_Project/Art/Shaders/Hecton_CoralMaster.shader` | 82 | `_ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK` |
+| `Assets/_Project/Art/Shaders/Hecton_DryZoneLit.shader` | 109 | `_ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK` |
+| `Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader` | 78 | `_ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK` |
+| `Assets/_Project/Art/Shaders/Hecton_LeviathanOrganic.shader` | 307 | `_ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK` |
+| `Assets/_Project/Art/Shaders/Hecton_ScatterIndirectLit.shader` | 226 | `_ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK` |
+| `Assets/_Project/Art/Shaders/TerrainMaster.shader` | 457 | `_ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK` |
+| `Assets/_Project/Art/Shaders/Hecton_WreckIndirectLit.shader` | 226 | `_ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK` |
+
+Interpretation:
+- world/vegetation/wreck/coral shaders already skip soft-shadow, additional-light-shadow, and baked-lightmap variants.
+- `Hecton_AbyssalVoxelRock.shader` also strips `POINT` and `POINT_COOKIE`.
+- This is source evidence only; final build variant counts still require Unity shader compilation logs.
+
 ## 2. HECTON-8 already has a custom rendering identity
 
 Evidence:

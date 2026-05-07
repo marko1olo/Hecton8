@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -462,6 +463,7 @@ namespace Hecton8.VFX
             if (_mainCamera != null)
             {
                 _mainCamera.fieldOfView = _baseFOV;
+                _mainCamera.ResetProjectionMatrix();
             }
         }
 
@@ -647,103 +649,137 @@ namespace Hecton8.VFX
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogDuplicateInstanceDetected()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] Duplicate instance detected. Destroying duplicate.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMainCameraMissing()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] MainCamera not found. System disabled.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogVolumeMissing()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] URPVolume not found. Post-processing disabled.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogVignetteMissing()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning("[CameraJuiceSystem] Vignette override not found in Volume profile.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogChromaticAberrationMissing()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning("[CameraJuiceSystem] ChromaticAberration override not found in Volume profile.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogDepthOfFieldMissing()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning("[CameraJuiceSystem] DepthOfField override not found in Volume profile.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogShakeCalculationFailed()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] Shake calculation failed.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogNullShakeProfile()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] TriggerShake called with null profile.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogShakeMaxDisplacementClamped(float maxDisplacement)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning("[CameraJuiceSystem] ShakeProfile MaxDisplacement out of range [0, 1]. Clamping.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogShakeDurationDefaulted(float duration)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning("[CameraJuiceSystem] ShakeProfile Duration invalid. Using default 0.5s.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogNullBiomeProfile()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning("[CameraJuiceSystem] TransitionToBiome called with null biome. Using default fallback.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogFovCalculationFailed()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] FOV calculation failed.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogBiomeBlendFailed()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] Biome blend failed.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogInteractionFocusFailed()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] Interaction focus calculation failed.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogFrameBudgetExceeded()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning("[CameraJuiceSystem] Frame time exceeded budget.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogHealthPostProcessingFailed()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] Health post-processing failed.");
+#endif
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogO2PostProcessingFailed()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError("[CameraJuiceSystem] O2 post-processing failed.");
+#endif
         }
 
         public int SavePriority => 75;
@@ -795,7 +831,7 @@ namespace Hecton8.VFX
             _inputReclaimFovDuration = Mathf.Max(0.0001f, durationSeconds);
             _inputReclaimFovElapsed = 0f;
             _inputReclaimFovActive = true;
-            _mainCamera.fieldOfView = _inputReclaimFovStart;
+            ApplyProjectionFov(_inputReclaimFovStart);
         }
 
         /// <summary>
@@ -918,9 +954,11 @@ namespace Hecton8.VFX
         private static float EvaluateEaseInOutQuad(float t)
         {
             t = Mathf.Clamp01(t);
-            return t < 0.5f
-                ? 2f * t * t
-                : 1f - Mathf.Pow(-2f * t + 2f, 2f) * 0.5f;
+            if (t < 0.5f)
+                return 2f * t * t;
+
+            float inverse = -2f * t + 2f;
+            return 1f - inverse * inverse * 0.5f;
         }
 
         private void ApplyBiomeBlend(BiomeProfile from, BiomeProfile to, float t)
@@ -1184,7 +1222,7 @@ namespace Hecton8.VFX
                 return;
             }
 
-            float blend = Mathf.Clamp01(1f - Mathf.Exp(-SUBMARINE_IMPACT_SHAKE_RECOVERY_SHARPNESS * safeDt));
+            float blend = ResolvePadeApproach01(SUBMARINE_IMPACT_SHAKE_RECOVERY_SHARPNESS, safeDt);
             _submarineImpactShakeOffset = Vector3.Lerp(_submarineImpactShakeOffset, targetOffset, blend);
             if (_submarineImpactShakeTimer <= 0f &&
                 targetOffset.sqrMagnitude <= SUBMARINE_IMPACT_SHAKE_EPSILON_SQ &&
@@ -1343,11 +1381,11 @@ namespace Hecton8.VFX
                 (currentSpeed - Mathf.Max(0f, _speedLineStartMetersPerSecond)) /
                 Mathf.Max(0.01f, _speedLineFullMetersPerSecond - _speedLineStartMetersPerSecond));
             speed01 = speed01 * speed01 * (3f - 2f * speed01);
-            float blend = Mathf.Clamp01(1f - Mathf.Exp(-8f * Mathf.Max(0f, dt)));
-            _speedLineIntensity = Mathf.Lerp(_speedLineIntensity, speed01, blend);
+            float blend = ResolvePadeApproach01(8f, dt);
+            _speedLineIntensity = math.lerp(_speedLineIntensity, speed01, blend);
 
             var emission = _speedLineParticles.emission;
-            float emissionRate = Mathf.Lerp(0f, Mathf.Max(1f, _speedLineMaxEmissionRate), _speedLineIntensity);
+            float emissionRate = math.lerp(0f, Mathf.Max(1f, _speedLineMaxEmissionRate), _speedLineIntensity);
             if (Mathf.Abs(_cachedSpeedLineEmissionRate - emissionRate) > 0.5f)
             {
                 emission.rateOverTime = emissionRate;
@@ -1355,7 +1393,7 @@ namespace Hecton8.VFX
             }
 
             var velocity = _speedLineParticles.velocityOverLifetime;
-            float velocityZ = -Mathf.Lerp(18f, 44f, _speedLineIntensity);
+            float velocityZ = -math.lerp(18f, 44f, _speedLineIntensity);
             if (Mathf.Abs(_cachedSpeedLineVelocityZ - velocityZ) > 0.25f)
             {
                 velocity.z = new ParticleSystem.MinMaxCurve(velocityZ * 0.64f, velocityZ);
@@ -1364,7 +1402,7 @@ namespace Hecton8.VFX
 
             if (_speedLineRenderer != null)
             {
-                float stretch = Mathf.Lerp(0.45f, Mathf.Max(0.45f, _speedLineMaxStretch), _speedLineIntensity);
+                float stretch = math.lerp(0.45f, Mathf.Max(0.45f, _speedLineMaxStretch), _speedLineIntensity);
                 if (Mathf.Abs(_cachedSpeedLineStretch - stretch) > 0.02f)
                 {
                     _speedLineRenderer.lengthScale = stretch;
@@ -1429,7 +1467,7 @@ namespace Hecton8.VFX
                 _fovBlendElapsed = Mathf.Min(_fovBlendElapsed + dt, _fovBlendDuration);
                 float normalizedBlend = Mathf.Clamp01(_fovBlendElapsed / _fovBlendDuration);
                 float easedBlend = EvaluateEaseOutQuad(normalizedBlend);
-                _currentFOVOffset = Mathf.Lerp(_fovBlendStart, _fovBlendTarget, easedBlend);
+                _currentFOVOffset = math.lerp(_fovBlendStart, _fovBlendTarget, easedBlend);
                 if (normalizedBlend >= 1f)
                 {
                     _currentFOVOffset = _fovBlendTarget;
@@ -1448,10 +1486,12 @@ namespace Hecton8.VFX
                 float currentSpeed = ResolveCurrentCameraSpeed();
                 float speedRange = Mathf.Max(0.01f, _swimmingFovWarpFullSpeed - _swimmingFovWarpStartSpeed);
                 float speedT = math.saturate((currentSpeed - _swimmingFovWarpStartSpeed) / speedRange);
-                swimmingWarpTarget = speedT * _swimmingFovWarpMaxOffset * _adaptiveFOVScale;
+                float smoothSpeedT = Mathf.SmoothStep(0f, 1f, speedT);
+                swimmingWarpTarget = smoothSpeedT * _swimmingFovWarpMaxOffset * _adaptiveFOVScale;
             }
 
-            float warpBlendT = 1f - math.exp(-math.max(0.01f, _swimmingFovWarpSharpness) * math.max(0f, dt));
+            float warpBlendT = ResolvePadeApproach01(math.max(0.01f, _swimmingFovWarpSharpness), dt);
+            warpBlendT = Mathf.SmoothStep(0f, 1f, math.saturate(warpBlendT));
             _swimmingVelocityFovOffset = math.lerp(_swimmingVelocityFovOffset, swimmingWarpTarget, warpBlendT);
             targetFOV = Mathf.Clamp(targetFOV + _swimmingVelocityFovOffset, MIN_FOV, MAX_FOV);
 
@@ -1460,13 +1500,37 @@ namespace Hecton8.VFX
                 _inputReclaimFovElapsed = Mathf.Min(_inputReclaimFovElapsed + Mathf.Max(0f, dt), _inputReclaimFovDuration);
                 float normalizedReclaim = Mathf.Clamp01(_inputReclaimFovElapsed / _inputReclaimFovDuration);
                 float easedReclaim = EvaluateEaseOutQuad(normalizedReclaim);
-                targetFOV = Mathf.Lerp(_inputReclaimFovStart, _inputReclaimFovTarget, easedReclaim);
+                targetFOV = math.lerp(_inputReclaimFovStart, _inputReclaimFovTarget, easedReclaim);
                 if (normalizedReclaim >= 1f)
                     _inputReclaimFovActive = false;
             }
 
-            // Apply to camera
+            ApplyProjectionFov(targetFOV);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolvePadeApproach01(float sharpness, float dt)
+        {
+            float x = math.min(math.max(0f, sharpness) * math.max(0f, dt), 8f);
+            float x2 = x * x;
+            float expNegApprox = 1f / (1f + x + (0.48f * x2) + (0.235f * x2 * x));
+            return math.saturate(1f - expNegApprox);
+        }
+
+        private void ApplyProjectionFov(float targetFOV)
+        {
+            if (_mainCamera == null)
+                return;
+
             _mainCamera.fieldOfView = targetFOV;
+            if (_mainCamera.orthographic)
+                return;
+
+            _mainCamera.projectionMatrix = Matrix4x4.Perspective(
+                targetFOV,
+                _mainCamera.aspect,
+                _mainCamera.nearClipPlane,
+                _mainCamera.farClipPlane);
         }
 
         private void UpdateBiomeBlend(float dt)

@@ -776,6 +776,7 @@ namespace Hecton8.World
                     record.Variation,
                     out int floraTemplateIndex,
                     out FloraDataTemplate.RuntimeDescriptor floraDescriptor);
+                byte geneticTraits = ResolveGeneticTraitByte(floraTemplates, floraTemplateIndex, floraDescriptor);
                 pool.Matrices[writeIndex] = ConvertMatrixToStableUniverseSpace(ToMatrix4x4(record.Matrix), universeOffset);
                 pool.Metadata[writeIndex] = new HectonVegetationInstanceData(
                     (HectonVegetationInstanceType)record.Type,
@@ -784,7 +785,7 @@ namespace Hecton8.World
                     ResolveDeterministicVatPhase01(record.Variation, record.Type, record.SemanticType, record.BiomeLayer),
                     floraTemplateIndex,
                     HectonVegetationInstanceData.RuntimeStateIdle,
-                    HectonVegetationRuntimeFlagEncoding.Encode(record.BiomeLayer, 0),
+                    HectonVegetationRuntimeFlagEncoding.Encode(record.BiomeLayer, 0, geneticTraits),
                     floraDescriptor.PulseFrequency,
                     new Vector4(
                         floraDescriptor.BioluminescenceColor.x,
@@ -818,6 +819,40 @@ namespace Hecton8.World
                 unchecked((uint)semanticType),
                 biomeLayer));
             return (phaseHash & 0x00FFFFFFu) / 16777215f;
+        }
+
+        private static byte ResolveGeneticTraitByte(
+            FloraDataTemplate[] floraTemplates,
+            int floraTemplateIndex,
+            FloraDataTemplate.RuntimeDescriptor descriptor)
+        {
+            byte geneticTraits = 0;
+            ulong authoredGenetics = 0UL;
+            FloraDataTemplate.FloraCategory category = FloraDataTemplate.FloraCategory.MicroGrass;
+            if (floraTemplates != null && floraTemplateIndex >= 0 && floraTemplateIndex < floraTemplates.Length && floraTemplates[floraTemplateIndex] != null)
+            {
+                FloraDataTemplate template = floraTemplates[floraTemplateIndex];
+                authoredGenetics = template.GeneticsMask;
+                category = template.Category;
+            }
+
+            if ((authoredGenetics & (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic) != 0UL)
+                geneticTraits |= (byte)HectonVegetationGeneticTraits.Poisonous;
+
+            if ((authoredGenetics & (ulong)GeneticTraitProfile.GeneticTraitMask.Medicinal) != 0UL ||
+                category == FloraDataTemplate.FloraCategory.HarvestableKelp ||
+                category == FloraDataTemplate.FloraCategory.GiantSargassum)
+            {
+                geneticTraits |= (byte)HectonVegetationGeneticTraits.Edible;
+            }
+
+            if ((authoredGenetics & (ulong)GeneticTraitProfile.GeneticTraitMask.Bioluminescent) != 0UL ||
+                descriptor.BioluminescenceColor.w > 0.001f)
+            {
+                geneticTraits |= (byte)HectonVegetationGeneticTraits.EmitsLight;
+            }
+
+            return geneticTraits;
         }
 
         private static void ResolveFloraDescriptor(

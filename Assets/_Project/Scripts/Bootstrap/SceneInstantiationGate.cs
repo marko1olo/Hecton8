@@ -102,7 +102,7 @@ namespace Hecton8.Bootstrap
                 }
 
                 LastFailureReason = failureReason;
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
         }
 

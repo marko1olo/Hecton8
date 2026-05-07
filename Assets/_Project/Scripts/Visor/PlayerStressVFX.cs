@@ -2,6 +2,7 @@ using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Visor
@@ -72,6 +73,7 @@ namespace Hecton8.Visor
 
         private const float PulseTwoPi = Mathf.PI * 2f;
         private const float DependencyResolveRetryIntervalSeconds = 0.5f;
+        private static readonly int PlayerStress01Id = Shader.PropertyToID("_PlayerStress01");
         private static readonly int HectonHudStressChromaticAberrationId = Shader.PropertyToID("_HectonHudStressChromaticAberration");
         private static readonly int HectonHudStressVignetteId = Shader.PropertyToID("_HectonHudStressVignette");
         private static readonly int HectonHudFogFrostId = Shader.PropertyToID("_HectonHudFogFrost");
@@ -156,7 +158,7 @@ namespace Hecton8.Visor
             float heartbeatBlend01 = _hasInteractionSignal
                 ? Mathf.Clamp01(_interactionFrequency01)
                 : audioStress01;
-            float heartbeatInterval = Mathf.Lerp(heartbeatIntervalMaxSeconds, heartbeatIntervalMinSeconds, heartbeatBlend01);
+            float heartbeatInterval = math.lerp(heartbeatIntervalMaxSeconds, heartbeatIntervalMinSeconds, heartbeatBlend01);
             float pulseFrequency = 1f / Mathf.Max(0.05f, heartbeatInterval);
             _pulsePhase += deltaTime * pulseFrequency * PulseTwoPi;
             if (_pulsePhase > PulseTwoPi)
@@ -284,6 +286,7 @@ namespace Hecton8.Visor
             float shaderFog = Mathf.Clamp01(fog01 * Mathf.Clamp01(shaderFogCondensationMaximum));
             float shaderFrost = Mathf.Clamp01(frost01 * Mathf.Clamp01(shaderFrostMaximum));
 
+            Shader.SetGlobalFloat(PlayerStress01Id, Mathf.Clamp01(stress01));
             Shader.SetGlobalFloat(HectonHudStressChromaticAberrationId, hudStressChroma);
             Shader.SetGlobalFloat(HectonHudStressVignetteId, shaderVignette);
             Shader.SetGlobalVector(HectonHudFogFrostId, new Vector4(shaderFog, shaderFrost, fog01, frost01));
@@ -295,6 +298,7 @@ namespace Hecton8.Visor
             _debugFrost01 = 0f;
             _debugTemperatureShock01 = 0f;
             _debugPulse01 = 0f;
+            Shader.SetGlobalFloat(PlayerStress01Id, 0f);
             Shader.SetGlobalFloat(HectonHudStressChromaticAberrationId, 0f);
             Shader.SetGlobalFloat(HectonHudStressVignetteId, 0f);
             Shader.SetGlobalVector(HectonHudFogFrostId, Vector4.zero);
@@ -308,8 +312,23 @@ namespace Hecton8.Visor
 
             float signalVolume = _hasInteractionSignal ? _interactionVolume01 : 1f;
             float signalPitch = _hasInteractionSignal ? _interactionPitchScale : 1f;
-            float volume = Mathf.Lerp(heartbeatVolumeMin, heartbeatVolumeMax, stress01) * signalVolume;
-            audioManager.PlayAtPoint(heartbeatClip, transform.position, volume, signalPitch, audioManager.InterfaceGroup);
+            float volume = math.lerp(heartbeatVolumeMin, heartbeatVolumeMax, stress01) * signalVolume;
+            audioManager.PlayAtPoint(heartbeatClip, ResolveHeartbeatAudioPosition(), volume, signalPitch, audioManager.InterfaceGroup);
+        }
+
+        private Vector3 ResolveHeartbeatAudioPosition()
+        {
+            HectonPlayerMovement movement = _playerMovement;
+            if (movement == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                movement = playerContext != null ? playerContext.PlayerMovement : null;
+            }
+
+            if (movement != null)
+                return (Vector3)movement.CurrentAup.ToRuntimeFloat3();
+
+            return transform.position;
         }
 
         private float ResolveFogging01()

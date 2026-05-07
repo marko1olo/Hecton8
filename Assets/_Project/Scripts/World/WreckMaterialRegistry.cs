@@ -2,6 +2,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
@@ -17,6 +18,10 @@ namespace Hecton8.World
     {
         private const int MaxModuleContracts = 16;
         private const int WreckBrgMetadataCount = 1;
+        private const int FrustumPlaneCount = 6;
+        private const float FrustumRefreshPositionEpsilonSq = 0.25f;
+        private const float FrustumRefreshRotationDotThreshold = 0.99995f;
+        private const float FrustumRefreshProjectionEpsilonSq = 0.000001f;
         private const string IndirectWreckShaderName = "Hecton8/World/WreckIndirectLit";
         private const double BrgUploadTelemetryThresholdMs = 0.2d;
         private const uint WreckBrgUploadWarningHash = 0x5755504Cu; // WUPL
@@ -30,13 +35,78 @@ namespace Hecton8.World
             public NativeArray<Matrix4x4> Matrices;
             public float3 RuntimeOffset;
 
-            public void Execute(int index)
+            public unsafe void Execute(int index)
             {
-                Matrix4x4 matrix = Matrices[index];
+                Matrix4x4* matrices = (Matrix4x4*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(Matrices);
+                ref Matrix4x4 matrix = ref matrices[index];
                 matrix.m03 += RuntimeOffset.x;
                 matrix.m13 += RuntimeOffset.y;
                 matrix.m23 += RuntimeOffset.z;
-                Matrices[index] = matrix;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct CullWreckMatricesToVisibleSubsetJob : IJob
+        {
+            [ReadOnly] public NativeArray<Matrix4x4> SourceMatrices;
+            [ReadOnly] public NativeArray<float> SourceAges;
+            [ReadOnly] public NativeArray<float4> FrustumPlanes;
+            public NativeList<Matrix4x4> VisibleMatrices;
+            public NativeList<float> VisibleAges;
+            public float3 LocalBoundsCenter;
+            public float3 LocalBoundsExtents;
+            public int SourceCount;
+            public int PlaneCount;
+            public bool HasAgeData;
+            public bool EnableFrustumCulling;
+
+            public void Execute()
+            {
+                VisibleMatrices.Clear();
+                VisibleAges.Clear();
+
+                int count = math.min(SourceCount, SourceMatrices.IsCreated ? SourceMatrices.Length : 0);
+                if (count <= 0)
+                    return;
+
+                for (int index = 0; index < count; index++)
+                {
+                    Matrix4x4 matrix = SourceMatrices[index];
+                    if (EnableFrustumCulling && !IsMatrixAabbVisible(in matrix))
+                        continue;
+
+                    VisibleMatrices.AddNoResize(matrix);
+                    float age01 = HasAgeData && index < SourceAges.Length
+                        ? SourceAges[index]
+                        : 0.5f;
+                    VisibleAges.AddNoResize(math.saturate(age01));
+                }
+            }
+
+            private bool IsMatrixAabbVisible(in Matrix4x4 matrix)
+            {
+                float3 axisX = new float3(matrix.m00, matrix.m10, matrix.m20);
+                float3 axisY = new float3(matrix.m01, matrix.m11, matrix.m21);
+                float3 axisZ = new float3(matrix.m02, matrix.m12, matrix.m22);
+                float3 translation = new float3(matrix.m03, matrix.m13, matrix.m23);
+                float3 center = translation + axisX * LocalBoundsCenter.x + axisY * LocalBoundsCenter.y + axisZ * LocalBoundsCenter.z;
+                float3 extents =
+                    math.abs(axisX) * LocalBoundsExtents.x +
+                    math.abs(axisY) * LocalBoundsExtents.y +
+                    math.abs(axisZ) * LocalBoundsExtents.z;
+
+                for (int planeIndex = 0; planeIndex < PlaneCount; planeIndex++)
+                {
+                    float4 plane = FrustumPlanes[planeIndex];
+                    float projectionRadius =
+                        math.abs(plane.x) * extents.x +
+                        math.abs(plane.y) * extents.y +
+                        math.abs(plane.z) * extents.z;
+                    if (math.dot(plane.xyz, center) + plane.w + projectionRadius < 0f)
+                        return false;
+                }
+
+                return true;
             }
         }
 
@@ -67,6 +137,8 @@ namespace Hecton8.World
             private readonly int _moduleIndex;
             private readonly string _matrixSentinelLabel;
             private readonly string _ageSentinelLabel;
+            private readonly string _visibleMatrixSentinelLabel;
+            private readonly string _visibleAgeSentinelLabel;
             private readonly string _metadataSentinelLabel;
             private BatchRendererGroup _batchRendererGroup;
             private NativeArray<MetadataValue> _batchMetadata;
@@ -85,10 +157,15 @@ namespace Hecton8.World
             private GraphicsBuffer _ageBuffer;
             private NativeList<Matrix4x4> _matrices;
             private NativeList<float> _ages;
+            private NativeList<Matrix4x4> _visibleMatrices;
+            private NativeList<float> _visibleAges;
             private Bounds _drawBounds;
+            private float3 _meshLocalBoundsCenter;
+            private float3 _meshLocalBoundsExtents;
             private Mesh _mesh;
             private int _subMeshIndex;
             private int _layer;
+            private int _uploadedInstanceCount;
             private ShadowCastingMode _shadowCastingMode;
             private bool _receiveShadows;
             private bool _ownsRuntimeMaterial;
@@ -99,6 +176,8 @@ namespace Hecton8.World
                 _moduleIndex = moduleIndex;
                 _matrixSentinelLabel = string.Concat(nameof(_matrices), "_", moduleIndex);
                 _ageSentinelLabel = string.Concat(nameof(_ages), "_", moduleIndex);
+                _visibleMatrixSentinelLabel = string.Concat(nameof(_visibleMatrices), "_", moduleIndex);
+                _visibleAgeSentinelLabel = string.Concat(nameof(_visibleAges), "_", moduleIndex);
                 _metadataSentinelLabel = string.Concat(nameof(_batchMetadata), "_", moduleIndex);
             }
 
@@ -111,8 +190,12 @@ namespace Hecton8.World
                 {
                     _matrices = new NativeList<Matrix4x4>(nextCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[maxPlacements] - BRG wreck module matrix staging - owner: WreckMaterialRegistry
                     _ages = new NativeList<float>(nextCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<float>[maxPlacements] - BRG wreck module age metadata staging - owner: WreckMaterialRegistry
+                    _visibleMatrices = new NativeList<Matrix4x4>(nextCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[maxPlacements] - BRG visible wreck matrix upload subset - owner: WreckMaterialRegistry
+                    _visibleAges = new NativeList<float>(nextCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<float>[maxPlacements] - BRG visible wreck age upload subset - owner: WreckMaterialRegistry
                     NativeMemorySentinel.RegisterNativeList(_matrices, nameof(WreckMaterialRegistry), _matrixSentinelLabel, NativeAllocationLifetime.Scene);
                     NativeMemorySentinel.RegisterNativeList(_ages, nameof(WreckMaterialRegistry), _ageSentinelLabel, NativeAllocationLifetime.Scene);
+                    NativeMemorySentinel.RegisterNativeList(_visibleMatrices, nameof(WreckMaterialRegistry), _visibleMatrixSentinelLabel, NativeAllocationLifetime.Scene);
+                    NativeMemorySentinel.RegisterNativeList(_visibleAges, nameof(WreckMaterialRegistry), _visibleAgeSentinelLabel, NativeAllocationLifetime.Scene);
                     return;
                 }
 
@@ -122,17 +205,40 @@ namespace Hecton8.World
                     NativeMemorySentinel.RegisterNativeList(_ages, nameof(WreckMaterialRegistry), _ageSentinelLabel, NativeAllocationLifetime.Scene);
                 }
 
+                if (!_visibleMatrices.IsCreated)
+                {
+                    _visibleMatrices = new NativeList<Matrix4x4>(nextCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[maxPlacements] - BRG visible wreck matrix upload subset - owner: WreckMaterialRegistry
+                    NativeMemorySentinel.RegisterNativeList(_visibleMatrices, nameof(WreckMaterialRegistry), _visibleMatrixSentinelLabel, NativeAllocationLifetime.Scene);
+                }
+
+                if (!_visibleAges.IsCreated)
+                {
+                    _visibleAges = new NativeList<float>(nextCapacity, Allocator.Persistent); // COLD ALLOC: NativeList<float>[maxPlacements] - BRG visible wreck age upload subset - owner: WreckMaterialRegistry
+                    NativeMemorySentinel.RegisterNativeList(_visibleAges, nameof(WreckMaterialRegistry), _visibleAgeSentinelLabel, NativeAllocationLifetime.Scene);
+                }
+
                 if (_matrices.Capacity < nextCapacity)
                 {
                     _matrices.Capacity = nextCapacity;
                     _ages.Capacity = nextCapacity;
+                    _visibleMatrices.Capacity = nextCapacity;
+                    _visibleAges.Capacity = nextCapacity;
                     NativeMemorySentinel.RefreshNativeList(_matrices, nameof(WreckMaterialRegistry), _matrixSentinelLabel);
                     NativeMemorySentinel.RefreshNativeList(_ages, nameof(WreckMaterialRegistry), _ageSentinelLabel);
+                    NativeMemorySentinel.RefreshNativeList(_visibleMatrices, nameof(WreckMaterialRegistry), _visibleMatrixSentinelLabel);
+                    NativeMemorySentinel.RefreshNativeList(_visibleAges, nameof(WreckMaterialRegistry), _visibleAgeSentinelLabel);
                 }
                 else if (_ages.Capacity < nextCapacity)
                 {
                     _ages.Capacity = nextCapacity;
                     NativeMemorySentinel.RefreshNativeList(_ages, nameof(WreckMaterialRegistry), _ageSentinelLabel);
+                }
+                else if (_visibleMatrices.Capacity < nextCapacity)
+                {
+                    _visibleMatrices.Capacity = nextCapacity;
+                    _visibleAges.Capacity = nextCapacity;
+                    NativeMemorySentinel.RefreshNativeList(_visibleMatrices, nameof(WreckMaterialRegistry), _visibleMatrixSentinelLabel);
+                    NativeMemorySentinel.RefreshNativeList(_visibleAges, nameof(WreckMaterialRegistry), _visibleAgeSentinelLabel);
                 }
             }
 
@@ -142,6 +248,11 @@ namespace Hecton8.World
                     _matrices.Clear();
                 if (_ages.IsCreated)
                     _ages.Clear();
+                if (_visibleMatrices.IsCreated)
+                    _visibleMatrices.Clear();
+                if (_visibleAges.IsCreated)
+                    _visibleAges.Clear();
+                _uploadedInstanceCount = 0;
             }
 
             public void Configure(
@@ -158,6 +269,11 @@ namespace Hecton8.World
                 _shadowCastingMode = shadowCastingMode;
                 _receiveShadows = receiveShadows;
                 _layer = layer;
+                Bounds meshBounds = mesh != null ? mesh.bounds : new Bounds(Vector3.zero, Vector3.one);
+                Vector3 center = meshBounds.center;
+                Vector3 extents = meshBounds.extents;
+                _meshLocalBoundsCenter = new float3(center.x, center.y, center.z);
+                _meshLocalBoundsExtents = math.max(new float3(extents.x, extents.y, extents.z), new float3(0.05f));
             }
 
             public void AddMatrix(Matrix4x4 matrix)
@@ -175,7 +291,7 @@ namespace Hecton8.World
                 _ages.Add(math.saturate(age01));
             }
 
-            public void Publish(Bounds drawBounds)
+            public void Publish(Bounds drawBounds, NativeArray<float4> frustumPlanes, bool enableFrustumCulling)
             {
                 _drawBounds = drawBounds;
                 if (_mesh == null || _materialSource == null || !_matrices.IsCreated || _matrices.Length <= 0)
@@ -183,15 +299,21 @@ namespace Hecton8.World
 
                 EnsureResources();
                 EnsureRuntimeMaterial();
-                EnsureMatrixBufferCapacity(_matrices.Length);
-                EnsureAgeBufferCapacity(_matrices.Length);
+                int visibleCount = CullVisibleSubset(frustumPlanes, enableFrustumCulling);
+                _uploadedInstanceCount = visibleCount;
+                if (_batchRendererGroup != null)
+                    _batchRendererGroup.SetGlobalBounds(_drawBounds);
+                if (visibleCount <= 0)
+                    return;
+
+                EnsureMatrixBufferCapacity(visibleCount);
+                EnsureAgeBufferCapacity(visibleCount);
                 if (_batchRendererGroup == null || _runtimeMaterial == null || _matrixBuffer == null || _ageBuffer == null)
                     return;
 
                 long uploadStartTimestamp = global::System.Diagnostics.Stopwatch.GetTimestamp();
-                GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _matrices.AsArray(), _matrices.Length);
-                if (_ages.IsCreated && _ages.Length == _matrices.Length)
-                    GraphicsBufferUploadUtility.UploadNativeArray(_ageBuffer, _ages.AsArray(), _ages.Length);
+                GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _visibleMatrices.AsArray(), visibleCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(_ageBuffer, _visibleAges.AsArray(), visibleCount);
                 _runtimeMaterial.SetBuffer(_WreckMatricesId, _matrixBuffer);
                 _runtimeMaterial.SetBuffer(_WreckAgesId, _ageBuffer);
                 SyncBatchBuffer(_matrixBuffer);
@@ -200,25 +322,57 @@ namespace Hecton8.World
                 WreckMaterialRegistry.PublishBrgUploadWarningIfNeeded(uploadStartTimestamp);
             }
 
+            private int CullVisibleSubset(NativeArray<float4> frustumPlanes, bool enableFrustumCulling)
+            {
+                if (!_matrices.IsCreated || !_visibleMatrices.IsCreated || !_visibleAges.IsCreated)
+                    return 0;
+
+                int count = _matrices.Length;
+                if (count <= 0)
+                    return 0;
+
+                if (_visibleMatrices.Capacity < count || _visibleAges.Capacity < count)
+                    EnsureCapacity(count);
+
+                bool hasPlanes = enableFrustumCulling && frustumPlanes.IsCreated && frustumPlanes.Length >= FrustumPlaneCount;
+                var job = new CullWreckMatricesToVisibleSubsetJob
+                {
+                    SourceMatrices = _matrices.AsArray(),
+                    SourceAges = _ages.IsCreated ? _ages.AsArray() : default,
+                    FrustumPlanes = frustumPlanes,
+                    VisibleMatrices = _visibleMatrices,
+                    VisibleAges = _visibleAges,
+                    LocalBoundsCenter = _meshLocalBoundsCenter,
+                    LocalBoundsExtents = _meshLocalBoundsExtents,
+                    SourceCount = count,
+                    PlaneCount = hasPlanes ? FrustumPlaneCount : 0,
+                    HasAgeData = _ages.IsCreated && _ages.Length == count,
+                    EnableFrustumCulling = hasPlanes
+                };
+
+                JobHandle handle = job.Schedule();
+                // BLOCKING_SYNC_POINT: BRG publish lane must own the compacted upload subset before touching GraphicsBuffer.
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                return _visibleMatrices.Length;
+            }
+
             public void ApplyOriginShift(Vector3 runtimeOffset)
             {
                 if (_matrices.IsCreated)
                 {
                     int count = _matrices.Length;
                     if (count > 0)
-                    {
-                        var job = new WreckMatrixRebaseJob
-                        {
-                            Matrices = _matrices.AsArray(),
-                            RuntimeOffset = new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z)
-                        };
-                        JobHandle handle = job.Schedule(count, 64);
-                        // BLOCKING_SYNC_POINT: floating-origin rebase is an atomic world-shift phase, not Tick cadence.
-                        DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
-                    }
+                        ApplyOriginShiftToMatrices(_matrices.AsArray(), count, runtimeOffset);
+                }
 
-                    if (_matrixBuffer != null && count > 0)
-                        GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _matrices.AsArray(), count);
+                if (_visibleMatrices.IsCreated)
+                {
+                    int visibleCount = _visibleMatrices.Length;
+                    if (visibleCount > 0)
+                        ApplyOriginShiftToMatrices(_visibleMatrices.AsArray(), visibleCount, runtimeOffset);
+
+                    if (_matrixBuffer != null && _uploadedInstanceCount > 0)
+                        GraphicsBufferUploadUtility.UploadNativeArray(_matrixBuffer, _visibleMatrices.AsArray(), _uploadedInstanceCount);
                 }
 
                 _drawBounds.center += runtimeOffset;
@@ -226,7 +380,26 @@ namespace Hecton8.World
                     _batchRendererGroup.SetGlobalBounds(_drawBounds);
             }
 
+            private static void ApplyOriginShiftToMatrices(NativeArray<Matrix4x4> matrices, int count, Vector3 runtimeOffset)
+            {
+                var job = new WreckMatrixRebaseJob
+                {
+                    Matrices = matrices,
+                    RuntimeOffset = new float3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z)
+                };
+                JobHandle handle = job.Schedule(count, 64);
+                // BLOCKING_SYNC_POINT: floating-origin rebase is an atomic world-shift phase, not Tick cadence.
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+            }
+
             public void Dispose()
+            {
+                JobHandle disposeHandle = Dispose(default);
+                if (!disposeHandle.IsCompleted)
+                    DispatcherJobSwap.TryComplete(ref disposeHandle, forceComplete: true);
+            }
+
+            public JobHandle Dispose(JobHandle dependency)
             {
                 if (_batchRendererGroup != null)
                 {
@@ -243,7 +416,9 @@ namespace Hecton8.World
                 if (_batchMetadata.IsCreated)
                 {
                     NativeMemorySentinel.UnregisterNativeArray(_batchMetadata);
-                    _batchMetadata.Dispose();
+                    NativeArray<MetadataValue> metadata = _batchMetadata;
+                    _batchMetadata = default;
+                    dependency = metadata.Dispose(dependency);
                 }
 
                 if (_batchHandleBuffer != null)
@@ -282,16 +457,37 @@ namespace Hecton8.World
                 _batchMaterialId = default;
                 _batchId = default;
                 _registeredBatchBuffer = null;
+                _uploadedInstanceCount = 0;
                 if (_matrices.IsCreated)
                 {
                     NativeMemorySentinel.UnregisterNativeList(nameof(WreckMaterialRegistry), _matrixSentinelLabel);
-                    _matrices.Dispose();
+                    NativeList<Matrix4x4> matrices = _matrices;
+                    _matrices = default;
+                    dependency = matrices.Dispose(dependency);
                 }
                 if (_ages.IsCreated)
                 {
                     NativeMemorySentinel.UnregisterNativeList(nameof(WreckMaterialRegistry), _ageSentinelLabel);
-                    _ages.Dispose();
+                    NativeList<float> ages = _ages;
+                    _ages = default;
+                    dependency = ages.Dispose(dependency);
                 }
+                if (_visibleMatrices.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeList(nameof(WreckMaterialRegistry), _visibleMatrixSentinelLabel);
+                    NativeList<Matrix4x4> visibleMatrices = _visibleMatrices;
+                    _visibleMatrices = default;
+                    dependency = visibleMatrices.Dispose(dependency);
+                }
+                if (_visibleAges.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeList(nameof(WreckMaterialRegistry), _visibleAgeSentinelLabel);
+                    NativeList<float> visibleAges = _visibleAges;
+                    _visibleAges = default;
+                    dependency = visibleAges.Dispose(dependency);
+                }
+
+                return dependency;
             }
 
             private void EnsureResources()
@@ -346,9 +542,11 @@ namespace Hecton8.World
                 _runtimeMaterial = new Material(runtimeShader)
                 {
                     hideFlags = HideFlags.HideAndDontSave,
-                    name = $"__WreckModule_{_moduleIndex}_BRG",
                     enableInstancing = true
                 }; // COLD ALLOC: Material[1] - BRG-local wreck module material clone - owner: WreckMaterialRegistry
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                _runtimeMaterial.name = $"__WreckModule_{_moduleIndex}_BRG";
+#endif
                 _runtimeMaterial.CopyPropertiesFromMaterial(_materialSource);
                 _ownsRuntimeMaterial = true;
                 _runtimeMaterialSource = _materialSource;
@@ -357,7 +555,7 @@ namespace Hecton8.World
 
             private void EnsureMatrixBufferCapacity(int instanceCount)
             {
-                int required = Mathf.NextPowerOfTwo(math.max(1, instanceCount));
+                int required = RoundUpPowerOfTwo(instanceCount);
                 if (_matrixBuffer != null && _matrixBuffer.count >= required)
                     return;
 
@@ -370,7 +568,7 @@ namespace Hecton8.World
 
             private void EnsureAgeBufferCapacity(int instanceCount)
             {
-                int required = Mathf.NextPowerOfTwo(math.max(1, instanceCount));
+                int required = RoundUpPowerOfTwo(instanceCount);
                 if (_ageBuffer != null && _ageBuffer.count >= required)
                     return;
 
@@ -378,6 +576,19 @@ namespace Hecton8.World
                     _ageBuffer.Release();
 
                 _ageBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(required); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(instanceCount)] - wreck module age metadata upload buffer - owner: WreckMaterialRegistry
+            }
+
+            private static int RoundUpPowerOfTwo(int value)
+            {
+                uint v = (uint)math.max(1, value);
+                v--;
+                v |= v >> 1;
+                v |= v >> 2;
+                v |= v >> 4;
+                v |= v >> 8;
+                v |= v >> 16;
+                v++;
+                return v > int.MaxValue ? int.MaxValue : (int)v;
             }
 
             private void SyncBatchRegistration()
@@ -422,7 +633,7 @@ namespace Hecton8.World
                 BatchCullingOutput cullingOutput,
                 System.IntPtr userContext)
             {
-                int instanceCount = _matrices.IsCreated ? _matrices.Length : 0;
+                int instanceCount = _uploadedInstanceCount;
                 if (instanceCount <= 0 ||
                     _batchId.Equals(default) ||
                     _batchMeshId.Equals(default) ||
@@ -505,9 +716,19 @@ namespace Hecton8.World
         private Bounds _publishedWorldBounds;
         private AbsoluteUniversePosition _publishedWreckCenterAup;
         private Transform _playerTransform;
+        private Camera _viewCamera;
+        private Plane[] _frustumPlaneCache;
+        private NativeArray<float4> _frustumPlanes;
+        private Vector3 _lastFrustumCameraPosition;
+        private Quaternion _lastFrustumCameraRotation = Quaternion.identity;
+        private float4 _lastFrustumProjectionSignature0;
+        private float4 _lastFrustumProjectionSignature1;
+        private int _lastFrustumPixelWidth;
+        private int _lastFrustumPixelHeight;
         private bool _hasPublishedWreck;
         private bool _registeredSlowTick;
         private bool _pdaSignalLatched;
+        private bool _hasCachedFrustumState;
 
         private void Awake()
         {
@@ -542,11 +763,10 @@ namespace Hecton8.World
             if (!_hasPublishedWreck)
                 return;
 
-            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
-            if (_playerTransform == null)
+            RefreshVisibilityUploads();
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in _publishedWreckCenterAup);
             float signalRadius = math.max(1f, pdaSignalRadiusMeters);
             double signalRadiusSq = (double)signalRadius * signalRadius;
@@ -557,7 +777,7 @@ namespace Hecton8.World
 
                 _pdaSignalLatched = true;
                 Vector3 pingCenter = _publishedWorldBounds.center;
-                ScanEvents.RaiseScanTriggered(
+                ScanEvents.RaiseWreckSignalPing(
                     new float3(pingCenter.x, pingCenter.y, pingCenter.z),
                     math.max(1f, pdaSignalPingRadiusMeters));
                 return;
@@ -567,6 +787,30 @@ namespace Hecton8.World
             double rearmRadiusSq = (double)rearmRadius * rearmRadius;
             if (distanceSq >= rearmRadiusSq)
                 _pdaSignalLatched = false;
+        }
+
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement != null)
+            {
+                playerAup = playerMovement.CurrentAup;
+                return true;
+            }
+
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            {
+                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    playerAup = movementState.PredictedAup;
+                    return true;
+                }
+            }
+
+            playerAup = default;
+            return false;
         }
 
         private static void PublishBrgUploadWarningIfNeeded(long uploadStartTimestamp)
@@ -596,6 +840,24 @@ namespace Hecton8.World
                 _moduleBatches[i]?.ApplyOriginShift(runtimeOffset);
 
             _publishedWorldBounds.center += runtimeOffset;
+            _hasCachedFrustumState = false;
+        }
+
+        private void RefreshVisibilityUploads()
+        {
+            if (_moduleBatches == null)
+                return;
+
+            bool hasFrustum = TryPopulateFrustumPlanes(out bool frustumChanged);
+            if (hasFrustum && !frustumChanged)
+                return;
+
+            for (int i = 0; i < _moduleBatches.Length; i++)
+            {
+                ModuleBatch batch = _moduleBatches[i];
+                if (batch != null && batch.HasContent)
+                    batch.Publish(_publishedWorldBounds, _frustumPlanes, hasFrustum);
+            }
         }
 
         /// <summary>
@@ -626,6 +888,7 @@ namespace Hecton8.World
             ResetAllBatches();
             _publishedWorldBounds = worldBounds;
             _hasPublishedWreck = instanceCount > 0 && IsFiniteBounds(worldBounds);
+            _hasCachedFrustumState = false;
             _publishedWreckCenterAup = _hasPublishedWreck
                 ? AbsoluteUniversePosition.FromRuntimePosition(worldBounds.center)
                 : default;
@@ -652,7 +915,10 @@ namespace Hecton8.World
                         }
 
                         if (singleBatch.HasContent)
-                            singleBatch.Publish(worldBounds);
+                        {
+                            bool hasFrustum = TryPopulateFrustumPlanes(out _);
+                            singleBatch.Publish(worldBounds, _frustumPlanes, hasFrustum);
+                        }
                         return;
                     }
                 }
@@ -684,8 +950,95 @@ namespace Hecton8.World
                 if (batch == null || !batch.HasContent)
                     continue;
 
-                batch.Publish(worldBounds);
+                bool hasFrustum = TryPopulateFrustumPlanes(out _);
+                batch.Publish(worldBounds, _frustumPlanes, hasFrustum);
             }
+        }
+
+        private bool TryPopulateFrustumPlanes(out bool frustumChanged)
+        {
+            frustumChanged = false;
+            EnsureFrustumScratch();
+            Camera cullCamera = ResolveViewCamera();
+            if (cullCamera == null || !cullCamera.enabled)
+            {
+                _hasCachedFrustumState = false;
+                return false;
+            }
+
+            Transform cameraTransform = cullCamera.transform;
+            Vector3 cameraPosition = cameraTransform.position;
+            Quaternion cameraRotation = cameraTransform.rotation;
+            Matrix4x4 projectionMatrix = cullCamera.projectionMatrix;
+            float4 projectionSignature0 = new float4(
+                projectionMatrix.m00,
+                projectionMatrix.m02,
+                projectionMatrix.m11,
+                projectionMatrix.m12);
+            float4 projectionSignature1 = new float4(
+                projectionMatrix.m22,
+                projectionMatrix.m23,
+                projectionMatrix.m32,
+                projectionMatrix.m33);
+            int pixelWidth = cullCamera.pixelWidth;
+            int pixelHeight = cullCamera.pixelHeight;
+            if (_hasCachedFrustumState &&
+                (cameraPosition - _lastFrustumCameraPosition).sqrMagnitude <= FrustumRefreshPositionEpsilonSq &&
+                math.abs(Quaternion.Dot(cameraRotation, _lastFrustumCameraRotation)) >= FrustumRefreshRotationDotThreshold &&
+                ProjectionSignaturesApproximatelyEqual(
+                    projectionSignature0,
+                    projectionSignature1,
+                    _lastFrustumProjectionSignature0,
+                    _lastFrustumProjectionSignature1) &&
+                pixelWidth == _lastFrustumPixelWidth &&
+                pixelHeight == _lastFrustumPixelHeight)
+            {
+                return true;
+            }
+
+            GeometryUtility.CalculateFrustumPlanes(cullCamera, _frustumPlaneCache);
+            for (int i = 0; i < FrustumPlaneCount; i++)
+            {
+                Plane plane = _frustumPlaneCache[i];
+                Vector3 normal = plane.normal;
+                _frustumPlanes[i] = new float4(normal.x, normal.y, normal.z, plane.distance);
+            }
+
+            _lastFrustumCameraPosition = cameraPosition;
+            _lastFrustumCameraRotation = cameraRotation;
+            _lastFrustumProjectionSignature0 = projectionSignature0;
+            _lastFrustumProjectionSignature1 = projectionSignature1;
+            _lastFrustumPixelWidth = pixelWidth;
+            _lastFrustumPixelHeight = pixelHeight;
+            _hasCachedFrustumState = true;
+            frustumChanged = true;
+            return true;
+        }
+
+        private static bool ProjectionSignaturesApproximatelyEqual(
+            float4 current0,
+            float4 current1,
+            float4 previous0,
+            float4 previous1)
+        {
+            float deltaSq = math.lengthsq(current0 - previous0) + math.lengthsq(current1 - previous1);
+            return deltaSq <= FrustumRefreshProjectionEpsilonSq;
+        }
+
+        private Camera ResolveViewCamera()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerCamera != null)
+            {
+                _viewCamera = playerContext.PlayerCamera;
+                return _viewCamera;
+            }
+
+            WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _playerTransform);
+            if (_playerTransform != null)
+                _viewCamera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(_playerTransform);
+
+            return _viewCamera;
         }
 
         private int ResolveSingleDrawModuleIndex(
@@ -791,9 +1144,22 @@ namespace Hecton8.World
             if (_moduleBatches != null && _moduleBatches.Length == MaxModuleContracts)
                 return;
 
+            EnsureFrustumScratch();
             _moduleBatches = new ModuleBatch[MaxModuleContracts]; // COLD ALLOC: ModuleBatch[16] - procedural wreck BRG owners by module slot - owner: WreckMaterialRegistry
             for (int i = 0; i < _moduleBatches.Length; i++)
                 _moduleBatches[i] = new ModuleBatch(this, i);
+        }
+
+        private void EnsureFrustumScratch()
+        {
+            if (_frustumPlaneCache == null || _frustumPlaneCache.Length != FrustumPlaneCount)
+                _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] - player-camera wreck BRG upload culling planes - owner: WreckMaterialRegistry
+
+            if (!_frustumPlanes.IsCreated)
+            {
+                _frustumPlanes = new NativeArray<float4>(FrustumPlaneCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float4>[6] - Burst frustum planes for wreck BRG upload culling - owner: WreckMaterialRegistry
+                NativeMemorySentinel.RegisterNativeArray(_frustumPlanes, nameof(WreckMaterialRegistry), nameof(_frustumPlanes), NativeAllocationLifetime.Scene);
+            }
         }
 
         private void ResetAllBatches()
@@ -820,6 +1186,18 @@ namespace Hecton8.World
             _moduleBatches = null;
             _hasPublishedWreck = false;
             _publishedWreckCenterAup = default;
+            _hasCachedFrustumState = false;
+            DisposeFrustumScratch();
+        }
+
+        private void DisposeFrustumScratch()
+        {
+            if (!_frustumPlanes.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_frustumPlanes);
+            _frustumPlanes.Dispose();
+            _frustumPlanes = default;
         }
 
         private Material ResolveMaterialForModule(int moduleIndex, WreckLodTier tier)

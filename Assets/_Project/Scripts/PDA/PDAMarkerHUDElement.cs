@@ -2,6 +2,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,8 +25,8 @@ namespace Hecton8.PDA
             public Image iconImage;
             public TMP_Text titleText;
             public TMP_Text distanceText;
-            public string cachedTitle;
-            public string cachedDistance;
+            public uint cachedTitleHash;
+            public int cachedDistanceMeters;
             public char[] titleBuffer;
             public char[] distanceBuffer;
         }
@@ -134,8 +135,8 @@ namespace Hecton8.PDA
                     iconImage = iconObject.GetComponent<Image>(),
                     titleText = ResolveChildText(iconObject.transform, "Label"),
                     distanceText = ResolveChildText(iconObject.transform, "Distance"),
-                    cachedTitle = string.Empty,
-                    cachedDistance = string.Empty,
+                    cachedTitleHash = uint.MaxValue,
+                    cachedDistanceMeters = int.MinValue,
                     titleBuffer = new char[MarkerIconDisplay.TitleBufferCapacity], // COLD ALLOC: char[128] — per-marker HUD title staging buffer for zero-GC TMP writes — owner: PDAMarkerHUDElement
                     distanceBuffer = new char[MarkerIconDisplay.DistanceBufferCapacity] // COLD ALLOC: char[16] — per-marker HUD distance staging buffer for zero-GC TMP writes — owner: PDAMarkerHUDElement
                 };
@@ -170,13 +171,15 @@ namespace Hecton8.PDA
                 return;
 
             Vector3 cameraPosition = _mainCamera.transform.position;
-            float distance = Vector3.Distance(marker.Position, cameraPosition);
-            if (distance > maxDisplayDistance)
+            float maxDisplayDistanceSq = maxDisplayDistance * maxDisplayDistance;
+            float distanceSq = (marker.Position - cameraPosition).sqrMagnitude;
+            if (distanceSq > maxDisplayDistanceSq)
             {
                 SetDisplayVisible(display, false);
                 return;
             }
 
+            float distance = distanceSq > 0.0001f ? distanceSq * math.rsqrt(distanceSq) : 0f;
             Vector3 screenPoint = _mainCamera.WorldToScreenPoint(marker.Position);
             if (screenPoint.z <= 0f)
             {
@@ -200,21 +203,23 @@ namespace Hecton8.PDA
 
             if (display.titleText != null)
             {
-                string nextTitle = showLabels ? marker.Title : string.Empty;
-                if (!string.Equals(display.cachedTitle, nextTitle, System.StringComparison.Ordinal))
+                uint nextTitleHash = showLabels ? marker.TitleHashID : 0u;
+                if (display.cachedTitleHash != nextTitleHash)
                 {
+                    string nextTitle = showLabels ? marker.Title : string.Empty;
                     ApplyText(display.titleText, display.titleBuffer, nextTitle);
-                    display.cachedTitle = nextTitle;
+                    display.cachedTitleHash = nextTitleHash;
                 }
             }
 
             if (display.distanceText != null)
             {
-                string nextDistance = showDistance ? ResolveDistanceLabel(Mathf.RoundToInt(distance)) : string.Empty;
-                if (!string.Equals(display.cachedDistance, nextDistance, System.StringComparison.Ordinal))
+                int nextDistanceMeters = showDistance ? Mathf.RoundToInt(distance) : -1;
+                if (display.cachedDistanceMeters != nextDistanceMeters)
                 {
+                    string nextDistance = showDistance ? ResolveDistanceLabel(nextDistanceMeters) : string.Empty;
                     ApplyText(display.distanceText, display.distanceBuffer, nextDistance);
-                    display.cachedDistance = nextDistance;
+                    display.cachedDistanceMeters = nextDistanceMeters;
                 }
             }
 

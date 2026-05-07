@@ -81,7 +81,6 @@ preyEscapePower = 0.15 + (1 - predatorPressure01) * 0.20
 victim dies if apexPower >= preyEscapePower
 ```
 
-For apex-versus-herbivore sectors this intentionally resolves as a kill while remaining deterministic. The prey record is removed from the sector block, its UID is removed from the in-memory registry, and `TryRegisterFaunaTombstone` writes the death into the persistent tombstone set so the same individual is not rehydrated later.
 
 ## Thermal Apex Migration
 

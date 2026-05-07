@@ -6,6 +6,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Modding;
 using Hecton8.Power;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Economy
@@ -205,7 +206,7 @@ namespace Hecton8.Economy
                 if (!TryBufferItem(item))
                     break;
 
-                if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(item.PersistentId), 1))
+                if (!inventory.TryRemoveQuantity(item.PersistentHashId, 1))
                 {
                     RemoveLastBufferedItem(item);
                     break;
@@ -461,8 +462,8 @@ namespace Hecton8.Economy
                 }
             }
 
-            float yieldScale = Mathf.Lerp(0.9f, 1.35f, Mathf.Clamp01((yieldUnits - 1) / 5f));
-            return Mathf.Max(1f, recycleDurationSeconds * categoryScale * yieldScale);
+            float yieldScale = math.lerp(0.9f, 1.35f, math.saturate((yieldUnits - 1) / 5f));
+            return math.max(1f, recycleDurationSeconds * categoryScale * yieldScale);
         }
 
         private static float ResolvePowerMultiplier(ItemData sourceItem, int yieldUnits)
@@ -470,9 +471,9 @@ namespace Hecton8.Economy
             float scarcityScale = 1f;
             ResourceScarcityDirector director = GlobalRegistry.ResourceScarcity;
             if (director != null && sourceItem != null)
-                scarcityScale = Mathf.Max(1f, director.GetIngredientMultiplier(sourceItem.PersistentId));
+                scarcityScale = Mathf.Max(1f, director.GetIngredientMultiplier(sourceItem.PersistentHashId));
 
-            float yieldScale = Mathf.Lerp(1f, 1.35f, Mathf.Clamp01((yieldUnits - 1) / 5f));
+            float yieldScale = math.lerp(1f, 1.35f, math.saturate((yieldUnits - 1) / 5f));
             return scarcityScale * yieldScale;
         }
 

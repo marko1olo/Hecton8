@@ -66,6 +66,7 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Interaction;
 using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
@@ -95,15 +96,17 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener
+    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener, Hecton8.Interaction.IKinematicRepairTarget
     {
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
         private const int ModuleWaterLevelShaderCapacity = 64;
         private const float BrownoutShaderStateEpsilon = 0.001f;
         private const float AupRadiusLogicThresholdMeters = 50f;
-        private static readonly int s_ModuleAmbienceDataId = Shader.PropertyToID("_ModuleAmbienceData");
-        private static readonly int s_ModuleWaterLevelsId = Shader.PropertyToID("_ModuleWaterLevels");
+        private const float RepairHandHalfSpanMeters = 0.18f;
+        private const float RepairHandVerticalBiasMeters = 0.05f;
+        private static readonly int s_ModuleAmbienceDataId = Shader.PropertyToID("_HectonModuleAmbienceDataBuffer");
+        private static readonly int s_ModuleWaterLevelsId = Shader.PropertyToID("_HectonModuleWaterLevelsBuffer");
         private static readonly int s_ModuleWaterLevelCountId = Shader.PropertyToID("_ModuleWaterLevelCount");
         private static readonly int s_BaseVoltageId = Shader.PropertyToID("_BaseVoltage");
         private static readonly int s_BaseVoltageFlickerSpeedId = Shader.PropertyToID("_BaseVoltageFlickerSpeed");
@@ -113,11 +116,14 @@ namespace Hecton8.Gameplay
         private static readonly Vector4[] s_moduleAmbienceData = new Vector4[ModuleWaterLevelShaderCapacity];
         // COLD ALLOC: Vector4[256] — global module water/flicker upload scratch — owner: BaseModule
         private static readonly Vector4[] s_moduleFloodAndFlickerData = new Vector4[ModuleWaterLevelShaderCapacity];
+        private static ComputeBuffer s_moduleAmbienceDataBuffer;
+        private static ComputeBuffer s_moduleFloodAndFlickerDataBuffer;
         private static int s_lastModuleWaterLevelUploadFrame = -1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetActiveModuleRegistry()
         {
+            ReleaseModuleWaterLevelBuffers();
             s_activeModules.Clear();
             s_lastModuleWaterLevelUploadFrame = -1;
             for (int i = 0; i < ModuleWaterLevelShaderCapacity; i++)
@@ -126,10 +132,62 @@ namespace Hecton8.Gameplay
                 s_moduleFloodAndFlickerData[i] = new Vector4(0f, 0f, 1f, 0f);
             }
 
+            EnsureModuleWaterLevelBuffers();
+            UploadModuleWaterLevelBuffers();
+            Shader.SetGlobalInt(s_ModuleWaterLevelCountId, 0);
             Shader.SetGlobalFloat(s_BaseVoltageId, 1f);
             Shader.SetGlobalFloat(s_BaseVoltageFlickerSpeedId, 19f);
             Shader.SetGlobalFloat(s_BaseVoltageMinimumId, 0.04f);
             Shader.SetGlobalColor(s_BaseBrownoutEmergencyColorId, new Color(1f, 0.13f, 0.06f, 1f));
+        }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorLifecycleHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= ReleaseModuleWaterLevelBuffers;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += ReleaseModuleWaterLevelBuffers;
+            UnityEditor.EditorApplication.quitting -= ReleaseModuleWaterLevelBuffers;
+            UnityEditor.EditorApplication.quitting += ReleaseModuleWaterLevelBuffers;
+        }
+#endif
+
+        private static void EnsureModuleWaterLevelBuffers()
+        {
+            if (s_moduleAmbienceDataBuffer != null && s_moduleFloodAndFlickerDataBuffer != null)
+                return;
+
+            ReleaseModuleWaterLevelBuffers();
+            // COLD ALLOC: ComputeBuffer[64 float4] - local module ambience data for shader StructuredBuffer - owner: BaseModule
+            s_moduleAmbienceDataBuffer = new ComputeBuffer(ModuleWaterLevelShaderCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
+            // COLD ALLOC: ComputeBuffer[64 float4] - local module water/flicker/condensation data for shader StructuredBuffer - owner: BaseModule
+            s_moduleFloodAndFlickerDataBuffer = new ComputeBuffer(ModuleWaterLevelShaderCapacity, sizeof(float) * 4, ComputeBufferType.Structured);
+        }
+
+        private static void ReleaseModuleWaterLevelBuffers()
+        {
+            if (s_moduleAmbienceDataBuffer != null)
+            {
+                s_moduleAmbienceDataBuffer.Release();
+                s_moduleAmbienceDataBuffer = null;
+            }
+
+            if (s_moduleFloodAndFlickerDataBuffer != null)
+            {
+                s_moduleFloodAndFlickerDataBuffer.Release();
+                s_moduleFloodAndFlickerDataBuffer = null;
+            }
+        }
+
+        private static void UploadModuleWaterLevelBuffers()
+        {
+            if (s_moduleAmbienceDataBuffer == null || s_moduleFloodAndFlickerDataBuffer == null)
+                return;
+
+            s_moduleAmbienceDataBuffer.SetData(s_moduleAmbienceData);
+            s_moduleFloodAndFlickerDataBuffer.SetData(s_moduleFloodAndFlickerData);
+            Shader.SetGlobalBuffer(s_ModuleAmbienceDataId, s_moduleAmbienceDataBuffer);
+            Shader.SetGlobalBuffer(s_ModuleWaterLevelsId, s_moduleFloodAndFlickerDataBuffer);
         }
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
@@ -1779,7 +1837,7 @@ namespace Hecton8.Gameplay
             float pitch01 = Mathf.Clamp01(pitchNoise * 0.5f + 0.5f);
             float pitchMin = Mathf.Max(0.1f, lowIntegrityGroanPitchMin);
             float pitchMax = Mathf.Max(pitchMin, lowIntegrityGroanPitchMax);
-            float pitch = Mathf.Lerp(pitchMin, pitchMax, pitch01) * Mathf.Lerp(1f, 0.82f, damage01);
+            float pitch = math.lerp(pitchMin, pitchMax, pitch01) * math.lerp(1f, 0.82f, damage01);
 
             ResolveModuleAmbienceBounds(out Vector3 centerWS, out _);
             ProceduralAudioEvents.RaiseStructuralStressTriggered(centerWS, stress01, pitch);
@@ -2069,7 +2127,7 @@ namespace Hecton8.Gameplay
 
             if (buildCost == null || buildCost.Count == 0)
             {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning(
                     $"[BaseModule] Deconstruct: '{gameObject.name}' has no buildCost data. " +
                     "Destroying without resource refund.", this);
@@ -2217,7 +2275,7 @@ namespace Hecton8.Gameplay
 
             if (worldItemPrefab == null)
             {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning(
                     $"[BaseModule] worldItemPrefab not assigned on '{gameObject.name}'. " +
                     $"Resource hash '{itemHashId}' dropped on the ground but has no world prefab. Lost.",
@@ -2228,7 +2286,7 @@ namespace Hecton8.Gameplay
 
             if (pool == null)
             {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning(
                     "[BaseModule] ObjectPoolManager not available. " +
                     $"Resource hash '{itemHashId}' lost.");
@@ -2731,7 +2789,7 @@ namespace Hecton8.Gameplay
             {
                 CaptureFloodSurfaceDefaults();
                 Vector3 nextLocalPosition = _defaultFloodSurfaceLocalPosition;
-                nextLocalPosition.y = Mathf.Lerp(ResolveFloodSurfaceMinimumLocalY(), ResolveFloodSurfaceMaximumLocalY(), sanitizedFloodLevel01);
+                nextLocalPosition.y = math.lerp(ResolveFloodSurfaceMinimumLocalY(), ResolveFloodSurfaceMaximumLocalY(), sanitizedFloodLevel01);
                 floodSurfacePlane.localPosition = nextLocalPosition;
             }
 
@@ -2766,7 +2824,7 @@ namespace Hecton8.Gameplay
             if (floodSurfacePlane != null)
                 return floodSurfacePlane.position.y;
 
-            float localY = Mathf.Lerp(ResolveFloodSurfaceMinimumLocalY(), ResolveFloodSurfaceMaximumLocalY(), _cachedFloodLevel01);
+            float localY = math.lerp(ResolveFloodSurfaceMinimumLocalY(), ResolveFloodSurfaceMaximumLocalY(), _cachedFloodLevel01);
             return transform.TransformPoint(new Vector3(0f, localY, 0f)).y;
         }
 
@@ -2818,8 +2876,7 @@ namespace Hecton8.Gameplay
                 s_moduleFloodAndFlickerData[i] = new Vector4(0f, 0f, 1f, 0f);
             }
 
-            Shader.SetGlobalVectorArray(s_ModuleAmbienceDataId, s_moduleAmbienceData);
-            Shader.SetGlobalVectorArray(s_ModuleWaterLevelsId, s_moduleFloodAndFlickerData);
+            UploadModuleWaterLevelBuffers();
             Shader.SetGlobalInt(s_ModuleWaterLevelCountId, moduleCount);
             Shader.SetGlobalFloat(s_BaseVoltageId, baseVoltage01);
             Shader.SetGlobalFloat(s_BaseVoltageFlickerSpeedId, baseFlickerSpeed);
@@ -3111,7 +3168,13 @@ namespace Hecton8.Gameplay
             for (int i = 0; i < count; i++)
             {
                 Light l = interiorLights[i];
-                if (l != null && l.enabled != enabled)
+                if (l == null)
+                    continue;
+
+                if (l.shadows != LightShadows.None)
+                    l.shadows = LightShadows.None;
+
+                if (l.enabled != enabled)
                     l.enabled = enabled;
             }
         }
@@ -3152,10 +3215,10 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             if (!_ambientLightsBrownedOut)
-                return Mathf.Lerp(1f, 0f, Mathf.Clamp01(_brownoutTransition01));
+                return math.lerp(1f, 0f, math.saturate(_brownoutTransition01));
 
             float voltage01 = Mathf.Clamp01(_ambientVoltageSupplyRatio / Mathf.Max(0.01f, brownoutActivationVoltageRatio));
-            return Mathf.Lerp(1f, Mathf.Max(Mathf.Clamp01(brownoutMinimumLightIntensityRatio), voltage01), Mathf.Clamp01(_brownoutTransition01));
+            return math.lerp(1f, Mathf.Max(Mathf.Clamp01(brownoutMinimumLightIntensityRatio), voltage01), math.saturate(_brownoutTransition01));
         }
 
         private void AdvanceBrownoutTransition(float dt)
@@ -3205,9 +3268,9 @@ namespace Hecton8.Gameplay
             ConfigureOxygenScrubberHumSource();
             float fadeSeconds = _oxygenHumTarget01 > _oxygenHum01
                 ? 0.25f
-                : Mathf.Max(0.1f, oxygenScrubberHumFailFadeSeconds);
-            float alpha = dt > 0f ? 1f - Mathf.Exp(-dt / fadeSeconds) : 1f;
-            _oxygenHum01 = Mathf.Lerp(_oxygenHum01, _oxygenHumTarget01, alpha);
+                : math.max(0.1f, oxygenScrubberHumFailFadeSeconds);
+            float alpha = dt > 0f ? 1f - math.exp(-dt / fadeSeconds) : 1f;
+            _oxygenHum01 = math.lerp(_oxygenHum01, _oxygenHumTarget01, alpha);
 
             if (_oxygenHum01 <= 0.001f)
             {
@@ -3222,16 +3285,16 @@ namespace Hecton8.Gameplay
                 oxygenScrubberHumSource.Play();
 
             oxygenScrubberHumSource.volume = oxygenScrubberHumVolume * _oxygenHum01;
-            oxygenScrubberHumSource.pitch = Mathf.Lerp(
+            oxygenScrubberHumSource.pitch = math.lerp(
                 ResolveOxygenScrubberHumFailPitch(),
-                Mathf.Max(0.01f, oxygenScrubberHumPoweredPitch),
+                math.max(0.01f, oxygenScrubberHumPoweredPitch),
                 _oxygenHum01);
             _oxygenHumActive = true;
         }
 
         private float ResolveOxygenScrubberHumFailPitch()
         {
-            return Mathf.Clamp(oxygenScrubberHumFailPitch, 0.2f, Mathf.Max(0.2f, oxygenScrubberHumPoweredPitch));
+            return math.clamp(oxygenScrubberHumFailPitch, 0.2f, math.max(0.2f, oxygenScrubberHumPoweredPitch));
         }
 
         /// <summary>
@@ -3734,14 +3797,14 @@ namespace Hecton8.Gameplay
                 if (!interiorTrigger.isTrigger)
                 {
                     interiorTrigger.isTrigger = true;
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[BaseModule] interiorTrigger on '{gameObject.name}' was not set as Trigger. " +
                         "Fixed automatically.", this);
 #endif
                 }
             }
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             else
             {
                 Debug.LogWarning(
@@ -3861,6 +3924,89 @@ namespace Hecton8.Gameplay
             _defaultCollisionDetectionMode = _moduleRigidbody.collisionDetectionMode;
             _defaultInterpolation = _moduleRigidbody.interpolation;
             _moduleBodyDefaultsCaptured = true;
+        }
+
+        public bool TryResolveRepairSnapPoints(
+            Vector3 runtimeHitPoint,
+            out AbsoluteUniversePosition leftHandAup,
+            out AbsoluteUniversePosition rightHandAup,
+            out Quaternion toolRotation)
+        {
+            leftHandAup = default;
+            rightHandAup = default;
+            toolRotation = Quaternion.identity;
+            if (!IsFiniteVector(runtimeHitPoint))
+                return false;
+
+            Transform moduleTransform = transform;
+            Vector3 right = moduleTransform.right;
+            Vector3 up = moduleTransform.up;
+            Vector3 forward = moduleTransform.forward;
+            if (!IsFiniteVector(right) || right.sqrMagnitude <= 0.000001f)
+                right = Vector3.right;
+            else
+                right.Normalize();
+
+            if (!IsFiniteVector(up) || up.sqrMagnitude <= 0.000001f)
+                up = Vector3.up;
+            else
+                up.Normalize();
+
+            if (!IsFiniteVector(forward) || forward.sqrMagnitude <= 0.000001f)
+                forward = Vector3.forward;
+            else
+                forward.Normalize();
+
+            Vector3 handCenter = runtimeHitPoint + up * RepairHandVerticalBiasMeters;
+            Vector3 leftRuntime = handCenter - right * RepairHandHalfSpanMeters;
+            Vector3 rightRuntime = handCenter + right * RepairHandHalfSpanMeters;
+            leftHandAup = AbsoluteUniversePosition.FromRuntimePosition(leftRuntime);
+            rightHandAup = AbsoluteUniversePosition.FromRuntimePosition(rightRuntime);
+            toolRotation = Quaternion.LookRotation(forward, up);
+            return IsFiniteQuaternion(toolRotation);
+        }
+
+        public bool TryResolveKinematicRepairSnap(
+            in Hecton8.Interaction.KinematicRepairTargetProbe probe,
+            out Hecton8.Interaction.KinematicRepairSnapPoint snapPoint)
+        {
+            snapPoint = default;
+            float3 runtimeHit = probe.HitAup.ToRuntimeFloat3();
+            Vector3 runtimeHitPoint = new Vector3(runtimeHit.x, runtimeHit.y, runtimeHit.z);
+            if (!TryResolveRepairSnapPoints(
+                    runtimeHitPoint,
+                    out AbsoluteUniversePosition leftHandAup,
+                    out AbsoluteUniversePosition rightHandAup,
+                    out Quaternion toolRotation))
+            {
+                return false;
+            }
+
+            float3 leftRuntime = leftHandAup.ToRuntimeFloat3();
+            float3 rightRuntime = rightHandAup.ToRuntimeFloat3();
+            Vector3 runtimeAnchor = new Vector3(
+                (leftRuntime.x + rightRuntime.x) * 0.5f,
+                (leftRuntime.y + rightRuntime.y) * 0.5f,
+                (leftRuntime.z + rightRuntime.z) * 0.5f);
+            if (!IsFiniteVector(runtimeAnchor))
+                runtimeAnchor = runtimeHitPoint;
+
+            Vector3 surfaceNormal = IsFiniteVector(probe.HitNormal) && probe.HitNormal.sqrMagnitude > 0.000001f
+                ? probe.HitNormal.normalized
+                : toolRotation * Vector3.forward;
+            snapPoint = new Hecton8.Interaction.KinematicRepairSnapPoint
+            {
+                AnchorAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeAnchor),
+                LeftHandAup = leftHandAup,
+                RightHandAup = rightHandAup,
+                RuntimePosition = runtimeAnchor,
+                SurfaceNormal = surfaceNormal,
+                ToolRotation = toolRotation,
+                HitDistance = math.max(0f, probe.HitDistance),
+                Blend = 1f,
+                ColliderInstanceId = probe.ColliderInstanceId
+            };
+            return true;
         }
 
         internal void SetEmergencyBulkheadLockdown(bool lockedDown)
@@ -4383,9 +4529,9 @@ namespace Hecton8.Gameplay
             float integrityDeficit = 1f - Mathf.Clamp01(integrityState);
             float pressureDelta = socketType switch
             {
-                BaseModuleVfxSocketType.Spark => Mathf.Lerp(1.5f, 3.5f, integrityDeficit),
-                BaseModuleVfxSocketType.Vent => Mathf.Lerp(2.5f, 5.5f, integrityDeficit),
-                _ => Mathf.Lerp(3f, 6f, integrityDeficit)
+                BaseModuleVfxSocketType.Spark => math.lerp(1.5f, 3.5f, integrityDeficit),
+                BaseModuleVfxSocketType.Vent => math.lerp(2.5f, 5.5f, integrityDeficit),
+                _ => math.lerp(3f, 6f, integrityDeficit)
             };
 
             EmitHullBreachJet(new Vector3(localPoint.x, localPoint.y, localPoint.z), pressureDelta);
@@ -4558,7 +4704,7 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             float depthThreat01 = ResolveCinematicDepthThreat01(ResolveExternalDepthMeters());
-            return Mathf.Lerp(cap * 0.35f, cap, depthThreat01);
+            return math.lerp(cap * 0.35f, cap, depthThreat01);
         }
 
         private float ResolveCinematicBreachVortexAcceleration()
@@ -4568,7 +4714,7 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             float depthThreat01 = ResolveCinematicDepthThreat01(ResolveExternalDepthMeters());
-            return Mathf.Lerp(cap * 0.25f, cap * 0.85f, depthThreat01);
+            return math.lerp(cap * 0.25f, cap * 0.85f, depthThreat01);
         }
 
         private float ResolveCinematicDepthThreat01(float depthMeters)

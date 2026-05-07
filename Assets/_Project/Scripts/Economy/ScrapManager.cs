@@ -105,14 +105,14 @@ namespace Hecton8.Economy
             if (!TryResolveRecycleYield(sourceItem, out ResourceStack[] resolvedYield))
                 return false;
 
-            if (!inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(sourceItem.PersistentId), 1))
+            if (!inventory.TryRemoveQuantity(sourceItem.PersistentHashId, 1))
                 return false;
 
             int grantedStackCount = 0;
             if (!GrantYield(inventory, resolvedYield, ref grantedStackCount))
             {
                 RollbackYield(inventory, resolvedYield, grantedStackCount);
-                inventory.TryAddItem(Hecton.Localization.LocHash.Compute(sourceItem.PersistentId), 1);
+                inventory.TryAddItem(sourceItem.PersistentHashId, 1);
                 return false;
             }
 
@@ -227,7 +227,7 @@ namespace Hecton8.Economy
 
                 for (int amountIndex = 0; amountIndex < stack.Amount; amountIndex++)
                 {
-                    if (!inventory.TryAddItem(Hecton.Localization.LocHash.Compute(stack.Item.PersistentId), 1))
+                    if (!inventory.TryAddItem(stack.Item.PersistentHashId, 1))
                         return false;
 
                     grantedStackCount++;
@@ -250,7 +250,7 @@ namespace Hecton8.Economy
                     continue;
 
                 int rollbackAmount = Mathf.Min(stack.Amount, remaining);
-                inventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(stack.Item.PersistentId), rollbackAmount);
+                inventory.TryRemoveQuantity(stack.Item.PersistentHashId, rollbackAmount);
                 remaining -= rollbackAmount;
             }
         }

@@ -1,3 +1,4 @@
+using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.World;
 using UnityEngine;
@@ -89,5 +90,26 @@ namespace Hecton8.Environment
         public WorldPrefabFamilyProfile[] preferredClusterFamilies;
         public WorldPrefabFamilyProfile[] preferredStructureFamilies;
         public WorldPrefabFamilyProfile[] preferredSpawnFamilies;
+
+        private int _familyHashId;
+
+        public int FamilyHashId => _familyHashId;
+
+        private void OnEnable()
+        {
+            RefreshRuntimeHashes();
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            RefreshRuntimeHashes();
+        }
+#endif
+
+        private void RefreshRuntimeHashes()
+        {
+            _familyHashId = LocHash.ComputeAsciiLowerInvariant(familyId);
+        }
     }
 }

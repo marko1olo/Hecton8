@@ -71,6 +71,19 @@ namespace Hecton8.Narrative
         [Tooltip("Proxy-mesh index used by diegetic PDA hologram previews.")]
         [SerializeField] private ushort proxyMeshIndex;
 
+        [Header("Encrypted Fragment Recovery")]
+        [Tooltip("Hash for encrypted fragment bit 0. Zero means this bit is not authored.")]
+        [SerializeField] private uint encryptedFragmentBit0Hash;
+
+        [Tooltip("Hash for encrypted fragment bit 1. Zero means this bit is not authored.")]
+        [SerializeField] private uint encryptedFragmentBit1Hash;
+
+        [Tooltip("Hash for encrypted fragment bit 2. Zero means this bit is not authored.")]
+        [SerializeField] private uint encryptedFragmentBit2Hash;
+
+        [Tooltip("Hash for encrypted fragment bit 3. Zero means this bit is not authored.")]
+        [SerializeField] private uint encryptedFragmentBit3Hash;
+
         /// <summary>
         /// Playback duration using override first, then the resolved localized clip length.
         /// </summary>
@@ -106,12 +119,35 @@ namespace Hecton8.Narrative
         public bool HasVisibleContent => HasPlaybackPayload || HasArchiveSummary;
         public string SafeLogId => string.IsNullOrWhiteSpace(logId) ? "audio_log" : logId;
         public ushort ProxyMeshIndex => proxyMeshIndex;
+        public bool IsFragmentedEncrypted =>
+            encryptedFragmentBit0Hash != 0u ||
+            encryptedFragmentBit1Hash != 0u ||
+            encryptedFragmentBit2Hash != 0u ||
+            encryptedFragmentBit3Hash != 0u;
         public string DisplayTitleOrFallback => localizedDisplayTitle.ResolveOrFallback(FallbackOrDefault(displayTitle, SafeLogId));
         public string AuthorOrFallback => localizedAuthor.ResolveOrFallback(FallbackOrDefault(author, "UNKNOWN"));
         public string SubtitleOrFallback => localizedSubtitleText.ResolveOrFallback(subtitleText);
         public string VisibleSubtitleOrFallback => StripTimecodedSubtitleMarkup(SubtitleOrFallback);
         public string ArchiveSummaryOrFallback => localizedArchiveSummary.ResolveOrFallback(FallbackOrDefault(archiveSummary, "Entry unavailable."));
         public string RecordDateOrFallback => localizedRecordDate.ResolveOrFallback(FallbackOrDefault(recordDate, "DATE UNKNOWN"));
+
+        public bool TryResolveEncryptedFragmentMask(uint fragmentHash, out uint fragmentBitMask)
+        {
+            fragmentBitMask = 0u;
+            if (fragmentHash == 0u)
+                return false;
+
+            if (fragmentHash == encryptedFragmentBit0Hash)
+                fragmentBitMask = 1u << 0;
+            else if (fragmentHash == encryptedFragmentBit1Hash)
+                fragmentBitMask = 1u << 1;
+            else if (fragmentHash == encryptedFragmentBit2Hash)
+                fragmentBitMask = 1u << 2;
+            else if (fragmentHash == encryptedFragmentBit3Hash)
+                fragmentBitMask = 1u << 3;
+
+            return fragmentBitMask != 0u;
+        }
 
         private static string FallbackOrDefault(string value, string fallback)
         {

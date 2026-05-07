@@ -13,9 +13,11 @@ namespace Hecton8.EditorTools
     internal static class HectonArtVramAudit
     {
         private const string MenuPath = "Hecton/Validation/Asset Pipeline/Audit Art VRAM Budget";
+        private const string ComplianceMenuPath = "Hecton/Validation/Asset Pipeline/Audit BC7 POT Compliance";
         private const string ArtRoot = "Assets/_Project/Art";
         private const long WarningThresholdBytes = 1536L * 1024L * 1024L;
         private const int MaxLoggedTextures = 16;
+        private const int MaxLoggedComplianceViolations = 96;
         private const float MipChainMultiplier = 4f / 3f;
 
         internal struct TextureVramEntry
@@ -33,6 +35,13 @@ namespace Hecton8.EditorTools
         {
             AuditResult result = RunAudit();
             EmitResult(result);
+        }
+
+        [MenuItem(ComplianceMenuPath, priority = 198)]
+        private static void RunComplianceFromMenu()
+        {
+            TextureComplianceResult result = RunComplianceAudit();
+            EmitComplianceResult(result);
         }
 
         internal static AuditResult RunAudit()
@@ -60,6 +69,52 @@ namespace Hecton8.EditorTools
             entries.Sort(static (left, right) => right.EstimatedBytes.CompareTo(left.EstimatedBytes));
 
             return new AuditResult(totalEstimatedBytes, entries.Count, entries);
+        }
+
+        internal static TextureComplianceResult RunComplianceAudit()
+        {
+            string[] textureGuids = AssetDatabase.FindAssets("t:Texture", new[] { ArtRoot });
+            List<string> violations = new List<string>(Mathf.Min(textureGuids.Length, MaxLoggedComplianceViolations)); // COLD ALLOC: List<string>[textureCount] - editor-only BC format/POT report rows - owner: HectonArtVramAudit
+            int scanned = 0;
+            int nonPowerOfTwoCount = 0;
+            int formatViolationCount = 0;
+
+            for (int i = 0; i < textureGuids.Length; i++)
+            {
+                string assetPath = AssetDatabase.GUIDToAssetPath(textureGuids[i]);
+                if (string.IsNullOrEmpty(assetPath))
+                    continue;
+
+                TextureImporter importer = AssetImporter.GetAtPath(assetPath) as TextureImporter;
+                if (importer == null)
+                    continue;
+
+                scanned++;
+                importer.GetSourceTextureWidthAndHeight(out int width, out int height);
+                TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
+                string formatLabel = ResolveFormatLabel(importer, standalone);
+                bool isNormalMap = IsNormalMap(assetPath, importer);
+                bool nonPowerOfTwo = !IsPowerOfTwo(width) || !IsPowerOfTwo(height);
+                bool formatViolation = isNormalMap
+                    ? !formatLabel.Contains("BC5")
+                    : !formatLabel.Contains("BC7");
+
+                if (nonPowerOfTwo)
+                    nonPowerOfTwoCount++;
+                if (formatViolation)
+                    formatViolationCount++;
+
+                if ((nonPowerOfTwo || formatViolation) && violations.Count < MaxLoggedComplianceViolations)
+                {
+                    string expectedFormat = isNormalMap ? "BC5(normal)" : "BC7";
+                    violations.Add(
+                        $"{assetPath} | {width}x{height} | {formatLabel} | expected={expectedFormat}" +
+                        $"{(nonPowerOfTwo ? " | nonPOT" : string.Empty)}" +
+                        $"{(formatViolation ? " | wrongFormat" : string.Empty)}");
+                }
+            }
+
+            return new TextureComplianceResult(scanned, nonPowerOfTwoCount, formatViolationCount, violations);
         }
 
         private static TextureVramEntry BuildEntry(string assetPath, TextureImporter importer, Texture texture)
@@ -95,6 +150,31 @@ namespace Hecton8.EditorTools
             return Mathf.Min(clampedImportedDimension, maxSize);
         }
 
+        private static string ResolveFormatLabel(TextureImporter importer, TextureImporterPlatformSettings platformSettings)
+        {
+            if (platformSettings != null && platformSettings.overridden)
+                return platformSettings.format.ToString();
+
+            return importer.textureCompression.ToString();
+        }
+
+        private static bool IsNormalMap(string assetPath, TextureImporter importer)
+        {
+            if (importer.textureType == TextureImporterType.NormalMap)
+                return true;
+
+            string lowerPath = assetPath.ToLowerInvariant();
+            return lowerPath.Contains("normal") ||
+                   lowerPath.Contains("_n.") ||
+                   lowerPath.Contains("_n_") ||
+                   lowerPath.Contains("nrm");
+        }
+
+        private static bool IsPowerOfTwo(int value)
+        {
+            return value > 0 && (value & (value - 1)) == 0;
+        }
+
         private static void EmitResult(AuditResult result)
         {
             float totalMegabytes = result.TotalEstimatedBytes / (1024f * 1024f);
@@ -118,6 +198,23 @@ namespace Hecton8.EditorTools
             }
         }
 
+        private static void EmitComplianceResult(TextureComplianceResult result)
+        {
+            string header =
+                $"[HectonArtVramAudit] BC7/POT compliance: scanned={result.ScannedTextureCount}, " +
+                $"nonPOT={result.NonPowerOfTwoCount}, formatViolations={result.FormatViolationCount}, " +
+                $"totalViolations={result.TotalViolationCount}.";
+
+            if (result.TotalViolationCount > 0)
+                Debug.LogWarning(header);
+            else
+                Debug.Log(header);
+
+            int loggedCount = Mathf.Min(result.Violations.Count, MaxLoggedComplianceViolations);
+            for (int i = 0; i < loggedCount; i++)
+                Debug.LogWarning($"[HectonArtVramAudit] Texture compliance violation #{i + 1}: {result.Violations[i]}");
+        }
+
         internal readonly struct AuditResult
         {
             public long TotalEstimatedBytes { get; }
@@ -129,6 +226,27 @@ namespace Hecton8.EditorTools
                 TotalEstimatedBytes = totalEstimatedBytes;
                 TextureCount = textureCount;
                 Entries = entries;
+            }
+        }
+
+        internal readonly struct TextureComplianceResult
+        {
+            public int ScannedTextureCount { get; }
+            public int NonPowerOfTwoCount { get; }
+            public int FormatViolationCount { get; }
+            public int TotalViolationCount => NonPowerOfTwoCount + FormatViolationCount;
+            public List<string> Violations { get; }
+
+            public TextureComplianceResult(
+                int scannedTextureCount,
+                int nonPowerOfTwoCount,
+                int formatViolationCount,
+                List<string> violations)
+            {
+                ScannedTextureCount = scannedTextureCount;
+                NonPowerOfTwoCount = nonPowerOfTwoCount;
+                FormatViolationCount = formatViolationCount;
+                Violations = violations;
             }
         }
     }

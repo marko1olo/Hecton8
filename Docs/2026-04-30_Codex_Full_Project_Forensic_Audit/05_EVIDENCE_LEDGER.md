@@ -3,6 +3,10 @@
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
+## Permanent Hallucination Guard
+
+Any status of `VERIFIED` without accompanying MCP Console `0`-error logs or PlayMode metrics is considered a hallucination and rejected by the CTO.
+
 ## 2026-05-04 Supersession Note
 
 The project-surface counters below were refreshed on May 2. Current global source/doc authority is `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` plus `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`: `1118` first-party `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, and current post-repair guard scan exit `0`. Treat the detailed broad grep counters below as historical until rerun as a full evidence-ledger pass.

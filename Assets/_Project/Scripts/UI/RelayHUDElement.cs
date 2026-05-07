@@ -130,7 +130,11 @@ namespace Hecton8.UI
         /// <summary>Returns the latest relay marker visibility state for diagnostics.</summary>
         public string DescribeDebugState()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             return _lastVisibilityState + " distance=" + _lastObservedDistance.ToString("0.0");
+#else
+            return string.Empty;
+#endif
         }
 
         /// <inheritdoc />
@@ -159,14 +163,18 @@ namespace Hecton8.UI
 
             Vector3 playerPosition = _playerTransform.position;
             Vector3 relayPosition = routeTarget.transform.position;
-            float distance = Vector3.Distance(playerPosition, relayPosition);
-            _lastObservedDistance = distance;
-            if (distance > maxDisplayDistance)
+            double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
+            double distanceSq = ResolveAupDistanceSq(playerPosition, relayPosition);
+            if (distanceSq > maxDisplayDistanceSq)
             {
+                _lastObservedDistance = maxDisplayDistance + 1f;
                 _lastVisibilityState = RelayMarkerVisibilityState.Hidden_TooFar;
                 SetVisible(false);
                 return;
             }
+
+            float distance = distanceSq > 0d ? (float)Math.Sqrt(distanceSq) : 0f;
+            _lastObservedDistance = distance;
 
             Vector3 screenPosition = _mainCamera.WorldToScreenPoint(relayPosition);
             bool behindCamera = screenPosition.z < 0f;
@@ -257,6 +265,13 @@ namespace Hecton8.UI
             }
 
             return _playerTransform != null;
+        }
+
+        private static double ResolveAupDistanceSq(Vector3 playerPosition, Vector3 relayPosition)
+        {
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            AbsoluteUniversePosition relayAup = AbsoluteUniversePosition.FromRuntimePosition(relayPosition);
+            return AbsoluteUniversePosition.DistanceSq(in playerAup, in relayAup);
         }
 
         private void UpdateLabel(string relayLabel)

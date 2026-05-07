@@ -145,6 +145,19 @@ namespace Hecton8.Core
             instance.UpsertLink(activeBatch, linkId, descriptor);
         }
 
+        internal static void SubmitRelaySpline(long linkId, SplineDescriptor descriptor, bool hasPower, Color poweredColor, Color unpoweredColor)
+        {
+            ConnectionSplineBatchRenderer instance = ResolveInstance();
+            instance.EnsureRuntimeRegistrations();
+            instance._batches[(int)BatchKind.RelayPowered].Color = poweredColor;
+            instance._batches[(int)BatchKind.RelayUnpowered].Color = unpoweredColor;
+
+            BatchState activeBatch = instance._batches[hasPower ? (int)BatchKind.RelayPowered : (int)BatchKind.RelayUnpowered];
+            BatchState inactiveBatch = instance._batches[hasPower ? (int)BatchKind.RelayUnpowered : (int)BatchKind.RelayPowered];
+            instance.RemoveLink(inactiveBatch, linkId);
+            instance.UpsertLink(activeBatch, linkId, descriptor);
+        }
+
         public static void RemoveRelayLink(long linkId)
         {
             if (_instance == null)
@@ -397,7 +410,7 @@ namespace Hecton8.Core
             {
                 descriptor.Flags |= PipeRenderFlags.MaskRuptured;
                 if (descriptor.RuptureStartTimeSeconds <= 0f)
-                    descriptor.RuptureStartTimeSeconds = Mathf.Max(0.001f, Time.time);
+                    descriptor.RuptureStartTimeSeconds = math.max(0.001f, Time.time);
             }
             else
             {

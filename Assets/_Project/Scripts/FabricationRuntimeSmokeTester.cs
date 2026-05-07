@@ -73,7 +73,7 @@ namespace Hecton8.Debugging
                 int beforeCount = recipe.resultItem != null ? _inventory.CountTotal(Hecton.Localization.LocHash.Compute(recipe.resultItem.PersistentId)) : 0;
 
                 fabricator.Interact(transform);
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
 
                 if (cancellationToken.IsCancellationRequested || this == null)
                     return;
@@ -122,7 +122,7 @@ namespace Hecton8.Debugging
         {
             float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
             while (!cancellationToken.IsCancellationRequested && Time.realtimeSinceStartup < deadline)
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
         }
 
         private Fabricator FindTargetFabricator()

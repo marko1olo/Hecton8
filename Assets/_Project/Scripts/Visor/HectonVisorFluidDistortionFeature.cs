@@ -1,6 +1,7 @@
 using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -18,6 +19,12 @@ namespace Hecton8.Visor
     /// </summary>
     public sealed class HectonVisorFluidDistortionFeature : ScriptableRendererFeature
     {
+        private const float ThermalDistortionCullSpeedMetersPerSecond = 15f;
+        private const float ThermalDistortionCullSpeedMetersPerSecondSq = ThermalDistortionCullSpeedMetersPerSecond * ThermalDistortionCullSpeedMetersPerSecond;
+        private const float HullStressVisorContributionStart01 = 0.65f;
+        private const float HullStressVisorContributionInvRange = 1f / (1f - HullStressVisorContributionStart01);
+        private const float VisorSpeedSquaredToShader01 = 0.0016f;
+
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader";
         private const string BlueNoiseAssetPath = "Assets/_Project/Art/TEXTURES/Utility/TX_BlueNoise_256_R8.png";
@@ -71,7 +78,7 @@ namespace Hecton8.Visor
 
         private readonly struct RuntimeState
         {
-            public RuntimeState(float wetness, float hullStress, Vector3 localVelocity, float ambientLight01, float effectIntensity, float rainIntensity)
+            public RuntimeState(float wetness, float hullStress, Vector3 localVelocity, float ambientLight01, float effectIntensity, float rainIntensity, float thermalMotionCull01)
             {
                 Wetness = wetness;
                 HullStress = hullStress;
@@ -79,6 +86,7 @@ namespace Hecton8.Visor
                 AmbientLight01 = ambientLight01;
                 EffectIntensity = effectIntensity;
                 RainIntensity = rainIntensity;
+                ThermalMotionCull01 = thermalMotionCull01;
             }
 
             public float Wetness { get; }
@@ -87,6 +95,7 @@ namespace Hecton8.Visor
             public float AmbientLight01 { get; }
             public float EffectIntensity { get; }
             public float RainIntensity { get; }
+            public float ThermalMotionCull01 { get; }
         }
 
         private sealed class VisorFluidPass : ScriptableRenderPass
@@ -201,8 +210,10 @@ namespace Hecton8.Visor
                 material.SetFloat(ShaderConstants.ForwardStretchStrengthId, Mathf.Clamp01(settings.forwardStretchStrength));
                 material.SetFloat(ShaderConstants.EdgeStreakStrengthId, Mathf.Clamp01(settings.edgeStreakStrength));
                 material.SetFloat(ShaderConstants.EdgeFadeExponentId, Mathf.Max(0.1f, settings.edgeFadeExponent));
-                material.SetFloat(ShaderConstants.SpeedId, Mathf.Clamp01(localVelocity.magnitude * 0.04f));
+                float speed01 = math.saturate(localVelocity.sqrMagnitude * VisorSpeedSquaredToShader01);
+                material.SetFloat(ShaderConstants.SpeedId, speed01);
                 material.SetVector(ShaderConstants.LocalVelocityId, new Vector4(lateralVelocity, verticalVelocity, forwardVelocity, 0f));
+                material.SetFloat(ShaderConstants.ThermalMotionCullId, runtimeState.ThermalMotionCull01);
                 material.SetFloat(ShaderConstants.AmbientLightId, runtimeState.AmbientLight01);
                 material.SetFloat(ShaderConstants.DustStrengthId, Mathf.Clamp01(settings.dustStrength));
                 material.SetFloat(ShaderConstants.AmbientDustResponseId, Mathf.Max(0f, settings.ambientDustResponse));
@@ -228,6 +239,7 @@ namespace Hecton8.Visor
             internal static readonly int EdgeFadeExponentId = Shader.PropertyToID("_HectonVisorFluidEdgeFadeExponent");
             internal static readonly int SpeedId = Shader.PropertyToID("_HectonVisorFluidSpeed");
             internal static readonly int LocalVelocityId = Shader.PropertyToID("_HectonVisorFluidLocalVelocity");
+            internal static readonly int ThermalMotionCullId = Shader.PropertyToID("_HectonThermalDistortionMotionCull");
             internal static readonly int AmbientLightId = Shader.PropertyToID("_HectonVisorFluidAmbientLight");
             internal static readonly int DustStrengthId = Shader.PropertyToID("_HectonVisorFluidDustStrength");
             internal static readonly int AmbientDustResponseId = Shader.PropertyToID("_HectonVisorFluidAmbientDustResponse");
@@ -305,19 +317,35 @@ namespace Hecton8.Visor
             float wetness = playerMovement != null ? Mathf.Clamp01(playerMovement.CurrentWetLensIntensity01) : 0f;
             float hullStress = playerMovement != null ? Mathf.Clamp01(playerMovement.CurrentHullStress01) : 0f;
             float ambientLight01 = ResolveAmbientLight01();
-            float hullContribution = Mathf.Clamp01(
-                Mathf.InverseLerp(0.65f, 1f, hullStress) * Mathf.Clamp01(settings.hullStressContribution));
-            float dustContribution = Mathf.Clamp01(ambientLight01 * Mathf.Clamp01(settings.dustStrength) * Mathf.Max(0f, settings.ambientDustResponse));
-            float effectIntensity = Mathf.Clamp01(Mathf.Max(Mathf.Max(wetness, hullContribution), dustContribution));
+            float hullContribution = math.saturate(
+                math.saturate((hullStress - HullStressVisorContributionStart01) * HullStressVisorContributionInvRange) *
+                math.saturate(settings.hullStressContribution));
+            float dustContribution = math.saturate(ambientLight01 * math.saturate(settings.dustStrength) * math.max(0f, settings.ambientDustResponse));
+            float effectIntensity = math.saturate(math.max(math.max(wetness, hullContribution), dustContribution));
             float rainIntensity = Mathf.Clamp01(Shader.GetGlobalFloat(ShaderConstants.RainIntensityId));
             if (effectIntensity <= 0.001f && rainIntensity <= 0.001f)
                 return false;
 
             Vector3 localVelocity = playerMovement != null
-                ? playerCamera.transform.InverseTransformDirection(playerMovement.InterpolatedLinearVelocity)
+                ? ResolveCameraLocalVelocity(playerCamera.transform, playerMovement.InterpolatedLinearVelocity)
                 : Vector3.zero;
-            runtimeState = new RuntimeState(wetness, hullStress, localVelocity, ambientLight01, effectIntensity, rainIntensity);
+            float thermalMotionCull01 = localVelocity.sqrMagnitude > ThermalDistortionCullSpeedMetersPerSecondSq ? 1f : 0f;
+            runtimeState = new RuntimeState(wetness, hullStress, localVelocity, ambientLight01, effectIntensity, rainIntensity, thermalMotionCull01);
             return true;
+        }
+
+        private static Vector3 ResolveCameraLocalVelocity(Transform cameraTransform, Vector3 worldVelocity)
+        {
+            if (cameraTransform == null)
+                return Vector3.zero;
+
+            Vector3 cameraRight = cameraTransform.right;
+            Vector3 cameraUp = cameraTransform.up;
+            Vector3 cameraForward = cameraTransform.forward;
+            return new Vector3(
+                Vector3.Dot(worldVelocity, cameraRight),
+                Vector3.Dot(worldVelocity, cameraUp),
+                Vector3.Dot(worldVelocity, cameraForward));
         }
 
         private static float ResolveAmbientLight01()

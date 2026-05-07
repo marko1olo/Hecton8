@@ -1,5 +1,6 @@
 # Flora Doc Supersession Log
 Date: 2026-04-29
+Status: PENDING VERIFICATION
 
 ## Scope
 

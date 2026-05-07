@@ -25,9 +25,9 @@ namespace Hecton8.Core
             (1u << 9) |
             (1u << 10);
 
-        /// <summary>Compile-time 20-bit renderer-safe all-project-layers mask.</summary>
+        /// <summary>Compile-time unsigned mask for all populated project layers.</summary>
         public const uint AllDefinedProjectRenderingLayerMaskValue =
-            (1u << 20) - 1u;
+            (1u << 23) - 1u;
 
         /// <summary>No Unity layers.</summary>
         public static readonly int NoLayers = 0;
@@ -91,6 +91,15 @@ namespace Hecton8.Core
 
         /// <summary>Construction socket layer index.</summary>
         public static readonly int Sockets = 19;
+
+        /// <summary>Brine toxicity gameplay layer index.</summary>
+        public static readonly int BrineToxicity = 20;
+
+        /// <summary>Async voxel proxy collider layer index.</summary>
+        public static readonly int VoxelProxy = 21;
+
+        /// <summary>Combined player vehicle collision layer index.</summary>
+        public static readonly int PlayerVehicle = 22;
 
         /// <summary>Strict authoring mask requested for data-template sanitation.</summary>
         public static readonly int DataTemplateAuthoringMask = DataTemplateAuthoringMaskValue;
@@ -164,6 +173,15 @@ namespace Hecton8.Core
         /// <summary>Construction socket collision/query mask.</summary>
         public static readonly int SocketsLayerMask = 1 << Sockets;
 
+        /// <summary>Brine toxicity collision/query mask.</summary>
+        public static readonly int BrineToxicityLayerMask = 1 << BrineToxicity;
+
+        /// <summary>Async voxel proxy collision/query mask.</summary>
+        public static readonly int VoxelProxyLayerMask = 1 << VoxelProxy;
+
+        /// <summary>Combined player vehicle collision/query mask.</summary>
+        public static readonly int PlayerVehicleLayerMask = 1 << PlayerVehicle;
+
         /// <summary>Strict base-building surface mask used by construction raycasts.</summary>
         public static readonly int ConstructionSurfaceLayerMask =
             BaseModuleLayerMask |
@@ -190,7 +208,7 @@ namespace Hecton8.Core
             VoxelCaveLayerMask |
             DebrisLayerMask;
 
-        /// <summary>All populated project layers, capped to Unity's 20-bit rendering-layer ceiling.</summary>
+        /// <summary>All populated project layers, capped to the explicitly authored project layer set.</summary>
         public static readonly int AllDefinedProjectLayersMask =
             (1 << 0) |
             (1 << 1) |
@@ -211,20 +229,26 @@ namespace Hecton8.Core
             (1 << 16) |
             (1 << 17) |
             (1 << 18) |
-            (1 << 19);
+            (1 << 19) |
+            (1 << 20) |
+            (1 << 21) |
+            (1 << 22);
 
         /// <summary>All populated project layers except Ignore Raycast.</summary>
         public static readonly int DefaultRaycastLayerMask =
-            AllDefinedProjectLayersMask & ~IgnoreRaycastLayerMask;
+            AllDefinedProjectLayersMask &
+            ~IgnoreRaycastLayerMask &
+            ~VoxelProxyLayerMask;
 
         /// <summary>Scene/render graph world layers, excluding UI and post-process presentation layers.</summary>
         public static readonly int RenderGraphWorldLayerMask =
             AllDefinedProjectLayersMask &
             ~UILayerMask &
             ~HudInternalLayerMask &
-            ~PostProcessLayerMask;
+            ~PostProcessLayerMask &
+            ~VoxelProxyLayerMask;
 
-        /// <summary>Twenty-bit renderer-safe mask for all populated project rendering layers.</summary>
+        /// <summary>Unsigned mask for all populated project rendering layers.</summary>
         public static readonly uint AllDefinedProjectRenderingLayerMask = AllDefinedProjectRenderingLayerMaskValue;
 
         /// <summary>Returns true when a serialized Unity LayerMask represents Everything.</summary>

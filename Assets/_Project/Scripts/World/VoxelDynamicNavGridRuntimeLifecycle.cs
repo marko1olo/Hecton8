@@ -7,10 +7,27 @@ namespace Hecton8.World
     /// Unity lifecycle bridge for the static voxel navgrid runtime native containers.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class VoxelDynamicNavGridRuntimeLifecycle : MonoBehaviour
+    public sealed class VoxelDynamicNavGridRuntimeLifecycle : MonoBehaviour, ISlowTickable
     {
+        private bool _registeredSlowTick;
+
+        private void OnEnable()
+        {
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredSlowTick = true;
+        }
+
         private void OnDisable()
         {
+            if (_registeredSlowTick)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredSlowTick = false;
+            }
+
             VoxelDynamicNavGridRuntime.DisposeAll();
         }
 
@@ -18,6 +35,11 @@ namespace Hecton8.World
         {
             VoxelDynamicNavGridRuntime.DisposeAll();
             VoxelDynamicNavGridRuntime.ClearLifecycleOwner(this);
+        }
+
+        public void SlowTick()
+        {
+            VoxelDynamicNavGridRuntime.TickDeferredDirtyVolumes();
         }
 
 #if UNITY_EDITOR

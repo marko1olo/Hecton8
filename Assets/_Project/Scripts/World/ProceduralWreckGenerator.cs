@@ -122,10 +122,6 @@ namespace Hecton8.World
         public Mesh DetailMesh;
         /// <summary>Filtered merged mesh containing only Clutter-tier modules for distant fill.</summary>
         public Mesh ClutterMesh;
-        /// <summary>Single merged damage decal mesh projected onto the structural surface.</summary>
-        public Mesh DamageDecalMesh;
-        /// <summary>Number of damage decal quads written into the decal mesh.</summary>
-        public int DamageDecalCount;
         /// <summary>Lightweight axis-aligned proxy mesh used for NavMesh baking and collision.</summary>
         public Mesh ProxyMesh;
         /// <summary>NavMeshData submitted to the async NavMesh builder. Null when navigation is disabled.</summary>
@@ -269,24 +265,6 @@ namespace Hecton8.World
 
     [StructLayout(LayoutKind.Sequential)]
     internal struct WreckMergedVertex
-    {
-        public float3 Position;
-        public float3 Normal;
-        public float2 UV;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct WreckDamageDecalStamp
-    {
-        public float3 Center;
-        public float3x3 Orientation;
-        public float2 HalfExtents;
-        public float2 UvMin;
-        public float2 UvMax;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    internal struct WreckDamageDecalVertex
     {
         public float3 Position;
         public float3 Normal;
@@ -458,59 +436,12 @@ namespace Hecton8.World
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    internal struct BuildDamageDecalMeshJob : IJobParallelFor
-    {
-        [ReadOnly] public NativeArray<WreckDamageDecalStamp> Stamps;
-        [NativeDisableParallelForRestriction] public NativeArray<WreckDamageDecalVertex> Vertices;
-        [NativeDisableParallelForRestriction] public NativeArray<uint> Indices;
-
-        public void Execute(int index)
-        {
-            WreckDamageDecalStamp stamp = Stamps[index];
-            float3 right = stamp.Orientation.c0 * stamp.HalfExtents.x;
-            float3 up = stamp.Orientation.c1 * stamp.HalfExtents.y;
-            float3 normal = stamp.Orientation.c2;
-
-            int vertexBase = index * 4;
-            int indexBase = index * 6;
-
-            Vertices[vertexBase + 0] = CreateVertex(stamp.Center - right - up, normal, new float2(stamp.UvMin.x, stamp.UvMin.y));
-            Vertices[vertexBase + 1] = CreateVertex(stamp.Center + right - up, normal, new float2(stamp.UvMax.x, stamp.UvMin.y));
-            Vertices[vertexBase + 2] = CreateVertex(stamp.Center + right + up, normal, new float2(stamp.UvMax.x, stamp.UvMax.y));
-            Vertices[vertexBase + 3] = CreateVertex(stamp.Center - right + up, normal, new float2(stamp.UvMin.x, stamp.UvMax.y));
-
-            Indices[indexBase + 0] = (uint)(vertexBase + 0);
-            Indices[indexBase + 1] = (uint)(vertexBase + 2);
-            Indices[indexBase + 2] = (uint)(vertexBase + 1);
-            Indices[indexBase + 3] = (uint)(vertexBase + 0);
-            Indices[indexBase + 4] = (uint)(vertexBase + 3);
-            Indices[indexBase + 5] = (uint)(vertexBase + 2);
-        }
-
-        private static WreckDamageDecalVertex CreateVertex(float3 position, float3 normal, float2 uv)
-        {
-            if (!math.all(math.isfinite(position)))
-                position = float3.zero;
-
-            if (!math.all(math.isfinite(normal)))
-                normal = new float3(0f, 1f, 0f);
-
-            return new WreckDamageDecalVertex
-            {
-                Position = position,
-                Normal = normal,
-                UV = uv
-            };
-        }
-    }
-
-    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BuildWreckRenderPayloadJob : IJobParallelFor
     {
         [ReadOnly] public NativeArray<WreckModulePlacement> Placements;
-        [NativeDisableParallelForRestriction] public NativeArray<Matrix4x4> WorldMatrices;
-        [NativeDisableParallelForRestriction] public NativeArray<byte> ModuleIds;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Ages;
+        public NativeArray<Matrix4x4> WorldMatrices;
+        public NativeArray<byte> ModuleIds;
+        public NativeArray<float> Ages;
         public AbsoluteUniversePosition CenterAup;
         public float3 RuntimeOrigin;
         public float ScatterRadiusMeters;
@@ -542,21 +473,40 @@ namespace Hecton8.World
         {
             float safeRadius = math.max(0f, radiusMeters);
             float safeVertical = math.max(0f, verticalMeters);
+            float safeExtent = safeRadius * 0.7f;
             hash = Mix(hash ^ 0x6D2B79F5u);
-            float angle = HashToUnitFloat(hash) * math.PI * 2f;
+            float horizontalX = (HashToUnitFloat(hash) * 2f - 1f) * safeExtent;
             hash = Mix(hash ^ 0x9E3779B9u);
-            float radius = math.sqrt(HashToUnitFloat(hash)) * safeRadius;
+            float horizontalZ = (HashToUnitFloat(hash) * 2f - 1f) * safeExtent;
             hash = Mix(hash ^ 0xBB67AE85u);
             float vertical = (HashToUnitFloat(hash) * 2f - 1f) * safeVertical;
-            return new float3(math.cos(angle) * radius, vertical, math.sin(angle) * radius);
+            return new float3(horizontalX, vertical, horizontalZ);
         }
 
         private static quaternion ResolveScatterRotation(uint hash, float yawRadians)
         {
             float safeYaw = math.max(0f, yawRadians);
+            if (safeYaw <= 0f)
+                return quaternion.identity;
+
             hash = Mix(hash ^ 0x3C6EF372u);
-            float yaw = (HashToUnitFloat(hash) * 2f - 1f) * safeYaw;
-            return quaternion.RotateY(yaw);
+            return ResolveCardinalYaw(hash);
+        }
+
+        private static quaternion ResolveCardinalYaw(uint hash)
+        {
+            const float HalfTurnSin = 0.70710677f;
+            switch (hash & 3u)
+            {
+                case 0u:
+                    return quaternion.identity;
+                case 1u:
+                    return new quaternion(0f, HalfTurnSin, 0f, HalfTurnSin);
+                case 2u:
+                    return new quaternion(0f, 1f, 0f, 0f);
+                default:
+                    return new quaternion(0f, -HalfTurnSin, 0f, HalfTurnSin);
+            }
         }
 
         private static uint ComputeInstanceHash(
@@ -626,9 +576,9 @@ namespace Hecton8.World
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     internal struct BuildWreckScatterMatricesJob : IJobParallelFor
     {
-        [NativeDisableParallelForRestriction] public NativeArray<Matrix4x4> WorldMatrices;
-        [NativeDisableParallelForRestriction] public NativeArray<byte> ModuleIds;
-        [NativeDisableParallelForRestriction] public NativeArray<float> Ages;
+        public NativeArray<Matrix4x4> WorldMatrices;
+        public NativeArray<byte> ModuleIds;
+        public NativeArray<float> Ages;
         public AbsoluteUniversePosition CenterAup;
         public float3 RuntimeOrigin;
         public int ModuleCount;
@@ -660,25 +610,40 @@ namespace Hecton8.World
         {
             float safeRadius = math.max(0f, radiusMeters);
             float safeVertical = math.max(0f, verticalMeters);
+            float safeExtent = safeRadius * 0.7f;
             hash = Mix(hash ^ 0x6D2B79F5u);
-            float angle = HashToUnitFloat(hash) * math.PI * 2f;
+            float horizontalX = (HashToUnitFloat(hash) * 2f - 1f) * safeExtent;
             hash = Mix(hash ^ 0x9E3779B9u);
-            float radius = math.sqrt(HashToUnitFloat(hash)) * safeRadius;
+            float horizontalZ = (HashToUnitFloat(hash) * 2f - 1f) * safeExtent;
             hash = Mix(hash ^ 0xBB67AE85u);
             float vertical = (HashToUnitFloat(hash) * 2f - 1f) * safeVertical;
-            return new float3(math.cos(angle) * radius, vertical, math.sin(angle) * radius);
+            return new float3(horizontalX, vertical, horizontalZ);
         }
 
         private static quaternion ResolveScatterRotation(uint hash, float yawRadians)
         {
             float safeYaw = math.max(0f, yawRadians);
+            if (safeYaw <= 0f)
+                return quaternion.identity;
+
             hash = Mix(hash ^ 0x3C6EF372u);
-            float yaw = (HashToUnitFloat(hash) * 2f - 1f) * safeYaw;
-            hash = Mix(hash ^ 0x510E527Fu);
-            float pitch = (HashToUnitFloat(hash) * 2f - 1f) * (safeYaw * 0.23f);
-            hash = Mix(hash ^ 0x1F83D9ABu);
-            float roll = (HashToUnitFloat(hash) * 2f - 1f) * (safeYaw * 0.35f);
-            return math.mul(quaternion.RotateY(yaw), math.mul(quaternion.RotateX(pitch), quaternion.RotateZ(roll)));
+            return ResolveCardinalYaw(hash);
+        }
+
+        private static quaternion ResolveCardinalYaw(uint hash)
+        {
+            const float HalfTurnSin = 0.70710677f;
+            switch (hash & 3u)
+            {
+                case 0u:
+                    return quaternion.identity;
+                case 1u:
+                    return new quaternion(0f, HalfTurnSin, 0f, HalfTurnSin);
+                case 2u:
+                    return new quaternion(0f, 1f, 0f, 0f);
+                default:
+                    return new quaternion(0f, -HalfTurnSin, 0f, HalfTurnSin);
+            }
         }
 
         private static float ResolveScale(uint hash, float minScale, float maxScale)
@@ -686,7 +651,8 @@ namespace Hecton8.World
             float safeMin = math.max(0.05f, minScale);
             float safeMax = math.max(safeMin, maxScale);
             hash = Mix(hash ^ 0xC2B2AE35u);
-            return math.lerp(safeMin, safeMax, HashToUnitFloat(hash));
+            float bandStep = (safeMax - safeMin) * 0.33333334f;
+            return safeMin + bandStep * (hash & 3u);
         }
 
         private static uint ComputeInstanceHash(
@@ -769,7 +735,7 @@ namespace Hecton8.World
     /// Deterministic wave-function-collapse wreck generator operating in absolute-universe space.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ProceduralWreckGenerator : MonoBehaviour, IProceduralGenerator
+    public sealed class ProceduralWreckGenerator : MonoBehaviour, IProceduralGenerator, IUpdatable
     {
         private const int MaxModuleDefinitions = 16;
         private const byte UncollapsedModuleId = byte.MaxValue;
@@ -790,6 +756,7 @@ namespace Hecton8.World
         private const int MaxEditorPreviewCellBudget = 256;
         private const uint FallbackSectionSalt = 0xA511E9B3u;
         private const float WreckSolveTelemetryThresholdMs = 0.2f;
+        private const int MaxPendingLootSpawns = 8;
         private const uint WreckSolveBudgetWarningHash = 0x57534C56u; // WSLV
         private const uint WreckBrgContextHash = 0x57425247u; // WBRG
         private static readonly WreckSiteVoronoiGateParameters DefaultWreckSiteGateParameters =
@@ -807,6 +774,15 @@ namespace Hecton8.World
                 IslandJunctionThreshold = 0.58f,
                 Seed = HectonSandboxAbyssalShelfMath.CombineWorldSeed(880031u, 0)
             };
+
+        private struct PendingWreckLootSpawn
+        {
+            public GameObject Prefab;
+            public Hecton8.Items.ItemData ItemData;
+            public Vector3 Position;
+            public Quaternion Rotation;
+            public int Quantity;
+        }
 
         [Header("WFC")]
         [SerializeField, Range(4, 32)]
@@ -937,41 +913,12 @@ namespace Hecton8.World
 
         [Header("Collision Proxy")]
         [SerializeField]
-        [Tooltip("Prewarmed pooled prefab with a BoxCollider or CapsuleCollider trigger covering the wreck center.")]
+        [Tooltip("Prewarmed pooled prefab with exactly one BoxCollider trigger covering the wreck center.")]
         private GameObject wreckCollisionProxyPrefab;
 
         [SerializeField]
         [Tooltip("Legacy nav proxy mesh used only by the non-BRG fallback path.")]
         private Mesh wreckCollisionProxyMesh;
-
-        [Header("Damage Decals")]
-        [SerializeField]
-        [Tooltip("True when the generator should emit a single merged damage decal mesh derived from baked source normals.")]
-        private bool buildDamageDecalMesh = true;
-
-        [SerializeField, Range(0, 64)]
-        [Tooltip("Hard cap for generated wreck damage decals. Zero disables decal generation.")]
-        private int maxDamageDecals = 24;
-
-        [SerializeField, Min(0.05f)]
-        [Tooltip("Base half-width in meters for each generated damage decal OBB.")]
-        private float damageDecalHalfWidth = 0.8f;
-
-        [SerializeField, Min(0.05f)]
-        [Tooltip("Base half-height in meters for each generated damage decal OBB.")]
-        private float damageDecalHalfHeight = 0.42f;
-
-        [SerializeField, Min(0f)]
-        [Tooltip("Normal offset applied to each decal center to avoid coplanar fighting against the merged wreck mesh.")]
-        private float damageDecalNormalBias = 0.03f;
-
-        [SerializeField, Range(1, 8)]
-        [Tooltip("Atlas column count used to resolve deterministic crack decal tiles.")]
-        private int damageDecalAtlasColumns = 4;
-
-        [SerializeField, Range(1, 8)]
-        [Tooltip("Atlas row count used to resolve deterministic crack decal tiles.")]
-        private int damageDecalAtlasRows = 4;
 
         [Header("Editor Preview")]
         [SerializeField]
@@ -986,9 +933,7 @@ namespace Hecton8.World
         [SerializeField] private uint _debugLastSeed;
         [SerializeField] private int _debugLastPlacementCount;
         [SerializeField] private int _debugLastCellCount;
-        [SerializeField] private int _debugLastDamageDecalCount;
         [SerializeField] private bool _debugLastCombinedBoundsValid;
-        [SerializeField] private bool _debugLastDamageDecalBoundsValid;
         [SerializeField] private bool _debugLastWorldBoundsValid;
         [SerializeField] private bool _debugLastProxyBoundsValid;
         [SerializeField] private WreckNavigationState _debugLastNavigationState;
@@ -1001,18 +946,20 @@ namespace Hecton8.World
         private NativeQueue<int3> _propagationQueue;
         private NativeList<WreckModulePlacement> _allPlacements;
         private NativeList<WreckModulePlacement> _filteredPlacements;
-        private NativeList<WreckDamageDecalStamp> _damageDecalStamps;
         private NativeArray<WreckModuleRuntimeDefinition> _runtimeDefinitions;
         private string _propagationQueueSentinelLabel;
         private string _allPlacementsSentinelLabel;
         private string _filteredPlacementsSentinelLabel;
-        private string _damageDecalStampsSentinelLabel;
         private List<NavMeshBuildSource> _navMeshSources;
         private List<WreckNavigationHandle> _activeNavigationHandles;
         private Mesh.MeshDataArray[] _readOnlyMeshSnapshots;
         private JobHandle[] _copyHandles;
+        private readonly PendingWreckLootSpawn[] _pendingLootSpawns = new PendingWreckLootSpawn[MaxPendingLootSpawns]; // COLD ALLOC: PendingWreckLootSpawn[8] - one-per-frame wreck loot spawn queue - owner: ProceduralWreckGenerator
         private GameObject _activeCollisionProxy;
         private Collider _activeCollisionCollider;
+        private int _pendingLootReadIndex;
+        private int _pendingLootCount;
+        private bool _registeredLootTick;
         private bool _initialized;
 
         private void Awake()
@@ -1020,9 +967,28 @@ namespace Hecton8.World
             Initialize();
         }
 
+        private void OnDisable()
+        {
+            ClearPendingLootQueue();
+            TryUnregisterLootTick();
+        }
+
         private void OnDestroy()
         {
             Dispose();
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (_pendingLootCount <= 0)
+            {
+                TryUnregisterLootTick();
+                return;
+            }
+
+            FlushOneQueuedLootSpawn();
+            if (_pendingLootCount <= 0)
+                TryUnregisterLootTick();
         }
 
         private void OnValidate()
@@ -1037,12 +1003,6 @@ namespace Hecton8.World
             navAgentHeight = Mathf.Max(0.5f, navAgentHeight);
             navAgentSlope = Mathf.Clamp(navAgentSlope, 0f, 60f);
             navAgentClimb = Mathf.Clamp(navAgentClimb, 0f, 1f);
-            maxDamageDecals = Mathf.Clamp(maxDamageDecals, 0, 64);
-            damageDecalHalfWidth = Mathf.Max(0.05f, damageDecalHalfWidth);
-            damageDecalHalfHeight = Mathf.Max(0.05f, damageDecalHalfHeight);
-            damageDecalNormalBias = Mathf.Max(0f, damageDecalNormalBias);
-            damageDecalAtlasColumns = Mathf.Clamp(damageDecalAtlasColumns, 1, 8);
-            damageDecalAtlasRows = Mathf.Clamp(damageDecalAtlasRows, 1, 8);
             maxEditorPreviewCells = Mathf.Clamp(maxEditorPreviewCells, 0, MaxEditorPreviewCellBudget);
             brgScatterRadiusMeters = Mathf.Max(0f, brgScatterRadiusMeters);
             brgScatterVerticalMeters = Mathf.Max(0f, brgScatterVerticalMeters);
@@ -1051,8 +1011,8 @@ namespace Hecton8.World
             brgMaxFragmentCount = Mathf.Clamp(Mathf.Max(brgMinFragmentCount, brgMaxFragmentCount), 50, 200);
             brgFragmentMinScale = Mathf.Max(0.05f, brgFragmentMinScale);
             brgFragmentMaxScale = Mathf.Max(brgFragmentMinScale, brgFragmentMaxScale);
-            wreckSiteJunctionThreshold = Mathf.Clamp01(wreckSiteJunctionThreshold);
-            wreckSiteRidgeThreshold = Mathf.Clamp01(wreckSiteRidgeThreshold);
+            wreckSiteJunctionThreshold = math.saturate(wreckSiteJunctionThreshold);
+            wreckSiteRidgeThreshold = math.saturate(wreckSiteRidgeThreshold);
             minLootCount = Mathf.Clamp(minLootCount, 0, 8);
             maxLootCount = Mathf.Clamp(Mathf.Max(minLootCount, maxLootCount), 0, 8);
             lootSpawnRadiusMeters = Mathf.Max(0.5f, lootSpawnRadiusMeters);
@@ -1229,6 +1189,8 @@ namespace Hecton8.World
         /// </summary>
         public void Dispose()
         {
+            ClearPendingLootQueue();
+            TryUnregisterLootTick();
             DespawnActiveCollisionProxy();
 
             if (_activeNavigationHandles != null)
@@ -1262,12 +1224,6 @@ namespace Hecton8.World
             {
                 NativeMemorySentinel.UnregisterNativeList(nameof(ProceduralWreckGenerator), _filteredPlacementsSentinelLabel);
                 _filteredPlacements.Dispose();
-            }
-
-            if (_damageDecalStamps.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(nameof(ProceduralWreckGenerator), _damageDecalStampsSentinelLabel);
-                _damageDecalStamps.Dispose();
             }
 
             if (_runtimeDefinitions.IsCreated)
@@ -1321,9 +1277,7 @@ namespace Hecton8.World
             _debugLastSeed = seed;
             _debugLastPlacementCount = 0;
             _debugLastCellCount = 0;
-            _debugLastDamageDecalCount = 0;
             _debugLastCombinedBoundsValid = false;
-            _debugLastDamageDecalBoundsValid = true;
             _debugLastWorldBoundsValid = false;
             _debugLastProxyBoundsValid = false;
             _debugLastNavigationState = WreckNavigationState.None;
@@ -1367,6 +1321,7 @@ namespace Hecton8.World
                 PlateUniformity = parameters.PlateUniformity,
                 DomainWarpMeters = parameters.DomainWarpMeters,
                 DomainWarpFrequency = parameters.DomainWarpFrequency,
+                SlopeNoiseFrequency = 0.00003125f,
                 MacroExponentialFalloff = 3.1f,
                 ShelfRunMeters = 15000f,
                 ShelfTargetSlopeDegrees = 30f,
@@ -1415,7 +1370,6 @@ namespace Hecton8.World
             _propagationQueueSentinelLabel = string.Concat(nameof(_propagationQueue), sentinelSuffix);
             _allPlacementsSentinelLabel = string.Concat(nameof(_allPlacements), sentinelSuffix);
             _filteredPlacementsSentinelLabel = string.Concat(nameof(_filteredPlacements), sentinelSuffix);
-            _damageDecalStampsSentinelLabel = string.Concat(nameof(_damageDecalStamps), sentinelSuffix);
             NativeMemorySentinel.RegisterNativeQueue(
                 _propagationQueue,
                 maxCellCount,
@@ -1428,9 +1382,6 @@ namespace Hecton8.World
             // COLD ALLOC: NativeList<WreckModulePlacement>[maxPlacements] - per-tier mesh merge filter scratch - owner: ProceduralWreckGenerator
             _filteredPlacements = new NativeList<WreckModulePlacement>(maxPlacements, Allocator.Persistent);
             NativeMemorySentinel.RegisterNativeList(_filteredPlacements, nameof(ProceduralWreckGenerator), _filteredPlacementsSentinelLabel, NativeAllocationLifetime.Scene);
-            // COLD ALLOC: NativeList<WreckDamageDecalStamp>[maxDamageDecals] - merged crack decal projector state - owner: ProceduralWreckGenerator
-            _damageDecalStamps = new NativeList<WreckDamageDecalStamp>(math.max(1, maxDamageDecals), Allocator.Persistent);
-            NativeMemorySentinel.RegisterNativeList(_damageDecalStamps, nameof(ProceduralWreckGenerator), _damageDecalStampsSentinelLabel, NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeArray<WreckModuleRuntimeDefinition>[16] - native WFC module table - owner: ProceduralWreckGenerator
             _runtimeDefinitions = new NativeArray<WreckModuleRuntimeDefinition>(MaxModuleDefinitions, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_runtimeDefinitions, nameof(ProceduralWreckGenerator), nameof(_runtimeDefinitions), NativeAllocationLifetime.Scene);
@@ -1466,8 +1417,6 @@ namespace Hecton8.World
             XorShift32State rng = new XorShift32State(seed);
             CollapseGrid(cellCount, moduleCount, ref rng);
             BuildPlacements(cellCount, seed);
-            Mesh damageDecalMesh = null;
-            ClearDamageDecalStamps();
             Mesh combinedMesh = wreckMaterialRegistry != null ? null : BuildMergedMesh(_allPlacements);
             Mesh proxyMesh = ResolveNavigationProxyMesh();
 
@@ -1487,9 +1436,7 @@ namespace Hecton8.World
             _debugLastSeed = seed;
             _debugLastPlacementCount = _allPlacements.Length;
             _debugLastCellCount = cellCount;
-            _debugLastDamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0;
             _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
-            _debugLastDamageDecalBoundsValid = damageDecalMesh == null || IsFiniteBounds(damageDecalMesh.bounds);
             _debugLastWorldBoundsValid = IsFiniteBounds(renderWorldBounds);
             _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
             _debugLastNavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None;
@@ -1501,8 +1448,6 @@ namespace Hecton8.World
                 EssentialMesh = null,
                 DetailMesh = null,
                 ClutterMesh = null,
-                DamageDecalMesh = damageDecalMesh,
-                DamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0,
                 ProxyMesh = proxyMesh,
                 Navigation = navMeshData,
                 NavigationBuild = navMeshOperation,
@@ -1533,11 +1478,6 @@ namespace Hecton8.World
             await YieldAfterGenerationStageAsync(stageStartTime);
 
             stageStartTime = Time.realtimeSinceStartupAsDouble;
-            Mesh damageDecalMesh = null;
-            ClearDamageDecalStamps();
-            await YieldAfterGenerationStageAsync(stageStartTime);
-
-            stageStartTime = Time.realtimeSinceStartupAsDouble;
             Mesh combinedMesh = wreckMaterialRegistry != null ? null : await BuildMergedMeshAsync(_allPlacements);
             await YieldAfterGenerationStageAsync(stageStartTime);
 
@@ -1560,9 +1500,7 @@ namespace Hecton8.World
             _debugLastSeed = seed;
             _debugLastPlacementCount = _allPlacements.Length;
             _debugLastCellCount = cellCount;
-            _debugLastDamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0;
             _debugLastCombinedBoundsValid = _allPlacements.IsCreated && _allPlacements.Length > 0;
-            _debugLastDamageDecalBoundsValid = damageDecalMesh == null || IsFiniteBounds(damageDecalMesh.bounds);
             _debugLastWorldBoundsValid = IsFiniteBounds(renderWorldBounds);
             _debugLastProxyBoundsValid = proxyMesh != null && IsFiniteBounds(proxyMesh.bounds);
             _debugLastNavigationState = navigationHandle != null ? navigationHandle.State : WreckNavigationState.None;
@@ -1573,8 +1511,6 @@ namespace Hecton8.World
                 EssentialMesh = null,
                 DetailMesh = null,
                 ClutterMesh = null,
-                DamageDecalMesh = damageDecalMesh,
-                DamageDecalCount = _damageDecalStamps.IsCreated ? _damageDecalStamps.Length : 0,
                 ProxyMesh = proxyMesh,
                 Navigation = navMeshData,
                 NavigationBuild = navMeshOperation,
@@ -1600,7 +1536,6 @@ namespace Hecton8.World
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeOrigin);
             int fragmentCount = ResolveBrgFragmentCount(seed);
             Bounds worldBounds = CalculateBrgWreckWorldBounds(runtimeOrigin);
-            ClearDamageDecalStamps();
 
             PublishBrgScatterPayload(centerAup, runtimeOrigin, worldBounds, seed, fragmentCount, moduleCount);
             PublishCollisionProxy(worldBounds);
@@ -1609,9 +1544,7 @@ namespace Hecton8.World
             _debugLastSeed = seed;
             _debugLastPlacementCount = fragmentCount;
             _debugLastCellCount = 0;
-            _debugLastDamageDecalCount = 0;
             _debugLastCombinedBoundsValid = true;
-            _debugLastDamageDecalBoundsValid = true;
             _debugLastWorldBoundsValid = IsFiniteBounds(worldBounds);
             _debugLastProxyBoundsValid = _activeCollisionCollider != null && IsFiniteBounds(worldBounds);
             _debugLastNavigationState = WreckNavigationState.None;
@@ -1628,8 +1561,6 @@ namespace Hecton8.World
                 EssentialMesh = null,
                 DetailMesh = null,
                 ClutterMesh = null,
-                DamageDecalMesh = null,
-                DamageDecalCount = 0,
                 ProxyMesh = null,
                 Navigation = null,
                 NavigationBuild = null,
@@ -1647,14 +1578,8 @@ namespace Hecton8.World
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeOrigin);
             int fragmentCount = ResolveBrgFragmentCount(seed);
             Bounds worldBounds = CalculateBrgWreckWorldBounds(runtimeOrigin);
-            ClearDamageDecalStamps();
 
-            if (!await PublishBrgScatterPayloadAsync(centerAup, runtimeOrigin, worldBounds, seed, fragmentCount, moduleCount))
-                return default;
-
-            await YieldAfterGenerationStageAsync(stageStartTime);
-
-            stageStartTime = Time.realtimeSinceStartupAsDouble;
+            PublishBrgScatterPayload(centerAup, runtimeOrigin, worldBounds, seed, fragmentCount, moduleCount);
             PublishCollisionProxy(worldBounds);
             SpawnWreckLoot(worldBounds, seed);
             await YieldAfterGenerationStageAsync(stageStartTime);
@@ -1662,9 +1587,7 @@ namespace Hecton8.World
             _debugLastSeed = seed;
             _debugLastPlacementCount = fragmentCount;
             _debugLastCellCount = 0;
-            _debugLastDamageDecalCount = 0;
             _debugLastCombinedBoundsValid = true;
-            _debugLastDamageDecalBoundsValid = true;
             _debugLastWorldBoundsValid = IsFiniteBounds(worldBounds);
             _debugLastProxyBoundsValid = _activeCollisionCollider != null && IsFiniteBounds(worldBounds);
             _debugLastNavigationState = WreckNavigationState.None;
@@ -1680,8 +1603,6 @@ namespace Hecton8.World
                 EssentialMesh = null,
                 DetailMesh = null,
                 ClutterMesh = null,
-                DamageDecalMesh = null,
-                DamageDecalCount = 0,
                 ProxyMesh = null,
                 Navigation = null,
                 NavigationBuild = null,
@@ -1734,70 +1655,6 @@ namespace Hecton8.World
                 DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 
                 wreckMaterialRegistry.Publish(moduleDefinitions, worldMatrices, moduleIds, ages, fragmentCount, worldBounds);
-            }
-            finally
-            {
-                if (ages.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(ages);
-                    ages.Dispose();
-                }
-                if (moduleIds.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(moduleIds);
-                    moduleIds.Dispose();
-                }
-                if (worldMatrices.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(worldMatrices);
-                    worldMatrices.Dispose();
-                }
-            }
-        }
-
-        private async Awaitable<bool> PublishBrgScatterPayloadAsync(
-            AbsoluteUniversePosition centerAup,
-            Vector3 runtimeOrigin,
-            Bounds worldBounds,
-            uint seed,
-            int fragmentCount,
-            int moduleCount)
-        {
-            if (wreckMaterialRegistry == null || fragmentCount <= 0)
-                return false;
-
-            NativeArray<Matrix4x4> worldMatrices = new NativeArray<Matrix4x4>(fragmentCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<byte> moduleIds = new NativeArray<byte>(fragmentCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeArray<float> ages = new NativeArray<float>(fragmentCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(worldMatrices, nameof(ProceduralWreckGenerator), nameof(worldMatrices), NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(moduleIds, nameof(ProceduralWreckGenerator), nameof(moduleIds), NativeAllocationLifetime.TempJob);
-            NativeMemorySentinel.RegisterNativeArray(ages, nameof(ProceduralWreckGenerator), nameof(ages), NativeAllocationLifetime.TempJob);
-
-            try
-            {
-                var job = new BuildWreckScatterMatricesJob
-                {
-                    WorldMatrices = worldMatrices,
-                    ModuleIds = moduleIds,
-                    Ages = ages,
-                    CenterAup = centerAup,
-                    RuntimeOrigin = new float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z),
-                    ModuleCount = moduleCount,
-                    ScatterRadiusMeters = math.max(0f, brgScatterRadiusMeters),
-                    ScatterVerticalMeters = math.max(0f, brgScatterVerticalMeters),
-                    ScatterYawRadians = math.radians(math.clamp(brgScatterYawDegrees, 0f, 180f)),
-                    MinScale = math.max(0.05f, brgFragmentMinScale),
-                    MaxScale = math.max(math.max(0.05f, brgFragmentMinScale), brgFragmentMaxScale),
-                    Seed = seed
-                };
-
-                JobHandle handle = job.Schedule(fragmentCount, 64);
-                JobHandle.ScheduleBatchedJobs();
-                if (!await WaitForJobHandleAsync(handle, "BRG wreck matrix scatter"))
-                    return false;
-
-                wreckMaterialRegistry.Publish(moduleDefinitions, worldMatrices, moduleIds, ages, fragmentCount, worldBounds);
-                return true;
             }
             finally
             {
@@ -1919,7 +1776,7 @@ namespace Hecton8.World
             if (instance == null)
                 return;
 
-            Collider primitiveCollider = ResolvePrimitiveCollisionProxy(instance);
+            BoxCollider primitiveCollider = ResolvePrimitiveCollisionProxy(instance);
             if (primitiveCollider == null)
             {
                 pool.Despawn(instance);
@@ -1936,7 +1793,7 @@ namespace Hecton8.World
             _activeCollisionCollider = primitiveCollider;
         }
 
-        private static Collider ResolvePrimitiveCollisionProxy(GameObject instance)
+        private static BoxCollider ResolvePrimitiveCollisionProxy(GameObject instance)
         {
             if (instance == null)
                 return null;
@@ -1944,28 +1801,13 @@ namespace Hecton8.World
             if (instance.TryGetComponent(out BoxCollider boxCollider) && boxCollider != null)
                 return boxCollider;
 
-            if (instance.TryGetComponent(out CapsuleCollider capsuleCollider) && capsuleCollider != null)
-                return capsuleCollider;
-
             return null;
         }
 
-        private static void ConfigurePrimitiveCollisionProxy(Collider primitiveCollider)
+        private static void ConfigurePrimitiveCollisionProxy(BoxCollider boxCollider)
         {
-            if (primitiveCollider is BoxCollider boxCollider)
-            {
-                boxCollider.center = Vector3.zero;
-                boxCollider.size = Vector3.one;
-                return;
-            }
-
-            if (primitiveCollider is CapsuleCollider capsuleCollider)
-            {
-                capsuleCollider.center = Vector3.zero;
-                capsuleCollider.direction = 1;
-                capsuleCollider.radius = 0.5f;
-                capsuleCollider.height = 1f;
-            }
+            boxCollider.center = Vector3.zero;
+            boxCollider.size = Vector3.one;
         }
 
         private static Vector3 ResolveCollisionProxyScale(Bounds worldBounds)
@@ -2015,10 +1857,6 @@ namespace Hecton8.World
                 return;
             }
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
-            if (pool == null)
-                return;
-
             int desiredMin = math.clamp(minLootCount, 0, 8);
             int desiredMax = math.clamp(math.max(desiredMin, maxLootCount), 0, 8);
             if (desiredMax <= 0)
@@ -2054,23 +1892,119 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float angle = rng.NextFloat01() * math.PI * 2f;
-                float radius = math.sqrt(rng.NextFloat01()) * radiusLimit;
-                float height = math.lerp(-0.35f, 1.1f, rng.NextFloat01());
-                Vector3 position = center + new Vector3(math.cos(angle) * radius, height, math.sin(angle) * radius);
-                Quaternion rotation = Quaternion.Euler(0f, rng.NextFloat01() * 360f, 0f);
-                GameObject instance = pool.Spawn(prefab, position, rotation);
-                if (instance == null)
+                float lootExtent = radiusLimit * 0.7f;
+                float horizontalX = (rng.NextFloat01() * 2f - 1f) * lootExtent;
+                float horizontalZ = (rng.NextFloat01() * 2f - 1f) * lootExtent;
+                float height = ResolveLootHeightBand(rng.NextUInt());
+                Vector3 position = center + new Vector3(horizontalX, height, horizontalZ);
+                Quaternion rotation = ResolveCardinalLootRotation(rng.NextUInt());
+                int quantity = math.max(1, math.min(3, (int)template.MaxStackSize));
+                if (!QueueWreckLootSpawn(prefab, itemData, quantity, position, rotation))
                     continue;
-
-                if (instance.TryGetComponent(out PickupItem pickup))
-                {
-                    int quantity = math.max(1, math.min(3, (int)template.MaxStackSize));
-                    pickup.Configure(itemData, quantity);
-                }
 
                 spawnedCount++;
             }
+        }
+
+        private static float ResolveLootHeightBand(uint state)
+        {
+            switch (state & 3u)
+            {
+                case 0u:
+                    return -0.35f;
+                case 1u:
+                    return 0.1f;
+                case 2u:
+                    return 0.55f;
+                default:
+                    return 1.1f;
+            }
+        }
+
+        private static Quaternion ResolveCardinalLootRotation(uint state)
+        {
+            const float HalfTurnSin = 0.70710677f;
+            switch (state & 3u)
+            {
+                case 0u:
+                    return Quaternion.identity;
+                case 1u:
+                    return new Quaternion(0f, HalfTurnSin, 0f, HalfTurnSin);
+                case 2u:
+                    return new Quaternion(0f, 1f, 0f, 0f);
+                default:
+                    return new Quaternion(0f, -HalfTurnSin, 0f, HalfTurnSin);
+            }
+        }
+
+        private bool QueueWreckLootSpawn(
+            GameObject prefab,
+            Hecton8.Items.ItemData itemData,
+            int quantity,
+            Vector3 position,
+            Quaternion rotation)
+        {
+            if (prefab == null || itemData == null || _pendingLootCount >= MaxPendingLootSpawns)
+                return false;
+
+            int writeIndex = (_pendingLootReadIndex + _pendingLootCount) % MaxPendingLootSpawns;
+            _pendingLootSpawns[writeIndex] = new PendingWreckLootSpawn
+            {
+                Prefab = prefab,
+                ItemData = itemData,
+                Position = position,
+                Rotation = rotation,
+                Quantity = math.max(1, quantity)
+            };
+            _pendingLootCount++;
+            TryRegisterLootTick();
+            return true;
+        }
+
+        private void ClearPendingLootQueue()
+        {
+            for (int i = 0; i < MaxPendingLootSpawns; i++)
+                _pendingLootSpawns[i] = default;
+
+            _pendingLootReadIndex = 0;
+            _pendingLootCount = 0;
+        }
+
+        private void TryUnregisterLootTick()
+        {
+            if (!_registeredLootTick)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registeredLootTick = false;
+        }
+
+        private void TryRegisterLootTick()
+        {
+            if (_registeredLootTick || _pendingLootCount <= 0 || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _registeredLootTick = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void FlushOneQueuedLootSpawn()
+        {
+            if (_pendingLootCount <= 0)
+                return;
+
+            PendingWreckLootSpawn spawn = _pendingLootSpawns[_pendingLootReadIndex];
+            _pendingLootSpawns[_pendingLootReadIndex] = default;
+            _pendingLootReadIndex = (_pendingLootReadIndex + 1) % MaxPendingLootSpawns;
+            _pendingLootCount--;
+
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool == null || spawn.Prefab == null || spawn.ItemData == null)
+                return;
+
+            GameObject instance = pool.Spawn(spawn.Prefab, spawn.Position, spawn.Rotation);
+            if (instance != null && instance.TryGetComponent(out PickupItem pickup))
+                pickup.Configure(spawn.ItemData, math.max(1, spawn.Quantity));
         }
 
         private async Awaitable SolveGridAsync(int cellCount, ushort initialMask, int moduleCount, uint seed)
@@ -2106,7 +2040,7 @@ namespace Hecton8.World
             if (elapsedSeconds < AsyncGenerationStageMainThreadBudgetSeconds)
                 return;
 
-            await Awaitable.NextFrameAsync();
+            await AwaitableDebtMonitor.NextFrameAsync();
         }
 
         private static async Awaitable<bool> YieldMeshBuildFrameAsync(string context, int waitedFrames)
@@ -2122,7 +2056,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            await Awaitable.NextFrameAsync();
+            await AwaitableDebtMonitor.NextFrameAsync();
             return true;
         }
 
@@ -2152,7 +2086,7 @@ namespace Hecton8.World
                 }
 
                 waitFrames++;
-                await Awaitable.NextFrameAsync();
+                await AwaitableDebtMonitor.NextFrameAsync();
             }
 
             DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
@@ -2600,10 +2534,10 @@ namespace Hecton8.World
                 vertexCount = totalVertexCount
             }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
 
-            Mesh result = new Mesh
-            {
-                name = $"{nameof(ProceduralWreckGenerator)}_{scheduledJobCount}"
-            };
+            Mesh result = new Mesh();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            result.name = $"{nameof(ProceduralWreckGenerator)}_{scheduledJobCount}";
+#endif
             Mesh.ApplyAndDisposeWritableMeshData(
                 writableMeshData,
                 result,
@@ -2754,10 +2688,10 @@ namespace Hecton8.World
                 if (!await YieldMeshBuildFrameAsync("merged mesh apply", meshYieldFrames++))
                     return null;
 
-                Mesh result = new Mesh
-                {
-                    name = $"{nameof(ProceduralWreckGenerator)}_{mergedPlacementCount}"
-                };
+                Mesh result = new Mesh();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                result.name = $"{nameof(ProceduralWreckGenerator)}_{mergedPlacementCount}";
+#endif
                 Mesh.ApplyAndDisposeWritableMeshData(
                     writableMeshData,
                     result,
@@ -2828,22 +2762,16 @@ namespace Hecton8.World
                 vertexCount = totalVertexCount
             }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
 
-            Mesh result = new Mesh
-            {
-                name = $"{nameof(ProceduralWreckGenerator)}_Proxy"
-            };
+            Mesh result = new Mesh();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            result.name = $"{nameof(ProceduralWreckGenerator)}_Proxy";
+#endif
             Mesh.ApplyAndDisposeWritableMeshData(
                 writableMeshData,
                 result,
                 MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
             result.bounds = localBounds;
             return result;
-        }
-
-        private void ClearDamageDecalStamps()
-        {
-            if (_damageDecalStamps.IsCreated)
-                _damageDecalStamps.Clear();
         }
 
         private static void PublishWreckSolveBudgetWarningIfNeeded(double elapsedMilliseconds)
@@ -2855,169 +2783,6 @@ namespace Hecton8.World
                 WreckSolveBudgetWarningHash,
                 WreckBrgContextHash,
                 (float)elapsedMilliseconds);
-        }
-
-        private void BuildDamageDecalStamps(uint seed)
-        {
-            if (!_damageDecalStamps.IsCreated)
-                return;
-
-            _damageDecalStamps.Clear();
-            if (!buildDamageDecalMesh || maxDamageDecals <= 0)
-                return;
-
-            int placementCount = _allPlacements.Length;
-            for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
-            {
-                if (_damageDecalStamps.Length >= maxDamageDecals)
-                    break;
-
-                WreckModulePlacement placement = _allPlacements[placementIndex];
-                if (placement.DrawPriority == (byte)WreckLodTier.Clutter)
-                    continue;
-
-                if (!TryBuildDamageDecalStamp(placement, seed, out WreckDamageDecalStamp stamp))
-                    continue;
-
-                _damageDecalStamps.Add(stamp);
-            }
-        }
-
-        private bool TryBuildDamageDecalStamp(in WreckModulePlacement placement, uint seed, out WreckDamageDecalStamp stamp)
-        {
-            stamp = default;
-
-            Mesh sourceMesh = ResolveStructuralMesh(placement.ModuleId);
-            if (sourceMesh == null)
-                return false;
-
-            using Mesh.MeshDataArray meshDataArray = Mesh.AcquireReadOnlyMeshData(sourceMesh);
-            Mesh.MeshData sourceData = meshDataArray[0];
-            if (!sourceData.HasVertexAttribute(VertexAttribute.Position) ||
-                !sourceData.HasVertexAttribute(VertexAttribute.Normal))
-            {
-                return false;
-            }
-
-            int positionStream = sourceData.GetVertexAttributeStream(VertexAttribute.Position);
-            int normalStream = sourceData.GetVertexAttributeStream(VertexAttribute.Normal);
-            if (positionStream < 0 || normalStream < 0 || sourceData.vertexCount <= 0)
-                return false;
-
-            NativeArray<Vector3> sourcePositions = sourceData.GetVertexData<Vector3>(positionStream);
-            NativeArray<Vector3> sourceNormals = sourceData.GetVertexData<Vector3>(normalStream);
-            int vertexCount = sourceData.vertexCount;
-            if (vertexCount <= 0)
-                return false;
-
-            uint placementHash = unchecked((((uint)placement.MortonIndex + 1u) * 747796405u) ^ (seed * 2891336453u));
-            XorShift32State rng = new XorShift32State(placementHash);
-            int sampleVertexIndex = (int)(rng.NextUInt() % (uint)vertexCount);
-            Vector3 sourcePosition = sourcePositions[sampleVertexIndex];
-            Vector3 sourceNormal = sourceNormals[sampleVertexIndex];
-
-            float3 worldPosition = placement.Position + math.rotate(placement.Rotation, new float3(sourcePosition.x, sourcePosition.y, sourcePosition.z));
-            float3 worldNormal = math.normalizesafe(
-                math.rotate(placement.Rotation, new float3(sourceNormal.x, sourceNormal.y, sourceNormal.z)),
-                new float3(0f, 1f, 0f));
-            if (!IsFiniteFloat3(worldPosition) || !IsFiniteFloat3(worldNormal))
-                return false;
-
-            float3 tangentReference = math.abs(worldNormal.y) < 0.95f
-                ? new float3(0f, 1f, 0f)
-                : new float3(1f, 0f, 0f);
-            float3 tangent = math.normalizesafe(
-                tangentReference - (worldNormal * math.dot(tangentReference, worldNormal)),
-                new float3(1f, 0f, 0f));
-            float3 bitangent = math.normalizesafe(math.cross(worldNormal, tangent), new float3(0f, 0f, 1f));
-
-            float atlasRotationRadians = (rng.NextUInt() & 3u) * (math.PI * 0.5f);
-            float cosAngle = math.cos(atlasRotationRadians);
-            float sinAngle = math.sin(atlasRotationRadians);
-            float3 rotatedTangent = math.normalizesafe(
-                (tangent * cosAngle) + (bitangent * sinAngle),
-                tangent);
-            rotatedTangent = math.normalizesafe(
-                rotatedTangent - (worldNormal * math.dot(rotatedTangent, worldNormal)),
-                tangent);
-            float3 rotatedBitangent = math.normalizesafe(
-                (-tangent * sinAngle) + (bitangent * cosAngle),
-                bitangent);
-            rotatedBitangent = math.normalizesafe(
-                rotatedBitangent - (worldNormal * math.dot(rotatedBitangent, worldNormal)),
-                bitangent);
-
-            float2 halfExtents = new float2(
-                math.max(0.08f, damageDecalHalfWidth * math.lerp(0.75f, 1.25f, rng.NextFloat01())),
-                math.max(0.08f, damageDecalHalfHeight * math.lerp(0.75f, 1.25f, rng.NextFloat01())));
-            if (!IsFiniteFloat2(halfExtents))
-                return false;
-
-            float3 center = worldPosition + (worldNormal * damageDecalNormalBias);
-            if (!TryResolveDamageAtlasUv(rng.NextUInt(), out float2 uvMin, out float2 uvMax))
-                return false;
-
-            stamp = new WreckDamageDecalStamp
-            {
-                Center = center,
-                Orientation = new float3x3(rotatedTangent, rotatedBitangent, worldNormal),
-                HalfExtents = halfExtents,
-                UvMin = uvMin,
-                UvMax = uvMax
-            };
-
-            return IsFiniteDamageDecalStamp(in stamp);
-        }
-
-        private Mesh BuildDamageDecalMesh()
-        {
-            if (!_damageDecalStamps.IsCreated || _damageDecalStamps.Length <= 0)
-                return null;
-
-            int stampCount = _damageDecalStamps.Length;
-            int vertexCount = stampCount * 4;
-            int indexCount = stampCount * 6;
-
-            Mesh.MeshDataArray writableMeshData = Mesh.AllocateWritableMeshData(1);
-            Mesh.MeshData meshData = writableMeshData[0];
-            meshData.SetVertexBufferParams(
-                vertexCount,
-                new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
-                new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
-                new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2));
-            meshData.SetIndexBufferParams(indexCount, IndexFormat.UInt32);
-
-            NativeArray<WreckDamageDecalVertex> vertices = meshData.GetVertexData<WreckDamageDecalVertex>();
-            NativeArray<uint> indices = meshData.GetIndexData<uint>();
-
-            BuildDamageDecalMeshJob job = new BuildDamageDecalMeshJob
-            {
-                Stamps = _damageDecalStamps.AsArray(),
-                Vertices = vertices,
-                Indices = indices
-            };
-
-            for (int index = 0; index < stampCount; index++)
-                job.Execute(index);
-
-            Bounds localBounds = CalculateDamageDecalBounds(_damageDecalStamps);
-            meshData.subMeshCount = 1;
-            meshData.SetSubMesh(0, new SubMeshDescriptor(0, indexCount, MeshTopology.Triangles)
-            {
-                bounds = localBounds,
-                vertexCount = vertexCount
-            }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
-
-            Mesh result = new Mesh
-            {
-                name = $"{nameof(ProceduralWreckGenerator)}_DamageDecals"
-            };
-            Mesh.ApplyAndDisposeWritableMeshData(
-                writableMeshData,
-                result,
-                MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
-            result.bounds = localBounds;
-            return result;
         }
 
         private async Awaitable<Mesh> BuildProxyMeshAsync()
@@ -3072,10 +2837,10 @@ namespace Hecton8.World
                     vertexCount = totalVertexCount
                 }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
 
-                Mesh result = new Mesh
-                {
-                    name = $"{nameof(ProceduralWreckGenerator)}_Proxy"
-                };
+                Mesh result = new Mesh();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                result.name = $"{nameof(ProceduralWreckGenerator)}_Proxy";
+#endif
                 Mesh.ApplyAndDisposeWritableMeshData(
                     writableMeshData,
                     result,
@@ -3272,7 +3037,9 @@ namespace Hecton8.World
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogPropagationQueueClearWatchdog(int maxIterations)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogError($"[ProceduralWreckGenerator] Propagation queue clear watchdog triggered at {maxIterations} iterations.");
+#endif
         }
 
         private byte SelectModuleFromMask(ushort mask, int moduleCount, ref XorShift32State rng)
@@ -3532,102 +3299,11 @@ namespace Hecton8.World
             return math.all(math.isfinite(value));
         }
 
-        private static bool IsFiniteFloat2(float2 value)
-        {
-            return math.all(math.isfinite(value));
-        }
-
-        private static bool IsFiniteFloat3x3(float3x3 value)
-        {
-            return IsFiniteFloat3(value.c0) && IsFiniteFloat3(value.c1) && IsFiniteFloat3(value.c2);
-        }
-
         private static bool IsFiniteBounds(Bounds bounds)
         {
             float3 center = new float3(bounds.center.x, bounds.center.y, bounds.center.z);
             float3 size = new float3(bounds.size.x, bounds.size.y, bounds.size.z);
             return IsFiniteFloat3(center) && IsFiniteFloat3(size);
-        }
-
-        private bool TryResolveDamageAtlasUv(uint tileSeed, out float2 uvMin, out float2 uvMax)
-        {
-            int columns = math.max(1, damageDecalAtlasColumns);
-            int rows = math.max(1, damageDecalAtlasRows);
-            int tileCount = columns * rows;
-            if (tileCount <= 0)
-            {
-                uvMin = float2.zero;
-                uvMax = new float2(1f, 1f);
-                return false;
-            }
-
-            int tileIndex = (int)(tileSeed % (uint)tileCount);
-            int tileX = tileIndex % columns;
-            int tileY = tileIndex / columns;
-            float2 tileSize = new float2(1f / columns, 1f / rows);
-            uvMin = new float2(tileX * tileSize.x, tileY * tileSize.y);
-            uvMax = uvMin + tileSize;
-            return IsFiniteFloat2(uvMin) && IsFiniteFloat2(uvMax);
-        }
-
-        private static bool IsFiniteDamageDecalStamp(in WreckDamageDecalStamp stamp)
-        {
-            return IsFiniteFloat3(stamp.Center) &&
-                   IsFiniteFloat3x3(stamp.Orientation) &&
-                   IsFiniteFloat2(stamp.HalfExtents) &&
-                   IsFiniteFloat2(stamp.UvMin) &&
-                   IsFiniteFloat2(stamp.UvMax);
-        }
-
-        private Bounds CalculateDamageDecalBounds(NativeList<WreckDamageDecalStamp> stamps)
-        {
-            if (!stamps.IsCreated || stamps.Length <= 0)
-                return CreateFallbackLocalBounds();
-
-            Bounds bounds = default;
-            bool initialized = false;
-            int count = stamps.Length;
-            for (int i = 0; i < count; i++)
-            {
-                if (!TryResolveDamageDecalBounds(stamps[i], out Bounds stampBounds))
-                    continue;
-
-                if (!initialized)
-                {
-                    bounds = stampBounds;
-                    initialized = true;
-                    continue;
-                }
-
-                bounds.Encapsulate(stampBounds);
-            }
-
-            return initialized && IsFiniteBounds(bounds) ? bounds : CreateFallbackLocalBounds();
-        }
-
-        private static bool TryResolveDamageDecalBounds(in WreckDamageDecalStamp stamp, out Bounds bounds)
-        {
-            if (!IsFiniteDamageDecalStamp(in stamp))
-            {
-                bounds = default;
-                return false;
-            }
-
-            float3 extents =
-                math.abs(stamp.Orientation.c0) * stamp.HalfExtents.x +
-                math.abs(stamp.Orientation.c1) * stamp.HalfExtents.y +
-                math.abs(stamp.Orientation.c2) * 0.02f;
-            if (!IsFiniteFloat3(extents))
-            {
-                bounds = default;
-                return false;
-            }
-
-            extents = math.max(extents, new float3(0.02f));
-            bounds = new Bounds(
-                new Vector3(stamp.Center.x, stamp.Center.y, stamp.Center.z),
-                new Vector3(extents.x * 2f, extents.y * 2f, extents.z * 2f));
-            return true;
         }
 
         internal void HandleNavigationBakeCompleted(WreckNavigationHandle navigationHandle)
@@ -3663,16 +3339,30 @@ namespace Hecton8.World
 
         private static int ClampPowerOfTwo(int value, int min, int max)
         {
-            int clamped = math.clamp(value, min, max);
-            if (Mathf.IsPowerOfTwo(clamped))
+            int safeMin = math.max(1, min);
+            int safeMax = math.max(safeMin, max);
+            int clamped = math.clamp(value, safeMin, safeMax);
+            if ((clamped & (clamped - 1)) == 0)
                 return clamped;
 
-            int nextPower = Mathf.NextPowerOfTwo(clamped);
-            if (nextPower > max)
+            int nextPower = RoundUpPowerOfTwo(clamped);
+            if (nextPower > safeMax)
                 nextPower >>= 1;
-            if (nextPower < min)
-                nextPower = min;
+            if (nextPower < safeMin)
+                nextPower = safeMin;
             return nextPower;
+        }
+
+        private static int RoundUpPowerOfTwo(int value)
+        {
+            int result = math.max(1, value);
+            result--;
+            result |= result >> 1;
+            result |= result >> 2;
+            result |= result >> 4;
+            result |= result >> 8;
+            result |= result >> 16;
+            return result + 1;
         }
 
         private static int EncodeMorton3(int x, int y, int z)

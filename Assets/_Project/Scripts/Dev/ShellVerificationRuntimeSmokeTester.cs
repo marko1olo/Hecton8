@@ -169,7 +169,7 @@ namespace Hecton8.Dev
                     if (runOnStart && !_isRunning)
                         break;
 
-                    await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                    await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
                 }
 
                 if (!runOnStart || _isRunning)
@@ -407,7 +407,7 @@ namespace Hecton8.Dev
                 else if (string.Equals(label, "Pause menu resolve in world", System.StringComparison.Ordinal))
                     TryLogPauseMenuDiagnostics(label);
 
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             Fail($"{label} timed out after {actionTimeout:0.00}s.");
@@ -438,7 +438,7 @@ namespace Hecton8.Dev
                     stableSince = -1f;
                 }
 
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
             Fail("Editor did not reach a stable non-compiling state before smoke start.");
@@ -454,7 +454,7 @@ namespace Hecton8.Dev
             while (Time.realtimeSinceStartup < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
         }
 

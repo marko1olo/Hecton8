@@ -71,6 +71,8 @@ namespace Hecton8.Core
         private static readonly RegistryBucket<IRegistryEventListener> _registryEventListeners = new RegistryBucket<IRegistryEventListener>(64);
         // COLD ALLOC: NoOpInputService[1] - null-object fallback for premature GlobalRegistry.Input reads - owner: GlobalRegistry
         private static readonly IInputService _noOpInputService = new NoOpInputService();
+        // COLD ALLOC: PcVRSomaticProvider[1] - null-object fallback for PC/console somatic reads - owner: GlobalRegistry
+        private static readonly IVRSomaticProvider _noOpVRSomaticProvider = PcVRSomaticProvider.Shared;
         private static readonly uint _inputDependencyWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.Input"));
         private static readonly uint _serviceReboundOverflowWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.ServiceReboundOverflow"));
         private static readonly uint _globalRegistryTelemetryContextHash = unchecked((uint)LocHash.Compute("GlobalRegistry"));
@@ -188,6 +190,7 @@ namespace Hecton8.Core
         private static ScanLogSystem _scanLogRuntime;
         private static ToolDurabilitySystem _toolDurabilityRuntime;
         private static ToolHapticsRuntime _toolHapticsRuntime;
+        private static IVRSomaticProvider _vrSomaticProvider;
         private static LoreDatabaseManager _loreDatabaseRuntime;
         private static PlayerExpressionManager _playerExpressionRuntime;
         private static SpectrumSystem _spectrumRuntime;
@@ -237,6 +240,7 @@ namespace Hecton8.Core
         private static GCMonitor _gcMonitorRuntime;
         private static CrashTelemetryBuffer _crashTelemetryRuntime;
         private static PlayerCriticalProceduralAudioRenderer _playerCriticalAudioRuntime;
+        private static ContextualPhysicalIkRuntime _contextualPhysicalIkRuntime;
         private static GameTickManager _tickManager;
         private static SystemDispatcher _dispatcher;
         private static RenderDispatcher _renderDispatcher;
@@ -260,6 +264,7 @@ namespace Hecton8.Core
         private static int _serviceReboundReferencePendingCount;
         private static bool _serviceReboundOverflowLogged;
         private static bool _isDispatchingServiceRebounds;
+        private static bool _suppressServiceReboundQueueing;
         private static GameBootstrapper _bootstrapperRuntime;
 
         /// <summary>
@@ -381,6 +386,11 @@ namespace Hecton8.Core
         /// Authoritative player critical procedural audio runtime owner.
         /// </summary>
         public static PlayerCriticalProceduralAudioRenderer PlayerCriticalAudio => _playerCriticalAudioRuntime;
+
+        /// <summary>
+        /// Registry-owned contextual physical IK runtime owner.
+        /// </summary>
+        internal static ContextualPhysicalIkRuntime ContextualPhysicalIkRuntime => _contextualPhysicalIkRuntime;
 
         /// <summary>
         /// Registered scene service slot.
@@ -768,6 +778,17 @@ namespace Hecton8.Core
         /// Registered tool haptics runtime owner.
         /// </summary>
         public static ToolHapticsRuntime ToolHaptics => _toolHapticsRuntime;
+
+        /// <summary>
+        /// Registered VR somatic provider, or the PC/console dummy provider when no VR owner is active.
+        /// </summary>
+        public static IVRSomaticProvider VRSomatic => _vrSomaticProvider ?? _noOpVRSomaticProvider;
+
+        /// <summary>
+        /// Raw registered VR somatic provider for bootstrap/service-owner validation.
+        /// Callers outside service initialization should use <see cref="VRSomatic"/>.
+        /// </summary>
+        internal static IVRSomaticProvider RegisteredVRSomatic => _vrSomaticProvider;
 
         /// <summary>
         /// Registered lore database runtime owner.
@@ -1171,6 +1192,7 @@ namespace Hecton8.Core
             _scanLogRuntime = null;
             _toolDurabilityRuntime = null;
             _toolHapticsRuntime = null;
+            _vrSomaticProvider = null;
             _loreDatabaseRuntime = null;
             _playerExpressionRuntime = null;
             _spectrumRuntime = null;
@@ -1220,6 +1242,7 @@ namespace Hecton8.Core
             _gcMonitorRuntime = null;
             _crashTelemetryRuntime = null;
             _playerCriticalAudioRuntime = null;
+            _contextualPhysicalIkRuntime = null;
             _tickManager = null;
             _dispatcher = null;
             _renderDispatcher = null;
@@ -1235,6 +1258,24 @@ namespace Hecton8.Core
             _hasHardwareProfile = false;
             _dispatcherRegistrationErrorLogged = false;
             _inputFallbackWarningPublished = false;
+            DisposeServiceReboundQueuesForShutdown();
+            _suppressServiceReboundQueueing = false;
+            _resolutionMask = 0u;
+            _updatables.Clear();
+            _fixedTickables.Clear();
+            _slowTickables.Clear();
+            _renderables.Clear();
+            _hotSwapListeners.Clear();
+            _registryEventListeners.Clear();
+            SystemDispatcher.ClearAllLanes();
+            NativeMemorySentinel.AssertNoAllocationsAfterServiceShutdown(nameof(ResetStaticState));
+            NativeMemorySentinel.ResetForSubsystemReload();
+        }
+
+        internal static void DisposeServiceReboundQueuesForShutdown()
+        {
+            _suppressServiceReboundQueueing = true;
+
             if (_pendingServiceRebounds.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(GlobalRegistry), nameof(_pendingServiceRebounds));
@@ -1256,15 +1297,6 @@ namespace Hecton8.Core
             _serviceReboundReferencePendingCount = 0;
             _serviceReboundOverflowLogged = false;
             _isDispatchingServiceRebounds = false;
-            _resolutionMask = 0u;
-            _updatables.Clear();
-            _fixedTickables.Clear();
-            _slowTickables.Clear();
-            _renderables.Clear();
-            _hotSwapListeners.Clear();
-            _registryEventListeners.Clear();
-            SystemDispatcher.ClearAllLanes();
-            NativeMemorySentinel.ResetForSubsystemReload();
         }
 
         /// <summary>
@@ -1851,6 +1883,23 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative contextual physical IK runtime owner.
+        /// </summary>
+        internal static void RegisterContextualPhysicalIkRuntime(ContextualPhysicalIkRuntime instance)
+        {
+            RegisterServiceAllowSameInstance(ref _contextualPhysicalIkRuntime, instance);
+        }
+
+        /// <summary>
+        /// Clears the authoritative contextual physical IK runtime owner.
+        /// </summary>
+        internal static void ClearContextualPhysicalIkRuntime(ContextualPhysicalIkRuntime instance)
+        {
+            if (instance == null || ReferenceEquals(_contextualPhysicalIkRuntime, instance))
+                _contextualPhysicalIkRuntime = null;
+        }
+
+        /// <summary>
         /// Registers the authoritative acoustic-zone runtime owner.
         /// </summary>
         public static void RegisterAcousticZoneRuntime(AcousticZoneController instance)
@@ -1936,6 +1985,14 @@ namespace Hecton8.Core
         public static void RegisterToolHapticsRuntime(ToolHapticsRuntime instance)
         {
             RegisterServiceAllowSameInstance(ref _toolHapticsRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative VR somatic provider.
+        /// </summary>
+        public static void RegisterVRSomaticProvider(IVRSomaticProvider instance)
+        {
+            RegisterServiceAllowSameInstance(ref _vrSomaticProvider, instance);
         }
 
         /// <summary>
@@ -3073,6 +3130,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current VR somatic provider if the owner matches.
+        /// </summary>
+        public static void UnregisterVRSomaticProvider(IVRSomaticProvider instance)
+        {
+            UnregisterService(ref _vrSomaticProvider, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current lore database runtime owner if the owner matches.
         /// </summary>
         public static void UnregisterLoreDatabaseRuntime(LoreDatabaseManager instance)
@@ -3996,6 +4061,9 @@ namespace Hecton8.Core
             if (serviceSlot == GlobalRegistryServiceSlot.Unknown)
                 return;
 
+            if (_suppressServiceReboundQueueing)
+                return;
+
             EnsureServiceReboundQueue();
             if (_pendingServiceReboundCount + _nextFrameServiceReboundCount >= MaxPendingServiceRebounds)
             {
@@ -4148,6 +4216,8 @@ namespace Hecton8.Core
             Type serviceType = typeof(T);
             if (serviceType == typeof(IInputService))
                 return _noOpInputService as T;
+            if (serviceType == typeof(IVRSomaticProvider))
+                return _noOpVRSomaticProvider as T;
 
             return null;
         }
@@ -4212,6 +4282,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.ScanLogRuntime: return _scanLogRuntime;
                 case GlobalRegistryServiceSlot.ToolDurabilityRuntime: return _toolDurabilityRuntime;
                 case GlobalRegistryServiceSlot.ToolHapticsRuntime: return _toolHapticsRuntime;
+                case GlobalRegistryServiceSlot.VRSomaticProvider: return _vrSomaticProvider;
                 case GlobalRegistryServiceSlot.LoreDatabaseRuntime: return _loreDatabaseRuntime;
                 case GlobalRegistryServiceSlot.AssetLifecycleRuntime: return _assetLifecycleRuntime;
                 case GlobalRegistryServiceSlot.AssetLoadDispatcherRuntime: return _assetLoadDispatcherRuntime;
@@ -4282,7 +4353,7 @@ namespace Hecton8.Core
 
         private static void ShutdownRegisteredServices()
         {
-            for (int slot = 0; slot <= (int)GlobalRegistryServiceSlot.ARWaypointRuntime; slot++)
+            for (int slot = 0; slot <= (int)GlobalRegistryServiceSlot.VRSomaticProvider; slot++)
             {
                 object service = ResolveRegisteredServiceObject((GlobalRegistryServiceSlot)slot);
                 if (service is IServiceShutdown shutdown)
@@ -4301,6 +4372,10 @@ namespace Hecton8.Core
                 IGlobalRegistryHotSwapListener listener = listeners[index];
                 if (listener == null)
                     continue;
+
+                object reboundService = currentService;
+                if (listener is IGlobalRegistryHotSwapRefListener refListener)
+                    refListener.OnGlobalRegistryServiceRebound(serviceSlot, ref reboundService);
 
                 listener.OnGlobalRegistryServiceReplaced(serviceSlot, previousService, currentService);
             }
@@ -4379,6 +4454,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(ScanLogSystem)) return GlobalRegistryServiceSlot.ScanLogRuntime;
             if (serviceType == typeof(ToolDurabilitySystem)) return GlobalRegistryServiceSlot.ToolDurabilityRuntime;
             if (serviceType == typeof(ToolHapticsRuntime)) return GlobalRegistryServiceSlot.ToolHapticsRuntime;
+            if (serviceType == typeof(IVRSomaticProvider)) return GlobalRegistryServiceSlot.VRSomaticProvider;
             if (serviceType == typeof(LoreDatabaseManager)) return GlobalRegistryServiceSlot.LoreDatabaseRuntime;
             if (serviceType == typeof(PlayerExpressionManager)) return GlobalRegistryServiceSlot.PlayerExpressionRuntime;
             if (serviceType == typeof(SpectrumSystem)) return GlobalRegistryServiceSlot.SpectrumRuntime;

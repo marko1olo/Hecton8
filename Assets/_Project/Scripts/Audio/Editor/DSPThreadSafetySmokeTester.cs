@@ -61,6 +61,7 @@ namespace Hecton8.Audio.Editor
                 string onDestroy = ExtractMethodBody(renderer, "private void OnDestroy()");
 
                 AssertContains(renderer, "private struct AudioParameterSnapshot", "AudioParameterSnapshot value struct exists", builder, ref failureCount);
+                AssertContains(renderer, "StructLayout(LayoutKind.Explicit, Size = 128)", "Audio parameter snapshot slots include 128-byte cache-line padding", builder, ref failureCount);
                 AssertContains(renderer, "internal struct AudioThreadDiagnostics", "Audio thread diagnostic snapshot exists", builder, ref failureCount);
                 AssertContains(renderer, "TryGetAudioThreadDiagnostics(out AudioThreadDiagnostics diagnostics)", "Audio diagnostics expose SPSC counters without touching callback", builder, ref failureCount);
                 AssertContains(renderer, "diagnostics.UnderrunCount = sampleRingBuffer.UnderrunCount", "Audio diagnostics include underrun count", builder, ref failureCount);
@@ -110,15 +111,16 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(updateCaveReverb, "Raycast", "Cave reverb update has no raycast path", builder, ref failureCount);
 
                 AssertContains(renderBubbleBlock, "ToolCavitationMaximumGain", "Tool cavitation injects into the reusable bubble scratch buffer", builder, ref failureCount);
-                AssertContains(renderBubbleBlock, "HashSigned(sampleIndex ^ 0x7E5A3C91u)", "Tool cavitation uses deterministic hash white noise", builder, ref failureCount);
+                AssertContains(renderBubbleBlock, "XorShiftSigned(sampleIndex, 0x7E5A3C91u)", "Tool cavitation uses deterministic XorShift white noise", builder, ref failureCount);
                 AssertNotContains(renderer, "ResolveMinnaertFrequency", "Minnaert frequency formula is absent from critical renderer", builder, ref failureCount);
                 AssertNotContains(renderer, "RenderMinnaert", "Minnaert bubble render kernel is absent from critical renderer", builder, ref failureCount);
 
                 AssertContains(renderer, "TinnitusCarrierHertz = 8000f", "O2 deprivation tinnitus carrier is 8 kHz", builder, ref failureCount);
-                AssertContains(renderTinnitusSample, "1f - math.exp(-TinnitusPlayerStressExponentialSharpness * playerStress)", "O2 tinnitus gain scales exponentially with player stress", builder, ref failureCount);
+                AssertContains(renderTinnitusSample, "ApproximateOneMinusExpNegPositive(TinnitusPlayerStressExponentialSharpness * playerStress)", "O2 tinnitus gain uses Padé exponential approximation", builder, ref failureCount);
+                AssertContains(renderer, "120f - (60f * clamped) + (12f * x2) - x3", "Padé exp(-x) numerator is present", builder, ref failureCount);
 
-                AssertContains(renderer, "BinauralWaterItdDelayRatio = 0.2326f", "Water/air ITD blend ratio exists", builder, ref failureCount);
-                AssertContains(renderer, "math.lerp(airItdSeconds, airItdSeconds * BinauralWaterItdDelayRatio", "Renderer blends ITD using WaterDensityMul", builder, ref failureCount);
+                AssertContains(renderer, "BinauralMaximumMicroDelaySeconds = 0.0007f", "Binaural fake ITD caps micro-delay at 0.7 ms", builder, ref failureCount);
+                AssertContains(renderer, "math.abs(rightDot) * maxDelaySamples", "Renderer derives fake ITD delay from head-right dot", builder, ref failureCount);
 
                 AssertContains(renderer, "_sabineReverbDelay = new NativeArray<float>(SabineReverbDelayCapacity, Allocator.AudioKernel", "Sabine delay cache is persistent native audio memory", builder, ref failureCount);
                 AssertNotContains(onDisable, "DisposeBuffers", "OnDisable does not dispose Sabine cache", builder, ref failureCount);
@@ -160,7 +162,8 @@ namespace Hecton8.Audio.Editor
                 AssertContains(spatialAudio, "ThreatBusDuckAttackSeconds = 0.05f", "Threat/Bed mixer duck attack is 0.05 s", builder, ref failureCount);
                 AssertContains(spatialAudio, "ThreatBusDuckReleaseSeconds = 0.3f", "Threat/Bed mixer duck release is 0.3 s", builder, ref failureCount);
                 AssertContains(spatialAudio, "WaterDensityMul = waterDensityMul", "Binaural telemetry publishes WaterDensityMul", builder, ref failureCount);
-                AssertContains(spatialAudio, "ItdSeconds = airItdSeconds", "Spatial telemetry publishes air ITD for renderer-side blend", builder, ref failureCount);
+                AssertContains(spatialAudio, "RightDot = earAxisDot", "Spatial telemetry publishes head-right dot for fake ITD", builder, ref failureCount);
+                AssertContains(spatialAudio, "ItdSeconds = 0f", "Spatial telemetry does not publish true ITD delay", builder, ref failureCount);
                 AssertContains(spatialAudio, "RefreshListenerCaveState", "Listener cave state is resolved by SpatialAudioManager", builder, ref failureCount);
                 AssertContains(spatialAudio, "HectonVoxelVolume", "Cave reverb state uses voxel-volume records", builder, ref failureCount);
                 AssertContains(spatialAudio, "localBounds.Contains", "Cave interior checks use local AABB bounds", builder, ref failureCount);

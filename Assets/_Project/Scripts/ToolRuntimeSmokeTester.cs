@@ -195,7 +195,7 @@ namespace Hecton8.Dev
                             break;
 
                         holsterElapsed += Time.unscaledDeltaTime;
-                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
                     }
 
                     if (holsterElapsed >= equipTimeout &&
@@ -243,7 +243,7 @@ namespace Hecton8.Dev
                             break;
 
                         elapsed += Time.unscaledDeltaTime;
-                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
                     }
 
                     PlayerTool liveTool = toolManager.CurrentTool;
@@ -298,7 +298,7 @@ namespace Hecton8.Dev
                             break;
 
                         holsterElapsed += Time.unscaledDeltaTime;
-                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
                     }
 
                     for (int i = 0; i < originalAssignments.Length; i++)
@@ -307,7 +307,7 @@ namespace Hecton8.Dev
                     if (originalSlot >= 0 && originalSlot < originalAssignments.Length && originalAssignments[originalSlot] != null)
                     {
                         toolManager.SwitchToSlot(originalSlot);
-                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                        await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
                     }
                 }
 
@@ -337,7 +337,7 @@ namespace Hecton8.Dev
             while (Time.realtimeSinceStartup < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
         }
 

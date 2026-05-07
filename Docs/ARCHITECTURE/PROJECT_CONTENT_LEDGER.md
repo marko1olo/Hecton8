@@ -27,6 +27,22 @@ MANDATES FOLLOWED:
 This ledger tracks stable authored identifiers and runtime `LocHash` values for the HECTON-8 resource-node matrix.
 It is the canonical handoff table for item/resource/entity hash coordination until a broader project-wide uint registry is formalized.
 
+## Orphaned Script Deletion Targets
+
+May 7 static audit scanned `1192` `.cs` files under `Assets/_Project/Scripts` and `428` first-party prefab YAML files.
+
+Result: `334` scripts are deletion review targets because the filename token was not found in any other `.cs` file and the script `.meta` GUID was not found in first-party prefab YAML.
+
+Full candidate artifact:
+
+- `CodexArtifacts/2026-05-07_ORPHANED_SCRIPT_AUDIT.csv`
+
+Boundary:
+
+- This is not deletion authorization.
+- Editor menu scripts, smoke testers, generated roots, reflection entry points, asmdef owners, ScriptableObject references, scene references, and Addressables references require manual review before removal.
+- Treat the list as the deletion queue seed, not as proof that the files are unused at runtime.
+
 ## LayerMask Sanitization Ledger
 
 Source of truth: `Assets/_Project/Scripts/Core/HectonLayerMasks.cs` and `ProjectSettings/TagManager.asset`.

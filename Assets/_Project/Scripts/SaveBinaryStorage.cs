@@ -2017,7 +2017,7 @@ namespace Hecton8.SaveSystem
                     ItemPersistentIdHash = itemHash,
                     InstanceUid = saveRecord.InstanceUid,
                     PackedLocalPosition = saveRecord.PackedLocalPosition,
-                    Quantity = isDeleted ? (ushort)1 : (saveRecord.Quantity < 1 ? (ushort)1 : saveRecord.Quantity),
+                    Quantity = saveRecord.Quantity < 1 ? (ushort)1 : saveRecord.Quantity,
                     ItemFlags = saveRecord.ItemFlags,
                     Reserved = saveRecord.Reserved
                 };
@@ -4866,7 +4866,7 @@ namespace Hecton8.SaveSystem
                     ItemPersistentIdHash = itemHash,
                     InstanceUid = saveRecord.InstanceUid,
                     PackedLocalPosition = saveRecord.PackedLocalPosition,
-                    Quantity = isDeleted ? (ushort)1 : (saveRecord.Quantity == 0 ? (ushort)1 : saveRecord.Quantity),
+                    Quantity = saveRecord.Quantity == 0 ? (ushort)1 : saveRecord.Quantity,
                     ItemFlags = saveRecord.ItemFlags,
                     Reserved = saveRecord.Reserved
                 };
