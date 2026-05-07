@@ -1,10 +1,10 @@
-﻿# Omega Autonomy Codex Audit - Terrain/World Domain
+# Omega Autonomy Codex Audit - Terrain/World Domain
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: sandbox abyssal shelf terrain smoke path, Omega dev smoke barrier cleanup, SpaceEngine research artifact reporting.
-Requested status: OMEGA VERIFIED  
-Executable smoke status: OMEGA VERIFIED via standalone terrain-domain smoke.  
+Requested status: OMEGA VERIFIED
+Executable smoke status: OMEGA VERIFIED via standalone terrain-domain smoke.
 Unity Editor batch status: OMEGA VERIFIED via `Library/OmegaAutonomySmokeTester.json`.
 
 ## Surgery Log
@@ -64,6 +64,6 @@ Existing SpaceEngine doc-domain smoke artifact:
 
 ## Status
 
-Static hardening pass: OMEGA VERIFIED.  
-Standalone executable terrain smoke: OMEGA VERIFIED.  
+Static hardening pass: OMEGA VERIFIED.
+Standalone executable terrain smoke: OMEGA VERIFIED.
 Unity Editor Omega smoke: OMEGA VERIFIED.

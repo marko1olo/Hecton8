@@ -1,9 +1,9 @@
-﻿# Docs Index
+# Docs Index
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
-Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, `2026-05-02` documentation actuality sweep, `2026-05-03` foundation-hardening continuation, `2026-05-04` documentation/current-evidence recheck, `2026-05-04` documentation sorting authority map, `2026-05-05` Omega-autonomy bounded verification, and `2026-05-06` documentation synchronization pass.
+Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, `2026-05-02` documentation actuality sweep, `2026-05-03` foundation-hardening continuation, `2026-05-04` documentation/current-evidence recheck, `2026-05-04` documentation sorting authority map, `2026-05-05` Omega-autonomy bounded verification, `2026-05-06` documentation synchronization pass, and `2026-05-07` Project Atlas synchronization pass.
 
 ## Read First
 
@@ -13,7 +13,10 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 - `SYSTEMS_CONTRACTS.md` - non-asset system contracts.
 - `DOC_GOVERNANCE.md` - placement rules for active/reference/archive docs.
 - `ROOT_DOCS_REFERENCE.md` - root/doc boundary and relocation map.
-- `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` - latest broad documentation synchronization pass and current May 6 doc/source inventory boundary.
+- `Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md` - latest Project Atlas/source-count synchronization pass and May 7 static inventory boundary.
+- `Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md` - current May 7 hallucination check, manifest, stale-symbol, native-lifecycle, and documentation cleanup boundary.
+- `Reports/2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json` - current machine-readable active documentation manifest.
+- `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` - previous broad documentation synchronization pass; historical after the May 7 synchronization pass.
 - `Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` - latest documentation sorting and authority map.
 - `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` - current header normalization and archive/move queue.
 - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` - latest documentation sweep and current May 4 build/guard/MCP evidence boundary.
@@ -35,6 +38,9 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 
 ## Current Audit Outputs
 
+- `Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`
+- `Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`
+- `Reports/2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`
 - `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
 - `Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
 - `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
@@ -69,7 +75,9 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 
 Current-state rule:
 
-- use `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` as the latest broad documentation synchronization layer and current May 6 inventory boundary
+- use `Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md` as the latest Project Atlas/source-count synchronization layer and current May 7 static inventory boundary
+- use `Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md` as the current hallucination-check, stale-symbol, manifest, native-lifecycle, and whitespace-cleanup report
+- use `Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` as the previous broad documentation synchronization layer, not the current counter authority
 - use `Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` as the latest documentation sorting and authority classification map
 - use `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` as the current header normalization and archive/move queue
 - use `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` as the latest broad documentation-sweep and current May 4 build/guard/MCP evidence addendum
@@ -87,7 +95,7 @@ Current-state rule:
 
 Current verification boundary:
 
-- latest May 6 documentation synchronization scan reports `Docs/**/*.md` total `429`, all markdown missing `Date:` `0`, all markdown missing `Status:` `0`, active non-report docs `162`, active header debt `0`, root `.md` files `5`, root `.txt`/`.log` files `0`, `Docs/Reports/*.md` `54`, relocated root logs `9`, `Assets/_Project/**/*.cs` `1206`, `Assets/_Project/Scripts/**/*.cs` `1165`, and `Assets/_Project/Scripts` line count `643074` by `Get-Content.Count`
+- latest May 7 brutal synchronization scan reports `Docs/**/*.md` total `436`, all markdown missing `Date:` `0`, all markdown missing `Status:` `0`, active non-report docs `162`, active header debt `0`, root `.md` files `5`, root `.txt`/`.log` files `0`, `Docs/Reports/*.md` `61`, relocated root logs `9`, `Assets/_Project/**/*.cs` `1212`, `Assets/_Project/Scripts/**/*.cs` `1171`, `Assets/_Project/Scripts` line count `651253` by `Get-Content.Count`, and `559502` by `Measure-Object -Line`
 - latest May 6 Unity MCP editor readback reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`, render textures `37`, render texture bytes `56,320,492`, renderer `PC_Renderer`, and `9` renderer features; this is editor-state proof only, not Play Mode/profiler/player-build proof
 - latest May 6 recursive `Docs` category scan inventoried `886` total files and `823` rewritable text-like files under the current extension policy; archive/deprecated/extracted research payloads remain evidence/provenance, not active authority
 - latest May 6 official source check found Unity `6000.4.5f1` is newer than the local project pin `6000.4.1f1`; do not treat this as permission to upgrade without the LTS migration protocol
@@ -101,8 +109,8 @@ Current verification boundary:
 - earlier fresh May 4 post-repair local Core build `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` returned `0 Warning(s)` and `0 Error(s)`
 - latest May 4 local Editor, `Hecton8.World.Dots.csproj`, and `Hecton8.PlayModeTests.csproj` builds all returned `0 Warning(s)` and `0 Error(s)`
 - fresh May 4 post-repair/current recheck foundation guard scan exited `0`; latest generated guard report timestamp is `2026-05-04 23:33:55`; current source gate inventory is `.Run(` `0`, hot-path `.Run(` review `0`, `.Complete(` text hits `5`, guarded dispatcher completion sites `1`, `UnsafeUtility.MemCpy outside guard` `0`, unauthorized Unity loop methods `0`, and runtime Find API text hits `8`
-- current active `Docs/**/*.md` inventory excluding archive/deprecated/obsolete is `194` after the sorting/header queue reports and root-log relocation; the older active/root markdown surface `217` from the documentation sweep was not recomputed in this pass
-- current source snapshot is `1118` first-party `.cs` files under `Assets/_Project` and `1078` `.cs` files under `Assets/_Project/Scripts`
+- historical May 4 active `Docs/**/*.md` inventory excluding archive/deprecated/obsolete was `194` after the sorting/header queue reports and root-log relocation; superseded by the May 7 active markdown count `223`
+- historical May 4 source snapshot was `1118` first-party `.cs` files under `Assets/_Project` and `1078` `.cs` files under `Assets/_Project/Scripts`; superseded by the May 7 source count `1212` / `1171`
 - earlier May 4 documentation-sweep MCP readback after retry: active scene `01_MAIN_MENU`, editor in Play Mode transition, console errors `0`, console warnings `18`, render textures `32`, render texture bytes `68215964`; latest current MCP recheck reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`, and is not Play Mode proof
 - historical May 3 Unity batchmode evidence exists in `Temp/CodexArtifacts/unity-batch-2026-05-03-foundation-hardening-after-watchdogs.log`: batchmode exited successfully, Tundra build succeeded, Mono reloaded, and the strict compiler-failure scan found `0` matches
 - historical May 3 full local Core build `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false` returned `0 Error(s)` and `0 Warning(s)` after stale generated Entities package references were pruned through source-backed Editor/MSBuild guards

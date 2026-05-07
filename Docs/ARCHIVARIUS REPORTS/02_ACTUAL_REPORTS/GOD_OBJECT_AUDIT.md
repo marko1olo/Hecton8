@@ -1,11 +1,11 @@
-﻿# GOD OBJECT AUDIT â€” Player & Submarine Prefab Component Analysis
+# GOD OBJECT AUDIT â€” Player & Submarine Prefab Component Analysis
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-> **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md Â§ Architecture First Â· Â§ Ownership / Ambiguity  
-> **Target:** â‰¤25 components on root GameObject  
+> **Status:** ETA SANITIZED
+> **Mandates Followed:** AGENTS.md Â§ Architecture First Â· Â§ Ownership / Ambiguity
+> **Target:** â‰¤25 components on root GameObject
 
 ---
 
@@ -24,9 +24,9 @@ Status: PENDING VERIFICATION
 
 ## 2. PLAYER.PREFAB â€” ROOT COMPONENT BREAKDOWN
 
-**File:** `Assets/_Project/Prefabs/Player.prefab`  
-**Root GameObject:** `Player` (fileID: 5334833049046775397)  
-**Total GameObjects in prefab:** 45 (including children)  
+**File:** `Assets/_Project/Prefabs/Player.prefab`
+**Root GameObject:** `Player` (fileID: 5334833049046775397)
+**Total GameObjects in prefab:** 45 (including children)
 **Components on root:** 28
 
 ### Component List
@@ -95,7 +95,7 @@ Status: PENDING VERIFICATION
 | P2 | Move `PlayerSwimPresentationController` + `PlayerSwimBlockoutRig` to child `Presentation` object. | 10 |
 | P3 | Merge `PlayerInteraction` raycast logic into `PlayerToolManager` (single hands system). | 9 |
 
-**After P0 alone:** root count = 19 (compliant).  
+**After P0 alone:** root count = 19 (compliant).
 **After full remediation:** root count â‰ˆ 9 (optimal).
 
 ---

@@ -1,10 +1,10 @@
-﻿# EVENT_LEAK_REPORT.md
+# EVENT_LEAK_REPORT.md
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Status:** PENDING VERIFICATION  
+**Date:** 2026-04-29
+**Status:** PENDING VERIFICATION
 **Scope:** current `HectonEventBus.Subscribe<T>()` ownership and unsubscribe hygiene in selected runtime subscribers under `Assets/_Project/Scripts/`
 
 **Mandates Followed:** `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
@@ -74,5 +74,5 @@ Status: PENDING VERIFICATION
 
 ## Verdict
 
-No confirmed high-risk `HectonEventBus` leak remains in the specific subscribers re-read in this pass.  
+No confirmed high-risk `HectonEventBus` leak remains in the specific subscribers re-read in this pass.
 Runtime teardown behavior is still `PENDING VERIFICATION`.

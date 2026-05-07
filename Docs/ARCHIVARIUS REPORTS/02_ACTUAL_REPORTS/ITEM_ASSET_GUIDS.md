@@ -1,10 +1,10 @@
-﻿# HECTON-8 â€” ITEM ASSET GUID AUDIT
+# HECTON-8 â€” ITEM ASSET GUID AUDIT
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
-**Status:** ETA SURGERY_PREPPED  
-**Purpose:** Hardcoded fallback table for Agent Gamma Addressables pre-warm queue.  
-**Scope:** `Assets/_Project/Prefabs/Items/Tools/*.prefab`  
+**Status:** ETA SURGERY_PREPPED
+**Purpose:** Hardcoded fallback table for Agent Gamma Addressables pre-warm queue.
+**Scope:** `Assets/_Project/Prefabs/Items/Tools/*.prefab`
 **Date:** 2026-04-28
 
 ---

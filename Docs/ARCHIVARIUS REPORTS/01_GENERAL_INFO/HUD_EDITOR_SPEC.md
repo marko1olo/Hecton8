@@ -1,11 +1,11 @@
-﻿# HUD EDITOR VISIBILITY SPEC â€” SuitHUDV4CanvasOverlay
+# HUD EDITOR VISIBILITY SPEC â€” SuitHUDV4CanvasOverlay
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Status:** PENDING VERIFICATION  
-**Target:** `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`  
-**Rule Basis:** AGENTS.md Â§ [REQ] OnDrawGizmos/OnDrawGizmosSelected: `#if UNITY_EDITOR` only. [FORBID] Physics/Find/GetComponent in OnDrawGizmos â€” visualize cached data only.  
+**Status:** PENDING VERIFICATION
+**Target:** `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`
+**Rule Basis:** AGENTS.md Â§ [REQ] OnDrawGizmos/OnDrawGizmosSelected: `#if UNITY_EDITOR` only. [FORBID] Physics/Find/GetComponent in OnDrawGizmos â€” visualize cached data only.
 **Mandates Followed:** AGENTS.md [RULE] MANDATE CONTEXTUAL INGESTION.
 
 ---
@@ -271,5 +271,5 @@ private void DrawGizmoHudElement(
 
 ---
 
-*STATUS: PENDING VERIFICATION*  
+*STATUS: PENDING VERIFICATION*
 *Action: Agent THETA implements Â§4.2 into SuitHUDV4CanvasOverlay.cs.*

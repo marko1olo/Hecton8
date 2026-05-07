@@ -1,4 +1,4 @@
-﻿# Documentation Synchronization Pass
+# Documentation Synchronization Pass
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -58,9 +58,9 @@ Fresh filesystem inventory from `2026-05-06`:
 | repository-root `.txt` files | `0` |
 | repository-root `.log` files | `0` |
 | relocated root `.log` files under `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*` | `9` |
-| `Assets/_Project/**/*.cs` | `1206` |
-| `Assets/_Project/Scripts/**/*.cs` | `1165` |
-| `Assets/_Project/Scripts` line count by `Get-Content.Count` | `643074` |
+| `Assets/_Project/**/*.cs` | `1212` |
+| `Assets/_Project/Scripts/**/*.cs` | `1171` |
+| `Assets/_Project/Scripts` line count by `Get-Content.Count` | `651121` |
 | `Assets/_Project/Scripts` line count by `Measure-Object -Line` | `552119` |
 
 Recursive category map from the same pass:
@@ -194,13 +194,13 @@ Observed results:
 
 | Evidence | Result |
 |---|---:|
-| `rg --files Assets/_Project -g '*.cs'` | `1206` |
-| `rg --files Assets/_Project/Scripts -g '*.cs'` | `1165` |
-| `Get-ChildItem Assets/_Project -Recurse -Filter *.cs` | `1206` |
-| `Get-ChildItem Assets/_Project/Scripts -Recurse -Filter *.cs` | `1165` |
-| `Assets/_Project/Scripts` line count by `Get-Content.Count` | `643074` |
+| `rg --files Assets/_Project -g '*.cs'` | `1212` |
+| `rg --files Assets/_Project/Scripts -g '*.cs'` | `1171` |
+| `Get-ChildItem Assets/_Project -Recurse -Filter *.cs` | `1212` |
+| `Get-ChildItem Assets/_Project/Scripts -Recurse -Filter *.cs` | `1171` |
+| `Assets/_Project/Scripts` line count by `Get-Content.Count` | `651121` |
 | `Assets/_Project/Scripts` line count by `Measure-Object -Line` | `552119` |
-| `GlobalRegistryContracts.cs` direct public interfaces | `34` |
+| `GlobalRegistryContracts.cs` direct public interfaces | `36` |
 | active markdown manifest entries | `216` |
 
 ## Current Authority Stack
@@ -253,7 +253,7 @@ Follow-up sync note: Unity MCP is reachable now and is recorded above, but that 
 - Normalized all remaining markdown provenance header gaps across `_Archive`, `Reports`, and `DEPRECATED`; full `Docs/**/*.md` is now `0` missing `Date:` and `0` missing `Status:`.
 - Removed trailing ASCII whitespace from two deprecated raw `.txt` evidence logs; no source/runtime files were changed.
 - Added fresh Unity MCP editor/readback facts for the current sync cycle.
-- Added Crucible V3 count evidence: `rg`/PowerShell C# file counts, `Get-Content.Count` and `Measure-Object -Line` script line counts, and `GlobalRegistryContracts.cs` public-interface count `34`.
+- Added Crucible V3 count evidence: `rg`/PowerShell C# file counts, `Get-Content.Count` and `Measure-Object -Line` script line counts, and `GlobalRegistryContracts.cs` public-interface count `36`.
 
 ## Do Not Claim
 
@@ -281,7 +281,7 @@ Correctness: active documentation entry points now point at May 6 counters and c
 ## Failure Modes
 
 - Dirty worktree source changes after this pass can invalidate C# inventory and build statements.
-- During the Crucible V3 resync, `Assets/_Project/Scripts` line counts changed while documentation was being edited. The `643074` / `552119` line counts are last-observed filesystem counts from the stabilization scan, not a guarantee that parallel source edits stopped.
+- During the Crucible V3 resync, `Assets/_Project/Scripts` line counts changed while documentation was being edited. The `651121` / `552119` line counts are last-observed filesystem counts from the stabilization scan, not a guarantee that parallel source edits stopped.
 - Generated reports and artifacts can change counts without a matching documentation sync.
 - `BROKEN_PREFABS.md` can be regenerated and must not become authority unless summarized in `Docs/Reports/`.
 - Archived/extracted research can contain stale or external claims; cite only with a current authority wrapper.

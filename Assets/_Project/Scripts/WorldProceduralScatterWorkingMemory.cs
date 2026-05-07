@@ -14,6 +14,9 @@ namespace Hecton8.World
         {
             private const int InitialGridPlacementNativeCapacity = 16384;
             private const int InitialCandidateAcceptanceBatchCapacity = 256;
+            private const int InitialPlacementPoolCapacity = 4096;
+            private const int InitialGridPlacementBucketCapacity = 512;
+            private const int InitialGridPlacementBucketListCapacity = 8;
             private const string NativeMemoryOwner = "WorldProceduralScatterDirector.ScatterWorkingMemory";
             private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
@@ -25,7 +28,7 @@ namespace Hecton8.World
             public readonly System.Collections.Generic.Dictionary<long, ScatterPlacement> DesiredPlacements = new System.Collections.Generic.Dictionary<long, ScatterPlacement>(2048);
             public readonly System.Collections.Generic.Dictionary<long, ScatterPlacement> RetainedPlacements = new System.Collections.Generic.Dictionary<long, ScatterPlacement>(4096);
             public readonly System.Collections.Generic.Dictionary<long, float> PlacementLastSeenTimes = new System.Collections.Generic.Dictionary<long, float>(4096);
-            public readonly System.Collections.Generic.Stack<ScatterPlacement> PlacementPool = new System.Collections.Generic.Stack<ScatterPlacement>(4096);
+            public readonly System.Collections.Generic.Stack<ScatterPlacement> PlacementPool = new System.Collections.Generic.Stack<ScatterPlacement>(InitialPlacementPoolCapacity);
             public readonly System.Collections.Generic.Dictionary<long, int> StructureWindowCounts = new System.Collections.Generic.Dictionary<long, int>(256);
             public readonly System.Collections.Generic.Dictionary<long, int> SpawnWindowCounts = new System.Collections.Generic.Dictionary<long, int>(256);
             public readonly System.Collections.Generic.Dictionary<long, int> FloraStreamCellBiomeCounts = new System.Collections.Generic.Dictionary<long, int>(512);
@@ -49,7 +52,7 @@ namespace Hecton8.World
             public readonly System.Collections.Generic.HashSet<long> StrictSubstrateMissingLoggedChunks = new System.Collections.Generic.HashSet<long>(256);
 #endif
             public readonly System.Collections.Generic.Dictionary<long, System.Collections.Generic.List<ScatterPlacement>> GridPlacements = new System.Collections.Generic.Dictionary<long, System.Collections.Generic.List<ScatterPlacement>>(512);
-            public readonly System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>> GridPlacementBuckets = new System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>>(512);
+            public readonly System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>> GridPlacementBuckets = new System.Collections.Generic.List<System.Collections.Generic.List<ScatterPlacement>>(InitialGridPlacementBucketCapacity);
             public NativeList<ScatterPlacementSpatialMetadata> GridPlacementSpatialMetadata;
             public NativeParallelMultiHashMap<int, float3> GridPlacementPositionBuckets;
             public NativeParallelMultiHashMap<int, int> GridPlacementMetadataBuckets;
@@ -142,6 +145,9 @@ namespace Hecton8.World
                     LayerBiomeCountsBuffer[layerIndex] = new System.Collections.Generic.Dictionary<string, int>(8);
                 }
 
+                PrewarmPlacementPool();
+                PrewarmGridPlacementBuckets();
+
                 // COLD ALLOC: NativeList<ScatterPlacementSpatialMetadata>[16384] — native scatter spacing cache — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
                 GridPlacementSpatialMetadata = new NativeList<ScatterPlacementSpatialMetadata>(InitialGridPlacementNativeCapacity, Allocator.Persistent);
                 // COLD ALLOC: NativeParallelMultiHashMap<int, float3>[16384] — native scatter cell position buckets — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
@@ -160,6 +166,27 @@ namespace Hecton8.World
                 CandidateAcceptanceClusterAccentRoleMaxRatiosScratch = new NativeArray<float>(_ClusterAccentRoleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 CandidateAcceptanceStructureAccentRoleMaxCountsScratch = new NativeArray<int>(_StructureAccentRoleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterNativeMemorySentinel();
+            }
+
+            private void PrewarmPlacementPool()
+            {
+                for (int i = PlacementPool.Count; i < InitialPlacementPoolCapacity; i++)
+                {
+                    // COLD ALLOC: ScatterPlacement[4096] - prewarmed candidate pool for streaming placement rebuilds - owner: WorldProceduralScatterDirector.ScatterWorkingMemory
+                    ScatterPlacement placement = new ScatterPlacement();
+                    placement.Reset();
+                    placement.IsPooled = true;
+                    PlacementPool.Push(placement);
+                }
+            }
+
+            private void PrewarmGridPlacementBuckets()
+            {
+                for (int i = GridPlacementBuckets.Count; i < InitialGridPlacementBucketCapacity; i++)
+                {
+                    // COLD ALLOC: List<ScatterPlacement>[512x8] - prewarmed scatter grid buckets - owner: WorldProceduralScatterDirector.ScatterWorkingMemory
+                    GridPlacementBuckets.Add(new System.Collections.Generic.List<ScatterPlacement>(InitialGridPlacementBucketListCapacity));
+                }
             }
 
             public void EnsureCellSamplingCapacity(int requiredCapacity)

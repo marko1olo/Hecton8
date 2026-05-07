@@ -14,10 +14,11 @@ Mandates followed:
 
 - Normalized `Date:` and `Status:` headers across the active documentation set to `2026-05-07` and `PENDING VERIFICATION`.
 - Updated `PROJECT_ATLAS.md` script inventory:
-  - `Assets/_Project`: `1211` C# files.
-  - `Assets/_Project/Scripts`: `1170` C# files.
-  - `Assets/_Project/Scripts` line count by `Get-Content.Count`: `650317`.
-  - `Assets/_Project/Scripts` line count by `Measure-Object -Line`: `558643`.
+  - `Assets/_Project`: `1212` C# files.
+  - `Assets/_Project/Scripts`: `1171` C# files.
+  - `Assets/_Project/Scripts` line count by `Get-Content.Count`: `651253`.
+  - `Assets/_Project/Scripts` line count by `Measure-Object -Line`: `559502`.
+- Updated the interface-health boundary: `GlobalRegistryContracts.cs` has `37` direct public interfaces by source count.
 - Generated `Docs/Reports/2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`.
 - Rewrote `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` terms so DOTS is exactly an `Experimental Seam` and Physics is exactly `Active/Transitional`.
 - Updated `EVENT_FLOW_MAP.md` with the exact five-artery Mega-Bus classification: Core, Env, Player, Base, AI.
@@ -56,6 +57,7 @@ $project = @(rg --files "Assets/_Project" -g "*.cs")
   ScriptsCsFiles = $scripts.Count
   ScriptsGetContentCount = (($scripts | ForEach-Object { (Get-Content -LiteralPath $_).Count }) | Measure-Object -Sum).Sum
   ScriptsMeasureObjectLine = (($scripts | ForEach-Object { Get-Content -LiteralPath $_ | Measure-Object -Line }) | Measure-Object -Sum Lines).Sum
+  GlobalRegistryContractInterfaces = (Select-String -LiteralPath "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs" -Pattern "^\s*public\s+interface\s+([A-Za-z0-9_]+)" | Measure-Object).Count
 }
 ```
 
@@ -63,10 +65,11 @@ Observed output:
 
 ```json
 {
-  "ProjectCsFiles": 1211,
-  "ScriptsCsFiles": 1170,
-  "ScriptsGetContentCount": 650317,
-  "ScriptsMeasureObjectLine": 558643
+  "ProjectCsFiles": 1212,
+  "ScriptsCsFiles": 1171,
+  "ScriptsGetContentCount": 651253,
+  "ScriptsMeasureObjectLine": 559502,
+  "GlobalRegistryContractInterfaces": 37
 }
 ```
 

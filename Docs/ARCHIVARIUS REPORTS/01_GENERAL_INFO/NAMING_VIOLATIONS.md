@@ -42,6 +42,11 @@ rg -n --pcre2 "[^\x00-\x7F]" Assets/_Project Docs `
 | Previous non-ASCII path entries under `Assets/_Project` | `570` |
 | Previous non-ASCII path entries under `Docs` | `68` |
 | Previous non-ASCII content files in active scan scope | `646` |
+| Current non-ASCII path entries under `Assets/_Project` and `Docs` | `638` |
+| Current non-ASCII path entries excluding archive/deprecated/obsolete folders | `575` |
+| Current non-ASCII path entries under `Assets/_Project` | `570` |
+| Current non-ASCII path entries under `Docs` | `68` |
+| Current non-ASCII content files in active scan scope | `623` |
 
 ## 2026-05-07 Cyrillic Path / Comment Sweep
 

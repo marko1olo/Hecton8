@@ -1,4 +1,4 @@
-﻿# MEMORY_ALIGNMENT_FIX.md â€” DOD Struct Layout Surgery
+# MEMORY_ALIGNMENT_FIX.md â€” DOD Struct Layout Surgery
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -14,8 +14,8 @@ Important boundary:
 - do not apply these surgeries blindly; re-read each live struct first, then verify size/alignment in code
 
 Use this file as a candidate queue for future work, not as direct implementation authority.
-**Status:** PENDING SURGERY  
-**Scan Date:** 2026-04-28  
+**Status:** PENDING SURGERY
+**Scan Date:** 2026-04-28
 **Scope:** All `[StructLayout]` and `NativeArray<T>` structs in `Assets/_Project/Scripts`
 
 ---
@@ -27,9 +27,9 @@ Use this file as a candidate queue for future work, not as direct implementation
 ---
 
 ## Struct 1: HectonVegetationInstanceData
-**File:** `Assets/_Project/Scripts/World/InstancedFloraRenderer.cs` (inferred)  
-**Current Size:** ~104 bytes (estimated)  
-**Alignment:** Default (~4-byte)  
+**File:** `Assets/_Project/Scripts/World/InstancedFloraRenderer.cs` (inferred)
+**Current Size:** ~104 bytes (estimated)
+**Alignment:** Default (~4-byte)
 **Target:** 16-byte aligned for GPU instancing
 
 ### Current Layout (estimated)
@@ -77,8 +77,8 @@ public struct HectonVegetationInstanceData
 ---
 
 ## Struct 2: ForcePacket
-**File:** `Assets/_Project/Scripts/Physics/PhysicsApplySystem.cs` (inferred)  
-**Current Size:** ~36 bytes  
+**File:** `Assets/_Project/Scripts/Physics/PhysicsApplySystem.cs` (inferred)
+**Current Size:** ~36 bytes
 **Alignment:** Default
 
 ### Current Layout (estimated)
@@ -114,9 +114,9 @@ public struct ForcePacket
 ---
 
 ## Struct 3: BoidData
-**File:** `Assets/_Project/Scripts/Fauna/BoidData.cs` (inferred)  
-**Current Size:** 32 bytes  
-**Alignment:** 4-byte  
+**File:** `Assets/_Project/Scripts/Fauna/BoidData.cs` (inferred)
+**Current Size:** 32 bytes
+**Alignment:** 4-byte
 **Status:** âœ… Burst-compatible, no surgery needed
 
 ```csharp
@@ -134,24 +134,24 @@ public struct BoidData
 ---
 
 ## Struct 4: CognitionCore
-**File:** `Assets/_Project/Scripts/AI/CognitionCore.cs` (inferred)  
-**Current Size:** 64 bytes  
-**Alignment:** 64-byte (cache-aligned)  
+**File:** `Assets/_Project/Scripts/AI/CognitionCore.cs` (inferred)
+**Current Size:** 64 bytes
+**Alignment:** 64-byte (cache-aligned)
 **Status:** âœ… COMPLIANT â€” cache line aligned
 
 ---
 
 ## Struct 5: AbsoluteUniversePositionBlit128
-**File:** `Assets/_Project/Scripts/Core/AbsoluteUniversePosition.cs` (inferred)  
-**Current Size:** 48 bytes  
-**Alignment:** 16-byte  
+**File:** `Assets/_Project/Scripts/Core/AbsoluteUniversePosition.cs` (inferred)
+**Current Size:** 48 bytes
+**Alignment:** 16-byte
 **Status:** âœ… GPU-friendly, no surgery needed
 
 ---
 
 ## Struct 6: QueryKey (AcousticOcclusionUtility)
-**File:** `Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs` line ~92  
-**Current Size:** 56 bytes  
+**File:** `Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs` line ~92
+**Current Size:** 56 bytes
 **Alignment:** Default
 
 ### Current Layout

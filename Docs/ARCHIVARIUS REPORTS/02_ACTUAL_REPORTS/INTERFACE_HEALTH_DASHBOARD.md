@@ -1,4 +1,4 @@
-﻿# HECTON-8 INTERFACE HEALTH DASHBOARD
+# HECTON-8 INTERFACE HEALTH DASHBOARD
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -9,16 +9,44 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 | Metric | Count |
 |---|---:|
-| Direct public interfaces in `GlobalRegistryContracts.cs` | 33 |
-| Interfaces with at least one direct implementor found in the May 1 source scan | stale `30/31`; not valid for the current `33` contract count |
+| Direct public interfaces in `GlobalRegistryContracts.cs` | 37 |
+| Interfaces with at least one direct implementor found in the May 1 source scan | stale `30/31`; not valid for the current `37` contract count |
 | Confirmed empty extension seams in current pass | not recounted |
 | Confirmed shadow/conflict cases in current pass | not recounted |
 | Interfaces with only one narrow direct implementor | not recounted in this pass |
 
 Current interface debt is not proven "ghost contracts".
-Current debt is stale documentation, narrow single-owner surfaces, two unreviewed added contract slots since the May 1 scan, and unresolved runtime verification of actual scene registration order.
+Current debt is stale documentation, narrow single-owner surfaces, six source-present contract slots not represented in the May 1 owner inventory, and unresolved runtime verification of actual scene registration order.
 
-May 4 correction: this dashboard's detailed inventory below is a May 1 source scan. It remains useful for named owners, but the interface-count/coverage ratio and current source/build boundary are superseded by `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+May 7 correction: this dashboard's detailed inventory below is a May 1 source scan. It remains useful for named owners, but the interface-count/coverage ratio and current source/build boundary are superseded by `Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`.
+
+## 2026-05-07 Contract Count Sync
+
+Fresh source count command:
+
+```powershell
+(Select-String -LiteralPath 'Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs' -Pattern '^\s*public\s+interface\s+([A-Za-z0-9_]+)' | Measure-Object).Count
+```
+
+Observed result: `37`.
+
+Current interface names:
+
+```text
+IUpdatable, ILateFrameTickable, IPostFixedTickable, IRenderable, IDamageReceiver,
+IDebrisDefinition, IInputService, IProfileService, IPDALogbookService,
+IPhysicsService, IAudioService, ISceneService, ISaveService, IUIService,
+IARWaypointService,
+IPlayerRuntimeContext, IPlayerInventoryService, IModularEquipmentService,
+IPlayerSensoryService, IEnvironmentRuntimeContext, IWeatherService,
+IThermodynamicsService, ILogisticsService, IWorldGenService, IWorldSeedProvider,
+IEncounterDirectorService, IQuestSystem, IFaunaSim, IFluidSim, IServiceHeartbeat,
+IServiceShutdown, IRegistryEventListener, IGlobalRegistryHotSwapListener,
+IHectonOceanKinematicsService, IInteractionSignalService, IDebrisService,
+IEcosystemDirectorService
+```
+
+Coverage ratios remain `PENDING VERIFICATION` until the implementor scan is rerun against all `37` names and live registry occupancy is proven from Unity runtime evidence.
 
 ## Inventory
 
@@ -60,7 +88,7 @@ May 4 correction: this dashboard's detailed inventory below is a May 1 source sc
 
 | Older claim | Current verified state |
 |---|---|
-| `GlobalRegistryContracts.cs` had `19`, `27`, or `31` interfaces | False now. Current file has `33` direct public interfaces. |
+| `GlobalRegistryContracts.cs` had `19`, `27`, `31`, `33`, `34`, or `36` interfaces | False now. Current file has `37` direct public interfaces. |
 | `IAudioService` had no implementor | False. `SpatialAudioManager` implements `IAudioService` and registers itself. |
 | `IUIService` was fragmented across multiple implementors | False in current source scan. Direct implementor found: `SuitHUDV4CanvasOverlay`. |
 | `IRenderable` had a single owner | False. Current direct implementors include `HectonUnderwaterVisuals`, `HectonSubmarineOS`, and `MissionMarkerSystem`. |
@@ -71,7 +99,7 @@ May 4 correction: this dashboard's detailed inventory below is a May 1 source sc
 ### No Deletion-Safe Ghost Interface In The Current Pass
 
 The previous dashboard is now partially outdated.
-The May 1 direct source scan found at least one implementor for `30/31` interfaces in `GlobalRegistryContracts.cs`; May 2 source count is `33` and coverage has not been recounted.
+The May 1 direct source scan found at least one implementor for `30/31` interfaces in `GlobalRegistryContracts.cs`; May 7 source count is `37` and coverage has not been recounted.
 
 `IGlobalRegistryHotSwapListener` currently has no direct implementor in the source scan.
 It is not deletion-safe because `GlobalRegistry` exposes listener registration infrastructure around it.
@@ -143,21 +171,27 @@ STATUS: PENDING VERIFICATION
 ## 2026-05-01 Interface Delta
 
 May 1 source check against `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` found `31` interfaces, not `27`.
-May 6 source count supersedes that number: `34` direct public interfaces. The added/changed slots require a fresh implementor scan before updating coverage ratios.
+May 7 source count supersedes that number: `37` direct public interfaces. The added/changed slots require a fresh implementor scan before updating coverage ratios.
 
 New / previously unlisted interfaces:
 
 | Interface | Current implementor(s) | State | Comment |
 |---|---|---|---|
+| `IProfileService` | not recounted in this pass | PENDING VERIFICATION | Source-present contract slot; May 1 owner inventory did not cover it. |
 | `IPDALogbookService` | `PDALogbookManager` | LIVE | Registry-backed PDA logbook service. |
+| `IARWaypointService` | not recounted in this pass | PENDING VERIFICATION | Source-present AR waypoint service slot; implementor coverage must be rerun against the current source. |
+| `IWorldSeedProvider` | not recounted in this pass | PENDING VERIFICATION | Source-present world-seed service slot; implementor coverage must be rerun against the current source. |
 | `IFaunaSim` | `FaunaSimulationEngine`, `DemiurgeFaunaSimulationService` | LIVE / MIXED | Real dedicated service exists, but bootstrap fallback service also implements the same contract. Ownership must be checked before claiming single authority. |
 | `IFluidSim` | `FluidMathCore` | LIVE | Physics namespace simulation service. |
+| `IServiceHeartbeat` | not recounted in this pass | PENDING VERIFICATION | Source-present lifecycle contract; runtime cadence and owners are not proven by this dashboard. |
+| `IServiceShutdown` | not recounted in this pass | PENDING VERIFICATION | Source-present lifecycle contract; teardown ownership is not proven by this dashboard. |
+| `IRegistryEventListener` | not recounted in this pass | PENDING VERIFICATION | Source-present registry-event listener contract; live listener occupancy is unverified. |
 | `IGlobalRegistryHotSwapListener` | none found in current source scan | EMPTY SEAM | Registry bucket and register/unregister APIs exist, but no current implementor was found. This is not deletion-safe; it is an unused extension seam until a listener appears. |
 
 Correction:
 
 - Older dashboard claim "at least one implementor for every interface in `GlobalRegistryContracts.cs`" is now false.
-- Historical truthful read for the May 1 scan: `30/31` interfaces had at least one source-level implementor; `IGlobalRegistryHotSwapListener` was registered infrastructure with no direct implementor. May 6 direct public interface count is `34`; coverage for those `34` interfaces remains pending.
+- Historical truthful read for the May 1 scan: `30/31` interfaces had at least one source-level implementor; `IGlobalRegistryHotSwapListener` was registered infrastructure with no direct implementor. May 7 direct public interface count is `37`; coverage for those `37` interfaces remains pending.
 - Live scene presence remains unverified because MCP console/session proof was not available in the current pass.
 
 STATUS: PENDING VERIFICATION

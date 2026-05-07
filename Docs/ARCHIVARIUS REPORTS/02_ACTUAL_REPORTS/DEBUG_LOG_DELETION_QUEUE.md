@@ -1,10 +1,10 @@
-﻿# DEBUG.LOG DELETION QUEUE â€” Unsanitized First-Party Runtime Logs
+# DEBUG.LOG DELETION QUEUE â€” Unsanitized First-Party Runtime Logs
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-> **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md Â§ Debug Log Hygiene â€” "Guard: #if UNITY_EDITOR || DEVELOPMENT_BUILD OR [System.Diagnostics.Conditional]"  
+> **Status:** ETA SANITIZED
+> **Mandates Followed:** AGENTS.md Â§ Debug Log Hygiene â€” "Guard: #if UNITY_EDITOR || DEVELOPMENT_BUILD OR [System.Diagnostics.Conditional]"
 
 ---
 

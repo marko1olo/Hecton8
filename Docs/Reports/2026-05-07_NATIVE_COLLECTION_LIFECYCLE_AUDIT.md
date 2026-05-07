@@ -31,7 +31,8 @@ Native allocation and sentinel token count:
 ```powershell
 $totalAllocTokens = 0
 $registerTokens = 0
-$unregisterTokens = 0
+$unregisterNativeTokens = 0
+$unregisterAnyTokens = 0
 $disposeHelperTokens = 0
 $disposeDotTokens = 0
 foreach ($f in $files) {
@@ -39,7 +40,8 @@ foreach ($f in $files) {
   if ($null -eq $txt) { $txt = '' }
   $totalAllocTokens += ([regex]::Matches($txt, $allocRegex)).Count
   $registerTokens += ([regex]::Matches($txt, 'NativeMemorySentinel\.RegisterNative')).Count
-  $unregisterTokens += ([regex]::Matches($txt, 'NativeMemorySentinel\.UnregisterNative')).Count
+  $unregisterNativeTokens += ([regex]::Matches($txt, 'NativeMemorySentinel\.UnregisterNative')).Count
+  $unregisterAnyTokens += ([regex]::Matches($txt, 'NativeMemorySentinel\.Unregister')).Count
   $disposeHelperTokens += ([regex]::Matches($txt, 'DisposeNative(Array|List|HashMap|Queue|ParallelMultiHashMap|ParallelHashMap)\s*\(')).Count
   $disposeDotTokens += ([regex]::Matches($txt, '\.Dispose\s*\(')).Count
 }
@@ -63,14 +65,15 @@ $regNoUnreg = foreach ($f in $files) {
 
 | Metric | Count |
 |---|---:|
-| `.cs` files under `Assets/_Project/Scripts` | `1170` |
+| `.cs` files under `Assets/_Project/Scripts` | `1171` |
 | Files with native allocation tokens | `204` |
-| Native allocation token hits | `1120` |
+| Native allocation token hits | `1116` |
 | Files with `NativeMemorySentinel.RegisterNative*` tokens | `170` |
-| `NativeMemorySentinel.RegisterNative*` token hits | `724` |
-| `NativeMemorySentinel.UnregisterNative*` token hits | `517` |
+| `NativeMemorySentinel.RegisterNative*` token hits | `720` |
+| `NativeMemorySentinel.UnregisterNative*` token hits | `513` |
+| `NativeMemorySentinel.Unregister*` token hits | `523` |
 | `DisposeNative*` helper token hits | `489` |
-| Direct `.Dispose(` token hits | `952` |
+| Direct `.Dispose(` token hits | `944` |
 | Naive same-file allocation-without-`.Dispose(` hits | `4` |
 | Naive register-without-unregister same-file hits | `3` |
 
@@ -100,6 +103,8 @@ It exposes matching unregister surfaces for arrays, lists, hash maps, parallel h
 | `Assets/_Project/Scripts/World/VegetationPredatorFearField.cs` | Native allocation token without direct `.Dispose(` | Uses `DisposeNativeArray(...)` before persistent buffer replacement. Naive detector misses helper-based lifecycle. |
 | `Assets/_Project/Scripts/VisualOmegaSmokeTester.cs` | Register token without unregister token | False-positive class: smoke tester scans source text for sentinel registration tokens. It is not the allocation owner. |
 | `Assets/_Project/Scripts/Editor/PersistenceUxSmokeTester.cs` | Register token without unregister token | False-positive class: editor smoke tester scans source text for image encoding/sentinel usage. It is not the allocation owner. |
+
+Static disposition: every reviewed static hit is either a source-text false positive or has a documented helper/partial-class disposal path. This is not runtime leak freedom.
 
 ## Lifecycle Rule
 

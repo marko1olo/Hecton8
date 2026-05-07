@@ -90,13 +90,37 @@ namespace Hecton8.UI
 
         private bool ShouldToggle()
         {
-            if (toggleKey == KeyCode.None || !Input.GetKeyDown(toggleKey))
+            global::UnityEngine.InputSystem.Keyboard keyboard = global::UnityEngine.InputSystem.Keyboard.current;
+            if (keyboard == null || toggleKey == KeyCode.None || !IsToggleKeyPressed(keyboard, toggleKey))
                 return false;
 
             if (!requireControlForToggle)
                 return true;
 
-            return Input.GetKey(KeyCode.LeftControl) || Input.GetKey(KeyCode.RightControl);
+            return keyboard.leftCtrlKey.isPressed || keyboard.rightCtrlKey.isPressed;
+        }
+
+        private static bool IsToggleKeyPressed(global::UnityEngine.InputSystem.Keyboard keyboard, KeyCode key)
+        {
+            if (keyboard == null)
+                return false;
+
+            switch (key)
+            {
+                case KeyCode.F1: return keyboard.f1Key.wasPressedThisFrame;
+                case KeyCode.F2: return keyboard.f2Key.wasPressedThisFrame;
+                case KeyCode.F3: return keyboard.f3Key.wasPressedThisFrame;
+                case KeyCode.F4: return keyboard.f4Key.wasPressedThisFrame;
+                case KeyCode.F5: return keyboard.f5Key.wasPressedThisFrame;
+                case KeyCode.F6: return keyboard.f6Key.wasPressedThisFrame;
+                case KeyCode.F7: return keyboard.f7Key.wasPressedThisFrame;
+                case KeyCode.F8: return keyboard.f8Key.wasPressedThisFrame;
+                case KeyCode.F9: return keyboard.f9Key.wasPressedThisFrame;
+                case KeyCode.F10: return keyboard.f10Key.wasPressedThisFrame;
+                case KeyCode.F11: return keyboard.f11Key.wasPressedThisFrame;
+                case KeyCode.F12: return keyboard.f12Key.wasPressedThisFrame;
+                default: return false;
+            }
         }
 
         private void TryRegister()

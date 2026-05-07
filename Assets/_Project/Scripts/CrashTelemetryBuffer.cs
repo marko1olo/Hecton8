@@ -1279,7 +1279,9 @@ namespace Hecton8.Core
                 UnsafeUtility.SizeOf<BootstrapSafeHaltMmfDump>() != BootstrapSafeHaltDumpSizeBytes)
             {
                 enabled = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("CrashTelemetryBuffer requires fixed-size blittable crash export structs.");
+#endif
                 return;
             }
 

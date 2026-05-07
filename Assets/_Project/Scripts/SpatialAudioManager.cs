@@ -1811,7 +1811,7 @@ private int AcquireSourceIndex()
         {
             acousticTransmission01 = 1f;
             lowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
-            float sourceListenerDistanceSq = (listenerAbsolutePosition - sourceAbsolutePosition).sqrMagnitude;
+            float sourceListenerDistanceSq = ResolveAbsoluteDistanceSqrFromAbsolutePositions(listenerAbsolutePosition, sourceAbsolutePosition);
             if (sourceListenerDistanceSq > VoxelSourceOcclusionTraceMaximumDistanceSq)
             {
                 ResolveCinematicFarVoxelOcclusion(sourceListenerDistanceSq, out acousticTransmission01, out lowPassCutoffHz);
@@ -2133,7 +2133,7 @@ private int AcquireSourceIndex()
 
             Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
             Vector3 listenerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(listener.position);
-            float sourceListenerDistanceSq = (listenerAbsolutePosition - sourceAbsolutePosition).sqrMagnitude;
+            float sourceListenerDistanceSq = ResolveAbsoluteDistanceSqrFromAbsolutePositions(listenerAbsolutePosition, sourceAbsolutePosition);
             if (sourceListenerDistanceSq > VoxelSourceOcclusionTraceMaximumDistanceSq)
             {
                 ResolveCinematicFarVoxelOcclusion(sourceListenerDistanceSq, out transmission01, out lowPassCutoffHz);
@@ -3334,6 +3334,19 @@ private int AcquireSourceIndex()
                 listenerAbsolutePosition.y,
                 listenerAbsolutePosition.z));
             AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            return ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
+        }
+
+        private static float ResolveAbsoluteDistanceSqrFromAbsolutePositions(Vector3 listenerAbsolutePosition, Vector3 sourceAbsolutePosition)
+        {
+            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                listenerAbsolutePosition.x,
+                listenerAbsolutePosition.y,
+                listenerAbsolutePosition.z));
+            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                sourceAbsolutePosition.x,
+                sourceAbsolutePosition.y,
+                sourceAbsolutePosition.z));
             return ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
         }
 

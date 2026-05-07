@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.World;
 using TMPro;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -15,7 +17,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/AR Waypoint Overlay")]
-    public sealed class ARWaypointOverlay : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener
+    public sealed class ARWaypointOverlay : MonoBehaviour, ITickable, ISlowTickable, IOriginShiftListener, IARWaypointService
     {
         private const int MaxAnchorWaypoints = 7;
         private const int MaxExternalWaypoints = 8;
@@ -33,11 +35,19 @@ namespace Hecton8.UI
         private const float EdgeOutlineWidth = 30f;
         private const float EdgeOutlineHeight = 16f;
         private const float ProjectionDepthEpsilon = 0.0001f;
+        private const float CinematicOcclusionNearDistanceMeters = 42f;
+        private const float CinematicOcclusionFarDistanceMeters = 128f;
+        private const float CinematicOcclusionSideWeight = 0.62f;
+        private const float CinematicOcclusionBehindDot = -0.05f;
+        private const double WaypointSolveBudgetWarningMilliseconds = 0.2d;
+        private const int WaypointPerformanceWarningCooldownFrames = 90;
         private const string RootName = "ARWaypointOverlay";
         private const string DefaultRelayLabel = "SERVICE RELAY";
         private const string DefaultAnchorLabel = "ABYSSAL ANCHOR";
         private const string DefaultExternalLabel = "WAYPOINT";
 
+        private static readonly uint _WaypointSolveBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HUD_AR_WAYPOINT_SOLVE_OVER_BUDGET"));
+        private static readonly uint _WaypointSolveBudgetContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ARWaypointOverlay.Solve"));
         private static readonly Color RelayColor = new Color(0.64f, 0.94f, 0.98f, 0.96f);
         private static readonly Color AnchorColor = new Color(0.98f, 0.74f, 0.22f, 0.96f);
         private static readonly Color OccludedColor = new Color(0.94f, 0.94f, 0.94f, 0.62f);
@@ -46,7 +56,26 @@ namespace Hecton8.UI
         private static readonly List<RectTransform> s_directChildBuffer =
             new List<RectTransform>(32);
 
-        private static ARWaypointOverlay s_instance;
+        // COLD ALLOC: string[16] - pre-baked waypoint slot names, avoids runtime interpolation - owner: ARWaypointOverlay
+        private static readonly string[] s_waypointSlotNames =
+        {
+            "Waypoint_0",
+            "Waypoint_1",
+            "Waypoint_2",
+            "Waypoint_3",
+            "Waypoint_4",
+            "Waypoint_5",
+            "Waypoint_6",
+            "Waypoint_7",
+            "Waypoint_8",
+            "Waypoint_9",
+            "Waypoint_10",
+            "Waypoint_11",
+            "Waypoint_12",
+            "Waypoint_13",
+            "Waypoint_14",
+            "Waypoint_15"
+        };
 
         private struct ExternalWaypoint
         {
@@ -82,24 +111,21 @@ namespace Hecton8.UI
             public bool CachedEdgeState;
         }
 
-        // COLD ALLOC: ExternalWaypoint[8] — external AR waypoint registry — owner: ARWaypointOverlay
+        // COLD ALLOC: ExternalWaypoint[8] - external AR waypoint registry - owner: ARWaypointOverlay
         private readonly ExternalWaypoint[] _externalWaypoints = new ExternalWaypoint[MaxExternalWaypoints];
-        // COLD ALLOC: RuntimeWaypoint[16] — projected waypoint payloads — owner: ARWaypointOverlay
+        // COLD ALLOC: RuntimeWaypoint[16] - projected waypoint payloads - owner: ARWaypointOverlay
         private readonly RuntimeWaypoint[] _runtimeWaypoints = new RuntimeWaypoint[MaxWaypoints];
-        // COLD ALLOC: WaypointSlot[16] — pooled waypoint UI markers — owner: ARWaypointOverlay
+        // COLD ALLOC: WaypointSlot[16] - pooled waypoint UI markers - owner: ARWaypointOverlay
         private readonly WaypointSlot[] _slots = new WaypointSlot[MaxWaypoints];
-        // COLD ALLOC: RaycastHit[1] — waypoint occlusion query buffer — owner: ARWaypointOverlay
-        private readonly RaycastHit[] _occlusionHits = new RaycastHit[1];
-        // COLD ALLOC: char[48] — transient zero-GC waypoint label formatter buffer — owner: ARWaypointOverlay
+        // COLD ALLOC: char[48] - transient zero-GC waypoint label formatter buffer - owner: ARWaypointOverlay
         private readonly char[] _labelCharBuffer = new char[MaximumLabelCharacters];
 
-        [SerializeField]
-        private LayerMask occlusionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
+        private bool _registeredWaypointService;
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _uiBuilt;
         private int _waypointCount;
+        private int _nextWaypointPerformanceWarningFrame;
         private Canvas _targetCanvas;
         private RectTransform _targetCanvasRect;
         private RectTransform _root;
@@ -110,7 +136,6 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            s_instance = null;
             s_overlayResolveBuffer.Clear();
             s_directChildBuffer.Clear();
         }
@@ -120,10 +145,11 @@ namespace Hecton8.UI
         /// </summary>
         public static void SetWaypoint(int id, Transform target, string label, Color color)
         {
-            if (s_instance == null)
+            IARWaypointService service = GlobalRegistry.ARWaypoints;
+            if (service == null)
                 return;
 
-            s_instance.SetExternalWaypointInternal(id, target, default, useTransform: true, label, color);
+            service.SetWaypoint(id, target, label, color);
         }
 
         /// <summary>
@@ -131,10 +157,11 @@ namespace Hecton8.UI
         /// </summary>
         public static void SetWaypoint(int id, Vector3 worldPosition, string label, Color color)
         {
-            if (s_instance == null)
+            IARWaypointService service = GlobalRegistry.ARWaypoints;
+            if (service == null)
                 return;
 
-            s_instance.SetExternalWaypointInternal(id, null, worldPosition, useTransform: false, label, color);
+            service.SetWaypoint(id, worldPosition, label, color);
         }
 
         /// <summary>
@@ -142,17 +169,16 @@ namespace Hecton8.UI
         /// </summary>
         public static void ClearWaypoint(int id)
         {
-            if (s_instance == null)
+            IARWaypointService service = GlobalRegistry.ARWaypoints;
+            if (service == null)
                 return;
 
-            s_instance.ClearExternalWaypointInternal(id);
+            service.ClearWaypoint(id);
         }
 
         private void OnEnable()
         {
-            if (s_instance == null || s_instance == this)
-                s_instance = this;
-
+            TryRegisterWaypointService();
             ResolveOwners();
             EnsureUiBuilt();
             HectonFloatingOrigin.RegisterListener(this);
@@ -168,9 +194,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            if (s_instance == this)
-                s_instance = null;
-
+            UnregisterWaypointService();
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
@@ -179,9 +203,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            if (s_instance == this)
-                s_instance = null;
-
+            UnregisterWaypointService();
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterFromTickManager();
             UnregisterFromSlowTickManager();
@@ -190,18 +212,22 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float dt)
         {
+            long solveStartTimestamp = Stopwatch.GetTimestamp();
             ResolveOwners();
             EnsureUiBuilt();
             CollectRuntimeWaypoints();
             RenderWaypoints();
+            PublishWaypointSolveWarningIfNeeded(solveStartTimestamp);
         }
 
         /// <inheritdoc />
         public void SlowTick()
         {
+            long solveStartTimestamp = Stopwatch.GetTimestamp();
             ResolveOwners();
             CollectRuntimeWaypoints();
             RefreshOcclusionStates();
+            PublishWaypointSolveWarningIfNeeded(solveStartTimestamp);
         }
 
         /// <inheritdoc />
@@ -225,6 +251,23 @@ namespace Hecton8.UI
             _viewCamera = null;
             _uiBuilt = false;
             _root = null;
+        }
+
+        bool IARWaypointService.IsInitialized => _uiBuilt && _root != null && _targetCanvas != null;
+
+        void IARWaypointService.SetWaypoint(int id, Transform target, string label, Color color)
+        {
+            SetExternalWaypointInternal(id, target, default, useTransform: true, label, color);
+        }
+
+        void IARWaypointService.SetWaypoint(int id, Vector3 worldPosition, string label, Color color)
+        {
+            SetExternalWaypointInternal(id, null, worldPosition, useTransform: false, label, color);
+        }
+
+        void IARWaypointService.ClearWaypoint(int id)
+        {
+            ClearExternalWaypointInternal(id);
         }
 
         private void ResolveOwners()
@@ -284,7 +327,7 @@ namespace Hecton8.UI
             _root = FindExistingChild(canvasRoot, RootName);
             if (_root == null)
             {
-                // COLD ALLOC: GameObject[1] — AR waypoint root canvas-space owner — owner: ARWaypointOverlay
+                // COLD ALLOC: GameObject[1] - AR waypoint root canvas-space owner - owner: ARWaypointOverlay
                 GameObject rootObject = new GameObject(RootName, typeof(RectTransform));
                 rootObject.layer = canvasRoot.gameObject.layer;
                 _root = rootObject.GetComponent<RectTransform>();
@@ -459,34 +502,53 @@ namespace Hecton8.UI
             if (_viewCamera == null)
                 return;
 
-            Vector3 origin = _viewCamera.transform.position;
+            Transform cameraTransform = _viewCamera.transform;
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraTransform.position);
+            float3 cameraForward = math.normalizesafe(
+                new float3(cameraTransform.forward.x, cameraTransform.forward.y, cameraTransform.forward.z),
+                new float3(0f, 0f, 1f));
+            float nearDistanceSq = CinematicOcclusionNearDistanceMeters * CinematicOcclusionNearDistanceMeters;
+            float farDistanceSq = CinematicOcclusionFarDistanceMeters * CinematicOcclusionFarDistanceMeters;
             for (int i = 0; i < _waypointCount; i++)
             {
                 RuntimeWaypoint waypoint = _runtimeWaypoints[i];
                 if (!waypoint.Active)
                     continue;
 
-                Vector3 delta = waypoint.WorldPosition - origin;
-                float distance = delta.magnitude;
-                if (distance <= 0.1f)
+                AbsoluteUniversePosition waypointAup = AbsoluteUniversePosition.FromRuntimePosition(waypoint.WorldPosition);
+                float3 delta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in waypointAup, in cameraAup);
+                float distanceSq = math.lengthsq(delta);
+                if (distanceSq <= 0.01f)
                 {
                     waypoint.Occluded = false;
                     _runtimeWaypoints[i] = waypoint;
                     continue;
                 }
 
-                Vector3 direction = delta / distance;
-                int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                    origin,
-                    direction,
-                    _occlusionHits,
-                    distance - 0.15f,
-                    occlusionMask,
-                    QueryTriggerInteraction.Ignore);
-
-                waypoint.Occluded = hitCount > 0;
+                float3 direction = delta * math.rsqrt(distanceSq);
+                float forwardDot = math.dot(cameraForward, direction);
+                float sideWeight = 1f - math.abs(forwardDot);
+                waypoint.Occluded =
+                    forwardDot <= CinematicOcclusionBehindDot ||
+                    distanceSq >= farDistanceSq ||
+                    (distanceSq >= nearDistanceSq && sideWeight >= CinematicOcclusionSideWeight);
                 _runtimeWaypoints[i] = waypoint;
             }
+        }
+
+        private void PublishWaypointSolveWarningIfNeeded(long startTimestamp)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
+            double elapsedMilliseconds = elapsedTicks * 1000.0d / Stopwatch.Frequency;
+            if (elapsedMilliseconds <= WaypointSolveBudgetWarningMilliseconds ||
+                Time.frameCount < _nextWaypointPerformanceWarningFrame)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _WaypointSolveBudgetWarningHash,
+                _WaypointSolveBudgetContextHash,
+                (float)elapsedMilliseconds);
+            _nextWaypointPerformanceWarningFrame = Time.frameCount + WaypointPerformanceWarningCooldownFrames;
         }
 
         private bool TryProjectWaypointOntoHudPlane(
@@ -506,7 +568,10 @@ namespace Hecton8.UI
 
             Transform cameraTransform = _viewCamera.transform;
             Vector3 cameraPosition = cameraTransform.position;
-            Vector3 delta = worldPosition - cameraPosition;
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
+            AbsoluteUniversePosition waypointAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            float3 deltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in waypointAup, in cameraAup);
+            Vector3 delta = new Vector3(deltaAup.x, deltaAup.y, deltaAup.z);
             Vector3 cameraForward = cameraTransform.forward;
             float viewDepth = Vector3.Dot(cameraForward, delta);
             float planeDistance = ResolveHudPlaneDistance(cameraTransform, _targetCanvasRect);
@@ -676,6 +741,28 @@ namespace Hecton8.UI
             _registeredSlowTick = false;
         }
 
+        private void TryRegisterWaypointService()
+        {
+            if (_registeredWaypointService || !Application.isPlaying)
+                return;
+
+            IARWaypointService current = GlobalRegistry.ARWaypoints;
+            if (current != null && !ReferenceEquals(current, this))
+                return;
+
+            GlobalRegistry.RegisterARWaypointService(this);
+            _registeredWaypointService = ReferenceEquals(GlobalRegistry.ARWaypoints, this);
+        }
+
+        private void UnregisterWaypointService()
+        {
+            if (!_registeredWaypointService)
+                return;
+
+            GlobalRegistry.UnregisterARWaypointService(this);
+            _registeredWaypointService = false;
+        }
+
         private static SuitHUDV4CanvasOverlay ResolveProjectionOverlay()
         {
             SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
@@ -710,7 +797,7 @@ namespace Hecton8.UI
 
         private static WaypointSlot CreateSlot(int index, RectTransform parent, Camera camera)
         {
-            GameObject rootObject = new GameObject($"Waypoint_{index}", typeof(RectTransform), typeof(CanvasGroup));
+            GameObject rootObject = new GameObject(s_waypointSlotNames[index], typeof(RectTransform), typeof(CanvasGroup));
             rootObject.layer = parent.gameObject.layer;
             RectTransform root = rootObject.GetComponent<RectTransform>();
             root.SetParent(parent, false);
@@ -779,7 +866,7 @@ namespace Hecton8.UI
             rect.anchoredPosition = new Vector2(0f, 14f);
             rect.sizeDelta = new Vector2(132f, 20f);
 
-            TextMeshProUGUI label = go.AddComponent<TextMeshProUGUI>(); // COLD ALLOC: TextMeshProUGUI[1] — AR waypoint label owner — owner: ARWaypointOverlay
+            TextMeshProUGUI label = go.AddComponent<TextMeshProUGUI>(); // COLD ALLOC: TextMeshProUGUI[1] - AR waypoint label owner - owner: ARWaypointOverlay
             label.font = LocalizedFontResolver.ResolveReadableFont(null);
             label.fontSize = 11f;
             label.alignment = TextAlignmentOptions.Bottom;
@@ -788,7 +875,7 @@ namespace Hecton8.UI
             label.raycastTarget = false;
             TMP_TextRegistry.EnsureRegistered(label);
 
-            WorldSpaceTMPSharpnessController sharpnessController = go.AddComponent<WorldSpaceTMPSharpnessController>(); // COLD ALLOC: WorldSpaceTMPSharpnessController[1] — per-label world-space SDF sharpness owner — owner: ARWaypointOverlay
+            WorldSpaceTMPSharpnessController sharpnessController = go.AddComponent<WorldSpaceTMPSharpnessController>(); // COLD ALLOC: WorldSpaceTMPSharpnessController[1] - per-label world-space SDF sharpness owner - owner: ARWaypointOverlay
             sharpnessController.Bind(label, camera);
             return label;
         }

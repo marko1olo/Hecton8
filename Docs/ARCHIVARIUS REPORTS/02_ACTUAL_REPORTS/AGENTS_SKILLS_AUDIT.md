@@ -1,10 +1,10 @@
-﻿# AGENTS-SKILLS MANDATE CROSS-REFERENCE AUDIT
+# AGENTS-SKILLS MANDATE CROSS-REFERENCE AUDIT
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-> **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md Â§ MANDATE CONTEXTUAL INGESTION  
+> **Status:** ETA SANITIZED
+> **Mandates Followed:** AGENTS.md Â§ MANDATE CONTEXTUAL INGESTION
 > **Method:** Full-text grep across `Assets/_Project/Scripts/`, `Docs/`, and `AGENTS.md`.
 
 ---

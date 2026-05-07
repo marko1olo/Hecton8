@@ -1,11 +1,11 @@
-﻿# SpaceEngine 0.9.8.0 Terrain And Noise Research
+# SpaceEngine 0.9.8.0 Terrain And Noise Research
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
-Source target: `C:\Users\danat\gemes\SpaceEngine 0.9.8.0\SpaceEngine 0.9.8.0`  
-Output target: `C:\hades\Hecton8\Docs\SPACE_ENGINE_RESEARCH\TERRAIN_AND_NOISE_098.md`  
-Mining status: MINING COMPLETE  
+Source target: `C:\Users\danat\gemes\SpaceEngine 0.9.8.0\SpaceEngine 0.9.8.0`
+Output target: `C:\hades\Hecton8\Docs\SPACE_ENGINE_RESEARCH\TERRAIN_AND_NOISE_098.md`
+Mining status: MINING COMPLETE
 Integration verification: PENDING VERIFICATION. This document installs no Unity runtime code and does not prove Burst compile, scene behavior, or frame-time impact.
 
 ## Mandate Gate

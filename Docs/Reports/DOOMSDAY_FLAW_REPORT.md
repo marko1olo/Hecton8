@@ -1,8 +1,8 @@
-﻿# HECTON-8 DOOMSDAY FLAW REPORT
+# HECTON-8 DOOMSDAY FLAW REPORT
 Date: 2026-05-07
 
-Generated: 2026-05-01  
-Mode: Deep Flaw Discovery / Forensics / QA Architecture  
+Generated: 2026-05-01
+Mode: Deep Flaw Discovery / Forensics / QA Architecture
 Status: PENDING VERIFICATION
 Scope: `Assets/_Project/Scripts/`
 

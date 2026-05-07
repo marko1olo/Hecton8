@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Bootstrap;
 using Hecton8.Building;
 using Hecton8.Core;
@@ -11,7 +12,6 @@ using Hecton8.World;
 using Hecton.Localization;
 using TMPro;
 using Unity.Collections;
-using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Rendering;
 #if UNITY_EDITOR
@@ -21,7 +21,7 @@ using UnityEditor;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener
+    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ICraftingEventListener, IGlobalRegistryHotSwapListener
     {
         private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const int MaxVisibleHologramInstances = 16;
@@ -29,18 +29,26 @@ namespace Hecton8.UI
         private const int RecipeLabelBufferCapacity = 128;
         private const int FallbackBufferCapacity = 64;
         private const float RecipePointerDistanceMeters = 6f;
+        private const float RecipePointerHalfWidth = 1.1f;
+        private const float RecipePointerHalfHeight = 0.26f;
+        private const float RecipePointerPlaneEpsilon = 0.0001f;
+        private const int FabricatorUiPerformanceWarningCooldownFrames = 30;
         private const float HologramBaseDistanceMeters = 1f;
         private const float HologramSpinDegreesPerSecond = 36f;
         private const float SelectedHologramScaleMultiplier = 2.8f;
         private const string NativeMemoryOwner = nameof(HectonFabricatorUI);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private static readonly uint _FabricatorUiSolveBudgetWarningHash =
+            unchecked((uint)LocHash.Compute("HectonFabricatorUI.SolveBudgetExceeded"));
+        private static readonly uint _FabricatorUiContextHash =
+            unchecked((uint)LocHash.Compute(nameof(HectonFabricatorUI)));
+        private static readonly long _FabricatorUiSolveBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 5000L);
 
         private struct RecipeListEntry
         {
             public Transform Root;
             public TextMeshPro Label;
             public TextMeshPro InflationLabel;
-            public BoxCollider Collider;
             public WorldSpaceTMPSharpnessController Sharpness;
             public WorldSpaceTMPSharpnessController InflationSharpness;
             public int RecipeIndex;
@@ -113,8 +121,6 @@ namespace Hecton8.UI
         private readonly char[] _fallbackBuffer = new char[FallbackBufferCapacity];
 
         private NativeArray<Matrix4x4> _hologramMatrices;
-        private NativeArray<RaycastCommand> _recipePointerCommands;
-        private NativeArray<RaycastHit> _recipePointerHits;
         private Material _runtimeHologramMaterial;
         private Mesh _runtimeHologramMesh;
         private Fabricator _currentFabricator;
@@ -129,14 +135,12 @@ namespace Hecton8.UI
         private bool _isCrafting;
         private float _craftProgress;
         private bool _tickRegistered;
-        private bool _lateFrameRegistered;
-        private bool _recipePointerScheduled;
         private bool _hotSwapListenerRegistered;
         private InputManager _subscribedInputManager;
         private float _hologramAnimationTime;
         private float _failurePanelShakeRemainingSeconds;
         private float _failurePanelShakeElapsedSeconds;
-        private JobHandle _recipePointerHandle;
+        private int _nextPerformanceWarningFrame;
 
         public static bool IsMenuOpen { get; private set; }
         public int CraftBatchMultiplier
@@ -161,11 +165,11 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            GlobalTelemetryBus.Initialize();
             ResolveRuntimeReferences();
 
             EnsureHologramBuffers();
             EnsureHologramResources();
-            EnsureRecipePointerBuffers();
             EnsureRecipeListPool();
         }
 
@@ -211,42 +215,6 @@ namespace Hecton8.UI
                 _hologramMatrices = default;
             }
 
-            bool hadScheduledRecipePointerJob = _recipePointerScheduled;
-            JobHandle recipePointerDisposeHandle = default;
-            if (hadScheduledRecipePointerJob)
-            {
-                recipePointerDisposeHandle = _recipePointerHandle;
-                _recipePointerScheduled = false;
-            }
-
-            if (_recipePointerCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_recipePointerCommands);
-                if (hadScheduledRecipePointerJob)
-                {
-                    recipePointerDisposeHandle = _recipePointerCommands.Dispose(recipePointerDisposeHandle);
-                }
-                else
-                {
-                    _recipePointerCommands.Dispose();
-                }
-                _recipePointerCommands = default;
-            }
-
-            if (_recipePointerHits.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_recipePointerHits);
-                if (hadScheduledRecipePointerJob)
-                {
-                    recipePointerDisposeHandle = _recipePointerHits.Dispose(recipePointerDisposeHandle);
-                }
-                else
-                {
-                    _recipePointerHits.Dispose();
-                }
-                _recipePointerHits = default;
-            }
-
             if (_runtimeHologramMaterial != null)
             {
                 Destroy(_runtimeHologramMaterial);
@@ -276,21 +244,37 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            long solveStartTimestamp = Stopwatch.GetTimestamp();
             _hologramAnimationTime += Mathf.Max(0f, deltaTime);
 
             if (_isOpen && _currentFabricator == null)
             {
                 CloseMenu();
+                PublishSolveWarningIfNeeded(solveStartTimestamp);
                 return;
             }
 
             ResolveRuntimeReferences();
             AdvanceFailurePanelShake(deltaTime);
             UpdateRecipeListPose();
+            UpdateRecipePointerSelection();
             RefreshRecipeListIfDirty();
             RenderActiveRecipeHologram(deltaTime);
-            ScheduleRecipePointerSelection();
             UpdateDiagnostics();
+            PublishSolveWarningIfNeeded(solveStartTimestamp);
+        }
+
+        private void PublishSolveWarningIfNeeded(long startTimestamp)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
+            if (elapsedTicks <= _FabricatorUiSolveBudgetTicks || Time.frameCount < _nextPerformanceWarningFrame)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _FabricatorUiSolveBudgetWarningHash,
+                _FabricatorUiContextHash,
+                (elapsedTicks * 1000f) / Stopwatch.Frequency);
+            _nextPerformanceWarningFrame = Time.frameCount + FabricatorUiPerformanceWarningCooldownFrames;
         }
 
         public void OnCraftingEvent(in CraftingEventPayload payload)
@@ -461,12 +445,6 @@ namespace Hecton8.UI
 
         private void CloseMenu()
         {
-            if (_recipePointerScheduled)
-            {
-                DispatcherJobSwap.TryComplete(ref _recipePointerHandle, true);
-                _recipePointerScheduled = false;
-            }
-
             _isOpen = false;
             IsMenuOpen = false;
             _isCrafting = false;
@@ -501,18 +479,10 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = GlobalRegistry.Updatables.Contains(this);
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
         }
 
         private void UnregisterTick()
         {
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
-                _lateFrameRegistered = false;
-            }
-
             if (_tickRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
@@ -608,11 +578,6 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterHotSwapListener(this);
 
             _hotSwapListenerRegistered = false;
-        }
-
-        public void LateFrameTick()
-        {
-            UpdateRecipePointerSelection();
         }
 
         private void SetSelectedIndex(int nextIndex)
@@ -983,29 +948,6 @@ namespace Hecton8.UI
             }
         }
 
-        private void EnsureRecipePointerBuffers()
-        {
-            if (!_recipePointerCommands.IsCreated)
-            {
-                _recipePointerCommands = new NativeArray<RaycastCommand>(1, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _recipePointerCommands,
-                    NativeMemoryOwner,
-                    nameof(_recipePointerCommands),
-                    NativeMemoryLifetime);
-            }
-
-            if (!_recipePointerHits.IsCreated)
-            {
-                _recipePointerHits = new NativeArray<RaycastHit>(1, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _recipePointerHits,
-                    NativeMemoryOwner,
-                    nameof(_recipePointerHits),
-                    NativeMemoryLifetime);
-            }
-        }
-
         private void EnsureRecipeListPool()
         {
             if (_recipeListRoot != null)
@@ -1041,10 +983,6 @@ namespace Hecton8.UI
                 inflationLabel.textWrappingMode = TextWrappingModes.NoWrap;
                 inflationLabel.SetCharArray(Array.Empty<char>(), 0, 0);
 
-                BoxCollider collider = entryObject.AddComponent<BoxCollider>();
-                collider.size = new Vector3(2.2f, 0.52f, 0.04f);
-                collider.center = new Vector3(0f, 0f, 0.02f);
-
                 WorldSpaceTMPSharpnessController sharpness = entryObject.AddComponent<WorldSpaceTMPSharpnessController>();
                 sharpness.Bind(label, hudCamera);
                 WorldSpaceTMPSharpnessController inflationSharpness = inflationObject.AddComponent<WorldSpaceTMPSharpnessController>();
@@ -1055,7 +993,6 @@ namespace Hecton8.UI
                     Root = entryObject.transform,
                     Label = label,
                     InflationLabel = inflationLabel,
-                    Collider = collider,
                     Sharpness = sharpness,
                     InflationSharpness = inflationSharpness,
                     RecipeIndex = -1
@@ -1228,50 +1165,49 @@ namespace Hecton8.UI
             return Mathf.Clamp(cursor, 0, _recipeLabelBuffer.Length);
         }
 
-        private void ScheduleRecipePointerSelection()
-        {
-            if (!_isOpen || _recipeListRoot == null || hudCamera == null || !_recipePointerCommands.IsCreated || !_recipePointerHits.IsCreated)
-                return;
-
-            if (_recipePointerScheduled)
-                return;
-
-            QueryParameters query = new QueryParameters(HectonLayerMasks.DataTemplateAuthoringMask, false, QueryTriggerInteraction.Ignore);
-            _recipePointerCommands[0] = new RaycastCommand(
-                hudCamera.transform.position,
-                hudCamera.transform.forward,
-                query,
-                RecipePointerDistanceMeters);
-            _recipePointerHandle = RaycastCommand.ScheduleBatch(_recipePointerCommands, _recipePointerHits, 1);
-            _recipePointerScheduled = true;
-        }
-
         private void UpdateRecipePointerSelection()
         {
-            if (!_recipePointerScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _recipePointerHandle, false))
-                return;
-
-            _recipePointerScheduled = false;
-            _hoveredRecipeIndex = -1;
-
-            Collider hitCollider = _recipePointerHits[0].collider;
-            if (hitCollider == null)
-                return;
-
-            for (int i = 0; i < MaxVisibleRecipeEntries; i++)
+            int nextHoveredRecipeIndex = -1;
+            if (_isOpen && _recipeListRoot != null && hudCamera != null && _recipes != null && _recipes.Count > 0)
             {
-                RecipeListEntry entry = _recipeEntries[i];
-                if (entry.Collider == null || !ReferenceEquals(entry.Collider, hitCollider) || entry.RecipeIndex < 0)
-                    continue;
+                Transform cameraTransform = hudCamera.transform;
+                Vector3 rayOrigin = cameraTransform.position;
+                Vector3 rayDirection = cameraTransform.forward;
+                Vector3 planeNormal = _recipeListRoot.forward;
+                float denom = Vector3.Dot(planeNormal, rayDirection);
+                if (Mathf.Abs(denom) > RecipePointerPlaneEpsilon)
+                {
+                    float distance = Vector3.Dot(_recipeListRoot.position - rayOrigin, planeNormal) / denom;
+                    if (distance >= 0f && distance <= RecipePointerDistanceMeters)
+                    {
+                        Vector3 localPoint = _recipeListRoot.InverseTransformPoint(rayOrigin + rayDirection * distance);
+                        int visibleRecipeCount = Mathf.Min(_recipes.Count, MaxVisibleRecipeEntries);
+                        for (int i = 0; i < visibleRecipeCount; i++)
+                        {
+                            RecipeListEntry entry = _recipeEntries[i];
+                            if (entry.Root == null || entry.RecipeIndex < 0)
+                                continue;
 
-                _hoveredRecipeIndex = entry.RecipeIndex;
-                if (_selectedIndex != entry.RecipeIndex)
-                    _selectedIndex = entry.RecipeIndex;
-                break;
+                            Vector3 entryPosition = entry.Root.localPosition;
+                            Vector3 entryScale = entry.Root.localScale;
+                            float halfWidth = RecipePointerHalfWidth * Mathf.Max(0.001f, Mathf.Abs(entryScale.x));
+                            float halfHeight = RecipePointerHalfHeight * Mathf.Max(0.001f, Mathf.Abs(entryScale.y));
+                            float deltaX = localPoint.x - entryPosition.x;
+                            float deltaY = localPoint.y - entryPosition.y;
+                            if (Mathf.Abs(deltaX) > halfWidth || Mathf.Abs(deltaY) > halfHeight)
+                                continue;
+
+                            nextHoveredRecipeIndex = entry.RecipeIndex;
+                            if (_selectedIndex != entry.RecipeIndex)
+                                _selectedIndex = entry.RecipeIndex;
+                            break;
+                        }
+                    }
+                }
             }
+
+            if (_hoveredRecipeIndex != nextHoveredRecipeIndex)
+                _hoveredRecipeIndex = nextHoveredRecipeIndex;
         }
 
         private bool CanCraftRecipe(RecipeData recipe)

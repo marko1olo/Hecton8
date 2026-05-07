@@ -188,24 +188,12 @@ namespace Hecton8.Atmosphere
         [SerializeField, Min(1f)] private float weatherBlendDuration = 35f;
 
         [Header("Local Shelter")]
-        [Tooltip("Layers treated as overhead rain blockers for the local player weather rig.")]
-        [SerializeField] private LayerMask shelterOccluderMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
-        [Tooltip("Vertical offset from the follow target used as the shelter probe origin.")]
-        [SerializeField, UnityEngine.Range(0.5f, 3f)] private float shelterProbeOriginOffset = 1.35f;
-
-        [Tooltip("Maximum upward distance checked for local rain shelter such as roofs or dry modules.")]
-        [SerializeField, Min(1f)] private float shelterProbeHeight = 12f;
-
         [Tooltip("Seconds used to visually converge local rain exposure after shelter state changes.")]
         [SerializeField, Min(0.05f)] private float shelterExposureBlendTime = 0.45f;
 
         [Header("References")]
         [Tooltip("Optional explicit player movement reference. If null, runtime resolve is used.")]
         [SerializeField] private HectonPlayerMovement playerMovement;
-
-        [Tooltip("Optional camera/head transform used as the single upward rain occlusion ray origin. If null, the runtime player camera is used.")]
-        [SerializeField] private Transform rainOcclusionOrigin;
 
         [Tooltip("Optional explicit underwater visuals reference. If null, runtime resolve is used.")]
         [SerializeField] private HectonUnderwaterVisuals underwaterVisuals;
@@ -289,8 +277,9 @@ namespace Hecton8.Atmosphere
         private bool _runtimeStateInitialized;
         private bool _bindingsApplied;
         private HectonPlayerMovement _subscribedPlayerMovement;
+        private Transform _selfTransform;
         private Transform _playerTransform;
-        private Transform _rainOcclusionTransform;
+        private BuoyancyObject _playerBuoyancy;
 
         private IHectonOceanKinematics _oceanKinematics;
         private HectonOceanSurfaceWeatherState _oceanSurfaceDefaults = new HectonOceanSurfaceWeatherState
@@ -319,11 +308,6 @@ namespace Hecton8.Atmosphere
         private JobHandle _weatherJobHandle;
         private bool _weatherJobScheduled;
         private bool _weatherJobPrimed;
-        private NativeArray<RaycastCommand> _shelterRaycastCommands;
-        private NativeArray<RaycastHit> _shelterRaycastHits;
-        private JobHandle _shelterRaycastHandle;
-        private bool _shelterRaycastScheduled;
-        private bool _shelterRaycastPrimed;
         private int _nextSurfaceWeatherPerformanceWarningFrame;
 
         /// <summary>
@@ -352,7 +336,7 @@ namespace Hecton8.Atmosphere
         public bool IsSurfaceSuppressed => _executionMode == SurfaceExecutionMode.SurfaceSuppressed;
 
         /// <summary>
-        /// Returns true when the single upward shelter probe blocks local screen-space rain.
+        /// Returns true when cached interior/depth state blocks local screen-space rain.
         /// </summary>
         public bool IsLocallySheltered => _isLocallySheltered;
 
@@ -363,6 +347,7 @@ namespace Hecton8.Atmosphere
 
         private void Awake()
         {
+            _selfTransform = transform;
             BuildFallbackProfiles();
             SeedRandom();
 #if UNITY_EDITOR
@@ -390,7 +375,6 @@ namespace Hecton8.Atmosphere
             TryUnregisterTickManagers();
 
             RefreshPlayerMovementSubscription(null);
-            TryCompleteShelterRaycast(forceComplete: true);
             _stormEquipmentPulseTimer = 0f;
             ClearWeatherBindings();
             TryUnregisterService();
@@ -404,7 +388,6 @@ namespace Hecton8.Atmosphere
             RefreshPlayerMovementSubscription(null);
             _stormEquipmentPulseTimer = 0f;
             DisposeWeatherMathBuffers();
-            DisposeShelterRaycastBuffers();
 
         }
 
@@ -440,7 +423,6 @@ namespace Hecton8.Atmosphere
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            TryCompleteShelterRaycast(forceComplete: false);
             TryCompleteWeatherMathJob();
         }
 
@@ -538,8 +520,9 @@ namespace Hecton8.Atmosphere
             {
                 playerMovement = playerContext.PlayerMovement;
                 _playerTransform = playerContext.PlayerTransform;
-                if (playerContext.PlayerCamera != null)
-                    _rainOcclusionTransform = playerContext.PlayerCamera.transform;
+                _playerBuoyancy = null;
+                if (_playerTransform != null)
+                    _playerTransform.TryGetComponent(out _playerBuoyancy);
                 return;
             }
 
@@ -550,10 +533,15 @@ namespace Hecton8.Atmosphere
 
                 if (playerMovement == null || playerMovement.transform != currentPlayerTransform)
                     currentPlayerTransform.TryGetComponent(out playerMovement);
+
+                currentPlayerTransform.TryGetComponent(out _playerBuoyancy);
             }
             else
             {
                 _playerTransform = playerMovement != null ? playerMovement.transform : null;
+                _playerBuoyancy = null;
+                if (_playerTransform != null)
+                    _playerTransform.TryGetComponent(out _playerBuoyancy);
             }
         }
 
@@ -624,6 +612,9 @@ namespace Hecton8.Atmosphere
 
             _subscribedPlayerMovement = target;
             _playerTransform = _subscribedPlayerMovement != null ? _subscribedPlayerMovement.transform : null;
+            _playerBuoyancy = null;
+            if (_playerTransform != null)
+                _playerTransform.TryGetComponent(out _playerBuoyancy);
 
             if (_subscribedPlayerMovement != null)
                 _subscribedPlayerMovement.OnWaterSplash += HandlePlayerWaterSplash;
@@ -692,60 +683,6 @@ namespace Hecton8.Atmosphere
             _weatherJobPrimed = false;
         }
 
-        private void EnsureShelterRaycastBuffers()
-        {
-            if (_shelterRaycastCommands.IsCreated && _shelterRaycastHits.IsCreated)
-                return;
-
-            if (!_shelterRaycastCommands.IsCreated)
-            {
-                _shelterRaycastCommands = new NativeArray<RaycastCommand>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] - deferred screen-space rain shelter probe - owner: HectonSurfaceWeatherDirector
-                NativeMemorySentinel.RegisterNativeArray(
-                    _shelterRaycastCommands,
-                    nameof(HectonSurfaceWeatherDirector),
-                    nameof(_shelterRaycastCommands),
-                    NativeAllocationLifetime.Scene);
-            }
-
-            if (!_shelterRaycastHits.IsCreated)
-            {
-                _shelterRaycastHits = new NativeArray<RaycastHit>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] - deferred screen-space rain shelter hit - owner: HectonSurfaceWeatherDirector
-                NativeMemorySentinel.RegisterNativeArray(
-                    _shelterRaycastHits,
-                    nameof(HectonSurfaceWeatherDirector),
-                    nameof(_shelterRaycastHits),
-                    NativeAllocationLifetime.Scene);
-            }
-        }
-
-        private void DisposeShelterRaycastBuffers()
-        {
-            bool hadScheduledShelterRaycast = _shelterRaycastScheduled;
-            JobHandle disposeHandle = hadScheduledShelterRaycast ? _shelterRaycastHandle : default;
-            _shelterRaycastScheduled = false;
-            _shelterRaycastPrimed = false;
-
-            if (_shelterRaycastCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_shelterRaycastCommands);
-                if (hadScheduledShelterRaycast)
-                    disposeHandle = _shelterRaycastCommands.Dispose(disposeHandle);
-                else
-                    _shelterRaycastCommands.Dispose();
-                _shelterRaycastCommands = default;
-            }
-
-            if (_shelterRaycastHits.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_shelterRaycastHits);
-                if (hadScheduledShelterRaycast)
-                    disposeHandle = _shelterRaycastHits.Dispose(disposeHandle);
-                else
-                    _shelterRaycastHits.Dispose();
-                _shelterRaycastHits = default;
-            }
-        }
-
         private void RunWeatherMathJobCold()
         {
             if (!_runtimeStateInitialized)
@@ -795,6 +732,7 @@ namespace Hecton8.Atmosphere
         private SurfaceWeatherJobInput BuildWeatherJobInput(float deltaTime)
         {
             Vector3 followPosition = ResolveFollowPosition();
+            Vector3 absoluteOffset = HectonFloatingOrigin.CurrentTotalOffset;
             return new SurfaceWeatherJobInput
             {
                 currentState = ToMathState(_currentState),
@@ -819,6 +757,7 @@ namespace Hecton8.Atmosphere
                 stormInterferencePulseIntervalMin = stormInterferencePulseIntervalMin,
                 stormInterferencePulseIntervalMax = stormInterferencePulseIntervalMax,
                 followPosition = ToFloat3(followPosition),
+                absoluteUniverseOffset = new double3(absoluteOffset.x, absoluteOffset.y, absoluteOffset.z),
                 surfaceY = ResolveSurfaceY(followPosition),
                 randomState = _rngState,
                 defaultFoamStrength = _oceanSurfaceDefaults.FoamStrength,
@@ -1049,25 +988,7 @@ namespace Hecton8.Atmosphere
 
         private Vector3 ResolveFollowPosition()
         {
-            return _playerTransform != null ? _playerTransform.position : transform.position;
-        }
-
-        private Transform ResolveRainOcclusionOrigin()
-        {
-            if (rainOcclusionOrigin != null)
-                return rainOcclusionOrigin;
-
-            if (_rainOcclusionTransform != null)
-                return _rainOcclusionTransform;
-
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null && playerContext.PlayerCamera != null)
-            {
-                _rainOcclusionTransform = playerContext.PlayerCamera.transform;
-                return _rainOcclusionTransform;
-            }
-
-            return _playerTransform;
+            return _playerTransform != null ? _playerTransform.position : (_selfTransform != null ? _selfTransform.position : default);
         }
 
         private float ResolveSurfaceY(Vector3 followPosition)
@@ -1293,7 +1214,7 @@ namespace Hecton8.Atmosphere
 
         private void ConfigurePendingThunder(Vector3 strikePosition, Vector3 listenerPosition, float electricalActivity)
         {
-            float thunderDistance = ResolveApproximateThunderDistanceMeters(strikePosition - listenerPosition);
+            float thunderDistance = ResolveAupThunderDistanceMeters(strikePosition, listenerPosition);
             float minDistance = math.max(10f, _currentState.lightningStrikeDistanceMin);
             float maxDistance = math.max(minDistance, _currentState.lightningStrikeDistanceMax);
             float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
@@ -1309,15 +1230,15 @@ namespace Hecton8.Atmosphere
                 NextRandom01()) * math.lerp(0.94f, 1.02f, 1f - distanceT);
         }
 
-        private static float ResolveApproximateThunderDistanceMeters(Vector3 delta)
+        private static float ResolveAupThunderDistanceMeters(Vector3 strikePosition, Vector3 listenerPosition)
         {
-            float ax = math.abs(delta.x);
-            float ay = math.abs(delta.y);
-            float az = math.abs(delta.z);
-            float max = math.max(ax, math.max(ay, az));
-            float min = math.min(ax, math.min(ay, az));
-            float mid = ax + ay + az - max - min;
-            return max + (mid * 0.375f) + (min * 0.125f);
+            AbsoluteUniversePosition strikeAup = AbsoluteUniversePosition.FromRuntimePosition(strikePosition);
+            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerPosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in strikeAup, in listenerAup);
+            if (!math.isfinite(distanceSq) || distanceSq <= 0d)
+                return 0f;
+
+            return (float)math.min(math.sqrt(distanceSq), (double)float.MaxValue);
         }
 
         private static Vector2 RotateDirection(Vector2 direction, float angleRadians)
@@ -1398,79 +1319,9 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            Transform occlusionOrigin = ResolveRainOcclusionOrigin();
-            if (occlusionOrigin == null)
-            {
-                _targetLocalRainExposure = 1f;
-                _isLocallySheltered = false;
-                return;
-            }
-
-            Vector3 probeOrigin = occlusionOrigin.position;
-            probeOrigin.y += shelterProbeOriginOffset;
-            ScheduleShelterRaycast(probeOrigin);
-        }
-
-        private void ScheduleShelterRaycast(Vector3 probeOrigin)
-        {
-            if (_shelterRaycastScheduled)
-                return;
-
-            EnsureShelterRaycastBuffers();
-            if (!_shelterRaycastCommands.IsCreated || !_shelterRaycastHits.IsCreated)
-                return;
-
-            QueryParameters queryParameters = new QueryParameters(
-                shelterOccluderMask.value,
-                false,
-                QueryTriggerInteraction.Ignore);
-            _shelterRaycastCommands[0] = new RaycastCommand(
-                probeOrigin,
-                Vector3.up,
-                queryParameters,
-                math.max(1f, shelterProbeHeight));
-            _shelterRaycastHits[0] = default;
-            _shelterRaycastHandle = RaycastCommand.ScheduleBatch(_shelterRaycastCommands, _shelterRaycastHits, 1, default);
-            _shelterRaycastScheduled = true;
-
-            if (!_shelterRaycastPrimed)
-            {
-                _targetLocalRainExposure = 1f;
-                _isLocallySheltered = false;
-            }
-        }
-
-        private void TryCompleteShelterRaycast(bool forceComplete)
-        {
-            if (!_shelterRaycastScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _shelterRaycastHandle, forceComplete))
-                return;
-
-            _shelterRaycastScheduled = false;
-            _shelterRaycastPrimed = true;
-
-            bool blocked = false;
-            if (_shelterRaycastHits.IsCreated)
-            {
-                Collider hitCollider = _shelterRaycastHits[0].collider;
-                if (hitCollider != null)
-                {
-                    Transform hitTransform = hitCollider.transform;
-                    blocked = _playerTransform == null || hitTransform == null || !hitTransform.IsChildOf(_playerTransform);
-                }
-            }
-
-            if (_executionMode == SurfaceExecutionMode.SurfaceSuppressed ||
-                ResolveCurrentDepth() > surfaceActivationDepth ||
-                (acousticZoneController != null && acousticZoneController.IsInterior))
-            {
-                blocked = true;
-            }
-
-            _targetLocalRainExposure = blocked ? 0f : 1f;
-            _isLocallySheltered = blocked;
+            bool dryZoneShelter = _playerBuoyancy != null && _playerBuoyancy.IsInDryZone;
+            _targetLocalRainExposure = dryZoneShelter ? 0f : 1f;
+            _isLocallySheltered = dryZoneShelter;
         }
 
         private float ResolveGustMultiplier(in WeatherFrameState state)
@@ -2413,6 +2264,10 @@ namespace Hecton8.Atmosphere
 
             if (surfaceSuppressionDelay < 0.1f)
                 surfaceSuppressionDelay = 0.1f;
+
+            if (shelterExposureBlendTime < 0.05f)
+                shelterExposureBlendTime = 0.05f;
+
         }
 #endif
     }

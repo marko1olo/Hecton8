@@ -1,18 +1,18 @@
-﻿# RENDERGRAPH AUDIT â€” HECTON-8 First-Party URP Features
+# RENDERGRAPH AUDIT â€” HECTON-8 First-Party URP Features
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Scope:** `Assets/_Project/Scripts/Visor/*Feature.cs` + owned `ScriptableRenderPass`  
-**Authority:** CTO / Lead Architect  
+**Date:** 2026-04-29
+**Scope:** `Assets/_Project/Scripts/Visor/*Feature.cs` + owned `ScriptableRenderPass`
+**Authority:** CTO / Lead Architect
 **Status:** ETA LEAK_MAPPED
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-All **7 first-party** `ScriptableRendererFeature` implementations were audited for `RTHandle` / `RenderTexture` / `GraphicsBuffer` lifecycle hygiene.  
+All **7 first-party** `ScriptableRendererFeature` implementations were audited for `RTHandle` / `RenderTexture` / `GraphicsBuffer` lifecycle hygiene.
 **Verdict:** Zero first-party RenderGraph resource leaks detected. Every pass that owns persistent GPU resources implements `IDisposable` and calls `Release()` in its `Dispose()` method. Every feature implements `Dispose(bool)` and forwards to its pass.
 
 > **WARNING:** This audit covers first-party code ONLY. Third-party Crest URP passes (`UnderwaterEffectPass`, `UnderwaterMaskPass`, `WaterRenderer`, etc.) are EXCLUDED per the **3RD-PARTY INTEGRITY** mandate. Crest maintains its own `Release()` / `OnDestroy()` patterns â€” do NOT write wrappers.

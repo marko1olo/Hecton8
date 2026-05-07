@@ -1,4 +1,4 @@
-﻿# VRAM BUDGET AUDIT â€” HECTON-8
+# VRAM BUDGET AUDIT â€” HECTON-8
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -45,7 +45,7 @@ Use this file as budget policy and estimate context only, not as current measure
 | **ÐžÑÑ‚Ð°Ñ‚Ð¾Ðº (ÑÐ¸ÑÑ‚ÐµÐ¼Ð°)** | 628 MB | âœ… OK |
 
 ### âš ï¸ ÐšÐ ÐÐ¡ÐÐ«Ð™ Ð¤Ð›ÐÐ“
-**Graduation response threshold:** used/total > 0.90 â†’ Mip-downgrade trigger  
+**Graduation response threshold:** used/total > 0.90 â†’ Mip-downgrade trigger
 **Ð¢ÐµÐºÑƒÑ‰Ð°Ñ Ð¾Ñ†ÐµÐ½ÐºÐ°:** ~850-950 MB (94-105% Ð¾Ñ‚ Ñ‚ÐµÐºÑÑ‚ÑƒÑ€Ð¸Ñ€Ð¾Ð²Ð°Ð½Ð½Ð¾Ð³Ð¾ Ð±ÑŽÐ´Ð¶ÐµÑ‚Ð°)
 
 ---
@@ -407,6 +407,6 @@ Assets/_Project/Art/TEXTURES/**/*.png
 
 ---
 
-**STATUS:** âš ï¸ **AT RISK** â€” 73% VRAM Ð±ÑŽÐ´Ð¶ÐµÑ‚Ð° Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¾  
-**NEXT AUDIT:** 2026-05-05 (Ð¿Ð¾ÑÐ»Ðµ Ð¾Ð¿Ñ‚Ð¸Ð¼Ð¸Ð·Ð°Ñ†Ð¸Ð¸ Ñ‚ÐµÐºÑÑ‚ÑƒÑ€)  
+**STATUS:** âš ï¸ **AT RISK** â€” 73% VRAM Ð±ÑŽÐ´Ð¶ÐµÑ‚Ð° Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¾
+**NEXT AUDIT:** 2026-05-05 (Ð¿Ð¾ÑÐ»Ðµ Ð¾Ð¿Ñ‚Ð¸Ð¼Ð¸Ð·Ð°Ñ†Ð¸Ð¸ Ñ‚ÐµÐºÑÑ‚ÑƒÑ€)
 **MIP-DOWNGRADE THRESHOLD:** 90% (1,620 MB)

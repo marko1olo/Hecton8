@@ -1,4 +1,4 @@
-﻿# PROJECT ATLAS
+# PROJECT ATLAS
 
 Version: 1.5.2
 Date: 2026-05-07
@@ -56,10 +56,10 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project`: `1211`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1170`
-Observed first-party C# line count under `Assets/_Project/Scripts` by `Get-Content.Count`: `650797`
-Observed first-party C# line count under `Assets/_Project/Scripts` by `Measure-Object -Line`: `559068`
+Observed first-party C# file count under `Assets/_Project`: `1212`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1171`
+Observed first-party C# line count under `Assets/_Project/Scripts` by `Get-Content.Count`: `651253`
+Observed first-party C# line count under `Assets/_Project/Scripts` by `Measure-Object -Line`: `559502`
 
 This is physical file count only.
 It does not imply quality, cohesion, or compile health.
@@ -206,7 +206,7 @@ Authority files for this boundary:
 
 These points were revalidated against current source in this pass:
 
-- `GlobalRegistryContracts.cs` now contains `36` direct public interfaces, not the older `19`, `27`, `31`, `33`, or `34` snapshots.
+- `GlobalRegistryContracts.cs` now contains `37` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, or `36` snapshots.
 - `SpatialAudioManager` directly implements `IAudioService` and registers through `GlobalRegistry.RegisterAudioService(this)`.
 - `SuitHUDV4CanvasOverlay` is the direct first-party `IUIService` implementor found in current source scan.
 - current bootstrap authority is split across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap`; it is not a single-owner startup surface.
@@ -388,10 +388,10 @@ Mandates followed for this update:
 
 Current measured source and documentation surface:
 
-- `Assets/_Project`: `1211` C# files.
-- `Assets/_Project/Scripts`: `1170` C# files.
-- Script LOC by PowerShell `Get-Content.Count` line count: `650797`.
-- Script LOC by PowerShell `Measure-Object -Line` line count: `559068`.
+- `Assets/_Project`: `1212` C# files.
+- `Assets/_Project/Scripts`: `1171` C# files.
+- Script LOC by PowerShell `Get-Content.Count` line count: `651253`.
+- Script LOC by PowerShell `Measure-Object -Line` line count: `559502`.
 - `.agents-skills`: `52` mandate files.
 - `Docs/**/*.md`: `436` markdown files.
 - Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `223`.
@@ -469,9 +469,9 @@ Mandate sync result for today's additions:
 
 Interface health result from `GlobalRegistryContracts.cs`:
 
-- Current direct public interface count: `36`.
-- Interfaces with at least one source-line implementation/reference scan hit: `36`.
-- Ghost interfaces by this static scan: `0`.
+- Current direct public interface count: `37`.
+- Interfaces with at least one source-line implementation/reference scan hit: not recounted after the 37th contract slot appeared.
+- Ghost interfaces by this static scan: `PENDING VERIFICATION`.
 
 Naming sweep result:
 
@@ -545,10 +545,10 @@ Mandates followed for this update:
 
 Current measured source/docs surface:
 
-- `Assets/_Project`: `1211` C# files.
-- `Assets/_Project/Scripts`: `1170` C# files.
-- Script LOC by PowerShell `Get-Content.Count` line count: `650797`.
-- Script LOC by PowerShell `Measure-Object -Line` line count: `559068`.
+- `Assets/_Project`: `1212` C# files.
+- `Assets/_Project/Scripts`: `1171` C# files.
+- Script LOC by PowerShell `Get-Content.Count` line count: `651253`.
+- Script LOC by PowerShell `Measure-Object -Line` line count: `559502`.
 - Scripts directly under `Assets/_Project/Scripts`: `336`.
 - Strict `StartCoroutine(` hits under `Assets/_Project/Scripts`: `0`.
 - `Docs`: `865` non-meta files in the current filesystem view.

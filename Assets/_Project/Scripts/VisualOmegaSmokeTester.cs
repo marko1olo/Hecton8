@@ -91,7 +91,7 @@ namespace Hecton8.Dev
             CheckContains(registrySource, "_mapMagicRuntime = null;", "globalregistry-mapmagic-reset");
             CheckContains(registryContractsSource, "MapMagicRuntime = 102", "globalregistry-mapmagic-slot");
             CheckNotContains(voxelStreamingSource, "$\"VoxelCave_", "voxel-streaming-hotpath-string-purged");
-            CheckContains(volumetricComputeSource, "clamp((int)round(_HectonVolumetricShadowParams.x), 1, 15)", "volumetric-shadow-step-cap-mx350");
+            CheckContains(volumetricComputeSource, "clamp((int)round(_HectonVolumetricShadowParams.x), 1, 7)", "volumetric-shadow-step-cap-mx350");
             CheckContains(retinaShaderSource, "_QUALITY_MX350", "retina-mx350-mode-toggle");
 
             _debugLastPass = _debugFailureCount == 0;

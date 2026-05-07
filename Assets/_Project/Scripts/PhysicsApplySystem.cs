@@ -856,9 +856,6 @@ namespace Hecton8.Physics
         private const float HullYieldThresholdJoules = 225000f;
         private const float AcousticImpulseReferenceEnergyJoules = HullYieldThresholdJoules;
         private const float AcousticImpulseEnergyLogScale = 0.001f;
-        private const float AcousticImpulseReferenceForceNewtonSq = 225000000f;
-        private const float AcousticImpulseReferenceTorqueNewtonMetersSq = 144000000f;
-        private const float AcousticImpulseReferenceVelocityMetersPerSecondSq = 196f;
         private const float AcousticImpulseMinimumRadiusMeters = 8f;
         private const float AcousticImpulseMaximumRadiusMeters = 64f;
         private const float MechanicalSparkProxyLightDurationSeconds = 0.05f;
@@ -1463,7 +1460,7 @@ namespace Hecton8.Physics
             {
                 EnsureSubmarineModifiableContacts();
                 PhysicsFrame.Tick();
-                FlushValidatedFrontBuffer();
+                FlushValidatedFrontBuffer(fixedDeltaTime);
                 ApplyDepressurizationVortices(fixedDeltaTime);
             }
         }
@@ -1487,7 +1484,7 @@ namespace Hecton8.Physics
             ExpireTransientImpactProxyLights();
         }
 
-        private void FlushValidatedFrontBuffer()
+        private void FlushValidatedFrontBuffer(float fixedDeltaTime)
         {
             if (!_frontBufferValidationReady)
                 return;
@@ -1530,6 +1527,7 @@ namespace Hecton8.Physics
                         Vector3 appliedForce = Vector3.zero;
                         Vector3 appliedTorque = Vector3.zero;
                         Vector3 impulsePosition = body.position;
+                        Vector3 preApplyVelocity = HectonPlayerMotor.SafeVelocity(body.linearVelocity);
                         bool appliedAny = false;
 
                         if ((flags & ForcePacketFlags.HasForce) != 0)
@@ -1572,7 +1570,14 @@ namespace Hecton8.Physics
                         }
 
                         if (packet.Priority == ForcePacketPriority.Critical && appliedAny)
-                            EmitCriticalAcousticImpulse(body, appliedForce, appliedTorque, impulsePosition);
+                            EmitCriticalAcousticImpulse(
+                                body,
+                                appliedForce,
+                                appliedTorque,
+                                impulsePosition,
+                                packet.Mode,
+                                fixedDeltaTime,
+                                preApplyVelocity);
                     }
 
                     System.Array.Clear(_frontPackets, 0, _frontCount);
@@ -1611,19 +1616,21 @@ namespace Hecton8.Physics
             Rigidbody body,
             Vector3 appliedForce,
             Vector3 appliedTorque,
-            Vector3 impulsePosition)
+            Vector3 impulsePosition,
+            ForceMode forceMode,
+            float fixedDeltaTime,
+            Vector3 preApplyVelocity)
         {
-            Vector3 baseVelocity = HectonPlayerMotor.SafeVelocity(body.linearVelocity);
-            float cinematicImpact01 = ResolveCinematicAcousticImpulse01(appliedForce, appliedTorque, baseVelocity);
-            float kineticEnergyJoules = cinematicImpact01 * AcousticImpulseReferenceEnergyJoules;
-            float volume01 = cinematicImpact01;
+            Vector3 predictedVelocity = preApplyVelocity + ResolvePacketVelocityDelta(appliedForce, forceMode, body.mass, fixedDeltaTime);
+            float kineticEnergyJoules = ResolveKineticEnergyJoules(body.mass, predictedVelocity);
+            float volume01 = ResolveAcousticImpulseVolume01(kineticEnergyJoules);
             float pitchScale = ResolveAcousticImpulsePitchScale(kineticEnergyJoules);
             float radiusMeters = math.lerp(AcousticImpulseMinimumRadiusMeters, AcousticImpulseMaximumRadiusMeters, volume01);
             Vector3 direction = appliedForce.sqrMagnitude > MinMagnitudeSq
                 ? appliedForce
                 : appliedTorque.sqrMagnitude > MinMagnitudeSq
                     ? appliedTorque
-                    : baseVelocity;
+                    : predictedVelocity;
             int sourceBodyEntityId = unchecked((int)EntityId.ToULong(body.GetEntityId()));
 
             AcousticImpulseEvent impulseEvent = new AcousticImpulseEvent(
@@ -1638,24 +1645,6 @@ namespace Hecton8.Physics
                 AcousticImpulseFlags.Critical);
             PhysicsEventBus.NotifyAcousticImpulse(in impulseEvent);
             TryRegisterMechanicalSparkProxyLight(impulsePosition, sourceBodyEntityId, volume01);
-        }
-
-        private static float ResolveCinematicAcousticImpulse01(Vector3 force, Vector3 torque, Vector3 velocity)
-        {
-            float3 safeForce = new float3(force.x, force.y, force.z);
-            float3 safeTorque = new float3(torque.x, torque.y, torque.z);
-            float3 safeVelocity = new float3(velocity.x, velocity.y, velocity.z);
-            if (!math.all(math.isfinite(safeForce)) ||
-                !math.all(math.isfinite(safeTorque)) ||
-                !math.all(math.isfinite(safeVelocity)))
-            {
-                return 0f;
-            }
-
-            float force01 = math.saturate(math.lengthsq(safeForce) / AcousticImpulseReferenceForceNewtonSq);
-            float torque01 = math.saturate(math.lengthsq(safeTorque) / AcousticImpulseReferenceTorqueNewtonMetersSq);
-            float velocity01 = math.saturate(math.lengthsq(safeVelocity) / AcousticImpulseReferenceVelocityMetersPerSecondSq);
-            return math.saturate(math.max(force01, math.max(torque01 * 0.8f, velocity01 * 0.55f)));
         }
 
         private static Vector3 ResolvePacketVelocityDelta(Vector3 force, ForceMode mode, float mass, float fixedDeltaTime)

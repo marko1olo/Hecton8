@@ -3729,6 +3729,9 @@ namespace Hecton8.World
                 ? _leviathanHeadVelocityWS.normalized
                 : _leviathanHeadForwardWS;
             float shockwaveSpeed01 = Mathf.Clamp01(_leviathanHeadVelocityWS.magnitude / Mathf.Max(leviathanShockwaveSpeedThreshold, 0.001f));
+            float shockwaveDensityScale = Mathf.Lerp(0.8f, 1.25f, originDensity01);
+            float safeShockwaveRadius = Mathf.Max(leviathanShockwaveRadius, 0.001f);
+            float shockwaveRadiusSq = safeShockwaveRadius * safeShockwaveRadius;
             for (int i = 0; i < rigidbodyCount; i++)
             {
                 Rigidbody targetBody = _leviathanShockwaveRigidbodies[i];
@@ -3738,19 +3741,15 @@ namespace Hecton8.World
 
                 Vector3 bodyCenter = targetBody.worldCenterOfMass;
                 Vector3 radialDirection = bodyCenter - _leviathanHeadPositionWS;
-                float radialDistance = radialDirection.magnitude;
-                if (radialDistance <= 0.0001f)
+                float radialDistanceSq = radialDirection.sqrMagnitude;
+                if (radialDistanceSq <= 0.0001f)
                     radialDirection = headDirection;
                 else
-                    radialDirection /= radialDistance;
+                    radialDirection *= math.rsqrt(radialDistanceSq);
 
-                float distance01 = Mathf.Clamp01(1f - radialDistance / Mathf.Max(leviathanShockwaveRadius, 0.001f));
+                float distance01 = Mathf.Clamp01(1f - radialDistanceSq / shockwaveRadiusSq);
                 if (distance01 <= 0.0001f)
                     continue;
-
-                float density01 = originDensity01;
-                if (dragManager != null && dragManager.SampleInfluence(bodyCenter, 0.75f, out _, out _, out float sampledDensity))
-                    density01 = Mathf.Max(density01, sampledDensity);
 
                 Vector3 impulseDirection = Vector3.Lerp(radialDirection, headDirection, 0.35f);
                 impulseDirection.y += leviathanShockwaveVerticalLift;
@@ -3761,7 +3760,7 @@ namespace Hecton8.World
 
                 float impulseMagnitude = leviathanShockwaveImpulse *
                                          Mathf.Lerp(0.7f, 1.35f, shockwaveSpeed01) *
-                                         Mathf.Lerp(0.8f, 1.25f, density01) *
+                                         shockwaveDensityScale *
                                          distance01;
                 PhysicsForceRouter.QueueForce(
                     targetBody,

@@ -16,7 +16,6 @@ Shader "HECTON/Terrain/TerrainMaster"
 
         [Header(Texture Array Packing)]
         [NoScaleOffset] _TerrainAlbedoArray ("Terrain Albedo Array", 2DArray) = "" {}
-        [NoScaleOffset] _TerrainNormalArray ("Terrain Normal Array", 2DArray) = "" {}
         _TerrainLayerCount ("Terrain Array Layer Count", Float) = 8
         _BiomeLayerStride ("Biome Layer Stride", Float) = 2
         _SandLayerIndex ("Sand Layer Offset", Float) = 0
@@ -110,7 +109,6 @@ Shader "HECTON/Terrain/TerrainMaster"
         TEXTURE2D(_RockTex);    SAMPLER(sampler_RockTex);
         TEXTURE2D(_RockNormal); SAMPLER(sampler_RockNormal);
         TEXTURE2D_ARRAY(_TerrainAlbedoArray); SAMPLER(sampler_TerrainAlbedoArray);
-        TEXTURE2D_ARRAY(_TerrainNormalArray); SAMPLER(sampler_TerrainNormalArray);
         TEXTURE2D(_HectonDistantTerrainShadowMask); SAMPLER(sampler_HectonDistantTerrainShadowMask);
         float4 _SargassumCanopyShadowParams;
         float4 _SargassumCanopyLightingParams;
@@ -224,26 +222,17 @@ Shader "HECTON/Terrain/TerrainMaster"
             return SAMPLE_TEXTURE2D_ARRAY(_TerrainAlbedoArray, sampler_TerrainAlbedoArray, uv, slice);
         }
 
-        half3 HectonSampleTerrainNormalArrayAtUv(float2 uv, half dominantAxis, float3 normalWS, float strength, float slice)
+        half3 HectonResolveTerrainNormalOffsetAtUv(float2 uv, half dominantAxis, float3 normalWS, float strength, float slice)
         {
-            half3 tangentNormal = UnpackNormalScale(
-                SAMPLE_TEXTURE2D_ARRAY(_TerrainNormalArray, sampler_TerrainNormalArray, uv, slice), strength);
-            half3 normalSign = sign((half3)normalWS);
-            if (dominantAxis < 0.5h)
-                return half3(tangentNormal.z * normalSign.x, tangentNormal.y, tangentNormal.x);
-
-            if (dominantAxis > 1.5h)
-                return half3(tangentNormal.x, tangentNormal.y, tangentNormal.z * normalSign.z);
-
-            return half3(tangentNormal.x, tangentNormal.z * normalSign.y, tangentNormal.y);
+            return half3(0.0h, 0.0h, 0.0h);
         }
 
-        half3 HectonSampleTerrainNormalArray(float3 posWS, float3 normalWS, float scale, float strength, float slice)
+        half3 HectonResolveTerrainNormalOffset(float3 posWS, float3 normalWS, float scale, float strength, float slice)
         {
             float2 uv;
             half dominantAxis;
             HectonResolveTerrainProjection(posWS, normalWS, scale, uv, dominantAxis);
-            return HectonSampleTerrainNormalArrayAtUv(uv, dominantAxis, normalWS, strength, slice);
+            return HectonResolveTerrainNormalOffsetAtUv(uv, dominantAxis, normalWS, strength, slice);
         }
 
         float2 HectonResolveTerrainBumpOffset(half3 viewDirectionWS, half dominantAxis, half height01)
@@ -552,7 +541,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 [branch]
                 if (_BumpOffsetStrength > 0.0001)
                     terrainSample = HectonSampleTerrainAlbedoArrayAtUv(offsetTerrainUv, terrainSlice);
-                half3 rockNormalWS = HectonSampleTerrainNormalArrayAtUv(
+                half3 rockNormalWS = HectonResolveTerrainNormalOffsetAtUv(
                     offsetTerrainUv, terrainDominantAxis, IN.normalWS, _RockNormalStr, terrainSlice);
                 half3 albedo = terrainSample.rgb * lerp(_SandColor.rgb, _RockColor.rgb, slopeBlend);
                 half smoothness = terrainSample.a * _BaseSmooth;
@@ -887,7 +876,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
                 float terrainScale = lerp(_SandScale, _RockScale, IN.blendData.x);
                 float terrainSlice = HectonResolveTerrainArraySlice(IN.blendData.x, IN.blendData.y);
-                half3 rockN = HectonSampleTerrainNormalArray(
+                half3 rockN = HectonResolveTerrainNormalOffset(
                     IN.positionWS, IN.normalWS, terrainScale, _RockNormalStr, terrainSlice);
 
                 float3 finalN = normalize(IN.normalWS + rockN * IN.blendData.x);

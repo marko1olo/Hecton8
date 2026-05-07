@@ -1,10 +1,10 @@
-﻿# PROFILING_PREPAREDNESS_AUDIT
+# PROFILING_PREPAREDNESS_AUDIT
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Status:** PENDING VERIFICATION  
+**Date:** 2026-04-29
+**Status:** PENDING VERIFICATION
 **Scope:** current profiler marker presence in selected first-party runtime systems
 
 **Mandates Followed:** `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
@@ -72,5 +72,5 @@ Status: PENDING VERIFICATION
 
 ## Verdict
 
-Profiler instrumentation coverage is better than the old audit claimed.  
+Profiler instrumentation coverage is better than the old audit claimed.
 Budget compliance and marker usefulness remain `PENDING VERIFICATION` until a live profiler run is captured.

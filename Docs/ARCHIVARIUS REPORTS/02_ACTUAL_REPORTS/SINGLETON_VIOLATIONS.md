@@ -1,10 +1,10 @@
-﻿# SINGLETON WITCH HUNT â€” FIRST-PARTY VIOLATIONS
+# SINGLETON WITCH HUNT â€” FIRST-PARTY VIOLATIONS
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Status:** PENDING VERIFICATION  
-**Audit Review Date:** 2026-04-29  
+**Status:** PENDING VERIFICATION
+**Audit Review Date:** 2026-04-29
 **Chronology Note:** The previous header claimed `2026-05-02`, which is impossible relative to the current workspace date. Treat this file as a static inventory until re-scanned.
 **Rule:** AGENTS.md Â§ PRIME DIRECTIVES â€” "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."
 

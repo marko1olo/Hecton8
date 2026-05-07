@@ -920,7 +920,7 @@ namespace Hecton8.Bootstrap
                 Log("  ✓ ObjectPoolManager");
             }
 
-            if (PrefabRegistry.Instance == null)
+            if (PrefabRegistry.ActiveRuntimeInstance == null)
             {
                 Debug.LogError("[SceneBootstrap] PrefabRegistry NOT FOUND! " +
                     "Run through 00_BOOTSTRAP or create a GameObject with PrefabRegistry component.");

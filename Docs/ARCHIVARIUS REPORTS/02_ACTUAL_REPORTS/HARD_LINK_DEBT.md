@@ -1,10 +1,10 @@
-﻿# HARD LINK DEBT â€” Asset-to-Code Violation Map
+# HARD LINK DEBT â€” Asset-to-Code Violation Map
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-> **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md Â§ Addressables Â· Â§ Resources.Load [FORBID] Â· Â§ AssetDatabase [Editor-only]  
+> **Status:** ETA SANITIZED
+> **Mandates Followed:** AGENTS.md Â§ Addressables Â· Â§ Resources.Load [FORBID] Â· Â§ AssetDatabase [Editor-only]
 
 ---
 
@@ -97,7 +97,7 @@ These are **not first-party** and must not be patched without an explicit extern
 | **Easy Save 3** | `ES3Settings.cs` | `ES3Defaults` asset | Startup |
 | **RealtimeCSG** | `MaterialUtility.cs` | Multiple materials & textures | Editor + runtime CSG preview |
 
-> **AGENTS.md Rule:** "[FORBID] A* Pathfinding, DOTween, Easy Save 3, Master Audio â€” replaced by custom Native/Burst/DSP subsystems."  
+> **AGENTS.md Rule:** "[FORBID] A* Pathfinding, DOTween, Easy Save 3, Master Audio â€” replaced by custom Native/Burst/DSP subsystems."
 > MasterAudio and EasySave3 are listed as forbidden, yet they remain in the project. This is architectural drift. Do **not** remove them in this pass; flag for dedicated purge milestone.
 
 ---

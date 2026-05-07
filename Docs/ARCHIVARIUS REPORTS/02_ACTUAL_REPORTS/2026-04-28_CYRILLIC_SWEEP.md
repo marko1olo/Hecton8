@@ -1,10 +1,10 @@
-﻿# CYRILLIC_SWEEP.md
+# CYRILLIC_SWEEP.md
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Status:** PENDING VERIFICATION  
+**Date:** 2026-04-29
+**Status:** PENDING VERIFICATION
 **Scope:** non-ASCII path sweep under `Assets/_Project`
 
 **Mandates Followed:** `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
@@ -57,7 +57,7 @@ The older report materially understated the scope.
 
 ## Corrected Conclusion
 
-This is not a small comment-hygiene issue.  
+This is not a small comment-hygiene issue.
 It is a broad asset-path naming problem spanning fonts, meshes, data assets, prefabs, and content folders.
 
 ---
@@ -86,5 +86,5 @@ Those require separate targeted passes.
 
 ## Verdict
 
-Non-ASCII path debt is widespread, not isolated.  
+Non-ASCII path debt is widespread, not isolated.
 Exact build impact remains `PENDING VERIFICATION`, but the naming exposure is real and large.

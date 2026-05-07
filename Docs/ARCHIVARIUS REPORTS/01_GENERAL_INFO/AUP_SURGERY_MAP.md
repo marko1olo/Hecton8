@@ -1,11 +1,11 @@
-﻿# HECTON-8 â€” AUP SURGERY BYTE MAP
+# HECTON-8 â€” AUP SURGERY BYTE MAP
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
-**Status:** ETA SURGERY_PREPPED  
-**Target:** `AbsoluteUniversePosition` layout mutation (int64Ã—3 + float3 â†’ TBD)  
-**Risk:** CRITICAL â€” breaks binary save compatibility, native container layouts, and payload prefix offsets.  
-**Author:** Autonomous Crusade / Pre-Surgery Mapping  
+**Status:** ETA SURGERY_PREPPED
+**Target:** `AbsoluteUniversePosition` layout mutation (int64Ã—3 + float3 â†’ TBD)
+**Risk:** CRITICAL â€” breaks binary save compatibility, native container layouts, and payload prefix offsets.
+**Author:** Autonomous Crusade / Pre-Surgery Mapping
 **Date:** 2026-04-28
 
 ---
@@ -388,5 +388,5 @@ namespace Hecton8.SaveSystem
 
 ---
 
-**STATUS:** ETA SURGERY_PREPPED  
+**STATUS:** ETA SURGERY_PREPPED
 **NEXT ACTION:** CTO approval on new AUP byte size â†’ freeze migration constants â†’ execute.

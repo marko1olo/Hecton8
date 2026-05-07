@@ -1,4 +1,4 @@
-﻿# HECTON-8 Global Architecture Map
+# HECTON-8 Global Architecture Map
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -22,9 +22,9 @@ Mandates followed:
 ## 1. Scope
 
 - Audit target: `Assets/_Project/**/*.cs`
-- Current first-party `.cs` inventory under `Assets/_Project`: `1206`
-- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1165`
-- Current script line count under `Assets/_Project/Scripts`: `643074`
+- Current first-party `.cs` inventory under `Assets/_Project`: `1212`
+- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1171`
+- Current script line count under `Assets/_Project/Scripts`: `651121`
 - Average lines per script: `551.99`
 - Scripts still living directly in `Assets/_Project/Scripts` root: `336`
 
@@ -32,7 +32,7 @@ This file replaces the older generated map whose `808`-script snapshot and some 
 
 2026-05-06 correction:
 - Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, earlier May 2 `489893`, and May 2 `1087/1047/571562/317` snapshots.
-- Current `GlobalRegistryContracts.cs` contains `34` direct public interfaces.
+- Current `GlobalRegistryContracts.cs` contains `36` direct public interfaces.
 - Older interface coverage ratios in this document are stale orientation only; re-open `GlobalRegistryContracts.cs` and implementors before making interface-completion claims.
 
 ## 2. Runtime Topology
@@ -96,7 +96,7 @@ Current direct damage contract owner confirmed by source scan:
 - `Hecton8.Core.IDamageReceiver` -> `Gameplay/HabitatIntegrityManager`
 
 This is materially different from older documents that claimed `IAudioService` was ghost, `IUIService` was directly multi-owned, or `IDamageReceiver` had two current implementers.
-It also supersedes older interface-count claims. Current direct public interface count is `34`; coverage must be rechecked from source before being used as proof.
+It also supersedes older interface-count claims. Current direct public interface count is `36`; coverage must be rechecked from source before being used as proof.
 
 ## 4. Event Architecture
 

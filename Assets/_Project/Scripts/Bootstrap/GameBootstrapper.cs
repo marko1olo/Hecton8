@@ -520,7 +520,7 @@ namespace Hecton8.Bootstrap
             catch (Exception exception)
             {
                 _currentPhase = BootstrapPhase.Fatal;
-                HandleFatalBootstrapException(phase.ToString(), exception);
+                HandleFatalBootstrapException(ResolveBootstrapPhaseName(phase), exception);
                 return false;
             }
             finally
@@ -529,6 +529,33 @@ namespace Hecton8.Bootstrap
                 double elapsedMilliseconds = phaseStopwatch.Elapsed.TotalMilliseconds;
                 CrashTelemetryBuffer.RecordBootstrapPhaseDuration(stepToken, elapsedMilliseconds);
                 BootstrapStatus.EndStep(stepToken);
+            }
+        }
+
+        private static string ResolveBootstrapPhaseName(BootstrapPhase phase)
+        {
+            switch (phase)
+            {
+                case BootstrapPhase.HardwareCheck:
+                    return nameof(BootstrapPhase.HardwareCheck);
+                case BootstrapPhase.MemoryPreWarm:
+                    return nameof(BootstrapPhase.MemoryPreWarm);
+                case BootstrapPhase.CoreServices:
+                    return nameof(BootstrapPhase.CoreServices);
+                case BootstrapPhase.Environment:
+                    return nameof(BootstrapPhase.Environment);
+                case BootstrapPhase.Player:
+                    return nameof(BootstrapPhase.Player);
+                case BootstrapPhase.UI:
+                    return nameof(BootstrapPhase.UI);
+                case BootstrapPhase.SceneActivate:
+                    return nameof(BootstrapPhase.SceneActivate);
+                case BootstrapPhase.Complete:
+                    return nameof(BootstrapPhase.Complete);
+                case BootstrapPhase.Fatal:
+                    return nameof(BootstrapPhase.Fatal);
+                default:
+                    return "Unknown";
             }
         }
 
@@ -1176,7 +1203,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.EquipmentInteractionHandler:
                     return GlobalRegistry.InteractionSignals != null;
                 case BootstrapDependencyNode.HectonFloatingOrigin:
-                    return HectonFloatingOrigin.Instance != null && !HectonFloatingOrigin.IsShiftInProgress;
+                    return GlobalRegistry.FloatingOrigin != null && !HectonFloatingOrigin.IsShiftInProgress;
                 case BootstrapDependencyNode.GlobalPhysicsStateManager:
                     return GlobalRegistry.PhysicsStateManager != null;
                 case BootstrapDependencyNode.PhysicsApplySystem:
@@ -1221,7 +1248,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.RenderDispatcher: return GlobalRegistry.RenderDispatcher;
                 case BootstrapDependencyNode.SceneRuntimeService: return GlobalRegistry.Scene;
                 case BootstrapDependencyNode.EquipmentInteractionHandler: return GlobalRegistry.InteractionSignals;
-                case BootstrapDependencyNode.HectonFloatingOrigin: return HectonFloatingOrigin.Instance;
+                case BootstrapDependencyNode.HectonFloatingOrigin: return GlobalRegistry.FloatingOrigin;
                 case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistry.PhysicsStateManager;
                 case BootstrapDependencyNode.PhysicsApplySystem: return GlobalRegistry.Physics;
                 case BootstrapDependencyNode.DebrisManager: return GlobalRegistry.Debris;
@@ -1314,7 +1341,7 @@ namespace Hecton8.Bootstrap
                     return EnsureEquipmentInteractionServiceRegistered() != null && GlobalRegistry.InteractionSignals != null;
 
                 case BootstrapDependencyNode.HectonFloatingOrigin:
-                    return EnsureFloatingOriginRegistered() != null && HectonFloatingOrigin.Instance != null;
+                    return EnsureFloatingOriginRegistered() != null && GlobalRegistry.FloatingOrigin != null;
 
                 case BootstrapDependencyNode.GlobalPhysicsStateManager:
                     return EnsureGlobalPhysicsStateManagerRegistered() != null && GlobalRegistry.PhysicsStateManager != null;
@@ -1599,7 +1626,7 @@ namespace Hecton8.Bootstrap
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static RuntimePerformanceProfiler EnsureRuntimePerformanceProfilerRegistered()
         {
-            RuntimePerformanceProfiler profiler = RuntimePerformanceProfiler.Instance;
+            RuntimePerformanceProfiler profiler = RuntimePerformanceProfiler.ActiveRuntime;
             bool activateAfterConfigure = false;
             if (profiler == null)
             {
@@ -1653,7 +1680,7 @@ namespace Hecton8.Bootstrap
 
         private static HectonFloatingOrigin EnsureFloatingOriginRegistered()
         {
-            HectonFloatingOrigin origin = HectonFloatingOrigin.Instance ?? HectonFloatingOrigin.EnsureRuntimeInstance();
+            HectonFloatingOrigin origin = GlobalRegistry.FloatingOrigin ?? HectonFloatingOrigin.EnsureRuntimeInstance();
 
             PersistRuntimeService(origin);
 
@@ -1706,7 +1733,7 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.FaunaSimulation != null)
                 return GlobalRegistry.FaunaSimulation.IsReady;
 
-            GlobalRegistry.RegisterFaunaSimulationService(DemiurgeFaunaSimulationService.Instance);
+            GlobalRegistry.RegisterFaunaSimulationService(DemiurgeFaunaSimulationService.Shared);
             return GlobalRegistry.FaunaSimulation != null && GlobalRegistry.FaunaSimulation.IsReady;
         }
 
@@ -1844,11 +1871,12 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.Audio != null)
                 return true;
 
-            GlobalRegistry.RegisterAudioService(NoOpAudioService.Instance);
+            GlobalRegistry.RegisterAudioService(NoOpAudioService.Shared);
             LogOptionalBootstrapWarning($"Injected NoOp audio service. Reason: {reason}");
             return GlobalRegistry.Audio != null;
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogOptionalBootstrapWarning(string message)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -2085,7 +2113,7 @@ namespace Hecton8.Bootstrap
             int index = (int)node;
             return index >= 0 && index < _bootstrapDependencyNodeNames.Length
                 ? _bootstrapDependencyNodeNames[index]
-                : node.ToString();
+                : "Unknown";
         }
 
         private static void HandleSceneLoadedGuard(Scene scene, LoadSceneMode mode)
@@ -2368,7 +2396,7 @@ namespace Hecton8.Bootstrap
     internal sealed class NoOpAudioService : IAudioService
     {
         // COLD ALLOC: NoOpAudioService[1] - non-critical audio fallback for deterministic bootstrap progress - owner: GameBootstrapper
-        internal static readonly NoOpAudioService Instance = new NoOpAudioService();
+        internal static readonly NoOpAudioService Shared = new NoOpAudioService();
 
         /// <inheritdoc />
         public bool IsInitialized => true;
@@ -2453,7 +2481,7 @@ namespace Hecton8.Bootstrap
     internal sealed class DemiurgeFaunaSimulationService : IFaunaSim
     {
         // COLD ALLOC: DemiurgeFaunaSimulationService[1] - headless data-only fauna simulation sentinel - owner: GameBootstrapper
-        internal static readonly DemiurgeFaunaSimulationService Instance = new DemiurgeFaunaSimulationService();
+        internal static readonly DemiurgeFaunaSimulationService Shared = new DemiurgeFaunaSimulationService();
 
         /// <inheritdoc />
         public bool IsReady => true;

@@ -1,4 +1,4 @@
-﻿# HECTON-8 â€” GLOSSARY OF TERMS
+# HECTON-8 â€” GLOSSARY OF TERMS
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -842,6 +842,6 @@ public interface IAudioOutputJob {
 
 ---
 
-**STATUS:** âœ… GLOSSARY.md ÑÐ¾Ð·Ð´Ð°Ð½  
-**LAST UPDATED:** 2026-04-28  
+**STATUS:** âœ… GLOSSARY.md ÑÐ¾Ð·Ð´Ð°Ð½
+**LAST UPDATED:** 2026-04-28
 **NEXT REVIEW:** ÐŸÑ€Ð¸ Ð´Ð¾Ð±Ð°Ð²Ð»ÐµÐ½Ð¸Ð¸ Ð½Ð¾Ð²Ñ‹Ñ… ÑÐ¸ÑÑ‚ÐµÐ¼ Ð¸Ð»Ð¸ Ñ‚ÐµÑ€Ð¼Ð¸Ð½Ð¾Ð²

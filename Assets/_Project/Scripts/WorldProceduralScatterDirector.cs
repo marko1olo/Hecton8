@@ -61,6 +61,12 @@ namespace Hecton8.World
         }
         private const string ScatterRootName = "__PROCEDURAL_SCATTER_WORLD";
         private const string GeneratedGeologyRootName = "__GENERATED_GEOLOGY";
+        private const string CandidateMapCapacityExceededWarning =
+            "[CandidateMap] Capacity exceeded. Increase capacity or reduce candidates.";
+        private const string CandidateMapNearCapacityWarning =
+            "[CandidateMap] Approaching capacity. Increase capacity or reduce candidates.";
+        private const string PlacementPoolExhaustedWarning =
+            "[WorldScatter] Placement pool exhausted. Candidate dropped; increase placement pool capacity.";
         private const int ScatterLayerCount = 4;
         private const string ScatterPatternNoneLabel = "None";
         private const string ScatterPatternSedimentResourcesLabel = "SedimentResources";
@@ -90,6 +96,7 @@ namespace Hecton8.World
         private const float FloraFallbackClusterNoiseScale = 0.009f;
         private static bool _candidateMapCapacityExceededWarningLogged;
         private static bool _candidateMapNearCapacityWarningLogged;
+        private static bool _placementPoolExhaustedWarningLogged;
 #if UNITY_EDITOR
         private static bool _assemblyReloadHookRegistered;
 #endif
@@ -493,6 +500,7 @@ namespace Hecton8.World
             _emergencyCanopyGeologyProfile = null;
             _emergencyLandmarkGeologyProfile = null;
             _emergencyCaveGeologyProfile = null;
+            _placementPoolExhaustedWarningLogged = false;
             _registeredScatterDirectors.Clear();
         }
         private Transform _scatterRootTransform;
@@ -1430,7 +1438,7 @@ namespace Hecton8.World
                 return;
 
             _candidateMapCapacityExceededWarningLogged = true;
-            UnityEngine.Debug.LogWarning($"[CandidateMap] Capacity exceeded ({capacity}), cannot add key {key}. Increase capacity or reduce candidates.");
+            UnityEngine.Debug.LogWarning(CandidateMapCapacityExceededWarning);
         }
 
         [Conditional("UNITY_EDITOR")]
@@ -1441,7 +1449,7 @@ namespace Hecton8.World
                 return;
 
             _candidateMapNearCapacityWarningLogged = true;
-            UnityEngine.Debug.LogWarning($"[CandidateMap] Approaching capacity ({count}/{capacity}), consider increasing capacity.");
+            UnityEngine.Debug.LogWarning(CandidateMapNearCapacityWarning);
         }
 
         private void ResolveCombinedBudgetScales(
@@ -1580,12 +1588,38 @@ namespace Hecton8.World
 
         private ScatterPlacement GetPooledPlacement()
         {
-            ScatterPlacement placement = _placementPool.Count > 0
-                ? _placementPool.Pop()
-                : new ScatterPlacement();
+            ScatterPlacement placement;
+            if (_placementPool.Count > 0)
+            {
+                placement = _placementPool.Pop();
+            }
+#if UNITY_EDITOR
+            else if (!Application.isPlaying)
+            {
+                // COLD ALLOC: editor-only preview rebuilds may exceed runtime pool sizing without affecting player streaming GC.
+                placement = new ScatterPlacement();
+            }
+#endif
+            else
+            {
+                LogPlacementPoolExhausted();
+                return null;
+            }
+
             placement.IsPooled = false;
             placement.ReferenceCount = 1;
             return placement;
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPlacementPoolExhausted()
+        {
+            if (_placementPoolExhaustedWarningLogged)
+                return;
+
+            _placementPoolExhaustedWarningLogged = true;
+            UnityEngine.Debug.LogWarning(PlacementPoolExhaustedWarning);
         }
 
         private static void RetainPlacement(ScatterPlacement placement)
@@ -2972,7 +3006,7 @@ namespace Hecton8.World
 
         private bool TryGetPrefabRegistry(out PrefabRegistry prefabRegistry)
         {
-            prefabRegistry = PrefabRegistry.Instance;
+            prefabRegistry = PrefabRegistry.ActiveRuntimeInstance;
             if (prefabRegistry != null)
                 return true;
 

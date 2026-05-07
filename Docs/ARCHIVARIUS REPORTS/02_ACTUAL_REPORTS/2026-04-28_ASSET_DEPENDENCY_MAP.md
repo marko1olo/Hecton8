@@ -1,4 +1,4 @@
-﻿# ASSET-TO-CODE DEPENDENCY MAP
+# ASSET-TO-CODE DEPENDENCY MAP
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -98,7 +98,7 @@ Preferred current references:
 [RequireComponent(typeof(SubmarineStructuralGrid))]
 public sealed class SubmarineCoreDirector : MonoBehaviour {}
 
-// ContextualPhysicalIkRig.cs  
+// ContextualPhysicalIkRig.cs
 [RequireComponent(typeof(Animator))]
 [RequireComponent(typeof(CapsuleCollider))]
 public sealed class ContextualPhysicalIkRig : MonoBehaviour {}
@@ -204,5 +204,5 @@ Obsolete note:
 
 **Historical Scan Status:** ETA VERIFIED âœ…
 
-**Critical Risk:** Scene object name dependencies  
+**Critical Risk:** Scene object name dependencies
 **Recommendation:** Replace scene object search with GlobalRegistry injection

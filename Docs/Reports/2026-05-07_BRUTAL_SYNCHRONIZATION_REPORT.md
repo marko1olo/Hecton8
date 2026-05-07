@@ -37,11 +37,13 @@ $ifaceAll = (rg -n '^\s*public\s+interface\s+' $contracts | Measure-Object).Coun
 
 Observed values:
 
-- `Assets/_Project`: `1211` C# files.
-- `Assets/_Project/Scripts`: `1170` C# files.
-- `Assets/_Project/Scripts` by `Get-Content.Count`: `650797` lines.
-- `Assets/_Project/Scripts` by `Measure-Object -Line`: `559068` lines.
-- `GlobalRegistryContracts.cs`: `36` public interfaces.
+- `Assets/_Project`: `1212` C# files.
+- `Assets/_Project/Scripts`: `1171` C# files.
+- `Assets/_Project/Scripts` by `Get-Content.Count`: `651253` lines.
+- `Assets/_Project/Scripts` by `Measure-Object -Line`: `559502` lines.
+- `GlobalRegistryContracts.cs`: `37` public interfaces.
+
+Boundary: source files were modified by another process during this pass. The stamped line count is the last observed count at `2026-05-07 04:47:30 +04:00`; source-count stability remains `PENDING VERIFICATION`.
 
 ## Documentation Count Evidence
 
@@ -76,15 +78,15 @@ Observed after this pass:
 |---|---|
 | Active markdown `Date:` headers | Rechecked for `Date: 2026-05-07`. |
 | Active markdown `Status:` headers | Nine report files lacked a header-level `Status:`. Header status inserted as `Status: PENDING VERIFICATION`. |
-| Stale compile claims | `itemGeneticsWords missing`, `MinimumDensity missing`, and `MaximumDensity missing` claims were not present in active docs. Source contains `itemGeneticsWords`, `MinimumDensity`, and `MaximumDensity`. |
+| Stale compile claims | No active doc asserts the old absence of `itemGeneticsWords`, `MinimumDensity`, or `MaximumDensity`. Source contains all three symbols. |
 | Deprecated flat redirects | No root-level `FLORA_SYSTEM_PLAN.md` or flat `Docs/FLORA_SYSTEM_PLAN.md` remains. Deprecated redirect stub is already under `Docs/DEPRECATED/Root_Redirect_Stubs_2026-05-01/`. Canonical `Docs/Flora_Pipeline/FLORA_SYSTEM_PLAN.md` is retained. |
 | Atlas count sync | `PROJECT_ATLAS.md` updated to current physical file/line/interface counts. |
 | JSON manifest | `Docs/Reports/2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json` generated. |
 | Conceptual system map | DOTS remains `Experimental Seam`; Physics remains `Active/Transitional`. |
-| Event flow map | `EVENT_BUS_MAP.md` and `SYSTEM_INTERCONNECT_MATRIX.md` now state the five arteries: Core, Env, Player, Base, AI. |
+| Event flow map | `EVENT_FLOW_MAP.md`, `EVENT_BUS_MAP.md`, and `SYSTEM_INTERCONNECT_MATRIX.md` state the five arteries: Core, Env, Player, Base, AI. |
 | UI zero-GC doctrine | `ZERO_GC_UI_PIPELINE.md` now explicitly forbids `.ToString()` helper laundering and requires `Span<char>`/`TryFormat`/`TMP_Text.SetCharArray`. |
-| Native collection lifecycle audit | `2026-05-07_NATIVE_COLLECTION_LIFECYCLE_AUDIT.md` created. Static audit remains `PENDING VERIFICATION`; runtime leak proof absent. |
-| `Soon` / `TODO` in architecture docs | No hits in active `Docs/ARCHITECTURE/*.md`. |
+| Native collection lifecycle audit | `2026-05-07_NATIVE_COLLECTION_LEAK_AUDIT.md` and `2026-05-07_NATIVE_COLLECTION_LIFECYCLE_AUDIT.md` updated with sentinel usage, static detector review, and disposal-path disposition. Static audit remains `PENDING VERIFICATION`; runtime leak proof absent. |
+| `Soon` / `TODO` in architecture docs | No hits in active architecture docs or authority maps after replacing the stale `soon enough` wording in the GlobalRegistry runtime matrix. |
 | Cyrillic path/comment sweep | `NAMING_VIOLATIONS.md` remains the active ledger. No mass rename performed. |
 | Hallucination check | No report with header `Status: MCP VERIFIED` plus blocked Unity-console text was found. Reports that reject MCP verification remain unchanged. |
 

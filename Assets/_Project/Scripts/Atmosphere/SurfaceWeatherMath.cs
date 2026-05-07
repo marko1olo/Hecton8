@@ -2,6 +2,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Hecton8.World;
 
 namespace Hecton8.Atmosphere
 {
@@ -152,6 +153,7 @@ namespace Hecton8.Atmosphere
         public float stormInterferencePulseIntervalMin;
         public float stormInterferencePulseIntervalMax;
         public float3 followPosition;
+        public double3 absoluteUniverseOffset;
         public float surfaceY;
         public uint randomState;
         public float defaultFoamStrength;
@@ -260,6 +262,7 @@ namespace Hecton8.Atmosphere
                         electricalActivity,
                         gustMultiplier,
                         input.followPosition,
+                        input.absoluteUniverseOffset,
                         input.surfaceY);
                 }
             }
@@ -320,6 +323,7 @@ namespace Hecton8.Atmosphere
             float electricalActivity,
             float gustMultiplier,
             float3 followPosition,
+            double3 absoluteUniverseOffset,
             float surfaceY)
         {
             float flashDuration = LightningFlashSeconds;
@@ -355,7 +359,10 @@ namespace Hecton8.Atmosphere
             float3 strikePosition = followPosition + new float3(resolvedDirection.x, 0f, resolvedDirection.y) * distance;
             strikePosition.y = surfaceY;
 
-            float thunderDistance = math.distance(followPosition, strikePosition);
+            float thunderDistance = ResolveAupThunderDistanceMeters(
+                followPosition,
+                strikePosition,
+                absoluteUniverseOffset);
             float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
             float loudness = math.lerp(state.thunderVolumeNear, state.thunderVolumeFar, distanceT);
             float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
@@ -380,6 +387,19 @@ namespace Hecton8.Atmosphere
             result.stormPulseIntensity = math.lerp(0.58f, 1f, electricalActivity);
             result.shouldTriggerLightning = 1;
             result.shouldTriggerLightningStormPulse = 1;
+        }
+
+        private static float ResolveAupThunderDistanceMeters(float3 listenerPosition, float3 strikePosition, double3 absoluteUniverseOffset)
+        {
+            double3 listenerAbsolute = new double3(listenerPosition.x, listenerPosition.y, listenerPosition.z) + absoluteUniverseOffset;
+            double3 strikeAbsolute = new double3(strikePosition.x, strikePosition.y, strikePosition.z) + absoluteUniverseOffset;
+            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(listenerAbsolute);
+            AbsoluteUniversePosition strikeAup = AbsoluteUniversePosition.FromAbsolutePosition(strikeAbsolute);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in listenerAup, in strikeAup);
+            if (!math.isfinite(distanceSq) || distanceSq <= 0d)
+                return 0f;
+
+            return (float)math.min(math.sqrt(distanceSq), (double)float.MaxValue);
         }
 
         private static float ResolveStormInterference(float precipitationIntensity, float electricalActivity, float threshold)

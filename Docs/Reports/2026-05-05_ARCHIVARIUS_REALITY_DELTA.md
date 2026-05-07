@@ -1,4 +1,4 @@
-﻿# Archivarius Reality Delta
+# Archivarius Reality Delta
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -17,9 +17,9 @@ Mandates followed:
 
 | Surface | Current count |
 |---|---:|
-| `Assets/_Project/**/*.cs` | `1206` |
-| `Assets/_Project/Scripts/**/*.cs` | `1165` |
-| `Assets/_Project/Scripts` line count | `643074` |
+| `Assets/_Project/**/*.cs` | `1212` |
+| `Assets/_Project/Scripts/**/*.cs` | `1171` |
+| `Assets/_Project/Scripts` line count | `651121` |
 | `.agents-skills` mandates | `52` |
 | `Docs/**/*.md` | `429` |
 | Active `Docs/**/*.md`, excluding archive/deprecated/obsolete | `216` |
@@ -107,7 +107,7 @@ This is source evidence only, not profiler or runtime proof.
 
 ## Interface Health
 
-`GlobalRegistryContracts.cs` direct public interface count: `34`.
+`GlobalRegistryContracts.cs` direct public interface count: `36`.
 
 Interfaces with direct implementors by source-line scan: `33`.
 

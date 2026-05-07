@@ -1,4 +1,4 @@
-﻿# VRAM_EXECUTION_LIST.md â€” Top 20 VRAM Offenders
+# VRAM_EXECUTION_LIST.md â€” Top 20 VRAM Offenders
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -20,8 +20,8 @@ Preferred current cross-checks:
 - `2026-04-28_DEAD_ASSET_SWEEP.md`
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
 - current Codex audit bundles under `Docs/2026-04-29_*`
-**Status:** âš ï¸ 73% BUDGET CONSUMED  
-**Scan Date:** 2026-04-28  
+**Status:** âš ï¸ 73% BUDGET CONSUMED
+**Scan Date:** 2026-04-28
 **Budget:** 900 MB (Texture) / 1800 MB (Total VRAM ceiling for MX350)
 
 ---

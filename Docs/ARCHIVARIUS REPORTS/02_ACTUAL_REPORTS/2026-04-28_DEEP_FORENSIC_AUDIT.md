@@ -1,4 +1,4 @@
-﻿# DEEP FORENSIC AUDIT â€” HECTON-8 SYSTEM ARCHAEOLOGY & HARDWARE DICTATORSHIP
+# DEEP FORENSIC AUDIT â€” HECTON-8 SYSTEM ARCHAEOLOGY & HARDWARE DICTATORSHIP
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -308,7 +308,7 @@ private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 1. **ACL-01:** Fix Crest violation
    - File: `HectonSurfaceWeatherDirector.cs`
    - Fix: Remove `using Crest;`, use `IHectonOceanKinematics`
-   
+
 2. **GC-01:** Fix ItemData managed references
    - Files: `PlayerInventory.cs`, `InventoryGrid.cs`, `Fabricator.cs`
    - Fix: Convert to hashId + NativeArray
@@ -350,7 +350,7 @@ private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 
 ---
 
-**NEXT AUDIT:** 2026-05-05 (7 days)  
+**NEXT AUDIT:** 2026-05-05 (7 days)
 **AUDIT MODE:** Deep Forensic + Runtime Verification
 
 ---

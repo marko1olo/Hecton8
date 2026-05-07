@@ -16,6 +16,7 @@ using Hecton8.Bootstrap;
 using Unity.Collections.LowLevel.Unsafe;
 using Hecton8.Core;
 using Hecton8.Dev;
+using Hecton8.Optimization;
 using Hecton8.World;
 using Stopwatch = System.Diagnostics.Stopwatch;
 #if UNITY_EDITOR
@@ -2592,6 +2593,8 @@ public class HectonVoxelEngine : MonoBehaviour
     private static readonly long ChunkGenerationFrameBudgetTicks = Stopwatch.Frequency / 500L;
     private const byte DeferredVoxelBakeDestroyOwner = 1 << 0;
     private const float VoxelLodColliderDisableDistanceMeters = 200f;
+    private const float VoxelPressureColliderDisableDistanceMeters = 120f;
+    private const float VoxelColliderFakePressureFactor = 0.85f;
     private const int VoxelPhysicsBakeMeshPoolSize = 32;
     private const string VoxelPhysicsBakePoolMeshName = "VoxelPhysicsBakePool";
     private const float VoxelAnomalySolveWarningMs = 0.2f;
@@ -3149,7 +3152,9 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             if (mapMagicBridge == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+#endif
                 return null;
             }
 
@@ -3378,7 +3383,9 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             if (mapMagicBridge == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+#endif
                 return null;
             }
 
@@ -3518,7 +3525,9 @@ public class HectonVoxelEngine : MonoBehaviour
 
             if (mapMagicBridge == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonVoxel] No MapMagicBridge assigned!");
+#endif
                 return false;
             }
 
@@ -4210,7 +4219,9 @@ public class HectonVoxelEngine : MonoBehaviour
 
     internal static int DebugResolveDistanceBasedVoxelLodLevel(Vector3 worldCenter, Vector3 observerPosition)
     {
-        return ResolveDistanceBasedVoxelLodLevel(worldCenter, observerPosition);
+        AbsoluteUniversePosition worldCenterAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);
+        AbsoluteUniversePosition observerAup = AbsoluteUniversePosition.FromRuntimePosition(observerPosition);
+        return ResolveDistanceBasedVoxelLodLevel(in worldCenterAup, in observerAup, VoxelLodColliderDisableDistanceMeters);
     }
 
     internal static bool DebugResolveVoxelPhysicsBakePoolExhausted(int inUseCount)
@@ -4224,21 +4235,21 @@ public class HectonVoxelEngine : MonoBehaviour
 
     private static int ResolveDistanceBasedVoxelLodLevel(Vector3 worldCenter)
     {
-        if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-            return ResolveDistanceBasedVoxelLodLevel(worldCenter, playerTransform.position);
+        if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            return 0;
 
-        Transform bootstrapPlayer = BootstrapState.CurrentPlayerTransform;
-        return bootstrapPlayer != null
-            ? ResolveDistanceBasedVoxelLodLevel(worldCenter, bootstrapPlayer.position)
-            : 0;
+        AbsoluteUniversePosition worldCenterAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenter);
+        return ResolveDistanceBasedVoxelLodLevel(in worldCenterAup, in playerAup, VoxelLodColliderDisableDistanceMeters);
     }
 
-    private static int ResolveDistanceBasedVoxelLodLevel(Vector3 worldCenter, Vector3 observerPosition)
+    private static int ResolveDistanceBasedVoxelLodLevel(
+        in AbsoluteUniversePosition worldCenterAup,
+        in AbsoluteUniversePosition observerAup,
+        float lodDistanceMeters)
     {
-        return VoxelRuntimeIntegrityUtility.ResolveDistanceBasedLodLevel(
-            worldCenter,
-            observerPosition,
-            VoxelLodColliderDisableDistanceMeters);
+        double distanceSq = AbsoluteUniversePosition.DistanceSq(in worldCenterAup, in observerAup);
+        double thresholdSq = (double)lodDistanceMeters * lodDistanceMeters;
+        return distanceSq > thresholdSq ? 1 : 0;
     }
 
     private static bool ShouldUseCinematicColliderFake(in VoxelPipelineData data)
@@ -4251,7 +4262,16 @@ public class HectonVoxelEngine : MonoBehaviour
 
         AbsoluteUniversePosition volumeAup = BuildCapturedAup(data.WorldCenter, data.AbsoluteUniverseOffsetAtStart);
         double distanceSq = AbsoluteUniversePosition.DistanceSq(in volumeAup, in playerAup);
-        double thresholdSq = (double)VoxelLodColliderDisableDistanceMeters * VoxelLodColliderDisableDistanceMeters;
+        float colliderDisableDistance = VoxelLodColliderDisableDistanceMeters;
+        VRAMPressureMonitor pressureMonitor = GlobalRegistry.VRAMPressure;
+        if (pressureMonitor != null &&
+            pressureMonitor.HasSample &&
+            pressureMonitor.PressureFactor >= VoxelColliderFakePressureFactor)
+        {
+            colliderDisableDistance = VoxelPressureColliderDisableDistanceMeters;
+        }
+
+        double thresholdSq = (double)colliderDisableDistance * colliderDisableDistance;
         return distanceSq > thresholdSq;
     }
 
@@ -4737,8 +4757,7 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             if (navObstacleSnapshot.IsCreated)
             {
-                navObstacleSnapshot.Dispose(firstPhaseHandle);
-                navObstacleSnapshot = default;
+                VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(ref navObstacleSnapshot, firstPhaseHandle);
             }
 
             throw;
@@ -4746,8 +4765,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
         if (navObstacleSnapshot.IsCreated)
         {
-            navObstacleSnapshot.Dispose();
-            navObstacleSnapshot = default;
+            VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(ref navObstacleSnapshot);
         }
         if (navGridScheduled)
             VoxelDynamicNavGridRuntime.CommitBuild(data.SourceVolume, data.SourceRuntimeStamp);

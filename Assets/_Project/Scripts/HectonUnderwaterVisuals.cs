@@ -866,7 +866,6 @@ namespace Hecton8.Environment
         private float _nextRuntimeReferenceWarningTime = float.NegativeInfinity;
         private float _nextEditorCameraResolveTime = float.NegativeInfinity;
         private const int RuntimeCameraBufferSize = 8;
-        private const float BottomSiltProbeMaxDistance = 500f;
         private static readonly Camera[] _runtimeCameraBuffer = new Camera[RuntimeCameraBufferSize]; // COLD ALLOC: Camera[8] Ã¢â‚¬â€ reusable runtime main-camera resolve buffer to avoid hierarchy array allocations Ã¢â‚¬â€ owner: HectonUnderwaterVisuals
         private Camera _gameplayMainCamera;
         private Camera _spaceCamera;
@@ -883,7 +882,6 @@ namespace Hecton8.Environment
         private bool _runtimeCameraStackFallbackActive;
         private int _spaceCameraOriginalCullingMask;
         private int _mainCameraOriginalCullingMask;
-        private int _bottomSiltProbeLayerMask = 1;
         private float _mainCameraOriginalDepth;
         private float _spaceCameraOriginalDepth;
         private CameraClearFlags _mainCameraOriginalClearFlags;
@@ -901,8 +899,6 @@ namespace Hecton8.Environment
 #endif
 
         private float _editorSlowTickAccum;
-        private readonly RaycastHit[] _bottomSiltProbeHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] Ã¢â‚¬â€ reused seafloor probe buffer for underwater bottom-silt gating Ã¢â‚¬â€ owner: HectonUnderwaterVisuals
-
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  LIFECYCLE
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -944,7 +940,6 @@ namespace Hecton8.Environment
             ResolveSpaceCamera();
             ValidateReferences();
             CachePhysicsEngine();
-            CacheBottomSiltLayerMask();
             CacheAtmosphereManager();
             CaptureBaseValues();
             CacheRuntimeSkyMaterialReference();
@@ -5502,33 +5497,21 @@ namespace Hecton8.Environment
 
         private float ResolveBottomSiltDistance(Vector3 probePosition)
         {
-            MapMagicBridge bridge = MapMagicBridge.Instance;
+            MapMagicBridge bridge = GlobalRegistry.MapMagic;
             if (bridge != null && bridge.TryGetHeight(probePosition.x, probePosition.z, out float seafloorHeight))
                 return math.max(0f, probePosition.y - seafloorHeight);
 
-            float rayOriginY = probePosition.y + 1f;
-            Vector3 rayOrigin = new Vector3(probePosition.x, rayOriginY, probePosition.z);
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                rayOrigin,
-                Vector3.down,
-                _bottomSiltProbeHits,
-                BottomSiltProbeMaxDistance,
-                _bottomSiltProbeLayerMask,
-                QueryTriggerInteraction.Ignore);
+            return ResolveFakeBottomSiltDistance(probePosition);
+        }
 
-            float bestDistance = float.PositiveInfinity;
-            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
-            {
-                RaycastHit hit = _bottomSiltProbeHits[hitIndex];
-                if (ShouldIgnoreBottomSiltHit(hit))
-                    continue;
-
-                float hitDistance = math.max(0f, probePosition.y - hit.point.y);
-                if (hitDistance < bestDistance)
-                    bestDistance = hitDistance;
-            }
-
-            return bestDistance;
+        private float ResolveFakeBottomSiltDistance(Vector3 probePosition)
+        {
+            float depth = math.max(0f, ResolveWaterLevel() - probePosition.y);
+            float2 phase = new float2(probePosition.x * 0.017f, probePosition.z * 0.013f);
+            float ridge = math.sin(phase.x + phase.y * 1.37f) * 0.5f +
+                          math.sin(phase.x * -1.91f + phase.y * 0.73f + 2.17f) * 0.25f;
+            float distance = math.lerp(18f, 140f, math.saturate(depth / 220f)) + ridge * 12f;
+            return math.max(4f, distance);
         }
 
         internal void TriggerExternalBottomSiltBurst(float intensity01)
@@ -5550,36 +5533,6 @@ namespace Hecton8.Environment
             _externalBottomSiltBurstBoost = math.max(
                 0f,
                 _externalBottomSiltBurstBoost - bottomSiltBurstRecoverySpeed * bottomSiltEmissionBoost * deltaTime);
-        }
-
-        private bool ShouldIgnoreBottomSiltHit(RaycastHit hit)
-        {
-            Collider hitCollider = hit.collider;
-            if (hitCollider == null)
-                return true;
-
-            Transform playerRoot = _playerRigidbody != null
-                ? _playerRigidbody.transform
-                : (playerCamera != null ? playerCamera.parent : null);
-            Transform hitTransform = hitCollider.transform;
-            if (playerRoot != null &&
-                (hitTransform == playerRoot || hitTransform.IsChildOf(playerRoot)))
-            {
-                return true;
-            }
-
-            Rigidbody hitBody = hit.rigidbody;
-            if (hitBody == null)
-                return false;
-
-            if (_playerRigidbody != null && hitBody == _playerRigidbody)
-                return true;
-
-            if (playerRoot == null)
-                return false;
-
-            Transform hitBodyTransform = hitBody.transform;
-            return hitBodyTransform == playerRoot || hitBodyTransform.IsChildOf(playerRoot);
         }
 
         private void UpdateShallowSunBeam(float depth, float lightFactor, bool isUnderwater, Vector3 canopyAnchorWS, float canopyWindow01, float canopyOcclusion01)
@@ -6248,11 +6201,6 @@ namespace Hecton8.Environment
 #if UNITY_EDITOR
             _debugPhysicsEngineFound = _physicsEngineCached;
 #endif
-        }
-
-        private void CacheBottomSiltLayerMask()
-        {
-            _bottomSiltProbeLayerMask = HectonLayerMasks.DefaultLayerMask | HectonLayerMasks.TerrainLayerMask;
         }
 
         private void InitializeCurrentValues()

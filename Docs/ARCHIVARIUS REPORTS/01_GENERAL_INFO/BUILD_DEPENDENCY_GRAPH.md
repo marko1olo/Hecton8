@@ -1,18 +1,18 @@
-﻿# BUILD DEPENDENCY GRAPH â€” HECTON-8 Bootstrapper Bloat Check
+# BUILD DEPENDENCY GRAPH â€” HECTON-8 Bootstrapper Bloat Check
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Target:** `GameBootstrapper.cs` + `Assets/_Project/Prefabs` hard-references  
-**Authority:** CTO / Lead Architect  
+**Date:** 2026-04-29
+**Target:** `GameBootstrapper.cs` + `Assets/_Project/Prefabs` hard-references
+**Authority:** CTO / Lead Architect
 **Status:** ETA LEAK_MAPPED
 
 ---
 
 ## EXECUTIVE SUMMARY
 
-`GameBootstrapper` is a **pure-code initialization orchestrator**. It does NOT directly reference any heavy assets (4K textures, audio beds, mesh prefabs, Addressables, or `Resources.Load` bundles).  
+`GameBootstrapper` is a **pure-code initialization orchestrator**. It does NOT directly reference any heavy assets (4K textures, audio beds, mesh prefabs, Addressables, or `Resources.Load` bundles).
 **Verdict:** Zero bootstrap-forced bloat. The only asset touch is a built-in Unity font (~negligible).
 
 > If the project is bleeding memory at boot, the leak is NOT in `GameBootstrapper`'s dependency graph. Investigate Crest `WaterRenderer` auto-initialization, `MapMagic` terrain chunk pre-warming, or BRG vegetation buffer pre-allocation instead.
@@ -68,7 +68,7 @@ Status: PENDING VERIFICATION
 | `StringBuilder` (1024 chars) | Managed string buffer | ~2 KB | Cold-alloc for fatal crash log formatting. |
 | `NativeArray<byte>` (24576 bytes) | Crash log scratch | ~24 KB | Temp allocator; disposed in `finally` block. |
 
-**Total forced RAM at bootstrap:** < 50 KB of managed/code memory.  
+**Total forced RAM at bootstrap:** < 50 KB of managed/code memory.
 **Zero textures, zero audio, zero meshes, zero Addressables.**
 
 ---
@@ -89,7 +89,7 @@ All `EnsureRuntimeInstance()` calls either:
 
 ## ASSET_DEPENDENCY_MAP.md STATUS
 
-`ASSET_DEPENDENCY_MAP.md` was referenced in `MASTER_INDEX.md` but **does not exist** on disk.  
+`ASSET_DEPENDENCY_MAP.md` was referenced in `MASTER_INDEX.md` but **does not exist** on disk.
 **Action:** Created as a placeholder stub in `01_GENERAL_INFO/ASSET_DEPENDENCY_MAP.md` mapping known hard-references. See file below.
 
 ---

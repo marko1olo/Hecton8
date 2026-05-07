@@ -14,6 +14,7 @@ namespace Hecton8.Gameplay
         private static readonly int SmoothnessId = Shader.PropertyToID("_Smoothness");
         private static readonly int BumpMapId = Shader.PropertyToID("_BumpMap");
         private static readonly int NormalMapId = Shader.PropertyToID("_NormalMap");
+        private static readonly int DetailNormalMapId = Shader.PropertyToID("_DetailNormalMap");
         private static readonly int CondensationStrengthId = Shader.PropertyToID("_CondensationStrength");
 
         [SerializeField] private Renderer targetRenderer;
@@ -79,6 +80,8 @@ namespace Hecton8.Gameplay
                     condensationMaterial.SetTexture(BumpMapId, drippingNormalMap);
                 if (condensationMaterial.HasProperty(NormalMapId))
                     condensationMaterial.SetTexture(NormalMapId, drippingNormalMap);
+                if (condensationMaterial.HasProperty(DetailNormalMapId))
+                    condensationMaterial.SetTexture(DetailNormalMapId, drippingNormalMap);
             }
 
             if (condensationMaterial.HasProperty(CondensationStrengthId))

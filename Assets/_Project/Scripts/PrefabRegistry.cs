@@ -16,8 +16,8 @@
 //   â€¢ Conditional compilation: #if UNITY_6000_4_OR_NEWER
 //
 // USAGE:
-//   int id = PrefabRegistry.Instance.GetOrRegisterPrefab(myPrefab);
-//   GameObject prefab = PrefabRegistry.Instance.GetPrefab(id);
+//   int id = PrefabRegistry.ActiveRuntimeInstance.GetOrRegisterPrefab(myPrefab);
+//   GameObject prefab = PrefabRegistry.ActiveRuntimeInstance.GetPrefab(id);
 //
 // ZERO GC:
 //   â€¢ Dictionary lookups â€” O(1), no allocations.
@@ -47,7 +47,6 @@ namespace Hecton8.Core
         //  SINGLETON
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private static PrefabRegistry _instance;
         private static bool _isShuttingDown;
         private static bool _isResolvingRuntimeInstance;
 #if UNITY_EDITOR
@@ -58,7 +57,7 @@ namespace Hecton8.Core
         private static void ResetStaticState()
         {
             ReleaseStaticNativeState();
-            _instance = null;
+            GlobalRegistry.ClearPrefabRegistryRuntime(null);
             _isShuttingDown = false;
             _isResolvingRuntimeInstance = false;
 #if UNITY_EDITOR
@@ -66,28 +65,11 @@ namespace Hecton8.Core
 #endif
         }
 
-        /// <summary>Global access to the registry.</summary>
-        public static PrefabRegistry Instance
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get
-            {
-#if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
-                    return null;
-#endif
-                if (_instance == null && Application.isPlaying && !_isShuttingDown)
-                    _instance = EnsureRuntimeInstance();
-
-                return _instance;
-            }
-        }
-
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  STORAGE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        internal static PrefabRegistry ActiveRuntimeInstance => _instance;
+        public static PrefabRegistry ActiveRuntimeInstance => GlobalRegistry.PrefabRegistryRuntime;
 
         /// <summary>Forward mapping: PrefabId â†’ Prefab.</summary>
         // COLD ALLOC: Dictionary[256] â€” prefab registry â€” owner: PrefabRegistry
@@ -118,39 +100,40 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
             EnsureEditorHooks();
 #endif
-            if (_instance != null && _instance != this)
+            PrefabRegistry runtime = GlobalRegistry.PrefabRegistryRuntime;
+            if (runtime != null && runtime != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterPrefabRegistryRuntime(this);
         }
 
         private void OnDestroy()
         {
-            if (_instance == this)
+            if (GlobalRegistry.PrefabRegistryRuntime == this)
             {
                 _isShuttingDown = true;
                 ReleaseNativeMap();
-                _instance = null;
+                GlobalRegistry.ClearPrefabRegistryRuntime(this);
             }
         }
 
         private void OnDisable()
         {
-            if (_instance != this)
+            if (GlobalRegistry.PrefabRegistryRuntime != this)
                 return;
 
             ReleaseNativeMap();
 
             if (!Application.isPlaying)
-                _instance = null;
+                GlobalRegistry.ClearPrefabRegistryRuntime(this);
         }
 
         private void OnApplicationQuit()
         {
-            if (_instance == this)
+            if (GlobalRegistry.PrefabRegistryRuntime == this)
                 _isShuttingDown = true;
         }
 
@@ -168,8 +151,9 @@ namespace Hecton8.Core
 
         private static void ReleaseStaticNativeState()
         {
-            if (_instance != null)
-                _instance.ReleaseNativeMap();
+            PrefabRegistry runtime = GlobalRegistry.PrefabRegistryRuntime;
+            if (runtime != null)
+                runtime.ReleaseNativeMap();
 
 #if UNITY_EDITOR
             ReleaseEditorHooks();
@@ -210,8 +194,9 @@ namespace Hecton8.Core
 
         private static PrefabRegistry EnsureRuntimeInstance()
         {
-            if (_instance != null || _isResolvingRuntimeInstance || !Application.isPlaying || _isShuttingDown)
-                return _instance;
+            PrefabRegistry runtime = GlobalRegistry.PrefabRegistryRuntime;
+            if (runtime != null || _isResolvingRuntimeInstance || !Application.isPlaying || _isShuttingDown)
+                return runtime;
 
             _isResolvingRuntimeInstance = true;
             try

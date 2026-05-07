@@ -23,6 +23,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         #define HECTON_RECENT_CUT_HEAT_MAX 16
         #define HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE 30.0
         #define HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START 24.0
+        #define HECTON_SHAFT_CHEAP_FALLOFF_THRESHOLD 0.08
+        #define HECTON_SHAFT_CHEAP_DRIVE_THRESHOLD 0.18
+        #define HECTON_SHAFT_FAKE_RAYMARCH_STEP_CUTOFF 3.0
 
         CBUFFER_START(UnityPerMaterial)
             float _HectonShaftPassMode;
@@ -152,10 +155,13 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
 
         float ResolveVolumetricLightDistanceFade(float3 lightPositionWS)
         {
-            float lightDistanceToCamera = distance(_WorldSpaceCameraPos, lightPositionWS);
-            float safeDistance = isfinite(lightDistanceToCamera) ? lightDistanceToCamera : HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE;
-            float fadeRange = max(HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE - HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START, 0.0001);
-            float fade = 1.0 - saturate((safeDistance - HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START) / fadeRange);
+            float3 lightDelta = _WorldSpaceCameraPos - lightPositionWS;
+            float lightDistanceSq = dot(lightDelta, lightDelta);
+            float cullDistanceSq = HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE * HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE;
+            float fadeStartSq = HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START * HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START;
+            float safeDistanceSq = isfinite(lightDistanceSq) ? max(lightDistanceSq, 0.0) : cullDistanceSq;
+            float fadeRangeSq = max(cullDistanceSq - fadeStartSq, 0.0001);
+            float fade = 1.0 - saturate((safeDistanceSq - fadeStartSq) * SafeRcp(fadeRangeSq));
             return max(fade, 0.0);
         }
 
@@ -358,9 +364,10 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
                         continue;
 
                     float3 sampledScenePositionWS = ComputeWorldSpacePosition(raySampleUV, sampledRawDepth, UNITY_MATRIX_I_VP);
-                    float sceneEyeDistance = distance(_WorldSpaceCameraPos, sampledScenePositionWS);
-                    float rayEyeDistance = distance(_WorldSpaceCameraPos, raySampleWS);
-                    float occluded = step(sceneEyeDistance + (_HectonContactShadowBias * 0.5), rayEyeDistance);
+                    float3 sceneCameraDelta = sampledScenePositionWS - _WorldSpaceCameraPos;
+                    float3 rayCameraDelta = raySampleWS - _WorldSpaceCameraPos;
+                    float depthBiasSq = _HectonContactShadowBias * _HectonContactShadowBias * 0.25;
+                    float occluded = step(dot(sceneCameraDelta, sceneCameraDelta) + depthBiasSq, dot(rayCameraDelta, rayCameraDelta));
                     if (occluded <= 0.5)
                         continue;
 
@@ -538,6 +545,17 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float radialDistanceSq = dot(radial, radial);
             float radialFalloff = saturate(1.0 - radialDistanceSq * 1.65);
             float jitter = (ResolveBlueNoise(screenUV) - 0.5) * _HectonShaftBlueNoiseJitter * 0.12;
+
+            if (radialFalloff <= HECTON_SHAFT_CHEAP_FALLOFF_THRESHOLD ||
+                drive <= HECTON_SHAFT_CHEAP_DRIVE_THRESHOLD ||
+                _HectonShaftRaymarchSteps <= HECTON_SHAFT_FAKE_RAYMARCH_STEP_CUTOFF)
+            {
+                float fakeTapT = saturate(0.38 + jitter * 0.5);
+                float2 fakeSampleUV = lerp(screenUV, originUV, fakeTapT);
+                half3 fakeSource = SampleBrightShaftSource(fakeSampleUV);
+                float fakeIntensity = radialFalloff * radialFalloff * lerp(0.12, 0.42, saturate(drive * 5.0));
+                return fakeSource * (_HectonShaftIntensity * drive * fakeIntensity);
+            }
 
             const int taps = 8;
             half3 accumulated = half3(0.0, 0.0, 0.0);
@@ -755,7 +773,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
                 float4 strengthTime = _HectonRecentCutHeatStrengthTime[heatIndex];
                 float radius = max(positionRadius.w, 0.001);
                 float age01 = saturate((_Time.y - strengthTime.y) * SafeRcp(max(strengthTime.z, 0.001)));
-                float spatialMask = saturate(1.0 - distance(scenePositionWS, positionRadius.xyz) * SafeRcp(radius));
+                float3 heatDelta = scenePositionWS - positionRadius.xyz;
+                float radiusSq = max(radius * radius, 0.000001);
+                float spatialMask = saturate(1.0 - dot(heatDelta, heatDelta) * SafeRcp(radiusSq));
                 hazeWeight += spatialMask * spatialMask * max(strengthTime.x, 0.0) * (1.0 - age01);
             }
 

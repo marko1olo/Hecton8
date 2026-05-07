@@ -74,8 +74,6 @@ namespace Hecton8.Dev
         private static readonly string[] _ScatterBackendShadowScheduleCandidates = { "WorldScatter.Backend.Shadow.Schedule" };
         private static readonly string[] _ScatterBackendShadowPumpCandidates = { "WorldScatter.Backend.Shadow.Pump" };
 
-        private static RuntimePerformanceProfiler _instance;
-
         [Header("Execution")]
         [SerializeField] private bool startProfilingOnEnable = true;
         [SerializeField] private bool logBudgetViolations = true;
@@ -265,7 +263,7 @@ namespace Hecton8.Dev
         private static bool _developmentProfilerEnsureCompleted;
 #endif
 
-        internal static RuntimePerformanceProfiler Instance => _instance;
+        internal static RuntimePerformanceProfiler ActiveRuntime => GlobalRegistry.RuntimePerformanceProfilerRuntime;
 
         /// <summary>
         /// Returns whether runtime profiling is currently sampling and recording trace windows.
@@ -275,7 +273,7 @@ namespace Hecton8.Dev
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+            GlobalRegistry.ClearRuntimePerformanceProfilerRuntime(null);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             _developmentProfilerEnsureCompleted = false;
 #endif
@@ -334,16 +332,15 @@ namespace Hecton8.Dev
 
             _developmentProfilerEnsureCompleted = true;
 
-            if (_instance != null)
+            if (GlobalRegistry.RuntimePerformanceProfilerRuntime != null)
             {
                 LogAutoBootstrapDecision("yield-instance");
                 return;
             }
 
-            RuntimePerformanceProfiler existing = RuntimePerformanceProfiler.Instance;
+            RuntimePerformanceProfiler existing = GlobalRegistry.RuntimePerformanceProfilerRuntime;
             if (existing != null)
             {
-                _instance = existing;
                 LogAutoBootstrapDecision("yield-existing");
                 return;
             }
@@ -373,9 +370,9 @@ namespace Hecton8.Dev
             Scene activeScene = SceneManager.GetActiveScene();
             string sceneName = activeScene.IsValid() ? activeScene.name : "InvalidScene";
             bool hasBootstrapInstance = GlobalRegistry.BootstrapperRuntime != null;
-            bool hasProfilerInstance = _instance != null;
+            bool hasProfilerInstance = GlobalRegistry.RuntimePerformanceProfilerRuntime != null;
             bool hasExistingProfiler =
-                RuntimePerformanceProfiler.Instance != null;
+                GlobalRegistry.RuntimePerformanceProfilerRuntime != null;
 
             string message =
                 $"[RuntimeProfilerBootstrap] action={action} scene={sceneName} frame={Time.frameCount} " +
@@ -395,7 +392,7 @@ namespace Hecton8.Dev
 
         internal static void RecordScatterRebuildProfile(in ScatterRebuildProfileSnapshot snapshot)
         {
-            RuntimePerformanceProfiler instance = _instance;
+            RuntimePerformanceProfiler instance = GlobalRegistry.RuntimePerformanceProfilerRuntime;
             if (instance == null)
                 return;
 
@@ -404,18 +401,19 @@ namespace Hecton8.Dev
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            RuntimePerformanceProfiler runtime = GlobalRegistry.RuntimePerformanceProfilerRuntime;
+            if (runtime != null && runtime != this)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 RuntimeDiagnosticsTrace.WriteEvent(
                     "runtime.lifecycle",
-                    $"duplicate-awake destroy id={GetEntityId()} existing={_instance.GetEntityId()} name={gameObject.name}");
+                    $"duplicate-awake destroy id={GetEntityId()} existing={runtime.GetEntityId()} name={gameObject.name}");
 #endif
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            GlobalRegistry.RegisterRuntimePerformanceProfilerRuntime(this);
 
             ClampSettings();
             _debugCurrentScene = SceneManager.GetActiveScene().name;
@@ -432,7 +430,7 @@ namespace Hecton8.Dev
             if (!Application.isPlaying)
                 return;
 
-            if (_instance != this)
+            if (GlobalRegistry.RuntimePerformanceProfilerRuntime != this)
                 return;
 
             SceneManager.sceneLoaded += HandleSceneLoaded;
@@ -454,7 +452,7 @@ namespace Hecton8.Dev
             if (!Application.isPlaying)
                 return;
 
-            if (_instance != this)
+            if (GlobalRegistry.RuntimePerformanceProfilerRuntime != this)
                 return;
 
             if (_registeredTick && _registeredSlowTick)
@@ -471,7 +469,7 @@ namespace Hecton8.Dev
             if (!Application.isPlaying)
                 return;
 
-            if (_instance != this)
+            if (GlobalRegistry.RuntimePerformanceProfilerRuntime != this)
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -493,9 +491,9 @@ namespace Hecton8.Dev
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeDiagnosticsTrace.WriteEvent(
                 "runtime.lifecycle",
-                $"on-destroy id={GetEntityId()} scene={SceneManager.GetActiveScene().name} active={_debugProfilingActive} instanceMatch={(_instance == this)}");
+                $"on-destroy id={GetEntityId()} scene={SceneManager.GetActiveScene().name} active={_debugProfilingActive} instanceMatch={(GlobalRegistry.RuntimePerformanceProfilerRuntime == this)}");
 #endif
-            if (_instance != this)
+            if (GlobalRegistry.RuntimePerformanceProfilerRuntime != this)
                 return;
 
             StopProfiling();
@@ -504,7 +502,7 @@ namespace Hecton8.Dev
             UnregisterEditorDiagnosticsHooks();
 #endif
             UnregisterFromTickManager();
-            _instance = null;
+            GlobalRegistry.ClearRuntimePerformanceProfilerRuntime(this);
         }
 
 #if UNITY_EDITOR
@@ -1603,7 +1601,7 @@ namespace Hecton8.Dev
 
         private static void HandleBeforeAssemblyReload()
         {
-            RuntimePerformanceProfiler instance = _instance;
+            RuntimePerformanceProfiler instance = GlobalRegistry.RuntimePerformanceProfilerRuntime;
             if (instance != null)
             {
                 instance.StopProfiling();
@@ -1670,7 +1668,7 @@ namespace Hecton8.Dev
         {
             UpdateDirtyPlayRetry();
 
-            RuntimePerformanceProfiler instance = _instance;
+            RuntimePerformanceProfiler instance = GlobalRegistry.RuntimePerformanceProfilerRuntime;
             if (instance == null || !Application.isPlaying || !instance._debugProfilingActive)
                 return;
 
@@ -1679,7 +1677,7 @@ namespace Hecton8.Dev
 
         private static void CaptureEditorEventSnapshot(string reason)
         {
-            RuntimePerformanceProfiler instance = _instance;
+            RuntimePerformanceProfiler instance = GlobalRegistry.RuntimePerformanceProfilerRuntime;
             if (instance == null || !instance._debugProfilingActive)
                 return;
 
@@ -1734,7 +1732,7 @@ namespace Hecton8.Dev
 
         private static bool ShouldContinueDirtyPlayMeasurement(string reason)
         {
-            RuntimePerformanceProfiler instance = _instance;
+            RuntimePerformanceProfiler instance = GlobalRegistry.RuntimePerformanceProfilerRuntime;
             if (instance == null || !instance._debugProfilingActive)
                 return false;
 

@@ -2441,16 +2441,15 @@ namespace Hecton8.Audio
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void TraceEvent(string eventLabel, HectonMusicBiomeProfile profile, AudioClip clip)
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+#if UNITY_EDITOR
             if (!_enableTelemetry)
                 return;
 
-            string profileLabel = profile != null && !string.IsNullOrEmpty(profile.ProfileLabel) ? profile.ProfileLabel : "None";
-            string clipLabel = clip != null ? clip.name : "None";
-            Debug.Log("[MusicDirector] " + eventLabel + " | profile=" + profileLabel + " | clip=" + clipLabel + " | tension=" + _resolvedTension01.ToString("F2"));
+            _ = eventLabel;
+            _ = profile;
+            _ = clip;
 #endif
         }
 

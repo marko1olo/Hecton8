@@ -634,7 +634,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         [SerializeField, Range(0f, 1f)] private float firmamentMilkyWayProbability = 0.76f;
         [SerializeField, Range(0.1f, 4f)] private float firmamentMilkyWayCoreBias = 1.8f;
         [SerializeField, Range(0f, 1f)] private float firmamentStarHaloGain = 0.35f;
-        [SerializeField, Range(0.05f, 1f)] private float firmamentLatitudeCompression = 0.42f;
+        [SerializeField, Range(0.05f, 1f)] private float firmamentLatitudeCompression = 0.22f;
         [SerializeField, Range(64, 512)] private int atmosphereScatteringLutWidth = 256;
         [SerializeField, Range(16, 128)] private int atmosphereScatteringLutHeight = 64;
         [SerializeField, Range(0f, 4f)] private float atmosphereScatteringDensity = 1f;

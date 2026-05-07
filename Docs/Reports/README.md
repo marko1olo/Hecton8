@@ -1,4 +1,4 @@
-﻿# Reports
+# Reports
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -18,6 +18,11 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 
 ## Current High-Authority Reports
 
+- `2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md`
+- `2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md`
+- `2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`
+- `2026-05-07_NATIVE_COLLECTION_LEAK_AUDIT.md`
+- `2026-05-07_NATIVE_COLLECTION_LIFECYCLE_AUDIT.md`
 - `2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
 - `2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json`
 - `2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
@@ -49,11 +54,20 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 - `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
 - `DOOMSDAY_FLAW_REPORT.md`
 
-`2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` is the latest broad documentation synchronization report.
-It records the current May 6 filesystem inventory: `Docs/**/*.md` total `429`, all markdown missing `Date:` `0`, all markdown missing `Status:` `0`, active non-report docs `162`, active header debt `0`, root `.md` files `5`, root `.txt`/`.log` files `0`, `Docs/Reports/*.md` `54`, relocated root logs `9`, `Assets/_Project/**/*.cs` `1206`, `Assets/_Project/Scripts/**/*.cs` `1165`, and `Assets/_Project/Scripts` line count `643074` by `Get-Content.Count`. It also records the recursive `Docs` category scan (`887` total files, `824` rewritable text-like files under the current extension policy), classifies `BROKEN_PREFABS.md` as a generated root snapshot, records that active and full-markdown `Date:` / `Status:` header debt is closed, adds the official Unity/package source-check boundary, records fresh Unity MCP editor readback, and states that the May 6 Grand Purge reports are scoped evidence only while full build remains blocked by missing `Assets/_Project/Scripts/SavePredictivePagingMath.cs`.
+`2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md` is the latest Project Atlas/source-count synchronization report.
+It records the current May 7 source inventory: `Assets/_Project/**/*.cs` `1212`, `Assets/_Project/Scripts/**/*.cs` `1171`, `Assets/_Project/Scripts` line count `651253` by `Get-Content.Count`, `559502` by `Measure-Object -Line`, and `GlobalRegistryContracts.cs` direct public interfaces `37`. It also records stale-symbol source proof for `itemGeneticsWords`, `MinimumDensity`, and `MaximumDensity`, and keeps runtime verification `PENDING`.
 
-`2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json` is the machine-readable active documentation manifest.
-It lists `216` active markdown files with parsed `Date`, `Status`, and title fields. The JSON is ASCII-escaped so the manifest itself does not add a new non-ASCII content violation.
+`2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md` is the current static documentation integrity report.
+It records physical markdown under `Docs` `436`, active markdown excluding archive/deprecated/obsolete `223`, active non-report markdown `162`, active report markdown `61`, non-meta files under `Docs` `865`, hallucination-pattern scan results, deprecated stub state, five-artery Mega-Bus synchronization, zero-GC UI doctrine, native collection leak/lifecycle audit status, and the diff artifact path. It is not Play Mode, profiler, console-clean compile, or runtime leak proof.
+
+`2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json` is the machine-readable active documentation manifest.
+It lists `223` active markdown files with parsed `Date`, `Status`, title, and byte-size fields.
+
+`2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md` is the previous broad documentation synchronization report.
+Read the May 7 synchronization reports first for current counters. The May 6 report remains historical editor-state/source-documentation evidence.
+
+`2026-05-06_ACTIVE_DOCUMENTATION_MANIFEST.json` is a previous machine-readable active documentation manifest.
+It is superseded by `2026-05-07_ACTIVE_DOCUMENTATION_MANIFEST.json`.
 
 `2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority classification map.
 It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, the follow-up relocation of repository-root logs into a deprecated evidence bundle, and the 2026-05-05 documentation influx count boundary. Read the May 6 synchronization report first for current counters.

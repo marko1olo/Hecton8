@@ -212,6 +212,8 @@ namespace Hecton8.World
             collider.isTrigger = true;
             collider.center = new Vector3(0f, -colliderDepthMeters * 0.5f, 0f);
             collider.size = new Vector3(1f, math.max(0.01f, colliderDepthMeters), 1f);
+            // Cinematic hazard fake: HazardZoneManager owns toxic incursion checks; the collider remains as disabled authoring fallback.
+            collider.enabled = false;
             poolObject.AddComponent<ToxinHazard>();
             return poolObject;
         }

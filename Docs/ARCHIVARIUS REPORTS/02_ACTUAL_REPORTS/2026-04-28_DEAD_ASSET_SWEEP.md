@@ -1,10 +1,10 @@
-﻿# DEAD_ASSET_SWEEP_REPORT
+# DEAD_ASSET_SWEEP_REPORT
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Status:** PENDING VERIFICATION  
+**Date:** 2026-04-29
+**Status:** PENDING VERIFICATION
 **Scope:** filesystem-only recheck of prior dead-asset accusations under `Assets/_Project`
 
 **Mandates Followed:** `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
@@ -76,6 +76,6 @@ Without that, deletion advice is not evidence-based.
 
 ## Verdict
 
-The prior dead-asset sweep was selective and overconfident.  
-This pass only confirms presence, not liveness.  
+The prior dead-asset sweep was selective and overconfident.
+This pass only confirms presence, not liveness.
 All deletion conclusions remain `PENDING VERIFICATION`.

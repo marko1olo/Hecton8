@@ -1,4 +1,4 @@
-﻿# ETA2_SUPREME_SUMMARY â€” Deep Core Archaeology Final Report
+# ETA2_SUPREME_SUMMARY â€” Deep Core Archaeology Final Report
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -9,7 +9,7 @@ This file is a dated summary snapshot and should not be read as current verified
 
 Confirmed drift versus current source recheck:
 
-- `21 interfaces catalogued` and later `27` / `31` / `33` interface notes are stale; current `GlobalRegistryContracts.cs` direct public interface count is `34`
+- `21 interfaces catalogued` and later `27` / `31` / `33` interface notes are stale; current `GlobalRegistryContracts.cs` direct public interface count is `36`
 - ghost-interface framing is stale for at least:
   - `IAudioService` -> direct owner `SpatialAudioManager`
   - `IUIService` -> direct owner `SuitHUDV4CanvasOverlay`
@@ -19,14 +19,14 @@ Confirmed drift versus current source recheck:
 - latest reachable Unity console slice on `2026-04-29` shows package-side MCP `ManageAsset` conversion failures on `ResourceNodeTemplate_*` assets, not a clean editor and not a proven first-party compile break
 
 Preferred current-state references: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`, `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`, `INTERFACE_CONTRACT_TABLE.md`, `INTERFACE_HEALTH_DASHBOARD.md`, `EVENT_FLOW_MAP.md`, and `PROJECT_ATLAS.md`.
-**Historical Status At Scan Time:** âœ… ETA DEEP_CORE VERIFIED  
-**Scan Date:** 2026-04-28  
+**Historical Status At Scan Time:** âœ… ETA DEEP_CORE VERIFIED
+**Scan Date:** 2026-04-28
 **Agent:** koda-pro (Supreme Compliance Auditor)
 
 ---
 
 ## 1. CIRCULAR DEPS + ACL INQUISITION (AsmDef)
-**Result:** âœ… NO CIRCULAR DEPENDENCIES  
+**Result:** âœ… NO CIRCULAR DEPENDENCIES
 **Result:** âŒ ACL VIOLATION â€” `Hecton8.Core.asmdef` contains 9 direct third-party references:
 - `MapMagic`, `Crest`, `WaveHarmonic.Crest`, `WaveHarmonic.Crest.Shared`
 - `GPUInstancer`, `ShapesRuntime`, `VolumetricLightBeam`

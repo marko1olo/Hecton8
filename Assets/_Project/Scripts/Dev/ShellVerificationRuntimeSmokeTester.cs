@@ -739,7 +739,7 @@ namespace Hecton8.Dev
             if (HasPendingResumeState())
                 return false;
 
-            RuntimePerformanceProfiler profiler = RuntimePerformanceProfiler.Instance;
+            RuntimePerformanceProfiler profiler = RuntimePerformanceProfiler.ActiveRuntime;
             return profiler != null &&
                    profiler.IsProfilingActive &&
                    string.Equals(activeSceneName, BootstrapSceneName, System.StringComparison.Ordinal);

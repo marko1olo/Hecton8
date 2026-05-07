@@ -47,6 +47,7 @@ namespace Hecton8.World
         private const float PersistentObstacleMergeDistanceMeters = 2f;
         private const string NativeMemoryOwner = nameof(VoxelDynamicNavGridRuntime);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const string ObstacleSnapshotNativeMemoryLabel = "VoxelDynamicNavGridRuntime.ObstacleSnapshot";
         private const string DynamicClearanceBudgetWarningMessage = "[VoxelDynamicNavGridRuntime] Partial clearance dilation exceeded 1ms; next destroyed-flora clear uses reduced clearance radius.";
 
         // COLD ALLOC: Dictionary<int, VolumeRecord>(16) - voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
@@ -577,8 +578,7 @@ namespace Hecton8.World
                 VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref NextDistance);
                 VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref PureVoidBlockFlags);
 
-                if (PendingObstacleSnapshot.IsCreated)
-                    PendingObstacleSnapshot.Dispose();
+                VoxelDynamicNavGridRuntime.DisposeObstacleSnapshot(ref PendingObstacleSnapshot);
 
                 Current = default;
                 Next = default;
@@ -841,6 +841,11 @@ namespace Hecton8.World
                 return default;
 
             NativeArray<NavObstaclePrimitive> snapshot = new NativeArray<NavObstaclePrimitive>(obstacleCount, allocator, NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                snapshot,
+                NativeMemoryOwner,
+                ObstacleSnapshotNativeMemoryLabel,
+                ResolveObstacleSnapshotLifetime(allocator));
             int writeIndex = 0;
             Dictionary<int, ObstacleRegistration>.Enumerator writeEnumerator = _registeredObstacles.GetEnumerator();
             while (writeEnumerator.MoveNext())
@@ -857,6 +862,44 @@ namespace Hecton8.World
             WritePersistentDynamicObstacles(ref snapshot, ref writeIndex);
 
             return snapshot;
+        }
+
+        internal static void DisposeObstacleSnapshot(ref NativeArray<NavObstaclePrimitive> snapshot)
+        {
+            if (!snapshot.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(snapshot);
+            snapshot.Dispose();
+            snapshot = default;
+        }
+
+        internal static JobHandle DisposeObstacleSnapshot(
+            ref NativeArray<NavObstaclePrimitive> snapshot,
+            JobHandle dependency)
+        {
+            if (!snapshot.IsCreated)
+                return dependency;
+
+            NativeMemorySentinel.UnregisterNativeArray(snapshot);
+            JobHandle disposeHandle = snapshot.Dispose(dependency);
+            snapshot = default;
+            return disposeHandle;
+        }
+
+        private static NativeAllocationLifetime ResolveObstacleSnapshotLifetime(Allocator allocator)
+        {
+            switch (allocator)
+            {
+                case Allocator.Temp:
+                    return NativeAllocationLifetime.Temp;
+                case Allocator.TempJob:
+                    return NativeAllocationLifetime.TempJob;
+                case Allocator.Persistent:
+                    return NativeMemoryLifetime;
+                default:
+                    return NativeAllocationLifetime.TransientArena;
+            }
         }
 
         internal static void EnqueueDynamicObstacleGrowth(float3 center, float3 extents, float expansionMeters)
@@ -939,11 +982,7 @@ namespace Hecton8.World
                 record.NextDistance = distanceSwap;
                 EvaluatePureVoidState(record);
 
-                if (record.PendingObstacleSnapshot.IsCreated)
-                {
-                    record.PendingObstacleSnapshot.Dispose();
-                    record.PendingObstacleSnapshot = default;
-                }
+                DisposeObstacleSnapshot(ref record.PendingObstacleSnapshot);
 
                 record.PendingRegionMin = int3.zero;
                 record.PendingRegionMax = int3.zero;
@@ -989,20 +1028,19 @@ namespace Hecton8.World
                 if (!TryResolveDynamicUpdateRegion(record, clearRequest, out int3 regionMin, out int3 regionMax))
                     continue;
 
-                NativeArray<byte>.Copy(record.Current, record.Next, record.Current.Length);
-                NativeArray<ushort>.Copy(record.CurrentDistance, record.NextDistance, record.CurrentDistance.Length);
-
-                if (record.PendingObstacleSnapshot.IsCreated)
-                    record.PendingObstacleSnapshot.Dispose();
-
-                record.PendingObstacleSnapshot = CreateObstacleSnapshot(Allocator.TempJob);
-                record.PendingRegionMin = regionMin;
-                record.PendingRegionMax = regionMax;
-
                 int3 regionSize = regionMax - regionMin + 1;
                 int regionPointCount = regionSize.x * regionSize.y * regionSize.z;
                 if (regionPointCount <= 0)
                     continue;
+
+                NativeArray<byte>.Copy(record.Current, record.Next, record.Current.Length);
+                NativeArray<ushort>.Copy(record.CurrentDistance, record.NextDistance, record.CurrentDistance.Length);
+
+                DisposeObstacleSnapshot(ref record.PendingObstacleSnapshot);
+
+                record.PendingObstacleSnapshot = CreateObstacleSnapshot(Allocator.TempJob);
+                record.PendingRegionMin = regionMin;
+                record.PendingRegionMax = regionMax;
 
                 int clearanceRadiusCells = ResolveDynamicClearanceRadiusCells(record.CellSize, useReducedClearance);
                 JobHandle resetHandle = new PartialObstacleResetAndStampJob

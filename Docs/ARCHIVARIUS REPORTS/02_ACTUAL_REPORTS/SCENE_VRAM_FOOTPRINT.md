@@ -1,10 +1,10 @@
-﻿# LIVE SCENE VRAM SURVEILLANCE â€” `02_HECTON_WORLD.unity`
+# LIVE SCENE VRAM SURVEILLANCE â€” `02_HECTON_WORLD.unity`
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Status:** PENDING VERIFICATION (requires Unity Editor Frame Debugger)  
-**Scan Date:** 2026-04-29  
+**Status:** PENDING VERIFICATION (requires Unity Editor Frame Debugger)
+**Scan Date:** 2026-04-29
 **Chronology Note:** The prior `2026-05-02` scan date could not be true in the current workspace. Content kept as estimate-only; no new Unity measurement was produced in this pass.
 **Mandates Followed:** AGENTS.md Â§ VRAM HARD CEILING Â· Â§ Textures Â· Â§ Graduation Response
 
@@ -12,8 +12,8 @@ Status: PENDING VERIFICATION
 
 ## LIMITATION NOTICE
 
-`02_HECTON_WORLD.unity` is stored in **Unity binary format** (header `6000.4.1f1`).  
-Without Unity Editor open, exact GUID cross-reference (prefab â†’ material â†’ texture) is **blocked**.  
+`02_HECTON_WORLD.unity` is stored in **Unity binary format** (header `6000.4.1f1`).
+Without Unity Editor open, exact GUID cross-reference (prefab â†’ material â†’ texture) is **blocked**.
 The numbers below are derived from:
 1. Existing first-party texture audit (`VRAM_BUDGET_AUDIT.md`, exact `.meta` + image-header parse).
 2. Known third-party package footprints (Crest, MapMagic, GPUInstancer, VolumetricLightBeam).
@@ -34,7 +34,7 @@ Source: `Assets/_Project/Art/TEXTURES/` + `WorldProceduralFlora/`
 | **Max Dimension** | 2048Ã—2048 (hero/world limit) |
 | **Uncompressed Violations** | 0 |
 
-**Assumption:** 02_HECTON_WORLD instantiates the vast majority of first-party assets (terrain, flora, sky, props, UI).  
+**Assumption:** 02_HECTON_WORLD instantiates the vast majority of first-party assets (terrain, flora, sky, props, UI).
 Therefore, **first-party scene footprint â‰ˆ 139 MB**.
 
 ---
@@ -87,7 +87,7 @@ Therefore, **first-party scene footprint â‰ˆ 139 MB**.
 | Midpoint | 1,049 MB | 751 MB (42%) | âš ï¸ AT RISK |
 | Upper bound | 1,184 MB | 616 MB (34%) | âš ï¸ AT RISK |
 
-**Graduation response threshold:** 90% (1,620 MB).  
+**Graduation response threshold:** 90% (1,620 MB).
 **Current distance to threshold:** 436 MB (midpoint) â†’ **no immediate Mip-downgrade trigger**.
 
 ---

@@ -1,11 +1,11 @@
-﻿# COMPUTE BUFFER LIFECYCLE AUDIT â€” HECTON-8 First-Party Code
+# COMPUTE BUFFER LIFECYCLE AUDIT â€” HECTON-8 First-Party Code
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Scope:** `new ComputeBuffer`, `new GraphicsBuffer`, `GraphicsBuffer.Target.*` in `Assets/_Project/Scripts/`  
-**Authority:** CTO / Lead Architect  
+**Date:** 2026-04-29
+**Scope:** `new ComputeBuffer`, `new GraphicsBuffer`, `GraphicsBuffer.Target.*` in `Assets/_Project/Scripts/`
+**Authority:** CTO / Lead Architect
 **Status:** ETA LEAK_MAPPED
 
 ---

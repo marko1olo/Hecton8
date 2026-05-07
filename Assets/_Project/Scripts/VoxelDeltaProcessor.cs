@@ -2300,9 +2300,8 @@ namespace Hecton8.Caves
             else
                 impulseDirection.Normalize();
 
-            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(request.AbsoluteHitPoint);
-            fluidDecals.RegisterVoxelCaveInDust(
-                runtimeHitPoint,
+            fluidDecals.RegisterVoxelCaveInDustAup(
+                request.AbsoluteHitPoint,
                 impulseDirection,
                 math.saturate(radius / math.max(MaxCarveRadiusMeters, MinCarveRadiusMeters)));
         }

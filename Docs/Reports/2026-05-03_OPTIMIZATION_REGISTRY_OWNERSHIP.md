@@ -1,4 +1,4 @@
-﻿# 2026-05-03 Optimization Registry Ownership
+# 2026-05-03 Optimization Registry Ownership
 Date: 2026-05-07
 
 Status: PENDING VERIFICATION
@@ -30,8 +30,8 @@ Not Play Mode verified. MCP resources are unavailable in this session. GCMonitor
 
 ## Regression Model
 
-CPU: unchanged in normal runtime; duplicate components now return before registering to tick/listener lanes.  
-GC: no hot-path managed allocations added.  
-Memory: removes ten static managed owner references; no runtime pools resized.  
-Cadence: SlowTick/Tick registration remains under the existing `GlobalRegistry`/`SystemDispatcher` lanes.  
+CPU: unchanged in normal runtime; duplicate components now return before registering to tick/listener lanes.
+GC: no hot-path managed allocations added.
+Memory: removes ten static managed owner references; no runtime pools resized.
+Cadence: SlowTick/Tick registration remains under the existing `GlobalRegistry`/`SystemDispatcher` lanes.
 Correctness: registry slot is now the single source of truth for Optimization runtime authority.

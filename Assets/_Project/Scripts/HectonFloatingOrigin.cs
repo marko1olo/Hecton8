@@ -376,7 +376,9 @@ namespace Hecton8.Core
 
                 if (watchdog++ > ShiftStabilityWatchdogFrames)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError("[FloatingOrigin] WaitForShiftStabilityAsync timed out.", origin);
+#endif
                     break;
                 }
 

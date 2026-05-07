@@ -1,9 +1,9 @@
-﻿# HECTON-8 â€” AUDIO MIXER ROUTING AUDIT
+# HECTON-8 â€” AUDIO MIXER ROUTING AUDIT
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
-**Status:** ETA SURGERY_PREPPED  
-**Mandate:** AGENTS.md â€” "Every sound must route through the Master Mixer (SFX, Music, UI, Ambient) for sidechaining."  
+**Status:** ETA SURGERY_PREPPED
+**Mandate:** AGENTS.md â€” "Every sound must route through the Master Mixer (SFX, Music, UI, Ambient) for sidechaining."
 **Date:** 2026-04-28
 
 ---

@@ -1,11 +1,11 @@
-﻿# FRAME TIMELINE â€” HECTON-8 Runtime Execution Order
+# FRAME TIMELINE â€” HECTON-8 Runtime Execution Order
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-> **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md Â§ Tick System Â· Â§ Jobs/Burst Â· Â§ Init Order Safety  
-> **Scope:** First-party production runtime under `Assets/_Project/Scripts/`  
+> **Status:** ETA SANITIZED
+> **Mandates Followed:** AGENTS.md Â§ Tick System Â· Â§ Jobs/Burst Â· Â§ Init Order Safety
+> **Scope:** First-party production runtime under `Assets/_Project/Scripts/`
 
 ---
 
@@ -18,7 +18,7 @@ HECTON-8 uses a **dual-layer tick architecture**:
 | **Dispatcher** | `SystemDispatcher` | `IUpdatable` Â· `IFixedTickable` Â· `ISlowTickable` | `RegistryBucket<T>` per `PriorityLayer` lane |
 | **Legacy Manager** | `GameTickManager` | `ITickable` Â· `IFixedTickable` Â· `ISlowTickable` | internal `TickList<T>` (buffered add/remove) |
 
-`GameTickManager` is itself registered into `SystemDispatcher` **Core lane** as `IUpdatable`/`IFixedTickable`.  
+`GameTickManager` is itself registered into `SystemDispatcher` **Core lane** as `IUpdatable`/`IFixedTickable`.
 Therefore, `GameTickManager.Tick()` and `GameTickManager.FixedTick()` are invoked by `SystemDispatcher`, and they in turn fan-out to the legacy `ITickable`/`IFixedTickable`/`ISlowTickable` lists.
 
 ---

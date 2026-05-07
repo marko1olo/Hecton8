@@ -101,6 +101,7 @@ namespace Hecton8.Gameplay
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
         private const int ModuleWaterLevelShaderCapacity = 64;
         private const float BrownoutShaderStateEpsilon = 0.001f;
+        private const float AupRadiusLogicThresholdMeters = 50f;
         private static readonly int s_ModuleAmbienceDataId = Shader.PropertyToID("_ModuleAmbienceData");
         private static readonly int s_ModuleWaterLevelsId = Shader.PropertyToID("_ModuleWaterLevels");
         private static readonly int s_ModuleWaterLevelCountId = Shader.PropertyToID("_ModuleWaterLevelCount");
@@ -167,6 +168,8 @@ namespace Hecton8.Gameplay
         private const float DefaultJointShearStressRecoveryPerSecond = 0.08f;
         private const float DefaultJointShearGroanCooldownSeconds = 4f;
         private const float DefaultHullCondensationStartDepthMeters = 2000f;
+        private const float CinematicLeakFullDepthMeters = 4000f;
+        private const float CinematicLeakBaseIntensity01 = 0.12f;
         private const float DefaultHullCondensationFullDepthMeters = 5000f;
         private const float DefaultLowIntegrityGroanNoiseFrequency = 0.19f;
         private const float DefaultLowIntegrityGroanNoiseThreshold = 0.58f;
@@ -885,7 +888,7 @@ namespace Hecton8.Gameplay
             SyncSpatialRole();
             UpdateOxygenScrubberHumTarget();
             AdvanceBrownoutShaderState(0f);
-            PublishActiveModuleWaterLevelsToShader();
+            PublishActiveModuleWaterLevelsToShader(true);
             UpdateAmbienceTickRegistration();
         }
 
@@ -1145,7 +1148,7 @@ namespace Hecton8.Gameplay
 
             UpdateOxygenScrubberHum(dt);
             if (shaderStateChanged)
-                PublishActiveModuleWaterLevelsToShader();
+                PublishActiveModuleWaterLevelsToShader(true);
 
             UpdateAmbienceTickRegistration();
         }
@@ -2328,7 +2331,7 @@ namespace Hecton8.Gameplay
             {
                 _ambientVoltageSupplyRatio = sanitizedVoltageRatio;
                 AdvanceBrownoutShaderState(0f);
-                PublishActiveModuleWaterLevelsToShader();
+                PublishActiveModuleWaterLevelsToShader(true);
                 UpdateAmbienceTickRegistration();
                 return;
             }
@@ -2337,13 +2340,13 @@ namespace Hecton8.Gameplay
             _ambientVoltageSupplyRatio = sanitizedVoltageRatio;
             SetLightsEnabled(ShouldLightsBeEnabled());
             AdvanceBrownoutShaderState(0f);
-            PublishActiveModuleWaterLevelsToShader();
+            PublishActiveModuleWaterLevelsToShader(true);
             UpdateAmbienceTickRegistration();
         }
 
         private bool HasOperationalPower => _solarEmpBlackoutRemainingSeconds <= 0.0001f &&
                                             _integrityComponent.HasOperationalPower(_hasPower);
-        private bool ShouldLightsBeEnabled() => HasOperationalPower;
+        private bool ShouldLightsBeEnabled() => HasOperationalPower && !_ambientLightsBrownedOut;
 
         public void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
         {
@@ -2355,10 +2358,18 @@ namespace Hecton8.Gameplay
             }
 
             float radius = pulseEvent.RadiusMeters;
-            if (radius < 250000f)
+            float radiusSq = radius * radius;
+            if (radius > AupRadiusLogicThresholdMeters && radius < 250000f)
+            {
+                AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+                AbsoluteUniversePosition pulseAup = AbsoluteUniversePosition.FromRuntimePosition(pulseEvent.RuntimePosition);
+                if (AbsoluteUniversePosition.DistanceSq(in moduleAup, in pulseAup) > (double)radiusSq)
+                    return;
+            }
+            else if (radius <= AupRadiusLogicThresholdMeters)
             {
                 Vector3 delta = transform.position - pulseEvent.RuntimePosition;
-                if (delta.sqrMagnitude > radius * radius)
+                if (delta.sqrMagnitude > radiusSq)
                     return;
             }
 
@@ -2725,7 +2736,7 @@ namespace Hecton8.Gameplay
             }
 
             UpdateFloodDistortionVolume(floodVisible);
-            PublishActiveModuleWaterLevelsToShader();
+            PublishActiveModuleWaterLevelsToShader(true);
         }
 
         private void UpdateFloodDistortionVolume(bool floodVisible)
@@ -2980,9 +2991,19 @@ namespace Hecton8.Gameplay
             Vector3 localLeakPoint = _hasBreachCenterOfMassTarget
                 ? _breachCenterOfMassTargetLocal
                 : ResolveDefaultBreachLocalPoint();
-            float pressureDeltaKPa = Mathf.Max(0f, ResolveHydrostaticPressureKPa(depthMeters) - SurfacePressureKPa);
-            float pressureVisualScale = Mathf.Clamp01((pressureDeltaKPa * 0.001f) + (deltaVolumeM3 * 0.35f));
+            float pressureVisualScale = ResolveCinematicLeakSprayScale01(depthMeters, deltaVolumeM3);
             RegisterInstancedPressureSpray(localLeakPoint, pressureVisualScale);
+        }
+
+        internal static float ResolveCinematicLeakSprayScale01(float depthMeters, float floodDeltaM3)
+        {
+            if (depthMeters <= 0f && floodDeltaM3 <= 0f)
+                return 0f;
+
+            float depth01 = Mathf.Clamp01(depthMeters / CinematicLeakFullDepthMeters);
+            float stagedDepth01 = depth01 * depth01 * (3f - (2f * depth01));
+            float burst01 = Mathf.Clamp01(floodDeltaM3 * 0.35f);
+            return Mathf.Clamp01(CinematicLeakBaseIntensity01 + (stagedDepth01 * 0.78f) + (burst01 * 0.22f));
         }
 
         private void SetWaterVolumeM3(float nextVolumeM3)
@@ -3151,7 +3172,7 @@ namespace Hecton8.Gameplay
             _currentBrownoutFlicker01 = 1f;
             _brownoutTransition01 = 0f;
             _brownoutTransitionTarget01 = 0f;
-            PublishActiveModuleWaterLevelsToShader();
+            PublishActiveModuleWaterLevelsToShader(true);
         }
 
         private void ConfigureOxygenScrubberHumSource()
@@ -3419,9 +3440,22 @@ namespace Hecton8.Gameplay
 
             HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
             if (atmosphereManager != null)
-                return Mathf.Max(0f, atmosphereManager.SeaLevelY - transform.position.y);
+                return ResolveExternalDepthMetersAup(atmosphereManager.SeaLevelY);
 
             return 0f;
+        }
+
+        private float ResolveExternalDepthMetersAup(float seaLevelRuntimeY)
+        {
+            Vector3 moduleRuntimePosition = transform.position;
+            AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(moduleRuntimePosition);
+            moduleRuntimePosition.y = seaLevelRuntimeY;
+            AbsoluteUniversePosition seaLevelAup = AbsoluteUniversePosition.FromRuntimePosition(moduleRuntimePosition);
+            double depthMeters = seaLevelAup.ToAbsoluteDouble3().y - moduleAup.ToAbsoluteDouble3().y;
+            if (!math.isfinite(depthMeters) || depthMeters <= 0d)
+                return 0f;
+
+            return (float)math.min(depthMeters, (double)float.MaxValue);
         }
 
         private float ResolveDryMassKilograms()
@@ -4438,8 +4472,7 @@ namespace Hecton8.Gameplay
                 influenceRadius = Mathf.Max(influenceRadius, resolvedRadius);
             }
 
-            float pressureDeltaKPa = Mathf.Max(0f, ResolveHydrostaticPressureKPa(ResolveExternalDepthMeters()) - SurfacePressureKPa);
-            float rawImpulse = pressureDeltaKPa * 1000f * ResolveBuoyancyDisplacementVolumeCubicMeters() * 0.001f;
+            float rawImpulse = ResolveCinematicImplosionImpulseNewtonSeconds();
             if (rawImpulse > 0f && float.IsFinite(rawImpulse))
             {
                 PhysicsApplySystem.TriggerImplosionImpulse(
@@ -4505,9 +4538,7 @@ namespace Hecton8.Gameplay
             }
 
             influenceRadius = Mathf.Max(0.5f, influenceRadius + Mathf.Max(0f, breachVortexRadiusPaddingMeters));
-            float pressureDeltaKPa = Mathf.Max(0f, ResolveHydrostaticPressureKPa(ResolveExternalDepthMeters()) - SurfacePressureKPa);
-            float rawForceNewtons = pressureDeltaKPa * 1000f * ResolveBreachAreaSquareMeters();
-            float baseAcceleration = rawForceNewtons / Mathf.Max(1f, breachVortexReferenceMassKilograms);
+            float baseAcceleration = ResolveCinematicBreachVortexAcceleration();
             if (baseAcceleration <= 0.0001f || !float.IsFinite(baseAcceleration))
                 return;
 
@@ -4518,6 +4549,34 @@ namespace Hecton8.Gameplay
                 baseAcceleration,
                 breachVortexMaximumAccelerationMetersPerSecondSquared,
                 breachVortexDurationSeconds);
+        }
+
+        private float ResolveCinematicImplosionImpulseNewtonSeconds()
+        {
+            float cap = ResolveImplosionMaximumImpulseNewtonSeconds();
+            if (cap <= 0f)
+                return 0f;
+
+            float depthThreat01 = ResolveCinematicDepthThreat01(ResolveExternalDepthMeters());
+            return Mathf.Lerp(cap * 0.35f, cap, depthThreat01);
+        }
+
+        private float ResolveCinematicBreachVortexAcceleration()
+        {
+            float cap = Mathf.Max(0f, breachVortexMaximumAccelerationMetersPerSecondSquared);
+            if (cap <= 0f)
+                return 0f;
+
+            float depthThreat01 = ResolveCinematicDepthThreat01(ResolveExternalDepthMeters());
+            return Mathf.Lerp(cap * 0.25f, cap * 0.85f, depthThreat01);
+        }
+
+        private float ResolveCinematicDepthThreat01(float depthMeters)
+        {
+            float startDepth = ResolveImplosionDepthThresholdMeters();
+            float fullDepth = Mathf.Max(startDepth + 1f, CinematicLeakFullDepthMeters);
+            float depth01 = Mathf.Clamp01((depthMeters - startDepth) / (fullDepth - startDepth));
+            return depth01 * depth01 * (3f - (2f * depth01));
         }
 
         private bool TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem)
@@ -4665,7 +4724,8 @@ namespace Hecton8.Gameplay
             if (deepCompressionFullPressureKPa < 1f) deepCompressionFullPressureKPa = 1f;
             if (maximumDeepCompressionAxisLoss < 0f) maximumDeepCompressionAxisLoss = 0f;
             if (maximumDeepCompressionAxisLoss > 0.01f) maximumDeepCompressionAxisLoss = 0.01f;
-            if (hullCondensationStartDepthMeters < 0f) hullCondensationStartDepthMeters = 0f;
+            if (hullCondensationStartDepthMeters < DefaultHullCondensationStartDepthMeters)
+                hullCondensationStartDepthMeters = DefaultHullCondensationStartDepthMeters;
             if (hullCondensationFullDepthMeters < hullCondensationStartDepthMeters + 1f)
                 hullCondensationFullDepthMeters = hullCondensationStartDepthMeters + 1f;
             if (lowIntegrityGroanThreshold01 < 0.01f) lowIntegrityGroanThreshold01 = 0.01f;

@@ -1,7 +1,7 @@
-﻿# HECTON-8 OMEGA Build Restoration / Unsafe Purge V2
+# HECTON-8 OMEGA Build Restoration / Unsafe Purge V2
 
 Date: 2026-05-07
-Auditor: Codex  
+Auditor: Codex
 Status: PENDING VERIFICATION
 
 ## Mandates Followed

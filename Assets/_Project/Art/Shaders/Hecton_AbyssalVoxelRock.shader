@@ -299,9 +299,16 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return positionWS + _HectonFloatingOriginOffset.xyz;
         }
 
+        half3 ResolveSharpTriplanarBlendWeights(half3 normalWS)
+        {
+            half3 blend = max(abs(normalWS), half3(0.0001h, 0.0001h, 0.0001h));
+            blend = pow(blend, max((half)_TriplanarBlendSharpness, 8.0h));
+            return blend / max(blend.x + blend.y + blend.z, 0.0001h);
+        }
+
         void ResolveDominantAxisProjection(float3 positionWS, half3 normalWS, out float2 uv, out half dominantAxis)
         {
-            half3 absNormal = saturate(abs(normalWS));
+            half3 absNormal = ResolveSharpTriplanarBlendWeights(normalWS);
             float tiling = max(_Tiling, 0.0001);
 
             if (absNormal.x >= absNormal.y && absNormal.x >= absNormal.z)
@@ -420,7 +427,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
         half ResolveStochasticDominantAxis(float3 positionWS, half3 normalWS)
         {
-            half3 absNormal = max(abs(normalWS), half3(0.0001h, 0.0001h, 0.0001h));
+            half3 absNormal = ResolveSharpTriplanarBlendWeights(normalWS);
             half dominantAxis = 0.0h;
             half dominantWeight = absNormal.x;
             half runnerUpAxis = 1.0h;

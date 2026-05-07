@@ -1,10 +1,10 @@
-﻿# HOT_PATH_VIOLATIONS.md
+# HOT_PATH_VIOLATIONS.md
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Status:** PENDING VERIFICATION  
+**Date:** 2026-04-29
+**Status:** PENDING VERIFICATION
 **Scope:** static source readback of current hot-path and near-hot-path risks under `Assets/_Project/Scripts/`
 
 **Mandates Followed:** `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
@@ -75,6 +75,6 @@ Status: PENDING VERIFICATION
 
 ## Verdict
 
-The earlier report overstated several hot-path violations that are no longer present in current source.  
-Real debt remains around event architecture, direct Crest coupling, and managed payload surfaces.  
+The earlier report overstated several hot-path violations that are no longer present in current source.
+Real debt remains around event architecture, direct Crest coupling, and managed payload surfaces.
 Runtime performance impact remains `PENDING VERIFICATION`.

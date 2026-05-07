@@ -1,10 +1,10 @@
-﻿# PROJECT_CONTENT_LEDGER
+# PROJECT_CONTENT_LEDGER
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
-STATUS: PENDING VERIFICATION  
-OWNER: Resource Matrix / Geology  
-SOURCE OF TRUTH: `Assets/_Project/Data/Scavenging/ResourceNodes/`  
+STATUS: PENDING VERIFICATION
+OWNER: Resource Matrix / Geology
+SOURCE OF TRUTH: `Assets/_Project/Data/Scavenging/ResourceNodes/`
 MANDATES FOLLOWED:
 - `CORE_Submarine_Vehicles_Kinematics_AUP.txt`
 - `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`

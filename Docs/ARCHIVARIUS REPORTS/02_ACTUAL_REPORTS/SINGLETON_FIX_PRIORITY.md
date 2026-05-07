@@ -1,4 +1,4 @@
-﻿# SINGLETON ELIMINATION ROADMAP â€” HECTON-8
+# SINGLETON ELIMINATION ROADMAP â€” HECTON-8
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -23,10 +23,10 @@ Use current direct-owner docs first:
 
 Status remains `PENDING VERIFICATION`.
 
-**Status:** PENDING VERIFICATION  
-**Authority:** CTO / Lead Architect  
-**Rule Basis:** AGENTS.md Â§ PRIME DIRECTIVES â€” "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."  
-**Source Violations:** `SINGLETON_VIOLATIONS.md` (101 first-party violations)  
+**Status:** PENDING VERIFICATION
+**Authority:** CTO / Lead Architect
+**Rule Basis:** AGENTS.md Â§ PRIME DIRECTIVES â€” "[FORBID] Classic Singletons and Awake() self-registration. [REQ] Managers accessed via GlobalRegistry."
+**Source Violations:** `SINGLETON_VIOLATIONS.md` (101 first-party violations)
 **Mandates Followed:** AGENTS.md [RULE] MANDATE CONTEXTUAL INGESTION, [RULE] ARCHITECTURE FIRST, [RULE] NO OPTIMISM.
 
 ---
@@ -251,7 +251,7 @@ _gameBootstrapper.ShowFatalError(msg);
 
 **Rationale:** These are presentation-only. Lowest blast radius. Merge or delete where possible.
 
-**Current-state safety note:** the recommendation column below is an old migration sketch, not a literal service-slot assignment contract.  
+**Current-state safety note:** the recommendation column below is an old migration sketch, not a literal service-slot assignment contract.
 Direct current owners already confirmed in source remain:
 
 - `SuitHUDV4CanvasOverlay -> IUIService`
@@ -350,5 +350,5 @@ Week 6: Purge + MCP validation per batch
 
 ---
 
-*STATUS: PENDING VERIFICATION*  
+*STATUS: PENDING VERIFICATION*
 *No optimism. Facts only. Next step: CTO approves Tier 1 batch order.*

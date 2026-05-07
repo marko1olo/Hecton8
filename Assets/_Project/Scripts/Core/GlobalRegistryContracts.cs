@@ -711,6 +711,33 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Registry-backed AR waypoint projection service. Static callers route through
+    /// <see cref="GlobalRegistry"/> instead of owning a local singleton.
+    /// </summary>
+    public interface IARWaypointService
+    {
+        /// <summary>
+        /// True once the waypoint overlay has a live HUD target.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Register or refresh an external waypoint bound to a transform target.
+        /// </summary>
+        void SetWaypoint(int id, Transform target, string label, Color color);
+
+        /// <summary>
+        /// Register or refresh an external waypoint bound to a runtime-space position.
+        /// </summary>
+        void SetWaypoint(int id, Vector3 worldPosition, string label, Color color);
+
+        /// <summary>
+        /// Remove a previously registered external waypoint.
+        /// </summary>
+        void ClearWaypoint(int id);
+    }
+
+    /// <summary>
     /// Authoritative player runtime-context contract exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IPlayerRuntimeContext
@@ -1489,6 +1516,7 @@ namespace Hecton8.Core
         UnderwaterVisualsRuntime = 116,
         DynamicDifficultyRuntime = 117,
         ToolHapticsRuntime = 118,
+        ARWaypointRuntime = 119,
         Unknown = 255
     }
 

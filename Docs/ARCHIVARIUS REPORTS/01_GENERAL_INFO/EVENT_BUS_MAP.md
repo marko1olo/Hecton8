@@ -1,4 +1,4 @@
-﻿# HECTON-8 EVENT BUS MAP
+# HECTON-8 EVENT BUS MAP
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -11,7 +11,7 @@ Scope: source-backed orientation map for the event-bus layer.
 
 This file is a lightweight orientation map only.
 
-It should not be treated as the definitive publisher/subscriber truth table.  
+It should not be treated as the definitive publisher/subscriber truth table.
 For the larger static readout, use:
 
 - `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md`
@@ -68,7 +68,7 @@ The present workspace contains two event-mapping documents:
 1. This file in `01_GENERAL_INFO`
 2. `EVENT_FLOW_MAP.md` in `02_ACTUAL_REPORTS`
 
-The detailed routing document is the better source for raw mappings.  
+The detailed routing document is the better source for raw mappings.
 This file should remain a short orientation page, not a second large truth table.
 
 ## File Map

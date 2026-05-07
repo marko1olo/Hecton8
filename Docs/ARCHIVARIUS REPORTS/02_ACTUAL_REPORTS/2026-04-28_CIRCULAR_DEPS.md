@@ -1,10 +1,10 @@
-﻿# CIRCULAR_DEPS.md
+# CIRCULAR_DEPS.md
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Date:** 2026-04-29  
-**Status:** PENDING VERIFICATION  
+**Date:** 2026-04-29
+**Status:** PENDING VERIFICATION
 **Scope:** current `.asmdef` dependency surface under `Assets/_Project/Scripts`
 
 **Mandates Followed:** `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
@@ -83,6 +83,6 @@ This is architecture coupling debt even without a proven cycle.
 
 ## Verdict
 
-No direct `.asmdef` cycle was confirmed in this pass.  
-Direct third-party references inside `Hecton8.Core` remain live architecture debt.  
+No direct `.asmdef` cycle was confirmed in this pass.
+Direct third-party references inside `Hecton8.Core` remain live architecture debt.
 Compile-graph correctness beyond static `.asmdef` readback remains `PENDING VERIFICATION`.

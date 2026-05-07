@@ -444,6 +444,10 @@ namespace Hecton8.Systems.AI
         private const float PredatorSightImmediateRevealRadiusMeters = 18f;
         private const double PredatorSightImmediateRevealRadiusMetersSqr =
             PredatorSightImmediateRevealRadiusMeters * PredatorSightImmediateRevealRadiusMeters;
+        private const float PredatorSightRearViewDotThreshold = -0.2f;
+        private const float PredatorSightRearViewFakeMinDistanceMeters = 24f;
+        private const double PredatorSightRearViewFakeMinDistanceMetersSqr =
+            PredatorSightRearViewFakeMinDistanceMeters * PredatorSightRearViewFakeMinDistanceMeters;
         private const double DirectorSolveBudgetMilliseconds = 0.2d;
         private const float DirectorSolveWarningCooldownSeconds = 1f;
         private static readonly uint _DirectorSolveBudgetWarningHash =
@@ -805,9 +809,17 @@ namespace Hecton8.Systems.AI
 
                 AbsoluteUniversePosition predatorAup =
                     AbsoluteUniversePosition.FromRuntimePosition(_predatorSightContacts[i].Position);
-                if (AbsoluteUniversePosition.DistanceSq(in predatorAup, in playerAup) <= PredatorSightImmediateRevealRadiusMetersSqr)
+                double predatorDistanceSqr = AbsoluteUniversePosition.DistanceSq(in predatorAup, in playerAup);
+                if (predatorDistanceSqr <= PredatorSightImmediateRevealRadiusMetersSqr)
                 {
                     brain.ApplyDirectorLineOfSight(true, playerPosition, safePlayerForward);
+                    continue;
+                }
+
+                if (predatorDistanceSqr >= PredatorSightRearViewFakeMinDistanceMetersSqr &&
+                    IsPredatorBehindPlayerViewByAup(in playerAup, in predatorAup, safePlayerForward))
+                {
+                    brain.ApplyDirectorLineOfSight(false, playerPosition, safePlayerForward);
                     continue;
                 }
 
@@ -849,6 +861,25 @@ namespace Hecton8.Systems.AI
                 buildHandle);
             _predatorSightScheduledCount = requestCount;
             _predatorSightJobScheduled = true;
+        }
+
+        private static bool IsPredatorBehindPlayerViewByAup(
+            in AbsoluteUniversePosition playerAup,
+            in AbsoluteUniversePosition predatorAup,
+            Vector3 playerForward)
+        {
+            double3 predatorDelta = predatorAup.ToAbsoluteDouble3() - playerAup.ToAbsoluteDouble3();
+            float3 runtimeDelta = new float3(
+                (float)predatorDelta.x,
+                (float)predatorDelta.y,
+                (float)predatorDelta.z);
+            float distanceSqr = math.lengthsq(runtimeDelta);
+            if (distanceSqr <= 0.0001f)
+                return false;
+
+            float3 directionToPredator = runtimeDelta * math.rsqrt(distanceSqr);
+            float3 safeForward = math.normalizesafe((float3)playerForward, new float3(0f, 0f, 1f));
+            return math.dot(safeForward, directionToPredator) <= PredatorSightRearViewDotThreshold;
         }
 
         private bool CompletePredatorSightBatch(bool forceComplete)

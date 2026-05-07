@@ -1,10 +1,10 @@
-﻿# VRAM BUDGET AUDIT â€” First-Party Texture Accounting
+# VRAM BUDGET AUDIT â€” First-Party Texture Accounting
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-> **Status:** ETA SANITIZED  
-> **Mandates Followed:** AGENTS.md Â§ Textures Â· Â§ VRAM HARD CEILING  
+> **Status:** ETA SANITIZED
+> **Mandates Followed:** AGENTS.md Â§ Textures Â· Â§ VRAM HARD CEILING
 > **Method:** `.meta` parser + `System.Drawing` image dimension read. No guesswork.
 
 ---

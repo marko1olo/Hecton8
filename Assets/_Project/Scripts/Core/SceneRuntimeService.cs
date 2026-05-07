@@ -37,9 +37,12 @@ namespace Hecton8.Core
         private const float WorldDroneRuntimeDb = -5f;
         private const float InputReclaimStartFov = 90f;
         private const float InputReclaimDurationSeconds = 1f;
+        private const double TransitionSolveTelemetryThresholdMs = 0.2d;
         private const int TransitionOverlaySortingOrder = 32766;
         private const int TerminalBootBufferLength = 384;
         private const uint TerminalBootHashSalt = 0x9E3779B9u;
+        private const uint TransitionSolveBudgetWarningHash = 0x54534F4Cu; // TSOL
+        private const uint TransitionTelemetryContextHash = 0x53434E45u; // SCNE
         private static readonly int _TransitionDitherProgressId = Shader.PropertyToID("_DitherProgress");
         private static readonly int _TransitionDitherColorId = Shader.PropertyToID("_Color");
         private static readonly int _TransitionBlueNoiseTextureId = Shader.PropertyToID("_BlueNoiseTex");
@@ -80,6 +83,7 @@ namespace Hecton8.Core
         private readonly char[] _terminalBootBuffer = new char[TerminalBootBufferLength];
         private uint _terminalBootSeed;
         private int _terminalBootLastFrame = -1;
+        private bool _transitionPerformanceWarningPublished;
 
         /// <summary>
         /// True once the service has registered itself into <see cref="GlobalRegistry"/>.
@@ -345,6 +349,7 @@ namespace Hecton8.Core
         {
             _cinematicTransitionActive = true;
             _cinematicTransitionElapsed = 0f;
+            _transitionPerformanceWarningPublished = false;
             _cinematicCamera = _configuredCinematicCamera;
             _cinematicMenuGroup = _configuredCinematicMenuGroup;
             _cinematicMenuRect = _cinematicMenuGroup != null
@@ -384,6 +389,7 @@ namespace Hecton8.Core
             if (!_cinematicTransitionActive)
                 return;
 
+            double solveStartTime = Time.realtimeSinceStartupAsDouble;
             _cinematicTransitionElapsed += Mathf.Max(0f, unscaledDeltaTime);
             float normalized = MainMenuCameraPanDurationSeconds > 0f
                 ? Mathf.Clamp01(_cinematicTransitionElapsed / MainMenuCameraPanDurationSeconds)
@@ -404,6 +410,7 @@ namespace Hecton8.Core
 
             SetTransitionDitherCoverage(1f);
             UpdateTerminalBootOverlay();
+            PublishTransitionSolveBudgetWarningIfNeeded(solveStartTime);
         }
 
         private async Awaitable CompleteMainMenuCinematicTransitionAsync(Scene previousScene, string loadedSceneName)
@@ -447,6 +454,7 @@ namespace Hecton8.Core
             float elapsed = 0f;
             while (Application.isPlaying && elapsed < TransitionDissolveSeconds)
             {
+                double solveStartTime = Time.realtimeSinceStartupAsDouble;
                 elapsed += Mathf.Max(0f, Time.unscaledDeltaTime);
                 float normalized = TransitionDissolveSeconds > 0f
                     ? Mathf.Clamp01(elapsed / TransitionDissolveSeconds)
@@ -459,6 +467,7 @@ namespace Hecton8.Core
                 if (_transitionDitherMaterial == null)
                     _transitionOverlayGroup.alpha = 1f - eased;
 
+                PublishTransitionSolveBudgetWarningIfNeeded(solveStartTime);
                 await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
             }
 
@@ -502,10 +511,27 @@ namespace Hecton8.Core
             _transitionOverlayGroup = null;
             _terminalBootText = null;
             _terminalBootLastFrame = -1;
+            _transitionPerformanceWarningPublished = false;
             if (_transitionDitherMaterial != null)
                 Destroy(_transitionDitherMaterial);
             _transitionDitherMaterial = null;
             ResetWorldEntryFreezeState();
+        }
+
+        private void PublishTransitionSolveBudgetWarningIfNeeded(double solveStartTime)
+        {
+            if (_transitionPerformanceWarningPublished || !Application.isPlaying)
+                return;
+
+            double elapsedMilliseconds = (Time.realtimeSinceStartupAsDouble - solveStartTime) * 1000.0d;
+            if (elapsedMilliseconds < TransitionSolveTelemetryThresholdMs)
+                return;
+
+            _transitionPerformanceWarningPublished = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                TransitionSolveBudgetWarningHash,
+                TransitionTelemetryContextHash,
+                (float)elapsedMilliseconds);
         }
 
         private void BeginAudioSnapshotDiveCrossfade()

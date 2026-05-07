@@ -1,4 +1,4 @@
-﻿# Documentation Sorting Authority Map
+# Documentation Sorting Authority Map
 
 Date: 2026-05-07
 Status: PENDING VERIFICATION
@@ -226,9 +226,9 @@ Fresh May 6 inventory supersedes the May 5 count boundary above:
 | root `.md` files | `5` |
 | root `.txt` / `.log` files | `0` |
 | relocated root `.log` files | `9` |
-| `Assets/_Project/**/*.cs` | `1206` |
-| `Assets/_Project/Scripts/**/*.cs` | `1165` |
-| `Assets/_Project/Scripts` line count by `Get-Content.Count` | `643074` |
+| `Assets/_Project/**/*.cs` | `1212` |
+| `Assets/_Project/Scripts/**/*.cs` | `1171` |
+| `Assets/_Project/Scripts` line count by `Get-Content.Count` | `651121` |
 
 Root active authority remains `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
 `BROKEN_PREFABS.md` is now present in root and is classified as generated snapshot evidence, not authority.

@@ -1,1345 +1,1567 @@
-﻿{
+{
     "generatedDate":  "2026-05-07",
     "status":  "PENDING VERIFICATION",
     "activeMarkdownCount":  223,
-    "activeScope":  "Docs/**/*.md excluding Docs/_Archive, Docs/DEPRECATED, Docs/Reports/DEPRECATED, and Docs/ARCHIVARIUS REPORTS/03_OBSOLETE",
     "entries":  [
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\01_EXECUTIVE_FORENSIC_SUMMARY.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/01_EXECUTIVE_FORENSIC_SUMMARY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Executive Forensic Summary",
                         "bytes":  5118
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\02_SYSTEM_REALITY_MATRIX.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "System Reality Matrix",
                         "bytes":  9641
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\03_CODE_HEALTH_AND_RUNTIME_ARCHITECTURE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/03_CODE_HEALTH_AND_RUNTIME_ARCHITECTURE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Code Health And Runtime Architecture",
                         "bytes":  6056
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\04_PLAYER_PERSPECTIVE_AND_READINESS.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/04_PLAYER_PERSPECTIVE_AND_READINESS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Player Perspective And Readiness",
                         "bytes":  2747
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\05_EVIDENCE_LEDGER.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/05_EVIDENCE_LEDGER.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Evidence Ledger",
                         "bytes":  6350
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\06_CRITICAL_ACTION_QUEUE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Critical Action Queue",
                         "bytes":  26031
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\07_REVERIFICATION_ADDENDUM_2026-04-30.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/07_REVERIFICATION_ADDENDUM_2026-04-30.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Reverification Addendum â€” 2026-04-30",
                         "bytes":  5353
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\08_SUBSYSTEM_IMPLEMENTATION_CATALOG.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/08_SUBSYSTEM_IMPLEMENTATION_CATALOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Subsystem Implementation Catalog",
                         "bytes":  6951
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\09_MANDATE_PRESSURE_HEATMAP.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/09_MANDATE_PRESSURE_HEATMAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Mandate Pressure Heatmap",
                         "bytes":  5665
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\10_VERIFICATION_AND_DOCSET_REALITY.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/10_VERIFICATION_AND_DOCSET_REALITY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Verification And Docset Reality",
                         "bytes":  4029
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\11_OWNER_DEEP_DIVE_WORLD_GAMEPLAY_UI.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/11_OWNER_DEEP_DIVE_WORLD_GAMEPLAY_UI.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Owner Deep Dive â€” World, Gameplay, UI",
                         "bytes":  5606
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\12_SERVICE_AND_EVENT_DRIFT_DEEP_DIVE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/12_SERVICE_AND_EVENT_DRIFT_DEEP_DIVE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Service And Event Drift Deep Dive",
                         "bytes":  4601
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\13_PERSISTENCE_CONTENT_AND_ECOSYSTEM_DEEP_DIVE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/13_PERSISTENCE_CONTENT_AND_ECOSYSTEM_DEEP_DIVE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Persistence, Content, And Ecosystem Deep Dive",
                         "bytes":  5028
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\14_DEPENDENCY_GRAVITY_AND_MONOLITH_RISK.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/14_DEPENDENCY_GRAVITY_AND_MONOLITH_RISK.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Dependency Gravity And Monolith Risk",
                         "bytes":  10030
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\15_SECONDARY_DOMAIN_DEEP_DIVE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/15_SECONDARY_DOMAIN_DEEP_DIVE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "15 Secondary Domain Deep Dive",
                         "bytes":  12906
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\16_SECONDARY_DOMAIN_REALITY_AND_AUTHORITY_MATRIX.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/16_SECONDARY_DOMAIN_REALITY_AND_AUTHORITY_MATRIX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "16 Secondary Domain Reality And Authority Matrix",
                         "bytes":  5895
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\17_SENSORY_SIMULATION_AND_PLAYER_CHANNELS.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/17_SENSORY_SIMULATION_AND_PLAYER_CHANNELS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "17 Sensory Simulation And Player Channels",
                         "bytes":  7658
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\18_INTERACTION_CONSTRUCTION_AND_RUNTIME_LINKAGE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/18_INTERACTION_CONSTRUCTION_AND_RUNTIME_LINKAGE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "18 Interaction Construction And Runtime Linkage",
                         "bytes":  7426
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\19_BOOTSTRAP_OPTIMIZATION_AND_RUNTIME_GOVERNANCE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/19_BOOTSTRAP_OPTIMIZATION_AND_RUNTIME_GOVERNANCE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "19 Bootstrap Optimization And Runtime Governance",
                         "bytes":  8092
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\20_SUPPORT_LAYER_REALITY_AND_DOCTRINE_DRIFT.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/20_SUPPORT_LAYER_REALITY_AND_DOCTRINE_DRIFT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "20 Support Layer Reality And Doctrine Drift",
                         "bytes":  7286
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\21_CONTENT_LOCALIZATION_AND_AUTHORED_SURFACE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/21_CONTENT_LOCALIZATION_AND_AUTHORED_SURFACE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "21 Content Localization And Authored Surface",
                         "bytes":  7293
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\22_SCENE_PREFAB_AND_SOURCE_OF_TRUTH_DISCIPLINE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/22_SCENE_PREFAB_AND_SOURCE_OF_TRUTH_DISCIPLINE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "22 Scene Prefab And Source Of Truth Discipline",
                         "bytes":  5200
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\23_RENDERING_VISUAL_STACK_AND_GPU_IDENTITY.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/23_RENDERING_VISUAL_STACK_AND_GPU_IDENTITY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "23 Rendering Visual Stack And GPU Identity",
                         "bytes":  6170
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\24_VERIFICATION_DOC_TRUST_AND_EVIDENCE_MODEL.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/24_VERIFICATION_DOC_TRUST_AND_EVIDENCE_MODEL.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "24 Verification Doc Trust And Evidence Model",
                         "bytes":  8878
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\25_AUDIT_BUNDLE_FILE_ACTUALITY_RECHECK.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/25_AUDIT_BUNDLE_FILE_ACTUALITY_RECHECK.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "25 Audit Bundle File Actuality Recheck",
                         "bytes":  10448
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\26_LEGACY_DOCSET_ACTUALITY_AND_UPDATE_QUEUE.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/26_LEGACY_DOCSET_ACTUALITY_AND_UPDATE_QUEUE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "26 Legacy Docset Actuality And Update Queue",
                         "bytes":  12233
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\27_PLAYMODE_DEADLOCK_STATIC_AUDIT.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/27_PLAYMODE_DEADLOCK_STATIC_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Play Mode Deadlock Static Audit",
                         "bytes":  15072
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\28_STALE_ERROR_PURGE_AND_TRUST_SYNC.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/28_STALE_ERROR_PURGE_AND_TRUST_SYNC.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "28 Stale Error Purge And Trust Sync",
                         "bytes":  6172
                     },
                     {
-                        "path":  "Docs\\2026-04-30_Codex_Full_Project_Forensic_Audit\\README.md",
+                        "path":  "Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/README.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-04-30 Codex Full Project Forensic Audit",
                         "bytes":  3206
                     },
                     {
-                        "path":  "Docs\\AI_Fauna\\AI_CREATURE_ROSTER_ENTERPRISE.md",
+                        "path":  "Docs/AI_Fauna/AI_CREATURE_ROSTER_ENTERPRISE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "AI Creature Roster Enterprise",
                         "bytes":  16167
                     },
                     {
-                        "path":  "Docs\\AI_Fauna\\AI_FAUNA_WORLD_INTEGRATION_REPORT.md",
+                        "path":  "Docs/AI_Fauna/AI_FAUNA_WORLD_INTEGRATION_REPORT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "AI Fauna World Integration Report",
                         "bytes":  5599
                     },
                     {
-                        "path":  "Docs\\AI_Fauna\\README.md",
+                        "path":  "Docs/AI_Fauna/README.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "AI Fauna Docs",
                         "bytes":  1277
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\AUDIO_DSP_PIPELINE.md",
+                        "path":  "Docs/ARCHITECTURE/AUDIO_DSP_PIPELINE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Audio DSP Pipeline",
                         "bytes":  8080
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\AUP_PRECISION_STANDARDS.md",
+                        "path":  "Docs/ARCHITECTURE/AUP_PRECISION_STANDARDS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "AUP Precision Standards",
                         "bytes":  3358
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\DISPATCH_PIPELINE.md",
+                        "path":  "Docs/ARCHITECTURE/DISPATCH_PIPELINE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Dispatch Pipeline",
                         "bytes":  12132
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\DRONE_FLEET_PROTOCOL.md",
+                        "path":  "Docs/ARCHITECTURE/DRONE_FLEET_PROTOCOL.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "DRONE FLEET PROTOCOL",
                         "bytes":  7383
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\ECS_DOTS_ADOPTION_PLAN.md",
+                        "path":  "Docs/ARCHITECTURE/ECS_DOTS_ADOPTION_PLAN.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ECS/DOTS Adoption Plan - FaunaSimulationEngine and FluidMathCore",
                         "bytes":  8832
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\EQUIPMENT_SOA_LAYOUT.md",
+                        "path":  "Docs/ARCHITECTURE/EQUIPMENT_SOA_LAYOUT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "EQUIPMENT_SOA_LAYOUT",
                         "bytes":  8812
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\FLOW_FIELD_MATH.md",
+                        "path":  "Docs/ARCHITECTURE/FLOW_FIELD_MATH.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "FLOW_FIELD_MATH.md",
                         "bytes":  7520
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\HABITAT_LOGISTICS_GRAPH.md",
+                        "path":  "Docs/ARCHITECTURE/HABITAT_LOGISTICS_GRAPH.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Habitat Logistics Graph",
                         "bytes":  18388
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\HEADLESS_ECOSYSTEM_SIMULATION.md",
+                        "path":  "Docs/ARCHITECTURE/HEADLESS_ECOSYSTEM_SIMULATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Headless Ecosystem Simulation",
                         "bytes":  7288
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\KINEMATICS_AUP_INTEGRATION.md",
+                        "path":  "Docs/ARCHITECTURE/KINEMATICS_AUP_INTEGRATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "KINEMATICS_AUP_INTEGRATION",
                         "bytes":  19332
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\KINETIC_ENTANGLEMENT.md",
+                        "path":  "Docs/ARCHITECTURE/KINETIC_ENTANGLEMENT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "KINETIC ENTANGLEMENT",
                         "bytes":  8554
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\MIGRATORY_FLORA_SYSTEM.md",
+                        "path":  "Docs/ARCHITECTURE/MIGRATORY_FLORA_SYSTEM.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Migratory Flora System",
                         "bytes":  4733
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\ORGANIC_ENTROPY_MATH.md",
+                        "path":  "Docs/ARCHITECTURE/ORGANIC_ENTROPY_MATH.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ORGANIC_ENTROPY_MATH",
                         "bytes":  8538
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\PROJECT_CONTENT_LEDGER.md",
+                        "path":  "Docs/ARCHITECTURE/PROJECT_CONTENT_LEDGER.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  18327
+                        "title":  "PROJECT_CONTENT_LEDGER",
+                        "bytes":  18318
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\QUEST_DAG_PROTOCOL.md",
+                        "path":  "Docs/ARCHITECTURE/QUEST_DAG_PROTOCOL.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "QUEST DAG Protocol",
                         "bytes":  12231
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\REACTIVE_ECONOMY_SYSTEM.md",
+                        "path":  "Docs/ARCHITECTURE/REACTIVE_ECONOMY_SYSTEM.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Reactive Economy System",
                         "bytes":  7720
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\SAVE_PAGING_PROTOCOL.md",
+                        "path":  "Docs/ARCHITECTURE/SAVE_PAGING_PROTOCOL.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "SAVE_PAGING_PROTOCOL",
                         "bytes":  10829
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\SAVE_V8_BINARY_SPEC.md",
+                        "path":  "Docs/ARCHITECTURE/SAVE_V8_BINARY_SPEC.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "SAVE_V8_BINARY_SPEC",
                         "bytes":  7171
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\SCANNER_DATA_MINING.md",
+                        "path":  "Docs/ARCHITECTURE/SCANNER_DATA_MINING.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Scanner Data Mining",
                         "bytes":  5058
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\SEISMIC_GEOLOGY_SYSTEM.md",
+                        "path":  "Docs/ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Seismic Geology System",
                         "bytes":  4596
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\SUBMARINE_OS_MANUAL.md",
+                        "path":  "Docs/ARCHITECTURE/SUBMARINE_OS_MANUAL.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "SUBMARINE OS MANUAL",
                         "bytes":  5746
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\SYSTEM_INTERCONNECT_MATRIX.md",
+                        "path":  "Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "System Interconnect Matrix",
                         "bytes":  33789
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\THIRD_PARTY_POISON.md",
+                        "path":  "Docs/ARCHITECTURE/THIRD_PARTY_POISON.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "THIRD-PARTY POISON",
                         "bytes":  5660
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\TRAUMA_GLITCH_SYSTEM.md",
+                        "path":  "Docs/ARCHITECTURE/TRAUMA_GLITCH_SYSTEM.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "TRAUMA_GLITCH_SYSTEM",
                         "bytes":  9123
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\URP_SCREENSHOT_PIPELINE.md",
+                        "path":  "Docs/ARCHITECTURE/URP_SCREENSHOT_PIPELINE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "URP Screenshot Pipeline",
                         "bytes":  6206
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\ZERO_GC_FABRICATION.md",
+                        "path":  "Docs/ARCHITECTURE/ZERO_GC_FABRICATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ZERO-GC Fabrication",
                         "bytes":  7409
                     },
                     {
-                        "path":  "Docs\\ARCHITECTURE\\ZERO_GC_UI_PIPELINE.md",
+                        "path":  "Docs/ARCHITECTURE/ZERO_GC_UI_PIPELINE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ZERO_GC_UI_PIPELINE",
                         "bytes":  9459
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\ASSET_DEPENDENCY_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/ASSET_DEPENDENCY_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  8259
+                        "title":  "ASSET DEPENDENCY MAP â€” HECTON-8 Hard-Referenced / Addressables Migration",
+                        "bytes":  8252
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\AUP_SURGERY_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/AUP_SURGERY_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  19956
+                        "title":  "HECTON-8 â€” AUP SURGERY BYTE MAP",
+                        "bytes":  19943
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\BUILD_DEPENDENCY_GRAPH.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/BUILD_DEPENDENCY_GRAPH.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  6983
+                        "title":  "BUILD DEPENDENCY GRAPH â€” HECTON-8 Bootstrapper Bloat Check",
+                        "bytes":  6968
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Conceptual System Authority Map",
                         "bytes":  12451
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 CONSTRUCTION RUNTIME INTEGRATION MAP",
                         "bytes":  10011
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\DEPENDENCY_GRAPH.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DEPENDENCY_GRAPH.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "GLOBAL REGISTRY DEPENDENCY GRAPH",
                         "bytes":  4898
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\DOC_AUTHORITY_CLASSIFICATION.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOC_AUTHORITY_CLASSIFICATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Doc Authority Classification",
                         "bytes":  16886
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\DOCSET_COVERAGE_MATRIX.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 DOCSET COVERAGE MATRIX",
                         "bytes":  22254
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\EVENT_BUS_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/EVENT_BUS_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  6549
+                        "title":  "HECTON-8 EVENT BUS MAP",
+                        "bytes":  6542
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 GAMEPLAY SYSTEM OWNERSHIP LEDGER",
                         "bytes":  13941
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\GLOSSARY.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/GLOSSARY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  43507
+                        "title":  "HECTON-8 â€” GLOSSARY OF TERMS",
+                        "bytes":  43500
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\HUD_EDITOR_SPEC.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/HUD_EDITOR_SPEC.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  12232
+                        "title":  "HUD EDITOR VISIBILITY SPEC â€” SuitHUDV4CanvasOverlay",
+                        "bytes":  12221
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\INTERFACE_CONTRACT_TABLE.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/INTERFACE_CONTRACT_TABLE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "INTERFACE CONTRACT TABLE",
                         "bytes":  3761
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\INTERFACE_STRATEGY.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/INTERFACE_STRATEGY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "INTERFACE STRATEGY",
                         "bytes":  4716
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\MASTER_INDEX.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/MASTER_INDEX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 ARCHIVARIUS MASTER INDEX",
                         "bytes":  9784
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\NAMING_VIOLATIONS.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  7653
+                        "title":  "Naming Violations",
+                        "bytes":  8007
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NARRATIVE_DISCOVERY_PROGRESSION_SYSTEM_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 NARRATIVE / DISCOVERY / PROGRESSION SYSTEM MAP",
                         "bytes":  20755
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\PLAYER_GAMEPLAY_CORE_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PLAYER_GAMEPLAY_CORE_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 PLAYER / GAMEPLAY CORE MAP",
                         "bytes":  12169
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\PROJECT_ATLAS.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  30502
+                        "title":  "PROJECT ATLAS",
+                        "bytes":  30567
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\STRUCTURAL_NARRATIVE.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/STRUCTURAL_NARRATIVE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 STRUCTURAL NARRATIVE",
                         "bytes":  5461
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 SURVIVAL / DAMAGE / HAZARD SYSTEM MAP",
                         "bytes":  22027
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\SYSTEM_INTERCONNECT_MATRIX.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/SYSTEM_INTERCONNECT_MATRIX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  11332
+                        "title":  "SYSTEM INTERCONNECT MATRIX â€” AbsoluteUniversePosition (AUP)",
+                        "bytes":  11319
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\TOOLS_INTERACTION_OPERATIONAL_SYSTEM_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/TOOLS_INTERACTION_OPERATIONAL_SYSTEM_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 TOOLS / INTERACTION / OPERATIONAL SYSTEM MAP",
                         "bytes":  31245
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\UI_AUDIO_PRESENTATION_SYSTEM_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/UI_AUDIO_PRESENTATION_SYSTEM_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 UI / AUDIO / PRESENTATION SYSTEM MAP",
                         "bytes":  14626
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\01_GENERAL_INFO\\WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 WORLD / ENVIRONMENT / SUBMARINE SYSTEM MAP",
                         "bytes":  12024
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_ASSET_DEPENDENCY_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_ASSET_DEPENDENCY_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  7022
+                        "title":  "ASSET-TO-CODE DEPENDENCY MAP",
+                        "bytes":  7015
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_CIRCULAR_DEPS.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_CIRCULAR_DEPS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  2591
+                        "title":  "CIRCULAR_DEPS.md",
+                        "bytes":  2580
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_CYRILLIC_SWEEP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_CYRILLIC_SWEEP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  2518
+                        "title":  "CYRILLIC_SWEEP.md",
+                        "bytes":  2507
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_DATA_DICTIONARY.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_DATA_DICTIONARY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  13489
+                        "title":  "HECTON-8 DATA DICTIONARY â€” DOD Struct Reference",
+                        "bytes":  13478
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_DEAD_ASSET_SWEEP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_DEAD_ASSET_SWEEP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  2940
+                        "title":  "DEAD_ASSET_SWEEP_REPORT",
+                        "bytes":  2929
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_DEEP_FORENSIC_AUDIT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_DEEP_FORENSIC_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  14054
+                        "title":  "DEEP FORENSIC AUDIT â€” HECTON-8 SYSTEM ARCHAEOLOGY \u0026 HARDWARE DICTATORSHIP",
+                        "bytes":  14046
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_ETA2_SUPREME_SUMMARY.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_ETA2_SUPREME_SUMMARY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  7615
+                        "title":  "ETA2_SUPREME_SUMMARY â€” Deep Core Archaeology Final Report",
+                        "bytes":  7606
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_EVENT_LEAK_REPORT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_EVENT_LEAK_REPORT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  3693
+                        "title":  "EVENT_LEAK_REPORT.md",
+                        "bytes":  3684
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_HOT_PATH_VIOLATIONS.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_HOT_PATH_VIOLATIONS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  3899
+                        "title":  "HOT_PATH_VIOLATIONS.md",
+                        "bytes":  3888
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_LIAR_DETECTION.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_LIAR_DETECTION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  4459
+                        "title":  "LIAR_DETECTION.md â€” Agent Integrity Audit",
+                        "bytes":  4448
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_MEMORY_ALIGNMENT_FIX.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_MEMORY_ALIGNMENT_FIX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  7121
+                        "title":  "MEMORY_ALIGNMENT_FIX.md â€” DOD Struct Layout Surgery",
+                        "bytes":  7082
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_PROFILING_PREPAREDNESS_AUDIT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_PROFILING_PREPAREDNESS_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  2899
+                        "title":  "PROFILING_PREPAREDNESS_AUDIT",
+                        "bytes":  2890
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_SUPREME_AUDITOR_REPORT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_SUPREME_AUDITOR_REPORT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  30191
+                        "title":  "SUPREME AUDITOR â€” CONTINUOUS SMART AUDIT REPORT",
+                        "bytes":  30166
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_VRAM_BUDGET_AUDIT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_VRAM_BUDGET_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  24229
+                        "title":  "VRAM BUDGET AUDIT â€” HECTON-8",
+                        "bytes":  24220
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-28_VRAM_EXECUTION_LIST.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_VRAM_EXECUTION_LIST.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  2891
+                        "title":  "VRAM_EXECUTION_LIST.md â€” Top 20 VRAM Offenders",
+                        "bytes":  2884
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ARCHIVARIUS DOCSET REVERIFICATION",
                         "bytes":  6448
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION_ADDENDUM.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION_ADDENDUM.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ARCHIVARIUS DOCSET REVERIFICATION ADDENDUM",
                         "bytes":  676
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-29_EQUIPMENT_VOXEL_WELD_SURGERY_LOG.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_EQUIPMENT_VOXEL_WELD_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Equipment Voxel Weld Surgery Log",
                         "bytes":  2599
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_GLOBALREGISTRY_RUNTIME_AUTHORITY_MATRIX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  13581
+                        "title":  "HECTON-8 GLOBALREGISTRY RUNTIME AUTHORITY MATRIX",
+                        "bytes":  13576
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-29_LOGIC_SPANNER_OVERCHARGE_SURGERY_LOG.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_LOGIC_SPANNER_OVERCHARGE_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-04-29 Logic Spanner / Overcharge Surgery Log",
                         "bytes":  3841
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 SAVE / LOAD RUNTIME TRUTH",
                         "bytes":  8684
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 SCENE / PREFAB SERVICE-OWNER TRUTH",
                         "bytes":  9021
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ARCHIVARIUS CONTINUATION REVERIFICATION",
                         "bytes":  8751
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "BOOTSTRAP RUNTIME AUTHORITY TRUTH",
                         "bytes":  12765
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-30_EDITOR_RUNTIME_FORENSICS.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-30_EDITOR_RUNTIME_FORENSICS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "EDITOR / RUNTIME FORENSICS",
                         "bytes":  11595
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-30_PERSISTENCE_AND_SCENE_SEARCH_DRIFT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-30_PERSISTENCE_AND_SCENE_SEARCH_DRIFT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "PERSISTENCE AND SCENE-SEARCH DRIFT",
                         "bytes":  7395
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-30_SAVE_PARTICIPANT_LEDGER.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-30_SAVE_PARTICIPANT_LEDGER.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 SAVE PARTICIPANT LEDGER",
                         "bytes":  10949
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\2026-04-30_SERVICE_AUTHORITY_DRIFT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-30_SERVICE_AUTHORITY_DRIFT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "SERVICE AUTHORITY DRIFT",
                         "bytes":  9197
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\AGENTS_SKILLS_AUDIT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/AGENTS_SKILLS_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  3011
+                        "title":  "AGENTS-SKILLS MANDATE CROSS-REFERENCE AUDIT",
+                        "bytes":  3004
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\AUDIO_ROUTING_AUDIT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/AUDIO_ROUTING_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  6807
+                        "title":  "HECTON-8 â€” AUDIO MIXER ROUTING AUDIT",
+                        "bytes":  6800
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\COMPUTE_BUFFER_AUDIT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/COMPUTE_BUFFER_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  10240
+                        "title":  "COMPUTE BUFFER LIFECYCLE AUDIT â€” HECTON-8 First-Party Code",
+                        "bytes":  10231
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\DEAD_CODE_GRAVEYARD.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/DEAD_CODE_GRAVEYARD.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "DEAD CODE GRAVEYARD",
                         "bytes":  9015
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\DEBUG_LOG_DELETION_QUEUE.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/DEBUG_LOG_DELETION_QUEUE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  5189
+                        "title":  "DEBUG.LOG DELETION QUEUE â€” Unsanitized First-Party Runtime Logs",
+                        "bytes":  5182
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\EVENT_FLOW_MAP.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/EVENT_FLOW_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 EVENT FLOW MAP",
                         "bytes":  22902
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\FRAME_TIMELINE.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/FRAME_TIMELINE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  7808
+                        "title":  "FRAME TIMELINE â€” HECTON-8 Runtime Execution Order",
+                        "bytes":  7797
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\GOD_OBJECT_AUDIT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/GOD_OBJECT_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  7259
+                        "title":  "GOD OBJECT AUDIT â€” Player \u0026 Submarine Prefab Component Analysis",
+                        "bytes":  7242
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\HARD_LINK_DEBT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/HARD_LINK_DEBT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  7067
+                        "title":  "HARD LINK DEBT â€” Asset-to-Code Violation Map",
+                        "bytes":  7058
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\INTERFACE_HEALTH_DASHBOARD.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/INTERFACE_HEALTH_DASHBOARD.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  11580
+                        "title":  "HECTON-8 INTERFACE HEALTH DASHBOARD",
+                        "bytes":  13813
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\ITEM_ASSET_GUIDS.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/ITEM_ASSET_GUIDS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  4258
+                        "title":  "HECTON-8 â€” ITEM ASSET GUID AUDIT",
+                        "bytes":  4249
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\MODULAR_EQUIPMENT_ENGINE_SURGERY_LOG.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/MODULAR_EQUIPMENT_ENGINE_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "MODULAR EQUIPMENT ENGINE SURGERY LOG",
                         "bytes":  7405
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\PROJECT_CONTENT_LEDGER.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/PROJECT_CONTENT_LEDGER.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "PROJECT_CONTENT_LEDGER",
                         "bytes":  13439
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\RENDERGRAPH_AUDIT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/RENDERGRAPH_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  6841
+                        "title":  "RENDERGRAPH AUDIT â€” HECTON-8 First-Party URP Features",
+                        "bytes":  6830
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\SCENE_VRAM_FOOTPRINT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/SCENE_VRAM_FOOTPRINT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  5078
+                        "title":  "LIVE SCENE VRAM SURVEILLANCE â€” `02_HECTON_WORLD.unity`",
+                        "bytes":  5063
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\SINGLETON_FIX_PRIORITY.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/SINGLETON_FIX_PRIORITY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  20156
+                        "title":  "SINGLETON ELIMINATION ROADMAP â€” HECTON-8",
+                        "bytes":  20141
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\SINGLETON_VIOLATIONS.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/SINGLETON_VIOLATIONS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  15066
+                        "title":  "SINGLETON WITCH HUNT â€” FIRST-PARTY VIOLATIONS",
+                        "bytes":  15059
                     },
                     {
-                        "path":  "Docs\\ARCHIVARIUS REPORTS\\02_ACTUAL_REPORTS\\VRAM_BUDGET_AUDIT.md",
+                        "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/VRAM_BUDGET_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  5908
+                        "title":  "VRAM BUDGET AUDIT â€” First-Party Texture Accounting",
+                        "bytes":  5901
                     },
                     {
-                        "path":  "Docs\\DOC_GOVERNANCE.md",
+                        "path":  "Docs/DOC_GOVERNANCE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Documentation Governance",
                         "bytes":  6171
                     },
                     {
-                        "path":  "Docs\\Flora_Pipeline\\AI_FLORA_EXECUTION_BRIEF.md",
+                        "path":  "Docs/Flora_Pipeline/AI_FLORA_EXECUTION_BRIEF.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "AI Flora Execution Brief",
                         "bytes":  5660
                     },
                     {
-                        "path":  "Docs\\Flora_Pipeline\\FLORA_NEXT_DIALOG_PROMPT.md",
+                        "path":  "Docs/Flora_Pipeline/FLORA_NEXT_DIALOG_PROMPT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Flora Next Dialog Prompt",
                         "bytes":  2614
                     },
                     {
-                        "path":  "Docs\\Flora_Pipeline\\FLORA_SYSTEM_PLAN.md",
+                        "path":  "Docs/Flora_Pipeline/FLORA_SYSTEM_PLAN.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Flora System Plan",
                         "bytes":  8930
                     },
                     {
-                        "path":  "Docs\\Flora_Pipeline\\FLORA_TEXTURE_IMPORT_LOG.md",
+                        "path":  "Docs/Flora_Pipeline/FLORA_TEXTURE_IMPORT_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Flora Texture Import Log",
                         "bytes":  734
                     },
                     {
-                        "path":  "Docs\\Flora_Pipeline\\README.md",
+                        "path":  "Docs/Flora_Pipeline/README.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Flora Pipeline Docs",
                         "bytes":  1437
                     },
                     {
-                        "path":  "Docs\\HECTON8_GLOBAL_ARCHITECTURE_MAP.md",
+                        "path":  "Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  10348
+                        "title":  "HECTON-8 Global Architecture Map",
+                        "bytes":  10345
                     },
                     {
-                        "path":  "Docs\\HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md",
+                        "path":  "Docs/HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Runtime Execution Master Plan",
                         "bytes":  18067
                     },
                     {
-                        "path":  "Docs\\Legacy_Backlog\\README.md",
+                        "path":  "Docs/Legacy_Backlog/README.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Legacy Backlog Docs",
                         "bytes":  1731
                     },
                     {
-                        "path":  "Docs\\Legacy_Backlog\\Полный_список_недоработок_и_план_разработки_—_Project_Submerge_(HECTON-8) - ЧИТАТЬ, рядом создать документ - что и как испарвляем, дианмично обновлять.md",
+                        "path":  "Docs/Legacy_Backlog/Полный_список_недоработок_и_план_разработки_—_Project_Submerge_(HECTON-8) - ЧИТАТЬ, рядом создать документ - что и как испарвляем, дианмично обновлять.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ÐŸÐ¾Ð»Ð½Ñ‹Ð¹ ÑÐ¿Ð¸ÑÐ¾Ðº Ð½ÐµÐ´Ð¾Ñ€Ð°Ð±Ð¾Ñ‚Ð¾Ðº Ð¸ Ð¿Ð»Ð°Ð½ Ñ€Ð°Ð·Ñ€Ð°Ð±Ð¾Ñ‚ÐºÐ¸ â€” Project Submerge (HECTON-8)",
                         "bytes":  54978
                     },
                     {
-                        "path":  "Docs\\Legacy_Backlog\\Что_и_как_исправляем_—_живой_план.md",
+                        "path":  "Docs/Legacy_Backlog/Что_и_как_исправляем_—_живой_план.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Ð§Ñ‚Ð¾ Ð¸ ÐºÐ°Ðº Ð¸ÑÐ¿Ñ€Ð°Ð²Ð»ÑÐµÐ¼ â€” Ð¶Ð¸Ð²Ð¾Ð¹ Ð¿Ð»Ð°Ð½",
                         "bytes":  171386
                     },
                     {
-                        "path":  "Docs\\Legacy_World_Reference\\README.md",
+                        "path":  "Docs/Legacy_World_Reference/README.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Legacy World Reference",
                         "bytes":  949
                     },
                     {
-                        "path":  "Docs\\Legacy_World_Reference\\TERRAIN_108_BIOMES_VISION.md",
+                        "path":  "Docs/Legacy_World_Reference/TERRAIN_108_BIOMES_VISION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Hecton8: The 108-Biome Deep Sea Lore Matrix (Exhaustive Specification)",
                         "bytes":  8673
                     },
                     {
-                        "path":  "Docs\\PROCEDURAL_ASSET_PIPELINE.md",
+                        "path":  "Docs/PROCEDURAL_ASSET_PIPELINE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "PROCEDURAL_ASSET_PIPELINE.md",
                         "bytes":  14810
                     },
                     {
-                        "path":  "Docs\\PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md",
+                        "path":  "Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Procedural World Vertical Architecture",
                         "bytes":  7725
                     },
                     {
-                        "path":  "Docs\\QUALITY_GATES.md",
+                        "path":  "Docs/QUALITY_GATES.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "QUALITY_GATES.md",
                         "bytes":  4550
                     },
                     {
-                        "path":  "Docs\\README.md",
+                        "path":  "Docs/README.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  18896
+                        "title":  "Docs Index",
+                        "bytes":  19937
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md",
+                        "path":  "Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Compile Stabilization Continuation - 2026-05-01",
                         "bytes":  4369
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-01_CURRENT_PROJECT_STATE.md",
+                        "path":  "Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Current Project State",
                         "bytes":  30813
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md",
+                        "path":  "Docs/Reports/2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Editor Log Console Stabilization",
                         "bytes":  12593
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md",
+                        "path":  "Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Event Bus / Spatial Hash Compile Delta - 2026-05-01",
                         "bytes":  6578
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-01_EVENT_CASCADE_RECHECK.md",
+                        "path":  "Docs/Reports/2026-05-01_EVENT_CASCADE_RECHECK.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Event Cascade Recheck",
                         "bytes":  46025
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-01_HEADLESS_FAUNA_CONSOLE_DELTA.md",
+                        "path":  "Docs/Reports/2026-05-01_HEADLESS_FAUNA_CONSOLE_DELTA.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Headless Fauna / Console Delta - 2026-05-01",
                         "bytes":  3480
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md",
+                        "path":  "Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Objective Project Conclusion",
                         "bytes":  12268
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-01_ZERO_GC_JOBS_CONTINUATION_DELTA.md",
+                        "path":  "Docs/Reports/2026-05-01_ZERO_GC_JOBS_CONTINUATION_DELTA.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-01 Zero-GC / Jobs Continuation Delta",
                         "bytes":  42817
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md",
+                        "path":  "Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Documentation Actuality Sweep",
                         "bytes":  11742
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-03_CONSOLE_VR_READINESS_AUDIT.md",
+                        "path":  "Docs/Reports/2026-05-03_CONSOLE_VR_READINESS_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Console And VR Readiness Audit",
                         "bytes":  10550
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-03_FOUNDATION_GUARD_SCAN.md",
+                        "path":  "Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Foundation Guard Scan",
                         "bytes":  19460
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-03_FOUNDATION_GUARD_SIGNAL_CLEANUP.md",
+                        "path":  "Docs/Reports/2026-05-03_FOUNDATION_GUARD_SIGNAL_CLEANUP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-03 Foundation Guard Signal Cleanup",
                         "bytes":  2528
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md",
+                        "path":  "Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-03 Foundation Hardening Continuation",
                         "bytes":  134582
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md",
+                        "path":  "Docs/Reports/2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-03 Habitat Graph Anchor-State Hardening",
                         "bytes":  6431
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-03_OPTIMIZATION_REGISTRY_OWNERSHIP.md",
+                        "path":  "Docs/Reports/2026-05-03_OPTIMIZATION_REGISTRY_OWNERSHIP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  3230
+                        "title":  "2026-05-03 Optimization Registry Ownership",
+                        "bytes":  3219
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-03_REGISTRY_RENDERABLE_AND_JOB_BARRIER_GUARD.md",
+                        "path":  "Docs/Reports/2026-05-03_REGISTRY_RENDERABLE_AND_JOB_BARRIER_GUARD.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-03 Registry Service/Renderable And Job Barrier Guard",
                         "bytes":  10065
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-03_SETTINGS_PERSISTENCE_REGISTRY_REBIND.md",
+                        "path":  "Docs/Reports/2026-05-03_SETTINGS_PERSISTENCE_REGISTRY_REBIND.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-03 Settings Persistence Registry Rebind",
                         "bytes":  4453
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md",
+                        "path":  "Docs/Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-04 Celestial Environment Orbital Sync Report",
                         "bytes":  4683
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md",
+                        "path":  "Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-04 Celestial Orbital Protocol Meteor Report",
                         "bytes":  8294
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md",
+                        "path":  "Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-04 Celestial Orbital Protocol Report",
                         "bytes":  6140
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md",
+                        "path":  "Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Documentation Actuality Sweep",
                         "bytes":  15959
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md",
+                        "path":  "Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Documentation Header And Archive Queue",
                         "bytes":  14107
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md",
+                        "path":  "Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  17797
+                        "title":  "Documentation Sorting Authority Map",
+                        "bytes":  17794
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md",
+                        "path":  "Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Foundation Guard Unsafe Copy And Menu Loop Repair",
                         "bytes":  5624
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_HECTON_SANDBOX_BIOMES_FOUNDATION_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/2026-05-04_HECTON_SANDBOX_BIOMES_FOUNDATION_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON Sandbox Biomes Foundation Surgery Log",
                         "bytes":  5329
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Hydraulic Erosion Engine Surgery Log",
                         "bytes":  43441
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-04_WARNING_CLEANUP.md",
+                        "path":  "Docs/Reports/2026-05-04_WARNING_CLEANUP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Warning Cleanup",
                         "bytes":  7616
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-05_ANOMALY_ENGINE_ISOLATED_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/2026-05-05_ANOMALY_ENGINE_ISOLATED_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-05 Anomaly Engine Isolated Surgery Log",
                         "bytes":  19324
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-05_ARCHIVARIUS_REALITY_DELTA.md",
+                        "path":  "Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  14675
+                        "title":  "Archivarius Reality Delta",
+                        "bytes":  14672
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-05_CELESTIAL_CATACLYSM_SPECIFICATION.md",
+                        "path":  "Docs/Reports/2026-05-05_CELESTIAL_CATACLYSM_SPECIFICATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Celestial Cataclysm Specification",
                         "bytes":  7295
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-05_CHTHONIC_PILLARS_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/2026-05-05_CHTHONIC_PILLARS_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-05 Chthonic Pillars Surgery Log",
                         "bytes":  5732
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-05_GRAND_PURGE_VERIFICATION_LOG.md",
+                        "path":  "Docs/Reports/2026-05-05_GRAND_PURGE_VERIFICATION_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-05 Grand Purge Verification Log",
                         "bytes":  2780
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Sandbox Biomes Macro Shelf Surgery Log",
                         "bytes":  22515
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-05_NARRATIVE_PURGE_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/2026-05-05_NARRATIVE_PURGE_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-05 Narrative Purge Surgery Log",
                         "bytes":  3048
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md",
+                        "path":  "Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-05 Omega Autonomy Forensic Hardening",
                         "bytes":  13309
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-06_BRG_WRECKS_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/2026-05-06_BRG_WRECKS_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-06 BRG Wrecks Surgery Log",
                         "bytes":  3310
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-06_CRUCIBLE_FINAL_HARDENING_LOG.md",
+                        "path":  "Docs/Reports/2026-05-06_CRUCIBLE_FINAL_HARDENING_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-06 CRUCIBLE FINAL HARDENING LOG",
                         "bytes":  3823
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md",
+                        "path":  "Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  18416
+                        "title":  "Documentation Synchronization Pass",
+                        "bytes":  18412
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-06_GRAND_PURGE_REPEAT_VERIFICATION_LOG.md",
+                        "path":  "Docs/Reports/2026-05-06_GRAND_PURGE_REPEAT_VERIFICATION_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-06 Grand Purge Repeat Verification Log",
                         "bytes":  3233
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-06_GRAND_PURGE_VERIFICATION_PASS_04_LOG.md",
+                        "path":  "Docs/Reports/2026-05-06_GRAND_PURGE_VERIFICATION_PASS_04_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-06 Grand Purge Verification Pass 04 Log",
                         "bytes":  2696
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-06_GRAND_PURGE_VERIFICATION_PASS_05_LOG.md",
+                        "path":  "Docs/Reports/2026-05-06_GRAND_PURGE_VERIFICATION_PASS_05_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Grand Purge Verification Pass 05",
                         "bytes":  3965
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-06_GRAND_PURGE_VERIFICATION_PASS_06_LOG.md",
+                        "path":  "Docs/Reports/2026-05-06_GRAND_PURGE_VERIFICATION_PASS_06_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "HECTON-8 Grand Purge Verification Pass 06",
                         "bytes":  3657
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md",
+                        "path":  "Docs/Reports/2026-05-07_BRUTAL_SYNCHRONIZATION_REPORT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  5447
+                        "title":  "2026-05-07 Brutal Synchronization Report",
+                        "bytes":  5833
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-07_CRUCIBLE_REPEAT_HARDENING_LOG.md",
+                        "path":  "Docs/Reports/2026-05-07_CRUCIBLE_REPEAT_HARDENING_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "2026-05-07 CRUCIBLE Repeat Hardening Log",
                         "bytes":  3522
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-07_NATIVE_COLLECTION_LEAK_AUDIT.md",
+                        "path":  "Docs/Reports/2026-05-07_NATIVE_COLLECTION_LEAK_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  3965
+                        "title":  "Native Collection Leak Audit",
+                        "bytes":  6412
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-07_NATIVE_COLLECTION_LIFECYCLE_AUDIT.md",
+                        "path":  "Docs/Reports/2026-05-07_NATIVE_COLLECTION_LIFECYCLE_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  6128
+                        "title":  "2026-05-07 Native Collection Lifecycle Audit",
+                        "bytes":  6606
                     },
                     {
-                        "path":  "Docs\\Reports\\2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md",
+                        "path":  "Docs/Reports/2026-05-07_PROJECT_ATLAS_SYNCHRONIZATION_PASS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  4100
+                        "title":  "Project Atlas Synchronization Pass",
+                        "bytes":  4462
                     },
                     {
-                        "path":  "Docs\\Reports\\AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "AWAITABLE MEMORY COMPACTION SURGERY LOG",
                         "bytes":  7100
                     },
                     {
-                        "path":  "Docs\\Reports\\CELESTIAL_MECHANICS_SPECIFICATION.md",
+                        "path":  "Docs/Reports/CELESTIAL_MECHANICS_SPECIFICATION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "CELESTIAL MECHANICS SPECIFICATION",
                         "bytes":  12132
                     },
                     {
-                        "path":  "Docs\\Reports\\CI_VALIDATION_HOOKS_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "CI Validation Hooks Surgery Log",
                         "bytes":  5083
                     },
                     {
-                        "path":  "Docs\\Reports\\DOOMSDAY_FLAW_REPORT.md",
+                        "path":  "Docs/Reports/DOOMSDAY_FLAW_REPORT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  27063
+                        "title":  "HECTON-8 DOOMSDAY FLAW REPORT",
+                        "bytes":  27056
                     },
                     {
-                        "path":  "Docs\\Reports\\FOUNDATION_HARDENING_SURGERY_LOG_2026-05-01.md",
+                        "path":  "Docs/Reports/FOUNDATION_HARDENING_SURGERY_LOG_2026-05-01.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Foundation Hardening Surgery Log",
                         "bytes":  6472
                     },
                     {
-                        "path":  "Docs\\Reports\\GC_SINGLETON_KILL_LIST.md",
+                        "path":  "Docs/Reports/GC_SINGLETON_KILL_LIST.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "GC and Singleton Kill List",
                         "bytes":  19856
                     },
                     {
-                        "path":  "Docs\\Reports\\NAVGRID_LEAK_PURGE_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/NAVGRID_LEAK_PURGE_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "NAVGRID LEAK PURGE SURGERY LOG",
                         "bytes":  5384
                     },
                     {
-                        "path":  "Docs\\Reports\\OMEGA_BUILD_RESTORATION_UNSAFE_PURGE_2026-05-01.md",
+                        "path":  "Docs/Reports/OMEGA_BUILD_RESTORATION_UNSAFE_PURGE_2026-05-01.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "OMEGA Build Restoration and Unsafe Purge - 2026-05-01",
                         "bytes":  7387
                     },
                     {
-                        "path":  "Docs\\Reports\\OMEGA_BUILD_RESTORATION_UNSAFE_PURGE_V2_2026-05-01.md",
+                        "path":  "Docs/Reports/OMEGA_BUILD_RESTORATION_UNSAFE_PURGE_V2_2026-05-01.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  6691
+                        "title":  "HECTON-8 OMEGA Build Restoration / Unsafe Purge V2",
+                        "bytes":  6686
                     },
                     {
-                        "path":  "Docs\\Reports\\OMEGA_CORE_ENFORCEMENT_2026-05-01.md",
+                        "path":  "Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "OMEGA Core Enforcement Surgery Log",
                         "bytes":  7681
                     },
                     {
-                        "path":  "Docs\\Reports\\OMEGA_PURGE_SURGERY_LOG.md",
+                        "path":  "Docs/Reports/OMEGA_PURGE_SURGERY_LOG.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "OMEGA PURGE SURGERY LOG",
                         "bytes":  7580
                     },
                     {
-                        "path":  "Docs\\Reports\\README.md",
+                        "path":  "Docs/Reports/README.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  22005
+                        "title":  "Reports",
+                        "bytes":  22619
                     },
                     {
-                        "path":  "Docs\\Reports\\TERRAIN_AND_BIOME_REALITY_MAP.md",
+                        "path":  "Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "TERRAIN AND BIOME REALITY MAP",
                         "bytes":  19330
                     },
                     {
-                        "path":  "Docs\\Reports\\TOTAL_CODEBASE_AUDIT_V2.md",
+                        "path":  "Docs/Reports/TOTAL_CODEBASE_AUDIT_V2.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "TOTAL CODEBASE AUDIT V2",
                         "bytes":  30873
                     },
                     {
-                        "path":  "Docs\\ROOT_DOCS_REFERENCE.md",
+                        "path":  "Docs/ROOT_DOCS_REFERENCE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Root Docs Reference",
                         "bytes":  4230
                     },
                     {
-                        "path":  "Docs\\Scatter_Runtime\\ECS_DOTS_ADOPTION_PLAN.md",
+                        "path":  "Docs/Scatter_Runtime/ECS_DOTS_ADOPTION_PLAN.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ECS / DOTS Adoption Plan",
                         "bytes":  30691
                     },
                     {
-                        "path":  "Docs\\Scatter_Runtime\\README.md",
+                        "path":  "Docs/Scatter_Runtime/README.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Scatter Runtime Docs",
                         "bytes":  1811
                     },
                     {
-                        "path":  "Docs\\Scatter_Runtime\\SCATTER_DOTS_NARROW_SCOPE_SPEC.md",
+                        "path":  "Docs/Scatter_Runtime/SCATTER_DOTS_NARROW_SCOPE_SPEC.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Scatter DOTS Narrow Scope Spec",
                         "bytes":  4973
                     },
                     {
-                        "path":  "Docs\\Scatter_Runtime\\SCATTER_PHASE1_BASELINE_CHECKLIST.md",
+                        "path":  "Docs/Scatter_Runtime/SCATTER_PHASE1_BASELINE_CHECKLIST.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Scatter Phase 1 Baseline Checklist",
                         "bytes":  5231
                     },
                     {
-                        "path":  "Docs\\Scatter_Runtime\\SCATTER_REFACTOR_EXECUTION_PLAN.md",
+                        "path":  "Docs/Scatter_Runtime/SCATTER_REFACTOR_EXECUTION_PLAN.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Scatter Refactor Execution Plan",
                         "bytes":  5183
                     },
                     {
-                        "path":  "Docs\\Scatter_Runtime\\SCATTER_REFACTORING_MANIFESTO_V2.md",
+                        "path":  "Docs/Scatter_Runtime/SCATTER_REFACTORING_MANIFESTO_V2.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "SCATTER REFACTORING MANIFESTO v2.0",
                         "bytes":  24798
                     },
                     {
-                        "path":  "Docs\\SPACE_ENGINE_RESEARCH\\ATMOSPHERE_AND_SCALE_099.md",
+                        "path":  "Docs/SPACE_ENGINE_RESEARCH/ATMOSPHERE_AND_SCALE_099.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "ATMOSPHERE_AND_SCALE_099",
                         "bytes":  20302
                     },
                     {
-                        "path":  "Docs\\SPACE_ENGINE_RESEARCH\\OMEGA_AUTONOMY_AUDIT.md",
+                        "path":  "Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "OMEGA AUTONOMY AUDIT",
                         "bytes":  6128
                     },
                     {
-                        "path":  "Docs\\SPACE_ENGINE_RESEARCH\\OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md",
+                        "path":  "Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  4900
+                        "title":  "Omega Autonomy Codex Audit - Terrain/World Domain",
+                        "bytes":  4889
                     },
                     {
-                        "path":  "Docs\\SPACE_ENGINE_RESEARCH\\ReferenceKernels\\HectonAupCameraRelative.reference.md",
+                        "path":  "Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAupCameraRelative.reference.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Hecton AUP Camera Relative Reference",
                         "bytes":  942
                     },
                     {
-                        "path":  "Docs\\SPACE_ENGINE_RESEARCH\\ReferenceKernels\\HectonGasBandBakeJob.reference.md",
+                        "path":  "Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonGasBandBakeJob.reference.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "Hecton Gas Band Bake Job Reference",
                         "bytes":  3813
                     },
                     {
-                        "path":  "Docs\\SPACE_ENGINE_RESEARCH\\SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md",
+                        "path":  "Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "SpaceEngine 0.9.8 Terrain Math Integration",
                         "bytes":  3668
                     },
                     {
-                        "path":  "Docs\\SPACE_ENGINE_RESEARCH\\TERRAIN_AND_NOISE_098.md",
+                        "path":  "Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "bytes":  31966
+                        "title":  "SpaceEngine 0.9.8.0 Terrain And Noise Research",
+                        "bytes":  31957
                     },
                     {
-                        "path":  "Docs\\SYSTEMS_CONTRACTS.md",
+                        "path":  "Docs/SYSTEMS_CONTRACTS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
+                        "title":  "SYSTEMS_CONTRACTS.md",
                         "bytes":  7815
                     }
                 ]

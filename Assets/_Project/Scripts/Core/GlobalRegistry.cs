@@ -61,9 +61,9 @@ namespace Hecton8.Core
     /// </summary>
     public static class GlobalRegistry
     {
-        // COLD ALLOC: RegistryBucket<IUpdatable>[128] — global multi-instance update registry — owner: GlobalRegistry
+        // COLD ALLOC: RegistryBucket<IUpdatable>[128] - global multi-instance update registry - owner: GlobalRegistry
         private static readonly RegistryBucket<IUpdatable> _updatables = new RegistryBucket<IUpdatable>(512);
-        // COLD ALLOC: RegistryBucket<IRenderable>[64] — global multi-instance render registry — owner: GlobalRegistry
+        // COLD ALLOC: RegistryBucket<IRenderable>[64] - global multi-instance render registry - owner: GlobalRegistry
         private static readonly RegistryBucket<IRenderable> _renderables = new RegistryBucket<IRenderable>(64);
         private static readonly RegistryBucket<IFixedTickable> _fixedTickables = new RegistryBucket<IFixedTickable>(256);
         private static readonly RegistryBucket<ISlowTickable> _slowTickables = new RegistryBucket<ISlowTickable>(256);
@@ -126,6 +126,7 @@ namespace Hecton8.Core
         private static ISceneService _scene;
         private static ISaveService _save;
         private static IUIService _ui;
+        private static IARWaypointService _arWaypoint;
         private static ObjectPoolManager _objectPool;
         private static IPlayerRuntimeContext _player;
         private static HectonPlayerMotor _playerMotor;
@@ -400,6 +401,11 @@ namespace Hecton8.Core
         /// Registered UI service slot.
         /// </summary>
         public static IUIService UI => _ui;
+
+        /// <summary>
+        /// Registered AR waypoint projection service slot.
+        /// </summary>
+        public static IARWaypointService ARWaypoints => _arWaypoint;
 
         /// <summary>
         /// Registered object-pool runtime owner.
@@ -1379,6 +1385,15 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative AR waypoint projection service.
+        /// </summary>
+        /// <param name="instance">Waypoint projection service instance.</param>
+        public static void RegisterARWaypointService(IARWaypointService instance)
+        {
+            RegisterService(ref _arWaypoint, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative object-pool runtime owner.
         /// </summary>
         /// <param name="instance">Object-pool owner instance.</param>
@@ -1576,6 +1591,15 @@ namespace Hecton8.Core
         public static void RegisterPrefabRegistryRuntime(PrefabRegistry instance)
         {
             RegisterServiceAllowSameInstance(ref _prefabRegistryRuntime, instance);
+        }
+
+        /// <summary>
+        /// Clears the authoritative prefab ID registry owner when the owner matches.
+        /// </summary>
+        public static void ClearPrefabRegistryRuntime(PrefabRegistry instance)
+        {
+            if (instance == null || ReferenceEquals(_prefabRegistryRuntime, instance))
+                _prefabRegistryRuntime = null;
         }
 
         /// <summary>
@@ -2497,6 +2521,15 @@ namespace Hecton8.Core
         public static void UnregisterUIService(IUIService instance)
         {
             UnregisterService(ref _ui, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current AR waypoint projection service if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterARWaypointService(IARWaypointService instance)
+        {
+            UnregisterService(ref _arWaypoint, instance);
         }
 
         /// <summary>
@@ -4129,6 +4162,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.Scene: return _scene;
                 case GlobalRegistryServiceSlot.Save: return _save;
                 case GlobalRegistryServiceSlot.UI: return _ui;
+                case GlobalRegistryServiceSlot.ARWaypointRuntime: return _arWaypoint;
                 case GlobalRegistryServiceSlot.ObjectPool: return _objectPool;
                 case GlobalRegistryServiceSlot.Player: return _player;
                 case GlobalRegistryServiceSlot.PlayerInventory: return _playerInventory;
@@ -4248,7 +4282,7 @@ namespace Hecton8.Core
 
         private static void ShutdownRegisteredServices()
         {
-            for (int slot = 0; slot <= (int)GlobalRegistryServiceSlot.ToolHapticsRuntime; slot++)
+            for (int slot = 0; slot <= (int)GlobalRegistryServiceSlot.ARWaypointRuntime; slot++)
             {
                 object service = ResolveRegisteredServiceObject((GlobalRegistryServiceSlot)slot);
                 if (service is IServiceShutdown shutdown)
@@ -4282,6 +4316,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(ISceneService)) return GlobalRegistryServiceSlot.Scene;
             if (serviceType == typeof(ISaveService)) return GlobalRegistryServiceSlot.Save;
             if (serviceType == typeof(IUIService)) return GlobalRegistryServiceSlot.UI;
+            if (serviceType == typeof(IARWaypointService)) return GlobalRegistryServiceSlot.ARWaypointRuntime;
             if (serviceType == typeof(ObjectPoolManager)) return GlobalRegistryServiceSlot.ObjectPool;
             if (serviceType == typeof(IPlayerRuntimeContext)) return GlobalRegistryServiceSlot.Player;
             if (serviceType == typeof(HectonPlayerMotor)) return GlobalRegistryServiceSlot.PlayerMotor;

@@ -20,12 +20,15 @@ namespace Hecton8.World
         private const string DecalMaterialAssetPath = "Assets/_Project/Art/Materials/VFX/MAT_AbyssalFluidDecal.mat";
 #endif
         private const string BuiltinQuadMeshName = "Quad.fbx";
+        private const byte FluidDecalDriftModeCurrent = 0;
+        private const byte FluidDecalDriftModeCinematic = 1;
 
         private struct FluidDecalState
         {
             public bool Active;
             public Vector3 PositionWS;
             public Vector3 DriftVelocityWS;
+            public byte DriftMode;
             public float RotationDegrees;
             public float Radius;
             public float TargetRadius;
@@ -260,12 +263,23 @@ namespace Hecton8.World
             Color color = voxelCaveInDustColor;
             color.a *= Mathf.Lerp(0.55f, 1f, clampedScale);
             Vector3 liftedPosition = positionWS + Vector3.up * Mathf.Lerp(0.08f, 0.22f, clampedScale);
+            Vector3 cinematicDrift = ResolveVoxelCaveInDustDrift(position3, resolvedImpulse, clampedScale);
             RegisterDecal(
                 liftedPosition,
                 color,
                 Mathf.Lerp(0.45f, 1.1f, clampedScale),
                 Mathf.Lerp(1.8f, 4.8f, clampedScale) * Mathf.Lerp(0.86f, 1.16f, downwardBias),
-                Mathf.Lerp(3.6f, 7.2f, clampedScale));
+                Mathf.Lerp(3.6f, 7.2f, clampedScale),
+                cinematicDrift,
+                FluidDecalDriftModeCinematic);
+        }
+
+        /// <summary>
+        /// Registers voxel cave-in dust from an absolute-universe hit point.
+        /// </summary>
+        public void RegisterVoxelCaveInDustAup(Vector3 absoluteUniversePosition, Vector3 impulseDirectionWS, float radiusScale)
+        {
+            RegisterVoxelCaveInDust(HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition), impulseDirectionWS, radiusScale);
         }
 
         /// <summary>
@@ -364,9 +378,13 @@ namespace Hecton8.World
                     continue;
                 }
 
-                Vector3 sampledCurrent = ResolveCurrentVelocity(decal.PositionWS);
-                float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, currentAdvectionBlendSharpness) * deltaTime);
-                decal.DriftVelocityWS = Vector3.Lerp(decal.DriftVelocityWS, sampledCurrent, blendT);
+                if (decal.DriftMode != FluidDecalDriftModeCinematic)
+                {
+                    Vector3 sampledCurrent = ResolveCurrentVelocity(decal.PositionWS);
+                    float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, currentAdvectionBlendSharpness) * deltaTime);
+                    decal.DriftVelocityWS = Vector3.Lerp(decal.DriftVelocityWS, sampledCurrent, blendT);
+                }
+
                 decal.PositionWS += driftDelta + decal.DriftVelocityWS * (ambientCurrentInfluence * deltaTime);
                 decal.Radius = Mathf.MoveTowards(decal.Radius, decal.TargetRadius, spreadSpeed * deltaTime);
                 _decalStates[i] = decal;
@@ -377,6 +395,11 @@ namespace Hecton8.World
         }
 
         private void RegisterDecal(Vector3 positionWS, Color color, float startRadius, float targetRadius, float lifetime)
+        {
+            RegisterDecal(positionWS, color, startRadius, targetRadius, lifetime, Vector3.zero, FluidDecalDriftModeCurrent);
+        }
+
+        private void RegisterDecal(Vector3 positionWS, Color color, float startRadius, float targetRadius, float lifetime, Vector3 driftVelocityWS, byte driftMode)
         {
             if (_decalStates == null || _decalStates.Length == 0)
                 return;
@@ -401,12 +424,15 @@ namespace Hecton8.World
             if (targetIndex < 0)
                 targetIndex = 0;
 
-            Vector3 currentVector = ResolveCurrentVelocity(positionWS);
+            Vector3 currentVector = driftMode == FluidDecalDriftModeCinematic
+                ? driftVelocityWS
+                : ResolveCurrentVelocity(positionWS) * 0.25f;
             _decalStates[targetIndex] = new FluidDecalState
             {
                 Active = true,
                 PositionWS = positionWS,
-                DriftVelocityWS = currentVector * 0.25f,
+                DriftVelocityWS = currentVector,
+                DriftMode = driftMode,
                 RotationDegrees = Mathf.Repeat((targetIndex * 57.29578f) + positionWS.x * 0.37f + positionWS.z * 0.19f, 360f),
                 Radius = Mathf.Max(0.1f, startRadius),
                 TargetRadius = Mathf.Max(startRadius, targetRadius),
@@ -414,6 +440,23 @@ namespace Hecton8.World
                 TotalLifetime = Mathf.Max(0.25f, lifetime),
                 Color = color
             };
+        }
+
+        private static Vector3 ResolveVoxelCaveInDustDrift(float3 position, float3 resolvedImpulse, float scale01)
+        {
+            uint seed = (uint)math.hash(new int4(
+                (int)math.round(position.x * 4f),
+                (int)math.round(position.y * 4f),
+                (int)math.round(position.z * 4f),
+                (int)math.round(scale01 * 255f)));
+            float angle = (seed & 0xFFFFu) * (math.PI * 2f / 65535f);
+            float lateral = math.lerp(0.025f, 0.12f, scale01);
+            float sink = -math.lerp(0.025f, 0.06f, scale01);
+            float impulseLateral = math.saturate(1f - math.abs(resolvedImpulse.y)) * 0.035f;
+            return new Vector3(
+                math.cos(angle) * lateral + resolvedImpulse.x * impulseLateral,
+                sink,
+                math.sin(angle) * lateral + resolvedImpulse.z * impulseLateral);
         }
 
         private void RegisterSpray(Vector3 positionWS, Vector3 directionWS, float intensity01)

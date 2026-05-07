@@ -201,20 +201,37 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     baseNormal * parasiteNormalTS.z);
             }
 
+            half3 BlendProceduralDropletNormalWS(half filmNoise, half dripNoise, half frostCrystal, half3 baseNormalWS, half strength)
+            {
+                half3 baseNormal = SafeNormalize3(baseNormalWS);
+                half3 tangentWS = abs(baseNormal.y) < 0.999h
+                    ? SafeNormalize3(cross(half3(0.0h, 1.0h, 0.0h), baseNormal))
+                    : half3(1.0h, 0.0h, 0.0h);
+                half3 bitangentWS = SafeNormalize3(cross(baseNormal, tangentWS));
+                half slopeX = ((dripNoise - 0.5h) * 1.36h + (frostCrystal - 0.5h) * 0.52h) * strength;
+                half slopeY = (filmNoise - 0.5h) * strength;
+                half3 dropletNormalWS = SafeNormalize3(
+                    tangentWS * slopeX +
+                    bitangentWS * slopeY +
+                    baseNormal);
+                return SafeNormalize3(lerp(baseNormal, dropletNormalWS, saturate(strength)));
+            }
+
             void ApplyInteriorCondensation(
                 float3 positionWS,
                 float2 uv,
-                half3 normalWS,
+                inout half3 normalWS,
                 half depthCondensation01,
                 inout half3 albedo,
                 inout half smoothness)
             {
                 half depthStrength = saturate(depthCondensation01);
                 half condensationStrength = saturate((half)_InteriorCondensationStrength) * depthStrength;
-                half abyssalFlowSpeed = (half)length(_AbyssalFlowWeatherCurrent.xyz);
+                half abyssalFlowSpeedSq = (half)dot(_AbyssalFlowWeatherCurrent.xyz, _AbyssalFlowWeatherCurrent.xyz);
+                half frostFlowThresholdSq = (half)(_InteriorAbyssalFrostFlowThreshold * _InteriorAbyssalFrostFlowThreshold);
                 half abyssalFlowCold01 = saturate(
-                    (abyssalFlowSpeed - (half)_InteriorAbyssalFrostFlowThreshold) /
-                    max(0.01h, 20.0h - (half)_InteriorAbyssalFrostFlowThreshold));
+                    (abyssalFlowSpeedSq - frostFlowThresholdSq) /
+                    max(0.01h, 400.0h - frostFlowThresholdSq));
                 half depthMeters = saturate((half)((-positionWS.y - _InteriorAbyssalFrostDepthStart) / max(_InteriorAbyssalFrostDepthRange, 1.0)));
                 half frostStrength = saturate((half)_InteriorAbyssalFrostStrength) * abyssalFlowCold01 * depthMeters;
                 if (condensationStrength <= 0.0001h && frostStrength <= 0.0001h)
@@ -245,6 +262,9 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 albedo = lerp(albedo, _InteriorAbyssalFrostTint.rgb, frost * 0.48h);
                 smoothness = lerp(smoothness, lerp(0.72h, 0.96h, depthStrength), condensation);
                 smoothness = lerp(smoothness, 0.32h, frost);
+                half dropletNormalStrength = saturate((condensation + frost * 0.35h) * 0.55h);
+                if (dropletNormalStrength > 0.0001h)
+                    normalWS = BlendProceduralDropletNormalWS(filmNoise, dripNoise, frostCrystal, normalWS, dropletNormalStrength);
             }
 
             void ResolveModuleAmbience(
@@ -332,6 +352,20 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 return saturate(max(floor01, flicker01));
             }
 
+            float2 ResolveBrownoutGlitchWarp(float2 uv, half moduleVoltage01)
+            {
+                half voltage01 = saturate((half)_BaseVoltage * moduleVoltage01);
+                half brownout01 = saturate((0.62h - voltage01) * 1.6129h);
+                if (brownout01 <= 0.0001h)
+                    return uv;
+
+                half rowNoise = (half)HectonCoreLitValueNoise2(float2(floor(uv.y * 64.0), floor(_Time.y * 11.0)));
+                half rowGate = smoothstep(0.74h, 1.0h, rowNoise);
+                half jitter = (half)HectonCoreLitValueNoise2(float2(floor(_Time.y * 18.0), floor(uv.y * 23.0))) - 0.5h;
+                uv.x += jitter * rowGate * brownout01 * 0.012;
+                return uv;
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
@@ -388,6 +422,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 ResolveModuleAmbience(input.positionWS, moduleFloodLevel01, moduleWaterY, moduleFlicker01, moduleCondensationDepth01);
                 half moduleSubmerged01 = ResolveModuleSubmerged01(input.positionWS, moduleFloodLevel01, moduleWaterY);
                 float2 baseUv = input.uv + ResolveModuleWaterlineWarp(input.positionWS, moduleSubmerged01);
+                baseUv = ResolveBrownoutGlitchWarp(baseUv, moduleFlicker01);
                 half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, baseUv) * _BaseColor;
                 half coverage = 1.0h;
                 #if defined(_ALPHATEST_ON)

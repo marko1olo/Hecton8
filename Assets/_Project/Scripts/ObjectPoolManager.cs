@@ -14,6 +14,7 @@ namespace Hecton8.Core
     public sealed class ObjectPoolManager : MonoBehaviour, IServiceHeartbeat
     {
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
+        private const string PoolContainerRuntimeName = "[Pool]";
         private const uint PoolExhaustedReasonMissingPool = 1u;
         private const uint PoolExhaustedReasonExpandRejected = 2u;
         private const uint PoolExhaustedReasonEmptyPool = 3u;
@@ -598,7 +599,7 @@ namespace Hecton8.Core
 
         private static PrefabRegistry EnsurePrefabRegistry()
         {
-            PrefabRegistry registry = PrefabRegistry.Instance;
+            PrefabRegistry registry = PrefabRegistry.ActiveRuntimeInstance;
             if (registry != null)
                 return registry;
 
@@ -612,7 +613,7 @@ namespace Hecton8.Core
 
         private Pool CreatePool(GameObject prefab, int prefabId)
         {
-            GameObject containerObject = new GameObject($"[Pool] {prefab.name}");
+            GameObject containerObject = new GameObject(PoolContainerRuntimeName);
             containerObject.transform.SetParent(transform, false);
 
             Pool pool = new Pool

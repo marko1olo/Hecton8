@@ -42,6 +42,7 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
             float _RainIntensity;
             float _CurrentWaterLevelY;
             float4 _GlobalWind;
+            float4 _HectonSurfaceSplashImpulse;
 
             struct Attributes
             {
@@ -61,31 +62,20 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
                 return frac(p.x * p.y);
             }
 
-            float2 Hash22(float2 p)
-            {
-                float n = Hash21(p);
-                return frac(float2(n, Hash21(p + n + 19.19)));
-            }
-
-            float VoronoiNearest(float2 p)
+            float CheapRainCellRipple01(float2 p, float timePhase)
             {
                 float2 cell = floor(p);
                 float2 local = frac(p);
-                float nearest = 8.0;
-
-                [unroll]
-                for (int y = -1; y <= 1; y++)
-                {
-                    [unroll]
-                    for (int x = -1; x <= 1; x++)
-                    {
-                        float2 offset = float2(x, y);
-                        float2 point = offset + Hash22(cell + offset);
-                        nearest = min(nearest, dot(point - local, point - local));
-                    }
-                }
-
-                return sqrt(nearest);
+                float seed = Hash21(cell);
+                float2 center = frac(float2(seed, Hash21(cell + seed + 19.19))) - 0.5;
+                float2 delta = local - 0.5 - center * 0.34;
+                float distSq = dot(delta, delta);
+                float phase = frac(timePhase * 0.19 + seed);
+                float radius = lerp(0.012, 0.21, phase);
+                float ring = smoothstep(0.021, 0.0, abs(distSq - radius * radius));
+                float core = smoothstep(0.014, 0.0, distSq) * (1.0 - phase);
+                float dropGate = smoothstep(0.58, 0.96, seed);
+                return saturate((ring * 0.78 + core * 0.35) * dropGate);
             }
 
             Varyings Vert(Attributes input)
@@ -108,10 +98,19 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
                 uv += windDir * (_Time.y * _RippleSpeed * (0.18 + windSpeed * 0.42));
                 uv.y += _Time.y * _RippleSpeed * 0.36;
 
-                float nearest = VoronoiNearest(uv);
-                float ring = smoothstep(0.112, 0.076, abs(nearest - 0.18));
-                float impactCore = smoothstep(0.055, 0.0, nearest);
-                float ripple = saturate(ring * 0.78 + impactCore * 0.42) * rain * surfaceFade;
+                float cellRipple = CheapRainCellRipple01(uv, _Time.y * _RippleSpeed);
+                float impulseAge = saturate(_Time.y - _HectonSurfaceSplashImpulse.z);
+                float impulseLife = saturate(1.0 - impulseAge * 1.65) * saturate(_HectonSurfaceSplashImpulse.w);
+                float2 impulseDelta = input.positionWS.xz - _HectonSurfaceSplashImpulse.xy;
+                float impulseDistSq = dot(impulseDelta, impulseDelta);
+                float impulseRadius = lerp(0.45, 3.2, impulseAge);
+                float impulseRadiusSq = impulseRadius * impulseRadius;
+                float impulseBand = lerp(0.16, 0.85, impulseAge) * max(impulseRadius, 0.001);
+                float impulseRing = smoothstep(impulseBand, 0.0, abs(impulseDistSq - impulseRadiusSq));
+                float impulseCore = smoothstep(0.18, 0.0, impulseDistSq) * (1.0 - impulseAge);
+                float impulseRipple = saturate(impulseRing * 0.82 + impulseCore * 0.35) * impulseLife * surfaceFade;
+                float telemetryGlitch = step(0.992, frac(dot(input.positionWS.xz, float2(0.071, 0.113)) + _Time.y * 23.0)) * impulseLife;
+                float ripple = saturate(cellRipple * rain * surfaceFade + impulseRipple + telemetryGlitch * 0.16 * surfaceFade);
                 half alpha = (half)(ripple * _RippleTint.a * _RippleStrength);
                 return half4(_RippleTint.rgb * (half)(ripple * _RippleStrength), alpha);
             }

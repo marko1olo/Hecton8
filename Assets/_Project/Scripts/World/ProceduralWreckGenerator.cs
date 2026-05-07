@@ -1467,15 +1467,7 @@ namespace Hecton8.World
             CollapseGrid(cellCount, moduleCount, ref rng);
             BuildPlacements(cellCount, seed);
             Mesh damageDecalMesh = null;
-            if (ShouldBuildCpuDamageDecalMesh())
-            {
-                BuildDamageDecalStamps(seed);
-                damageDecalMesh = BuildDamageDecalMesh();
-            }
-            else
-            {
-                ClearDamageDecalStamps();
-            }
+            ClearDamageDecalStamps();
             Mesh combinedMesh = wreckMaterialRegistry != null ? null : BuildMergedMesh(_allPlacements);
             Mesh proxyMesh = ResolveNavigationProxyMesh();
 
@@ -1542,15 +1534,7 @@ namespace Hecton8.World
 
             stageStartTime = Time.realtimeSinceStartupAsDouble;
             Mesh damageDecalMesh = null;
-            if (ShouldBuildCpuDamageDecalMesh())
-            {
-                BuildDamageDecalStamps(seed);
-                damageDecalMesh = BuildDamageDecalMesh();
-            }
-            else
-            {
-                ClearDamageDecalStamps();
-            }
+            ClearDamageDecalStamps();
             await YieldAfterGenerationStageAsync(stageStartTime);
 
             stageStartTime = Time.realtimeSinceStartupAsDouble;
@@ -1665,7 +1649,8 @@ namespace Hecton8.World
             Bounds worldBounds = CalculateBrgWreckWorldBounds(runtimeOrigin);
             ClearDamageDecalStamps();
 
-            PublishBrgScatterPayload(centerAup, runtimeOrigin, worldBounds, seed, fragmentCount, moduleCount);
+            if (!await PublishBrgScatterPayloadAsync(centerAup, runtimeOrigin, worldBounds, seed, fragmentCount, moduleCount))
+                return default;
 
             await YieldAfterGenerationStageAsync(stageStartTime);
 
@@ -1749,6 +1734,70 @@ namespace Hecton8.World
                 DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 
                 wreckMaterialRegistry.Publish(moduleDefinitions, worldMatrices, moduleIds, ages, fragmentCount, worldBounds);
+            }
+            finally
+            {
+                if (ages.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(ages);
+                    ages.Dispose();
+                }
+                if (moduleIds.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(moduleIds);
+                    moduleIds.Dispose();
+                }
+                if (worldMatrices.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(worldMatrices);
+                    worldMatrices.Dispose();
+                }
+            }
+        }
+
+        private async Awaitable<bool> PublishBrgScatterPayloadAsync(
+            AbsoluteUniversePosition centerAup,
+            Vector3 runtimeOrigin,
+            Bounds worldBounds,
+            uint seed,
+            int fragmentCount,
+            int moduleCount)
+        {
+            if (wreckMaterialRegistry == null || fragmentCount <= 0)
+                return false;
+
+            NativeArray<Matrix4x4> worldMatrices = new NativeArray<Matrix4x4>(fragmentCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> moduleIds = new NativeArray<byte>(fragmentCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<float> ages = new NativeArray<float>(fragmentCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(worldMatrices, nameof(ProceduralWreckGenerator), nameof(worldMatrices), NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(moduleIds, nameof(ProceduralWreckGenerator), nameof(moduleIds), NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(ages, nameof(ProceduralWreckGenerator), nameof(ages), NativeAllocationLifetime.TempJob);
+
+            try
+            {
+                var job = new BuildWreckScatterMatricesJob
+                {
+                    WorldMatrices = worldMatrices,
+                    ModuleIds = moduleIds,
+                    Ages = ages,
+                    CenterAup = centerAup,
+                    RuntimeOrigin = new float3(runtimeOrigin.x, runtimeOrigin.y, runtimeOrigin.z),
+                    ModuleCount = moduleCount,
+                    ScatterRadiusMeters = math.max(0f, brgScatterRadiusMeters),
+                    ScatterVerticalMeters = math.max(0f, brgScatterVerticalMeters),
+                    ScatterYawRadians = math.radians(math.clamp(brgScatterYawDegrees, 0f, 180f)),
+                    MinScale = math.max(0.05f, brgFragmentMinScale),
+                    MaxScale = math.max(math.max(0.05f, brgFragmentMinScale), brgFragmentMaxScale),
+                    Seed = seed
+                };
+
+                JobHandle handle = job.Schedule(fragmentCount, 64);
+                JobHandle.ScheduleBatchedJobs();
+                if (!await WaitForJobHandleAsync(handle, "BRG wreck matrix scatter"))
+                    return false;
+
+                wreckMaterialRegistry.Publish(moduleDefinitions, worldMatrices, moduleIds, ages, fragmentCount, worldBounds);
+                return true;
             }
             finally
             {
@@ -2791,11 +2840,6 @@ namespace Hecton8.World
             return result;
         }
 
-        private bool ShouldBuildCpuDamageDecalMesh()
-        {
-            return false;
-        }
-
         private void ClearDamageDecalStamps()
         {
             if (_damageDecalStamps.IsCreated)
@@ -3761,7 +3805,9 @@ namespace Hecton8.World
 
             EditorUtility.SetDirty(root);
             PrefabUtility.RecordPrefabInstancePropertyModifications(root);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[HectonCompoundColliderAutoFitter] Root={root.name} MeshCollidersRemoved={meshColliders.Length} PrimitiveColliders={fittedCount}", root);
+#endif
             return fittedCount;
         }
 

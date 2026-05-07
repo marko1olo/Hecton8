@@ -1,5 +1,4 @@
 using Hecton8.Core;
-using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -13,10 +12,14 @@ namespace Hecton8.Atmosphere
     {
         private const int BoltPointCount = 6;
         private const float BoltDurationSeconds = 0.14f;
+        private static readonly int _SurfaceSplashImpulseId = Shader.PropertyToID("_HectonSurfaceSplashImpulse");
 
         [Header("Lightning")]
         [Tooltip("Height of the lightning source point above the water surface.")]
         [SerializeField, Min(5f)] private float lightningHeight = 95f;
+
+        [Tooltip("Pre-authored line renderer used for lightning bolts. Runtime GameObject/AddComponent creation is forbidden.")]
+        [SerializeField] private LineRenderer authoredBoltRenderer;
 
         [Tooltip("Shared line-renderer material used by lightning bolts. Runtime fallback material creation is forbidden.")]
         [SerializeField] private Material lightningBoltMaterial;
@@ -25,6 +28,7 @@ namespace Hecton8.Atmosphere
         private float _boltTimer;
         private float _boltIntensity;
         private bool _loggedMissingBoltMaterial;
+        private bool _loggedMissingBoltRenderer;
 
         // COLD ALLOC: Vector3[6] - reusable bolt polyline points for world lightning - owner: SurfaceWeatherVfxRig
         private readonly Vector3[] _boltPoints = new Vector3[BoltPointCount];
@@ -148,7 +152,7 @@ namespace Hecton8.Atmosphere
         }
 
         /// <summary>
-        /// Rain impact bursts were removed with the particle purge. Surface response is shader-only.
+        /// Publishes one player-scale splash impulse. The ocean shader expands the ripple without CPU decal registration.
         /// </summary>
         internal void TriggerSurfaceSplashBurst(
             Vector3 centerPosition,
@@ -156,15 +160,16 @@ namespace Hecton8.Atmosphere
             Vector2 windDirection,
             float intensity)
         {
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
-            if (fluidDecals == null)
+            float clampedIntensity = Mathf.Clamp01(intensity);
+            if (clampedIntensity <= 0.0001f)
                 return;
 
-            Vector3 decalPosition = centerPosition;
-            decalPosition.y = surfaceY + 0.01f;
-            Vector3 driftVelocity = new Vector3(windDirection.x, 0f, windDirection.y) *
-                                    Mathf.Lerp(0.5f, 3.5f, Mathf.Clamp01(intensity));
-            fluidDecals.RegisterWaterSplash(decalPosition, driftVelocity, intensity);
+            Vector4 impulse;
+            impulse.x = centerPosition.x;
+            impulse.y = centerPosition.z;
+            impulse.z = Time.time;
+            impulse.w = clampedIntensity;
+            Shader.SetGlobalVector(_SurfaceSplashImpulseId, impulse);
         }
 
         /// <summary>
@@ -184,16 +189,31 @@ namespace Hecton8.Atmosphere
             if (_boltRenderer != null)
                 return;
 
-            BuildLightningBolt();
+            ResolveBoltRenderer();
         }
 
-        private void BuildLightningBolt()
+        private void ResolveBoltRenderer()
         {
-            // COLD ALLOC: GameObject[1] - world lightning bolt renderer - owner: SurfaceWeatherVfxRig
-            GameObject boltObject = new GameObject("LightningBolt");
-            boltObject.transform.SetParent(transform, false);
+            _boltRenderer = authoredBoltRenderer;
+            if (_boltRenderer == null && !TryGetComponent(out _boltRenderer))
+            {
+                if (!_loggedMissingBoltRenderer)
+                {
+                    _loggedMissingBoltRenderer = true;
+                    Debug.LogError("[SurfaceWeatherVfxRig] Missing authored LineRenderer. Add it to this rig or assign authoredBoltRenderer; runtime renderer creation is forbidden.", this);
+                }
 
-            _boltRenderer = boltObject.AddComponent<LineRenderer>();
+                return;
+            }
+
+            ConfigureBoltRenderer(_boltRenderer);
+        }
+
+        private void ConfigureBoltRenderer(LineRenderer renderer)
+        {
+            if (renderer == null)
+                return;
+
             _boltRenderer.alignment = LineAlignment.View;
             _boltRenderer.textureMode = LineTextureMode.Stretch;
             _boltRenderer.shadowCastingMode = ShadowCastingMode.Off;

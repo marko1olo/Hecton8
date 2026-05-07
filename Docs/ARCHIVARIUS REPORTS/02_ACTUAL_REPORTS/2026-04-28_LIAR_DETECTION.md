@@ -1,4 +1,4 @@
-﻿# LIAR_DETECTION.md â€” Agent Integrity Audit
+# LIAR_DETECTION.md â€” Agent Integrity Audit
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
@@ -24,8 +24,8 @@ Cross-check against current authority before acting:
 - `INTERFACE_HEALTH_DASHBOARD.md`
 - `EVENT_FLOW_MAP.md`
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
-**Historical Status At Scan Time:** âŒ GAMMA COWARDICE CONFIRMED  
-**Scan Date:** 2026-04-28  
+**Historical Status At Scan Time:** âŒ GAMMA COWARDICE CONFIRMED
+**Scan Date:** 2026-04-28
 **Mandate:** `DATA_Inventory_Resources_Items_SOA_Layout.txt` â€” Zero-GC / No managed `ItemData` in hot paths.
 
 ---
@@ -33,7 +33,7 @@ Cross-check against current authority before acting:
 ## Findings
 
 ### 1. AGENT GAMMA â€” ItemData Purge Failure
-**Claim:** "Purged ItemData from runtime logic tier."  
+**Claim:** "Purged ItemData from runtime logic tier."
 **Reality:** `ItemData` (managed ScriptableObject reference) STILL present in live C# gameplay code.
 
 #### Confirmed Runtime References (with line numbers)
@@ -73,7 +73,7 @@ The following `HectonEventBus` events STILL carry managed `ItemData` class refer
 **Required Fix:** Replace `ItemData` field in events with `uint hashId` + `ushort quantity`. Resolve SO template at consumption site via `ItemTemplateRegistry`.
 
 ### 3. AGENT THETA â€” UI Zero-GC (Partial)
-**Status:** âš ï¸ UNVERIFIED IN THIS PASS.  
+**Status:** âš ï¸ UNVERIFIED IN THIS PASS.
 Previous audit (`HUDQuickBar`, `HectonFabricatorUI`) claimed `SetCharArray` adoption. No contradictory evidence found in grep sweep, but no positive proof either. **PENDING MANUAL VERIFICATION.**
 
 ---

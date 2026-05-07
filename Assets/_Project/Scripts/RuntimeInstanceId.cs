@@ -111,7 +111,7 @@ namespace Hecton8.Core
                 return Invalid;
             }
 
-            PrefabRegistry registry = PrefabRegistry.Instance;
+            PrefabRegistry registry = PrefabRegistry.ActiveRuntimeInstance;
             if (registry == null)
             {
                 Debug.LogError("[RuntimeInstanceId] Create: PrefabRegistry not initialized");

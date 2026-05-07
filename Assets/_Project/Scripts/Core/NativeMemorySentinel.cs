@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Hecton.Localization;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
@@ -31,6 +32,16 @@ namespace Hecton8.Core
         private const string CriticalMemoryViolationPrefix = "CRITICAL_MEMORY_VIOLATION";
         private const string MemoryLeakDetectedPrefix = "MEMORY_LEAK_DETECTED";
         private const string StaleBufferCrimePrefix = "STALE_BUFFER_CRIME";
+        private const string CriticalMemoryViolationRegistryCapacityMessage = "CRITICAL_MEMORY_VIOLATION: NativeMemorySentinel registry capacity exceeded.";
+        private const string CriticalMemoryViolationSceneLeakMessage = "CRITICAL_MEMORY_VIOLATION: scene allocation survived unload.";
+        private const string CriticalMemoryViolationUnsafeLeakMessage = "CRITICAL_MEMORY_VIOLATION: UnsafeUtility leak detector reported leaks.";
+        private const string MemoryLeakDetectedRetentionMessage = "MEMORY_LEAK_DETECTED: transient allocation exceeded legal frame window.";
+        private const string StaleBufferCrimeRetentionMessage = "STALE_BUFFER_CRIME: TempJob allocation exceeded 4-frame legal window.";
+
+        private static readonly uint _nativeMemoryContextHash = unchecked((uint)LocHash.Compute(nameof(NativeMemorySentinel)));
+        private static readonly uint _criticalMemoryViolationHash = unchecked((uint)LocHash.Compute(CriticalMemoryViolationPrefix));
+        private static readonly uint _memoryLeakDetectedHash = unchecked((uint)LocHash.Compute(MemoryLeakDetectedPrefix));
+        private static readonly uint _staleBufferCrimeHash = unchecked((uint)LocHash.Compute(StaleBufferCrimePrefix));
 
         private struct NativeAllocationRecord
         {
@@ -365,8 +376,13 @@ namespace Hecton8.Core
             int id = _nextId++;
             if (_count >= MaxTrackedAllocations)
             {
-                Debug.LogError(
-                    $"{CriticalMemoryViolationPrefix}: NativeMemorySentinel registry capacity exceeded. owner={owner} label={label}");
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _criticalMemoryViolationHash,
+                    _nativeMemoryContextHash,
+                    MaxTrackedAllocations);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(CriticalMemoryViolationRegistryCapacityMessage);
+#endif
                 return 0;
             }
 
@@ -514,8 +530,13 @@ namespace Hecton8.Core
 
                 reported++;
                 Interlocked.Increment(ref _sceneLeakViolationCount);
-                Debug.LogError(
-                    $"{CriticalMemoryViolationPrefix}: scene allocation survived unload. context={context} owner={record.Owner} label={record.Label} bytes={record.Bytes} pointer=0x{record.Pointer.ToInt64():X}\nALLOCATOR_STACK:\n{record.StackTrace}");
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _criticalMemoryViolationHash,
+                    _nativeMemoryContextHash,
+                    record.Bytes <= 0L ? 0f : record.Bytes > float.MaxValue ? float.MaxValue : (float)record.Bytes);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(CriticalMemoryViolationSceneLeakMessage);
+#endif
             }
 
 #if HECTON_FULL_NATIVE_LEAK_SCAN_ON_SCENE_UNLOAD
@@ -523,8 +544,13 @@ namespace Hecton8.Core
             if (unsafeLeakCount > reported)
             {
                 Interlocked.Increment(ref _sceneLeakViolationCount);
-                Debug.LogError(
-                    $"{CriticalMemoryViolationPrefix}: UnsafeUtility leak detector reported {unsafeLeakCount} leak(s), sentinel scene records={reported}. context={context}");
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _criticalMemoryViolationHash,
+                    _nativeMemoryContextHash,
+                    unsafeLeakCount);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(CriticalMemoryViolationUnsafeLeakMessage);
+#endif
             }
 #endif
         }
@@ -559,11 +585,19 @@ namespace Hecton8.Core
 
                 record.LeakReported = true;
                 _records[i] = record;
-                string prefix = record.Lifetime == NativeAllocationLifetime.TempJob
-                    ? StaleBufferCrimePrefix
-                    : MemoryLeakDetectedPrefix;
+                uint warningHash = record.Lifetime == NativeAllocationLifetime.TempJob
+                    ? _staleBufferCrimeHash
+                    : _memoryLeakDetectedHash;
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    warningHash,
+                    _nativeMemoryContextHash,
+                    retentionFrames);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
-                    $"{prefix}: {record.Lifetime} allocation retention={retentionFrames} frames legalWindow={legalFrameWindow} owner={record.Owner} label={record.Label} bytes={record.Bytes} pointer=0x{record.Pointer.ToInt64():X}\nALLOCATOR_STACK:\n{record.StackTrace}");
+                    record.Lifetime == NativeAllocationLifetime.TempJob
+                        ? StaleBufferCrimeRetentionMessage
+                        : MemoryLeakDetectedRetentionMessage);
+#endif
             }
         }
 

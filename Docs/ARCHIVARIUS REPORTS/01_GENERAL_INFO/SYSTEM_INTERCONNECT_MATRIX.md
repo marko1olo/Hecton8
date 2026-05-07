@@ -1,12 +1,12 @@
-﻿# SYSTEM INTERCONNECT MATRIX â€” AbsoluteUniversePosition (AUP)
+# SYSTEM INTERCONNECT MATRIX â€” AbsoluteUniversePosition (AUP)
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 
 
-**Status:** PENDING VERIFICATION  
-**Target Struct:** `AbsoluteUniversePosition` (`Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`, lines 19â€“109)  
-**Blit Struct:** `AbsoluteUniversePositionBlit128` (lines 132â€“141)  
-**Rule Basis:** AGENTS.md Â§ [REQ] All universe math MUST use Absolute Universe Position (AUP = int64x3 grid + float3 local). Transform.position is presentation-only.  
+**Status:** PENDING VERIFICATION
+**Target Struct:** `AbsoluteUniversePosition` (`Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`, lines 19â€“109)
+**Blit Struct:** `AbsoluteUniversePositionBlit128` (lines 132â€“141)
+**Rule Basis:** AGENTS.md Â§ [REQ] All universe math MUST use Absolute Universe Position (AUP = int64x3 grid + float3 local). Transform.position is presentation-only.
 **Mandates Followed:** AGENTS.md [RULE] MANDATE CONTEXTUAL INGESTION, [RULE] ARCHITECTURE FIRST.
 
 ---
@@ -108,5 +108,5 @@ If you change a field in `AbsoluteUniversePosition` (e.g., `CellSizeMeters`, pac
 
 ---
 
-*STATUS: PENDING VERIFICATION*  
+*STATUS: PENDING VERIFICATION*
 *Action: AUP Surgery requires approval of SaveDataVersion bump + migration path.*

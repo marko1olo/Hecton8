@@ -145,7 +145,7 @@ Current interpretation:
 
 ## Bootstrap Backfill Coverage
 
-One of the most important current truths is that bootstrap still manually backfills several slots if direct owner registration did not happen soon enough.
+One of the most important current truths is that bootstrap still manually backfills several slots if direct owner registration did not happen in time.
 
 Confirmed bootstrap backfill paths in `Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs`:
 
