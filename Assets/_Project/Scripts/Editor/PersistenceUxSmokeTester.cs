@@ -41,6 +41,16 @@ namespace Hecton8.Dev
             string saveBinaryStorage = ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs");
             string persistentWorldRegistry = ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs");
             string unsafeMemoryCopyGuard = ReadProjectFile("Assets/_Project/Scripts/Core/UnsafeMemoryCopyGuard.cs");
+            string saveEvents = ReadProjectFile("Assets/_Project/Scripts/SaveEvents.cs");
+            string hectonEventBus = ReadProjectFile("Assets/_Project/Scripts/ModdingAPI/HectonEventBus.cs");
+            string codexPlayModeLauncher = ReadProjectFile("Assets/_Project/Scripts/Editor/CodexPlayModeLauncher.cs");
+            string sceneRuntimeService = ReadProjectFile("Assets/_Project/Scripts/Core/SceneRuntimeService.cs");
+            string mainMenuController = ReadProjectFile("Assets/_Project/Scripts/MainMenuController.cs");
+            string pauseMenuController = ReadProjectFile("Assets/_Project/Scripts/UI/PauseMenuController.cs");
+            string saveSlotMaintenanceRecord = ReadProjectFile("Assets/_Project/Scripts/SaveSlotMaintenanceRecord.cs");
+            string saveStation = ReadProjectFile("Assets/_Project/Scripts/Interaction/SaveStation.cs");
+            string saveSidecarStorage = ReadProjectFile("Assets/_Project/Scripts/SaveSidecarStorage.cs");
+            string saveSlotThumbnail = ReadProjectFile("Assets/_Project/Scripts/UI/SaveSlotThumbnail.cs");
 
             bool asyncThumbnailPass =
                 ContainsAll(thumbnailSystem, "Extension = \".jpg\"", "EncodeNativeArrayToJPG", "Awaitable.BackgroundThreadAsync", "NativeMemorySentinel.RegisterNativeArray") &&
@@ -119,6 +129,88 @@ namespace Hecton8.Dev
 
             bool writeAllBytesPurgedPass = !ProjectSourceContains("File." + "WriteAllBytes");
 
+            bool saveEventOverflowTelemetryPass =
+                ContainsAll(saveEvents, "DroppedEventCount", "ReportOverflow(type);", "GlobalTelemetryBus.PublishPerformanceWarning", "SaveEventOverflowWarningHash", "SaveEventQueueContextHash", "ResolveKnownSlotIndex", "UnknownSlotNumber") &&
+                ContainsAll(saveEvents, "DroppedListenerRegistrationCount", "ReportListenerRegistrationOverflow", "SaveEventListenerOverflowWarningHash", "TryRegister(listener)") &&
+                ContainsAll(saveEvents, "TruncatedPayloadCount", "ReportPayloadTruncated", "SaveEventPayloadTruncatedWarningHash", "CopyFromTruncated", "CopySlotName(slot)", "CopyMessage(message)") &&
+                ContainsAll(saveEvents, "ManualSlotCount = 3", "ResolveManualSlotName", "TryResolveKnownSlotName", "if (slotName.Length <= 0)", "resolvedSlotName = Slot0Name", "resolvedSlotName = Slot2Name", "return false;") &&
+                ContainsAll(saveEvents, "private static void DrainQueueWithoutBudget", "silent stale-event cleanup must not steal shared LateFrame dispatch budget") &&
+                ContainsAll(saveEvents, "NativeMemorySentinel.RegisterNativeQueue", "NativeAllocationLifetime.Session") &&
+                ContainsAll(pauseMenuController, "_cachedUpperSlotDisplayNames", "ClearUpperSlotDisplayCache", "SaveEvents.ResolveKnownSlotIndex(slotName)") &&
+                ContainsAll(pauseMenuController, "NormalizeSaveSlots()", "saveSlots = { \"slot_0\", \"slot_1\", \"slot_2\" }", "new string[SaveEvents.ManualSlotCount]") &&
+                ContainsAll(pauseMenuController, "CopyFixedStringUpperAsciiToBuffer(in error, buffer, ref cursor)", "CopyStringToBuffer(_cachedUnknownErrorStatus, buffer, cursor)") &&
+                ContainsAll(mainMenuController, "SlotCount = SaveEvents.ManualSlotCount", "SaveEvents.ResolveManualSlotName(0)", "SaveEvents.ResolveManualSlotName(1)", "SaveEvents.ResolveManualSlotName(2)") &&
+                ContainsAll(ReadProjectFile("Assets/_Project/Scripts/UI/SaveThumbnailCapture.cs"), "SaveEvents.TryResolveKnownSlotName(in payload.SlotName, out string slotName)", "SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);") &&
+                SourceIndex(saveEvents, "Slot3Name") == int.MaxValue &&
+                SourceIndex(saveEvents, "\"slot_3\"") == int.MaxValue &&
+                SourceIndex(mainMenuController, "\"slot_3\"") == int.MaxValue &&
+                SourceIndex(pauseMenuController, "\"slot_3\"") == int.MaxValue &&
+                SourceIndex(pauseMenuController, "CachedToUpperInvariant(error.ToString())") == int.MaxValue &&
+                SourceIndex(saveEvents, ".ToString()") == int.MaxValue &&
+                SourceIndex(saveEvents, "Substring(") == int.MaxValue &&
+                SourceIndex(saveEvents, "SlotName = string.IsNullOrEmpty(slot)") == int.MaxValue &&
+                SourceIndex(saveEvents, "Message = string.IsNullOrEmpty(message)") == int.MaxValue;
+
+            bool saveEventDispatchMutationPass =
+                ContainsAll(saveEvents, "ListenerCapacity = 16", "_deferredRegisterListeners", "_deferredUnregisterListeners") &&
+                ContainsAll(saveEvents, "QueueDeferredRegister(listener);", "QueueDeferredUnregister(listener);", "ApplyDeferredListenerMutations();") &&
+                ContainsAll(saveEvents, "private static void RegisterImmediate", "CancelDeferredRegister(listener)", "CancelDeferredUnregister(listener)") &&
+                ContainsAll(saveEvents, "ListenerExceptionCount", "ReportListenerDispatchException", "SaveEventListenerExceptionWarningHash", "SaveEventListenerExceptionContextHash") &&
+                ContainsAll(saveEvents, "listener == null || IsDeferredUnregisterPending(listener)", "_listeners.TryUnregister(listener)") &&
+                SourceIndex(saveEvents, "if (_isDispatching)\r\n                CancelDeferredUnregister(listener)") == int.MaxValue;
+
+            bool eventBusThrowableAllocationTelemetryPass =
+                ContainsAll(hectonEventBus, "MaxEventDispatchDepth = 5", "GlobalTelemetryBus.PublishCatastrophicCascadePrevented") &&
+                ContainsAll(hectonEventBus, "GC.GetAllocatedBytesForCurrentThread() - allocationBefore", "ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberHash, allocationDelta);", "ModCallbackExceptionDisableReason") &&
+                CountOccurrences(hectonEventBus, "ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);") == 3 &&
+                SourceIndex(hectonEventBus, "ex.Message") == int.MaxValue;
+
+            bool sceneActivationContractPass =
+                ContainsAll(sceneRuntimeService, "TransitionDissolveSeconds = 3f", "_pendingSceneLoadOperation.allowSceneActivation = false", "ReleaseSceneActivation(_pendingSceneLoadOperation);") &&
+                ContainsAll(sceneRuntimeService, "HasMainMenuDissolveReachedActivationTime(_cinematicTransitionElapsed)", "return elapsedSeconds == TransitionDissolveSeconds;") &&
+                ContainsAll(sceneRuntimeService, "IServiceShutdown", "ShutdownServiceState()", "_sceneActivationReleased = false;") &&
+                ContainsAll(mainMenuController, "SceneRuntimeService.EnsureRuntimeInstance", "sceneService.LoadScene(targetSceneName);") &&
+                ContainsAll(pauseMenuController, "SceneRuntimeService.EnsureRuntimeInstance", "sceneService.LoadScene(mainMenuSceneName);") &&
+                SourceIndex(sceneRuntimeService, "_pendingSceneLoadOperation.allowSceneActivation = true") == int.MaxValue &&
+                SourceIndex(sceneRuntimeService, "_cinematicTransitionElapsed >= TransitionDissolveSeconds") == int.MaxValue &&
+                SourceIndex(mainMenuController, "allowSceneActivation") == int.MaxValue &&
+                SourceIndex(mainMenuController, "SceneManager.LoadSceneAsync") == int.MaxValue &&
+                SourceIndex(pauseMenuController, "allowSceneActivation") == int.MaxValue &&
+                SourceIndex(pauseMenuController, "SceneManager.LoadSceneAsync") == int.MaxValue;
+
+            bool playModeSentinelAsyncIoPass =
+                ContainsAll(codexPlayModeLauncher, "TryWriteAutoRunFlagAsync", "FileOptions.Asynchronous | FileOptions.WriteThrough", "await stream.WriteAsync(AutoRunFlagPayload, 0, AutoRunFlagPayload.Length);", "await stream.FlushAsync();") &&
+                ContainsAll(codexPlayModeLauncher, "RequestMetricsWriteAndCleanup", "WriteMetricsAndCleanupAsync", "await WriteMetricsAsync();", "Metrics pipeline failed before cleanup", "CleanupAndExitIfBatch();");
+
+            bool saveSlotPathGuardPass =
+                ContainsAll(saveManager, "MaxSaveSlotNameLength = 48", "InvalidSlotNameReason = \"Invalid save slot name.\"", "InvalidSlotFileStem = \"slot_invalid\"") &&
+                ContainsAll(saveManager, "TryResolveSafeSlotName", "ResolveSafeSlotFileStem", "IsReservedManualSlotPattern", "StringComparison.OrdinalIgnoreCase", "!SaveEvents.IsKnownManualSlotName(slotName)", "safeSlotName = slotName;") &&
+                ContainsAll(saveManager, "SaveEvents.RaiseSaveFailed(string.Empty, InvalidSlotNameReason);", "SaveEvents.RaiseLoadFailed(string.Empty, InvalidSlotNameReason);") &&
+                ContainsAll(saveManager, "GetPrimarySaveFilePath(string slotName) => $\"{ResolveSafeSlotFileStem(slotName)}.sav\"", "GetTempSaveFilePath(string slotName) => $\"{ResolveSafeSlotFileStem(slotName)}.sav.tmp\"", "GetDiagnosticSaveFilePath(string slotName) => $\"{ResolveSafeSlotFileStem(slotName)}.diag\"") &&
+                ContainsAll(saveManager, "return TryResolveSafeSlotName(slotName, out slotName);", "BuildSaveSlotInfoInternal(string slotName)") &&
+                CountOccurrences(saveManager, "if (!TryResolveSafeSlotName(slotName, out slotName))") >= 7 &&
+                ContainsAll(saveSlotMaintenanceRecord, "SaveManager.GetDiagnosticSaveFilePath(slotName)", "SaveManager.TryResolveSafeSlotName(SlotName, out string safeSlotName)", "SaveManager.TryResolveSafeSlotName(slotName, out string safeSlotName)", "SaveSlotInfo.ToStorageString(SaveSlotIntegrityState.Empty)") &&
+                ContainsAll(saveStation, "SaveManager.IsSafeSlotName(_saveSlot)", "Save slot rejected by SaveManager slot-name guard.", "Debug.LogError(\"[SaveStation] SaveManager instance not found.\", this);") &&
+                SourceIndex(saveStation, "#if UNITY_EDITOR || DEVELOPMENT_BUILD") < SourceIndex(saveStation, "Debug.LogError(\"[SaveStation] SaveManager instance not found.\", this);") &&
+                SourceIndex(saveManager, "slotName.Trim(") == int.MaxValue &&
+                SourceIndex(saveManager, "$\"{slotName}.sav\"") == int.MaxValue &&
+                SourceIndex(saveManager, "$\"{slotName}.sav.tmp\"") == int.MaxValue &&
+                SourceIndex(saveManager, "$\"{slotName}.diag\"") == int.MaxValue &&
+                SourceIndex(saveSlotMaintenanceRecord, "$\"{slotName}.diag\"") == int.MaxValue &&
+                SourceIndex(saveSlotMaintenanceRecord, "SaveSlotIntegrityState.Empty.ToString()") == int.MaxValue;
+
+            bool saveThumbnailSidecarGuardPass =
+                ContainsAll(thumbnailSystem, "ResolveThumbnailFileStem", "SaveManager.ResolveSafeSlotFileStem(slotName)", "Path.Combine(Application.persistentDataPath, ResolveThumbnailFileStem(slotName) + Extension)", "Path.Combine(Application.persistentDataPath, ResolveThumbnailFileStem(slotName) + LegacyExtension)") &&
+                CountOccurrences(thumbnailSystem, "SaveManager.TryResolveSafeSlotName(slotName, out slotName)") >= 4 &&
+                ContainsAll(thumbnailSystem, "AsyncWriteManager.WriteAll(tempPath, dataPtr, encodedJpg.Length, out string writeError)", "throw new IOException(writeError);", "bool encodedJpgRegistered = false", "encodedJpgRegistered = true", "File.Move(tempPath, path);", "await Awaitable.MainThreadAsync();") &&
+                ContainsAll(saveSidecarStorage, "NativeTempMemoryLifetime = NativeAllocationLifetime.Temp", "RegisterTempBuffer(buffer, \"metadataWriteBuffer\")", "RegisterTempBuffer(buffer, \"metadataReadBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceWriteBuffer\")", "RegisterTempBuffer(buffer, \"maintenanceReadBuffer\")", "NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime)", "NativeMemorySentinel.UnregisterNativeArray(buffer)") &&
+                ContainsAll(saveSlotThumbnail, "SaveManager.IsSafeSlotName(slotName)", "SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);", "SaveThumbnailSystem.LoadThumbnail(slotName)") &&
+                SourceIndex(thumbnailSystem, "slotName + Extension") == int.MaxValue &&
+                SourceIndex(thumbnailSystem, "slotName + LegacyExtension") == int.MaxValue &&
+                SourceIndex(thumbnailSystem, "new FileStream(tempPath") == int.MaxValue &&
+                CountOccurrences(saveSidecarStorage, "DisposeTempBuffer(ref buffer);") == 4 &&
+                CountOccurrences(saveSidecarStorage, "buffer.Dispose();") == 1;
+
             bool pass = asyncThumbnailPass &&
                         loadingStagePass &&
                         safeAupSnapPass &&
@@ -136,7 +228,14 @@ namespace Hecton8.Dev
                         registryMigrationRsqrtPass &&
                         deterministicScatterCheapRadiusPass &&
                         asyncDehydrationPipelinePass &&
-                        writeAllBytesPurgedPass;
+                        writeAllBytesPurgedPass &&
+                        saveEventOverflowTelemetryPass &&
+                        saveEventDispatchMutationPass &&
+                        eventBusThrowableAllocationTelemetryPass &&
+                        sceneActivationContractPass &&
+                        playModeSentinelAsyncIoPass &&
+                        saveSlotPathGuardPass &&
+                        saveThumbnailSidecarGuardPass;
 
             WriteArtifact(
                 pass,
@@ -158,6 +257,13 @@ namespace Hecton8.Dev
                 deterministicScatterCheapRadiusPass,
                 asyncDehydrationPipelinePass,
                 writeAllBytesPurgedPass,
+                saveEventOverflowTelemetryPass,
+                saveEventDispatchMutationPass,
+                eventBusThrowableAllocationTelemetryPass,
+                sceneActivationContractPass,
+                playModeSentinelAsyncIoPass,
+                saveSlotPathGuardPass,
+                saveThumbnailSidecarGuardPass,
                 rewrittenOffset,
                 rewrittenLength);
 
@@ -171,9 +277,9 @@ namespace Hecton8.Dev
 
         private static bool RunInventoryFullWriteMmfAssert(out int rewrittenOffset, out int rewrittenLength)
         {
-            byte[] before = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] - editor-only inventory full-write sector fixture - owner: PersistenceUxSmokeTester
-            byte[] after = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] - editor-only inventory full-write sector fixture - owner: PersistenceUxSmokeTester
-            byte[] observed = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] - editor-only MMF full-write verification readback - owner: PersistenceUxSmokeTester
+            byte[] before = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] — editor-only inventory full-write sector fixture — owner: PersistenceUxSmokeTester
+            byte[] after = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] — editor-only inventory full-write sector fixture — owner: PersistenceUxSmokeTester
+            byte[] observed = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] — editor-only MMF full-write verification readback — owner: PersistenceUxSmokeTester
             for (int slot = 0; slot < InventorySlotCount; slot++)
             {
                 int offset = slot * InventorySlotStrideBytes;
@@ -253,6 +359,26 @@ namespace Hecton8.Dev
             return index < 0 ? int.MaxValue : index;
         }
 
+        private static int CountOccurrences(string source, string value)
+        {
+            if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(value))
+                return 0;
+
+            int count = 0;
+            int searchIndex = 0;
+            while (searchIndex < source.Length)
+            {
+                int foundIndex = source.IndexOf(value, searchIndex, StringComparison.Ordinal);
+                if (foundIndex < 0)
+                    break;
+
+                count++;
+                searchIndex = foundIndex + value.Length;
+            }
+
+            return count;
+        }
+
         private static bool ContainsAll(string source, params string[] values)
         {
             if (string.IsNullOrEmpty(source) || values == null)
@@ -319,6 +445,13 @@ namespace Hecton8.Dev
             bool deterministicScatterCheapRadiusPass,
             bool asyncDehydrationPipelinePass,
             bool writeAllBytesPurgedPass,
+            bool saveEventOverflowTelemetryPass,
+            bool saveEventDispatchMutationPass,
+            bool eventBusThrowableAllocationTelemetryPass,
+            bool sceneActivationContractPass,
+            bool playModeSentinelAsyncIoPass,
+            bool saveSlotPathGuardPass,
+            bool saveThumbnailSidecarGuardPass,
             int inventoryRewriteOffset,
             int inventoryRewriteLength)
         {
@@ -327,7 +460,7 @@ namespace Hecton8.Dev
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
 
-            StringBuilder builder = new StringBuilder(768); // COLD ALLOC: StringBuilder[768] - editor smoke JSON artifact - owner: PersistenceUxSmokeTester
+            StringBuilder builder = new StringBuilder(1248); // COLD ALLOC: StringBuilder[1248] — editor smoke JSON artifact — owner: PersistenceUxSmokeTester
             builder.Append('{')
                 .Append("\"tester\":\"PersistenceUxSmokeTester\",")
                 .Append("\"pass\":").Append(pass ? "true" : "false").Append(',')
@@ -349,6 +482,13 @@ namespace Hecton8.Dev
                 .Append("\"deterministicScatterCheapRadiusPass\":").Append(deterministicScatterCheapRadiusPass ? "true" : "false").Append(',')
                 .Append("\"asyncDehydrationPipelinePass\":").Append(asyncDehydrationPipelinePass ? "true" : "false").Append(',')
                 .Append("\"writeAllBytesPurgedPass\":").Append(writeAllBytesPurgedPass ? "true" : "false").Append(',')
+                .Append("\"saveEventOverflowTelemetryPass\":").Append(saveEventOverflowTelemetryPass ? "true" : "false").Append(',')
+                .Append("\"saveEventDispatchMutationPass\":").Append(saveEventDispatchMutationPass ? "true" : "false").Append(',')
+                .Append("\"eventBusThrowableAllocationTelemetryPass\":").Append(eventBusThrowableAllocationTelemetryPass ? "true" : "false").Append(',')
+                .Append("\"sceneActivationContractPass\":").Append(sceneActivationContractPass ? "true" : "false").Append(',')
+                .Append("\"playModeSentinelAsyncIoPass\":").Append(playModeSentinelAsyncIoPass ? "true" : "false").Append(',')
+                .Append("\"saveSlotPathGuardPass\":").Append(saveSlotPathGuardPass ? "true" : "false").Append(',')
+                .Append("\"saveThumbnailSidecarGuardPass\":").Append(saveThumbnailSidecarGuardPass ? "true" : "false").Append(',')
                 .Append("\"inventoryRewriteOffset\":").Append(inventoryRewriteOffset).Append(',')
                 .Append("\"inventoryRewriteLength\":").Append(inventoryRewriteLength)
                 .Append('}');

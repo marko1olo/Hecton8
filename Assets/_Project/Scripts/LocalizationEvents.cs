@@ -1,3 +1,5 @@
+using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Collections;
@@ -59,16 +61,38 @@ namespace Hecton.Localization
         private const int LanguageListenerCapacity = 128;
         private const int CorruptionListenerCapacity = 64;
         private const int PendingEventCapacity = 128;
+        private const uint ListenerOverflowWarningHash = 0x4C45564Cu; // LEVL
+        private const uint LanguageListenerContextHash = 0x4C454C47u; // LELG
+        private const uint CorruptionListenerContextHash = 0x4C454C43u; // LELC
+        private const uint ListenerExceptionWarningHash = 0x4C455645u; // LEVE
+        private const uint ListenerExceptionLanguageContextHash = 0x4C455847u; // LEXG
+        private const uint ListenerExceptionCorruptionContextHash = 0x4C455843u; // LEXC
         private static readonly uint _OverflowWarningHash = unchecked((uint)LocHash.Compute("LocalizationEvents.Overflow"));
 
         // COLD ALLOC: RegistryBucket<ILocalizationLanguageChangedListener>[128] - language listeners drained by SystemDispatcher - owner: LocalizationEvents
         private static readonly RegistryBucket<ILocalizationLanguageChangedListener> _languageListeners = new RegistryBucket<ILocalizationLanguageChangedListener>(LanguageListenerCapacity);
         // COLD ALLOC: RegistryBucket<ILocalizationCorruptionVisualStateListener>[64] - corruption visual listeners drained by SystemDispatcher - owner: LocalizationEvents
         private static readonly RegistryBucket<ILocalizationCorruptionVisualStateListener> _corruptionListeners = new RegistryBucket<ILocalizationCorruptionVisualStateListener>(CorruptionListenerCapacity);
+        // COLD ALLOC: ILocalizationLanguageChangedListener[128] - language listener additions deferred during localization dispatch - owner: LocalizationEvents
+        private static readonly ILocalizationLanguageChangedListener[] _deferredLanguageRegisterListeners = new ILocalizationLanguageChangedListener[LanguageListenerCapacity];
+        // COLD ALLOC: ILocalizationLanguageChangedListener[128] - language listener removals deferred during localization dispatch - owner: LocalizationEvents
+        private static readonly ILocalizationLanguageChangedListener[] _deferredLanguageUnregisterListeners = new ILocalizationLanguageChangedListener[LanguageListenerCapacity];
+        // COLD ALLOC: ILocalizationCorruptionVisualStateListener[64] - corruption listener additions deferred during localization dispatch - owner: LocalizationEvents
+        private static readonly ILocalizationCorruptionVisualStateListener[] _deferredCorruptionRegisterListeners = new ILocalizationCorruptionVisualStateListener[CorruptionListenerCapacity];
+        // COLD ALLOC: ILocalizationCorruptionVisualStateListener[64] - corruption listener removals deferred during localization dispatch - owner: LocalizationEvents
+        private static readonly ILocalizationCorruptionVisualStateListener[] _deferredCorruptionUnregisterListeners = new ILocalizationCorruptionVisualStateListener[CorruptionListenerCapacity];
         private static NativeQueue<LocalizationEventPayload> _pendingEvents;
         private static NativeQueue<LocalizationEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredLanguageRegisterCount;
+        private static int _deferredLanguageUnregisterCount;
+        private static int _deferredCorruptionRegisterCount;
+        private static int _deferredCorruptionUnregisterCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerOverflowTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
         private static bool _overflowWarningQueued;
 
@@ -76,6 +100,16 @@ namespace Hecton.Localization
         /// Pending payload count in the localization event lane.
         /// </summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        /// <summary>
+        /// Listener mutations dropped because fixed deferred buffers were saturated.
+        /// </summary>
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+
+        /// <summary>
+        /// Listener callback exceptions isolated during late-frame dispatch.
+        /// </summary>
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
@@ -96,8 +130,20 @@ namespace Hecton.Localization
 
             _languageListeners.Clear();
             _corruptionListeners.Clear();
+            Array.Clear(_deferredLanguageRegisterListeners, 0, _deferredLanguageRegisterCount);
+            Array.Clear(_deferredLanguageUnregisterListeners, 0, _deferredLanguageUnregisterCount);
+            Array.Clear(_deferredCorruptionRegisterListeners, 0, _deferredCorruptionRegisterCount);
+            Array.Clear(_deferredCorruptionUnregisterListeners, 0, _deferredCorruptionUnregisterCount);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredLanguageRegisterCount = 0;
+            _deferredLanguageUnregisterCount = 0;
+            _deferredCorruptionRegisterCount = 0;
+            _deferredCorruptionUnregisterCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerOverflowTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
             _overflowWarningQueued = false;
         }
@@ -112,8 +158,13 @@ namespace Hecton.Localization
                 return;
 
             EnsureInitialized();
-            if (!_languageListeners.Contains(listener))
-                _languageListeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredLanguageRegister(listener);
+                return;
+            }
+
+            RegisterLanguageListenerImmediate(listener);
         }
 
         /// <summary>
@@ -125,8 +176,13 @@ namespace Hecton.Localization
             if (listener == null)
                 return;
 
-            if (_languageListeners.Contains(listener))
-                _languageListeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredLanguageUnregister(listener);
+                return;
+            }
+
+            _languageListeners.TryUnregister(listener);
         }
 
         /// <summary>
@@ -139,8 +195,13 @@ namespace Hecton.Localization
                 return;
 
             EnsureInitialized();
-            if (!_corruptionListeners.Contains(listener))
-                _corruptionListeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredCorruptionRegister(listener);
+                return;
+            }
+
+            RegisterCorruptionListenerImmediate(listener);
         }
 
         /// <summary>
@@ -152,8 +213,13 @@ namespace Hecton.Localization
             if (listener == null)
                 return;
 
-            if (_corruptionListeners.Contains(listener))
-                _corruptionListeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredCorruptionUnregister(listener);
+                return;
+            }
+
+            _corruptionListeners.TryUnregister(listener);
         }
 
         /// <summary>
@@ -213,6 +279,7 @@ namespace Hecton.Localization
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -290,8 +357,10 @@ namespace Hecton.Localization
                     for (int i = count - 1; i >= 0; i--)
                     {
                         ILocalizationLanguageChangedListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnLocalizationLanguageChanged(in payload);
+                        if (listener == null || IsDeferredLanguageUnregisterPending(listener))
+                            continue;
+
+                        DispatchToLanguageListener(listener, in payload);
                     }
                     break;
                 }
@@ -303,12 +372,229 @@ namespace Hecton.Localization
                     for (int i = count - 1; i >= 0; i--)
                     {
                         ILocalizationCorruptionVisualStateListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnLocalizationCorruptionVisualStateChanged(in payload);
+                        if (listener == null || IsDeferredCorruptionUnregisterPending(listener))
+                            continue;
+
+                        DispatchToCorruptionListener(listener, in payload);
                     }
                     break;
                 }
             }
+        }
+
+        private static void RegisterLanguageListenerImmediate(ILocalizationLanguageChangedListener listener)
+        {
+            if (_languageListeners.Contains(listener))
+                return;
+
+            if (!_languageListeners.TryRegister(listener))
+                ReportListenerOverflow(LanguageListenerContextHash);
+        }
+
+        private static void RegisterCorruptionListenerImmediate(ILocalizationCorruptionVisualStateListener listener)
+        {
+            if (_corruptionListeners.Contains(listener))
+                return;
+
+            if (!_corruptionListeners.TryRegister(listener))
+                ReportListenerOverflow(CorruptionListenerContextHash);
+        }
+
+        private static void QueueDeferredLanguageRegister(ILocalizationLanguageChangedListener listener)
+        {
+            if (_languageListeners.Contains(listener))
+            {
+                RemoveDeferredListener(_deferredLanguageUnregisterListeners, ref _deferredLanguageUnregisterCount, listener);
+                return;
+            }
+
+            RemoveDeferredListener(_deferredLanguageUnregisterListeners, ref _deferredLanguageUnregisterCount, listener);
+            if (!TryAppendDeferredListener(_deferredLanguageRegisterListeners, ref _deferredLanguageRegisterCount, listener))
+                ReportListenerOverflow(LanguageListenerContextHash);
+        }
+
+        private static void QueueDeferredLanguageUnregister(ILocalizationLanguageChangedListener listener)
+        {
+            if (RemoveDeferredListener(_deferredLanguageRegisterListeners, ref _deferredLanguageRegisterCount, listener))
+                return;
+
+            if (!_languageListeners.Contains(listener))
+                return;
+
+            if (!TryAppendDeferredListener(_deferredLanguageUnregisterListeners, ref _deferredLanguageUnregisterCount, listener))
+                ReportListenerOverflow(LanguageListenerContextHash);
+        }
+
+        private static void QueueDeferredCorruptionRegister(ILocalizationCorruptionVisualStateListener listener)
+        {
+            if (_corruptionListeners.Contains(listener))
+            {
+                RemoveDeferredListener(_deferredCorruptionUnregisterListeners, ref _deferredCorruptionUnregisterCount, listener);
+                return;
+            }
+
+            RemoveDeferredListener(_deferredCorruptionUnregisterListeners, ref _deferredCorruptionUnregisterCount, listener);
+            if (!TryAppendDeferredListener(_deferredCorruptionRegisterListeners, ref _deferredCorruptionRegisterCount, listener))
+                ReportListenerOverflow(CorruptionListenerContextHash);
+        }
+
+        private static void QueueDeferredCorruptionUnregister(ILocalizationCorruptionVisualStateListener listener)
+        {
+            if (RemoveDeferredListener(_deferredCorruptionRegisterListeners, ref _deferredCorruptionRegisterCount, listener))
+                return;
+
+            if (!_corruptionListeners.Contains(listener))
+                return;
+
+            if (!TryAppendDeferredListener(_deferredCorruptionUnregisterListeners, ref _deferredCorruptionUnregisterCount, listener))
+                ReportListenerOverflow(CorruptionListenerContextHash);
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredLanguageUnregisterCount; i++)
+                _languageListeners.TryUnregister(_deferredLanguageUnregisterListeners[i]);
+
+            for (int i = 0; i < _deferredCorruptionUnregisterCount; i++)
+                _corruptionListeners.TryUnregister(_deferredCorruptionUnregisterListeners[i]);
+
+            for (int i = 0; i < _deferredLanguageRegisterCount; i++)
+                RegisterLanguageListenerImmediate(_deferredLanguageRegisterListeners[i]);
+
+            for (int i = 0; i < _deferredCorruptionRegisterCount; i++)
+                RegisterCorruptionListenerImmediate(_deferredCorruptionRegisterListeners[i]);
+
+            ClearDeferredListeners(_deferredLanguageRegisterListeners, ref _deferredLanguageRegisterCount);
+            ClearDeferredListeners(_deferredLanguageUnregisterListeners, ref _deferredLanguageUnregisterCount);
+            ClearDeferredListeners(_deferredCorruptionRegisterListeners, ref _deferredCorruptionRegisterCount);
+            ClearDeferredListeners(_deferredCorruptionUnregisterListeners, ref _deferredCorruptionUnregisterCount);
+        }
+
+        private static bool IsDeferredLanguageUnregisterPending(ILocalizationLanguageChangedListener listener)
+        {
+            return ContainsDeferredListener(_deferredLanguageUnregisterListeners, _deferredLanguageUnregisterCount, listener);
+        }
+
+        private static bool IsDeferredCorruptionUnregisterPending(ILocalizationCorruptionVisualStateListener listener)
+        {
+            return ContainsDeferredListener(_deferredCorruptionUnregisterListeners, _deferredCorruptionUnregisterCount, listener);
+        }
+
+        private static void DispatchToLanguageListener(
+            ILocalizationLanguageChangedListener listener,
+            in LocalizationEventPayload payload)
+        {
+            try
+            {
+                listener.OnLocalizationLanguageChanged(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerException(ListenerExceptionLanguageContextHash);
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        private static void DispatchToCorruptionListener(
+            ILocalizationCorruptionVisualStateListener listener,
+            in LocalizationEventPayload payload)
+        {
+            try
+            {
+                listener.OnLocalizationCorruptionVisualStateChanged(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerException(ListenerExceptionCorruptionContextHash);
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static bool TryAppendDeferredListener<T>(T[] listeners, ref int count, T listener) where T : class
+        {
+            if (listener == null)
+                return true;
+
+            if (ContainsDeferredListener(listeners, count, listener))
+                return true;
+
+            if (count >= listeners.Length)
+                return false;
+
+            listeners[count++] = listener;
+            return true;
+        }
+
+        private static bool RemoveDeferredListener<T>(T[] listeners, ref int count, T listener) where T : class
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (!ReferenceEquals(listeners[i], listener))
+                    continue;
+
+                count--;
+                listeners[i] = listeners[count];
+                listeners[count] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool ContainsDeferredListener<T>(T[] listeners, int count, T listener) where T : class
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(listeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ClearDeferredListeners<T>(T[] listeners, ref int count) where T : class
+        {
+            for (int i = 0; i < count; i++)
+                listeners[i] = null;
+
+            count = 0;
+        }
+
+        private static void ReportListenerOverflow(uint contextHash)
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerOverflowTelemetryFrame == frame)
+                return;
+
+            _lastListenerOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerOverflowWarningHash,
+                contextHash,
+                _droppedListenerRegistrationCount);
+        }
+
+        private static void ReportListenerException(uint contextHash)
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerExceptionWarningHash,
+                contextHash,
+                _listenerExceptionCount);
         }
 
         private static void EnsureInitialized()
@@ -322,6 +608,7 @@ namespace Hecton.Localization
                     nameof(LocalizationEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -333,6 +620,21 @@ namespace Hecton.Localization
                     nameof(LocalizationEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 

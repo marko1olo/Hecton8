@@ -18,8 +18,8 @@
 //   • Хвостовые вершины имеют ОТРИЦАТЕЛЬНЫЙ Z (local).
 //
 // TAIL WAG (процедурная анимация):
-//   displacement = sin(time × freq + instanceID × phaseOffset) 
-//                  × amplitude × pow(abs(localZ), power)
+//   displacement = cheapWave(time × freq + instanceID × phaseOffset)
+//                  x amplitude x cheap tail polynomial
 //   
 //   localZ < 0 = хвост → максимальное смещение
 //   localZ ≈ 0 = центр → минимальное
@@ -116,8 +116,9 @@ Shader "Hecton8/BoidFishInstanced"
             #pragma fragment frag
 
             // ── Минимальные фичи ──
-            #pragma multi_compile_instancing
             #pragma target 4.5  // Required for StructuredBuffer
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             // ══════════════════════════════════════════════════════
             //  INCLUDES
@@ -194,6 +195,7 @@ Shader "Hecton8/BoidFishInstanced"
             float _ParasiteMode;
             float _ParasiteAggression;
             float _VelocitySleepScale;
+            float4 _TotalUniverseOffset;
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
@@ -217,20 +219,26 @@ Shader "Hecton8/BoidFishInstanced"
 
             struct Attributes
             {
+                #if defined(UNITY_INSTANCING_ENABLED)
+                    UNITY_VERTEX_INPUT_INSTANCE_ID
+                #else
+                uint instanceID : SV_InstanceID;
+                #endif
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float2 uv         : TEXCOORD0;
+                float4 color      : COLOR;
             };
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float2 uv         : TEXCOORD0;
                 float3 normalWS   : TEXCOORD1;
                 float  colorBlend : TEXCOORD2;   // belly/back blend factor
                 float  instanceRand : TEXCOORD3; // per-instance random [0..1]
-                float  aliveMask : TEXCOORD4;
-                float  aggressiveMask : TEXCOORD5;
+                float  aggressiveMask : TEXCOORD4;
             };
 
             // ══════════════════════════════════════════════════════
@@ -245,26 +253,24 @@ Shader "Hecton8/BoidFishInstanced"
             /// 
             /// Handles edge case: velocity nearly parallel to world up.
             /// 
-            /// Cost: ~12 ALU (3× cross, 3× normalize).
+            /// Cost: L1 reciprocal basis build, branchless zero-velocity fallback.
             /// </summary>
+            float3 FastNormalizeL1(float3 value, float3 fallback)
+            {
+                float len = abs(value.x) + abs(value.y) + abs(value.z);
+                return lerp(fallback, value * rcp(max(len, 0.00001)), step(0.00001, len));
+            }
+
             float3x3 BuildLookRotation(float3 forward)
             {
-                // Normalize forward
-                float fwdLen = length(forward);
-                
-                // Safety: if velocity is near-zero, default to +Z
-                if (fwdLen < 0.0001)
-                    forward = float3(0, 0, 1);
-                else
-                    forward = forward / fwdLen;
-                
-                // Choose up vector (avoid parallel case)
-                float3 up = float3(0, 1, 0);
-                if (abs(dot(forward, up)) > 0.999)
-                    up = float3(1, 0, 0);
+                forward = FastNormalizeL1(forward, float3(0, 0, 1));
+
+                // Choose up vector without a dynamic vertex branch.
+                float3 up = lerp(float3(0, 1, 0), float3(1, 0, 0), step(0.999, abs(forward.y)));
                 
                 // Build orthonormal basis
-                float3 right = normalize(cross(up, forward));
+                float3 right = cross(up, forward);
+                right = FastNormalizeL1(right, float3(1, 0, 0));
                 up = cross(forward, right);
                 
                 // Column-major matrix:
@@ -295,15 +301,22 @@ Shader "Hecton8/BoidFishInstanced"
                 return value;
             }
 
-            float InstanceRandom(uint id)
+            float HashToUnit01(uint hash)
             {
-                return (float)(HashUInt(id) & 0x00ffffffu) * (1.0 / 16777216.0);
+                return (float)(hash & 0x00ffffffu) * (1.0 / 16777216.0);
+            }
+
+            float RemapSquaredVelocityVat(float speedSq, float referenceSpeed)
+            {
+                float referenceSq = max(referenceSpeed * referenceSpeed, 0.001);
+                float x = saturate(speedSq * rcp(referenceSq));
+                return x * (2.0 - x);
             }
 
             float HashTile2(float2 value)
             {
-                uint2 cell = (uint2)floor(abs(value) * 4096.0);
-                return InstanceRandom(cell.x ^ (cell.y * 0x9e3779b9u));
+                uint2 cell = (uint2)(value * 4096.0);
+                return HashToUnit01(HashUInt(cell.x ^ (cell.y * 0x9e3779b9u)));
             }
 
             half3 ApplyInstanceHueShift(half3 color, half hueShift)
@@ -311,75 +324,85 @@ Shader "Hecton8/BoidFishInstanced"
                 half amount = saturate(abs(hueShift));
                 half3 positiveShift = color.gbr;
                 half3 negativeShift = color.brg;
-                half3 shifted = hueShift >= 0.0h ? positiveShift : negativeShift;
+                half3 shifted = lerp(negativeShift, positiveShift, step(0.0h, hueShift));
                 return saturate(lerp(color, shifted, amount));
+            }
+
+            half FastTrianglePulse(half phase)
+            {
+                half wave = frac(phase * 0.15915494h);
+                return 1.0h - abs(wave * 2.0h - 1.0h);
+            }
+
+            float FastSignedTriangleWave(float phase)
+            {
+                return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 4.0 - 2.0);
             }
 
             float ResolveBiolumSpotNoise(float2 uv)
             {
-                float2 tiledUv = frac(uv);
                 if (_HectonCausticsTextureParams.x > 0.5)
+                {
+                    float2 tiledUv = frac(uv);
                     return SAMPLE_TEXTURE2D(_HectonCausticsTextureA, sampler_HectonCausticsTextureA, tiledUv).r;
+                }
 
-                return HashTile2(tiledUv);
+                return HashTile2(uv);
             }
 
-            float ResolveInterleavedDither(float2 pixel)
+            float ResolveInterleavedDither(uint2 pixel)
             {
-                uint2 p = (uint2)pixel;
-                uint hash = HashUInt(p.x ^ (p.y * 0x27d4eb2du) ^ 0x9e3779b9u);
-                return (float)(hash & 255u) * (1.0 / 255.0);
+                uint hash = HashUInt(pixel.x ^ (pixel.y * 0x27d4eb2du) ^ 0x9e3779b9u);
+                return HashToUnit01(hash);
             }
 
             float ResolveBlueNoiseDither(float4 positionCS)
             {
-                float2 pixel = floor(positionCS.xy);
+                uint2 pixelCoord = (uint2)positionCS.xy;
                 if (_BlueNoiseTex_TexelSize.z > 0.0001 && _BlueNoiseTex_TexelSize.w > 0.0001)
                 {
+                    float2 pixel = (float2)pixelCoord;
                     float2 temporalOffset = frac(_Time.y * float2(0.75487766, 0.56984029));
                     float2 blueNoiseUv = frac(pixel * _BlueNoiseTex_TexelSize.xy + temporalOffset);
                     return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUv).r;
                 }
 
-                return ResolveInterleavedDither(pixel);
+                return ResolveInterleavedDither(pixelCoord);
             }
 
-            float2 ResolveVatFrameUv(uint vertexID, float frameIndex)
+            float2 ResolveVatFrameUv(float vertexU, float frameIndex, float invFrameCount)
             {
-                float safeVertexCount = max(_VatVertexCount, 1.0);
-                float safeFrameCount = max(_VatFrameCount, 1.0);
-                return float2(
-                    (vertexID + 0.5) / safeVertexCount,
-                    (frameIndex + 0.5) / safeFrameCount);
+                return float2(vertexU, (frameIndex + 0.5) * invFrameCount);
             }
 
-            float3 SampleVatPosition(uint vertexID, float frameIndex)
+            float3 SampleVatPosition(float vertexU, float frameIndex, float invFrameCount)
             {
-                float2 uv = ResolveVatFrameUv(vertexID, frameIndex);
+                float2 uv = ResolveVatFrameUv(vertexU, frameIndex, invFrameCount);
                 return SAMPLE_TEXTURE2D_LOD(_VatPositionTex, sampler_VatPositionTex, uv, 0).xyz * _VatPositionScale;
             }
 
-            float3 SampleVatNormal(uint vertexID, float frameIndex, float3 fallbackNormalOS)
+            float3 SampleVatNormal(float vertexU, float frameIndex, float invFrameCount, float3 fallbackNormalOS, float normalBlend)
             {
-                float2 uv = ResolveVatFrameUv(vertexID, frameIndex);
+                float2 uv = ResolveVatFrameUv(vertexU, frameIndex, invFrameCount);
                 float3 encodedNormal = SAMPLE_TEXTURE2D_LOD(_VatNormalTex, sampler_VatNormalTex, uv, 0).xyz * 2.0 - 1.0;
                 float encodedLengthSq = dot(encodedNormal, encodedNormal);
-                if (encodedLengthSq <= 0.0001)
-                    return fallbackNormalOS;
-
-                float3 vatNormal = encodedNormal * rsqrt(encodedLengthSq);
-                return normalize(lerp(fallbackNormalOS, vatNormal, saturate(_VatNormalBlend)));
+                return lerp(fallbackNormalOS, encodedNormal, normalBlend * step(0.0001, encodedLengthSq));
             }
 
             // ══════════════════════════════════════════════════════
             //  VERTEX SHADER
             // ══════════════════════════════════════════════════════
 
-            Varyings vert(Attributes input, uint rawInstanceID : SV_InstanceID, uint vertexID : SV_VertexID)
+            Varyings vert(Attributes input, uint vertexID : SV_VertexID)
             {
                 Varyings output;
-
-                uint instanceID = rawInstanceID;
+                #if defined(UNITY_INSTANCING_ENABLED)
+                    UNITY_SETUP_INSTANCE_ID(input);
+                    uint instanceID = unity_InstanceID;
+                #else
+                uint instanceID = input.instanceID;
+                #endif
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 // ══════════════════════════════════════════════════
                 //  1. READ BOID DATA
@@ -387,23 +410,37 @@ Shader "Hecton8/BoidFishInstanced"
 
                 BoidData boid = _BoidsBuffer[instanceID];
                 float3 boidPos = boid.position;
+                float3 boidAup = boidPos + _TotalUniverseOffset.xyz;
                 float3 boidVel = boid.velocity * saturate(_VelocitySleepScale);
-                float  speed   = length(boidVel);
-                bool   isConsumed = (boid.stateFlags & BOID_FLAG_CONSUMED) != 0u;
-                float  aggressiveMask = (boid.stateFlags & BOID_FLAG_MUTATION_AGGRESSIVE) != 0u ? 1.0 : 0.0;
+                float  speedSq = dot(boidVel, boidVel);
+                float  aggressiveMask = (float)((boid.stateFlags & BOID_FLAG_MUTATION_AGGRESSIVE) >> 4u);
                 float  aggressiveSpeedScale = lerp(1.0, 2.0, aggressiveMask);
-                float  velocityAnim01 = saturate(speed / max(_VatSpeedReference, 0.001));
-                float  consumed01 = isConsumed ? saturate(boid.panic) : 0.0;
-                float  aliveMask = consumed01 < 0.999 ? 1.0 : 0.0;
-                float  aupPhase = boidPos.x * 13.37;
+                float  aggressiveAmplitudeScale = lerp(1.0, 2.0, aggressiveMask);
+                float  vatSpeed01 = RemapSquaredVelocityVat(speedSq, _VatSpeedReference);
+                float  consumedMask = (float)((boid.stateFlags & BOID_FLAG_CONSUMED) >> 3u);
+                float  consumed01 = saturate(boid.panic) * consumedMask;
+                float  aliveMask = 1.0 - step(0.999, consumed01);
+                float  aupPhase = boidAup.x * 13.37;
                 float  consumedScale = 1.0 - consumed01;
 
                 // ══════════════════════════════════════════════════
                 //  2. PER-INSTANCE RANDOM
                 // ══════════════════════════════════════════════════
 
-                float instRand = InstanceRandom(instanceID);
+                uint instanceHash = HashUInt(instanceID);
+                float instRand = HashToUnit01(instanceHash);
                 output.instanceRand = instRand;
+                float lodKeep = saturate(_LodDitherKeep01);
+                float lodVisibleMask = step(max(HashToUnit01(instanceHash ^ 0x5f356495u), 0.000001), lodKeep);
+                if (aliveMask * lodVisibleMask < 0.5)
+                {
+                    output.positionCS = float4(2.0, 2.0, 1.0, 1.0);
+                    output.normalWS = float3(0.0, 1.0, 0.0);
+                    output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                    output.aggressiveMask = aggressiveMask;
+                    output.colorBlend = saturate(-input.positionOS.y - _BellyBlend);
+                    return output;
+                }
 
                 // ══════════════════════════════════════════════════
                 //  3. TAIL WAG ANIMATION (vertex displacement)
@@ -417,8 +454,8 @@ Shader "Hecton8/BoidFishInstanced"
                 // Displacement formula:
                 //   phase = time × (baseFreq + speed × speedInfluence) 
                 //           + instanceID × phaseVariance
-                //   factor = pow(saturate(-localZ / meshLength), power)
-                //   dx = sin(phase + localZ × bodyWaveK) × amplitude × factor
+                //   factor = cheap polynomial tail mask
+                //   dx = cheap phase wave × amplitude × factor
                 //
                 // bodyWaveK creates an S-curve along the body
                 // (phase varies along Z = travelling wave).
@@ -429,28 +466,40 @@ Shader "Hecton8/BoidFishInstanced"
                 if (useVat)
                 {
                     float safeFrameCount = max(_VatFrameCount, 1.0);
-                    float vatMotionSpeed = max(_VatPlaybackSpeed, 0.0) * velocityAnim01 * aggressiveSpeedScale;
+                    float invFrameCount = rcp(safeFrameCount);
+                    float vertexU = (vertexID + 0.5) * rcp(max(_VatVertexCount, 1.0));
+                    float vatMotionSpeed = max(_VatPlaybackSpeed, 0.0) * vatSpeed01 * aggressiveSpeedScale;
                     float vatPhase = frac((_Time.y * vatMotionSpeed) + (float(instanceID) * max(_VatInstancePhaseScale, 0.0)) + aupPhase * 0.15915494);
                     float vatFrame = vatPhase * safeFrameCount;
                     float vatFrameFloor = floor(vatFrame);
-                    float vatFrameCeil = fmod(vatFrameFloor + 1.0, safeFrameCount);
+                    float vatFrameCeil = vatFrameFloor + 1.0;
+                    vatFrameCeil -= safeFrameCount * step(safeFrameCount, vatFrameCeil);
                     float vatBlend = frac(vatFrame);
-                    float3 vatPositionA = SampleVatPosition(vertexID, vatFrameFloor);
-                    float3 vatPositionB = SampleVatPosition(vertexID, vatFrameCeil);
-                    float3 vatNormalA = SampleVatNormal(vertexID, vatFrameFloor, localNormal);
-                    float3 vatNormalB = SampleVatNormal(vertexID, vatFrameCeil, localNormal);
-                    localPos = lerp(vatPositionA, vatPositionB, vatBlend);
-                    localNormal = normalize(lerp(vatNormalA, vatNormalB, vatBlend));
+                    float3 vatPositionA = SampleVatPosition(vertexU, vatFrameFloor, invFrameCount);
+                    float3 vatPositionB = SampleVatPosition(vertexU, vatFrameCeil, invFrameCount);
+                    float3 vatPosition = lerp(vatPositionA, vatPositionB, vatBlend);
+                    localPos += (vatPosition - localPos) * aggressiveAmplitudeScale;
+                    float vatNormalBlend = saturate(_VatNormalBlend);
+                    if (vatNormalBlend > 0.0001)
+                    {
+                        float3 vatNormalA = SampleVatNormal(vertexU, vatFrameFloor, invFrameCount, localNormal, vatNormalBlend);
+                        float3 vatNormalB = SampleVatNormal(vertexU, vatFrameCeil, invFrameCount, localNormal, vatNormalBlend);
+                        localNormal = FastNormalizeL1(lerp(vatNormalA, vatNormalB, vatBlend), input.normalOS);
+                    }
                 }
                 else
                 {
                     // Tail factor: 0 at head (+Z), 1 at tail tip (-Z)
                     // Using -Z so that negative Z (tail) gives positive factor
                     float tailFactor = saturate(-localPos.z);
-                    tailFactor = pow(tailFactor, _TailPower);
+                    float tailFactorSq = tailFactor * tailFactor;
+                    float tailFactorQuartic = tailFactorSq * tailFactorSq;
+                    float tailPowerLow = saturate(_TailPower - 1.0);
+                    float tailPowerHigh = saturate((_TailPower - 2.0) * 0.5);
+                    tailFactor = lerp(lerp(tailFactor, tailFactorSq, tailPowerLow), tailFactorQuartic, tailPowerHigh);
 
                     // Phase with body wave component
-                    float freqAdjusted = (_TailFrequency + speed * _TailSpeedInfluence) * velocityAnim01 * aggressiveSpeedScale;
+                    float freqAdjusted = (_TailFrequency + vatSpeed01 * _TailSpeedInfluence) * vatSpeed01 * aggressiveSpeedScale;
                     float phase = _Time.y * freqAdjusted 
                                 + aupPhase
                                 + float(instanceID) * _TailPhaseVariance;
@@ -458,32 +507,35 @@ Shader "Hecton8/BoidFishInstanced"
                     // Body wave: phase varies along Z for S-curve
                     // bodyWaveK = 2.0 creates ~1 full wave along body
                     float bodyWaveK = 2.0;
-                    float worldYPhase = (boidPos.y + localPos.y) * _TailWorldYPhase;
+                    float worldYPhase = (boidAup.y + localPos.y) * _TailWorldYPhase;
                     float wavePhase = phase + worldYPhase + localPos.z * bodyWaveK;
 
                     // Amplitude scales with speed (faster = smaller wag)
                     float parasiteMode = saturate(_ParasiteMode);
-                    float ampAdjusted = _TailAmplitude * (1.0 + 0.3 * instRand) * lerp(1.0, 0.28, parasiteMode);
+                    float ampAdjusted = _TailAmplitude * (1.0 + 0.3 * instRand) * lerp(1.0, 0.28, parasiteMode) * aggressiveAmplitudeScale;
                     
                     // Apply displacement to local X (horizontal wag)
-                    localPos.x += sin(wavePhase) * ampAdjusted * tailFactor;
+                    localPos.x += FastSignedTriangleWave(wavePhase) * ampAdjusted * tailFactor;
 
                     // Subtle Y displacement (vertical undulation, half amplitude)
-                    localPos.y += cos(wavePhase * 0.7) * ampAdjusted * 0.3 * tailFactor;
+                    localPos.y += FastSignedTriangleWave(wavePhase * 0.7 + 1.5707963) * ampAdjusted * 0.3 * tailFactor;
                 }
 
-                float finMask = saturate(abs(localPos.x) * 1.8 + saturate(localPos.y) * 0.25) * saturate(1.0 - abs(localPos.z) * 0.35);
-                float finStretch = 1.0 + ((InstanceRandom(instanceID ^ 0x6c8e9cf5u) - 0.5) * 2.0) * _FinStretchStrength * finMask;
-                localPos.x *= finStretch;
+                float geometricFinMask = saturate(abs(localPos.x) * 1.8 + saturate(localPos.y) * 0.25) * saturate(1.0 - abs(localPos.z) * 0.35);
+                float finMask = saturate(input.color.r) * geometricFinMask;
+                float finStretch = ((HashToUnit01(instanceHash ^ 0x6c8e9cf5u) - 0.5) * 2.0) * _FinStretchStrength * finMask;
+                localPos += localNormal * finStretch;
 
                 // ══════════════════════════════════════════════════
                 //  4. SCALE
                 // ══════════════════════════════════════════════════
 
                 // Per-instance size variation (±15%)
-                float aupScaleJitter = 1.0 + frac(boidPos.x) * 0.2;
+                float3 aupScaleJitter = 1.0 + frac(boidAup.xyz) * float3(0.20, 0.08, 0.14);
                 float scaleVariation = 0.95 + instRand * 0.1;
                 localPos *= _FishScale * scaleVariation * aupScaleJitter * consumedScale;
+                float lodMorph = lodKeep * lodKeep * (3.0 - 2.0 * lodKeep);
+                localPos *= lodMorph;
 
                 // ══════════════════════════════════════════════════
                 //  5. ROTATION (LookRotation from velocity)
@@ -499,9 +551,8 @@ Shader "Hecton8/BoidFishInstanced"
                 // ══════════════════════════════════════════════════
 
                 output.positionCS = TransformWorldToHClip(worldPos);
-                output.normalWS   = normalize(worldNrm);
+                output.normalWS   = worldNrm;
                 output.uv         = TRANSFORM_TEX(input.uv, _BaseMap);
-                output.aliveMask  = aliveMask;
                 output.aggressiveMask = aggressiveMask;
 
                 // Belly blend: vertices below local Y center → belly color
@@ -516,8 +567,7 @@ Shader "Hecton8/BoidFishInstanced"
 
             half4 frag(Varyings input) : SV_Target
             {
-                clip(input.aliveMask - 0.5);
-                clip(_LodDitherKeep01 - ResolveBlueNoiseDither(input.positionCS));
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 // ── Texture sample ──
                 half4 texColor = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
 
@@ -538,7 +588,7 @@ Shader "Hecton8/BoidFishInstanced"
                 half NdotUp = dot(input.normalWS, half3(0, 1, 0)) * 0.5 + 0.5;
                 
                 // Directional hint (fake sun from slightly angled direction)
-                half3 fakeLightDir = normalize(half3(0.3, 0.8, 0.2));
+                half3 fakeLightDir = half3(0.3419h, 0.9117h, 0.2279h);
                 half NdotL = saturate(dot(input.normalWS, fakeLightDir));
                 
                 // Combine: ambient + directional
@@ -554,25 +604,47 @@ Shader "Hecton8/BoidFishInstanced"
                 half3 waterColor = half3(0.1, 0.2, 0.35);
                 color = lerp(color, waterColor, depthFade * 0.6);
 
+                half aggressiveMask = saturate(input.aggressiveMask);
                 half nightFactor = saturate(_HectonNightFactor * _BiolumNightResponse);
-                half biolumPhase = (_Time.y * _SargassumBiolumPhaseMultiplier) + input.instanceRand * 6.28318h + input.uv.y * 2.1h + depth * 0.012h;
-                half biolumPulse = 1.0h + sin(biolumPhase) * _BiolumPulseAmplitude;
-                half oceanBiolumInfluence = saturate(_HectonOceanBiolumStrength);
-                half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
-                half globalOceanPanic = saturate((half)_GlobalOceanPanic);
-                biolumColor = lerp(biolumColor, (half3)_GlobalOceanPanicColor.rgb, globalOceanPanic);
-                biolumColor = lerp(biolumColor, half3(1.0h, 0.08h, 0.03h), saturate(input.aggressiveMask));
-                half spotNoise = ResolveBiolumSpotNoise(input.uv * max(_BiolumSpotScale, 0.001) + input.instanceRand * half2(13.17h, 31.73h));
-                half spotMask = step((half)_BiolumSpotThreshold, spotNoise);
-                half biolumMask = saturate(0.28h + (1.0h - input.colorBlend) * 0.34h + (1.0h - lighting) * 0.22h);
-                half spottedBiolumMask = saturate(biolumMask + spotMask * 0.75h);
-                color += biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.6h + globalOceanPanic * 0.45h) * nightFactor * biolumPulse * spottedBiolumMask);
-                color += half3(1.0h, 0.05h, 0.02h) * (_AggressiveGlowStrength * saturate(input.aggressiveMask) * spotMask * nightFactor);
+                half biolumBudget = nightFactor * max((half)_BiolumStrength, (half)_AggressiveGlowStrength * aggressiveMask);
+                half emissiveBudget = max(biolumBudget, parasiteMode);
+                if (emissiveBudget > 0.0001h)
+                {
+                    if (biolumBudget > 0.0001h)
+                    {
+                        half biolumPhase = (_Time.y * _SargassumBiolumPhaseMultiplier) + input.instanceRand * 6.28318h + input.uv.y * 2.1h + depth * 0.012h;
+                        half biolumPulse = 1.0h + (FastTrianglePulse(biolumPhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
+                        half oceanBiolumInfluence = saturate(_HectonOceanBiolumStrength);
+                        half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
+                        half globalOceanPanic = saturate((half)_GlobalOceanPanic);
+                        biolumColor = lerp(biolumColor, (half3)_GlobalOceanPanicColor.rgb, globalOceanPanic);
+                        biolumColor = lerp(biolumColor, half3(1.0h, 0.08h, 0.03h), aggressiveMask);
+                        half biolumMask = saturate(0.28h + (1.0h - input.colorBlend) * 0.34h + (1.0h - lighting) * 0.22h);
+                        half spotNoise = ResolveBiolumSpotNoise(input.uv * max(_BiolumSpotScale, 0.001) + input.instanceRand * half2(13.17h, 31.73h));
+                        half spotThreshold = saturate((half)_BiolumSpotThreshold + (input.instanceRand - 0.5h) * 0.12h);
+                        half spotMask = step(spotThreshold, spotNoise);
+                        half spottedBiolumMask = saturate(biolumMask + spotMask * 0.75h);
+                        color += biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.6h + globalOceanPanic * 0.45h) * nightFactor * biolumPulse * spottedBiolumMask);
+                        color += half3(1.0h, 0.05h, 0.02h) * (_AggressiveGlowStrength * aggressiveMask * spotMask * nightFactor);
+                    }
 
-                half parasitePulse = 1.0h + sin((_Time.y * _SargassumBiolumPhaseMultiplier * 1.65h) + input.instanceRand * 9.7h + input.uv.x * 12.0h) * 0.35h;
-                half parasiteMask = saturate(0.35h + (1.0h - abs(input.normalWS.y)) * 0.45h + input.uv.x * 0.2h);
-                color = lerp(color, color * lerp(1.0h, 0.82h, parasiteMode), parasiteMode);
-                color += _ParasiteGlowColor.rgb * (_ParasiteGlowStrength * parasiteMode * parasiteMask * parasitePulse * lerp(0.55h, 1.15h, parasiteAggression));
+                    if (parasiteMode > 0.0001h)
+                    {
+                        half parasitePhase = (_Time.y * _SargassumBiolumPhaseMultiplier * 1.65h) + input.instanceRand * 9.7h + input.uv.x * 12.0h;
+                        half parasitePulse = 1.0h + (FastTrianglePulse(parasitePhase) * 2.0h - 1.0h) * 0.35h;
+                        half parasiteMask = saturate(0.35h + (1.0h - abs(input.normalWS.y)) * 0.45h + input.uv.x * 0.2h);
+                        color = lerp(color, color * lerp(1.0h, 0.82h, parasiteMode), parasiteMode);
+                        color += _ParasiteGlowColor.rgb * (_ParasiteGlowStrength * parasiteMode * parasiteMask * parasitePulse * lerp(0.55h, 1.15h, parasiteAggression));
+                    }
+                }
+
+                half lodKeep = saturate((half)_LodDitherKeep01);
+                if (lodKeep < 0.999h)
+                {
+                    half lodDither = (half)ResolveBlueNoiseDither(input.positionCS);
+                    half lodNoiseAmp = lodKeep * (1.0h - lodKeep);
+                    color *= saturate(lodKeep + (lodDither - 0.5h) * lodNoiseAmp);
+                }
 
                 return half4(color, 1.0);
             }

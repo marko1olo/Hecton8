@@ -1,3 +1,4 @@
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.UI
@@ -8,9 +9,11 @@ namespace Hecton8.UI
     internal static class CharBufferPool
     {
         private const int SlotCount = 16;
-        private const int SlotLength = 512;
+        internal const int RequiredVrTextCapacity = 256;
+        private const int SlotLength = RequiredVrTextCapacity;
+        private const uint AllSlotsMask = (1u << SlotCount) - 1u;
 
-        // COLD ALLOC: char[16][] — transient HUD text staging pool — owner: CharBufferPool
+        // COLD ALLOC: char[16][256] — transient VR HUD text staging pool — owner: CharBufferPool
         private static readonly char[][] s_slots =
         {
             new char[SlotLength], new char[SlotLength], new char[SlotLength], new char[SlotLength],
@@ -19,9 +22,9 @@ namespace Hecton8.UI
             new char[SlotLength], new char[SlotLength], new char[SlotLength], new char[SlotLength]
         };
 
-        private static ushort _slotMask = 0xFFFF;
+        private static uint _slotMask = AllSlotsMask;
 
-        internal static int AvailableSlotCount => CountAvailableSlots(_slotMask);
+        internal static int AvailableSlotCount => (int)math.countbits(_slotMask & AllSlotsMask);
         internal static int SlotCapacity => SlotLength;
 
         internal readonly struct Lease
@@ -37,32 +40,47 @@ namespace Hecton8.UI
             public bool IsValid => SlotIndex >= 0 && Buffer != null;
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _slotMask = AllSlotsMask;
+            Prewarm();
+        }
+
         public static void Prewarm()
         {
             for (int slotIndex = 0; slotIndex < SlotCount; slotIndex++)
             {
                 char[] buffer = s_slots[slotIndex];
-                if (buffer.Length > 0)
-                    buffer[0] = '\0';
+                if (buffer.Length < RequiredVrTextCapacity)
+                    continue;
+
+                buffer[0] = '\0';
+                buffer[RequiredVrTextCapacity - 1] = '\0';
             }
         }
 
         public static bool TryAcquire(out Lease lease)
         {
-            if (_slotMask == 0)
+            uint availableMask = _slotMask & AllSlotsMask;
+            if (availableMask == 0u)
             {
+                _slotMask = 0u;
                 lease = default;
                 return false;
             }
 
-            int slotIndex = FindFirstFreeSlot(_slotMask);
+            if (availableMask != _slotMask)
+                _slotMask = availableMask;
+
+            int slotIndex = (int)math.tzcnt(availableMask);
             if ((uint)slotIndex >= SlotCount)
             {
                 lease = default;
                 return false;
             }
 
-            _slotMask = (ushort)(_slotMask & ~(1 << slotIndex));
+            _slotMask = availableMask & ~(1u << slotIndex);
             lease = new Lease(slotIndex, s_slots[slotIndex]);
             return true;
         }
@@ -72,30 +90,14 @@ namespace Hecton8.UI
             if (!lease.IsValid || (uint)lease.SlotIndex >= SlotCount)
                 return;
 
-            _slotMask = (ushort)(_slotMask | (1 << lease.SlotIndex));
-        }
+            if (!ReferenceEquals(lease.Buffer, s_slots[lease.SlotIndex]))
+                return;
 
-        private static int FindFirstFreeSlot(ushort slotMask)
-        {
-            for (int i = 0; i < SlotCount; i++)
-            {
-                if ((slotMask & (1 << i)) != 0)
-                    return i;
-            }
+            uint slotBit = 1u << lease.SlotIndex;
+            if ((_slotMask & slotBit) != 0u)
+                return;
 
-            return -1;
-        }
-
-        private static int CountAvailableSlots(ushort slotMask)
-        {
-            int count = 0;
-            for (int i = 0; i < SlotCount; i++)
-            {
-                if ((slotMask & (1 << i)) != 0)
-                    count++;
-            }
-
-            return count;
+            _slotMask = (_slotMask | slotBit) & AllSlotsMask;
         }
     }
 }

@@ -17,7 +17,9 @@ namespace Hecton8.World
         public bool HasConfiguredProfile(WorldProceduralPattern pattern)
         {
             EnsureLookup();
-            return _lookup != null && _lookup.ContainsKey(pattern) && _lookup[pattern] != null;
+            return _lookup != null &&
+                   _lookup.TryGetValue(pattern, out WorldProceduralPatternProfile profile) &&
+                   profile != null;
         }
 
         public WorldProceduralPatternProfile GetProfile(WorldProceduralPattern pattern, out bool usedFallback)
@@ -48,11 +50,12 @@ namespace Hecton8.World
             if (_lookup != null)
                 return;
 
-            _lookup = new Dictionary<WorldProceduralPattern, WorldProceduralPatternProfile>();
-            if (profiles == null)
+            int profileCount = profiles != null ? profiles.Length : 0;
+            _lookup = new Dictionary<WorldProceduralPattern, WorldProceduralPatternProfile>(profileCount);
+            if (profileCount <= 0)
                 return;
 
-            for (int i = 0; i < profiles.Length; i++)
+            for (int i = 0; i < profileCount; i++)
             {
                 WorldProceduralPatternProfile profile = profiles[i];
                 if (profile == null)

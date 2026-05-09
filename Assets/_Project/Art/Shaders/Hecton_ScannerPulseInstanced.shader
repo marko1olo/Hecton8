@@ -30,6 +30,8 @@ Shader "HECTON/Scanner/PulseInstanced"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -51,6 +53,7 @@ Shader "HECTON/Scanner/PulseInstanced"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
@@ -58,6 +61,7 @@ Shader "HECTON/Scanner/PulseInstanced"
             {
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.uv = input.uv;
@@ -71,25 +75,45 @@ Shader "HECTON/Scanner/PulseInstanced"
                 return frac(p.x * p.y);
             }
 
+            float TemporalFlicker01(float timeSeconds, float speed, float phaseOffset)
+            {
+                return frac(sin(timeSeconds * max(speed, 0.001) + phaseOffset) * 43758.5453);
+            }
+
+            float2 ApproximateUnitDirectionDiamond(float2 value)
+            {
+                float2 absValue = abs(value);
+                float invRadius = rcp(max(absValue.x + absValue.y, 0.0001));
+                return value * invRadius;
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 centered = input.uv * 2.0 - 1.0;
-                float radius = length(centered);
-                float outer = 1.0 - smoothstep(1.0 - _RingThickness, 1.0, radius);
-                float inner = smoothstep(max(0.0, 1.0 - _RingThickness * 2.0), 1.0 - _RingThickness, radius);
-                float band = floor(radius * 42.0 + _Time.y * 18.0);
+                float radiusSq = dot(centered, centered);
+                float outerStart = 1.0 - _RingThickness;
+                float innerStart = max(0.0, 1.0 - _RingThickness * 2.0);
+                outerStart *= outerStart;
+                innerStart *= innerStart;
+                float outer = 1.0 - smoothstep(outerStart, 1.0, radiusSq);
+                float inner = smoothstep(innerStart, outerStart, radiusSq);
+                float radial01 = saturate(radiusSq);
+                float band = floor(radial01 * 42.0 + _Time.y * 18.0);
                 float noise = Hash21(float2(band, floor(centered.x * 19.0 + centered.y * 23.0)));
-                float sweep = smoothstep(0.92, 1.0, frac(radius * 6.0 - _Time.y * 1.7));
+                float sweep = smoothstep(0.92, 1.0, frac(radial01 * 6.0 - _Time.y * 1.7));
                 float analogJitter = lerp(1.0, 0.72 + noise * 0.56, saturate(_AnalogJitterStrength + sweep * 0.08));
                 float chromaBias = (noise - 0.5) * _AnalogJitterStrength;
                 float alpha = saturate(outer * inner * analogJitter) * _BaseColor.a;
-                float2 radialDir = centered * rsqrt(max(dot(centered, centered), 0.0001));
+                float2 radialDir = ApproximateUnitDirectionDiamond(centered);
                 float sweepDot = dot(radialDir, float2(_SinTime.y, _CosTime.y));
                 float sweepLine = saturate(1.0 - abs(sweepDot - 0.91) * 16.0);
                 sweepLine = sweepLine * sweepLine * (3.0 - 2.0 * sweepLine);
-                float sweepFlicker = Hash21(float2(floor(_Time.y * 24.0), band + 91.0));
+                float sweepFlicker = TemporalFlicker01(_Time.y, 24.0, band * 0.173 + noise * 5.13);
                 float sweepGlow = sweepLine * sweepFlicker * _SweepInterferenceStrength;
                 alpha = saturate(alpha + sweepGlow * outer * _BaseColor.a);
+                clip(alpha - 0.0005);
                 float3 color = _BaseColor.rgb + float3(chromaBias * 0.15, chromaBias * 0.05, -chromaBias * 0.08);
                 color += _BaseColor.rgb * sweepGlow * 0.6;
                 return half4(saturate(color) * alpha, alpha);
@@ -97,4 +121,5 @@ Shader "HECTON/Scanner/PulseInstanced"
             ENDHLSL
         }
     }
+    FallBack Off
 }

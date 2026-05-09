@@ -39,6 +39,8 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
             #pragma target 3.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -56,12 +58,14 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
             };
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 half3 normalWS : TEXCOORD1;
@@ -81,9 +85,22 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
                 return (half)frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
+            half FastGhostFresnel(half value, half power)
+            {
+                half v = saturate(value);
+                half v2 = v * v;
+                half v4 = v2 * v2;
+                half v8 = v4 * v4;
+                half lowPowerBlend = saturate(2.0h - power);
+                half highPowerBlend = saturate((power - 2.0h) * 0.16666667h);
+                return lerp(lerp(v2, v8, highPowerBlend), v, lowPowerBlend);
+            }
+
             Varyings Vert(Attributes input)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
                 output.positionCS = positionInputs.positionCS;
@@ -95,9 +112,10 @@ Shader "Hecton8/Environment/Hecton_VoxelBakeGhost"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 half3 normalWS = SafeNormalize(input.normalWS);
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
-                half fresnel = pow(saturate(1.0h - dot(normalWS, viewDirWS)), _FresnelPower);
+                half fresnel = FastGhostFresnel(1.0h - dot(normalWS, viewDirWS), _FresnelPower);
 
                 float instabilitySeed = Hash31(
                     input.positionWS * max((float)_InstabilityScale, 0.001) +

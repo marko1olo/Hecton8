@@ -69,7 +69,6 @@ namespace Hecton8.UI
         {
             LocalizationEvents.RegisterLanguageListener(this);
             QueueApplyMirroring();
-            TryRegisterForTick();
         }
 
         private void OnDisable()
@@ -107,10 +106,15 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             if (!_applyMirroringPending)
+            {
+                TryUnregisterFromTick();
                 return;
+            }
 
             _applyMirroringPending = false;
             ApplyMirroring();
+            if (!_applyMirroringPending)
+                TryUnregisterFromTick();
         }
 
         private void TryRegisterForTick()
@@ -188,6 +192,7 @@ namespace Hecton8.UI
         private void QueueApplyMirroring()
         {
             _applyMirroringPending = true;
+            TryRegisterForTick();
         }
 
         private static void MarkLayoutForRebuildSafe(RectTransform rectTransform)

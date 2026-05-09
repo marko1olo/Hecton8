@@ -1,5 +1,6 @@
 using UnityEngine;
 using Hecton8.Core;
+using Unity.Mathematics;
 
 namespace Hecton8.UI
 {
@@ -37,7 +38,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _rectTransform = GetComponent<RectTransform>();
+            TryGetComponent(out _rectTransform);
             if (_rectTransform != null)
                 _originalPosition = _rectTransform.anchoredPosition;
         }
@@ -67,15 +68,19 @@ namespace Hecton8.UI
             if (!_isShaking)
                 return;
 
-            _shakeTimer += dt;
-            float t = Mathf.Clamp01(_shakeTimer / shakeDuration);
-            float intensity = shakeCurve.Evaluate(t) * shakeIntensity;
+            float safeDeltaTime = math.max(0f, dt);
+            float safeDuration = math.max(0.0001f, shakeDuration);
+            _shakeTimer += safeDeltaTime;
+            float t = math.saturate(_shakeTimer / safeDuration);
+            float envelope = shakeCurve != null ? shakeCurve.Evaluate(t) : 1f - t;
+            float intensity = envelope * shakeIntensity;
 
             if (_rectTransform != null)
             {
+                float phase = (_shakeTimer * 97.31f) + (t * 13.17f);
                 Vector2 offset = new Vector2(
-                    Random.Range(-intensity, intensity),
-                    Random.Range(-intensity, intensity));
+                    CheapSignedNoise(phase, 0.113f) * intensity,
+                    CheapSignedNoise(phase, 0.719f) * intensity);
                 _rectTransform.anchoredPosition = _originalPosition + offset;
             }
 
@@ -125,6 +130,14 @@ namespace Hecton8.UI
                 _rectTransform.anchoredPosition = _originalPosition;
         }
 
+        private static float CheapSignedNoise(float value, float seed)
+        {
+            float h = math.frac((value + seed) * 0.1031f);
+            h *= h + 33.33f;
+            h *= h + h;
+            return (math.frac(h) * 2f) - 1f;
+        }
+
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying)
@@ -133,8 +146,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void Unregister()

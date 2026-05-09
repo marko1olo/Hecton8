@@ -4,7 +4,6 @@ using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 namespace Hecton8.Audio
 {
@@ -14,6 +13,8 @@ namespace Hecton8.Audio
     [DisallowMultipleComponent]
     public sealed class DeepPsychosisController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
+        private const int DependencyRetryFrameInterval = 30;
+
         [Header("── Clip Pools ──────────────────")]
         [Tooltip("3D whisper cues emitted around the player during deep psychosis windows.")]
         [SerializeField] private AudioClip[] whisperClips;
@@ -63,14 +64,23 @@ namespace Hecton8.Audio
         private bool _registeredSlowTick;
         private HectonSurvivalSystem _survivalSystem;
         private Transform _playerTransform;
+        private Transform _dependencyPlayerTransform;
+        private HectonPlayerMovement _playerMovement;
+        private bool _movementLookupAttempted;
+        private bool _survivalLookupAttempted;
+        private int _nextDependencyRetryFrame;
         private float _psychosisIntensity01;
         private float _cueTimerSeconds;
+        private uint _psychosisRandomState;
 
         private void Awake()
         {
             _playerTransform = transform;
             TryResolveDependencies();
             _cueTimerSeconds = cueIntervalMaxSeconds;
+            _psychosisRandomState = unchecked(((uint)EntityId.ToULong(GetEntityId()) * 747796405u) ^ 0x9E3779B9u);
+            if (_psychosisRandomState == 0u)
+                _psychosisRandomState = 0xA341316Cu;
         }
 
         private void OnEnable()
@@ -147,16 +157,69 @@ namespace Hecton8.Audio
 
         private void TryResolveDependencies()
         {
-            if (_playerTransform == null && SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                _playerTransform = playerTransform;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform resolvedPlayerTransform = playerContext != null && playerContext.PlayerTransform != null
+                ? playerContext.PlayerTransform
+                : _playerTransform;
 
-            if (_survivalSystem == null)
+            if (resolvedPlayerTransform == null &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform bootstrapPlayerTransform))
             {
+                resolvedPlayerTransform = bootstrapPlayerTransform;
+            }
+
+            if (!ReferenceEquals(_dependencyPlayerTransform, resolvedPlayerTransform))
+            {
+                _dependencyPlayerTransform = resolvedPlayerTransform;
+                _playerTransform = resolvedPlayerTransform;
+                _playerMovement = playerContext != null &&
+                                  ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform)
+                    ? playerContext.PlayerMovement
+                    : null;
+                _survivalSystem = null;
+                _movementLookupAttempted = _playerMovement != null;
+                _survivalLookupAttempted = false;
+                _nextDependencyRetryFrame = 0;
+            }
+
+            if ((_playerMovement == null && _movementLookupAttempted) ||
+                (_survivalSystem == null && _survivalLookupAttempted))
+            {
+                if (Time.frameCount >= _nextDependencyRetryFrame)
+                {
+                    _movementLookupAttempted = _playerMovement != null;
+                    _survivalLookupAttempted = _survivalSystem != null;
+                }
+            }
+
+            if (_playerMovement == null &&
+                playerContext != null &&
+                ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform) &&
+                playerContext.PlayerMovement != null)
+            {
+                _playerMovement = playerContext.PlayerMovement;
+                _movementLookupAttempted = true;
+            }
+
+            if (_playerMovement == null && !_movementLookupAttempted && _playerTransform != null)
+            {
+                _movementLookupAttempted = true;
+                _playerTransform.TryGetComponent(out _playerMovement);
+                if (_playerMovement == null)
+                    _nextDependencyRetryFrame = Time.frameCount + DependencyRetryFrameInterval;
+            }
+
+            if (_survivalSystem == null && !_survivalLookupAttempted)
+            {
+                _survivalLookupAttempted = true;
                 if (_playerTransform != null)
                     _playerTransform.TryGetComponent(out _survivalSystem);
 
                 if (_survivalSystem == null)
                     TryGetComponent(out _survivalSystem);
+
+                if (_survivalSystem == null)
+                    _nextDependencyRetryFrame = Time.frameCount + DependencyRetryFrameInterval;
             }
         }
 
@@ -206,24 +269,52 @@ namespace Hecton8.Audio
                 return;
             }
 
-            Vector3 origin = _playerTransform.position;
+            if (!TryResolvePlayerAupRuntimePosition(out Vector3 origin))
+                return;
+
             float radius = math.lerp(cueRadiusMin, cueRadiusMax, _psychosisIntensity01);
-            Vector3 offset = new Vector3(
-                UnityEngine.Random.Range(-1f, 1f),
-                UnityEngine.Random.Range(-0.35f, 0.35f),
-                UnityEngine.Random.Range(-1f, 1f));
+            float3 offset = new float3(
+                NextRandomRange(-1f, 1f),
+                NextRandomRange(-0.35f, 0.35f),
+                NextRandomRange(-1f, 1f));
 
-            if (offset.sqrMagnitude < 0.01f)
-                offset = Vector3.forward;
+            float offsetLengthSq = math.lengthsq(offset);
+            if (offsetLengthSq < 0.01f)
+            {
+                offset = new float3(0f, 0f, 1f);
+            }
+            else
+            {
+                offset *= math.rsqrt(offsetLengthSq);
+            }
 
-            offset.Normalize();
-            Vector3 cuePosition = origin + offset * radius;
+            Vector3 cuePosition = origin + new Vector3(offset.x, offset.y, offset.z) * radius;
             float volume = math.lerp(cueVolumeMin, cueVolumeMax, _psychosisIntensity01);
-            float pitch = UnityEngine.Random.Range(0.88f, 1.08f);
+            float pitch = NextRandomRange(0.88f, 1.08f);
             audioManager.PlayAtPoint(clip, cuePosition, volume, pitch, audioManager.AmbientGroup);
 
-            if (_psychosisIntensity01 >= 0.55f && UnityEngine.Random.value <= helmetWhisperChance)
+            if (_psychosisIntensity01 >= 0.55f && NextRandom01() <= helmetWhisperChance)
                 GlobalRegistry.AcousticZone?.PlayMadnessWhisperCue();
+        }
+
+        private bool TryResolvePlayerAupRuntimePosition(out Vector3 runtimePosition)
+        {
+            HectonPlayerMovement movement = _playerMovement;
+            if (movement == null)
+            {
+                TryResolveDependencies();
+                movement = _playerMovement;
+            }
+
+            if (movement == null)
+            {
+                runtimePosition = default;
+                return false;
+            }
+
+            float3 runtime = movement.CurrentAup.ToRuntimeFloat3();
+            runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return true;
         }
 
         private AudioClip SelectCueClip()
@@ -237,13 +328,13 @@ namespace Hecton8.Audio
             return SelectRandomClip(fallbackPool);
         }
 
-        private static AudioClip SelectRandomClip(AudioClip[] clips)
+        private AudioClip SelectRandomClip(AudioClip[] clips)
         {
             if (clips == null || clips.Length == 0)
                 return null;
 
             int clipCount = clips.Length;
-            int startIndex = UnityEngine.Random.Range(0, clipCount);
+            int startIndex = NextRandomRangeInt(0, clipCount);
             for (int i = 0; i < clipCount; i++)
             {
                 AudioClip clip = clips[(startIndex + i) % clipCount];
@@ -252,6 +343,32 @@ namespace Hecton8.Audio
             }
 
             return null;
+        }
+
+        private float NextRandomRange(float minInclusive, float maxInclusive)
+        {
+            return math.lerp(minInclusive, maxInclusive, NextRandom01());
+        }
+
+        private int NextRandomRangeInt(int minInclusive, int maxExclusive)
+        {
+            int span = math.max(1, maxExclusive - minInclusive);
+            return minInclusive + (int)(NextRandomUInt() % (uint)span);
+        }
+
+        private float NextRandom01()
+        {
+            return (NextRandomUInt() & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private uint NextRandomUInt()
+        {
+            uint state = _psychosisRandomState != 0u ? _psychosisRandomState : 0xA341316Cu;
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            _psychosisRandomState = state;
+            return state;
         }
     }
 }

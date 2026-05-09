@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -17,13 +19,42 @@ namespace Hecton8.Gameplay
             public readonly string Title;
             public readonly string Category;
             public readonly string Summary;
+            public readonly uint IdHash;
+            public readonly uint TitleHash;
+            public readonly uint CategoryHash;
+            public readonly uint SummaryHash;
 
             public ScanEntrySnapshot(string id, string title, string category, string summary)
+                : this(
+                    id,
+                    title,
+                    category,
+                    summary,
+                    ScanEvents.ComputeEntryHash(id),
+                    ScanLogSystem.ComputeContentHash(title),
+                    ScanLogSystem.ComputeContentHash(category),
+                    ScanLogSystem.ComputeContentHash(summary))
+            {
+            }
+
+            public ScanEntrySnapshot(
+                string id,
+                string title,
+                string category,
+                string summary,
+                uint idHash,
+                uint titleHash,
+                uint categoryHash,
+                uint summaryHash)
             {
                 Id = id;
                 Title = title;
                 Category = category;
                 Summary = summary;
+                IdHash = idHash;
+                TitleHash = titleHash;
+                CategoryHash = categoryHash;
+                SummaryHash = summaryHash;
             }
         }
 
@@ -33,6 +64,10 @@ namespace Hecton8.Gameplay
             public string title;
             public string category;
             public string summary;
+            public uint idHash;
+            public uint titleHash;
+            public uint categoryHash;
+            public uint summaryHash;
         }
 
         private const string GenericResourceEntryId = "scan.resource_node";
@@ -40,52 +75,55 @@ namespace Hecton8.Gameplay
         private const string GenericResourceCategory = "Resource";
         private const string GenericResourceSummary =
             "Hydroacoustic pulse returned a mineral-density signature. Mark for salvage or extraction.";
+        private const string UnknownTitle = "UNKNOWN CONTACT";
+        private const string UnknownCategory = "Unknown";
+        private const string DefaultSummary = "Scan profile archived.";
+        private const string ScanArchivedMessage = "SCAN ARCHIVED";
+
+        private static readonly uint GenericResourceEntryHash = ScanEvents.ComputeEntryHash(GenericResourceEntryId);
+        private static readonly uint GenericResourceTitleHash = ComputeContentHash(GenericResourceTitle);
+        private static readonly uint GenericResourceCategoryHash = ComputeContentHash(GenericResourceCategory);
+        private static readonly uint GenericResourceSummaryHash = ComputeContentHash(GenericResourceSummary);
 
         [SerializeField] private int maxTrackedEntries = 128;
         [SerializeField] private int maxRecentEntries = 6;
 
-        private readonly Dictionary<string, int> _entryIndexById = new Dictionary<string, int>(StringComparer.Ordinal);
+        private readonly Dictionary<uint, int> _entryIndexByHash = new Dictionary<uint, int>(128);
         private readonly List<ScanEntryRecord> _entries = new List<ScanEntryRecord>(64);
-        private readonly List<string> _recentIds = new List<string>(8);
+        private readonly List<uint> _recentEntryHashes = new List<uint>(8);
         private bool _saveRegistered;
         private bool _serviceRegistered;
-        private ScanEntrySnapshot[] _recentBuffer;
-        private HUDNotification _hudNotification;
+        private uint _scanArchivedNotificationHash;
 
-        public static ScanLogSystem Instance { get; private set; }
+        public static ScanLogSystem Instance => GlobalRegistry.ScanLog;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            Instance = null;
         }
 
         public int SavePriority => 35;
         public int LoadPriority => 35;
         public int EntryCount => _entries.Count;
-        public int RecentCount => _recentIds.Count;
+        public int RecentCount => _recentEntryHashes.Count;
 
         public event Action ScanLogChanged;
         public event Action<ScanEntrySnapshot> EntryUnlocked;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            ScanLogSystem registered = GlobalRegistry.ScanLog;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            Instance = this;
-            EnsureBuffers();
-            AutoResolveHud();
+            _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage);
         }
 
         private void OnEnable()
         {
-            if (Instance == null)
-                Instance = this;
-
             TryRegisterService();
             TryRegisterSaveParticipant();
             ScanEvents.Register(this);
@@ -106,9 +144,6 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregisterService();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         private void TryRegisterService()
@@ -133,21 +168,21 @@ namespace Hecton8.Gameplay
 
         public int CopyRecentEntries(ScanEntrySnapshot[] buffer)
         {
-            if (buffer == null || buffer.Length == 0 || _recentIds.Count == 0)
+            if (buffer == null || buffer.Length == 0 || _recentEntryHashes.Count == 0)
                 return 0;
 
-            int count = Mathf.Min(buffer.Length, _recentIds.Count);
+            int count = math.min(buffer.Length, _recentEntryHashes.Count);
             for (int i = 0; i < count; i++)
             {
-                string id = _recentIds[i];
-                if (!_entryIndexById.TryGetValue(id, out int entryIndex) || entryIndex < 0 || entryIndex >= _entries.Count)
+                uint entryHash = _recentEntryHashes[i];
+                if (!_entryIndexByHash.TryGetValue(entryHash, out int entryIndex) || entryIndex < 0 || entryIndex >= _entries.Count)
                 {
                     buffer[i] = default;
                     continue;
                 }
 
                 ScanEntryRecord entry = _entries[entryIndex];
-                buffer[i] = new ScanEntrySnapshot(entry.id, entry.title, entry.category, entry.summary);
+                buffer[i] = ToSnapshot(in entry);
             }
 
             return count;
@@ -155,21 +190,21 @@ namespace Hecton8.Gameplay
 
         public bool TryGetLatestEntry(out ScanEntrySnapshot entry)
         {
-            if (_recentIds.Count <= 0)
+            if (_recentEntryHashes.Count <= 0)
             {
                 entry = default;
                 return false;
             }
 
-            string id = _recentIds[0];
-            if (!_entryIndexById.TryGetValue(id, out int entryIndex) || entryIndex < 0 || entryIndex >= _entries.Count)
+            uint entryHash = _recentEntryHashes[0];
+            if (!_entryIndexByHash.TryGetValue(entryHash, out int entryIndex) || entryIndex < 0 || entryIndex >= _entries.Count)
             {
                 entry = default;
                 return false;
             }
 
             ScanEntryRecord record = _entries[entryIndex];
-            entry = new ScanEntrySnapshot(record.id, record.title, record.category, record.summary);
+            entry = ToSnapshot(in record);
             return true;
         }
 
@@ -198,14 +233,24 @@ namespace Hecton8.Gameplay
             _saveRegistered = false;
         }
 
-        public bool ContainsEntry(string entryId)
+        public bool ContainsEntry(uint entryHash)
         {
-            return !string.IsNullOrWhiteSpace(entryId) && _entryIndexById.ContainsKey(entryId);
+            return entryHash != 0u && _entryIndexByHash.ContainsKey(entryHash);
         }
 
         public void ArchiveEntry(string entryId, string title, string category, string summary, bool markRecent = true)
         {
-            TryAddOrUpdateEntry(entryId, title, category, summary, markRecent, raiseEvents: true);
+            TryAddOrUpdateEntry(
+                ScanEvents.ComputeEntryHash(entryId),
+                entryId,
+                title,
+                category,
+                summary,
+                titleHash: 0u,
+                categoryHash: 0u,
+                summaryHash: 0u,
+                markRecent: markRecent,
+                raiseEvents: true);
         }
 
         public void PopulateSaveData(SaveData data)
@@ -214,8 +259,7 @@ namespace Hecton8.Gameplay
                 return;
 
             data.scanLog.EnsureCapacity();
-            data.scanLog.entryCount = Mathf.Min(_entries.Count, ScanLogDTO.MaxEntries);
-            data.scanLog.recentCount = Mathf.Min(_recentIds.Count, ScanLogDTO.MaxRecentEntries);
+            data.scanLog.entryCount = math.min(_entries.Count, ScanLogDTO.MaxEntries);
 
             for (int i = 0; i < data.scanLog.entryCount; i++)
             {
@@ -232,10 +276,19 @@ namespace Hecton8.Gameplay
             for (int i = data.scanLog.entryCount; i < ScanLogDTO.MaxEntries; i++)
                 data.scanLog.entries[i] = default;
 
-            for (int i = 0; i < data.scanLog.recentCount; i++)
-                data.scanLog.recentEntryIds[i] = _recentIds[i];
+            int recentCount = 0;
+            for (int i = 0; i < _recentEntryHashes.Count && recentCount < ScanLogDTO.MaxRecentEntries; i++)
+            {
+                uint entryHash = _recentEntryHashes[i];
+                if (!_entryIndexByHash.TryGetValue(entryHash, out int entryIndex) || entryIndex < 0 || entryIndex >= _entries.Count)
+                    continue;
 
-            for (int i = data.scanLog.recentCount; i < ScanLogDTO.MaxRecentEntries; i++)
+                data.scanLog.recentEntryIds[recentCount] = _entries[entryIndex].id;
+                recentCount++;
+            }
+
+            data.scanLog.recentCount = recentCount;
+            for (int i = recentCount; i < ScanLogDTO.MaxRecentEntries; i++)
                 data.scanLog.recentEntryIds[i] = string.Empty;
         }
 
@@ -247,21 +300,32 @@ namespace Hecton8.Gameplay
                 return;
 
             ScanLogDTO dto = data.scanLog;
-            int entryCount = Mathf.Clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int entryCount = math.clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
             for (int i = 0; i < entryCount; i++)
             {
                 ScanEntryDTO entry = dto.entries[i];
-                TryAddOrUpdateEntry(entry.id, entry.title, entry.category, entry.summary, markRecent: false, raiseEvents: false);
+                TryAddOrUpdateEntry(
+                    ScanEvents.ComputeEntryHash(entry.id),
+                    entry.id,
+                    entry.title,
+                    entry.category,
+                    entry.summary,
+                    titleHash: 0u,
+                    categoryHash: 0u,
+                    summaryHash: 0u,
+                    markRecent: false,
+                    raiseEvents: false);
             }
 
-            int recentCount = Mathf.Clamp(dto.recentCount, 0, dto.recentEntryIds != null ? dto.recentEntryIds.Length : 0);
+            int recentCount = math.clamp(dto.recentCount, 0, dto.recentEntryIds != null ? dto.recentEntryIds.Length : 0);
             for (int i = 0; i < recentCount; i++)
             {
                 string entryId = dto.recentEntryIds[i];
-                if (string.IsNullOrWhiteSpace(entryId) || !_entryIndexById.ContainsKey(entryId))
+                uint entryHash = ScanEvents.ComputeEntryHash(entryId);
+                if (entryHash == 0u || !_entryIndexByHash.ContainsKey(entryHash))
                     continue;
 
-                _recentIds.Add(entryId);
+                _recentEntryHashes.Add(entryHash);
             }
 
             ScanLogChanged?.Invoke();
@@ -274,7 +338,7 @@ namespace Hecton8.Gameplay
                 case ScanEventType.EntryDiscovered:
                     if (ScanEvents.TryResolveEntryMetadata(payload.EntryHash, out ScanEntryMetadata metadata))
                     {
-                        HandleEntryDiscovered(metadata.EntryId, metadata.Title, metadata.Category, metadata.Summary);
+                        HandleEntryDiscovered(in metadata);
                     }
                     break;
 
@@ -284,120 +348,216 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void HandleEntryDiscovered(string entryId, string title, string category, string summary)
+        private void HandleEntryDiscovered(in ScanEntryMetadata metadata)
         {
-            TryAddOrUpdateEntry(entryId, title, category, summary, markRecent: true, raiseEvents: true);
+            TryAddOrUpdateEntry(
+                metadata.EntryHash,
+                metadata.EntryId,
+                metadata.Title,
+                metadata.Category,
+                metadata.Summary,
+                metadata.TitleHash,
+                metadata.CategoryHash,
+                metadata.SummaryHash,
+                markRecent: true,
+                raiseEvents: true);
         }
 
         private void HandleNodeFound(Unity.Mathematics.float3 _)
         {
-            if (ContainsEntry(GenericResourceEntryId))
+            if (ContainsEntry(GenericResourceEntryHash))
                 return;
 
             TryAddOrUpdateEntry(
+                GenericResourceEntryHash,
                 GenericResourceEntryId,
                 GenericResourceTitle,
                 GenericResourceCategory,
                 GenericResourceSummary,
+                GenericResourceTitleHash,
+                GenericResourceCategoryHash,
+                GenericResourceSummaryHash,
                 markRecent: true,
                 raiseEvents: true);
         }
 
         private void TryAddOrUpdateEntry(
+            uint entryHash,
             string entryId,
             string title,
             string category,
             string summary,
+            uint titleHash,
+            uint categoryHash,
+            uint summaryHash,
             bool markRecent,
             bool raiseEvents)
         {
-            if (string.IsNullOrWhiteSpace(entryId))
+            entryId = TrimOrFallback(entryId, string.Empty);
+            if (entryHash == 0u || entryId.Length == 0)
                 return;
 
-            entryId = entryId.Trim();
-            title = string.IsNullOrWhiteSpace(title) ? entryId.ToUpperInvariant() : title.Trim();
-            category = string.IsNullOrWhiteSpace(category) ? "Unknown" : category.Trim();
-            summary = string.IsNullOrWhiteSpace(summary) ? "Scan profile archived." : summary.Trim();
+            title = TrimOrFallback(title, UnknownTitle);
+            category = TrimOrFallback(category, UnknownCategory);
+            summary = TrimOrFallback(summary, DefaultSummary);
+            titleHash = titleHash != 0u ? titleHash : ComputeContentHash(title);
+            categoryHash = categoryHash != 0u ? categoryHash : ComputeContentHash(category);
+            summaryHash = summaryHash != 0u ? summaryHash : ComputeContentHash(summary);
 
             bool added = false;
-            if (_entryIndexById.TryGetValue(entryId, out int existingIndex))
+            if (_entryIndexByHash.TryGetValue(entryHash, out int existingIndex))
             {
                 ScanEntryRecord updated = _entries[existingIndex];
+                updated.id = entryId;
                 updated.title = title;
                 updated.category = category;
                 updated.summary = summary;
+                updated.idHash = entryHash;
+                updated.titleHash = titleHash;
+                updated.categoryHash = categoryHash;
+                updated.summaryHash = summaryHash;
                 _entries[existingIndex] = updated;
             }
             else
             {
-                if (_entries.Count >= Mathf.Max(1, maxTrackedEntries))
+                if (_entries.Count >= math.max(1, maxTrackedEntries))
                     return;
 
                 existingIndex = _entries.Count;
-                _entryIndexById.Add(entryId, existingIndex);
+                _entryIndexByHash.Add(entryHash, existingIndex);
                 _entries.Add(new ScanEntryRecord
                 {
                     id = entryId,
                     title = title,
                     category = category,
-                    summary = summary
+                    summary = summary,
+                    idHash = entryHash,
+                    titleHash = titleHash,
+                    categoryHash = categoryHash,
+                    summaryHash = summaryHash
                 });
                 added = true;
             }
 
             if (markRecent)
-                PushRecent(entryId);
+                PushRecent(entryHash);
 
             if (added && raiseEvents)
             {
-                ShowUnlockFeedback(title, category);
-                EntryUnlocked?.Invoke(new ScanEntrySnapshot(entryId, title, category, summary));
+                ShowUnlockFeedback();
+                EntryUnlocked?.Invoke(new ScanEntrySnapshot(
+                    entryId,
+                    title,
+                    category,
+                    summary,
+                    entryHash,
+                    titleHash,
+                    categoryHash,
+                    summaryHash));
             }
 
             if (added || markRecent)
                 ScanLogChanged?.Invoke();
         }
 
-        private void PushRecent(string entryId)
+        private void PushRecent(uint entryHash)
         {
-            _recentIds.Remove(entryId);
-            _recentIds.Insert(0, entryId);
+            int cap = math.clamp(maxRecentEntries, 1, ScanLogDTO.MaxRecentEntries);
+            for (int i = _recentEntryHashes.Count - 1; i >= cap; i--)
+                _recentEntryHashes.RemoveAt(i);
 
-            int cap = Mathf.Clamp(maxRecentEntries, 1, ScanLogDTO.MaxRecentEntries);
-            if (_recentIds.Count > cap)
-                _recentIds.RemoveRange(cap, _recentIds.Count - cap);
-        }
+            int count = _recentEntryHashes.Count;
+            int existingIndex = -1;
+            for (int i = 0; i < count; i++)
+            {
+                if (_recentEntryHashes[i] == entryHash)
+                {
+                    existingIndex = i;
+                    break;
+                }
+            }
 
-        private void EnsureBuffers()
-        {
-            int cap = Mathf.Clamp(maxRecentEntries, 1, ScanLogDTO.MaxRecentEntries);
-            if (_recentBuffer == null || _recentBuffer.Length != cap)
-                _recentBuffer = new ScanEntrySnapshot[cap];
+            if (existingIndex == 0)
+                return;
+
+            if (existingIndex > 0)
+            {
+                for (int i = existingIndex; i > 0; i--)
+                    _recentEntryHashes[i] = _recentEntryHashes[i - 1];
+
+                _recentEntryHashes[0] = entryHash;
+                return;
+            }
+
+            if (count < cap)
+            {
+                _recentEntryHashes.Add(entryHash);
+                count++;
+            }
+
+            for (int i = count - 1; i > 0; i--)
+                _recentEntryHashes[i] = _recentEntryHashes[i - 1];
+
+            _recentEntryHashes[0] = entryHash;
         }
 
         private void ClearRuntimeState()
         {
-            _entryIndexById.Clear();
+            _entryIndexByHash.Clear();
             _entries.Clear();
-            _recentIds.Clear();
-            EnsureBuffers();
+            _recentEntryHashes.Clear();
         }
 
-        private void AutoResolveHud()
+        private void ShowUnlockFeedback()
         {
-            if (_hudNotification == null)
-                HUDNotification.TryGetActive(out _hudNotification);
+            if (_scanArchivedNotificationHash == 0u)
+                _scanArchivedNotificationHash = NotificationEvents.RegisterMessage(ScanArchivedMessage);
+
+            NotificationEvents.PushRegisteredInfo(_scanArchivedNotificationHash);
         }
 
-        private void ShowUnlockFeedback(string title, string category)
+        private static ScanEntrySnapshot ToSnapshot(in ScanEntryRecord entry)
         {
-            AutoResolveHud();
-            if (_hudNotification == null)
-                return;
+            return new ScanEntrySnapshot(
+                entry.id,
+                entry.title,
+                entry.category,
+                entry.summary,
+                entry.idHash,
+                entry.titleHash,
+                entry.categoryHash,
+                entry.summaryHash);
+        }
 
-            string resolvedTitle = string.IsNullOrWhiteSpace(title) ? "UNKNOWN CONTACT" : title.Trim().ToUpperInvariant();
-            string resolvedCategory = string.IsNullOrWhiteSpace(category) ? "Unknown" : category.Trim().ToUpperInvariant();
-            _hudNotification.ShowInfo($"SCAN ARCHIVED - {resolvedTitle} [{resolvedCategory}]");
+        private static uint ComputeContentHash(string value)
+        {
+            return string.IsNullOrWhiteSpace(value)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(value));
+        }
+
+        private static string TrimOrFallback(string value, string fallback)
+        {
+            if (string.IsNullOrEmpty(value))
+                return fallback;
+
+            int start = 0;
+            int end = value.Length - 1;
+            while (start <= end && char.IsWhiteSpace(value[start]))
+                start++;
+            while (end >= start && char.IsWhiteSpace(value[end]))
+                end--;
+
+            if (start > end)
+                return fallback;
+            if (start == 0 && end == value.Length - 1)
+                return value;
+
+            int length = end - start + 1;
+            return string.Create(length, (value, start), static (buffer, state) =>
+            {
+                state.Item1.AsSpan(state.Item2, buffer.Length).CopyTo(buffer);
+            });
         }
     }
 }

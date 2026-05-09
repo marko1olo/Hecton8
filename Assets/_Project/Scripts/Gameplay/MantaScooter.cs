@@ -37,6 +37,14 @@ namespace Hecton8.Gameplay
     public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IUpdatable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter, ILocalizationLanguageChangedListener
     {
         private const float DefaultTransportPropulsionReference = 800f;
+        private const float ThrottleBlendSpeedFloor = 0.01f;
+        private const float ThrottleBlendDenominatorFloor = 0.0001f;
+        private const float ThrottleExponentEpsilon = 0.001f;
+        private const float PadeOneTwelfth = 0.0833333333f;
+        private const float DegreesToRadians = 0.017453292519943295f;
+        private const float MaxSpotConeRadians = 1.56206965f;
+        private const float CosFourthCoefficient = 0.0416666679f;
+        private const float HeadlightNoiseCellsPerSecond = 64f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -136,6 +144,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private TMPro.TMP_Text batteryText;
         private char[] _depthHudBuffer;
         private char[] _batteryHudBuffer;
+        private FixedCharBuffer _toolWarningBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - manta warning HUD staging buffer - owner: MantaScooter
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool STATE
@@ -223,6 +232,7 @@ namespace Hecton8.Gameplay
         private float[] _headlightBaseSpotAngles;
         private float[] _headlightBaseIntensities;
         private float[] _headlightBaseRanges;
+        private bool _headlightsRegisteredForShadowBudget;
         private bool _headlightStateInitialized;
         private float _headlightGlitchPhase;
         private Vector3 _lastPublishedVolumetricVelocity;
@@ -231,6 +241,7 @@ namespace Hecton8.Gameplay
         private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
 
         private const int MaxHeadlights = 2;
+        private const int ParentComponentResolveDepth = 32;
         private static readonly int _HeadlightCountId = Shader.PropertyToID("_HectonScooterHeadlightCount");
         private static readonly int _HeadlightPositionsWsId = Shader.PropertyToID("_HectonScooterHeadlightPositionsWS");
         private static readonly int _HeadlightDirectionsWsId = Shader.PropertyToID("_HectonScooterHeadlightDirectionsWS");
@@ -338,7 +349,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             _batteryItem = battery;
-            _currentCharge = Mathf.Clamp01(charge);
+            _currentCharge = math.saturate(charge);
             _hasBattery = true;
 
             UpdateBatteryVisuals();
@@ -371,6 +382,7 @@ namespace Hecton8.Gameplay
             BindTransportPresetToFeelContract();
             EnsureTransportLifecycleInitialized();
             CacheHeadlightDefaults();
+            RegisterHeadlightShadowBudget();
             ClearHeadlightGlobals();
 
             // Setup motor audio
@@ -381,11 +393,13 @@ namespace Hecton8.Gameplay
         {
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshMantaLocalizationCache();
+            RegisterHeadlightShadowBudget();
         }
 
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
+            UnregisterHeadlightShadowBudget();
             RestoreHeadlightDefaults();
             ClearHeadlightGlobals();
         }
@@ -404,6 +418,7 @@ namespace Hecton8.Gameplay
             ResolvePlayerReferences();
             ResetHudStateCache();
             CacheHeadlightDefaults();
+            RegisterHeadlightShadowBudget();
             ClearHeadlightGlobals();
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
@@ -414,6 +429,7 @@ namespace Hecton8.Gameplay
             DeactivateScooter();
             RestoreHeadlightDefaults();
             ClearHeadlightGlobals();
+            UnregisterHeadlightShadowBudget();
             UnregisterFromTick();
             ResetHudStateCache();
             _damageReceivers.Clear();
@@ -463,7 +479,7 @@ namespace Hecton8.Gameplay
                     DeactivateScooter();
 
                 _debugActivationState = ActivationStateBroken;
-                ToolHitUtility.ShowWarning(_localizedTransportBrokenWarning);
+                PublishToolWarning(_localizedTransportBrokenWarning);
                 return;
             }
 
@@ -474,7 +490,7 @@ namespace Hecton8.Gameplay
                     DeactivateScooter();
 
                 _debugActivationState = ActivationStateNoBattery;
-                ToolHitUtility.ShowWarning(_localizedNoBatteryWarning);
+                PublishToolWarning(_localizedNoBatteryWarning);
                 return;
             }
 
@@ -484,7 +500,7 @@ namespace Hecton8.Gameplay
                     DeactivateScooter();
 
                 _debugActivationState = ActivationStateBatteryTooLow;
-                ToolHitUtility.ShowWarning(_localizedNoBatteryWarning);
+                PublishToolWarning(_localizedNoBatteryWarning);
                 return;
             }
 
@@ -521,7 +537,7 @@ namespace Hecton8.Gameplay
             if (_isMoving)
             {
                 // Drain battery while moving
-                _currentCharge = Mathf.Max(0f, _currentCharge - ResolveEffectiveBatteryDrainRate() * driveThrottleOutput * deltaTime);
+                _currentCharge = math.max(0f, _currentCharge - ResolveEffectiveBatteryDrainRate() * driveThrottleOutput * deltaTime);
                 UpdatePowerIndicator();
                 UpdateHUD();
 
@@ -529,7 +545,7 @@ namespace Hecton8.Gameplay
                 {
                     DeactivateScooter();
                     _debugActivationState = ActivationStateBatteryDepleted;
-                    ToolHitUtility.ShowWarning(_localizedBatteryDepletedWarning);
+                    PublishToolWarning(_localizedBatteryDepletedWarning);
                 }
             }
         }
@@ -583,7 +599,7 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
-            int batteryPercent = Mathf.RoundToInt(_currentCharge * 100f);
+            int batteryPercent = RoundToIntPositive(_currentCharge * 100f);
             if (!_summaryStateInitialized ||
                 _lastSummaryHasBattery != _hasBattery ||
                 _lastSummaryActive != _isActive ||
@@ -602,6 +618,19 @@ namespace Hecton8.Gameplay
             }
 
             return _cachedOperationalSummary;
+        }
+
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
+            if (!_hasBattery)
+            {
+                AppendText(ref buffer, _localizedSummaryNoBattery);
+                return;
+            }
+
+            AppendText(ref buffer, _isActive ? "MANTA // ACTIVE // BAT " : "MANTA // STANDBY // BAT ");
+            buffer.AppendInt(math.clamp((int)math.round(_currentCharge * 100f), 0, 100));
+            AppendText(ref buffer, "%");
         }
 
         public override string GetOperationalDirective()
@@ -627,6 +656,20 @@ namespace Hecton8.Gameplay
             }
 
             return _cachedOperationalDirective;
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
+            bool batteryLow = _hasBattery && _currentCharge < minChargeToActivate;
+            AppendText(
+                ref buffer,
+                !_hasBattery
+                    ? _localizedDirectiveInsertBattery
+                    : batteryLow
+                        ? _localizedDirectiveSwapRecharge
+                        : _isActive
+                            ? _localizedDirectiveHoldForward
+                            : _localizedDirectiveHoldPrimary);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -706,7 +749,7 @@ namespace Hecton8.Gameplay
             if (_isTransportBroken || !_isActive || !_hasBattery || _currentCharge < minChargeToActivate)
                 return 1f;
 
-            return Mathf.Lerp(1f, ResolveConfiguredTransportSpeedMultiplier(), ResolveEffectiveDriveThrottleOutput());
+            return math.lerp(1f, ResolveConfiguredTransportSpeedMultiplier(), ResolveEffectiveDriveThrottleOutput());
         }
 
         /// <summary>
@@ -744,7 +787,7 @@ namespace Hecton8.Gameplay
         public float GetTransportBoost01()
         {
             float propulsionReference = ResolveTransportPropulsionReference();
-            return Mathf.Clamp01(GetPropulsionForce() / propulsionReference);
+            return math.saturate(GetPropulsionForce() / propulsionReference);
         }
 
         /// <summary>
@@ -752,11 +795,11 @@ namespace Hecton8.Gameplay
         /// </summary>
         internal void ApplyEmpDisruption(float duration)
         {
-            float disruptionDuration = Mathf.Max(empMisfireMinimumDuration, duration);
+            float disruptionDuration = math.max(empMisfireMinimumDuration, duration);
             if (disruptionDuration <= 0.0001f)
                 return;
 
-            _empMisfireTimer = Mathf.Max(_empMisfireTimer, disruptionDuration);
+            _empMisfireTimer = math.max(_empMisfireTimer, disruptionDuration);
             _misfireIntervalTimer = 0f;
         }
 
@@ -817,7 +860,7 @@ namespace Hecton8.Gameplay
             if (!_hasBattery || normalizedChargeDelta <= 0f)
                 return;
 
-            _currentCharge = Mathf.Clamp01(_currentCharge + normalizedChargeDelta * ResolveStationChargeRateScale());
+            _currentCharge = math.saturate(_currentCharge + normalizedChargeDelta * ResolveStationChargeRateScale());
             UpdatePowerIndicator();
             UpdateHUD();
         }
@@ -841,19 +884,19 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureTransportLifecycleInitialized();
-            float damageT = Mathf.InverseLerp(startSpeed, maxSpeed, impactSpeed);
-            float damage = Mathf.Lerp(0f, maxDamage, damageT);
-            _currentIntegrity = Mathf.Max(0f, _currentIntegrity - damage);
+            float damageT = InverseLerpSaturated(startSpeed, maxSpeed, impactSpeed);
+            float damage = math.lerp(0f, maxDamage, damageT);
+            _currentIntegrity = math.max(0f, _currentIntegrity - damage);
             float nextIntegrityNormalized = ResolveCurrentIntegrityNormalized();
             DamageSignal damageSignal = BuildDamageSignal(impactSpeed, hitPoint, (uint)DamageTypeMask.Impact, previousIntegrityNormalized, nextIntegrityNormalized);
             DispatchIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, damageSignal);
 
             float previousPowerChannel = ResolvePowerChannel(previousIntegrityNormalized);
             float nextPowerChannel = ResolvePowerChannel(nextIntegrityNormalized);
-            if (Mathf.Abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
+            if (math.abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
                 DispatchPowerChanged(previousPowerChannel, nextPowerChannel, damageSignal);
 
-            DispatchClarityChanged(0f, Mathf.Clamp01(Mathf.Max(damageT, 1f - nextIntegrityNormalized)), damageSignal);
+            DispatchClarityChanged(0f, math.saturate(math.max(damageT, 1f - nextIntegrityNormalized)), damageSignal);
             DispatchTraumaThresholdCrossed(ResolveTraumaLevel(nextIntegrityNormalized, damageT));
             if (_currentIntegrity <= 0.0001f)
                 BreakTransport();
@@ -908,10 +951,10 @@ namespace Hecton8.Gameplay
         {
             PlayerTransportFeelContract transportFeelContract = TransportFeelContract;
             if (transportFeelContract != null)
-                return Mathf.Max(0.01f, transportFeelContract.PropulsionForceReference);
+                return math.max(0.01f, transportFeelContract.PropulsionForceReference);
 
             if (transportPreset != null)
-                return Mathf.Max(0.01f, transportPreset.PropulsionForceReference);
+                return math.max(0.01f, transportPreset.PropulsionForceReference);
 
             return DefaultTransportPropulsionReference;
         }
@@ -919,7 +962,7 @@ namespace Hecton8.Gameplay
         private float ResolveConfiguredTransportPropulsionForce()
         {
             if (transportPreset != null)
-                return Mathf.Max(0f, transportPreset.PropulsionForce);
+                return math.max(0f, transportPreset.PropulsionForce);
 
             return DefaultTransportPropulsionReference;
         }
@@ -927,7 +970,7 @@ namespace Hecton8.Gameplay
         private float ResolveConfiguredTransportSpeedMultiplier()
         {
             if (transportPreset != null)
-                return Mathf.Max(1f, transportPreset.SpeedMultiplier);
+                return math.max(1f, transportPreset.SpeedMultiplier);
 
             return speedMultiplier;
         }
@@ -956,18 +999,26 @@ namespace Hecton8.Gameplay
 
         private float AdvanceDriveThrottle(float currentThrottle, float targetThrottle, float deltaTime)
         {
-            float clampedCurrent = Mathf.Clamp01(currentThrottle);
-            float clampedTarget = Mathf.Clamp01(targetThrottle);
+            float clampedCurrent = math.saturate(currentThrottle);
+            float clampedTarget = math.saturate(targetThrottle);
             float sharpness = clampedTarget > clampedCurrent
                 ? ResolveConfiguredThrottleRiseSharpness()
                 : ResolveConfiguredThrottleFallSharpness();
-            float blend = 1f - Mathf.Exp(-sharpness * deltaTime);
-            return Mathf.Lerp(clampedCurrent, clampedTarget, blend);
+            float blend = FastThrottleDecayBlend01(sharpness, deltaTime);
+            return math.lerp(clampedCurrent, clampedTarget, blend);
         }
 
         private float ResolveDriveThrottleOutput()
         {
-            return Mathf.Pow(Mathf.Clamp01(_driveThrottleCurrent), ResolveConfiguredThrottleOutputExponent());
+            float throttle = math.saturate(_driveThrottleCurrent);
+            float exponent = ResolveConfiguredThrottleOutputExponent();
+            if (math.abs(exponent - 1f) <= ThrottleExponentEpsilon)
+                return throttle;
+
+            if (math.abs(exponent - 2f) <= ThrottleExponentEpsilon)
+                return throttle * throttle;
+
+            return ApproximateThrottlePower01(throttle, exponent);
         }
 
         private float ResolveEffectiveDriveThrottleOutput()
@@ -983,7 +1034,7 @@ namespace Hecton8.Gameplay
         private float ResolveConfiguredThrottleRiseSharpness()
         {
             if (transportPreset != null)
-                return Mathf.Max(0.5f, transportPreset.ThrottleRiseSharpness);
+                return math.max(0.5f, transportPreset.ThrottleRiseSharpness);
 
             return 10f;
         }
@@ -991,7 +1042,7 @@ namespace Hecton8.Gameplay
         private float ResolveConfiguredThrottleFallSharpness()
         {
             if (transportPreset != null)
-                return Mathf.Max(0.5f, transportPreset.ThrottleFallSharpness);
+                return math.max(0.5f, transportPreset.ThrottleFallSharpness);
 
             return 8f;
         }
@@ -999,9 +1050,50 @@ namespace Hecton8.Gameplay
         private float ResolveConfiguredThrottleOutputExponent()
         {
             if (transportPreset != null)
-                return Mathf.Max(0.5f, transportPreset.ThrottleOutputExponent);
+                return math.max(0.5f, transportPreset.ThrottleOutputExponent);
 
             return 1f;
+        }
+
+        private static float FastThrottleDecayBlend01(float blendSpeed, float deltaTime)
+        {
+            float x = math.max(ThrottleBlendSpeedFloor, blendSpeed) * math.max(0f, deltaTime);
+            float x2 = x * x;
+            float numerator = 1f - 0.5f * x + x2 * PadeOneTwelfth;
+            float denominator = 1f + 0.5f * x + x2 * PadeOneTwelfth;
+            return math.saturate(1f - numerator / math.max(ThrottleBlendDenominatorFloor, denominator));
+        }
+
+        private static float ApproximateThrottlePower01(float throttle, float exponent)
+        {
+            float t = math.saturate(throttle);
+            float e = math.max(0.5f, exponent);
+            float square = t * t;
+            if (e <= 1f)
+            {
+                float pseudoRoot = math.saturate(t * (1.5f - 0.5f * t));
+                return math.lerp(pseudoRoot, t, math.saturate((e - 0.5f) * 2f));
+            }
+
+            if (e <= 2f)
+                return math.lerp(t, square, math.saturate(e - 1f));
+
+            float cubic = square * t;
+            return math.lerp(square, cubic, math.saturate(e - 2f));
+        }
+
+        private static int RoundToIntPositive(float value)
+        {
+            return value <= 0f ? 0 : (int)math.floor(value + 0.5f);
+        }
+
+        private static float InverseLerpSaturated(float min, float max, float value)
+        {
+            float range = max - min;
+            if (math.abs(range) <= 0.000001f)
+                return value >= max ? 1f : 0f;
+
+            return math.saturate((value - min) / range);
         }
 
         private void ResolveVehicleUpgradeModule()
@@ -1014,12 +1106,12 @@ namespace Hecton8.Gameplay
         {
             ResolveVehicleUpgradeModule();
             float drainScale = _vehicleUpgradeModule != null
-                ? Mathf.Max(0.1f, _vehicleUpgradeModule.ChargeDrainScale)
+                ? math.max(0.1f, _vehicleUpgradeModule.ChargeDrainScale)
                 : 1f;
             float abyssalOverstrainMultiplier = _playerMovement != null
                 ? _playerMovement.CurrentAbyssalCounterDriveEnergyMultiplier
                 : 1f;
-            return Mathf.Max(0f, batteryDrainRate * drainScale * abyssalOverstrainMultiplier);
+            return math.max(0f, batteryDrainRate * drainScale * abyssalOverstrainMultiplier);
         }
 
         private void EnsureTransportLifecycleInitialized()
@@ -1035,18 +1127,18 @@ namespace Hecton8.Gameplay
         private float ResolveCurrentIntegrityNormalized()
         {
             EnsureTransportLifecycleInitialized();
-            return Mathf.Clamp01(_currentIntegrity / ResolveMaxIntegrity());
+            return math.saturate(_currentIntegrity / ResolveMaxIntegrity());
         }
 
         private float ResolveMaxIntegrity()
         {
             ResolveVehicleUpgradeModule();
             float integrityBonus = _vehicleUpgradeModule != null
-                ? Mathf.Max(0f, _vehicleUpgradeModule.MaxIntegrityBonus)
+                ? math.max(0f, _vehicleUpgradeModule.MaxIntegrityBonus)
                 : 0f;
 
             if (transportPreset != null)
-                return Mathf.Max(1f, transportPreset.MaxIntegrity + integrityBonus);
+                return math.max(1f, transportPreset.MaxIntegrity + integrityBonus);
 
             return 100f + integrityBonus;
         }
@@ -1054,7 +1146,7 @@ namespace Hecton8.Gameplay
         private float ResolveCollisionDamageStartSpeed()
         {
             if (transportPreset != null)
-                return Mathf.Max(0f, transportPreset.CollisionDamageStartSpeed);
+                return math.max(0f, transportPreset.CollisionDamageStartSpeed);
 
             return 6f;
         }
@@ -1062,15 +1154,15 @@ namespace Hecton8.Gameplay
         private float ResolveCollisionDamageMaxSpeed(float minimum)
         {
             if (transportPreset != null)
-                return Mathf.Max(minimum + 0.01f, transportPreset.CollisionDamageMaxSpeed);
+                return math.max(minimum + 0.01f, transportPreset.CollisionDamageMaxSpeed);
 
-            return Mathf.Max(minimum + 0.01f, 14f);
+            return math.max(minimum + 0.01f, 14f);
         }
 
         private float ResolveCollisionDamageAtMaxSpeed()
         {
             if (transportPreset != null)
-                return Mathf.Max(0f, transportPreset.CollisionDamageAtMaxSpeed);
+                return math.max(0f, transportPreset.CollisionDamageAtMaxSpeed);
 
             return 42f;
         }
@@ -1078,7 +1170,7 @@ namespace Hecton8.Gameplay
         private float ResolveStationChargeRateScale()
         {
             if (transportPreset != null)
-                return Mathf.Max(0f, transportPreset.StationChargeRateScale);
+                return math.max(0f, transportPreset.StationChargeRateScale);
 
             return 1f;
         }
@@ -1091,7 +1183,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float stress01 = Mathf.Max(ResolveHullStressMisfire01(), ResolveEmpMisfire01());
+            float stress01 = math.max(ResolveHullStressMisfire01(), ResolveEmpMisfire01());
             if (stress01 <= 0f)
             {
                 ResetMisfireState();
@@ -1123,30 +1215,30 @@ namespace Hecton8.Gameplay
 
         private float ResolveHullStressMisfire01()
         {
-            float threshold = Mathf.Clamp01(misfireStressThreshold);
+            float threshold = math.saturate(misfireStressThreshold);
             if (_playerMovement == null || _playerMovement.CurrentHullStress01 <= threshold)
                 return 0f;
 
-            return Mathf.InverseLerp(threshold, 1f, _playerMovement.CurrentHullStress01);
+            return InverseLerpSaturated(threshold, 1f, _playerMovement.CurrentHullStress01);
         }
 
         private void StartHullStressMisfire(float stress01)
         {
             _misfireSequence++;
-            float interval = Mathf.Lerp(
-                Mathf.Max(0.1f, misfireIntervalMax),
-                Mathf.Max(0.05f, misfireIntervalMin),
+            float interval = math.lerp(
+                math.max(0.1f, misfireIntervalMax),
+                math.max(0.05f, misfireIntervalMin),
                 stress01);
-            float duration = Mathf.Lerp(
-                Mathf.Max(0.02f, misfireStallDurationMin),
-                Mathf.Max(0.02f, misfireStallDurationMax),
+            float duration = math.lerp(
+                math.max(0.02f, misfireStallDurationMin),
+                math.max(0.02f, misfireStallDurationMax),
                 stress01);
-            float deviationMagnitude = Mathf.Lerp(
-                Mathf.Max(0f, misfireDeviationMinDegrees),
-                Mathf.Max(0f, misfireDeviationMaxDegrees),
+            float deviationMagnitude = math.lerp(
+                math.max(0f, misfireDeviationMinDegrees),
+                math.max(0f, misfireDeviationMaxDegrees),
                 stress01);
-            float signedPitch = Mathf.Lerp(-1f, 1f, Hash01(_misfireSequence * 92821u + 17u));
-            float signedYaw = Mathf.Lerp(-1f, 1f, Hash01(_misfireSequence * 68917u + 53u));
+            float signedPitch = math.lerp(-1f, 1f, Hash01(_misfireSequence * 92821u + 17u));
+            float signedYaw = math.lerp(-1f, 1f, Hash01(_misfireSequence * 68917u + 53u));
 
             _misfireIntervalTimer = interval;
             _misfireStallTimer = duration;
@@ -1174,6 +1266,45 @@ namespace Hecton8.Gameplay
             value *= 2654435769u;
             value ^= value >> 16;
             return (value & 0x00FFFFFFu) / 16777215f;
+        }
+
+        private static float CheapUnsignedNoise(float phase, uint salt)
+        {
+            float sample = math.max(0f, phase) * HeadlightNoiseCellsPerSecond;
+            uint cell = (uint)math.floor(sample);
+            float t = math.frac(sample);
+            float eased = t * t * (3f - 2f * t);
+            float a = Hash01(cell * 747796405u + salt);
+            float b = Hash01((cell + 1u) * 747796405u + salt);
+            return math.lerp(a, b, eased);
+        }
+
+        private static float CheapSignedNoise(float phase, uint salt)
+        {
+            return CheapUnsignedNoise(phase, salt) * 2f - 1f;
+        }
+
+        private static float CheapPulse01(float phase, uint salt)
+        {
+            float t = math.frac(math.max(0f, phase) + Hash01(salt));
+            return 1f - math.abs(t * 2f - 1f);
+        }
+
+        private static float ApproximateCosPositive(float radians)
+        {
+            float x = math.clamp(radians, 0f, MaxSpotConeRadians);
+            float x2 = x * x;
+            return math.saturate(1f - 0.5f * x2 + CosFourthCoefficient * x2 * x2);
+        }
+
+        private static Color LerpColor(Color from, Color to, float t)
+        {
+            float blend = math.saturate(t);
+            return new Color(
+                math.lerp(from.r, to.r, blend),
+                math.lerp(from.g, to.g, blend),
+                math.lerp(from.b, to.b, blend),
+                math.lerp(from.a, to.a, blend));
         }
 
         private void DispatchIntegrityChanged(float prev, float next, DamageSignal signal)
@@ -1211,16 +1342,16 @@ namespace Hecton8.Gameplay
             float nextIntegrityNormalized)
         {
             DamageSignal signal = default;
-            signal.magnitude = Mathf.Max(0f, impactSpeed);
+            signal.magnitude = math.max(0f, impactSpeed);
             signal.localPoint = _cachedTransform != null
                 ? (float3)_cachedTransform.InverseTransformPoint(hitPoint)
                 : float3.zero;
             signal.damageType = damageType;
-            signal.integrityDelta = (byte)Mathf.Clamp(
-                Mathf.RoundToInt(Mathf.Abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
+            signal.integrityDelta = (byte)math.clamp(
+                RoundToIntPositive(math.abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
                 0,
                 byte.MaxValue);
-            signal.depth = _mantaSurvivalSystem != null ? Mathf.Max(0f, _mantaSurvivalSystem.Depth) : 0f;
+            signal.depth = _mantaSurvivalSystem != null ? math.max(0f, _mantaSurvivalSystem.Depth) : 0f;
             signal.sourceID = DamageSourceIds.MantaScooter;
             return signal;
         }
@@ -1229,7 +1360,7 @@ namespace Hecton8.Gameplay
         {
             return integrityNormalized >= 0.4f
                 ? 1f
-                : Mathf.Clamp01(integrityNormalized / 0.4f);
+                : math.saturate(integrityNormalized / 0.4f);
         }
 
         private static TraumaLevel ResolveTraumaLevel(float integrityNormalized, float damageT)
@@ -1259,7 +1390,7 @@ namespace Hecton8.Gameplay
             _empMisfireTimer = 0f;
             DeactivateScooter();
             _debugActivationState = ActivationStateBroken;
-            ToolHitUtility.ShowWarning(_localizedTransportBrokenWarning);
+            PublishToolWarning(_localizedTransportBrokenWarning);
         }
 
         private void UpdatePowerIndicator()
@@ -1328,6 +1459,44 @@ namespace Hecton8.Gameplay
             _headlightStateInitialized = true;
         }
 
+        private void RegisterHeadlightShadowBudget()
+        {
+            if (_headlightsRegisteredForShadowBudget)
+                return;
+
+            if (_headlightSlots == null)
+                CacheHeadlightDefaults();
+
+            bool registeredAny = false;
+            for (int slotIndex = 0; slotIndex < MaxHeadlights; slotIndex++)
+            {
+                Light headlight = _headlightSlots[slotIndex];
+                if (headlight == null)
+                    continue;
+
+                registeredAny |= HectonUrpShadowBudgetGuard.RegisterAuthoritativeForwardSpotlight(headlight);
+            }
+
+            _headlightsRegisteredForShadowBudget = registeredAny;
+        }
+
+        private void UnregisterHeadlightShadowBudget()
+        {
+            if (!_headlightsRegisteredForShadowBudget || _headlightSlots == null)
+                return;
+
+            for (int slotIndex = 0; slotIndex < MaxHeadlights; slotIndex++)
+            {
+                Light headlight = _headlightSlots[slotIndex];
+                if (headlight == null)
+                    continue;
+
+                HectonUrpShadowBudgetGuard.UnregisterDynamicShadowLight(headlight);
+            }
+
+            _headlightsRegisteredForShadowBudget = false;
+        }
+
         private void UpdateHeadlightState(float deltaTime)
         {
             if (!_headlightStateInitialized)
@@ -1344,7 +1513,7 @@ namespace Hecton8.Gameplay
 
             bool allowHeadlights = _isActive && !_isTransportBroken;
             float stress01 = allowHeadlights ? ResolveHullStressMisfire01() : 0f;
-            _headlightGlitchPhase += deltaTime * Mathf.Lerp(0.35f, headlightGlitchFrequency, stress01);
+            _headlightGlitchPhase += deltaTime * math.lerp(0.35f, headlightGlitchFrequency, stress01);
 
             int activeCount = 0;
             for (int slotIndex = 0; slotIndex < MaxHeadlights; slotIndex++)
@@ -1389,21 +1558,29 @@ namespace Hecton8.Gameplay
         private void PublishVolumetricSiltGlobals(float deltaTime, bool allowHeadlights)
         {
             Vector3 velocity = allowHeadlights && _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
-            float speed = velocity.magnitude;
-            float previousSpeed = _lastPublishedVolumetricVelocity.magnitude;
+            float speedSq = velocity.sqrMagnitude;
+            float speed = ApproximateMagnitudeFromSq(speedSq);
+            float previousSpeedSq = _lastPublishedVolumetricVelocity.sqrMagnitude;
+            float previousSpeed = ApproximateMagnitudeFromSq(previousSpeedSq);
             float brakeStrength = 0f;
-            if (_hasLastPublishedVolumetricVelocity && previousSpeed > 0.1f && TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime))
+            if (_hasLastPublishedVolumetricVelocity && previousSpeedSq > 0.01f && TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime))
             {
                 Vector3 acceleration = SanitizeFiniteVector((velocity - _lastPublishedVolumetricVelocity) * inverseDeltaTime);
-                float brakingDeceleration = Mathf.Max(0f, Vector3.Dot(-acceleration, _lastPublishedVolumetricVelocity.normalized));
-                float speedDrop = Mathf.Max(0f, previousSpeed - speed);
-                brakeStrength = Mathf.Clamp01(brakingDeceleration * 0.035f + speedDrop * 0.18f);
+                float previousInvSpeed = math.rsqrt(previousSpeedSq);
+                float brakingDeceleration = math.max(0f, Vector3.Dot(-acceleration, _lastPublishedVolumetricVelocity) * previousInvSpeed);
+                float speedDrop = math.max(0f, previousSpeed - speed);
+                brakeStrength = math.saturate(brakingDeceleration * 0.035f + speedDrop * 0.18f);
             }
 
             Shader.SetGlobalVector(_ScooterVelocityWsId, new Vector4(velocity.x, velocity.y, velocity.z, speed));
             Shader.SetGlobalFloat(_ScooterBrakeCloudId, brakeStrength);
             _lastPublishedVolumetricVelocity = velocity;
             _hasLastPublishedVolumetricVelocity = allowHeadlights;
+        }
+
+        private static float ApproximateMagnitudeFromSq(float magnitudeSq)
+        {
+            return magnitudeSq > 0.000001f ? magnitudeSq * math.rsqrt(magnitudeSq) : 0f;
         }
 
         private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
@@ -1444,22 +1621,22 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float primaryNoise = Mathf.PerlinNoise(_headlightGlitchPhase + slotIndex * 0.37f, 0.19f + slotIndex * 0.23f) * 2f - 1f;
-            float secondaryNoise = Mathf.PerlinNoise(0.41f + slotIndex * 0.29f, _headlightGlitchPhase * 0.71f) * 2f - 1f;
-            float spectrumNoise = Mathf.PerlinNoise(_headlightGlitchPhase * 0.43f + slotIndex, 0.67f);
-            float stressPulse = stress01 * Mathf.Clamp01(0.5f + 0.5f * Mathf.Sin(_headlightGlitchPhase * 1.37f + slotIndex * 1.11f));
-            float glitchNoise = Mathf.Max(Mathf.Abs(primaryNoise), Mathf.Abs(secondaryNoise));
+            float primaryNoise = CheapSignedNoise(_headlightGlitchPhase + slotIndex * 0.37f, (uint)(slotIndex + 1) * 151u);
+            float secondaryNoise = CheapSignedNoise(_headlightGlitchPhase * 0.71f + slotIndex * 0.29f, (uint)(slotIndex + 1) * 349u);
+            float spectrumNoise = CheapUnsignedNoise(_headlightGlitchPhase * 0.43f + slotIndex, (uint)(slotIndex + 1) * 877u);
+            float stressPulse = stress01 * CheapPulse01(_headlightGlitchPhase * 1.37f + slotIndex * 1.11f, (uint)(slotIndex + 1) * 1223u);
+            float glitchNoise = math.max(math.abs(primaryNoise), math.abs(secondaryNoise));
 
             Color glitchedColor = new Color(
-                Mathf.Clamp01(baseColor.r * (1f + headlightSpectrumGlitchStrength * stressPulse)),
-                Mathf.Clamp01(baseColor.g * (1f - headlightSpectrumGlitchStrength * glitchNoise * 0.72f)),
-                Mathf.Clamp01(baseColor.b * (1f + headlightSpectrumGlitchStrength * Mathf.Lerp(-0.18f, 0.52f, spectrumNoise) * stress01)),
+                math.saturate(baseColor.r * (1f + headlightSpectrumGlitchStrength * stressPulse)),
+                math.saturate(baseColor.g * (1f - headlightSpectrumGlitchStrength * glitchNoise * 0.72f)),
+                math.saturate(baseColor.b * (1f + headlightSpectrumGlitchStrength * math.lerp(-0.18f, 0.52f, spectrumNoise) * stress01)),
                 baseColor.a);
 
-            headlight.color = Color.Lerp(baseColor, glitchedColor, stress01);
-            headlight.spotAngle = Mathf.Clamp(baseSpotAngle + primaryNoise * headlightAngleJitterMaxDegrees * stress01, 4f, 179f);
-            headlight.intensity = Mathf.Max(0f, baseIntensity * (1f - headlightIntensityJitter * stress01 + Mathf.Abs(secondaryNoise) * headlightIntensityJitter * stress01));
-            headlight.range = Mathf.Max(0.1f, baseRange * Mathf.Lerp(1f, 0.92f, stress01 * Mathf.Abs(primaryNoise)));
+            headlight.color = LerpColor(baseColor, glitchedColor, stress01);
+            headlight.spotAngle = math.clamp(baseSpotAngle + primaryNoise * headlightAngleJitterMaxDegrees * stress01, 4f, 179f);
+            headlight.intensity = math.max(0f, baseIntensity * (1f - headlightIntensityJitter * stress01 + math.abs(secondaryNoise) * headlightIntensityJitter * stress01));
+            headlight.range = math.max(0.1f, baseRange * math.lerp(1f, 0.92f, stress01 * math.abs(primaryNoise)));
         }
 
         private void WriteHeadlightPayload(int payloadIndex, Light headlight)
@@ -1467,19 +1644,20 @@ namespace Hecton8.Gameplay
             if (payloadIndex < 0 || payloadIndex >= MaxHeadlights || headlight == null)
                 return;
 
-            float outerAngleRadians = Mathf.Max(1f, headlight.spotAngle * 0.5f) * Mathf.Deg2Rad;
+            float outerAngleRadians = math.max(1f, headlight.spotAngle * 0.5f) * DegreesToRadians;
             float innerAngleRadians = outerAngleRadians * 0.76f;
-            float outerCos = Mathf.Cos(outerAngleRadians);
-            float innerCos = Mathf.Cos(innerAngleRadians);
-            Vector3 directionWs = headlight.transform.forward;
+            float outerCos = ApproximateCosPositive(outerAngleRadians);
+            float innerCos = ApproximateCosPositive(innerAngleRadians);
+            Transform headlightTransform = headlight.transform;
+            Vector3 directionWs = headlightTransform.forward;
             Color lightColor = headlight.color;
-            Vector3 positionWs = headlight.transform.position;
+            Vector3 positionWs = headlightTransform.position;
 
             _headlightPositionsWs[payloadIndex] = new Vector4(
                 positionWs.x,
                 positionWs.y,
                 positionWs.z,
-                Mathf.Max(0.1f, headlight.range));
+                math.max(0.1f, headlight.range));
 
             _headlightDirectionsWs[payloadIndex] = new Vector4(
                 directionWs.x,
@@ -1491,12 +1669,12 @@ namespace Hecton8.Gameplay
                 lightColor.r,
                 lightColor.g,
                 lightColor.b,
-                Mathf.Max(0f, headlight.intensity));
+                math.max(0f, headlight.intensity));
 
             _headlightConeData[payloadIndex] = new Vector4(
                 outerCos,
-                Mathf.Max(0f, headlightVolumetricStrength),
-                Mathf.Max(0f, headlight.range > 0.0001f ? 1f / headlight.range : 0f),
+                math.max(0f, headlightVolumetricStrength),
+                math.max(0f, headlight.range > 0.0001f ? 1f / headlight.range : 0f),
                 1f);
         }
 
@@ -1572,7 +1750,7 @@ namespace Hecton8.Gameplay
             // Update depth display
             if (depthText != null && _playerMovement != null)
             {
-                int depthTenths = Mathf.RoundToInt(_playerMovement.CurrentDepth * 10f);
+                int depthTenths = RoundToIntPositive(_playerMovement.CurrentDepth * 10f);
                 if (depthTenths != _lastDepthTenths)
                 {
                     SetDepthHudText(depthTenths);
@@ -1583,7 +1761,7 @@ namespace Hecton8.Gameplay
             // Update battery display
             if (batteryText != null)
             {
-                int batteryPercent = Mathf.RoundToInt(_currentCharge * 100f);
+                int batteryPercent = RoundToIntPositive(_currentCharge * 100f);
                 if (batteryPercent != _lastBatteryPercent)
                 {
                     SetBatteryHudText(batteryPercent);
@@ -1614,7 +1792,7 @@ namespace Hecton8.Gameplay
 
         private static int WriteDepthHudBuffer(char[] buffer, int depthTenths)
         {
-            int clampedTenths = Mathf.Max(0, depthTenths);
+            int clampedTenths = math.max(0, depthTenths);
             int wholeMeters = clampedTenths / 10;
             int tenths = clampedTenths % 10;
             int length = WriteUnsignedInt(buffer, 0, wholeMeters);
@@ -1626,7 +1804,7 @@ namespace Hecton8.Gameplay
 
         private static int WritePercentHudBuffer(char[] buffer, int percent)
         {
-            int clampedPercent = Mathf.Clamp(percent, 0, 100);
+            int clampedPercent = math.clamp(percent, 0, 100);
             int length = WriteUnsignedInt(buffer, 0, clampedPercent);
             buffer[length++] = '%';
             return length;
@@ -1666,7 +1844,7 @@ namespace Hecton8.Gameplay
         private void ResolvePlayerReferences()
         {
             if (_playerMovement == null)
-                _playerMovement = GetComponentInParent<HectonPlayerMovement>();
+                TryResolveParentComponent(_cachedTransform != null ? _cachedTransform : transform, out _playerMovement);
 
             if (_mantaSurvivalSystem == null && _playerMovement != null)
                 _playerMovement.TryGetComponent(out _mantaSurvivalSystem);
@@ -1678,14 +1856,29 @@ namespace Hecton8.Gameplay
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
                 if (_playerMovement == null)
-                    _playerMovement = playerTransform.GetComponent<HectonPlayerMovement>();
+                    playerTransform.TryGetComponent(out _playerMovement);
 
                 if (_mantaSurvivalSystem == null)
-                    _mantaSurvivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+                    playerTransform.TryGetComponent(out _mantaSurvivalSystem);
 
-            if (_playerRigidbody == null)
-                _playerRigidbody = playerTransform.GetComponent<Rigidbody>();
+                if (_playerRigidbody == null)
+                    playerTransform.TryGetComponent(out _playerRigidbody);
             }
+        }
+
+        private static bool TryResolveParentComponent<T>(Transform start, out T component) where T : Component
+        {
+            component = null;
+            Transform current = start;
+            for (int depth = 0; current != null && depth < ParentComponentResolveDepth; depth++)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private void ResetHudStateCache()
@@ -1715,8 +1908,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void UnregisterFromTick()
@@ -1761,11 +1953,15 @@ namespace Hecton8.Gameplay
 
         private static string ResolveSummaryVariant(string[] cache, string fallbackFormat, int batteryPercent)
         {
-            int clampedPercent = Mathf.Clamp(batteryPercent, 0, 100);
-            if (cache == null || cache.Length <= clampedPercent || string.IsNullOrEmpty(cache[clampedPercent]))
-                return string.Format(fallbackFormat, clampedPercent);
+            int clampedPercent = math.clamp(batteryPercent, 0, 100);
+            if (cache == null || cache.Length <= clampedPercent)
+                return fallbackFormat;
 
-            return cache[clampedPercent];
+            string cachedVariant = cache[clampedPercent];
+            if (string.IsNullOrEmpty(cachedVariant))
+                return fallbackFormat;
+
+            return cachedVariant;
         }
 
         private static void EnsureSummaryCache(ref string[] cache, string format)
@@ -1785,10 +1981,22 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
+        }
+
+        private void PublishToolWarning(string message)
+        {
+            _toolWarningBuffer.Clear();
+            if (AppendText(ref _toolWarningBuffer, message))
+                ToolHitUtility.ShowWarning(in _toolWarningBuffer);
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            empMisfireMinimumDuration = Mathf.Clamp(empMisfireMinimumDuration, 0.1f, 6f);
+            empMisfireMinimumDuration = math.clamp(empMisfireMinimumDuration, 0.1f, 6f);
             BindTransportPresetToFeelContract();
         }
 #endif

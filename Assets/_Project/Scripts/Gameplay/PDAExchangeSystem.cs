@@ -1,12 +1,13 @@
 using System;
-using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
+using Hecton.Localization;
 using Hecton8.AtlasSignal;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -15,41 +16,128 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/PDA Exchange System")]
     public sealed class PDAExchangeSystem : MonoBehaviour, ISaveable
     {
+        [StructLayout(LayoutKind.Sequential)]
         public readonly struct TransactionSnapshot
         {
-            public readonly string OfferId;
-            public readonly string OfferName;
-            public readonly string ChannelName;
-            public readonly string CostSummary;
-            public readonly string RewardSummary;
+            public readonly BarterOfferData Offer;
+            public readonly int OfferHash;
+            public readonly string LegacyOfferId;
+            public readonly string LegacyOfferName;
+            public readonly string LegacyChannelName;
+            public readonly string LegacyCostSummary;
+            public readonly string LegacyRewardSummary;
 
-            public TransactionSnapshot(string offerId, string offerName, string channelName, string costSummary, string rewardSummary)
+            public TransactionSnapshot(BarterOfferData offer, int offerHash)
             {
-                OfferId = offerId;
-                OfferName = offerName;
-                ChannelName = channelName;
-                CostSummary = costSummary;
-                RewardSummary = rewardSummary;
+                Offer = offer;
+                OfferHash = offerHash;
+                LegacyOfferId = string.Empty;
+                LegacyOfferName = string.Empty;
+                LegacyChannelName = string.Empty;
+                LegacyCostSummary = string.Empty;
+                LegacyRewardSummary = string.Empty;
+            }
+
+            private TransactionSnapshot(
+                BarterOfferData offer,
+                int offerHash,
+                string legacyOfferId,
+                string legacyOfferName,
+                string legacyChannelName,
+                string legacyCostSummary,
+                string legacyRewardSummary)
+            {
+                Offer = offer;
+                OfferHash = offerHash;
+                LegacyOfferId = legacyOfferId;
+                LegacyOfferName = legacyOfferName;
+                LegacyChannelName = legacyChannelName;
+                LegacyCostSummary = legacyCostSummary;
+                LegacyRewardSummary = legacyRewardSummary;
+            }
+
+            public static TransactionSnapshot FromLegacy(
+                int offerHash,
+                string offerId,
+                string offerName,
+                string channelName,
+                string costSummary,
+                string rewardSummary)
+            {
+                return new TransactionSnapshot(
+                    null,
+                    offerHash,
+                    offerId ?? string.Empty,
+                    offerName ?? string.Empty,
+                    channelName ?? string.Empty,
+                    costSummary ?? string.Empty,
+                    rewardSummary ?? string.Empty);
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         public readonly struct OfferSnapshot
         {
             public readonly BarterOfferData Offer;
+            public readonly int OfferHash;
+            public readonly uint RequiredScanEntryHash;
             public readonly int Executions;
-            public readonly bool Unlocked;
-            public readonly bool CanExecute;
-            public readonly string Status;
+            public readonly ExchangeStatus Status;
+            private readonly byte _unlocked;
+            private readonly byte _canExecute;
 
-            public OfferSnapshot(BarterOfferData offer, int executions, bool unlocked, bool canExecute, string status)
+            public OfferSnapshot(
+                BarterOfferData offer,
+                int offerHash,
+                uint requiredScanEntryHash,
+                int executions,
+                bool unlocked,
+                bool canExecute,
+                ExchangeStatus status)
             {
                 Offer = offer;
+                OfferHash = offerHash;
+                RequiredScanEntryHash = requiredScanEntryHash;
                 Executions = executions;
-                Unlocked = unlocked;
-                CanExecute = canExecute;
                 Status = status;
+                _unlocked = unlocked ? (byte)1 : (byte)0;
+                _canExecute = canExecute ? (byte)1 : (byte)0;
             }
+
+            public bool Unlocked => _unlocked != 0;
+            public bool CanExecute => _canExecute != 0;
+            public bool HasRequiredScanEntry => RequiredScanEntryHash != 0u;
         }
+
+        public enum ExchangeStatus : byte
+        {
+            Ready = 0,
+            NoOffer = 1,
+            ScanLock = 2,
+            ContractClosed = 3,
+            InventoryOffline = 4,
+            CostDataInvalid = 5,
+            InsufficientMaterials = 6
+        }
+
+        private const string StatusReady = "READY";
+        private const string StatusNoOffer = "NO OFFER";
+        private const string StatusScanLock = "SCAN LOCK";
+        private const string StatusContractClosed = "CONTRACT CLOSED";
+        private const string StatusInventoryOffline = "INVENTORY OFFLINE";
+        private const string StatusCostDataInvalid = "COST DATA INVALID";
+        private const string StatusInsufficientMaterials = "INSUFFICIENT MATERIALS";
+        private const string RelayOfferLockedMessage = "EXCHANGE RELAY - OFFER LOCKED";
+        private const string RelayReadyMessage = "EXCHANGE RELAY - READY";
+        private const string RelayNoOfferMessage = "EXCHANGE RELAY - NO OFFER";
+        private const string RelayScanLockMessage = "EXCHANGE RELAY - SCAN LOCK";
+        private const string RelayContractClosedMessage = "EXCHANGE RELAY - CONTRACT CLOSED";
+        private const string RelayInventoryOfflineMessage = "EXCHANGE RELAY - INVENTORY OFFLINE";
+        private const string RelayCostDataInvalidMessage = "EXCHANGE RELAY - COST DATA INVALID";
+        private const string RelayInsufficientMaterialsMessage = "EXCHANGE RELAY - INSUFFICIENT MATERIALS";
+        private const string RelayCostFailedMessage = "EXCHANGE RELAY - COST VERIFICATION FAILED";
+        private const string RelayCargoFullMessage = "EXCHANGE RELAY - CARGO CAPACITY INSUFFICIENT";
+        private const string RelayConfirmedMessage = "EXCHANGE RELAY - CONFIRMED";
 
         [Header("References")]
         [SerializeField] private PlayerInventory playerInventory;
@@ -57,42 +145,49 @@ namespace Hecton8.Gameplay
         [SerializeField] private HUDNotification hudNotification;
         [SerializeField] private BarterOfferCatalog offerCatalog;
 
-        private readonly Dictionary<string, int> _executionCounts = new Dictionary<string, int>(StringComparer.Ordinal);
-        private readonly List<TransactionSnapshot> _recentTransactions = new List<TransactionSnapshot>(8);
+        // COLD ALLOC: int[MaxOffers] - offer execution hash slots without Dictionary churn - owner: PDAExchangeSystem
+        private readonly int[] _executionOfferHashes = new int[BarterDTO.MaxOffers];
+        // COLD ALLOC: int[MaxOffers] - offer execution counts parallel to _executionOfferHashes - owner: PDAExchangeSystem
+        private readonly int[] _executionCounts = new int[BarterDTO.MaxOffers];
+        // COLD ALLOC: int[MaxOffers] - boot-time catalog offer hashes; ScriptableObjects stay immutable at runtime.
+        private readonly int[] _catalogOfferHashes = new int[BarterDTO.MaxOffers];
+        // COLD ALLOC: uint[MaxOffers] - boot-time scan-entry gates parallel to _catalogOfferHashes.
+        private readonly uint[] _catalogRequiredScanEntryHashes = new uint[BarterDTO.MaxOffers];
+        // COLD ALLOC: TransactionSnapshot[8] - fixed recent exchange history ring - owner: PDAExchangeSystem
+        private readonly TransactionSnapshot[] _recentTransactions = new TransactionSnapshot[BarterDTO.MaxRecentTransactions];
         private readonly StringBuilder _sb = new StringBuilder(256);
+        private int _executionStateCount;
+        private int _catalogRuntimeHashCount;
+        private int _recentTransactionCount;
         private bool _serviceRegistered;
 
-        public static PDAExchangeSystem Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            Instance = null;
-        }
+        public static PDAExchangeSystem Instance => GlobalRegistry.PDAExchange;
 
         public int SavePriority => 36;
         public int LoadPriority => 36;
         public int OfferCount => offerCatalog != null ? offerCatalog.Count : 0;
-        public int RecentTransactionCount => _recentTransactions.Count;
+        public int RecentTransactionCount => _recentTransactionCount;
 
         public event Action ExchangeStateChanged;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            PDAExchangeSystem registered = GlobalRegistry.PDAExchange;
+            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
                 return;
             }
 
-            Instance = this;
             AutoResolve();
+            CacheCatalogRuntimeHashes();
         }
 
         private void OnEnable()
         {
             TryRegisterService();
             AutoResolve();
+            CacheCatalogRuntimeHashes();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             if (playerInventory != null)
                 playerInventory.InventoryChanged += HandleInventoryChanged;
@@ -108,14 +203,19 @@ namespace Hecton8.Gameplay
             if (scanLogSystem != null)
                 scanLogSystem.ScanLogChanged -= HandleScanLogChanged;
             TryUnregisterService();
-            if (Instance == this)
-                Instance = null;
         }
 
         private void TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            PDAExchangeSystem registered = GlobalRegistry.PDAExchange;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterPDAExchangeRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PDAExchange, this);
@@ -135,12 +235,28 @@ namespace Hecton8.Gameplay
             return offerCatalog != null ? offerCatalog.GetAt(index) : null;
         }
 
+        public int GetOfferHash(BarterOfferData offer)
+        {
+            return ResolveOfferHash(offer);
+        }
+
+        public uint GetRequiredScanEntryHash(BarterOfferData offer)
+        {
+            int index = ResolveOfferIndex(offer);
+            return GetRequiredScanEntryHashAt(index);
+        }
+
+        public bool HasRequiredScanEntry(BarterOfferData offer)
+        {
+            return GetRequiredScanEntryHash(offer) != 0u;
+        }
+
         public int CopyRecentTransactions(TransactionSnapshot[] buffer)
         {
-            if (buffer == null || buffer.Length == 0 || _recentTransactions.Count == 0)
+            if (buffer == null || buffer.Length == 0 || _recentTransactionCount == 0)
                 return 0;
 
-            int count = Mathf.Min(buffer.Length, _recentTransactions.Count);
+            int count = math.min(buffer.Length, _recentTransactionCount);
             for (int i = 0; i < count; i++)
                 buffer[i] = _recentTransactions[i];
             return count;
@@ -151,7 +267,7 @@ namespace Hecton8.Gameplay
             if (buffer == null || buffer.Length == 0 || offerCatalog == null)
                 return 0;
 
-            int count = Mathf.Min(buffer.Length, offerCatalog.Count);
+            int count = math.min(math.min(buffer.Length, offerCatalog.Count), BarterDTO.MaxOffers);
             for (int i = 0; i < count; i++)
             {
                 BarterOfferData offer = offerCatalog.GetAt(i);
@@ -161,11 +277,20 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
-                int executions = GetExecutionCount(offer.offerId);
-                bool unlocked = IsUnlocked(offer);
-                string status = "SCAN LOCK";
-                bool canExecute = unlocked && CanExecute(offer, out status);
-                buffer[i] = new OfferSnapshot(offer, executions, unlocked, canExecute, unlocked ? status : "SCAN LOCK");
+                int offerHash = GetOfferHashAt(i);
+                uint requiredScanEntryHash = GetRequiredScanEntryHashAt(i);
+                int executions = GetExecutionCount(offerHash);
+                bool unlocked = IsUnlocked(requiredScanEntryHash);
+                ExchangeStatus status = ExchangeStatus.ScanLock;
+                bool canExecute = unlocked && CanExecute(offer, offerHash, requiredScanEntryHash, out status);
+                buffer[i] = new OfferSnapshot(
+                    offer,
+                    offerHash,
+                    requiredScanEntryHash,
+                    executions,
+                    unlocked,
+                    canExecute,
+                    unlocked ? status : ExchangeStatus.ScanLock);
             }
 
             return count;
@@ -177,48 +302,46 @@ namespace Hecton8.Gameplay
             if (offer == null)
                 return false;
 
-            if (!IsUnlocked(offer))
+            int offerHash = ResolveOfferHash(offer);
+            if (offerHash == 0)
+                return false;
+
+            uint requiredScanEntryHash = GetRequiredScanEntryHash(offer);
+            if (!IsUnlocked(requiredScanEntryHash))
             {
-                NotifyWarning("EXCHANGE RELAY - OFFER LOCKED");
+                NotifyWarning(RelayOfferLockedMessage);
                 return false;
             }
 
-            if (!CanExecute(offer, out string status))
+            if (!CanExecute(offer, offerHash, requiredScanEntryHash, out ExchangeStatus status))
             {
-                NotifyWarning($"EXCHANGE RELAY - {status}");
+                NotifyWarning(ResolveRelayStatusMessage(status));
                 return false;
             }
 
             if (playerInventory == null)
             {
-                NotifyWarning("EXCHANGE RELAY - INVENTORY OFFLINE");
+                NotifyWarning(RelayInventoryOfflineMessage);
                 return false;
             }
 
             if (!ConsumeBundle(offer.costs))
             {
-                NotifyWarning("EXCHANGE RELAY - COST VERIFICATION FAILED");
+                NotifyWarning(RelayCostFailedMessage);
                 return false;
             }
 
             if (!GrantRewards(offer.rewards))
             {
                 RefundBundle(offer.costs);
-                NotifyWarning("EXCHANGE RELAY - CARGO CAPACITY INSUFFICIENT");
+                NotifyWarning(RelayCargoFullMessage);
                 return false;
             }
 
-            string key = GetOfferKey(offer.offerId);
-            _executionCounts.TryGetValue(key, out int currentCount);
-            _executionCounts[key] = currentCount + 1;
-            PushRecentTransaction(new TransactionSnapshot(
-                offer.offerId,
-                offer.offerName,
-                offer.channelName,
-                BuildBundleSummary(offer.costs, "NONE"),
-                BuildBundleSummary(offer.rewards, "NONE")));
+            IncrementExecutionCount(offerHash);
+            PushRecentTransaction(new TransactionSnapshot(offer, offerHash));
 
-            NotifyInfo($"EXCHANGE RELAY - {offer.offerName.ToUpperInvariant()} CONFIRMED");
+            NotifyInfo(RelayConfirmedMessage);
             ExchangeStateChanged?.Invoke();
 
             // Уведомляем Atlas6DirectiveSystem — бартер = рост доверия
@@ -227,75 +350,138 @@ namespace Hecton8.Gameplay
                 directive.RegisterBarterTransaction();
 
             // Публикуем событие для QuestManager (OnItemCollected уже обрабатывается)
-            Atlas6Events.RaiseBarterAccepted(_executionCounts.Count);
+            Atlas6Events.RaiseBarterAccepted(_executionStateCount);
 
             return true;
         }
 
-        public bool CanExecute(BarterOfferData offer, out string status)
+        public bool CanExecute(BarterOfferData offer, out ExchangeStatus status)
         {
-            status = "READY";
-            if (offer == null)
+            int index = ResolveOfferIndex(offer);
+            return CanExecute(offer, GetOfferHashAt(index), GetRequiredScanEntryHashAt(index), out status);
+        }
+
+        private bool CanExecute(
+            BarterOfferData offer,
+            int offerHash,
+            uint requiredScanEntryHash,
+            out ExchangeStatus status)
+        {
+            status = ExchangeStatus.Ready;
+            if (offer == null || offerHash == 0)
             {
-                status = "NO OFFER";
+                status = ExchangeStatus.NoOffer;
                 return false;
             }
 
-            if (!IsUnlocked(offer))
+            if (!IsUnlocked(requiredScanEntryHash))
             {
-                status = "SCAN LOCK";
+                status = ExchangeStatus.ScanLock;
                 return false;
             }
 
-            if (HasReachedLimit(offer))
+            if (HasReachedLimit(offerHash, offer.repeatLimit))
             {
-                status = "CONTRACT CLOSED";
+                status = ExchangeStatus.ContractClosed;
                 return false;
             }
 
             if (playerInventory == null)
             {
-                status = "INVENTORY OFFLINE";
+                status = ExchangeStatus.InventoryOffline;
                 return false;
             }
 
             BarterItemAmount[] costs = offer.costs;
-            for (int i = 0; i < costs.Length; i++)
+            if (costs != null)
             {
-                if (costs[i].item == null)
+                for (int i = 0; i < costs.Length; i++)
                 {
-                    status = "COST DATA INVALID";
-                    return false;
-                }
+                    if (costs[i].item == null)
+                    {
+                        status = ExchangeStatus.CostDataInvalid;
+                        return false;
+                    }
 
-                int amount = Mathf.Max(1, costs[i].amount);
-                if (playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(costs[i].item.PersistentId)) < amount)
-                {
-                    status = $"NEED {costs[i].item.itemName.ToUpperInvariant()} X{amount}";
-                    return false;
+                    int amount = math.max(1, costs[i].amount);
+                    int itemHash = costs[i].item.PersistentHashId;
+                    if (itemHash == 0 || playerInventory.CountTotal(itemHash) < amount)
+                    {
+                        status = ExchangeStatus.InsufficientMaterials;
+                        return false;
+                    }
                 }
             }
 
             return true;
         }
 
-        public string BuildBundleSummary(BarterItemAmount[] bundle, string emptyLabel)
+        public void AppendBundleSummary(StringBuilder builder, BarterItemAmount[] bundle, string emptyLabel)
         {
-            _sb.Length = 0;
+            if (builder == null)
+                return;
+
             if (bundle == null || bundle.Length == 0)
-                return emptyLabel;
+            {
+                builder.Append(emptyLabel);
+                return;
+            }
 
             for (int i = 0; i < bundle.Length; i++)
             {
                 if (i > 0)
-                    _sb.Append("  |  ");
+                    builder.Append("  |  ");
 
-                int amount = Mathf.Max(1, bundle[i].amount);
-                _sb.Append(bundle[i].item != null ? bundle[i].item.itemName.ToUpperInvariant() : "UNKNOWN");
-                _sb.Append(" X").Append(amount);
+                int amount = math.max(1, bundle[i].amount);
+                builder.Append(bundle[i].item != null ? bundle[i].item.itemName : "UNKNOWN");
+                builder.Append(" X").Append(amount);
+            }
+        }
+
+        public bool TryAppendBundleSummary(Span<char> buffer, ref int cursor, BarterItemAmount[] bundle, ReadOnlySpan<char> emptyLabel)
+        {
+            if (bundle == null || bundle.Length == 0)
+                return TryAppend(buffer, ref cursor, emptyLabel);
+
+            for (int i = 0; i < bundle.Length; i++)
+            {
+                if (i > 0 && !TryAppend(buffer, ref cursor, "  |  ".AsSpan()))
+                    return false;
+
+                int amount = math.max(1, bundle[i].amount);
+                ReadOnlySpan<char> itemName = bundle[i].item != null && !string.IsNullOrWhiteSpace(bundle[i].item.itemName)
+                    ? bundle[i].item.itemName.AsSpan()
+                    : "UNKNOWN".AsSpan();
+
+                if (!TryAppend(buffer, ref cursor, itemName) ||
+                    !TryAppend(buffer, ref cursor, " X".AsSpan()) ||
+                    !amount.TryFormat(buffer.Slice(cursor), out int written))
+                {
+                    return false;
+                }
+
+                cursor += written;
             }
 
+            return true;
+        }
+
+        private string BuildBundleSummaryForSave(BarterItemAmount[] bundle, string emptyLabel)
+        {
+            _sb.Length = 0;
+            AppendBundleSummary(_sb, bundle, emptyLabel);
+
             return _sb.ToString();
+        }
+
+        private static bool TryAppend(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
+        {
+            if (cursor < 0 || cursor + value.Length > buffer.Length)
+                return false;
+
+            value.CopyTo(buffer.Slice(cursor));
+            cursor += value.Length;
+            return true;
         }
 
         public void PopulateSaveData(SaveData data)
@@ -305,37 +491,44 @@ namespace Hecton8.Gameplay
 
             data.barter.EnsureCapacity();
             int count = 0;
-            Dictionary<string, int>.Enumerator enumerator = _executionCounts.GetEnumerator();
-            while (enumerator.MoveNext())
+            if (offerCatalog != null)
             {
-                KeyValuePair<string, int> kvp = enumerator.Current;
-                if (count >= BarterDTO.MaxOffers)
-                    break;
-
-                data.barter.offerStates[count] = new BarterOfferStateDTO
+                for (int i = 0; i < offerCatalog.Count && count < BarterDTO.MaxOffers; i++)
                 {
-                    offerId = kvp.Key,
-                    executionCount = kvp.Value
-                };
-                count++;
+                    BarterOfferData offer = offerCatalog.GetAt(i);
+                    int offerHash = ResolveOfferHash(offer);
+                    int executionCount = GetExecutionCount(offerHash);
+                    if (offerHash == 0 || executionCount <= 0)
+                    {
+                        continue;
+                    }
+
+                    data.barter.offerStates[count] = new BarterOfferStateDTO
+                    {
+                        offerId = offer.offerId,
+                        executionCount = executionCount
+                    };
+                    count++;
+                }
             }
 
             data.barter.stateCount = count;
             for (int i = count; i < BarterDTO.MaxOffers; i++)
                 data.barter.offerStates[i] = default;
 
-            int recentCount = Mathf.Min(_recentTransactions.Count, BarterDTO.MaxRecentTransactions);
+            int recentCount = math.min(_recentTransactionCount, BarterDTO.MaxRecentTransactions);
             data.barter.recentTransactionCount = recentCount;
             for (int i = 0; i < recentCount; i++)
             {
                 TransactionSnapshot tx = _recentTransactions[i];
+                BarterOfferData txOffer = tx.Offer;
                 data.barter.recentTransactions[i] = new BarterTransactionDTO
                 {
-                    offerId = tx.OfferId,
-                    offerName = tx.OfferName,
-                    channelName = tx.ChannelName,
-                    costSummary = tx.CostSummary,
-                    rewardSummary = tx.RewardSummary
+                    offerId = txOffer != null ? txOffer.offerId : tx.LegacyOfferId,
+                    offerName = txOffer != null ? txOffer.offerName : tx.LegacyOfferName,
+                    channelName = txOffer != null ? txOffer.channelName : tx.LegacyChannelName,
+                    costSummary = txOffer != null ? BuildBundleSummaryForSave(txOffer.costs, "NONE") : tx.LegacyCostSummary,
+                    rewardSummary = txOffer != null ? BuildBundleSummaryForSave(txOffer.rewards, "NONE") : tx.LegacyRewardSummary
                 };
             }
 
@@ -345,35 +538,43 @@ namespace Hecton8.Gameplay
 
         public void LoadFromSaveData(SaveData data)
         {
-            _executionCounts.Clear();
-            _recentTransactions.Clear();
+            ClearExecutionCounts();
+            ClearRecentTransactions();
             if (data == null)
                 return;
 
             BarterDTO dto = data.barter;
-            int count = Mathf.Clamp(dto.stateCount, 0, dto.offerStates != null ? dto.offerStates.Length : 0);
+            CacheCatalogRuntimeHashes();
+            int count = math.clamp(dto.stateCount, 0, dto.offerStates != null ? dto.offerStates.Length : 0);
             for (int i = 0; i < count; i++)
             {
                 BarterOfferStateDTO state = dto.offerStates[i];
                 if (string.IsNullOrWhiteSpace(state.offerId))
                     continue;
 
-                _executionCounts[GetOfferKey(state.offerId)] = Mathf.Max(0, state.executionCount);
+                int offerHash = ComputeOfferHash(state.offerId);
+                if (offerHash != 0)
+                    SetExecutionCount(offerHash, math.max(0, state.executionCount));
             }
 
-            int recentCount = Mathf.Clamp(dto.recentTransactionCount, 0, dto.recentTransactions != null ? dto.recentTransactions.Length : 0);
+            int recentCount = math.clamp(dto.recentTransactionCount, 0, dto.recentTransactions != null ? dto.recentTransactions.Length : 0);
             for (int i = 0; i < recentCount; i++)
             {
                 BarterTransactionDTO tx = dto.recentTransactions[i];
                 if (string.IsNullOrWhiteSpace(tx.offerId) && string.IsNullOrWhiteSpace(tx.offerName))
                     continue;
 
-                _recentTransactions.Add(new TransactionSnapshot(
-                    tx.offerId ?? string.Empty,
-                    tx.offerName ?? string.Empty,
-                    tx.channelName ?? string.Empty,
-                    tx.costSummary ?? string.Empty,
-                    tx.rewardSummary ?? string.Empty));
+                int offerHash = ComputeOfferHash(tx.offerId);
+                BarterOfferData offer = FindOfferByHash(offerHash);
+                AppendLoadedTransaction(offer != null
+                    ? new TransactionSnapshot(offer, offerHash)
+                    : TransactionSnapshot.FromLegacy(
+                        offerHash,
+                        tx.offerId,
+                        tx.offerName,
+                        tx.channelName,
+                        tx.costSummary,
+                        tx.rewardSummary));
             }
 
             ExchangeStateChanged?.Invoke();
@@ -383,10 +584,11 @@ namespace Hecton8.Gameplay
         {
             if (playerInventory == null)
             {
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                    playerTransform != null)
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null &&
+                    playerContext.PlayerObject != null)
                 {
-                    playerInventory = playerTransform.GetComponent<PlayerInventory>();
+                    playerContext.PlayerObject.TryGetComponent(out playerInventory);
                 }
             }
             if (scanLogSystem == null)
@@ -403,10 +605,15 @@ namespace Hecton8.Gameplay
             if (offer == null)
                 return false;
 
-            if (string.IsNullOrWhiteSpace(offer.requiredScanEntryId))
+            return IsUnlocked(GetRequiredScanEntryHash(offer));
+        }
+
+        private bool IsUnlocked(uint requiredScanEntryHash)
+        {
+            if (requiredScanEntryHash == 0u)
                 return true;
 
-            return scanLogSystem != null && scanLogSystem.ContainsEntry(offer.requiredScanEntryId);
+            return scanLogSystem != null && scanLogSystem.ContainsEntry(requiredScanEntryHash);
         }
 
         private bool HasReachedLimit(BarterOfferData offer)
@@ -414,28 +621,245 @@ namespace Hecton8.Gameplay
             if (offer == null)
                 return true;
 
-            if (offer.repeatLimit <= 0)
+            return HasReachedLimit(ResolveOfferHash(offer), offer.repeatLimit);
+        }
+
+        private bool HasReachedLimit(int offerHash, int repeatLimit)
+        {
+            if (repeatLimit <= 0)
                 return false;
 
-            return GetExecutionCount(offer.offerId) >= offer.repeatLimit;
+            return offerHash == 0 || GetExecutionCount(offerHash) >= repeatLimit;
         }
 
-        private int GetExecutionCount(string offerId)
+        private int GetExecutionCount(BarterOfferData offer)
         {
-            _executionCounts.TryGetValue(GetOfferKey(offerId), out int count);
-            return count;
+            int offerHash = ResolveOfferHash(offer);
+            if (offerHash == 0)
+                return 0;
+
+            return GetExecutionCount(offerHash);
         }
 
-        private static string GetOfferKey(string offerId)
+        private int GetExecutionCount(int offerHash)
         {
-            return string.IsNullOrWhiteSpace(offerId) ? string.Empty : offerId.Trim();
+            int slot = FindExecutionSlot(offerHash);
+            return slot >= 0 ? _executionCounts[slot] : 0;
+        }
+
+        private void IncrementExecutionCount(int offerHash)
+        {
+            int slot = FindOrCreateExecutionSlot(offerHash);
+            if (slot >= 0)
+                _executionCounts[slot] = math.max(0, _executionCounts[slot]) + 1;
+        }
+
+        private void SetExecutionCount(int offerHash, int count)
+        {
+            if (count <= 0)
+                return;
+
+            int slot = FindOrCreateExecutionSlot(offerHash);
+            if (slot >= 0)
+                _executionCounts[slot] = count;
+        }
+
+        private int FindExecutionSlot(int offerHash)
+        {
+            if (offerHash == 0)
+                return -1;
+
+            for (int i = 0; i < _executionStateCount; i++)
+            {
+                if (_executionOfferHashes[i] == offerHash)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private int FindOrCreateExecutionSlot(int offerHash)
+        {
+            int existingSlot = FindExecutionSlot(offerHash);
+            if (existingSlot >= 0)
+                return existingSlot;
+
+            if (offerHash == 0 || _executionStateCount >= BarterDTO.MaxOffers)
+                return -1;
+
+            int slot = _executionStateCount++;
+            _executionOfferHashes[slot] = offerHash;
+            _executionCounts[slot] = 0;
+            return slot;
+        }
+
+        private void ClearExecutionCounts()
+        {
+            for (int i = 0; i < _executionStateCount; i++)
+            {
+                _executionOfferHashes[i] = 0;
+                _executionCounts[i] = 0;
+            }
+
+            _executionStateCount = 0;
+        }
+
+        private int ResolveOfferHash(BarterOfferData offer)
+        {
+            int index = ResolveOfferIndex(offer);
+            return GetOfferHashAt(index);
+        }
+
+        private int ResolveOfferIndex(BarterOfferData offer)
+        {
+            if (offer == null || offerCatalog == null)
+                return -1;
+
+            int count = math.min(_catalogRuntimeHashCount, offerCatalog.Count);
+            for (int i = 0; i < count; i++)
+            {
+                if (ReferenceEquals(offerCatalog.GetAt(i), offer))
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private int GetOfferHashAt(int index)
+        {
+            return index >= 0 && index < _catalogRuntimeHashCount ? _catalogOfferHashes[index] : 0;
+        }
+
+        private uint GetRequiredScanEntryHashAt(int index)
+        {
+            return index >= 0 && index < _catalogRuntimeHashCount ? _catalogRequiredScanEntryHashes[index] : 0u;
+        }
+
+        private static int ComputeOfferHash(string offerId)
+        {
+            return string.IsNullOrWhiteSpace(offerId) ? 0 : LocHash.Compute(offerId);
+        }
+
+        public static string ResolveStatusLabel(ExchangeStatus status)
+        {
+            switch (status)
+            {
+                case ExchangeStatus.Ready:
+                    return StatusReady;
+                case ExchangeStatus.NoOffer:
+                    return StatusNoOffer;
+                case ExchangeStatus.ScanLock:
+                    return StatusScanLock;
+                case ExchangeStatus.ContractClosed:
+                    return StatusContractClosed;
+                case ExchangeStatus.InventoryOffline:
+                    return StatusInventoryOffline;
+                case ExchangeStatus.CostDataInvalid:
+                    return StatusCostDataInvalid;
+                case ExchangeStatus.InsufficientMaterials:
+                    return StatusInsufficientMaterials;
+                default:
+                    return StatusNoOffer;
+            }
+        }
+
+        private static string ResolveRelayStatusMessage(ExchangeStatus status)
+        {
+            switch (status)
+            {
+                case ExchangeStatus.Ready:
+                    return RelayReadyMessage;
+                case ExchangeStatus.NoOffer:
+                    return RelayNoOfferMessage;
+                case ExchangeStatus.ScanLock:
+                    return RelayScanLockMessage;
+                case ExchangeStatus.ContractClosed:
+                    return RelayContractClosedMessage;
+                case ExchangeStatus.InventoryOffline:
+                    return RelayInventoryOfflineMessage;
+                case ExchangeStatus.CostDataInvalid:
+                    return RelayCostDataInvalidMessage;
+                case ExchangeStatus.InsufficientMaterials:
+                    return RelayInsufficientMaterialsMessage;
+                default:
+                    return RelayNoOfferMessage;
+            }
         }
 
         private void PushRecentTransaction(TransactionSnapshot snapshot)
         {
-            if (_recentTransactions.Count >= BarterDTO.MaxRecentTransactions)
-                _recentTransactions.RemoveAt(_recentTransactions.Count - 1);
-            _recentTransactions.Insert(0, snapshot);
+            int last = math.min(_recentTransactionCount, BarterDTO.MaxRecentTransactions - 1);
+            for (int i = last; i > 0; i--)
+                _recentTransactions[i] = _recentTransactions[i - 1];
+
+            _recentTransactions[0] = snapshot;
+            _recentTransactionCount = math.min(_recentTransactionCount + 1, BarterDTO.MaxRecentTransactions);
+        }
+
+        private void AppendLoadedTransaction(TransactionSnapshot snapshot)
+        {
+            if (_recentTransactionCount >= BarterDTO.MaxRecentTransactions)
+                return;
+
+            _recentTransactions[_recentTransactionCount++] = snapshot;
+        }
+
+        private void ClearRecentTransactions()
+        {
+            for (int i = 0; i < _recentTransactionCount; i++)
+                _recentTransactions[i] = default;
+
+            _recentTransactionCount = 0;
+        }
+
+        private BarterOfferData FindOfferByHash(int offerHash)
+        {
+            if (offerHash == 0 || offerCatalog == null)
+                return null;
+
+            int count = math.min(_catalogRuntimeHashCount, offerCatalog.Count);
+            for (int i = 0; i < count; i++)
+            {
+                BarterOfferData offer = offerCatalog.GetAt(i);
+                if (GetOfferHashAt(i) == offerHash)
+                    return offer;
+            }
+
+            return null;
+        }
+
+        private void CacheCatalogRuntimeHashes()
+        {
+            if (offerCatalog == null)
+            {
+                ClearCatalogRuntimeHashes();
+                return;
+            }
+
+            ClearCatalogRuntimeHashes();
+            int count = math.min(offerCatalog.Count, BarterDTO.MaxOffers);
+            for (int i = 0; i < count; i++)
+            {
+                BarterOfferData offer = offerCatalog.GetAt(i);
+                if (offer != null)
+                {
+                    _catalogOfferHashes[i] = ComputeOfferHash(offer.offerId);
+                    _catalogRequiredScanEntryHashes[i] = ScanEvents.ComputeEntryHash(offer.requiredScanEntryId);
+                }
+            }
+
+            _catalogRuntimeHashCount = count;
+        }
+
+        private void ClearCatalogRuntimeHashes()
+        {
+            for (int i = 0; i < _catalogRuntimeHashCount; i++)
+            {
+                _catalogOfferHashes[i] = 0;
+                _catalogRequiredScanEntryHashes[i] = 0u;
+            }
+
+            _catalogRuntimeHashCount = 0;
         }
 
         private bool ConsumeBundle(BarterItemAmount[] bundle)
@@ -448,10 +872,11 @@ namespace Hecton8.Gameplay
                 if (bundle[i].item == null)
                     return false;
 
-                if (!playerInventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId), Mathf.Max(1, bundle[i].amount)))
+                int itemHash = bundle[i].item.PersistentHashId;
+                if (itemHash == 0 || !playerInventory.TryRemoveQuantity(itemHash, math.max(1, bundle[i].amount)))
                 {
                     for (int j = 0; j < i; j++)
-                        playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(bundle[j].item.PersistentId), Mathf.Max(1, bundle[j].amount));
+                        playerInventory.TryAddItem(bundle[j].item.PersistentHashId, math.max(1, bundle[j].amount));
                     return false;
                 }
             }
@@ -469,10 +894,11 @@ namespace Hecton8.Gameplay
                 if (bundle[i].item == null)
                     return false;
 
-                if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId), Mathf.Max(1, bundle[i].amount)))
+                int itemHash = bundle[i].item.PersistentHashId;
+                if (itemHash == 0 || !playerInventory.TryAddItem(itemHash, math.max(1, bundle[i].amount)))
                 {
                     for (int j = 0; j < i; j++)
-                        playerInventory.TryRemoveQuantity(Hecton.Localization.LocHash.Compute(bundle[j].item.PersistentId), Mathf.Max(1, bundle[j].amount));
+                        playerInventory.TryRemoveQuantity(bundle[j].item.PersistentHashId, math.max(1, bundle[j].amount));
                     return false;
                 }
             }
@@ -487,8 +913,12 @@ namespace Hecton8.Gameplay
 
             for (int i = 0; i < bundle.Length; i++)
             {
-                if (bundle[i].item != null)
-                    playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId), Mathf.Max(1, bundle[i].amount));
+                if (bundle[i].item == null)
+                    continue;
+
+                int itemHash = bundle[i].item.PersistentHashId;
+                if (itemHash != 0)
+                    playerInventory.TryAddItem(itemHash, math.max(1, bundle[i].amount));
             }
         }
 

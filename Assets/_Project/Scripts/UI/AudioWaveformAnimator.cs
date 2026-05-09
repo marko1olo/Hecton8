@@ -13,6 +13,7 @@ namespace Hecton8.UI
     public sealed class AudioWaveformAnimator : MonoBehaviour, ITickable, IUpdatable
     {
         private const int MaxCueTextChars = 1024;
+        private const float AmplitudeIdleEpsilon = 0.001f;
 
         [Header("References")]
         [SerializeField] private RectTransform[] waveformBars;
@@ -64,14 +65,17 @@ namespace Hecton8.UI
         {
             EnsureWaveformTargets();
             TrySubscribeToSubtitleManager();
-            RegisterToTickManager();
             ApplyIdlePose();
+            RefreshTickRegistration();
         }
 
         private void OnDisable()
         {
             UnsubscribeFromSubtitleManager();
             UnregisterFromTickManager();
+            _cueTimer = 0f;
+            _cueDuration = 0f;
+            _amplitude = 0f;
             ApplyIdlePose();
         }
 
@@ -88,28 +92,39 @@ namespace Hecton8.UI
                 }
             }
 
-            float targetAmplitude = _cueTimer > 0f ? Mathf.Lerp(0.22f, 1f, _speakerIntensity) : 0f;
-            if (_cueTimer > 0f)
+            if (_cueTimer <= 0f)
             {
-                _cueTimer -= deltaTime;
-                _noisePhase += deltaTime * Mathf.Lerp(waveformSpeedMin, waveformSpeedMax, targetAmplitude);
-                _amplitude = math.lerp(_amplitude, targetAmplitude, FastDecayBlend(decaySharpness, deltaTime));
-            }
-            else
-            {
-                _amplitude = 0f;
+                if (_amplitude > AmplitudeIdleEpsilon)
+                {
+                    _amplitude = 0f;
+                    ApplyIdlePose();
+                }
+
+                RefreshTickRegistration();
+                return;
             }
 
+            float targetAmplitude = math.lerp(0.22f, 1f, math.saturate(_speakerIntensity));
+            _cueTimer = math.max(0f, _cueTimer - math.max(0f, deltaTime));
+            _noisePhase += deltaTime * math.lerp(waveformSpeedMin, waveformSpeedMax, targetAmplitude);
+            _amplitude = math.lerp(_amplitude, targetAmplitude, FastDecayBlend(decaySharpness, deltaTime));
+
             ApplyWaveformPose();
+            if (_cueTimer <= 0f)
+            {
+                _amplitude = 0f;
+                ApplyIdlePose();
+                RefreshTickRegistration();
+            }
         }
 
         private void HandleCueChanged(float duration, char[] textBuffer, int textStart, int textLength, float speakerIntensity)
         {
-            _cueDuration = Mathf.Max(0f, duration);
+            _cueDuration = math.max(0f, duration);
             _cueTimer = _cueDuration;
             _cueSeed = ComputeCueSeed(textBuffer, textStart, textLength);
-            _speakerIntensity = Mathf.Clamp01(speakerIntensity);
-            _amplitude = _cueDuration > 0f ? Mathf.Lerp(0.22f, 1f, _speakerIntensity) : 0f;
+            _speakerIntensity = math.saturate(speakerIntensity);
+            _amplitude = _cueDuration > 0f ? math.lerp(0.22f, 1f, _speakerIntensity) : 0f;
             if (_cueDuration <= 0f)
             {
                 _noisePhase = 0f;
@@ -117,6 +132,7 @@ namespace Hecton8.UI
             }
 
             ApplyOptionalCueText(textBuffer, textStart, textLength);
+            RefreshTickRegistration();
         }
 
         private static float FastDecayBlend(float sharpness, float deltaTime)
@@ -189,20 +205,41 @@ namespace Hecton8.UI
             if (waveformBars == null)
                 return;
 
-            float liveBlend = Mathf.Clamp01(_amplitude);
+            float liveBlend = math.saturate(_amplitude);
             for (int i = 0; i < waveformBars.Length; i++)
             {
                 RectTransform rect = waveformBars[i];
                 if (rect == null)
                     continue;
 
-                float noise = Mathf.PerlinNoise((i + 1) * 0.37f + (_cueSeed & 255) * 0.001f, _noisePhase + i * 0.21f);
-                float intensityBlend = Mathf.Lerp(0.2f, 1f, _speakerIntensity);
-                float activeMin = Mathf.Lerp(idleScaleY, activeMinScaleY, intensityBlend);
-                float activeMax = Mathf.Lerp(Mathf.Max(idleScaleY, activeMinScaleY), activeMaxScaleY, intensityBlend);
-                float targetY = Mathf.Lerp(idleScaleY, Mathf.Lerp(activeMin, activeMax, noise), liveBlend);
+                float noise = ResolveWaveformNoise(i, _cueSeed, _noisePhase);
+                float intensityBlend = math.lerp(0.2f, 1f, math.saturate(_speakerIntensity));
+                float activeMin = math.lerp(idleScaleY, activeMinScaleY, intensityBlend);
+                float activeMax = math.lerp(math.max(idleScaleY, activeMinScaleY), activeMaxScaleY, intensityBlend);
+                float targetY = math.lerp(idleScaleY, math.lerp(activeMin, activeMax, noise), liveBlend);
                 rect.localScale = new Vector3(_baseScaleX[i], targetY, _baseScaleZ[i]);
             }
+        }
+
+        private static float ResolveWaveformNoise(int barIndex, int cueSeed, float noisePhase)
+        {
+            float sample = (noisePhase * 8f) + (barIndex * 1.73f) + ((cueSeed & 255) * 0.013f);
+            float frame = math.floor(sample);
+            float blend = SmoothStep01(math.frac(sample));
+            float hashA = Hash01(frame, cueSeed + barIndex * 37);
+            float hashB = Hash01(frame + 1f, cueSeed + barIndex * 37);
+            return math.lerp(hashA, hashB, blend);
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            value = math.saturate(value);
+            return value * value * (3f - (2f * value));
+        }
+
+        private static float Hash01(float x, int seed)
+        {
+            return math.frac(52.9829189f * math.frac(math.dot(new float2(x, seed), new float2(0.06711056f, 0.00583715f))));
         }
 
         private void TrySubscribeToSubtitleManager()
@@ -227,6 +264,23 @@ namespace Hecton8.UI
 
             _subtitleManager = null;
             _subscribed = false;
+        }
+
+        private void RefreshTickRegistration()
+        {
+            if (!isActiveAndEnabled)
+            {
+                UnregisterFromTickManager();
+                return;
+            }
+
+            if (!_subscribed || _cueTimer > 0f || _amplitude > AmplitudeIdleEpsilon)
+            {
+                RegisterToTickManager();
+                return;
+            }
+
+            UnregisterFromTickManager();
         }
 
         private void ApplyOptionalCueText(char[] textBuffer, int textStart, int textLength)
@@ -293,8 +347,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()

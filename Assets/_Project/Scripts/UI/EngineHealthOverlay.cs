@@ -59,7 +59,7 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-#if ENABLE_LEGACY_INPUT_MANAGER
+#if ENABLE_INPUT_SYSTEM
             if (ShouldToggle())
                 SetVisible(!_visible);
 #endif
@@ -88,6 +88,7 @@ namespace Hecton8.UI
                 _root.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
         }
 
+#if ENABLE_INPUT_SYSTEM
         private bool ShouldToggle()
         {
             global::UnityEngine.InputSystem.Keyboard keyboard = global::UnityEngine.InputSystem.Keyboard.current;
@@ -122,6 +123,7 @@ namespace Hecton8.UI
                 default: return false;
             }
         }
+#endif
 
         private void TryRegister()
         {
@@ -195,13 +197,18 @@ namespace Hecton8.UI
             public GraphElement(float[] samples, float budgetMilliseconds)
             {
                 _samples = samples;
-                _budgetMilliseconds = Mathf.Max(0.001f, budgetMilliseconds);
+                _budgetMilliseconds = budgetMilliseconds > 0.001f ? budgetMilliseconds : 0.001f;
                 generateVisualContent += DrawGraph;
             }
 
             public void SetSampleCount(int sampleCount)
             {
-                _sampleCount = Mathf.Clamp(sampleCount, 0, _samples.Length);
+                if (sampleCount <= 0)
+                    _sampleCount = 0;
+                else if (sampleCount >= _samples.Length)
+                    _sampleCount = _samples.Length;
+                else
+                    _sampleCount = sampleCount;
             }
 
             private void DrawGraph(MeshGenerationContext context)
@@ -233,7 +240,7 @@ namespace Hecton8.UI
 
             private void DrawBudgetLine(Painter2D painter, Rect rect)
             {
-                float y = rect.yMax - Mathf.Clamp01(_budgetMilliseconds / (_budgetMilliseconds * 2f)) * rect.height;
+                float y = rect.yMax - rect.height * 0.5f;
                 painter.strokeColor = new Color(0.65f, 1f, 0.65f, 0.5f);
                 painter.lineWidth = 1f;
                 painter.BeginPath();
@@ -244,11 +251,17 @@ namespace Hecton8.UI
 
             private void DrawSamples(Painter2D painter, Rect rect)
             {
-                float step = rect.width / Mathf.Max(1, _sampleCount - 1);
+                int divisor = _sampleCount > 1 ? _sampleCount - 1 : 1;
+                float step = rect.width / divisor;
                 float graphMax = _budgetMilliseconds * 2f;
                 for (int i = 0; i < _sampleCount; i++)
                 {
-                    float value = Mathf.Clamp(_samples[i], 0f, graphMax);
+                    float value = _samples[i];
+                    if (value < 0f)
+                        value = 0f;
+                    else if (value > graphMax)
+                        value = graphMax;
+
                     float normalized = value / graphMax;
                     float x = rect.x + step * i;
                     float y = rect.yMax - normalized * rect.height;

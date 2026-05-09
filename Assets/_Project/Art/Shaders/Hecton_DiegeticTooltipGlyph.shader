@@ -29,6 +29,9 @@ Shader "Hecton8/UI/DiegeticTooltipGlyph"
             #pragma fragment Frag
             #pragma target 4.5
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -59,6 +62,7 @@ Shader "Hecton8/UI/DiegeticTooltipGlyph"
                 float2 uv : TEXCOORD0;
                 float4 tint : COLOR0;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             Varyings Vert(Attributes input)
@@ -66,6 +70,7 @@ Shader "Hecton8/UI/DiegeticTooltipGlyph"
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 float4 uvRect = UNITY_ACCESS_INSTANCED_PROP(PerInstance, _GlyphUvRect);
                 output.positionCS = TransformObjectToHClip(input.positionOS);
@@ -77,6 +82,7 @@ Shader "Hecton8/UI/DiegeticTooltipGlyph"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float sdf = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv).a;
                 float alpha = saturate((sdf - 0.5 + _FaceDilate) * _GradientScale + 0.5);
@@ -85,4 +91,6 @@ Shader "Hecton8/UI/DiegeticTooltipGlyph"
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

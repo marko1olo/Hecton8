@@ -90,7 +90,7 @@ namespace Hecton8.SaveSystem
 
         public static string GetThumbnailPath(string slotName)
         {
-            return Path.Combine(Application.persistentDataPath, slotName + Extension);
+            return Path.Combine(Application.persistentDataPath, ResolveThumbnailFileStem(slotName) + Extension);
         }
 
         public static string GetTempThumbnailPath(string slotName)
@@ -104,8 +104,12 @@ namespace Hecton8.SaveSystem
         /// </summary>
         public static void CaptureThumbnail(string slotName, Camera overrideCamera = null)
         {
-            if (string.IsNullOrEmpty(slotName) || _thumbnailWriteInProgress || !TryResolveCaptureCamera(overrideCamera, out Camera captureCamera))
+            if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName) ||
+                _thumbnailWriteInProgress ||
+                !TryResolveCaptureCamera(overrideCamera, out Camera captureCamera))
+            {
                 return;
+            }
 
             if ((_hasPendingRequest && string.Equals(_pendingRequest.SlotName, slotName, StringComparison.OrdinalIgnoreCase)) ||
                 (_hasInflightRequest && string.Equals(_inflightRequest.SlotName, slotName, StringComparison.OrdinalIgnoreCase)))
@@ -163,6 +167,9 @@ namespace Hecton8.SaveSystem
         {
             AssetLoadDispatcher.ForceEvaluateUiMipBiasGate();
 
+            if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName))
+                return null;
+
             if (_spriteCache.TryGetValue(slotName, out Sprite cached))
             {
                 if (cached != null && cached.texture != null)
@@ -195,6 +202,9 @@ namespace Hecton8.SaveSystem
 
         public static void DeleteThumbnail(string slotName)
         {
+            if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName))
+                return;
+
             ClearCacheEntry(slotName);
 
             string path = GetThumbnailPath(slotName);
@@ -316,6 +326,12 @@ namespace Hecton8.SaveSystem
 
         private static async Awaitable PersistThumbnailAsync(string slotName, NativeArray<byte> rgbaBytes, int width, int height)
         {
+            if (!SaveManager.TryResolveSafeSlotName(slotName, out slotName))
+            {
+                _thumbnailWriteInProgress = false;
+                return;
+            }
+
             string path = GetThumbnailPath(slotName);
             string tempPath = GetTempThumbnailPath(slotName);
 
@@ -330,37 +346,42 @@ namespace Hecton8.SaveSystem
                 if (File.Exists(tempPath))
                     File.Delete(tempPath);
 
-                NativeArray<byte> encodedJpg = ImageConversion.EncodeNativeArrayToJPG(
-                    rgbaBytes,
-                    GraphicsFormat.R8G8B8A8_SRGB,
-                    (uint)width,
-                    (uint)height,
-                    0u,
-                    JpegQuality);
-
-                if (!encodedJpg.IsCreated || encodedJpg.Length <= 0)
-                    throw new IOException("JPG encoder returned no thumbnail bytes.");
-
-                NativeMemorySentinel.RegisterNativeArray(
-                    encodedJpg,
-                    NativeMemoryOwner,
-                    "thumbnailEncodedJpg",
-                    NativeAllocationLifetime.TransientArena);
-
+                NativeArray<byte> encodedJpg = default;
+                bool encodedJpgRegistered = false;
                 try
                 {
+                    encodedJpg = ImageConversion.EncodeNativeArrayToJPG(
+                        rgbaBytes,
+                        GraphicsFormat.R8G8B8A8_SRGB,
+                        (uint)width,
+                        (uint)height,
+                        0u,
+                        JpegQuality);
+
+                    if (!encodedJpg.IsCreated || encodedJpg.Length <= 0)
+                        throw new IOException("JPG encoder returned no thumbnail bytes.");
+
+                    NativeMemorySentinel.RegisterNativeArray(
+                        encodedJpg,
+                        NativeMemoryOwner,
+                        "thumbnailEncodedJpg",
+                        NativeAllocationLifetime.TransientArena);
+                    encodedJpgRegistered = true;
+
                     unsafe
                     {
                         void* dataPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(encodedJpg);
-                        using var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None);
-                        stream.Write(new ReadOnlySpan<byte>(dataPtr, encodedJpg.Length));
+                        if (!AsyncWriteManager.WriteAll(tempPath, dataPtr, encodedJpg.Length, out string writeError))
+                            throw new IOException(writeError);
                     }
                 }
                 finally
                 {
                     if (encodedJpg.IsCreated)
                     {
-                        NativeMemorySentinel.UnregisterNativeArray(encodedJpg);
+                        if (encodedJpgRegistered)
+                            NativeMemorySentinel.UnregisterNativeArray(encodedJpg);
+
                         encodedJpg.Dispose();
                     }
                 }
@@ -369,6 +390,7 @@ namespace Hecton8.SaveSystem
                     File.Delete(path);
 
                 File.Move(tempPath, path);
+                await Awaitable.MainThreadAsync();
             }
             catch (Exception)
             {
@@ -401,7 +423,7 @@ namespace Hecton8.SaveSystem
             if (byteLength <= 0)
                 return false;
 
-            _readbackRgbaBuffer = new NativeArray<byte>(byteLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[Width * Height * 4] - persistent thumbnail GPU readback shadow buffer - owner: SaveThumbnailSystem
+            _readbackRgbaBuffer = new NativeArray<byte>(byteLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[Width * Height * 4] — persistent thumbnail GPU readback shadow buffer — owner: SaveThumbnailSystem
             NativeMemorySentinel.RegisterNativeArray(
                 _readbackRgbaBuffer,
                 NativeMemoryOwner,
@@ -431,7 +453,12 @@ namespace Hecton8.SaveSystem
 
         private static string GetLegacyThumbnailPath(string slotName)
         {
-            return Path.Combine(Application.persistentDataPath, slotName + LegacyExtension);
+            return Path.Combine(Application.persistentDataPath, ResolveThumbnailFileStem(slotName) + LegacyExtension);
+        }
+
+        private static string ResolveThumbnailFileStem(string slotName)
+        {
+            return SaveManager.ResolveSafeSlotFileStem(slotName);
         }
 
         private static void ClearCacheEntry(string slotName)

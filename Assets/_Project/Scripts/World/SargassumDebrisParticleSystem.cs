@@ -1,5 +1,6 @@
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -243,19 +244,17 @@ namespace Hecton8.World
             if (intensity <= 0.0001f)
                 return;
 
-            Vector3 normalizedDirection = directionWS.sqrMagnitude > 0.0001f
-                ? directionWS.normalized
-                : Vector3.up;
-            Vector3 baseVelocity = normalizedDirection * Mathf.Lerp(burstSpeed * 0.6f, burstSpeed, intensity);
+            Vector3 normalizedDirection = ResolveSafeDirection(directionWS, Vector3.up);
+            Vector3 baseVelocity = normalizedDirection * LerpClamped(burstSpeed * 0.6f, burstSpeed, intensity);
             baseVelocity.y += upwardLift;
 
-            int leafCount = Mathf.RoundToInt(Mathf.Lerp(minLeafParticles, maxLeafParticles, intensity));
+            int leafCount = Mathf.RoundToInt(LerpClamped(minLeafParticles, maxLeafParticles, intensity));
             EmitGroup(
                 positionWS,
                 baseVelocity,
                 leafCount,
-                leafLifetime * Mathf.Lerp(0.82f, 1.12f, Next01()),
-                leafSize * Mathf.Lerp(0.82f, 1.24f, intensity),
+                leafLifetime * LerpClamped(0.82f, 1.12f, Next01()),
+                leafSize * LerpClamped(0.82f, 1.24f, intensity),
                 Color.Lerp(_leafShadowColor, _leafHighlightColor, Next01()));
 
             int bubbleCount = Mathf.RoundToInt(maxBubbleParticles * Mathf.Clamp01(bubbleWeight));
@@ -268,8 +267,8 @@ namespace Hecton8.World
                 positionWS,
                 bubbleVelocity,
                 bubbleCount,
-                bubbleLifetime * Mathf.Lerp(0.88f, 1.12f, Next01()),
-                bubbleSize * Mathf.Lerp(0.85f, 1.15f, Mathf.Clamp01(bubbleWeight)),
+                bubbleLifetime * LerpClamped(0.88f, 1.12f, Next01()),
+                bubbleSize * LerpClamped(0.85f, 1.15f, Mathf.Clamp01(bubbleWeight)),
                 _bubbleColor);
         }
 
@@ -325,7 +324,7 @@ namespace Hecton8.World
                 return;
             }
 
-            float canopyDensityBias = Mathf.Lerp(0.82f, 1.12f, 1f - sample.Window01);
+            float canopyDensityBias = LerpClamped(0.82f, 1.12f, 1f - sample.Window01);
             _ambientSpawnAccumulator = Mathf.Min(
                 _ambientSpawnAccumulator + ambientSpawnRate * densityT * canopyDensityBias * deltaTime,
                 8f);
@@ -401,7 +400,7 @@ namespace Hecton8.World
 
         private void EmitAmbientParticle(Vector3 centerWS, float densityT, float window01)
         {
-            bool emitBubble = Next01() < ambientBubbleChance * Mathf.Lerp(0.9f, 1.15f, window01);
+            bool emitBubble = Next01() < ambientBubbleChance * LerpClamped(0.9f, 1.15f, window01);
             float size = emitBubble ? bubbleSize * 0.42f : ambientSize;
             float lifetime = emitBubble ? bubbleLifetime * 1.65f : ambientLifetime;
             Color color = emitBubble
@@ -411,8 +410,8 @@ namespace Hecton8.World
             EmitSingle(
                 BuildAmbientPosition(centerWS),
                 BuildAmbientVelocity(densityT),
-                lifetime * Mathf.Lerp(0.82f, 1.18f, Next01()),
-                size * Mathf.Lerp(0.78f, 1.22f, densityT),
+                lifetime * LerpClamped(0.82f, 1.18f, Next01()),
+                size * LerpClamped(0.78f, 1.22f, densityT),
                 color);
         }
 
@@ -427,10 +426,10 @@ namespace Hecton8.World
 
         private Vector3 BuildAmbientVelocity(float densityT)
         {
-            float lateralScale = ambientDriftSpeed * Mathf.Lerp(0.7f, 1.15f, densityT);
+            float lateralScale = ambientDriftSpeed * LerpClamped(0.7f, 1.15f, densityT);
             return new Vector3(
                 NextSigned(lateralScale),
-                ambientRiseSpeed * Mathf.Lerp(0.8f, 1.2f, Next01()),
+                ambientRiseSpeed * LerpClamped(0.8f, 1.2f, Next01()),
                 NextSigned(lateralScale));
         }
 
@@ -463,10 +462,21 @@ namespace Hecton8.World
 
         private Vector3 BuildJitterVector()
         {
-            float jitterX = Mathf.Lerp(-0.65f, 0.65f, Next01());
-            float jitterY = Mathf.Lerp(0.05f, 0.85f, Next01());
-            float jitterZ = Mathf.Lerp(-0.65f, 0.65f, Next01());
+            float jitterX = LerpClamped(-0.65f, 0.65f, Next01());
+            float jitterY = LerpClamped(0.05f, 0.85f, Next01());
+            float jitterZ = LerpClamped(-0.65f, 0.65f, Next01());
             return new Vector3(jitterX, jitterY, jitterZ);
+        }
+
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return from + ((to - from) * math.saturate(t));
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
+        {
+            float lengthSq = direction.sqrMagnitude;
+            return lengthSq > 0.0001f ? direction * math.rsqrt(lengthSq) : fallback;
         }
 
         private float NextSigned(float magnitude)

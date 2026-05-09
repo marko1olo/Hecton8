@@ -24,6 +24,7 @@
 // ============================================================================
 
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Crafting;
@@ -39,6 +40,7 @@ using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -57,13 +59,28 @@ namespace Hecton8.Gameplay
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 16;
+        private const uint EventOverflowWarningHash = 0x46484F46u;
+        private const uint ListenerRejectedWarningHash = 0x4648524Au;
+        private const uint ListenerExceptionWarningHash = 0x46484558u;
+        private const uint EventContextHash = 0x46484D53u;
+        private const uint ListenerContextHash = 0x46484C53u;
 
         // COLD ALLOC: RegistryBucket<IFirstHourEventListener>[8] - first-hour milestone listeners drained by SystemDispatcher LateUpdate - owner: FirstHourEvents
         private static readonly RegistryBucket<IFirstHourEventListener> _listeners = new RegistryBucket<IFirstHourEventListener>(ListenerCapacity);
+        private static readonly IFirstHourEventListener[] _deferredRegisterListeners = new IFirstHourEventListener[ListenerCapacity];
+        private static readonly IFirstHourEventListener[] _deferredUnregisterListeners = new IFirstHourEventListener[ListenerCapacity];
         private static NativeQueue<FirstHourEventPayload> _pendingEvents;
         private static NativeQueue<FirstHourEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastEventOverflowTelemetryFrame = -1;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         /// <summary>
@@ -89,8 +106,18 @@ namespace Hecton8.Gameplay
             }
 
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastEventOverflowTelemetryFrame = -1;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -104,8 +131,13 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -117,8 +149,17 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            if (!_listeners.TryUnregister(listener))
+                return;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
         }
 
         /// <summary>
@@ -132,7 +173,10 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportEventOverflow();
                 return;
+            }
 
             FirstHourEventPayload payload = new FirstHourEventPayload
             {
@@ -186,13 +230,16 @@ namespace Hecton8.Gameplay
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IFirstHourEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnFirstHourMilestoneReached(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -207,25 +254,249 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<FirstHourEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] - deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate - owner: FirstHourEvents
+                _pendingEvents = new NativeQueue<FirstHourEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate — owner: FirstHourEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
                     nameof(FirstHourEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] - next-frame first-hour milestone lane prevents same-frame reentrant dispatch - owner: FirstHourEvents
+                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] — next-frame first-hour milestone lane prevents same-frame reentrant dispatch — owner: FirstHourEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
                     nameof(FirstHourEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static void DispatchToListener(IFirstHourEventListener listener, in FirstHourEventPayload payload)
+        {
+            try
+            {
+                listener.OnFirstHourMilestoneReached(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IFirstHourEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IFirstHourEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IFirstHourEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IFirstHourEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IFirstHourEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IFirstHourEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IFirstHourEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IFirstHourEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
+        }
+
+        private static void RegisterImmediate(IFirstHourEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportEventOverflow()
+        {
+            _droppedEventCount++;
+            int frame = Time.frameCount;
+            if (_lastEventOverflowTelemetryFrame == frame)
+                return;
+
+            _lastEventOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                EventOverflowWarningHash,
+                EventContextHash,
+                Mathf.Max(1, _droppedEventCount));
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerRejectedWarningHash,
+                ListenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerExceptionWarningHash,
+                ListenerContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
+        }
+
+        private static void DropQueuedEvents()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                while (_pendingEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                while (_nextFrameEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
         }
 
         private static void DrainWithoutDispatch()
@@ -293,6 +564,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Unmanaged first-hour milestone event payload.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct FirstHourEventPayload
     {
         public byte Milestone;
@@ -380,11 +652,6 @@ namespace Hecton8.Gameplay
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static FirstHourDirector Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
-
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
@@ -413,8 +680,19 @@ namespace Hecton8.Gameplay
         private bool _lastContextLoreContact;
         private HectonSurvivalSystem _survivalSystem;
         private uint _firstModuleZoneDiscoveryHash;
+        private uint _arrivalQuestHash;
+        private uint _firstResourceQuestHash;
+        private uint _firstDepthQuestHash;
+        private int _firstResourceItemHash;
+        private bool _firstResourceIsCopper;
 
         private const float MinEarnedOrientationTime = 75f;
+        private const string DataCopperItemId = "Data_Copper";
+        private const string ShadowEventDiscoveryId = "first_hour_shadow_event";
+        private const string FirstColonyModuleDiscoveryId = "first_colony_module_spotted";
+        private static readonly int _dataCopperItemHash = LocHash.Compute(DataCopperItemId);
+        private static readonly uint _shadowEventDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(ShadowEventDiscoveryId);
+        private static readonly uint _firstColonyModuleDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(FirstColonyModuleDiscoveryId);
         private const string MsgResourceShelfRead =
             "HOLD THE READABLE EDGE. THE FIRST COPPER NORMALLY SITS LOWER AND OFF TO THE SIDE OF THE SAFEST SHELF.";
         private const string MsgFabricationFallback =
@@ -459,14 +737,14 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
             RefreshCachedHashes();
         }
 
         private void OnEnable()
         {
-            TryRegisterService();
+            if (!TryRegisterService())
+                return;
+
             TryRegister();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
@@ -510,13 +788,13 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             TryUnregisterService();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         private void Start()
         {
+            if (!TryRegisterService())
+                return;
+
             TryRegister();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             RefreshCachedHashes();
@@ -545,13 +823,21 @@ namespace Hecton8.Gameplay
             _registered = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return true;
+
+            FirstHourDirector registeredRuntime = GlobalRegistry.FirstHour;
+            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
 
             GlobalRegistry.RegisterFirstHourRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.FirstHour, this);
+            return _serviceRegistered;
         }
 
         private void TryUnregisterService()
@@ -599,7 +885,7 @@ namespace Hecton8.Gameplay
                 _sessionTime >= firstModuleTime &&
                 currentDepthTier > 1 &&
                 GlobalRegistry.Quest != null &&
-                GlobalRegistry.Quest.IsCompleted(firstDepthQuestId))
+                GlobalRegistry.Quest.IsCompleted(_firstDepthQuestHash))
             {
                 _firstModuleHintIssued = true;
                 _firstModuleReminderIssued = true;
@@ -636,19 +922,19 @@ namespace Hecton8.Gameplay
             switch (milestone)
             {
                 case FirstHourMilestone.Orientation:
-                    CompleteQuest(arrivalQuestId);
-                    ActivateQuest(firstResourceQuestId);
+                    CompleteQuest(_arrivalQuestHash);
+                    ActivateQuest(_firstResourceQuestHash);
                     TryAdvanceFirstResourceGoalFromRuntimeInventory();
                     break;
 
                 case FirstHourMilestone.TheShadow:
                     // ТЕНЬ — большая, быстрая, слева
                     // Director AI получает narrative bonus (снижение tension после страха)
-                    NarrativeEvents.RaiseDiscoveryMade("first_hour_shadow_event");
+                    NarrativeEvents.RaiseDiscoveryMade(_shadowEventDiscoveryHash);
                     break;
 
                 case FirstHourMilestone.FirstModule:
-                    NarrativeEvents.RaiseDiscoveryMade("first_colony_module_spotted");
+                    NarrativeEvents.RaiseDiscoveryMade(_firstColonyModuleDiscoveryHash);
                     break;
 
             }
@@ -665,34 +951,6 @@ namespace Hecton8.Gameplay
                 !IsMilestoneComplete(FirstHourMilestone.FirstCraft));
         }
 
-        private void HandleDiscovery(string discoveryId)
-        {
-            if (string.IsNullOrEmpty(discoveryId))
-                return;
-
-            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
-            if (relayDirector != null && relayDirector.IsRelayDiscoveryId(discoveryId))
-                _hasLoreRouteContact = true;
-
-            if (!IsMilestoneComplete(FirstHourMilestone.FirstModule) &&
-                string.Equals(discoveryId, firstModuleZoneDiscoveryId, StringComparison.Ordinal))
-            {
-                CheckMilestone(FirstHourMilestone.FirstModule, true);
-            }
-        }
-
-        private void HandleScanEntryDiscovered(string entryId, string title, string category, string summary)
-        {
-            if (IsMilestoneComplete(FirstHourMilestone.FirstModule) ||
-                string.IsNullOrEmpty(entryId))
-            {
-                return;
-            }
-
-            if (entryId.StartsWith("module.", StringComparison.Ordinal))
-                CheckMilestone(FirstHourMilestone.FirstModule, true);
-        }
-
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
         {
             if ((NarrativeEventType)payload.EventType != NarrativeEventType.DiscoveryMade)
@@ -705,10 +963,9 @@ namespace Hecton8.Gameplay
                 CheckMilestone(FirstHourMilestone.FirstModule, true);
             }
 
-            if (!NarrativeEvents.TryResolveDiscoveryId(payload.DiscoveryHash, out string discoveryId))
-                return;
-
-            HandleDiscovery(discoveryId);
+            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
+            if (relayDirector != null && relayDirector.IsRelayDiscoveryHash(payload.DiscoveryHash))
+                _hasLoreRouteContact = true;
         }
 
         public void OnScanEvent(in ScanEventPayload payload)
@@ -728,19 +985,17 @@ namespace Hecton8.Gameplay
             if ((QuestEventType)payload.EventType != QuestEventType.Completed)
                 return;
 
-            uint firstDepthQuestHash = QuestFlagHashKernel.ComputeStableHash(firstDepthQuestId);
-            if (payload.QuestHashID == firstDepthQuestHash)
+            if (payload.QuestHashID == _firstDepthQuestHash)
             {
                 _firstDepthReminderIssued = true;
                 return;
             }
 
-            uint firstResourceQuestHash = QuestFlagHashKernel.ComputeStableHash(firstResourceQuestId);
-            if (payload.QuestHashID != firstResourceQuestHash)
+            if (payload.QuestHashID != _firstResourceQuestHash)
                 return;
 
             _firstResourceReminderIssued = true;
-            ActivateQuest(firstDepthQuestId);
+            ActivateQuest(_firstDepthQuestHash);
         }
 
         public void OnAudioLogEvent(in AudioLogEventPayload payload)
@@ -776,14 +1031,14 @@ namespace Hecton8.Gameplay
         {
             if (!IsMilestoneComplete(FirstHourMilestone.Orientation) ||
                 item == null ||
-                !item.MatchesPersistentId(firstResourceItemId))
+                !item.MatchesPersistentHash(_firstResourceItemHash))
             {
                 return;
             }
 
-            CompleteQuest(firstResourceQuestId);
+            CompleteQuest(_firstResourceQuestHash);
             _firstResourceReminderIssued = true;
-            ActivateQuest(firstDepthQuestId);
+            ActivateQuest(_firstDepthQuestHash);
             _firstDepthReminderIssued = false;
         }
 
@@ -850,7 +1105,9 @@ namespace Hecton8.Gameplay
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogMilestoneTriggered(FirstHourMilestone milestone, float sessionTime)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[FirstHour] Milestone: {milestone} (t={sessionTime:F0}s)");
+#endif
         }
 
         public void PopulateSaveData(SaveData data)
@@ -925,33 +1182,33 @@ namespace Hecton8.Gameplay
             _hasLoreRouteContact = (flags & GuidanceStateFlags.HasLoreRouteContact) != 0;
         }
 
-        private void ActivateQuest(string questId)
+        private void ActivateQuest(uint questHash)
         {
-            if (string.IsNullOrEmpty(questId))
+            if (questHash == 0u)
                 return;
 
             QuestManager questManager = GlobalRegistry.Quest;
             if (questManager == null)
                 return;
 
-            if (!questManager.IsActive(questId) && !questManager.IsCompleted(questId))
-                questManager.ActivateQuest(questId);
+            if (!questManager.IsActive(questHash) && !questManager.IsCompleted(questHash))
+                questManager.ActivateQuest(questHash);
         }
 
-        private void CompleteQuest(string questId)
+        private void CompleteQuest(uint questHash)
         {
-            if (string.IsNullOrEmpty(questId))
+            if (questHash == 0u)
                 return;
 
             QuestManager questManager = GlobalRegistry.Quest;
             if (questManager == null)
                 return;
 
-            if (!questManager.IsActive(questId) && !questManager.IsCompleted(questId))
-                questManager.ActivateQuest(questId);
+            if (!questManager.IsActive(questHash) && !questManager.IsCompleted(questHash))
+                questManager.ActivateQuest(questHash);
 
-            if (questManager.IsActive(questId))
-                questManager.CompleteQuest(questId);
+            if (questManager.IsActive(questHash))
+                questManager.CompleteQuest(questHash);
         }
 
         private void SynchronizeEarlyQuestState()
@@ -959,18 +1216,18 @@ namespace Hecton8.Gameplay
             if (!IsMilestoneComplete(FirstHourMilestone.Orientation))
                 return;
 
-            CompleteQuest(arrivalQuestId);
-            ActivateQuest(firstResourceQuestId);
+            CompleteQuest(_arrivalQuestHash);
+            ActivateQuest(_firstResourceQuestHash);
             TryAdvanceFirstResourceGoalFromRuntimeInventory();
 
             QuestManager questManager = GlobalRegistry.Quest;
-            if (questManager != null && questManager.IsCompleted(firstResourceQuestId))
+            if (questManager != null && questManager.IsCompleted(_firstResourceQuestHash))
             {
                 _firstResourceReminderIssued = true;
-                ActivateQuest(firstDepthQuestId);
+                ActivateQuest(_firstDepthQuestHash);
             }
 
-            if (questManager != null && questManager.IsCompleted(firstDepthQuestId))
+            if (questManager != null && questManager.IsCompleted(_firstDepthQuestHash))
                 _firstDepthReminderIssued = true;
 
             if (_hasLoreRouteContact)
@@ -1010,31 +1267,27 @@ namespace Hecton8.Gameplay
         {
             if (data == null ||
                 !IsMilestoneComplete(FirstHourMilestone.Orientation) ||
-                !SaveInventoryContainsItem(data.inventory, firstResourceItemId))
+                !SaveInventoryContainsItem(data.inventory, _firstResourceItemHash))
             {
                 return;
             }
 
-            CompleteQuest(firstResourceQuestId);
+            CompleteQuest(_firstResourceQuestHash);
             _firstResourceReminderIssued = true;
-            ActivateQuest(firstDepthQuestId);
+            ActivateQuest(_firstDepthQuestHash);
             _firstDepthReminderIssued = false;
         }
 
-        private static bool SaveInventoryContainsItem(InventoryDTO inventory, string itemId)
+        private static bool SaveInventoryContainsItem(InventoryDTO inventory, int itemHashId)
         {
-            if (string.IsNullOrEmpty(itemId) ||
+            if (itemHashId == 0 ||
                 inventory.itemHashIds == null ||
                 inventory.cellCount <= 0)
             {
                 return false;
             }
 
-            int itemHashId = LocHash.Compute(itemId);
-            if (itemHashId == 0)
-                return false;
-
-            int cellCount = Mathf.Min(inventory.cellCount, inventory.itemHashIds.Length);
+            int cellCount = math.min(inventory.cellCount, inventory.itemHashIds.Length);
             for (int i = 0; i < cellCount; i++)
             {
                 if (inventory.itemHashIds[i] == itemHashId)
@@ -1046,7 +1299,7 @@ namespace Hecton8.Gameplay
 
         private void TryAdvanceFirstResourceGoalFromRuntimeInventory()
         {
-            if (string.IsNullOrEmpty(firstResourceItemId) ||
+            if (_firstResourceItemHash == 0 ||
                 !TryGetRuntimeInventory(out PlayerInventory inventory) ||
                 inventory == null)
             {
@@ -1064,18 +1317,12 @@ namespace Hecton8.Gameplay
                 for (int x = 0; x < columns; x++)
                 {
                     int itemHashId = inventory.GetItemHashAt(x, y);
-                    ItemData item = itemHashId != 0 && inventory.ItemCatalog != null
-                        ? inventory.ItemCatalog.FindByHash(itemHashId)
-                        : null;
-                    if (item == null)
+                    if (itemHashId != _firstResourceItemHash)
                         continue;
 
-                    if (!item.MatchesPersistentId(firstResourceItemId))
-                        continue;
-
-                    CompleteQuest(firstResourceQuestId);
+                    CompleteQuest(_firstResourceQuestHash);
                     _firstResourceReminderIssued = true;
-                    ActivateQuest(firstDepthQuestId);
+                    ActivateQuest(_firstDepthQuestHash);
                     _firstDepthReminderIssued = false;
                     return;
                 }
@@ -1092,11 +1339,11 @@ namespace Hecton8.Gameplay
                 return;
 
             if (!_firstResourceReminderIssued &&
-                !questManager.IsCompleted(firstResourceQuestId) &&
+                !questManager.IsCompleted(_firstResourceQuestHash) &&
                 _sessionTime >= firstResourceReminderTime)
             {
                 _firstResourceReminderIssued = true;
-                string reminderMessage = string.Equals(firstResourceItemId, "Data_Copper", StringComparison.Ordinal)
+                string reminderMessage = _firstResourceIsCopper
                     ? ResolveLocalized(
                         LocalizationKeys.FIRST_HOUR_RESOURCE_REMINDER_COPPER,
                         "LOOK FOR COPPER IN THE DEBRIS AND AROUND THE ROCKS. WITHOUT IT, YOU DO NOT MOVE THE CHAIN FORWARD.")
@@ -1107,9 +1354,9 @@ namespace Hecton8.Gameplay
             }
 
             if (!_firstDepthReminderIssued &&
-                questManager.IsCompleted(firstResourceQuestId) &&
-                questManager.IsActive(firstDepthQuestId) &&
-                !questManager.IsCompleted(firstDepthQuestId) &&
+                questManager.IsCompleted(_firstResourceQuestHash) &&
+                questManager.IsActive(_firstDepthQuestHash) &&
+                !questManager.IsCompleted(_firstDepthQuestHash) &&
                 _sessionTime >= firstDepthReminderTime)
             {
                 _firstDepthReminderIssued = true;
@@ -1119,7 +1366,7 @@ namespace Hecton8.Gameplay
             }
 
             if (!_firstModuleReminderIssued &&
-                questManager.IsCompleted(firstDepthQuestId) &&
+                questManager.IsCompleted(_firstDepthQuestHash) &&
                 !IsMilestoneComplete(FirstHourMilestone.FirstModule) &&
                 _sessionTime >= firstModuleReminderTime)
             {
@@ -1154,8 +1401,8 @@ namespace Hecton8.Gameplay
 
             int currentDepthTier = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentDepthTier : 1;
             HectonBiomeMatrixProfile currentBiome = ResolveCurrentBiomeProfile(currentZone);
-            bool resourceCompleted = questManager.IsCompleted(firstResourceQuestId);
-            bool depthCompleted = questManager.IsCompleted(firstDepthQuestId);
+            bool resourceCompleted = questManager.IsCompleted(_firstResourceQuestHash);
+            bool depthCompleted = questManager.IsCompleted(_firstDepthQuestHash);
             bool loreRouteContact = _hasLoreRouteContact;
 
             bool zoneChanged = !ReferenceEquals(currentZone, _lastObservedZone);
@@ -1206,7 +1453,7 @@ namespace Hecton8.Gameplay
             HectonBiomeMatrixProfile currentBiome)
         {
             if (_starterResourcesZoneHintIssued ||
-                questManager.IsCompleted(firstResourceQuestId) ||
+                questManager.IsCompleted(_firstResourceQuestHash) ||
                 currentZone.Kind != WorldZoneAnchor.ZoneKind.Resources)
             {
                 return false;
@@ -1226,7 +1473,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             if (!_starterFabricationFallbackHintIssued &&
-                !questManager.IsCompleted(firstResourceQuestId))
+                !questManager.IsCompleted(_firstResourceQuestHash))
             {
                 _starterFabricationFallbackHintIssued = true;
                 PublishContextualInfo(ResolveFabricationFallbackMessage(currentZone, currentBiome));
@@ -1234,8 +1481,8 @@ namespace Hecton8.Gameplay
             }
 
             if (!_firstReturnLoreHintIssued &&
-                questManager.IsCompleted(firstResourceQuestId) &&
-                !questManager.IsCompleted(firstDepthQuestId) &&
+                questManager.IsCompleted(_firstResourceQuestHash) &&
+                !questManager.IsCompleted(_firstDepthQuestHash) &&
                 !_hasLoreRouteContact)
             {
                 _firstReturnLoreHintIssued = true;
@@ -1253,8 +1500,8 @@ namespace Hecton8.Gameplay
             int currentDepthTier)
         {
             if (_deeperRouteZoneHintIssued ||
-                !questManager.IsCompleted(firstResourceQuestId) ||
-                questManager.IsCompleted(firstDepthQuestId) ||
+                !questManager.IsCompleted(_firstResourceQuestHash) ||
+                questManager.IsCompleted(_firstDepthQuestHash) ||
                 currentDepthTier > 1)
             {
                 return false;
@@ -1279,7 +1526,7 @@ namespace Hecton8.Gameplay
             int currentDepthTier)
         {
             if (_starterBackslideGuidanceIssued ||
-                !questManager.IsCompleted(firstDepthQuestId) ||
+                !questManager.IsCompleted(_firstDepthQuestHash) ||
                 IsMilestoneComplete(FirstHourMilestone.FirstModule) ||
                 currentZone == null)
             {
@@ -1307,7 +1554,7 @@ namespace Hecton8.Gameplay
             int currentDepthTier)
         {
             if (_moduleRouteHintIssued ||
-                !questManager.IsCompleted(firstDepthQuestId) ||
+                !questManager.IsCompleted(_firstDepthQuestHash) ||
                 IsMilestoneComplete(FirstHourMilestone.FirstModule) ||
                 currentDepthTier <= 1)
             {
@@ -1334,7 +1581,7 @@ namespace Hecton8.Gameplay
                 return;
 
             NotificationEvents.PushInfo(message);
-            _nextContextualGuidanceTime = Time.unscaledTime + Mathf.Max(0f, contextualGuidanceCooldown);
+            _nextContextualGuidanceTime = Time.unscaledTime + math.max(0f, contextualGuidanceCooldown);
         }
 
         private HectonBiomeMatrixProfile ResolveCurrentBiomeProfile(WorldZoneAnchor currentZone)
@@ -1502,6 +1749,13 @@ namespace Hecton8.Gameplay
         private void RefreshCachedHashes()
         {
             _firstModuleZoneDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(firstModuleZoneDiscoveryId);
+            _arrivalQuestHash = QuestFlagHashKernel.ComputeStableHash(arrivalQuestId);
+            _firstResourceQuestHash = QuestFlagHashKernel.ComputeStableHash(firstResourceQuestId);
+            _firstDepthQuestHash = QuestFlagHashKernel.ComputeStableHash(firstDepthQuestId);
+            _firstResourceItemHash = string.IsNullOrWhiteSpace(firstResourceItemId)
+                ? 0
+                : LocHash.Compute(firstResourceItemId);
+            _firstResourceIsCopper = _firstResourceItemHash != 0 && _firstResourceItemHash == _dataCopperItemHash;
         }
     }
 }

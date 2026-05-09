@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -20,6 +21,7 @@ namespace Hecton8.Tools
     public sealed class ToolDurabilitySystem : MonoBehaviour, ISaveable, ISlowTickable, IUpdatable, ILateFrameTickable
     {
         private const int MaxTrackedTools = 32;
+        private const int MaxQueuedDurabilityCommands = 32;
         private const float SlowTickDeltaTime = 0.5f;
         private const float UnderwaterDepthThreshold = 0.5f;
         private const float ActiveUseWindowSeconds = 0.7f;
@@ -29,7 +31,7 @@ namespace Hecton8.Tools
         private const ushort DegradedFlag = 1 << 0;
         private const ushort BrokenFlag = 1 << 1;
 
-        public static ToolDurabilitySystem Instance { get; private set; }
+        public static ToolDurabilitySystem Instance => GlobalRegistry.ToolDurability;
 
         [Header("── Settings ────────────────────────────────")]
         [Tooltip("Enable runtime tool wear processing.")]
@@ -75,13 +77,16 @@ namespace Hecton8.Tools
         private readonly uint[] _itemHashBySlot = new uint[MaxTrackedTools];
         // COLD ALLOC: bool[32] — managed slot occupancy mirror — owner: ToolDurabilitySystem
         private readonly bool[] _slotUsed = new bool[MaxTrackedTools];
-
+        // COLD ALLOC: PendingDurabilityCommand[32] - one-frame native-job mutation queue - owner: ToolDurabilitySystem
+        private readonly PendingDurabilityCommand[] _queuedDurabilityCommands = new PendingDurabilityCommand[MaxQueuedDurabilityCommands];
         private NativeArray<ItemState> _itemStates;
         private NativeArray<float> _pendingDecayDt;
         private NativeArray<float> _wearMultipliers;
         private NativeArray<byte> _slotActive;
         private NativeQueue<BreakdownEvent> _breakdownEvents;
         private JobHandle _scheduledDecayHandle;
+        private JobHandle _disposeHandle;
+        private int _queuedDurabilityCommandCount;
         private bool _decayScheduled;
 
         private HectonSurvivalSystem _playerSurvivalSystem;
@@ -103,7 +108,6 @@ namespace Hecton8.Tools
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            Instance = null;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -168,13 +172,36 @@ namespace Hecton8.Tools
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct BreakdownEvent
         {
             public int SlotIndex;
             public uint HashId;
         }
 
+        private enum DurabilityCommandKind : byte
+        {
+            Repair = 1,
+            Break = 2,
+            Reset = 3,
+            Drain = 4,
+            DrainByTime = 5
+        }
+
+#pragma warning disable 0649 // Assigned through object initializers before queued drain; compiler does not track array-backed command staging.
+        [StructLayout(LayoutKind.Sequential)]
+        private struct PendingDurabilityCommand
+        {
+            public string ToolId;
+            public float Amount;
+            public float MaxDurability;
+            public uint ItemHashId;
+            public DurabilityCommandKind Kind;
+        }
+#pragma warning restore 0649
+
 #pragma warning disable 0649 // Reserved padding keeps native item-state layout stable for future flags.
+        [StructLayout(LayoutKind.Sequential)]
         private struct ItemState
         {
             public float durability;
@@ -186,13 +213,13 @@ namespace Hecton8.Tools
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            ToolDurabilitySystem registered = GlobalRegistry.ToolDurability;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            Instance = this;
             EnsureNativeState();
         }
 
@@ -227,9 +254,6 @@ namespace Hecton8.Tools
         {
             TryUnregisterService();
             DisposeNativeState();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         public void Tick(float deltaTime)
@@ -254,7 +278,10 @@ namespace Hecton8.Tools
         public void LateFrameTick()
         {
             if (!_decayScheduled)
+            {
+                DrainQueuedDurabilityCommands();
                 return;
+            }
 
             if (!DispatcherJobSwap.TryComplete(ref _scheduledDecayHandle, forceComplete: false))
                 return;
@@ -262,6 +289,7 @@ namespace Hecton8.Tools
             _decayScheduled = false;
             SyncManagedMirrorsFromNative();
             FlushBreakdownEvents();
+            DrainQueuedDurabilityCommands();
         }
 
         public void SlowTick()
@@ -272,19 +300,20 @@ namespace Hecton8.Tools
         public float GetDurability(string toolID, float maxDurability)
         {
             if (string.IsNullOrEmpty(toolID))
-                return Mathf.Max(0f, maxDurability);
+                return math.max(0f, maxDurability);
 
+            TryCompleteDecayJobIfScheduled(forceComplete: false);
             if (_durabilityMap.TryGetValue(toolID, out float current))
                 return current;
 
             EnsureToolRegistered(toolID, unchecked((uint)Animator.StringToHash(toolID)), maxDurability);
-            return Mathf.Max(0f, maxDurability);
+            return math.max(0f, maxDurability);
         }
 
         public float GetDurabilityNormalized(string toolID, float maxDurability)
         {
             float current = GetDurability(toolID, maxDurability);
-            return Mathf.Clamp01(current / Mathf.Max(1f, maxDurability));
+            return math.saturate(current / math.max(1f, maxDurability));
         }
 
         public bool IsBroken(string toolID)
@@ -292,6 +321,7 @@ namespace Hecton8.Tools
             if (string.IsNullOrEmpty(toolID))
                 return false;
 
+            TryCompleteDecayJobIfScheduled(forceComplete: false);
             return _brokenMap.TryGetValue(toolID, out bool broken) && broken;
         }
 
@@ -304,48 +334,103 @@ namespace Hecton8.Tools
             if (slotIndex < 0 || !_itemStates.IsCreated)
                 return false;
 
+            if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
+            {
+                float maxDurability = math.max(1f, _maxDurabilityBySlot[slotIndex]);
+                return _durabilityMap.TryGetValue(toolID, out float current) &&
+                       current <= maxDurability * DegradedThreshold;
+            }
+
             return (_itemStates[slotIndex].flags & DegradedFlag) != 0;
         }
 
         public void DrainDurability(string toolID, float amount, float maxDurability)
         {
-            if (!enableDurabilityDrain || amount <= 0f)
+            if (!enableDurabilityDrain || string.IsNullOrEmpty(toolID) || !TryResolvePositiveDurabilityAmount(amount, out float safeAmount))
                 return;
 
-            int slotIndex = EnsureToolRegistered(toolID, unchecked((uint)Animator.StringToHash(toolID)), maxDurability);
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
+            if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
+            {
+                QueueDurabilityCommand(DurabilityCommandKind.Drain, toolID, safeAmount, safeMaxDurability, unchecked((uint)Animator.StringToHash(toolID)));
+                return;
+            }
+
+            ApplyDrainDurability(toolID, safeAmount, safeMaxDurability);
+        }
+
+        private void ApplyDrainDurability(string toolID, float amount, float maxDurability)
+        {
+            float safeAmount = ClampFiniteNonNegative(amount);
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
+            if (safeAmount <= 0f)
+                return;
+
+            int slotIndex = EnsureToolRegistered(toolID, unchecked((uint)Animator.StringToHash(toolID)), safeMaxDurability);
             if (slotIndex < 0)
                 return;
 
-            _pendingDecayDt[slotIndex] += (amount / Mathf.Max(1f, maxDurability)) * Mathf.Max(0.1f, globalDurabilityMultiplier);
+            _pendingDecayDt[slotIndex] += (safeAmount / safeMaxDurability) * math.max(0.1f, globalDurabilityMultiplier);
         }
 
         public void DrainDurabilityByTime(string toolID, uint itemHashId, float scaledDeltaTime, float maxDurability)
         {
-            if (!enableDurabilityDrain || scaledDeltaTime <= 0f)
+            if (!enableDurabilityDrain || string.IsNullOrEmpty(toolID) || !TryResolvePositiveDurabilityAmount(scaledDeltaTime, out float safeScaledDeltaTime))
                 return;
 
-            int slotIndex = EnsureToolRegistered(toolID, itemHashId, maxDurability);
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
+            if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
+            {
+                QueueDurabilityCommand(DurabilityCommandKind.DrainByTime, toolID, safeScaledDeltaTime, safeMaxDurability, itemHashId);
+                return;
+            }
+
+            ApplyDrainDurabilityByTime(toolID, itemHashId, safeScaledDeltaTime, safeMaxDurability);
+        }
+
+        private void ApplyDrainDurabilityByTime(string toolID, uint itemHashId, float scaledDeltaTime, float maxDurability)
+        {
+            float safeScaledDeltaTime = ClampFiniteNonNegative(scaledDeltaTime);
+            if (safeScaledDeltaTime <= 0f)
+                return;
+
+            int slotIndex = EnsureToolRegistered(toolID, itemHashId, ResolveSafeMaxDurability(maxDurability));
             if (slotIndex < 0)
                 return;
 
-            _pendingDecayDt[slotIndex] += scaledDeltaTime * Mathf.Max(0.1f, globalDurabilityMultiplier);
+            _pendingDecayDt[slotIndex] += safeScaledDeltaTime * math.max(0.1f, globalDurabilityMultiplier);
         }
 
         public void RepairTool(string toolID, float amount, float maxDurability)
         {
-            if (string.IsNullOrEmpty(toolID) || amount <= 0f)
+            if (string.IsNullOrEmpty(toolID) || !TryResolvePositiveDurabilityAmount(amount, out float safeAmount))
                 return;
 
-            CompleteDecayJobIfScheduled();
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
+            if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
+            {
+                QueueDurabilityCommand(DurabilityCommandKind.Repair, toolID, safeAmount, safeMaxDurability);
+                return;
+            }
+
+            ApplyRepairTool(toolID, safeAmount, safeMaxDurability);
+        }
+
+        private void ApplyRepairTool(string toolID, float amount, float maxDurability)
+        {
+            float safeAmount = ClampFiniteNonNegative(amount);
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
+            if (safeAmount <= 0f)
+                return;
 
             int existingSlot = ResolveSlot(toolID);
             uint hashId = existingSlot >= 0 ? _itemHashBySlot[existingSlot] : unchecked((uint)Animator.StringToHash(toolID));
-            int slotIndex = EnsureToolRegistered(toolID, hashId, maxDurability);
+            int slotIndex = EnsureToolRegistered(toolID, hashId, safeMaxDurability);
             if (slotIndex < 0)
                 return;
 
             ItemState state = _itemStates[slotIndex];
-            state.durability = math.saturate(state.durability + (amount / Mathf.Max(1f, maxDurability)));
+            state.durability = math.saturate(state.durability + (safeAmount / safeMaxDurability));
             if (state.durability >= DegradedThreshold)
                 state.flags &= unchecked((ushort)~DegradedFlag);
 
@@ -353,16 +438,17 @@ namespace Hecton8.Tools
             _itemStates[slotIndex] = state;
             _pendingDecayDt[slotIndex] = 0f;
 
-            float repairedDurability = state.durability * Mathf.Max(1f, maxDurability);
+            float repairedDurability = state.durability * safeMaxDurability;
             _durabilityMap[toolID] = repairedDurability;
             _brokenMap[toolID] = false;
             OnToolRepaired?.Invoke(toolID, repairedDurability);
-            OnDurabilityChanged?.Invoke(toolID, repairedDurability, Mathf.Max(1f, maxDurability));
+            OnDurabilityChanged?.Invoke(toolID, repairedDurability, safeMaxDurability);
         }
 
         public void RepairToolFull(string toolID, float maxDurability)
         {
-            RepairTool(toolID, Mathf.Max(1f, maxDurability), maxDurability);
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
+            RepairTool(toolID, safeMaxDurability, safeMaxDurability);
         }
 
         public void BreakTool(string toolID)
@@ -370,8 +456,17 @@ namespace Hecton8.Tools
             if (string.IsNullOrEmpty(toolID))
                 return;
 
-            CompleteDecayJobIfScheduled();
+            if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
+            {
+                QueueDurabilityCommand(DurabilityCommandKind.Break, toolID, 0f, 1f);
+                return;
+            }
 
+            ApplyBreakTool(toolID);
+        }
+
+        private void ApplyBreakTool(string toolID)
+        {
             int existingSlot = ResolveSlot(toolID);
             uint hashId = existingSlot >= 0 ? _itemHashBySlot[existingSlot] : unchecked((uint)Animator.StringToHash(toolID));
             int slotIndex = EnsureToolRegistered(toolID, hashId, 1f);
@@ -387,7 +482,7 @@ namespace Hecton8.Tools
             _itemStates[slotIndex] = state;
             _durabilityMap[toolID] = 0f;
             _brokenMap[toolID] = true;
-            OnDurabilityChanged?.Invoke(toolID, 0f, Mathf.Max(1f, _maxDurabilityBySlot[slotIndex]));
+            OnDurabilityChanged?.Invoke(toolID, 0f, math.max(1f, _maxDurabilityBySlot[slotIndex]));
             OnToolBroken?.Invoke(toolID);
         }
 
@@ -396,11 +491,22 @@ namespace Hecton8.Tools
             if (string.IsNullOrEmpty(toolID))
                 return;
 
-            CompleteDecayJobIfScheduled();
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
+            if (!TryCompleteDecayJobIfScheduled(forceComplete: false))
+            {
+                QueueDurabilityCommand(DurabilityCommandKind.Reset, toolID, 0f, safeMaxDurability);
+                return;
+            }
 
+            ApplyResetDurability(toolID, safeMaxDurability);
+        }
+
+        private void ApplyResetDurability(string toolID, float maxDurability)
+        {
+            float safeMaxDurability = ResolveSafeMaxDurability(maxDurability);
             int existingSlot = ResolveSlot(toolID);
             uint hashId = existingSlot >= 0 ? _itemHashBySlot[existingSlot] : unchecked((uint)Animator.StringToHash(toolID));
-            int slotIndex = EnsureToolRegistered(toolID, hashId, maxDurability);
+            int slotIndex = EnsureToolRegistered(toolID, hashId, safeMaxDurability);
             if (slotIndex < 0)
                 return;
 
@@ -410,10 +516,9 @@ namespace Hecton8.Tools
             _itemStates[slotIndex] = state;
             _pendingDecayDt[slotIndex] = 0f;
 
-            float resolvedMax = Mathf.Max(1f, maxDurability);
-            _durabilityMap[toolID] = resolvedMax;
+            _durabilityMap[toolID] = safeMaxDurability;
             _brokenMap[toolID] = false;
-            OnDurabilityChanged?.Invoke(toolID, resolvedMax, resolvedMax);
+            OnDurabilityChanged?.Invoke(toolID, safeMaxDurability, safeMaxDurability);
         }
 
         public void PopulateSaveData(SaveData data)
@@ -454,24 +559,28 @@ namespace Hecton8.Tools
             while (durabilityEnumerator.MoveNext())
             {
                 KeyValuePair<string, float> pair = durabilityEnumerator.Current;
-                float resolvedMaxDurability = Mathf.Max(1f, pair.Value);
+                if (string.IsNullOrEmpty(pair.Key))
+                    continue;
+
+                float savedDurability = ClampFiniteNonNegative(pair.Value);
+                float resolvedMaxDurability = ResolveSafeMaxDurability(savedDurability);
                 int slotIndex = EnsureToolRegistered(pair.Key, unchecked((uint)Animator.StringToHash(pair.Key)), resolvedMaxDurability);
                 if (slotIndex < 0)
                     continue;
 
-                float normalized = Mathf.Clamp01(pair.Value / resolvedMaxDurability);
+                float normalized = math.saturate(savedDurability / resolvedMaxDurability);
                 ItemState state = _itemStates[slotIndex];
                 state.durability = normalized;
                 state.flags = normalized < DegradedThreshold ? DegradedFlag : (ushort)0;
                 _itemStates[slotIndex] = state;
-                _durabilityMap[pair.Key] = pair.Value;
+                _durabilityMap[pair.Key] = savedDurability;
             }
 
             Dictionary<string, bool>.Enumerator brokenEnumerator = data.toolBrokenMap.GetEnumerator();
             while (brokenEnumerator.MoveNext())
             {
                 KeyValuePair<string, bool> pair = brokenEnumerator.Current;
-                if (!pair.Value)
+                if (!pair.Value || string.IsNullOrEmpty(pair.Key))
                     continue;
 
                 int slotIndex = ResolveSlot(pair.Key);
@@ -536,7 +645,7 @@ namespace Hecton8.Tools
             if (!_pendingDecayDt.IsCreated || !_slotActive.IsCreated)
                 return;
 
-            float scaledDeltaTime = BrineCorrosionPerSecond * SlowTickDeltaTime * Mathf.Max(0.1f, globalDurabilityMultiplier);
+            float scaledDeltaTime = BrineCorrosionPerSecond * SlowTickDeltaTime * math.max(0.1f, globalDurabilityMultiplier);
             if (scaledDeltaTime <= 0f)
                 return;
 
@@ -570,15 +679,23 @@ namespace Hecton8.Tools
                 _playerRoot.TryGetComponent(out _playerSurvivalSystem);
 
             if (_playerToolManager == null)
+            {
                 _playerToolManager = GlobalRegistry.Player != null && GlobalRegistry.Player.ToolManager != null
                     ? GlobalRegistry.Player.ToolManager
-                    : _playerRoot.GetComponent<PlayerToolManager>();
+                    : null;
+                if (_playerToolManager == null)
+                    _playerRoot.TryGetComponent(out _playerToolManager);
+            }
 
             return _playerSurvivalSystem != null && _playerToolManager != null;
         }
 
         private void EnsureNativeState()
         {
+            DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
+            if (!_disposeHandle.IsCompleted)
+                return;
+
             if (!_itemStates.IsCreated)
             {
                 _itemStates = new NativeArray<ItemState>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ItemState>[32] — authoritative tool durability slots — owner: ToolDurabilitySystem
@@ -632,76 +749,67 @@ namespace Hecton8.Tools
                     nameof(ToolDurabilitySystem),
                     nameof(_breakdownEvents),
                     NativeAllocationLifetime.Scene);
+                PrewarmQueue(ref _breakdownEvents, MaxTrackedTools);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
         private void DisposeNativeState()
         {
-            if (_decayScheduled)
+            ClearQueuedDurabilityCommands();
+            DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
+            if (!_disposeHandle.IsCompleted)
+                return;
+
+            JobHandle disposeHandle = _decayScheduled ? _scheduledDecayHandle : default;
+            bool scheduledDispose = false;
+
+            if (_itemStates.IsCreated)
             {
-                JobHandle disposeHandle = _scheduledDecayHandle;
-
-                if (_itemStates.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_itemStates);
-                    disposeHandle = _itemStates.Dispose(disposeHandle);
-                }
-
-                if (_pendingDecayDt.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_pendingDecayDt);
-                    disposeHandle = _pendingDecayDt.Dispose(disposeHandle);
-                }
-
-                if (_wearMultipliers.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_wearMultipliers);
-                    disposeHandle = _wearMultipliers.Dispose(disposeHandle);
-                }
-
-                if (_slotActive.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_slotActive);
-                    disposeHandle = _slotActive.Dispose(disposeHandle);
-                }
-
-                if (_breakdownEvents.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeQueue(nameof(ToolDurabilitySystem), nameof(_breakdownEvents));
-                    disposeHandle = _breakdownEvents.Dispose(disposeHandle);
-                }
+                NativeMemorySentinel.UnregisterNativeArray(_itemStates);
+                disposeHandle = _itemStates.Dispose(disposeHandle);
+                scheduledDispose = true;
             }
-            else
+
+            if (_pendingDecayDt.IsCreated)
             {
-                if (_itemStates.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_itemStates);
-                    _itemStates.Dispose();
-                }
+                NativeMemorySentinel.UnregisterNativeArray(_pendingDecayDt);
+                disposeHandle = _pendingDecayDt.Dispose(disposeHandle);
+                scheduledDispose = true;
+            }
 
-                if (_pendingDecayDt.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_pendingDecayDt);
-                    _pendingDecayDt.Dispose();
-                }
+            if (_wearMultipliers.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_wearMultipliers);
+                disposeHandle = _wearMultipliers.Dispose(disposeHandle);
+                scheduledDispose = true;
+            }
 
-                if (_wearMultipliers.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_wearMultipliers);
-                    _wearMultipliers.Dispose();
-                }
+            if (_slotActive.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_slotActive);
+                disposeHandle = _slotActive.Dispose(disposeHandle);
+                scheduledDispose = true;
+            }
 
-                if (_slotActive.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeArray(_slotActive);
-                    _slotActive.Dispose();
-                }
-
-                if (_breakdownEvents.IsCreated)
-                {
-                    NativeMemorySentinel.UnregisterNativeQueue(nameof(ToolDurabilitySystem), nameof(_breakdownEvents));
-                    _breakdownEvents.Dispose();
-                }
+            if (_breakdownEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ToolDurabilitySystem), nameof(_breakdownEvents));
+                disposeHandle = _breakdownEvents.Dispose(disposeHandle);
+                scheduledDispose = true;
             }
 
             _itemStates = default;
@@ -711,11 +819,19 @@ namespace Hecton8.Tools
             _breakdownEvents = default;
             _scheduledDecayHandle = default;
             _decayScheduled = false;
+            if (!scheduledDispose)
+                return;
+
+            _disposeHandle = disposeHandle;
+            JobHandle.ScheduleBatchedJobs();
         }
 
         private void ClearRuntimeState()
         {
+            ClearQueuedDurabilityCommands();
             EnsureNativeState();
+            if (!HasNativeState())
+                return;
 
             _durabilityMap.Clear();
             _brokenMap.Clear();
@@ -745,6 +861,8 @@ namespace Hecton8.Tools
                 return -1;
 
             EnsureNativeState();
+            if (!HasNativeState())
+                return -1;
 
             if (_slotByToolId.TryGetValue(toolID, out int existingSlot))
             {
@@ -768,7 +886,7 @@ namespace Hecton8.Tools
                     hashID = itemHashId
                 };
                 _itemStates[i] = state;
-                _durabilityMap[toolID] = Mathf.Max(1f, maxDurability);
+                _durabilityMap[toolID] = math.max(1f, maxDurability);
                 _brokenMap[toolID] = false;
                 return i;
             }
@@ -778,7 +896,7 @@ namespace Hecton8.Tools
 
         private void UpdateSlotMetadata(int slotIndex, string toolID, uint itemHashId, float maxDurability)
         {
-            float resolvedMaxDurability = Mathf.Max(1f, maxDurability);
+            float resolvedMaxDurability = math.max(1f, maxDurability);
             _toolIdBySlot[slotIndex] = toolID;
             _maxDurabilityBySlot[slotIndex] = resolvedMaxDurability;
             _itemHashBySlot[slotIndex] = itemHashId;
@@ -799,7 +917,7 @@ namespace Hecton8.Tools
         private static float ResolveWearMultiplier(uint itemHashId)
         {
             if (itemHashId != 0u && ItemTemplateRegistry.TryGetTemplate(itemHashId, out ItemTemplate template))
-                return Mathf.Max(0f, template.WearMultiplier);
+                return math.max(0f, template.WearMultiplier);
 
             return 1f;
         }
@@ -809,6 +927,15 @@ namespace Hecton8.Tools
             return !string.IsNullOrEmpty(toolID) && _slotByToolId.TryGetValue(toolID, out int slotIndex)
                 ? slotIndex
                 : -1;
+        }
+
+        private bool HasNativeState()
+        {
+            return _itemStates.IsCreated &&
+                   _pendingDecayDt.IsCreated &&
+                   _wearMultipliers.IsCreated &&
+                   _slotActive.IsCreated &&
+                   _breakdownEvents.IsCreated;
         }
 
         private bool HasPendingDecay()
@@ -840,7 +967,7 @@ namespace Hecton8.Tools
                     continue;
 
                 ItemState state = _itemStates[i];
-                float maxDurability = Mathf.Max(1f, _maxDurabilityBySlot[i]);
+                float maxDurability = math.max(1f, _maxDurabilityBySlot[i]);
                 float currentDurability = math.saturate(state.durability) * maxDurability;
                 bool broken = autoBreakOnZero && (state.flags & BrokenFlag) != 0;
 
@@ -877,13 +1004,238 @@ namespace Hecton8.Tools
 
         private void CompleteDecayJobIfScheduled()
         {
-            if (!_decayScheduled)
-                return;
+            TryCompleteDecayJobIfScheduled(forceComplete: true);
+        }
 
-            DispatcherJobSwap.TryComplete(ref _scheduledDecayHandle, forceComplete: true);
+        private bool TryCompleteDecayJobIfScheduled(bool forceComplete)
+        {
+            if (!_decayScheduled)
+            {
+                DrainQueuedDurabilityCommands();
+                return true;
+            }
+
+            if (!DispatcherJobSwap.TryComplete(ref _scheduledDecayHandle, forceComplete))
+                return false;
+
             _decayScheduled = false;
             SyncManagedMirrorsFromNative();
             FlushBreakdownEvents();
+            DrainQueuedDurabilityCommands();
+            return true;
+        }
+
+        private void QueueDurabilityCommand(DurabilityCommandKind kind, string toolID, float amount, float maxDurability, uint itemHashId = 0u)
+        {
+            if (TryMergeQueuedDurabilityCommand(kind, toolID, amount, maxDurability, itemHashId))
+                return;
+
+            PendingDurabilityCommand command = CreatePendingDurabilityCommand(kind, toolID, amount, maxDurability, itemHashId);
+            if (_queuedDurabilityCommandCount >= MaxQueuedDurabilityCommands)
+            {
+                if (TryCompleteDecayJobIfScheduled(forceComplete: false))
+                {
+                    ApplyDurabilityCommand(in command);
+                    return;
+                }
+
+                TryReplaceQueuedDurabilityCommand(in command);
+                return;
+            }
+
+            _queuedDurabilityCommands[_queuedDurabilityCommandCount++] = command;
+        }
+
+        private static PendingDurabilityCommand CreatePendingDurabilityCommand(
+            DurabilityCommandKind kind,
+            string toolID,
+            float amount,
+            float maxDurability,
+            uint itemHashId)
+        {
+            return new PendingDurabilityCommand
+            {
+                ToolId = toolID,
+                Amount = ClampFiniteNonNegative(amount),
+                MaxDurability = ResolveSafeMaxDurability(maxDurability),
+                ItemHashId = itemHashId,
+                Kind = kind
+            };
+        }
+
+        private bool TryReplaceQueuedDurabilityCommand(in PendingDurabilityCommand command)
+        {
+            if (command.Kind != DurabilityCommandKind.Break &&
+                command.Kind != DurabilityCommandKind.Reset &&
+                command.Kind != DurabilityCommandKind.Repair)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _queuedDurabilityCommandCount; i++)
+            {
+                PendingDurabilityCommand existing = _queuedDurabilityCommands[i];
+                if (!string.Equals(existing.ToolId, command.ToolId, StringComparison.Ordinal) ||
+                    !IsWearCommand(existing.Kind))
+                {
+                    continue;
+                }
+
+                _queuedDurabilityCommands[i] = command;
+                return true;
+            }
+
+            for (int i = 0; i < _queuedDurabilityCommandCount; i++)
+            {
+                if (!IsWearCommand(_queuedDurabilityCommands[i].Kind))
+                    continue;
+
+                _queuedDurabilityCommands[i] = command;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryMergeQueuedDurabilityCommand(DurabilityCommandKind kind, string toolID, float amount, float maxDurability, uint itemHashId)
+        {
+            if (_queuedDurabilityCommandCount <= 0 || string.IsNullOrEmpty(toolID))
+                return false;
+
+            for (int index = _queuedDurabilityCommandCount - 1; index >= 0; index--)
+            {
+                PendingDurabilityCommand queued = _queuedDurabilityCommands[index];
+                if (!string.Equals(queued.ToolId, toolID, StringComparison.Ordinal))
+                    continue;
+
+                if (queued.Kind != kind)
+                    return false;
+
+                return TryMergeQueuedDurabilityCommandAt(index, amount, maxDurability, itemHashId);
+            }
+
+            return false;
+        }
+
+        private bool TryMergeQueuedDurabilityCommandAt(int index, float amount, float maxDurability, uint itemHashId)
+        {
+            PendingDurabilityCommand existing = _queuedDurabilityCommands[index];
+            switch (existing.Kind)
+            {
+                case DurabilityCommandKind.Drain:
+                case DurabilityCommandKind.Repair:
+                    if (!CanMergeDurabilityMax(existing.MaxDurability, maxDurability))
+                        return false;
+                    existing.Amount = ClampFiniteNonNegative(existing.Amount) + ClampFiniteNonNegative(amount);
+                    existing.MaxDurability = math.max(existing.MaxDurability, maxDurability);
+                    _queuedDurabilityCommands[index] = existing;
+                    return true;
+
+                case DurabilityCommandKind.DrainByTime:
+                    if (existing.ItemHashId != itemHashId ||
+                        !CanMergeDurabilityMax(existing.MaxDurability, maxDurability))
+                    {
+                        return false;
+                    }
+
+                    existing.Amount = ClampFiniteNonNegative(existing.Amount) + ClampFiniteNonNegative(amount);
+                    existing.MaxDurability = math.max(existing.MaxDurability, maxDurability);
+                    _queuedDurabilityCommands[index] = existing;
+                    return true;
+
+                case DurabilityCommandKind.Break:
+                    return true;
+
+                case DurabilityCommandKind.Reset:
+                    if (!CanMergeDurabilityMax(existing.MaxDurability, maxDurability))
+                        return false;
+                    existing.MaxDurability = maxDurability;
+                    existing.ItemHashId = itemHashId;
+                    _queuedDurabilityCommands[index] = existing;
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsWearCommand(DurabilityCommandKind kind)
+        {
+            return kind == DurabilityCommandKind.Drain ||
+                   kind == DurabilityCommandKind.DrainByTime;
+        }
+
+        private static bool TryResolvePositiveDurabilityAmount(float value, out float resolved)
+        {
+            resolved = ClampFiniteNonNegative(value);
+            return resolved > 0f;
+        }
+
+        private static float ResolveSafeMaxDurability(float maxDurability)
+        {
+            return math.isfinite(maxDurability) ? math.max(1f, maxDurability) : 1f;
+        }
+
+        private static bool CanMergeDurabilityMax(float left, float right)
+        {
+            return math.isfinite(left) &&
+                   math.isfinite(right) &&
+                   math.abs(left - right) <= 0.0001f;
+        }
+
+        private static float ClampFiniteNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private void DrainQueuedDurabilityCommands()
+        {
+            int count = _queuedDurabilityCommandCount;
+            if (count <= 0 || _decayScheduled)
+                return;
+
+            _queuedDurabilityCommandCount = 0;
+            for (int i = 0; i < count; i++)
+            {
+                PendingDurabilityCommand command = _queuedDurabilityCommands[i];
+                _queuedDurabilityCommands[i] = default;
+                ApplyDurabilityCommand(command);
+            }
+        }
+
+        private void ClearQueuedDurabilityCommands()
+        {
+            int count = _queuedDurabilityCommandCount;
+            _queuedDurabilityCommandCount = 0;
+            for (int i = 0; i < count; i++)
+                _queuedDurabilityCommands[i] = default;
+        }
+
+        private void ApplyDurabilityCommand(in PendingDurabilityCommand command)
+        {
+            if (string.IsNullOrEmpty(command.ToolId))
+                return;
+
+            switch (command.Kind)
+            {
+                case DurabilityCommandKind.Repair:
+                    if (command.Amount > 0f)
+                        ApplyRepairTool(command.ToolId, command.Amount, command.MaxDurability);
+                    break;
+                case DurabilityCommandKind.Break:
+                    ApplyBreakTool(command.ToolId);
+                    break;
+                case DurabilityCommandKind.Reset:
+                    ApplyResetDurability(command.ToolId, command.MaxDurability);
+                    break;
+                case DurabilityCommandKind.Drain:
+                    if (command.Amount > 0f)
+                        ApplyDrainDurability(command.ToolId, command.Amount, command.MaxDurability);
+                    break;
+                case DurabilityCommandKind.DrainByTime:
+                    if (command.Amount > 0f)
+                        ApplyDrainDurabilityByTime(command.ToolId, command.ItemHashId, command.Amount, command.MaxDurability);
+                    break;
+            }
         }
 
         private void TryRegisterSlowTick()
@@ -893,8 +1245,7 @@ namespace Hecton8.Tools
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterSlowTick()
@@ -913,8 +1264,7 @@ namespace Hecton8.Tools
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredUpdate = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterUpdate()
@@ -933,8 +1283,7 @@ namespace Hecton8.Tools
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterLateFrame()

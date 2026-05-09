@@ -287,7 +287,7 @@ namespace Hecton8.Editor.DebugTools
             if (bridgeUniversePosition != runtimePosition)
                 return bridgeUniversePosition;
 
-            HectonFloatingOrigin floatingOrigin = HectonFloatingOrigin.Instance;
+            HectonFloatingOrigin floatingOrigin = GlobalRegistry.FloatingOrigin;
             return floatingOrigin != null
                 ? runtimePosition + floatingOrigin.TotalUniverseOffset
                 : runtimePosition;

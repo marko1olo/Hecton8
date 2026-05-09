@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -32,15 +33,49 @@ namespace Hecton8.Gameplay
         private static RuntimeState s_state;
         private static bool s_hasState;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            s_state = default;
+            s_hasState = false;
+        }
+
         public static void Publish(Vector3 origin, Vector3 forward, Vector3 up, float radius, float duration, float intensity)
         {
-            float3 forwardAxis = math.normalizesafe((float3)forward, new float3(0f, 0f, 1f));
-            float3 upAxis = math.normalizesafe((float3)up, new float3(0f, 1f, 0f));
-            float3 rightAxis = math.normalizesafe(math.cross(upAxis, forwardAxis), new float3(1f, 0f, 0f));
-            upAxis = math.normalizesafe(math.cross(forwardAxis, rightAxis), new float3(0f, 1f, 0f));
+            float3 originRuntime = (float3)origin;
+            if (!math.all(math.isfinite(originRuntime)) ||
+                !math.all(math.isfinite((float3)forward)) ||
+                !math.all(math.isfinite((float3)up)) ||
+                radius <= 0.001f ||
+                duration <= 0.001f ||
+                intensity <= 0.001f)
+            {
+                s_state = default;
+                s_hasState = false;
+                return;
+            }
+
+            float3 forwardAxis = NormalizeVectorRsqrt((float3)forward, new float3(0f, 0f, 1f));
+            float3 upSeed = NormalizeVectorRsqrt((float3)up, new float3(0f, 1f, 0f));
+            if (math.abs(math.dot(upSeed, forwardAxis)) > 0.94f)
+                upSeed = math.abs(forwardAxis.y) < 0.94f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
+
+            float3 rightAxis = NormalizeVectorRsqrt(math.cross(upSeed, forwardAxis), new float3(1f, 0f, 0f));
+            if (math.abs(math.dot(rightAxis, forwardAxis)) > 0.94f)
+                rightAxis = NormalizeVectorRsqrt(math.cross(new float3(0f, 0f, 1f), forwardAxis), new float3(1f, 0f, 0f));
+
+            float3 upAxis = NormalizeVectorRsqrt(math.cross(forwardAxis, rightAxis), new float3(0f, 1f, 0f));
+            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            float3 shaderOrigin = originRuntime + new float3(committedOffset.x, committedOffset.y, committedOffset.z);
+            if (!math.all(math.isfinite(shaderOrigin)))
+            {
+                s_state = default;
+                s_hasState = false;
+                return;
+            }
 
             s_state = new RuntimeState(
-                (float3)origin,
+                shaderOrigin,
                 rightAxis,
                 upAxis,
                 forwardAxis,
@@ -57,7 +92,26 @@ namespace Hecton8.Gameplay
             if (!s_hasState)
                 return false;
 
-            return now <= s_state.StartTime + s_state.Duration && s_state.Intensity > 0.001f;
+            float duration = math.max(0.001f, s_state.Duration);
+            float elapsed = now - s_state.StartTime;
+            float remainingFade = 1f - math.saturate(elapsed / duration);
+            bool active = elapsed >= 0f && elapsed <= duration && s_state.Intensity * remainingFade > 0.001f;
+            if (!active)
+            {
+                s_hasState = false;
+                state = default;
+            }
+
+            return active;
+        }
+
+        private static float3 NormalizeVectorRsqrt(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            if (lengthSq <= 0.000001f || !math.all(math.isfinite(value)))
+                return fallback;
+
+            return value * math.rsqrt(lengthSq);
         }
     }
 }

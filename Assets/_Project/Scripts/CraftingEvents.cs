@@ -3,6 +3,8 @@
 // NativeQueue-backed crafting event lane flushed by SystemDispatcher.LateUpdate.
 // ============================================================================
 
+using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -81,6 +83,14 @@ namespace Hecton8.Crafting
         private const int ListenerCapacity = 32;
         private const int PendingEventCapacity = 128;
         private const int ReferenceSlotCapacity = 128;
+        private const uint CraftingListenerOverflowWarningHash = 0x4345564Cu; // CEVL
+        private const uint CraftingListenerContextHash = 0x43455652u; // CEVR
+        private const uint CraftingListenerExceptionWarningHash = 0x43455645u; // CEVE
+        private const uint CraftingListenerExceptionContextHash = 0x43455658u; // CEVX
+        private const uint CraftingQueueOverflowWarningHash = 0x43455651u; // CEVQ
+        private const uint CraftingQueueContextHash = 0x43455650u; // CEVP
+        private const uint CraftingReferenceSlotExhaustedWarningHash = 0x43524653u; // CRFS
+        private const uint CraftingReferenceSlotContextHash = 0x43524643u; // CRFC
 
         private struct CraftingReferenceSlot
         {
@@ -98,6 +108,10 @@ namespace Hecton8.Crafting
 
         // COLD ALLOC: RegistryBucket<ICraftingEventListener>[32] - crafting listeners drained by SystemDispatcher LateUpdate - owner: CraftingEvents
         private static readonly RegistryBucket<ICraftingEventListener> _listeners = new RegistryBucket<ICraftingEventListener>(ListenerCapacity);
+        // COLD ALLOC: ICraftingEventListener[32] - listener additions deferred while dispatching crafting events - owner: CraftingEvents
+        private static readonly ICraftingEventListener[] _deferredRegisterListeners = new ICraftingEventListener[ListenerCapacity];
+        // COLD ALLOC: ICraftingEventListener[32] - listener removals deferred while dispatching crafting events - owner: CraftingEvents
+        private static readonly ICraftingEventListener[] _deferredUnregisterListeners = new ICraftingEventListener[ListenerCapacity];
         // COLD ALLOC: CraftingReferenceSlot[128] - managed reference sidecar for unmanaged crafting payloads - owner: CraftingEvents
         private static readonly CraftingReferenceSlot[] _referenceSlots = new CraftingReferenceSlot[ReferenceSlotCapacity];
         // COLD ALLOC: bool[128] - reference slot occupancy map prevents wrap overwrite before deferred flush - owner: CraftingEvents
@@ -110,9 +124,27 @@ namespace Hecton8.Crafting
         private static int _referencePendingCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _droppedReferenceSlotCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastQueueOverflowTelemetryFrame = -1;
+        private static int _lastReferenceSlotTelemetryFrame = -1;
+        private static int _lastListenerOverflowTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        public static int DroppedEventCount => _droppedEventCount;
+
+        public static int DroppedReferenceSlotCount => _droppedReferenceSlotCount;
+
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
@@ -132,11 +164,23 @@ namespace Hecton8.Crafting
             }
 
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             ClearReferenceSlots();
             _referenceWriteIndex = 0;
             _referencePendingCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _droppedReferenceSlotCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastQueueOverflowTelemetryFrame = -1;
+            _lastReferenceSlotTelemetryFrame = -1;
+            _lastListenerOverflowTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -148,9 +192,13 @@ namespace Hecton8.Crafting
             if (listener == null)
                 return;
 
-            EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -161,8 +209,13 @@ namespace Hecton8.Crafting
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            _listeners.TryUnregister(listener);
         }
 
         /// <summary>
@@ -205,13 +258,16 @@ namespace Hecton8.Crafting
                     for (int i = count - 1; i >= 0; i--)
                     {
                         ICraftingEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnCraftingEvent(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
 
                 if (IsValidReferenceSlot(payload.ReferenceSlot) && releaseCount < ReferenceSlotCapacity)
@@ -276,7 +332,7 @@ namespace Hecton8.Crafting
         /// </summary>
         public static void RaiseFabricatorOpened(Fabricator fabricator)
         {
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+            if (!TryReserveReferenceSlot(CraftingEventType.FabricatorOpened, out int referenceSlot))
                 return;
 
             _referenceSlots[referenceSlot].Fabricator = fabricator;
@@ -310,7 +366,7 @@ namespace Hecton8.Crafting
         /// </summary>
         public static void RaiseCraftStarted(RecipeData recipe)
         {
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+            if (!TryReserveReferenceSlot(CraftingEventType.CraftStarted, out int referenceSlot))
                 return;
 
             _referenceSlots[referenceSlot].Fabricator = null;
@@ -349,7 +405,7 @@ namespace Hecton8.Crafting
             if (resultItemHash != 0u)
                 GlobalTelemetryBus.PublishItemCrafted(resultItemHash);
 
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+            if (!TryReserveReferenceSlot(CraftingEventType.CraftCompleted, out int referenceSlot))
                 return;
 
             _referenceSlots[referenceSlot].Fabricator = null;
@@ -371,7 +427,7 @@ namespace Hecton8.Crafting
         /// </summary>
         public static void RaiseCraftOutputSynthesized(CraftedItemSynthesisEvent synthesisEvent)
         {
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+            if (!TryReserveReferenceSlot(CraftingEventType.CraftOutputSynthesized, out int referenceSlot))
                 return;
 
             _referenceSlots[referenceSlot].Fabricator = null;
@@ -408,7 +464,7 @@ namespace Hecton8.Crafting
         /// </summary>
         public static void RaiseCraftFailed(Fabricator fabricator)
         {
-            if (!TryReserveReferenceSlot(out int referenceSlot))
+            if (!TryReserveReferenceSlot(CraftingEventType.CraftFailed, out int referenceSlot))
                 return;
 
             _referenceSlots[referenceSlot].Fabricator = fabricator;
@@ -434,6 +490,7 @@ namespace Hecton8.Crafting
                     nameof(CraftingEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -445,34 +502,54 @@ namespace Hecton8.Crafting
                     nameof(CraftingEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
         }
 
-        private static void Enqueue(in CraftingEventPayload payload)
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static bool Enqueue(in CraftingEventPayload payload)
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
+                ReportQueueOverflow(payload.EventType);
                 ReleaseReferenceSlot(payload.ReferenceSlot);
-                return;
+                return false;
             }
 
             if (_isDispatching)
             {
                 _nextFrameEvents.Enqueue(payload);
                 _nextFrameEventCount++;
-                return;
+                return true;
             }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+            return true;
         }
 
-        private static bool TryReserveReferenceSlot(out int referenceSlot)
+        private static bool TryReserveReferenceSlot(CraftingEventType eventType, out int referenceSlot)
         {
             referenceSlot = -1;
             if (_referencePendingCount >= ReferenceSlotCapacity)
+            {
+                ReportReferenceSlotExhausted((ushort)eventType);
                 return false;
+            }
 
             for (int probe = 0; probe < ReferenceSlotCapacity; probe++)
             {
@@ -583,6 +660,208 @@ namespace Hecton8.Crafting
             _nextFrameEvents = swap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
+        }
+
+        private static void DispatchToListener(ICraftingEventListener listener, in CraftingEventPayload payload)
+        {
+            try
+            {
+                listener.OnCraftingEvent(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(ICraftingEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= _deferredRegisterListeners.Length)
+            {
+                ReportListenerRegistrationOverflow();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(ICraftingEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener))
+                return;
+
+            if (IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= _deferredUnregisterListeners.Length)
+            {
+                ReportListenerRegistrationOverflow();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(ICraftingEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(ICraftingEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(ICraftingEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(ICraftingEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                ICraftingEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                ICraftingEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
+        private static void RegisterImmediate(ICraftingEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationOverflow();
+        }
+
+        private static void ReportQueueOverflow(ushort eventType)
+        {
+            _droppedEventCount++;
+            int frame = Time.frameCount;
+            if (_lastQueueOverflowTelemetryFrame == frame)
+                return;
+
+            _lastQueueOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                CraftingQueueOverflowWarningHash,
+                CraftingQueueContextHash ^ ((uint)eventType << 24),
+                Mathf.Max(1, _droppedEventCount));
+        }
+
+        private static void ReportReferenceSlotExhausted(ushort eventType)
+        {
+            _droppedReferenceSlotCount++;
+            int frame = Time.frameCount;
+            if (_lastReferenceSlotTelemetryFrame == frame)
+                return;
+
+            _lastReferenceSlotTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                CraftingReferenceSlotExhaustedWarningHash,
+                CraftingReferenceSlotContextHash ^ ((uint)eventType << 24),
+                Mathf.Max(1, _droppedReferenceSlotCount));
+        }
+
+        private static void ReportListenerRegistrationOverflow()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerOverflowTelemetryFrame == frame)
+                return;
+
+            _lastListenerOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                CraftingListenerOverflowWarningHash,
+                CraftingListenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                CraftingListenerExceptionWarningHash,
+                CraftingListenerExceptionContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
         }
 
         private static void ClearReferenceSlots()

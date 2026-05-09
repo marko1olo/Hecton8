@@ -14,7 +14,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9921)]
-    public sealed class PlayerSensoryManager : MonoBehaviour, IPlayerSensoryService, IUpdatable, IServiceHeartbeat
+    public sealed class PlayerSensoryManager : MonoBehaviour, IPlayerSensoryService, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         private bool _isInitialized;
         private bool _registeredUpdatable;
@@ -178,8 +178,30 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             TryUnregisterUpdatable();
             TryUnregisterService();
+            _isInitialized = false;
+            _syncInProgress = false;
+            _playerObject = null;
+            _playerTransform = null;
+            _playerMovement = null;
+            _playerCamera = null;
+            _flashlight = null;
+            _thrusterAudio = null;
+            _underwaterVisuals = null;
+            _visorController = null;
+            _hudNotification = null;
+            _visorResolveBuffer.Clear();
 
             GlobalRegistry.ClearPlayerSensoryRuntime(this);
         }

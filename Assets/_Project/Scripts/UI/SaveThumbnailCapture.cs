@@ -28,7 +28,9 @@ namespace Hecton8.UI
             if (payload.Type != SaveEventType.SaveStarted || payload.SlotName.Length == 0)
                 return;
 
-            string slotName = payload.SlotName.ToString();
+            if (!SaveEvents.TryResolveKnownSlotName(in payload.SlotName, out string slotName))
+                return;
+
             SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);
         }
     }

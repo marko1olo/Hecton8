@@ -66,6 +66,7 @@ Shader "Hecton/Item/Highlight"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _SHADOWS_SOFT
@@ -91,6 +92,7 @@ Shader "Hecton/Item/Highlight"
                 float4 tangentWS : TEXCOORD3;
                 float fogFactor : TEXCOORD4;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             TEXTURE2D(_BaseMap);
@@ -110,11 +112,18 @@ Shader "Hecton/Item/Highlight"
                 float _OutlineThickness;
             CBUFFER_END
 
+            float3 HectonHighlightSafeNormalize(float3 value, float3 fallback)
+            {
+                float lenSq = dot(value, value);
+                return lenSq > 0.0001 ? value * rsqrt(lenSq) : fallback;
+            }
+
             Varyings vert(Attributes input)
             {
                 Varyings output = (Varyings)0;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
                 VertexNormalInputs normalInput = GetVertexNormalInputs(input.normalOS, input.tangentOS);
@@ -132,6 +141,7 @@ Shader "Hecton/Item/Highlight"
             half4 frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 // Sample textures
                 half4 albedoAlpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
@@ -144,7 +154,7 @@ Shader "Hecton/Item/Highlight"
                 float3 bitangent = sgn * cross(input.normalWS.xyz, input.tangentWS.xyz);
                 float3x3 tangentToWorld = float3x3(input.tangentWS.xyz, bitangent.xyz, input.normalWS.xyz);
                 half3 normalWS = TransformTangentToWorld(normalTS, tangentToWorld);
-                normalWS = normalize(normalWS);
+                normalWS = (half3)HectonHighlightSafeNormalize(normalWS, half3(0.0h, 1.0h, 0.0h));
 
                 // Occlusion
                 half occlusion = SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, input.uv).g;
@@ -175,9 +185,9 @@ Shader "Hecton/Item/Highlight"
                 if (_HighlightIntensity > 0.01)
                 {
                     // Fresnel-based rim glow
-                    half3 viewDir = normalize(inputData.viewDirectionWS);
+                    half3 viewDir = (half3)HectonHighlightSafeNormalize(inputData.viewDirectionWS, half3(0.0h, 0.0h, 1.0h));
                     half fresnel = 1.0 - saturate(dot(viewDir, normalWS));
-                    fresnel = pow(fresnel, 2.0) * _HighlightIntensity;
+                    fresnel = fresnel * fresnel * _HighlightIntensity;
                     
                     // Add highlight color
                     color.rgb = lerp(color.rgb, _HighlightColor.rgb, fresnel * 0.5);
@@ -205,6 +215,7 @@ Shader "Hecton/Item/Highlight"
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -227,6 +238,7 @@ Shader "Hecton/Item/Highlight"
             #pragma vertex DepthOnlyVertex
             #pragma fragment DepthOnlyFragment
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/Shaders/LitInput.hlsl"

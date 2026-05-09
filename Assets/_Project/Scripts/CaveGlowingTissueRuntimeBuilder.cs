@@ -1,4 +1,5 @@
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -59,21 +60,22 @@ namespace Hecton8.Caves
             string name = GetCachedName(index);
             bool ceilingBias = Hash01(runtimeSeed, index, 11) > 0.35f;
             float side = HashSigned(runtimeSeed, index, 17);
-            float wallInset = Mathf.Lerp(0.06f, 0.22f, Hash01(runtimeSeed, index, 23));
+            float intensityT = math.saturate(globalIntensity);
+            float wallInset = math.lerp(0.06f, 0.22f, Hash01(runtimeSeed, index, 23));
             float verticalT = ceilingBias
-                ? Mathf.Lerp(0.52f, 0.94f, Hash01(runtimeSeed, index, 31))
-                : Mathf.Lerp(0.18f, 0.68f, Hash01(runtimeSeed, index, 31));
+                ? math.lerp(0.52f, 0.94f, Hash01(runtimeSeed, index, 31))
+                : math.lerp(0.18f, 0.68f, Hash01(runtimeSeed, index, 31));
             float x = volumeBounds.center.x + Mathf.Sign(side) * volumeBounds.extents.x * (1f - wallInset);
-            float y = Mathf.Lerp(volumeBounds.min.y, volumeBounds.max.y, verticalT);
+            float y = math.lerp(volumeBounds.min.y, volumeBounds.max.y, verticalT);
             float z = volumeBounds.center.z + HashSigned(runtimeSeed, index, 43) * volumeBounds.extents.z * 0.76f;
-            float width = Mathf.Lerp(0.2f, 0.8f, Hash01(runtimeSeed, index, 59)) * Mathf.Lerp(0.85f, 1.2f, globalIntensity);
-            float height = Mathf.Lerp(width * 0.55f, width * 1.4f, Hash01(runtimeSeed, index, 71));
-            float thickness = Mathf.Lerp(0.08f, 0.24f, Hash01(runtimeSeed, index, 83));
+            float width = math.lerp(0.2f, 0.8f, Hash01(runtimeSeed, index, 59)) * math.lerp(0.85f, 1.2f, intensityT);
+            float height = math.lerp(width * 0.55f, width * 1.4f, Hash01(runtimeSeed, index, 71));
+            float thickness = math.lerp(0.08f, 0.24f, Hash01(runtimeSeed, index, 83));
             float yaw = HashSigned(runtimeSeed, index, 97) * 42f;
             float roll = HashSigned(runtimeSeed, index, 109) * 18f;
             float pitch = ceilingBias
-                ? Mathf.Lerp(92f, 138f, Hash01(runtimeSeed, index, 127))
-                : Mathf.Lerp(-18f, 26f, Hash01(runtimeSeed, index, 127));
+                ? math.lerp(92f, 138f, Hash01(runtimeSeed, index, 127))
+                : math.lerp(-18f, 26f, Hash01(runtimeSeed, index, 127));
             Vector3 localPosition = new Vector3(x, y, z);
             Vector3 localScale = new Vector3(width, height, thickness);
             Quaternion localRotation = Quaternion.Euler(pitch, yaw, roll);
@@ -107,9 +109,10 @@ namespace Hecton8.Caves
             if (renderer == null || config == null)
                 return;
 
-            float glowFactor = Mathf.Lerp(0.45f, 1.25f, Hash01(runtimeSeed, index, 149)) * Mathf.Lerp(0.85f, 1.2f, globalIntensity);
+            float intensityT = math.saturate(globalIntensity);
+            float glowFactor = math.lerp(0.45f, 1.25f, Hash01(runtimeSeed, index, 149)) * math.lerp(0.85f, 1.2f, intensityT);
             Color baseColor = Color.Lerp(config.baseColor, config.glowColor, 0.42f);
-            Color emission = config.glowColor * glowFactor * Mathf.Lerp(0.35f, 1.35f, config.pulseAmount);
+            Color emission = config.glowColor * glowFactor * math.lerp(0.35f, 1.35f, math.saturate(config.pulseAmount));
             MaterialPropertyBlock propertyBlock = GetTissuePropertyBlock();
             propertyBlock.Clear();
             renderer.GetPropertyBlock(propertyBlock);
@@ -146,7 +149,7 @@ namespace Hecton8.Caves
             float intensity = Mathf.Clamp(globalIntensity, 0.1f, 1.25f);
             float density = Mathf.Clamp01(config.density);
             return Mathf.Clamp(
-                Mathf.RoundToInt(maxCount * Mathf.Max(complexity, verticalSurface) * Mathf.Lerp(0.55f, 1.15f, density) * intensity),
+                Mathf.RoundToInt(maxCount * Mathf.Max(complexity, verticalSurface) * math.lerp(0.55f, 1.15f, density) * intensity),
                 1,
                 maxCount);
         }

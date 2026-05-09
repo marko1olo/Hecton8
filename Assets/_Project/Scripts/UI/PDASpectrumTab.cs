@@ -13,12 +13,12 @@
 // ============================================================================
 
 using Hecton8.Environment;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Visor;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -63,6 +63,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _signalSummaryLabel;
         private PDAMapTab _mapTab;
         private HectonSurvivalSystem _survivalSystem;
+        private HectonPlayerMovement _playerMovement;
         // COLD ALLOC: char[512] — spectrum diagnostic line assembly buffer — owner: PDASpectrumTab
         private readonly char[] _lineBuffer = new char[512];
         private int _lineLength;
@@ -79,7 +80,7 @@ namespace Hecton8.UI
         {
             "Стандартный режим визора. Без модификаций.",
             "Тепловые сигнатуры существ и оборудования.\nОбнаружение через стены и туман.",
-            $"Движение в радиусе 100м.\nНе показывает что — только что есть.\nПульс каждые 3 секунды.",
+            "Движение в радиусе 100м.\nНе показывает что — только что есть.\nПульс каждые 3 секунды.",
             "Биомеханические сигнатуры.\nОбнаружение дронов Атлас-6.\nТребует апгрейда сенсоров."
         };
 
@@ -89,6 +90,14 @@ namespace Hecton8.UI
             "АКТИВНЫЙ РЕЖИМ: ТЕПЛОВИЗОР",
             "АКТИВНЫЙ РЕЖИМ: СОНАР",
             "АКТИВНЫЙ РЕЖИМ: ЭХОЛОТ"
+        };
+
+        private static readonly string[] ModeButtonObjectNames =
+        {
+            "ModeBtn_0",
+            "ModeBtn_1",
+            "ModeBtn_2",
+            "ModeBtn_3"
         };
 
         private const string SonarActiveStatus = "СОНАР АКТИВЕН — РАДИУС: 100М";
@@ -231,7 +240,7 @@ namespace Hecton8.UI
                 float yMax = 1f - 0.05f - row * (btnH / 400f + 0.02f);
                 float yMin = yMax - btnH / 400f;
 
-                RectTransform btn = CreateRect($"ModeBtn_{i}", root);
+                RectTransform btn = CreateRect(ModeButtonObjectNames[i], root);
                 Anchor(btn,
                     new Vector2(xMin, 0.45f + (1 - row) * 0.25f),
                     new Vector2(xMax, 0.45f + (1 - row) * 0.25f + 0.22f),
@@ -378,7 +387,7 @@ namespace Hecton8.UI
             Append("BIOME // ");
             AppendBiomeName(matrixProfile);
             Append(" // DEPTH ");
-            AppendDistance(Mathf.RoundToInt(biomeDirector.CurrentDepthMeters));
+            AppendDistance((int)math.round(biomeDirector.CurrentDepthMeters));
             SetLineText(_statusLabel);
         }
 
@@ -432,9 +441,9 @@ namespace Hecton8.UI
 
             ClearLine();
             Append("DEPTH // ");
-            AppendDistance(Mathf.RoundToInt(biomeDirector.CurrentDepthMeters));
+            AppendDistance((int)math.round(biomeDirector.CurrentDepthMeters));
             Append(" // MATRIX ");
-            AppendInt(Mathf.Max(0, matrixProfile.matrixIndex));
+            AppendInt(math.max(0, matrixProfile.matrixIndex));
             SetLineText(_contactSummaryLabel);
 
             if (visualProfile != null)
@@ -531,16 +540,20 @@ namespace Hecton8.UI
 
         private bool TryResolveSurvivalSystem(out HectonSurvivalSystem survival)
         {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerMovement != null)
+                _playerMovement = playerContext.PlayerMovement;
+
             if (_survivalSystem != null)
             {
                 survival = _survivalSystem;
                 return true;
             }
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
+            if (playerContext != null &&
+                playerContext.PlayerObject != null)
             {
-                _survivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+                playerContext.PlayerObject.TryGetComponent(out _survivalSystem);
             }
 
             survival = _survivalSystem;
@@ -550,6 +563,7 @@ namespace Hecton8.UI
         private void AppendLastLossSuffix()
         {
             if (!TryResolveSurvivalSystem(out HectonSurvivalSystem survival) ||
+                !TryResolvePlayerAup(out AbsoluteUniversePosition playerAup) ||
                 !survival.TryGetLastDeathRecord(out SurvivalDeathRecord record))
             {
                 return;
@@ -558,12 +572,13 @@ namespace Hecton8.UI
             Append(" // LOSS ");
             Append(ResolveDeathCauseTag(record.Cause));
             Append(' ');
-            AppendDistance(Mathf.RoundToInt(Vector3.Distance(survival.transform.position, record.Position)));
+            AppendDistance(ResolveRoundedApproximateAupDistanceMeters(in playerAup, record.Position));
         }
 
         private bool TryAppendLastLossLabel()
         {
             if (!TryResolveSurvivalSystem(out HectonSurvivalSystem survival) ||
+                !TryResolvePlayerAup(out AbsoluteUniversePosition playerAup) ||
                 !survival.TryGetLastDeathRecord(out SurvivalDeathRecord record))
             {
                 return false;
@@ -573,29 +588,69 @@ namespace Hecton8.UI
             Append("LAST LOSS // ");
             Append(ResolveDeathCauseTag(record.Cause));
             Append(' ');
-            AppendDistance(Mathf.RoundToInt(Vector3.Distance(survival.transform.position, record.Position)));
+            AppendDistance(ResolveRoundedApproximateAupDistanceMeters(in playerAup, record.Position));
             SetLineText(_signalSummaryLabel);
             return true;
         }
 
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (_playerMovement == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _playerMovement = playerContext.PlayerMovement;
+            }
+
+            if (_playerMovement != null)
+            {
+                playerAup = _playerMovement.CurrentAup;
+                return true;
+            }
+
+            playerAup = default;
+            return false;
+        }
+
+        private static int ResolveRoundedApproximateAupDistanceMeters(in AbsoluteUniversePosition fromAup, Vector3 toRuntimePosition)
+        {
+            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntimePosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in fromAup, in toAup);
+            float approximateMeters = ApproximateDistanceMetersFromSq(distanceSq);
+            return approximateMeters >= int.MaxValue ? int.MaxValue : (int)math.round(approximateMeters);
+        }
+
+        private static float ApproximateDistanceMetersFromSq(double distanceSq)
+        {
+            if (double.IsNaN(distanceSq) || double.IsInfinity(distanceSq))
+                return float.PositiveInfinity;
+            if (distanceSq <= 0d)
+                return 0f;
+
+            float clampedSq = (float)math.min(distanceSq, (double)float.MaxValue);
+            uint estimateBits = (math.asuint(clampedSq) >> 1) + 0x1FC00000u;
+            float estimate = math.asfloat(estimateBits);
+            return 0.5f * (estimate + (clampedSq / math.max(estimate, 0.0001f)));
+        }
+
         private void AppendInt(int value)
         {
-            int clampedValue = Mathf.Clamp(value, 0, HudNumericStringCache.MaxIntegerValue);
+            int clampedValue = math.clamp(value, 0, HudNumericStringCache.MaxIntegerValue);
             Append(HudNumericStringCache.IntStrings[clampedValue]);
         }
 
         private void AppendDistance(int distanceMeters)
         {
-            int clampedDistance = Mathf.Clamp(distanceMeters, 0, HudNumericStringCache.MaxIntegerValue);
+            int clampedDistance = math.clamp(distanceMeters, 0, HudNumericStringCache.MaxIntegerValue);
             Append(HudNumericStringCache.IntStrings[clampedDistance]);
             Append('M');
         }
 
         private void AppendTenths(float value)
         {
-            int roundedTenths = Mathf.Abs(Mathf.RoundToInt(value * 10f));
+            int roundedTenths = math.abs((int)math.round(value * 10f));
             int maxHudTenths = HudNumericStringCache.MaxIntegerValue * 10 + 9;
-            int clampedTenths = Mathf.Clamp(roundedTenths, 0, maxHudTenths);
+            int clampedTenths = math.clamp(roundedTenths, 0, maxHudTenths);
             Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
             Append('.');
             Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
@@ -603,7 +658,7 @@ namespace Hecton8.UI
 
         private void AppendSignedTenths(float value)
         {
-            int roundedTenths = Mathf.RoundToInt(value * 10f);
+            int roundedTenths = (int)math.round(value * 10f);
             if (roundedTenths < 0)
             {
                 Append('-');
@@ -611,7 +666,7 @@ namespace Hecton8.UI
             }
 
             int maxHudTenths = HudNumericStringCache.MaxIntegerValue * 10 + 9;
-            int clampedTenths = Mathf.Clamp(roundedTenths, 0, maxHudTenths);
+            int clampedTenths = math.clamp(roundedTenths, 0, maxHudTenths);
             Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
             Append('.');
             Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
@@ -794,8 +849,7 @@ namespace Hecton8.UI
             if (label == null)
                 return;
 
-            label.SetCharArray(_lineBuffer, 0, Mathf.Clamp(_lineLength, 0, _lineBuffer.Length));
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+            label.SetCharArray(_lineBuffer, 0, math.clamp(_lineLength, 0, _lineBuffer.Length));
         }
 
         private void Append(string value)
@@ -803,7 +857,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(value) || _lineLength >= _lineBuffer.Length)
                 return;
 
-            int copyLength = Mathf.Min(value.Length, _lineBuffer.Length - _lineLength);
+            int copyLength = math.min(value.Length, _lineBuffer.Length - _lineLength);
             for (int i = 0; i < copyLength; i++)
                 _lineBuffer[_lineLength + i] = value[i];
             _lineLength += copyLength;

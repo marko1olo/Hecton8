@@ -19,6 +19,8 @@ using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Physics;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -107,6 +109,8 @@ namespace Hecton8.Gameplay
         private bool _isStabilized;
         private bool _registered;
         private bool _registeredFixed;
+        private bool _registeredBeacon;
+        private AbsoluteUniversePosition _cachedAup;
         private int _emissionPropertyId;
 
         // Cached references
@@ -157,6 +161,9 @@ namespace Hecton8.Gameplay
         /// <summary>World position of the beacon.</summary>
         public Vector3 Position => _cachedTransform.position;
 
+        /// <summary>Cached absolute universe position for long-range HUD and scanner logic.</summary>
+        public AbsoluteUniversePosition PositionAup => _cachedAup;
+
         /// <summary>True if beacon has stabilized at target depth.</summary>
         public bool IsStabilized => _isStabilized;
 
@@ -183,6 +190,8 @@ namespace Hecton8.Gameplay
 
             if (beaconLight == null)
                 beaconLight = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
+
+            RefreshCachedAup();
         }
 
         private void OnEnable()
@@ -190,9 +199,9 @@ namespace Hecton8.Gameplay
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegisterTickSystems();
 
-            // Register to beacon registry for HUD access
-            BeaconRegistry.Register(this);
+            TryRegisterBeacon();
 
+            RefreshCachedAup();
             RebuildLocalizedTextCache();
             UpdateBeaconLight();
 
@@ -206,14 +215,13 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
-            // Unregister from beacon registry
-            BeaconRegistry.Unregister(this);
+            TryUnregisterBeacon();
             TryUnregisterTickSystems();
         }
 
         private void OnDestroy()
         {
-            BeaconRegistry.Unregister(this);
+            TryUnregisterBeacon();
             TryUnregisterTickSystems();
         }
 
@@ -253,6 +261,8 @@ namespace Hecton8.Gameplay
             if (_rb == null)
                 return;
 
+            RefreshCachedAup();
+
             // Calculate current depth
             float currentDepth = -_cachedTransform.position.y;
 
@@ -261,7 +271,8 @@ namespace Hecton8.Gameplay
 
             // Check if stabilized
             bool wasStabilized = _isStabilized;
-            _isStabilized = Mathf.Abs(depthError) < 0.5f && _rb.linearVelocity.magnitude < 0.1f;
+            float linearSpeedSq = _rb.linearVelocity.sqrMagnitude;
+            _isStabilized = math.abs(depthError) < 0.5f && linearSpeedSq < 0.01f;
 
             if (_isStabilized && !wasStabilized)
             {
@@ -346,6 +357,29 @@ namespace Hecton8.Gameplay
             BeaconLabel = newLabel;
         }
 
+        private void RefreshCachedAup()
+        {
+            _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
+        }
+
+        private void TryRegisterBeacon()
+        {
+            if (_registeredBeacon)
+                return;
+
+            BeaconRegistry.Register(this);
+            _registeredBeacon = true;
+        }
+
+        private void TryUnregisterBeacon()
+        {
+            if (!_registeredBeacon)
+                return;
+
+            BeaconRegistry.Unregister(this);
+            _registeredBeacon = false;
+        }
+
         /// <summary>
         /// Sets the localization table key for authored beacon labels.
         /// </summary>
@@ -375,7 +409,7 @@ namespace Hecton8.Gameplay
         /// <param name="depth">Target depth (negative = underwater).</param>
         public void SetTargetDepth(float depth)
         {
-            targetDepth = Mathf.Clamp(depth, -500f, 0f);
+            targetDepth = math.clamp(depth, -500f, 0f);
 
             // Re-enable physics if locked
             if (_rb != null && _rb.isKinematic && lockAtTarget)
@@ -418,14 +452,12 @@ namespace Hecton8.Gameplay
 
             if (!_registered)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registered = GlobalRegistry.Updatables.Contains(this);
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredFixed)
             {
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-                _registeredFixed = GlobalRegistry.FixedTickables.Contains(this);
+                _registeredFixed = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             }
         }
 

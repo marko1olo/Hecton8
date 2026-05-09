@@ -1,4 +1,5 @@
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -28,6 +29,7 @@ namespace Hecton8.AI
         {
             public PlayerNoiseSignal(
                 Vector3 position,
+                in AbsoluteUniversePosition positionAup,
                 float movementSpeedSqr,
                 bool flashlightOn,
                 float transportBoost01,
@@ -40,6 +42,7 @@ namespace Hecton8.AI
                 float signalRadiusMeters = 0f)
             {
                 Position = position;
+                PositionAup = positionAup;
                 MovementSpeedSqr = movementSpeedSqr;
                 FlashlightOn = flashlightOn;
                 TransportBoost01 = transportBoost01;
@@ -54,6 +57,9 @@ namespace Hecton8.AI
 
             /// <summary>World position of the player noise source.</summary>
             public Vector3 Position { get; }
+
+            /// <summary>AUP of the player noise source for long-range sensory math.</summary>
+            public AbsoluteUniversePosition PositionAup { get; }
 
             /// <summary>Squared player movement speed at the time of the report.</summary>
             public float MovementSpeedSqr { get; }
@@ -111,13 +117,37 @@ namespace Hecton8.AI
             float transportSignature,
             float toolUseNoise01)
         {
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            ReportPlayerSignal(
+                position,
+                in positionAup,
+                movementSpeedSqr,
+                flashlightOn,
+                transportBoost01,
+                transportSignature,
+                toolUseNoise01);
+        }
+
+        /// <summary>
+        /// Reports the latest player-noise snapshot with caller-owned AUP to avoid repeat runtime conversion.
+        /// </summary>
+        public static void ReportPlayerSignal(
+            Vector3 position,
+            in AbsoluteUniversePosition positionAup,
+            float movementSpeedSqr,
+            bool flashlightOn,
+            float transportBoost01,
+            float transportSignature,
+            float toolUseNoise01)
+        {
             _playerNoiseSignal = new PlayerNoiseSignal(
                 position,
-                Mathf.Max(0f, movementSpeedSqr),
+                in positionAup,
+                math.max(0f, movementSpeedSqr),
                 flashlightOn,
-                Mathf.Clamp01(transportBoost01),
-                Mathf.Max(0f, transportSignature),
-                Mathf.Clamp01(toolUseNoise01),
+                math.saturate(transportBoost01),
+                math.max(0f, transportSignature),
+                math.saturate(toolUseNoise01),
                 Time.frameCount);
             _hasPlayerNoiseSignal = true;
             float transientRadius = ResolveDispatchRadius(_playerNoiseSignal);
@@ -125,6 +155,7 @@ namespace Hecton8.AI
             {
                 WorldSpatialHashGrid.RegisterTransientEvent(
                     position,
+                    in positionAup,
                     transientRadius,
                     ResolveSignalIntensity01(_playerNoiseSignal),
                     PlayerNoiseMemorySeconds,
@@ -140,9 +171,11 @@ namespace Hecton8.AI
         /// </summary>
         public static void ReportActiveSonarPing(Vector3 position, float intensity01)
         {
-            float clampedIntensity = Mathf.Clamp01(intensity01);
+            float clampedIntensity = math.saturate(intensity01);
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
             _playerNoiseSignal = new PlayerNoiseSignal(
                 position,
+                in positionAup,
                 0f,
                 false,
                 0f,
@@ -156,6 +189,7 @@ namespace Hecton8.AI
             _hasPlayerNoiseSignal = true;
             WorldSpatialHashGrid.RegisterTransientEvent(
                 position,
+                in positionAup,
                 ActiveSonarDetectionRadius,
                 clampedIntensity,
                 ActiveSonarMemorySeconds,
@@ -195,8 +229,11 @@ namespace Hecton8.AI
             if (dispatchRadius <= 0f)
                 return;
 
+            Vector3 position = signal.Position;
+            AbsoluteUniversePosition positionAup = signal.PositionAup;
             int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
-                signal.Position,
+                position,
+                in positionAup,
                 dispatchRadius,
                 SpatialTargetKind.Bioform,
                 SpatialInteractionFlags.AcousticReceiver,
@@ -211,8 +248,11 @@ namespace Hecton8.AI
 
         private static void DispatchActiveSonarPing(PlayerNoiseSignal signal)
         {
+            Vector3 position = signal.Position;
+            AbsoluteUniversePosition positionAup = signal.PositionAup;
             int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
-                signal.Position,
+                position,
+                in positionAup,
                 ActiveSonarDetectionRadius,
                 SpatialTargetKind.Bioform,
                 SpatialInteractionFlags.AcousticReceiver,
@@ -225,7 +265,7 @@ namespace Hecton8.AI
                     continue;
 
                 AcousticOcclusionResult occlusion = AcousticOcclusionUtility.EvaluateOcclusionPath(
-                    signal.Position,
+                    position,
                     listener.Position,
                     SensoryOcclusionMask,
                     null,
@@ -235,6 +275,7 @@ namespace Hecton8.AI
 
                 PlayerNoiseSignal transmittedSignal = new PlayerNoiseSignal(
                     signal.Position,
+                    in positionAup,
                     0f,
                     false,
                     0f,
@@ -258,50 +299,62 @@ namespace Hecton8.AI
 
             if (signal.MovementSpeedSqr >= MinimumMovementNoiseSqr)
             {
-                float movementSpeed = Mathf.Sqrt(signal.MovementSpeedSqr);
-                float movementRadius = Mathf.Lerp(
+                float movementRadius = LerpClamped(
                     MinimumMovementNoiseRadius,
                     MaximumMovementNoiseRadius,
-                    Mathf.InverseLerp(0.5f, 8.5f, movementSpeed));
-                dispatchRadius = Mathf.Max(dispatchRadius, movementRadius);
+                    InverseLerpClamped(MinimumMovementNoiseSqr, 72.25f, signal.MovementSpeedSqr));
+                dispatchRadius = math.max(dispatchRadius, movementRadius);
             }
 
             if (signal.ToolUseNoise01 > 0f)
             {
-                float toolRadius = Mathf.Lerp(
+                float toolRadius = LerpClamped(
                     MinimumToolNoiseRadius,
                     MaximumToolNoiseRadius,
                     signal.ToolUseNoise01);
-                dispatchRadius = Mathf.Max(dispatchRadius, toolRadius);
+                dispatchRadius = math.max(dispatchRadius, toolRadius);
             }
 
             if (signal.TransportBoost01 > 0f)
             {
-                float transportSignature = Mathf.Max(1f, signal.TransportSignature);
-                float transportRadius = Mathf.Lerp(
+                float transportSignature = math.max(1f, signal.TransportSignature);
+                float transportRadius = LerpClamped(
                     MinimumTransportNoiseRadius,
                     MaximumTransportNoiseRadius * transportSignature,
                     signal.TransportBoost01);
-                dispatchRadius = Mathf.Max(dispatchRadius, transportRadius);
+                dispatchRadius = math.max(dispatchRadius, transportRadius);
             }
 
             if (signal.IsActiveSonarPing)
-                dispatchRadius = Mathf.Max(dispatchRadius, signal.SignalRadiusMeters);
+                dispatchRadius = math.max(dispatchRadius, signal.SignalRadiusMeters);
 
             return dispatchRadius;
+        }
+
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return from + (to - from) * math.saturate(t);
+        }
+
+        private static float InverseLerpClamped(float from, float to, float value)
+        {
+            float range = to - from;
+            return range > 0.000001f
+                ? math.saturate((value - from) / range)
+                : 0f;
         }
 
         private static float ResolveSignalIntensity01(PlayerNoiseSignal signal)
         {
             float movementIntensity = signal.MovementSpeedSqr > 0f
-                ? Mathf.InverseLerp(MinimumMovementNoiseSqr, 72.25f, signal.MovementSpeedSqr)
+                ? InverseLerpClamped(MinimumMovementNoiseSqr, 72.25f, signal.MovementSpeedSqr)
                 : 0f;
-            float utilityIntensity = Mathf.Max(signal.ToolUseNoise01, signal.TransportBoost01);
+            float utilityIntensity = math.max(signal.ToolUseNoise01, signal.TransportBoost01);
             if (signal.FlashlightOn)
-                utilityIntensity = Mathf.Max(utilityIntensity, 0.25f);
+                utilityIntensity = math.max(utilityIntensity, 0.25f);
             if (signal.IsActiveSonarPing)
-                utilityIntensity = Mathf.Max(utilityIntensity, signal.ToolUseNoise01 * signal.AcousticTransmission01);
-            return Mathf.Clamp01(Mathf.Max(movementIntensity, utilityIntensity));
+                utilityIntensity = math.max(utilityIntensity, signal.ToolUseNoise01 * signal.AcousticTransmission01);
+            return math.saturate(math.max(movementIntensity, utilityIntensity));
         }
 
         public static float EvaluatePlayerNoise01(
@@ -311,28 +364,27 @@ namespace Hecton8.AI
         {
             if (TryGetPlayerSignal(out PlayerNoiseSignal signal))
             {
-                float distance = Vector3.Distance(listenerPosition, signal.Position);
-                float speed = Mathf.Sqrt(signal.MovementSpeedSqr);
-                float speed01 = Mathf.InverseLerp(0.75f, 8.5f, speed);
+                float distanceSqr = (listenerPosition - signal.Position).sqrMagnitude;
+                float speed01 = InverseLerpClamped(0.5625f, 72.25f, signal.MovementSpeedSqr);
                 float maxDistance = signal.SignalRadiusMeters > 0f ? signal.SignalRadiusMeters : 42f;
-                float distance01 = 1f - Mathf.InverseLerp(6f, maxDistance, distance);
-                float pulse01 = Mathf.Max(signal.TransportBoost01, signal.ToolUseNoise01);
+                float distance01 = 1f - InverseLerpClamped(36f, maxDistance * maxDistance, distanceSqr);
+                float pulse01 = math.max(signal.TransportBoost01, signal.ToolUseNoise01);
                 if (signal.IsActiveSonarPing)
-                    pulse01 = Mathf.Max(pulse01, signal.ToolUseNoise01 * signal.AcousticTransmission01);
-                return Mathf.Clamp01(Mathf.Max(speed01 * distance01, pulse01 * distance01));
+                    pulse01 = math.max(pulse01, signal.ToolUseNoise01 * signal.AcousticTransmission01);
+                return math.saturate(math.max(speed01 * distance01, pulse01 * distance01));
             }
 
             if (playerTransform == null || playerBody == null)
                 return 0f;
 
-            float playerSpeed = playerBody.linearVelocity.magnitude;
-            if (playerSpeed <= 0.1f)
+            float playerSpeedSqr = playerBody.linearVelocity.sqrMagnitude;
+            if (playerSpeedSqr <= 0.01f)
                 return 0f;
 
-            float playerDistance = Vector3.Distance(listenerPosition, playerTransform.position);
-            float playerSpeed01 = Mathf.InverseLerp(0.75f, 8.5f, playerSpeed);
-            float playerDistance01 = 1f - Mathf.InverseLerp(6f, 42f, playerDistance);
-            return Mathf.Clamp01(playerSpeed01 * playerDistance01);
+            float playerDistanceSqr = (listenerPosition - playerTransform.position).sqrMagnitude;
+            float playerSpeed01 = InverseLerpClamped(0.5625f, 72.25f, playerSpeedSqr);
+            float playerDistance01 = 1f - InverseLerpClamped(36f, 1764f, playerDistanceSqr);
+            return math.saturate(playerSpeed01 * playerDistance01);
         }
     }
 }

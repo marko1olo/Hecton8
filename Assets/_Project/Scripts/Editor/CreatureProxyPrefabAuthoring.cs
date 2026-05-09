@@ -40,7 +40,7 @@ namespace Hecton8.AI.Editor
             Material leviathanMaterial = EnsureMaterial("Mat_LeviathanProxy.mat", new Color(0.75f, 0.22f, 0.22f));
             Material droneMaterial = EnsureMaterial("Mat_DroneProxy.mat", new Color(0.70f, 0.86f, 1.00f));
 
-            EnsureProxyPrefab(SmallPassiveProxyPath, BuildRoot("SmallPassiveProxy", PrimitiveType.Sphere, passiveMaterial, new Vector3(0.8f, 0.45f, 1.2f), AddSmallPassiveCollider));
+            EnsureProxyPrefab(SmallPassiveProxyPath, BuildRoot("SmallPassiveProxy", PrimitiveType.Sphere, passiveMaterial, new Vector3(0.8f, 0.45f, 1.2f), AddSmallPassiveCollider, kinematicOnly: true));
             EnsureProxyPrefab(TerritorialProxyPath, BuildRoot("TerritorialProxy", PrimitiveType.Capsule, territorialMaterial, new Vector3(1.2f, 0.9f, 2.0f), AddTerritorialCollider));
             EnsureProxyPrefab(HunterProxyPath, BuildRoot("HunterProxy", PrimitiveType.Capsule, hunterMaterial, new Vector3(1.4f, 1.0f, 2.6f), AddHunterCollider));
             EnsureProxyPrefab(HeavyHunterProxyPath, BuildRoot("HeavyHunterProxy", PrimitiveType.Capsule, heavyHunterMaterial, new Vector3(2.0f, 1.4f, 3.8f), AddHeavyHunterCollider));
@@ -85,30 +85,43 @@ namespace Hecton8.AI.Editor
             PrimitiveType visualType,
             Material material,
             Vector3 visualScale,
-            System.Action<GameObject> addCollider)
+            System.Action<GameObject> addCollider,
+            bool kinematicOnly = false)
         {
             GameObject root = new GameObject(name);
-            Rigidbody rigidbody = root.AddComponent<Rigidbody>();
-            rigidbody.useGravity = false;
-            rigidbody.linearDamping = 1.2f;
-            rigidbody.angularDamping = 4f;
-            rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+            if (!kinematicOnly)
+            {
+                Rigidbody rigidbody = root.AddComponent<Rigidbody>();
+                rigidbody.useGravity = false;
+                rigidbody.isKinematic = false;
+                rigidbody.detectCollisions = true;
+                rigidbody.linearDamping = 1.2f;
+                rigidbody.angularDamping = 4f;
+                rigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+            }
 
-            root.AddComponent<FaunaBrain>();
-            root.AddComponent<Hecton8.Gameplay.ScannableTarget>();
+            if (!kinematicOnly)
+            {
+                root.AddComponent<FaunaBrain>();
+                root.AddComponent<Hecton8.Gameplay.ScannableTarget>();
+            }
+
             addCollider(root);
+            if (kinematicOnly)
+            {
+                if (root.TryGetComponent(out Collider proxyCollider))
+                    proxyCollider.isTrigger = true;
+            }
 
             GameObject visual = GameObject.CreatePrimitive(visualType);
             visual.name = "Visual";
             visual.transform.SetParent(root.transform, false);
             visual.transform.localScale = visualScale;
 
-            Collider visualCollider = visual.GetComponent<Collider>();
-            if (visualCollider != null)
+            if (visual.TryGetComponent(out Collider visualCollider))
                 Object.DestroyImmediate(visualCollider);
 
-            MeshRenderer renderer = visual.GetComponent<MeshRenderer>();
-            if (renderer != null && material != null)
+            if (visual.TryGetComponent(out MeshRenderer renderer) && material != null)
                 renderer.sharedMaterial = material;
 
             return root;

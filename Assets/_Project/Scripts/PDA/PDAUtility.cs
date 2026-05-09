@@ -1,5 +1,6 @@
 using Hecton8.SaveSystem;
 using Hecton8.Atmosphere;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.PDA
@@ -134,15 +135,20 @@ namespace Hecton8.PDA
             HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
             if (atmosphereManager != null)
             {
-                float cycleDuration = Mathf.Max(1f, atmosphereManager.CycleDuration);
-                dayIndex = Mathf.FloorToInt((float)(atmosphereManager.ElapsedCycleTimeSeconds / cycleDuration)) + 1;
-                dayTimeHours = Mathf.Repeat(atmosphereManager.TimeOfDay, 1f) * 24f;
+                float cycleDuration = math.max(1f, atmosphereManager.CycleDuration);
+                dayIndex = (int)math.floor((float)(atmosphereManager.ElapsedCycleTimeSeconds / cycleDuration)) + 1;
+                dayTimeHours = Repeat01(atmosphereManager.TimeOfDay) * 24f;
                 return;
             }
 
-            float fallbackCycleDuration = Mathf.Max(1f, FallbackCycleDurationSeconds);
-            dayIndex = Mathf.FloorToInt(playTimeSeconds / fallbackCycleDuration) + 1;
-            dayTimeHours = Mathf.Repeat(playTimeSeconds / fallbackCycleDuration, 1f) * 24f;
+            float fallbackCycleDuration = math.max(1f, FallbackCycleDurationSeconds);
+            dayIndex = (int)math.floor(playTimeSeconds / fallbackCycleDuration) + 1;
+            dayTimeHours = Repeat01(playTimeSeconds / fallbackCycleDuration) * 24f;
+        }
+
+        private static float Repeat01(float value)
+        {
+            return value - math.floor(value);
         }
     }
 }

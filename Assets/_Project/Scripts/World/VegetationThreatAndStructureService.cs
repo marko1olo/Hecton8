@@ -26,9 +26,9 @@ namespace Hecton8.World
 
         internal void ApplyExternalThreatPulse(Vector3 position, float radius, float strength, float holdDuration)
         {
-            float resolvedRadius = Mathf.Max(0f, radius);
-            float resolvedStrength = Mathf.Max(0f, strength);
-            float resolvedHoldDuration = Mathf.Max(0.01f, holdDuration);
+            float resolvedRadius = math.max(0f, radius);
+            float resolvedStrength = math.max(0f, strength);
+            float resolvedHoldDuration = math.max(0.01f, holdDuration);
             if (resolvedRadius <= 0f || resolvedStrength <= 0f)
                 return;
 
@@ -43,11 +43,11 @@ namespace Hecton8.World
             }
             else
             {
-                _externalThreatPulseRadius = Mathf.Max(_externalThreatPulseRadius, resolvedRadius);
-                _externalThreatPulseStrength = Mathf.Max(_externalThreatPulseStrength, resolvedStrength);
+                _externalThreatPulseRadius = math.max(_externalThreatPulseRadius, resolvedRadius);
+                _externalThreatPulseStrength = math.max(_externalThreatPulseStrength, resolvedStrength);
             }
 
-            _externalThreatPulseHoldTimer = Mathf.Max(_externalThreatPulseHoldTimer, resolvedHoldDuration);
+            _externalThreatPulseHoldTimer = math.max(_externalThreatPulseHoldTimer, resolvedHoldDuration);
         }
 
         /// <summary>
@@ -150,7 +150,7 @@ namespace Hecton8.World
             if (threat <= 0f)
                 return 1f;
 
-            return 1f + (Mathf.Clamp01(threat) * predatorSpawnThreatBonusMultiplier);
+            return 1f + (math.saturate(threat) * predatorSpawnThreatBonusMultiplier);
         }
 
         /// <summary>
@@ -184,12 +184,19 @@ namespace Hecton8.World
         {
             if (!_flowFieldInitialized || !_nativeMemory.EcosystemFlowFieldCurrentNative.IsCreated || _ecosystemThreatGridResolution <= 0)
             {
-                if (playerTransform == null)
+                if (!TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition))
                     return Vector3.zero;
 
-                Vector3 toPlayer = playerTransform.position - position;
-                toPlayer.y = 0f;
-                return toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : Vector3.zero;
+                float3 toPlayer = new float3(
+                    playerRuntimePosition.x - position.x,
+                    0f,
+                    playerRuntimePosition.z - position.z);
+                float distanceSq = math.lengthsq(toPlayer);
+                if (distanceSq <= 0.0001f)
+                    return Vector3.zero;
+
+                float3 direction = toPlayer * math.rsqrt(distanceSq);
+                return new Vector3(direction.x, 0f, direction.z);
             }
 
             float2 flow = SampleFlowFieldAtPosition(position, _ecosystemFlowFieldCenter, threatGridCellSize, _ecosystemThreatGridResolution, _nativeMemory.EcosystemFlowFieldCurrentNative);
@@ -257,16 +264,15 @@ namespace Hecton8.World
             if (!_threatGridInitialized ||
                 !_nativeMemory.EcosystemThreatGridCurrentNative.IsCreated ||
                 _ecosystemThreatGridResolution <= 0 ||
-                playerTransform == null)
+                !TryResolvePlayerRuntimePositionFromAup(out Vector3 playerPosition))
             {
                 return false;
             }
 
-            float minDistanceSq = Mathf.Max(0f, minimumDistanceFromPlayer) * Mathf.Max(0f, minimumDistanceFromPlayer);
-            float maxDistance = Mathf.Max(minimumDistanceFromPlayer, maximumDistanceFromPlayer);
+            float minDistanceSq = math.max(0f, minimumDistanceFromPlayer) * math.max(0f, minimumDistanceFromPlayer);
+            float maxDistance = math.max(minimumDistanceFromPlayer, maximumDistanceFromPlayer);
             float maxDistanceSq = maxDistance * maxDistance;
             int halfExtent = _ecosystemThreatGridResolution >> 1;
-            Vector3 playerPosition = playerTransform.position;
             float bestThreat = minimumThreatLevel;
             Vector3 bestPosition = default;
 

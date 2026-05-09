@@ -1,5 +1,4 @@
 using System;
-using System.Runtime.CompilerServices;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Physics;
@@ -19,11 +18,12 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9940)]
-    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable, IServiceHeartbeat
+    public sealed class SceneRuntimeService : MonoBehaviour, ISceneService, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         private const int SceneActivationWatchdogInitialFrames = 1200;
         private const int SceneActivationWatchdogRepeatFrames = 300;
         private const string MainMenuSceneName = "01_MAIN_MENU";
+        private const string WorldSceneName = "02_HECTON_WORLD";
         private const string TransitionOverlayRootName = "[SceneRuntimeService_TransitionOverlay]";
         private const string TransitionDitherShaderName = "Hecton8/UI/BlueNoiseDitherDissolve";
         private const float MainMenuCameraPanDurationSeconds = 2f;
@@ -99,6 +99,7 @@ namespace Hecton8.Core
         private string _pendingSceneName;
         private AsyncOperation _pendingSceneLoadOperation;
         private int _gpuResidencyReadyFrame = -1;
+        private bool _sceneActivationReleased;
         private bool _cinematicTransitionActive;
         private float _cinematicTransitionElapsed;
         private Camera _cinematicCamera;
@@ -140,6 +141,14 @@ namespace Hecton8.Core
         /// True when bootstrap has completed and guarded transitions are allowed.
         /// </summary>
         public bool CanLoadScene => GameBootstrapper.IsBootstrapComplete;
+
+        internal static void ReleaseSceneActivation(AsyncOperation operation)
+        {
+            if (operation == null)
+                return;
+
+            operation.allowSceneActivation = true;
+        }
 
         internal void ConfigureMainMenuCinematic(Camera menuCamera, Texture blueNoiseTexture)
         {
@@ -232,6 +241,7 @@ namespace Hecton8.Core
                 _sceneLoadInFlight = true;
                 _pendingSceneName = sceneName;
                 _gpuResidencyReadyFrame = -1;
+                _sceneActivationReleased = false;
                 Scene previousScene = SceneManager.GetActiveScene();
                 bool useCinematicTransition = ShouldUseMainMenuCinematicTransition(previousScene, sceneName);
                 if (useCinematicTransition)
@@ -258,13 +268,17 @@ namespace Hecton8.Core
                         TickMainMenuCinematicTransition(Time.unscaledDeltaTime);
 
                     bool loadReady = _pendingSceneLoadOperation.progress >= 0.9f;
-                    bool poolsReady = loadReady && ArePersistentWorldPoolsReadyForSceneActivation();
-                    bool originStable = poolsReady && IsFloatingOriginStableForSceneActivation();
-                    bool gpuResidencyReady = IsGpuResidencyReadyForSceneActivation(loadReady, poolsReady, originStable);
+                    bool requiresWorldResidencyGate = RequiresWorldResidencyGate(sceneName);
+                    bool poolsReady = !requiresWorldResidencyGate || (loadReady && ArePersistentWorldPoolsReadyForSceneActivation());
+                    bool originStable = !requiresWorldResidencyGate || (poolsReady && IsFloatingOriginStableForSceneActivation());
+                    bool gpuResidencyReady = !requiresWorldResidencyGate ||
+                                             IsGpuResidencyReadyForSceneActivation(loadReady, poolsReady, originStable);
 
-                    if (IsSceneActivationGateReady(useCinematicTransition, loadReady, poolsReady, originStable, gpuResidencyReady))
+                    if (!_sceneActivationReleased &&
+                        IsSceneActivationGateReady(useCinematicTransition, loadReady, poolsReady, originStable, gpuResidencyReady))
                     {
-                        _pendingSceneLoadOperation.allowSceneActivation = true;
+                        ReleaseSceneActivation(_pendingSceneLoadOperation);
+                        _sceneActivationReleased = true;
                     }
                     else if (waitFrames >= nextWatchdogFrame)
                     {
@@ -289,6 +303,7 @@ namespace Hecton8.Core
                 _pendingSceneName = null;
                 _pendingSceneLoadOperation = null;
                 _gpuResidencyReadyFrame = -1;
+                _sceneActivationReleased = false;
             }
         }
 
@@ -330,9 +345,25 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             TryUnregisterUpdatable();
             TryUnregisterSceneCallbacks();
             TryUnregisterSceneService();
+            EndMainMenuCinematicTransition();
+            _sceneLoadInFlight = false;
+            _pendingSceneName = null;
+            _pendingSceneLoadOperation = null;
+            _gpuResidencyReadyFrame = -1;
+            _sceneActivationReleased = false;
             _isInitialized = false;
 
             GlobalRegistry.ClearSceneRuntime(this);
@@ -377,12 +408,17 @@ namespace Hecton8.Core
             return registry.AreResidentWorldPrefabPoolsReady();
         }
 
+        private static bool RequiresWorldResidencyGate(string nextSceneName)
+        {
+            return string.Equals(nextSceneName, WorldSceneName, StringComparison.Ordinal);
+        }
+
         private static bool ShouldUseMainMenuCinematicTransition(Scene previousScene, string nextSceneName)
         {
             return previousScene.IsValid() &&
                    previousScene.isLoaded &&
                    string.Equals(previousScene.name, MainMenuSceneName, StringComparison.Ordinal) &&
-                   !string.Equals(previousScene.name, nextSceneName, StringComparison.Ordinal);
+                   string.Equals(nextSceneName, WorldSceneName, StringComparison.Ordinal);
         }
 
         private void BeginMainMenuCinematicTransition()
@@ -438,7 +474,9 @@ namespace Hecton8.Core
                 return;
 
             double solveStartTime = Time.realtimeSinceStartupAsDouble;
-            _cinematicTransitionElapsed += math.max(0f, unscaledDeltaTime);
+            _cinematicTransitionElapsed = math.min(
+                TransitionDissolveSeconds,
+                _cinematicTransitionElapsed + math.max(0f, unscaledDeltaTime));
             float normalized = MainMenuCameraPanDurationSeconds > 0f
                 ? math.saturate(_cinematicTransitionElapsed / MainMenuCameraPanDurationSeconds)
                 : 1f;
@@ -701,11 +739,11 @@ namespace Hecton8.Core
             AppendAsciiLiteral(buffer, ref cursor, _TerminalBootMaskBytes);
             AppendHex8(buffer, ref cursor, MixTerminalBootHash(_terminalBootSeed ^ 0xC2B2AE35u, (uint)(frame + 31)));
             AppendNewLine(buffer, ref cursor);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootDispatcherLabelBytes, GlobalRegistry.Dispatcher);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootTickLabelBytes, GlobalRegistry.TickManager);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootSceneLabelBytes, GlobalRegistry.Scene);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootPhysicsLabelBytes, GlobalRegistry.Physics);
-            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, GlobalRegistry.Audio);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootDispatcherLabelBytes, GlobalRegistry.Dispatcher, 0u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootTickLabelBytes, GlobalRegistry.TickManager, 1u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootSceneLabelBytes, GlobalRegistry.Scene, 2u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootPhysicsLabelBytes, GlobalRegistry.Physics, 3u, _terminalBootSeed, (uint)frame);
+            AppendServiceHandle(buffer, ref cursor, _TerminalBootAudioLabelBytes, GlobalRegistry.Audio, 4u, _terminalBootSeed, (uint)frame);
 
             _terminalBootText.SetCharArray(_terminalBootBuffer, 0, cursor);
         }
@@ -770,7 +808,14 @@ namespace Hecton8.Core
                 cursor += written;
         }
 
-        private static void AppendServiceHandle(Span<char> buffer, ref int cursor, byte[] label, object service)
+        private static void AppendServiceHandle(
+            Span<char> buffer,
+            ref int cursor,
+            byte[] label,
+            object service,
+            uint serviceIndex,
+            uint bootSeed,
+            uint frame)
         {
             AppendAsciiLiteral(buffer, ref cursor, _TerminalBootServicePrefixBytes);
             AppendAsciiLiteral(buffer, ref cursor, label);
@@ -782,11 +827,17 @@ namespace Hecton8.Core
                 return;
             }
 
-            IntPtr handle = new IntPtr(RuntimeHelpers.GetHashCode(service));
+            uint low = MixTerminalBootHash(bootSeed ^ (serviceIndex * 0x85EBCA6Bu), frame + serviceIndex);
             if (IntPtr.Size == 8)
-                AppendHex16(buffer, ref cursor, unchecked((ulong)handle.ToInt64()));
+            {
+                uint high = MixTerminalBootHash(bootSeed ^ (serviceIndex * 0xC2B2AE35u), frame + serviceIndex + 0x9E3779B9u);
+                AppendHex16(buffer, ref cursor, ((ulong)high << 32) | low);
+            }
             else
-                AppendHex8(buffer, ref cursor, unchecked((uint)handle.ToInt32()));
+            {
+                AppendHex8(buffer, ref cursor, low);
+            }
+
             AppendNewLine(buffer, ref cursor);
         }
 
@@ -800,7 +851,15 @@ namespace Hecton8.Core
             if (!loadReady || !poolsReady || !originStable || !gpuResidencyReady)
                 return false;
 
-            return !useCinematicTransition || _cinematicTransitionElapsed >= TransitionDissolveSeconds;
+            if (!useCinematicTransition)
+                return true;
+
+            return HasMainMenuDissolveReachedActivationTime(_cinematicTransitionElapsed);
+        }
+
+        private static bool HasMainMenuDissolveReachedActivationTime(float elapsedSeconds)
+        {
+            return elapsedSeconds == TransitionDissolveSeconds;
         }
 
         private void SetTransitionDitherCoverage(float coverage)

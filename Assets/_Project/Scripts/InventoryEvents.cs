@@ -95,11 +95,11 @@ namespace Hecton8.Inventory
             }
         }
 
-        // COLD ALLOC: RegistryBucket<IInventoryEventListener>[16] - inventory listeners drained by SystemDispatcher LateUpdate - owner: InventoryEvents
+        // COLD ALLOC: RegistryBucket<IInventoryEventListener>[16] — inventory listeners drained by SystemDispatcher LateUpdate — owner: InventoryEvents
         private static readonly RegistryBucket<IInventoryEventListener> _listeners = new RegistryBucket<IInventoryEventListener>(ListenerCapacity);
-        // COLD ALLOC: InventoryReferenceSlot[64] - managed reference sidecar for unmanaged inventory payloads - owner: InventoryEvents
+        // COLD ALLOC: InventoryReferenceSlot[64] — managed reference sidecar for unmanaged inventory payloads — owner: InventoryEvents
         private static readonly InventoryReferenceSlot[] _referenceSlots = new InventoryReferenceSlot[ReferenceSlotCapacity];
-        // COLD ALLOC: bool[64] - reference slot occupancy map prevents wrap overwrite before deferred flush - owner: InventoryEvents
+        // COLD ALLOC: bool[64] — reference slot occupancy map prevents wrap overwrite before deferred flush — owner: InventoryEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<InventoryEventPayload> _pendingEvents;
         private static NativeQueue<InventoryEventPayload> _nextFrameEvents;
@@ -391,24 +391,26 @@ namespace Hecton8.Inventory
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<InventoryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] - deferred inventory event lane flushed by SystemDispatcher LateUpdate - owner: InventoryEvents
+                _pendingEvents = new NativeQueue<InventoryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — deferred inventory event lane flushed by SystemDispatcher LateUpdate — owner: InventoryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
                     nameof(InventoryEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<InventoryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] - next-frame inventory event lane prevents same-frame reentrant dispatch - owner: InventoryEvents
+                _nextFrameEvents = new NativeQueue<InventoryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InventoryEventPayload>[64] — next-frame inventory event lane prevents same-frame reentrant dispatch — owner: InventoryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
                     nameof(InventoryEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
 
             if (!_queuedEventKeys.IsCreated)
@@ -419,6 +421,20 @@ namespace Hecton8.Inventory
                     nameof(InventoryEvents),
                     nameof(_queuedEventKeys),
                     NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 

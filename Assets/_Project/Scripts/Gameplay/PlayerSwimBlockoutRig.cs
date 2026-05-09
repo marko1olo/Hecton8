@@ -32,6 +32,10 @@ namespace Hecton8.Gameplay
         private const int MaxHierarchyTraversalDepth = 64;
         private const int MaxHierarchyTraversalNodes = 512;
         private const int FirstPersonToolsLayerIndex = 18;
+        private const float Pi = 3.14159265359f;
+        private const float TwoPi = 6.28318530718f;
+        private const float HalfPi = 1.57079632679f;
+        private const float DegreesToRadians = 0.01745329252f;
 
         [Header("── References ─────────────────────────")]
         [Tooltip("Primary swim presentation owner publishing guide pose truth.")]
@@ -351,7 +355,7 @@ namespace Hecton8.Gameplay
                 _hasInitializedVisibleState = true;
             }
 
-            float t = 1f - math.exp(-visibilityBlendSpeed * dt);
+            float t = ResolveDecayBlend(visibilityBlendSpeed, dt);
             _visualWeight = math.lerp(_visualWeight, targetWeight, t);
             _leftVisualWeight = math.lerp(_leftVisualWeight, targetLeftWeight, t);
             _rightVisualWeight = math.lerp(_rightVisualWeight, targetRightWeight, t);
@@ -476,8 +480,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
@@ -716,6 +719,12 @@ namespace Hecton8.Gameplay
             return math.max(visibility, connectionFloor);
         }
 
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
+        }
+
         private void ApplyShoulderPose(
             Transform shoulder,
             Vector3 baseLocalPosition,
@@ -732,7 +741,7 @@ namespace Hecton8.Gameplay
             targetLocalPosition.x += guideDelta.x * shoulderGuideHorizontalFollow;
             targetLocalPosition.y += guideDelta.y * shoulderGuideVerticalFollow;
             targetLocalPosition.z += guideDelta.z * shoulderGuideDepthFollow;
-            shoulder.localPosition = Vector3.Lerp(baseLocalPosition, targetLocalPosition, visibility);
+            shoulder.localPosition = ApproximateVectorLerp(baseLocalPosition, targetLocalPosition, visibility);
         }
 
         private void ApplyPart(
@@ -787,12 +796,14 @@ namespace Hecton8.Gameplay
             Vector3 shoulderPosition = shoulder.position;
             Vector3 forearmPosition = forearm.position;
             Vector3 direction = forearmPosition - shoulderPosition;
-            float distance = direction.magnitude;
-            if (distance <= 0.0001f)
+            float distanceSq = direction.sqrMagnitude;
+            if (distanceSq <= 0.00000001f)
                 return;
 
+            float inverseDistance = math.rsqrt(distanceSq);
+            float distance = distanceSq * inverseDistance;
             Vector3 midpoint = shoulderPosition + direction * 0.5f;
-            Quaternion rotation = Quaternion.LookRotation(direction / distance, transform.up);
+            Quaternion rotation = ResolveLookRotationNoTrig(direction * inverseDistance, transform.up);
             upperArm.SetPositionAndRotation(midpoint, rotation);
 
             float bulkScale = suitScale + sprintBoost;
@@ -811,6 +822,143 @@ namespace Hecton8.Gameplay
             attachment.SetPositionAndRotation(source.position, source.rotation);
             if (attachment.localScale != Vector3.one)
                 attachment.localScale = Vector3.one;
+        }
+
+        private static float ApproximateSinCycle01(float cycle01)
+        {
+            ApproximateSinCosFullNoTrig(cycle01 * TwoPi, out float sin, out _);
+            return sin;
+        }
+
+        private static float ApproximateCosCycle01(float cycle01)
+        {
+            ApproximateSinCosFullNoTrig(cycle01 * TwoPi, out _, out float cos);
+            return cos;
+        }
+
+        private static Vector3 ApproximateVectorLerp(Vector3 from, Vector3 to, float blend01)
+        {
+            float t = math.saturate(blend01);
+            return new Vector3(
+                math.lerp(from.x, to.x, t),
+                math.lerp(from.y, to.y, t),
+                math.lerp(from.z, to.z, t));
+        }
+
+        private static Quaternion ApproximateNlerpNoSqrt(Quaternion fromRotation, Quaternion toRotation, float blend01)
+        {
+            float4 from = new float4(fromRotation.x, fromRotation.y, fromRotation.z, fromRotation.w);
+            float4 to = new float4(toRotation.x, toRotation.y, toRotation.z, toRotation.w);
+            if (math.dot(from, to) < 0f)
+                to = -to;
+
+            float4 blended = math.lerp(from, to, math.saturate(blend01));
+            float lengthSq = math.max(math.dot(blended, blended), 0.000001f);
+            blended *= math.rsqrt(lengthSq);
+            return new Quaternion(blended.x, blended.y, blended.z, blended.w);
+        }
+
+        private static Quaternion ResolveEulerRotationNoTrig(Vector3 eulerDegrees)
+        {
+            ApproximateSinCosFullNoTrig(eulerDegrees.x * DegreesToRadians * 0.5f, out float sx, out float cx);
+            ApproximateSinCosFullNoTrig(eulerDegrees.y * DegreesToRadians * 0.5f, out float sy, out float cy);
+            ApproximateSinCosFullNoTrig(eulerDegrees.z * DegreesToRadians * 0.5f, out float sz, out float cz);
+
+            float4 pitch = new float4(sx, 0f, 0f, cx);
+            float4 yaw = new float4(0f, sy, 0f, cy);
+            float4 roll = new float4(0f, 0f, sz, cz);
+            return ToQuaternion(NormalizeQuaternionNoSqrt(MulQuaternionNoSqrt(MulQuaternionNoSqrt(yaw, pitch), roll)));
+        }
+
+        private static Quaternion ResolveLookRotationNoTrig(Vector3 forward, Vector3 up)
+        {
+            Vector3 f = NormalizeVectorRsqrt(forward, Vector3.forward);
+            Vector3 u = NormalizeVectorRsqrt(up, Vector3.up);
+            if (math.abs(math.dot((float3)f, (float3)u)) > 0.94f)
+                u = math.abs(f.y) < 0.94f ? Vector3.up : Vector3.right;
+
+            Vector3 r = NormalizeVectorRsqrt(CrossVector(u, f), Vector3.right);
+            u = NormalizeVectorRsqrt(CrossVector(f, r), Vector3.up);
+
+            float m00 = r.x;
+            float m01 = u.x;
+            float m02 = f.x;
+            float m10 = r.y;
+            float m11 = u.y;
+            float m12 = f.y;
+            float m20 = r.z;
+            float m21 = u.z;
+            float m22 = f.z;
+            float trace = m00 + m11 + m22;
+
+            float4 q;
+            if (trace > 0f)
+                q = new float4(m21 - m12, m02 - m20, m10 - m01, 1f + trace);
+            else if (m00 >= m11 && m00 >= m22)
+                q = new float4(1f + m00 - m11 - m22, m01 + m10, m02 + m20, m21 - m12);
+            else if (m11 > m22)
+                q = new float4(m01 + m10, 1f + m11 - m00 - m22, m12 + m21, m02 - m20);
+            else
+                q = new float4(m02 + m20, m12 + m21, 1f + m22 - m00 - m11, m10 - m01);
+
+            return ToQuaternion(NormalizeQuaternionNoSqrt(q));
+        }
+
+        private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float cosSign = 1f;
+            if (x > HalfPi)
+            {
+                x = Pi - x;
+                cosSign = -1f;
+            }
+            else if (x < -HalfPi)
+            {
+                x = -Pi - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
+        private static Vector3 NormalizeVectorRsqrt(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.sqrMagnitude;
+            if (lengthSq <= 0.000001f || !math.all(math.isfinite((float3)value)))
+                return fallback;
+
+            return value * math.rsqrt(lengthSq);
+        }
+
+        private static Vector3 CrossVector(Vector3 a, Vector3 b)
+        {
+            return new Vector3(
+                a.y * b.z - a.z * b.y,
+                a.z * b.x - a.x * b.z,
+                a.x * b.y - a.y * b.x);
+        }
+
+        private static float4 MulQuaternionNoSqrt(float4 lhs, float4 rhs)
+        {
+            return new float4(
+                lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y,
+                lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x,
+                lhs.w * rhs.z + lhs.x * rhs.y - lhs.y * rhs.x + lhs.z * rhs.w,
+                lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z);
+        }
+
+        private static float4 NormalizeQuaternionNoSqrt(float4 value)
+        {
+            float lengthSq = math.max(math.dot(value, value), 0.000001f);
+            return value * math.rsqrt(lengthSq);
+        }
+
+        private static Quaternion ToQuaternion(float4 value)
+        {
+            return new Quaternion(value.x, value.y, value.z, value.w);
         }
 
         private static Transform FindTransformRecursive(Transform parent, string transformName)

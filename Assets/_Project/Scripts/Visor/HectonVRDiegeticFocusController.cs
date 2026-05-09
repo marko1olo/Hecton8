@@ -13,6 +13,7 @@ namespace Hecton8.Visor
     public sealed class HectonVRDiegeticFocusController : MonoBehaviour, ITickable
     {
         private const float GlobalWriteEpsilon = 0.001f;
+        private const float FocusSleepEpsilon = 0.002f;
 
         private static readonly int HectonWorldFocusBlurId = Shader.PropertyToID("_HectonWorldFocusBlur");
         private static readonly int HectonHudFocusBlurId = Shader.PropertyToID("_HectonHudFocusBlur");
@@ -24,6 +25,7 @@ namespace Hecton8.Visor
 
         [Header("Focus Response")]
         [SerializeField, Min(0.05f)] private float focusDistanceMeters = 3f;
+        [SerializeField, Range(0f, 1f)] private float focusGateDotThreshold = 0.35f;
         [SerializeField, Min(0.01f)] private float focusBlendSpeed = 12f;
         [SerializeField, Range(0f, 1f)] private float worldBlurWhenPdaFocused = 1f;
         [SerializeField, Range(0f, 1f)] private float hudBlurWhenSceneFocused = 0.45f;
@@ -62,17 +64,20 @@ namespace Hecton8.Visor
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            Transform rayOrigin = ResolveEyeSelectionOrigin();
-            if (rayOrigin == null)
+            if (!TryResolveEyeSelectionPose(out Vector3 rayOriginPosition, out Vector3 rayForward))
             {
                 ApplyFocusTargets(0f, 0f, deltaTime);
+                if (pdaPanel == null && AreFocusTargetsSettled(0f, 0f))
+                    TryUnregisterTick();
+
                 return;
             }
 
             bool pdaFocused = pdaPanel != null &&
+                              IsPanelInsideCheapFocusGate(rayOriginPosition, rayForward) &&
                               pdaPanel.TryProjectRayToCanvas(
-                                  rayOrigin.position,
-                                  rayOrigin.forward,
+                                  rayOriginPosition,
+                                  rayForward,
                                   focusDistanceMeters,
                                   out float2 _,
                                   out Vector3 _);
@@ -80,12 +85,37 @@ namespace Hecton8.Visor
             float worldTarget = pdaFocused ? worldBlurWhenPdaFocused : 0f;
             float hudTarget = pdaFocused ? 0f : hudBlurWhenSceneFocused;
             ApplyFocusTargets(worldTarget, hudTarget, deltaTime);
+            if (pdaPanel == null && AreFocusTargetsSettled(worldTarget, hudTarget))
+                TryUnregisterTick();
         }
 
         internal void OverrideFocusTargets(Transform selectionOrigin, DiegeticPanelController panel)
         {
             eyeSelectionOrigin = selectionOrigin;
             pdaPanel = panel;
+            TryRegisterTick();
+        }
+
+        private bool TryResolveEyeSelectionPose(out Vector3 position, out Vector3 forward)
+        {
+            Transform rayOrigin = ResolveEyeSelectionOrigin();
+            if (rayOrigin == null)
+            {
+                position = Vector3.zero;
+                forward = Vector3.forward;
+                return false;
+            }
+
+            rayOrigin.GetPositionAndRotation(out position, out Quaternion rotation);
+            if (!IsFinite(position) || !IsFinite(rotation))
+            {
+                position = Vector3.zero;
+                forward = Vector3.forward;
+                return false;
+            }
+
+            forward = rotation * Vector3.forward;
+            return IsFinite(forward);
         }
 
         private Transform ResolveEyeSelectionOrigin()
@@ -96,25 +126,64 @@ namespace Hecton8.Visor
             Camera camera = fallbackEyeCamera;
             if (camera == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                camera = playerContext != null ? playerContext.PlayerCamera : null;
+                if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+                    camera = runtimeContext.PlayerCamera;
+
+                if (camera == null)
+                {
+                    IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                    camera = playerContext != null ? playerContext.PlayerCamera : null;
+                }
             }
 
             return camera != null ? camera.transform : null;
         }
 
+        private bool IsPanelInsideCheapFocusGate(Vector3 rayOriginPosition, Vector3 rayForward)
+        {
+            if (pdaPanel == null || !pdaPanel.TryGetFocusGateData(out Vector3 panelOrigin, out _))
+                return false;
+
+            float3 toPanel = (float3)(panelOrigin - rayOriginPosition);
+            float distanceSq = math.lengthsq(toPanel);
+            float safeFocusDistance = math.max(0.05f, focusDistanceMeters);
+            if (distanceSq > safeFocusDistance * safeFocusDistance)
+                return false;
+
+            if (distanceSq <= 0.0001f)
+                return true;
+
+            float3 forward = (float3)rayForward;
+            float forwardLengthSq = math.lengthsq(forward);
+            if (forwardLengthSq <= 0.0001f)
+                return false;
+
+            float forwardDot = math.dot(forward, toPanel);
+            if (forwardDot <= 0f)
+                return false;
+
+            float threshold = math.saturate(focusGateDotThreshold);
+            return forwardDot * forwardDot >= distanceSq * forwardLengthSq * threshold * threshold;
+        }
+
         private void ApplyFocusTargets(float worldTarget, float hudTarget, float deltaTime)
         {
             float safeDt = math.max(0f, deltaTime);
-            float linearAlpha = safeDt > 0f
-                ? 1f - math.exp(-math.max(0.01f, focusBlendSpeed) * safeDt)
+            float blend = safeDt > 0f
+                ? FastDecayBlend(math.max(0.01f, focusBlendSpeed), safeDt)
                 : 1f;
-            float alpha = linearAlpha * linearAlpha * (3f - (2f * linearAlpha));
+            float alpha = SmoothStep01(blend);
 
             _worldBlur = math.lerp(_worldBlur, math.saturate(worldTarget), alpha);
             _hudBlur = math.lerp(_hudBlur, math.saturate(hudTarget), alpha);
             ApplyGlobalIfChanged(HectonWorldFocusBlurId, ref _appliedWorldBlur, _worldBlur);
             ApplyGlobalIfChanged(HectonHudFocusBlurId, ref _appliedHudBlur, _hudBlur);
+        }
+
+        private bool AreFocusTargetsSettled(float worldTarget, float hudTarget)
+        {
+            return math.abs(_worldBlur - math.saturate(worldTarget)) <= FocusSleepEpsilon &&
+                math.abs(_hudBlur - math.saturate(hudTarget)) <= FocusSleepEpsilon;
         }
 
         private static void ApplyGlobalIfChanged(int shaderId, ref float appliedValue, float value)
@@ -127,6 +196,21 @@ namespace Hecton8.Visor
             Shader.SetGlobalFloat(shaderId, clampedValue);
         }
 
+        private static float SmoothStep01(float t)
+        {
+            t = math.saturate(t);
+            return t * t * (3f - (2f * t));
+        }
+
+        private static float FastDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            if (x >= 3.5f)
+                return 1f;
+
+            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
+        }
+
         private void TryRegisterTick()
         {
             if (_registeredToTick || !Application.isPlaying)
@@ -135,8 +219,7 @@ namespace Hecton8.Visor
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTick()
@@ -152,10 +235,24 @@ namespace Hecton8.Visor
         private void OnValidate()
         {
             focusDistanceMeters = math.max(0.05f, focusDistanceMeters);
+            focusGateDotThreshold = math.saturate(focusGateDotThreshold);
             focusBlendSpeed = math.max(0.01f, focusBlendSpeed);
             worldBlurWhenPdaFocused = math.saturate(worldBlurWhenPdaFocused);
             hudBlurWhenSceneFocused = math.saturate(hudBlurWhenSceneFocused);
         }
 #endif
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z) &&
+                   math.isfinite(value.w);
+        }
     }
 }

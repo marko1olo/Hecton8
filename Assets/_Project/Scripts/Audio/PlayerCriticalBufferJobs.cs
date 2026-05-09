@@ -1,12 +1,11 @@
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
 
 namespace Hecton8.Audio
 {
     /// <summary>
-    /// Cold-path Burst jobs for player-critical DSP buffer maintenance.
+    /// Cold-path native buffer maintenance for player-critical DSP buffers.
     /// </summary>
     internal static class PlayerCriticalBufferJobs
     {
@@ -19,22 +18,12 @@ namespace Hecton8.Audio
             if (safeCount <= 0)
                 return;
 
-            ClearFloatJob job = new ClearFloatJob
+            // COLD NATIVE CLEAR: audio configuration/reset path only; producer thread is stopped before this is called.
+            unsafe
             {
-                Buffer = buffer
-            };
-            // COLD SYNC JOB: audio configuration/reset path only; producer thread is stopped before this is called.
-            job.Schedule(safeCount, 256).Complete();
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ClearFloatJob : IJobParallelFor
-        {
-            public NativeArray<float> Buffer;
-
-            public void Execute(int index)
-            {
-                Buffer[index] = 0f;
+                void* bufferPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
+                long byteCount = (long)safeCount * UnsafeUtility.SizeOf<float>();
+                UnsafeUtility.MemClear(bufferPtr, byteCount);
             }
         }
     }

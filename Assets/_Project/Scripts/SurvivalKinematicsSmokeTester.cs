@@ -76,9 +76,9 @@ namespace Hecton8.Dev
             if (verboseLogging)
             {
                 if (_debugLastPass)
-                    Debug.Log("[SurvivalKinematicsSmoke] PASS");
+                    Debug.Log("[SurvivalKinematicsSmoke] PASS", this);
                 else
-                    Debug.LogError("[SurvivalKinematicsSmoke] FAIL mask=" + failureMask);
+                    Debug.LogError("[SurvivalKinematicsSmoke] FAIL", this);
             }
 #endif
         }
@@ -121,7 +121,7 @@ namespace Hecton8.Dev
                 failureMask |= FailureCriticalHaptics;
 
             float stressOxygenMultiplier = HectonSurvivalSystem.ResolveHeartrateOxygenMultiplier(1f);
-            if (math.abs(stressOxygenMultiplier - math.exp(0.5f)) > 0.0001f ||
+            if (math.abs(stressOxygenMultiplier - 1.6487213f) > 0.0001f ||
                 math.abs(HectonSurvivalSystem.ResolveHeartrateOxygenMultiplier(0f) - 1f) > 0.0001f)
             {
                 failureMask |= FailureStressOxygen;

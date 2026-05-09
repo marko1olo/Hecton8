@@ -39,6 +39,7 @@ using Hecton8.Tools;
 using Hecton8.Visor;
 using System.Runtime.InteropServices;
 using Unity.Collections;
+using Unity.Mathematics;
 using VLB;
 using UnityEngine;
 
@@ -202,6 +203,7 @@ namespace Hecton8.Gameplay
                     nameof(FlashlightEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -213,6 +215,21 @@ namespace Hecton8.Gameplay
                     nameof(FlashlightEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -779,6 +796,47 @@ namespace Hecton8.Gameplay
             return $"Lamp standby. Beam {BeamModeLabel} ({BeamRoleLabel}) preset | Energy {EnergyPercent:0}% | Heat {(_heatLevel * 100f):0}%.";
         }
 
+        public void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
+            if (_isOverheated)
+            {
+                AppendText(ref buffer, "Beam ");
+                AppendText(ref buffer, BeamModeLabel);
+                AppendText(ref buffer, " (");
+                AppendText(ref buffer, BeamRoleLabel);
+                AppendText(ref buffer, "). Lamp is overheated and locked for ");
+                buffer.AppendInt(Mathf.CeilToInt(_overheatCooldownTimer));
+                AppendText(ref buffer, " s.");
+                return;
+            }
+
+            if (_isOn)
+            {
+                AppendText(ref buffer, "Beam ");
+                AppendText(ref buffer, BeamModeLabel);
+                AppendText(ref buffer, " (");
+                AppendText(ref buffer, BeamRoleLabel);
+                AppendText(ref buffer, "). Energy ");
+                buffer.AppendInt(Mathf.RoundToInt(EnergyPercent));
+                AppendText(ref buffer, "% | Heat ");
+                buffer.AppendInt(Mathf.RoundToInt(_heatLevel * 100f));
+                AppendText(ref buffer, "% | Output ");
+                buffer.AppendFloat(GetModeIntensity(), 1);
+                AppendText(ref buffer, ".");
+                return;
+            }
+
+            AppendText(ref buffer, "Lamp standby. Beam ");
+            AppendText(ref buffer, BeamModeLabel);
+            AppendText(ref buffer, " (");
+            AppendText(ref buffer, BeamRoleLabel);
+            AppendText(ref buffer, ") preset | Energy ");
+            buffer.AppendInt(Mathf.RoundToInt(EnergyPercent));
+            AppendText(ref buffer, "% | Heat ");
+            buffer.AppendInt(Mathf.RoundToInt(_heatLevel * 100f));
+            AppendText(ref buffer, "%.");
+        }
+
         public string BuildOperationalRecommendation()
         {
             if (_isOverheated)
@@ -799,6 +857,45 @@ namespace Hecton8.Gameplay
                 default:
                     return "Use this for general travel when you need balanced reach and coverage.";
             }
+        }
+
+        public void WriteOperationalRecommendation(ref FixedCharBuffer buffer)
+        {
+            if (_isOverheated)
+            {
+                AppendText(ref buffer, "Hold the lamp down until the thermal lock clears.");
+                return;
+            }
+
+            if (EnergyPercent <= lowBatteryThreshold)
+            {
+                AppendText(ref buffer, "Keep light discipline tight and use short bursts only.");
+                return;
+            }
+
+            if (_heatLevel >= flickerHeatThreshold)
+            {
+                AppendText(ref buffer, "Shift to shorter bursts or a wider beam until heat falls.");
+                return;
+            }
+
+            switch (_beamMode)
+            {
+                case BeamMode.Flood:
+                    AppendText(ref buffer, "Use this for close search, salvage sweeps, and cave junctions.");
+                    return;
+                case BeamMode.Focus:
+                    AppendText(ref buffer, "Use this for distant reads, narrow passages, and threat spotting.");
+                    return;
+                default:
+                    AppendText(ref buffer, "Use this for general travel when you need balanced reach and coverage.");
+                    return;
+            }
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
         }
 
         private static InputManager ResolveNativeFlashlightInputManager()
@@ -1054,8 +1151,7 @@ namespace Hecton8.Gameplay
 
             if (Mathf.Abs(_currentIntensity - target) > 0.001f)
             {
-                _currentIntensity = Mathf.Lerp(_currentIntensity, target,
-                    1f - Mathf.Exp(-transitionSpeed * deltaTime));
+                _currentIntensity = math.lerp(_currentIntensity, target, ResolveDecayBlend(transitionSpeed, deltaTime));
 
                 if (flashlightLight != null)
                     flashlightLight.intensity = _currentIntensity;
@@ -1178,13 +1274,13 @@ namespace Hecton8.Gameplay
                 float minIntensity = batteryOrHeatFlicker ? flickerMinIntensity : 1f;
                 if (_externalInterferenceIntensity > 0.001f)
                 {
-                    float interferenceMin = Mathf.Lerp(1f, stormInterferenceMinIntensity, _externalInterferenceIntensity);
+                    float interferenceMin = math.lerp(1f, stormInterferenceMinIntensity, math.saturate(_externalInterferenceIntensity));
                     minIntensity = batteryOrHeatFlicker
                         ? Mathf.Min(minIntensity, interferenceMin)
                         : interferenceMin;
                 }
 
-                _flickerIntensityMod = Mathf.Lerp(minIntensity, 1f, noise);
+                _flickerIntensityMod = math.lerp(minIntensity, 1f, noise);
             }
             else
             {
@@ -1252,9 +1348,9 @@ namespace Hecton8.Gameplay
                 {
                     depth = Mathf.Max(0f, _playerMovement.CurrentDepth);
                     float depthFactor = Mathf.Clamp01(depth / Mathf.Max(0.01f, underwaterBeamFullDepth));
-                    multiplier *= Mathf.Lerp(1f, underwaterBeamMaxMultiplier, depthFactor);
+                    multiplier *= math.lerp(1f, underwaterBeamMaxMultiplier, depthFactor);
                     noiseIntensity = underwaterBeamNoiseMax * depthFactor;
-                    sideSoftness = Mathf.Lerp(1.5f, underwaterBeamSideSoftness, depthFactor);
+                    sideSoftness = math.lerp(1.5f, underwaterBeamSideSoftness, depthFactor);
                     jitter = underwaterBeamJitterMax * depthFactor;
                 }
 
@@ -1310,8 +1406,14 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float t = 1f - Mathf.Exp(-_externalInterferenceRecoverySpeed * deltaTime);
-            _externalInterferenceIntensity = Mathf.Lerp(_externalInterferenceIntensity, 0f, t);
+            float t = ResolveDecayBlend(_externalInterferenceRecoverySpeed, deltaTime);
+            _externalInterferenceIntensity = math.lerp(_externalInterferenceIntensity, 0f, t);
+        }
+
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
         }
 
         private float GetModeIntensity()

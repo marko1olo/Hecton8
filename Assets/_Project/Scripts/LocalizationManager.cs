@@ -109,7 +109,7 @@ namespace Hecton.Localization
         private const string HangulCorruptionAlphabet = "심해압력산소전력균열경보파손격리영역장치";
         private const string DevanagariCorruptionAlphabet = "अआइईउऊकखगघचछजझटठडढतथदधनपफबभमयरलवशसह";
 
-        public static LocalizationManager Instance { get; private set; }
+        public static LocalizationManager Instance => GlobalRegistry.Localization;
 
         [Header("=== Config ===")]
         [SerializeField] private GameLanguage defaultLanguage = GameLanguage.English;
@@ -155,18 +155,17 @@ namespace Hecton.Localization
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            Instance = null;
         }
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            LocalizationManager registered = GlobalRegistry.Localization;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            Instance = this;
             GlobalRegistry.RegisterLocalizationRuntime(this);
             _registeredLocalizationRuntime = ReferenceEquals(GlobalRegistry.Localization, this);
             GameBootstrapper.PersistRuntimeService(this);
@@ -199,10 +198,6 @@ namespace Hecton.Localization
                 _registeredLocalizationRuntime = false;
             }
 
-            if (Instance == this)
-            {
-                Instance = null;
-            }
         }
 
         /// <summary>
@@ -217,7 +212,7 @@ namespace Hecton.Localization
             if (TryGet(CurrentLanguage, key, out string value))
                 return ApplyInterfaceIntrusionIfNeeded(ExpandNarrativeTokens(value));
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning($"[Localization] Missing key: \"{key}\" for {CurrentLanguage}");
 #endif
             return key;
@@ -256,7 +251,7 @@ namespace Hecton.Localization
             }
             catch (FormatException)
             {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
                     $"[Localization] Format error for key \"{key}\", template: \"{template}\", args count: {args.Length}");
 #endif
@@ -543,7 +538,7 @@ namespace Hecton.Localization
             _intrusionGlyphModeActive = false;
             PublishVisualLanguageState();
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Localization] Language changed to: {language}");
 #endif
         }
@@ -611,7 +606,7 @@ namespace Hecton.Localization
 
                 if (!Enum.TryParse(file.name, true, out GameLanguage language))
                 {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[Localization] Cannot parse language from filename: \"{file.name}\". " +
                         $"Expected one of: {string.Join(", ", Enum.GetNames(typeof(GameLanguage)))}");
@@ -671,7 +666,7 @@ namespace Hecton.Localization
             if (CurrentLanguage == language)
                 LocalizationEvents.PublishLanguageChanged(language);
 
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Localization] Injected {entries.Count} entries into {language} from '{sourceId}'.");
 #endif
         }
@@ -715,7 +710,7 @@ namespace Hecton.Localization
             }
             catch (Exception exception)
             {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError($"[Localization] JSON parse error: {exception.Message}");
 #endif
             }
@@ -1227,7 +1222,7 @@ namespace Hecton.Localization
             if (string.IsNullOrEmpty(alphabet))
                 return text;
 
-            int threshold = Mathf.RoundToInt(Mathf.Lerp(0f, 700f, intensity));
+            int threshold = (int)(700f * intensity + 0.5f);
             if (threshold <= 0)
                 return text;
 
@@ -1273,7 +1268,8 @@ namespace Hecton.Localization
                 return true;
             }
 
-            int threshold = Mathf.RoundToInt(Mathf.Lerp(0f, 700f, Mathf.Clamp01(intensity)));
+            float clampedIntensity = Mathf.Clamp01(intensity);
+            int threshold = (int)(700f * clampedIntensity + 0.5f);
             if (threshold <= 0)
             {
                 length = CopySpanToBuffer(text, destination);
@@ -1547,7 +1543,7 @@ namespace Hecton.Localization
             }
             catch (FormatException)
             {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
                     $"[Localization] Format error for key \"{key}\", template: \"{template}\", args count: {args.Length}");
 #endif

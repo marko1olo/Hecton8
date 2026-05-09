@@ -18,7 +18,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9490)]
-    public sealed class RuntimeWatchdog : MonoBehaviour, IUpdatable
+    public sealed class RuntimeWatchdog : MonoBehaviour, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         public interface IEmergencyResetTarget
         {
@@ -63,15 +63,18 @@ namespace Hecton8.Core
         private const int SampleIntervalFrames = 60;
         private const int FrameStripConsecutiveFrames = 5;
         private const int FaunaEmergencyCullCooldownFrames = 60;
+        private const int FaunaEmergencyCullEmptyCooldownFrames = 15;
+        private const double EmergencyResetFailureCooldownSeconds = 1.0d;
         private const double StallThresholdSeconds = 5.0;
         private const double FrozenServiceThresholdSeconds = 2.0;
-        private const float BaseFrameStripThresholdMs = 15f;
-        private const float BaseFrameStripThresholdSeconds = BaseFrameStripThresholdMs / 1000f;
-        private const float XrFrameStripThresholdSeconds = BaseFrameStripThresholdSeconds * 0.5f;
+        private const float BaseFrameStripThresholdSeconds = 0.015f;
+        private const float XrFrameStripThresholdSeconds = 0.0075f;
         private const float GlobalLodBiasEmergency = 0.5f;
         private const float BaseFaunaArteryBudgetMs = 2.0f;
         private const float BaseHudHeartbeatTimeoutSeconds = 0.2f;
+        private const float GcSteadyStateWarmupSeconds = 5f;
         private const float MmfHealthCheckIntervalSeconds = 60f;
+        private const float MmfHealthRetryDelaySeconds = 5f;
         private const long BaseMmfBloatThresholdBytes = 50L * 1024L * 1024L;
         private const long InvalidMmfSectorHash = long.MinValue;
         private const int FaunaLogicRateColdTick = 1;
@@ -87,6 +90,8 @@ namespace Hecton8.Core
         private static readonly uint _faunaEmergencyCullHash = unchecked((uint)LocHash.Compute("FAUNA_EMERGENCY_CULL"));
         private static readonly uint _mmfBloatAlarmHash = unchecked((uint)LocHash.Compute("MMF_BLOAT_ALARM"));
         private static readonly uint _uiDeadlockHash = unchecked((uint)LocHash.Compute("UI_DEADLOCK"));
+        private static readonly uint _criticalGcSpikeHash = unchecked((uint)LocHash.Compute("CRITICAL_GC_SPIKE"));
+        private static readonly uint _fastTickSteadyStateHash = unchecked((uint)LocHash.Compute("FAST_TICK_STEADY_STATE"));
         private static readonly uint _nativeLeakReapedHash = unchecked((uint)LocHash.Compute("NATIVE_LEAK_REAPED"));
         private static readonly uint _nativeLeakLabelHash = unchecked((uint)LocHash.Compute("NATIVE_LEAK_LABEL"));
         private static readonly uint _nanSentinelRecoveryHash = unchecked((uint)LocHash.Compute("NAN_SENTINEL_RECOVERY"));
@@ -122,6 +127,7 @@ namespace Hecton8.Core
         private static string _mmfHealthWorkPath;
         private static long _mmfHealthWorkSectorHash;
         private static int _mmfHealthWorkGeneration;
+        private static string _deadlockTraceDirectory;
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -136,11 +142,19 @@ namespace Hecton8.Core
         private int _nextSampleFrame;
         private int _consecutiveOverBudgetFrames;
         private int _lastConsumedMmfHealthGeneration;
+        private int _lastGen0CollectionCount;
+        private int _lastGcSpikeFrame = -1;
+        private int _steadyStateGcGen0CollectionsDelta;
+        private float _gcSteadyStateWarmupRemaining = GcSteadyStateWarmupSeconds;
+        private bool _gcSteadyStateActive;
         private double _nextMmfHealthCheckTime;
         private long _lastMmfBytes = -1L;
         private long _lastMmfSectorHash = InvalidMmfSectorHash;
 
         public static int ActiveTargetFPS => HectonXRRuntimeState.IsXRActive ? VrTargetFPS : TargetFPS;
+        public ServiceHeartbeatState HeartbeatState => _registeredUpdatable ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Booting;
+        public bool IsServiceReady => _registeredUpdatable;
+        public int SteadyStateGcGen0CollectionsDelta => _steadyStateGcGen0CollectionsDelta;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -163,6 +177,7 @@ namespace Hecton8.Core
             _mmfHealthWorkPath = null;
             _mmfHealthWorkSectorHash = InvalidMmfSectorHash;
             _mmfHealthWorkGeneration = 0;
+            _deadlockTraceDirectory = null;
         }
 
         public static RuntimeWatchdog EnsureRuntimeInstance()
@@ -251,7 +266,7 @@ namespace Hecton8.Core
             if (reapedCount <= 0)
                 return;
 
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningNoThrow(
                 _nativeLeakReapedHash,
                 _watchdogContextHash,
                 reapedCount);
@@ -260,9 +275,9 @@ namespace Hecton8.Core
         internal static void ReportNativeLeakReaped(uint ownerHash, uint labelHash, long bytes)
         {
             float megabytes = bytes <= 0L ? 0f : math.min(float.MaxValue, bytes / (1024f * 1024f));
-            GlobalTelemetryBus.PublishPerformanceWarning(_nativeLeakReapedHash, ownerHash, megabytes);
+            PublishPerformanceWarningNoThrow(_nativeLeakReapedHash, ownerHash, megabytes);
             if (labelHash != 0u)
-                GlobalTelemetryBus.PublishPerformanceWarning(_nativeLeakLabelHash, labelHash, megabytes);
+                PublishPerformanceWarningNoThrow(_nativeLeakLabelHash, labelHash, megabytes);
         }
 
         internal static Vector3 ReportRigidbodyNanRecovery(
@@ -273,7 +288,7 @@ namespace Hecton8.Core
             Vector3 recoveredPosition = CrashTelemetryBuffer.ReportNanPhysicsRecovery(
                 invalidRuntimePosition,
                 lastKnownGoodRuntimePosition);
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningNoThrow(
                 _nanSentinelRecoveryHash,
                 updatingSystemHash,
                 1f);
@@ -282,7 +297,9 @@ namespace Hecton8.Core
 
         public void InitializeService()
         {
+            GlobalTelemetryBus.Initialize();
             GlobalRegistry.RegisterRuntimeWatchdogRuntime(this);
+            ResetGcCollectionSentinel();
             TryRegisterUpdatable();
         }
 
@@ -300,6 +317,8 @@ namespace Hecton8.Core
 
             _nextSampleFrame = Time.frameCount + SampleIntervalFrames;
             _nextMmfHealthCheckTime = Time.realtimeSinceStartupAsDouble + MmfHealthCheckIntervalSeconds;
+            GlobalTelemetryBus.Initialize();
+            ResetGcCollectionSentinel();
         }
 
         private void OnEnable()
@@ -328,11 +347,25 @@ namespace Hecton8.Core
                 GlobalRegistry.UnregisterRuntimeWatchdogRuntime(this);
         }
 
+        public void OnServiceShutdown()
+        {
+            OnDisable();
+            if (ReferenceEquals(GlobalRegistry.RuntimeWatchdog, this))
+                GlobalRegistry.UnregisterRuntimeWatchdogRuntime(this);
+            _watchdogStateFlags = 0u;
+            _consecutiveOverBudgetFrames = 0;
+            _lastConsumedMmfHealthGeneration = 0;
+            _lastMmfBytes = -1L;
+            _lastMmfSectorHash = InvalidMmfSectorHash;
+            ResetGcCollectionSentinel();
+        }
+
         public void Tick(float deltaTime)
         {
             int frame = Time.frameCount;
             ConsumeMmfHealthResult();
             EnforceFrameBudget(deltaTime);
+            TickGcCollectionSentinel(deltaTime);
 
             double now = Time.realtimeSinceStartupAsDouble;
             EnforceHudHeartbeat(now, frame);
@@ -344,6 +377,51 @@ namespace Hecton8.Core
             _nextSampleFrame = frame + SampleIntervalFrames;
             NativeMemorySentinel.AuditLongLivedTransientAllocations(frame);
             SampleRuntimeLanes(now);
+        }
+
+        private void ResetGcCollectionSentinel()
+        {
+            _lastGen0CollectionCount = GC.CollectionCount(0);
+            _lastGcSpikeFrame = -1;
+            _steadyStateGcGen0CollectionsDelta = 0;
+            _gcSteadyStateWarmupRemaining = GcSteadyStateWarmupSeconds;
+            _gcSteadyStateActive = false;
+        }
+
+        private void TickGcCollectionSentinel(float deltaTime)
+        {
+            int currentGen0CollectionCount = GC.CollectionCount(0);
+            if (!_gcSteadyStateActive)
+            {
+                if (deltaTime > 0f)
+                    _gcSteadyStateWarmupRemaining -= deltaTime;
+
+                _lastGen0CollectionCount = currentGen0CollectionCount;
+                if (_gcSteadyStateWarmupRemaining > 0f)
+                    return;
+
+                _gcSteadyStateActive = true;
+                return;
+            }
+
+            int delta = currentGen0CollectionCount - _lastGen0CollectionCount;
+            if (delta <= 0)
+            {
+                if (delta < 0)
+                    _lastGen0CollectionCount = currentGen0CollectionCount;
+                return;
+            }
+
+            _lastGen0CollectionCount = currentGen0CollectionCount;
+            _steadyStateGcGen0CollectionsDelta = _steadyStateGcGen0CollectionsDelta > int.MaxValue - delta
+                ? int.MaxValue
+                : _steadyStateGcGen0CollectionsDelta + delta;
+            int frame = Time.frameCount;
+            if (_lastGcSpikeFrame == frame)
+                return;
+
+            _lastGcSpikeFrame = frame;
+            PublishCriticalGcSpikeNoThrow(_criticalGcSpikeHash, _fastTickSteadyStateHash, delta);
         }
 
         private void EnforceFrameBudget(float deltaTime)
@@ -372,7 +450,7 @@ namespace Hecton8.Core
 
             Shader.SetGlobalFloat(_globalLodBiasId, GlobalLodBiasEmergency);
             _watchdogStateFlags |= WatchdogStateGlobalLodStripped;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningNoThrow(
                 _budgetStripHash,
                 _watchdogContextHash,
                 deltaTime * 1000f);
@@ -390,11 +468,14 @@ namespace Hecton8.Core
 
             int culledCount = director.ApplyEmergencyColdTickCull();
             if (culledCount <= 0)
+            {
+                _nextFaunaEmergencyCullFrame = frame + FaunaEmergencyCullEmptyCooldownFrames;
                 return;
+            }
 
             Shader.SetGlobalInt(_faunaLogicRateId, FaunaLogicRateColdTick);
             _nextFaunaEmergencyCullFrame = frame + FaunaEmergencyCullCooldownFrames;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningNoThrow(
                 _faunaEmergencyCullHash,
                 _watchdogContextHash,
                 elapsedMilliseconds);
@@ -403,6 +484,11 @@ namespace Hecton8.Core
         private static float ResolveScaledThreshold(float baseValue)
         {
             return HectonXRRuntimeState.IsXRActive ? baseValue * 0.5f : baseValue;
+        }
+
+        private static double ResolveScaledThreshold(double baseValue)
+        {
+            return HectonXRRuntimeState.IsXRActive ? baseValue * 0.5d : baseValue;
         }
 
         private static float ResolveFrameStripThresholdSeconds()
@@ -445,13 +531,21 @@ namespace Hecton8.Core
             if (elapsedSeconds <= timeoutSeconds || _hudDeadlockRecoveryFrame == frame)
                 return;
 
-            Canvas.ForceUpdateCanvases();
+            TriggerHudCanvasBuildBatch(canvas);
             _hudDeadlockRecoveryFrame = frame;
             _lastHudCanvasUpdateTime = now;
-            GlobalTelemetryBus.PublishPerformanceWarning(
+            PublishPerformanceWarningNoThrow(
                 _uiDeadlockHash,
                 _watchdogContextHash,
                 (float)(elapsedSeconds * 1000d));
+        }
+
+        private static void TriggerHudCanvasBuildBatch(Canvas canvas)
+        {
+            if (canvas == null || !canvas.enabled)
+                return;
+
+            Canvas.ForceUpdateCanvases();
         }
 
         private void QueueMmfHealthCheckIfDue(double now)
@@ -459,22 +553,62 @@ namespace Hecton8.Core
             if (now < _nextMmfHealthCheckTime)
                 return;
 
-            _nextMmfHealthCheckTime = now + MmfHealthCheckIntervalSeconds;
             PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null ||
                 !registry.TryGetIndexedSaveHealth(out string savePath, out long sectorHash) ||
                 string.IsNullOrEmpty(savePath))
             {
+                _nextMmfHealthCheckTime = now + MmfHealthRetryDelaySeconds;
                 return;
             }
 
             if (Interlocked.CompareExchange(ref _mmfHealthCheckInFlight, 1, 0) != 0)
+            {
+                _nextMmfHealthCheckTime = now + MmfHealthRetryDelaySeconds;
                 return;
+            }
 
-            _mmfHealthWorkPath = savePath;
-            _mmfHealthWorkSectorHash = sectorHash;
-            _mmfHealthWorkGeneration = Interlocked.Increment(ref _mmfHealthGeneration);
-            ThreadPool.UnsafeQueueUserWorkItem(_mmfHealthCallback, null);
+            AssignMmfHealthWork(savePath, sectorHash, Interlocked.Increment(ref _mmfHealthGeneration));
+            try
+            {
+                if (ThreadPool.UnsafeQueueUserWorkItem(_mmfHealthCallback, null))
+                {
+                    _nextMmfHealthCheckTime = now + MmfHealthCheckIntervalSeconds;
+                }
+                else
+                {
+                    ClearMmfHealthWork();
+                    _nextMmfHealthCheckTime = now + MmfHealthRetryDelaySeconds;
+                    Interlocked.Exchange(ref _mmfHealthCheckInFlight, 0);
+                }
+            }
+            catch (Exception)
+            {
+                ClearMmfHealthWork();
+                _nextMmfHealthCheckTime = now + MmfHealthRetryDelaySeconds;
+                Interlocked.Exchange(ref _mmfHealthCheckInFlight, 0);
+            }
+        }
+
+        private static void AssignMmfHealthWork(string path, long sectorHash, int generation)
+        {
+            Volatile.Write(ref _mmfHealthWorkSectorHash, sectorHash);
+            Volatile.Write(ref _mmfHealthWorkPath, path);
+            Volatile.Write(ref _mmfHealthWorkGeneration, generation);
+        }
+
+        private static void ClearMmfHealthWork()
+        {
+            Volatile.Write(ref _mmfHealthWorkGeneration, 0);
+            Volatile.Write(ref _mmfHealthWorkPath, null);
+            Volatile.Write(ref _mmfHealthWorkSectorHash, InvalidMmfSectorHash);
+        }
+
+        private static void ReadMmfHealthWork(out string path, out long sectorHash, out int generation)
+        {
+            generation = Volatile.Read(ref _mmfHealthWorkGeneration);
+            path = Volatile.Read(ref _mmfHealthWorkPath);
+            sectorHash = Volatile.Read(ref _mmfHealthWorkSectorHash);
         }
 
         private static void ExecuteMmfHealthCheck(object state)
@@ -484,9 +618,7 @@ namespace Hecton8.Core
             int generation = 0;
             try
             {
-                string path = _mmfHealthWorkPath;
-                generation = _mmfHealthWorkGeneration;
-                sectorHash = _mmfHealthWorkSectorHash;
+                ReadMmfHealthWork(out string path, out sectorHash, out generation);
                 if (!string.IsNullOrEmpty(path) && TryGetFileLength(path, out long fileBytes))
                     bytes = fileBytes;
             }
@@ -512,6 +644,7 @@ namespace Hecton8.Core
                     Volatile.Write(ref _mmfHealthResultReady, 1);
                 }
 
+                ClearMmfHealthWork();
                 Interlocked.Exchange(ref _mmfHealthCheckInFlight, 0);
             }
         }
@@ -579,7 +712,7 @@ namespace Hecton8.Core
             long deltaBytes = bytes - _lastMmfBytes;
             if (deltaBytes > ResolveScaledByteThreshold(BaseMmfBloatThresholdBytes))
             {
-                GlobalTelemetryBus.PublishPerformanceWarning(
+                PublishPerformanceWarningNoThrow(
                     _mmfBloatAlarmHash,
                     _watchdogContextHash,
                     math.min(float.MaxValue, deltaBytes / (1024f * 1024f)));
@@ -610,9 +743,9 @@ namespace Hecton8.Core
                     continue;
                 }
 
-                double thresholdSeconds = IsEmergencyResetLane(laneIndex)
+                double thresholdSeconds = ResolveScaledThreshold(IsEmergencyResetLane(laneIndex)
                     ? FrozenServiceThresholdSeconds
-                    : StallThresholdSeconds;
+                    : StallThresholdSeconds);
                 if (now - lastChange < thresholdSeconds)
                     continue;
 
@@ -621,9 +754,16 @@ namespace Hecton8.Core
                     unchecked((uint)currentCounter));
                 if (IsEmergencyResetLane(laneIndex))
                 {
-                    ServiceEmergencyReset(laneIndex);
-                    _lastObservedCounters[laneIndex] = currentCounter;
-                    _lastChangeTimes[laneIndex] = now;
+                    if (ServiceEmergencyReset(laneIndex))
+                    {
+                        _lastObservedCounters[laneIndex] = Volatile.Read(ref _heartbeatCounters[laneIndex]);
+                        _lastChangeTimes[laneIndex] = now;
+                    }
+                    else
+                    {
+                        _lastChangeTimes[laneIndex] = now - thresholdSeconds + EmergencyResetFailureCooldownSeconds;
+                    }
+
                     continue;
                 }
 
@@ -639,14 +779,28 @@ namespace Hecton8.Core
                    laneIndex == (int)RuntimeWatchdogLane.WorldStreaming;
         }
 
-        private static void ServiceEmergencyReset(int laneIndex)
+        private static bool ServiceEmergencyReset(int laneIndex)
         {
             if ((uint)laneIndex >= LaneCapacity)
-                return;
+                return false;
 
             IEmergencyResetTarget target = _emergencyResetTargets[laneIndex];
-            target?.ServiceEmergencyReset();
-            Interlocked.Increment(ref _heartbeatCounters[laneIndex]);
+            if (target == null)
+                return false;
+
+            try
+            {
+                target.ServiceEmergencyReset();
+                Interlocked.Increment(ref _heartbeatCounters[laneIndex]);
+                return true;
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                UnityEngine.Debug.LogException(exception);
+#endif
+                return false;
+            }
         }
 
         private static void WriteDeadlockTraceDump(int laneIndex, int counter, double stalledSeconds)
@@ -696,15 +850,19 @@ namespace Hecton8.Core
             catch (Exception exception)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogError("[RuntimeWatchdog] Failed to write deadlock trace dump: " + exception.Message);
+                UnityEngine.Debug.LogException(exception);
 #endif
             }
         }
 
         private static string ResolveExecutableAdjacentDirectory()
         {
+            if (!string.IsNullOrEmpty(_deadlockTraceDirectory))
+                return _deadlockTraceDirectory;
+
             DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
-            return dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+            _deadlockTraceDirectory = dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+            return _deadlockTraceDirectory;
         }
 
         private static void AppendLiteral(char[] buffer, ref int length, string value)
@@ -773,6 +931,34 @@ namespace Hecton8.Core
                     CultureInfo.InvariantCulture))
             {
                 length += charsWritten;
+            }
+        }
+
+        private static void PublishPerformanceWarningNoThrow(uint warningHash, uint contextHash, float scalarValue)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, scalarValue);
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                UnityEngine.Debug.LogException(exception);
+#endif
+            }
+        }
+
+        private static void PublishCriticalGcSpikeNoThrow(uint spikeHash, uint contextHash, int gen0CollectionsDelta)
+        {
+            try
+            {
+                GlobalTelemetryBus.PublishCriticalGcSpike(spikeHash, contextHash, gen0CollectionsDelta);
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                UnityEngine.Debug.LogException(exception);
+#endif
             }
         }
 

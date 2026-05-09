@@ -61,6 +61,48 @@ namespace Hecton8.World
             Abyss = 3
         }
 
+        private const int ActiveCaveKeyCapacity = 32;
+        private const int EntranceMarkerNameCapacity = 32;
+        private const int ThermalGeyserNameCapacity = 32;
+        private const float ThermalGeyserFloorOffset = 0.35f;
+        private static readonly string[] _EntranceMarkerNames = CreateIndexedNameCache("Marker_", EntranceMarkerNameCapacity); // COLD ALLOC: string[32] — bounded entrance marker names — owner: WorldCaveDirector
+        private static readonly string[] _ThermalGeyserNames = CreateTwoDigitNameCache("_ThermalGeyser_", ThermalGeyserNameCapacity); // COLD ALLOC: string[32] — bounded thermal geyser names — owner: WorldCaveDirector
+        private static readonly Color _EntranceHazardColor = new Color(0.9f, 0.3f, 0.2f);
+        private static readonly Color _EntranceLifeColor = new Color(0.4f, 0.8f, 0.4f);
+        private static readonly Color _EntranceNeutralColor = new Color(0.8f, 0.6f, 0.2f);
+        private static readonly Color _EntranceDeepColor = new Color(0.2f, 0.8f, 1f);
+        private static readonly Gradient _EntranceHazardGradient = CreateStaticGradient(_EntranceHazardColor, 0.3f); // COLD ALLOC: Gradient[1] — reused hazard entrance marker gradient — owner: WorldCaveDirector
+        private static readonly Gradient _EntranceLifeGradient = CreateStaticGradient(_EntranceLifeColor, 0.3f); // COLD ALLOC: Gradient[1] — reused life entrance marker gradient — owner: WorldCaveDirector
+        private static readonly Gradient _EntranceNeutralGradient = CreateStaticGradient(_EntranceNeutralColor, 0.3f); // COLD ALLOC: Gradient[1] — reused neutral entrance marker gradient — owner: WorldCaveDirector
+        private static readonly Gradient _EntranceDeepGradient = CreateStaticGradient(_EntranceDeepColor, 0.5f); // COLD ALLOC: Gradient[1] — reused deep entrance marker gradient — owner: WorldCaveDirector
+
+        private sealed class DeepFungiParticleCache : MonoBehaviour
+        {
+            private readonly GradientColorKey[] _colorKeys = new GradientColorKey[2]; // COLD ALLOC: GradientColorKey[2] — reusable deep-fungi gradient color keys — owner: DeepFungiParticleCache
+            private readonly GradientAlphaKey[] _alphaKeys = new GradientAlphaKey[2]; // COLD ALLOC: GradientAlphaKey[2] — reusable deep-fungi gradient alpha keys — owner: DeepFungiParticleCache
+            private Gradient _gradient; // COLD ALLOC: Gradient[1] — per-fungi particle color-over-life gradient — owner: DeepFungiParticleCache
+            private Color _cachedGlowColor;
+            private bool _hasGradient;
+
+            internal Gradient ResolveGradient(Color glowColor)
+            {
+                if (_gradient == null)
+                    _gradient = new Gradient();
+
+                if (_hasGradient && _cachedGlowColor == glowColor)
+                    return _gradient;
+
+                _colorKeys[0] = new GradientColorKey(glowColor, 0f);
+                _colorKeys[1] = new GradientColorKey(Color.clear, 1f);
+                _alphaKeys[0] = new GradientAlphaKey(0.6f, 0f);
+                _alphaKeys[1] = new GradientAlphaKey(0f, 1f);
+                _gradient.SetKeys(_colorKeys, _alphaKeys);
+                _cachedGlowColor = glowColor;
+                _hasGradient = true;
+                return _gradient;
+            }
+        }
+
         private sealed class PendingCaveSpawnState : IDisposable
         {
             public CancellationTokenSource Cancellation;
@@ -107,7 +149,7 @@ namespace Hecton8.World
         [SerializeField] private bool _debugReady;
 
         private bool _registeredToTickManager;
-        private readonly HashSet<long> _activeCaveKeys = new HashSet<long>();
+        private readonly HashSet<long> _activeCaveKeys = new HashSet<long>(ActiveCaveKeyCapacity);
         private readonly Dictionary<long, CaveInstance> _caveInstances = new Dictionary<long, CaveInstance>(32);
         private readonly Dictionary<long, PendingCaveSpawnState> _pendingCaveSpawns = new Dictionary<long, PendingCaveSpawnState>(16);
         private readonly Dictionary<long, CaveEntranceHint[]> _caveEntranceHints = new Dictionary<long, CaveEntranceHint[]>(32); // COLD ALLOC: cached entrance hints for field sampling, capped by active caves.
@@ -122,7 +164,6 @@ namespace Hecton8.World
         private static readonly int _CrustColorId = Shader.PropertyToID("_CrustColor");
         private static readonly int _CrustRoughnessId = Shader.PropertyToID("_CrustRoughness");
         private static MaterialPropertyBlock _CaveSurfacePropertyBlock;
-        private readonly RaycastHit[] _cavePlacementHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] - bounded cave-floor placement probe buffer - owner: WorldCaveDirector
         private static readonly CaveStructureType[] _CliffStructureTypes =
         {
             CaveStructureType.Stalactite,
@@ -262,8 +303,8 @@ namespace Hecton8.World
             List<Vector3> candidates = GenerateCaveCandidates(currentZone);
 
             // Spawn caves at candidates
-            foreach (Vector3 candidate in candidates)
-                TryQueueCaveSpawn(candidate, biomeFamily);
+            for (int i = 0; i < candidates.Count; i++)
+                TryQueueCaveSpawn(candidates[i], biomeFamily);
 
             UpdateDiagnostics();
         }
@@ -378,8 +419,7 @@ namespace Hecton8.World
                     return;
                 }
 
-                HectonVoxelVolume voxelVolume = caveVolume.GetComponent<HectonVoxelVolume>();
-                if (voxelVolume == null)
+                if (!caveVolume.TryGetComponent(out HectonVoxelVolume voxelVolume))
                 {
                     CleanupSpawnedVolume(caveVolume);
                     LogCaveSpawnFailure(position, "Generated cave volume did not include HectonVoxelVolume.");
@@ -785,19 +825,21 @@ namespace Hecton8.World
             Transform markerTransform = markerIndex < markerRoot.childCount
                 ? markerRoot.GetChild(markerIndex)
                 : null;
+            string markerName = GetCachedEntranceMarkerName(markerIndex);
             GameObject marker = markerTransform != null
                 ? markerTransform.gameObject
-                : new GameObject($"Marker_{markerIndex}");
+                : new GameObject(markerName);
             if (markerTransform == null)
             {
                 markerTransform = marker.transform;
                 markerTransform.SetParent(markerRoot, false);
             }
 
-            marker.name = $"Marker_{markerIndex}";
+            marker.name = markerName;
             markerTransform.position = position + Vector3.up * 0.5f; // Slightly above ground
-            markerTransform.rotation = inwardDirection.sqrMagnitude > 0.001f
-                ? Quaternion.LookRotation(inwardDirection.normalized, Vector3.up)
+            float inwardDirectionSq = inwardDirection.sqrMagnitude;
+            markerTransform.rotation = inwardDirectionSq > 0.001f
+                ? Quaternion.LookRotation(inwardDirection * math.rsqrt(inwardDirectionSq), Vector3.up)
                 : Quaternion.identity;
             if (!marker.activeSelf)
                 marker.SetActive(true);
@@ -810,20 +852,19 @@ namespace Hecton8.World
             Color lightColor;
             if (hazard > 0.7f)
             {
-                lightColor = new Color(0.9f, 0.3f, 0.2f); // Red for danger
+                lightColor = _EntranceHazardColor; // Red for danger
             }
             else if (mood > 0.6f)
             {
-                lightColor = new Color(0.4f, 0.8f, 0.4f); // Green for life
+                lightColor = _EntranceLifeColor; // Green for life
             }
             else
             {
-                lightColor = new Color(0.8f, 0.6f, 0.2f); // Warm for neutral
+                lightColor = _EntranceNeutralColor; // Warm for neutral
             }
 
             // Add a light for visibility
-            Light entranceLight = marker.GetComponent<Light>();
-            if (entranceLight == null)
+            if (!marker.TryGetComponent(out Light entranceLight))
                 entranceLight = marker.AddComponent<Light>();
             entranceLight.type = LightType.Point;
             entranceLight.color = lightColor;
@@ -831,8 +872,7 @@ namespace Hecton8.World
             entranceLight.range = 4f + hazard * 2f; // Wider for dangerous caves
 
             // Add particle system for atmospheric effect
-            ParticleSystem ps = marker.GetComponent<ParticleSystem>();
-            if (ps == null)
+            if (!marker.TryGetComponent(out ParticleSystem ps))
                 ps = marker.AddComponent<ParticleSystem>();
             var main = ps.main;
             main.startSize = 0.05f + mood * 0.15f;
@@ -850,22 +890,7 @@ namespace Hecton8.World
             // Particle color based on context
             var colorOverLifetime = ps.colorOverLifetime;
             colorOverLifetime.enabled = true;
-            Gradient gradient = new Gradient();
-            if (instance.preset.spawnContext == SpawnContext.CaveDeep)
-            {
-                gradient.SetKeys(
-                    new GradientColorKey[] { new GradientColorKey(new Color(0.2f, 0.8f, 1f), 0f), new GradientColorKey(Color.clear, 1f) },
-                    new GradientAlphaKey[] { new GradientAlphaKey(0.5f, 0f), new GradientAlphaKey(0f, 1f) }
-                );
-            }
-            else
-            {
-                gradient.SetKeys(
-                    new GradientColorKey[] { new GradientColorKey(lightColor, 0f), new GradientColorKey(Color.clear, 1f) },
-                    new GradientAlphaKey[] { new GradientAlphaKey(0.3f, 0f), new GradientAlphaKey(0f, 1f) }
-                );
-            }
-            colorOverLifetime.color = gradient;
+            colorOverLifetime.color = ResolveEntranceMarkerGradient(instance.preset.spawnContext, lightColor);
         }
 
         private void ApplyEntranceQualityPass(CaveInstance instance, CavePreset preset)
@@ -888,15 +913,13 @@ namespace Hecton8.World
             entranceQualityRoot.localScale = Vector3.one;
 
             // Add collider as "quality zone" marker
-            var sphereCollider = entranceQualityGO.GetComponent<SphereCollider>();
-            if (sphereCollider == null)
+            if (!entranceQualityGO.TryGetComponent(out SphereCollider sphereCollider))
                 sphereCollider = entranceQualityGO.AddComponent<SphereCollider>();
             sphereCollider.radius = preset.entranceRadius * 2f;
             sphereCollider.isTrigger = true;
 
             // Add light glow aura at entrance for safe zone feel
-            Light entranceGlow = entranceQualityGO.GetComponent<Light>();
-            if (entranceGlow == null)
+            if (!entranceQualityGO.TryGetComponent(out Light entranceGlow))
                 entranceGlow = entranceQualityGO.AddComponent<Light>();
             entranceGlow.type = LightType.Point;
             entranceGlow.color = new Color(0.8f, 0.7f, 0.5f); // warm safety glow
@@ -968,8 +991,7 @@ namespace Hecton8.World
         private void ApplyMineralCrustToVolume(HectonVoxelVolume volume, MineralCrustConfig config)
         {
             // Apply mineral crust as material property block to the cave mesh
-            var meshRenderer = volume.GetComponent<MeshRenderer>();
-            if (meshRenderer == null) return;
+            if (!volume.TryGetComponent(out MeshRenderer meshRenderer)) return;
 
             _CaveSurfacePropertyBlock.Clear();
             meshRenderer.GetPropertyBlock(_CaveSurfacePropertyBlock);
@@ -1053,7 +1075,8 @@ namespace Hecton8.World
                 return;
 
             ThermalGeyserConfig geyserConfig = dressingConfig.thermalGeysers;
-            int geyserCount = Mathf.Clamp(Mathf.RoundToInt(geyserConfig.maxCount * Mathf.Clamp01(dressingConfig.globalIntensity)), 0, geyserConfig.maxCount);
+            int maxGeyserCount = Mathf.Clamp(geyserConfig.maxCount, 0, ThermalGeyserNameCapacity);
+            int geyserCount = Mathf.Clamp(Mathf.RoundToInt(maxGeyserCount * Mathf.Clamp01(dressingConfig.globalIntensity)), 0, maxGeyserCount);
             Transform dressingRoot = GetOrCreateDressingRoot(instance.volume.transform);
             if (dressingRoot == null)
                 return;
@@ -1068,13 +1091,17 @@ namespace Hecton8.World
 
             for (int geyserIndex = 0; geyserIndex < geyserCount; geyserIndex++)
             {
-                Transform geyserTransform = geyserRoot.Find($"_ThermalGeyser_{geyserIndex:00}");
-                GameObject geyserObject = geyserTransform != null ? geyserTransform.gameObject : new GameObject($"_ThermalGeyser_{geyserIndex:00}");
+                string geyserName = GetCachedThermalGeyserName(geyserIndex);
+                Transform geyserTransform = geyserIndex < geyserRoot.childCount
+                    ? geyserRoot.GetChild(geyserIndex)
+                    : geyserRoot.Find(geyserName);
+                GameObject geyserObject = geyserTransform != null ? geyserTransform.gameObject : new GameObject(geyserName);
                 if (geyserTransform == null)
                 {
                     geyserTransform = geyserObject.transform;
                     geyserTransform.SetParent(geyserRoot, false);
                 }
+                geyserObject.name = geyserName;
 
                 if (!geyserObject.TryGetComponent(out CurrentVolume currentVolume))
                     currentVolume = geyserObject.AddComponent<CurrentVolume>();
@@ -1104,36 +1131,9 @@ namespace Hecton8.World
                 return Vector3.zero;
 
             float margin = 1.25f;
-            float sampleX = Mathf.Lerp(bounds.min.x + margin, bounds.max.x - margin, Hash01(geyserIndex + 1, 41));
-            float sampleZ = Mathf.Lerp(bounds.min.z + margin, bounds.max.z - margin, Hash01(geyserIndex + 1, 83));
-            float rayDistance = bounds.size.y + 2f;
-            Vector3 rayOriginWS = volume.transform.TransformPoint(new Vector3(sampleX, bounds.max.y + 1f, sampleZ));
-            Ray ray = new Ray(rayOriginWS, Vector3.down);
-
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                ray,
-                _cavePlacementHits,
-                rayDistance,
-                HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask,
-                QueryTriggerInteraction.Ignore);
-
-            float nearestDistance = float.PositiveInfinity;
-            Vector3 resolvedPointWS = volume.transform.TransformPoint(new Vector3(sampleX, bounds.min.y + 0.35f, sampleZ));
-            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
-            {
-                RaycastHit hit = _cavePlacementHits[hitIndex];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null || (!hitCollider.transform.IsChildOf(volume.transform) && hitCollider.transform != volume.transform))
-                    continue;
-
-                if (hit.distance >= nearestDistance)
-                    continue;
-
-                nearestDistance = hit.distance;
-                resolvedPointWS = hit.point + (hit.normal.normalized * 0.08f);
-            }
-
-            return volume.transform.InverseTransformPoint(resolvedPointWS);
+            float sampleX = math.lerp(bounds.min.x + margin, bounds.max.x - margin, Hash01(geyserIndex + 1, 41));
+            float sampleZ = math.lerp(bounds.min.z + margin, bounds.max.z - margin, Hash01(geyserIndex + 1, 83));
+            return new Vector3(sampleX, bounds.min.y + ThermalGeyserFloorOffset, sampleZ);
         }
 
         private static float Hash01(int index, int salt)
@@ -1172,11 +1172,11 @@ namespace Hecton8.World
             }
 
             float verticalBias = Mathf.Clamp01(config.verticalBias);
-            float verticalMin = Mathf.Lerp(volumeBounds.min.y, volumeBounds.center.y, 0.2f);
-            float verticalMax = Mathf.Lerp(volumeBounds.center.y, volumeBounds.max.y, 0.85f);
+            float verticalMin = math.lerp(volumeBounds.min.y, volumeBounds.center.y, 0.2f);
+            float verticalMax = math.lerp(volumeBounds.center.y, volumeBounds.max.y, 0.85f);
             Vector3 emissionCenter = new Vector3(
                 volumeBounds.center.x,
-                Mathf.Lerp(verticalMin, verticalMax, verticalBias),
+                math.lerp(verticalMin, verticalMax, verticalBias),
                 volumeBounds.center.z);
             Vector3 emissionSize = new Vector3(
                 Mathf.Max(2f, volumeBounds.size.x * 0.72f),
@@ -1186,20 +1186,19 @@ namespace Hecton8.World
 
             fungiTransform.localPosition = emissionCenter;
 
-            ParticleSystem ps = fungiGO.GetComponent<ParticleSystem>();
-            if (ps == null)
+            if (!fungiGO.TryGetComponent(out ParticleSystem ps))
                 ps = fungiGO.AddComponent<ParticleSystem>();
 
             var main = ps.main;
             main.startSize = new ParticleSystem.MinMaxCurve(config.particleSize * 0.5f, config.particleSize * 1.5f);
             main.startLifetime = config.lifetime;
             main.maxParticles = Mathf.Clamp(
-                Mathf.RoundToInt(Mathf.Lerp(18f, 84f, volumeFactor) * Mathf.Clamp01(config.density)),
+                Mathf.RoundToInt(math.lerp(18f, 84f, volumeFactor) * Mathf.Clamp01(config.density)),
                 8,
                 96);
 
             var emission = ps.emission;
-            emission.rateOverTime = config.emissionRate * Mathf.Lerp(0.7f, 1.2f, volumeFactor);
+            emission.rateOverTime = config.emissionRate * math.lerp(0.7f, 1.2f, volumeFactor);
 
             var shape = ps.shape;
             shape.shapeType = ParticleSystemShapeType.BoxShell;
@@ -1207,15 +1206,11 @@ namespace Hecton8.World
 
             var colorOverLifetime = ps.colorOverLifetime;
             colorOverLifetime.enabled = true;
-            Gradient gradient = new Gradient();
-            gradient.SetKeys(
-                new GradientColorKey[] { new GradientColorKey(config.glowColor, 0f), new GradientColorKey(Color.clear, 1f) },
-                new GradientAlphaKey[] { new GradientAlphaKey(0.6f, 0f), new GradientAlphaKey(0f, 1f) }
-            );
-            colorOverLifetime.color = gradient;
+            if (!fungiGO.TryGetComponent(out DeepFungiParticleCache fungiCache))
+                fungiCache = fungiGO.AddComponent<DeepFungiParticleCache>();
+            colorOverLifetime.color = fungiCache.ResolveGradient(config.glowColor);
 
-            var renderer = ps.GetComponent<ParticleSystemRenderer>();
-            if (renderer != null)
+            if (ps.TryGetComponent(out ParticleSystemRenderer renderer))
             {
                 renderer.renderMode = ParticleSystemRenderMode.Billboard;
             }
@@ -1226,8 +1221,7 @@ namespace Hecton8.World
             if (volumeRoot == null)
                 return null;
 
-            HectonVoxelVolume volume = volumeRoot.GetComponent<HectonVoxelVolume>();
-            if (volume != null)
+            if (volumeRoot.TryGetComponent(out HectonVoxelVolume volume))
                 return volume.GetOrCreateRuntimeRoot("_CaveDressing");
 
             Transform dressingRoot = volumeRoot.Find("_CaveDressing");
@@ -1254,6 +1248,63 @@ namespace Hecton8.World
                 if (child != null && child.gameObject.activeSelf)
                     child.gameObject.SetActive(false);
             }
+        }
+
+        private static string GetCachedEntranceMarkerName(int index)
+        {
+            if ((uint)index < (uint)_EntranceMarkerNames.Length)
+                return _EntranceMarkerNames[index];
+
+            return "_EntranceMarker";
+        }
+
+        private static string GetCachedThermalGeyserName(int index)
+        {
+            if ((uint)index < (uint)_ThermalGeyserNames.Length)
+                return _ThermalGeyserNames[index];
+
+            return "_ThermalGeyser";
+        }
+
+        private static string[] CreateIndexedNameCache(string prefix, int count)
+        {
+            string[] names = new string[count];
+            for (int i = 0; i < count; i++)
+                names[i] = prefix + i;
+
+            return names;
+        }
+
+        private static string[] CreateTwoDigitNameCache(string prefix, int count)
+        {
+            string[] names = new string[count];
+            for (int i = 0; i < count; i++)
+                names[i] = i < 10 ? prefix + "0" + i : prefix + i;
+
+            return names;
+        }
+
+        private static Gradient ResolveEntranceMarkerGradient(SpawnContext spawnContext, Color lightColor)
+        {
+            if (spawnContext == SpawnContext.CaveDeep)
+                return _EntranceDeepGradient;
+
+            if (lightColor == _EntranceHazardColor)
+                return _EntranceHazardGradient;
+
+            if (lightColor == _EntranceLifeColor)
+                return _EntranceLifeGradient;
+
+            return _EntranceNeutralGradient;
+        }
+
+        private static Gradient CreateStaticGradient(Color color, float alpha)
+        {
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[] { new GradientColorKey(color, 0f), new GradientColorKey(Color.clear, 1f) },
+                new[] { new GradientAlphaKey(alpha, 0f), new GradientAlphaKey(0f, 1f) });
+            return gradient;
         }
 
         private void RefreshCaveLifecycleState()
@@ -1489,21 +1540,21 @@ namespace Hecton8.World
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogCaveGenerated(Vector3 position)
         {
-            Debug.Log($"[WorldCaveDirector] Successfully generated cave at {position}");
+            Debug.Log("[WorldCaveDirector] Cave generated.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogNoGeometry(Vector3 position)
         {
-            Debug.LogWarning($"[WorldCaveDirector] Cave generation produced no geometry at {position}");
+            Debug.LogWarning("[WorldCaveDirector] Cave generation produced no geometry.");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogCaveSpawnFailure(Vector3 position, string message)
         {
-            Debug.LogError($"[WorldCaveDirector] Failed to generate cave at {position}: {message}");
+            Debug.LogError(message);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

@@ -88,6 +88,7 @@ namespace Hecton8.Construction
         private readonly List<TemporaryBypassRecord> _temporaryBypassBuffer;
         private readonly List<long> _submittedLinkIds;
         private readonly List<long> _emittedRuptureEdgeVfxKeys;
+        private readonly HashSet<long> _emittedRuptureEdgeVfxLookup;
         private readonly List<uint> _ruptureCascadeAppliedNodeIds;
         private readonly Dictionary<uint, int> _moduleIndexByNodeId;
         private readonly Dictionary<SocketKey, SocketMatchEntry> _socketLookup;
@@ -125,6 +126,8 @@ namespace Hecton8.Construction
             _submittedLinkIds = new List<long>(InitialEdgeCapacity);
             // COLD ALLOC: List<Int64>[128] - emitted rupture edge VFX keys - owner: HabitatGraphManager
             _emittedRuptureEdgeVfxKeys = new List<long>(InitialEdgeCapacity);
+            // COLD ALLOC: HashSet<Int64>[256] - capped duplicate guard for rupture edge VFX keys - owner: HabitatGraphManager
+            _emittedRuptureEdgeVfxLookup = new HashSet<long>(InitialEdgeCapacity * 2);
             // COLD ALLOC: List<UInt32>[64] - one-shot rupture cascade source guard - owner: HabitatGraphManager
             _ruptureCascadeAppliedNodeIds = new List<uint>(safeModuleCapacity);
             // COLD ALLOC: Dictionary<UInt32,Int32>[64] — node-id to module-index lookup for temporary bypass stitching — owner: HabitatGraphManager
@@ -586,9 +589,6 @@ namespace Hecton8.Construction
                     if ((neighborFlags & LogisticsNodeFlags.Ruptured) != 0)
                         continue;
 
-                    if (!HasUnseveredRuntimeEdge(nodeIndex, neighborNodeIndex))
-                        continue;
-
                     BaseModule neighborModule = _moduleBuffer[neighborNodeIndex].BaseModule;
                     if (neighborModule == null ||
                         !neighborModule.isActiveAndEnabled ||
@@ -611,28 +611,6 @@ namespace Hecton8.Construction
                 return 0;
 
             return _nodes[nodeIndex].NetworkId;
-        }
-
-        private bool HasUnseveredRuntimeEdge(int sourceIndex, int destinationIndex)
-        {
-            for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
-            {
-                EdgeRecord edge = _edgeBuffer[edgeIndex];
-                if (edge.Severed)
-                    continue;
-
-                if (edge.SourceIndex == sourceIndex && edge.DestinationIndex == destinationIndex)
-                    return true;
-
-                if (!edge.DirectedOnly &&
-                    edge.SourceIndex == destinationIndex &&
-                    edge.DestinationIndex == sourceIndex)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         private void EnsureRuptureCascadeStateCapacity(int requiredCapacity)
@@ -958,8 +936,8 @@ namespace Hecton8.Construction
 
             Vector3 direction = destinationPosition - sourcePosition;
             float sqrMagnitude = direction.sqrMagnitude;
-            Vector3 forward = sqrMagnitude > 0.0001f ? direction / math.sqrt(sqrMagnitude) : Vector3.up;
-            float resistance = math.max(MinimumEdgeResistance, math.sqrt(math.max(0f, sqrMagnitude)) * EdgeResistancePerMeter);
+            Vector3 forward = ResolveFastDirection(direction, sqrMagnitude);
+            float resistance = math.max(MinimumEdgeResistance, ResolveFastLengthFromSq(sqrMagnitude) * EdgeResistancePerMeter);
 
             _edgeBuffer.Add(new EdgeRecord
             {
@@ -1020,7 +998,7 @@ namespace Hecton8.Construction
                 Vector3 destinationPosition = _moduleBuffer[destinationIndex].Position;
                 Vector3 direction = destinationPosition - sourcePosition;
                 float sqrMagnitude = direction.sqrMagnitude;
-                Vector3 forward = sqrMagnitude > 0.0001f ? direction / math.sqrt(sqrMagnitude) : Vector3.up;
+                Vector3 forward = ResolveFastDirection(direction, sqrMagnitude);
 
                 _edgeBuffer.Add(new EdgeRecord
                 {
@@ -1113,6 +1091,8 @@ namespace Hecton8.Construction
             int reservedDirectedEdgeCapacity = math.max(1, _edgeBuffer.Count * 2);
             EnsureEdgeCapacity(reservedDirectedEdgeCapacity);
             int logicalDirectedEdgeCount = 0;
+            float unsupportedSpanMeters = LogisticsPipeBuilder.UnsupportedSpanMeters;
+            float unsupportedSpanSq = unsupportedSpanMeters * unsupportedSpanMeters;
 
             for (int nodeIndex = 0; nodeIndex <= _nodeCount; nodeIndex++)
                 _edgeOffsets[nodeIndex] = 0;
@@ -1120,8 +1100,11 @@ namespace Hecton8.Construction
             for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
             {
                 EdgeRecord edge = _edgeBuffer[edgeIndex];
-                float distance = math.distance(edge.StartSocketPosition, edge.EndSocketPosition);
-                bool unsupported = distance > LogisticsPipeBuilder.UnsupportedSpanMeters &&
+                edge.ForwardCsrIndex = -1;
+                edge.ReverseCsrIndex = -1;
+                float3 socketDelta = edge.EndSocketPosition - edge.StartSocketPosition;
+                float distanceSq = math.lengthsq(socketDelta);
+                bool unsupported = distanceSq > unsupportedSpanSq &&
                                    !HasIntermediateSupport(edge.SourceIndex, edge.DestinationIndex, edge.StartSocketPosition, edge.EndSocketPosition);
 
                 if (unsupported || HasImplodedEndpoint(edge))
@@ -1130,7 +1113,9 @@ namespace Hecton8.Construction
                 if (!edge.Severed && TryApplyHydroShearRupture(ref edge))
                     MarkEdgeRuptured(ref edge);
 
-                edge.Resistance = math.max(MinimumEdgeResistance, distance * EdgeResistancePerMeter);
+                edge.Resistance = edge.Severed
+                    ? 0f
+                    : math.max(MinimumEdgeResistance, ResolveFastLengthFromSq(distanceSq) * EdgeResistancePerMeter);
                 _edgeBuffer[edgeIndex] = edge;
 
                 if (edge.Severed)
@@ -1164,14 +1149,20 @@ namespace Hecton8.Construction
                 _edgeWriteCursor[edge.SourceIndex] = forwardWriteIndex + 1;
                 _edgeDestinations[forwardWriteIndex] = edge.DestinationIndex;
                 _edgeResistance[forwardWriteIndex] = edge.Resistance;
+                edge.ForwardCsrIndex = forwardWriteIndex;
 
                 if (edge.DirectedOnly)
+                {
+                    _edgeBuffer[edgeIndex] = edge;
                     continue;
+                }
 
                 int reverseWriteIndex = _edgeWriteCursor[edge.DestinationIndex];
                 _edgeWriteCursor[edge.DestinationIndex] = reverseWriteIndex + 1;
                 _edgeDestinations[reverseWriteIndex] = edge.SourceIndex;
                 _edgeResistance[reverseWriteIndex] = edge.Resistance;
+                edge.ReverseCsrIndex = reverseWriteIndex;
+                _edgeBuffer[edgeIndex] = edge;
             }
 
             _edgeCount = logicalDirectedEdgeCount;
@@ -1216,9 +1207,25 @@ namespace Hecton8.Construction
 
         private void MarkEdgeRuptured(ref EdgeRecord edge)
         {
+            InvalidateRuntimeCsrEdge(edge.ForwardCsrIndex);
+            if (!edge.DirectedOnly)
+                InvalidateRuntimeCsrEdge(edge.ReverseCsrIndex);
+
             edge.Flags |= PipeRenderFlags.MaskRuptured;
             edge.Severed = true;
+            edge.ForwardCsrIndex = -1;
+            edge.ReverseCsrIndex = -1;
             RegisterSeveredEdgeRuptureVfx(in edge);
+        }
+
+        private void InvalidateRuntimeCsrEdge(int csrIndex)
+        {
+            if (csrIndex < 0 || !_edgeDestinations.IsCreated || csrIndex >= _edgeDestinations.Length)
+                return;
+
+            _edgeDestinations[csrIndex] = -1;
+            if (_edgeResistance.IsCreated && csrIndex < _edgeResistance.Length)
+                _edgeResistance[csrIndex] = 0f;
         }
 
         private void MarkNodeRuptured(int nodeIndex)
@@ -1245,11 +1252,8 @@ namespace Hecton8.Construction
             }
 
             long linkId = ComposeLinkId(_moduleBuffer[edge.SourceIndex].NodeId, _moduleBuffer[edge.DestinationIndex].NodeId);
-            for (int i = 0; i < _emittedRuptureEdgeVfxKeys.Count; i++)
-            {
-                if (_emittedRuptureEdgeVfxKeys[i] == linkId)
-                    return;
-            }
+            if (_emittedRuptureEdgeVfxLookup.Contains(linkId))
+                return;
 
             AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
             if (fluidDecals == null || _emittedRuptureEdgeVfxKeys.Count >= _emittedRuptureEdgeVfxKeys.Capacity)
@@ -1258,10 +1262,14 @@ namespace Hecton8.Construction
             Vector3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.StartSocketPosition);
             Vector3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.EndSocketPosition);
             Vector3 midpointRuntime = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5f);
-            float spanMeters = math.distance(edge.StartSocketPosition, edge.EndSocketPosition);
-            float radiusScale = math.lerp(0.65f, 1.2f, math.saturate(spanMeters / LogisticsPipeBuilder.UnsupportedSpanMeters));
+            float3 spanDelta = edge.EndSocketPosition - edge.StartSocketPosition;
+            float spanSq = math.lengthsq(spanDelta);
+            float unsupportedSpanMeters = LogisticsPipeBuilder.UnsupportedSpanMeters;
+            float unsupportedSpanSq = unsupportedSpanMeters * unsupportedSpanMeters;
+            float radiusScale = math.lerp(0.65f, 1.2f, math.saturate(spanSq / math.max(0.0001f, unsupportedSpanSq)));
             fluidDecals.RegisterRuptureFluid(midpointRuntime, radiusScale);
             _emittedRuptureEdgeVfxKeys.Add(linkId);
+            _emittedRuptureEdgeVfxLookup.Add(linkId);
         }
 
         private void EvaluateAnchorReachability()
@@ -1907,18 +1915,38 @@ namespace Hecton8.Construction
 
         private static int QuantizeAxis(Vector3 direction)
         {
-            float3 normalized = math.normalizesafe((float3)direction, new float3(0f, 0f, 1f));
-            float absX = math.abs(normalized.x);
-            float absY = math.abs(normalized.y);
-            float absZ = math.abs(normalized.z);
+            if (!math.isfinite(direction.x) || !math.isfinite(direction.y) || !math.isfinite(direction.z))
+                return 4;
+
+            float absX = math.abs(direction.x);
+            float absY = math.abs(direction.y);
+            float absZ = math.abs(direction.z);
+            if ((absX + absY + absZ) <= 0.0001f)
+                return 4;
 
             if (absX >= absY && absX >= absZ)
-                return normalized.x >= 0f ? 0 : 1;
+                return direction.x >= 0f ? 0 : 1;
 
             if (absY >= absX && absY >= absZ)
-                return normalized.y >= 0f ? 2 : 3;
+                return direction.y >= 0f ? 2 : 3;
 
-            return normalized.z >= 0f ? 4 : 5;
+            return direction.z >= 0f ? 4 : 5;
+        }
+
+        private static Vector3 ResolveFastDirection(Vector3 direction, float sqrMagnitude)
+        {
+            if (!math.isfinite(sqrMagnitude) || sqrMagnitude <= 0.0001f)
+                return Vector3.up;
+
+            return direction * math.rsqrt(sqrMagnitude);
+        }
+
+        private static float ResolveFastLengthFromSq(float sqrMagnitude)
+        {
+            float safeSq = math.max(0f, sqrMagnitude);
+            return math.isfinite(safeSq) && safeSq > 0.0001f
+                ? safeSq * math.rsqrt(safeSq)
+                : 0f;
         }
 
         private static int OppositeAxis(int axis)
@@ -2073,6 +2101,8 @@ namespace Hecton8.Construction
             public float3 StartForward;
             public float3 EndForward;
             public float Resistance;
+            public int ForwardCsrIndex;
+            public int ReverseCsrIndex;
             public PipeRenderFlags Flags;
             public bool Severed;
             public bool DirectedOnly;

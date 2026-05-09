@@ -55,12 +55,10 @@ namespace Hecton8.World
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private static CullingManager _instance;
-
         /// <summary>
         /// Singleton instance. Null if not initialized.
         /// </summary>
-        public static CullingManager Instance => _instance;
+        public static CullingManager Instance => GlobalRegistry.Culling;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR SETTINGS
@@ -122,8 +120,8 @@ namespace Hecton8.World
             public Renderer[] ManagedRenderers;
             public bool[] OriginalForceRenderingOffStates;
             public Bounds Bounds;
-            public float CullDistance;
-            public float ReactivateDistance; // CullDistance * (1 - hysteresis)
+            public float CullDistanceSq;
+            public float ReactivateDistanceSq;
             public bool IsActive;
         }
 
@@ -131,7 +129,7 @@ namespace Hecton8.World
         private readonly List<CullableObject> _cullableObjects = new List<CullableObject>(1000);
 
         // COLD ALLOC: HashSet<GameObject>[1000] — O(1) duplicate check — owner: CullingManager
-        private readonly HashSet<GameObject> _registeredObjects = new HashSet<GameObject>();
+        private readonly HashSet<GameObject> _registeredObjects = new HashSet<GameObject>(1000);
 
         // COLD ALLOC: Plane[6] — frustum planes — owner: CullingManager
         private readonly Plane[] _frustumPlanes = new Plane[6];
@@ -183,16 +181,10 @@ namespace Hecton8.World
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
         private void Awake()
         {
-            // Singleton setup
-            if (_instance != null && _instance != this)
+            CullingManager registered = GlobalRegistry.Culling;
+            if (registered != null && registered != this)
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[CullingManager] Duplicate instance detected. Destroying duplicate.");
@@ -200,8 +192,6 @@ namespace Hecton8.World
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
 
             #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[CullingManager] Initialized.");
@@ -233,9 +223,6 @@ namespace Hecton8.World
             TryUnregister();
             TryUnregisterService();
 
-            // Clear singleton
-            if (_instance == this)
-                _instance = null;
         }
 
         private void TryRegister()
@@ -261,6 +248,13 @@ namespace Hecton8.World
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            CullingManager registered = GlobalRegistry.Culling;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterCullingRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Culling, this);
@@ -312,19 +306,19 @@ namespace Hecton8.World
             for (int i = 0; i < _cullableObjects.Count; i++)
             {
                 CullableObject obj = _cullableObjects[i];
-                if (obj.GameObject == null) continue;
+                Transform objTransform = obj.Transform;
+                if (obj.GameObject == null || objTransform == null) continue;
 
                 obj.Bounds = CalculateBounds(obj.GameObject, obj.ManagedRenderers);
 
                 // Calculate squared distance (avoid sqrt)
-                Vector3 delta = obj.Transform.position - camPos;
+                Vector3 delta = objTransform.position - camPos;
                 float sqrDist = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
 
                 if (obj.IsActive)
                 {
                     // Check if should deactivate
-                    float cullDistSqr = obj.CullDistance * obj.CullDistance;
-                    if (sqrDist > cullDistSqr)
+                    if (sqrDist > obj.CullDistanceSq)
                     {
                         SetCullState(ref obj, true);
                         distanceCulled++;
@@ -341,8 +335,7 @@ namespace Hecton8.World
                 else
                 {
                     // Check if should reactivate (with hysteresis)
-                    float reactivateDistSqr = obj.ReactivateDistance * obj.ReactivateDistance;
-                    if (sqrDist < reactivateDistSqr)
+                    if (sqrDist < obj.ReactivateDistanceSq)
                     {
                         SetCullState(ref obj, false);
                     }
@@ -373,14 +366,16 @@ namespace Hecton8.World
             if (obj == null) return;
 
             // Calculate bounds to determine size
-            Bounds bounds = CalculateBounds(obj, renderer != null ? new[] { renderer } : null);
-            float size = bounds.size.magnitude;
+            Bounds bounds = renderer != null
+                ? CalculateSingleRendererBounds(obj, renderer)
+                : CalculateBounds(obj, null);
+            float sizeSq = bounds.size.sqrMagnitude;
 
             // Assign cull distance based on object size
             float cullDistance;
-            if (size < 1f)
+            if (sizeSq < 1f)
                 cullDistance = _smallObjectCullDistance;
-            else if (size < 5f)
+            else if (sizeSq < 25f)
                 cullDistance = _mediumObjectCullDistance;
             else
                 cullDistance = _largeObjectCullDistance;
@@ -434,6 +429,8 @@ namespace Hecton8.World
             // Calculate hysteresis distance
             float hysteresisFactor = 1f - (_hysteresisPercent / 100f);
             float reactivateDistance = cullDistance * hysteresisFactor;
+            float cullDistanceSq = cullDistance * cullDistance;
+            float reactivateDistanceSq = reactivateDistance * reactivateDistance;
 
             var cullableObj = new CullableObject
             {
@@ -442,8 +439,8 @@ namespace Hecton8.World
                 ManagedRenderers = managedRenderers,
                 OriginalForceRenderingOffStates = originalForceRenderingOffStates,
                 Bounds = CalculateBounds(obj, managedRenderers),
-                CullDistance = cullDistance,
-                ReactivateDistance = reactivateDistance,
+                CullDistanceSq = cullDistanceSq,
+                ReactivateDistanceSq = reactivateDistanceSq,
                 IsActive = obj.activeSelf
             };
 
@@ -540,10 +537,19 @@ namespace Hecton8.World
                 if (playerTransform.TryGetComponent(out Camera playerOwnedCamera))
                     return playerOwnedCamera;
 
-                return ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                return playerContext != null ? playerContext.PlayerCamera : null;
             }
 
             return null;
+        }
+
+        private Bounds CalculateSingleRendererBounds(GameObject obj, Renderer renderer)
+        {
+            if (renderer != null)
+                return renderer.bounds;
+
+            return CalculateBounds(obj, null);
         }
 
         private Bounds CalculateBounds(GameObject obj, Renderer[] renderers)
@@ -592,8 +598,11 @@ namespace Hecton8.World
 
             if (renderer != null)
             {
-                managedRenderers = new[] { renderer };
-                originalForceRenderingOffStates = new[] { renderer.forceRenderingOff };
+                // COLD ALLOC: Renderer[1]/bool[1] - persistent per-object culling state, not a temp registration scratch.
+                managedRenderers = new Renderer[1];
+                originalForceRenderingOffStates = new bool[1];
+                managedRenderers[0] = renderer;
+                originalForceRenderingOffStates[0] = renderer.forceRenderingOff;
                 return true;
             }
 

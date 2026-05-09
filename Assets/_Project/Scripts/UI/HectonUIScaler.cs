@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -54,7 +55,7 @@ namespace Hecton8.UI
         private Vector2 _lastAppliedReferenceResolution = Vector2.zero;
         private float _lastAppliedMatch = -1f;
         private Matrix4x4 _uiMatrix = Matrix4x4.identity;
-        private readonly List<HorizontalOrVerticalLayoutGroup> _layoutGroupDisableBuffer = new List<HorizontalOrVerticalLayoutGroup>(16); // COLD ALLOC: List<HorizontalOrVerticalLayoutGroup>[16] - scaler-owned layout group disable scratch - owner: HectonUIScaler
+        private readonly List<HorizontalOrVerticalLayoutGroup> _layoutGroupDisableBuffer = new List<HorizontalOrVerticalLayoutGroup>(16); // COLD ALLOC: List<HorizontalOrVerticalLayoutGroup>[16] — scaler-owned layout group disable scratch — owner: HectonUIScaler
 
         /// <summary>Current matrix applied to the scaled content root.</summary>
         public Matrix4x4 CurrentMatrix => _uiMatrix;
@@ -63,12 +64,18 @@ namespace Hecton8.UI
         public Vector2 ReferenceResolution => referenceResolution;
 
         /// <summary>Scaled content parent used by first-party HUD overlays.</summary>
-        public RectTransform ContentRoot => ResolveContentRootInternal(createIfMissing: Application.isPlaying);
+        public RectTransform ContentRoot => ResolveContentRootInternal(createIfMissing: false);
 
         private void OnEnable()
         {
             ResolveCanvas();
-            EnsureContentRoot();
+            RectTransform contentRoot = EnsureContentRoot();
+            if (contentRoot == null)
+            {
+                _pendingContentRootBootstrap = true;
+                return;
+            }
+
             DisableUnityLayoutGroupsIfConfigured();
             ApplyManualLinearLayout();
             ApplyScale(force: true);
@@ -113,7 +120,13 @@ namespace Hecton8.UI
             if (!_pendingContentRootBootstrap && ResolveContentRootInternal(createIfMissing: false) != null)
                 return;
 
-            EnsureContentRoot();
+            RectTransform contentRoot = EnsureContentRoot();
+            if (contentRoot == null)
+            {
+                _pendingContentRootBootstrap = true;
+                return;
+            }
+
             DisableUnityLayoutGroupsIfConfigured();
             ApplyManualLinearLayout();
             ApplyScale(force: true);
@@ -212,7 +225,14 @@ namespace Hecton8.UI
 
         private RectTransform ResolveContentRootInternal(bool createIfMissing)
         {
-            ResolveCanvas();
+            if (_targetCanvas == null)
+            {
+                if (!createIfMissing)
+                    return null;
+
+                ResolveCanvas();
+            }
+
             if (_targetCanvas == null)
                 return null;
 
@@ -236,7 +256,7 @@ namespace Hecton8.UI
         private void ResolveCanvas()
         {
             if (_targetCanvas == null)
-                _targetCanvas = GetComponent<Canvas>();
+                TryGetComponent(out _targetCanvas);
         }
 
         private RectTransform EnsureContentRoot()
@@ -254,10 +274,10 @@ namespace Hecton8.UI
 
             if (_contentRoot == null)
             {
-                // COLD ALLOC: GameObject[1] â€” matrix-scaled HUD content root â€” owner: HectonUIScaler
+                // COLD ALLOC: GameObject[1] — matrix-scaled HUD content root — owner: HectonUIScaler
                 GameObject rootObject = new GameObject(ContentRootName, typeof(RectTransform));
                 rootObject.layer = canvasRoot.gameObject.layer;
-                _contentRoot = rootObject.GetComponent<RectTransform>();
+                rootObject.TryGetComponent(out _contentRoot);
                 _contentRoot.SetParent(canvasRoot, false);
             }
 
@@ -269,20 +289,23 @@ namespace Hecton8.UI
             if (contentRoot == null)
                 return null;
 
-            contentRoot.anchorMin = new Vector2(0.5f, 0.5f);
-            contentRoot.anchorMax = new Vector2(0.5f, 0.5f);
-            contentRoot.pivot = new Vector2(0.5f, 0.5f);
-            contentRoot.anchoredPosition = Vector2.zero;
-            contentRoot.localRotation = Quaternion.identity;
-            // Stamp the reference rect immediately so stretched HUD children never inherit Unity's 100x100 default RectTransform.
-            contentRoot.sizeDelta = referenceResolution;
-            contentRoot.localScale = Vector3.one;
+            Vector2 centered = new Vector2(0.5f, 0.5f);
+            if (contentRoot.anchorMin != centered)
+                contentRoot.anchorMin = centered;
+            if (contentRoot.anchorMax != centered)
+                contentRoot.anchorMax = centered;
+            if (contentRoot.pivot != centered)
+                contentRoot.pivot = centered;
+            if (contentRoot.anchoredPosition != Vector2.zero)
+                contentRoot.anchoredPosition = Vector2.zero;
+            if (contentRoot.localRotation != Quaternion.identity)
+                contentRoot.localRotation = Quaternion.identity;
             return contentRoot;
         }
 
         private void ApplyScale(bool force)
         {
-            RectTransform contentRoot = EnsureContentRoot();
+            RectTransform contentRoot = ResolveContentRootInternal(createIfMissing: false);
             if (contentRoot == null)
                 return;
 
@@ -350,9 +373,7 @@ namespace Hecton8.UI
         {
             float scaleX = screenWidth / Mathf.Max(1f, referenceResolution.x);
             float scaleY = screenHeight / Mathf.Max(1f, referenceResolution.y);
-            float logWidth = Mathf.Log(Mathf.Max(0.0001f, scaleX), 2f);
-            float logHeight = Mathf.Log(Mathf.Max(0.0001f, scaleY), 2f);
-            float blendedScale = Mathf.Pow(2f, Mathf.Lerp(logWidth, logHeight, matchWidthOrHeight));
+            float blendedScale = math.lerp(scaleX, scaleY, matchWidthOrHeight);
             return Mathf.Clamp(blendedScale, minimumScale, maximumScale);
         }
 
@@ -373,7 +394,7 @@ namespace Hecton8.UI
                 return;
 
             float normalizedWide = Mathf.Clamp01((aspect - ultrawideAspectThreshold) / Mathf.Max(0.01f, 2.4f - ultrawideAspectThreshold));
-            aspectScaleX = Mathf.Lerp(1f, ultrawideScaleX, normalizedWide);
+            aspectScaleX = math.lerp(1f, ultrawideScaleX, normalizedWide);
             horizontalInset = ultrawideHorizontalInset * normalizedWide;
         }
 

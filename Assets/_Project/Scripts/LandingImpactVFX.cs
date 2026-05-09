@@ -315,7 +315,7 @@ namespace Hecton8.VFX
                         speed = suit.impactRecoverySpeed;
                     }
 
-                    float t = 1f - math.exp(-speed * deltaTime);
+                    float t = ResolveDecayBlend(speed, deltaTime);
                     _currentIntensity = math.lerp(_currentIntensity, 0f, t);
                 }
                 else
@@ -477,7 +477,7 @@ namespace Hecton8.VFX
                     speed = suit.impactRecoverySpeed;
                 }
 
-                float t = 1f - math.exp(-speed * deltaTime);
+                float t = ResolveDecayBlend(speed, deltaTime);
                 _currentIntensity = math.lerp(_currentIntensity, 0f, t);
             }
             else
@@ -496,7 +496,7 @@ namespace Hecton8.VFX
 
             if (_waterTransitionIntensity > 0.001f)
             {
-                float t = 1f - math.exp(-_waterTransitionRecoverySpeed * deltaTime);
+                float t = ResolveDecayBlend(_waterTransitionRecoverySpeed, deltaTime);
                 _waterTransitionIntensity = math.lerp(_waterTransitionIntensity, 0f, t);
             }
             else
@@ -515,7 +515,7 @@ namespace Hecton8.VFX
 
             if (_thermoclineTransitionIntensity > 0.001f)
             {
-                float t = 1f - math.exp(-_thermoclineTransitionRecoverySpeed * deltaTime);
+                float t = ResolveDecayBlend(_thermoclineTransitionRecoverySpeed, deltaTime);
                 _thermoclineTransitionIntensity = math.lerp(_thermoclineTransitionIntensity, 0f, t);
             }
             else
@@ -597,6 +597,12 @@ namespace Hecton8.VFX
                 default:
                     return 1f;
             }
+        }
+
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
         }
     }
 }

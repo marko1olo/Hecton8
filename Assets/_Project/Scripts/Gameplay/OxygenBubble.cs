@@ -23,6 +23,7 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -109,6 +110,7 @@ namespace Hecton8.Gameplay
         private BubbleState _state = BubbleState.Floating;
         private float _lifetimeTimer;
         private float _driftOffset;
+        private float _driftPhase;
         private bool _isRegistered;
 
         // Pre-cached player tag for CompareTag
@@ -140,13 +142,15 @@ namespace Hecton8.Gameplay
             }
 
             // Random drift offset for variation
-            _driftOffset = Random.Range(0f, 6.28f); // 0 to 2π
+            _driftOffset = UnityEngine.Random.Range(0f, 6.28f); // 0 to 2π
+            _driftPhase = math.frac(_driftOffset * 0.15915494f);
         }
 
         private void OnEnable()
         {
             _state = BubbleState.Floating;
             _lifetimeTimer = 0f;
+            _driftPhase = math.frac(_driftOffset * 0.15915494f);
 
             RegisterToTick();
         }
@@ -204,16 +208,24 @@ namespace Hecton8.Gameplay
             // Base upward movement
             Vector3 movement = Vector3.up * floatSpeed * deltaTime;
 
-            // Add horizontal drift (sine wave)
+            // Add horizontal drift through a cheap triangle-wave visual fake.
             if (driftAmplitude > 0f)
             {
-                float driftX = Mathf.Sin(Time.time * driftFrequency + _driftOffset) * driftAmplitude * deltaTime;
-                float driftZ = Mathf.Cos(Time.time * driftFrequency * 0.7f + _driftOffset) * driftAmplitude * deltaTime;
+                float safeFrequency = math.max(0f, driftFrequency);
+                _driftPhase = math.frac(_driftPhase + safeFrequency * math.max(0f, deltaTime));
+                float driftX = EvaluateSignedTriangle(_driftPhase) * driftAmplitude * deltaTime;
+                float driftZ = EvaluateSignedTriangle(math.frac((_driftPhase * 0.7f) + 0.25f)) * driftAmplitude * deltaTime;
                 movement.x += driftX;
                 movement.z += driftZ;
             }
 
             _transform.position += movement;
+        }
+
+        private static float EvaluateSignedTriangle(float phase01)
+        {
+            float phase = math.frac(phase01);
+            return 1f - (4f * math.abs(phase - 0.5f));
         }
 
         private void Collect(Transform collector)
@@ -294,7 +306,7 @@ namespace Hecton8.Gameplay
         /// <param name="amount">Oxygen amount to restore.</param>
         public void SetOxygenAmount(float amount)
         {
-            oxygenAmount = Mathf.Max(0f, amount);
+            oxygenAmount = math.max(0f, amount);
         }
 
         /// <summary>
@@ -304,7 +316,8 @@ namespace Hecton8.Gameplay
         {
             _state = BubbleState.Floating;
             _lifetimeTimer = 0f;
-            _driftOffset = Random.Range(0f, 6.28f);
+            _driftOffset = UnityEngine.Random.Range(0f, 6.28f);
+            _driftPhase = math.frac(_driftOffset * 0.15915494f);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -316,8 +329,7 @@ namespace Hecton8.Gameplay
             if (_isRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.Updatables.Contains(this);
+            _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromTick()

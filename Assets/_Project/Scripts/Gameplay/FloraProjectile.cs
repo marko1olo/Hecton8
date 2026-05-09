@@ -1,5 +1,6 @@
 using Hecton8.Audio;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -16,6 +17,8 @@ namespace Hecton8.Gameplay
     public sealed class FloraProjectile : MonoBehaviour, ITickable, IUpdatable, IPoolable
     {
         private const string PlayerTag = "Player";
+        private const float MaxProjectileSpeedMetersPerSecond = 64f;
+        private const float MaxProjectileSpeedSq = MaxProjectileSpeedMetersPerSecond * MaxProjectileSpeedMetersPerSecond;
 
         [Header("Damage")]
         [Tooltip("Damage dealt to the player on hit.")]
@@ -148,11 +151,12 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Initialize(Vector3 velocity)
         {
-            _initialVelocity = velocity;
+            Vector3 safeVelocity = ResolveSafeVelocity(velocity);
+            _initialVelocity = safeVelocity;
             _initialized = true;
 
             if (_rigidbody != null)
-                _rigidbody.linearVelocity = velocity;
+                _rigidbody.linearVelocity = safeVelocity;
         }
 
         private void OnCollisionEnter(Collision collision)
@@ -221,7 +225,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void SetDamage(float amount)
         {
-            damage = Mathf.Max(0f, amount);
+            damage = float.IsFinite(amount) ? math.max(0f, amount) : 0f;
         }
 
         /// <summary>
@@ -241,8 +245,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -252,6 +255,25 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private static Vector3 ResolveSafeVelocity(Vector3 velocity)
+        {
+            if (!IsFinite(velocity))
+                return Vector3.zero;
+
+            float speedSq = velocity.sqrMagnitude;
+            if (!float.IsFinite(speedSq) || speedSq <= 0.000001f)
+                return Vector3.zero;
+
+            return speedSq <= MaxProjectileSpeedSq
+                ? velocity
+                : velocity * (MaxProjectileSpeedMetersPerSecond * math.rsqrt(speedSq));
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
 #if UNITY_EDITOR

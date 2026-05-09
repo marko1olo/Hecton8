@@ -30,13 +30,38 @@ namespace Hecton8.AI
     /// <summary>
     /// Data-only fauna simulation service. Owns Burst job scheduling and keeps visual/GameObject logic out of LOD math.
     /// </summary>
-    public sealed class FaunaSimulationEngine : IFaunaSim
+    public sealed class FaunaSimulationEngine : IFaunaSim, IServiceHeartbeat, IServiceShutdown
     {
+        private FaunaDirector _owner;
+
         /// <inheritdoc />
         public bool IsReady { get; private set; }
 
         /// <inheritdoc />
         public int ResidentSlotCapacity { get; private set; }
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => IsReady ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => IsReady;
+
+        /// <inheritdoc />
+        public void OnServiceShutdown()
+        {
+            if (_owner != null)
+            {
+                _owner.OnServiceShutdown();
+                return;
+            }
+
+            Shutdown();
+        }
+
+        internal void BindOwner(FaunaDirector owner)
+        {
+            _owner = owner;
+        }
 
         /// <summary>
         /// Marks the service ready after residency buffers have been allocated by the owning director.

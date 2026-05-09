@@ -1,5 +1,5 @@
-using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -40,7 +40,7 @@ namespace Hecton8.World
         public void RegisterSwarmWakeImpulse(Vector3 positionWS, Vector3 flowVectorWS, float radiusMeters, float lifetimeSeconds)
         {
             EnsureFlowFieldBuffers();
-            float strength = flowVectorWS.magnitude;
+            float strength = EstimateLength3D(flowVectorWS);
             if (strength <= 0.0001f)
             {
                 _swarmWakeImpulseCount = 0;
@@ -59,6 +59,41 @@ namespace Hecton8.World
             };
             _swarmWakeImpulseCount = 1;
             _swarmWakeImpulseExpireTime = Time.unscaledTime + math.max(0.1f, lifetimeSeconds);
+        }
+
+        private static float2 NormalizeSafe2(float2 value, float2 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > 0.000001f
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float3 NormalizeSafe3(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > 0.000001f
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float InverseLerpSpeedSq(float minSpeed, float maxSpeed, float speedSq)
+        {
+            float minSq = minSpeed * minSpeed;
+            float maxSq = maxSpeed * maxSpeed;
+            return math.saturate((math.max(0f, speedSq) - minSq) / math.max(0.000001f, maxSq - minSq));
+        }
+
+        private static float LerpClamped(float a, float b, float t)
+        {
+            return math.lerp(a, b, math.saturate(t));
+        }
+
+        private static float ResolveCheapRetention(float decay)
+        {
+            decay = math.max(0f, decay);
+            float decaySq = decay * decay;
+            return math.saturate(1f / (1f + decay + (decaySq * 0.48f) + (decaySq * decay * 0.235f)));
         }
 
         /// <summary>
@@ -154,8 +189,8 @@ namespace Hecton8.World
         private void PrepareFlowFieldSamplingSnapshot(Vector3 flowCenter)
         {
             EnsureThreatGridBuffers();
-            EnsureFloat3Capacity(ref _nativeMemory.FlowSamplingDensityGridNative, Mathf.Max(1, _threatSamplingChunkCount * DensityGridCellCount));
-            EnsureFloatNativeCapacity(ref _nativeMemory.FlowNavSupportGridNative, Mathf.Max(1, _ecosystemThreatGridCellCount));
+            EnsureFloat3Capacity(ref _nativeMemory.FlowSamplingDensityGridNative, math.max(1, _threatSamplingChunkCount * DensityGridCellCount));
+            EnsureFloatNativeCapacity(ref _nativeMemory.FlowNavSupportGridNative, math.max(1, _ecosystemThreatGridCellCount));
             ClearFloatGrid(_nativeMemory.FlowNavSupportGridNative, _ecosystemThreatGridCellCount);
 
             if (_threatSamplingChunkCount <= 0 ||
@@ -207,18 +242,19 @@ namespace Hecton8.World
             if (!HasValidThreatGridConfiguration())
                 return;
 
-            Vector3 targetCenter = playerTransform != null
-                ? playerTransform.position
+            bool hasPlayerRuntimePosition = TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition);
+            Vector3 targetCenter = hasPlayerRuntimePosition
+                ? playerRuntimePosition
                 : (_threatGridInitialized ? _ecosystemThreatGridCenter : Vector3.zero);
             Vector3 previousCenter = _threatGridInitialized ? _ecosystemThreatGridCenter : targetCenter;
             ResolveThreatSignalSnapshot(out Vector3 emissionPosition, out float emissionRadius, out float emissionStrength);
 
             float deltaTime = 0.5f;
             if (_lastThreatPropagationTime > float.NegativeInfinity)
-                deltaTime = Mathf.Clamp(Time.time - _lastThreatPropagationTime, 0.05f, 5f);
+                deltaTime = math.clamp(Time.time - _lastThreatPropagationTime, 0.05f, 5f);
 
-            int shiftX = Mathf.RoundToInt((targetCenter.x - previousCenter.x) / threatGridCellSize);
-            int shiftZ = Mathf.RoundToInt((targetCenter.z - previousCenter.z) / threatGridCellSize);
+            int shiftX = (int)math.round((targetCenter.x - previousCenter.x) / threatGridCellSize);
+            int shiftZ = (int)math.round((targetCenter.z - previousCenter.z) / threatGridCellSize);
             float halfExtent = (_ecosystemThreatGridResolution - 1) * 0.5f * threatGridCellSize;
             Vector3 voxelOrigin = new Vector3(
                 targetCenter.x - halfExtent,
@@ -430,12 +466,13 @@ namespace Hecton8.World
                     _nativeMemory.SwarmWakeImpulseNative[0] = default;
             }
 
+            bool hasPlayerRuntimePosition = TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition);
             Vector3 flowCenter = _threatGridInitialized
                 ? _ecosystemThreatGridCenter
-                : (playerTransform != null ? playerTransform.position : Vector3.zero);
+                : (hasPlayerRuntimePosition ? playerRuntimePosition : Vector3.zero);
             PrepareFlowFieldSamplingSnapshot(flowCenter);
 
-            Vector3 playerPosition = playerTransform != null ? playerTransform.position : flowCenter;
+            Vector3 playerPosition = hasPlayerRuntimePosition ? playerRuntimePosition : flowCenter;
             Vector3 hotspotPosition = _currentThreatHotspotLevel >= flowFieldHotspotMinimumThreat
                 ? _currentThreatHotspotPosition
                 : playerPosition;
@@ -443,7 +480,7 @@ namespace Hecton8.World
                 ? _currentThreatHotspotLevel
                 : 0f;
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
-            float2 weatherDirectionXZ = math.normalizesafe(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
+            float2 weatherDirectionXZ = NormalizeSafe2(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
 
             var job = new BuildAbyssalFlowFieldJob
             {
@@ -491,10 +528,10 @@ namespace Hecton8.World
 
             EnsureThermalGridBuffers();
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
-            float2 weatherDirectionXZ = math.normalizesafe(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
+            float2 weatherDirectionXZ = NormalizeSafe2(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
 
-            Vector3 thermalCenter = playerTransform != null
-                ? new Vector3(playerTransform.position.x, waterLevel - (thermalGridDepthMeters * 0.5f), playerTransform.position.z)
+            Vector3 thermalCenter = TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition)
+                ? new Vector3(playerRuntimePosition.x, waterLevel - (thermalGridDepthMeters * 0.5f), playerRuntimePosition.z)
                 : (_abyssalThermalGridInitialized
                     ? _abyssalThermalGridCenter
                     : new Vector3(0f, waterLevel - (thermalGridDepthMeters * 0.5f), 0f));
@@ -629,20 +666,20 @@ namespace Hecton8.World
 
         private void ResolveThreatSignalSnapshot(out Vector3 emissionPosition, out float emissionRadius, out float emissionStrength)
         {
-            emissionPosition = playerTransform != null ? playerTransform.position : Vector3.zero;
+            bool hasPlayerRuntimePosition = TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition);
+            emissionPosition = hasPlayerRuntimePosition ? playerRuntimePosition : Vector3.zero;
             emissionRadius = 0f;
             emissionStrength = 0f;
 
             if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal signal))
             {
                 emissionPosition = signal.Position;
-                float movementSpeed = Mathf.Sqrt(Mathf.Max(0f, signal.MovementSpeedSqr));
-                float movement01 = Mathf.InverseLerp(0.5f, 8.5f, movementSpeed);
-                float tool01 = Mathf.Clamp01(signal.ToolUseNoise01);
-                float transport01 = Mathf.Clamp01(signal.TransportBoost01 * Mathf.Max(1f, signal.TransportSignature));
+                float movement01 = InverseLerpSpeedSq(0.5f, 8.5f, signal.MovementSpeedSqr);
+                float tool01 = math.saturate(signal.ToolUseNoise01);
+                float transport01 = math.saturate(signal.TransportBoost01 * math.max(1f, signal.TransportSignature));
                 float flashlight01 = signal.FlashlightOn ? 1f : 0f;
-                float radius01 = Mathf.Clamp01(Mathf.Max(Mathf.Max(movement01, tool01), Mathf.Max(signal.TransportBoost01, flashlight01 * 0.7f)));
-                emissionRadius = Mathf.Lerp(threatEmissionRadiusMin, threatEmissionRadiusMax, radius01);
+                float radius01 = math.saturate(math.max(math.max(movement01, tool01), math.max(signal.TransportBoost01, flashlight01 * 0.7f)));
+                emissionRadius = LerpClamped(threatEmissionRadiusMin, threatEmissionRadiusMax, radius01);
                 emissionStrength =
                     (movement01 * threatNoiseDepositPerSecond) +
                     ((tool01 + transport01) * threatPulseDepositPerSecond) +
@@ -651,20 +688,20 @@ namespace Hecton8.World
                 return;
             }
 
-            if (playerTransform == null)
+            if (!hasPlayerRuntimePosition)
             {
                 ApplyExternalThreatPulseToSnapshot(ref emissionPosition, ref emissionRadius, ref emissionStrength);
                 return;
             }
 
-            float fallbackMovement01 = Mathf.InverseLerp(0.5f, 8.5f, _playerVelocity.magnitude);
+            float fallbackMovement01 = InverseLerpSpeedSq(0.5f, 8.5f, _playerVelocity.sqrMagnitude);
             if (fallbackMovement01 <= 0f)
             {
                 ApplyExternalThreatPulseToSnapshot(ref emissionPosition, ref emissionRadius, ref emissionStrength);
                 return;
             }
 
-            emissionRadius = Mathf.Lerp(threatEmissionRadiusMin, threatEmissionRadiusMax, fallbackMovement01);
+            emissionRadius = LerpClamped(threatEmissionRadiusMin, threatEmissionRadiusMax, fallbackMovement01);
             emissionStrength = fallbackMovement01 * threatNoiseDepositPerSecond;
             ApplyExternalThreatPulseToSnapshot(ref emissionPosition, ref emissionRadius, ref emissionStrength);
         }
@@ -675,8 +712,8 @@ namespace Hecton8.World
                 return;
 
             emissionPosition = _externalThreatPulsePosition;
-            emissionRadius = Mathf.Max(emissionRadius, _externalThreatPulseRadius);
-            emissionStrength = Mathf.Max(emissionStrength, _externalThreatPulseStrength);
+            emissionRadius = math.max(emissionRadius, _externalThreatPulseRadius);
+            emissionStrength = math.max(emissionStrength, _externalThreatPulseStrength);
         }
 
         private void UpdateThreatHotspot()
@@ -707,7 +744,7 @@ namespace Hecton8.World
             _currentThreatHotspotLevel = bestThreat;
             _currentThreatHotspotPosition = new Vector3(
                 _ecosystemThreatGridCenter.x + ((bestX - halfExtent) * threatGridCellSize),
-                playerTransform != null ? playerTransform.position.y : _ecosystemThreatGridCenter.y,
+                TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition) ? playerRuntimePosition.y : _ecosystemThreatGridCenter.y,
                 _ecosystemThreatGridCenter.z + ((bestZ - halfExtent) * threatGridCellSize));
         }
 
@@ -735,12 +772,12 @@ namespace Hecton8.World
             if (localX < 0f || localZ < 0f || localX > halfExtent * 2f || localZ > halfExtent * 2f)
                 return float2.zero;
 
-            float normalizedX = Mathf.Clamp(localX / cellSize, 0f, resolution - 1);
-            float normalizedZ = Mathf.Clamp(localZ / cellSize, 0f, resolution - 1);
-            int cellX = Mathf.Clamp(Mathf.FloorToInt(normalizedX), 0, resolution - 1);
-            int cellZ = Mathf.Clamp(Mathf.FloorToInt(normalizedZ), 0, resolution - 1);
-            int nextCellX = Mathf.Min(cellX + 1, resolution - 1);
-            int nextCellZ = Mathf.Min(cellZ + 1, resolution - 1);
+            float normalizedX = math.clamp(localX / cellSize, 0f, resolution - 1);
+            float normalizedZ = math.clamp(localZ / cellSize, 0f, resolution - 1);
+            int cellX = math.clamp((int)math.floor(normalizedX), 0, resolution - 1);
+            int cellZ = math.clamp((int)math.floor(normalizedZ), 0, resolution - 1);
+            int nextCellX = math.min(cellX + 1, resolution - 1);
+            int nextCellZ = math.min(cellZ + 1, resolution - 1);
             float fracX = normalizedX - cellX;
             float fracZ = normalizedZ - cellZ;
 
@@ -750,9 +787,10 @@ namespace Hecton8.World
             float2 sample11 = flowField[(nextCellZ * resolution) + nextCellX];
             float2 sampleX0 = math.lerp(sample00, sample10, fracX);
             float2 sampleX1 = math.lerp(sample01, sample11, fracX);
-            return math.normalizesafe(math.lerp(sampleX0, sampleX1, fracZ), float2.zero);
+            return NormalizeSafe2(math.lerp(sampleX0, sampleX1, fracZ), float2.zero);
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GenerateAnchoredVegetationJob : IJobParallelFor
         {
@@ -1001,7 +1039,7 @@ namespace Hecton8.World
                     AbyssalFlowNoiseStrength,
                     AbyssalFlowVerticalStrength,
                     seed);
-                flowDirection = math.normalizesafe(new float2(flowVector.x, flowVector.z), flowDirection);
+                flowDirection = NormalizeSafe2(new float2(flowVector.x, flowVector.z), flowDirection);
                 float rotationJitter = ((Hash01(seed ^ RotationSalt) * 2f) - 1f) * RotationJitterRadians;
                 quaternion rotation = math.mul(BuildAlignedRotation(normal, variation), quaternion.AxisAngle(normal, rotationJitter));
                 Output[index] = new JobInstanceRecord
@@ -1173,6 +1211,7 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct GenerateFloatingVegetationJob : IJobParallelFor
         {
@@ -1285,7 +1324,7 @@ namespace Hecton8.World
                 float heightScale = math.lerp(0.35f, 0.9f, occupancy) * math.lerp(0.85f, 1.05f, scaleLerp);
                 float widthScale = math.lerp(0.8f, 1.25f, math.max(Hash01(seed ^ 0xA24BAEDCu), occupancy));
                 float3 position = new float3(sampleX, WaterLevel + FloatingSurfaceOffset, sampleZ);
-                float2 flowDirection = math.normalizesafe(FloatingFlowDirection, new float2(1f, 0f));
+                float2 flowDirection = NormalizeSafe2(FloatingFlowDirection, new float2(1f, 0f));
                 float3 flowVector = new float3(flowDirection.x, 0f, flowDirection.y);
                 float rotationAngle = (variation * math.PI * 2f) + (((Hash01(seed ^ RotationSalt) * 2f) - 1f) * RotationJitterRadians);
                 quaternion rotation = quaternion.RotateY(rotationAngle);
@@ -1306,6 +1345,7 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SampleBiomassDensityJob : IJobParallelFor
         {
@@ -1325,6 +1365,7 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         public struct VegetationDensityQueryJob : IJobParallelFor
         {
@@ -1363,6 +1404,7 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ThreatPropagationJob : IJobParallelFor
         {
@@ -1419,17 +1461,19 @@ namespace Hecton8.World
 
                 float retentionBoost = math.saturate((attractor.x * SargassumRetentionBoost) + (attractor.y * TechnoJungleRetentionBoost));
                 float decayRate = math.max(0f, DecayPerSecond) * (1f - retentionBoost);
-                float retention = math.exp(-decayRate * math.max(0f, DeltaTime));
+                float retention = ResolveCheapRetention(decayRate * math.max(0f, DeltaTime));
                 float propagatedThreat = diffusedThreat * retention;
 
                 float localDeposit = 0f;
                 if (EmissionStrength > 0f && EmissionRadius > 0f)
                 {
                     float2 delta = new float2(worldX - EmissionPosition.x, worldZ - EmissionPosition.z);
-                    float distance = math.length(delta);
-                    if (distance <= EmissionRadius)
+                    float emissionRadius = math.max(0.01f, EmissionRadius);
+                    float distanceSq = math.lengthsq(delta);
+                    float emissionRadiusSq = emissionRadius * emissionRadius;
+                    if (distanceSq <= emissionRadiusSq)
                     {
-                        float falloff = 1f - math.saturate(distance / math.max(0.01f, EmissionRadius));
+                        float falloff = 1f - math.saturate(distanceSq / emissionRadiusSq);
                         float accumulationBoost = 1f + (attractor.x * SargassumAccumulationBoost) + (attractor.y * TechnoJungleAccumulationBoost);
                         localDeposit = EmissionStrength * DeltaTime * falloff * accumulationBoost;
                     }
@@ -1568,6 +1612,7 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ThreatVoxelizationJob : IJobParallelFor
         {
@@ -1705,6 +1750,7 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct SwarmWakeImpulse
         {
             public float3 Position;
@@ -1713,6 +1759,7 @@ namespace Hecton8.World
             public float Strength;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildAbyssalFlowFieldJob : IJobParallelFor
         {
@@ -1759,11 +1806,11 @@ namespace Hecton8.World
                 float worldZ = GridCenter.z + ((cellZ - halfExtent) * CellSize);
                 float3 position = new float3(worldX, GridCenter.y, worldZ);
 
-                float2 threatGradient = math.normalizesafe(ComputeThreatGradient(cellX, cellZ), float2.zero);
-                float2 toPlayer = math.normalizesafe(new float2(PlayerPosition.x - worldX, PlayerPosition.z - worldZ), threatGradient);
+                float2 threatGradient = NormalizeSafe2(ComputeThreatGradient(cellX, cellZ), float2.zero);
+                float2 toPlayer = NormalizeSafe2(new float2(PlayerPosition.x - worldX, PlayerPosition.z - worldZ), threatGradient);
                 float hotspotBlend = math.saturate(HotspotThreatLevel);
-                float2 toHotspot = math.normalizesafe(new float2(HotspotPosition.x - worldX, HotspotPosition.z - worldZ), toPlayer);
-                float2 seekDir = math.normalizesafe(
+                float2 toHotspot = NormalizeSafe2(new float2(HotspotPosition.x - worldX, HotspotPosition.z - worldZ), toPlayer);
+                float2 seekDir = NormalizeSafe2(
                     (threatGradient * ThreatBias) +
                     (toPlayer * PlayerBias * (1f - hotspotBlend)) +
                     (toHotspot * HotspotBias * hotspotBlend),
@@ -1772,10 +1819,10 @@ namespace Hecton8.World
                 float centerObstacle = SampleObstacle(position);
                 float2 obstacleGradient = ComputeObstacleGradient(position);
                 float obstacleFactor = math.saturate((centerObstacle - ObstacleSoftThreshold) / math.max(0.0001f, ObstacleHardThreshold - ObstacleSoftThreshold));
-                float2 avoidanceDir = math.normalizesafe(-obstacleGradient, new float2(0f, 0f));
+                float2 avoidanceDir = NormalizeSafe2(-obstacleGradient, new float2(0f, 0f));
 
                 float navSupport = SampleNavSupport(cellX, cellZ);
-                float2 roadDir = math.normalizesafe(ComputeNavGradient(cellX, cellZ), seekDir);
+                float2 roadDir = NormalizeSafe2(ComputeNavGradient(cellX, cellZ), seekDir);
                 float2 wakeDir = SampleWakeFlow(position);
                 float2 weatherBias = ResolveWeatherBias();
 
@@ -1788,7 +1835,7 @@ namespace Hecton8.World
                     combined = avoidanceDir * math.max(1f, ObstacleAvoidBias);
 
                 float resolvedSpeed = ResolveFlowSpeedMetersPerSecond(wakeDir);
-                Output[index] = math.normalizesafe(combined, float2.zero) * resolvedSpeed;
+                Output[index] = NormalizeSafe2(combined, float2.zero) * resolvedSpeed;
             }
 
             private float2 ResolveWeatherBias()
@@ -1908,21 +1955,27 @@ namespace Hecton8.World
                     if (impulse.Radius <= 0.0001f || impulse.Strength <= 0.0001f)
                         continue;
 
+                    float radius = math.max(impulse.Radius, 0.001f);
                     float2 planarDelta = new float2(position.x - impulse.Position.x, position.z - impulse.Position.z);
-                    float planarDistance = math.length(planarDelta);
-                    float planarGate = math.saturate(1f - (planarDistance / math.max(impulse.Radius, 0.001f)));
+                    float planarDistanceSq = math.lengthsq(planarDelta);
+                    float radiusSq = radius * radius;
+                    if (planarDistanceSq > radiusSq)
+                        continue;
+
+                    float planarGate = math.saturate(1f - (planarDistanceSq / radiusSq));
                     if (planarGate <= 0f)
                         continue;
 
-                    float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) / math.max(impulse.Radius, 0.001f)));
+                    float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) / radius));
                     float weight = planarGate * planarGate * verticalGate * impulse.Strength;
-                    wake += math.normalizesafe(new float2(impulse.FlowVector.x, impulse.FlowVector.z), float2.zero) * weight;
+                    wake += NormalizeSafe2(new float2(impulse.FlowVector.x, impulse.FlowVector.z), float2.zero) * weight;
                 }
 
                 return wake;
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildAbyssalThermalGridJob : IJobParallelFor
         {
@@ -1992,11 +2045,22 @@ namespace Hecton8.World
                 {
                     float remainingDepth = math.max(1f, GridDepthMeters - ThermoclineDepth);
                     float deep01 = math.saturate((depthMeters - ThermoclineDepth) / remainingDepth);
-                    thermocline01 = 0.24f + (math.pow(deep01, math.max(0.25f, DepthFalloffExponent)) * 0.76f);
+                    thermocline01 = 0.24f + (ApproximateDepthFalloff01(deep01, DepthFalloffExponent) * 0.76f);
                 }
 
                 thermocline01 = math.max(thermocline01, normalizedDepth * 0.18f);
                 return math.lerp(SurfaceTemperatureCelsius, AbyssTemperatureCelsius, math.saturate(thermocline01));
+            }
+
+            private static float ApproximateDepthFalloff01(float value, float exponent)
+            {
+                float t = math.saturate(value);
+                float slowCurve = t * t;
+                float fastCurve = t * (2f - t);
+                float highExponentWeight = math.saturate((exponent - 1f) * 0.5f);
+                float lowExponentWeight = math.saturate(1f - exponent);
+                float shaped = math.lerp(t, slowCurve, highExponentWeight);
+                return math.lerp(shaped, fastCurve, lowExponentWeight);
             }
 
             private float ResolvePocketHeat(float3 position, float depthMeters)
@@ -2037,6 +2101,7 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildAbyssalFlowVolumeJob : IJobParallelFor
         {
@@ -2096,7 +2161,7 @@ namespace Hecton8.World
                 float aboveTemperature = ThermalGrid[GetPhysicalIndex(cellX, math.max(0, layer - 1), cellZ)];
                 float belowTemperature = ThermalGrid[GetPhysicalIndex(cellX, math.min(VerticalResolution - 1, layer + 1), cellZ)];
 
-                float2 weatherDirection = math.normalizesafe(WeatherDirectionXZ, new float2(0f, 1f));
+                float2 weatherDirection = NormalizeSafe2(WeatherDirectionXZ, new float2(0f, 1f));
                 float2 horizontalCurrent = weatherDirection * WeatherCurrentSpeed;
                 float verticalCurrent = (aboveTemperature - belowTemperature) * math.max(0.05f, ThermalIntensity);
                 float thermalOffset = localTemperature - belowTemperature;
@@ -2141,13 +2206,18 @@ namespace Hecton8.World
                     if (impulse.Radius <= 0.0001f || impulse.Strength <= 0.0001f)
                         continue;
 
+                    float radius = math.max(impulse.Radius, 0.001f);
                     float3 delta = position - impulse.Position;
-                    float distance = math.length(delta);
-                    float weight = math.saturate(1f - (distance / math.max(impulse.Radius, 0.001f)));
+                    float distanceSq = math.lengthsq(delta);
+                    float radiusSq = radius * radius;
+                    if (distanceSq > radiusSq)
+                        continue;
+
+                    float weight = math.saturate(1f - (distanceSq / radiusSq));
                     if (weight <= 0f)
                         continue;
 
-                    wake += math.normalizesafe(impulse.FlowVector, float3.zero) * (weight * weight * impulse.Strength);
+                    wake += NormalizeSafe3(impulse.FlowVector, float3.zero) * (weight * weight * impulse.Strength);
                 }
 
                 return wake;
@@ -2171,6 +2241,7 @@ namespace Hecton8.World
             }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct NativeAStarJob : IJob
         {
@@ -2277,7 +2348,7 @@ namespace Hecton8.World
                         if (distanceSq <= 0.000001f || distanceSq > neighborRadiusSq)
                             continue;
 
-                        float distance = math.sqrt(distanceSq);
+                        float distance = EstimateLength3D(delta);
                         float conduitStrength = ResolveConduitStrength(current, neighbor, currentNode, neighborNode, delta, distance, out float conduitAlignment, out float verticalBonus);
                         float allowedVertical = VerticalTolerance + verticalBonus;
                         if ((verticalDelta * verticalDelta) > (allowedVertical * allowedVertical))
@@ -2336,7 +2407,7 @@ namespace Hecton8.World
             {
                 float3 node = ToFloat3(Nodes[nodeIndex]);
                 float3 goal = ToFloat3(Nodes[EndNode]);
-                float horizontalDistance = math.length(node.xz - goal.xz);
+                float horizontalDistance = EstimateLength2D(node.xz - goal.xz);
                 float verticalPenalty = math.abs(node.y - goal.y) * 1.85f;
                 return horizontalDistance + verticalPenalty;
             }
@@ -2377,7 +2448,7 @@ namespace Hecton8.World
                     return 0f;
 
                 float3 edgeDirection = delta / distance;
-                float3 conduitDirection = math.normalize(conduitVector);
+                float3 conduitDirection = NormalizeSafe3(conduitVector, edgeDirection);
                 conduitAlignment = math.saturate((math.dot(edgeDirection, conduitDirection) * 0.5f) + 0.5f);
                 verticalBonus = ConduitVerticalToleranceBonus * combinedStrength * conduitAlignment * math.abs(conduitDirection.y);
                 return combinedStrength;
@@ -2431,7 +2502,7 @@ namespace Hecton8.World
 
                     float radius = math.max(node.Radius, 1f);
                     float2 delta = new float2(position.x - node.Position.x, position.z - node.Position.z);
-                    float gate = 1f - math.saturate(math.length(delta) / radius);
+                    float gate = 1f - math.saturate(EstimateLength2D(delta) / radius);
                     if (gate <= 0f)
                         continue;
 
@@ -2585,8 +2656,29 @@ namespace Hecton8.World
             {
                 return new float3(value.x, value.y, value.z);
             }
+
+            private static float EstimateLength2D(float2 value)
+            {
+                float ax = math.abs(value.x);
+                float ay = math.abs(value.y);
+                float max = math.max(ax, ay);
+                float min = math.min(ax, ay);
+                return max + (min * 0.375f);
+            }
+
+            private static float EstimateLength3D(float3 value)
+            {
+                float ax = math.abs(value.x);
+                float ay = math.abs(value.y);
+                float az = math.abs(value.z);
+                float max = math.max(ax, math.max(ay, az));
+                float min = math.min(ax, math.min(ay, az));
+                float mid = ax + ay + az - max - min;
+                return max + (mid * 0.375f) + (min * 0.25f);
+            }
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct StringPullPathJob : IJob
         {
@@ -2734,11 +2826,11 @@ namespace Hecton8.World
 
                 float3 previous = ToFloat3(InputPath[index - 1]);
                 float3 next = ToFloat3(InputPath[index + 1]);
-                float3 prevDirection = math.normalizesafe(center - previous, new float3(0f, 0f, 1f));
-                float3 nextDirection = math.normalizesafe(next - center, prevDirection);
-                portalAxis = math.normalizesafe(prevDirection + nextDirection, nextDirection);
-                float3 cornerNormal = math.normalizesafe(math.cross(prevDirection, nextDirection), ResolvePerpendicular(portalAxis));
-                float3 side = math.normalizesafe(math.cross(cornerNormal, portalAxis), ResolvePerpendicular(portalAxis));
+                float3 prevDirection = NormalizeSafe3(center - previous, new float3(0f, 0f, 1f));
+                float3 nextDirection = NormalizeSafe3(next - center, prevDirection);
+                portalAxis = NormalizeSafe3(prevDirection + nextDirection, nextDirection);
+                float3 cornerNormal = NormalizeSafe3(math.cross(prevDirection, nextDirection), ResolvePerpendicular(portalAxis));
+                float3 side = NormalizeSafe3(math.cross(cornerNormal, portalAxis), ResolvePerpendicular(portalAxis));
                 float obstacle = SampleObstacle(centerValue);
                 float obstacleT = math.saturate(obstacle / math.max(0.01f, DensityObstacleThreshold));
                 float maxHalfWidth = math.max(0.9f, SampleSpacing * 1.6f);
@@ -3010,7 +3102,7 @@ namespace Hecton8.World
                 int nextIndex = math.min(InputPath.Length - 1, clampedIndex + 1);
                 float3 previous = ToFloat3(InputPath[previousIndex]);
                 float3 next = ToFloat3(InputPath[nextIndex]);
-                return math.normalizesafe(next - previous, new float3(0f, 0f, 1f));
+                return NormalizeSafe3(next - previous, new float3(0f, 0f, 1f));
             }
 
             private static float3 ToFloat3(Vector3 value)
@@ -3023,7 +3115,7 @@ namespace Hecton8.World
                 float3 reference = math.abs(axis.y) < 0.9f
                     ? new float3(0f, 1f, 0f)
                     : new float3(1f, 0f, 0f);
-                return math.normalizesafe(math.cross(reference, axis), new float3(0f, 0f, 1f));
+                return NormalizeSafe3(math.cross(reference, axis), new float3(0f, 0f, 1f));
             }
 
             private static float3 ResolveWindingAxis(
@@ -3035,15 +3127,15 @@ namespace Hecton8.World
                 float3 portalAxis,
                 float3 fallbackAxis)
             {
-                float3 portalCenterDirection = math.normalizesafe((((portalLeft + portalRight) * 0.5f) - apex), portalAxis);
+                float3 portalCenterDirection = NormalizeSafe3(((portalLeft + portalRight) * 0.5f) - apex, portalAxis);
                 if (math.lengthsq(portalCenterDirection) > FunnelEpsilon)
                     return portalCenterDirection;
 
-                float3 wedgeCenterDirection = math.normalizesafe((((left + right) * 0.5f) - apex), portalAxis);
+                float3 wedgeCenterDirection = NormalizeSafe3(((left + right) * 0.5f) - apex, portalAxis);
                 if (math.lengthsq(wedgeCenterDirection) > FunnelEpsilon)
                     return wedgeCenterDirection;
 
-                return math.normalizesafe(portalAxis, math.normalizesafe(fallbackAxis, new float3(0f, 0f, 1f)));
+                return NormalizeSafe3(portalAxis, NormalizeSafe3(fallbackAxis, new float3(0f, 0f, 1f)));
             }
 
             private static float ScalarTripleProduct(float3 axis, float3 b, float3 c)

@@ -26,6 +26,7 @@ namespace Hecton8.UI
     using Hecton8.Tools;
     using System;
     using System.Runtime.CompilerServices;
+    using Unity.Mathematics;
     using UnityEngine;
     using UnityEngine.Events;
 
@@ -53,6 +54,9 @@ namespace Hecton8.UI
 
         [Tooltip("Layers to check for interactables.")]
         [SerializeField] private LayerMask interactionMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+
+        [Tooltip("Seconds between prompt ray probes. Kept short enough for UI feel, but not every render frame.")]
+        [SerializeField, Range(0.016666668f, 0.2f)] private float promptProbeIntervalSeconds = 0.05f;
 
         [Header("â”€â”€ Prompt Templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Default interaction prompt format. {0}=verb, {1}=name")]
@@ -98,11 +102,19 @@ namespace Hecton8.UI
         private string _cachedPrompt;
         private int _cachedPromptStateHash;
         private bool _hasCachedPrompt;
+        private BioReactor _cachedFuelProbeReactor;
+        private PlayerInventory _cachedFuelProbeInventory;
+        private int _cachedFuelProbeInventoryVersion = int.MinValue;
+        private bool _cachedFuelProbeResult;
         private InputManager _subscribedInputManager;
         private bool _hotSwapListenerRegistered;
         private bool _isVisible;
-        private float _cameraRetryTime;
+        private float _cameraRetryTimer;
         private const float CameraRetryInterval = 2f;
+        private const float MinimumPromptProbeIntervalSeconds = 0.016666668f;
+        private const int MaxPromptRaycastHits = 4;
+        private static readonly Vector3 CenterViewportPoint = new Vector3(0.5f, 0.5f, 0f);
+        private float _promptProbeTimer;
         private string _localizedDefaultPromptFormat;
         private string _localizedNoBatteryPrompt;
         private string _localizedSwapBatteryPrompt;
@@ -122,9 +134,12 @@ namespace Hecton8.UI
         private string _localizedVerbTake;
 
         // Pre-allocated raycast buffer
-        private readonly RaycastHit[] _hitBuffer = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe â€” owner: InteractionUI
+        private readonly RaycastHit[] _hitBuffer = new RaycastHit[MaxPromptRaycastHits]; // COLD ALLOC: RaycastHit[4] - bounded prompt probe buffer - owner: InteractionUI
         // COLD ALLOC: char[256] â€” interaction prompt TMP staging buffer â€” owner: InteractionUI
         private readonly char[] _promptCharBuffer = new char[256];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool _promptRaycastBufferSaturationLogged;
+#endif
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  PUBLIC PROPERTIES
@@ -143,7 +158,7 @@ namespace Hecton8.UI
         private void Awake()
         {
             _cachedTransform = transform;
-            _cameraRetryTime = 0f; // Allow immediate first resolve in Tick
+            _cameraRetryTimer = 0f; // Allow immediate first resolve in Tick
             ConfigurePromptText();
             RefreshLocalizedPromptCache();
             SetVisible(false);
@@ -190,42 +205,36 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            float safeDeltaTime = math.max(0f, deltaTime);
+            _cameraRetryTimer = math.max(0f, _cameraRetryTimer - safeDeltaTime);
             // â”€â”€ Check if action is in progress â”€â”€
             PlayerActionController actionController = GlobalRegistry.PlayerActions;
             if (actionController != null && actionController.IsActionInProgress)
             {
                 // Show action in progress prompt, hide interaction prompt
+                _promptProbeTimer = 0f;
                 UpdatePrompt(_localizedActionInProgressPrompt);
                 SetVisible(true);
                 return;
             }
 
-            if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
+            if (_promptProbeTimer > 0f)
             {
-                _mainCamera = null;
-                if (Time.time < _cameraRetryTime)
-                {
-                    if (_isVisible)
-                        SetVisible(false);
-                    return;
-                }
+                _promptProbeTimer = math.max(0f, _promptProbeTimer - safeDeltaTime);
+                return;
+            }
 
-                _cameraRetryTime = Time.time + CameraRetryInterval;
+            _promptProbeTimer = ResolvePromptProbeInterval();
 
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                if (playerContext != null)
-                    _mainCamera = playerContext.PlayerCamera;
-
-                if (_mainCamera == null)
-                {
-                    if (_isVisible)
-                        SetVisible(false);
-                    return;
-                }
+            if (!TryResolveCamera())
+            {
+                if (_isVisible)
+                    SetVisible(false);
+                return;
             }
 
             // Raycast from camera center
-            Ray ray = _mainCamera.ViewportPointToRay(new Vector3(0.5f, 0.5f, 0f));
+            Ray ray = _mainCamera.ViewportPointToRay(CenterViewportPoint);
 
             int hitCount = Physics.RaycastNonAlloc(
                 ray,
@@ -234,17 +243,7 @@ namespace Hecton8.UI
                 interactionMask,
                 QueryTriggerInteraction.Collide);
 
-            if (hitCount <= 0)
-            {
-                if (_isVisible)
-                    SetVisible(false);
-                return;
-            }
-
-            RaycastHit hit = _hitBuffer[0];
-            Collider collider = hit.collider;
-
-            if (collider == null)
+            if (!TryResolveNearestPromptTarget(hitCount, out Collider promptCollider, out InteractableRegistry.TargetInfo targetInfo, out float hitDistance))
             {
                 if (_isVisible)
                     SetVisible(false);
@@ -252,7 +251,7 @@ namespace Hecton8.UI
             }
 
             // Build context-sensitive prompt
-            string prompt = BuildPrompt(collider, hit.distance);
+            string prompt = BuildPrompt(promptCollider, in targetInfo, hitDistance);
 
             if (string.IsNullOrEmpty(prompt))
             {
@@ -269,9 +268,77 @@ namespace Hecton8.UI
         //  PRIVATE â€” PROMPT BUILDING
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private string BuildPrompt(Collider collider, float distance)
+        private bool TryResolveCamera()
         {
-            if (!InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo))
+            if (_mainCamera != null && _mainCamera.isActiveAndEnabled)
+                return true;
+
+            _mainCamera = null;
+            if (_cameraRetryTimer > 0f)
+                return false;
+
+            _cameraRetryTimer = CameraRetryInterval;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                _mainCamera = playerContext.PlayerCamera;
+
+            return _mainCamera != null && _mainCamera.isActiveAndEnabled;
+        }
+
+        private bool TryResolveNearestPromptTarget(
+            int hitCount,
+            out Collider promptCollider,
+            out InteractableRegistry.TargetInfo targetInfo,
+            out float distance)
+        {
+            promptCollider = null;
+            targetInfo = default;
+            distance = float.MaxValue;
+            if (hitCount <= 0)
+            {
+                ClearPromptBuildCache();
+                return false;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (hitCount >= _hitBuffer.Length && !_promptRaycastBufferSaturationLogged)
+            {
+                _promptRaycastBufferSaturationLogged = true;
+                Debug.LogWarning(
+                    "[InteractionUI] Prompt raycast buffer saturated. Increase MaxPromptRaycastHits or narrow interactionMask.",
+                    this);
+            }
+#endif
+
+            int count = math.min(hitCount, _hitBuffer.Length);
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit candidate = _hitBuffer[i];
+                _hitBuffer[i] = default;
+                Collider candidateCollider = candidate.collider;
+                if (candidateCollider == null ||
+                    candidate.distance >= distance ||
+                    !InteractableRegistry.TryResolve(candidateCollider, out InteractableRegistry.TargetInfo candidateInfo) ||
+                    candidateInfo.Interactable == null)
+                {
+                    continue;
+                }
+
+                promptCollider = candidateCollider;
+                targetInfo = candidateInfo;
+                distance = candidate.distance;
+            }
+
+            if (promptCollider != null)
+                return true;
+
+            ClearPromptBuildCache();
+            return false;
+        }
+
+        private string BuildPrompt(Collider collider, in InteractableRegistry.TargetInfo targetInfo, float distance)
+        {
+            if (targetInfo.Interactable == null)
             {
                 ClearPromptBuildCache();
                 return null;
@@ -305,8 +372,8 @@ namespace Hecton8.UI
 
         private string BuildPromptUncached(in InteractableRegistry.TargetInfo targetInfo)
         {
-            if (targetInfo.Interactable != null)
-                return BuildInteractablePrompt(targetInfo);
+            if (targetInfo.BatteryTool != null)
+                return BuildBatteryToolPrompt(targetInfo.BatteryTool);
 
             if (targetInfo.Charger != null)
                 return BuildBatteryChargerPrompt(targetInfo.Charger);
@@ -319,6 +386,9 @@ namespace Hecton8.UI
 
             if (targetInfo.Pickup != null && targetInfo.Pickup.ItemData != null)
                 return BuildPickupItemPrompt(targetInfo.Pickup);
+
+            if (targetInfo.Interactable != null)
+                return BuildInteractablePrompt(targetInfo);
 
             return null;
         }
@@ -359,7 +429,7 @@ namespace Hecton8.UI
                     hash = hash * 31 + (heldBatteryTool.HasBattery ? 1 : 0);
 
                 if (targetInfo.Reactor != null)
-                    hash = hash * 31 + (_inventory != null ? targetInfo.Reactor.CountFuelInInventory(_inventory) : 0);
+                    hash = hash * 31 + (HasDepositableFuelCached(targetInfo.Reactor) ? 1 : 0);
 
                 if (targetInfo.Crate != null)
                     hash = hash * 31 + (targetInfo.Crate.IsEmpty() ? 1 : 0);
@@ -372,7 +442,7 @@ namespace Hecton8.UI
                     {
                         hash = hash * 31 + LocHash.Compute(item.PersistentId);
                         hash = hash * 31 + (item.isConsumable ? 1 : 0);
-                        hash = hash * 31 + Mathf.RoundToInt(item.UseDuration * 10f);
+                        hash = hash * 31 + (int)math.round(item.UseDuration * 10f);
                         hash = hash * 31 + (item.integrityRestore > 0f ? 1 : 0);
                         hash = hash * 31 + (item.thirstRestore > 0f ? 1 : 0);
                         hash = hash * 31 + (item.hungerRestore > 0f ? 1 : 0);
@@ -393,29 +463,12 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Builds prompt for pickup items, showing duration for consumables.
-        /// Zero GC: uses cached StringBuilder for string building.
+        /// Builds prompt for pickup items from the pickup's cached interact text.
         /// </summary>
         private string BuildPickupItemPrompt(PickupItem pickup)
         {
-            ItemData item = pickup.ItemData;
-            if (item == null)
-                return null;
-
-            string itemDisplay = LocalizedInlineIconResolver.BuildItemDisplay(item, item.itemName);
-
-            // Check if this is a consumable with use duration
-            if (item.isConsumable && item.UseDuration > 0f)
-            {
-                // Determine verb based on item type
-                string verb = GetConsumableVerb(item);
-                if (LocalizedInlineIconResolver.TryResolveItemChip(item, out string chip))
-                    verb = chip + " " + verb;
-                // Note: string.Format is acceptable here (not in hot path - only when looking at new item)
-                return string.Format(_localizedConsumableWithDurationFormat, verb, item.UseDuration);
-            }
-
-            return string.Format(_localizedDefaultPromptFormat, _localizedVerbTake, itemDisplay);
+            string cachedText = pickup.GetInteractText();
+            return string.IsNullOrEmpty(cachedText) ? _localizedTakeItemPrompt : cachedText;
         }
 
         /// <summary>
@@ -494,26 +547,54 @@ namespace Hecton8.UI
 
         private string BuildBioReactorPrompt(BioReactor reactor)
         {
-            // Check if player has organic items
-            if (_inventory != null)
-            {
-                int fuelCount = reactor.CountFuelInInventory(_inventory);
-                if (fuelCount > 0)
-                {
-                    LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
-                    if (localization != null)
-                    {
-                        return localization.GetPluralFormatted(
-                            LocalizationKeys.INTERACT_DEPOSIT_FUEL_COUNT,
-                            fuelCount,
-                            fuelCount);
-                    }
+            return HasDepositableFuelCached(reactor) ? _localizedDepositFuelPrompt : _localizedBioReactorPrompt;
+        }
 
-                    return string.Format("{0} ({1})", _localizedDepositFuelPrompt, fuelCount);
+        private bool HasDepositableFuelCached(BioReactor reactor)
+        {
+            int inventoryVersion = _inventory != null ? _inventory.InventoryVersion : int.MinValue;
+            if (ReferenceEquals(_cachedFuelProbeReactor, reactor) &&
+                ReferenceEquals(_cachedFuelProbeInventory, _inventory) &&
+                _cachedFuelProbeInventoryVersion == inventoryVersion)
+            {
+                return _cachedFuelProbeResult;
+            }
+
+            _cachedFuelProbeReactor = reactor;
+            _cachedFuelProbeInventory = _inventory;
+            _cachedFuelProbeInventoryVersion = inventoryVersion;
+            _cachedFuelProbeResult = HasDepositableFuelUncached(reactor);
+            return _cachedFuelProbeResult;
+        }
+
+        private bool HasDepositableFuelUncached(BioReactor reactor)
+        {
+            if (reactor == null || _inventory == null || _inventory.Grid == null || _inventory.ItemCatalog == null)
+                return false;
+
+            InventoryGrid grid = _inventory.Grid;
+            int cols = grid.Columns;
+            int rows = grid.Rows;
+
+            for (int y = 0; y < rows; y++)
+            {
+                for (int x = 0; x < cols; x++)
+                {
+                    int anchorIndex = grid.GetCellAnchorIndex(x, y);
+                    if (anchorIndex < 0 || anchorIndex != y * cols + x)
+                        continue;
+
+                    int itemHashId = _inventory.GetItemHashAt(x, y);
+                    if (itemHashId == 0)
+                        continue;
+
+                    ItemData item = _inventory.ItemCatalog.FindByHash(itemHashId);
+                    if (item != null && reactor.IsAcceptedFuel(item))
+                        return true;
                 }
             }
 
-            return _localizedBioReactorPrompt;
+            return false;
         }
 
         private string BuildStorageCratePrompt(StorageCrate crate)
@@ -617,6 +698,7 @@ namespace Hecton8.UI
             RefreshLocalizedPromptCache();
             _currentPrompt = null;
             _currentPromptSource = null;
+            _promptProbeTimer = 0f;
             ClearPromptBuildCache();
         }
 
@@ -625,6 +707,7 @@ namespace Hecton8.UI
             RefreshLocalizedPromptCache();
             _currentPrompt = null;
             _currentPromptSource = null;
+            _promptProbeTimer = 0f;
             ClearPromptBuildCache();
         }
 
@@ -666,6 +749,7 @@ namespace Hecton8.UI
 
             SubscribeInputManagerIfAvailable();
             RefreshLocalizedPromptCache();
+            _promptProbeTimer = 0f;
             ClearPromptBuildCache();
         }
 
@@ -674,8 +758,7 @@ namespace Hecton8.UI
             if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -683,9 +766,7 @@ namespace Hecton8.UI
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.HotSwapListeners.Contains(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
         }
 
@@ -695,6 +776,10 @@ namespace Hecton8.UI
             _cachedPrompt = null;
             _cachedPromptStateHash = 0;
             _hasCachedPrompt = false;
+            _cachedFuelProbeReactor = null;
+            _cachedFuelProbeInventory = null;
+            _cachedFuelProbeInventoryVersion = int.MinValue;
+            _cachedFuelProbeResult = false;
         }
 
         private void ConfigurePromptText()
@@ -759,8 +844,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
@@ -770,6 +854,11 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private float ResolvePromptProbeInterval()
+        {
+            return math.max(MinimumPromptProbeIntervalSeconds, promptProbeIntervalSeconds);
         }
     }
 }

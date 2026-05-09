@@ -25,6 +25,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -403,12 +404,14 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregister();
         }
 
@@ -420,8 +423,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -589,7 +591,7 @@ namespace Hecton8.Gameplay
             }
 
             // Fire event if level changed significantly
-            if (Mathf.Abs(_currentFuelLevel - previousLevel) > 0.1f)
+            if (math.abs(_currentFuelLevel - previousLevel) > 0.1f)
             {
                 OnFuelLevelChanged?.Invoke(FuelLevel);
             }
@@ -622,7 +624,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float utilization = Mathf.Clamp01(grid.TotalConsumption / totalGeneration);
+            float utilization = math.saturate(grid.TotalConsumption / totalGeneration);
             _debugGridUtilization = utilization;
 
             if (utilization < overheatUtilizationThreshold)
@@ -632,7 +634,7 @@ namespace Hecton8.Gameplay
             }
 
             float parasiteOverheatMultiplier = _hostModule != null
-                ? Mathf.Max(1f, _hostModule.ParasiteBioReactorOverheatMultiplier)
+                ? math.max(1f, _hostModule.ParasiteBioReactorOverheatMultiplier)
                 : 1f;
             _overheatTimer += deltaTime * parasiteOverheatMultiplier;
             if (_hostModule == null || _overheatTimer < overheatGraceSeconds)
@@ -649,7 +651,7 @@ namespace Hecton8.Gameplay
             if (_overheatTimer <= 0f)
                 return;
 
-            _overheatTimer = Mathf.Max(0f, _overheatTimer - (deltaTime * Mathf.Max(0.1f, overheatCooldownRate)));
+            _overheatTimer = math.max(0f, _overheatTimer - (deltaTime * math.max(0.1f, overheatCooldownRate)));
         }
 
         private void TriggerMeltdown()
@@ -676,6 +678,9 @@ namespace Hecton8.Gameplay
                 meltdownMask,
                 QueryTriggerInteraction.Ignore);
 
+            float safeMeltdownRadius = math.max(0.1f, meltdownRadius);
+            float meltdownRadiusSq = safeMeltdownRadius * safeMeltdownRadius;
+            float inverseMeltdownRadiusSq = math.rcp(meltdownRadiusSq);
             int damagedModuleCount = 0;
             int damagedSurvivalCount = 0;
             for (int i = 0; i < hitCount; i++)
@@ -686,8 +691,11 @@ namespace Hecton8.Gameplay
                     continue;
 
                 Vector3 offset = hit.bounds.ClosestPoint(origin) - origin;
-                float distance = offset.magnitude;
-                float damage01 = 1f - Mathf.Clamp01(distance / Mathf.Max(0.1f, meltdownRadius));
+                float distanceSq = math.lengthsq(new float3(offset.x, offset.y, offset.z));
+                if (distanceSq >= meltdownRadiusSq)
+                    continue;
+
+                float damage01 = 1f - math.saturate(distanceSq * inverseMeltdownRadiusSq);
                 if (damage01 <= 0f)
                     continue;
 

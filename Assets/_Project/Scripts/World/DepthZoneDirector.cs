@@ -195,6 +195,7 @@ namespace Hecton8.World
                     nameof(DepthZoneEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -206,6 +207,21 @@ namespace Hecton8.World
                     nameof(DepthZoneEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -253,10 +269,7 @@ namespace Hecton8.World
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static DepthZoneDirector Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
+        public static DepthZoneDirector Instance => GlobalRegistry.DepthZone;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -286,8 +299,13 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
+            DepthZoneDirector registered = GlobalRegistry.DepthZone;
+            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
+
             RebuildZoneMessageCache();
         }
 
@@ -313,9 +331,6 @@ namespace Hecton8.World
         {
             TryUnregister();
             TryUnregisterService();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -593,6 +608,13 @@ namespace Hecton8.World
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            DepthZoneDirector registered = GlobalRegistry.DepthZone;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterDepthZoneRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.DepthZone, this);

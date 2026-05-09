@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.Interaction;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.TextCore;
@@ -199,7 +200,7 @@ namespace Hecton8.UI
             bool hasVisiblePayload = (_textGlyphCount > 0 || _iconCount > 0) &&
                                      (_diagnosticActive || _activeAnchor != null);
             float targetAlpha = hasVisiblePayload ? 1f : 0f;
-            _visibleAlpha = Mathf.MoveTowards(_visibleAlpha, targetAlpha, fadeSpeed * Mathf.Max(0f, dt));
+            _visibleAlpha = MoveTowardsFast(_visibleAlpha, targetAlpha, fadeSpeed * math.max(0f, dt));
             if (_visibleAlpha <= 0.0001f || !hasVisiblePayload)
                 return;
 
@@ -245,6 +246,16 @@ namespace Hecton8.UI
                     _textGlyphCount,
                     tint);
             }
+        }
+
+        private static float MoveTowardsFast(float current, float target, float maxDelta)
+        {
+            float delta = target - current;
+            float safeDelta = math.max(0f, maxDelta);
+            if (math.abs(delta) <= safeDelta)
+                return target;
+
+            return current + (math.sign(delta) * safeDelta);
         }
 
         private void HandleHoverChanged(IInteractable target)
@@ -691,7 +702,7 @@ namespace Hecton8.UI
                 ShadowCastingMode.Off,
                 false,
                 gameObject.layer,
-                null,
+                camera,
                 LightProbeUsage.Off,
                 null);
         }

@@ -39,58 +39,60 @@ namespace Hecton8.AI
             canFlee = archetype.canFlee;
             _lootProfileId = archetype.lootProfileId ?? string.Empty;
 
-            _baseMaxHealth = Mathf.Max(1f, archetype.maxHealth);
+            _baseMaxHealth = math.max(1f, archetype.maxHealth);
             _maxHealth = _baseMaxHealth;
-            _currentHealth = Mathf.Clamp(_currentHealth, 0f, _maxHealth);
+            _currentHealth = math.clamp(_currentHealth, 0f, _maxHealth);
             if (_currentHealth <= 0.001f)
                 _currentHealth = _maxHealth;
 
-            _baseAggroDistance = Mathf.Max(0f, archetype.baseAggroDistance);
-            _baseDeaggroDistance = Mathf.Max(_baseAggroDistance, archetype.baseDeaggroDistance);
-            _baseAttackDamage = Mathf.Max(0f, archetype.attackDamage);
-            _baseCruiseSpeed = Mathf.Max(0.1f, archetype.cruiseSpeed);
-            _baseBurstSpeed = Mathf.Max(_baseCruiseSpeed, archetype.burstSpeed);
-            _baseTurnSpeed = Mathf.Max(0.1f, archetype.turnSpeed);
+            _baseAggroDistance = math.max(0f, archetype.baseAggroDistance);
+            _baseDeaggroDistance = math.max(_baseAggroDistance, archetype.baseDeaggroDistance);
+            _baseAttackDamage = math.max(0f, archetype.attackDamage);
+            _baseCruiseSpeed = math.max(0.1f, archetype.cruiseSpeed);
+            _baseBurstSpeed = math.max(_baseCruiseSpeed, archetype.burstSpeed);
+            _baseTurnSpeed = math.max(0.1f, archetype.turnSpeed);
 
             if (_faunaDataTemplate != null)
             {
                 _baseAggroDistance = _faunaDataTemplate.AggroRadius;
-                _baseDeaggroDistance = Mathf.Max(_baseAggroDistance, Mathf.Max(archetype.baseDeaggroDistance, _baseAggroDistance * 1.35f));
+                _baseDeaggroDistance = math.max(_baseAggroDistance, math.max(archetype.baseDeaggroDistance, _baseAggroDistance * 1.35f));
                 _baseCruiseSpeed = _faunaDataTemplate.SwimSpeed;
-                _baseBurstSpeed = Mathf.Max(_baseCruiseSpeed, _faunaDataTemplate.MaxSpeedMetersPerSecond);
+                _baseBurstSpeed = math.max(_baseCruiseSpeed, _faunaDataTemplate.MaxSpeedMetersPerSecond);
                 _baseTurnSpeed = _faunaDataTemplate.TurnRate;
             }
 
             _sensorSuite.aggroDistance = _baseAggroDistance;
             _sensorSuite.deaggroDistance = _baseDeaggroDistance;
-            _sensorSuite.sleepDistance = Mathf.Max(1f, archetype.sleepDistance);
+            _sensorSuite.sleepDistance = math.max(1f, archetype.sleepDistance);
             if (_faunaDataTemplate != null)
                 _sensorSuite.visionConeAngle = _faunaDataTemplate.VisionConeAngle;
             _sensorSuite.reactToPlayerNoise = archetype.reactToPlayerNoise;
             _sensorSuite.reactToPlayerLight = archetype.reactToPlayerLight;
 
-            _stateMachine.escapeDistance = Mathf.Max(0f, archetype.baseEscapeDistance);
-            _stateMachine.escapeSafeDistance = Mathf.Max(_stateMachine.escapeDistance, archetype.baseEscapeSafeDistance);
-            _stateMachine.stalkDuration = Mathf.Max(0f, archetype.stalkDuration);
-            _stateMachine.stalkRadius = Mathf.Max(1f, archetype.stalkDistance);
+            _stateMachine.escapeDistance = math.max(0f, archetype.baseEscapeDistance);
+            _stateMachine.escapeSafeDistance = math.max(_stateMachine.escapeDistance, archetype.baseEscapeSafeDistance);
+            _stateMachine.stalkDuration = math.max(0f, archetype.stalkDuration);
+            _stateMachine.stalkRadius = math.max(1f, archetype.stalkDistance);
             _stateMachine.useTerritory = archetype.useHomeTerritory;
-            _stateMachine.patrolRadius = Mathf.Max(1f, archetype.homeReturnDistance);
+            _stateMachine.patrolRadius = math.max(1f, archetype.homeReturnDistance);
             _stateMachine.wanderRadius = archetype.useHomeTerritory
-                ? Mathf.Max(1f, archetype.homeWanderRadius)
-                : Mathf.Max(1f, _stateMachine.wanderRadius);
+                ? math.max(1f, archetype.homeWanderRadius)
+                : math.max(1f, _stateMachine.wanderRadius);
 
             _steeringEngine.moveSpeed = _baseCruiseSpeed;
             _steeringEngine.maxSpeed = _baseBurstSpeed;
             _steeringEngine.turnSpeed = _baseTurnSpeed;
             _steeringEngine.rotationSpeed = _baseTurnSpeed;
-            _steeringEngine.swimForce = Mathf.Max(_baseCruiseSpeed, _baseBurstSpeed);
+            _steeringEngine.swimForce = math.max(_baseCruiseSpeed, _baseBurstSpeed);
             ApplyRuntimeEcosystemOverlays();
+            ApplyPassiveRigidbodyCastrationIfRequired();
         }
 
         public void SetSpawnPoint(Vector3 spawnPoint)
         {
             _spawnPoint = spawnPoint;
-            transform.position = spawnPoint;
+            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPoint);
+            ApplyAupPresentationPosition(in spawnAup);
             _utilityBrain.SetSpawnAnchor(spawnPoint);
         }
 
@@ -326,7 +328,7 @@ namespace Hecton8.AI
                 return;
 
             int safeCapacity = math.max(1, capacity);
-            _slots = new NativeArray<float4>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _slots = new NativeArray<float4>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[safeCapacity] - predator memory ring buffer - owner: PredatorMemory
             NativeMemorySentinel.RegisterNativeArray(_slots, nameof(PredatorMemory), nameof(_slots), NativeAllocationLifetime.Session);
             _writeIndex = 0;
             _count = 0;
@@ -413,7 +415,12 @@ namespace Hecton8.AI
 
                 float age01 = 1f - math.saturate(age / safeMaxAge);
                 float3 toMemory = slot.xyz - currentPosition;
-                float distanceWeight = math.rsqrt(math.max(math.lengthsq(toMemory), 1f));
+                float3 absoluteDelta = math.abs(toMemory);
+                float maxAxis = math.cmax(absoluteDelta);
+                float minAxis = math.cmin(absoluteDelta);
+                float midAxis = absoluteDelta.x + absoluteDelta.y + absoluteDelta.z - maxAxis - minAxis;
+                float approxDistance = maxAxis + midAxis * 0.5f + minAxis * 0.25f;
+                float distanceWeight = math.rcp(1f + approxDistance);
                 float candidateWeight = age01 * age01 * distanceWeight;
                 if (candidateWeight <= bestWeight)
                     continue;
@@ -599,10 +606,14 @@ namespace Hecton8.AI
             float acousticTransmission01 = 0f;
             bool hasNoisePlayerTarget = false;
             Vector3 noisePlayerPosition = default;
+            AbsoluteUniversePosition noisePlayerAup = default;
+            bool hasNoisePlayerAup = false;
             if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal playerNoise))
             {
                 hasNoisePlayerTarget = true;
                 noisePlayerPosition = playerNoise.Position;
+                noisePlayerAup = playerNoise.PositionAup;
+                hasNoisePlayerAup = true;
                 float movement01 = math.saturate(math.max(0f, playerNoise.MovementSpeedSqr) / (8.5f * 8.5f));
                 float tool01 = math.saturate(playerNoise.ToolUseNoise01);
                 float transport01 = math.saturate(playerNoise.TransportBoost01 * math.max(1f, playerNoise.TransportSignature));
@@ -616,7 +627,12 @@ namespace Hecton8.AI
             Vector3 floatingOriginOffset = Hecton8.Core.HectonFloatingOrigin.CurrentTotalOffset;
             AbsoluteUniversePositionBlit128 playerTargetAup = default;
             if (hasAnyPlayerTarget)
-                playerTargetAup = AbsoluteUniversePosition.FromRuntimePosition(resolvedPlayerPosition).ToAlignedBlit();
+            {
+                playerTargetAup = !context.HasPlayerTarget && hasNoisePlayerAup
+                    ? noisePlayerAup.ToAlignedBlit()
+                    : AbsoluteUniversePosition.FromRuntimePosition(resolvedPlayerPosition).ToAlignedBlit();
+            }
+
             bool hasPackTarget = _archetype != null && _archetype.usePackHunt && (hasAnyPlayerTarget || context.HasPreyTarget);
             Vector3 resolvedPackTargetPosition = hasAnyPlayerTarget
                 ? resolvedPlayerPosition
@@ -625,7 +641,9 @@ namespace Hecton8.AI
                 ? context.PlayerVelocity
                 : Vector3.zero;
             AbsoluteUniversePositionBlit128 packTargetAup = hasPackTarget
-                ? AbsoluteUniversePosition.FromRuntimePosition(resolvedPackTargetPosition).ToAlignedBlit()
+                ? !context.HasPlayerTarget && hasNoisePlayerAup && hasAnyPlayerTarget
+                    ? noisePlayerAup.ToAlignedBlit()
+                    : AbsoluteUniversePosition.FromRuntimePosition(resolvedPackTargetPosition).ToAlignedBlit()
                 : default;
 
             float chemicalSignal01 = 0f;

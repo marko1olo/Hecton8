@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -16,7 +17,12 @@ namespace Hecton8.Construction
     internal static class LogisticsPipeTransportScheduler
     {
         private const int InitialNodeCapacity = 32;
-        private const float CycleWarningCadenceSeconds = 5f;
+        private const int CycleWarningCadenceFrames = 300;
+        private const string NativeMemoryOwner = nameof(LogisticsPipeTransportScheduler);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private const string CycleRepairWarningMessage = "LogisticsPipeTransportScheduler dropped cyclic edge to keep pipe DAG valid.";
+#endif
         // COLD ALLOC: List<LogisticsPipeNode>[32] — active pipe-node registry for shared DAG transport scheduling — owner: LogisticsPipeTransportScheduler
         private static readonly List<LogisticsPipeNode> _activeNodes = new List<LogisticsPipeNode>(InitialNodeCapacity);
         // COLD ALLOC: NativeArray<int>[capacity] — visited-mark scratch for ordered fallback replay without managed heap churn — owner: LogisticsPipeTransportScheduler
@@ -40,7 +46,7 @@ namespace Hecton8.Construction
         private static int _scheduledNodeCount;
         private static int _lastProcessedFrame = -1;
         private static int _visitStamp = 1;
-        private static float _nextCycleWarningTime;
+        private static int _nextCycleWarningFrame;
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildPipeTopologicalOrderJob : IJob
@@ -120,6 +126,7 @@ namespace Hecton8.Construction
             _scheduledNodeCount = 0;
             _lastProcessedFrame = -1;
             _visitStamp = 1;
+            _nextCycleWarningFrame = 0;
         }
 
         internal static void Register(LogisticsPipeNode node)
@@ -395,6 +402,7 @@ namespace Hecton8.Construction
 
             DisposeNativeArray(ref _visitMarks);
             _visitMarks = nextVisitMarks;
+            RegisterNativeArray(_visitMarks, nameof(_visitMarks));
         }
 
         private static void EnsureSuppressionCapacity(int requiredCount)
@@ -424,20 +432,22 @@ namespace Hecton8.Construction
             DisposeNativeArray(ref _suppressedEdgeDestinations);
             _suppressedEdgeSources = nextSources;
             _suppressedEdgeDestinations = nextDestinations;
+            RegisterNativeArray(_suppressedEdgeSources, nameof(_suppressedEdgeSources));
+            RegisterNativeArray(_suppressedEdgeDestinations, nameof(_suppressedEdgeDestinations));
         }
 
         private static void EnsureNativeCapacity(int nodeCount, int edgeCount)
         {
-            EnsureNativeArray(ref _edgeOffsets, nodeCount + 1);
-            EnsureNativeArray(ref _edgeDestinations, edgeCount);
-            EnsureNativeArray(ref _inputIndegrees, nodeCount);
-            EnsureNativeArray(ref _workIndegrees, nodeCount);
-            EnsureNativeArray(ref _queue, nodeCount);
-            EnsureNativeArray(ref _sortedOrder, nodeCount);
-            EnsureNativeArray(ref _sortedCount, 1);
+            EnsureNativeArray(ref _edgeOffsets, nodeCount + 1, nameof(_edgeOffsets));
+            EnsureNativeArray(ref _edgeDestinations, edgeCount, nameof(_edgeDestinations));
+            EnsureNativeArray(ref _inputIndegrees, nodeCount, nameof(_inputIndegrees));
+            EnsureNativeArray(ref _workIndegrees, nodeCount, nameof(_workIndegrees));
+            EnsureNativeArray(ref _queue, nodeCount, nameof(_queue));
+            EnsureNativeArray(ref _sortedOrder, nodeCount, nameof(_sortedOrder));
+            EnsureNativeArray(ref _sortedCount, 1, nameof(_sortedCount));
         }
 
-        private static void EnsureNativeArray(ref NativeArray<int> array, int requiredLength)
+        private static void EnsureNativeArray(ref NativeArray<int> array, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (array.IsCreated && array.Length >= safeLength)
@@ -445,6 +455,7 @@ namespace Hecton8.Construction
 
             DisposeNativeArray(ref array);
             array = new NativeArray<int>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
 
         private static void RepairCycleOrder(int activeCount)
@@ -590,12 +601,14 @@ namespace Hecton8.Construction
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogCycleRepairWarning(int sourceIndex, int destinationIndex)
         {
-            float currentTime = Time.unscaledTime;
-            if (currentTime < _nextCycleWarningTime)
+            int currentFrame = Time.frameCount;
+            if (currentFrame < _nextCycleWarningFrame)
                 return;
 
-            _nextCycleWarningTime = currentTime + CycleWarningCadenceSeconds;
-            Debug.LogWarning($"LogisticsPipeTransportScheduler dropped cyclic edge {sourceIndex}->{destinationIndex} to keep pipe DAG valid.");
+            _nextCycleWarningFrame = currentFrame + CycleWarningCadenceFrames;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning(CycleRepairWarningMessage);
+#endif
         }
 
         private static void DisposeNativeArray(ref NativeArray<int> array)
@@ -603,6 +616,7 @@ namespace Hecton8.Construction
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
         }
@@ -612,9 +626,15 @@ namespace Hecton8.Construction
             if (!array.IsCreated)
                 return dependency;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             JobHandle disposeHandle = array.Dispose(dependency);
             array = default;
             return disposeHandle;
+        }
+
+        private static void RegisterNativeArray(NativeArray<int> array, string label)
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
     }
 }

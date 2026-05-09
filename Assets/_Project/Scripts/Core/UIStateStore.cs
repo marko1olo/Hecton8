@@ -1,7 +1,9 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -63,7 +65,8 @@ namespace Hecton8.Core
         ToolHeat01 = 13,
         FrostIntensity01 = 14,
         WaterSurfaceY = 15,
-        Count = 16
+        RoomOxygen01 = 16,
+        Count = 17
     }
 
     /// <summary>
@@ -186,9 +189,10 @@ namespace Hecton8.Core
         /// </summary>
         public static float ReadValueOrDefault(UIValueSlotId slotId, float fallback)
         {
-            return TryReadValue(slotId, out UIValueSlot valueSlot)
-                ? valueSlot.Value
-                : fallback;
+            if (!TryReadValue(slotId, out UIValueSlot valueSlot))
+                return FiniteOrZero(fallback);
+
+            return IsFinite(valueSlot.Value) ? valueSlot.Value : FiniteOrZero(fallback);
         }
 
         /// <summary>
@@ -197,7 +201,7 @@ namespace Hecton8.Core
         internal static void SetPDAOpenState(bool isOpen, int activeTab, float openDurationSeconds)
         {
             EnsureInitialized();
-            int tab = Mathf.Clamp(activeTab, 0, ushort.MaxValue);
+            int tab = math.clamp(activeTab, 0, (int)ushort.MaxValue);
             UIStateData state = _states[(int)UIStateSlot.PDA];
             CapturePDAStateSnapshot(in state);
             state.Version++;
@@ -207,7 +211,7 @@ namespace Hecton8.Core
                 : (ushort)(state.Flags & ~(ushort)UIStateFlags.PDAOpen);
             state.PreviousTab = state.ActiveTab;
             state.ActiveTab = (ushort)tab;
-            state.OpenDurationSeconds = Mathf.Max(0f, openDurationSeconds);
+            state.OpenDurationSeconds = FiniteNonNegativeOrZero(openDurationSeconds);
             _states[(int)UIStateSlot.PDA] = state;
         }
 
@@ -221,8 +225,8 @@ namespace Hecton8.Core
             CapturePDAStateSnapshot(in state);
             state.Version++;
             state.CommandSequence++;
-            state.PreviousTab = (ushort)Mathf.Clamp(previousTab, 0, ushort.MaxValue);
-            state.ActiveTab = (ushort)Mathf.Clamp(currentTab, 0, ushort.MaxValue);
+            state.PreviousTab = (ushort)math.clamp(previousTab, 0, (int)ushort.MaxValue);
+            state.ActiveTab = (ushort)math.clamp(currentTab, 0, (int)ushort.MaxValue);
             _states[(int)UIStateSlot.PDA] = state;
         }
 
@@ -235,7 +239,7 @@ namespace Hecton8.Core
             UIStateData state = _states[(int)UIStateSlot.PDA];
             CapturePDAStateSnapshot(in state);
             state.Version++;
-            state.LogEntryCount = (uint)Mathf.Max(0, entryCount);
+            state.LogEntryCount = (uint)math.max(0, entryCount);
             state.LatestLogEventHash = latestEventHash;
             _states[(int)UIStateSlot.PDA] = state;
         }
@@ -257,8 +261,9 @@ namespace Hecton8.Core
                 return;
 
             EnsureInitialized();
+            float safeTimestampSeconds = FiniteNonNegativeOrZero(timestampSeconds);
             _pdaLogEventHashes[_pdaLogWriteIndex] = eventHash;
-            _pdaLogEventTimestamps[_pdaLogWriteIndex] = Mathf.Max(0f, timestampSeconds);
+            _pdaLogEventTimestamps[_pdaLogWriteIndex] = safeTimestampSeconds;
             _pdaLogWriteIndex++;
             if (_pdaLogWriteIndex >= MaxPdaLogEvents)
                 _pdaLogWriteIndex = 0;
@@ -296,9 +301,21 @@ namespace Hecton8.Core
             valueSlot.Flags = inputIsFinite
                 ? valueSlot.Flags & ~ValueSlotInvalidInputSnappedFlag
                 : valueSlot.Flags | ValueSlotInvalidInputSnappedFlag;
-            valueSlot.LastWriteUnscaledTime = Mathf.Max(0f, unscaledTimeSeconds);
+            valueSlot.LastWriteUnscaledTime = FiniteNonNegativeOrZero(unscaledTimeSeconds);
             valueSlot.Version++;
             _valueSlots[index] = valueSlot;
+        }
+
+        /// <summary>
+        /// Invalidates one numeric UI value slot without allocating the store on cold/offline paths.
+        /// </summary>
+        public static void ClearValue(UIValueSlotId slotId)
+        {
+            int index = (int)slotId;
+            if ((uint)index >= ValueSlotCount || !_valueSlots.IsCreated)
+                return;
+
+            _valueSlots[index] = default;
         }
 
         /// <summary>
@@ -319,15 +336,15 @@ namespace Hecton8.Core
             float inventoryLoad01,
             float unscaledTimeSeconds)
         {
-            WriteValue(UIValueSlotId.Oxygen01, Mathf.Clamp01(oxygen01), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.Power01, Mathf.Clamp01(power01), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.Health01, Mathf.Clamp01(health01), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.DepthMeters, Mathf.Max(0f, depthMeters), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.PressureAtm, Mathf.Max(1f, pressureAtm), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.SafeDepthMeters, Mathf.Max(0f, safeDepthMeters), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.OxygenCurrent, Mathf.Max(0f, oxygenCurrent), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.EnergyCurrent, Mathf.Max(0f, energyCurrent), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.IntegrityCurrent, Mathf.Max(0f, integrityCurrent), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.Oxygen01, FiniteSaturate01(oxygen01), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.Power01, FiniteSaturate01(power01), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.Health01, FiniteSaturate01(health01), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.DepthMeters, FiniteNonNegativeOrZero(depthMeters), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.PressureAtm, FiniteAtLeast(pressureAtm, 1f), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.SafeDepthMeters, FiniteNonNegativeOrZero(safeDepthMeters), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.OxygenCurrent, FiniteNonNegativeOrZero(oxygenCurrent), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.EnergyCurrent, FiniteNonNegativeOrZero(energyCurrent), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.IntegrityCurrent, FiniteNonNegativeOrZero(integrityCurrent), unscaledTimeSeconds);
             WriteInventoryLoadState(inventoryMassKg, carryCapacityKg, inventoryLoad01, unscaledTimeSeconds);
         }
 
@@ -336,9 +353,9 @@ namespace Hecton8.Core
         /// </summary>
         public static void WriteInventoryLoadState(float totalMassKg, float carryCapacityKg, float load01, float unscaledTimeSeconds)
         {
-            WriteValue(UIValueSlotId.InventoryMassKg, Mathf.Max(0f, totalMassKg), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.CarryCapacityKg, Mathf.Max(0.01f, carryCapacityKg), unscaledTimeSeconds);
-            WriteValue(UIValueSlotId.InventoryLoad01, Mathf.Clamp01(load01), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.InventoryMassKg, FiniteNonNegativeOrZero(totalMassKg), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.CarryCapacityKg, FiniteAtLeast(carryCapacityKg, 0.01f), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.InventoryLoad01, FiniteSaturate01(load01), unscaledTimeSeconds);
         }
 
         /// <summary>
@@ -346,7 +363,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void WriteFrostIntensity(float frostIntensity01, float unscaledTimeSeconds)
         {
-            WriteValue(UIValueSlotId.FrostIntensity01, Mathf.Clamp01(frostIntensity01), unscaledTimeSeconds);
+            WriteValue(UIValueSlotId.FrostIntensity01, FiniteSaturate01(frostIntensity01), unscaledTimeSeconds);
         }
 
         /// <summary>
@@ -387,7 +404,7 @@ namespace Hecton8.Core
             if (_historyCount <= 0)
                 return false;
 
-            int safeFramesBack = Mathf.Clamp(framesBack, 1, _historyCount);
+            int safeFramesBack = math.clamp(framesBack, 1, _historyCount);
             int index = _historyWriteIndex - safeFramesBack;
             if (index < 0)
                 index += UIStateHistoryFrames;
@@ -464,7 +481,31 @@ namespace Hecton8.Core
 
         private static bool IsFinite(float value)
         {
-            return !float.IsNaN(value) && !float.IsInfinity(value);
+            return math.isfinite(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FiniteSaturate01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FiniteOrZero(float value)
+        {
+            return math.isfinite(value) ? value : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FiniteAtLeast(float value, float minimum)
+        {
+            return math.isfinite(value) ? math.max(minimum, value) : minimum;
         }
     }
 }

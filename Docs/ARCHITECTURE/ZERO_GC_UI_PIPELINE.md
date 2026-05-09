@@ -26,6 +26,18 @@ This project does not push runtime HUD numbers into `TMP_Text.text`. Hot-path UI
 - A UI change that cannot prove this path remains `PENDING VERIFICATION`, regardless of visual correctness.
 - All HUD Canvas components must be split into Static and Dynamic to prevent full-screen vertex rebuilds on text changes.
 
+## Hard Canvas Split Mandate
+
+All HUD Canvas components must be split into Static and Dynamic to prevent full-screen vertex rebuilds on text changes.
+
+Minimum partition:
+
+- Static Canvas: frames, icons, nonchanging visor art, borders, and decorative overlays.
+- Dynamic Low-Cadence Canvas: oxygen, depth, power, inventory counts, and other throttled text.
+- Dynamic High-Cadence Canvas: reticles, active warnings, hit markers, and any 60 Hz text or pulse.
+
+Any HUD prefab or runtime-generated HUD root that mixes static art with changing TMP/Text components in one full-screen Canvas is a `CRITICAL UI REBUILD VIOLATION` until split or removed.
+
 ## May 7 Source Enforcement Scan
 
 Command:

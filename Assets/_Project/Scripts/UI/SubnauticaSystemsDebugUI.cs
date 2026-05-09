@@ -9,6 +9,7 @@ using Hecton8.World;
 using Hecton8.Environment;
 using Hecton8.VFX;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
@@ -156,12 +157,16 @@ namespace Hecton8.UI
         private SoundscapeSystem _resolvedSoundscapeSystem;
         private HectonUnderwaterVisuals _resolvedUnderwaterVisuals;
         private CameraJuiceSystem _resolvedCameraJuiceSystem;
+        private string _lastTitleValue = string.Empty;
         private string _lastSceneValue = string.Empty;
         private string _lastBootstrapValue = string.Empty;
         private string _lastTickCountsValue = string.Empty;
+        private string _lastRenderScaleValue = string.Empty;
         private string _lastRenderPressureValue = string.Empty;
         private string _lastFaunaBiomeValue = string.Empty;
         private string _lastFaunaBiasValue = string.Empty;
+        private string _lastFaunaLimitValue = string.Empty;
+        private string _lastMusicTensionValue = string.Empty;
         private string _lastMusicProfileValue = string.Empty;
         private string _lastSoundscapeTierValue = string.Empty;
         private string _lastUnderwaterBudgetValue = string.Empty;
@@ -186,6 +191,20 @@ namespace Hecton8.UI
         private readonly char[] _cameraBudgetBuffer = new char[40];
         // COLD ALLOC: char[32] - stress harness diagnostic buffer - owner: SubnauticaSystemsDebugUI
         private readonly char[] _stressBuffer = new char[32];
+        private int _lastTickCountsHash;
+        private int _lastTickCountsLength = -1;
+        private int _lastRenderScaleHash;
+        private int _lastRenderScaleLength = -1;
+        private int _lastFaunaLimitHash;
+        private int _lastFaunaLimitLength = -1;
+        private int _lastMusicTensionHash;
+        private int _lastMusicTensionLength = -1;
+        private int _lastUnderwaterBudgetHash;
+        private int _lastUnderwaterBudgetLength = -1;
+        private int _lastCameraBudgetHash;
+        private int _lastCameraBudgetLength = -1;
+        private int _lastStressHash;
+        private int _lastStressLength = -1;
 
         private void Awake()
         {
@@ -224,7 +243,8 @@ namespace Hecton8.UI
                 Debug.Log($"[SubnauticaSystemsDebugUI] OnEnable '{name}' id={EntityId.ToULong(GetEntityId())}.", this);
 #endif
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
-            TryRegister();
+            if (!_registered || !_slowTickRegistered)
+                TryRegister();
             QueueRuntimeBootstrap(forceManagerResolve: true);
         }
 
@@ -259,15 +279,13 @@ namespace Hecton8.UI
 
             if (!_registered)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registered = GlobalRegistry.Updatables.Contains(this);
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             }
 
             if (_slowTickRegistered)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+            _slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -290,7 +308,8 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
-            TryRegister();
+            if (!_registered || !_slowTickRegistered)
+                TryRegister();
 
             _refreshTimer += dt;
             if (_refreshTimer < refreshInterval)
@@ -529,7 +548,8 @@ namespace Hecton8.UI
             CameraJuiceSystem cameraJuice = _resolvedCameraJuiceSystem;
             Scene activeScene = SceneManager.GetActiveScene();
 
-            _titleValue.SetText(enableStressTest ? "LIVE / FORCED PRESSURE" : "LIVE / PASSIVE");
+            string titleLabel = enableStressTest ? "LIVE / FORCED PRESSURE" : "LIVE / PASSIVE";
+            SetDynamicText(_titleValue, titleLabel, ref _lastTitleValue);
 
             string sceneLabel = activeScene.IsValid() ? activeScene.name : MissingLabel;
             SetDynamicText(_sceneValue, sceneLabel, ref _lastSceneValue);
@@ -550,11 +570,13 @@ namespace Hecton8.UI
 
             if (scaler != null)
             {
-                SetFloatText(_renderScaleValue, _renderScaleBuffer, scaler.CurrentRenderScale, "0.00");
+                _lastRenderScaleValue = string.Empty;
+                SetFloatText(_renderScaleValue, _renderScaleBuffer, scaler.CurrentRenderScale, "0.00", ref _lastRenderScaleHash, ref _lastRenderScaleLength);
             }
             else
             {
-                _renderScaleValue.SetText(MissingLabel);
+                InvalidateDynamicBufferCache(ref _lastRenderScaleHash, ref _lastRenderScaleLength);
+                SetDynamicText(_renderScaleValue, MissingLabel, ref _lastRenderScaleValue);
             }
 
             string pressureLabel = scaler != null ? scaler.DebugPressureStateLabel : MissingLabel;
@@ -571,6 +593,7 @@ namespace Hecton8.UI
 
             if (fauna != null)
             {
+                _lastFaunaLimitValue = string.Empty;
                 SetFaunaLimitsText(
                     _faunaLimitValue,
                     fauna.DebugEffectiveSpawnsPerTick,
@@ -579,19 +602,22 @@ namespace Hecton8.UI
             }
             else
             {
-                _faunaLimitValue.SetText(MissingLabel);
+                InvalidateDynamicBufferCache(ref _lastFaunaLimitHash, ref _lastFaunaLimitLength);
+                SetDynamicText(_faunaLimitValue, MissingLabel, ref _lastFaunaLimitValue);
             }
 
             if (music != null)
             {
-                SetFloatText(_musicTensionValue, _musicTensionBuffer, music.CurrentTension01, "0.00");
+                _lastMusicTensionValue = string.Empty;
+                SetFloatText(_musicTensionValue, _musicTensionBuffer, music.CurrentTension01, "0.00", ref _lastMusicTensionHash, ref _lastMusicTensionLength);
                 string profileLabel = music.ActiveResolvedProfile != null ? music.ActiveResolvedProfile.name : MissingLabel;
                 SetDynamicText(_musicProfileValue, profileLabel, ref _lastMusicProfileValue);
                 debugMusicProfile = profileLabel;
             }
             else
             {
-                _musicTensionValue.SetText(MissingLabel);
+                InvalidateDynamicBufferCache(ref _lastMusicTensionHash, ref _lastMusicTensionLength);
+                SetDynamicText(_musicTensionValue, MissingLabel, ref _lastMusicTensionValue);
                 SetDynamicText(_musicProfileValue, MissingLabel, ref _lastMusicProfileValue);
                 debugMusicProfile = MissingLabel;
             }
@@ -614,13 +640,16 @@ namespace Hecton8.UI
                     "0.00",
                     'E',
                     underwaterVisuals.DebugSuspendedMotesEmission,
-                    "0.0");
+                    "0.0",
+                    ref _lastUnderwaterBudgetHash,
+                    ref _lastUnderwaterBudgetLength);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 debugUnderwaterBudget = hasUnderwaterBudget ? "LIVE HUD" : MissingLabel;
 #endif
             }
             else
             {
+                InvalidateDynamicBufferCache(ref _lastUnderwaterBudgetHash, ref _lastUnderwaterBudgetLength);
                 SetDynamicText(_underwaterBudgetValue, MissingLabel, ref _lastUnderwaterBudgetValue);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 debugUnderwaterBudget = MissingLabel;
@@ -641,13 +670,16 @@ namespace Hecton8.UI
                     "0.00",
                     'P',
                     cameraJuice.DebugAdaptivePostFxScale,
-                    "0.00");
+                    "0.00",
+                    ref _lastCameraBudgetHash,
+                    ref _lastCameraBudgetLength);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 debugCameraBudget = hasCameraBudget ? "LIVE HUD" : MissingLabel;
 #endif
             }
             else
             {
+                InvalidateDynamicBufferCache(ref _lastCameraBudgetHash, ref _lastCameraBudgetLength);
                 SetDynamicText(_cameraBudgetValue, MissingLabel, ref _lastCameraBudgetValue);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 debugCameraBudget = MissingLabel;
@@ -661,6 +693,7 @@ namespace Hecton8.UI
             }
             else
             {
+                InvalidateDynamicBufferCache(ref _lastStressHash, ref _lastStressLength);
                 SetDynamicText(_stressValue, DisabledLabel, ref _lastStressValue);
             }
 
@@ -745,17 +778,28 @@ namespace Hecton8.UI
 
         private void ResetDynamicTextCache()
         {
+            _lastTitleValue = string.Empty;
             _lastSceneValue = string.Empty;
             _lastBootstrapValue = string.Empty;
             _lastTickCountsValue = string.Empty;
+            _lastRenderScaleValue = string.Empty;
             _lastRenderPressureValue = string.Empty;
             _lastFaunaBiomeValue = string.Empty;
             _lastFaunaBiasValue = string.Empty;
+            _lastFaunaLimitValue = string.Empty;
+            _lastMusicTensionValue = string.Empty;
             _lastMusicProfileValue = string.Empty;
             _lastSoundscapeTierValue = string.Empty;
             _lastUnderwaterBudgetValue = string.Empty;
             _lastCameraBudgetValue = string.Empty;
             _lastStressValue = string.Empty;
+            InvalidateDynamicBufferCache(ref _lastTickCountsHash, ref _lastTickCountsLength);
+            InvalidateDynamicBufferCache(ref _lastRenderScaleHash, ref _lastRenderScaleLength);
+            InvalidateDynamicBufferCache(ref _lastFaunaLimitHash, ref _lastFaunaLimitLength);
+            InvalidateDynamicBufferCache(ref _lastMusicTensionHash, ref _lastMusicTensionLength);
+            InvalidateDynamicBufferCache(ref _lastUnderwaterBudgetHash, ref _lastUnderwaterBudgetLength);
+            InvalidateDynamicBufferCache(ref _lastCameraBudgetHash, ref _lastCameraBudgetLength);
+            InvalidateDynamicBufferCache(ref _lastStressHash, ref _lastStressLength);
         }
 
         private TextMeshProUGUI CreateLabel(string name, string text, Vector2 anchoredPos, Vector2 size, float fontSize, FontStyles fontStyle)
@@ -808,13 +852,11 @@ namespace Hecton8.UI
             if (!force && now < _nextManagerResolveAttemptTime)
                 return;
 
-            _nextManagerResolveAttemptTime = now + Mathf.Max(0.1f, managerResolveRetryInterval);
+            _nextManagerResolveAttemptTime = now + math.max(0.1f, managerResolveRetryInterval);
 
             if (_resolvedScaler == null)
             {
                 _resolvedScaler = GlobalRegistry.DynamicResolution;
-                if (_resolvedScaler == null)
-                    _resolvedScaler = GlobalRegistry.DynamicResolution;
             }
 
             if (_resolvedFaunaDirector == null)
@@ -832,22 +874,16 @@ namespace Hecton8.UI
             if (_resolvedSoundscapeSystem == null)
             {
                 _resolvedSoundscapeSystem = GlobalRegistry.Soundscape;
-                if (_resolvedSoundscapeSystem == null)
-                    _resolvedSoundscapeSystem = GlobalRegistry.Soundscape;
             }
 
             if (_resolvedUnderwaterVisuals == null)
             {
                 _resolvedUnderwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
-                if (_resolvedUnderwaterVisuals == null)
-                    _resolvedUnderwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
             }
 
             if (_resolvedCameraJuiceSystem == null)
             {
                 _resolvedCameraJuiceSystem = GlobalRegistry.CameraJuice;
-                if (_resolvedCameraJuiceSystem == null)
-                    _resolvedCameraJuiceSystem = GlobalRegistry.CameraJuice;
             }
         }
 
@@ -914,12 +950,27 @@ namespace Hecton8.UI
 
         private static void SetDynamicText(TMP_Text label, string value, ref string cache)
         {
+            if (label == null)
+                return;
+
             string safeValue = string.IsNullOrEmpty(value) ? MissingLabel : value;
             if (cache == safeValue)
                 return;
 
-            cache = safeValue;
-            label.SetText(safeValue);
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                int length = math.min(safeValue.Length, lease.Buffer.Length);
+                safeValue.CopyTo(0, lease.Buffer, 0, length);
+                label.SetCharArray(lease.Buffer, 0, length);
+                cache = safeValue;
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
         }
 
         private void SetTickCountsText(TMP_Text label, int tickables, int fixedTickables, int slowTickables)
@@ -934,10 +985,10 @@ namespace Hecton8.UI
             index = WriteInt(_tickCountsBuffer, index, fixedTickables);
             index = WriteLiteral(_tickCountsBuffer, index, " | S ");
             index = WriteInt(_tickCountsBuffer, index, slowTickables);
-            ApplyDynamicBuffer(label, _tickCountsBuffer, index);
+            ApplyDynamicBufferIfChanged(label, _tickCountsBuffer, index, ref _lastTickCountsHash, ref _lastTickCountsLength);
         }
 
-        private static void SetFloatText(TMP_Text label, char[] buffer, float value, string format)
+        private static void SetFloatText(TMP_Text label, char[] buffer, float value, string format, ref int cachedHash, ref int cachedLength)
         {
             if (label == null || buffer == null)
                 return;
@@ -945,7 +996,7 @@ namespace Hecton8.UI
             if (!value.TryFormat(buffer.AsSpan(), out int length, format))
                 return;
 
-            ApplyDynamicBuffer(label, buffer, length);
+            ApplyDynamicBufferIfChanged(label, buffer, length, ref cachedHash, ref cachedLength);
         }
 
         private void SetFaunaLimitsText(TMP_Text label, float burst, float biomeLimit, float globalLimit)
@@ -960,7 +1011,7 @@ namespace Hecton8.UI
             index = WriteInt(_faunaLimitsBuffer, index, Mathf.RoundToInt(biomeLimit));
             index = WriteLiteral(_faunaLimitsBuffer, index, " | Global ");
             index = WriteInt(_faunaLimitsBuffer, index, Mathf.RoundToInt(globalLimit));
-            ApplyDynamicBuffer(label, _faunaLimitsBuffer, index);
+            ApplyDynamicBufferIfChanged(label, _faunaLimitsBuffer, index, ref _lastFaunaLimitHash, ref _lastFaunaLimitLength);
         }
 
         private static bool SetBudgetTripletText(
@@ -974,7 +1025,9 @@ namespace Hecton8.UI
             string format1,
             char prefix2,
             float value2,
-            string format2)
+            string format2,
+            ref int cachedHash,
+            ref int cachedLength)
         {
             if (label == null || buffer == null)
                 return false;
@@ -985,7 +1038,7 @@ namespace Hecton8.UI
             index = WriteBudgetEntry(buffer, index, prefix1, value1, format1);
             index = WriteLiteral(buffer, index, " | ");
             index = WriteBudgetEntry(buffer, index, prefix2, value2, format2);
-            ApplyDynamicBuffer(label, buffer, index);
+            ApplyDynamicBufferIfChanged(label, buffer, index, ref cachedHash, ref cachedLength);
             return true;
         }
 
@@ -1006,17 +1059,42 @@ namespace Hecton8.UI
 
             index += frameLength;
             index = WriteLiteral(_stressBuffer, index, " MS");
-            ApplyDynamicBuffer(label, _stressBuffer, index);
+            ApplyDynamicBufferIfChanged(label, _stressBuffer, index, ref _lastStressHash, ref _lastStressLength);
         }
 
-        private static void ApplyDynamicBuffer(TMP_Text label, char[] buffer, int length)
+        private static bool ApplyDynamicBufferIfChanged(TMP_Text label, char[] buffer, int length, ref int cachedHash, ref int cachedLength)
         {
             if (label == null || buffer == null)
-                return;
+                return false;
 
             int safeLength = Mathf.Clamp(length, 0, buffer.Length);
+            int hash = ComputeCharHash(buffer, safeLength);
+            if (cachedLength == safeLength && cachedHash == hash)
+                return false;
+
             label.SetCharArray(buffer, 0, safeLength);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+            cachedHash = hash;
+            cachedLength = safeLength;
+            return true;
+        }
+
+        private static void InvalidateDynamicBufferCache(ref int cachedHash, ref int cachedLength)
+        {
+            cachedHash = 0;
+            cachedLength = -1;
+        }
+
+        private static int ComputeCharHash(char[] buffer, int length)
+        {
+            unchecked
+            {
+                int hash = (int)2166136261u;
+                int safeLength = math.max(0, math.min(length, buffer != null ? buffer.Length : 0));
+                for (int i = 0; i < safeLength; i++)
+                    hash = (hash ^ buffer[i]) * 16777619;
+
+                return hash ^ safeLength;
+            }
         }
 
         private static int WriteBudgetEntry(char[] buffer, int index, char prefix, float value, string format)
@@ -1125,6 +1203,7 @@ namespace Hecton8.UI
             _runtimeSnapshotLogged = true;
             _runtimeSnapshotScene = activeScene.name;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log(
                 "[SubnauticaSystemsDebugUI] runtime-snapshot " +
                 "scene=" + activeScene.name +
@@ -1144,6 +1223,7 @@ namespace Hecton8.UI
                 " camera=LIVE HUD" +
                 " stress=" + (enableStressTest ? EnabledLabel : DisabledLabel),
                 this);
+#endif
         }
 
         private bool IsSnapshotRuntimeReady(
@@ -1171,7 +1251,7 @@ namespace Hecton8.UI
             }
 
             if (enableStressTest &&
-                Mathf.Abs(scaler.CurrentRenderScale - forcedRenderScale) > 0.02f)
+                math.abs(scaler.CurrentRenderScale - forcedRenderScale) > 0.02f)
             {
                 return false;
             }

@@ -41,8 +41,8 @@ namespace Hecton8.Editor
             if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
                 Directory.CreateDirectory(directory);
 
-            // COLD ALLOC: StringBuilder[640] — batch-mode anomaly smoke JSON writer — owner: AnomalySmokeBatchAutoRunner
-            var builder = new StringBuilder(640);
+            // COLD ALLOC: StringBuilder[768] — batch-mode anomaly smoke JSON writer — owner: AnomalySmokeBatchAutoRunner
+            var builder = new StringBuilder(768);
             builder.AppendLine("{");
             builder.AppendLine("  \"status\": \"PASS\",");
             builder.AppendLine("  \"runner\": \"AnomalySmokeBatchAutoRunner\",");
@@ -50,6 +50,7 @@ namespace Hecton8.Editor
             builder.AppendLine("  \"passedCases\": " + report.PassedCases + ",");
             AppendCase(builder, "perfectBowl", report.PerfectBowl, false);
             AppendCase(builder, "flatPlane", report.FlatPlane, false);
+            AppendCase(builder, "openEdgeBowl", report.OpenEdgeBowl, false);
             AppendCase(builder, "dualBowl", report.DualBowl, true);
             builder.AppendLine("}");
             File.WriteAllText(ReportPath, builder.ToString());

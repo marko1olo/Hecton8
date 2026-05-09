@@ -36,6 +36,8 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -111,35 +113,35 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                float2 centerUv = abs(input.uv - 0.5) * 2.0;
+                float edge = max(centerUv.x, centerUv.y);
+                float edgeFade = 1.0 - smoothstep(1.0 - _EdgeFade, 1.0, edge);
+                float frameMask = step(0.982, edge);
+                float powerLevel = saturate(_PanelPowerLevel);
+                if (powerLevel < 0.1)
+                {
+                    float dither = Bayer4x4(floor(input.positionCS.xy));
+                    float phosphorBit = step(dither, 0.375);
+                    float ditherAlpha = saturate((phosphorBit * 0.58 + frameMask * 0.42) * edgeFade * _Color.a);
+                    return half4(0.02h, 0.92h, 0.24h, (half)ditherAlpha);
+                }
+
                 half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
                 half4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
                 half4 hudSample = max(baseSample, mainSample);
 
                 float maxRgb = max(max(hudSample.r, hudSample.g), hudSample.b);
                 float rgbAlpha = saturate((maxRgb - _BlackCutoff) * _AlphaGain);
-                float2 centerUv = abs(input.uv - 0.5) * 2.0;
-                float edge = max(centerUv.x, centerUv.y);
-                float edgeFade = 1.0 - smoothstep(1.0 - _EdgeFade, 1.0, edge);
-                float frameMask = step(0.982, edge);
-                float alpha = max(hudSample.a, rgbAlpha) * _Color.a * saturate(_PanelPowerLevel) * edgeFade;
-                float3 color = hudSample.rgb * _Color.rgb * _Intensity * lerp(0.45, 1.0, saturate(_PanelPowerLevel));
+                float alpha = max(hudSample.a, rgbAlpha) * _Color.a * powerLevel * edgeFade;
+                float3 color = hudSample.rgb * _Color.rgb * _Intensity * lerp(0.45, 1.0, powerLevel);
                 color += _Color.rgb * frameMask * _FrameAlpha;
                 alpha = max(alpha, frameMask * _FrameAlpha);
-
-                if (_PanelPowerLevel < 0.1)
-                {
-                    float dither = Bayer4x4(floor(input.positionCS.xy));
-                    float luminance = dot(hudSample.rgb, float3(0.2126, 0.7152, 0.0722)) * max(_Intensity, 0.001);
-                    float phosphorBit = step(0.13 + dither * 0.58, luminance);
-                    float frameBit = frameMask * 0.42;
-                    float phosphorJitter = lerp(0.72, 1.0, dither);
-                    color = float3(0.02, 0.92, 0.24) * (phosphorBit * phosphorJitter + frameBit);
-                    alpha = max(alpha, saturate((phosphorBit * max(rgbAlpha, hudSample.a) + frameBit) * edgeFade * _Color.a));
-                }
 
                 return half4(color, alpha);
             }
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

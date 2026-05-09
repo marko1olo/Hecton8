@@ -22,7 +22,7 @@ namespace Hecton8.UI
     /// Prevents broken bootstrap appearance by maintaining visual continuity during async operations.
     /// </summary>
     [RequireComponent(typeof(CanvasGroup))]
-    public sealed class LoadingScreenController : MonoBehaviour, ITickable, IUpdatable
+    public sealed class LoadingScreenController : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         private enum VisibilityState
         {
@@ -84,6 +84,8 @@ namespace Hecton8.UI
         private float _fadeStartAlpha;
         private float _delayRemaining;
         private float _lastUnscaledTickTime;
+        private bool _runtimeRegistered;
+        private bool _serviceShuttingDown;
         private VisibilityState _visibilityState;
         private int _currentProgressPercent = -1;
         private string _currentTipText = "Loading...";
@@ -96,12 +98,23 @@ namespace Hecton8.UI
 
         private CanvasGroup _canvasGroup;
 
+        public ServiceHeartbeatState HeartbeatState =>
+            _serviceShuttingDown
+                ? ServiceHeartbeatState.Shutdown
+                : _runtimeRegistered
+                    ? ServiceHeartbeatState.Ready
+                    : ServiceHeartbeatState.NotStarted;
+
+        public bool IsServiceReady => _runtimeRegistered && !_serviceShuttingDown;
+
         private void Awake()
         {
             _canvasGroup = GetComponent<CanvasGroup>();
             if (_canvasGroup == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[LoadingScreenController] Missing CanvasGroup component!");
+#endif
                 enabled = false;
                 return;
             }
@@ -113,7 +126,9 @@ namespace Hecton8.UI
 
             if (_loadingPanel == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[LoadingScreenController] Loading panel not assigned!");
+#endif
                 enabled = false;
                 return;
             }
@@ -131,24 +146,40 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            if (_serviceShuttingDown)
+                return;
+
+            TryRegisterRuntime();
             TryRegisterToTickManager();
             _lastUnscaledTickTime = Time.unscaledTime;
         }
 
         private void Start()
         {
+            TryRegisterRuntime();
             TryRegisterToTickManager();
         }
 
         private void OnDisable()
         {
             UnregisterFromTickManager();
+            TryUnregisterRuntime();
             _lastUnscaledTickTime = 0f;
         }
 
         private void OnDestroy()
         {
+            OnServiceShutdown();
+        }
+
+        public void OnServiceShutdown()
+        {
+            if (_serviceShuttingDown)
+                return;
+
+            _serviceShuttingDown = true;
             UnregisterFromTickManager();
+            TryUnregisterRuntime();
         }
 
         /// <summary>
@@ -400,7 +431,7 @@ namespace Hecton8.UI
             float duration = Mathf.Max(0.0001f, _fadeDuration);
             _transitionElapsed += unscaledDeltaTime;
             float t = Mathf.Clamp01(_transitionElapsed / duration);
-            _canvasGroup.alpha = Mathf.Lerp(_fadeStartAlpha, 1f, t);
+            _canvasGroup.alpha = _fadeStartAlpha + ((1f - _fadeStartAlpha) * t);
 
             if (t >= 1f)
                 _visibilityState = VisibilityState.Visible;
@@ -418,7 +449,7 @@ namespace Hecton8.UI
             float duration = Mathf.Max(0.0001f, _fadeDuration);
             _transitionElapsed += unscaledDeltaTime;
             float t = Mathf.Clamp01(_transitionElapsed / duration);
-            _canvasGroup.alpha = Mathf.Lerp(_fadeStartAlpha, 0f, t);
+            _canvasGroup.alpha = _fadeStartAlpha * (1f - t);
 
             if (t < 1f)
                 return;
@@ -451,8 +482,33 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+        }
+
+        private bool TryRegisterRuntime()
+        {
+            if (_runtimeRegistered)
+                return true;
+
+            if (!Application.isPlaying || _serviceShuttingDown)
+                return false;
+
+            LoadingScreenController current = GlobalRegistry.LoadingScreen;
+            if (current != null && current != this)
+                return false;
+
+            GlobalRegistry.RegisterLoadingScreenRuntime(this);
+            _runtimeRegistered = ReferenceEquals(GlobalRegistry.LoadingScreen, this);
+            return _runtimeRegistered;
+        }
+
+        private void TryUnregisterRuntime()
+        {
+            if (!_runtimeRegistered)
+                return;
+
+            GlobalRegistry.UnregisterLoadingScreenRuntime(this);
+            _runtimeRegistered = false;
         }
 
         private void UnregisterFromTickManager()

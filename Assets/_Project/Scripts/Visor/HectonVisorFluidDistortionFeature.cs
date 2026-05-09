@@ -24,6 +24,8 @@ namespace Hecton8.Visor
         private const float HullStressVisorContributionStart01 = 0.65f;
         private const float HullStressVisorContributionInvRange = 1f / (1f - HullStressVisorContributionStart01);
         private const float VisorSpeedSquaredToShader01 = 0.0016f;
+        private const float QuaternionMinimumLengthSq = 0.000001f;
+        private const float QuaternionUnitLengthSqEpsilon = 0.015625f;
 
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader";
@@ -100,6 +102,8 @@ namespace Hecton8.Visor
 
         private sealed class VisorFluidPass : ScriptableRenderPass
         {
+            private const float MaterialFloatEpsilon = 0.0001f;
+
             private sealed class PassData
             {
                 internal TextureHandle source;
@@ -111,6 +115,27 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private RuntimeState _runtimeState;
+            private Material _lastParameterMaterial;
+            private Texture _lastBlueNoiseTexture;
+            private Vector4 _lastLocalVelocityShader = Vector4.positiveInfinity;
+            private float _lastIntensity = float.PositiveInfinity;
+            private float _lastRainIntensity = float.PositiveInfinity;
+            private float _lastWetness = float.PositiveInfinity;
+            private float _lastHullStress = float.PositiveInfinity;
+            private float _lastDistortionStrength = float.PositiveInfinity;
+            private float _lastRunoffSpeed = float.PositiveInfinity;
+            private float _lastDropletScale = float.PositiveInfinity;
+            private float _lastLateralStreakStrength = float.PositiveInfinity;
+            private float _lastForwardStretchStrength = float.PositiveInfinity;
+            private float _lastEdgeStreakStrength = float.PositiveInfinity;
+            private float _lastEdgeFadeExponent = float.PositiveInfinity;
+            private float _lastSpeed01 = float.PositiveInfinity;
+            private float _lastThermalMotionCull = float.PositiveInfinity;
+            private float _lastAmbientLight = float.PositiveInfinity;
+            private float _lastDustStrength = float.PositiveInfinity;
+            private float _lastAmbientDustResponse = float.PositiveInfinity;
+            private float _lastBlueNoiseTilePixels = float.PositiveInfinity;
+            private float _lastHasBlueNoise = float.PositiveInfinity;
 
             public VisorFluidPass()
             {
@@ -192,35 +217,102 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private static void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
+            private void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
             {
-                Vector3 localVelocity = runtimeState.LocalVelocity;
-                float lateralVelocity = Mathf.Clamp(localVelocity.x * 0.08f, -1f, 1f);
-                float forwardVelocity = Mathf.Clamp(localVelocity.z * 0.05f, -1f, 1f);
-                float verticalVelocity = Mathf.Clamp(localVelocity.y * 0.08f, -1f, 1f);
+                if (!ReferenceEquals(_lastParameterMaterial, material))
+                {
+                    ResetMaterialParameterCache();
+                    _lastParameterMaterial = material;
+                }
 
-                material.SetFloat(ShaderConstants.IntensityId, runtimeState.EffectIntensity);
-                material.SetFloat(ShaderConstants.RainIntensityId, runtimeState.RainIntensity);
-                material.SetFloat(ShaderConstants.WetnessId, runtimeState.Wetness);
-                material.SetFloat(ShaderConstants.HullStressId, runtimeState.HullStress);
-                material.SetFloat(ShaderConstants.DistortionStrengthId, Mathf.Max(0f, settings.distortionStrength));
-                material.SetFloat(ShaderConstants.RunoffSpeedId, Mathf.Max(0.1f, settings.runoffSpeed));
-                material.SetFloat(ShaderConstants.DropletScaleId, Mathf.Max(2f, settings.dropletScale));
-                material.SetFloat(ShaderConstants.LateralStreakStrengthId, Mathf.Clamp01(settings.lateralStreakStrength));
-                material.SetFloat(ShaderConstants.ForwardStretchStrengthId, Mathf.Clamp01(settings.forwardStretchStrength));
-                material.SetFloat(ShaderConstants.EdgeStreakStrengthId, Mathf.Clamp01(settings.edgeStreakStrength));
-                material.SetFloat(ShaderConstants.EdgeFadeExponentId, Mathf.Max(0.1f, settings.edgeFadeExponent));
-                float speed01 = math.saturate(localVelocity.sqrMagnitude * VisorSpeedSquaredToShader01);
-                material.SetFloat(ShaderConstants.SpeedId, speed01);
-                material.SetVector(ShaderConstants.LocalVelocityId, new Vector4(lateralVelocity, verticalVelocity, forwardVelocity, 0f));
-                material.SetFloat(ShaderConstants.ThermalMotionCullId, runtimeState.ThermalMotionCull01);
-                material.SetFloat(ShaderConstants.AmbientLightId, runtimeState.AmbientLight01);
-                material.SetFloat(ShaderConstants.DustStrengthId, Mathf.Clamp01(settings.dustStrength));
-                material.SetFloat(ShaderConstants.AmbientDustResponseId, Mathf.Max(0f, settings.ambientDustResponse));
-                material.SetFloat(ShaderConstants.BlueNoiseTilePixelsId, Mathf.Max(16f, settings.blueNoiseTilePixels));
-                material.SetFloat(ShaderConstants.HasBlueNoiseId, settings.blueNoiseTexture != null ? 1f : 0f);
-                if (settings.blueNoiseTexture != null)
+                float effectIntensity = Sanitize01(runtimeState.EffectIntensity);
+                float rainIntensity = Sanitize01(runtimeState.RainIntensity);
+                float wetness = Sanitize01(runtimeState.Wetness);
+                float hullStress = Sanitize01(runtimeState.HullStress);
+                float ambientLight01 = Sanitize01(runtimeState.AmbientLight01);
+                float thermalMotionCull01 = Sanitize01(runtimeState.ThermalMotionCull01);
+                Vector3 localVelocity = SanitizeVector(runtimeState.LocalVelocity);
+                float lateralVelocity = math.clamp(localVelocity.x * 0.08f, -1f, 1f);
+                float forwardVelocity = math.clamp(localVelocity.z * 0.05f, -1f, 1f);
+                float verticalVelocity = math.clamp(localVelocity.y * 0.08f, -1f, 1f);
+                float speed01 = math.saturate(
+                    (localVelocity.x * localVelocity.x +
+                     localVelocity.y * localVelocity.y +
+                     localVelocity.z * localVelocity.z) * VisorSpeedSquaredToShader01);
+                Vector4 localVelocityShader = new Vector4(lateralVelocity, verticalVelocity, forwardVelocity, 0f);
+                float hasBlueNoise = settings.blueNoiseTexture != null ? 1f : 0f;
+
+                SetMaterialFloatIfChanged(material, ShaderConstants.IntensityId, effectIntensity, ref _lastIntensity);
+                SetMaterialFloatIfChanged(material, ShaderConstants.RainIntensityId, rainIntensity, ref _lastRainIntensity);
+                SetMaterialFloatIfChanged(material, ShaderConstants.WetnessId, wetness, ref _lastWetness);
+                SetMaterialFloatIfChanged(material, ShaderConstants.HullStressId, hullStress, ref _lastHullStress);
+                SetMaterialFloatIfChanged(material, ShaderConstants.DistortionStrengthId, SanitizeNonNegative(settings.distortionStrength), ref _lastDistortionStrength);
+                SetMaterialFloatIfChanged(material, ShaderConstants.RunoffSpeedId, SanitizeAtLeast(settings.runoffSpeed, 0.1f), ref _lastRunoffSpeed);
+                SetMaterialFloatIfChanged(material, ShaderConstants.DropletScaleId, SanitizeAtLeast(settings.dropletScale, 2f), ref _lastDropletScale);
+                SetMaterialFloatIfChanged(material, ShaderConstants.LateralStreakStrengthId, Sanitize01(settings.lateralStreakStrength), ref _lastLateralStreakStrength);
+                SetMaterialFloatIfChanged(material, ShaderConstants.ForwardStretchStrengthId, Sanitize01(settings.forwardStretchStrength), ref _lastForwardStretchStrength);
+                SetMaterialFloatIfChanged(material, ShaderConstants.EdgeStreakStrengthId, Sanitize01(settings.edgeStreakStrength), ref _lastEdgeStreakStrength);
+                SetMaterialFloatIfChanged(material, ShaderConstants.EdgeFadeExponentId, SanitizeAtLeast(settings.edgeFadeExponent, 0.1f), ref _lastEdgeFadeExponent);
+                SetMaterialFloatIfChanged(material, ShaderConstants.SpeedId, speed01, ref _lastSpeed01);
+                SetMaterialVectorIfChanged(material, ShaderConstants.LocalVelocityId, localVelocityShader, ref _lastLocalVelocityShader);
+                SetMaterialFloatIfChanged(material, ShaderConstants.ThermalMotionCullId, thermalMotionCull01, ref _lastThermalMotionCull);
+                SetMaterialFloatIfChanged(material, ShaderConstants.AmbientLightId, ambientLight01, ref _lastAmbientLight);
+                SetMaterialFloatIfChanged(material, ShaderConstants.DustStrengthId, Sanitize01(settings.dustStrength), ref _lastDustStrength);
+                SetMaterialFloatIfChanged(material, ShaderConstants.AmbientDustResponseId, SanitizeNonNegative(settings.ambientDustResponse), ref _lastAmbientDustResponse);
+                SetMaterialFloatIfChanged(material, ShaderConstants.BlueNoiseTilePixelsId, SanitizeAtLeast(settings.blueNoiseTilePixels, 16f), ref _lastBlueNoiseTilePixels);
+                SetMaterialFloatIfChanged(material, ShaderConstants.HasBlueNoiseId, hasBlueNoise, ref _lastHasBlueNoise);
+                if (settings.blueNoiseTexture != null && !ReferenceEquals(settings.blueNoiseTexture, _lastBlueNoiseTexture))
+                {
                     material.SetTexture(ShaderConstants.BlueNoiseTexId, settings.blueNoiseTexture);
+                    _lastBlueNoiseTexture = settings.blueNoiseTexture;
+                }
+            }
+
+            private void ResetMaterialParameterCache()
+            {
+                _lastBlueNoiseTexture = null;
+                _lastLocalVelocityShader = Vector4.positiveInfinity;
+                _lastIntensity = float.PositiveInfinity;
+                _lastRainIntensity = float.PositiveInfinity;
+                _lastWetness = float.PositiveInfinity;
+                _lastHullStress = float.PositiveInfinity;
+                _lastDistortionStrength = float.PositiveInfinity;
+                _lastRunoffSpeed = float.PositiveInfinity;
+                _lastDropletScale = float.PositiveInfinity;
+                _lastLateralStreakStrength = float.PositiveInfinity;
+                _lastForwardStretchStrength = float.PositiveInfinity;
+                _lastEdgeStreakStrength = float.PositiveInfinity;
+                _lastEdgeFadeExponent = float.PositiveInfinity;
+                _lastSpeed01 = float.PositiveInfinity;
+                _lastThermalMotionCull = float.PositiveInfinity;
+                _lastAmbientLight = float.PositiveInfinity;
+                _lastDustStrength = float.PositiveInfinity;
+                _lastAmbientDustResponse = float.PositiveInfinity;
+                _lastBlueNoiseTilePixels = float.PositiveInfinity;
+                _lastHasBlueNoise = float.PositiveInfinity;
+            }
+
+            private static void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue)
+            {
+                if (math.abs(value - cachedValue) <= MaterialFloatEpsilon)
+                    return;
+
+                material.SetFloat(shaderId, value);
+                cachedValue = value;
+            }
+
+            private static void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue)
+            {
+                if (math.abs(value.x - cachedValue.x) <= MaterialFloatEpsilon &&
+                    math.abs(value.y - cachedValue.y) <= MaterialFloatEpsilon &&
+                    math.abs(value.z - cachedValue.z) <= MaterialFloatEpsilon &&
+                    math.abs(value.w - cachedValue.w) <= MaterialFloatEpsilon)
+                {
+                    return;
+                }
+
+                material.SetVector(shaderId, value);
+                cachedValue = value;
             }
         }
 
@@ -305,31 +397,57 @@ namespace Hecton8.Visor
             if (renderCamera == null || settings == null)
                 return false;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext == null)
-                return false;
+            Camera playerCamera;
+            HectonPlayerMovement playerMovement;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            {
+                playerCamera = runtimeContext.PlayerCamera;
+                playerMovement = runtimeContext.PlayerMovement;
+            }
+            else
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext == null)
+                    return false;
 
-            Camera playerCamera = playerContext.PlayerCamera;
-            HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
+                playerCamera = playerContext.PlayerCamera;
+                playerMovement = playerContext.PlayerMovement;
+            }
+
             if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
                 return false;
 
-            float wetness = playerMovement != null ? Mathf.Clamp01(playerMovement.CurrentWetLensIntensity01) : 0f;
-            float hullStress = playerMovement != null ? Mathf.Clamp01(playerMovement.CurrentHullStress01) : 0f;
-            float ambientLight01 = ResolveAmbientLight01();
+            Transform playerCameraTransform = playerCamera.transform;
+            float wetness = playerMovement != null ? Sanitize01(playerMovement.CurrentWetLensIntensity01) : 0f;
+            float hullStress = playerMovement != null ? Sanitize01(playerMovement.CurrentHullStress01) : 0f;
+            float dustStrength = Sanitize01(settings.dustStrength);
+            float ambientDustResponse = SanitizeNonNegative(settings.ambientDustResponse);
+            float ambientLight01 = 0f;
+            float dustContribution = 0f;
+            if (dustStrength > 0.001f && ambientDustResponse > 0.001f)
+            {
+                ambientLight01 = Sanitize01(ResolveAmbientLight01());
+                dustContribution = math.saturate(ambientLight01 * dustStrength * ambientDustResponse);
+            }
+
             float hullContribution = math.saturate(
                 math.saturate((hullStress - HullStressVisorContributionStart01) * HullStressVisorContributionInvRange) *
-                math.saturate(settings.hullStressContribution));
-            float dustContribution = math.saturate(ambientLight01 * math.saturate(settings.dustStrength) * math.max(0f, settings.ambientDustResponse));
+                Sanitize01(settings.hullStressContribution));
             float effectIntensity = math.saturate(math.max(math.max(wetness, hullContribution), dustContribution));
-            float rainIntensity = Mathf.Clamp01(Shader.GetGlobalFloat(ShaderConstants.RainIntensityId));
+            float rainIntensity = Sanitize01(Shader.GetGlobalFloat(ShaderConstants.RainIntensityId));
             if (effectIntensity <= 0.001f && rainIntensity <= 0.001f)
                 return false;
 
-            Vector3 localVelocity = playerMovement != null
-                ? ResolveCameraLocalVelocity(playerCamera.transform, playerMovement.InterpolatedLinearVelocity)
-                : Vector3.zero;
-            float thermalMotionCull01 = localVelocity.sqrMagnitude > ThermalDistortionCullSpeedMetersPerSecondSq ? 1f : 0f;
+            Vector3 localVelocity = Vector3.zero;
+            float fluidVelocityActivity = math.max(wetness, hullStress);
+            if (playerMovement != null && fluidVelocityActivity > 0.001f)
+                localVelocity = ResolveCameraLocalVelocity(playerCameraTransform, playerMovement.InterpolatedLinearVelocity);
+
+            float localVelocitySq =
+                localVelocity.x * localVelocity.x +
+                localVelocity.y * localVelocity.y +
+                localVelocity.z * localVelocity.z;
+            float thermalMotionCull01 = localVelocitySq > ThermalDistortionCullSpeedMetersPerSecondSq ? 1f : 0f;
             runtimeState = new RuntimeState(wetness, hullStress, localVelocity, ambientLight01, effectIntensity, rainIntensity, thermalMotionCull01);
             return true;
         }
@@ -339,20 +457,64 @@ namespace Hecton8.Visor
             if (cameraTransform == null)
                 return Vector3.zero;
 
-            Vector3 cameraRight = cameraTransform.right;
-            Vector3 cameraUp = cameraTransform.up;
-            Vector3 cameraForward = cameraTransform.forward;
+            worldVelocity = SanitizeVector(worldVelocity);
+            Quaternion cameraRotation = cameraTransform.rotation;
+            if (!TrySanitizeQuaternion(cameraRotation, out cameraRotation))
+                return Vector3.zero;
+
+            Vector3 cameraRight = cameraRotation * Vector3.right;
+            Vector3 cameraUp = cameraRotation * Vector3.up;
+            Vector3 cameraForward = cameraRotation * Vector3.forward;
             return new Vector3(
                 Vector3.Dot(worldVelocity, cameraRight),
                 Vector3.Dot(worldVelocity, cameraUp),
                 Vector3.Dot(worldVelocity, cameraForward));
         }
 
+        private static bool TrySanitizeQuaternion(Quaternion value, out Quaternion sanitized)
+        {
+            float4 q = new float4(value.x, value.y, value.z, value.w);
+            float lengthSq = math.lengthsq(q);
+            if (!math.all(math.isfinite(q)) || !math.isfinite(lengthSq) || lengthSq <= QuaternionMinimumLengthSq)
+            {
+                sanitized = Quaternion.identity;
+                return false;
+            }
+
+            if (math.abs(lengthSq - 1f) > QuaternionUnitLengthSqEpsilon)
+                q *= math.rsqrt(lengthSq);
+
+            sanitized = new Quaternion(q.x, q.y, q.z, q.w);
+            return true;
+        }
+
         private static float ResolveAmbientLight01()
         {
             Color ambientColor = RenderSettings.ambientLight.linear;
-            float colorIntensity = Mathf.Max(ambientColor.r, Mathf.Max(ambientColor.g, ambientColor.b));
-            return Mathf.Clamp01(Mathf.Max(RenderSettings.ambientIntensity, colorIntensity));
+            float colorIntensity = math.max(ambientColor.r, math.max(ambientColor.g, ambientColor.b));
+            return math.saturate(math.max(RenderSettings.ambientIntensity, colorIntensity));
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float SanitizeAtLeast(float value, float minimum)
+        {
+            return math.isfinite(value) ? math.max(minimum, value) : minimum;
+        }
+
+        private static Vector3 SanitizeVector(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z)
+                ? value
+                : Vector3.zero;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

@@ -13,6 +13,9 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Station Keeping Controller")]
     public sealed class SubmarineStationKeepingController : MonoBehaviour, IFixedTickable
     {
+        private const float PositionHoldEpsilonMetersSq = 0.000001f;
+        private const float RotationHoldDotThreshold = 0.9999995f;
+
         [Header("Station Keeping")]
         [Tooltip("When enabled at runtime, the controller holds the current hull pose until released or retargeted.")]
         [SerializeField] private bool armOnEnable;
@@ -29,6 +32,7 @@ namespace Hecton8.Gameplay
         private bool _stationKeepingEnabled;
         private Quaternion _targetRotation = Quaternion.identity;
         private double3 _targetAbsolutePosition;
+        private float _stationKeepingSpeedMetersPerSecond;
 
         /// <summary>True while the controller is actively holding a target pose.</summary>
         public bool IsStationKeepingEnabled => _stationKeepingEnabled;
@@ -50,6 +54,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             _stationKeepingEnabled = false;
+            _stationKeepingSpeedMetersPerSecond = 0f;
         }
 
         private void OnDestroy()
@@ -69,16 +74,51 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 hullPosition = _hullRigidbody.position;
-            Vector3 nextRuntimePosition = ResolveStationKeepingStepNoSqrt(hullPosition, offsetToTarget, ResolvePositionStepMeters(fixedDeltaTime));
+            Quaternion currentRotation = _hullRigidbody.rotation;
+            if (math.lengthsq(offsetToTarget) <= PositionHoldEpsilonMetersSq &&
+                IsRotationClose(currentRotation, _targetRotation))
+            {
+                if (!_hullRigidbody.isKinematic)
+                {
+                    _hullRigidbody.linearVelocity = Vector3.zero;
+                    _hullRigidbody.angularVelocity = Vector3.zero;
+                }
+
+                _stationKeepingSpeedMetersPerSecond = 0f;
+                return;
+            }
+
+            Vector3 offsetToTargetVector = new Vector3(offsetToTarget.x, offsetToTarget.y, offsetToTarget.z);
+            Vector3 targetRuntimePosition = hullPosition + offsetToTargetVector;
+            Vector3 nextRuntimePosition = Vector3.MoveTowards(
+                hullPosition,
+                targetRuntimePosition,
+                ResolvePositionStepMeters(offsetToTarget, fixedDeltaTime));
             if (!IsFinite(nextRuntimePosition))
                 return;
 
-            _hullRigidbody.linearVelocity = Vector3.zero;
-            _hullRigidbody.angularVelocity = Vector3.zero;
+            float safeDeltaTime = math.max(fixedDeltaTime, 0.0001f);
+            float rotationStep = math.max(1f, rotationLockDegreesPerSecond) * fixedDeltaTime;
+            Quaternion nextRotation = Quaternion.RotateTowards(currentRotation, _targetRotation, rotationStep);
+            Vector3 impliedLinearVelocity = (nextRuntimePosition - hullPosition) / safeDeltaTime;
+            Vector3 impliedAngularVelocity = ResolveAngularVelocityRadians(currentRotation, nextRotation, safeDeltaTime);
+            if (!IsFinite(impliedLinearVelocity) || !IsFinite(impliedAngularVelocity))
+                return;
 
-            float rotationStep = Mathf.Max(1f, rotationLockDegreesPerSecond) * fixedDeltaTime;
+            impliedLinearVelocity = ClampMagnitude(impliedLinearVelocity, math.max(0.01f, positionLockSpeedMetersPerSecond));
+            impliedAngularVelocity = ClampMagnitude(impliedAngularVelocity, math.radians(math.max(1f, rotationLockDegreesPerSecond)));
+            nextRuntimePosition = hullPosition + impliedLinearVelocity * safeDeltaTime;
+            if (!IsFinite(nextRuntimePosition))
+                return;
+
+            if (!_hullRigidbody.isKinematic)
+            {
+                _hullRigidbody.linearVelocity = impliedLinearVelocity;
+                _hullRigidbody.angularVelocity = impliedAngularVelocity;
+            }
+
             _hullRigidbody.MovePosition(nextRuntimePosition);
-            _hullRigidbody.MoveRotation(Quaternion.RotateTowards(_hullRigidbody.rotation, _targetRotation, rotationStep));
+            _hullRigidbody.MoveRotation(nextRotation);
         }
 
         /// <summary>
@@ -92,6 +132,7 @@ namespace Hecton8.Gameplay
 
             _targetAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(_hullRigidbody.worldCenterOfMass).ToAbsoluteDouble3();
             _targetRotation = _hullRigidbody.rotation;
+            _stationKeepingSpeedMetersPerSecond = 0f;
             _stationKeepingEnabled = true;
         }
 
@@ -106,6 +147,7 @@ namespace Hecton8.Gameplay
 
             _targetAbsolutePosition = absoluteUniversePosition;
             _targetRotation = _hullRigidbody.rotation;
+            _stationKeepingSpeedMetersPerSecond = 0f;
             _stationKeepingEnabled = true;
         }
 
@@ -115,6 +157,7 @@ namespace Hecton8.Gameplay
         public void Release()
         {
             _stationKeepingEnabled = false;
+            _stationKeepingSpeedMetersPerSecond = 0f;
         }
 
         private void CacheReferences()
@@ -126,36 +169,26 @@ namespace Hecton8.Gameplay
                 _hullRigidbody = _submarineCore.HullRigidbody;
         }
 
-        private float ResolvePositionStepMeters(float fixedDeltaTime)
+        private float ResolvePositionStepMeters(float3 offsetToTarget, float fixedDeltaTime)
         {
             float safeDeltaTime = math.max(0f, fixedDeltaTime);
-            float authoredStep = math.max(0.01f, positionLockSpeedMetersPerSecond) * safeDeltaTime;
+            float offsetSq = math.lengthsq(offsetToTarget);
+            if (offsetSq <= 0.000001f)
+            {
+                _stationKeepingSpeedMetersPerSecond = 0f;
+                return 0f;
+            }
+
+            float authoredSpeed = math.max(0.01f, positionLockSpeedMetersPerSecond);
             float hullMass = _hullRigidbody != null ? math.max(1f, _hullRigidbody.mass) : 1f;
             float maxThrusterForce = _submarineCore != null
                 ? math.max(1f, _submarineCore.MaxThrust)
-                : hullMass * math.max(0.01f, positionLockSpeedMetersPerSecond);
+                : hullMass * authoredSpeed;
             float thrusterAcceleration = maxThrusterForce / hullMass;
-            float thrusterLimitedStep = 0.5f * thrusterAcceleration * safeDeltaTime * safeDeltaTime;
-            return math.max(0.001f, math.min(authoredStep, thrusterLimitedStep));
-        }
-
-        private static Vector3 ResolveStationKeepingStepNoSqrt(Vector3 currentPosition, float3 offsetToTarget, float maxStepMeters)
-        {
-            float safeStep = math.max(0f, maxStepMeters);
-            float stepSq = safeStep * safeStep;
-            float offsetSq = math.lengthsq(offsetToTarget);
-            float3 current3 = new float3(currentPosition.x, currentPosition.y, currentPosition.z);
-            if (offsetSq <= stepSq)
-            {
-                float3 snapped3 = current3 + offsetToTarget;
-                return new Vector3(snapped3.x, snapped3.y, snapped3.z);
-            }
-
-            float3 absOffset = math.abs(offsetToTarget);
-            float l1Distance = math.max(0.0001f, absOffset.x + absOffset.y + absOffset.z);
-            float stepT = math.saturate(safeStep / l1Distance);
-            float3 next3 = current3 + (offsetToTarget * stepT);
-            return new Vector3(next3.x, next3.y, next3.z);
+            _stationKeepingSpeedMetersPerSecond = math.min(
+                authoredSpeed,
+                _stationKeepingSpeedMetersPerSecond + thrusterAcceleration * safeDeltaTime);
+            return math.max(0.001f, _stationKeepingSpeedMetersPerSecond * safeDeltaTime);
         }
 
         private void TryRegister()
@@ -181,6 +214,60 @@ namespace Hecton8.Gameplay
         private static bool IsFinite(Vector3 value)
         {
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static Vector3 ClampMagnitude(Vector3 value, float maxMagnitude)
+        {
+            float sqrMagnitude = value.sqrMagnitude;
+            if (!float.IsFinite(sqrMagnitude) || sqrMagnitude <= 0.000001f)
+                return Vector3.zero;
+
+            float safeMax = math.max(0f, maxMagnitude);
+            float maxSq = safeMax * safeMax;
+            return sqrMagnitude <= maxSq
+                ? value
+                : value * (safeMax * math.rsqrt(sqrMagnitude));
+        }
+
+        private static bool IsRotationClose(Quaternion currentRotation, Quaternion targetRotation)
+        {
+            float dot =
+                currentRotation.x * targetRotation.x +
+                currentRotation.y * targetRotation.y +
+                currentRotation.z * targetRotation.z +
+                currentRotation.w * targetRotation.w;
+            return math.abs(dot) >= RotationHoldDotThreshold;
+        }
+
+        private static Vector3 ResolveAngularVelocityRadians(Quaternion currentRotation, Quaternion nextRotation, float deltaTime)
+        {
+            Quaternion inverseCurrent = new Quaternion(
+                -currentRotation.x,
+                -currentRotation.y,
+                -currentRotation.z,
+                currentRotation.w);
+            Quaternion deltaRotation = nextRotation * inverseCurrent;
+            float4 q = new float4(deltaRotation.x, deltaRotation.y, deltaRotation.z, deltaRotation.w);
+            if (q.w < 0f)
+                q = -q;
+
+            q = NormalizeQuaternionNoSqrt(q);
+            float3 angularDelta = new float3(q.x, q.y, q.z) * 2f;
+            if (!math.all(math.isfinite(angularDelta)) || math.lengthsq(angularDelta) <= 0.00000001f)
+                return Vector3.zero;
+
+            float inverseDeltaTime = math.rcp(math.max(deltaTime, 0.0001f));
+            Vector3 angularVelocity = new Vector3(
+                angularDelta.x * inverseDeltaTime,
+                angularDelta.y * inverseDeltaTime,
+                angularDelta.z * inverseDeltaTime);
+            return IsFinite(angularVelocity) ? angularVelocity : Vector3.zero;
+        }
+
+        private static float4 NormalizeQuaternionNoSqrt(float4 value)
+        {
+            float lengthSq = math.max(math.dot(value, value), 0.000001f);
+            return value * math.rsqrt(lengthSq);
         }
     }
 }

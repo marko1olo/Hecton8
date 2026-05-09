@@ -140,6 +140,7 @@ namespace Hecton8.World
         private const string EmptyTunnelsLabel = "emptyCaveTunnels";
         private const string EntrancesLabel = "caveEntrances";
         private const string StructuresLabel = "caveStructures";
+        private const int RuntimeKeySetCapacity = 64;
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance => GlobalRegistry.GeologyVoxelBridge;
@@ -221,9 +222,9 @@ namespace Hecton8.World
         private readonly Dictionary<long, PendingRequestState> _pendingRequests = new Dictionary<long, PendingRequestState>(32);
         private readonly Dictionary<long, WorldGenerativeGeologyVoxelBlendRequest> _queuedLaunchRequests = new Dictionary<long, WorldGenerativeGeologyVoxelBlendRequest>(32);
         private readonly Dictionary<long, float> _queuedLaunchTimes = new Dictionary<long, float>(32);
-        private readonly HashSet<long> _pendingRuntimeKeys = new HashSet<long>();
-        private readonly HashSet<long> _queuedLaunchKeys = new HashSet<long>();
-        private readonly HashSet<long> _desiredRuntimeKeys = new HashSet<long>();
+        private readonly HashSet<long> _pendingRuntimeKeys = new HashSet<long>(RuntimeKeySetCapacity);
+        private readonly HashSet<long> _queuedLaunchKeys = new HashSet<long>(RuntimeKeySetCapacity);
+        private readonly HashSet<long> _desiredRuntimeKeys = new HashSet<long>(RuntimeKeySetCapacity);
         private readonly List<long> _desiredRuntimeKeyOrder = new List<long>(32);
         private readonly List<long> _retainedDesiredRuntimeKeyOrder = new List<long>(32);
         private readonly List<long> _queuedLaunchOrder = new List<long>(32);

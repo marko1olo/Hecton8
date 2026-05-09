@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -77,6 +78,8 @@ namespace Hecton8.Visor
 
         private sealed class RetinaDistortionPass : ScriptableRenderPass
         {
+            private const float MaterialFloatEpsilon = 0.0001f;
+
             private sealed class PassData
             {
                 internal TextureHandle source;
@@ -88,6 +91,16 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private RuntimeState _runtimeState;
+            private Material _lastParameterMaterial;
+            private float _lastHealth01 = float.PositiveInfinity;
+            private float _lastCritical01 = float.PositiveInfinity;
+            private float _lastHeartbeatBpm = float.PositiveInfinity;
+            private float _lastChromaticOffset = float.PositiveInfinity;
+            private float _lastDistortionOffset = float.PositiveInfinity;
+            private float _lastVignetteStrength = float.PositiveInfinity;
+            private bool _lastMx350Tier;
+            private bool _keywordStateInitialized;
+            private bool _materialDirty = true;
 
             public RetinaDistortionPass()
             {
@@ -167,25 +180,80 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private static void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
+            private void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
             {
-                float critical01 = Mathf.Clamp01(runtimeState.Critical01);
-                material.SetFloat(ShaderConstants.HealthId, Mathf.Clamp01(runtimeState.Health01));
-                material.SetFloat(ShaderConstants.CriticalId, critical01);
-                material.SetFloat(ShaderConstants.HeartbeatBpmId, Mathf.Max(1f, runtimeState.HeartbeatBpm));
+                if (!ReferenceEquals(_lastParameterMaterial, material))
+                {
+                    ResetMaterialParameterCache();
+                    _lastParameterMaterial = material;
+                }
+
+                float critical01 = math.saturate(runtimeState.Critical01);
+                float health01 = math.saturate(runtimeState.Health01);
+                float heartbeatBpm = math.max(1f, runtimeState.HeartbeatBpm);
                 RetinaOffsetBudget offsetBudget = ResolveRetinaOffsetBudget(
-                    Mathf.Max(0f, settings.maxChromaticOffset),
-                    Mathf.Max(0f, settings.maxDistortionOffset),
+                    math.max(0f, settings.maxChromaticOffset),
+                    math.max(0f, settings.maxDistortionOffset),
                     critical01,
                     SystemInfo.graphicsMemorySize);
                 bool mx350Tier = SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048;
+                float vignetteStrength = math.saturate(settings.maxVignetteStrength) * critical01;
+
+                SetMx350KeywordIfChanged(material, mx350Tier);
+                SetMaterialFloatIfChanged(material, ShaderConstants.HealthId, health01, ref _lastHealth01);
+                SetMaterialFloatIfChanged(material, ShaderConstants.CriticalId, critical01, ref _lastCritical01);
+                SetMaterialFloatIfChanged(material, ShaderConstants.HeartbeatBpmId, heartbeatBpm, ref _lastHeartbeatBpm);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.ChromaticOffsetId,
+                    offsetBudget.ChromaticOffset,
+                    ref _lastChromaticOffset);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.DistortionOffsetId,
+                    offsetBudget.DistortionOffset,
+                    ref _lastDistortionOffset);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.VignetteStrengthId,
+                    vignetteStrength,
+                    ref _lastVignetteStrength);
+                _materialDirty = false;
+            }
+
+            private void ResetMaterialParameterCache()
+            {
+                _lastHealth01 = float.PositiveInfinity;
+                _lastCritical01 = float.PositiveInfinity;
+                _lastHeartbeatBpm = float.PositiveInfinity;
+                _lastChromaticOffset = float.PositiveInfinity;
+                _lastDistortionOffset = float.PositiveInfinity;
+                _lastVignetteStrength = float.PositiveInfinity;
+                _keywordStateInitialized = false;
+                _materialDirty = true;
+            }
+
+            private void SetMx350KeywordIfChanged(Material material, bool mx350Tier)
+            {
+                if (!_materialDirty && _keywordStateInitialized && _lastMx350Tier == mx350Tier)
+                    return;
+
                 if (mx350Tier)
                     material.EnableKeyword(ShaderConstants.Mx350Keyword);
                 else
                     material.DisableKeyword(ShaderConstants.Mx350Keyword);
-                material.SetFloat(ShaderConstants.ChromaticOffsetId, offsetBudget.ChromaticOffset);
-                material.SetFloat(ShaderConstants.DistortionOffsetId, offsetBudget.DistortionOffset);
-                material.SetFloat(ShaderConstants.VignetteStrengthId, Mathf.Clamp01(settings.maxVignetteStrength) * critical01);
+
+                _lastMx350Tier = mx350Tier;
+                _keywordStateInitialized = true;
+            }
+
+            private void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue)
+            {
+                if (!_materialDirty && math.abs(cachedValue - value) <= MaterialFloatEpsilon)
+                    return;
+
+                material.SetFloat(shaderId, value);
+                cachedValue = value;
             }
         }
 
@@ -263,16 +331,16 @@ namespace Hecton8.Visor
             if (!UIStateStore.TryReadValue(UIValueSlotId.Health01, out UIValueSlot healthSlot))
                 return false;
 
-            float threshold = Mathf.Clamp(settings.healthThreshold01, 0.01f, 0.35f);
-            float health01 = Mathf.Clamp01(healthSlot.Value);
+            float threshold = math.clamp(settings.healthThreshold01, 0.01f, 0.35f);
+            float health01 = math.saturate(healthSlot.Value);
             if (health01 >= threshold)
                 return false;
 
-            float critical01 = Mathf.Clamp01((threshold - health01) / threshold);
+            float critical01 = math.saturate((threshold - health01) / threshold);
             float drive01 = critical01 * critical01 * (3f - 2f * critical01);
-            float baseBpm = Mathf.Max(1f, settings.baseHeartbeatBpm);
-            float criticalBpm = Mathf.Max(baseBpm, settings.criticalHeartbeatBpm);
-            runtimeState = new RuntimeState(health01, drive01, Mathf.Lerp(baseBpm, criticalBpm, drive01));
+            float baseBpm = math.max(1f, settings.baseHeartbeatBpm);
+            float criticalBpm = math.max(baseBpm, settings.criticalHeartbeatBpm);
+            runtimeState = new RuntimeState(health01, drive01, math.lerp(baseBpm, criticalBpm, drive01));
             return true;
         }
 
@@ -282,18 +350,18 @@ namespace Hecton8.Visor
             float critical01,
             int graphicsMemoryMb)
         {
-            float clampedCritical = Mathf.Clamp01(critical01);
+            float clampedCritical = math.saturate(critical01);
             bool mx350Tier = graphicsMemoryMb > 0 && graphicsMemoryMb <= 2048;
             if (mx350Tier)
             {
                 return new RetinaOffsetBudget(
-                    Mathf.Max(0f, maxChromaticOffset) * clampedCritical,
+                    math.max(0f, maxChromaticOffset) * clampedCritical,
                     0f);
             }
 
             return new RetinaOffsetBudget(
                 0f,
-                Mathf.Max(0f, maxDistortionOffset) * clampedCritical);
+                math.max(0f, maxDistortionOffset) * clampedCritical);
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

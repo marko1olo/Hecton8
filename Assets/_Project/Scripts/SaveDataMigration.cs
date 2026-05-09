@@ -1136,6 +1136,31 @@ namespace Hecton8.SaveSystem
                 steps.Add("audioLog list created");
             }
 
+            if (data.audioLogEncryptedFragmentHashes == null ||
+                data.audioLogEncryptedFragmentHashes.Length < SaveData.MaxEncryptedAudioLogFragments)
+            {
+                data.audioLogEncryptedFragmentHashes = new uint[SaveData.MaxEncryptedAudioLogFragments];
+                data.audioLogEncryptedFragmentCount = 0;
+                changed = true;
+                steps.Add("encrypted audio-log hash state created");
+            }
+
+            if (data.audioLogEncryptedFragmentBits == null ||
+                data.audioLogEncryptedFragmentBits.Length < SaveData.MaxEncryptedAudioLogFragments)
+            {
+                data.audioLogEncryptedFragmentBits = new uint[SaveData.MaxEncryptedAudioLogFragments];
+                data.audioLogEncryptedFragmentCount = 0;
+                changed = true;
+                steps.Add("encrypted audio-log bit state created");
+            }
+
+            data.audioLogEncryptedFragmentCount = math.clamp(
+                data.audioLogEncryptedFragmentCount,
+                0,
+                math.min(
+                    SaveData.MaxEncryptedAudioLogFragments,
+                    math.min(data.audioLogEncryptedFragmentHashes.Length, data.audioLogEncryptedFragmentBits.Length)));
+
             if (!IndustrialLoreBitMask.HasExpectedCapacity(data.industrialLoreUnlockWords))
             {
                 IndustrialLoreBitMask.EnsureCapacity(ref data.industrialLoreUnlockWords);

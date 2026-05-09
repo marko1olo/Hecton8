@@ -26,10 +26,15 @@ namespace Hecton8.Interaction
     [AddComponentMenu("Hecton8/Interaction/LifePod Seat Strap Coordinator")]
     public sealed class LifePodSeatStrapCoordinator : MonoBehaviour, IFixedTickable
     {
-        private const byte HapticPriorityCritical = 3;
+        private const byte HapticPriorityCritical = ToolHapticsRuntime.PriorityCritical;
         private const byte LeftMotorMask = 0x01;
         private const byte RightMotorMask = 0x02;
         private const float MinimumFixedDeltaTime = 0.0001f;
+        private const float MaximumSeatLockFixedDeltaTime = 0.05f;
+        private const float MaximumCorrectionMetersPerSecond = 20f;
+        private const float MaximumHardSnapDistanceMeters = 0.5f;
+        private const float MaximumHapticDurationSeconds = 0.2f;
+        private const float MaximumHapticFrequencyHz = 60f;
 
         [Header("Seat Lock")]
         [SerializeField, Tooltip("Runtime seat anchor. Both straps must latch before the player motor is pinned to this transform.")]
@@ -82,9 +87,19 @@ namespace Hecton8.Interaction
         private Transform _leftIkAnchor;
         private Transform _rightIkAnchor;
         private HectonPlayerMotor _playerMotor;
-        private Rigidbody _playerBody;
-        private Transform _playerTransform;
+        private HectonPlayerMovement _playerMovement;
         private AbsoluteUniversePosition _seatLockAup;
+        private float _resolvedMaximumCorrectionMetersPerSecond;
+        private float _resolvedHardSnapDistanceSq;
+        private float _resolvedLatchLowFrequency;
+        private float _resolvedLatchHighFrequency;
+        private float _resolvedLatchHapticDurationSeconds;
+        private float _resolvedLatchHapticFrequencyHz;
+        private float _resolvedLockLowFrequency;
+        private float _resolvedLockHighFrequency;
+        private float _resolvedLockHapticDurationSeconds;
+        private float _resolvedLockHapticFrequencyHz;
+        private bool _seatLockPoseCached;
 
         /// <summary>
         /// True after the left strap has completed its latch hold.
@@ -116,12 +131,14 @@ namespace Hecton8.Interaction
             if (seatAnchor == null)
                 seatAnchor = transform;
 
-            TryUpdateSeatAup();
+            CacheScalarConfig();
+            TryCacheSeatLockPose();
         }
 
         private void OnEnable()
         {
-            if (_seatLockActive)
+            CacheScalarConfig();
+            if (_seatLockActive && TryCacheSeatLockPose())
                 TryRegisterFixedTick();
         }
 
@@ -143,6 +160,7 @@ namespace Hecton8.Interaction
             if (!IsFinite(handPosition))
                 return false;
 
+            CacheScalarConfig();
             bool stateChanged = false;
             if (side == LifePodSeatStrapSide.Left)
             {
@@ -216,21 +234,23 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            if (!TryResolvePlayerMotor())
+            if (!TryEnsurePlayerMotor())
                 return;
 
-            if (!TryResolveSeatPosition(out Vector3 targetPosition))
+            if (!TryResolveSeatLockRuntimePosition(out Vector3 targetPosition))
                 return;
 
-            float safeFixedDeltaTime = math.max(fixedDeltaTime, MinimumFixedDeltaTime);
-            Vector3 currentPosition = _playerBody != null ? _playerBody.position : _playerTransform.position;
-            Vector3 delta = targetPosition - currentPosition;
+            float safeFixedDeltaTime = SanitizeFixedDeltaSeconds(fixedDeltaTime);
+            if (!TryResolveCurrentPlayerAup(out AbsoluteUniversePosition currentAup, out Vector3 currentPosition))
+                return;
+
+            float3 deltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in _seatLockAup, in currentAup);
+            Vector3 delta = new Vector3(deltaAup.x, deltaAup.y, deltaAup.z);
             if (!IsFinite(delta))
                 return;
 
             float distanceSq = delta.sqrMagnitude;
-            float hardSnapDistanceSq = hardSnapDistanceMeters * hardSnapDistanceMeters;
-            if (distanceSq <= hardSnapDistanceSq)
+            if (distanceSq <= _resolvedHardSnapDistanceSq)
             {
                 _playerMotor.MovePosition(targetPosition);
                 if (zeroLinearVelocityWhileLocked)
@@ -238,7 +258,7 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            float maxStep = maximumCorrectionMetersPerSecond * safeFixedDeltaTime;
+            float maxStep = _resolvedMaximumCorrectionMetersPerSecond * safeFixedDeltaTime;
             float maxStepSq = maxStep * maxStep;
             if (distanceSq <= maxStepSq)
             {
@@ -248,7 +268,7 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            float invDistance = math.rsqrt(distanceSq);
+            float invDistance = math.rcp(math.max(ApproximateMagnitudeNoSqrt(delta), 0.000001f));
             Vector3 nextPosition = currentPosition + delta * (maxStep * invDistance);
 
             if (!IsFinite(nextPosition))
@@ -261,57 +281,74 @@ namespace Hecton8.Interaction
 
         private void EngageSeatLock()
         {
-            if (!TryUpdateSeatAup())
+            if (!TryCacheSeatLockPose())
                 return;
 
             _seatLockActive = true;
-            TryResolvePlayerMotor();
+            TryEnsurePlayerMotor();
             TryRegisterFixedTick();
 
             if (hapticsEnabled)
             {
                 ToolHapticsRuntime.EnqueueSinusoidalCommand(
-                    lockLowFrequency,
-                    lockHighFrequency,
-                    lockHapticDurationSeconds,
-                    lockHapticFrequencyHz,
+                    _resolvedLockLowFrequency,
+                    _resolvedLockHighFrequency,
+                    _resolvedLockHapticDurationSeconds,
+                    _resolvedLockHapticFrequencyHz,
                     HapticPriorityCritical,
                     LeftMotorMask | RightMotorMask);
             }
         }
 
-        private bool TryResolvePlayerMotor()
+        private bool TryEnsurePlayerMotor()
         {
+            if (_playerMotor != null && _playerMotor.Body != null && _playerMovement != null)
+                return true;
+
             HectonPlayerMotor motor = GlobalRegistry.PlayerMotor;
             if (motor == null || motor.Body == null)
                 return false;
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             _playerMotor = motor;
-            _playerBody = motor.Body;
-            _playerTransform = playerContext != null && playerContext.IsInitialized && playerContext.PlayerTransform != null
-                ? playerContext.PlayerTransform
-                : motor.transform;
-            return _playerTransform != null;
+            _playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            return _playerMovement != null;
         }
 
-        private bool TryResolveSeatPosition(out Vector3 targetPosition)
+        private bool TryResolveCurrentPlayerAup(out AbsoluteUniversePosition currentAup, out Vector3 runtimePosition)
         {
-            targetPosition = Vector3.zero;
-            if (seatAnchor == null)
+            currentAup = default;
+            runtimePosition = Vector3.zero;
+            if (_playerMovement == null)
                 return false;
 
-            targetPosition = seatAnchor.position;
+            currentAup = _playerMovement.CurrentAup;
+            float3 runtime = currentAup.ToRuntimeFloat3();
+            runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return IsFinite(runtimePosition);
+        }
+
+        private bool TryResolveSeatLockRuntimePosition(out Vector3 targetPosition)
+        {
+            targetPosition = Vector3.zero;
+            if (!_seatLockPoseCached)
+                return false;
+
+            float3 runtime = _seatLockAup.ToRuntimeFloat3();
+            targetPosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return IsFinite(targetPosition);
+        }
+
+        private bool TryCacheSeatLockPose()
+        {
+            Transform anchor = seatAnchor != null ? seatAnchor : transform;
+            Vector3 targetPosition = anchor.position;
             if (!IsFinite(targetPosition))
                 return false;
 
             _seatLockAup = AbsoluteUniversePosition.FromRuntimePosition(targetPosition);
+            _seatLockPoseCached = true;
             return true;
-        }
-
-        private bool TryUpdateSeatAup()
-        {
-            return TryResolveSeatPosition(out _);
         }
 
         private void QueueLatchHaptic(PhysicalHandSide handSide, LifePodSeatStrapSide strapSide)
@@ -320,21 +357,20 @@ namespace Hecton8.Interaction
                 return;
 
             ToolHapticsRuntime.EnqueueSinusoidalCommand(
-                latchLowFrequency,
-                latchHighFrequency,
-                latchHapticDurationSeconds,
-                latchHapticFrequencyHz,
+                _resolvedLatchLowFrequency,
+                _resolvedLatchHighFrequency,
+                _resolvedLatchHapticDurationSeconds,
+                _resolvedLatchHapticFrequencyHz,
                 HapticPriorityCritical,
                 ResolveMotorMask(handSide, strapSide));
         }
 
         private void TryRegisterFixedTick()
         {
-            if (_registeredFixedTick || !Application.isPlaying)
+            if (_registeredFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
-            _registeredFixedTick = true;
+            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterFixedTick()
@@ -362,5 +398,102 @@ namespace Hecton8.Interaction
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3));
         }
+
+        private static float ApproximateMagnitudeNoSqrt(Vector3 value)
+        {
+            float3 absValue = math.abs(new float3(value.x, value.y, value.z));
+            float largest = math.cmax(absValue);
+            float smallest = math.cmin(absValue);
+            float middle = absValue.x + absValue.y + absValue.z - largest - smallest;
+            return largest + (middle * 0.375f) + (smallest * 0.125f);
+        }
+
+        private static float SanitizeFixedDeltaSeconds(float value)
+        {
+            return math.isfinite(value)
+                ? math.clamp(value, MinimumFixedDeltaTime, MaximumSeatLockFixedDeltaTime)
+                : MinimumFixedDeltaTime;
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private void CacheScalarConfig()
+        {
+            _resolvedMaximumCorrectionMetersPerSecond = ResolveSafeMaximumCorrectionMetersPerSecond();
+            float hardSnapDistance = ResolveSafeHardSnapDistanceMeters();
+            _resolvedHardSnapDistanceSq = hardSnapDistance * hardSnapDistance;
+            _resolvedLatchLowFrequency = Sanitize01(latchLowFrequency);
+            _resolvedLatchHighFrequency = Sanitize01(latchHighFrequency);
+            _resolvedLatchHapticDurationSeconds = ResolveSafeHapticDuration(latchHapticDurationSeconds);
+            _resolvedLatchHapticFrequencyHz = ResolveSafeHapticFrequency(latchHapticFrequencyHz);
+            _resolvedLockLowFrequency = Sanitize01(lockLowFrequency);
+            _resolvedLockHighFrequency = Sanitize01(lockHighFrequency);
+            _resolvedLockHapticDurationSeconds = ResolveSafeHapticDuration(lockHapticDurationSeconds);
+            _resolvedLockHapticFrequencyHz = ResolveSafeHapticFrequency(lockHapticFrequencyHz);
+        }
+
+        private float ResolveSafeMaximumCorrectionMetersPerSecond()
+        {
+            return math.isfinite(maximumCorrectionMetersPerSecond)
+                ? math.clamp(maximumCorrectionMetersPerSecond, 0.01f, MaximumCorrectionMetersPerSecond)
+                : 6f;
+        }
+
+        private float ResolveSafeHardSnapDistanceMeters()
+        {
+            return math.isfinite(hardSnapDistanceMeters)
+                ? math.clamp(hardSnapDistanceMeters, 0.0001f, MaximumHardSnapDistanceMeters)
+                : 0.025f;
+        }
+
+        private static float ResolveSafeHapticDuration(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0.01f, MaximumHapticDurationSeconds) : 0.01f;
+        }
+
+        private static float ResolveSafeHapticFrequency(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 1f, MaximumHapticFrequencyHz) : MaximumHapticFrequencyHz;
+        }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            if (!math.isfinite(maximumCorrectionMetersPerSecond))
+                maximumCorrectionMetersPerSecond = 6f;
+            if (!math.isfinite(hardSnapDistanceMeters))
+                hardSnapDistanceMeters = 0.025f;
+            maximumCorrectionMetersPerSecond = math.clamp(maximumCorrectionMetersPerSecond, 0.01f, MaximumCorrectionMetersPerSecond);
+            hardSnapDistanceMeters = math.clamp(hardSnapDistanceMeters, 0.0001f, MaximumHardSnapDistanceMeters);
+            if (!math.isfinite(latchLowFrequency))
+                latchLowFrequency = 0.18f;
+            if (!math.isfinite(latchHighFrequency))
+                latchHighFrequency = 0.35f;
+            if (!math.isfinite(latchHapticDurationSeconds))
+                latchHapticDurationSeconds = 0.055f;
+            if (!math.isfinite(latchHapticFrequencyHz))
+                latchHapticFrequencyHz = MaximumHapticFrequencyHz;
+            if (!math.isfinite(lockLowFrequency))
+                lockLowFrequency = 0.35f;
+            if (!math.isfinite(lockHighFrequency))
+                lockHighFrequency = 0.55f;
+            if (!math.isfinite(lockHapticDurationSeconds))
+                lockHapticDurationSeconds = 0.09f;
+            if (!math.isfinite(lockHapticFrequencyHz))
+                lockHapticFrequencyHz = MaximumHapticFrequencyHz;
+            latchLowFrequency = Sanitize01(latchLowFrequency);
+            latchHighFrequency = Sanitize01(latchHighFrequency);
+            latchHapticDurationSeconds = ResolveSafeHapticDuration(latchHapticDurationSeconds);
+            latchHapticFrequencyHz = ResolveSafeHapticFrequency(latchHapticFrequencyHz);
+            lockLowFrequency = Sanitize01(lockLowFrequency);
+            lockHighFrequency = Sanitize01(lockHighFrequency);
+            lockHapticDurationSeconds = ResolveSafeHapticDuration(lockHapticDurationSeconds);
+            lockHapticFrequencyHz = ResolveSafeHapticFrequency(lockHapticFrequencyHz);
+            CacheScalarConfig();
+        }
+#endif
     }
 }

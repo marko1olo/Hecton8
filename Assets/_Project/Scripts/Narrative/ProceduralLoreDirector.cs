@@ -51,7 +51,7 @@ namespace Hecton8.Narrative
         // COLD ALLOC: List<ActiveLorePlacement>[12] - active frontier lore placements - owner: ProceduralLoreDirector
         private readonly List<ActiveLorePlacement> _activePlacements = new List<ActiveLorePlacement>(ProceduralLoreStateDTO.MaxActivePlacements);
         // COLD ALLOC: HashSet<long>[12] - occupied frontier chunk keys - owner: ProceduralLoreDirector
-        private readonly HashSet<long> _occupiedChunkKeys = new HashSet<long>();
+        private readonly HashSet<long> _occupiedChunkKeys = new HashSet<long>(ProceduralLoreStateDTO.MaxActivePlacements);
         // COLD ALLOC: Vector2Int[ExplorationMapDTO.MaxExploredChunks] - exploration snapshot buffer - owner: ProceduralLoreDirector
         private readonly Vector2Int[] _exploredChunkBuffer = new Vector2Int[ExplorationMapDTO.MaxExploredChunks];
         // COLD ALLOC: AudioLogData[256] - PDA archive catalog snapshot - owner: ProceduralLoreDirector

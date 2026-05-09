@@ -5,6 +5,7 @@
 
 namespace Hecton8.Gameplay
 {
+    using Unity.Mathematics;
     using UnityEngine;
 
     /// <summary>
@@ -53,10 +54,10 @@ namespace Hecton8.Gameplay
             float targetCutRadius)
         {
             cutResponder = responder;
-            speedMultiplier = Mathf.Clamp(targetSpeedMultiplier, 0.1f, 1f);
-            dragMultiplier = Mathf.Max(1f, targetDragMultiplier);
-            cutSpeedThreshold = Mathf.Max(0.1f, targetCutSpeedThreshold);
-            cutRadius = Mathf.Max(0.1f, targetCutRadius);
+            speedMultiplier = math.clamp(targetSpeedMultiplier, 0.1f, 1f);
+            dragMultiplier = math.max(1f, targetDragMultiplier);
+            cutSpeedThreshold = math.max(0.1f, targetCutSpeedThreshold);
+            cutRadius = math.max(0.1f, targetCutRadius);
         }
 
         private void Reset()
@@ -140,10 +141,12 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 velocity = attachedBody.linearVelocity;
-            float speed = velocity.magnitude;
-            if (speed < cutSpeedThreshold)
+            float speedSq = velocity.sqrMagnitude;
+            float cutSpeedThresholdSq = cutSpeedThreshold * cutSpeedThreshold;
+            if (speedSq < cutSpeedThresholdSq)
                 return;
 
+            float speed = speedSq * math.rsqrt(speedSq);
             Vector3 contactPoint = other.ClosestPoint(transform.position);
             cutResponder.RegisterCut(contactPoint, velocity, speed);
         }

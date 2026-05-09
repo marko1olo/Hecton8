@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.AI;
+using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.Construction;
 using Hecton8.Core;
@@ -13,6 +14,7 @@ using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Input;
 using Hecton8.Optimization;
+using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.Quest;
@@ -23,6 +25,7 @@ using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
+using Unity.Mathematics;
 #if UNITY_ADDRESSABLES_EXIST
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -104,13 +107,17 @@ namespace Hecton8.Bootstrap
             EcosystemDirector = 13,
             FaunaSimulation = 14,
             SpatialAudioManager = 15,
-            InputDispatcher = 16,
-            PlayerRuntimeContextService = 17,
-            PlayerInventoryManager = 18,
-            PlayerSensoryManager = 19,
-            PowerGridManager = 20,
-            ConstructionManager = 21,
-            Count = 22,
+            NativeInputManager = 16,
+            InputDispatcher = 17,
+            PlayerRuntimeContextService = 18,
+            PlayerInventoryManager = 19,
+            PlayerSensoryManager = 20,
+            PowerGridManager = 21,
+            ConstructionManager = 22,
+            ConnectionSplineBatchRenderer = 23,
+            BeaconNetworkSystem = 24,
+            ModWorldPersistenceManager = 25,
+            Count = 26,
         }
 
         private readonly struct BootstrapDependencyEdge
@@ -143,12 +150,16 @@ namespace Hecton8.Bootstrap
             "EcosystemDirector",
             "FaunaSimulation",
             "SpatialAudioManager",
+            "NativeInputManager",
             "InputDispatcher",
             "PlayerRuntimeContextService",
             "PlayerInventoryManager",
             "PlayerSensoryManager",
             "PowerGridManager",
             "ConstructionManager",
+            "ConnectionSplineBatchRenderer",
+            "BeaconNetworkSystem",
+            "ModWorldPersistenceManager",
         };
 
         private static readonly BootstrapDependencyEdge[] _bootstrapDependencyEdges =
@@ -177,6 +188,16 @@ namespace Hecton8.Bootstrap
             new BootstrapDependencyEdge(BootstrapDependencyNode.ConstructionManager, BootstrapDependencyNode.SaveManager),
             new BootstrapDependencyEdge(BootstrapDependencyNode.ConstructionManager, BootstrapDependencyNode.ObjectPoolManager),
             new BootstrapDependencyEdge(BootstrapDependencyNode.ConstructionManager, BootstrapDependencyNode.PowerGridManager),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.ConnectionSplineBatchRenderer, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.ConnectionSplineBatchRenderer, BootstrapDependencyNode.HectonFloatingOrigin),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.BeaconNetworkSystem, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.BeaconNetworkSystem, BootstrapDependencyNode.SaveManager),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.ModWorldPersistenceManager, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.ModWorldPersistenceManager, BootstrapDependencyNode.SaveManager),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.ModWorldPersistenceManager, BootstrapDependencyNode.ObjectPoolManager),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.ModWorldPersistenceManager, BootstrapDependencyNode.SceneRuntimeService),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.NativeInputManager, BootstrapDependencyNode.SystemDispatcher),
+            new BootstrapDependencyEdge(BootstrapDependencyNode.InputDispatcher, BootstrapDependencyNode.NativeInputManager),
             new BootstrapDependencyEdge(BootstrapDependencyNode.InputDispatcher, BootstrapDependencyNode.SystemDispatcher),
             new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerRuntimeContextService, BootstrapDependencyNode.InputDispatcher),
             new BootstrapDependencyEdge(BootstrapDependencyNode.PlayerInventoryManager, BootstrapDependencyNode.PlayerRuntimeContextService),
@@ -185,9 +206,9 @@ namespace Hecton8.Bootstrap
         };
 
         private static readonly object _bootstrapDependencyScratchLock = new object();
-        // COLD ALLOC: int[22] - bootstrap dependency in-degree scratch without async Span state capture risk - owner: GameBootstrapper
+        // COLD ALLOC: int[bootstrap-node-count] - bootstrap dependency in-degree scratch without async Span state capture risk - owner: GameBootstrapper
         private static readonly int[] _bootstrapDependencyInDegreeScratch = new int[(int)BootstrapDependencyNode.Count];
-        // COLD ALLOC: BootstrapDependencyNode[22] - bootstrap dependency queue scratch without async Span state capture risk - owner: GameBootstrapper
+        // COLD ALLOC: BootstrapDependencyNode[bootstrap-node-count] - bootstrap dependency queue scratch without async Span state capture risk - owner: GameBootstrapper
         private static readonly BootstrapDependencyNode[] _bootstrapDependencyQueueScratch = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
         private static readonly GlobalRegistryServiceSlot[] _bootstrapRegistryExecutionOrderScratch =
             new GlobalRegistryServiceSlot[(int)BootstrapDependencyNode.Count];
@@ -217,7 +238,7 @@ namespace Hecton8.Bootstrap
 #if UNITY_ADDRESSABLES_EXIST
         private AsyncOperationHandle<GameObject>[] _uiPrefabInstanceHandles;
 #endif
-        // COLD ALLOC: BootstrapDependencyNode[22] - cached Kahn topological service execution order - owner: GameBootstrapper
+        // COLD ALLOC: BootstrapDependencyNode[bootstrap-node-count] - cached Kahn topological service execution order - owner: GameBootstrapper
         private readonly BootstrapDependencyNode[] _bootstrapExecutionOrder = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
         private int _bootstrapExecutionOrderCount;
 
@@ -381,6 +402,7 @@ namespace Hecton8.Bootstrap
 
         private static void DisposeSessionNativeStateForShutdown()
         {
+            ShutdownSystemDispatcherForBootstrapTeardown();
             Hecton8.Modding.ModLoader.ResetStaticState();
             Hecton8.Modding.ModRegistryEvents.ResetStaticState();
             BootstrapEvents.ResetStaticState();
@@ -389,6 +411,8 @@ namespace Hecton8.Bootstrap
             Hecton.Localization.LocalizationEvents.ResetStaticState();
             ObjectPoolDiagnostics.ResetStaticState();
             UIStateStore.Shutdown();
+            HighPressureEvents.Shutdown();
+            FatalPressureImplosionEvents.Shutdown();
             AcousticZoneEvents.ResetStaticState();
             BaseAirlockEvents.ResetStaticState();
             Hecton8.Interaction.InteractionEvents.ResetStaticState();
@@ -398,6 +422,21 @@ namespace Hecton8.Bootstrap
             WorldSpatialHashGrid.ClearRuntimeState();
             NativeArenaAllocator.Shutdown();
             GlobalRegistry.DisposeServiceReboundQueuesForShutdown();
+        }
+
+        private static void ShutdownSystemDispatcherForBootstrapTeardown()
+        {
+            SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
+            if (dispatcher == null)
+                dispatcher = SystemDispatcher.ActiveRuntimeInstance;
+
+            if (dispatcher != null)
+            {
+                dispatcher.OnServiceShutdown();
+                return;
+            }
+
+            SystemDispatcher.ClearAllLanes();
         }
 
         /// <summary>
@@ -621,6 +660,7 @@ namespace Hecton8.Bootstrap
             {
                 _preWarmAssetsReady = false;
                 NativeArenaAllocator.Initialize();
+                GlobalTelemetryBus.Initialize();
                 if (!_headlessBootMode)
                 {
                     VRAMEnforcer.InitializeRuntimeBudget();
@@ -830,7 +870,7 @@ namespace Hecton8.Bootstrap
                 if (!SceneBootstrap.TryValidateSceneRootBudget(MainMenuSceneName, "bootstrap-main-menu-preactivation"))
                     return false;
 
-                loadOperation.allowSceneActivation = true;
+                SceneRuntimeService.ReleaseSceneActivation(loadOperation);
                 waitFrames = 0;
                 waitStartTimestamp = Stopwatch.GetTimestamp();
                 while (!loadOperation.isDone)
@@ -852,7 +892,7 @@ namespace Hecton8.Bootstrap
             catch (OperationCanceledException)
             {
                 if (loadOperation != null && !loadOperation.isDone)
-                    loadOperation.allowSceneActivation = true;
+                    SceneRuntimeService.ReleaseSceneActivation(loadOperation);
 
                 return false;
             }
@@ -914,10 +954,19 @@ namespace Hecton8.Bootstrap
 
             _bootstrapInputManager = inputManager;
 
+            if (!ReferenceEquals(GlobalRegistry.NativeInputManager, inputManager))
+                GlobalRegistry.RegisterNativeInputManagerRuntime(inputManager);
+
             PersistRuntimeService(inputManager);
-            UserOptionsPersistence userOptionsPersistence = UserOptionsPersistence.EnsureRuntimeInstance();
+            UserOptionsPersistence userOptionsPersistence = GlobalRegistry.UserOptions;
+            if (userOptionsPersistence == null)
+            {
+                GameObject userOptionsRoot = new GameObject("[UserOptionsPersistence]"); // COLD ALLOC: GameObject[1] - bootstrap-owned user options persistence root - owner: GameBootstrapper
+                userOptionsPersistence = userOptionsRoot.AddComponent<UserOptionsPersistence>();
+            }
+
             PersistRuntimeService(userOptionsPersistence);
-            if (userOptionsPersistence != null)
+            if (userOptionsPersistence != null && !ReferenceEquals(GlobalRegistry.UserOptions, userOptionsPersistence))
                 GlobalRegistry.RegisterUserOptionsRuntime(userOptionsPersistence);
 
             RebindingManager rebindingManager = RebindingManager.ActiveRuntimeInstance;
@@ -1004,13 +1053,18 @@ namespace Hecton8.Bootstrap
         {
             SettingsManager settingsManager = GlobalRegistry.Settings;
             if (settingsManager == null)
-                settingsManager = SettingsManager.EnsureRuntimeInstance();
+            {
+                GameObject settingsRoot = new GameObject("[SettingsManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned settings runtime owner - owner: GameBootstrapper
+                settingsManager = settingsRoot.AddComponent<SettingsManager>();
+            }
 
             if (settingsManager == null)
                 return null;
 
             PersistRuntimeService(settingsManager);
-            GlobalRegistry.RegisterSettingsRuntime(settingsManager);
+            if (!ReferenceEquals(GlobalRegistry.Settings, settingsManager))
+                GlobalRegistry.RegisterSettingsRuntime(settingsManager);
+
             settingsManager.RefreshPersistenceFromRegistry();
             return settingsManager;
         }
@@ -1246,6 +1300,8 @@ namespace Hecton8.Bootstrap
                     return GlobalRegistry.InteractionSignals != null;
                 case BootstrapDependencyNode.HectonFloatingOrigin:
                     return GlobalRegistry.FloatingOrigin != null && !HectonFloatingOrigin.IsShiftInProgress;
+                case BootstrapDependencyNode.ConnectionSplineBatchRenderer:
+                    return GlobalRegistry.ConnectionSplineBatchRenderer != null;
                 case BootstrapDependencyNode.GlobalPhysicsStateManager:
                     return GlobalRegistry.PhysicsStateManager != null;
                 case BootstrapDependencyNode.PhysicsApplySystem:
@@ -1262,6 +1318,8 @@ namespace Hecton8.Bootstrap
                     return GlobalRegistry.FaunaSimulation != null && GlobalRegistry.FaunaSimulation.IsReady;
                 case BootstrapDependencyNode.SpatialAudioManager:
                     return GlobalRegistry.Audio != null;
+                case BootstrapDependencyNode.NativeInputManager:
+                    return GlobalRegistry.NativeInputManager != null;
                 case BootstrapDependencyNode.InputDispatcher:
                     return GlobalRegistry.RegisteredInput != null;
                 case BootstrapDependencyNode.PlayerRuntimeContextService:
@@ -1274,6 +1332,10 @@ namespace Hecton8.Bootstrap
                     return GlobalRegistry.PowerGrid != null;
                 case BootstrapDependencyNode.ConstructionManager:
                     return GlobalRegistry.ConstructionRuntime != null || GlobalRegistry.Logistics == null;
+                case BootstrapDependencyNode.BeaconNetworkSystem:
+                    return GlobalRegistry.BeaconNetwork != null;
+                case BootstrapDependencyNode.ModWorldPersistenceManager:
+                    return GlobalRegistry.ModWorldPersistence != null;
                 default:
                     return false;
             }
@@ -1291,6 +1353,7 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.SceneRuntimeService: return GlobalRegistry.Scene;
                 case BootstrapDependencyNode.EquipmentInteractionHandler: return GlobalRegistry.InteractionSignals;
                 case BootstrapDependencyNode.HectonFloatingOrigin: return GlobalRegistry.FloatingOrigin;
+                case BootstrapDependencyNode.ConnectionSplineBatchRenderer: return GlobalRegistry.ConnectionSplineBatchRenderer;
                 case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistry.PhysicsStateManager;
                 case BootstrapDependencyNode.PhysicsApplySystem: return GlobalRegistry.Physics;
                 case BootstrapDependencyNode.DebrisManager: return GlobalRegistry.Debris;
@@ -1299,12 +1362,15 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.EcosystemDirector: return GlobalRegistry.EcosystemDirector;
                 case BootstrapDependencyNode.FaunaSimulation: return GlobalRegistry.FaunaSimulation;
                 case BootstrapDependencyNode.SpatialAudioManager: return GlobalRegistry.Audio;
+                case BootstrapDependencyNode.NativeInputManager: return GlobalRegistry.NativeInputManager;
                 case BootstrapDependencyNode.InputDispatcher: return GlobalRegistry.RegisteredInput;
                 case BootstrapDependencyNode.PlayerRuntimeContextService: return GlobalRegistry.Player;
                 case BootstrapDependencyNode.PlayerInventoryManager: return GlobalRegistry.PlayerInventory;
                 case BootstrapDependencyNode.PlayerSensoryManager: return GlobalRegistry.PlayerSensory;
                 case BootstrapDependencyNode.PowerGridManager: return GlobalRegistry.PowerGrid;
                 case BootstrapDependencyNode.ConstructionManager: return GlobalRegistry.ConstructionRuntime;
+                case BootstrapDependencyNode.BeaconNetworkSystem: return GlobalRegistry.BeaconNetwork;
+                case BootstrapDependencyNode.ModWorldPersistenceManager: return GlobalRegistry.ModWorldPersistence;
                 default: return null;
             }
         }
@@ -1320,12 +1386,14 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.RenderDispatcher:
                 case BootstrapDependencyNode.SceneRuntimeService:
                 case BootstrapDependencyNode.EquipmentInteractionHandler:
+                case BootstrapDependencyNode.ModWorldPersistenceManager:
                     return BootstrapPhase.CoreServices;
 
                 case BootstrapDependencyNode.HectonFloatingOrigin:
                 case BootstrapDependencyNode.GlobalPhysicsStateManager:
                 case BootstrapDependencyNode.PhysicsApplySystem:
                 case BootstrapDependencyNode.DebrisManager:
+                case BootstrapDependencyNode.ConnectionSplineBatchRenderer:
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService:
                 case BootstrapDependencyNode.OceanKinematicsRuntimeService:
                 case BootstrapDependencyNode.EcosystemDirector:
@@ -1335,10 +1403,12 @@ namespace Hecton8.Bootstrap
                 case BootstrapDependencyNode.ConstructionManager:
                     return BootstrapPhase.Environment;
 
+                case BootstrapDependencyNode.NativeInputManager:
                 case BootstrapDependencyNode.InputDispatcher:
                 case BootstrapDependencyNode.PlayerRuntimeContextService:
                 case BootstrapDependencyNode.PlayerInventoryManager:
                 case BootstrapDependencyNode.PlayerSensoryManager:
+                case BootstrapDependencyNode.BeaconNetworkSystem:
                     return BootstrapPhase.Player;
 
                 default:
@@ -1384,6 +1454,9 @@ namespace Hecton8.Bootstrap
 
                 case BootstrapDependencyNode.HectonFloatingOrigin:
                     return EnsureFloatingOriginRegistered() != null && GlobalRegistry.FloatingOrigin != null;
+
+                case BootstrapDependencyNode.ConnectionSplineBatchRenderer:
+                    return EnsureConnectionSplineBatchRendererRegistered() != null && GlobalRegistry.ConnectionSplineBatchRenderer != null;
 
                 case BootstrapDependencyNode.GlobalPhysicsStateManager:
                     return EnsureGlobalPhysicsStateManagerRegistered() != null && GlobalRegistry.PhysicsStateManager != null;
@@ -1448,6 +1521,9 @@ namespace Hecton8.Bootstrap
                     return constructionManager == null || GlobalRegistry.ConstructionRuntime != null;
                 }
 
+                case BootstrapDependencyNode.NativeInputManager:
+                    return EnsureNativeInputManagerRegistered() != null && GlobalRegistry.NativeInputManager != null;
+
                 case BootstrapDependencyNode.InputDispatcher:
                     return EnsureInputDispatcherRegistered() != null && GlobalRegistry.RegisteredInput != null;
 
@@ -1483,6 +1559,12 @@ namespace Hecton8.Bootstrap
                     playerSensoryManager.InitializeService();
                     return GlobalRegistry.PlayerSensory != null;
                 }
+
+                case BootstrapDependencyNode.BeaconNetworkSystem:
+                    return EnsureBeaconNetworkServiceRegistered() != null && GlobalRegistry.BeaconNetwork != null;
+
+                case BootstrapDependencyNode.ModWorldPersistenceManager:
+                    return EnsureModWorldPersistenceRegistered() != null && GlobalRegistry.ModWorldPersistence != null;
 
                 case BootstrapDependencyNode.PowerGridManager:
                     return EnsurePowerGridServiceRegistered() != null && GlobalRegistry.PowerGrid != null;
@@ -1584,6 +1666,20 @@ namespace Hecton8.Bootstrap
 
             objectPoolManager.InitializeService();
             return objectPoolManager;
+        }
+
+        private static ModWorldPersistenceManager EnsureModWorldPersistenceRegistered()
+        {
+            ModWorldPersistenceManager manager = GlobalRegistry.ModWorldPersistence;
+            if (manager == null)
+            {
+                GameObject runtimeRoot = new GameObject("[ModWorldPersistenceManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned mod world persistence root - owner: GameBootstrapper
+                manager = runtimeRoot.AddComponent<ModWorldPersistenceManager>();
+            }
+
+            PersistRuntimeService(manager);
+            manager.InitializeService();
+            return manager;
         }
 
         private static RenderDispatcher EnsureRenderDispatcherRegistered()
@@ -1730,11 +1826,39 @@ namespace Hecton8.Bootstrap
             return origin;
         }
 
+        private static ConnectionSplineBatchRenderer EnsureConnectionSplineBatchRendererRegistered()
+        {
+            ConnectionSplineBatchRenderer renderer = GlobalRegistry.ConnectionSplineBatchRenderer;
+            if (renderer == null)
+            {
+                GameObject runtimeRoot = new GameObject("[ConnectionSplineBatchRenderer]"); // COLD ALLOC: GameObject[1] - bootstrap-owned shader-bent connection renderer root - owner: GameBootstrapper
+                renderer = runtimeRoot.AddComponent<ConnectionSplineBatchRenderer>();
+            }
+
+            PersistRuntimeService(renderer);
+            renderer.InitializeService();
+            return renderer;
+        }
+
+        private static BeaconNetworkSystem EnsureBeaconNetworkServiceRegistered()
+        {
+            BeaconNetworkSystem beaconNetwork = GlobalRegistry.BeaconNetwork;
+            if (beaconNetwork == null)
+            {
+                GameObject runtimeRoot = new GameObject("[BeaconNetworkSystem]"); // COLD ALLOC: GameObject[1] - bootstrap-owned beacon network root - owner: GameBootstrapper
+                beaconNetwork = runtimeRoot.AddComponent<BeaconNetworkSystem>();
+            }
+
+            PersistRuntimeService(beaconNetwork);
+            if (!ReferenceEquals(GlobalRegistry.BeaconNetwork, beaconNetwork))
+                GlobalRegistry.RegisterBeaconNetworkRuntime(beaconNetwork);
+
+            return beaconNetwork;
+        }
+
         private static GlobalPhysicsStateManager EnsureGlobalPhysicsStateManagerRegistered()
         {
             GlobalPhysicsStateManager manager = GlobalRegistry.PhysicsStateManager;
-            if (manager == null)
-                manager = GlobalPhysicsStateManager.ActiveRuntimeInstance;
 
             if (manager == null)
             {
@@ -1811,6 +1935,21 @@ namespace Hecton8.Bootstrap
             dispatcher.BindNativeInputManager(_bootstrapInputManager);
             dispatcher.InitializeService();
             return dispatcher;
+        }
+
+        private static InputManager EnsureNativeInputManagerRegistered()
+        {
+            if (_bootstrapInputManager == null)
+                _bootstrapInputManager = GlobalRegistry.NativeInputManager;
+
+            if (_bootstrapInputManager == null)
+                return null;
+
+            if (!ReferenceEquals(GlobalRegistry.NativeInputManager, _bootstrapInputManager))
+                GlobalRegistry.RegisterNativeInputManagerRuntime(_bootstrapInputManager);
+
+            PersistRuntimeService(_bootstrapInputManager);
+            return _bootstrapInputManager;
         }
 
         private static PowerGridManager EnsurePowerGridServiceRegistered()
@@ -1997,9 +2136,9 @@ namespace Hecton8.Bootstrap
 
         private static global::Hecton8.Core.HectonHardwareProfile CaptureHardwareProfile()
         {
-            int graphicsMemoryMb = Mathf.Max(0, SystemInfo.graphicsMemorySize);
-            int systemMemoryMb = Mathf.Max(0, SystemInfo.systemMemorySize);
-            int processorCount = Mathf.Max(1, SystemInfo.processorCount);
+            int graphicsMemoryMb = math.max(0, SystemInfo.graphicsMemorySize);
+            int systemMemoryMb = math.max(0, SystemInfo.systemMemorySize);
+            int processorCount = math.max(1, SystemInfo.processorCount);
             global::Hecton8.Core.HectonQualityTier qualityTier = graphicsMemoryMb < SuspiciousGraphicsMemoryFallbackThresholdMb
                 ? global::Hecton8.Core.HectonQualityTier.Low
                 : ResolveQualityTier(graphicsMemoryMb, systemMemoryMb, processorCount);
@@ -2184,6 +2323,9 @@ namespace Hecton8.Bootstrap
                 case GlobalRegistryServiceSlot.FloatingOriginRuntime:
                     node = BootstrapDependencyNode.HectonFloatingOrigin;
                     return true;
+                case GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime:
+                    node = BootstrapDependencyNode.ConnectionSplineBatchRenderer;
+                    return true;
                 case GlobalRegistryServiceSlot.PhysicsStateManager:
                     node = BootstrapDependencyNode.GlobalPhysicsStateManager;
                     return true;
@@ -2214,6 +2356,9 @@ namespace Hecton8.Bootstrap
                 case GlobalRegistryServiceSlot.Logistics:
                     node = BootstrapDependencyNode.ConstructionManager;
                     return true;
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime:
+                    node = BootstrapDependencyNode.NativeInputManager;
+                    return true;
                 case GlobalRegistryServiceSlot.Input:
                     node = BootstrapDependencyNode.InputDispatcher;
                     return true;
@@ -2225,6 +2370,12 @@ namespace Hecton8.Bootstrap
                     return true;
                 case GlobalRegistryServiceSlot.PlayerSensory:
                     node = BootstrapDependencyNode.PlayerSensoryManager;
+                    return true;
+                case GlobalRegistryServiceSlot.BeaconNetworkRuntime:
+                    node = BootstrapDependencyNode.BeaconNetworkSystem;
+                    return true;
+                case GlobalRegistryServiceSlot.ModWorldPersistenceRuntime:
+                    node = BootstrapDependencyNode.ModWorldPersistenceManager;
                     return true;
                 default:
                     node = default;
@@ -2681,7 +2832,7 @@ namespace Hecton8.Bootstrap
     /// <summary>
     /// Data-only fauna simulation sentinel for headless boots before world fauna presentation exists.
     /// </summary>
-    internal sealed class DemiurgeFaunaSimulationService : IFaunaSim
+    internal sealed class DemiurgeFaunaSimulationService : IFaunaSim, IServiceHeartbeat, IServiceShutdown
     {
         // COLD ALLOC: DemiurgeFaunaSimulationService[1] - headless data-only fauna simulation sentinel - owner: GameBootstrapper
         internal static readonly DemiurgeFaunaSimulationService Shared = new DemiurgeFaunaSimulationService();
@@ -2691,6 +2842,17 @@ namespace Hecton8.Bootstrap
 
         /// <inheritdoc />
         public int ResidentSlotCapacity => 0;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => ServiceHeartbeatState.Ready;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => true;
+
+        /// <inheritdoc />
+        public void OnServiceShutdown()
+        {
+        }
     }
 
     internal static class BootstrapBiosErrorOverlay

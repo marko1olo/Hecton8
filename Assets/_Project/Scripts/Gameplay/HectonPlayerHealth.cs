@@ -10,6 +10,7 @@ using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Sirenix.OdinInspector;
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -39,8 +40,10 @@ namespace Hecton8.Gameplay
         private const string RadiationFatigueDiscoveryId = "radiation_fatigue_advisory_30";
         private const string RadiationCriticalDiscoveryId = "radiation_critical_advisory";
         private const string LeviathanTraumaDiscoveryId = "leviathan_trauma_voice_log";
+        private const string MutationDetectedMessage = "MUTATION DETECTED";
         private const string RadiationFatigueFallbackMessage = "CRITICAL ADVISORY // RADIATION LOAD 30 PERCENT";
         private const string RadiationCriticalFallbackMessage = "CRITICAL ADVISORY // RADIATION LOAD 70 PERCENT - RAD-SHIELD REQUIRED";
+        private static readonly uint _mutationDetectedMessageHash = NotificationEvents.ComputeMessageHash(MutationDetectedMessage);
         private static readonly char[] s_radiationFatigueMessage =
         {
             'C','R','I','T','I','C','A','L',' ','A','D','V','I','S','O','R','Y',' ','/','/',' ',
@@ -323,6 +326,8 @@ namespace Hecton8.Gameplay
         private bool _radiationCriticalAdvisoryIssued;
         private bool _leviathanTraumaAdvisoryIssued;
         private HectonSurvivalSystem _survivalSystem;
+        private HectonPlayerMovement _playerMovement;
+        private Vector3 _lastKnownRuntimePosition;
 
         /// <summary>Initializes the health system.</summary>
         private void Awake()
@@ -332,7 +337,9 @@ namespace Hecton8.Gameplay
                 _baseMaxHealth = Mathf.Max(MinimumRuntimeMaxHealth, maxHealth);
                 maxHealth = _baseMaxHealth;
                 currentHealth = maxHealth;
+                NotificationEvents.RegisterMessage(MutationDetectedMessage);
                 TryGetComponent(out _survivalSystem);
+                TryGetComponent(out _playerMovement);
                 ApplyMutationRuntimeEffects();
                 _isInitialized = true;
             }
@@ -511,7 +518,7 @@ namespace Hecton8.Gameplay
             _leviathanTraumaAdvisoryIssued = true;
             NarrativeEvents.RaiseDiscoveryMade(LeviathanTraumaDiscoveryId);
             ProceduralAudioEvents.RaiseAudioPingTriggered(
-                transform.position,
+                ResolvePlayerRuntimePosition(),
                 1f,
                 0.6f,
                 1f,
@@ -538,15 +545,12 @@ namespace Hecton8.Gameplay
                 _mutationFlags |= threshold.MutationBit;
                 ApplyMutationRuntimeEffects();
                 OnMutationFlagsChanged?.Invoke(_mutationFlags);
-                NotificationEvents.PushWarning("MUTATION DETECTED // " + ResolveMutationDisplayName(threshold));
+                NotificationEvents.PushRegisteredWarning(_mutationDetectedMessageHash);
             }
         }
 
         private void ApplyMutationRuntimeEffects()
         {
-            if (_survivalSystem == null)
-                TryGetComponent(out _survivalSystem);
-
             if (_survivalSystem == null)
                 return;
 
@@ -556,17 +560,29 @@ namespace Hecton8.Gameplay
             _survivalSystem.SetRuntimeOxygenCapacityMultiplier(oxygenCapacityMultiplier);
         }
 
-        private static string ResolveMutationDisplayName(HazardMutationProfile.MutationThreshold threshold)
+        private Vector3 ResolvePlayerRuntimePosition()
         {
-            return string.IsNullOrWhiteSpace(threshold.DisplayName)
-                ? "UNKNOWN ADAPTATION"
-                : threshold.DisplayName.Trim();
+            if (_playerMovement == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _playerMovement = playerContext.PlayerMovement;
+            }
+
+            if (_playerMovement != null)
+            {
+                float3 runtimePosition = _playerMovement.CurrentAup.ToRuntimeFloat3();
+                _lastKnownRuntimePosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                return _lastKnownRuntimePosition;
+            }
+
+            return _lastKnownRuntimePosition;
         }
 
         /// <summary>Handles player death.</summary>
         private void Die()
         {
-            GlobalTelemetryBus.PublishPlayerDeath(transform.position);
+            GlobalTelemetryBus.PublishPlayerDeath(ResolvePlayerRuntimePosition());
             OnDeath?.Invoke();
             // TODO: Trigger death sequence, respawn, etc.
             LogPlayerDied();

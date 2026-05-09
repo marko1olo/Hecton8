@@ -31,6 +31,7 @@
 //   v1.0: Basic placement.
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using Hecton8.Audio;
 using Hecton8.Building;
@@ -58,7 +59,8 @@ namespace Hecton8.Building
             MissingCost = 2,
             PlacementBlocked = 3,
             Ready = 4,
-            SnappedReady = 5
+            SnappedReady = 5,
+            BlueprintLocked = 6
         }
 
         // ══════════════════════════════════════════════════════════
@@ -203,6 +205,9 @@ namespace Hecton8.Building
         // COLD ALLOC: List<MonoBehaviour>[2] — authored placement-rule scan buffer for the active buildable prefab — owner: PlayerBuilder
         private readonly List<MonoBehaviour> _placementRuleBuffer = new List<MonoBehaviour>(2);
         private readonly List<ModuleSocket> _ghostSocketBuffer = new List<ModuleSocket>(8);
+        private FixedCharBuffer _builderHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - builder HUD notification staging buffer - owner: PlayerBuilder
+        private FixedCharBuffer _builderLogTitleBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - builder field-log title staging buffer - owner: PlayerBuilder
+        private FixedCharBuffer _builderLogSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - builder field-log summary staging buffer - owner: PlayerBuilder
         private IBuildPlacementRule _activePlacementRule;
         private bool _semanticPlacementValid = true;
         private string _semanticPlacementBlockReason = string.Empty;
@@ -231,9 +236,9 @@ namespace Hecton8.Building
 
         public BuildableData ActiveBuildable => activeBuildable;
         public int ActiveBuildableIndex => _activeBuildableIndex;
-        public int BuildableCount => _buildCatalog != null ? _buildCatalog.Count : 0;
-        public bool HasResourcesForActiveBuildable => activeBuildable != null && HasResources(activeBuildable);
-        public bool CanPlaceActiveBuildable => _currentGhost != null && _currentGhost.CanBuild && _semanticPlacementValid && _integrityPlacementValid;
+        public int BuildableCount => _buildCatalog != null ? _buildCatalog.ViewableCount : 0;
+        public bool HasResourcesForActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && HasResources(activeBuildable);
+        public bool CanPlaceActiveBuildable => activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable) && _currentGhost != null && _currentGhost.CanBuild && _semanticPlacementValid && _integrityPlacementValid;
         public bool HasPlacementPreview => _currentGhostObj != null;
         public BuildReadiness ActiveBuildReadiness => GetActiveBuildReadiness();
 
@@ -251,20 +256,24 @@ namespace Hecton8.Building
 
         public BuildableData GetBuildableAt(int index)
         {
-            if (_buildCatalog == null || index < 0 || index >= _buildCatalog.Count)
+            if (_buildCatalog == null || index < 0 || index >= _buildCatalog.ViewableCount)
                 return null;
 
-            return _buildCatalog.GetAt(index);
+            return _buildCatalog.GetViewableAt(index);
         }
 
         public BuildableData GetRelativeBuildable(int direction)
         {
-            if (_buildCatalog == null || _buildCatalog.Count <= 0)
+            if (_buildCatalog == null || _buildCatalog.ViewableCount <= 0)
                 return null;
 
-            int currentIndex = _activeBuildableIndex >= 0 ? _activeBuildableIndex : 0;
-            int nextIndex = (currentIndex + direction + _buildCatalog.Count) % _buildCatalog.Count;
-            return _buildCatalog.GetAt(nextIndex);
+            int currentIndex = _buildCatalog.IndexOfViewable(activeBuildable);
+            if (currentIndex < 0)
+                currentIndex = direction >= 0 ? -1 : 0;
+
+            int viewableCount = _buildCatalog.ViewableCount;
+            int nextIndex = (currentIndex + direction + viewableCount) % viewableCount;
+            return _buildCatalog.GetViewableAt(nextIndex);
         }
 
         public bool DebugDeployActiveBuildable(Vector3 position, Quaternion rotation, bool consumeCost = true)
@@ -277,26 +286,42 @@ namespace Hecton8.Building
             LogBuilderDebug($"DebugDeploy -> active={(activeBuildable != null ? activeBuildable.moduleName : "null")}");
             if (activeBuildable == null || activeBuildable.finalPrefab == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: no active buildable/final prefab.");
+#endif
+                return false;
+            }
+
+            if (!IsBuildableBlueprintViewable(activeBuildable))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: blueprint locked.");
+#endif
                 return false;
             }
 
             if (consumeCost && !HasResources(activeBuildable))
             {
-                Debug.LogWarning($"[BuilderDebug] DebugDeploy aborted: missing resources for {activeBuildable.moduleName}.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: missing resources for active buildable.");
+#endif
                 return false;
             }
 
             if (!TryGetObjectPool(out ObjectPoolManager pool))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: ObjectPoolManager unavailable.");
+#endif
                 return false;
             }
 
             GameObject spawned = SpawnPlacedModule(activeBuildable, position, rotation, pool);
             if (spawned == null)
             {
-                Debug.LogWarning($"[BuilderDebug] DebugDeploy aborted: failed to spawn {activeBuildable.moduleName}.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[BuilderDebug] DebugDeploy aborted: failed to spawn active buildable.");
+#endif
                 return false;
             }
 
@@ -345,11 +370,26 @@ namespace Hecton8.Building
                 return false;
             if (activeBuildable == null)
                 return false;
+            if (!IsBuildableBlueprintViewable(activeBuildable))
+                return false;
             if (!HasResources(activeBuildable))
                 return false;
 
             TryPlaceModuleInternal();
             return true;
+        }
+
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
+            AppendText(ref buffer, "BUILDER // ");
+            WriteActiveBuildOperationalSummary(ref buffer);
+            AppendText(ref buffer, " // ");
+            WriteActiveBuildStatusLabel(ref buffer);
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
+            WriteActiveBuildAdvice(ref buffer);
         }
 
         public string GetActiveBuildStatusLabel()
@@ -358,6 +398,7 @@ namespace Hecton8.Building
             {
                 case BuildReadiness.Offline: return "OFFLINE";
                 case BuildReadiness.NoSelection: return "NO MODULE";
+                case BuildReadiness.BlueprintLocked: return "BLUEPRINT LOCKED";
                 case BuildReadiness.MissingCost: return "MISSING COST";
                 case BuildReadiness.PlacementBlocked: return "PLACEMENT BLOCKED";
                 case BuildReadiness.SnappedReady: return "SNAPPED READY";
@@ -367,57 +408,91 @@ namespace Hecton8.Building
 
         public string GetActiveBuildAdvice()
         {
+            _builderLogSummaryBuffer.Clear();
+            WriteActiveBuildAdvice(ref _builderLogSummaryBuffer);
+            return _builderLogSummaryBuffer.ToString();
+        }
+
+        public void WriteActiveBuildStatusLabel(ref FixedCharBuffer buffer)
+        {
+            switch (GetActiveBuildReadiness())
+            {
+                case BuildReadiness.Offline:
+                    AppendText(ref buffer, "OFFLINE");
+                    return;
+                case BuildReadiness.NoSelection:
+                    AppendText(ref buffer, "NO MODULE");
+                    return;
+                case BuildReadiness.BlueprintLocked:
+                    AppendText(ref buffer, "BLUEPRINT LOCKED");
+                    return;
+                case BuildReadiness.MissingCost:
+                    AppendText(ref buffer, "MISSING COST");
+                    return;
+                case BuildReadiness.PlacementBlocked:
+                    AppendText(ref buffer, "PLACEMENT BLOCKED");
+                    return;
+                case BuildReadiness.SnappedReady:
+                    AppendText(ref buffer, "SNAPPED READY");
+                    return;
+                default:
+                    AppendText(ref buffer, "READY");
+                    return;
+            }
+        }
+
+        public void WriteActiveBuildAdvice(ref FixedCharBuffer buffer)
+        {
             string purpose = DescribeBuildPurpose(activeBuildable);
 
             switch (GetActiveBuildReadiness())
             {
                 case BuildReadiness.Offline:
-                    return "Restore builder links before field deployment.";
+                    AppendText(ref buffer, "Restore builder links before field deployment.");
+                    return;
                 case BuildReadiness.NoSelection:
-                    return "Pick a buildable from PDA Construction or cycle the catalog.";
+                    AppendText(ref buffer, "Pick a buildable from PDA Construction or cycle the catalog.");
+                    return;
+                case BuildReadiness.BlueprintLocked:
+                    AppendText(ref buffer, "Recover the linked quest signal before this blueprint can deploy.");
+                    return;
                 case BuildReadiness.MissingCost:
-                    return $"{purpose} Recover materials first. Need {GetActiveCostDigest()}.";
+                    AppendText(ref buffer, purpose);
+                    AppendText(ref buffer, " Recover materials first. Need ");
+                    WriteActiveCostDigest(ref buffer);
+                    AppendText(ref buffer, ".");
+                    return;
                 case BuildReadiness.PlacementBlocked:
+                    AppendText(ref buffer, purpose);
+                    AppendText(ref buffer, " ");
                     string blockReason = ResolvePlacementBlockReason();
                     if (!string.IsNullOrEmpty(blockReason))
-                        return $"{purpose} {blockReason}.";
-                    return IsSnapped
-                        ? $"{purpose} Socket alignment is good, but the final volume is obstructed."
-                        : $"{purpose} Reposition, rotate, or snap to a valid socket.";
+                    {
+                        AppendText(ref buffer, blockReason);
+                        AppendText(ref buffer, ".");
+                        return;
+                    }
+
+                    AppendText(
+                        ref buffer,
+                        IsSnapped
+                            ? "Socket alignment is good, but the final volume is obstructed."
+                            : "Reposition, rotate, or snap to a valid socket.");
+                    return;
                 case BuildReadiness.SnappedReady:
-                    return $"{purpose} Placement is socket-locked and ready to deploy.";
+                    AppendText(ref buffer, purpose);
+                    AppendText(ref buffer, " Placement is socket-locked and ready to deploy.");
+                    return;
                 default:
-                    return $"{purpose} Placement is clear. Deploy when ready.";
+                    AppendText(ref buffer, purpose);
+                    AppendText(ref buffer, " Placement is clear. Deploy when ready.");
+                    return;
             }
         }
 
-        public string GetActiveCostDigest()
+        public void WriteActiveCostDigest(ref FixedCharBuffer buffer)
         {
-            if (activeBuildable == null || activeBuildable.buildCost == null || activeBuildable.buildCost.Count == 0)
-                return "NO COST";
-
-            System.Text.StringBuilder sb = new System.Text.StringBuilder(128);
-            for (int i = 0; i < activeBuildable.buildCost.Count; i++)
-            {
-                InventoryCost cost = activeBuildable.buildCost[i];
-                if (cost == null || cost.item == null || cost.amount <= 0)
-                    continue;
-
-                int available = inventory != null && cost.item != null
-                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
-                    : 0;
-                if (sb.Length > 0)
-                    sb.Append(" | ");
-
-                string itemName = string.IsNullOrWhiteSpace(cost.item.itemName) ? cost.item.name : cost.item.itemName;
-                sb.Append(itemName.ToUpperInvariant());
-                sb.Append(' ');
-                sb.Append(available);
-                sb.Append('/');
-                sb.Append(cost.amount);
-            }
-
-            return sb.Length > 0 ? sb.ToString() : "NO COST";
+            WriteCostDigest(activeBuildable, ref buffer);
         }
 
         public string GetActiveBuildRoleLabel()
@@ -430,20 +505,44 @@ namespace Hecton8.Building
             if (activeBuildable == null)
                 return "NO FAMILY // NO ROLE";
 
-            return $"{activeBuildable.FamilyShortCode} // {DescribePowerRole(activeBuildable)}";
+            _builderLogSummaryBuffer.Clear();
+            AppendText(ref _builderLogSummaryBuffer, activeBuildable.FamilyShortCode);
+            AppendText(ref _builderLogSummaryBuffer, " // ");
+            AppendText(ref _builderLogSummaryBuffer, DescribePowerRole(activeBuildable));
+            return _builderLogSummaryBuffer.ToString();
         }
 
         public string GetActiveBuildOperationalSummary()
         {
-            if (activeBuildable == null)
-                return "NO MODULE";
+            _builderLogSummaryBuffer.Clear();
+            WriteActiveBuildOperationalSummary(ref _builderLogSummaryBuffer);
+            return _builderLogSummaryBuffer.ToString();
+        }
 
-            return $"{activeBuildable.moduleName.ToUpperInvariant()} // {activeBuildable.FamilyShortCode} // {DescribePowerRole(activeBuildable)}";
+        public void WriteActiveBuildOperationalSummary(ref FixedCharBuffer buffer)
+        {
+            if (activeBuildable == null)
+            {
+                AppendText(ref buffer, "NO MODULE");
+                return;
+            }
+
+            string moduleName = activeBuildable.moduleName;
+            if (string.IsNullOrWhiteSpace(moduleName))
+                AppendText(ref buffer, "MODULE");
+            else
+                AppendUpperInvariant(ref buffer, moduleName);
+
+            AppendText(ref buffer, " // ");
+            AppendText(ref buffer, activeBuildable.FamilyShortCode);
+            AppendText(ref buffer, " // ");
+            AppendText(ref buffer, DescribePowerRole(activeBuildable));
         }
 
         public void SetActiveBuildable(BuildableData data)
         {
             if (data == null) return;
+            if (!IsBuildableBlueprintViewable(data)) return;
 
             bool wasEquipped = IsEquipped;
 
@@ -564,29 +663,26 @@ namespace Hecton8.Building
         private void CycleBuildable(int direction)
         {
             ResolveRuntimeReferences();
-            if (_buildCatalog == null || _buildCatalog.Count <= 0)
+            if (_buildCatalog == null || _buildCatalog.ViewableCount <= 0)
             {
                 NotifyBuildBlocked("MODULE CATALOG OFFLINE");
                 return;
             }
 
-            int count = _buildCatalog.Count;
-            int startIndex = _activeBuildableIndex;
-
-            if (startIndex < 0 || startIndex >= count)
-                startIndex = Mathf.Max(0, _buildCatalog.IndexOf(activeBuildable));
+            int count = _buildCatalog.ViewableCount;
+            int startIndex = _buildCatalog.IndexOfViewable(activeBuildable);
 
             if (startIndex < 0)
-                startIndex = 0;
+                startIndex = direction >= 0 ? -1 : 0;
 
             for (int step = 1; step <= count; step++)
             {
                 int candidateIndex = WrapIndex(startIndex + (step * direction), count);
-                BuildableData candidate = _buildCatalog.GetAt(candidateIndex);
+                BuildableData candidate = _buildCatalog.GetViewableAt(candidateIndex);
                 if (candidate == null) continue;
 
                 SetActiveBuildable(candidate);
-                _activeBuildableIndex = candidateIndex;
+                _activeBuildableIndex = _buildCatalog.IndexOf(candidate);
                 PlaySound(rotateSound);
                 NotifyBuildableSelection();
                 return;
@@ -635,7 +731,9 @@ namespace Hecton8.Building
         {
             if (activeBuildable == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[PlayerBuilder] No buildable module assigned!");
+#endif
                 return;
             }
 
@@ -701,7 +799,7 @@ namespace Hecton8.Building
 
             if (_currentGhostUsesRuntimeProxy)
             {
-                Object.Destroy(_currentGhostObj);
+                UnityEngine.Object.Destroy(_currentGhostObj);
             }
             else
             {
@@ -709,7 +807,7 @@ namespace Hecton8.Building
                 if (pool != null)
                     pool.Despawn(_currentGhostObj);
                 else
-                    Object.Destroy(_currentGhostObj);
+                    UnityEngine.Object.Destroy(_currentGhostObj);
             }
 
             _currentGhostObj = null;
@@ -949,7 +1047,7 @@ namespace Hecton8.Building
             //    Snap: snapSpeed (быстрый, ~20) — "щёлк" к позиции.
             //    Non-snap: ghostFollowSpeed (плавный, ~12) — обычное следование.
             //
-            //  Exp smoothing: 1 - exp(-speed * dt) = frame-rate independent.
+            //  Cheap cinematic smoothing: x/(1+x) avoids exp() in the placement tick.
             // ═══════════════════════════════════════════════════
 
             if (IsStructuralBuildable(activeBuildable))
@@ -962,7 +1060,7 @@ namespace Hecton8.Building
             Vector3 previousPosition = t.position;
             Quaternion previousRotation = t.rotation;
             float speed = _isSnapped ? snapSpeed : ghostFollowSpeed;
-            float lerpFactor = 1f - Mathf.Exp(-speed * dt);
+            float lerpFactor = ResolveDecayBlend(speed, dt);
 
             t.position = Vector3.Lerp(previousPosition, targetPos, lerpFactor);
             t.rotation = Quaternion.Slerp(previousRotation, targetRot, lerpFactor);
@@ -1004,6 +1102,13 @@ namespace Hecton8.Building
                 return;
             }
 
+            if (!IsBuildableBlueprintViewable(activeBuildable))
+            {
+                NotifyBuildBlocked("BLUEPRINT LOCKED");
+                PlaySound(errorSound);
+                return;
+            }
+
             if (_currentGhostObj == null || _currentGhost == null)
             {
                 NotifyBuildBlocked("PLACEMENT INVALID");
@@ -1022,7 +1127,9 @@ namespace Hecton8.Building
             {
                 NotifyMissingResources(activeBuildable);
                 PlaySound(errorSound);
-                Debug.LogWarning("[PlayerBuilder] Недостаточно ресурсов!");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[PlayerBuilder] Missing resources.");
+#endif
                 return;
             }
 
@@ -1107,6 +1214,11 @@ namespace Hecton8.Building
             return _habitatConstructionManager.HasBuildResources(inventory, data);
         }
 
+        private static bool IsBuildableBlueprintViewable(BuildableData data)
+        {
+            return data != null && data.IsBlueprintViewable();
+        }
+
         private void ResolveRuntimeReferences()
         {
             LogBuilderDebug("ResolveRuntimeReferences begin");
@@ -1145,17 +1257,21 @@ namespace Hecton8.Building
         {
             LogBuilderDebug("EnsureCatalogSelection begin");
             if (!autoResolveCatalogSelection) return;
-            if (activeBuildable != null) return;
-            if (_buildCatalog == null || _buildCatalog.Count <= 0) return;
+            if (activeBuildable != null && IsBuildableBlueprintViewable(activeBuildable)) return;
+            if (_buildCatalog == null || _buildCatalog.ViewableCount <= 0) return;
 
-            for (int i = 0; i < _buildCatalog.Count; i++)
+            activeBuildable = null;
+            _activeBuildableIndex = -1;
+
+            int viewableCount = _buildCatalog.ViewableCount;
+            for (int i = 0; i < viewableCount; i++)
             {
-                BuildableData candidate = _buildCatalog.GetAt(i);
+                BuildableData candidate = _buildCatalog.GetViewableAt(i);
                 if (candidate == null) continue;
 
                 activeBuildable = candidate;
                 CacheActivePlacementRule();
-                _activeBuildableIndex = i;
+                _activeBuildableIndex = _buildCatalog.IndexOf(candidate);
                 LogBuilderDebug($"EnsureCatalogSelection picked={candidate.moduleName} index={i}");
                 return;
             }
@@ -1171,7 +1287,9 @@ namespace Hecton8.Building
                 return;
             }
 
-            _activeBuildableIndex = _buildCatalog.IndexOf(activeBuildable);
+            _activeBuildableIndex = IsBuildableBlueprintViewable(activeBuildable)
+                ? _buildCatalog.IndexOf(activeBuildable)
+                : -1;
         }
 
         private void NotifyBuildableSelection()
@@ -1182,19 +1300,34 @@ namespace Hecton8.Building
                 return;
             }
 
-            string message =
-                $"BUILDER // {GetActiveBuildOperationalSummary()} // {GetActiveBuildStatusLabel()} // {GetActiveCostDigest()}";
+            _builderHudBuffer.Clear();
+            AppendText(ref _builderHudBuffer, "BUILDER // ");
+            WriteActiveBuildOperationalSummary(ref _builderHudBuffer);
+            AppendText(ref _builderHudBuffer, " // ");
+            WriteActiveBuildStatusLabel(ref _builderHudBuffer);
+            AppendText(ref _builderHudBuffer, " // ");
+            WriteActiveCostDigest(ref _builderHudBuffer);
+            PublishBuilderInfo();
 
-            if (hudNotification != null)
-                hudNotification.ShowInfo(message);
-            else
-                Debug.Log(message);
-
+            _builderLogTitleBuffer.Clear();
+            AppendText(ref _builderLogTitleBuffer, "BUILDABLE ARMED - ");
+            AppendUpperInvariant(ref _builderLogTitleBuffer, activeBuildable.moduleName);
+            _builderLogSummaryBuffer.Clear();
+            AppendText(ref _builderLogSummaryBuffer, activeBuildable.FamilyShortCode);
+            AppendText(ref _builderLogSummaryBuffer, " // ");
+            AppendText(ref _builderLogSummaryBuffer, DescribePowerRole(activeBuildable));
+            AppendText(ref _builderLogSummaryBuffer, " // ");
+            WriteActiveBuildAdvice(ref _builderLogSummaryBuffer);
+            BuildReadiness readiness = ActiveBuildReadiness;
             FieldOperationLogSystem.RecordOperation(
                 "BUILDER",
-                $"BUILDABLE ARMED - {activeBuildable.moduleName.ToUpperInvariant()}",
-                $"{GetActiveBuildFamilyAndRoleLabel()} // {GetActiveBuildAdvice()}",
-                ActiveBuildReadiness == BuildReadiness.MissingCost ? "WARN" : "INFO");
+                in _builderLogTitleBuffer,
+                in _builderLogSummaryBuffer,
+                readiness == BuildReadiness.MissingCost ||
+                readiness == BuildReadiness.BlueprintLocked ||
+                readiness == BuildReadiness.PlacementBlocked
+                    ? "WARN"
+                    : "INFO");
         }
 
         private void NotifyMissingResources(BuildableData data)
@@ -1205,16 +1338,26 @@ namespace Hecton8.Building
                 return;
             }
 
-            string message = $"BUILDER // {data.moduleName.ToUpperInvariant()} // {data.FamilyShortCode} // MISSING COST // {GetCostDigest(data)}";
-            if (hudNotification != null)
-                hudNotification.ShowWarning(message);
-            else
-                Debug.LogWarning(message);
+            _builderHudBuffer.Clear();
+            AppendText(ref _builderHudBuffer, "BUILDER // ");
+            AppendUpperInvariant(ref _builderHudBuffer, data.moduleName);
+            AppendText(ref _builderHudBuffer, " // ");
+            AppendText(ref _builderHudBuffer, data.FamilyShortCode);
+            AppendText(ref _builderHudBuffer, " // MISSING COST // ");
+            WriteCostDigest(data, ref _builderHudBuffer);
+            PublishBuilderWarning();
 
+            _builderLogTitleBuffer.Clear();
+            AppendText(ref _builderLogTitleBuffer, "MISSING MATERIALS - ");
+            AppendUpperInvariant(ref _builderLogTitleBuffer, data.moduleName);
+            _builderLogSummaryBuffer.Clear();
+            AppendText(ref _builderLogSummaryBuffer, DescribeBuildPowerRole(data));
+            AppendText(ref _builderLogSummaryBuffer, " // Required: ");
+            WriteCostDigest(data, ref _builderLogSummaryBuffer);
             FieldOperationLogSystem.RecordOperation(
                 "BUILDER",
-                $"MISSING MATERIALS - {data.moduleName.ToUpperInvariant()}",
-                $"{DescribeBuildPowerRole(data)} // Required: {GetCostDigest(data)}",
+                in _builderLogTitleBuffer,
+                in _builderLogSummaryBuffer,
                 "WARN");
         }
 
@@ -1223,18 +1366,27 @@ namespace Hecton8.Building
             if (string.IsNullOrEmpty(reason))
                 reason = "BUILD BLOCKED";
 
-            string message = activeBuildable != null
-                ? $"BUILDER // {activeBuildable.moduleName.ToUpperInvariant()} // {activeBuildable.FamilyShortCode} // {reason}"
-                : $"BUILDER // {reason}";
-            if (hudNotification != null)
-                hudNotification.ShowWarning(message);
-            else
-                Debug.LogWarning(message);
+            _builderHudBuffer.Clear();
+            AppendText(ref _builderHudBuffer, "BUILDER // ");
+            if (activeBuildable != null)
+            {
+                AppendUpperInvariant(ref _builderHudBuffer, activeBuildable.moduleName);
+                AppendText(ref _builderHudBuffer, " // ");
+                AppendText(ref _builderHudBuffer, activeBuildable.FamilyShortCode);
+                AppendText(ref _builderHudBuffer, " // ");
+            }
 
+            AppendText(ref _builderHudBuffer, reason);
+            PublishBuilderWarning();
+
+            _builderLogTitleBuffer.Clear();
+            AppendText(ref _builderLogTitleBuffer, reason);
+            _builderLogSummaryBuffer.Clear();
+            WriteActiveBuildAdvice(ref _builderLogSummaryBuffer);
             FieldOperationLogSystem.RecordOperation(
                 "BUILDER",
-                reason,
-                GetActiveBuildAdvice(),
+                in _builderLogTitleBuffer,
+                in _builderLogSummaryBuffer,
                 "WARN");
         }
 
@@ -1242,16 +1394,26 @@ namespace Hecton8.Building
         {
             if (data == null) return;
 
-            string message = $"BUILDER // {data.moduleName.ToUpperInvariant()} DEPLOYED";
-            if (hudNotification != null)
-                hudNotification.ShowInfo(message);
-            else
-                Debug.Log(message);
+            _builderHudBuffer.Clear();
+            AppendText(ref _builderHudBuffer, "BUILDER // ");
+            AppendUpperInvariant(ref _builderHudBuffer, data.moduleName);
+            AppendText(ref _builderHudBuffer, " DEPLOYED");
+            PublishBuilderInfo();
 
+            _builderLogTitleBuffer.Clear();
+            AppendText(ref _builderLogTitleBuffer, "MODULE DEPLOYED - ");
+            AppendUpperInvariant(ref _builderLogTitleBuffer, data.moduleName);
+            _builderLogSummaryBuffer.Clear();
+            AppendText(ref _builderLogSummaryBuffer, DescribeBuildPowerRole(data));
+            AppendText(ref _builderLogSummaryBuffer, " // ");
+            AppendText(ref _builderLogSummaryBuffer, DescribeBuildPurpose(data));
+            AppendText(ref _builderLogSummaryBuffer, " ");
+            WriteCostDigest(data, ref _builderLogSummaryBuffer);
+            AppendText(ref _builderLogSummaryBuffer, " consumed.");
             FieldOperationLogSystem.RecordOperation(
                 "BUILDER",
-                $"MODULE DEPLOYED - {data.moduleName.ToUpperInvariant()}",
-                $"{DescribeBuildPowerRole(data)} // {DescribeBuildPurpose(data)} {GetCostDigest(data)} consumed.",
+                in _builderLogTitleBuffer,
+                in _builderLogSummaryBuffer,
                 "INFO");
         }
 
@@ -1404,6 +1566,34 @@ namespace Hecton8.Building
             placedModule.transform.SetPositionAndRotation(placePos, placeRot);
         }
 
+        private void PublishBuilderInfo()
+        {
+            if (hudNotification != null)
+            {
+                hudNotification.ShowInfo(in _builderHudBuffer);
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log(_builderHudBuffer.ToString());
+#endif
+        }
+
+        private void PublishBuilderWarning()
+        {
+            if (hudNotification != null)
+            {
+                hudNotification.ShowWarning(in _builderHudBuffer);
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning(_builderHudBuffer.ToString());
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogBuilderDebug(string message)
         {
             if (!builderDebugLogging)
@@ -1414,17 +1604,22 @@ namespace Hecton8.Building
 
         private void NotifyModuleDeconstructed(BaseModule module)
         {
-            string moduleName = module != null ? module.gameObject.name.ToUpperInvariant() : "MODULE";
-            string message = $"BUILDER // {moduleName} RECOVERED";
-            if (hudNotification != null)
-                hudNotification.ShowInfo(message);
-            else
-                Debug.Log(message);
+            string moduleName = module != null ? module.gameObject.name : "MODULE";
+            _builderHudBuffer.Clear();
+            AppendText(ref _builderHudBuffer, "BUILDER // ");
+            AppendUpperInvariant(ref _builderHudBuffer, moduleName);
+            AppendText(ref _builderHudBuffer, " RECOVERED");
+            PublishBuilderInfo();
 
+            _builderLogTitleBuffer.Clear();
+            AppendText(ref _builderLogTitleBuffer, "MODULE RECOVERED - ");
+            AppendUpperInvariant(ref _builderLogTitleBuffer, moduleName);
+            _builderLogSummaryBuffer.Clear();
+            AppendText(ref _builderLogSummaryBuffer, "Construction module was deconstructed and resources were routed back to the expedition economy.");
             FieldOperationLogSystem.RecordOperation(
                 "BUILDER",
-                $"MODULE RECOVERED - {moduleName}",
-                "Construction module was deconstructed and resources were routed back to the expedition economy.",
+                in _builderLogTitleBuffer,
+                in _builderLogSummaryBuffer,
                 "INFO");
         }
 
@@ -1432,6 +1627,9 @@ namespace Hecton8.Building
         {
             if (activeBuildable == null)
                 return BuildReadiness.NoSelection;
+
+            if (!IsBuildableBlueprintViewable(activeBuildable))
+                return BuildReadiness.BlueprintLocked;
 
             if (inventory == null || playerCamera == null)
                 return BuildReadiness.Offline;
@@ -1748,33 +1946,39 @@ namespace Hecton8.Building
             return "PLACEMENT INVALID";
         }
 
-        private string GetCostDigest(BuildableData data)
+        private void WriteCostDigest(BuildableData data, ref FixedCharBuffer buffer)
         {
             if (data == null || data.buildCost == null || data.buildCost.Count == 0)
-                return "NO COST";
+            {
+                AppendText(ref buffer, "NO COST");
+                return;
+            }
 
-            System.Text.StringBuilder sb = new System.Text.StringBuilder(128);
+            bool wroteAny = false;
             for (int i = 0; i < data.buildCost.Count; i++)
             {
                 InventoryCost cost = data.buildCost[i];
                 if (cost == null || cost.item == null || cost.amount <= 0)
                     continue;
 
-                int available = inventory != null && cost.item != null
-                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
-                    : 0;
-                if (sb.Length > 0)
-                    sb.Append(" | ");
+                if (wroteAny)
+                    AppendText(ref buffer, " | ");
 
                 string itemName = string.IsNullOrWhiteSpace(cost.item.itemName) ? cost.item.name : cost.item.itemName;
-                sb.Append(itemName.ToUpperInvariant());
-                sb.Append(' ');
-                sb.Append(available);
-                sb.Append('/');
-                sb.Append(cost.amount);
+                AppendUpperInvariant(ref buffer, itemName);
+                AppendText(ref buffer, " ");
+
+                int available = inventory != null
+                    ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
+                    : 0;
+                buffer.AppendInt(available);
+                AppendText(ref buffer, "/");
+                buffer.AppendInt(cost.amount);
+                wroteAny = true;
             }
 
-            return sb.Length > 0 ? sb.ToString() : "NO COST";
+            if (!wroteAny)
+                AppendText(ref buffer, "NO COST");
         }
 
         private static string DescribePowerRole(BuildableData data)
@@ -1839,6 +2043,34 @@ namespace Hecton8.Building
                 default:
                     return "Use this module to extend the expedition footprint.";
             }
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
+        }
+
+        private static bool AppendUpperInvariant(ref FixedCharBuffer buffer, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            Span<char> scratch = stackalloc char[1];
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                scratch[0] = c == '_' ? ' ' : char.ToUpperInvariant(c);
+                if (!buffer.Append(scratch))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
         }
 
         private static int WrapIndex(int value, int count)

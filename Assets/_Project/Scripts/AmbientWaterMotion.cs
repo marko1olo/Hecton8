@@ -5,6 +5,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Physics
@@ -32,11 +33,13 @@ namespace Hecton8.Physics
         private Transform _cachedTransform;
         private Vector3 _restLocalPosition;
         private Quaternion _restLocalRotation;
+        private AbsoluteUniversePosition _restAup;
         private float _phase;
 
         public Transform CachedTransform => _cachedTransform;
         public Vector3 RestLocalPosition => _restLocalPosition;
         public Quaternion RestLocalRotation => _restLocalRotation;
+        public AbsoluteUniversePosition RestAup => _restAup;
         public float VerticalAmplitude => verticalAmplitude;
         public Vector3 PositionalAmplitude => positionalAmplitude;
         public Vector3 AngularAmplitude => angularAmplitude;
@@ -77,6 +80,7 @@ namespace Hecton8.Physics
             _cachedTransform ??= transform;
             _restLocalPosition = _cachedTransform.localPosition;
             _restLocalRotation = _cachedTransform.localRotation;
+            _restAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedTransform.position);
         }
 
         public void ApplyProfile()

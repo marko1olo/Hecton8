@@ -158,6 +158,7 @@ namespace Hecton8.SaveSystem
                 && WriteStringArray(ref writer, data.narrativeDiscoveryIds)
                 && writer.WriteInt(data.narrativeDepthTier)
                 && WriteStringList(ref writer, data.audioLogDiscoveredIds)
+                && WriteEncryptedAudioLogFragments(ref writer, data)
                 && writer.WriteStructArray(data.industrialLoreUnlockWords)
                 && WriteStringList(ref writer, data.questActiveIds)
                 && WriteStringList(ref writer, data.questCompletedIds)
@@ -221,6 +222,7 @@ namespace Hecton8.SaveSystem
                 || !ReadStringArray(ref reader, out data.narrativeDiscoveryIds)
                 || !reader.ReadInt(out data.narrativeDepthTier)
                 || !ReadStringList(ref reader, out data.audioLogDiscoveredIds)
+                || !ReadEncryptedAudioLogFragments(ref reader, data.version, data)
                 || !reader.ReadStructArray(out data.industrialLoreUnlockWords)
                 || !ReadStringList(ref reader, out data.questActiveIds)
                 || !ReadStringList(ref reader, out data.questCompletedIds)
@@ -254,6 +256,58 @@ namespace Hecton8.SaveSystem
 
             ApplyInventoryBiologicalDecay(ref data.inventory, data.playerStats.environmentTemperature);
             data.voxelDeltaPersistence = VoxelDeltaPersistenceDTO.CreateDefault();
+            return true;
+        }
+
+        private const int EncryptedAudioLogFragmentSaveVersion = 61;
+
+        private static bool WriteEncryptedAudioLogFragments(ref BufferWriter writer, SaveData data)
+        {
+            if (data == null)
+                return writer.WriteInt(0)
+                    && writer.WriteStructArraySlice<uint>(null, 0)
+                    && writer.WriteStructArraySlice<uint>(null, 0);
+
+            int safeCount = Math.Clamp(
+                data.audioLogEncryptedFragmentCount,
+                0,
+                Math.Min(
+                    SaveData.MaxEncryptedAudioLogFragments,
+                    Math.Min(
+                        data.audioLogEncryptedFragmentHashes != null ? data.audioLogEncryptedFragmentHashes.Length : 0,
+                        data.audioLogEncryptedFragmentBits != null ? data.audioLogEncryptedFragmentBits.Length : 0)));
+
+            return writer.WriteInt(safeCount)
+                && writer.WriteStructArraySlice(data.audioLogEncryptedFragmentHashes, safeCount)
+                && writer.WriteStructArraySlice(data.audioLogEncryptedFragmentBits, safeCount);
+        }
+
+        private static bool ReadEncryptedAudioLogFragments(ref BufferReader reader, int saveDataVersion, SaveData data)
+        {
+            if (data == null)
+                return false;
+
+            if (saveDataVersion < EncryptedAudioLogFragmentSaveVersion)
+            {
+                data.audioLogEncryptedFragmentCount = 0;
+                data.audioLogEncryptedFragmentHashes = new uint[SaveData.MaxEncryptedAudioLogFragments];
+                data.audioLogEncryptedFragmentBits = new uint[SaveData.MaxEncryptedAudioLogFragments];
+                return true;
+            }
+
+            if (!reader.ReadInt(out int count) ||
+                !reader.ReadStructArray(out data.audioLogEncryptedFragmentHashes) ||
+                !reader.ReadStructArray(out data.audioLogEncryptedFragmentBits))
+            {
+                return false;
+            }
+
+            int hashLength = data.audioLogEncryptedFragmentHashes != null ? data.audioLogEncryptedFragmentHashes.Length : 0;
+            int bitLength = data.audioLogEncryptedFragmentBits != null ? data.audioLogEncryptedFragmentBits.Length : 0;
+            data.audioLogEncryptedFragmentCount = Math.Clamp(
+                count,
+                0,
+                Math.Min(SaveData.MaxEncryptedAudioLogFragments, Math.Min(hashLength, bitLength)));
             return true;
         }
 
@@ -1911,7 +1965,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            values = new HashSet<int>();
+            values = new HashSet<int>(count);
             for (int i = 0; i < count; i++)
             {
                 if (!reader.ReadInt(out int entryValue))

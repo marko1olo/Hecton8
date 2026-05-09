@@ -52,8 +52,13 @@ namespace Hecton8.Gameplay
         HostileDroneDetected = 15
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct HectonSubmarineOsSnapshot
     {
+        private const byte LowPowerModeFlag = 1 << 0;
+        private const byte LifeSupportCriticalFlag = 1 << 1;
+        private const byte StationKeepingFlag = 1 << 2;
+
         public HectonSubmarineOsSnapshot(
             SubsystemStatus subsystemStatus,
             SubmarineEmergencyLevel emergencyLevel,
@@ -64,26 +69,40 @@ namespace Hecton8.Gameplay
             bool lifeSupportCriticalActive,
             bool stationKeepingActive)
         {
-            SubsystemStatus = subsystemStatus;
-            EmergencyLevel = emergencyLevel;
             PowerNormalized = powerNormalized;
             OxygenNormalized = oxygenNormalized;
             MaxPressureKPa = maxPressureKPa;
-            LowPowerModeActive = lowPowerModeActive;
-            LifeSupportCriticalActive = lifeSupportCriticalActive;
-            StationKeepingActive = stationKeepingActive;
+            SubsystemStatus = subsystemStatus;
+            EmergencyLevel = emergencyLevel;
+            _stateFlags = BuildStateFlags(lowPowerModeActive, lifeSupportCriticalActive, stationKeepingActive);
         }
 
-        public SubsystemStatus SubsystemStatus { get; }
-        public SubmarineEmergencyLevel EmergencyLevel { get; }
-        public float PowerNormalized { get; }
-        public float OxygenNormalized { get; }
-        public float MaxPressureKPa { get; }
-        public bool LowPowerModeActive { get; }
-        public bool LifeSupportCriticalActive { get; }
-        public bool StationKeepingActive { get; }
+        public readonly float PowerNormalized;
+        public readonly float OxygenNormalized;
+        public readonly float MaxPressureKPa;
+        public readonly SubsystemStatus SubsystemStatus;
+        public readonly SubmarineEmergencyLevel EmergencyLevel;
+        private readonly byte _stateFlags;
+
+        public bool LowPowerModeActive => (_stateFlags & LowPowerModeFlag) != 0;
+        public bool LifeSupportCriticalActive => (_stateFlags & LifeSupportCriticalFlag) != 0;
+        public bool StationKeepingActive => (_stateFlags & StationKeepingFlag) != 0;
+
+        private static byte BuildStateFlags(bool lowPowerModeActive, bool lifeSupportCriticalActive, bool stationKeepingActive)
+        {
+            byte flags = 0;
+            if (lowPowerModeActive)
+                flags |= LowPowerModeFlag;
+            if (lifeSupportCriticalActive)
+                flags |= LifeSupportCriticalFlag;
+            if (stationKeepingActive)
+                flags |= StationKeepingFlag;
+
+            return flags;
+        }
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct HectonSubmarineOsLogRequest
     {
         public HectonSubmarineOsLogRequest(HectonSubmarineOsLogCode code, byte priority)
@@ -92,8 +111,8 @@ namespace Hecton8.Gameplay
             Priority = priority;
         }
 
-        public HectonSubmarineOsLogCode Code { get; }
-        public byte Priority { get; }
+        public readonly HectonSubmarineOsLogCode Code;
+        public readonly byte Priority;
     }
 
     /// <summary>
@@ -311,24 +330,40 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - deferred submarine OS event lane - owner: HectonSubmarineOsEvents
+                _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] — deferred submarine OS event lane — owner: HectonSubmarineOsEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
                     nameof(HectonSubmarineOsEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - next-frame submarine OS event lane prevents same-frame reentrant dispatch - owner: HectonSubmarineOsEvents
+                _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] — next-frame submarine OS event lane prevents same-frame reentrant dispatch — owner: HectonSubmarineOsEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
                     nameof(HectonSubmarineOsEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -546,6 +581,7 @@ namespace Hecton8.Gameplay
         private bool _registeredSlowTick;
         private bool _runtimeLifecycleStarted;
         private bool _stationKeepingStateCached;
+        private float _brownoutPulsePhase;
         private int _hostileDroneAlarmCount;
         private HectonDroneFleetSnapshot _fleetSnapshot;
 
@@ -667,7 +703,8 @@ namespace Hecton8.Gameplay
             if (!_brownoutCachesBuilt)
                 return;
 
-            float pulse = 0.5f + (0.5f * Mathf.Sin(Time.time * BrownoutBlinkFrequency));
+            _brownoutPulsePhase = math.frac(_brownoutPulsePhase + math.max(0f, deltaTime) * BrownoutBlinkFrequency);
+            float pulse = 1f - math.abs((_brownoutPulsePhase * 2f) - 1f);
             Shader.SetGlobalFloat(_HectonBrownoutPulseId, pulse);
             ApplyBrownoutVisualsBudgeted();
         }
@@ -730,7 +767,7 @@ namespace Hecton8.Gameplay
         private void HandleFleetSnapshotUpdated(in HectonDroneFleetSnapshot snapshot)
         {
             _fleetSnapshot = snapshot;
-            int alarmSequence = Mathf.Max(snapshot.LogicLeechHijackCount, snapshot.HostileDroneCount > 0 ? 1 : 0);
+            int alarmSequence = math.max(snapshot.LogicLeechHijackCount, snapshot.HostileDroneCount > 0 ? 1 : 0);
             if (alarmSequence <= _hostileDroneAlarmCount)
                 return;
 
@@ -746,20 +783,17 @@ namespace Hecton8.Gameplay
 
             if (!_registeredUpdatable)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+                _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredSlowTick)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredRenderable)
             {
-                GlobalRegistry.Renderables.Register(this);
-                _registeredRenderable = GlobalRegistry.Renderables.Contains(this);
+                _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
             }
         }
 

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -38,18 +39,32 @@ namespace Hecton8.World
         [Header("Diagnostics")]
         [SerializeField] private string _debugState = "Far";
         [SerializeField] private float _debugLastDistance;
+        [SerializeField] private float _debugLastDistanceSq;
         [SerializeField] private float _debugScaledNearDistance;
         [SerializeField] private float _debugScaledMidDistance;
 
+        private AbsoluteUniversePosition _anchorAup;
         private SliceState _currentState = SliceState.Far;
+        private bool _anchorAupInitialized;
 
         public SliceState CurrentState => _currentState;
         public float NearDistance => nearDistance;
         public float MidDistance => midDistance;
         public float HysteresisPadding => hysteresisPadding;
+        public AbsoluteUniversePosition AnchorAup
+        {
+            get
+            {
+                if (!_anchorAupInitialized)
+                    CacheAnchorAup();
+
+                return _anchorAup;
+            }
+        }
 
         private void OnEnable()
         {
+            CacheAnchorAup();
             RegisterActiveAnchor(this);
         }
 
@@ -86,6 +101,7 @@ namespace Hecton8.World
         private void Awake()
         {
             ClampSettings();
+            CacheAnchorAup();
             RefreshFidelityRoots();
             ApplyState(SliceState.Far, true);
         }
@@ -98,7 +114,13 @@ namespace Hecton8.World
         public void ApplyForDistance(float distance, float nearDistanceScale, float midDistanceScale)
         {
             _debugLastDistance = distance;
-            SliceState nextState = EvaluateState(distance, nearDistanceScale, midDistanceScale);
+            ApplyForDistanceSq(distance * distance, nearDistanceScale, midDistanceScale);
+        }
+
+        public void ApplyForDistanceSq(float distanceSq, float nearDistanceScale, float midDistanceScale)
+        {
+            _debugLastDistanceSq = distanceSq;
+            SliceState nextState = EvaluateStateSq(distanceSq, nearDistanceScale, midDistanceScale);
             ApplyState(nextState, false);
         }
 
@@ -123,39 +145,60 @@ namespace Hecton8.World
             ApplyFidelityRoots(nextState);
 
             _currentState = nextState;
-            _debugState = nextState.ToString();
+            _debugState = ResolveStateName(nextState);
         }
 
-        private SliceState EvaluateState(float distance, float nearDistanceScale, float midDistanceScale)
+        private SliceState EvaluateStateSq(float distanceSq, float nearDistanceScale, float midDistanceScale)
         {
-            float scaledNearDistance = nearDistance * Mathf.Clamp(nearDistanceScale, 0.5f, 1.5f);
-            float scaledMidDistance = midDistance * Mathf.Clamp(midDistanceScale, 0.5f, 1.5f);
-            scaledMidDistance = Mathf.Max(scaledNearDistance + 20f, scaledMidDistance);
+            float scaledNearDistance = nearDistance * math.clamp(nearDistanceScale, 0.5f, 1.5f);
+            float scaledMidDistance = midDistance * math.clamp(midDistanceScale, 0.5f, 1.5f);
+            scaledMidDistance = math.max(scaledNearDistance + 20f, scaledMidDistance);
 
             _debugScaledNearDistance = scaledNearDistance;
             _debugScaledMidDistance = scaledMidDistance;
 
             if (_currentState == SliceState.Near)
             {
-                if (distance <= scaledNearDistance + hysteresisPadding)
+                float nearExitDistance = scaledNearDistance + hysteresisPadding;
+                if (distanceSq <= nearExitDistance * nearExitDistance)
                     return SliceState.Near;
             }
-            else if (distance <= scaledNearDistance)
+            else if (distanceSq <= scaledNearDistance * scaledNearDistance)
             {
                 return SliceState.Near;
             }
 
             if (_currentState == SliceState.Mid)
             {
-                if (distance <= scaledMidDistance + hysteresisPadding)
+                float midExitDistance = scaledMidDistance + hysteresisPadding;
+                if (distanceSq <= midExitDistance * midExitDistance)
                     return SliceState.Mid;
             }
-            else if (distance <= scaledMidDistance)
+            else if (distanceSq <= scaledMidDistance * scaledMidDistance)
             {
                 return SliceState.Mid;
             }
 
             return SliceState.Far;
+        }
+
+        internal static string ResolveStateName(SliceState state)
+        {
+            switch (state)
+            {
+                case SliceState.Near:
+                    return "Near";
+                case SliceState.Mid:
+                    return "Mid";
+                default:
+                    return "Far";
+            }
+        }
+
+        private void CacheAnchorAup()
+        {
+            _anchorAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            _anchorAupInitialized = true;
         }
 
         private static void SetRootsActive(GameObject[] roots, bool active)

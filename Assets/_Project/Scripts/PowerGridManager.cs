@@ -13,7 +13,7 @@ namespace Hecton8.Power
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5500)]
-    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPowerGridService, IServiceHeartbeat
+    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPowerGridService, IServiceHeartbeat, IServiceShutdown
     {
         private static List<PowerGrid> _allGrids;
 
@@ -132,6 +132,30 @@ namespace Hecton8.Power
 
         private void OnDisable()
         {
+            UnregisterRuntimeHooks();
+        }
+
+        private void OnDestroy()
+        {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
+            UnregisterRuntimeHooks();
+            DisposeAllGrids();
+            _pendingWirelessToolDemandWattSeconds = 0f;
+            _debugPendingWirelessToolDemandWattSeconds = 0f;
+            _slowTickFinalizationPending = false;
+        }
+
+        private void UnregisterRuntimeHooks()
+        {
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
@@ -176,14 +200,6 @@ namespace Hecton8.Power
             ProcessPendingSplitChecks();
             PublishTelemetrySnapshot();
             _slowTickFinalizationPending = false;
-        }
-
-        private void OnDestroy()
-        {
-            CompletePendingSlowTickEvaluationsForTeardown();
-            TryUnregister();
-            TryUnregisterService();
-            DisposeAllGrids();
         }
 
         public static PowerGrid CreateGrid(PowerNode initialNode)

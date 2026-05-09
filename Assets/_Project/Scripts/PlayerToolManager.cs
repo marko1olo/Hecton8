@@ -101,6 +101,8 @@ namespace Hecton8.Gameplay
         private PlayerTool _currentTool;
         // COLD ALLOC: char[512] — zero-GC active tool HUD summary staging buffer — owner: PlayerToolManager
         private FixedCharBuffer _toolSummaryBuffer = new FixedCharBuffer(512);
+        // COLD ALLOC: char[512] - zero-GC active tool HUD directive staging buffer - owner: PlayerToolManager
+        private FixedCharBuffer _toolDirectiveBuffer = new FixedCharBuffer(512);
 
         /// <summary>Индекс текущего активного слота (-1 = ничего).</summary>
         private int _currentSlotIndex = -1;
@@ -549,9 +551,12 @@ namespace Hecton8.Gameplay
             if (IsBatterySiphonLockoutActive)
                 return "CELL SWAP // LOCKOUT";
 
-            return _currentTool != null
-                ? _currentTool.GetOperationalSummary()
-                : "NO TOOL ARMED";
+            if (_currentTool == null)
+                return "NO TOOL ARMED";
+
+            _toolSummaryBuffer.Clear();
+            _currentTool.WriteOperationalSummary(ref _toolSummaryBuffer);
+            return _toolSummaryBuffer.ToString();
         }
 
         public bool TryWriteCurrentToolOperationalSummary(Span<char> destination, out int length)
@@ -576,43 +581,8 @@ namespace Hecton8.Gameplay
                 return length > 0;
             }
 
-            if (_currentTool is ScannerTool scanner &&
-                scanner.TryGetScientificScanSnapshot(out ScannerTool.ScientificScanSnapshot snapshot) &&
-                snapshot.IsActive)
-            {
-                int cursor = 0;
-                cursor = AppendLiteral(destination, cursor, "SCANNER // ");
-                cursor = AppendLiteral(destination, cursor, DescribeScientificTarget(snapshot));
-                cursor = AppendLiteral(destination, cursor, " // ");
-                cursor = AppendInt(destination, cursor, math.clamp(Mathf.RoundToInt(snapshot.Progress01 * 100f), 0, 100));
-                cursor = AppendLiteral(destination, cursor, "% // TEMP ");
-                cursor = AppendInt(destination, cursor, Mathf.RoundToInt(snapshot.TemperatureC));
-                cursor = AppendLiteral(destination, cursor, "C // SAL ");
-                cursor = AppendInt(destination, cursor, Mathf.RoundToInt(snapshot.SalinityPpt));
-                cursor = AppendLiteral(destination, cursor, " // TOX ");
-                cursor = AppendInt(destination, cursor, math.clamp(Mathf.RoundToInt(snapshot.Toxicity01 * 100f), 0, 100));
-                cursor = AppendLiteral(destination, cursor, "%");
-                if (snapshot.HasAttractantTrace)
-                {
-                    cursor = AppendLiteral(destination, cursor, " // ");
-                    cursor = AppendLiteral(destination, cursor, DescribeScientificAttractantChannel(snapshot.AttractantChannel));
-                    cursor = AppendLiteral(destination, cursor, " VEC ");
-                    cursor = AppendSignedInt(destination, cursor, Mathf.RoundToInt(snapshot.ScentDirection.x * 100f));
-                    cursor = AppendLiteral(destination, cursor, ",");
-                    cursor = AppendSignedInt(destination, cursor, Mathf.RoundToInt(snapshot.ScentDirection.y * 100f));
-                    cursor = AppendLiteral(destination, cursor, ",");
-                    cursor = AppendSignedInt(destination, cursor, Mathf.RoundToInt(snapshot.ScentDirection.z * 100f));
-                }
-                else if (snapshot.OrganicBlood01 > 0.1f)
-                {
-                    cursor = AppendLiteral(destination, cursor, " // TRACES OF ORGANIC BLOOD DETECTED");
-                }
-                length = cursor;
-                return cursor > 0;
-            }
-
             _toolSummaryBuffer.Clear();
-            _currentTool.WriteOperationalSummary(_toolSummaryBuffer);
+            _currentTool.WriteOperationalSummary(ref _toolSummaryBuffer);
             ReadOnlySpan<char> summary = _toolSummaryBuffer.AsSpan();
             int copyLength = Mathf.Min(summary.Length, destination.Length);
             if (copyLength <= 0)
@@ -631,9 +601,48 @@ namespace Hecton8.Gameplay
             if (IsSwapping)
                 return "Tool swap in progress. Wait for the active handoff.";
 
-            return _currentTool != null
-                ? _currentTool.GetOperationalDirective()
-                : "Arm a tool from quick slots or PDA loadout.";
+            if (_currentTool == null)
+                return "Arm a tool from quick slots or PDA loadout.";
+
+            _toolDirectiveBuffer.Clear();
+            _currentTool.WriteOperationalDirective(ref _toolDirectiveBuffer);
+            return _toolDirectiveBuffer.ToString();
+        }
+
+        public bool TryWriteCurrentToolOperationalDirective(Span<char> destination, out int length)
+        {
+            length = 0;
+            if (destination.Length == 0)
+                return false;
+
+            if (IsBatterySiphonLockoutActive)
+            {
+                length = AppendLiteral(destination, 0, "Battery auto-swap in progress. Tool interaction locked.");
+                return length > 0;
+            }
+
+            if (IsSwapping)
+            {
+                length = AppendLiteral(destination, 0, "Tool swap in progress. Wait for the active handoff.");
+                return length > 0;
+            }
+
+            if (_currentTool == null)
+            {
+                length = AppendLiteral(destination, 0, "Arm a tool from quick slots or PDA loadout.");
+                return length > 0;
+            }
+
+            _toolDirectiveBuffer.Clear();
+            _currentTool.WriteOperationalDirective(ref _toolDirectiveBuffer);
+            ReadOnlySpan<char> directive = _toolDirectiveBuffer.AsSpan();
+            int copyLength = Mathf.Min(directive.Length, destination.Length);
+            if (copyLength <= 0)
+                return false;
+
+            directive.Slice(0, copyLength).CopyTo(destination);
+            length = copyLength;
+            return true;
         }
 
         public GameObject GetAssignedToolPrefab(int slotIndex)
@@ -743,44 +752,6 @@ namespace Hecton8.Gameplay
             return "TOOL";
         }
 
-        private static string DescribeScientificMaterial(ScannerTool.ScientificMaterialClass materialClass)
-        {
-            switch (materialClass)
-            {
-                case ScannerTool.ScientificMaterialClass.Basalt:
-                    return "BASALT";
-                case ScannerTool.ScientificMaterialClass.MetallicSilt:
-                    return "METALLIC SILT";
-                case ScannerTool.ScientificMaterialClass.Sediment:
-                    return "SEDIMENT";
-                default:
-                    return "UNKNOWN";
-            }
-        }
-
-        private static string DescribeScientificAttractantChannel(ScannerTool.ScientificAttractantChannel attractantChannel)
-        {
-            switch (attractantChannel)
-            {
-                case ScannerTool.ScientificAttractantChannel.Blood:
-                    return "BLOOD";
-                case ScannerTool.ScientificAttractantChannel.Exhaust:
-                    return "EXHAUST";
-                default:
-                    return "TRACE";
-            }
-        }
-
-        private static string DescribeScientificTarget(ScannerTool.ScientificScanSnapshot snapshot)
-        {
-            if (snapshot.HasFaunaContact)
-                return "BIOFORM";
-
-            return snapshot.MaterialClass != ScannerTool.ScientificMaterialClass.None
-                ? DescribeScientificMaterial(snapshot.MaterialClass)
-                : "WATER";
-        }
-
         private static int AppendLiteral(Span<char> destination, int cursor, string literal)
         {
             if (string.IsNullOrEmpty(literal) || cursor >= destination.Length)
@@ -813,14 +784,6 @@ namespace Hecton8.Gameplay
             return value.TryFormat(destination.Slice(cursor), out int charsWritten)
                 ? cursor + charsWritten
                 : cursor;
-        }
-
-        private static int AppendSignedInt(Span<char> destination, int cursor, int value)
-        {
-            if (value >= 0)
-                cursor = AppendLiteral(destination, cursor, "+");
-
-            return AppendInt(destination, cursor, value);
         }
 
         public int FindAssignedSlotForToolType<TTool>() where TTool : PlayerTool

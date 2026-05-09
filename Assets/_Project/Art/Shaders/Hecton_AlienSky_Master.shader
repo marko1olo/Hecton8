@@ -180,6 +180,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             #pragma fragment SkyFrag
             #pragma target 3.5
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
             #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS

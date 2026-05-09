@@ -1,8 +1,9 @@
 using System;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.World;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -22,8 +23,9 @@ namespace Hecton8.UI
             Hidden_NoRouteTarget = 1,
             Hidden_TooFar = 2,
             Hidden_BehindCamera = 3,
-            Visible_OnScreen = 4,
-            Visible_ClampedToEdge = 5
+            Hidden_NoPlayerAup = 4,
+            Visible_OnScreen = 5,
+            Visible_ClampedToEdge = 6
         }
 
         [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -56,25 +58,30 @@ namespace Hecton8.UI
         private Camera _mainCamera;
         private CanvasGroup _canvasGroup;
         private RectTransform _rectTransform;
-        private Transform _playerTransform;
+        private HectonPlayerMovement _playerMovement;
         private EmergencyServiceRelay _trackedRelay;
         private bool _registered;
         private bool _isVisible;
         private bool _hasLabelState;
         private bool _hasVisibilityState;
         private bool _hasColorState;
+        private bool _hasPositionState;
         private bool _lastColorUsedEdgeState;
+        private int _lastPixelX;
+        private int _lastPixelY;
         private int _lastDistanceMeters = int.MinValue;
         private int _lastLabelLength;
         private uint _lastLabelHash = LabelHashSeed;
         private RelayMarkerVisibilityState _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoRouteTarget;
         private float _lastObservedDistance;
-        private float _cameraRetryTime;
+        private float _cameraRetryTimer;
+        private float _hiddenPollTimer;
         // COLD ALLOC: char[16] - relay HUD distance text staging buffer - owner: RelayHUDElement
         private readonly char[] _distanceBuffer = new char[16];
         // COLD ALLOC: char[96] - relay HUD label text staging buffer - owner: RelayHUDElement
         private readonly char[] _labelBuffer = new char[LabelTextCapacity];
         private const float CameraRetryInterval = 2f;
+        private const float HiddenPollInterval = 0.25f;
         private const int LabelTextCapacity = 96;
         private const uint LabelHashSeed = 2166136261u;
         private const uint LabelHashPrime = 16777619u;
@@ -88,13 +95,9 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            TryCacheCamera();
+            TryCacheCamera(0f);
 
-            if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registered = GlobalRegistry.Updatables.Contains(this);
-            }
+            TryRegister();
         }
 
         private void OnDisable()
@@ -113,7 +116,10 @@ namespace Hecton8.UI
             _hasColorState = false;
             _lastColorUsedEdgeState = false;
             _hasVisibilityState = false;
+            _hasPositionState = false;
             _isVisible = false;
+            _hiddenPollTimer = 0f;
+            _cameraRetryTimer = 0f;
             SetVisible(false);
         }
 
@@ -131,7 +137,17 @@ namespace Hecton8.UI
         public string DescribeDebugState()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            return _lastVisibilityState + " distance=" + _lastObservedDistance.ToString("0.0");
+            return _lastVisibilityState switch
+            {
+                RelayMarkerVisibilityState.Hidden_NoCamera => "Hidden_NoCamera",
+                RelayMarkerVisibilityState.Hidden_NoRouteTarget => "Hidden_NoRouteTarget",
+                RelayMarkerVisibilityState.Hidden_TooFar => "Hidden_TooFar",
+                RelayMarkerVisibilityState.Hidden_BehindCamera => "Hidden_BehindCamera",
+                RelayMarkerVisibilityState.Hidden_NoPlayerAup => "Hidden_NoPlayerAup",
+                RelayMarkerVisibilityState.Visible_OnScreen => "Visible_OnScreen",
+                RelayMarkerVisibilityState.Visible_ClampedToEdge => "Visible_ClampedToEdge",
+                _ => "Hidden_NoRouteTarget"
+            };
 #else
             return string.Empty;
 #endif
@@ -140,7 +156,16 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float dt)
         {
-            if (!TryCacheCamera())
+            if (!_isVisible)
+            {
+                _hiddenPollTimer -= math.max(0f, dt);
+                if (_hiddenPollTimer > 0f)
+                    return;
+
+                _hiddenPollTimer = HiddenPollInterval;
+            }
+
+            if (!TryCacheCamera(dt))
             {
                 _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoCamera;
                 SetVisible(false);
@@ -159,12 +184,21 @@ namespace Hecton8.UI
                 return;
             }
 
+            if (!ReferenceEquals(_trackedRelay, routeTarget))
+                _hasPositionState = false;
+
             _trackedRelay = routeTarget;
 
-            Vector3 playerPosition = _playerTransform.position;
-            Vector3 relayPosition = routeTarget.transform.position;
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoPlayerAup;
+                SetVisible(false);
+                return;
+            }
+
+            AbsoluteUniversePosition relayAup = routeTarget.RelayAup;
             double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
-            double distanceSq = ResolveAupDistanceSq(playerPosition, relayPosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in relayAup);
             if (distanceSq > maxDisplayDistanceSq)
             {
                 _lastObservedDistance = maxDisplayDistance + 1f;
@@ -173,9 +207,8 @@ namespace Hecton8.UI
                 return;
             }
 
-            float distance = distanceSq > 0d ? (float)Math.Sqrt(distanceSq) : 0f;
-            _lastObservedDistance = distance;
-
+            float3 relayRuntime = relayAup.ToRuntimeFloat3();
+            Vector3 relayPosition = new Vector3(relayRuntime.x, relayRuntime.y, relayRuntime.z);
             Vector3 screenPosition = _mainCamera.WorldToScreenPoint(relayPosition);
             bool behindCamera = screenPosition.z < 0f;
             if (behindCamera && hideWhenBehindCamera)
@@ -186,25 +219,30 @@ namespace Hecton8.UI
             }
 
             bool clampedToEdge = behindCamera;
+            float screenWidth = Screen.width;
+            float screenHeight = Screen.height;
             if (behindCamera)
             {
-                screenPosition.x = Screen.width - screenPosition.x;
-                screenPosition.y = Screen.height - screenPosition.y;
+                screenPosition.x = screenWidth - screenPosition.x;
+                screenPosition.y = screenHeight - screenPosition.y;
             }
 
             float minX = screenMargin;
-            float maxX = Screen.width - screenMargin;
+            float maxX = screenWidth - screenMargin;
             float minY = screenMargin;
-            float maxY = Screen.height - screenMargin;
+            float maxY = screenHeight - screenMargin;
 
             if (screenPosition.x < minX || screenPosition.x > maxX || screenPosition.y < minY || screenPosition.y > maxY)
             {
                 clampedToEdge = true;
-                screenPosition.x = Mathf.Clamp(screenPosition.x, minX, maxX);
-                screenPosition.y = Mathf.Clamp(screenPosition.y, minY, maxY);
+                screenPosition.x = math.clamp(screenPosition.x, minX, maxX);
+                screenPosition.y = math.clamp(screenPosition.y, minY, maxY);
             }
 
-            _rectTransform.position = screenPosition;
+            float distance = ApproximateDistanceMetersFromSq(distanceSq);
+            _lastObservedDistance = distance;
+
+            ApplyScreenPosition(screenPosition);
             UpdateLabel(routeTarget.RelayLabel);
             UpdateDistance(distance);
             UpdateColor(clampedToEdge);
@@ -214,64 +252,67 @@ namespace Hecton8.UI
             SetVisible(true);
         }
 
-        private bool TryCacheCamera()
+        private bool TryCacheCamera(float dt)
         {
             if (_mainCamera != null && _mainCamera.isActiveAndEnabled)
-            {
-                if (_playerTransform == null)
-                {
-                    if (!SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform) || _playerTransform == null)
-                        _playerTransform = _mainCamera.transform;
-                }
-                return _playerTransform != null;
-            }
+                return TryCachePlayerMovement();
 
             _mainCamera = null;
 
-            if (Time.time < _cameraRetryTime)
+            _cameraRetryTimer -= math.max(0f, dt);
+            if (_cameraRetryTimer > 0f)
                 return false;
 
-            _cameraRetryTime = Time.time + CameraRetryInterval;
+            _cameraRetryTimer = CameraRetryInterval;
 
             // Resolve via registry-owned player hierarchy.
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null && playerContext.PlayerTransform != null)
+            if (playerContext != null)
             {
-                Transform playerTransform = playerContext.PlayerTransform;
                 _mainCamera = playerContext.PlayerCamera;
-                if (_mainCamera != null)
-                {
-                    _playerTransform = playerTransform;
+                _playerMovement = playerContext.PlayerMovement;
+                if (_mainCamera != null && _playerMovement != null)
                     return true;
-                }
             }
 
-            // Fallback: walk local hierarchy (self, children, parent)
-            _mainCamera = GetComponent<Camera>();
-            if (_mainCamera == null)
-            {
-                Transform parent = transform.parent;
-                if (parent != null)
-                    parent.TryGetComponent(out _mainCamera);
-            }
-
-            if (_mainCamera == null)
-                return false;
-
-            if (_playerTransform == null)
-            {
-                if (!SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform) || _playerTransform == null)
-                    _playerTransform = _mainCamera.transform;
-            }
-
-            return _playerTransform != null;
+            return false;
         }
 
-        private static double ResolveAupDistanceSq(Vector3 playerPosition, Vector3 relayPosition)
+        private bool TryCachePlayerMovement()
         {
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
-            AbsoluteUniversePosition relayAup = AbsoluteUniversePosition.FromRuntimePosition(relayPosition);
-            return AbsoluteUniversePosition.DistanceSq(in playerAup, in relayAup);
+            if (_playerMovement != null)
+                return true;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                _playerMovement = playerContext.PlayerMovement;
+
+            return _playerMovement != null;
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (TryCachePlayerMovement())
+            {
+                playerAup = _playerMovement.CurrentAup;
+                return true;
+            }
+
+            playerAup = default;
+            return false;
+        }
+
+        private static float ApproximateDistanceMetersFromSq(double distanceSq)
+        {
+            if (double.IsNaN(distanceSq) || double.IsInfinity(distanceSq))
+                return float.PositiveInfinity;
+            if (distanceSq <= 0d)
+                return 0f;
+
+            float clampedSq = (float)math.min(distanceSq, (double)float.MaxValue);
+            uint estimateBits = (math.asuint(clampedSq) >> 1) + 0x1FC00000u;
+            float estimate = math.asfloat(estimateBits);
+            return 0.5f * (estimate + (clampedSq / math.max(estimate, 0.0001f)));
         }
 
         private void UpdateLabel(string relayLabel)
@@ -292,7 +333,6 @@ namespace Hecton8.UI
 
             WriteLabelToBuffer(relayLabel, _labelBuffer, displayLength, truncated);
             labelText.SetCharArray(_labelBuffer, 0, displayLength);
-            labelText.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
             _lastLabelLength = displayLength;
             _lastLabelHash = displayHash;
             _hasLabelState = true;
@@ -303,13 +343,12 @@ namespace Hecton8.UI
             if (distanceText == null)
                 return;
 
-            int distanceMeters = Mathf.RoundToInt(distance);
+            int distanceMeters = (int)math.round(distance);
             if (_lastDistanceMeters == distanceMeters)
                 return;
 
             _lastDistanceMeters = distanceMeters;
-            if (!distanceMeters.TryFormat(_distanceBuffer.AsSpan(), out int length))
-                length = 0;
+            int length = WriteNonNegativeInt(distanceMeters, _distanceBuffer);
 
             if (length < _distanceBuffer.Length)
             {
@@ -318,7 +357,17 @@ namespace Hecton8.UI
             }
 
             distanceText.SetCharArray(_distanceBuffer, 0, length);
-            distanceText.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static int WriteNonNegativeInt(int value, char[] buffer)
+        {
+            if (buffer == null || buffer.Length <= 0)
+                return 0;
+
+            int safeValue = math.max(0, value);
+            return safeValue.TryFormat(new System.Span<char>(buffer), out int length)
+                ? length
+                : 0;
         }
 
         private bool LabelBufferMatches(string relayLabel, int displayLength, bool truncated)
@@ -337,7 +386,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(relayLabel) || destination == null || destination.Length == 0)
                 return 0;
 
-            return Mathf.Min(relayLabel.Length, destination.Length);
+            return math.min(relayLabel.Length, destination.Length);
         }
 
         private static bool IsLabelTruncated(string relayLabel, int displayLength, char[] destination)
@@ -393,6 +442,28 @@ namespace Hecton8.UI
                 labelText.color = textColor;
         }
 
+        private void ApplyScreenPosition(Vector3 screenPosition)
+        {
+            if (_rectTransform == null)
+                return;
+
+            int pixelX = (int)math.round(screenPosition.x);
+            int pixelY = (int)math.round(screenPosition.y);
+            if (_hasPositionState &&
+                _lastPixelX == pixelX &&
+                _lastPixelY == pixelY)
+            {
+                return;
+            }
+
+            _hasPositionState = true;
+            _lastPixelX = pixelX;
+            _lastPixelY = pixelY;
+            screenPosition.x = pixelX;
+            screenPosition.y = pixelY;
+            _rectTransform.position = screenPosition;
+        }
+
         private void SetVisible(bool visible)
         {
             if (_canvasGroup == null)
@@ -403,9 +474,21 @@ namespace Hecton8.UI
 
             _hasVisibilityState = true;
             _isVisible = visible;
+            if (visible)
+                _hiddenPollTimer = 0f;
+            else
+                _hasPositionState = false;
             _canvasGroup.alpha = visible ? 1f : 0f;
             _canvasGroup.blocksRaycasts = false;
             _canvasGroup.interactable = false;
+        }
+
+        private void TryRegister()
+        {
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
     }
 }

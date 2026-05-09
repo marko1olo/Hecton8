@@ -1,4 +1,5 @@
 using System;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -26,6 +27,21 @@ namespace Hecton8.Visor
             return cameraType == CameraType.Preview ||
                    cameraType == CameraType.Reflection ||
                    cameraType == CameraType.SceneView;
+        }
+
+        private static Vector3 ResolveAmbientDirectionCheap(Vector3 direction)
+        {
+            if (direction.sqrMagnitude <= 0.0001f)
+                return Vector3.up;
+
+            float ax = math.abs(direction.x);
+            float ay = math.abs(direction.y);
+            float az = math.abs(direction.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            float approximateLength = math.max(0.0001f, maxAxis + midAxis * 0.375f + minAxis * 0.125f);
+            return direction / approximateLength;
         }
 
         [Serializable]
@@ -70,11 +86,34 @@ namespace Hecton8.Visor
 
         private sealed class AbyssalSsdoPass : ScriptableRenderPass
         {
+            private const float MaterialFloatEpsilon = 0.0001f;
+            private const float MaterialVectorEpsilonSq = 0.0000001f;
+
             private sealed class FullscreenPassData
             {
                 internal TextureHandle source;
                 internal TextureHandle destination;
                 internal Material material;
+            }
+
+            private struct MaterialParameterCache
+            {
+                internal Material Material;
+                internal Vector4 InputSize;
+                internal Vector4 OutputSize;
+                internal Vector4 AmbientDirection;
+                internal Texture2D BlueNoiseTexture;
+                internal float PassMode;
+                internal float RadiusMeters;
+                internal float Intensity;
+                internal float Bias;
+                internal float DepthSigma;
+                internal float BlurDepthThreshold;
+                internal float CompositeStrength;
+                internal float ProjectionScale;
+                internal float HasBlueNoiseTexture;
+                internal int SampleCount;
+                internal bool Applied;
             }
 
             private sealed class CompositePassData
@@ -91,6 +130,10 @@ namespace Hecton8.Visor
             private Material _blurHorizontalMaterial;
             private Material _blurVerticalMaterial;
             private Material _compositeMaterial;
+            private MaterialParameterCache _occlusionParameterCache;
+            private MaterialParameterCache _blurHorizontalParameterCache;
+            private MaterialParameterCache _blurVerticalParameterCache;
+            private MaterialParameterCache _compositeParameterCache;
 
             public AbyssalSsdoPass()
             {
@@ -147,8 +190,9 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                int ssdoWidth = Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
-                int ssdoHeight = Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
+                float renderScale = math.clamp(_settings.renderScale, 0.25f, 1f);
+                int ssdoWidth = math.max(1, (int)(sourceDesc.width * renderScale + 0.5f));
+                int ssdoHeight = math.max(1, (int)(sourceDesc.height * renderScale + 0.5f));
 
                 TextureDesc occlusionDesc = new TextureDesc(sourceDesc);
                 occlusionDesc.name = "_HectonAbyssalSSDO";
@@ -179,15 +223,49 @@ namespace Hecton8.Visor
 
                 Camera camera = cameraData.camera;
                 Matrix4x4 projectionMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
-                float projectionScale = Mathf.Abs(projectionMatrix.m11) * 0.5f * sourceDesc.height * Mathf.Max(0.01f, _settings.radiusMeters);
-                Vector3 ambientDirection = _settings.ambientDirection.sqrMagnitude > 0.0001f
-                    ? _settings.ambientDirection.normalized
-                    : Vector3.up;
+                float projectionScale = math.abs(projectionMatrix.m11) * 0.5f * sourceDesc.height * math.max(0.01f, _settings.radiusMeters);
+                Vector3 ambientDirection = ResolveAmbientDirectionCheap(_settings.ambientDirection);
 
-                UpdateMaterialParameters(_occlusionMaterial, _settings, 0f, sourceDesc, ssdoWidth, ssdoHeight, projectionScale, ambientDirection);
-                UpdateMaterialParameters(_blurHorizontalMaterial, _settings, 1f, sourceDesc, ssdoWidth, ssdoHeight, projectionScale, ambientDirection);
-                UpdateMaterialParameters(_blurVerticalMaterial, _settings, 2f, sourceDesc, ssdoWidth, ssdoHeight, projectionScale, ambientDirection);
-                UpdateMaterialParameters(_compositeMaterial, _settings, 3f, sourceDesc, ssdoWidth, ssdoHeight, projectionScale, ambientDirection);
+                UpdateMaterialParameters(
+                    _occlusionMaterial,
+                    ref _occlusionParameterCache,
+                    _settings,
+                    0f,
+                    sourceDesc,
+                    ssdoWidth,
+                    ssdoHeight,
+                    projectionScale,
+                    ambientDirection);
+                UpdateMaterialParameters(
+                    _blurHorizontalMaterial,
+                    ref _blurHorizontalParameterCache,
+                    _settings,
+                    1f,
+                    sourceDesc,
+                    ssdoWidth,
+                    ssdoHeight,
+                    projectionScale,
+                    ambientDirection);
+                UpdateMaterialParameters(
+                    _blurVerticalMaterial,
+                    ref _blurVerticalParameterCache,
+                    _settings,
+                    2f,
+                    sourceDesc,
+                    ssdoWidth,
+                    ssdoHeight,
+                    projectionScale,
+                    ambientDirection);
+                UpdateMaterialParameters(
+                    _compositeMaterial,
+                    ref _compositeParameterCache,
+                    _settings,
+                    3f,
+                    sourceDesc,
+                    ssdoWidth,
+                    ssdoHeight,
+                    projectionScale,
+                    ambientDirection);
 
                 using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Abyssal SSDO Gather", out var passData, _profilingSampler))
                 {
@@ -280,6 +358,7 @@ namespace Hecton8.Visor
 
             private static void UpdateMaterialParameters(
                 Material material,
+                ref MaterialParameterCache cache,
                 FeatureSettings settings,
                 float passMode,
                 TextureDesc sourceDesc,
@@ -288,28 +367,124 @@ namespace Hecton8.Visor
                 float projectionScale,
                 Vector3 ambientDirection)
             {
-                material.SetFloat(ShaderConstants.PassModeId, passMode);
-                material.SetVector(ShaderConstants.InputSizeId, new Vector4(
+                bool materialDirty = !cache.Applied || !ReferenceEquals(cache.Material, material);
+                if (materialDirty)
+                {
+                    cache.Material = material;
+                    cache.Applied = true;
+                }
+
+                Vector4 inputSize = new Vector4(
                     sourceDesc.width,
                     sourceDesc.height,
-                    1f / Mathf.Max(1, sourceDesc.width),
-                    1f / Mathf.Max(1, sourceDesc.height)));
-                material.SetVector(ShaderConstants.OutputSizeId, new Vector4(
+                    1f / math.max(1, sourceDesc.width),
+                    1f / math.max(1, sourceDesc.height));
+                Vector4 outputSize = new Vector4(
                     outputWidth,
                     outputHeight,
-                    1f / Mathf.Max(1, outputWidth),
-                    1f / Mathf.Max(1, outputHeight)));
-                material.SetFloat(ShaderConstants.RadiusMetersId, Mathf.Max(0.01f, settings.radiusMeters));
-                material.SetFloat(ShaderConstants.IntensityId, Mathf.Max(0f, settings.intensity));
-                material.SetFloat(ShaderConstants.BiasId, Mathf.Max(0f, settings.bias));
-                material.SetFloat(ShaderConstants.DepthSigmaId, Mathf.Max(0.01f, settings.depthSigma));
-                material.SetFloat(ShaderConstants.BlurDepthThresholdId, Mathf.Max(0.001f, settings.blurDepthThreshold));
-                material.SetFloat(ShaderConstants.CompositeStrengthId, Mathf.Clamp01(settings.compositeStrength));
-                material.SetFloat(ShaderConstants.ProjectionScaleId, Mathf.Max(0.01f, projectionScale));
-                material.SetInt(ShaderConstants.SampleCountId, Mathf.Clamp(settings.sampleCount, 4, 6));
-                material.SetVector(ShaderConstants.AmbientDirectionId, new Vector4(ambientDirection.x, ambientDirection.y, ambientDirection.z, 0f));
-                material.SetFloat(ShaderConstants.HasBlueNoiseTextureId, settings.blueNoiseTexture != null ? 1f : 0f);
-                material.SetTexture(ShaderConstants.BlueNoiseTextureId, settings.blueNoiseTexture);
+                    1f / math.max(1, outputWidth),
+                    1f / math.max(1, outputHeight));
+                Vector4 ambientDirectionVector = new Vector4(ambientDirection.x, ambientDirection.y, ambientDirection.z, 0f);
+                float radiusMeters = math.max(0.01f, settings.radiusMeters);
+                float intensity = math.max(0f, settings.intensity);
+                float bias = math.max(0f, settings.bias);
+                float depthSigma = math.max(0.01f, settings.depthSigma);
+                float blurDepthThreshold = math.max(0.001f, settings.blurDepthThreshold);
+                float compositeStrength = math.saturate(settings.compositeStrength);
+                float safeProjectionScale = math.max(0.01f, projectionScale);
+                int sampleCount = math.clamp(settings.sampleCount, 4, 6);
+                Texture2D blueNoiseTexture = settings.blueNoiseTexture;
+                float hasBlueNoiseTexture = blueNoiseTexture != null ? 1f : 0f;
+
+                SetMaterialFloatIfChanged(material, ShaderConstants.PassModeId, passMode, ref cache.PassMode, materialDirty);
+                SetMaterialVectorIfChanged(material, ShaderConstants.InputSizeId, inputSize, ref cache.InputSize, materialDirty);
+                SetMaterialVectorIfChanged(material, ShaderConstants.OutputSizeId, outputSize, ref cache.OutputSize, materialDirty);
+                SetMaterialFloatIfChanged(material, ShaderConstants.RadiusMetersId, radiusMeters, ref cache.RadiusMeters, materialDirty);
+                SetMaterialFloatIfChanged(material, ShaderConstants.IntensityId, intensity, ref cache.Intensity, materialDirty);
+                SetMaterialFloatIfChanged(material, ShaderConstants.BiasId, bias, ref cache.Bias, materialDirty);
+                SetMaterialFloatIfChanged(material, ShaderConstants.DepthSigmaId, depthSigma, ref cache.DepthSigma, materialDirty);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.BlurDepthThresholdId,
+                    blurDepthThreshold,
+                    ref cache.BlurDepthThreshold,
+                    materialDirty);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.CompositeStrengthId,
+                    compositeStrength,
+                    ref cache.CompositeStrength,
+                    materialDirty);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.ProjectionScaleId,
+                    safeProjectionScale,
+                    ref cache.ProjectionScale,
+                    materialDirty);
+                SetMaterialIntIfChanged(material, ShaderConstants.SampleCountId, sampleCount, ref cache.SampleCount, materialDirty);
+                SetMaterialVectorIfChanged(
+                    material,
+                    ShaderConstants.AmbientDirectionId,
+                    ambientDirectionVector,
+                    ref cache.AmbientDirection,
+                    materialDirty);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.HasBlueNoiseTextureId,
+                    hasBlueNoiseTexture,
+                    ref cache.HasBlueNoiseTexture,
+                    materialDirty);
+                SetMaterialTextureIfChanged(
+                    material,
+                    ShaderConstants.BlueNoiseTextureId,
+                    blueNoiseTexture,
+                    ref cache.BlueNoiseTexture,
+                    materialDirty);
+            }
+
+            private static void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue, bool materialDirty)
+            {
+                if (!materialDirty && math.abs(cachedValue - value) <= MaterialFloatEpsilon)
+                    return;
+
+                material.SetFloat(shaderId, value);
+                cachedValue = value;
+            }
+
+            private static void SetMaterialIntIfChanged(Material material, int shaderId, int value, ref int cachedValue, bool materialDirty)
+            {
+                if (!materialDirty && cachedValue == value)
+                    return;
+
+                material.SetInt(shaderId, value);
+                cachedValue = value;
+            }
+
+            private static void SetMaterialVectorIfChanged(Material material, int shaderId, Vector4 value, ref Vector4 cachedValue, bool materialDirty)
+            {
+                if (!materialDirty && Vector4DistanceSq(cachedValue, value) <= MaterialVectorEpsilonSq)
+                    return;
+
+                material.SetVector(shaderId, value);
+                cachedValue = value;
+            }
+
+            private static void SetMaterialTextureIfChanged(Material material, int shaderId, Texture2D value, ref Texture2D cachedValue, bool materialDirty)
+            {
+                if (!materialDirty && ReferenceEquals(cachedValue, value))
+                    return;
+
+                material.SetTexture(shaderId, value);
+                cachedValue = value;
+            }
+
+            private static float Vector4DistanceSq(Vector4 a, Vector4 b)
+            {
+                float x = a.x - b.x;
+                float y = a.y - b.y;
+                float z = a.z - b.z;
+                float w = a.w - b.w;
+                return x * x + y * y + z * z + w * w;
             }
         }
 

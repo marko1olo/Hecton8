@@ -21,23 +21,20 @@ namespace Hecton8.Economy
         private const float ComponentRecoveryRatio = 0.40f;
         private const float EquipmentRecoveryRatio = 0.25f;
 
-        private static ScrapManager _instance;
         private bool _serviceRegistered;
 
         /// <summary>
         /// Active runtime owner while the gameplay scene is loaded.
         /// </summary>
-        public static ScrapManager Instance => _instance;
+        public static ScrapManager Instance => GlobalRegistry.Scrap;
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            ScrapManager registered = GlobalRegistry.Scrap;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
-                return;
             }
-
-            _instance = this;
         }
 
         private void OnEnable()
@@ -53,15 +50,19 @@ namespace Hecton8.Economy
         private void OnDestroy()
         {
             TryUnregisterFromGlobalRegistry();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         private void TryRegisterToGlobalRegistry()
         {
-            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+            if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            ScrapManager registered = GlobalRegistry.Scrap;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterScrapRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Scrap, this);

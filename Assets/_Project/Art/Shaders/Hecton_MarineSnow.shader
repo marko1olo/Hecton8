@@ -29,6 +29,9 @@ Shader "Hecton8/VFX/MarineSnow"
             #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct Particle
@@ -80,6 +83,8 @@ Shader "Hecton8/VFX/MarineSnow"
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 float4 color : COLOR0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             float2 ResolveQuadCorner(uint vertexID)
@@ -95,14 +100,22 @@ Shader "Hecton8/VFX/MarineSnow"
             Varyings vert(Attributes input)
             {
                 Varyings output;
-                Particle particle = _MarineSnowParticles[input.instanceID];
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                uint instanceID = input.instanceID;
+            #if UNITY_ANY_INSTANCING_ENABLED
+                instanceID = unity_InstanceID;
+            #endif
+                Particle particle = _MarineSnowParticles[instanceID];
                 float active = step(0.5, _MarineSnowMetaParams.w);
                 float densityScale = saturate(_MarineSnowCameraUp_Density.w);
                 float2 corner = ResolveQuadCorner(input.vertexID);
                 float3 cameraRight = _MarineSnowCameraRight_DeltaTime.xyz;
                 float3 cameraUp = _MarineSnowCameraUp_Density.xyz;
                 float maxDistance = max(_MarineSnowRenderParams.z, 0.25);
-                float distanceFade = saturate(1.0 - distance(particle.Pos, _MarineSnowCameraPosition_Time.xyz) / maxDistance);
+                float3 cameraDelta = particle.Pos - _MarineSnowCameraPosition_Time.xyz;
+                float distanceFade = saturate(1.0 - dot(cameraDelta, cameraDelta) / (maxDistance * maxDistance));
                 float isBubble = ((particle.Flags & 1u) != 0u) ? 1.0 : 0.0;
                 float size = particle.Size * lerp(0.65, 1.0, distanceFade) * lerp(1.0, 1.65, isBubble);
                 float stretchScale = max(1.0, _MarineSnowCameraVelocity_Stretch.w);
@@ -125,14 +138,26 @@ Shader "Hecton8/VFX/MarineSnow"
                 return output;
             }
 
+            float FastRadialSoftness(float radial, float softness)
+            {
+                float radial2 = radial * radial;
+                float radial4 = radial2 * radial2;
+                return lerp(radial, radial4, saturate((softness - 1.0) * 0.3333));
+            }
+
             half4 frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 centered = input.uv * 2.0 - 1.0;
                 float radial = saturate(1.0 - dot(centered, centered));
-                float alpha = pow(radial, _MarineSnowRenderParams.y) * input.color.a;
+                float alpha = FastRadialSoftness(radial, _MarineSnowRenderParams.y) * input.color.a;
+                clip(alpha - 0.0005);
                 return half4(input.color.rgb, alpha);
             }
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

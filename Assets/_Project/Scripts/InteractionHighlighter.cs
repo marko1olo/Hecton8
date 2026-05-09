@@ -11,7 +11,7 @@
 //   • Ленивая регистрация: Register в GameTickManager ТОЛЬКО когда
 //     цвет в переходном состоянии (currentColor ≠ targetColor).
 //     Unregister когда цвет достиг цели. Нет CPU расхода вхолостую.
-//   • Плавная интерполяция через Color.Lerp + нормализованный прогресс
+//   • Плавная интерполяция через scalar math.lerp + нормализованный прогресс
 //     в Tick(float dt). Frame-rate independent.
 //   • OnDisable: обязательный Unregister + мгновенный сброс цвета.
 //
@@ -55,6 +55,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Interaction
@@ -252,7 +253,7 @@ namespace Hecton8.Interaction
         ///   → Tick() больше не вызывается до следующего SetHighlight.
         ///   → Zero CPU cost в idle состоянии.
         ///
-        /// ZERO GC: Color.Lerp — struct math. ApplyImmediate — zero GC.
+        /// ZERO GC: scalar color lerp — struct math. ApplyImmediate — zero GC.
         /// </summary>
         public void Tick(float deltaTime)
         {
@@ -274,9 +275,19 @@ namespace Hecton8.Interaction
             else
             {
                 // ── Интерполяция в процессе ──
-                _currentValue = Color.Lerp(_fadeFromColor, _fadeToColor, _lerpProgress);
+                _currentValue = LerpColor(_fadeFromColor, _fadeToColor, _lerpProgress);
                 ApplyImmediate(_currentValue);
             }
+        }
+
+        private static Color LerpColor(Color from, Color to, float t)
+        {
+            float clampedT = math.saturate(t);
+            return new Color(
+                math.lerp(from.r, to.r, clampedT),
+                math.lerp(from.g, to.g, clampedT),
+                math.lerp(from.b, to.b, clampedT),
+                math.lerp(from.a, to.a, clampedT));
         }
 
         // ══════════════════════════════════════════════════════════

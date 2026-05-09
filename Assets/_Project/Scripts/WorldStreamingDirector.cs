@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -285,8 +286,7 @@ namespace Hecton8.World
             if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -349,13 +349,15 @@ namespace Hecton8.World
                 }
 
                 ApplyMapMagicTerrainProfile(surfaceSurveyProfile);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 _debugApplied = false;
                 UpdateDiagnostics();
+#endif
                 return;
             }
 
             float targetSpeedSq = GetCurrentSpeedSq();
-            _smoothedSpeedSq = Mathf.Lerp(_smoothedSpeedSq, targetSpeedSq, speedSmoothing);
+            _smoothedSpeedSq = math.lerp(_smoothedSpeedSq, targetSpeedSq, math.saturate(speedSmoothing));
 
             DepthZone depthZone = GetDepthZone(depth);
             float traverseSpeedThresholdSq = traverseSpeedStart * traverseSpeedStart;
@@ -377,10 +379,12 @@ namespace Hecton8.World
                     terrainHeightmapMaximumLod);
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugDepth = depth;
             _debugSpeed = Mathf.Sqrt(Mathf.Max(0f, _smoothedSpeedSq));
             _debugDepthZone = GetDepthZoneLabel(depthZone);
             _debugMotionMode = GetMotionModeLabel(motionMode);
+#endif
 
             bool changed =
                 force ||
@@ -394,7 +398,9 @@ namespace Hecton8.World
 
             if (!changed)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UpdateDiagnostics();
+#endif
                 return;
             }
 
@@ -415,17 +421,21 @@ namespace Hecton8.World
             _lastTerrainBaseMapDistance = profile.terrainBaseMapDistance;
             _lastTerrainDetailDistance = profile.terrainDetailDistance;
             _lastTerrainDetailDensity = profile.terrainDetailDensity;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugNearSliceScale = profile.nearSliceScale;
             _debugMidSliceScale = profile.midSliceScale;
             _debugApplied = true;
             UpdateDiagnostics();
+#endif
         }
 
         private void ApplyMapMagicTerrainProfile(StreamingProfile profile)
         {
             if (mapMagicBridge == null || !mapMagicBridge.IsAvailable)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 _debugMapMagicObjectsPerFrame = -1;
+#endif
                 return;
             }
 
@@ -437,6 +447,7 @@ namespace Hecton8.World
                 profile.terrainDetailDensity,
                 terrainHeightmapMaximumLod);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugMapMagicObjectsPerFrame = profile.mapMagicObjectsPerFrame;
             _debugTerrainDraftsInPlaymode = terrainDraftsInPlaymode;
             _debugTerrainDraftResolution = GetTerrainResolutionLabel(terrainDraftResolution);
@@ -445,6 +456,7 @@ namespace Hecton8.World
             _debugTerrainPixelError = profile.terrainPixelError;
             _debugTerrainBaseMapDistance = profile.terrainBaseMapDistance;
             _debugTerrainDetailDistance = profile.terrainDetailDistance;
+#endif
         }
 
         private static string GetTerrainResolutionLabel(int resolution)
@@ -608,7 +620,9 @@ namespace Hecton8.World
 
         private void RefreshRuntimeProfilesFromChunkProfile()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugUsingSharedChunkProfile = chunkStreamingProfile != null;
+#endif
             if (chunkStreamingProfile == null)
                 return;
 
@@ -678,11 +692,13 @@ namespace Hecton8.World
 
         private void UpdateDiagnostics()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugPlayerReady = playerTransform != null && playerRigidbody != null;
             _debugBridgeReady = mapMagicBridge != null && mapMagicBridge.IsAvailable;
             _debugBiomeCacheReady = biomeSamplerCache != null && biomeSamplerCache.IsReady;
             _debugBudgetReady = scatterBudgetController != null;
             _debugUsingSharedChunkProfile = chunkStreamingProfile != null;
+#endif
         }
     }
 }

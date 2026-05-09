@@ -116,6 +116,10 @@ namespace Hecton8.World
                 nodeCount += payload.Count;
             }
 
+            int fixedNodeCapacity = ResolveMaxAbyssalNavNodeCapacity();
+            if (nodeCount > fixedNodeCapacity)
+                nodeCount = fixedNodeCapacity;
+
             _abyssalNavNodeCount = nodeCount;
             if (nodeCount <= 0)
             {
@@ -132,28 +136,37 @@ namespace Hecton8.World
                 _nativeMemory.AbyssalNavNodes.Clear();
             if (_nativeMemory.AbyssalNavGraphHashNative.IsCreated)
                 _nativeMemory.AbyssalNavGraphHashNative.Clear();
-            EnsureAbyssalNavNodeListCapacity(nodeCount);
-            EnsureVector3Capacity(ref _abyssalNavNodeSnapshot, nodeCount);
-            EnsureVector3Capacity(ref _abyssalNavConduitVectorsSnapshot, nodeCount);
-            EnsureFloatCapacity(ref _abyssalNavConduitStrengthSnapshot, nodeCount);
-            EnsureByteCapacity(ref _abyssalNavNodeTypesSnapshot, nodeCount);
-            EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalNavNodeSnapshotNative, nodeCount);
-            EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalNavConduitVectorsSnapshotNative, nodeCount);
-            EnsureFloatNativeCapacity(ref _nativeMemory.AbyssalNavConduitStrengthSnapshotNative, nodeCount);
-            EnsureByteNativeCapacity(ref _nativeMemory.AbyssalNavNodeTypesSnapshotNative, nodeCount);
-            EnsureAbyssalNavGraphHashCapacity(nodeCount * 4);
+            if (!EnsureAbyssalNavNodeListCapacity(nodeCount))
+            {
+                _abyssalNavNodeCount = 0;
+                return;
+            }
+
+            EnsureVector3Capacity(ref _abyssalNavNodeSnapshot, fixedNodeCapacity);
+            EnsureVector3Capacity(ref _abyssalNavConduitVectorsSnapshot, fixedNodeCapacity);
+            EnsureFloatCapacity(ref _abyssalNavConduitStrengthSnapshot, fixedNodeCapacity);
+            EnsureByteCapacity(ref _abyssalNavNodeTypesSnapshot, fixedNodeCapacity);
+            EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalNavNodeSnapshotNative, fixedNodeCapacity);
+            EnsureVector3NativeCapacity(ref _nativeMemory.AbyssalNavConduitVectorsSnapshotNative, fixedNodeCapacity);
+            EnsureFloatNativeCapacity(ref _nativeMemory.AbyssalNavConduitStrengthSnapshotNative, fixedNodeCapacity);
+            EnsureByteNativeCapacity(ref _nativeMemory.AbyssalNavNodeTypesSnapshotNative, fixedNodeCapacity);
+            if (!EnsureAbyssalNavGraphHashCapacity(nodeCount * 4))
+            {
+                _abyssalNavNodeCount = 0;
+                return;
+            }
 
             bool hasOrigin = false;
             Vector3 minNode = default;
 
             int writeIndex = 0;
-            for (int i = 0; i < _selectedChunkCount; i++)
+            for (int i = 0; i < _selectedChunkCount && writeIndex < nodeCount; i++)
             {
                 ChunkKey key = _selectedChunkKeys[i];
                 if (!_chunkAbyssalNavPayloads.TryGetValue(key, out ChunkAbyssalNavPayload payload) || payload.Count <= 0 || !payload.Nodes.IsCreated)
                     continue;
 
-                for (int nodeIndex = 0; nodeIndex < payload.Count; nodeIndex++)
+                for (int nodeIndex = 0; nodeIndex < payload.Count && writeIndex < nodeCount; nodeIndex++)
                 {
                     Vector3 node = payload.Nodes[nodeIndex];
                     Vector3 conduitVector = payload.ConduitVectors.IsCreated && nodeIndex < payload.ConduitVectors.Length
@@ -189,6 +202,7 @@ namespace Hecton8.World
                 }
             }
 
+            _abyssalNavNodeCount = writeIndex;
             _abyssalNavGraphOrigin = hasOrigin ? minNode : Vector3.zero;
             if (_nativeMemory.AbyssalNavGraphHashNative.IsCreated)
             {
@@ -362,10 +376,12 @@ namespace Hecton8.World
                     continue;
 
                 float swirl01 = Mathf.Clamp01((localThreat - threatWhirlpoolThreshold) / Mathf.Max(0.01f, 1f - threatWhirlpoolThreshold));
-                swirl01 *= 1f - Mathf.Clamp01(Mathf.Sqrt(radialSq) / threatWhirlpoolRadius);
-                Vector3 tangent = new Vector3(-radial.z, 0f, radial.x).normalized;
+                swirl01 *= 1f - Mathf.Clamp01(radialSq / radiusSq);
+                Vector3 tangent = NormalizeVector3Fast(new Vector3(-radial.z, 0f, radial.x), Vector3.forward);
                 Vector3 baseFlow = buffers.FlowVectors[i];
-                Vector3 distortedFlow = Vector3.Lerp(baseFlow, tangent * Mathf.Max(baseFlow.magnitude, 1f), swirl01 * threatWhirlpoolStrength);
+                float fakeMagnitude = Mathf.Max(EstimateLength3D(baseFlow), 1f);
+                float blend = Mathf.Clamp01(swirl01 * threatWhirlpoolStrength);
+                Vector3 distortedFlow = baseFlow + ((tangent * fakeMagnitude) - baseFlow) * blend;
                 Vector2 distortedDirection = NormalizeFlowDirection(new Vector2(distortedFlow.x, distortedFlow.z));
                 buffers.FlowVectors[i] = distortedFlow;
                 buffers.FlowDirections[i] = distortedDirection;

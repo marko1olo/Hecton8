@@ -34,6 +34,10 @@ namespace Hecton8.AtlasSignal
     {
         private const int MaximumSynchronizedPhase = 3;
         private const float SlowTickDeltaSeconds = 0.5f;
+        private const string CoreMessageId = "atlas6_core_message";
+        private const string FullyDecodedDiscoveryId = "atlas6_signal_fully_decoded";
+        private static readonly uint _coreMessageHash = AtlasSignalEvents.ComputeMessageHash(CoreMessageId);
+        private static readonly uint _fullyDecodedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(FullyDecodedDiscoveryId);
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -62,15 +66,6 @@ namespace Hecton8.AtlasSignal
         [SerializeField, Range(0f, 1f)] private float waveMatchUnlockThreshold01 = 0.92f;
 
         // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
-
-        public static AtlasSignalDecoder Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
-
-        // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
@@ -78,6 +73,7 @@ namespace Hecton8.AtlasSignal
         private bool _fullyDecoded;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _atlasSignalEventRegistered;
         private bool _decodeWindowOpen;
         private float _decodeProgress;
         private float _submittedCarrierFrequencyHz;
@@ -101,11 +97,11 @@ namespace Hecton8.AtlasSignal
         public int CurrentPhase => _currentPhase;
         public bool IsFullyDecoded => _fullyDecoded;
         internal bool IsDecodeWindowOpen => _decodeWindowOpen;
-        internal float CurrentDecodeProgress => _decodeProgress;
-        public float CurrentWaveMatch01 => _waveMatch01;
-        public float TargetCarrierFrequencyHz => targetCarrierFrequencyHz;
-        public float TargetCarrierPhase01 => targetCarrierPhase01;
-        public bool IsSpectrogramWaveMatched => !requireSpectrogramWaveMatch || _waveMatch01 >= waveMatchUnlockThreshold01;
+        internal float CurrentDecodeProgress => Sanitize01(_decodeProgress);
+        public float CurrentWaveMatch01 => Sanitize01(_waveMatch01);
+        public float TargetCarrierFrequencyHz => SanitizeFrequencyHz(targetCarrierFrequencyHz);
+        public float TargetCarrierPhase01 => SanitizePhase01(targetCarrierPhase01);
+        public bool IsSpectrogramWaveMatched => !requireSpectrogramWaveMatch || Sanitize01(_waveMatch01) >= ResolveWaveMatchUnlockThreshold01();
         public string CurrentMessage => _currentPhase < PhaseMessages.Length
             ? PhaseMessages[_currentPhase]
             : string.Empty;
@@ -114,18 +110,14 @@ namespace Hecton8.AtlasSignal
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
-        private void Awake()
-        {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
-        }
-
         private void OnEnable()
         {
-            TryRegisterToGlobalRegistry();
+            if (!TryRegisterToGlobalRegistry())
+                return;
+
             TryRegister();
 
-            AtlasSignalEvents.Register(this);
+            TryRegisterAtlasSignalEvents();
             TrySynchronizePhaseFromSignal();
         }
 
@@ -133,17 +125,14 @@ namespace Hecton8.AtlasSignal
         {
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
-
-            AtlasSignalEvents.Unregister(this);
+            TryUnregisterAtlasSignalEvents();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
-
-            if (Instance == this)
-                Instance = null;
+            TryUnregisterAtlasSignalEvents();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -183,10 +172,16 @@ namespace Hecton8.AtlasSignal
 
         private int CalculatePhase(float strength)
         {
-            if (strength >= fullDecodeThreshold) return 4;
-            if (strength >= phase3Threshold)     return 3;
-            if (strength >= phase2Threshold)     return 2;
-            if (strength >= phase1Threshold)     return 1;
+            float safeStrength = Sanitize01(strength);
+            float phase1 = ResolveThreshold01(phase1Threshold, 0.05f);
+            float phase2 = math.max(phase1, ResolveThreshold01(phase2Threshold, 0.30f));
+            float phase3 = math.max(phase2, ResolveThreshold01(phase3Threshold, 0.70f));
+            float fullDecode = math.max(phase3, ResolveThreshold01(fullDecodeThreshold, 0.95f));
+
+            if (safeStrength >= fullDecode) return 4;
+            if (safeStrength >= phase3)      return 3;
+            if (safeStrength >= phase2)      return 2;
+            if (safeStrength >= phase1)      return 1;
             return 0;
         }
 
@@ -208,13 +203,21 @@ namespace Hecton8.AtlasSignal
             _registered = false;
         }
 
-        private void TryRegisterToGlobalRegistry()
+        private bool TryRegisterToGlobalRegistry()
         {
-            if (_serviceRegistered || !Application.isPlaying || Instance != this)
-                return;
+            if (_serviceRegistered || !Application.isPlaying)
+                return true;
+
+            AtlasSignalDecoder registeredRuntime = GlobalRegistry.AtlasSignalDecoder;
+            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
 
             GlobalRegistry.RegisterAtlasSignalDecoderRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AtlasSignalDecoder, this);
+            return _serviceRegistered;
         }
 
         private void TryUnregisterFromGlobalRegistry()
@@ -224,6 +227,24 @@ namespace Hecton8.AtlasSignal
 
             GlobalRegistry.UnregisterAtlasSignalDecoderRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void TryRegisterAtlasSignalEvents()
+        {
+            if (_atlasSignalEventRegistered)
+                return;
+
+            AtlasSignalEvents.Register(this);
+            _atlasSignalEventRegistered = AtlasSignalEvents.IsRegistered(this);
+        }
+
+        private void TryUnregisterAtlasSignalEvents()
+        {
+            if (!_atlasSignalEventRegistered)
+                return;
+
+            AtlasSignalEvents.Unregister(this);
+            _atlasSignalEventRegistered = false;
         }
 
         private void OnPhaseAdvanced(int phase, float strength)
@@ -284,10 +305,10 @@ namespace Hecton8.AtlasSignal
             if (sys == null || _fullyDecoded)
                 return;
 
-            int synchronizedPhase = Mathf.Min(MaximumSynchronizedPhase, CalculatePhase(sys.CurrentStrength));
+            int synchronizedPhase = math.min(MaximumSynchronizedPhase, CalculatePhase(sys.CurrentStrength));
             if (synchronizedPhase > _currentPhase)
                 _currentPhase = synchronizedPhase;
-            _decodeWindowOpen = sys.CurrentStrength >= fullDecodeThreshold;
+            _decodeWindowOpen = CalculatePhase(sys.CurrentStrength) >= 4;
         }
 
         private bool CanDecodeSignal(AtlasSignalSystem sys)
@@ -309,15 +330,16 @@ namespace Hecton8.AtlasSignal
 
         public float SubmitWaveMatch(float carrierFrequencyHz, float carrierPhase01)
         {
-            _submittedCarrierFrequencyHz = math.max(0f, carrierFrequencyHz);
-            _submittedCarrierPhase01 = math.frac(carrierPhase01);
+            _submittedCarrierFrequencyHz = SanitizeFrequencyHz(carrierFrequencyHz);
+            _submittedCarrierPhase01 = SanitizePhase01(carrierPhase01);
             _waveMatch01 = SignalBeaconMath.EvaluateSineWaveMatch(
-                targetCarrierFrequencyHz,
-                targetCarrierPhase01,
+                SanitizeFrequencyHz(targetCarrierFrequencyHz),
+                SanitizePhase01(targetCarrierPhase01),
                 _submittedCarrierFrequencyHz,
                 _submittedCarrierPhase01,
-                frequencyToleranceHz,
-                phaseTolerance01);
+                SanitizePositive(frequencyToleranceHz, 0.001f),
+                SanitizePositive(phaseTolerance01, 0.001f));
+            _waveMatch01 = Sanitize01(_waveMatch01);
 
             return _waveMatch01;
         }
@@ -327,11 +349,15 @@ namespace Hecton8.AtlasSignal
             if (_fullyDecoded || !_decodeWindowOpen)
                 return false;
 
-            if (requireSpectrogramWaveMatch && _waveMatch01 < waveMatchUnlockThreshold01)
+            float unlockThreshold01 = ResolveWaveMatchUnlockThreshold01();
+            float safeWaveMatch01 = Sanitize01(_waveMatch01);
+            if (requireSpectrogramWaveMatch && safeWaveMatch01 < unlockThreshold01)
                 return false;
 
-            float matchScale = requireSpectrogramWaveMatch ? math.max(waveMatchUnlockThreshold01, _waveMatch01) : 1f;
-            _decodeProgress = Mathf.Clamp01(_decodeProgress + (Mathf.Max(0f, unpackSpeed) * Mathf.Max(0f, dt) * matchScale));
+            float matchScale = requireSpectrogramWaveMatch ? math.max(unlockThreshold01, safeWaveMatch01) : 1f;
+            float safeUnpackSpeed = SanitizePositive(unpackSpeed, 0f);
+            float safeDeltaTime = SanitizePositive(dt, 0f);
+            _decodeProgress = Sanitize01(_decodeProgress + (safeUnpackSpeed * safeDeltaTime * matchScale));
             if (_decodeProgress < 1f)
                 return false;
 
@@ -341,23 +367,62 @@ namespace Hecton8.AtlasSignal
 
         private void CompleteDecode()
         {
+            if (_fullyDecoded)
+                return;
+
             _fullyDecoded = true;
             _currentPhase = 4;
-            AtlasSignalEvents.RaiseDecoded("atlas6_core_message");
-            NarrativeEvents.RaiseDiscoveryMade("atlas6_signal_fully_decoded");
+            _decodeProgress = 1f;
+            _decodeWindowOpen = false;
+            AtlasSignalEvents.RaiseDecoded(_coreMessageHash);
+            NarrativeEvents.RaiseDiscoveryMade(_fullyDecodedDiscoveryHash);
             LogSignalFullyDecoded();
+        }
+
+        private float ResolveWaveMatchUnlockThreshold01()
+        {
+            return ResolveThreshold01(waveMatchUnlockThreshold01, 0.92f);
+        }
+
+        private static float ResolveThreshold01(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.saturate(value) : math.saturate(fallback);
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SanitizePhase01(float value)
+        {
+            return math.isfinite(value) ? math.frac(value) : 0f;
+        }
+
+        private static float SanitizeFrequencyHz(float value)
+        {
+            return math.isfinite(value) ? math.max(0.001f, value) : 0.001f;
+        }
+
+        private static float SanitizePositive(float value, float fallback)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : math.max(0f, fallback);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogSignalFullyDecoded()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[AtlasDecoder] Signal fully decoded. Atlas-6 core message received.");
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogPhaseAdvanced(int phase, string msg, float strength)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[AtlasDecoder] Phase {phase}: {msg} (strength: {strength:F2})");
+#endif
         }
     }
 }

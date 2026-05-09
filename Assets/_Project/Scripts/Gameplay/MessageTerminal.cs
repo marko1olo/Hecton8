@@ -172,7 +172,8 @@ namespace Hecton8.Gameplay
                 statusLightRenderer = GetComponent<Renderer>();
 
             // Initialize read messages tracking
-            _readMessageIds = new HashSet<string>(); // COLD ALLOC: HashSet<string> — track read messages — owner: MessageTerminal
+            int readMessageCapacity = messages != null ? messages.Length : 0;
+            _readMessageIds = new HashSet<string>(readMessageCapacity); // COLD ALLOC: HashSet<string>[messages.Length] - track read messages - owner: MessageTerminal
 
             // Mark already-read messages
             if (messages != null)

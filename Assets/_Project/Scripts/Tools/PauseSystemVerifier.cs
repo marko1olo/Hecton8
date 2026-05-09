@@ -1,6 +1,5 @@
 using System;
 using System.Threading;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.UI;
@@ -34,18 +33,8 @@ namespace Hecton8.Tools
         private int _testsFailed;
         private PauseMenuController _pauseMenu;
 
-        public static PauseSystemVerifier Instance { get; private set; }
-
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-            GameBootstrapper.PersistRuntimeService(this);
             ResolvePauseMenu();
             _isPaused = IsGamePaused();
         }
@@ -330,10 +319,14 @@ namespace Hecton8.Tools
             _pauseMenu = VerificationRuntimeProbe.ResolvePauseMenu();
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogVerification(string message)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_enableLogging)
                 Debug.Log($"[PauseSystemVerifier] {message}");
+#endif
         }
     }
 }

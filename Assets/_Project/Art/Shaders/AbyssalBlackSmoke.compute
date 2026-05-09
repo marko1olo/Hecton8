@@ -41,7 +41,9 @@ float _MaxViewDistance;
 
 float Hash11(float value)
 {
-    return frac(sin(value * 12.9898 + 78.233) * 43758.5453);
+    float3 hash = frac(float3(value, value + 19.19, value + 37.37) * float3(0.1031, 0.1030, 0.0973));
+    hash += dot(hash, hash.yzx + 33.33);
+    return frac((hash.x + hash.y) * hash.z);
 }
 
 float3 SafeNormalize(float3 value)
@@ -55,9 +57,15 @@ float3 SafeNormalize(float3 value)
 
 float3 BuildRespawnPosition(ThermalVentGpuData vent, uint particleIndex, float seed)
 {
-    float angle = Hash11(particleIndex * 1.37 + vent.PositionWS.x * 0.003 + seed * 41.0) * 6.2831853;
-    float radial = sqrt(Hash11(particleIndex * 0.91 + vent.PositionWS.z * 0.005 + seed * 13.0)) * vent.RadiusWS * 0.45;
-    float3 lateral = float3(cos(angle), 0.0, sin(angle)) * radial;
+    float2 radialVector = float2(
+        Hash11(particleIndex * 1.37 + vent.PositionWS.x * 0.003 + seed * 41.0) * 2.0 - 1.0,
+        Hash11(particleIndex * 1.91 + vent.PositionWS.z * 0.005 + seed * 17.0) * 2.0 - 1.0);
+    radialVector *= rsqrt(max(dot(radialVector, radialVector), EPSILON));
+    float radialSeed = max(
+        Hash11(particleIndex * 0.91 + vent.PositionWS.z * 0.005 + seed * 13.0),
+        Hash11(particleIndex * 1.11 + vent.PositionWS.x * 0.007 + seed * 23.0));
+    float radial = radialSeed * vent.RadiusWS * 0.45;
+    float3 lateral = float3(radialVector.x, 0.0, radialVector.y) * radial;
     float vertical = lerp(0.15, 1.5, Hash11(particleIndex * 0.57 + seed * 7.3));
     return vent.PositionWS + lateral + float3(0.0, vertical, 0.0);
 }
@@ -98,7 +106,9 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     float lifeT = saturate(particle.Lifetime / max(particle.MaxLifetime, 0.001));
     float heightT = saturate((particle.PositionWS.y - vent.PositionWS.y) / max(vent.HeightWS, 0.001));
-    float radialT = saturate(distance(particle.PositionWS.xz, vent.PositionWS.xz) / max(vent.RadiusWS, 0.001));
+    float2 radialOffset = particle.PositionWS.xz - vent.PositionWS.xz;
+    float radiusSq = max(vent.RadiusWS * vent.RadiusWS, 0.001);
+    float radialT = saturate(dot(radialOffset, radialOffset) / radiusSq);
     float3 toCenter = float3(vent.PositionWS.x - particle.PositionWS.x, 0.0, vent.PositionWS.z - particle.PositionWS.z);
     float3 inward = SafeNormalize(toCenter);
     float noisePhase = particle.Seed * 37.0 + _SimulationTime * 0.91 + index * 0.013;
@@ -109,13 +119,15 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     lateralNoise.y = 0.0;
     float3 turbulence = SafeNormalize(lateralNoise) * (_NoiseParams.x * vent.SmokeDensity);
     float upward = vent.UpdraftVelocity + (Hash11(noisePhase + 4.0) * 2.0 - 1.0) * _NoiseParams.y;
-    float confinement = saturate((radialT - 0.55) / 0.45);
+    float confinement = saturate((radialT - 0.3025) / 0.6975);
     float3 acceleration = float3(0.0, upward, 0.0) + inward * (confinement * vent.UpdraftVelocity * 0.28) + turbulence;
 
     particle.VelocityWS += acceleration * dt;
     particle.PositionWS += particle.VelocityWS * dt;
 
-    float distanceFade = 1.0 - saturate(distance(particle.PositionWS, _CameraPositionWS) / max(_MaxViewDistance, 0.001));
+    float3 toCamera = particle.PositionWS - _CameraPositionWS;
+    float maxViewDistanceSq = max(_MaxViewDistance * _MaxViewDistance, 0.001);
+    float distanceFade = 1.0 - saturate(dot(toCamera, toCamera) / maxViewDistanceSq);
     float plumeFade = (1.0 - heightT) * (1.0 - radialT * 0.82);
     particle.Alpha = saturate(plumeFade * distanceFade * vent.SmokeDensity * 0.42);
 

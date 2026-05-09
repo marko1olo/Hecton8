@@ -44,6 +44,18 @@ float SafeRcp(float value)
     return abs(value) > 1e-5 ? rcp(value) : 0.0;
 }
 
+float FastNegativeExp(float x)
+{
+    x = max(0.0, x);
+    float x2 = x * x;
+    return rcp(1.0 + x + 0.48 * x2 + 0.235 * x2 * x);
+}
+
+float FastTrianglePulse01(float phase)
+{
+    return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+}
+
 float3 SafeNormalize3(float3 value)
 {
     float lenSq = dot(value, value);
@@ -81,7 +93,9 @@ void ResolveDepthData(float2 screenUv, out float rawDepth, out float validMask, 
 
 float Hash31(float3 value)
 {
-    return frac(sin(dot(value, float3(127.1, 311.7, 74.7))) * 43758.5453);
+    float3 hash = frac(value * float3(0.1031, 0.1030, 0.0973));
+    hash += dot(hash, hash.yzx + 33.33);
+    return frac((hash.x + hash.y) * hash.z);
 }
 
 float ValueNoise3(float3 samplePosition)
@@ -136,7 +150,7 @@ float PhaseHG(float cosTheta, float anisotropy)
     float g = clamp(anisotropy, -0.95, 0.95);
     float gSq = g * g;
     float denominator = max(1.0 + gSq - 2.0 * g * cosTheta, 1e-4);
-    return (1.0 - gSq) / (4.0 * PI * pow(denominator, 1.5));
+    return (1.0 - gSq) * SafeRcp(4.0 * PI) * SafeRcp(denominator) * rsqrt(denominator);
 }
 
 float SampleFogDensity(float3 samplePositionWS, float normalizedTravel)
@@ -211,7 +225,7 @@ float ResolveFlashlightConeMask(float3 samplePositionWS, float3 cameraToSampleDi
 
     float viewAlignment = saturate(dot(SafeNormalize3(cameraToSampleDirectionWS), lightDirectionWS));
     float backscatter = lerp(0.18, 1.0, viewAlignment * viewAlignment);
-    float pressureStripe = 0.94 + 0.06 * sin(dot(samplePositionWS, float3(0.31, 1.73, -0.27)) + _Time.y * 3.1);
+    float pressureStripe = 0.94 + 0.06 * (FastTrianglePulse01(dot(samplePositionWS, float3(0.31, 1.73, -0.27)) + _Time.y * 3.1) * 2.0 - 1.0);
     coneColor = _HectonFlashlightColor.rgb * _HectonFlashlightColor.w * saturate(_HectonFlashlightVolumetricOpacity);
     return coneMask * rangeMask * backscatter * pressureStripe;
 }
@@ -238,7 +252,7 @@ float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirec
         float travel = (stepIndex + 0.5) * stepLength;
         float3 raySampleWS = samplePositionWS + toLightDirectionWS * travel;
         float occlusion = ResolveDepthOcclusionAtWorldPosition(raySampleWS, depthBias);
-        transmittance *= exp(-occlusion * density * strength * stepLength);
+        transmittance *= FastNegativeExp(occlusion * density * strength * stepLength);
         if (transmittance <= 0.02)
             return 0.02;
     }
@@ -345,7 +359,7 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
         density *= hudDensityLift;
 
         float extinction = density * max(localScatterCoeff, 0.0001);
-        transmittance *= exp(-extinction * stepSize);
+        transmittance *= FastNegativeExp(extinction * stepSize);
 
         if (mainLightAvailable > 0.0)
         {
@@ -419,10 +433,10 @@ void CompositeVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
             float3 tapPositionWS;
             ResolveDepthData(sampleUv, tapRawDepth, tapValidMask, tapLinearEyeDepth, tapPositionWS);
             float depthWeight = tapValidMask > 0.5
-                ? exp(-abs(tapLinearEyeDepth - linearEyeDepth) * depthScale)
+                ? FastNegativeExp(abs(tapLinearEyeDepth - linearEyeDepth) * depthScale)
                 : 0.0;
             float2 offset = samplePixel - halfPixel;
-            float spatialWeight = exp(-dot(offset, offset) * 0.9);
+            float spatialWeight = FastNegativeExp(dot(offset, offset) * 0.9);
             float weight = spatialWeight * depthWeight;
             accumulated += SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricHalfInput, sampler_LinearClamp, saturate(sampleUv), 0) * weight;
             weightSum += weight;

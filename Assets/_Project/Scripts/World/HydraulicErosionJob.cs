@@ -8,10 +8,43 @@ using Unity.Mathematics;
 namespace Hecton8.World
 {
     /// <summary>
+    /// Blittable hydraulic erosion height/silt delta emitted by droplet slices.
+    /// </summary>
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+    public struct HydraulicErosionHeightDelta
+    {
+        /// <summary>Linear heightmap cell index.</summary>
+        public int Index;
+
+        /// <summary>Signed normalized height delta.</summary>
+        public float HeightDelta01;
+
+        /// <summary>Positive normalized sediment deposition delta.</summary>
+        public float SedimentDelta01;
+
+        /// <summary>Positive normalized erosion-depth delta.</summary>
+        public float ErosionDepthDelta01;
+    }
+
+    /// <summary>
     /// Schedules hydraulic erosion as four color-coded sub-grid phases.
     /// </summary>
     public static class HydraulicErosionScheduler
     {
+        private const int MinDefaultDeltasPerApply = 1024;
+        private const int MaxDefaultDeltasPerApply = 8192;
+        private const int MaxDeltaApplyPassesPerDropletSlice = 128;
+
+        /// <summary>Default telemetry capacity for worst-case sliced height-delta queues.</summary>
+        public const int RecommendedMaxTrackedHeightDeltaQueueCapacity = 8 * 1024 * 1024;
+
+        /// <summary>
+        /// Maximum queued height-delta writes one droplet step can emit:
+        /// DepositFlatSediment may run four 3x3 fill passes plus four bilinear cells,
+        /// then terminal water/speed loss can still spread sediment across a 5x5 flat.
+        /// </summary>
+        public const int MaxHeightDeltaWritesPerDropletStep = 65;
+
         /// <summary>
         /// Schedules red-black style XY parity phases so same-phase sub-grids never share a write boundary.
         /// </summary>
@@ -82,6 +115,139 @@ namespace Hecton8.World
             job.DropletIndexOffset = originalDropletIndexOffset;
             return handle;
         }
+
+        /// <summary>
+        /// Schedules droplet slices and applies their queued height deltas after each slice.
+        /// </summary>
+        /// <param name="job">Caller-owned erosion job configuration.</param>
+        /// <param name="dropletsPerSlice">Maximum droplets assigned to one four-phase pass.</param>
+        /// <param name="innerLoopBatchCount">Batch count for sub-grid jobs.</param>
+        /// <param name="heightDeltas">Parallel droplet producer queue consumed by one delta-apply job.</param>
+        /// <param name="maxDeltasPerApply">Preferred queued-delta drain cap per apply job. Values below one use a bounded estimate.</param>
+        /// <param name="dependency">Upstream job dependency.</param>
+        /// <returns>Combined handle for all scheduled slices and their delta-apply passes.</returns>
+        public static JobHandle ScheduleFourPhaseSlicedWithDeltaApply(
+            ref HydraulicErosionJob job,
+            int dropletsPerSlice,
+            int innerLoopBatchCount,
+            NativeQueue<HydraulicErosionHeightDelta> heightDeltas,
+            int maxDeltasPerApply,
+            JobHandle dependency)
+        {
+            if (!heightDeltas.IsCreated)
+                return ScheduleFourPhaseSliced(ref job, dropletsPerSlice, innerLoopBatchCount, dependency);
+
+            int originalDropletCount = math.max(0, job.DropletCount);
+            int originalDropletIndexOffset = job.DropletIndexOffset;
+            byte originalQueueHeightDeltas = job.QueueHeightDeltas;
+            byte originalDeferHeightDeltaApplication = job.DeferHeightDeltaApplication;
+            NativeQueue<HydraulicErosionHeightDelta>.ParallelWriter originalHeightDeltaQueue = job.HeightDeltaQueue;
+            int safeDropletsPerSlice = math.max(1, dropletsPerSlice);
+            int safeMaxDeltasPerApply = ResolvePreferredMaxDeltasPerApply(
+                maxDeltasPerApply,
+                safeDropletsPerSlice,
+                job.MaxLifetime);
+
+            if (originalDropletCount <= 0)
+                return dependency;
+
+            job.QueueHeightDeltas = 1;
+            job.DeferHeightDeltaApplication = 1;
+            job.HeightDeltaQueue = heightDeltas.AsParallelWriter();
+
+            JobHandle handle = dependency;
+            for (int dropletOffset = 0; dropletOffset < originalDropletCount; dropletOffset += safeDropletsPerSlice)
+            {
+                job.DropletCount = math.min(safeDropletsPerSlice, originalDropletCount - dropletOffset);
+                job.DropletIndexOffset = originalDropletIndexOffset + dropletOffset;
+                handle = ScheduleFourPhase(ref job, innerLoopBatchCount, handle);
+                int applyBudget = safeMaxDeltasPerApply;
+                int applyPassCount = ResolveHeightDeltaApplyPlan(job.DropletCount, job.MaxLifetime, safeMaxDeltasPerApply, out applyBudget);
+                for (int applyPass = 0; applyPass < applyPassCount; applyPass++)
+                {
+                    handle = new HydraulicErosionDeltaApplyJob
+                    {
+                        HeightDeltas = heightDeltas,
+                        Heightmap = job.Heightmap,
+                        SedimentMask = job.SedimentMask,
+                        ErosionDepthMask = job.ErosionDepthMask,
+                        MaxDeltas = applyBudget,
+                        ApplyQueuedDeltas = job.DeferHeightDeltaApplication
+                    }.Schedule(handle);
+                }
+            }
+
+            job.DropletCount = originalDropletCount;
+            job.DropletIndexOffset = originalDropletIndexOffset;
+            job.QueueHeightDeltas = originalQueueHeightDeltas;
+            job.DeferHeightDeltaApplication = originalDeferHeightDeltaApplication;
+            job.HeightDeltaQueue = originalHeightDeltaQueue;
+            return handle;
+        }
+
+        private static int ResolvePreferredMaxDeltasPerApply(int requestedMaxDeltasPerApply, int dropletsPerSlice, int maxLifetime)
+        {
+            if (requestedMaxDeltasPerApply > 0)
+                return requestedMaxDeltasPerApply;
+
+            long estimated = EstimateMaxHeightDeltaWrites(dropletsPerSlice, maxLifetime);
+            long budget = estimated / MaxDeltaApplyPassesPerDropletSlice;
+            if (budget < MinDefaultDeltasPerApply)
+                return MinDefaultDeltasPerApply;
+            if (budget > MaxDefaultDeltasPerApply)
+                return MaxDefaultDeltasPerApply;
+
+            return (int)budget;
+        }
+
+        private static int ResolveHeightDeltaApplyPlan(
+            int dropletCount,
+            int maxLifetime,
+            int maxDeltasPerApply,
+            out int resolvedMaxDeltasPerApply)
+        {
+            int safeBudget = math.max(1, maxDeltasPerApply);
+            resolvedMaxDeltasPerApply = safeBudget;
+            long estimated = EstimateMaxHeightDeltaWrites(dropletCount, maxLifetime);
+            if (estimated <= safeBudget)
+                return 1;
+
+            long passes = (estimated + safeBudget - 1L) / safeBudget;
+            if (passes <= MaxDeltaApplyPassesPerDropletSlice)
+                return (int)passes;
+
+            long raisedBudget = (estimated + MaxDeltaApplyPassesPerDropletSlice - 1L) / MaxDeltaApplyPassesPerDropletSlice;
+            resolvedMaxDeltasPerApply = raisedBudget > int.MaxValue ? int.MaxValue : (int)raisedBudget;
+            return MaxDeltaApplyPassesPerDropletSlice;
+        }
+
+        /// <summary>
+        /// Resolves a sentinel/telemetry capacity for the queued delta buffer using the same worst-case model as the scheduler.
+        /// </summary>
+        public static int ResolveTrackedHeightDeltaQueueCapacity(
+            int dropletCount,
+            int maxLifetime,
+            int minCapacity,
+            int maxTrackedCapacity)
+        {
+            int safeMinCapacity = math.max(1, minCapacity);
+            int safeMaxCapacity = math.max(safeMinCapacity, maxTrackedCapacity);
+            long estimated = EstimateMaxHeightDeltaWrites(dropletCount, maxLifetime);
+            if (estimated < safeMinCapacity)
+                return safeMinCapacity;
+            if (estimated > safeMaxCapacity)
+                return safeMaxCapacity;
+
+            return (int)estimated;
+        }
+
+        /// <summary>Estimates the maximum height-delta writes emitted by one sliced droplet pass.</summary>
+        public static long EstimateMaxHeightDeltaWrites(int dropletCount, int maxLifetime)
+        {
+            return (long)math.max(0, dropletCount) *
+                   math.max(1, maxLifetime) *
+                   MaxHeightDeltaWritesPerDropletStep;
+        }
     }
 
     /// <summary>
@@ -137,6 +303,15 @@ namespace Hecton8.World
         // for the active phase and later phases are chained by JobHandle dependency.
         [NativeDisableParallelForRestriction]
         public NativeArray<float> ErosionDepthMask;
+
+        /// <summary>Optional queue writer for deferred terrain deltas.</summary>
+        public NativeQueue<HydraulicErosionHeightDelta>.ParallelWriter HeightDeltaQueue;
+
+        /// <summary>Non-zero emits every terrain mutation into <see cref="HeightDeltaQueue"/>.</summary>
+        public byte QueueHeightDeltas;
+
+        /// <summary>Non-zero prevents immediate heightmap mutation; queued deltas are applied by a later job.</summary>
+        public byte DeferHeightDeltaApplication;
 
         /// <summary>Heightmap width, including any overlap margin.</summary>
         public int Width;
@@ -629,9 +804,7 @@ namespace Hecton8.World
                     float requested = amount * weight;
                     float current = math.saturate(Heightmap[index]);
                     float actual = math.min(current, requested);
-                    Heightmap[index] = current - actual;
-                    if (ErosionDepthMask.IsCreated)
-                        ErosionDepthMask[index] += actual;
+                    ApplyHeightDelta(index, -actual, 0f, actual);
                     removed += actual;
                 }
             }
@@ -670,9 +843,7 @@ namespace Hecton8.World
                     float2 cellCenter = new float2(centerX + ox + 0.5f, centerZ + oz + 0.5f);
                     float weight = math.saturate(1f - FastSpeedMagnitude(math.lengthsq(cellCenter - position)) * 0.28f) / totalWeight;
                     float deposit = amount * weight;
-                    Heightmap[index] = math.saturate(Heightmap[index] + deposit);
-                    if (SedimentMask.IsCreated)
-                        SedimentMask[index] += deposit;
+                    ApplyHeightDelta(index, deposit, deposit, 0f);
                 }
             }
 
@@ -738,9 +909,7 @@ namespace Hecton8.World
                         if (math.abs(h - lowest) > 0.000001f)
                             continue;
 
-                        Heightmap[index] = math.saturate(h + raise);
-                        if (SedimentMask.IsCreated)
-                            SedimentMask[index] += raise;
+                        ApplyHeightDelta(index, raise, raise, 0f);
                     }
                 }
 
@@ -782,9 +951,34 @@ namespace Hecton8.World
         private void DepositAtIndex(int index, float amount)
         {
             float actual = math.max(0f, amount);
-            Heightmap[index] = math.saturate(Heightmap[index] + actual);
-            if (SedimentMask.IsCreated)
-                SedimentMask[index] += actual;
+            ApplyHeightDelta(index, actual, actual, 0f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private void ApplyHeightDelta(int index, float heightDelta01, float sedimentDelta01, float erosionDepthDelta01)
+        {
+            if (heightDelta01 == 0f && sedimentDelta01 == 0f && erosionDepthDelta01 == 0f)
+                return;
+
+            if (QueueHeightDeltas != 0)
+            {
+                HeightDeltaQueue.Enqueue(new HydraulicErosionHeightDelta
+                {
+                    Index = index,
+                    HeightDelta01 = heightDelta01,
+                    SedimentDelta01 = sedimentDelta01,
+                    ErosionDepthDelta01 = erosionDepthDelta01
+                });
+            }
+
+            if (DeferHeightDeltaApplication != 0)
+                return;
+
+            Heightmap[index] = math.saturate(Heightmap[index] + heightDelta01);
+            if (sedimentDelta01 != 0f && SedimentMask.IsCreated)
+                SedimentMask[index] += sedimentDelta01;
+            if (erosionDepthDelta01 != 0f && ErosionDepthMask.IsCreated)
+                ErosionDepthMask[index] += erosionDepthDelta01;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -810,6 +1004,60 @@ namespace Hecton8.World
         private static float Hash01(uint value)
         {
             return (Hash(value) & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+    }
+
+    /// <summary>
+    /// Applies queued hydraulic erosion deltas after a sliced droplet pass.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct HydraulicErosionDeltaApplyJob : IJob
+    {
+        /// <summary>Queued signed height and mask deltas emitted by the droplet job.</summary>
+        public NativeQueue<HydraulicErosionHeightDelta> HeightDeltas;
+
+        /// <summary>Mutable normalized heightmap target.</summary>
+        public NativeArray<float> Heightmap;
+
+        /// <summary>Mutable normalized sediment accumulation target.</summary>
+        public NativeArray<float> SedimentMask;
+
+        /// <summary>Mutable normalized erosion-depth target.</summary>
+        public NativeArray<float> ErosionDepthMask;
+
+        /// <summary>Maximum deltas consumed in this apply pass. Values below one are clamped to one to preserve bounded slicing.</summary>
+        public int MaxDeltas;
+
+        /// <summary>Non-zero applies queued deltas; zero drains already-applied telemetry deltas.</summary>
+        public byte ApplyQueuedDeltas;
+
+        /// <inheritdoc />
+        public void Execute()
+        {
+            if (!HeightDeltas.IsCreated || !Heightmap.IsCreated)
+                return;
+
+            int budget = math.max(1, MaxDeltas);
+            int applied = 0;
+            while (applied < budget && HeightDeltas.TryDequeue(out HydraulicErosionHeightDelta delta))
+            {
+                if ((uint)delta.Index >= (uint)Heightmap.Length)
+                {
+                    applied++;
+                    continue;
+                }
+
+                if (ApplyQueuedDeltas != 0)
+                {
+                    Heightmap[delta.Index] = math.saturate(Heightmap[delta.Index] + delta.HeightDelta01);
+                    if (delta.SedimentDelta01 != 0f && SedimentMask.IsCreated && (uint)delta.Index < (uint)SedimentMask.Length)
+                        SedimentMask[delta.Index] += delta.SedimentDelta01;
+                    if (delta.ErosionDepthDelta01 != 0f && ErosionDepthMask.IsCreated && (uint)delta.Index < (uint)ErosionDepthMask.Length)
+                        ErosionDepthMask[delta.Index] += delta.ErosionDepthDelta01;
+                }
+
+                applied++;
+            }
         }
     }
 

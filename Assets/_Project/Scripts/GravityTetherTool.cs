@@ -1,11 +1,12 @@
 namespace Hecton8.Gameplay
 {
+    using System;
     using Hecton8.Core;
     using Hecton8.Interaction;
     using Hecton8.Inventory;
-    using Hecton8.Items;
     using Hecton8.Physics;
     using Hecton8.Tools;
+    using Unity.Mathematics;
     using UnityEngine;
 
     /// <summary>
@@ -15,6 +16,7 @@ namespace Hecton8.Gameplay
     public sealed class GravityTetherTool : PlayerTool
     {
         private const int TetherHitCapacity = 32;
+        private const float MinimumPullDistanceSq = 0.000001f;
         private static readonly int _DefaultTetherLayerMask =
             HectonLayerMasks.DroppedItemLayerMask |
             HectonLayerMasks.InteractableLayerMask;
@@ -41,7 +43,7 @@ namespace Hecton8.Gameplay
         private Transform _cachedTransform;
         private Transform _resolvedChestTarget;
         private PlayerInventory _inventory;
-        private readonly RaycastHit[] _tetherHits = new RaycastHit[TetherHitCapacity]; // COLD ALLOC: RaycastHit[32] — gravity tether SphereCastNonAlloc result buffer — owner: GravityTetherTool
+        private readonly Collider[] _tetherOverlapCandidates = new Collider[TetherHitCapacity]; // COLD ALLOC: Collider[32] - gravity tether OverlapSphereNonAlloc candidate buffer - owner: GravityTetherTool
 
         private void Awake()
         {
@@ -70,60 +72,113 @@ namespace Hecton8.Gameplay
             Vector3 origin = _cachedTransform.position;
             Vector3 direction = _cachedTransform.forward;
             float runtimeRange = GetRuntimeMaxRange(rangeMeters);
-            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
-                origin,
-                sphereRadiusMeters,
-                direction,
-                _tetherHits,
-                runtimeRange,
+            float halfRange = runtimeRange * 0.5f;
+            int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
+                origin + direction * halfRange,
+                halfRange + sphereRadiusMeters,
+                _tetherOverlapCandidates,
                 ResolveTetherLayerMask(),
                 QueryTriggerInteraction.Collide);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (hitCount >= TetherHitCapacity)
+                Debug.LogWarning("[GravityTetherTool] Tether candidate buffer saturated; results truncated.");
+#endif
+            float rangeSq = runtimeRange * runtimeRange;
+            float tubeRadiusSq = sphereRadiusMeters * sphereRadiusMeters;
+            float pickupDistanceSq = pickupDistanceMeters * pickupDistanceMeters;
+            Vector3 chestPosition = chest.position;
 
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
-                ProcessTetherHit(_tetherHits[hitIndex], chest);
+            {
+                Collider candidate = _tetherOverlapCandidates[hitIndex];
+                if (candidate == null)
+                    continue;
+
+                Vector3 candidatePosition = ResolveTetherCandidatePosition(candidate);
+                Vector3 fromOrigin = candidatePosition - origin;
+                float distanceSq = fromOrigin.sqrMagnitude;
+                if (distanceSq > rangeSq)
+                    continue;
+
+                float forwardMeters = math.dot((float3)fromOrigin, (float3)direction);
+                if (forwardMeters < 0f || forwardMeters > runtimeRange)
+                    continue;
+
+                float radialSq = distanceSq - forwardMeters * forwardMeters;
+                if (radialSq > tubeRadiusSq)
+                    continue;
+
+                ProcessTetherHit(candidate, candidatePosition, chest, chestPosition, pickupDistanceSq);
+            }
+        }
+
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
+            AppendText(ref buffer, "GRAV TETHER // RNG ");
+            buffer.AppendFloat(GetRuntimeMaxRange(rangeMeters), 1);
+            AppendText(ref buffer, "M // FORCE ");
+            buffer.AppendFloat(GetRuntimePowerScalar(pullVelocityChange), 1);
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
+            if (!IsEquipped)
+            {
+                AppendText(ref buffer, "Tether stowed. Equip before loot recovery.");
+                return;
+            }
+
+            AppendText(ref buffer, "Hold primary: overlap broadphase, squared-distance gate, no sweep cast.");
         }
 
         protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
         {
-            profile.MaxRange = Mathf.Max(0.1f, rangeMeters);
-            profile.PowerScalar = Mathf.Max(0.1f, pullVelocityChange);
+            profile.MaxRange = math.max(0.1f, rangeMeters);
+            profile.PowerScalar = math.max(0.1f, pullVelocityChange);
         }
 
-        private void ProcessTetherHit(RaycastHit hit, Transform chest)
+        private void ProcessTetherHit(
+            Collider hitCollider,
+            Vector3 interactionPoint,
+            Transform chest,
+            Vector3 chestPosition,
+            float pickupDistanceSq)
         {
-            Collider hitCollider = hit.collider;
             if (hitCollider == null)
                 return;
 
-            Vector3 chestPosition = chest.position;
-            Vector3 toChest = chestPosition - hit.point;
+            Vector3 toChest = chestPosition - interactionPoint;
             float sqrDistance = toChest.sqrMagnitude;
-            if (sqrDistance <= pickupDistanceMeters * pickupDistanceMeters &&
+            if (sqrDistance <= pickupDistanceSq &&
                 TryResolvePickupSource(hitCollider, out IInventoryPickupSource pickupSource))
             {
                 pickupSource.TryHandleInventoryPickup(ResolveInventory(), chest);
                 return;
             }
 
-            Rigidbody body = hit.rigidbody;
+            Rigidbody body = hitCollider.attachedRigidbody;
             if (body == null)
                 return;
 
-            Vector3 pullDirection = sqrDistance > 0.000001f ? toChest / Mathf.Sqrt(sqrDistance) : chest.forward;
+            if (sqrDistance <= MinimumPullDistanceSq)
+                return;
+
+            Vector3 pullDirection = toChest * math.rsqrt(sqrDistance);
             PhysicsForceRouter.QueueForce(body, pullDirection * GetRuntimePowerScalar(pullVelocityChange), ForceMode.VelocityChange);
+        }
+
+        private static Vector3 ResolveTetherCandidatePosition(Collider hitCollider)
+        {
+            Rigidbody body = hitCollider.attachedRigidbody;
+            return body != null ? body.worldCenterOfMass : hitCollider.transform.position;
         }
 
         private bool TryResolvePickupSource(Collider hitCollider, out IInventoryPickupSource pickupSource)
         {
-            if (hitCollider.TryGetComponent(out PickupItem pickupItem))
+            if (InteractableRegistry.TryResolve(hitCollider, out InteractableRegistry.TargetInfo targetInfo) &&
+                targetInfo.PickupSource != null)
             {
-                pickupSource = pickupItem;
-                return true;
-            }
-
-            if (hitCollider.TryGetComponent(out HectonItem hectonItem))
-            {
-                pickupSource = hectonItem;
+                pickupSource = targetInfo.PickupSource;
                 return true;
             }
 
@@ -160,6 +215,11 @@ namespace Hecton8.Gameplay
         {
             int mask = interactableMask.value;
             return HectonLayerMasks.IsEverythingLayerMask(mask) ? _DefaultTetherLayerMask : mask;
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return buffer.Append(value.AsSpan());
         }
     }
 }

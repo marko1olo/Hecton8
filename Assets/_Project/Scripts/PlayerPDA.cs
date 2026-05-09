@@ -44,9 +44,9 @@ using Hecton8.Optimization;
 using Hecton8.World;
 using System;
 using System.Runtime.InteropServices;
-using System.Text;
 using TMPro;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -363,24 +363,26 @@ namespace Hecton8.UI
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<PDAEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] - deferred PDA event lane flushed by SystemDispatcher LateUpdate - owner: PDAEvents
+                _pendingEvents = new NativeQueue<PDAEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] — deferred PDA event lane flushed by SystemDispatcher LateUpdate — owner: PDAEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
                     nameof(PDAEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<PDAEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] - next-frame PDA events raised by listeners - owner: PDAEvents
+                _nextFrameEvents = new NativeQueue<PDAEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] — next-frame PDA events raised by listeners — owner: PDAEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
                     nameof(PDAEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
 
             if (!_queuedEventKeys.IsCreated)
@@ -391,6 +393,20 @@ namespace Hecton8.UI
                     nameof(PDAEvents),
                     nameof(_queuedEventKeys),
                     NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -1283,9 +1299,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            // Exponential lerp for smooth fade
-            float t = 1f - Mathf.Exp(-fadeSpeed * deltaTime);
-            _currentAlpha = Mathf.Lerp(_currentAlpha, _targetAlpha, t);
+            float fadeStep = Mathf.Max(0f, fadeSpeed * deltaTime);
+            float t = fadeStep / (1f + fadeStep);
+            _currentAlpha = math.lerp(_currentAlpha, _targetAlpha, t);
 
             pdaCanvasGroup.alpha = _currentAlpha;
 
@@ -1581,8 +1597,8 @@ namespace Hecton8.UI
         [SerializeField] private TMP_FontAsset labelFont;
         [SerializeField] private TMP_FontAsset numericFont;
 
-        // COLD ALLOC: StringBuilder[192] — PDA diagnostics terminal text assembly — owner: PDADiagnosticTerminal
-        private readonly StringBuilder _builder = new StringBuilder(192);
+        // COLD ALLOC: char[192] - PDA diagnostics terminal TMP staging buffer - owner: PDADiagnosticTerminal
+        private readonly char[] _diagnosticTextBuffer = new char[192];
 
         private bool _built;
         private bool _registered;
@@ -1741,17 +1757,29 @@ namespace Hecton8.UI
             _lastHullStressPercent = hullStressPercent;
             _lastUniverseOffset = universeOffset;
 
-            _builder.Clear();
-            _builder.Append("GC RESERVED  ").Append(memoryMb).Append(" MB\n");
-            _builder.Append("FRAME RATE   ").Append(fps).Append(" FPS\n");
-            _builder.Append("BOIDS LIVE   ").Append(boidCount).Append('\n');
-            _builder.Append("HULL STRESS  ").Append(hullStressPercent).Append("%\n");
-            _builder.Append("UNIV OFFSET  ");
-            AppendSignedRoundedVector(_builder, universeOffset);
-            _builder.Append('\n');
-            _builder.Append("SLOW TICK    2 HZ\n");
-            _builder.Append("STATUS       ONLINE");
-            _bodyLabel.SetText(_builder);
+            Span<char> buffer = _diagnosticTextBuffer.AsSpan();
+            int cursor = 0;
+            bool written =
+                TryAppend(buffer, ref cursor, "GC RESERVED  ".AsSpan()) &&
+                TryAppendInt(buffer, ref cursor, memoryMb) &&
+                TryAppendLine(buffer, ref cursor, " MB".AsSpan()) &&
+                TryAppend(buffer, ref cursor, "FRAME RATE   ".AsSpan()) &&
+                TryAppendInt(buffer, ref cursor, fps) &&
+                TryAppendLine(buffer, ref cursor, " FPS".AsSpan()) &&
+                TryAppend(buffer, ref cursor, "BOIDS LIVE   ".AsSpan()) &&
+                TryAppendInt(buffer, ref cursor, boidCount) &&
+                TryAppendNewLine(buffer, ref cursor) &&
+                TryAppend(buffer, ref cursor, "HULL STRESS  ".AsSpan()) &&
+                TryAppendInt(buffer, ref cursor, hullStressPercent) &&
+                TryAppendLine(buffer, ref cursor, "%".AsSpan()) &&
+                TryAppend(buffer, ref cursor, "UNIV OFFSET  ".AsSpan()) &&
+                TryAppendSignedRoundedVector(buffer, ref cursor, universeOffset) &&
+                TryAppendNewLine(buffer, ref cursor) &&
+                TryAppendLine(buffer, ref cursor, "SLOW TICK    2 HZ".AsSpan()) &&
+                TryAppend(buffer, ref cursor, "STATUS       ONLINE".AsSpan());
+
+            if (written)
+                _bodyLabel.SetCharArray(_diagnosticTextBuffer, 0, cursor);
         }
 
         private void ResolveDiagnosticsSources()
@@ -1849,24 +1877,60 @@ namespace Hecton8.UI
             return text;
         }
 
-        private static void AppendSignedRoundedVector(StringBuilder builder, Vector3 value)
+        private static bool TryAppendSignedRoundedVector(Span<char> buffer, ref int cursor, Vector3 value)
         {
-            builder.Append('[');
-            AppendSignedRounded(builder, value.x);
-            builder.Append(',');
-            AppendSignedRounded(builder, value.y);
-            builder.Append(',');
-            AppendSignedRounded(builder, value.z);
-            builder.Append(']');
+            return TryAppend(buffer, ref cursor, "[".AsSpan()) &&
+                TryAppendSignedRounded(buffer, ref cursor, value.x) &&
+                TryAppend(buffer, ref cursor, ",".AsSpan()) &&
+                TryAppendSignedRounded(buffer, ref cursor, value.y) &&
+                TryAppend(buffer, ref cursor, ",".AsSpan()) &&
+                TryAppendSignedRounded(buffer, ref cursor, value.z) &&
+                TryAppend(buffer, ref cursor, "]".AsSpan());
         }
 
-        private static void AppendSignedRounded(StringBuilder builder, float value)
+        private static bool TryAppendSignedRounded(Span<char> buffer, ref int cursor, float value)
         {
             int rounded = Mathf.RoundToInt(value);
-            if (rounded >= 0)
-                builder.Append('+');
+            if (rounded >= 0 && !TryAppend(buffer, ref cursor, "+".AsSpan()))
+                return false;
 
-            builder.Append(rounded);
+            return TryAppendInt(buffer, ref cursor, rounded);
+        }
+
+        private static bool TryAppendLine(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
+        {
+            return TryAppend(buffer, ref cursor, value) && TryAppendNewLine(buffer, ref cursor);
+        }
+
+        private static bool TryAppendNewLine(Span<char> buffer, ref int cursor)
+        {
+            if (cursor < 0 || cursor >= buffer.Length)
+                return false;
+
+            buffer[cursor++] = '\n';
+            return true;
+        }
+
+        private static bool TryAppendInt(Span<char> buffer, ref int cursor, int value)
+        {
+            if ((uint)cursor > (uint)buffer.Length ||
+                !value.TryFormat(buffer.Slice(cursor), out int written))
+            {
+                return false;
+            }
+
+            cursor += written;
+            return true;
+        }
+
+        private static bool TryAppend(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
+        {
+            if (cursor < 0 || cursor + value.Length > buffer.Length)
+                return false;
+
+            value.CopyTo(buffer.Slice(cursor));
+            cursor += value.Length;
+            return true;
         }
 
         private static void Anchor(RectTransform rect, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)

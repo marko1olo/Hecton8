@@ -59,7 +59,7 @@ Shader "Hidden/Hecton8/SargassumCutMaskStamp"
 
                 half2 delta = input.uv - _StampUvRadiusStrength.xy;
                 half radius = max(_StampUvRadiusStrength.z, 0.0001h);
-                half normalized = saturate(1.0h - length(delta) / radius);
+                half normalized = saturate(1.0h - dot(delta, delta) / (radius * radius));
                 half stamp = normalized * normalized * _StampUvRadiusStrength.w;
                 current = max(current, stamp);
 

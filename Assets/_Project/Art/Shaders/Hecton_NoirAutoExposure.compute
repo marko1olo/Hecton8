@@ -47,6 +47,13 @@ float ResolveLuminance(float3 color)
     return ResolveFinitePositive(luminance, 0.0001, 0.0001);
 }
 
+float FastNegativeExp(float x)
+{
+    x = max(0.0, x);
+    float x2 = x * x;
+    return rcp(1.0 + x + 0.48 * x2 + 0.235 * x2 * x);
+}
+
 [numthreads(64, 1, 1)]
 void ClearHistogram(uint3 dispatchThreadID : SV_DispatchThreadID)
 {
@@ -99,7 +106,7 @@ void ResolveExposure(uint3 dispatchThreadID : SV_DispatchThreadID)
         : previousEv;
     float adaptationRate = ResolveFinitePositive(_HectonNoirExposureAdaptationRate, 0.0001, 0.0001);
     float deltaTime = ResolveFinitePositive(_HectonNoirExposureDeltaTime, 0.0001, 0.0001);
-    float blendT = saturate(ResolveFiniteOrDefault(1.0 - exp(-adaptationRate * deltaTime), 1.0));
+    float blendT = saturate(ResolveFiniteOrDefault(1.0 - FastNegativeExp(adaptationRate * deltaTime), 1.0));
     float smoothedEv = clamp(ResolveFiniteOrDefault(lerp(previousEv, weightedTargetEv, blendT), previousEv), minEv, maxEv);
     float evDeltaLimit = ResolveFinitePositive(_HectonNoirEVMaxDeltaPerFrame, 0.05, 0.05);
     float currentEv = clamp(previousEv + clamp(smoothedEv - previousEv, -evDeltaLimit, evDeltaLimit), minEv, maxEv);

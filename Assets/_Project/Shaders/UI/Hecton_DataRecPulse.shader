@@ -33,12 +33,16 @@ Shader "Hecton8/UI/DataRecPulse"
             Name "DataRecPulse"
 
             HLSLPROGRAM
+            #pragma target 3.5
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
             struct appdata_t
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 float4 vertex : POSITION;
                 half4 color : COLOR;
                 float2 texcoord : TEXCOORD0;
@@ -46,6 +50,8 @@ Shader "Hecton8/UI/DataRecPulse"
 
             struct v2f
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 vertex : SV_POSITION;
                 half4 color : COLOR;
                 float2 texcoord : TEXCOORD0;
@@ -62,9 +68,17 @@ Shader "Hecton8/UI/DataRecPulse"
                 half _SweepIntensity;
             CBUFFER_END
 
+            half FastTrianglePulse01(half phase)
+            {
+                return 1.0h - abs(frac(phase * 0.15915494h + 0.25h) * 2.0h - 1.0h);
+            }
+
             v2f vert(appdata_t input)
             {
                 v2f output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.vertex = TransformObjectToHClip(input.vertex.xyz);
                 output.texcoord = input.texcoord;
                 output.color = input.color * _Color;
@@ -73,18 +87,16 @@ Shader "Hecton8/UI/DataRecPulse"
 
             half4 frag(v2f input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 half4 texel = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.texcoord);
-                half pulse = lerp(_PulseMin, _PulseMax, 0.5h + 0.5h * sin(_Time.y * _PulseSpeed));
+                half pulse = lerp(_PulseMin, _PulseMax, FastTrianglePulse01(_Time.y * _PulseSpeed));
                 half2 centeredUv = (half2)(input.texcoord - 0.5);
                 half radiusSq = max(dot(centeredUv, centeredUv), 0.0001h);
                 half radialMask = saturate(1.0h - abs(radiusSq - 0.1024h) * 16.0h);
-                half phase = _Time.y * _PulseSpeed * 0.42h;
-                half sweepSin;
-                half sweepCos;
-                sincos(phase, sweepSin, sweepCos);
                 half2 dir = centeredUv * rsqrt(radiusSq);
-                half2 sweepDir = half2(sweepCos, sweepSin);
-                half sweepWave = 0.5h + 0.5h * dot(dir, sweepDir);
+                half sweepPhase = frac(_Time.y * _PulseSpeed * 0.066845h);
+                half sweepWave = 1.0h - abs(frac((dir.x * 0.5h + dir.y * 0.5h) + sweepPhase) * 2.0h - 1.0h);
                 half sweep = smoothstep(0.82h, 1.0h, sweepWave) * radialMask * _SweepIntensity;
                 half4 color = texel * input.color;
                 color.a *= saturate(pulse + sweep);

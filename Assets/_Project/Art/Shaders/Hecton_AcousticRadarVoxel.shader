@@ -24,6 +24,7 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
 
             Blend SrcAlpha One
             ZWrite Off
+            ZTest LEqual
             Cull Off
 
             HLSLPROGRAM
@@ -31,6 +32,8 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -47,6 +50,7 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
                 float3 positionWS : TEXCOORD0;
                 float3 positionOS : TEXCOORD1;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -58,7 +62,14 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
 
             float Hash31(float3 p)
             {
-                return frac(sin(dot(p, float3(17.13, 61.71, 113.37))) * 43758.5453);
+                float3 hash = frac(p * float3(0.1031, 0.1030, 0.0973));
+                hash += dot(hash, hash.yzx + 33.33);
+                return frac((hash.x + hash.y) * hash.z);
+            }
+
+            float FastTrianglePulse01(float phase)
+            {
+                return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
             }
 
             Varyings Vert(Attributes input)
@@ -66,6 +77,7 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
                 output.positionCS = positionInputs.positionCS;
@@ -76,13 +88,17 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float3 cell = floor((input.positionOS + 0.5) * max(2.0, _VoxelDitherDensity));
                 float dither = Hash31(cell + floor(_Time.y * 9.0));
                 clip(dither - 0.08);
 
                 float scanline = frac((input.positionWS.y * _ScanlineDensity) + (_Time.y * 3.5));
-                float scanGlow = pow(1.0 - abs(scanline * 2.0 - 1.0), 5.0);
-                half pulse = (half)(0.72 + 0.28 * sin(_Time.y * 7.0 + input.positionWS.x * 13.0));
+                float scanBase = 1.0 - abs(scanline * 2.0 - 1.0);
+                float scanSq = scanBase * scanBase;
+                float scanGlow = scanSq * scanSq * scanBase;
+                half pulse = (half)(0.72 + 0.28 * (FastTrianglePulse01(_Time.y * 7.0 + input.positionWS.x * 13.0) * 2.0 - 1.0));
                 half alpha = saturate(_BaseColor.a * (0.44h + scanGlow * 0.42h + pulse * 0.24h));
                 half3 color = _BaseColor.rgb * (0.75h + scanGlow * (half)_PulseIntensity);
                 return half4(color, alpha);
@@ -90,4 +106,5 @@ Shader "Hecton8/UI/AcousticRadarVoxel"
             ENDHLSL
         }
     }
+    FallBack Off
 }

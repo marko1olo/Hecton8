@@ -57,6 +57,8 @@ namespace Hecton8.Visor
 
         private sealed class BrownoutPass : ScriptableRenderPass
         {
+            private const float MaterialFloatEpsilon = 0.0001f;
+
             private sealed class PassData
             {
                 internal TextureHandle source;
@@ -68,6 +70,14 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private RuntimeState _runtimeState;
+            private Material _lastParameterMaterial;
+            private float _lastBrownoutIntensity = float.PositiveInfinity;
+            private float _lastWorldFocusBlur = float.PositiveInfinity;
+            private float _lastNearCollisionIntensity = float.PositiveInfinity;
+            private float _lastWorldBlurTexelRadius = float.PositiveInfinity;
+            private float _lastScanlineStrength = float.PositiveInfinity;
+            private float _lastDitherStrength = float.PositiveInfinity;
+            private bool _materialDirty = true;
 
             public BrownoutPass()
             {
@@ -153,14 +163,65 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private static void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
+            private void UpdateMaterialParameters(Material material, FeatureSettings settings, RuntimeState runtimeState)
             {
-                material.SetFloat(ShaderConstants.BrownoutIntensityId, math.saturate(runtimeState.BrownoutIntensity));
-                material.SetFloat(ShaderConstants.WorldFocusBlurId, math.saturate(runtimeState.WorldFocusBlur));
-                material.SetFloat(ShaderConstants.NearCollisionIntensityId, math.saturate(runtimeState.NearCollisionIntensity));
-                material.SetFloat(ShaderConstants.WorldBlurTexelRadiusId, math.max(0f, settings.worldBlurTexelRadius));
-                material.SetFloat(ShaderConstants.ScanlineStrengthId, math.saturate(settings.scanlineStrength));
-                material.SetFloat(ShaderConstants.DitherStrengthId, math.saturate(settings.ditherStrength));
+                if (!ReferenceEquals(_lastParameterMaterial, material))
+                {
+                    ResetMaterialParameterCache();
+                    _lastParameterMaterial = material;
+                }
+
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.BrownoutIntensityId,
+                    math.saturate(runtimeState.BrownoutIntensity),
+                    ref _lastBrownoutIntensity);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.WorldFocusBlurId,
+                    math.saturate(runtimeState.WorldFocusBlur),
+                    ref _lastWorldFocusBlur);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.NearCollisionIntensityId,
+                    math.saturate(runtimeState.NearCollisionIntensity),
+                    ref _lastNearCollisionIntensity);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.WorldBlurTexelRadiusId,
+                    math.max(0f, settings.worldBlurTexelRadius),
+                    ref _lastWorldBlurTexelRadius);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.ScanlineStrengthId,
+                    math.saturate(settings.scanlineStrength),
+                    ref _lastScanlineStrength);
+                SetMaterialFloatIfChanged(
+                    material,
+                    ShaderConstants.DitherStrengthId,
+                    math.saturate(settings.ditherStrength),
+                    ref _lastDitherStrength);
+                _materialDirty = false;
+            }
+
+            private void ResetMaterialParameterCache()
+            {
+                _lastBrownoutIntensity = float.PositiveInfinity;
+                _lastWorldFocusBlur = float.PositiveInfinity;
+                _lastNearCollisionIntensity = float.PositiveInfinity;
+                _lastWorldBlurTexelRadius = float.PositiveInfinity;
+                _lastScanlineStrength = float.PositiveInfinity;
+                _lastDitherStrength = float.PositiveInfinity;
+                _materialDirty = true;
+            }
+
+            private void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue)
+            {
+                if (!_materialDirty && math.abs(cachedValue - value) <= MaterialFloatEpsilon)
+                    return;
+
+                material.SetFloat(shaderId, value);
+                cachedValue = value;
             }
         }
 
@@ -223,11 +284,19 @@ namespace Hecton8.Visor
         private static bool TryBuildRuntimeState(Camera renderCamera, out RuntimeState runtimeState)
         {
             runtimeState = default;
-            if (renderCamera == null)
+            if (renderCamera == null || !HectonXRRuntimeState.IsXRActive)
                 return false;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            Camera playerCamera = null;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+                playerCamera = runtimeContext.PlayerCamera;
+
+            if (playerCamera == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            }
+
             if (playerCamera != null && !ReferenceEquals(renderCamera, playerCamera))
                 return false;
 

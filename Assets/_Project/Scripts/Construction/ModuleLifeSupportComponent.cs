@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Gameplay;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -21,6 +22,10 @@ namespace Hecton8.Construction
     {
         private const float ToxicCo2ThresholdNormalized = 0.75f;
         private const float HypoxiaCo2ThresholdNormalized = 0.80f;
+        private const float MinimumLifeSupportCapacity = 1f;
+        private const float MinimumRatioDenominator = 0.01f;
+        private const float PressureCompressionMinScale = 0.1f;
+        private const float PressureCompressionMaxScale = 1f;
         private const string AirReserveSummaryPrefix = "Breathable reserve down to ";
         private const string AirReserveSummarySuffix = "% inside the dry shelter loop. Scrubber support is no longer keeping pace with occupancy.";
         private const string Co2CriticalSummaryPrefix = "CO2 saturation reached ";
@@ -47,12 +52,16 @@ namespace Hecton8.Construction
         private bool _co2CriticalLatched;
         private bool _co2HypoxiaLatched;
 
-        public float AirReserveNormalized => _breathableReserveCapacity > 0.01f ? Mathf.Clamp01(_breathableReserve / _breathableReserveCapacity) : 1f;
+        public float AirReserveNormalized => _breathableReserveCapacity > MinimumRatioDenominator
+            ? math.saturate(FiniteNonNegativeOrZero(_breathableReserve) / _breathableReserveCapacity)
+            : 1f;
         public bool IsAirQualityLow => AirReserveNormalized <= _staleAirThreshold;
-        public float Co2Normalized => _co2Capacity > 0.01f ? Mathf.Clamp01(_co2Level / _co2Capacity) : 0f;
+        public float Co2Normalized => _co2Capacity > MinimumRatioDenominator
+            ? math.saturate(FiniteNonNegativeOrZero(_co2Level) / _co2Capacity)
+            : 0f;
         public bool IsCo2Critical => _co2Level >= _co2CriticalThreshold;
         public bool IsCo2Toxic => Co2Normalized >= ToxicCo2ThresholdNormalized;
-        public float ToxicHazardIntensity => Mathf.InverseLerp(ToxicCo2ThresholdNormalized, 1f, Co2Normalized);
+        public float ToxicHazardIntensity => math.saturate((Co2Normalized - ToxicCo2ThresholdNormalized) / (1f - ToxicCo2ThresholdNormalized));
         public float BreathableReserve => _breathableReserve;
         public float BreathableReserveCapacity => _breathableReserveCapacity;
         public float Co2Level => _co2Level;
@@ -72,20 +81,20 @@ namespace Hecton8.Construction
             float co2GenerationRate,
             float co2CriticalThreshold)
         {
-            _oxygenRefillRate = Mathf.Max(0f, oxygenRefillRate);
-            _baseBreathableReserveCapacity = Mathf.Max(1f, breathableReserveCapacity);
+            _oxygenRefillRate = FiniteNonNegativeOrZero(oxygenRefillRate);
+            _baseBreathableReserveCapacity = math.max(MinimumLifeSupportCapacity, FiniteNonNegativeOrZero(breathableReserveCapacity));
             _breathableReserveCapacity = _baseBreathableReserveCapacity;
-            _breathableReserve = breathableReserve;
-            _airRecycleRate = Mathf.Max(0f, airRecycleRate);
-            _occupiedAirDrainRate = Mathf.Max(0f, occupiedAirDrainRate);
-            _staleAirThreshold = Mathf.Clamp(staleAirThreshold, 0.05f, 0.8f);
-            _staleAirMinRefillScale = Mathf.Clamp01(staleAirMinRefillScale);
-            _staleAirSuitDrainRate = Mathf.Max(0f, staleAirSuitDrainRate);
-            _baseCo2Capacity = Mathf.Max(1f, co2Capacity);
+            _breathableReserve = math.isfinite(breathableReserve) ? breathableReserve : _breathableReserveCapacity;
+            _airRecycleRate = FiniteNonNegativeOrZero(airRecycleRate);
+            _occupiedAirDrainRate = FiniteNonNegativeOrZero(occupiedAirDrainRate);
+            _staleAirThreshold = math.clamp(FiniteOr(staleAirThreshold, 0.2f), 0.05f, 0.8f);
+            _staleAirMinRefillScale = math.saturate(FiniteNonNegativeOrZero(staleAirMinRefillScale));
+            _staleAirSuitDrainRate = FiniteNonNegativeOrZero(staleAirSuitDrainRate);
+            _baseCo2Capacity = math.max(MinimumLifeSupportCapacity, FiniteNonNegativeOrZero(co2Capacity));
             _co2Capacity = _baseCo2Capacity;
-            _co2Level = Mathf.Max(0f, co2Level);
-            _co2GenerationRate = Mathf.Max(0f, co2GenerationRate);
-            _baseCo2CriticalThreshold = Mathf.Clamp(co2CriticalThreshold, 0.05f, _baseCo2Capacity);
+            _co2Level = FiniteNonNegativeOrZero(co2Level);
+            _co2GenerationRate = FiniteNonNegativeOrZero(co2GenerationRate);
+            _baseCo2CriticalThreshold = math.clamp(FiniteOr(co2CriticalThreshold, _baseCo2Capacity * 0.8f), 0.05f, _baseCo2Capacity);
             _co2CriticalThreshold = _baseCo2CriticalThreshold;
             _pressureCompressionVolumeScale = 1f;
             InitializeCold();
@@ -93,11 +102,15 @@ namespace Hecton8.Construction
 
         public void InitializeCold()
         {
-            if (_breathableReserve <= 0f)
+            _breathableReserveCapacity = math.max(MinimumLifeSupportCapacity, FiniteNonNegativeOrZero(_breathableReserveCapacity));
+            _co2Capacity = math.max(MinimumLifeSupportCapacity, FiniteNonNegativeOrZero(_co2Capacity));
+            _co2CriticalThreshold = math.clamp(FiniteOr(_co2CriticalThreshold, _co2Capacity * HypoxiaCo2ThresholdNormalized), 0.05f, _co2Capacity);
+
+            if (!math.isfinite(_breathableReserve) || _breathableReserve <= 0f)
                 _breathableReserve = _breathableReserveCapacity;
 
-            _breathableReserve = Mathf.Clamp(_breathableReserve, 0f, _breathableReserveCapacity);
-            _co2Level = Mathf.Clamp(_co2Level, 0f, _co2Capacity);
+            _breathableReserve = math.clamp(_breathableReserve, 0f, _breathableReserveCapacity);
+            _co2Level = math.clamp(FiniteNonNegativeOrZero(_co2Level), 0f, _co2Capacity);
             _airReserveWarningLatched = IsAirQualityLow;
             _airReserveDepletedLatched = _breathableReserve <= 0f;
             _co2CriticalLatched = IsCo2Critical;
@@ -106,8 +119,8 @@ namespace Hecton8.Construction
 
         public void RestoreState(float airReserveNormalized, float co2Normalized)
         {
-            _breathableReserve = Mathf.Clamp01(airReserveNormalized) * _breathableReserveCapacity;
-            _co2Level = Mathf.Clamp01(co2Normalized) * _co2Capacity;
+            _breathableReserve = math.saturate(FiniteNonNegativeOrZero(airReserveNormalized)) * _breathableReserveCapacity;
+            _co2Level = math.saturate(FiniteNonNegativeOrZero(co2Normalized)) * _co2Capacity;
             _airReserveWarningLatched = IsAirQualityLow;
             _airReserveDepletedLatched = _breathableReserve <= 0f;
             _co2CriticalLatched = IsCo2Critical;
@@ -120,14 +133,14 @@ namespace Hecton8.Construction
         /// <param name="volumeScale">Normalized room volume scale in [0.1, 1.0].</param>
         public void ApplyPressureCompressionScale(float volumeScale)
         {
-            float sanitizedScale = Mathf.Clamp(volumeScale, 0.1f, 1f);
-            if (Mathf.Abs(_pressureCompressionVolumeScale - sanitizedScale) <= 0.00001f)
+            float sanitizedScale = math.clamp(FiniteOr(volumeScale, PressureCompressionMaxScale), PressureCompressionMinScale, PressureCompressionMaxScale);
+            if (math.abs(_pressureCompressionVolumeScale - sanitizedScale) <= 0.00001f)
                 return;
 
             _pressureCompressionVolumeScale = sanitizedScale;
-            _breathableReserveCapacity = Mathf.Max(1f, _baseBreathableReserveCapacity * sanitizedScale);
-            _co2Capacity = Mathf.Max(1f, _baseCo2Capacity * sanitizedScale);
-            _co2CriticalThreshold = Mathf.Clamp(_baseCo2CriticalThreshold * sanitizedScale, 0.05f, _co2Capacity);
+            _breathableReserveCapacity = math.max(MinimumLifeSupportCapacity, FiniteNonNegativeOrZero(_baseBreathableReserveCapacity) * sanitizedScale);
+            _co2Capacity = math.max(MinimumLifeSupportCapacity, FiniteNonNegativeOrZero(_baseCo2Capacity) * sanitizedScale);
+            _co2CriticalThreshold = math.clamp(FiniteNonNegativeOrZero(_baseCo2CriticalThreshold) * sanitizedScale, 0.05f, _co2Capacity);
 
             if (_breathableReserve > _breathableReserveCapacity)
                 _breathableReserve = _breathableReserveCapacity;
@@ -163,17 +176,21 @@ namespace Hecton8.Construction
             if (trackedPlayerSurvival == null)
                 return;
 
+            float safeDt = FiniteNonNegativeOrZero(dt);
+            if (safeDt <= 0f)
+                return;
+
             switch (failureMode)
             {
                 case BaseModuleFailureMode.OxygenLeak:
                     if (oxygenLeakDrainRate > 0f)
-                        trackedPlayerSurvival.DrainOxygen(oxygenLeakDrainRate * dt);
+                        trackedPlayerSurvival.DrainOxygen(FiniteNonNegativeOrZero(oxygenLeakDrainRate) * safeDt);
                     break;
                 case BaseModuleFailureMode.Fire:
                     if (fireSuitDamageRate > 0f)
-                        trackedPlayerSurvival.TakeDamage(fireSuitDamageRate * dt);
+                        trackedPlayerSurvival.TakeDamage(FiniteNonNegativeOrZero(fireSuitDamageRate) * safeDt);
                     if (fireSuitEnergyDrainRate > 0f)
-                        trackedPlayerSurvival.DrainEnergy(fireSuitEnergyDrainRate * dt);
+                        trackedPlayerSurvival.DrainEnergy(FiniteNonNegativeOrZero(fireSuitEnergyDrainRate) * safeDt);
                     break;
             }
         }
@@ -186,7 +203,11 @@ namespace Hecton8.Construction
             HectonSurvivalSystem trackedPlayerSurvival)
         {
             ModuleLifeSupportSignals signals = default;
-            float sanitizedSupplyRatio = hasOperationalPower ? Mathf.Clamp01(powerSupplyRatio) : 0f;
+            float safeDt = FiniteNonNegativeOrZero(dt);
+            if (safeDt <= 0f)
+                return signals;
+
+            float sanitizedSupplyRatio = hasOperationalPower ? math.saturate(FiniteNonNegativeOrZero(powerSupplyRatio)) : 0f;
 
             if (dryCompartment &&
                 hasOperationalPower &&
@@ -195,7 +216,7 @@ namespace Hecton8.Construction
                 _breathableReserve < _breathableReserveCapacity &&
                 sanitizedSupplyRatio > 0f)
             {
-                _breathableReserve += _airRecycleRate * sanitizedSupplyRatio * dt;
+                _breathableReserve += _airRecycleRate * sanitizedSupplyRatio * safeDt;
                 if (_breathableReserve > _breathableReserveCapacity)
                     _breathableReserve = _breathableReserveCapacity;
             }
@@ -203,18 +224,18 @@ namespace Hecton8.Construction
             if (!dryCompartment)
             {
                 if (_co2GenerationRate > 0f)
-                    AccumulateCo2(_co2GenerationRate * dt);
+                    AccumulateCo2(_co2GenerationRate * safeDt);
             }
             else if (!hasOperationalPower && _airRecycleRate > 0f)
             {
-                AccumulateCo2(_airRecycleRate * dt);
+                AccumulateCo2(_airRecycleRate * safeDt);
             }
 
             if (trackedPlayerSurvival != null && dryCompartment)
             {
                 if (_occupiedAirDrainRate > 0f)
                 {
-                    _breathableReserve -= _occupiedAirDrainRate * dt;
+                    _breathableReserve -= _occupiedAirDrainRate * safeDt;
                     if (_breathableReserve < 0f)
                         _breathableReserve = 0f;
                 }
@@ -224,17 +245,17 @@ namespace Hecton8.Construction
                     co2AccumulationRate += _co2GenerationRate;
 
                 if (co2AccumulationRate > 0f)
-                    AccumulateCo2(co2AccumulationRate * dt);
+                    AccumulateCo2(co2AccumulationRate * safeDt);
 
                 if (_breathableReserve > 0f && !IsCo2Critical)
                 {
                     float refillScale = ResolveAirRefillScale();
                     if (refillScale > 0f && _oxygenRefillRate > 0f)
-                        trackedPlayerSurvival.RefillOxygen(_oxygenRefillRate * refillScale * sanitizedSupplyRatio * dt);
+                        trackedPlayerSurvival.RefillOxygen(_oxygenRefillRate * refillScale * sanitizedSupplyRatio * safeDt);
                 }
                 else if (_staleAirSuitDrainRate > 0f)
                 {
-                    trackedPlayerSurvival.DrainOxygen(_staleAirSuitDrainRate * dt);
+                    trackedPlayerSurvival.DrainOxygen(_staleAirSuitDrainRate * safeDt);
                 }
             }
 
@@ -285,29 +306,30 @@ namespace Hecton8.Construction
 
         public void ScrubCo2(float amount)
         {
-            if (amount <= 0f)
+            float safeAmount = FiniteNonNegativeOrZero(amount);
+            if (safeAmount <= 0f)
                 return;
 
-            _co2Level -= amount;
+            _co2Level -= safeAmount;
             if (_co2Level < 0f)
                 _co2Level = 0f;
 
-            _breathableReserve += amount;
+            _breathableReserve += safeAmount;
             if (_breathableReserve > _breathableReserveCapacity)
                 _breathableReserve = _breathableReserveCapacity;
         }
 
         public void ApplyFloodExposure(float normalizedFloodDelta, float co2Amplifier)
         {
-            if (normalizedFloodDelta <= 0f)
+            float floodDelta = FiniteNonNegativeOrZero(normalizedFloodDelta);
+            if (floodDelta <= 0f)
                 return;
 
-            float floodDelta = Mathf.Max(0f, normalizedFloodDelta);
             _breathableReserve -= _breathableReserveCapacity * floodDelta;
             if (_breathableReserve < 0f)
                 _breathableReserve = 0f;
 
-            _co2Level += _co2Capacity * floodDelta * Mathf.Max(0f, co2Amplifier);
+            _co2Level += _co2Capacity * floodDelta * FiniteNonNegativeOrZero(co2Amplifier);
             if (_co2Level > _co2Capacity)
                 _co2Level = _co2Capacity;
         }
@@ -315,7 +337,7 @@ namespace Hecton8.Construction
         public void CollapseBreathableReserve()
         {
             _breathableReserve = 0f;
-            _co2Level = Mathf.Max(_co2Level, _co2CriticalThreshold);
+            _co2Level = math.max(FiniteNonNegativeOrZero(_co2Level), _co2CriticalThreshold);
             if (_co2Level > _co2Capacity)
                 _co2Level = _co2Capacity;
 
@@ -326,11 +348,12 @@ namespace Hecton8.Construction
 
         private void AccumulateCo2(float amount)
         {
-            if (amount <= 0f)
+            float safeAmount = FiniteNonNegativeOrZero(amount);
+            if (safeAmount <= 0f)
                 return;
 
-            float normalizedLevel = _co2Capacity > 0.01f
-                ? Mathf.Clamp01((_co2Level + amount) / _co2Capacity)
+            float normalizedLevel = _co2Capacity > MinimumRatioDenominator
+                ? math.saturate((FiniteNonNegativeOrZero(_co2Level) + safeAmount) / _co2Capacity)
                 : 0f;
             _co2Level = normalizedLevel * _co2Capacity;
         }
@@ -339,7 +362,7 @@ namespace Hecton8.Construction
         {
             return BuildPercentSummary(
                 AirReserveSummaryPrefix,
-                Mathf.Clamp(Mathf.RoundToInt(AirReserveNormalized * 100f), 0, 999),
+                math.clamp((int)math.round(AirReserveNormalized * 100f), 0, 999),
                 AirReserveSummarySuffix);
         }
 
@@ -347,7 +370,7 @@ namespace Hecton8.Construction
         {
             return BuildPercentSummary(
                 Co2CriticalSummaryPrefix,
-                Mathf.Clamp(Mathf.RoundToInt(Co2Normalized * 100f), 0, 999),
+                math.clamp((int)math.round(Co2Normalized * 100f), 0, 999),
                 Co2CriticalSummarySuffix);
         }
 
@@ -380,7 +403,17 @@ namespace Hecton8.Construction
             if (airQuality <= 0f || _staleAirThreshold <= 0.01f)
                 return _staleAirMinRefillScale;
 
-            return Mathf.Lerp(_staleAirMinRefillScale, 1f, airQuality / _staleAirThreshold);
+            return math.lerp(_staleAirMinRefillScale, 1f, airQuality / _staleAirThreshold);
+        }
+
+        private static float FiniteOr(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        private static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
         }
     }
 }

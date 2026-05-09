@@ -42,7 +42,7 @@ namespace Hecton8.World
                 return 1f;
 
             float depth01 = Mathf.InverseLerp(deepColdPocketTemperatureThresholdCelsius, thermalAbyssTemperatureCelsius, localTemperature);
-            return Mathf.Lerp(1f, deepColdPocketStressMultiplierMax, Mathf.Clamp01(depth01));
+            return LerpClamped(1f, deepColdPocketStressMultiplierMax, depth01);
         }
 
         /// <summary>
@@ -115,13 +115,13 @@ namespace Hecton8.World
             float sample101 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x1, y1, z0)];
             float sample011 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x0, y1, z1)];
             float sample111 = _nativeMemory.AbyssalThermalGridNative[GetThermalGridPhysicalIndex(x1, y1, z1)];
-            float sampleX00 = Mathf.Lerp(sample000, sample100, fracX);
-            float sampleX10 = Mathf.Lerp(sample010, sample110, fracX);
-            float sampleX01 = Mathf.Lerp(sample001, sample101, fracX);
-            float sampleX11 = Mathf.Lerp(sample011, sample111, fracX);
-            float sampleZ0 = Mathf.Lerp(sampleX00, sampleX10, fracZ);
-            float sampleZ1 = Mathf.Lerp(sampleX01, sampleX11, fracZ);
-            return Mathf.Lerp(sampleZ0, sampleZ1, fracY);
+            float sampleX00 = LerpClamped(sample000, sample100, fracX);
+            float sampleX10 = LerpClamped(sample010, sample110, fracX);
+            float sampleX01 = LerpClamped(sample001, sample101, fracX);
+            float sampleX11 = LerpClamped(sample011, sample111, fracX);
+            float sampleZ0 = LerpClamped(sampleX00, sampleX10, fracZ);
+            float sampleZ1 = LerpClamped(sampleX01, sampleX11, fracZ);
+            return LerpClamped(sampleZ0, sampleZ1, fracY);
         }
 
         private int GetThermalGridPhysicalIndex(int x, int y, int z)

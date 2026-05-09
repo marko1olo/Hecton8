@@ -32,16 +32,14 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Conditional = System.Diagnostics.ConditionalAttribute;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Hecton8.Inventory;
-using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.AtlasSignal
@@ -85,19 +83,35 @@ namespace Hecton8.AtlasSignal
 
     public static class Atlas6Events
     {
+        private const int ListenerCapacity = 4;
         private const int PendingEventCapacity = 4;
+        private static readonly uint _ListenerRejectedWarningHash = unchecked((uint)LocHash.Compute("Atlas6Events.ListenerRejected"));
+        private static readonly uint _ListenerExceptionWarningHash = unchecked((uint)LocHash.Compute("Atlas6Events.ListenerException"));
+        private static readonly uint _ListenerContextHash = unchecked((uint)LocHash.Compute("Atlas6Events.Listeners"));
 
         // COLD ALLOC: RegistryBucket<IAtlas6EventListener>[4] - Atlas-6 directive listeners drained on dispatcher LateUpdate - owner: Atlas6Events
-        private static readonly RegistryBucket<IAtlas6EventListener> _listeners = new RegistryBucket<IAtlas6EventListener>(4);
+        private static readonly RegistryBucket<IAtlas6EventListener> _listeners = new RegistryBucket<IAtlas6EventListener>(ListenerCapacity);
+        // COLD ALLOC: IAtlas6EventListener[4] - listener additions deferred while dispatching Atlas-6 directive events - owner: Atlas6Events
+        private static readonly IAtlas6EventListener[] _deferredRegisterListeners = new IAtlas6EventListener[ListenerCapacity];
+        // COLD ALLOC: IAtlas6EventListener[4] - listener removals deferred while dispatching Atlas-6 directive events - owner: Atlas6Events
+        private static readonly IAtlas6EventListener[] _deferredUnregisterListeners = new IAtlas6EventListener[ListenerCapacity];
         // COLD ALLOC: Dictionary<uint,string>[8] - hashed directive conflict IDs for cold-path resolution - owner: Atlas6Events
         private static readonly Dictionary<uint, string> _conflictIdsByHash = new Dictionary<uint, string>(8);
         private static NativeQueue<Atlas6EventPayload> _pendingEvents;
         private static NativeQueue<Atlas6EventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -118,8 +132,16 @@ namespace Hecton8.AtlasSignal
 
             _listeners.Clear();
             _conflictIdsByHash.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -130,7 +152,13 @@ namespace Hecton8.AtlasSignal
                 return;
 
             EnsureInitialized();
-            _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>Конфликт директив — Атлас-6 не может выполнить приказ.</summary>
@@ -139,7 +167,13 @@ namespace Hecton8.AtlasSignal
             if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            _listeners.TryUnregister(listener);
         }
 
         /// <summary>Бартер принят — Атлас-6 получил ресурсы.</summary>
@@ -172,13 +206,16 @@ namespace Hecton8.AtlasSignal
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IAtlas6EventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnAtlas6Event(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -192,6 +229,13 @@ namespace Hecton8.AtlasSignal
         public static bool TryResolveDirectiveConflict(uint conflictHash, out string conflictId)
         {
             return _conflictIdsByHash.TryGetValue(conflictHash, out conflictId);
+        }
+
+        public static uint ComputeDirectiveConflictHash(string conflictId)
+        {
+            return string.IsNullOrWhiteSpace(conflictId)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(conflictId));
         }
 
         public static void RaisePlayerStatusChanged(Atlas6PlayerStatus status)
@@ -209,13 +253,23 @@ namespace Hecton8.AtlasSignal
 
         public static void RaiseDirectiveConflict(string conflictId)
         {
-            uint conflictHash = string.IsNullOrWhiteSpace(conflictId)
-                ? 0u
-                : unchecked((uint)LocHash.Compute(conflictId));
+            uint conflictHash = ComputeDirectiveConflictHash(conflictId);
             if (conflictHash == 0u)
                 return;
 
-            if (!Enqueue(new Atlas6EventPayload
+            if (!RaiseDirectiveConflict(conflictHash))
+                return;
+
+            if (!_conflictIdsByHash.ContainsKey(conflictHash))
+                _conflictIdsByHash.Add(conflictHash, conflictId);
+        }
+
+        public static bool RaiseDirectiveConflict(uint conflictHash)
+        {
+            if (conflictHash == 0u)
+                return false;
+
+            return Enqueue(new Atlas6EventPayload
             {
                 TransactionCount = 0,
                 ConflictHash = conflictHash,
@@ -223,13 +277,7 @@ namespace Hecton8.AtlasSignal
                 ResourceHash = 0u,
                 EventType = (ushort)Atlas6EventType.DirectiveConflict,
                 StatusValue = 0
-            }))
-            {
-                return;
-            }
-
-            if (!_conflictIdsByHash.ContainsKey(conflictHash))
-                _conflictIdsByHash.Add(conflictHash, conflictId);
+            });
         }
 
         public static void RaiseBarterAccepted(int transactionCount)
@@ -265,24 +313,40 @@ namespace Hecton8.AtlasSignal
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate - owner: Atlas6Events
+                _pendingEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] — deferred Atlas-6 directive lane flushed by SystemDispatcher LateUpdate — owner: Atlas6Events
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
                     nameof(Atlas6Events),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] - next-frame Atlas-6 directive lane prevents same-frame reentrant dispatch - owner: Atlas6Events
+                _nextFrameEvents = new NativeQueue<Atlas6EventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<Atlas6EventPayload>[4] — next-frame Atlas-6 directive lane prevents same-frame reentrant dispatch — owner: Atlas6Events
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
                     nameof(Atlas6Events),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -362,6 +426,177 @@ namespace Hecton8.AtlasSignal
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
+
+        private static void DispatchToListener(IAtlas6EventListener listener, in Atlas6EventPayload payload)
+        {
+            try
+            {
+                listener.OnAtlas6Event(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IAtlas6EventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IAtlas6EventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IAtlas6EventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IAtlas6EventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IAtlas6EventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IAtlas6EventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IAtlas6EventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IAtlas6EventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
+        private static void RegisterImmediate(IAtlas6EventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _ListenerRejectedWarningHash,
+                _ListenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _ListenerExceptionWarningHash,
+                _ListenerContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
+        }
     }
 
     [DisallowMultipleComponent]
@@ -374,11 +609,14 @@ namespace Hecton8.AtlasSignal
         private const string TerminalSectorDiscoveryId = "atlas6_terminal_sector3";
         private const string CoreReachedDiscoveryId = "atlas6_core_reached";
         private const string CoreDataAccessedDiscoveryId = "atlas6_core_data_accessed";
+        private const string DirectiveConflictColonyDeadId = "directive_2_impossible_colony_dead";
+        private const string ScarcityDirectiveFallbackWarning = "ATLAS-6 DIRECTIVE: RESTOCK ESSENTIAL RESOURCE.";
         private static readonly uint _signalIdentityDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(SignalIdentityDiscoveryId);
         private static readonly uint _signalFullyDecodedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(SignalFullyDecodedDiscoveryId);
         private static readonly uint _terminalSectorDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(TerminalSectorDiscoveryId);
         private static readonly uint _coreReachedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(CoreReachedDiscoveryId);
         private static readonly uint _coreDataAccessedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(CoreDataAccessedDiscoveryId);
+        private static readonly uint _directiveConflictColonyDeadHash = Atlas6Events.ComputeDirectiveConflictHash(DirectiveConflictColonyDeadId);
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -400,9 +638,6 @@ namespace Hecton8.AtlasSignal
         //  GLOBAL REGISTRY COMPATIBILITY
         // ══════════════════════════════════════════════════════════
 
-        public static Atlas6DirectiveSystem Instance => Hecton8.Core.GlobalRegistry.Atlas6Directive;
-
-
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
@@ -412,7 +647,7 @@ namespace Hecton8.AtlasSignal
         private bool _directiveConflictTriggered;
         private bool _registered;
         private bool _serviceRegistered;
-        private Transform _playerTransform;
+        private HectonPlayerMovement _playerMovement;
         private uint _latestScarcityDirectiveQuestHash;
         private uint _latestScarcityDirectiveResourceHash;
 
@@ -443,7 +678,7 @@ namespace Hecton8.AtlasSignal
                     Atlas6PlayerStatus.Unknown      => 0f,
                     Atlas6PlayerStatus.Detected     => 0.1f,
                     Atlas6PlayerStatus.Neutral      => 0.3f,
-                    Atlas6PlayerStatus.Collaborator => Mathf.Min(1f, _barterTransactionCount / (float)collaboratorThreshold),
+                    Atlas6PlayerStatus.Collaborator => math.min(1f, _barterTransactionCount / (float)collaboratorThreshold),
                     Atlas6PlayerStatus.Anomaly      => 0.5f,
                     Atlas6PlayerStatus.Threat       => 0f,
                     _                               => 0f
@@ -454,13 +689,6 @@ namespace Hecton8.AtlasSignal
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
-
-        private void Awake()
-        {
-            Atlas6DirectiveSystem registeredRuntime = Hecton8.Core.GlobalRegistry.Atlas6Directive;
-            if (registeredRuntime != null && registeredRuntime != this)
-                Destroy(gameObject);
-        }
 
         private void OnEnable()
         {
@@ -501,18 +729,13 @@ namespace Hecton8.AtlasSignal
 
         public void SlowTick()
         {
-            if (_playerTransform == null)
-            {
-                ResolvePlayer();
-                return;
-            }
-
             AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal == null) return;
             if (!signal.IsDetected) return;
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return;
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
-            AbsoluteUniversePosition coreAup = AbsoluteUniversePosition.FromRuntimePosition(signal.AtlasCorePosition);
+            AbsoluteUniversePosition coreAup = signal.AtlasCoreAup;
             double distanceToCoreSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
             double anomalyRangeSq = (double)anomalyRange * anomalyRange;
 
@@ -532,7 +755,7 @@ namespace Hecton8.AtlasSignal
                 _playerStatus >= Atlas6PlayerStatus.Detected)
             {
                 _directiveConflictTriggered = true;
-                Atlas6Events.RaiseDirectiveConflict("directive_2_impossible_colony_dead");
+                Atlas6Events.RaiseDirectiveConflict(_directiveConflictColonyDeadHash);
 
                 LogDirectiveConflict();
             }
@@ -668,17 +891,7 @@ namespace Hecton8.AtlasSignal
                 return;
             }
 
-            string resourceName = "ESSENTIAL RESOURCE";
-            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
-            PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
-                ? inventoryService.Inventory
-                : null;
-            ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;
-            ItemData item = catalog != null ? catalog.FindByHash(unchecked((int)resourceHash)) : null;
-            if (item != null)
-                resourceName = item.itemName.ToUpperInvariant();
-
-            NotificationEvents.PushWarning($"ATLAS-6 DIRECTIVE: RESTOCK {resourceName}.");
+            NotificationEvents.PushWarning(ScarcityDirectiveFallbackWarning);
         }
 
         private bool CanAdoptAtlasStatusFromDiscovery(uint discoveryHash)
@@ -711,14 +924,34 @@ namespace Hecton8.AtlasSignal
 
         private void ResolvePlayer()
         {
-            SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
+            _playerMovement = null;
+
+            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            if (playerContext != null)
+                _playerMovement = playerContext.PlayerMovement;
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (_playerMovement == null)
+            {
+                ResolvePlayer();
+                if (_playerMovement == null)
+                {
+                    playerAup = default;
+                    return false;
+                }
+            }
+
+            playerAup = _playerMovement.CurrentAup;
+            return true;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogDirectiveConflict()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[Atlas6] Directive conflict: Directive #2 (protect colony) impossible; colony dead.");
+            UnityEngine.Debug.Log("[Atlas6] Directive conflict: Directive #2 (protect colony) impossible; colony dead.");
 #endif
         }
 
@@ -726,7 +959,7 @@ namespace Hecton8.AtlasSignal
         private static void LogPlayerStatus(Atlas6PlayerStatus newStatus)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[Atlas6] Player status: {newStatus}");
+            UnityEngine.Debug.Log($"[Atlas6] Player status: {newStatus}");
 #endif
         }
 

@@ -12,6 +12,7 @@ namespace Hecton8.Core
     internal static unsafe class NativeArenaAllocator
     {
         private const int DefaultArenaBytes = 256 * 1024;
+        private const int MaxArenaAlignment = 4096;
 
         private static readonly ProfilerMarker _resetProfilerMarker = new ProfilerMarker("H8.Core.NativeArena.Reset");
 
@@ -31,6 +32,28 @@ namespace Hecton8.Core
         {
             Shutdown();
         }
+
+#if UNITY_EDITOR
+        [UnityEditor.InitializeOnLoadMethod]
+        private static void RegisterEditorShutdownHooks()
+        {
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload -= Shutdown;
+            UnityEditor.AssemblyReloadEvents.beforeAssemblyReload += Shutdown;
+            UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
+            UnityEditor.EditorApplication.quitting -= Shutdown;
+            UnityEditor.EditorApplication.quitting += Shutdown;
+        }
+
+        private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange stateChange)
+        {
+            if (stateChange == UnityEditor.PlayModeStateChange.ExitingEditMode ||
+                stateChange == UnityEditor.PlayModeStateChange.ExitingPlayMode)
+            {
+                Shutdown();
+            }
+        }
+#endif
 
         public static void Initialize(int capacityBytes = DefaultArenaBytes)
         {
@@ -77,17 +100,39 @@ namespace Hecton8.Core
                 return false;
 
             Initialize();
+            if (_basePtr == null || _capacityBytes <= 0)
+                return false;
 
-            int safeAlignment = Math.Max(1, alignment);
-            long alignedAddress = ((long)_basePtr + _cursorBytes + (safeAlignment - 1)) & ~((long)safeAlignment - 1);
+            int safeAlignment = NormalizeAlignment(alignment);
+            if (safeAlignment <= 0)
+                return false;
+
+            long baseAddress = (long)_basePtr;
+            long rawAddress = baseAddress + _cursorBytes;
+            long alignedAddress = (rawAddress + (safeAlignment - 1L)) & ~(safeAlignment - 1L);
             int alignedOffset = (int)(alignedAddress - (long)_basePtr);
             int nextCursor = alignedOffset + byteCount;
-            if (nextCursor > _capacityBytes)
+            if (alignedOffset < 0 || nextCursor < alignedOffset || nextCursor > _capacityBytes)
                 return false;
 
             ptr = _basePtr + alignedOffset;
             _cursorBytes = nextCursor;
             return true;
+        }
+
+        private static int NormalizeAlignment(int alignment)
+        {
+            if (alignment <= 1)
+                return 1;
+
+            if (alignment > MaxArenaAlignment)
+                return 0;
+
+            int safeAlignment = 1;
+            while (safeAlignment < alignment)
+                safeAlignment <<= 1;
+
+            return safeAlignment;
         }
 
         public static void Reset()

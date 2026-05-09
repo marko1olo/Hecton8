@@ -20,6 +20,7 @@ namespace Hecton8.World
     /// <summary>
     /// Zero-allocation hand IK snap target resolved from the active indirect-flora lanes.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct FloraHarvestInteractionPoint
     {
         public readonly uint InstanceUid;
@@ -90,8 +91,6 @@ namespace Hecton8.World
         private const float TitanRootMoundRadiusMeters = 5f;
         private const float TitanRootMoundStrengthMeters = 2.25f;
         private const float TitanRootMoundMatureThreshold01 = 0.999f;
-        private const float HighSpeedFloraSnapMinimumSpeedMetersPerSecond = 10f;
-        private const int HighSpeedFloraSnapMaxInstancesPerEvent = 4;
         private const byte FloraRuntimeFlagHasParasite = (byte)HectonVegetationRuntimeFlags.Parasite;
         private const byte FloraRuntimeFlagDead = 1 << 6;
         private const int DefaultCorpseNodeCapacity = 96;
@@ -519,7 +518,7 @@ namespace Hecton8.World
                 }
                 else
                 {
-                    record.BloodIntensity = Mathf.Lerp(0.35f, DefaultCorpseBloodIntensity, ResolveCorpseCapacityFraction01(in record));
+                    record.BloodIntensity = math.lerp(0.35f, DefaultCorpseBloodIntensity, ResolveCorpseCapacityFraction01(in record));
                 }
 
                 _corpseResourceNodes[i] = record;
@@ -553,7 +552,7 @@ namespace Hecton8.World
                 if (distanceSq > maxDistanceSq)
                     continue;
 
-                float distance01 = 1f - Mathf.Clamp01((float)math.sqrt(distanceSq) / searchRadius);
+                float distance01 = 1f - math.saturate((float)(distanceSq / maxDistanceSq));
                 float mass01 = ResolveCorpseCapacityFraction01(in record);
                 float influence01 = distance01 * mass01;
                 if (influence01 > bestInfluence01)
@@ -589,7 +588,7 @@ namespace Hecton8.World
                 if (distanceSq > radiusSq)
                     continue;
 
-                float distance01 = 1f - Mathf.Clamp01((float)math.sqrt(distanceSq) / CorpseDiseaseRadiusMeters);
+                float distance01 = 1f - math.saturate((float)(distanceSq / radiusSq));
                 float mass01 = ResolveCorpseCapacityFraction01(in record);
                 severity01 = Mathf.Max(severity01, distance01 * mass01 * CorpseDiseaseSeverity);
                 sourcePosition = record.Position;
@@ -1859,7 +1858,7 @@ namespace Hecton8.World
                 }
 
                 float normalizedDecay = ResolveCorpseCapacityFraction01(in record);
-                float bloodIntensity = Mathf.Lerp(0.35f, record.BloodIntensity, normalizedDecay);
+                float bloodIntensity = math.lerp(0.35f, record.BloodIntensity, normalizedDecay);
                 ChemicalInfluenceGrid.QueueBloodScent(record.Position, bloodIntensity);
             }
 
@@ -1960,10 +1959,7 @@ namespace Hecton8.World
                 metadata[activeIndex],
                 types[activeIndex]);
             Vector3 normal = handRuntimePosition - snapPosition;
-            if (normal.sqrMagnitude <= 0.0001f)
-                normal = Vector3.up;
-            else
-                normal.Normalize();
+            normal = NormalizeVector3Fast(normal, Vector3.up);
 
             interactionPoint = new FloraHarvestInteractionPoint(
                 instanceUid,
@@ -1974,27 +1970,6 @@ namespace Hecton8.World
                 templateIndex,
                 1f);
             return true;
-        }
-
-        public int ApplyHighSpeedKelpForestSnap(Vector3 runtimePosition, Vector3 velocity, float radiusMeters)
-        {
-            float speedSq = velocity.sqrMagnitude;
-            if (radiusMeters <= 0f ||
-                speedSq < HighSpeedFloraSnapMinimumSpeedMetersPerSecond * HighSpeedFloraSnapMinimumSpeedMetersPerSecond)
-            {
-                return 0;
-            }
-
-            if (vegetationBridge == null)
-                vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-
-            if (vegetationBridge == null)
-                return 0;
-
-            RefreshActiveCachesIfNeeded(force: false);
-            Vector3 universePosition = HectonMapMagicVegetationBridge.ToUniverseSpace(runtimePosition);
-            float radiusSq = radiusMeters * radiusMeters;
-            return ApplyHighSpeedKelpForestSnapInLane(universePosition, radiusSq, HighSpeedFloraSnapMaxInstancesPerEvent);
         }
 
         internal int CollectNearestConsumableFlora(
@@ -2146,75 +2121,6 @@ namespace Hecton8.World
             return activeIndex >= 0 && instanceUid != 0u && templateIndex >= 0;
         }
 
-        private int ApplyHighSpeedKelpForestSnapInLane(Vector3 universePosition, float radiusSq, int maxSnaps)
-        {
-            NativeArray<Matrix4x4> matrices = _underwaterMatrices;
-            NativeArray<HectonVegetationInstanceData> metadata = _underwaterMetadata;
-            NativeArray<int> types = _underwaterTypes;
-            NativeArray<int> semanticTypes = _underwaterSemanticTypes;
-            NativeArray<uint> instanceUids = _underwaterInstanceUids;
-            NativeArray<byte> materialClasses = _underwaterMaterialClasses;
-            NativeArray<Unity.Mathematics.half> health = _underwaterHealth;
-            int count = _underwaterCount;
-            if (!matrices.IsCreated ||
-                !metadata.IsCreated ||
-                !types.IsCreated ||
-                !semanticTypes.IsCreated ||
-                !instanceUids.IsCreated ||
-                !materialClasses.IsCreated ||
-                !health.IsCreated ||
-                count <= 0 ||
-                maxSnaps <= 0)
-            {
-                return 0;
-            }
-
-            int safeCount = math.min(
-                count,
-                math.min(
-                    matrices.Length,
-                    math.min(
-                        metadata.Length,
-                        math.min(types.Length, math.min(semanticTypes.Length, math.min(instanceUids.Length, math.min(materialClasses.Length, health.Length)))))));
-            int snappedCount = 0;
-            for (int i = 0; i < safeCount && snappedCount < maxSnaps; i++)
-            {
-                uint candidateUid = instanceUids[i];
-                if (candidateUid == 0u ||
-                    (float)health[i] <= 0.0001f ||
-                    (_destroyedByInstanceUid.IsCreated && _destroyedByInstanceUid.ContainsKey(candidateUid)) ||
-                    (_regrowthProgressByInstanceUid.IsCreated && _regrowthProgressByInstanceUid.ContainsKey(candidateUid)))
-                {
-                    continue;
-                }
-
-                HarvestableTemplate.MaterialClass materialClass = (HarvestableTemplate.MaterialClass)materialClasses[i];
-                if (materialClass != HarvestableTemplate.MaterialClass.Kelp)
-                    continue;
-
-                HectonVegetationInstanceData instanceMetadata = metadata[i];
-                int templateIndex = ResolveTemplateIndex(instanceMetadata, materialClass);
-                if (templateIndex < 0)
-                    continue;
-
-                Vector3 rootPosition = ExtractTranslation(matrices[i]);
-                float distanceSq = ResolveHarvestDistanceSq(
-                    universePosition,
-                    rootPosition,
-                    instanceMetadata,
-                    types[i],
-                    radiusSq,
-                    KelpRadiusBias);
-                if (distanceSq > radiusSq)
-                    continue;
-
-                ApplyPassiveDecomposition(true, i, candidateUid, materialClass, templateIndex, rootPosition);
-                snappedCount++;
-            }
-
-            return snappedCount;
-        }
-
         private static Vector3 ResolveHarvestSnapPosition(
             Vector3 handRuntimePosition,
             Vector3 rootPosition,
@@ -2224,14 +2130,15 @@ namespace Hecton8.World
             HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)typeId;
             if (vegetationType == HectonVegetationInstanceType.GiantKelp)
             {
-                float kelpHeight = Mathf.Lerp(10f, 20f, Mathf.Clamp01(Mathf.Abs(metadata.HeightScale)));
+                float kelpHeight = math.lerp(10f, 20f, math.saturate(math.abs(metadata.HeightScale)));
                 Vector3 top = rootPosition + Vector3.up * Mathf.Max(0.5f, kelpHeight + KelpRadiusBias);
                 return ClosestPointOnSegment(rootPosition, top, handRuntimePosition);
             }
 
+            float height01 = math.saturate(math.abs(metadata.HeightScale));
             float verticalBias = vegetationType == HectonVegetationInstanceType.Sargassum
-                ? Mathf.Lerp(0.18f, 0.85f, Mathf.Clamp01(Mathf.Abs(metadata.HeightScale)))
-                : Mathf.Lerp(0.12f, 0.65f, Mathf.Clamp01(Mathf.Abs(metadata.HeightScale)));
+                ? math.lerp(0.18f, 0.85f, height01)
+                : math.lerp(0.12f, 0.65f, height01);
             return rootPosition + Vector3.up * verticalBias;
         }
 
@@ -2484,7 +2391,7 @@ namespace Hecton8.World
             ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
             ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
 
-            PublishExternalInteraction(instancePosition, hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized * (normalizedPower * OrganicBurstVelocityScale) : Vector3.up, interactionBurstRadius * 1.25f);
+            PublishExternalInteraction(instancePosition, NormalizeVector3Fast(hitNormal, Vector3.up) * (normalizedPower * OrganicBurstVelocityScale), interactionBurstRadius * 1.25f);
             SpawnDebris(materialClass, instanceMatrix, instancePosition, hitPoint, hitNormal, normalizedPower, instanceUid);
             QueueYieldEvent(
                 instancePosition,
@@ -2575,7 +2482,7 @@ namespace Hecton8.World
             if (profile == null || !profile.IsValid)
                 return;
 
-            Vector3 fallbackNormal = hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : Vector3.up;
+            Vector3 fallbackNormal = NormalizeVector3Fast(hitNormal, Vector3.up);
             debrisService.SpawnBurst(
                 profile,
                 instancePosition,
@@ -3696,10 +3603,10 @@ namespace Hecton8.World
                 _decompositionStartTimeByInstanceUid.TryGetValue(instanceUid, out decompositionStartTime);
 
             HectonVegetationInstanceData decompositionMetadata = metadata[activeIndex];
-            decompositionMetadata.HeightScale = -Mathf.Lerp(baseScale.x, MinimumDecomposedHeightScale, smoothEntropy);
+            decompositionMetadata.HeightScale = -math.lerp(baseScale.x, MinimumDecomposedHeightScale, smoothEntropy);
             decompositionMetadata.WidthScale = -Mathf.Max(0.001f, decompositionStartTime);
             decompositionMetadata.RuntimeState = HectonVegetationInstanceData.RuntimeStateDying;
-            decompositionMetadata.HealthNormalized = Mathf.Lerp(1f, 0f, smoothEntropy);
+            decompositionMetadata.HealthNormalized = math.lerp(1f, 0f, smoothEntropy);
             metadata[activeIndex] = decompositionMetadata;
         }
 
@@ -3769,7 +3676,6 @@ namespace Hecton8.World
                 return;
 
             const float parasiteRadius = 3.25f;
-            float inverseRadius = 1f / parasiteRadius;
             for (int i = 0; i < count; i++)
             {
                 uint instanceUid = instanceUids[i];
@@ -3782,13 +3688,14 @@ namespace Hecton8.World
                 }
 
                 Vector3 delta = ExtractTranslation(matrices[i]) - runtimePosition;
-                float distance = delta.magnitude;
-                if (distance >= parasiteRadius)
+                float distanceSq = delta.sqrMagnitude;
+                float radiusSq = parasiteRadius * parasiteRadius;
+                if (distanceSq >= radiusSq)
                     continue;
 
-                float exposure = 1f - Mathf.Clamp01(distance * inverseRadius);
+                float exposure = 1f - math.saturate(distanceSq / radiusSq);
                 if (exposure > bestExposure)
-                bestExposure = exposure;
+                    bestExposure = exposure;
             }
         }
 
@@ -4037,7 +3944,7 @@ namespace Hecton8.World
             }
 
             float baseHealth = ResolveBaseHealth(templateIndex);
-            float normalizedHealth = Mathf.Lerp(ResolveBareThreshold01(templateIndex), AllelopathicBareHealth01, clampedToxicity01);
+            float normalizedHealth = math.lerp(ResolveBareThreshold01(templateIndex), AllelopathicBareHealth01, clampedToxicity01);
             float normalizedHeightScale = Mathf.Clamp(
                 Mathf.Min(normalizedHealth, ResolveBareHeightCeiling01(templateIndex)),
                 SoftBareHealthFloor01,
@@ -4060,7 +3967,7 @@ namespace Hecton8.World
         {
             float clampedProgress = math.saturate(progress01);
             float smoothProgress = clampedProgress * clampedProgress * (3f - (2f * clampedProgress));
-            return Mathf.Lerp(0.1f, 1f, smoothProgress);
+            return math.lerp(0.1f, 1f, smoothProgress);
         }
 
         private float ResolveBaseHealth(int templateIndex)
@@ -4239,7 +4146,7 @@ namespace Hecton8.World
                 ? Mathf.Max(0.1f, _templateDescriptors[templateIndex].BaseHealth)
                 : 1f;
             float smoothProgress = progress01 * progress01 * (3f - (2f * progress01));
-            return Mathf.Max(0.05f, Mathf.Lerp(baseHealth * 0.1f, baseHealth, smoothProgress));
+            return Mathf.Max(0.05f, math.lerp(baseHealth * 0.1f, baseHealth, smoothProgress));
         }
 
         private float ResolveMaturationScaleMultiplier(uint instanceUid)
@@ -4323,8 +4230,8 @@ namespace Hecton8.World
                 : new float2(1f, 1f);
             HectonVegetationInstanceData regrowthMetadata = metadata[activeIndex];
             regrowthMetadata.Type = types[activeIndex];
-            regrowthMetadata.HeightScale = Mathf.Lerp(MinimumDecomposedHeightScale, baseScale.x, smoothProgress);
-            regrowthMetadata.WidthScale = Mathf.Lerp(MinimumDecomposedWidthScale, baseScale.y, smoothProgress);
+            regrowthMetadata.HeightScale = math.lerp(MinimumDecomposedHeightScale, baseScale.x, smoothProgress);
+            regrowthMetadata.WidthScale = math.lerp(MinimumDecomposedWidthScale, baseScale.y, smoothProgress);
             regrowthMetadata.RuntimeState = progress01 >= 0.995f
                 ? HectonVegetationInstanceData.RuntimeStateIdle
                 : HectonVegetationInstanceData.RuntimeStateAgitated;
@@ -4407,10 +4314,10 @@ namespace Hecton8.World
 
             float resolvedMassKg = materialClass switch
             {
-                HarvestableTemplate.MaterialClass.Kelp => Mathf.Max(1f, baseHealth * Mathf.Lerp(0.28f, 0.52f, height01) * Mathf.Lerp(0.9f, 1.15f, width01)),
-                HarvestableTemplate.MaterialClass.Coral => Mathf.Max(2f, baseHealth * Mathf.Lerp(0.55f, 0.8f, height01)),
-                HarvestableTemplate.MaterialClass.TitaniumOutcrop => Mathf.Max(4f, baseHealth * Mathf.Lerp(0.82f, 1.08f, height01)),
-                HarvestableTemplate.MaterialClass.Sargassum => Mathf.Max(0.75f, baseHealth * Mathf.Lerp(0.22f, 0.38f, height01) * Mathf.Lerp(0.85f, 1.1f, width01)),
+                HarvestableTemplate.MaterialClass.Kelp => Mathf.Max(1f, baseHealth * math.lerp(0.28f, 0.52f, height01) * math.lerp(0.9f, 1.15f, width01)),
+                HarvestableTemplate.MaterialClass.Coral => Mathf.Max(2f, baseHealth * math.lerp(0.55f, 0.8f, height01)),
+                HarvestableTemplate.MaterialClass.TitaniumOutcrop => Mathf.Max(4f, baseHealth * math.lerp(0.82f, 1.08f, height01)),
+                HarvestableTemplate.MaterialClass.Sargassum => Mathf.Max(0.75f, baseHealth * math.lerp(0.22f, 0.38f, height01) * math.lerp(0.85f, 1.1f, width01)),
                 _ => Mathf.Max(1f, baseHealth * 0.4f)
             };
 
@@ -4445,7 +4352,7 @@ namespace Hecton8.World
             HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)typeId;
             if (vegetationType == HectonVegetationInstanceType.GiantKelp)
             {
-                float kelpHeight = Mathf.Lerp(10f, 20f, Mathf.Clamp01(metadata.HeightScale));
+                float kelpHeight = math.lerp(10f, 20f, math.saturate(metadata.HeightScale));
                 Vector3 top = rootPosition + Vector3.up * Mathf.Max(0.5f, kelpHeight + KelpRadiusBias);
                 Vector3 closest = ClosestPointOnSegment(rootPosition, top, centerUniversePosition);
                 return (closest - centerUniversePosition).sqrMagnitude;
@@ -4465,7 +4372,7 @@ namespace Hecton8.World
             HectonVegetationInstanceType vegetationType = (HectonVegetationInstanceType)typeId;
             if (vegetationType == HectonVegetationInstanceType.GiantKelp)
             {
-                float kelpHeight = Mathf.Lerp(10f, 20f, Mathf.Clamp01(metadata.HeightScale));
+                float kelpHeight = math.lerp(10f, 20f, math.saturate(metadata.HeightScale));
                 Vector3 top = rootPosition + Vector3.up * Mathf.Max(0.5f, kelpHeight + KelpRadiusBias);
                 Vector3 closest = ClosestPointOnSegment(rootPosition, top, hitPoint);
                 return (closest - hitPoint).sqrMagnitude;
@@ -4593,6 +4500,12 @@ namespace Hecton8.World
             NativeMemorySentinel.UnregisterNativeHashMap(NativeMemoryOwner, label);
             map.Dispose();
             map = default;
+        }
+
+        private static Vector3 NormalizeVector3Fast(Vector3 vector, Vector3 fallback)
+        {
+            float magnitudeSq = vector.sqrMagnitude;
+            return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
         }
     }
 }

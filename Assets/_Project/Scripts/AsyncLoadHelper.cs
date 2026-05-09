@@ -61,56 +61,24 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(7500)]
     public sealed class AsyncLoadHelper : MonoBehaviour, ITickable
     {
-        private static AsyncLoadHelper _instance;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static bool _unsupportedLoadErrorLogged;
+#endif
         private static int _nextRequestId = 1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _unsupportedLoadErrorLogged = false;
+#endif
             _nextRequestId = 1;
         }
 
         /// <summary>
-        /// Gets or creates a scene-local helper shell for legacy callers that still access the singleton.
-        /// The helper is intentionally non-persistent because runtime loading is disabled.
+        /// Legacy accessor retained for ABI compatibility. Runtime loading is disabled.
         /// </summary>
-        public static AsyncLoadHelper Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    // COLD ALLOC: GameObject[1] — disabled legacy async helper compatibility shell — owner: AsyncLoadHelper
-                    GameObject go = new GameObject("[AsyncLoadHelper]");
-                    _instance = go.AddComponent<AsyncLoadHelper>();
-                    go.hideFlags = HideFlags.HideInHierarchy;
-                }
-
-                return _instance;
-            }
-        }
-
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
-        }
-
-        private void OnDestroy()
-        {
-            if (_instance == this)
-            {
-                _instance = null;
-            }
-        }
+        public static AsyncLoadHelper Instance => null;
 
         /// <summary>
         /// Legacy interface method retained for compatibility.
@@ -125,7 +93,10 @@ namespace Hecton8.Core
         /// </summary>
         public static int LoadAssetAsync<T>(string path, Action<T> onComplete) where T : UnityEngine.Object
         {
-            return LoadAssetAsync(path, typeof(T), asset => onComplete?.Invoke(asset as T));
+            int requestId = _nextRequestId++;
+            LogUnsupportedLoad(path, typeof(T), 1);
+            onComplete?.Invoke(null);
+            return requestId;
         }
 
         /// <summary>
@@ -150,7 +121,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            // COLD ALLOC: mirror caller request count for explicit failure reporting.
+            // COLD ALLOC: LoadResult[requests.Length] - mirror caller request count for explicit failure reporting - owner: AsyncLoadHelper
             LoadResult[] results = new LoadResult[requests.Length];
             LogUnsupportedLoad("batch", null, requests.Length);
 
@@ -203,10 +174,9 @@ namespace Hecton8.Core
 
         private static void LogUnsupportedLoad(string path, Type assetType, int requestCount)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_unsupportedLoadErrorLogged)
-            {
                 return;
-            }
 
             _unsupportedLoadErrorLogged = true;
             string typeName = assetType != null ? assetType.Name : "Unknown";
@@ -214,6 +184,7 @@ namespace Hecton8.Core
                 $"AsyncLoadHelper is disabled. Runtime Resources/Addressables loading is not available in this project. " +
                 $"Requests: {requestCount}. Path: {path}. Type: {typeName}. " +
                 "Use scene-owned references, ObjectPoolManager, or an approved async content pipeline.");
+#endif
         }
     }
 }

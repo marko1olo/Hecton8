@@ -2,6 +2,7 @@ using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.UI
@@ -83,11 +84,12 @@ namespace Hecton8.UI
             if (!_typingActive)
             {
                 TryStartNextEntry();
+                RefreshTickRegistration();
                 return;
             }
 
             _typingAccumulator += deltaTime * CharactersPerSecond;
-            int nextVisibleLength = Mathf.Min(_typingSourceLength, Mathf.FloorToInt(_typingAccumulator));
+            int nextVisibleLength = math.min(_typingSourceLength, (int)math.floor(_typingAccumulator));
             if (nextVisibleLength == _typingVisibleLength)
                 return;
 
@@ -103,6 +105,7 @@ namespace Hecton8.UI
                 _typingRenderBaseLength = 0;
                 RefreshTerminal();
                 TryStartNextEntry();
+                RefreshTickRegistration();
             }
         }
 
@@ -111,6 +114,13 @@ namespace Hecton8.UI
         /// </summary>
         public void BindTerminal(TMP_Text label)
         {
+            if (ReferenceEquals(terminalLabel, label))
+            {
+                RefreshTerminal();
+                return;
+            }
+
+            ResetTerminalVisibility();
             terminalLabel = label;
             RefreshTerminal();
         }
@@ -133,18 +143,20 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             HectonSubmarineOsEvents.Register(this);
-            TryRegister();
+            RefreshTickRegistration();
             RefreshTerminal();
         }
 
         private void OnDisable()
         {
+            ResetTerminalVisibility();
             HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            ResetTerminalVisibility();
             HectonSubmarineOsEvents.Unregister(this);
             TryUnregister();
         }
@@ -159,6 +171,17 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void RefreshTickRegistration()
+        {
+            if (_typingActive || _pendingEntryCount > 0)
+            {
+                TryRegister();
+                return;
+            }
+
+            TryUnregister();
         }
 
         private void TryUnregister()
@@ -180,6 +203,8 @@ namespace Hecton8.UI
             InsertPendingEntry(request.Code, request.Priority);
             if (!_typingActive)
                 TryStartNextEntry();
+
+            RefreshTickRegistration();
         }
 
         public void OnSubmarineOsEvent(in SubmarineOsEventPayload payload)
@@ -228,7 +253,6 @@ namespace Hecton8.UI
             if (_pendingEntryCount == 0)
                 _pendingEntryTail = _pendingEntryHead;
 
-            Array.Clear(_typingBuffer, 0, _typingBuffer.Length);
             _typingSourceLength = BuildMessage(nextEntry.Code, _typingBuffer, _snapshot);
             if (_typingSourceLength <= 0)
                 return;
@@ -269,7 +293,7 @@ namespace Hecton8.UI
                 case HectonSubmarineOsLogCode.HullPressureHigh:
                     cursor = AppendRange(destination, cursor, s_warnPrefix);
                     cursor = AppendRange(destination, cursor, s_hullPressure);
-                    cursor = AppendInt(destination, cursor, Mathf.RoundToInt(snapshot.MaxPressureKPa));
+                    cursor = AppendInt(destination, cursor, (int)math.round(snapshot.MaxPressureKPa));
                     cursor = AppendRange(destination, cursor, s_kpa);
                     return cursor;
 
@@ -323,8 +347,7 @@ namespace Hecton8.UI
         {
             int writeIndex = _historyLineWriteIndex;
             char[] line = _historyLines[writeIndex];
-            Array.Clear(line, 0, line.Length);
-            int safeLength = Mathf.Min(_typingSourceLength, line.Length);
+            int safeLength = math.min(_typingSourceLength, line.Length);
             for (int i = 0; i < safeLength; i++)
                 line[i] = _typingBuffer[i];
 
@@ -361,7 +384,7 @@ namespace Hecton8.UI
                 cursor = AppendRange(_renderBuffer, cursor, _typingBuffer, 0, _typingSourceLength);
             }
 
-            int safeLength = Mathf.Clamp(cursor, 0, _renderBuffer.Length);
+            int safeLength = math.clamp(cursor, 0, _renderBuffer.Length);
             terminalLabel.SetCharArray(_renderBuffer, 0, safeLength);
             ApplyTypingVisibleCharacters(safeLength);
         }
@@ -384,9 +407,15 @@ namespace Hecton8.UI
             }
 
             int safeRenderedLength = renderedLength > 0 ? renderedLength : _typingRenderBaseLength + _typingSourceLength;
-            int visibleCharacters = Mathf.Clamp(_typingRenderBaseLength + _typingVisibleLength, 0, safeRenderedLength);
+            int visibleCharacters = math.clamp(_typingRenderBaseLength + _typingVisibleLength, 0, safeRenderedLength);
             if (terminalLabel.maxVisibleCharacters != visibleCharacters)
                 terminalLabel.maxVisibleCharacters = visibleCharacters;
+        }
+
+        private void ResetTerminalVisibility()
+        {
+            if (terminalLabel != null && terminalLabel.maxVisibleCharacters != int.MaxValue)
+                terminalLabel.maxVisibleCharacters = int.MaxValue;
         }
 
         private static int AppendRange(char[] destination, int cursor, char[] source)
@@ -399,10 +428,10 @@ namespace Hecton8.UI
             if (destination == null || source == null || sourceLength <= 0)
                 return cursor;
 
-            int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
-            int safeSourceOffset = Mathf.Clamp(sourceOffset, 0, source.Length);
-            int remainingSource = Mathf.Max(0, source.Length - safeSourceOffset);
-            int safeLength = Mathf.Min(Mathf.Min(remainingSource, sourceLength), destination.Length - safeCursor);
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
+            int safeSourceOffset = math.clamp(sourceOffset, 0, source.Length);
+            int remainingSource = math.max(0, source.Length - safeSourceOffset);
+            int safeLength = math.min(math.min(remainingSource, sourceLength), destination.Length - safeCursor);
             for (int i = 0; i < safeLength; i++)
                 destination[safeCursor + i] = source[safeSourceOffset + i];
 
@@ -414,7 +443,7 @@ namespace Hecton8.UI
             if (destination == null || destination.Length == 0)
                 return cursor;
 
-            int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
             if (safeCursor >= destination.Length)
                 return safeCursor;
 
@@ -424,9 +453,9 @@ namespace Hecton8.UI
 
         private static int AppendPercent(char[] destination, int cursor, float normalizedValue)
         {
-            int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
-            int percent = Mathf.RoundToInt(Mathf.Clamp01(normalizedValue) * 100f);
-            Span<char> writableSpan = new Span<char>(destination, safeCursor, destination.Length - safeCursor);
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
+            int percent = (int)math.round(math.saturate(normalizedValue) * 100f);
+            Span<char> writableSpan = destination.AsSpan(safeCursor, destination.Length - safeCursor);
             if (!percent.TryFormat(writableSpan, out int written))
                 return safeCursor;
 
@@ -435,8 +464,8 @@ namespace Hecton8.UI
 
         private static int AppendInt(char[] destination, int cursor, int value)
         {
-            int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
-            Span<char> writableSpan = new Span<char>(destination, safeCursor, destination.Length - safeCursor);
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
+            Span<char> writableSpan = destination.AsSpan(safeCursor, destination.Length - safeCursor);
             if (!value.TryFormat(writableSpan, out int written))
                 return safeCursor;
 

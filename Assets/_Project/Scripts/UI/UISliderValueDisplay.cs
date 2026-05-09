@@ -97,7 +97,6 @@ namespace Hecton8.UI
             LocNumericBuffer.Write(new System.ReadOnlySpan<char>(_resolvedTemplateChars), LocNumericArg.Float(displayValue), out char[] buffer, out int length);
             int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
             valueText.SetCharArray(buffer, 0, safeLength);
-            valueText.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private void RebuildTemplateCache()

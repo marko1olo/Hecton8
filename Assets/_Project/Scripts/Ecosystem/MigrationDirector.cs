@@ -11,7 +11,6 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
-using UnityEngine.XR;
 
 namespace Hecton8.Ecosystem
 {
@@ -21,14 +20,14 @@ namespace Hecton8.Ecosystem
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6225)]
     [AddComponentMenu("Hecton8/Ecosystem/Migration Director")]
-    public sealed class MigrationDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable
+    public sealed class MigrationDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
     {
-        private static MigrationDirector _instance;
         private const float DefaultMigrationDistanceMeters = 320f;
-        private const float DefaultSlowTickIntervalSeconds = 0.5f;
         private const float DefaultColdTickIntervalSeconds = 5f;
         private const float GlobalMigrationCellSizeMeters = 100f;
         private const float BloodCloudPoiLifetimeGameSeconds = 3600f;
+        private const float MigrationSwarmStateLifetimeGameSeconds = 30f;
+        private const float MigrationSwarmStateFutureToleranceGameSeconds = 2f;
         private const float VrSwarmPopulationScale = 0.6f;
         private const float Tau = 6.28318530718f;
         private const int BloodCloudPoiCapacity = 8;
@@ -40,6 +39,11 @@ namespace Hecton8.Ecosystem
         private const int MinimumGridResolutionY = 2;
         private const int MaximumGridResolutionXZ = 128;
         private const int MaximumGridResolutionY = 32;
+        private const ushort MigrationCellFlagBloodCloud = 1 << 0;
+        private const ushort MigrationCellFlagPopulation = 1 << 1;
+        private const ushort MigrationCellFlagPopulationSaturated = 1 << 2;
+        private const ushort MigrationCellFlagNoPopulation = unchecked((ushort)~MigrationCellFlagPopulation);
+        private const ushort MigrationCellFlagNoPopulationSaturated = unchecked((ushort)~MigrationCellFlagPopulationSaturated);
         private const string NativeMemoryOwner = nameof(MigrationDirector);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 
@@ -49,6 +53,7 @@ namespace Hecton8.Ecosystem
         private int3 _migrationGridResolution;
         private int _migrationGridCellCount;
         private float _coldTickAccumulator;
+        private float _lastColdTickRuntimeSeconds = -1f;
         private float _debugLastSeasonalPhase;
         private float _debugLastMigrationGridMagnitude;
         private int _debugBloodCloudPoiCount;
@@ -57,11 +62,15 @@ namespace Hecton8.Ecosystem
         private bool _debugVrSwarmScalingActive;
         private JobHandle _migrationFieldHandle;
         private bool _migrationFieldScheduled;
+        private int _pendingBloodCloudPoiWriteCount;
+        private bool _serviceRegistered;
 
         private NativeArray<MigrationGridCell> _migrationGridFront;
         private NativeArray<MigrationGridCell> _migrationGridBack;
         private NativeArray<MigrationBloodCloudPoi> _bloodCloudPois;
         private NativeArray<MigrationSwarmState> _migrationSwarmStates;
+        private readonly MigrationBloodCloudPoi[] _bloodCloudPoiMirror = new MigrationBloodCloudPoi[BloodCloudPoiCapacity]; // COLD ALLOC: MigrationBloodCloudPoi[8] - main-thread POI mirror; NativeArray is job-owned during scheduled rebuilds - owner: MigrationDirector
+        private readonly MigrationBloodCloudPoi[] _pendingBloodCloudPoiWrites = new MigrationBloodCloudPoi[BloodCloudPoiCapacity]; // COLD ALLOC: MigrationBloodCloudPoi[8] - deferred kill-site writes while migration job owns NativeArray - owner: MigrationDirector
 
         [Header("Temperature Migration")]
         [Tooltip("Optional authored temperature bands used to steer migration routes and herbivore relocation targets.")]
@@ -110,13 +119,10 @@ namespace Hecton8.Ecosystem
         [SerializeField] private Vector3 _debugLastMigrationDirection = Vector3.forward;
         [SerializeField] private Vector3 _debugLastMigrationGridDirection = Vector3.forward;
 
-        /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
-        public static MigrationDirector Instance => _instance;
-
         /// <summary>
         /// Coarse global migration cell. X/Z indices wrap in AUP-space; Y is clamped to the shelf water column.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         public struct MigrationGridCell
         {
             public int3 AupCell;
@@ -126,11 +132,11 @@ namespace Hecton8.Ecosystem
             public ushort Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 80)]
         private struct MigrationBloodCloudPoi
         {
             public AbsoluteUniversePositionBlit128 PositionAup;
-            public float3 PositionWS;
+            public float3 PositionFieldAupMeters;
             public float RadiusMeters;
             public float Strength;
             public float ExpireGameTimeSeconds;
@@ -138,7 +144,7 @@ namespace Hecton8.Ecosystem
             public int Flags;
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 40)]
         private struct MigrationSwarmState
         {
             public int3 AupCell;
@@ -150,15 +156,36 @@ namespace Hecton8.Ecosystem
             public uint Flags;
         }
 
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState
+        {
+            get
+            {
+                if (!_serviceRegistered)
+                    return ServiceHeartbeatState.NotStarted;
+
+                return IsMigrationNativeStateAllocated ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Booting;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered && IsMigrationNativeStateAllocated;
+
+        private bool IsMigrationNativeStateAllocated =>
+            _migrationGridFront.IsCreated &&
+            _migrationGridBack.IsCreated &&
+            _bloodCloudPois.IsCreated &&
+            _migrationSwarmStates.IsCreated;
+
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            MigrationDirector registered = GlobalRegistry.Migration;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
             SanitizeMigrationSettings();
             AllocateMigrationNativeState();
             RefreshCurrentDay();
@@ -166,6 +193,10 @@ namespace Hecton8.Ecosystem
 
         private void OnEnable()
         {
+            TryRegisterService();
+            if (Application.isPlaying && !_serviceRegistered)
+                return;
+
             TryRegisterToTickManager();
             TryRegisterLateFrameTickManager();
             AllocateMigrationNativeState();
@@ -174,6 +205,9 @@ namespace Hecton8.Ecosystem
 
         private void Start()
         {
+            if (Application.isPlaying && !_serviceRegistered)
+                return;
+
             TryRegisterToTickManager();
             TryRegisterLateFrameTickManager();
             AllocateMigrationNativeState();
@@ -182,18 +216,21 @@ namespace Hecton8.Ecosystem
 
         private void OnDisable()
         {
-            UnregisterFromTickManager();
-            UnregisterLateFrameTickManager();
-            DisposeMigrationNativeState();
+            OnServiceShutdown();
         }
 
         private void OnDestroy()
         {
+            OnServiceShutdown();
+        }
+
+        /// <inheritdoc />
+        public void OnServiceShutdown()
+        {
             UnregisterFromTickManager();
             UnregisterLateFrameTickManager();
             DisposeMigrationNativeState();
-            if (_instance == this)
-                _instance = null;
+            TryUnregisterService();
         }
 
         /// <inheritdoc />
@@ -214,7 +251,8 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static float ResolveSelectionMultiplier(int biomeIndex, CreatureArchetypeData archetype)
         {
-            return _instance != null ? _instance.ResolveSelectionMultiplierInternal(biomeIndex, archetype) : 1f;
+            MigrationDirector runtime = GlobalRegistry.Migration;
+            return runtime != null ? runtime.ResolveSelectionMultiplierInternal(biomeIndex, archetype) : 1f;
         }
 
         /// <summary>
@@ -222,9 +260,20 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static int ResolveVisibleBoidCount(int speciesId, Vector3 origin, int requestedPopulationCount)
         {
-            return _instance != null
-                ? _instance.ResolveVisibleBoidCountInternal(speciesId, origin, requestedPopulationCount)
-                : Mathf.Max(0, requestedPopulationCount);
+            MigrationDirector runtime = GlobalRegistry.Migration;
+            return runtime != null
+                ? runtime.ResolveVisibleBoidCountInternal(speciesId, origin, requestedPopulationCount)
+                : ResolveVisibleBoidCountFromMigrationPopulationStatic(requestedPopulationCount);
+        }
+
+        /// <summary>
+        /// Refreshes an already-dematerialized statistical swarm population point without materialising boids.
+        /// </summary>
+        public static void RegisterStatisticalSwarmPopulation(int speciesId, Vector3 origin, int populationCount)
+        {
+            MigrationDirector runtime = GlobalRegistry.Migration;
+            if (runtime != null)
+                runtime.RegisterStatisticalSwarmPopulationInternal(speciesId, origin, populationCount);
         }
 
         /// <summary>
@@ -232,7 +281,8 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static float ResolveVatSwayAmplitudeScale()
         {
-            return _instance != null ? _instance.ResolveVatSwayAmplitudeScaleInternal() : 1f;
+            MigrationDirector runtime = GlobalRegistry.Migration;
+            return runtime != null ? runtime.ResolveVatSwayAmplitudeScaleInternal() : 1f;
         }
 
         /// <summary>
@@ -240,14 +290,40 @@ namespace Hecton8.Ecosystem
         /// </summary>
         public static void RegisterPredatorKillPoi(uint uniqueInstanceUid, Vector3 worldPosition, float fallbackRuntimeSeconds)
         {
-            if (_instance != null)
-                _instance.RegisterPredatorKillPoiInternal(uniqueInstanceUid, worldPosition, fallbackRuntimeSeconds);
+            MigrationDirector runtime = GlobalRegistry.Migration;
+            if (runtime != null)
+                runtime.RegisterPredatorKillPoiInternal(uniqueInstanceUid, worldPosition, fallbackRuntimeSeconds);
         }
 
         internal static bool TryResolveMigrationTarget(int speciesId, Vector3 origin, out Vector3 target)
         {
             target = origin;
-            return _instance != null && _instance.TryResolveMigrationTargetInternal(speciesId, origin, out target);
+            MigrationDirector runtime = GlobalRegistry.Migration;
+            return runtime != null && runtime.TryResolveMigrationTargetInternal(speciesId, origin, out target);
+        }
+
+        internal static int RegisterStatisticalSwarmPopulationAndResolveCount(int speciesId, Vector3 origin, int populationCount)
+        {
+            MigrationDirector runtime = GlobalRegistry.Migration;
+            return runtime != null
+                ? runtime.RegisterStatisticalSwarmPopulationInternal(speciesId, origin, populationCount)
+                : Mathf.Max(0, populationCount);
+        }
+
+        internal static int ResolveVisibleBoidCountFromMigrationPopulation(int migrationPopulationCount)
+        {
+            MigrationDirector runtime = GlobalRegistry.Migration;
+            return runtime != null
+                ? runtime.ResolveVisibleBoidCountFromMigrationPopulationInternal(migrationPopulationCount)
+                : ResolveVisibleBoidCountFromMigrationPopulationStatic(migrationPopulationCount);
+        }
+
+        internal static int3 ResolveMigrationPopulationAupCell(Vector3 origin)
+        {
+            MigrationDirector runtime = GlobalRegistry.Migration;
+            return runtime != null
+                ? runtime.ResolveMigrationAupCell(origin)
+                : ResolveMigrationAupCell(origin, GlobalMigrationCellSizeMeters);
         }
 
         private float ResolveSelectionMultiplierInternal(int biomeIndex, CreatureArchetypeData archetype)
@@ -270,8 +346,8 @@ namespace Hecton8.Ecosystem
             bool abundanceWave = (hash & 0x10u) != 0u;
             float waveStrength = Hash01(hash ^ 0x7F4A7C15u);
             float dailyWave = abundanceWave
-                ? Mathf.Lerp(1.12f, 1.6f, waveStrength)
-                : Mathf.Lerp(0.58f, 0.92f, waveStrength);
+                ? math.lerp(1.12f, 1.6f, waveStrength)
+                : math.lerp(0.58f, 0.92f, waveStrength);
             float currentBias = ResolveCurrentDrivenBias(biomeIndex, archetype, hash);
             return dailyWave * currentBias;
         }
@@ -294,18 +370,18 @@ namespace Hecton8.Ecosystem
             if (sqrMagnitude <= 0.0001f)
                 return 1f;
 
-            currentVector.Normalize();
+            currentVector *= math.rsqrt(sqrMagnitude);
 
-            float preferredHeadingRadians = Hash01(hash ^ 0xB5297A4Du) * Mathf.PI * 2f;
+            float preferredHeadingRadians = Hash01(hash ^ 0xB5297A4Du) * Tau;
             Vector3 preferredHeading = new Vector3(
-                Mathf.Cos(preferredHeadingRadians),
+                math.cos(preferredHeadingRadians),
                 0f,
-                Mathf.Sin(preferredHeadingRadians));
-            float alignment01 = Mathf.InverseLerp(-1f, 1f, Vector3.Dot(currentVector, preferredHeading));
+                math.sin(preferredHeadingRadians));
+            float alignment01 = math.saturate((Vector3.Dot(currentVector, preferredHeading) + 1f) * 0.5f);
 
             float roleBlend = archetype.roleType == CreatureRoleType.Ambient ? 0.82f : 0.64f;
-            float weightedAlignment = Mathf.Lerp(0.5f, alignment01, roleBlend);
-            return Mathf.Lerp(0.7f, 1.45f, weightedAlignment);
+            float weightedAlignment = math.lerp(0.5f, alignment01, roleBlend);
+            return math.lerp(0.7f, 1.45f, weightedAlignment);
         }
 
         private bool TryResolveMigrationTargetInternal(int speciesId, Vector3 origin, out Vector3 target)
@@ -321,7 +397,8 @@ namespace Hecton8.Ecosystem
             float currentAlignmentWeight = hasRoute ? Mathf.Clamp01(route.currentAlignmentWeight) : Mathf.Clamp01(fallbackCurrentAlignmentWeight);
             float depthBiasMeters = hasRoute ? route.depthBiasMeters : 0f;
 
-            uint seed = Hash((uint)speciesId ^ (uint)_currentDayIndex * 0x9E3779B9u ^ HashFloat3(origin));
+            int3 originAupCell = ResolveMigrationAupCell(origin);
+            uint seed = Hash((uint)speciesId ^ (uint)_currentDayIndex * 0x9E3779B9u ^ HashInt3(originAupCell));
             Vector3 preferredDirection = hasRoute
                 ? ResolvePreferredDirection(route.preferredPlanarDirection, seed)
                 : ResolvePreferredDirection(Vector2.zero, seed);
@@ -337,20 +414,70 @@ namespace Hecton8.Ecosystem
             _debugLastMigrationTemperatureCelsius = sampledTemperature;
             _debugLastMigrationDirection = migrationDirection;
 
-            target = origin + (migrationDirection * routeDistance) + (Vector3.down * depthBiasMeters);
+            target = BuildMigrationTargetRuntime(origin, migrationDirection, routeDistance, depthBiasMeters);
             return true;
         }
 
         private int ResolveVisibleBoidCountInternal(int speciesId, Vector3 origin, int requestedPopulationCount)
         {
-            int safePopulationCount = Mathf.Max(0, requestedPopulationCount);
-            float populationMultiplier = ResolveWhaleFallPopulationMultiplier(speciesId, origin, ResolveTimelineGameSeconds(0f));
-            int resolvedPopulationCount = Mathf.Clamp(Mathf.RoundToInt(safePopulationCount * populationMultiplier), 0, int.MaxValue);
-            if (IsVrSwarmScalingActive())
-                resolvedPopulationCount = Mathf.Clamp(Mathf.RoundToInt(resolvedPopulationCount * VrSwarmPopulationScale), 0, int.MaxValue);
+            int migrationPopulationCount = ResolveEcologicalMigrationPopulationCountInternal(speciesId, origin, requestedPopulationCount);
+            WriteSwarmPopulationState(speciesId, origin, migrationPopulationCount);
+            return ResolveVisibleBoidCountFromMigrationPopulationInternal(migrationPopulationCount);
+        }
 
-            WriteSwarmPopulationState(speciesId, origin, resolvedPopulationCount);
-            return resolvedPopulationCount;
+        private int RegisterStatisticalSwarmPopulationInternal(int speciesId, Vector3 origin, int populationCount)
+        {
+            if (populationCount <= 0)
+            {
+                if (_migrationSwarmStates.IsCreated)
+                    WriteSwarmPopulationState(speciesId, origin, 0);
+
+                return 0;
+            }
+
+            AllocateMigrationNativeState();
+            int migrationPopulationCount = ResolveEcologicalMigrationPopulationCountInternal(speciesId, origin, populationCount);
+            WriteSwarmPopulationState(speciesId, origin, migrationPopulationCount);
+            return migrationPopulationCount;
+        }
+
+        private int ResolveEcologicalMigrationPopulationCountInternal(int speciesId, Vector3 origin, int requestedPopulationCount)
+        {
+            int safePopulationCount = Mathf.Max(0, requestedPopulationCount);
+            if (safePopulationCount <= 0)
+                return 0;
+
+            float populationMultiplier = ResolveWhaleFallPopulationMultiplier(speciesId, origin, ResolveTimelineGameSeconds(0f));
+            return RoundPositiveToIntSaturated(safePopulationCount * populationMultiplier);
+        }
+
+        private int ResolveVisibleBoidCountFromMigrationPopulationInternal(int migrationPopulationCount)
+        {
+            bool vrActive = IsVrSwarmScalingActive();
+            _debugVrSwarmScalingActive = vrActive;
+            return ResolveVisibleBoidCountFromMigrationPopulationStatic(migrationPopulationCount, vrActive);
+        }
+
+        private static int ResolveVisibleBoidCountFromMigrationPopulationStatic(int migrationPopulationCount)
+        {
+            return ResolveVisibleBoidCountFromMigrationPopulationStatic(migrationPopulationCount, IsVrSwarmScalingActive());
+        }
+
+        private static int ResolveVisibleBoidCountFromMigrationPopulationStatic(int migrationPopulationCount, bool vrActive)
+        {
+            int safePopulationCount = Mathf.Max(0, migrationPopulationCount);
+            if (safePopulationCount <= 0 || !vrActive)
+                return safePopulationCount;
+
+            return RoundPositiveToIntSaturated(safePopulationCount * VrSwarmPopulationScale);
+        }
+
+        private static int RoundPositiveToIntSaturated(float value)
+        {
+            if (!math.isfinite(value) || value <= 0f)
+                return 0;
+
+            return value >= int.MaxValue ? int.MaxValue : (int)(value + 0.5f);
         }
 
         private float ResolveVatSwayAmplitudeScaleInternal()
@@ -367,12 +494,84 @@ namespace Hecton8.Ecosystem
                 return;
 
             float gameTimeSeconds = ResolveTimelineGameSeconds(fallbackRuntimeSeconds);
-            int selectedSlot = 0;
-            float earliestExpiry = float.MaxValue;
-            for (int i = 0; i < _bloodCloudPois.Length; i++)
+            PruneExpiredMigrationSwarmStates(gameTimeSeconds);
+            MigrationBloodCloudPoi poi = BuildBloodCloudPoi(uniqueInstanceUid, worldPosition, gameTimeSeconds);
+            if (_migrationFieldScheduled)
             {
-                MigrationBloodCloudPoi candidate = _bloodCloudPois[i];
+                EnqueuePendingBloodCloudPoiWrite(in poi, gameTimeSeconds);
+                _debugBloodCloudPoiCount = CountActiveBloodCloudPois(gameTimeSeconds);
+                return;
+            }
+
+            WriteBloodCloudPoiToNative(in poi, gameTimeSeconds);
+            RequestMigrationFieldRebuildSoon();
+        }
+
+        private MigrationBloodCloudPoi BuildBloodCloudPoi(uint uniqueInstanceUid, Vector3 worldPosition, float gameTimeSeconds)
+        {
+            MigrationBloodCloudPoi poi = default;
+            poi.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition).ToAlignedBlit();
+            poi.PositionFieldAupMeters = ResolveWrappedMigrationFieldPoint(worldPosition);
+            poi.RadiusMeters = Mathf.Max(10f, bloodCloudPoiRadiusMeters);
+            poi.Strength = Mathf.Max(0f, bloodCloudPoiStrength);
+            poi.ExpireGameTimeSeconds = gameTimeSeconds + BloodCloudPoiLifetimeGameSeconds;
+            poi.SourceId = unchecked((int)(uniqueInstanceUid & 0x7FFFFFFFu));
+            poi.Flags = 1;
+            return poi;
+        }
+
+        private void WriteBloodCloudPoiToNative(in MigrationBloodCloudPoi poi, float gameTimeSeconds)
+        {
+            if (!_bloodCloudPois.IsCreated || _bloodCloudPois.Length == 0)
+                return;
+
+            int sourceId = poi.SourceId;
+            int capacity = math.min(_bloodCloudPois.Length, _bloodCloudPoiMirror.Length);
+            int selectedSlot = -1;
+            int earliestSlot = 0;
+            float earliestExpiry = float.MaxValue;
+            for (int i = 0; i < capacity; i++)
+            {
+                MigrationBloodCloudPoi candidate = _bloodCloudPoiMirror[i];
+                if (candidate.Flags != 0 && candidate.SourceId == sourceId)
+                {
+                    selectedSlot = i;
+                    break;
+                }
+
                 if (candidate.Flags == 0 || gameTimeSeconds >= candidate.ExpireGameTimeSeconds)
+                {
+                    if (selectedSlot < 0)
+                        selectedSlot = i;
+
+                    continue;
+                }
+
+                if (candidate.ExpireGameTimeSeconds < earliestExpiry)
+                {
+                    earliestExpiry = candidate.ExpireGameTimeSeconds;
+                    earliestSlot = i;
+                }
+            }
+
+            if (selectedSlot < 0)
+                selectedSlot = earliestSlot;
+
+            _bloodCloudPois[selectedSlot] = poi;
+            _bloodCloudPoiMirror[selectedSlot] = poi;
+            _debugBloodCloudPoiCount = CountActiveBloodCloudPois(gameTimeSeconds);
+        }
+
+        private void EnqueuePendingBloodCloudPoiWrite(in MigrationBloodCloudPoi poi, float gameTimeSeconds)
+        {
+            CompactPendingBloodCloudPoiWrites(gameTimeSeconds);
+            int selectedSlot = -1;
+            int replaceSlot = 0;
+            float earliestExpiry = float.MaxValue;
+            for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
+            {
+                MigrationBloodCloudPoi candidate = _pendingBloodCloudPoiWrites[i];
+                if (candidate.Flags != 0 && candidate.SourceId == poi.SourceId)
                 {
                     selectedSlot = i;
                     break;
@@ -381,20 +580,68 @@ namespace Hecton8.Ecosystem
                 if (candidate.ExpireGameTimeSeconds < earliestExpiry)
                 {
                     earliestExpiry = candidate.ExpireGameTimeSeconds;
-                    selectedSlot = i;
+                    replaceSlot = i;
                 }
             }
 
-            MigrationBloodCloudPoi poi = default;
-            poi.PositionWS = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
-            poi.PositionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition).ToAlignedBlit();
-            poi.RadiusMeters = Mathf.Max(10f, bloodCloudPoiRadiusMeters);
-            poi.Strength = Mathf.Max(0f, bloodCloudPoiStrength);
-            poi.ExpireGameTimeSeconds = gameTimeSeconds + BloodCloudPoiLifetimeGameSeconds;
-            poi.SourceId = unchecked((int)(uniqueInstanceUid & 0x7FFFFFFFu));
-            poi.Flags = 1;
-            _bloodCloudPois[selectedSlot] = poi;
-            _debugBloodCloudPoiCount = CountActiveBloodCloudPois(gameTimeSeconds);
+            if (selectedSlot < 0)
+            {
+                if (_pendingBloodCloudPoiWriteCount < _pendingBloodCloudPoiWrites.Length)
+                    selectedSlot = _pendingBloodCloudPoiWriteCount++;
+                else
+                    selectedSlot = replaceSlot;
+            }
+
+            _pendingBloodCloudPoiWrites[selectedSlot] = poi;
+        }
+
+        private bool FlushPendingBloodCloudPoiWrites(float gameTimeSeconds)
+        {
+            CompactPendingBloodCloudPoiWrites(gameTimeSeconds);
+            if (_migrationFieldScheduled || _pendingBloodCloudPoiWriteCount <= 0)
+                return false;
+
+            bool wroteAny = false;
+            for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
+            {
+                MigrationBloodCloudPoi poi = _pendingBloodCloudPoiWrites[i];
+                if (poi.Flags != 0)
+                {
+                    WriteBloodCloudPoiToNative(in poi, gameTimeSeconds);
+                    wroteAny = true;
+                }
+
+                _pendingBloodCloudPoiWrites[i] = default;
+            }
+
+            _pendingBloodCloudPoiWriteCount = 0;
+            return wroteAny;
+        }
+
+        private void RequestMigrationFieldRebuildSoon()
+        {
+            _coldTickAccumulator = Mathf.Max(_coldTickAccumulator, migrationFieldColdTickIntervalSeconds);
+        }
+
+        private void CompactPendingBloodCloudPoiWrites(float gameTimeSeconds)
+        {
+            if (_pendingBloodCloudPoiWriteCount <= 0)
+                return;
+
+            int writeIndex = 0;
+            for (int readIndex = 0; readIndex < _pendingBloodCloudPoiWriteCount; readIndex++)
+            {
+                MigrationBloodCloudPoi poi = _pendingBloodCloudPoiWrites[readIndex];
+                if (poi.Flags == 0 || gameTimeSeconds >= poi.ExpireGameTimeSeconds)
+                    continue;
+
+                _pendingBloodCloudPoiWrites[writeIndex++] = poi;
+            }
+
+            for (int i = writeIndex; i < _pendingBloodCloudPoiWriteCount; i++)
+                _pendingBloodCloudPoiWrites[i] = default;
+
+            _pendingBloodCloudPoiWriteCount = writeIndex;
         }
 
         private void AdvanceMigrationFieldColdTick()
@@ -406,7 +653,7 @@ namespace Hecton8.Ecosystem
             if (!_migrationGridFront.IsCreated || !_migrationGridBack.IsCreated || _migrationFieldScheduled)
                 return;
 
-            _coldTickAccumulator += DefaultSlowTickIntervalSeconds;
+            _coldTickAccumulator += ResolveColdTickDeltaSeconds(Time.unscaledTime);
             if (_coldTickAccumulator < migrationFieldColdTickIntervalSeconds)
                 return;
 
@@ -420,6 +667,8 @@ namespace Hecton8.Ecosystem
                 return;
 
             float timelineSeconds = ResolveTimelineGameSeconds(Time.time);
+            FlushPendingBloodCloudPoiWrites(timelineSeconds);
+            PruneExpiredMigrationSwarmStates(timelineSeconds);
             float seasonalPhase = ResolveSeasonalPhase(timelineSeconds);
             _debugLastSeasonalPhase = seasonalPhase;
             _debugBloodCloudPoiCount = CountActiveBloodCloudPois(timelineSeconds);
@@ -457,6 +706,11 @@ namespace Hecton8.Ecosystem
                 MigrationGridCell firstCell = _migrationGridFront[0];
                 _debugLastMigrationGridDirection = new Vector3(firstCell.Direction.x, firstCell.Direction.y, firstCell.Direction.z);
             }
+            float gameTimeSeconds = ResolveTimelineGameSeconds(Time.time);
+            PruneExpiredMigrationSwarmStates(gameTimeSeconds);
+            ApplyMigrationSwarmPopulationCountsToFrontGrid();
+            if (FlushPendingBloodCloudPoiWrites(gameTimeSeconds))
+                RequestMigrationFieldRebuildSoon();
         }
 
         private bool TrySampleMigrationFieldDirection(Vector3 origin, out Vector3 direction)
@@ -467,45 +721,95 @@ namespace Hecton8.Ecosystem
 
             double safeCellSize = Mathf.Max(1f, migrationCellSizeMeters);
             double3 originAupMeters = ResolveAupMeters(origin);
-            double x = (originAupMeters.x - migrationGridOriginAupLocal.x) / safeCellSize;
-            double y = (originAupMeters.y - migrationGridOriginAupLocal.y) / safeCellSize;
-            double z = (originAupMeters.z - migrationGridOriginAupLocal.z) / safeCellSize;
+            double gridX = ((originAupMeters.x - migrationGridOriginAupLocal.x) / safeCellSize) - 0.5d;
+            double gridY = ((originAupMeters.y - migrationGridOriginAupLocal.y) / safeCellSize) - 0.5d;
+            double gridZ = ((originAupMeters.z - migrationGridOriginAupLocal.z) / safeCellSize) - 0.5d;
+            int x0 = FastFloorToInt(gridX);
+            int y0 = FastFloorToInt(gridY);
+            int z0 = FastFloorToInt(gridZ);
+            float tx = math.saturate((float)(gridX - x0));
+            float ty = math.saturate((float)(gridY - y0));
+            float tz = math.saturate((float)(gridZ - z0));
+            int ix0 = WrapIndex(x0, _migrationGridResolution.x);
+            int ix1 = WrapIndex(x0 + 1, _migrationGridResolution.x);
+            int iy0 = math.clamp(y0, 0, _migrationGridResolution.y - 1);
+            int iy1 = math.clamp(y0 + 1, 0, _migrationGridResolution.y - 1);
+            int iz0 = WrapIndex(z0, _migrationGridResolution.z);
+            int iz1 = WrapIndex(z0 + 1, _migrationGridResolution.z);
 
-            int ix = WrapIndex(FastFloorToInt(x), _migrationGridResolution.x);
-            int iy = Mathf.Clamp(FastFloorToInt(y), 0, _migrationGridResolution.y - 1);
-            int iz = WrapIndex(FastFloorToInt(z), _migrationGridResolution.z);
-            float3 sampled = _migrationGridFront[BuildMigrationCellIndex(ix, iy, iz, _migrationGridResolution)].Direction;
+            float3 c000 = _migrationGridFront[BuildMigrationCellIndex(ix0, iy0, iz0, _migrationGridResolution)].Direction;
+            float3 c100 = _migrationGridFront[BuildMigrationCellIndex(ix1, iy0, iz0, _migrationGridResolution)].Direction;
+            float3 c010 = _migrationGridFront[BuildMigrationCellIndex(ix0, iy1, iz0, _migrationGridResolution)].Direction;
+            float3 c110 = _migrationGridFront[BuildMigrationCellIndex(ix1, iy1, iz0, _migrationGridResolution)].Direction;
+            float3 c001 = _migrationGridFront[BuildMigrationCellIndex(ix0, iy0, iz1, _migrationGridResolution)].Direction;
+            float3 c101 = _migrationGridFront[BuildMigrationCellIndex(ix1, iy0, iz1, _migrationGridResolution)].Direction;
+            float3 c011 = _migrationGridFront[BuildMigrationCellIndex(ix0, iy1, iz1, _migrationGridResolution)].Direction;
+            float3 c111 = _migrationGridFront[BuildMigrationCellIndex(ix1, iy1, iz1, _migrationGridResolution)].Direction;
+            float3 c00 = math.lerp(c000, c100, tx);
+            float3 c10 = math.lerp(c010, c110, tx);
+            float3 c01 = math.lerp(c001, c101, tx);
+            float3 c11 = math.lerp(c011, c111, tx);
+            float3 c0 = math.lerp(c00, c10, ty);
+            float3 c1 = math.lerp(c01, c11, ty);
+            float3 sampled = math.lerp(c0, c1, tz);
+            float sampledSq = math.lengthsq(sampled);
+            if (sampledSq <= 0.0001f)
+                return false;
+
+            sampled *= math.rsqrt(sampledSq);
             direction = new Vector3(sampled.x, sampled.y, sampled.z);
-            return direction.sqrMagnitude > 0.0001f;
+            return true;
         }
 
         private float ResolveWhaleFallPopulationMultiplier(int speciesId, Vector3 origin, float gameTimeSeconds)
         {
-            if (!_bloodCloudPois.IsCreated || !IsScavengerMigrationSpecies(speciesId))
+            if (!IsScavengerMigrationSpecies(speciesId))
+                return 1f;
+
+            CompactPendingBloodCloudPoiWrites(gameTimeSeconds);
+            if (_pendingBloodCloudPoiWriteCount <= 0 && CountActiveBloodCloudPois(gameTimeSeconds) <= 0)
                 return 1f;
 
             float multiplier = 1f;
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
-            for (int i = 0; i < _bloodCloudPois.Length; i++)
+            for (int i = 0; i < _bloodCloudPoiMirror.Length; i++)
             {
-                MigrationBloodCloudPoi poi = _bloodCloudPois[i];
-                if (poi.Flags == 0 || gameTimeSeconds >= poi.ExpireGameTimeSeconds)
+                MigrationBloodCloudPoi poi = _bloodCloudPoiMirror[i];
+                if (HasPendingBloodCloudPoiSource(poi.SourceId, gameTimeSeconds))
                     continue;
 
-                double radius = math.max(1f, poi.RadiusMeters);
-                double radiusSq = radius * radius;
-                AbsoluteUniversePosition poiAup = AbsoluteUniversePosition.FromAlignedBlit(in poi.PositionAup);
-                double distSq = AbsoluteUniversePosition.DistanceSq(in originAup, in poiAup);
-                if (distSq > radiusSq)
-                    continue;
+                multiplier = ResolveWhaleFallPopulationMultiplierForPoi(in poi, in originAup, gameTimeSeconds, multiplier);
+            }
 
-                float falloff = 1f - math.saturate((float)(distSq / radiusSq));
-                float candidateMultiplier = Mathf.Lerp(1f, Mathf.Max(1f, whaleFallScavengerPopulationMultiplier), falloff * falloff);
-                if (candidateMultiplier > multiplier)
-                    multiplier = candidateMultiplier;
+            for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
+            {
+                MigrationBloodCloudPoi pendingPoi = _pendingBloodCloudPoiWrites[i];
+                multiplier = ResolveWhaleFallPopulationMultiplierForPoi(in pendingPoi, in originAup, gameTimeSeconds, multiplier);
             }
 
             return multiplier;
+        }
+
+        private float ResolveWhaleFallPopulationMultiplierForPoi(
+            in MigrationBloodCloudPoi poi,
+            in AbsoluteUniversePosition originAup,
+            float gameTimeSeconds,
+            float currentMultiplier)
+        {
+            if (poi.Flags == 0 || gameTimeSeconds >= poi.ExpireGameTimeSeconds)
+                return currentMultiplier;
+
+            double radius = math.max(1f, poi.RadiusMeters);
+            double radiusSq = radius * radius;
+            double invRadiusSq = 1d / radiusSq;
+            AbsoluteUniversePosition poiAup = AbsoluteUniversePosition.FromAlignedBlit(in poi.PositionAup);
+            double distSq = AbsoluteUniversePosition.DistanceSq(in originAup, in poiAup);
+            if (distSq > radiusSq)
+                return currentMultiplier;
+
+            float falloff = math.saturate((float)(1d - distSq * invRadiusSq));
+            float candidateMultiplier = math.lerp(1f, math.max(1f, whaleFallScavengerPopulationMultiplier), falloff * falloff);
+            return candidateMultiplier > currentMultiplier ? candidateMultiplier : currentMultiplier;
         }
 
         private bool IsScavengerMigrationSpecies(int speciesId)
@@ -527,34 +831,330 @@ namespace Hecton8.Ecosystem
             if (!_migrationSwarmStates.IsCreated || _migrationSwarmStates.Length == 0)
                 return;
 
-            uint hash = Hash((uint)speciesId ^ HashFloat3(origin));
-            int slot = (int)(hash % (uint)_migrationSwarmStates.Length);
+            float gameTimeSeconds = ResolveTimelineGameSeconds(Time.time);
+            PruneExpiredMigrationSwarmStates(gameTimeSeconds);
+            int3 aupCell = ResolveMigrationAupCell(origin);
+            uint hash = Hash((uint)speciesId ^ HashInt3(aupCell));
+            int safePopulationCount = Mathf.Clamp(populationCount, 0, ushort.MaxValue);
+            if (safePopulationCount <= 0)
+            {
+                if (!TryFindMigrationSwarmStateSlot(hash, speciesId, in aupCell, out int clearSlot))
+                    return;
+
+                MigrationSwarmState clearedState = _migrationSwarmStates[clearSlot];
+                _migrationSwarmStates[clearSlot] = default;
+                RecomputeMigrationGridPopulationCell(in clearedState.AupCell);
+                RefreshDebugStatisticalSwarmSlotCount();
+                return;
+            }
+
+            int slot = ResolveMigrationSwarmStateSlot(hash, speciesId, in aupCell);
+            MigrationSwarmState previousState = _migrationSwarmStates[slot];
+            bool hadPreviousState = previousState.Flags != 0;
+
             MigrationSwarmState state = default;
-            state.AupCell = ResolveMigrationAupCell(origin);
+            state.AupCell = aupCell;
             state.LocalPosition = new float3(origin.x, origin.y, origin.z);
             state.RadiusMeters = 200f;
-            state.LastWriteGameTimeSeconds = ResolveTimelineGameSeconds(Time.time);
-            state.PopulationCount = (ushort)Mathf.Clamp(populationCount, 0, ushort.MaxValue);
+            state.LastWriteGameTimeSeconds = gameTimeSeconds;
+            state.PopulationCount = (ushort)safePopulationCount;
             state.SpeciesId = (ushort)Mathf.Clamp(speciesId, 0, ushort.MaxValue);
             state.Flags = 1u;
             _migrationSwarmStates[slot] = state;
-            _debugStatisticalSwarmSlotCount = Mathf.Min(_migrationSwarmStates.Length, _debugStatisticalSwarmSlotCount + 1);
+            if (hadPreviousState && !AreSameAupCell(in previousState.AupCell, in state.AupCell))
+                RecomputeMigrationGridPopulationCell(in previousState.AupCell);
+
+            RecomputeMigrationGridPopulationCell(in state.AupCell);
+            RefreshDebugStatisticalSwarmSlotCount();
+        }
+
+        private int ResolveMigrationSwarmStateSlot(uint hash, int speciesId, in int3 aupCell)
+        {
+            int capacity = _migrationSwarmStates.Length;
+            int startSlot = (int)(hash % (uint)capacity);
+            int emptySlot = -1;
+            int oldestSlot = startSlot;
+            float oldestWriteTime = float.MaxValue;
+            ushort speciesKey = (ushort)Mathf.Clamp(speciesId, 0, ushort.MaxValue);
+            for (int probe = 0; probe < capacity; probe++)
+            {
+                int slot = (startSlot + probe) % capacity;
+                MigrationSwarmState candidate = _migrationSwarmStates[slot];
+                if (candidate.Flags == 0)
+                {
+                    if (emptySlot < 0)
+                        emptySlot = slot;
+
+                    continue;
+                }
+
+                if (candidate.SpeciesId == speciesKey &&
+                    AreSameAupCell(in candidate.AupCell, in aupCell))
+                {
+                    return slot;
+                }
+
+                if (candidate.LastWriteGameTimeSeconds < oldestWriteTime)
+                {
+                    oldestWriteTime = candidate.LastWriteGameTimeSeconds;
+                    oldestSlot = slot;
+                }
+            }
+
+            return emptySlot >= 0 ? emptySlot : oldestSlot;
+        }
+
+        private bool TryFindMigrationSwarmStateSlot(uint hash, int speciesId, in int3 aupCell, out int slot)
+        {
+            slot = -1;
+            int capacity = _migrationSwarmStates.Length;
+            if (capacity <= 0)
+                return false;
+
+            int startSlot = (int)(hash % (uint)capacity);
+            ushort speciesKey = (ushort)Mathf.Clamp(speciesId, 0, ushort.MaxValue);
+            for (int probe = 0; probe < capacity; probe++)
+            {
+                int candidateSlot = (startSlot + probe) % capacity;
+                MigrationSwarmState candidate = _migrationSwarmStates[candidateSlot];
+                if (candidate.Flags == 0)
+                    continue;
+
+                if (candidate.SpeciesId == speciesKey &&
+                    AreSameAupCell(in candidate.AupCell, in aupCell))
+                {
+                    slot = candidateSlot;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ApplyMigrationSwarmPopulationCountsToFrontGrid()
+        {
+            if (!_migrationGridFront.IsCreated || !_migrationSwarmStates.IsCreated)
+                return;
+
+            for (int i = 0; i < _migrationSwarmStates.Length; i++)
+            {
+                MigrationSwarmState state = _migrationSwarmStates[i];
+                if (state.Flags != 0 && state.PopulationCount > 0)
+                    ApplyMigrationGridPopulationDelta(in state, state.PopulationCount);
+            }
+        }
+
+        private void PruneExpiredMigrationSwarmStates(float gameTimeSeconds)
+        {
+            if (!_migrationSwarmStates.IsCreated)
+            {
+                _debugStatisticalSwarmSlotCount = 0;
+                return;
+            }
+
+            bool changed = false;
+            for (int i = 0; i < _migrationSwarmStates.Length; i++)
+            {
+                MigrationSwarmState state = _migrationSwarmStates[i];
+                if (state.Flags == 0)
+                    continue;
+
+                if (!IsMigrationSwarmStateExpired(in state, gameTimeSeconds))
+                    continue;
+
+                _migrationSwarmStates[i] = default;
+                RecomputeMigrationGridPopulationCell(in state.AupCell);
+                changed = true;
+            }
+
+            if (changed)
+                RefreshDebugStatisticalSwarmSlotCount();
+        }
+
+        private static bool IsMigrationSwarmStateExpired(in MigrationSwarmState state, float gameTimeSeconds)
+        {
+            float ageSeconds = gameTimeSeconds - state.LastWriteGameTimeSeconds;
+            if (ageSeconds > MigrationSwarmStateLifetimeGameSeconds)
+                return true;
+
+            return ageSeconds < -MigrationSwarmStateFutureToleranceGameSeconds;
+        }
+
+        private void ApplyMigrationGridPopulationDelta(in MigrationSwarmState state, int populationDelta)
+        {
+            if (!_migrationGridFront.IsCreated ||
+                _migrationGridFront.Length != _migrationGridCellCount ||
+                _migrationGridCellCount <= 0 ||
+                populationDelta == 0 ||
+                !TryResolveMigrationGridIndexFromAupCell(in state.AupCell, out int cellIndex))
+            {
+                return;
+            }
+
+            MigrationGridCell cell = _migrationGridFront[cellIndex];
+            int rawPopulation = cell.PopulationCount + populationDelta;
+            int resolvedPopulation = math.clamp(rawPopulation, 0, ushort.MaxValue);
+            cell.PopulationCount = (ushort)resolvedPopulation;
+            if (resolvedPopulation > 0)
+            {
+                cell.Flags = (ushort)(cell.Flags | MigrationCellFlagPopulation);
+                cell.Flags = rawPopulation > ushort.MaxValue
+                    ? (ushort)(cell.Flags | MigrationCellFlagPopulationSaturated)
+                    : (ushort)(cell.Flags & MigrationCellFlagNoPopulationSaturated);
+            }
+            else
+            {
+                cell.Flags = (ushort)(cell.Flags & MigrationCellFlagNoPopulation);
+                cell.Flags = (ushort)(cell.Flags & MigrationCellFlagNoPopulationSaturated);
+            }
+
+            _migrationGridFront[cellIndex] = cell;
+        }
+
+        private void RecomputeMigrationGridPopulationCell(in int3 aupCell)
+        {
+            if (!_migrationGridFront.IsCreated ||
+                !_migrationSwarmStates.IsCreated ||
+                _migrationGridFront.Length != _migrationGridCellCount ||
+                _migrationGridCellCount <= 0 ||
+                !TryResolveMigrationGridIndexFromAupCell(in aupCell, out int targetCellIndex))
+            {
+                return;
+            }
+
+            int population = 0;
+            bool saturated = false;
+            for (int i = 0; i < _migrationSwarmStates.Length; i++)
+            {
+                MigrationSwarmState state = _migrationSwarmStates[i];
+                if (state.Flags == 0 || state.PopulationCount == 0)
+                    continue;
+
+                if (!TryResolveMigrationGridIndexFromAupCell(in state.AupCell, out int stateCellIndex) ||
+                    stateCellIndex != targetCellIndex)
+                {
+                    continue;
+                }
+
+                int nextPopulation = population + state.PopulationCount;
+                if (nextPopulation > ushort.MaxValue)
+                {
+                    population = ushort.MaxValue;
+                    saturated = true;
+                    break;
+                }
+
+                population = nextPopulation;
+            }
+
+            MigrationGridCell cell = _migrationGridFront[targetCellIndex];
+            cell.PopulationCount = (ushort)population;
+            if (population > 0)
+            {
+                cell.Flags = (ushort)(cell.Flags | MigrationCellFlagPopulation);
+                cell.Flags = saturated
+                    ? (ushort)(cell.Flags | MigrationCellFlagPopulationSaturated)
+                    : (ushort)(cell.Flags & MigrationCellFlagNoPopulationSaturated);
+            }
+            else
+            {
+                cell.Flags = (ushort)(cell.Flags & MigrationCellFlagNoPopulation);
+                cell.Flags = (ushort)(cell.Flags & MigrationCellFlagNoPopulationSaturated);
+            }
+
+            _migrationGridFront[targetCellIndex] = cell;
+        }
+
+        private bool TryResolveMigrationGridIndexFromAupCell(in int3 aupCell, out int cellIndex)
+        {
+            cellIndex = 0;
+            if (_migrationGridResolution.x <= 0 || _migrationGridResolution.y <= 0 || _migrationGridResolution.z <= 0)
+                return false;
+
+            double safeCellSize = Mathf.Max(1f, migrationCellSizeMeters);
+            double cellCenterX = (aupCell.x + 0.5d) * safeCellSize;
+            double cellCenterY = (aupCell.y + 0.5d) * safeCellSize;
+            double cellCenterZ = (aupCell.z + 0.5d) * safeCellSize;
+            int ix = WrapIndex(FastFloorToInt((cellCenterX - migrationGridOriginAupLocal.x) / safeCellSize), _migrationGridResolution.x);
+            int iy = Mathf.Clamp(FastFloorToInt((cellCenterY - migrationGridOriginAupLocal.y) / safeCellSize), 0, _migrationGridResolution.y - 1);
+            int iz = WrapIndex(FastFloorToInt((cellCenterZ - migrationGridOriginAupLocal.z) / safeCellSize), _migrationGridResolution.z);
+            cellIndex = BuildMigrationCellIndex(ix, iy, iz, _migrationGridResolution);
+            return cellIndex >= 0 && cellIndex < _migrationGridCellCount;
+        }
+
+        private void RefreshDebugStatisticalSwarmSlotCount()
+        {
+            if (!_migrationSwarmStates.IsCreated)
+            {
+                _debugStatisticalSwarmSlotCount = 0;
+                return;
+            }
+
+            int count = 0;
+            for (int i = 0; i < _migrationSwarmStates.Length; i++)
+            {
+                if (_migrationSwarmStates[i].Flags != 0)
+                    count++;
+            }
+
+            _debugStatisticalSwarmSlotCount = count;
         }
 
         private int CountActiveBloodCloudPois(float gameTimeSeconds)
         {
-            if (!_bloodCloudPois.IsCreated)
-                return 0;
-
             int count = 0;
-            for (int i = 0; i < _bloodCloudPois.Length; i++)
+            for (int i = 0; i < _bloodCloudPoiMirror.Length; i++)
             {
-                MigrationBloodCloudPoi poi = _bloodCloudPois[i];
+                MigrationBloodCloudPoi poi = _bloodCloudPoiMirror[i];
                 if (poi.Flags != 0 && gameTimeSeconds < poi.ExpireGameTimeSeconds)
                     count++;
             }
 
+            for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
+            {
+                MigrationBloodCloudPoi pendingPoi = _pendingBloodCloudPoiWrites[i];
+                if (pendingPoi.Flags == 0 || gameTimeSeconds >= pendingPoi.ExpireGameTimeSeconds)
+                    continue;
+
+                if (HasActiveBloodCloudPoiSource(pendingPoi.SourceId, gameTimeSeconds))
+                    continue;
+
+                count++;
+            }
+
             return count;
+        }
+
+        private bool HasPendingBloodCloudPoiSource(int sourceId, float gameTimeSeconds)
+        {
+            for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
+            {
+                MigrationBloodCloudPoi poi = _pendingBloodCloudPoiWrites[i];
+                if (poi.Flags != 0 &&
+                    poi.SourceId == sourceId &&
+                    gameTimeSeconds < poi.ExpireGameTimeSeconds)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool HasActiveBloodCloudPoiSource(int sourceId, float gameTimeSeconds)
+        {
+            for (int i = 0; i < _bloodCloudPoiMirror.Length; i++)
+            {
+                MigrationBloodCloudPoi poi = _bloodCloudPoiMirror[i];
+                if (poi.Flags != 0 &&
+                    poi.SourceId == sourceId &&
+                    gameTimeSeconds < poi.ExpireGameTimeSeconds)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private float ResolveTimelineGameSeconds(float fallbackRuntimeSeconds)
@@ -577,9 +1177,9 @@ namespace Hecton8.Ecosystem
         {
             float biomeOffset = biomeIndex * 173.31f;
             float dayOffset = _currentDayIndex * 41.7f;
-            float x = Mathf.Sin(biomeOffset + dayOffset + Hash01(hash ^ 0x68E31DA4u) * 6.28318f) * 420f;
-            float z = Mathf.Cos(biomeOffset * 0.5f + dayOffset + Hash01(hash ^ 0xC2B2AE35u) * 6.28318f) * 420f;
-            float y = -Mathf.Lerp(24f, 220f, Hash01(hash ^ 0x9E3779B9u));
+            float x = math.sin(biomeOffset + dayOffset + Hash01(hash ^ 0x68E31DA4u) * Tau) * 420f;
+            float z = math.cos(biomeOffset * 0.5f + dayOffset + Hash01(hash ^ 0xC2B2AE35u) * Tau) * 420f;
+            float y = -math.lerp(24f, 220f, Hash01(hash ^ 0x9E3779B9u));
             return new Vector3(x, y, z);
         }
 
@@ -600,16 +1200,36 @@ namespace Hecton8.Ecosystem
                 return preferredDirection;
 
             float3 planar = new float3(blended.x, 0f, blended.z);
-            planar = math.normalizesafe(planar, new float3(preferredDirection.x, 0f, preferredDirection.z));
+            float3 planarFallback = NormalizeOrFallback(new float3(preferredDirection.x, 0f, preferredDirection.z), new float3(0f, 0f, 1f));
+            planar = NormalizeOrFallback(planar, planarFallback);
             return new Vector3(planar.x, 0f, planar.z);
         }
 
         private static Vector3 BlendDirectionsLinear(Vector3 from, Vector3 to, float weight)
         {
-            float3 a = math.normalizesafe(new float3(from.x, from.y, from.z), new float3(0f, 0f, 1f));
-            float3 b = math.normalizesafe(new float3(to.x, to.y, to.z), a);
-            float3 blended = math.normalizesafe(math.lerp(a, b, math.saturate(weight)), a);
+            float3 a = NormalizeOrFallback(new float3(from.x, from.y, from.z), new float3(0f, 0f, 1f));
+            float3 b = NormalizeOrFallback(new float3(to.x, to.y, to.z), a);
+            float3 blended = NormalizeOrFallback(math.lerp(a, b, math.saturate(weight)), a);
             return new Vector3(blended.x, blended.y, blended.z);
+        }
+
+        private static Vector3 BuildMigrationTargetRuntime(Vector3 origin, Vector3 direction, float routeDistanceMeters, float depthBiasMeters)
+        {
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            double3 originAbsolute = originAup.ToAbsoluteDouble3();
+            double3 routeOffset = new double3(
+                direction.x * (double)routeDistanceMeters,
+                direction.y * (double)routeDistanceMeters - depthBiasMeters,
+                direction.z * (double)routeDistanceMeters);
+            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromAbsolutePosition(originAbsolute + routeOffset);
+            float3 runtimeTarget = targetAup.ToRuntimeFloat3();
+            return new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
+        }
+
+        private static float3 NormalizeOrFallback(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > 0.0001f ? value * math.rsqrt(lengthSq) : fallback;
         }
 
         private float ResolveWaterTemperature(Vector3 origin)
@@ -620,11 +1240,18 @@ namespace Hecton8.Ecosystem
 
         private static Vector3 ResolvePreferredDirection(Vector2 preferredPlanarDirection, uint seed)
         {
-            Vector2 planarDirection = preferredPlanarDirection.sqrMagnitude > 0.0001f
-                ? preferredPlanarDirection.normalized
-                : new Vector2(
-                    Mathf.Cos(Hash01(seed ^ 0x68E31DA4u) * Mathf.PI * 2f),
-                    Mathf.Sin(Hash01(seed ^ 0xC2B2AE35u) * Mathf.PI * 2f));
+            float2 planarDirection = new float2(preferredPlanarDirection.x, preferredPlanarDirection.y);
+            float planarSq = math.lengthsq(planarDirection);
+            if (planarSq > 0.0001f)
+            {
+                planarDirection *= math.rsqrt(planarSq);
+            }
+            else
+            {
+                float headingRadians = Hash01(seed ^ 0x68E31DA4u) * Tau;
+                planarDirection = new float2(math.cos(headingRadians), math.sin(headingRadians));
+            }
+
             return new Vector3(planarDirection.x, 0f, planarDirection.y);
         }
 
@@ -651,8 +1278,15 @@ namespace Hecton8.Ecosystem
             SanitizeMigrationSettings();
             int3 requiredResolution = new int3(migrationGridResolutionX, migrationGridResolutionY, migrationGridResolutionZ);
             int requiredCellCount = requiredResolution.x * requiredResolution.y * requiredResolution.z;
-            if (_migrationGridFront.IsCreated && _migrationGridCellCount == requiredCellCount)
+            if (_migrationGridFront.IsCreated &&
+                _migrationGridBack.IsCreated &&
+                _bloodCloudPois.IsCreated &&
+                _migrationSwarmStates.IsCreated &&
+                _migrationGridCellCount == requiredCellCount &&
+                math.all(_migrationGridResolution == requiredResolution))
+            {
                 return;
+            }
 
             DisposeMigrationNativeState();
             _migrationGridResolution = requiredResolution;
@@ -663,7 +1297,7 @@ namespace Hecton8.Ecosystem
             _migrationGridFront = new NativeArray<MigrationGridCell>(requiredCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_migrationGridFront, NativeMemoryOwner, nameof(_migrationGridFront), NativeMemoryLifetime);
             // COLD ALLOC: NativeArray<MigrationGridCell>[65536 max] — Burst write target for seasonal migration flow updates — owner: MigrationDirector
-            _migrationGridBack = new NativeArray<MigrationGridCell>(requiredCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _migrationGridBack = new NativeArray<MigrationGridCell>(requiredCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             NativeMemorySentinel.RegisterNativeArray(_migrationGridBack, NativeMemoryOwner, nameof(_migrationGridBack), NativeMemoryLifetime);
             // COLD ALLOC: NativeArray<MigrationBloodCloudPoi>[8] — kill-site vector distortion sources — owner: MigrationDirector
             _bloodCloudPois = new NativeArray<MigrationBloodCloudPoi>(BloodCloudPoiCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -672,42 +1306,72 @@ namespace Hecton8.Ecosystem
             _migrationSwarmStates = new NativeArray<MigrationSwarmState>(MigrationSwarmCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(_migrationSwarmStates, NativeMemoryOwner, nameof(_migrationSwarmStates), NativeMemoryLifetime);
             _debugStatisticalSwarmSlotCount = 0;
+            _coldTickAccumulator = migrationFieldColdTickIntervalSeconds;
+            _lastColdTickRuntimeSeconds = -1f;
         }
 
         private void DisposeMigrationNativeState()
         {
-            CompleteMigrationFieldJob(forceComplete: true);
-            if (_migrationGridFront.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_migrationGridFront);
-                _migrationGridFront.Dispose();
-                _migrationGridFront = default;
-            }
-
-            if (_migrationGridBack.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_migrationGridBack);
-                _migrationGridBack.Dispose();
-                _migrationGridBack = default;
-            }
-
-            if (_bloodCloudPois.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_bloodCloudPois);
-                _bloodCloudPois.Dispose();
-                _bloodCloudPois = default;
-            }
-
-            if (_migrationSwarmStates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_migrationSwarmStates);
-                _migrationSwarmStates.Dispose();
-                _migrationSwarmStates = default;
-            }
+            bool hadScheduledFieldJob = _migrationFieldScheduled;
+            JobHandle disposeDependency = hadScheduledFieldJob ? _migrationFieldHandle : default;
+            bool scheduledDispose = false;
+            scheduledDispose |= DisposeNativeArrayDeferred(ref _migrationGridFront, disposeDependency);
+            scheduledDispose |= DisposeNativeArrayDeferred(ref _migrationGridBack, disposeDependency);
+            scheduledDispose |= DisposeNativeArrayDeferred(ref _bloodCloudPois, disposeDependency);
+            scheduledDispose |= DisposeNativeArrayDeferred(ref _migrationSwarmStates, disposeDependency);
+            if (scheduledDispose)
+                JobHandle.ScheduleBatchedJobs();
 
             _migrationGridCellCount = 0;
+            _migrationGridResolution = int3.zero;
             _debugMigrationGridCellCount = 0;
+            _debugBloodCloudPoiCount = 0;
+            _debugStatisticalSwarmSlotCount = 0;
+            for (int i = 0; i < _bloodCloudPoiMirror.Length; i++)
+                _bloodCloudPoiMirror[i] = default;
+            for (int i = 0; i < _pendingBloodCloudPoiWriteCount; i++)
+                _pendingBloodCloudPoiWrites[i] = default;
+            _pendingBloodCloudPoiWriteCount = 0;
+            _coldTickAccumulator = 0f;
+            _lastColdTickRuntimeSeconds = -1f;
+            _migrationFieldHandle = default;
             _migrationFieldScheduled = false;
+        }
+
+        private static bool DisposeNativeArrayDeferred<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return false;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose(dependency);
+            array = default;
+            return true;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            MigrationDirector registered = GlobalRegistry.Migration;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            GlobalRegistry.RegisterMigrationDirectorRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Migration, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterMigrationDirectorRuntime(this);
+            _serviceRegistered = false;
         }
 
         private void TryRegisterToTickManager()
@@ -715,8 +1379,7 @@ namespace Hecton8.Ecosystem
             if (_registeredToTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromTickManager()
@@ -733,8 +1396,7 @@ namespace Hecton8.Ecosystem
             if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterLateFrameTickManager()
@@ -777,14 +1439,14 @@ namespace Hecton8.Ecosystem
             }
         }
 
-        private static uint HashFloat3(Vector3 value)
+        private static uint HashInt3(int3 value)
         {
             unchecked
             {
                 uint hash = 0x811C9DC5u;
-                hash = Hash(hash ^ (uint)Mathf.RoundToInt(value.x * 10f));
-                hash = Hash(hash ^ (uint)Mathf.RoundToInt(value.y * 10f));
-                hash = Hash(hash ^ (uint)Mathf.RoundToInt(value.z * 10f));
+                hash = Hash(hash ^ (uint)value.x);
+                hash = Hash(hash ^ (uint)value.y);
+                hash = Hash(hash ^ (uint)value.z);
                 return hash;
             }
         }
@@ -820,14 +1482,56 @@ namespace Hecton8.Ecosystem
             return (y * resolution.z + z) * resolution.x + x;
         }
 
+        private static bool AreSameAupCell(in int3 a, in int3 b)
+        {
+            return a.x == b.x && a.y == b.y && a.z == b.z;
+        }
+
+        private float ResolveColdTickDeltaSeconds(float runtimeSeconds)
+        {
+            if (_lastColdTickRuntimeSeconds < 0f)
+            {
+                _lastColdTickRuntimeSeconds = runtimeSeconds;
+                return 0f;
+            }
+
+            float deltaSeconds = runtimeSeconds - _lastColdTickRuntimeSeconds;
+            _lastColdTickRuntimeSeconds = runtimeSeconds;
+            if (!math.isfinite(deltaSeconds) || deltaSeconds <= 0f)
+                return 0f;
+
+            return math.min(deltaSeconds, migrationFieldColdTickIntervalSeconds);
+        }
+
         private int3 ResolveMigrationAupCell(Vector3 origin)
         {
             double safeCellSize = Mathf.Max(1f, migrationCellSizeMeters);
+            return ResolveMigrationAupCell(origin, safeCellSize);
+        }
+
+        private static int3 ResolveMigrationAupCell(Vector3 origin, double safeCellSize)
+        {
             double3 originAupMeters = ResolveAupMeters(origin);
             return new int3(
                 FastFloorToInt(originAupMeters.x / safeCellSize),
                 FastFloorToInt(originAupMeters.y / safeCellSize),
                 FastFloorToInt(originAupMeters.z / safeCellSize));
+        }
+
+        private float3 ResolveWrappedMigrationFieldPoint(Vector3 runtimePosition)
+        {
+            double safeCellSize = Mathf.Max(1f, migrationCellSizeMeters);
+            double3 aupMeters = ResolveAupMeters(runtimePosition);
+            double extentX = safeCellSize * Mathf.Max(1, migrationGridResolutionX);
+            double extentY = safeCellSize * Mathf.Max(1, migrationGridResolutionY);
+            double extentZ = safeCellSize * Mathf.Max(1, migrationGridResolutionZ);
+            double originX = migrationGridOriginAupLocal.x;
+            double originY = migrationGridOriginAupLocal.y;
+            double originZ = migrationGridOriginAupLocal.z;
+            return new float3(
+                (float)WrapCoordinateToExtent(aupMeters.x, originX, extentX),
+                (float)ClampCoordinate(aupMeters.y, originY, originY + extentY),
+                (float)WrapCoordinateToExtent(aupMeters.z, originZ, extentZ));
         }
 
         private static double3 ResolveAupMeters(Vector3 runtimePosition)
@@ -839,9 +1543,27 @@ namespace Hecton8.Ecosystem
                 aup.GridZ * (double)AbsoluteUniversePosition.CellSizeMeters + aup.LocalZ);
         }
 
+        private static double WrapCoordinateToExtent(double value, double origin, double extent)
+        {
+            if (extent <= 0d)
+                return origin;
+
+            double local = value - origin;
+            double wrapped = local - math.floor(local / extent) * extent;
+            return origin + wrapped;
+        }
+
+        private static double ClampCoordinate(double value, double min, double max)
+        {
+            if (value < min)
+                return min;
+
+            return value > max ? max : value;
+        }
+
         private static bool IsVrSwarmScalingActive()
         {
-            return HectonXRRuntimeState.IsXRActive || (XRSettings.enabled && XRSettings.isDeviceActive);
+            return HectonXRRuntimeState.IsXRActive;
         }
 
         [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
@@ -861,6 +1583,7 @@ namespace Hecton8.Ecosystem
                 int x = index % Resolution.x;
                 int z = (index / Resolution.x) % Resolution.z;
                 int y = index / (Resolution.x * Resolution.z);
+                float safeCellSize = math.max(1f, CellSizeMeters);
 
                 float invX = Resolution.x > 0 ? 1f / Resolution.x : 0f;
                 float invY = Resolution.y > 1 ? 1f / (Resolution.y - 1) : 0f;
@@ -873,9 +1596,9 @@ namespace Hecton8.Ecosystem
                 float seasonalAngle = SeasonalPhase + math.sin(seamAngleX) * 0.85f + math.cos(seamAngleZ) * 0.65f + depth01 * 0.72f;
 
                 float3 cellPosition = OriginAupLocal + new float3(
-                    (x + 0.5f) * CellSizeMeters,
-                    (y + 0.5f) * CellSizeMeters,
-                    (z + 0.5f) * CellSizeMeters);
+                    (x + 0.5f) * safeCellSize,
+                    (y + 0.5f) * safeCellSize,
+                    (z + 0.5f) * safeCellSize);
 
                 float3 baseDirection = new float3(
                     math.cos(seasonalAngle) + math.sin(seamAngleZ + SeasonalPhase * 0.37f) * 0.23f,
@@ -891,26 +1614,44 @@ namespace Hecton8.Ecosystem
                         continue;
 
                     float radius = math.max(1f, poi.RadiusMeters);
+                    float invRadius = 1f / radius;
+                    float invRadiusSq = invRadius * invRadius;
                     float radiusSq = radius * radius;
-                    float3 toPoi = poi.PositionWS - cellPosition;
+                    float3 toPoi = poi.PositionFieldAupMeters - cellPosition;
+                    toPoi.x = WrapDeltaToExtent(toPoi.x, safeCellSize * math.max(1, Resolution.x));
+                    toPoi.z = WrapDeltaToExtent(toPoi.z, safeCellSize * math.max(1, Resolution.z));
                     float distSq = math.lengthsq(toPoi);
                     if (distSq > radiusSq)
                         continue;
 
-                    float falloff = 1f - math.saturate(distSq / radiusSq);
+                    float falloff = math.saturate(1f - distSq * invRadiusSq);
                     float strength = math.max(0f, poi.Strength) * falloff * falloff;
-                    attraction += math.normalizesafe(toPoi, float3.zero) * strength;
+                    attraction += toPoi * (strength * invRadius);
                     attractionWeight += strength;
                 }
 
-                float3 direction = math.normalizesafe(baseDirection + attraction, new float3(0f, 0f, 1f));
+                float3 direction = NormalizeOrFallback(baseDirection + attraction, new float3(0f, 0f, 1f));
                 MigrationGridCell cell = default;
-                cell.AupCell = new int3(x, y, z);
+                cell.AupCell = (int3)math.floor(cellPosition / safeCellSize);
                 cell.Direction = direction;
                 cell.Magnitude = math.saturate(1f + attractionWeight * 0.18f);
                 cell.PopulationCount = 0;
-                cell.Flags = (ushort)(attractionWeight > 0.0001f ? 1 : 0);
+                cell.Flags = (ushort)(attractionWeight > 0.0001f ? MigrationCellFlagBloodCloud : 0);
                 Output[index] = cell;
+            }
+
+            private static float WrapDeltaToExtent(float delta, float extent)
+            {
+                if (extent <= 0f)
+                    return delta;
+
+                return delta - math.round(delta / extent) * extent;
+            }
+
+            private static float3 NormalizeOrFallback(float3 value, float3 fallback)
+            {
+                float lengthSq = math.lengthsq(value);
+                return lengthSq > 0.0001f ? value * math.rsqrt(lengthSq) : fallback;
             }
         }
     }

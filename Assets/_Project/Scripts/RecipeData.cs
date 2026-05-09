@@ -82,6 +82,7 @@ namespace Hecton8.Crafting
 
         private string _cachedCraftText;
         private string _cachedCostSummary;
+        private uint _requiredScanEntryHash;
         private int _requiredAnchoredBiomeFamilyHashId;
 
         private void OnEnable()
@@ -130,8 +131,7 @@ namespace Hecton8.Crafting
         /// </summary>
         public string GetCraftText()
         {
-            RebuildCache();
-            return _cachedCraftText;
+            return _cachedCraftText ?? string.Empty;
         }
 
         /// <summary>
@@ -139,8 +139,7 @@ namespace Hecton8.Crafting
         /// </summary>
         public string GetCostSummary()
         {
-            RebuildCache();
-            return _cachedCostSummary;
+            return _cachedCostSummary ?? "-";
         }
 
         /// <summary>
@@ -150,7 +149,7 @@ namespace Hecton8.Crafting
             ? overrideIcon
             : (resultItem != null ? resultItem.icon : null);
 
-        public bool RequiresScanUnlock => !string.IsNullOrWhiteSpace(requiredScanEntryId);
+        public bool RequiresScanUnlock => _requiredScanEntryHash != 0u;
         public bool RequiresAnchoredBiomeLock => requiresAnchoredBaseBiome &&
                                                  (requiredAnchoredBiomeMatrixId > 0 ||
                                                   !string.IsNullOrWhiteSpace(requiredAnchoredBiomeFamilyId));
@@ -158,6 +157,7 @@ namespace Hecton8.Crafting
         public string RequiredScanEntryId => string.IsNullOrWhiteSpace(requiredScanEntryId)
             ? string.Empty
             : requiredScanEntryId.Trim();
+        public uint RequiredScanEntryHash => _requiredScanEntryHash;
         public int RequiredAnchoredBiomeFamilyHashId => _requiredAnchoredBiomeFamilyHashId;
 
         public bool IsUnlocked(ScanLogSystem scanLogSystem)
@@ -165,7 +165,7 @@ namespace Hecton8.Crafting
             if (!RequiresScanUnlock)
                 return true;
 
-            return scanLogSystem != null && scanLogSystem.ContainsEntry(RequiredScanEntryId);
+            return scanLogSystem != null && scanLogSystem.ContainsEntry(_requiredScanEntryHash);
         }
 
         public FabricationGroup GetResolvedFabricationGroup()
@@ -216,6 +216,7 @@ namespace Hecton8.Crafting
 
         private void RebuildCache()
         {
+            // Cold cache build only. Runtime UI getters return these references without rebuilding strings.
             _cachedCraftText = "Create " + DisplayNameOrFallback;
 
             var sb = new StringBuilder(64);
@@ -245,6 +246,7 @@ namespace Hecton8.Crafting
 
         private void RefreshRuntimeHashes()
         {
+            _requiredScanEntryHash = ScanEvents.ComputeEntryHash(requiredScanEntryId);
             _requiredAnchoredBiomeFamilyHashId = LocHash.ComputeAsciiLowerInvariant(requiredAnchoredBiomeFamilyId);
         }
 

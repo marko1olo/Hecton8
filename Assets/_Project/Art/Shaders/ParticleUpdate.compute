@@ -36,6 +36,12 @@ float SafeRcp(float value)
     return abs(value) > EPSILON ? rcp(value) : 0.0;
 }
 
+float FastTriangleSigned(float phase)
+{
+    float triangle01 = 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+    return triangle01 * 2.0 - 1.0;
+}
+
 float3 SampleFlowField(float3 positionWS)
 {
     int resolution = max((int)round(_FieldParams.x), 1);
@@ -112,14 +118,15 @@ void SimulateBloodDispersion(uint3 dispatchThreadID : SV_DispatchThreadID)
     float alignment = dot(particleDirN, flowDirN);
     float alignmentN = saturate((alignment + 1.0) * 0.5);
     float dragMultiplier = lerp(1.0, 0.1, alignmentN);
-    float dragAttenuation = pow(saturate(1.0 - dragMultiplier * baseDragCoeff), dt * 60.0);
+    float dragBase = saturate(1.0 - dragMultiplier * baseDragCoeff);
+    float dragAttenuation = lerp(1.0, dragBase, saturate(dt * 60.0));
     particle.Vel *= dragAttenuation;
 
     float turbulencePhase = particle.Pad.x * 6.2831853 + _FieldParams.z;
     float3 turbulence = float3(
-        sin(turbulencePhase + particle.Pos.y * 0.13),
-        cos(turbulencePhase * 0.83 + particle.Pos.x * 0.09),
-        sin(turbulencePhase * 1.17 + particle.Pos.z * 0.11));
+        FastTriangleSigned(turbulencePhase + particle.Pos.y * 0.13),
+        FastTriangleSigned(turbulencePhase * 0.83 + particle.Pos.x * 0.09 + 1.5707963),
+        FastTriangleSigned(turbulencePhase * 1.17 + particle.Pos.z * 0.11));
     particle.Vel += turbulence * (turbulenceScale * dt);
     particle.Vel.y += buoyancy * dt;
 

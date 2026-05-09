@@ -25,25 +25,7 @@ namespace Hecton8.World
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private static HectonRockManager _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
-        public static HectonRockManager Instance
-        {
-            get
-            {
-#if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
-                    return null;
-#endif
-                return _instance;
-            }
-        }
+        public static HectonRockManager Instance => GlobalRegistry.RockManager;
 
         internal GPUInstancerPrefabManager GpuInstancerManager => gpuiManager;
 
@@ -119,12 +101,12 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            HectonRockManager registered = GlobalRegistry.RockManager;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
-            _instance = this;
 
             // COLD ALLOC: Dictionary<int,Dictionary<Vector2Int,Matrix4x4[]>>[8] - rock chunk maps by layer - owner: HectonRockManager
             _chunkData = new Dictionary<int, Dictionary<Vector2Int, Matrix4x4[]>>(8);
@@ -146,7 +128,7 @@ namespace Hecton8.World
             // COLD ALLOC: Dictionary<int,GPUInstancerPrefabPrototype>[8] - prefab prototype lookup by layer - owner: HectonRockManager
             _prototypeLookup = new Dictionary<int, GPUInstancerPrefabPrototype>(8);
             // COLD ALLOC: HashSet<int>[8] - GPUI initialized layer set - owner: HectonRockManager
-            _gpuiInitializedLayers = new HashSet<int>();
+            _gpuiInitializedLayers = new HashSet<int>(8);
 
             if (rockLayers != null)
             {
@@ -156,16 +138,20 @@ namespace Hecton8.World
 
                     if (cfg.prefabReference == null)
                     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         Debug.LogError($"[HectonRockManager] Rock layer {i} (layerId={cfg.layerId}) " +
                                        "has null prefabReference!", this);
+#endif
                         continue;
                     }
 
                     GPUInstancerPrefabPrototype proto = cfg.prefabReference.prefabPrototype;
                     if (proto == null)
                     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         Debug.LogError($"[HectonRockManager] Rock layer {i} (layerId={cfg.layerId}) " +
                                        "prefab has no prefabPrototype! Is it registered in GPUI Manager?", this);
+#endif
                         continue;
                     }
 
@@ -181,8 +167,10 @@ namespace Hecton8.World
                     }
                     else
                     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         Debug.LogWarning($"[HectonRockManager] Duplicate layerId={cfg.layerId} " +
                                           "in rock layers config. Skipping.", this);
+#endif
                     }
                 }
             }
@@ -191,15 +179,23 @@ namespace Hecton8.World
             {
                 TryGetComponent(out gpuiManager);
                 if (gpuiManager == null)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError("[HectonRockManager] GPUInstancerPrefabManager not found!", this);
+#endif
+                }
             }
 
             if (proximityColliderSystem == null)
             {
                 proximityColliderSystem = ProximityColliderSystem.ActiveRuntimeInstance;
                 if (proximityColliderSystem == null)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning("[HectonRockManager] ProximityColliderSystem not found. " +
                                      "Rocks will render but have no physics.", this);
+#endif
+                }
             }
 
             UpdateDiagnostics();
@@ -231,14 +227,19 @@ namespace Hecton8.World
         {
             TryUnregisterFromGlobalRegistry();
 
-            if (_instance == this)
-                _instance = null;
         }
 
         private void TryRegisterToGlobalRegistry()
         {
-            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+            if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            HectonRockManager registered = GlobalRegistry.RockManager;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterRockManagerRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.RockManager, this);

@@ -91,6 +91,15 @@ namespace Hecton8.Quest
         [SerializeField] public bool autoActivateOnStart;
         [SerializeField] public bool oneTimeOnly = true;
 
+        private uint _markerTargetHash;
+
+        public uint MarkerTargetHash => _markerTargetHash;
+
+        private void OnEnable()
+        {
+            RefreshRuntimeHashes();
+        }
+
         /// <summary>
         /// Localized display title for the active language.
         /// </summary>
@@ -111,7 +120,14 @@ namespace Hecton8.Quest
         {
             if (string.IsNullOrEmpty(questId))
                 questId = name.ToLower().Replace(" ", "_");
+
+            RefreshRuntimeHashes();
         }
 #endif
+
+        private void RefreshRuntimeHashes()
+        {
+            _markerTargetHash = QuestFlagHashKernel.ComputeStableHash(markerTargetId);
+        }
     }
 }

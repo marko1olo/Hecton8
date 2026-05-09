@@ -59,12 +59,10 @@ namespace Hecton8.World
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private static DynamicResolutionScaler _instance;
-
         /// <summary>
         /// Singleton instance. Null if not initialized.
         /// </summary>
-        public static DynamicResolutionScaler Instance => _instance;
+        public static DynamicResolutionScaler Instance => GlobalRegistry.DynamicResolution;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR SETTINGS
@@ -186,16 +184,10 @@ namespace Hecton8.World
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
         private void Awake()
         {
-            // Singleton setup
-            if (_instance != null && _instance != this)
+            DynamicResolutionScaler registered = GlobalRegistry.DynamicResolution;
+            if (registered != null && registered != this)
             {
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[DynamicResolutionScaler] Duplicate instance detected. Destroying duplicate.");
@@ -203,8 +195,6 @@ namespace Hecton8.World
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
 
             // Cache URP asset
             _urpAsset = UniversalRenderPipeline.asset;
@@ -262,9 +252,6 @@ namespace Hecton8.World
             TryUnregister();
             TryUnregisterService();
 
-            // Clear singleton
-            if (_instance == this)
-                _instance = null;
         }
 
         private void TryRegister()
@@ -290,6 +277,13 @@ namespace Hecton8.World
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            DynamicResolutionScaler registered = GlobalRegistry.DynamicResolution;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterDynamicResolutionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.DynamicResolution, this);
@@ -408,7 +402,8 @@ namespace Hecton8.World
                 {
                     float pressureRange = Mathf.Max(0.01f, _criticalFrameTime - _targetFrameTime);
                     float pressureLerp = Mathf.Clamp01((effectiveFrameTime - _targetFrameTime) / pressureRange);
-                    float adaptiveReductionPercent = Mathf.Lerp(_scaleReductionPercent, _criticalScaleReductionPercent, pressureLerp);
+                    float adaptiveReductionPercent = _scaleReductionPercent +
+                        (_criticalScaleReductionPercent - _scaleReductionPercent) * pressureLerp;
                     ApplyScaleReduction(adaptiveReductionPercent);
                     _consecutiveSlowFrames = 0;
                 }
@@ -554,7 +549,7 @@ namespace Hecton8.World
         private void UpdateFrameTrend(float frameTimeMs)
         {
             float smoothing = Mathf.Clamp01(_frameTimeSmoothing);
-            _smoothedFrameTimeMs = Mathf.Lerp(_smoothedFrameTimeMs, frameTimeMs, smoothing);
+            _smoothedFrameTimeMs += (frameTimeMs - _smoothedFrameTimeMs) * smoothing;
             if (frameTimeMs > _peakFrameTimeMs)
                 _peakFrameTimeMs = frameTimeMs;
         }

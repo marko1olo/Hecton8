@@ -21,6 +21,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private const string SilhouetteShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_DistantLandmarkSilhouette.shader";
 #endif
+        private const int BrgMetadataPlaceholderCount = 1;
 
         private static readonly int LandmarkMatricesId = Shader.PropertyToID("_HectonLandmarkMatrices");
         private static readonly int LandmarkFadeId = Shader.PropertyToID("_HectonLandmarkInstanceFade");
@@ -341,7 +342,8 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
-                _batchMetadata = new NativeArray<MetadataValue>(0, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[0] - BRG metadata placeholder for distant landmark renderer - owner: HectonDistantLandmarkRenderer
+                _batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for distant landmark renderer - owner: HectonDistantLandmarkRenderer
+                NativeMemorySentinel.RegisterNativeArray(_batchMetadata, nameof(HectonDistantLandmarkRenderer), nameof(_batchMetadata), NativeAllocationLifetime.Session);
                 _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for distant landmark renderer - owner: HectonDistantLandmarkRenderer
                 _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
                 _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
@@ -398,9 +400,15 @@ namespace Hecton8.World
                 return;
 
             if (_uploadedLandmarkMatrices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_uploadedLandmarkMatrices);
                 _uploadedLandmarkMatrices.Dispose();
+            }
             if (_uploadedLandmarkFade.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_uploadedLandmarkFade);
                 _uploadedLandmarkFade.Dispose();
+            }
 
             if (_uploadedMatrixBuffer != null)
             {
@@ -416,6 +424,8 @@ namespace Hecton8.World
 
             _uploadedLandmarkMatrices = new NativeArray<Matrix4x4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - distant landmark native upload cache - owner: HectonDistantLandmarkRenderer
             _uploadedLandmarkFade = new NativeArray<Vector4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Vector4>[NextPowerOfTwo(requiredCount)] - distant landmark fade upload cache - owner: HectonDistantLandmarkRenderer
+            NativeMemorySentinel.RegisterNativeArray(_uploadedLandmarkMatrices, nameof(HectonDistantLandmarkRenderer), nameof(_uploadedLandmarkMatrices), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_uploadedLandmarkFade, nameof(HectonDistantLandmarkRenderer), nameof(_uploadedLandmarkFade), NativeAllocationLifetime.Session);
             _uploadedMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark matrix upload buffer - owner: HectonDistantLandmarkRenderer
             _uploadedFadeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - distant landmark fade upload buffer - owner: HectonDistantLandmarkRenderer
         }
@@ -463,7 +473,10 @@ namespace Hecton8.World
             }
 
             if (_batchMetadata.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_batchMetadata);
                 _batchMetadata.Dispose();
+            }
 
             if (_uploadedMatrixBuffer != null)
             {
@@ -479,9 +492,15 @@ namespace Hecton8.World
             }
 
             if (_uploadedLandmarkMatrices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_uploadedLandmarkMatrices);
                 _uploadedLandmarkMatrices.Dispose();
+            }
             if (_uploadedLandmarkFade.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_uploadedLandmarkFade);
                 _uploadedLandmarkFade.Dispose();
+            }
 
         }
 

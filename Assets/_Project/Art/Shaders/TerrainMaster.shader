@@ -459,6 +459,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma multi_compile_fog
             // GPU instancing
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
 
@@ -706,6 +707,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma vertex   ShadowVert
             #pragma fragment ShadowFrag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile _ _CASTING_PUNCTUAL_LIGHT_SHADOW
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -785,6 +787,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma vertex   DepthVert
             #pragma fragment DepthFrag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             struct DepthAttr
             {
@@ -836,6 +839,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             #pragma vertex   DNVert
             #pragma fragment DNFrag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             // Only Core.hlsl is included via HLSLINCLUDE â€” minimal dependencies
 

@@ -7,6 +7,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -55,8 +56,8 @@ namespace Hecton8.UI
         private TextMeshProUGUI _powerLine;
         private TextMeshProUGUI _costLine;
         private TextMeshProUGUI _hintLine;
-        private float _nextRefreshAt;
-        private float _nextAutoResolveAt;
+        private float _refreshTimer;
+        private float _autoResolveRetryTimer;
         private int _lastStaticStateHash;
         private int _lastLiveStateHash;
         // COLD ALLOC: char[192] — builder overlay module label buffer — owner: BuilderStatusOverlay
@@ -75,6 +76,7 @@ namespace Hecton8.UI
         private readonly char[] _costBuffer = new char[256];
         // COLD ALLOC: char[192] — builder overlay hint label buffer — owner: BuilderStatusOverlay
         private readonly char[] _hintBuffer = new char[192];
+        private readonly char[] _adviceScratchBuffer = new char[192];
         private bool _tickRegistered;
         private PlayerInventory _subscribedInventory;
         private PlayerToolManager _subscribedToolManager;
@@ -98,29 +100,34 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            if (!ShouldKeepTicking())
+            float safeDeltaTime = math.max(0f, deltaTime);
+            if (!ShouldKeepTicking(safeDeltaTime))
             {
                 UnregisterTick();
                 return;
             }
 
-            if (Time.unscaledTime < _nextRefreshAt)
+            _refreshTimer -= safeDeltaTime;
+            if (_refreshTimer > 0f)
                 return;
 
-            _nextRefreshAt = Time.unscaledTime + Mathf.Max(0.05f, refreshInterval);
+            _refreshTimer = math.max(0.05f, refreshInterval);
             RefreshState();
         }
 
         private void ForceRefresh()
         {
-            _nextRefreshAt = 0f;
+            _refreshTimer = 0f;
             _lastStaticStateHash = int.MinValue;
             _lastLiveStateHash = int.MinValue;
             RefreshState();
         }
 
-        private void AutoResolve()
+        private void AutoResolve(float deltaTime = 0f)
         {
+            if (deltaTime > 0f && _autoResolveRetryTimer > 0f)
+                _autoResolveRetryTimer = math.max(0f, _autoResolveRetryTimer - deltaTime);
+
             bool requiresRuntimeResolve =
                 playerBuilder == null ||
                 inventory == null ||
@@ -128,7 +135,7 @@ namespace Hecton8.UI
                 toolManager == null;
 
             if (requiresRuntimeResolve &&
-                (!Application.isPlaying || Time.unscaledTime >= _nextAutoResolveAt))
+                (!Application.isPlaying || _autoResolveRetryTimer <= 0f))
             {
                 IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
                 if (playerContext != null)
@@ -149,7 +156,7 @@ namespace Hecton8.UI
                     constructionManager = environmentContext != null ? environmentContext.ConstructionManager : null;
                 }
 
-                _nextAutoResolveAt = Time.unscaledTime + AutoResolveRetryInterval;
+                _autoResolveRetryTimer = AutoResolveRetryInterval;
             }
 
             if (labelFont == null)
@@ -365,11 +372,11 @@ namespace Hecton8.UI
                     _indexLine,
                     _indexBuffer,
                     LocNumericArg.Int(activeIndex + 1),
-                    LocNumericArg.Int(Mathf.Max(1, buildCount)),
+                    LocNumericArg.Int(math.max(1, buildCount)),
                     LocNumericArg.Int(builtModuleCount));
                 BuildQueueHint(activeIndex, buildCount);
 
-                int roundedPowerRating = Mathf.RoundToInt(powerRating);
+                int roundedPowerRating = (int)math.round(powerRating);
                 int powerLength = 0;
                 powerLength = Append(_powerBuffer, powerLength, "ROLE // ");
                 powerLength = Append(_powerBuffer, powerLength, playerBuilder.GetActiveBuildRoleLabel());
@@ -418,14 +425,17 @@ namespace Hecton8.UI
                 _resourceLine.color = hasResources ? ReadyColor : WarnColor;
                 SetLiteral(_resourceLine, _resourceBuffer, hasResources ? "RESOURCES // READY" : "RESOURCES // INSUFFICIENT");
                 _costLine.color = hasResources ? DimColor : WarnColor;
-                int hintLength = AppendUpperInvariant(_hintBuffer, 0, playerBuilder.GetActiveBuildAdvice());
+                FixedCharBuffer adviceBuffer = new FixedCharBuffer(_adviceScratchBuffer);
+                adviceBuffer.Clear();
+                playerBuilder.WriteActiveBuildAdvice(ref adviceBuffer);
+                int hintLength = AppendUpperInvariant(_hintBuffer, 0, adviceBuffer.AsSpan());
                 SetBufferText(_hintLine, _hintBuffer, hintLength);
             }
         }
 
-        private bool ShouldKeepTicking()
+        private bool ShouldKeepTicking(float deltaTime = 0f)
         {
-            AutoResolve();
+            AutoResolve(deltaTime);
             return RequiresRuntimeResolve() || IsBuilderOverlayVisible();
         }
 
@@ -471,8 +481,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()
@@ -493,7 +502,7 @@ namespace Hecton8.UI
                 hash = hash * 31 + activeIndex;
                 hash = hash * 31 + buildCount;
                 hash = hash * 31 + builtModuleCount;
-                hash = hash * 31 + Mathf.RoundToInt(powerRating * 10f);
+                hash = hash * 31 + (int)math.round(powerRating * 10f);
                 hash = hash * 31 + _inventoryRevision;
                 if (data != null && data.buildCost != null && inventory != null)
                 {
@@ -646,9 +655,8 @@ namespace Hecton8.UI
             if (label == null || buffer == null)
                 return;
 
-            int safeLength = Mathf.Clamp(length, 0, buffer.Length);
+            int safeLength = math.clamp(length, 0, buffer.Length);
             label.SetCharArray(buffer, 0, safeLength);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static int CopyToBuffer(char[] buffer, string value)
@@ -656,7 +664,7 @@ namespace Hecton8.UI
             if (buffer == null || string.IsNullOrEmpty(value))
                 return 0;
 
-            int length = Mathf.Min(value.Length, buffer.Length);
+            int length = math.min(value.Length, buffer.Length);
             value.AsSpan(0, length).CopyTo(buffer.AsSpan());
             return length;
         }
@@ -664,9 +672,9 @@ namespace Hecton8.UI
         private static int Append(char[] buffer, int index, string value)
         {
             if (buffer == null || string.IsNullOrEmpty(value) || index >= buffer.Length)
-                return Mathf.Clamp(index, 0, buffer != null ? buffer.Length : 0);
+                return math.clamp(index, 0, buffer != null ? buffer.Length : 0);
 
-            int length = Mathf.Min(value.Length, buffer.Length - index);
+            int length = math.min(value.Length, buffer.Length - index);
             value.AsSpan(0, length).CopyTo(buffer.AsSpan(index));
             return index + length;
         }
@@ -688,12 +696,29 @@ namespace Hecton8.UI
         private static int AppendUpperInvariant(char[] buffer, int index, string value)
         {
             if (buffer == null || string.IsNullOrEmpty(value))
-                return Mathf.Clamp(index, 0, buffer != null ? buffer.Length : 0);
+                return math.clamp(index, 0, buffer != null ? buffer.Length : 0);
 
             if (index < 0)
                 index = 0;
 
-            int length = Mathf.Min(value.Length, buffer.Length - index);
+            int length = math.min(value.Length, buffer.Length - index);
+            for (int i = 0; i < length; i++)
+            {
+                buffer[index + i] = char.ToUpperInvariant(value[i]);
+            }
+
+            return index + length;
+        }
+
+        private static int AppendUpperInvariant(char[] buffer, int index, ReadOnlySpan<char> value)
+        {
+            if (buffer == null || value.IsEmpty)
+                return math.clamp(index, 0, buffer != null ? buffer.Length : 0);
+
+            if (index < 0)
+                index = 0;
+
+            int length = math.min(value.Length, buffer.Length - index);
             for (int i = 0; i < length; i++)
             {
                 buffer[index + i] = char.ToUpperInvariant(value[i]);

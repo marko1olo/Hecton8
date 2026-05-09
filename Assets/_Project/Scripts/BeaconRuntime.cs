@@ -1,5 +1,6 @@
 using Hecton.Localization;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -7,6 +8,10 @@ namespace Hecton8.Gameplay
 {
     public sealed class BeaconRuntime : MonoBehaviour, ITickable, IUpdatable
     {
+        private const float FlickerBase = 0.8f;
+        private const float FlickerAmplitude = 0.15f;
+        private const float FlickerCyclesPerSecond = 0.5570423f;
+
         private static Shader s_fallbackBeaconShader;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -30,7 +35,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _light = GetComponent<Light>();
+            TryGetComponent(out _light);
             if (_light != null)
                 _baseIntensity = _light.intensity <= 0f ? 1.6f : _light.intensity;
         }
@@ -59,7 +64,7 @@ namespace Hecton8.Gameplay
             _sourcePrefab = _isFallbackRuntime ? null : sourcePrefab;
             _flickerTime = 0f;
             if (_light == null)
-                _light = GetComponent<Light>();
+                TryGetComponent(out _light);
             if (_light != null)
             {
                 _light.color = color;
@@ -71,10 +76,15 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             if (_light == null)
+            {
+                UnregisterFromTickManager();
                 return;
+            }
 
-            _flickerTime += deltaTime;
-            _light.intensity = _baseIntensity * (0.8f + Mathf.Sin(_flickerTime * 3.5f) * 0.15f);
+            _flickerTime = math.frac(_flickerTime + (math.max(0f, deltaTime) * FlickerCyclesPerSecond));
+            float triangle = 1f - math.abs((_flickerTime * 2f) - 1f);
+            float signedTriangle = (triangle * 2f) - 1f;
+            _light.intensity = _baseIntensity * (FlickerBase + (signedTriangle * FlickerAmplitude));
         }
 
         private void OnDestroy()
@@ -98,11 +108,10 @@ namespace Hecton8.Gameplay
 
         private void RegisterToTickManager()
         {
-            if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredToTickManager || _light == null || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromTickManager()
@@ -126,7 +135,7 @@ namespace Hecton8.Gameplay
             if (shader == null)
                 return null;
 
-            // COLD ALLOC: Material[1] - per fallback beacon color instance with BeaconRuntime ownership - owner: BeaconRuntime
+            // COLD ALLOC: Material[1] — per fallback beacon color instance with BeaconRuntime ownership — owner: BeaconRuntime
             Material material = new Material(shader)
             {
                 name = "MAT_Runtime_BeaconFallback",
@@ -194,7 +203,7 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
-        private static readonly string[] _cachedUpperStrings = new string[16];
+        private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] — upper-case label cache slots — owner: BeaconRuntime
 
         /// <summary>
         /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.

@@ -23,6 +23,7 @@
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Physics;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -90,9 +91,11 @@ namespace Hecton8.Gameplay
         private bool _isRegisteredTick;
         private bool _isRegisteredSlowTick;
 
+        private const float MinPullDistanceSq = 0.01f;
+
         /// <summary>
         /// Pre-allocated buffer for OverlapSphereNonAlloc.
-        /// COLD ALLOC: Collider[32] — gravity trap detection buffer — owner: GravTrap
+        /// COLD ALLOC: Collider[maxTargets] — gravity trap detection buffer — owner: GravTrap
         /// </summary>
         private Collider[] _targetBuffer;
 
@@ -114,7 +117,7 @@ namespace Hecton8.Gameplay
         {
             _transform = transform;
 
-            // COLD ALLOC: Collider buffer for physics detection
+            // COLD ALLOC: Collider[maxTargets] — gravity trap detection buffer — owner: GravTrap
             _targetBuffer = new Collider[maxTargets];
 
             // Set default layer mask if not assigned
@@ -238,6 +241,7 @@ namespace Hecton8.Gameplay
         private void PullNearbyObjects()
         {
             Vector3 trapPos = _transform.position;
+            float dampenDistanceSq = dampenDistance * dampenDistance;
 
             // Use NonAlloc for zero GC
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
@@ -263,24 +267,22 @@ namespace Hecton8.Gameplay
                 // Skip kinematic or sleeping bodies
                 if (rb.isKinematic || rb.IsSleeping()) continue;
 
-                // Calculate direction and distance
+                // Calculate direction and squared distance
                 Vector3 targetPos = target.transform.position;
                 Vector3 direction = trapPos - targetPos;
-                float distance = direction.magnitude;
+                float distanceSq = direction.sqrMagnitude;
 
                 // Skip if too close (already at center)
-                if (distance < 0.1f) continue;
+                if (distanceSq < MinPullDistanceSq) continue;
 
-                direction.Normalize();
+                direction *= math.rsqrt(distanceSq);
 
                 // Calculate force with damping near center
                 float forceMagnitude = pullForce;
 
-                if (distance < dampenDistance)
+                if (distanceSq < dampenDistanceSq)
                 {
-                    // Dampen force to create orbit effect
-                    float dampenFactor = distance / dampenDistance;
-                    forceMagnitude *= dampenFactor * dampenFactor; // Quadratic falloff
+                    forceMagnitude *= distanceSq / math.max(MinPullDistanceSq, dampenDistanceSq);
                 }
 
                 // Apply force

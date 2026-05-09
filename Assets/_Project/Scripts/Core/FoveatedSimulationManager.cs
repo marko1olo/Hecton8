@@ -21,6 +21,7 @@ namespace Hecton8.Core
         bool TryResolveTick(IUpdatable item, float frameDeltaTime, out float effectiveDeltaTime);
         void NotifyTickCompleted(IUpdatable item);
         void ScheduleFrameJobs();
+        bool TryCompleteFrameJobs();
         void CompleteFrameJobs();
         void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount);
         void ResetRuntimeState();
@@ -56,6 +57,7 @@ namespace Hecton8.Core
     internal sealed class FoveatedSimulationManager : IFoveatedDispatcher, IOriginShiftListener
     {
         private const double SlowJobCompleteWarningMilliseconds = 100.0;
+        private const string SlowJobCompleteWarningMessage = "[SystemDispatcher] JobHandle.Complete slow in foveated simulation swap window.";
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ImportanceScoringJob : IJobParallelFor
@@ -193,6 +195,8 @@ namespace Hecton8.Core
         private readonly int[] _visualTargetIndices = new int[MaxTargets];
         // COLD ALLOC: IFoveatedSimulationTarget[512] — deferred raycast owners for same-frame dispatch — owner: FoveatedSimulationManager
         private readonly IFoveatedSimulationTarget[] _deferredRaycastOwners = new IFoveatedSimulationTarget[MaxDeferredRaycastCommands];
+        // COLD ALLOC: IFoveatedSimulationTarget[256] — pending deferred raycast owner refs immune to target index swap — owner: FoveatedSimulationManager
+        private readonly IFoveatedSimulationTarget[] _pendingDeferredRaycastOwners = new IFoveatedSimulationTarget[MaxDeferredRaycastCommands];
         private readonly int[] _deferredRaycastCommandIndices = new int[MaxDeferredRaycastCommands];
         private readonly RaycastCommand[] _deferredRaycastScratchCommands = new RaycastCommand[MaxDeferredRaycastCommandsPerTarget];
 
@@ -205,9 +209,8 @@ namespace Hecton8.Core
         private NativeArray<float3> _jobFromPositions;
         private NativeArray<float3> _jobToPositions;
         private NativeArray<float> _jobAlphas;
-        private NativeQueue<RaycastCommand> _pendingDeferredRaycastCommands;
-        private NativeQueue<int> _pendingDeferredRaycastOwnerIndices;
-        private NativeQueue<int> _pendingDeferredRaycastCommandIndices;
+        private NativeArray<RaycastCommand> _pendingDeferredRaycastCommands;
+        private NativeArray<int> _pendingDeferredRaycastCommandIndices;
         private NativeList<RaycastCommand> _deferredRaycastCommands;
         private NativeArray<RaycastHit> _deferredRaycastResults;
         private JobHandle _importanceHandle;
@@ -236,6 +239,8 @@ namespace Hecton8.Core
         private bool _voxelTeardownBackpressureActive;
         private int _voxelTeardownBackpressurePendingCount;
         private int _queuedDeferredRaycastCount;
+        private int _pendingDeferredRaycastHead;
+        private int _pendingDeferredRaycastTail;
         private int _lastDeferredRaycastScheduleFrame = -1;
 
         public void InitializeRuntime()
@@ -301,6 +306,8 @@ namespace Hecton8.Core
             if (removedIndex < 0 || removedIndex >= _targetCount)
                 return;
 
+            InvalidateDeferredRaycastOwner(target);
+
             int lastIndex = _targetCount - 1;
             if (removedIndex != lastIndex)
             {
@@ -331,10 +338,10 @@ namespace Hecton8.Core
 
         public void BeginDispatcherFrame(float frameDeltaTime)
         {
-            CompleteFrameJobsInternal(true);
+            TryCompleteFrameJobsInternal(true, forceComplete: false);
             EnsureNativeBuffersAllocated();
 
-            if (_deferredRaycastCommands.IsCreated)
+            if (!_deferredRaycastScheduled && _deferredRaycastCommands.IsCreated)
                 _deferredRaycastCommands.Clear();
 
             if (!TryResolveViewCamera(frameDeltaTime))
@@ -392,7 +399,7 @@ namespace Hecton8.Core
             Vector3 rawVelocity = Vector3.zero;
             if (TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime))
                 rawVelocity = SanitizeFiniteVector((currentPosition - previousPosition) * inverseDeltaTime);
-            float velocityBlend = 1.0f - math.exp(-ResolveVelocitySmoothingSharpness(_tickRates[index]) * deltaTime);
+            float velocityBlend = ApproximateOneMinusExpNeg(ResolveVelocitySmoothingSharpness(_tickRates[index]) * deltaTime);
             float3 smoothedVelocity = math.lerp(
                 new float3(_smoothedVelocities[index].x, _smoothedVelocities[index].y, _smoothedVelocities[index].z),
                 new float3(rawVelocity.x, rawVelocity.y, rawVelocity.z),
@@ -401,7 +408,6 @@ namespace Hecton8.Core
 
             if (_deferredRaycastCommands.IsCreated &&
                 _pendingDeferredRaycastCommands.IsCreated &&
-                _pendingDeferredRaycastOwnerIndices.IsCreated &&
                 _pendingDeferredRaycastCommandIndices.IsCreated &&
                 _queuedDeferredRaycastCount < MaxDeferredRaycastCommands &&
                 _importanceScores[index] >= MinimumDeferredRaycastImportanceScore)
@@ -412,10 +418,10 @@ namespace Hecton8.Core
                      commandIndex < safeCommandCount && _queuedDeferredRaycastCount < MaxDeferredRaycastCommands;
                      commandIndex++)
                 {
-                    _pendingDeferredRaycastCommands.Enqueue(_deferredRaycastScratchCommands[commandIndex]);
-                    _pendingDeferredRaycastOwnerIndices.Enqueue(index);
-                    _pendingDeferredRaycastCommandIndices.Enqueue(commandIndex);
-                    _queuedDeferredRaycastCount++;
+                    TryEnqueueDeferredRaycastCommand(
+                        target,
+                        _deferredRaycastScratchCommands[commandIndex],
+                        commandIndex);
                 }
             }
         }
@@ -439,35 +445,53 @@ namespace Hecton8.Core
                 : Vector3.zero;
         }
 
+        private static float ApproximateOneMinusExpNeg(float value)
+        {
+            float x = math.clamp(value, 0.0f, 3.0f);
+            float expApprox = math.rcp(1.0f + x + (0.5f * x * x));
+            return math.saturate(1.0f - expApprox);
+        }
+
         public void ScheduleFrameJobs()
         {
-            if (_visualTargetCacheDirty)
+            TryCompleteFrameJobsInternal(true, forceComplete: false);
+
+            if (_visualTargetCacheDirty && !_interpolationScheduled)
                 RebuildVisualTargetCache();
 
-            if (_visualTargetCount > 0)
+            if (_visualTargetCount > 0 && !_interpolationScheduled)
                 ScheduleInterpolationJob();
 
-            DrainDeferredRaycastQueues();
-            int currentFrame = Time.frameCount;
-            if (_deferredRaycastCommands.IsCreated &&
-                _deferredRaycastCommands.Length > 0 &&
-                _lastDeferredRaycastScheduleFrame != currentFrame)
+            if (!_deferredRaycastScheduled)
             {
-                _deferredRaycastHandle = RaycastCommand.ScheduleBatch(
-                    _deferredRaycastCommands.AsDeferredJobArray(),
-                    _deferredRaycastResults,
-                    MinimumCommandsPerJob,
-                    default);
-                _deferredRaycastScheduled = true;
-                _lastDeferredRaycastScheduleFrame = currentFrame;
+                DrainDeferredRaycastQueues();
+                int currentFrame = Time.frameCount;
+                if (_deferredRaycastCommands.IsCreated &&
+                    _deferredRaycastCommands.Length > 0 &&
+                    _lastDeferredRaycastScheduleFrame != currentFrame)
+                {
+                    _deferredRaycastHandle = RaycastCommand.ScheduleBatch(
+                        _deferredRaycastCommands.AsDeferredJobArray(),
+                        _deferredRaycastResults,
+                        MinimumCommandsPerJob,
+                        default);
+                    _deferredRaycastScheduled = true;
+                    _lastDeferredRaycastScheduleFrame = currentFrame;
+                }
             }
 
-            ScheduleImportanceScoringJob();
+            if (!_importanceScheduled)
+                ScheduleImportanceScoringJob();
+        }
+
+        public bool TryCompleteFrameJobs()
+        {
+            return TryCompleteFrameJobsInternal(true, forceComplete: false);
         }
 
         public void CompleteFrameJobs()
         {
-            CompleteFrameJobsInternal(true);
+            TryCompleteFrameJobsInternal(true, forceComplete: true);
         }
 
         public void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount)
@@ -489,37 +513,58 @@ namespace Hecton8.Core
             movement.SetRuntimeVoxelBackpressureSwimSpeedMultiplier(active ? VoxelTeardownBackpressureSwimSpeedMultiplier : 1f);
         }
 
-        private void CompleteFrameJobsInternal(bool includeDeferredRaycasts)
+        private bool TryCompleteFrameJobsInternal(bool includeDeferredRaycasts, bool forceComplete)
         {
+            bool completedAll = true;
             if (_interpolationScheduled)
             {
-                CompleteJobWithWarning(ref _interpolationHandle, "FoveatedSimulationManager.Interpolation");
-                _interpolationScheduled = false;
+                if (!TryCompleteJob(ref _interpolationHandle, "FoveatedSimulationManager.Interpolation", forceComplete))
+                {
+                    completedAll = false;
+                }
+                else
+                {
+                    _interpolationScheduled = false;
+                }
             }
 
             if (includeDeferredRaycasts && _deferredRaycastScheduled)
             {
-                CompleteJobWithWarning(ref _deferredRaycastHandle, "FoveatedSimulationManager.DeferredRaycasts");
-                int raycastCount = _deferredRaycastCommands.Length;
-                for (int i = 0; i < raycastCount; i++)
+                if (!TryCompleteJob(ref _deferredRaycastHandle, "FoveatedSimulationManager.DeferredRaycasts", forceComplete))
                 {
-                    IFoveatedSimulationTarget owner = _deferredRaycastOwners[i];
-                    if (owner != null)
-                        owner.ConsumeDeferredRaycastHit(_deferredRaycastCommandIndices[i], _deferredRaycastResults[i]);
-
-                    _deferredRaycastOwners[i] = null;
-                    _deferredRaycastCommandIndices[i] = 0;
+                    completedAll = false;
                 }
+                else
+                {
+                    int raycastCount = _deferredRaycastCommands.Length;
+                    for (int i = 0; i < raycastCount; i++)
+                    {
+                        IFoveatedSimulationTarget owner = _deferredRaycastOwners[i];
+                        if (IsActiveFoveatedTarget(owner))
+                            owner.ConsumeDeferredRaycastHit(_deferredRaycastCommandIndices[i], _deferredRaycastResults[i]);
 
-                _deferredRaycastScheduled = false;
+                        _deferredRaycastOwners[i] = null;
+                        _deferredRaycastCommandIndices[i] = 0;
+                    }
+
+                    _deferredRaycastScheduled = false;
+                }
             }
 
             if (_importanceScheduled)
             {
-                CompleteJobWithWarning(ref _importanceHandle, "FoveatedSimulationManager.ImportanceScoring");
-                ApplyImportanceResults();
-                _importanceScheduled = false;
+                if (!TryCompleteJob(ref _importanceHandle, "FoveatedSimulationManager.ImportanceScoring", forceComplete))
+                {
+                    completedAll = false;
+                }
+                else
+                {
+                    ApplyImportanceResults();
+                    _importanceScheduled = false;
+                }
             }
+
+            return completedAll;
         }
 
         public void ResetRuntimeState()
@@ -527,7 +572,7 @@ namespace Hecton8.Core
             if (_voxelTeardownBackpressureActive)
                 SetVoxelTeardownBackpressure(false, 0);
 
-            CompleteFrameJobsInternal(true);
+            TryCompleteFrameJobsInternal(true, forceComplete: true);
             DisposeVisualTransformAccessArray();
             DisposeNativeBuffers(JobHandle.CombineDependencies(_importanceHandle, JobHandle.CombineDependencies(_interpolationHandle, _deferredRaycastHandle)));
             _importanceHandle = default;
@@ -550,6 +595,7 @@ namespace Hecton8.Core
             Array.Clear(_visualTargetIndices, 0, _visualTargetIndices.Length);
             Array.Clear(_deferredRaycastOwners, 0, _deferredRaycastOwners.Length);
             Array.Clear(_deferredRaycastCommandIndices, 0, _deferredRaycastCommandIndices.Length);
+            DrainDeferredRaycastQueueResidue();
 
             _viewCamera = null;
             _cameraTransform = null;
@@ -566,7 +612,6 @@ namespace Hecton8.Core
             _listenerStateInitialized = false;
             _interpolationScheduled = false;
             _deferredRaycastScheduled = false;
-            _queuedDeferredRaycastCount = 0;
             _lastDeferredRaycastScheduleFrame = -1;
             _voxelTeardownBackpressureActive = false;
             _voxelTeardownBackpressurePendingCount = 0;
@@ -579,7 +624,7 @@ namespace Hecton8.Core
             if (shiftOffset.sqrMagnitude <= MinimumVelocityDelta)
                 return;
 
-            CompleteFrameJobsInternal(true);
+            TryCompleteFrameJobsInternal(true, forceComplete: true);
             for (int i = 0; i < _targetCount; i++)
             {
                 _visualFromPositions[i] -= shiftOffset;
@@ -603,8 +648,11 @@ namespace Hecton8.Core
             ResetRuntimeState();
         }
 
-        private static void CompleteJobWithWarning(ref JobHandle handle, string systemName)
+        private static bool TryCompleteJob(ref JobHandle handle, string systemName, bool forceComplete)
         {
+            if (!forceComplete)
+                return DispatcherJobSwap.TryFinalizeCompleted(ref handle);
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
@@ -612,12 +660,12 @@ namespace Hecton8.Core
             double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
             {
-                Debug.LogWarning(
-                    $"[SystemDispatcher] JobHandle.Complete slow: {systemName} took {elapsedMilliseconds:F2}ms.");
+                Debug.LogWarning(SlowJobCompleteWarningMessage);
             }
 #else
             DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 #endif
+            return true;
         }
 
         private void ScheduleImportanceScoringJob()
@@ -833,17 +881,12 @@ namespace Hecton8.Core
 
             if (!_pendingDeferredRaycastCommands.IsCreated)
             {
-                _pendingDeferredRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[256] - next-frame deferred fauna sight-line requests - owner: FoveatedSimulationManager
-            }
-
-            if (!_pendingDeferredRaycastOwnerIndices.IsCreated)
-            {
-                _pendingDeferredRaycastOwnerIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[256] - deferred fauna sight-line owner indices aligned to queued commands - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastCommands = new NativeArray<RaycastCommand>(MaxDeferredRaycastCommands, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RaycastCommand>[256] — fixed ring buffer for next-frame deferred fauna sight-line requests — owner: FoveatedSimulationManager
             }
 
             if (!_pendingDeferredRaycastCommandIndices.IsCreated)
             {
-                _pendingDeferredRaycastCommandIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[256] - deferred fauna sight-line command slot indices aligned to queued commands - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastCommandIndices = new NativeArray<int>(MaxDeferredRaycastCommands, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[256] — fixed ring buffer for deferred fauna sight-line command slot indices — owner: FoveatedSimulationManager
             }
 
             if (!_deferredRaycastCommands.IsCreated)
@@ -872,9 +915,8 @@ namespace Hecton8.Core
             NativeMemorySentinel.RegisterNativeArray(_jobFromPositions, nameof(FoveatedSimulationManager), nameof(_jobFromPositions), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_jobToPositions, nameof(FoveatedSimulationManager), nameof(_jobToPositions), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_jobAlphas, nameof(FoveatedSimulationManager), nameof(_jobAlphas), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeQueue(_pendingDeferredRaycastCommands, MaxDeferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommands), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeQueue(_pendingDeferredRaycastOwnerIndices, MaxDeferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastOwnerIndices), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeQueue(_pendingDeferredRaycastCommandIndices, MaxDeferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommandIndices), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_pendingDeferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommands), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_pendingDeferredRaycastCommandIndices, nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommandIndices), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeList(_deferredRaycastCommands, nameof(FoveatedSimulationManager), nameof(_deferredRaycastCommands), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_deferredRaycastResults, nameof(FoveatedSimulationManager), nameof(_deferredRaycastResults), NativeAllocationLifetime.Session);
             _nativeMemorySentinelRegistered = true;
@@ -891,13 +933,9 @@ namespace Hecton8.Core
             DisposeNativeArray(ref _jobFromPositions, ref disposeHandle);
             DisposeNativeArray(ref _jobToPositions, ref disposeHandle);
             DisposeNativeArray(ref _jobAlphas, ref disposeHandle);
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommands));
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastOwnerIndices));
-            NativeMemorySentinel.UnregisterNativeQueue(nameof(FoveatedSimulationManager), nameof(_pendingDeferredRaycastCommandIndices));
             NativeMemorySentinel.UnregisterNativeList(nameof(FoveatedSimulationManager), nameof(_deferredRaycastCommands));
-            DisposeNativeQueue(ref _pendingDeferredRaycastCommands);
-            DisposeNativeQueue(ref _pendingDeferredRaycastOwnerIndices);
-            DisposeNativeQueue(ref _pendingDeferredRaycastCommandIndices);
+            DisposeNativeArray(ref _pendingDeferredRaycastCommands, ref disposeHandle);
+            DisposeNativeArray(ref _pendingDeferredRaycastCommandIndices, ref disposeHandle);
             DisposeNativeList(ref _deferredRaycastCommands, ref disposeHandle);
             DisposeNativeArray(ref _deferredRaycastResults, ref disposeHandle);
             DispatcherJobSwap.TryComplete(ref disposeHandle, forceComplete: true);
@@ -910,10 +948,10 @@ namespace Hecton8.Core
             _jobToPositions = default;
             _jobAlphas = default;
             _pendingDeferredRaycastCommands = default;
-            _pendingDeferredRaycastOwnerIndices = default;
             _pendingDeferredRaycastCommandIndices = default;
             _deferredRaycastCommands = default;
             _deferredRaycastResults = default;
+            DrainDeferredRaycastQueueResidue();
             _nativeMemorySentinelRegistered = false;
             _nativeMemoryBudgetRegistered = false;
         }
@@ -937,15 +975,6 @@ namespace Hecton8.Core
             list = default;
         }
 
-        private static void DisposeNativeQueue<T>(ref NativeQueue<T> queue) where T : unmanaged
-        {
-            if (!queue.IsCreated)
-                return;
-
-            queue.Dispose();
-            queue = default;
-        }
-
         private void DrainDeferredRaycastQueues()
         {
             if (!_deferredRaycastCommands.IsCreated)
@@ -957,73 +986,100 @@ namespace Hecton8.Core
             while (commandIndex < MaxDeferredRaycastCommandsPerFrame &&
                    TryDequeueDeferredRaycastCommand(
                        out RaycastCommand command,
-                       out int ownerIndex,
+                       out IFoveatedSimulationTarget owner,
                        out int ownerCommandIndex))
             {
+                if (!IsActiveFoveatedTarget(owner))
+                    continue;
+
                 _deferredRaycastCommands.AddNoResize(command);
-                _deferredRaycastOwners[commandIndex] = ownerIndex >= 0 && ownerIndex < _targetCount ? _targets[ownerIndex] : null;
+                _deferredRaycastOwners[commandIndex] = owner;
                 _deferredRaycastCommandIndices[commandIndex] = ownerCommandIndex;
                 commandIndex++;
             }
-
-            if (commandIndex > 0)
-                _queuedDeferredRaycastCount = math.max(0, _queuedDeferredRaycastCount - commandIndex);
         }
 
         private bool TryDequeueDeferredRaycastCommand(
             out RaycastCommand command,
-            out int ownerIndex,
+            out IFoveatedSimulationTarget owner,
             out int ownerCommandIndex)
         {
             command = default;
-            ownerIndex = 0;
+            owner = null;
             ownerCommandIndex = 0;
 
             if (!_pendingDeferredRaycastCommands.IsCreated ||
-                !_pendingDeferredRaycastOwnerIndices.IsCreated ||
-                !_pendingDeferredRaycastCommandIndices.IsCreated)
+                !_pendingDeferredRaycastCommandIndices.IsCreated ||
+                _queuedDeferredRaycastCount <= 0)
             {
                 return false;
             }
 
-            if (!_pendingDeferredRaycastCommands.TryDequeue(out command))
+            int head = _pendingDeferredRaycastHead;
+            command = _pendingDeferredRaycastCommands[head];
+            owner = _pendingDeferredRaycastOwners[head];
+            ownerCommandIndex = _pendingDeferredRaycastCommandIndices[head];
+            _pendingDeferredRaycastOwners[head] = null;
+            _pendingDeferredRaycastCommandIndices[head] = 0;
+            _pendingDeferredRaycastHead = IncrementDeferredRaycastRingIndex(head);
+            _queuedDeferredRaycastCount--;
+            return true;
+        }
+
+        private bool TryEnqueueDeferredRaycastCommand(
+            IFoveatedSimulationTarget owner,
+            in RaycastCommand command,
+            int ownerCommandIndex)
+        {
+            if (!_pendingDeferredRaycastCommands.IsCreated ||
+                !_pendingDeferredRaycastCommandIndices.IsCreated ||
+                _queuedDeferredRaycastCount >= MaxDeferredRaycastCommands)
                 return false;
 
-            if (_pendingDeferredRaycastOwnerIndices.TryDequeue(out ownerIndex) &&
-                _pendingDeferredRaycastCommandIndices.TryDequeue(out ownerCommandIndex))
-            {
-                return true;
-            }
-
-            DrainDeferredRaycastQueueResidue();
-            _queuedDeferredRaycastCount = 0;
-            command = default;
-            ownerIndex = 0;
-            ownerCommandIndex = 0;
-            return false;
+            int tail = _pendingDeferredRaycastTail;
+            _pendingDeferredRaycastCommands[tail] = command;
+            _pendingDeferredRaycastOwners[tail] = owner;
+            _pendingDeferredRaycastCommandIndices[tail] = ownerCommandIndex;
+            _pendingDeferredRaycastTail = IncrementDeferredRaycastRingIndex(tail);
+            _queuedDeferredRaycastCount++;
+            return true;
         }
 
         private void DrainDeferredRaycastQueueResidue()
         {
-            if (_pendingDeferredRaycastCommands.IsCreated)
+            Array.Clear(_pendingDeferredRaycastOwners, 0, _pendingDeferredRaycastOwners.Length);
+            _pendingDeferredRaycastHead = 0;
+            _pendingDeferredRaycastTail = 0;
+            _queuedDeferredRaycastCount = 0;
+        }
+
+        private static int IncrementDeferredRaycastRingIndex(int index)
+        {
+            index++;
+            return index >= MaxDeferredRaycastCommands ? 0 : index;
+        }
+
+        private bool IsActiveFoveatedTarget(IFoveatedSimulationTarget target)
+        {
+            if (target == null)
+                return false;
+
+            int index = target.FoveatedTargetIndex;
+            return index >= 0 && index < _targetCount && ReferenceEquals(_targets[index], target);
+        }
+
+        private void InvalidateDeferredRaycastOwner(IFoveatedSimulationTarget target)
+        {
+            for (int i = 0; i < _pendingDeferredRaycastOwners.Length; i++)
             {
-                while (_pendingDeferredRaycastCommands.TryDequeue(out _))
-                {
-                }
+                if (ReferenceEquals(_pendingDeferredRaycastOwners[i], target))
+                    _pendingDeferredRaycastOwners[i] = null;
             }
 
-            if (_pendingDeferredRaycastOwnerIndices.IsCreated)
+            for (int i = 0; i < _deferredRaycastOwners.Length; i++)
             {
-                while (_pendingDeferredRaycastOwnerIndices.TryDequeue(out _))
-                {
-                }
-            }
-
-            if (_pendingDeferredRaycastCommandIndices.IsCreated)
-            {
-                while (_pendingDeferredRaycastCommandIndices.TryDequeue(out _))
-                {
-                }
+                if (ReferenceEquals(_deferredRaycastOwners[i], target))
+                    _deferredRaycastOwners[i] = null;
             }
         }
 
@@ -1036,6 +1092,8 @@ namespace Hecton8.Core
                               GetNativeArrayBytes(_jobFromPositions) +
                               GetNativeArrayBytes(_jobToPositions) +
                               GetNativeArrayBytes(_jobAlphas) +
+                              GetNativeArrayBytes(_pendingDeferredRaycastCommands) +
+                              GetNativeArrayBytes(_pendingDeferredRaycastCommandIndices) +
                               GetNativeArrayBytes(_deferredRaycastResults) +
                               GetNativeListBytes(_deferredRaycastCommands);
             MemoryBudgetTracker.Register(MemoryBudgetOwnerName, totalBytes, PersistentNativeBudgetBytes);
@@ -1075,7 +1133,10 @@ namespace Hecton8.Core
                 playerTransform != null)
             {
                 if (!playerTransform.TryGetComponent(out _viewCamera))
-                    _viewCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+                {
+                    IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                    _viewCamera = playerContext != null ? playerContext.PlayerCamera : null;
+                }
             }
 
             if (_viewCamera == null)

@@ -31,7 +31,8 @@ Shader "Hecton8/Visor/HolographicEdge"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma multi_compile_instancing
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -50,7 +51,6 @@ Shader "Hecton8/Visor/HolographicEdge"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
-                HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -58,15 +58,12 @@ Shader "Hecton8/Visor/HolographicEdge"
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
-                HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
                 HECTON_CORE_LIT_DECLARE_VERTEX_OUTPUT_STEREO
             };
 
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
-                HECTON_CORE_LIT_TRANSFER_INSTANCE_ID(input, output);
                 HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 float3 normalOS = HectonCoreLitSafeNormalize(input.normalOS);
@@ -79,7 +76,6 @@ Shader "Hecton8/Visor/HolographicEdge"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
                 HECTON_CORE_LIT_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float3 absolutePosition = input.positionWS + _TotalUniverseOffset.xyz;
@@ -98,7 +94,7 @@ Shader "Hecton8/Visor/HolographicEdge"
                 float edge = lerp(edgeSq, edgeSq * edgeBase, saturate((_EdgePower - 2.0) * 0.5));
                 float row = floor(input.positionCS.y * 0.5);
                 float scanline = lerp(1.0, 0.45 + 0.55 * step(0.48, frac(row + _Time.y * 18.0)), saturate(_ScanlineStrength));
-                float crawl = frac(sin(_Time.y * _FlickerSpeed) * 43758.5453123);
+                float crawl = HectonCoreLitTrianglePulse01(_Time.y * _FlickerSpeed + row * 0.071);
                 half alpha = (half)saturate(_BaseColor.a * (0.18 + edge * 1.4) * scanline * lerp(0.62, 1.18, crawl));
                 half3 color = _BaseColor.rgb * (half)(1.2 + edge * 2.8);
                 return half4(color, alpha);
@@ -106,4 +102,6 @@ Shader "Hecton8/Visor/HolographicEdge"
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

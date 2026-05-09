@@ -10,7 +10,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9926)]
-    public sealed class OceanKinematicsRuntimeService : MonoBehaviour, IHectonOceanKinematicsService, IUpdatable, IServiceHeartbeat
+    public sealed class OceanKinematicsRuntimeService : MonoBehaviour, IHectonOceanKinematicsService, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         // COLD ALLOC: List<IHectonOceanKinematics>[4] - registered ocean-kinematics providers ordered by runtime priority - owner: OceanKinematicsRuntimeService
         private readonly List<IHectonOceanKinematics> _providers = new List<IHectonOceanKinematics>(4);
@@ -131,8 +131,19 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             TryUnregisterUpdatable();
             TryUnregisterService();
+            _isInitialized = false;
             _providers.Clear();
             _activeProvider = null;
 

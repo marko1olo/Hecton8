@@ -162,10 +162,13 @@ namespace Hecton8.Biolum
             _debugPointCount = pointCount;
 
             float worldTexelSize = volumeWorldSize / math.max(1, volumeResolution);
-            float centerDelta = _hasLastVolumeCenter ? Vector3.Distance(_lastVolumeCenter, volumeCenter) : 0f;
-            if (_hasLastVolumeCenter && centerDelta >= volumeWorldSize * 0.5f)
+            Vector3 centerOffset = _hasLastVolumeCenter ? volumeCenter - _lastVolumeCenter : Vector3.zero;
+            float centerDeltaSq = _hasLastVolumeCenter ? centerOffset.sqrMagnitude : 0f;
+            float clearDistance = volumeWorldSize * 0.5f;
+            if (_hasLastVolumeCenter && centerDeltaSq >= clearDistance * clearDistance)
                 _needsClear = true;
 
+            float centerDelta = centerDeltaSq > 0.000001f ? EstimateLength3D(centerOffset) : 0f;
             float motionDecayBoost = math.saturate(centerDelta / math.max(worldTexelSize * 4f, 0.001f));
             float resolvedDecayRate = math.saturate(decayRate + motionDecayBoost * 0.45f);
 
@@ -332,8 +335,19 @@ namespace Hecton8.Biolum
 
         private void DispatchVolumeKernel(int kernelIndex)
         {
-            int dispatchCount = Mathf.CeilToInt(volumeResolution / (float)ThreadGroupSize);
+            int dispatchCount = math.max(1, (volumeResolution + ThreadGroupSize - 1) / ThreadGroupSize);
             biolumDiffusionCompute.Dispatch(kernelIndex, dispatchCount, dispatchCount, dispatchCount);
+        }
+
+        private static float EstimateLength3D(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.25f);
         }
 
         private void PublishGlobals()

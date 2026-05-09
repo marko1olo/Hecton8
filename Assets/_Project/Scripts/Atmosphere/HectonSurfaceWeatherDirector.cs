@@ -26,6 +26,7 @@ namespace Hecton8.Atmosphere
     public sealed class HectonSurfaceWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
     {
         private const float ExponentialBlendCompletion = 0.99f;
+        private const float ExponentialBlendRateScale = 4.6051702f;
         private const float ResolveRetryInterval = 2f;
         private const float LightningFlashSeconds = 0.1f;
         private const float SpeedOfSoundMetersPerSecond = 343f;
@@ -1187,7 +1188,7 @@ namespace Hecton8.Atmosphere
             if (preferredDirection.sqrMagnitude < 0.0001f)
                 preferredDirection = Vector2.right;
             else
-                preferredDirection.Normalize();
+                preferredDirection *= math.rsqrt(preferredDirection.sqrMagnitude);
 
             float randomAngle = randomA * math.PI * 2f;
             Vector2 randomDirection = new Vector2(math.cos(randomAngle), math.sin(randomAngle));
@@ -1198,7 +1199,7 @@ namespace Hecton8.Atmosphere
             if (resolvedDirection.sqrMagnitude < 0.0001f)
                 resolvedDirection = randomDirection;
 
-            resolvedDirection.Normalize();
+            resolvedDirection *= math.rsqrt(resolvedDirection.sqrMagnitude);
 
             float minDistance = math.max(10f, _currentState.lightningStrikeDistanceMin);
             float maxDistance = math.max(minDistance, _currentState.lightningStrikeDistanceMax);
@@ -1268,8 +1269,22 @@ namespace Hecton8.Atmosphere
         {
             float clampedDeltaTime = math.max(0f, deltaTime);
             float duration = math.max(0.0001f, durationSeconds);
-            float blendRate = -math.log(1f - ExponentialBlendCompletion) / duration;
-            return 1f - math.exp(-blendRate * clampedDeltaTime);
+            return ApproximateOneMinusExpNegPositive((ExponentialBlendRateScale / duration) * clampedDeltaTime);
+        }
+
+        private static float ApproximateOneMinusExpNegPositive(float x)
+        {
+            return math.saturate(1f - ApproximateExpNegPositive(x));
+        }
+
+        private static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(x, 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
         }
 
         private void UpdateDiagnostics()

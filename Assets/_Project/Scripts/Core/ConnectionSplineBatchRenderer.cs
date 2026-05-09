@@ -14,7 +14,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("")]
-    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener
+    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, IConnectionSplineBatchRendererService, IServiceHeartbeat, IServiceShutdown, ILateFrameTickable, IOriginShiftListener
     {
         private const int DefaultBatchCapacity = 100;
         private const int MaxRenderedLinksPerBatch = 64;
@@ -62,24 +62,31 @@ namespace Hecton8.Core
             public GraphicsBuffer InstanceBuffer;
             public Bounds WorldBounds;
             public bool Dirty;
+            public bool MaterialColorDirty;
             public int InstanceCount;
             public Color Color;
+            public Color AppliedColor;
             public float Radius;
             public BatchKind Kind;
         }
 
-        private static ConnectionSplineBatchRenderer _instance;
         private bool _registeredLateFrameTick;
         private bool _registeredOriginShiftListener;
+        private bool _serviceRegistered;
+        private bool _shutdownComplete;
 
         // COLD ALLOC: BatchState[5] - persistent shared shader-bent pipe render batches - owner: ConnectionSplineBatchRenderer
         private readonly BatchState[] _batches = new BatchState[5];
         // COLD ALLOC: Dictionary<long,SplineDescriptor>[100] - master logistics-pipe registry for distance-based batch reassignment - owner: ConnectionSplineBatchRenderer
         private readonly Dictionary<long, SplineDescriptor> _pipeRegistrations = new Dictionary<long, SplineDescriptor>(DefaultBatchCapacity);
         // COLD ALLOC: HashSet<uint>[100] - ruptured logistics-pipe endpoint flags - owner: ConnectionSplineBatchRenderer
-        private readonly HashSet<uint> _rupturedPipeNodes = new HashSet<uint>();
+        private readonly HashSet<uint> _rupturedPipeNodes = new HashSet<uint>(DefaultBatchCapacity);
         // COLD ALLOC: List<long>[100] - shared dictionary-key scratch for rupture and origin-shift rebases - owner: ConnectionSplineBatchRenderer
         private readonly List<long> _pipeRuptureUpdateScratch = new List<long>(DefaultBatchCapacity);
+
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        public bool IsServiceReady => _serviceRegistered;
 
         /// <summary>Compatibility overload for existing point-to-point logistics pipes.</summary>
         public static void SubmitPipeLink(long linkId, Vector3 start, Vector3 end, Color color)
@@ -94,28 +101,23 @@ namespace Hecton8.Core
 
         internal static void SubmitPipeLink(long linkId, SplineDescriptor descriptor, Color color)
         {
-            ConnectionSplineBatchRenderer instance = ResolveInstance();
-            instance.EnsureRuntimeRegistrations();
-            instance.UpsertPipeLink(linkId, descriptor, color);
+            IConnectionSplineBatchRendererService renderer = ResolveService();
+            if (renderer != null)
+                renderer.SubmitPipeLink(linkId, descriptor, color);
         }
 
         public static void RemovePipeLink(long linkId)
         {
-            if (_instance == null)
-                return;
-
-            _instance._pipeRegistrations.Remove(linkId);
-            _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesNear], linkId);
-            _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesFar], linkId);
-            _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesLine], linkId);
+            IConnectionSplineBatchRendererService renderer = ResolveService();
+            if (renderer != null)
+                renderer.RemovePipeLink(linkId);
         }
 
         internal static void SetPipeNodeRuptured(uint nodeId, bool ruptured)
         {
-            if (_instance == null)
-                return;
-
-            _instance.SetPipeNodeRupturedInternal(nodeId, ruptured);
+            IConnectionSplineBatchRendererService renderer = ResolveService();
+            if (renderer != null)
+                renderer.SetPipeNodeRuptured(nodeId, ruptured);
         }
 
         public static void SetLogisticsPathHighlightActive(bool active)
@@ -125,11 +127,6 @@ namespace Hecton8.Core
 
         public static void SubmitRelayLink(long linkId, Vector3 start, Vector3 end, bool hasPower, Color poweredColor, Color unpoweredColor)
         {
-            ConnectionSplineBatchRenderer instance = ResolveInstance();
-            instance.EnsureRuntimeRegistrations();
-            instance._batches[(int)BatchKind.RelayPowered].Color = poweredColor;
-            instance._batches[(int)BatchKind.RelayUnpowered].Color = unpoweredColor;
-
             float3 chordDirection = LogisticsPipeBuilder.SafeNormalize((float3)end - (float3)start, new float3(0f, 0f, 1f));
             SplineDescriptor descriptor = LogisticsPipeBuilder.CreateSocketDescriptor(
                 start,
@@ -139,63 +136,60 @@ namespace Hecton8.Core
                 RelayRadiusMeters,
                 PipeRenderFlags.None);
 
-            BatchState activeBatch = instance._batches[hasPower ? (int)BatchKind.RelayPowered : (int)BatchKind.RelayUnpowered];
-            BatchState inactiveBatch = instance._batches[hasPower ? (int)BatchKind.RelayUnpowered : (int)BatchKind.RelayPowered];
-            instance.RemoveLink(inactiveBatch, linkId);
-            instance.UpsertLink(activeBatch, linkId, descriptor);
+            IConnectionSplineBatchRendererService renderer = ResolveService();
+            if (renderer != null)
+                renderer.SubmitRelaySpline(linkId, descriptor, hasPower, poweredColor, unpoweredColor);
         }
 
         internal static void SubmitRelaySpline(long linkId, SplineDescriptor descriptor, bool hasPower, Color poweredColor, Color unpoweredColor)
         {
-            ConnectionSplineBatchRenderer instance = ResolveInstance();
-            instance.EnsureRuntimeRegistrations();
-            instance._batches[(int)BatchKind.RelayPowered].Color = poweredColor;
-            instance._batches[(int)BatchKind.RelayUnpowered].Color = unpoweredColor;
-
-            BatchState activeBatch = instance._batches[hasPower ? (int)BatchKind.RelayPowered : (int)BatchKind.RelayUnpowered];
-            BatchState inactiveBatch = instance._batches[hasPower ? (int)BatchKind.RelayUnpowered : (int)BatchKind.RelayPowered];
-            instance.RemoveLink(inactiveBatch, linkId);
-            instance.UpsertLink(activeBatch, linkId, descriptor);
+            IConnectionSplineBatchRendererService renderer = ResolveService();
+            if (renderer != null)
+                renderer.SubmitRelaySpline(linkId, descriptor, hasPower, poweredColor, unpoweredColor);
         }
 
         public static void RemoveRelayLink(long linkId)
         {
-            if (_instance == null)
-                return;
-
-            _instance.RemoveLink(_instance._batches[(int)BatchKind.RelayPowered], linkId);
-            _instance.RemoveLink(_instance._batches[(int)BatchKind.RelayUnpowered], linkId);
+            IConnectionSplineBatchRendererService renderer = ResolveService();
+            if (renderer != null)
+                renderer.RemoveRelayLink(linkId);
         }
 
-        private static ConnectionSplineBatchRenderer ResolveInstance()
+        private static IConnectionSplineBatchRendererService ResolveService()
         {
-            if (_instance != null)
-                return _instance;
-
-            GameObject root = new GameObject("ConnectionSplineBatchRenderer")
-            {
-                hideFlags = HideFlags.DontSave
-            };
-
-            _instance = root.AddComponent<ConnectionSplineBatchRenderer>();
-            return _instance;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return GlobalRegistry.Get<IConnectionSplineBatchRendererService>();
+#else
+            return GlobalRegistry.TryGet(out IConnectionSplineBatchRendererService renderer) ? renderer : null;
+#endif
         }
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            ConnectionSplineBatchRenderer activeRuntime = GlobalRegistry.ConnectionSplineBatchRenderer;
+            if (activeRuntime != null && activeRuntime != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
             Color pipeColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
             InitializeBatch((int)BatchKind.PipesNear, BatchKind.PipesNear, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters);
             InitializeBatch((int)BatchKind.PipesFar, BatchKind.PipesFar, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters);
             InitializeBatch((int)BatchKind.PipesLine, BatchKind.PipesLine, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters);
             InitializeBatch((int)BatchKind.RelayPowered, BatchKind.RelayPowered, new Color(0.25f, 0.95f, 1f, 0.95f), RelayRadiusMeters);
             InitializeBatch((int)BatchKind.RelayUnpowered, BatchKind.RelayUnpowered, new Color(0.35f, 0.42f, 0.48f, 0.55f), RelayRadiusMeters);
+        }
+
+        public void InitializeService()
+        {
+            if (_serviceRegistered)
+                return;
+
+            _shutdownComplete = false;
+            GlobalRegistry.RegisterConnectionSplineBatchRendererRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ConnectionSplineBatchRenderer, this);
+            EnsureRuntimeRegistrations();
         }
 
         private void OnEnable()
@@ -219,6 +213,8 @@ namespace Hecton8.Core
             RebaseRegistrationDictionary(_pipeRegistrations, shiftOffset3);
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 RebaseBatchForOriginShift(_batches[batchIndex], shiftOffset3);
+
+            RefreshLateFrameTickRegistration();
         }
 
         private void EnsureRuntimeRegistrations()
@@ -226,8 +222,8 @@ namespace Hecton8.Core
             if (!Application.isPlaying)
                 return;
 
-            TryRegisterLateFrameTickable();
             TryRegisterOriginShiftListener();
+            RefreshLateFrameTickRegistration();
         }
 
         private void TryRegisterLateFrameTickable()
@@ -266,21 +262,85 @@ namespace Hecton8.Core
             _registeredOriginShiftListener = false;
         }
 
+        void IConnectionSplineBatchRendererService.SubmitPipeLink(long linkId, SplineDescriptor descriptor, Color color)
+        {
+            EnsureRuntimeRegistrations();
+            UpsertPipeLink(linkId, descriptor, color);
+        }
+
+        void IConnectionSplineBatchRendererService.RemovePipeLink(long linkId)
+        {
+            _pipeRegistrations.Remove(linkId);
+            RemoveLink(_batches[(int)BatchKind.PipesNear], linkId);
+            RemoveLink(_batches[(int)BatchKind.PipesFar], linkId);
+            RemoveLink(_batches[(int)BatchKind.PipesLine], linkId);
+        }
+
+        void IConnectionSplineBatchRendererService.SetPipeNodeRuptured(uint nodeId, bool ruptured)
+        {
+            SetPipeNodeRupturedInternal(nodeId, ruptured);
+        }
+
+        void IConnectionSplineBatchRendererService.SubmitRelaySpline(
+            long linkId,
+            SplineDescriptor descriptor,
+            bool hasPower,
+            Color poweredColor,
+            Color unpoweredColor)
+        {
+            EnsureRuntimeRegistrations();
+            SetBatchColor(_batches[(int)BatchKind.RelayPowered], poweredColor);
+            SetBatchColor(_batches[(int)BatchKind.RelayUnpowered], unpoweredColor);
+            BatchState activeBatch = _batches[hasPower ? (int)BatchKind.RelayPowered : (int)BatchKind.RelayUnpowered];
+            BatchState inactiveBatch = _batches[hasPower ? (int)BatchKind.RelayUnpowered : (int)BatchKind.RelayPowered];
+            RemoveLink(inactiveBatch, linkId);
+            UpsertLink(activeBatch, linkId, descriptor);
+        }
+
+        void IConnectionSplineBatchRendererService.RemoveRelayLink(long linkId)
+        {
+            RemoveLink(_batches[(int)BatchKind.RelayPowered], linkId);
+            RemoveLink(_batches[(int)BatchKind.RelayUnpowered], linkId);
+        }
+
         public void LateFrameTick()
         {
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 ProcessBatch(_batches[batchIndex]);
+
+            RefreshLateFrameTickRegistration();
         }
 
         private void OnDestroy()
         {
-            OnDisable();
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
+            if (_shutdownComplete)
+                return;
+
+            TryUnregisterOriginShiftListener();
+            TryUnregisterLateFrameTickable();
 
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 DisposeBatch(_batches[batchIndex]);
 
-            if (_instance == this)
-                _instance = null;
+            _pipeRegistrations.Clear();
+            _rupturedPipeNodes.Clear();
+            _pipeRuptureUpdateScratch.Clear();
+
+            if (_serviceRegistered)
+                GlobalRegistry.UnregisterConnectionSplineBatchRendererRuntime(this);
+
+            _serviceRegistered = false;
+            _shutdownComplete = true;
         }
 
         private void InitializeBatch(int index, BatchKind kind, Color color, float radius)
@@ -289,13 +349,15 @@ namespace Hecton8.Core
             {
                 Kind = kind,
                 Color = color,
+                AppliedColor = color,
                 Radius = radius,
                 Mesh = ResolveStaticCylinderMesh(),
                 Material = CreateRuntimeMaterial(color),
-                Dirty = true
+                Dirty = false,
+                MaterialColorDirty = false
             };
 
-            EnsureBatchCapacity(batch, DefaultBatchCapacity);
+            EnsureBatchCapacity(batch, MaxRenderedLinksPerBatch);
             _batches[index] = batch;
         }
 
@@ -364,9 +426,9 @@ namespace Hecton8.Core
 
         private void UpsertPipeLink(long linkId, SplineDescriptor descriptor, Color color)
         {
-            _batches[(int)BatchKind.PipesNear].Color = color;
-            _batches[(int)BatchKind.PipesFar].Color = color;
-            _batches[(int)BatchKind.PipesLine].Color = color;
+            SetBatchColor(_batches[(int)BatchKind.PipesNear], color);
+            SetBatchColor(_batches[(int)BatchKind.PipesFar], color);
+            SetBatchColor(_batches[(int)BatchKind.PipesLine], color);
             ApplyPipeRuptureFlags(linkId, ref descriptor);
             _pipeRegistrations[linkId] = descriptor;
             ReassignPipeBatch(linkId, in descriptor);
@@ -437,6 +499,7 @@ namespace Hecton8.Core
 
             batch.Registrations[linkId] = descriptor;
             batch.Dirty = true;
+            RefreshLateFrameTickRegistration();
         }
 
         private void RemoveLink(BatchState batch, long linkId)
@@ -448,6 +511,21 @@ namespace Hecton8.Core
                 return;
 
             batch.Dirty = true;
+            RefreshLateFrameTickRegistration();
+        }
+
+        private void SetBatchColor(BatchState batch, Color color)
+        {
+            if (batch == null || ColorsMatch(batch.Color, color))
+                return;
+
+            batch.Color = color;
+            batch.MaterialColorDirty = true;
+            if (batch.Registrations.Count <= 0 && batch.InstanceCount <= 0)
+                return;
+
+            batch.Dirty = true;
+            RefreshLateFrameTickRegistration();
         }
 
         private void ProcessBatch(BatchState batch)
@@ -499,17 +577,64 @@ namespace Hecton8.Core
 
             batch.InstanceCount = writeIndex;
             GraphicsBufferUploadUtility.UploadNativeArray(batch.InstanceBuffer, batch.InstanceData, writeIndex);
-            if (batch.Material != null)
-            {
-                ApplyMaterialColor(batch.Material, batch.Color);
-                batch.Material.SetBuffer(s_FlexiblePipeInstancesId, batch.InstanceBuffer);
-            }
+            ApplyBatchMaterialState(batch);
 
             float3 center = (minBounds + maxBounds) * 0.5f;
             float3 size = math.max(maxBounds - minBounds, new float3(0.05f, 0.05f, 0.05f));
             batch.WorldBounds = new Bounds(
                 new Vector3(center.x, center.y, center.z),
                 new Vector3(size.x, size.y, size.z));
+        }
+
+        private static void ApplyBatchMaterialState(BatchState batch)
+        {
+            if (batch.Material == null)
+                return;
+
+            batch.Material.SetBuffer(s_FlexiblePipeInstancesId, batch.InstanceBuffer);
+            if (!batch.MaterialColorDirty && ColorsMatch(batch.AppliedColor, batch.Color))
+                return;
+
+            ApplyMaterialColor(batch.Material, batch.Color);
+            batch.AppliedColor = batch.Color;
+            batch.MaterialColorDirty = false;
+        }
+
+        private void RefreshLateFrameTickRegistration()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            {
+                TryUnregisterLateFrameTickable();
+                return;
+            }
+
+            if (HasRenderableBatchWork())
+                TryRegisterLateFrameTickable();
+            else
+                TryUnregisterLateFrameTickable();
+        }
+
+        private bool HasRenderableBatchWork()
+        {
+            for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
+            {
+                BatchState batch = _batches[batchIndex];
+                if (batch == null)
+                    continue;
+
+                if (batch.Dirty || batch.InstanceCount > 0 || batch.Registrations.Count > 0)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool ColorsMatch(Color lhs, Color rhs)
+        {
+            return lhs.r == rhs.r
+                && lhs.g == rhs.g
+                && lhs.b == rhs.b
+                && lhs.a == rhs.a;
         }
 
         private static bool IsPowerFlowPipeBatch(BatchState batch)
@@ -588,6 +713,9 @@ namespace Hecton8.Core
             if (batch == null)
                 return;
 
+            if (batch.Registrations.Count <= 0 && batch.InstanceCount <= 0)
+                return;
+
             RebaseRegistrationDictionary(batch.Registrations, shiftOffset);
             batch.Dirty = true;
         }
@@ -648,12 +776,17 @@ namespace Hecton8.Core
             DisposeNativeArray(ref batch.Descriptors);
             DisposeNativeArray(ref batch.InstanceData);
             ReleaseBuffer(ref batch.InstanceBuffer);
+            batch.Registrations.Clear();
+            batch.InstanceCount = 0;
+            batch.Dirty = false;
 
             if (batch.Mesh != null && !IsSharedStaticMesh(batch.Mesh))
                 Destroy(batch.Mesh);
+            batch.Mesh = null;
 
             if (batch.Material != null)
                 Destroy(batch.Material);
+            batch.Material = null;
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array)

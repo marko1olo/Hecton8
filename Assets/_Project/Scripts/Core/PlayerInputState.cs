@@ -45,9 +45,23 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Per-controller activity bits used to skip idle XR hand work.
+    /// </summary>
+    [Flags]
+    internal enum XRInputActiveBit : uint
+    {
+        None = 0u,
+        Trigger = 1u << 0,
+        Grip = 1u << 1,
+        Joystick = 1u << 2,
+        Primary = 1u << 3,
+        Secondary = 1u << 4,
+    }
+
+    /// <summary>
     /// Zero-allocation player input snapshot captured once at the start of each frame.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public struct PlayerInputState
     {
         /// <summary>
@@ -84,7 +98,7 @@ namespace Hecton8.Core
     /// <summary>
     /// Blittable OpenXR controller state captured once per dispatcher frame.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct XRInputState
     {
         /// <summary>Frame that produced this snapshot.</summary>
@@ -113,6 +127,12 @@ namespace Hecton8.Core
 
         /// <summary>Cached OpenXR button flags.</summary>
         public uint ButtonsBitmask;
+
+        /// <summary>Shifted active-control mask: left uses bits 0-4, right uses bits 5-9.</summary>
+        public uint ActiveMask;
+
+        /// <summary>True when any analog/button input survived the deadzone gate.</summary>
+        public readonly bool HasActiveInput => ActiveMask != 0u;
 
         /// <summary>
         /// Returns true when the cached XR snapshot contains the requested button flag.

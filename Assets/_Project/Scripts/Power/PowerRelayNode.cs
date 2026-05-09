@@ -177,7 +177,7 @@ namespace Hecton8.Power
                 if (neighbor == null)
                     continue;
 
-                totalHalfCableLength += Vector3.Distance(relayPosition, neighbor.transform.position) * 0.5f;
+                totalHalfCableLength += (relayPosition - neighbor.transform.position).magnitude * 0.5f;
 
                 if (neighbor.TryGetComponent(out PowerRelayNode relayNeighbor) && relayNeighbor != null)
                     relayNeighborCount++;

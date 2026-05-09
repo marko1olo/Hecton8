@@ -97,7 +97,6 @@ namespace Hecton8.UI
                 text.isRightToLeftText = rtl;
                 LocRegistry.TryGetRawBuffer(entry.LocalizationKeyHash, out char[] buffer, out int length);
                 text.SetCharArray(buffer, 0, length);
-                text.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
             }
 
             text.SetMaterialDirty();

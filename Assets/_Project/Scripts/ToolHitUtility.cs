@@ -5,6 +5,7 @@ using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -155,10 +156,7 @@ namespace Hecton8.Gameplay
             if (impulse <= 0f || !TryGetRigidbody(hitCollider, out Rigidbody body))
                 return;
 
-            if (direction.sqrMagnitude < 0.0001f)
-                direction = Vector3.forward;
-
-            Vector3 normalizedDirection = direction.normalized;
+            Vector3 normalizedDirection = NormalizeOrForward(direction);
             PhysicsForceRouter.QueueForce(body, normalizedDirection * impulse, ForceMode.Impulse);
             TryApplyRelativeCarrierImpulse(normalizedDirection, impulse);
         }
@@ -175,8 +173,21 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            PhysicsForceRouter.QueueForce(carrierBody, -direction.normalized * impulse, ForceMode.Impulse);
+            Vector3 normalizedDirection = NormalizeOrForward(direction);
+            PhysicsForceRouter.QueueForce(carrierBody, -normalizedDirection * impulse, ForceMode.Impulse);
             return true;
+        }
+
+        private static Vector3 NormalizeOrForward(Vector3 direction)
+        {
+            float sqrMagnitude = direction.sqrMagnitude;
+            if (sqrMagnitude <= 0.0001f)
+                return Vector3.forward;
+
+            if (math.abs(sqrMagnitude - 1f) <= 0.02f)
+                return direction;
+
+            return direction * math.rsqrt(sqrMagnitude);
         }
 
         private static bool TryResolvePlayerToolManager(out PlayerToolManager toolManager)
@@ -263,33 +274,32 @@ namespace Hecton8.Gameplay
                 LogToolWarning(in messageBuffer);
         }
 
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static void LogToolInfo(string message)
         {
             Debug.Log($"[ToolInfo] {message}");
         }
 
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogToolInfo(in FixedCharBuffer messageBuffer)
         {
             Debug.Log($"[ToolInfo] {messageBuffer.ToString()}");
         }
 
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogToolWarning(string message)
         {
             Debug.LogWarning($"[ToolWarning] {message}");
         }
 
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogToolWarning(in FixedCharBuffer messageBuffer)
         {
             Debug.LogWarning($"[ToolWarning] {messageBuffer.ToString()}");
         }
+#else
+        private static void LogToolInfo(string message) { }
+        private static void LogToolInfo(in FixedCharBuffer messageBuffer) { }
+        private static void LogToolWarning(string message) { }
+        private static void LogToolWarning(in FixedCharBuffer messageBuffer) { }
+#endif
     }
 }
 

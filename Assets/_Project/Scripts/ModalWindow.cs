@@ -288,17 +288,6 @@ namespace Hecton.UI.MainMenu
 
         private static bool EnsureInstanceAvailable()
         {
-            if (_instance != null)
-                return true;
-
-            ModalWindow candidate = FindAnyObjectByType<ModalWindow>(FindObjectsInactive.Include);
-            if (candidate == null)
-                return false;
-
-            if (!candidate.TryClaimInstance())
-                return false;
-
-            candidate.EnsureRuntimeBindings(hideAfterBinding: true);
             return _instance != null;
         }
 

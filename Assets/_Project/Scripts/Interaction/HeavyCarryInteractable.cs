@@ -17,6 +17,8 @@ namespace Hecton8.Interaction
     [AddComponentMenu("Hecton8/Interaction/Heavy Carry Interactable")]
     public sealed class HeavyCarryInteractable : MonoBehaviour, IInteractable
     {
+        private const int MaxParentResolveDepth = 32;
+
         [Header("── Cargo ──────────────────")]
         [Tooltip("Optional explicit rigidbody. Falls back to attached or parent rigidbody.")]
         [SerializeField] private Rigidbody carryBody;
@@ -39,7 +41,7 @@ namespace Hecton8.Interaction
 
         private void Awake()
         {
-            _highlighter = GetComponent<InteractionHighlighter>();
+            _highlighter = TryGetComponent(out InteractionHighlighter highlighter) ? highlighter : null;
             ResolveCarryBody();
             RebuildPromptCache();
         }
@@ -62,6 +64,11 @@ namespace Hecton8.Interaction
 
             body = carryBody;
             return body != null;
+        }
+
+        private void OnDisable()
+        {
+            InteractableRegistry.InvalidateTree(this);
         }
 
         void IInteractable.OnHoverStart()
@@ -91,8 +98,24 @@ namespace Hecton8.Interaction
             if (carryBody == null)
             {
                 if (!TryGetComponent(out carryBody))
-                    carryBody = GetComponentInParent<Rigidbody>();
+                    TryResolveParentComponent(transform, out carryBody);
             }
+        }
+
+        private static bool TryResolveParentComponent<T>(Transform start, out T component) where T : Component
+        {
+            component = null;
+            Transform current = start != null ? start.parent : null;
+            int depth = 0;
+            while (current != null && depth++ < MaxParentResolveDepth)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private void RebuildPromptCache()

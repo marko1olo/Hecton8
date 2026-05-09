@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -33,6 +34,7 @@ namespace Hecton8.VFX
     public sealed class CameraJuiceSystem : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener
     {
         // ═══ CACHED REFERENCES ═══
+        [StructLayout(LayoutKind.Sequential)]
         private struct ShakeJobInput
         {
             public float NoiseTime;
@@ -43,6 +45,7 @@ namespace Hecton8.VFX
             public float3 AxisWeights;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct ShakeJobResult
         {
             public float3 Offset;
@@ -108,6 +111,7 @@ namespace Hecton8.VFX
         private const float SUBMARINE_IMPACT_SHAKE_MAX_DISPLACEMENT = 0.085f;
         private const float SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT = 0.09f;
         private const float SUBMARINE_IMPACT_SHAKE_EPSILON_SQ = 0.0000001f;
+        private const float SUBMARINE_IMPACT_SHAKE_NOISE_FREQUENCY = 64f;
         private float _shakeNoiseTime;
         private float _submarineImpactShakeTimer;
         private float _submarineImpactShakeSeverity;
@@ -159,7 +163,6 @@ namespace Hecton8.VFX
         private IInteractable _focusTarget;
         private Transform _focusTargetTransform;
         private float _focusDistance;
-        private float _focusDistanceVelocity;
         private float _pauseDepthOfFieldWeight;
         private float _pauseDofBaseFocalLength;
         private float _pauseDofBaseAperture;
@@ -270,7 +273,7 @@ namespace Hecton8.VFX
         public float ShakeIntensityMultiplier
         {
             get => _shakeIntensityMultiplier;
-            set => _shakeIntensityMultiplier = Mathf.Clamp(value, 0f, 2f);
+            set => _shakeIntensityMultiplier = math.clamp(value, 0f, 2f);
         }
 
         /// <summary>
@@ -280,7 +283,7 @@ namespace Hecton8.VFX
         public float FOVIntensityMultiplier
         {
             get => _fovIntensityMultiplier;
-            set => _fovIntensityMultiplier = Mathf.Clamp(value, 0f, 2f);
+            set => _fovIntensityMultiplier = math.clamp(value, 0f, 2f);
         }
 
         /// <summary>
@@ -414,10 +417,9 @@ namespace Hecton8.VFX
 
             if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-                _registered = GlobalRegistry.Updatables.Contains(this) ||
-                              GlobalRegistry.SlowTickables.Contains(this);
+                bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+                bool slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Player);
+                _registered = updateRegistered || slowTickRegistered;
             }
             TryRegisterLateFrame();
 
@@ -445,7 +447,6 @@ namespace Hecton8.VFX
 
             _focusTarget = null;
             _focusTargetTransform = null;
-            _focusDistanceVelocity = 0f;
             _pauseDepthOfFieldWeight = 0f;
             _pauseDofOverrideEngaged = false;
             _pauseDofDefaultsCaptured = false;
@@ -473,12 +474,8 @@ namespace Hecton8.VFX
 
             if (_registered)
             {
-                if (GlobalRegistry.SlowTickables.Contains(this))
-                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
-
-                if (GlobalRegistry.Updatables.Contains(this))
-                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
                 _registered = false;
             }
         }
@@ -515,8 +512,7 @@ namespace Hecton8.VFX
             if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterLateFrame()
@@ -815,7 +811,7 @@ namespace Hecton8.VFX
         /// <param name="weight">Normalized pause menu focus weight.</param>
         public void ApplyPauseDepthOfFieldWeight(float weight)
         {
-            _pauseDepthOfFieldWeight = Mathf.Clamp01(weight);
+            _pauseDepthOfFieldWeight = math.saturate(weight);
         }
 
         /// <summary>
@@ -826,9 +822,9 @@ namespace Hecton8.VFX
             if (!_fovEnabled || _mainCamera == null)
                 return;
 
-            _inputReclaimFovStart = Mathf.Clamp(startFov, MIN_FOV, MAX_FOV);
-            _inputReclaimFovTarget = Mathf.Clamp(_baseFOV, MIN_FOV, MAX_FOV);
-            _inputReclaimFovDuration = Mathf.Max(0.0001f, durationSeconds);
+            _inputReclaimFovStart = math.clamp(startFov, MIN_FOV, MAX_FOV);
+            _inputReclaimFovTarget = math.clamp(_baseFOV, MIN_FOV, MAX_FOV);
+            _inputReclaimFovDuration = math.max(0.0001f, durationSeconds);
             _inputReclaimFovElapsed = 0f;
             _inputReclaimFovActive = true;
             ApplyProjectionFov(_inputReclaimFovStart);
@@ -854,7 +850,7 @@ namespace Hecton8.VFX
             if (maxDisplacement < 0f || maxDisplacement > 1f)
             {
                 LogShakeMaxDisplacementClamped(maxDisplacement);
-                maxDisplacement = Mathf.Clamp(maxDisplacement, 0f, 1f);
+                maxDisplacement = math.saturate(maxDisplacement);
             }
 
             float duration = profile.Duration;
@@ -890,12 +886,12 @@ namespace Hecton8.VFX
             if (!_shakeEnabled)
                 return;
 
-            float safeSeverity = Mathf.Clamp01(severity01);
+            float safeSeverity = math.saturate(severity01);
             if (safeSeverity <= 0f)
                 return;
 
             _submarineImpactShakeSign = _submarineImpactShakeSign >= 0f ? -1f : 1f;
-            _submarineImpactShakeSeverity = Mathf.Max(_submarineImpactShakeSeverity * 0.65f, safeSeverity);
+            _submarineImpactShakeSeverity = math.max(_submarineImpactShakeSeverity * 0.65f, safeSeverity);
             _submarineImpactShakeTimer = SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS;
             _submarineImpactShakeKickOffset = new Vector3(
                 _submarineImpactShakeSign * SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT * safeSeverity,
@@ -915,7 +911,7 @@ namespace Hecton8.VFX
 
             _fovBlendStart = _currentFOVOffset;
             _fovBlendTarget = amount;
-            _fovBlendDuration = Mathf.Max(0.0001f, duration);
+            _fovBlendDuration = math.max(0.0001f, duration);
             _fovBlendElapsed = 0f;
             _fovBlendActive = true;
         }
@@ -938,7 +934,7 @@ namespace Hecton8.VFX
 
             _targetBiome = biome;
             _biomeBlendFrom = _currentBiome ?? biome;
-            _biomeBlendDuration = Mathf.Max(0.0001f, blendDuration);
+            _biomeBlendDuration = math.max(0.0001f, blendDuration);
             _biomeBlendElapsed = 0f;
             _biomeBlendActive = true;
             ApplyBiomeBlend(_biomeBlendFrom, _targetBiome, 0f);
@@ -946,19 +942,25 @@ namespace Hecton8.VFX
 
         private static float EvaluateEaseOutQuad(float t)
         {
-            t = Mathf.Clamp01(t);
+            t = math.saturate(t);
             float inverse = 1f - t;
             return 1f - inverse * inverse;
         }
 
         private static float EvaluateEaseInOutQuad(float t)
         {
-            t = Mathf.Clamp01(t);
+            t = math.saturate(t);
             if (t < 0.5f)
                 return 2f * t * t;
 
             float inverse = -2f * t + 2f;
             return 1f - inverse * inverse * 0.5f;
+        }
+
+        private static float EvaluateSmoothStep01(float t)
+        {
+            t = math.saturate(t);
+            return t * t * (3f - (2f * t));
         }
 
         private void ApplyBiomeBlend(BiomeProfile from, BiomeProfile to, float t)
@@ -975,8 +977,8 @@ namespace Hecton8.VFX
             // Blend bloom
             if (_urpVolume.profile.TryGet(out Bloom bloom))
             {
-                bloom.intensity.value = Mathf.Lerp(from.BloomIntensity, to.BloomIntensity, t);
-                bloom.threshold.value = Mathf.Lerp(from.BloomThreshold, to.BloomThreshold, t);
+                bloom.intensity.value = math.lerp(from.BloomIntensity, to.BloomIntensity, t);
+                bloom.threshold.value = math.lerp(from.BloomThreshold, to.BloomThreshold, t);
             }
 
             // Note: AO and Fog require additional URP components
@@ -1012,7 +1014,7 @@ namespace Hecton8.VFX
         {
             // Calculate damage amount (assuming integrity is 0-1 normalized)
             // Trigger FOV recoil proportional to damage
-            float damageAmount = Mathf.Max(0f, 1f - integrity);
+            float damageAmount = math.max(0f, 1f - integrity);
             if (damageAmount > 0.1f)
             {
                 float fovReduction = -5f * damageAmount;
@@ -1059,7 +1061,7 @@ namespace Hecton8.VFX
             }
 
             UpdateSubmarineImpactShake(dt, effectiveShakeScale);
-            _shakeNoiseTime += Mathf.Max(0f, dt);
+            _shakeNoiseTime += math.max(0f, dt);
 
             int count = _activeShakes.Count;
             if (count <= 0)
@@ -1117,7 +1119,7 @@ namespace Hecton8.VFX
             ScheduleShakeJob(
                 liveCount,
                 effectiveShakeScale,
-                Mathf.Min(MAX_SHAKE_DISPLACEMENT, Mathf.Max(0.005f, _cameraShakeClipSafeDisplacement)));
+                math.min(MAX_SHAKE_DISPLACEMENT, math.max(0.005f, _cameraShakeClipSafeDisplacement)));
         }
 
         private bool HasShakeJobBuffers()
@@ -1193,37 +1195,43 @@ namespace Hecton8.VFX
 
         private void UpdateSubmarineImpactShake(float dt, float effectiveShakeScale)
         {
-            float safeDt = Mathf.Max(0f, dt);
+            float safeDt = math.max(0f, dt);
             Vector3 targetOffset = Vector3.zero;
 
             if (_submarineImpactShakeTimer > 0f)
             {
                 float elapsed = SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS - _submarineImpactShakeTimer;
-                float normalizedTime = Mathf.Clamp01(elapsed / SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS);
+                float normalizedTime = math.saturate(elapsed / SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS);
                 float falloff = 1f - normalizedTime;
                 falloff *= falloff;
 
-                float3 sample = ResolvePrebakedSubmarineImpactPerlin(normalizedTime);
+                float3 sample = ResolveSubmarineImpactNoise(elapsed * SUBMARINE_IMPACT_SHAKE_NOISE_FREQUENCY, _submarineImpactShakeSeverity);
                 sample.x *= _submarineImpactShakeSign;
                 sample.z *= -_submarineImpactShakeSign;
                 float amplitude = SUBMARINE_IMPACT_SHAKE_MAX_DISPLACEMENT *
                     _submarineImpactShakeSeverity *
-                    Mathf.Max(0f, effectiveShakeScale) *
+                    math.max(0f, effectiveShakeScale) *
                     falloff;
                 targetOffset = new Vector3(sample.x, sample.y, sample.z) * amplitude;
-                _submarineImpactShakeTimer = Mathf.Max(0f, _submarineImpactShakeTimer - safeDt);
+                _submarineImpactShakeTimer = math.max(0f, _submarineImpactShakeTimer - safeDt);
             }
 
             if (_submarineImpactShakeKickPending)
             {
                 _submarineImpactShakeOffset = targetOffset +
-                    (_submarineImpactShakeKickOffset * Mathf.Max(0f, effectiveShakeScale));
+                    (_submarineImpactShakeKickOffset * math.max(0f, effectiveShakeScale));
                 _submarineImpactShakeKickPending = false;
                 return;
             }
 
             float blend = ResolvePadeApproach01(SUBMARINE_IMPACT_SHAKE_RECOVERY_SHARPNESS, safeDt);
-            _submarineImpactShakeOffset = Vector3.Lerp(_submarineImpactShakeOffset, targetOffset, blend);
+            float3 currentOffset = new float3(
+                _submarineImpactShakeOffset.x,
+                _submarineImpactShakeOffset.y,
+                _submarineImpactShakeOffset.z);
+            float3 targetOffset3 = new float3(targetOffset.x, targetOffset.y, targetOffset.z);
+            float3 blendedOffset = math.lerp(currentOffset, targetOffset3, blend);
+            _submarineImpactShakeOffset = new Vector3(blendedOffset.x, blendedOffset.y, blendedOffset.z);
             if (_submarineImpactShakeTimer <= 0f &&
                 targetOffset.sqrMagnitude <= SUBMARINE_IMPACT_SHAKE_EPSILON_SQ &&
                 _submarineImpactShakeOffset.sqrMagnitude <= SUBMARINE_IMPACT_SHAKE_EPSILON_SQ)
@@ -1241,30 +1249,27 @@ namespace Hecton8.VFX
             _submarineImpactShakeKickPending = false;
         }
 
-        private static float3 ResolvePrebakedSubmarineImpactPerlin(float normalizedTime)
+        private static float3 ResolveSubmarineImpactNoise(float noiseTime, float severitySeed)
         {
-            float scaled = math.saturate(normalizedTime) * 10f;
-            int index = math.min(9, (int)scaled);
-            float t = scaled - index;
-            return math.lerp(GetSubmarineImpactPerlinSample(index), GetSubmarineImpactPerlinSample(index + 1), t);
+            float seed = severitySeed * 37.13f;
+            float frame = math.floor(noiseTime);
+            float blend = EvaluateSmoothStep01(math.frac(noiseTime));
+            float3 sampleA = ResolveSubmarineImpactHash(frame, seed);
+            float3 sampleB = ResolveSubmarineImpactHash(frame + 1f, seed);
+            return math.lerp(sampleA, sampleB, blend);
         }
 
-        private static float3 GetSubmarineImpactPerlinSample(int index)
+        private static float3 ResolveSubmarineImpactHash(float frame, float seed)
         {
-            switch (index)
-            {
-                case 0: return new float3(-0.68f, 0.84f, -0.22f);
-                case 1: return new float3(0.93f, -0.52f, 0.36f);
-                case 2: return new float3(-0.41f, -0.88f, -0.64f);
-                case 3: return new float3(0.27f, 0.72f, 0.91f);
-                case 4: return new float3(-0.86f, 0.18f, -0.35f);
-                case 5: return new float3(0.54f, -0.44f, 0.62f);
-                case 6: return new float3(-0.33f, 0.31f, -0.74f);
-                case 7: return new float3(0.21f, -0.24f, 0.38f);
-                case 8: return new float3(-0.14f, 0.16f, -0.19f);
-                case 9: return new float3(0.08f, -0.07f, 0.11f);
-                default: return float3.zero;
-            }
+            return new float3(
+                HashSignedUnit(frame + seed, seed + 11.17f),
+                HashSignedUnit(seed + 23.71f, frame + seed * 1.19f),
+                HashSignedUnit(frame * 1.41f + seed, seed + 37.03f));
+        }
+
+        private static float HashSignedUnit(float x, float y)
+        {
+            return (math.frac(52.9829189f * math.frac(math.dot(new float2(x, y), new float2(0.06711056f, 0.00583715f)))) * 2f) - 1f;
         }
 
         private void ReleaseShakeJobBuffers()
@@ -1306,12 +1311,18 @@ namespace Hecton8.VFX
 
         private Vector3 ResolveClipSafeShakeOffset(Vector3 offset)
         {
-            float maxShakeDisplacement = Mathf.Min(
+            float maxShakeDisplacement = math.min(
                 MAX_SHAKE_DISPLACEMENT,
-                Mathf.Max(0.005f, _cameraShakeClipSafeDisplacement));
-            return offset.sqrMagnitude > maxShakeDisplacement * maxShakeDisplacement
-                ? offset.normalized * maxShakeDisplacement
-                : offset;
+                math.max(0.005f, _cameraShakeClipSafeDisplacement));
+            float distanceSq = offset.sqrMagnitude;
+            float maxShakeDisplacementSq = maxShakeDisplacement * maxShakeDisplacement;
+            if (distanceSq <= maxShakeDisplacementSq)
+                return offset;
+
+            if (distanceSq <= 0.000001f)
+                return Vector3.zero;
+
+            return offset * (maxShakeDisplacement * math.rsqrt(distanceSq));
         }
 
         private void EnsureCameraSpeedLineParticles()
@@ -1319,7 +1330,7 @@ namespace Hecton8.VFX
             if (_speedLineParticles != null || _cameraTransform == null)
                 return;
 
-            int maxParticles = Mathf.Max(1, _speedLineMaxParticles);
+            int maxParticles = math.max(1, _speedLineMaxParticles);
             // COLD ALLOC: GameObject[1] + ParticleSystem[1] — camera-local cinematic speed-line emitter — owner: CameraJuiceSystem
             GameObject speedLineObject = new GameObject("PFX_Camera_SpeedLines");
             speedLineObject.layer = TransparentFxLayerIndex;
@@ -1377,16 +1388,16 @@ namespace Hecton8.VFX
                 return;
 
             float currentSpeed = ResolveCurrentCameraSpeed();
-            float speed01 = Mathf.Clamp01(
-                (currentSpeed - Mathf.Max(0f, _speedLineStartMetersPerSecond)) /
-                Mathf.Max(0.01f, _speedLineFullMetersPerSecond - _speedLineStartMetersPerSecond));
+            float speed01 = math.saturate(
+                (currentSpeed - math.max(0f, _speedLineStartMetersPerSecond)) /
+                math.max(0.01f, _speedLineFullMetersPerSecond - _speedLineStartMetersPerSecond));
             speed01 = speed01 * speed01 * (3f - 2f * speed01);
             float blend = ResolvePadeApproach01(8f, dt);
             _speedLineIntensity = math.lerp(_speedLineIntensity, speed01, blend);
 
             var emission = _speedLineParticles.emission;
-            float emissionRate = math.lerp(0f, Mathf.Max(1f, _speedLineMaxEmissionRate), _speedLineIntensity);
-            if (Mathf.Abs(_cachedSpeedLineEmissionRate - emissionRate) > 0.5f)
+            float emissionRate = math.lerp(0f, math.max(1f, _speedLineMaxEmissionRate), _speedLineIntensity);
+            if (math.abs(_cachedSpeedLineEmissionRate - emissionRate) > 0.5f)
             {
                 emission.rateOverTime = emissionRate;
                 _cachedSpeedLineEmissionRate = emissionRate;
@@ -1394,7 +1405,7 @@ namespace Hecton8.VFX
 
             var velocity = _speedLineParticles.velocityOverLifetime;
             float velocityZ = -math.lerp(18f, 44f, _speedLineIntensity);
-            if (Mathf.Abs(_cachedSpeedLineVelocityZ - velocityZ) > 0.25f)
+            if (math.abs(_cachedSpeedLineVelocityZ - velocityZ) > 0.25f)
             {
                 velocity.z = new ParticleSystem.MinMaxCurve(velocityZ * 0.64f, velocityZ);
                 _cachedSpeedLineVelocityZ = velocityZ;
@@ -1402,8 +1413,8 @@ namespace Hecton8.VFX
 
             if (_speedLineRenderer != null)
             {
-                float stretch = math.lerp(0.45f, Mathf.Max(0.45f, _speedLineMaxStretch), _speedLineIntensity);
-                if (Mathf.Abs(_cachedSpeedLineStretch - stretch) > 0.02f)
+                float stretch = math.lerp(0.45f, math.max(0.45f, _speedLineMaxStretch), _speedLineIntensity);
+                if (math.abs(_cachedSpeedLineStretch - stretch) > 0.02f)
                 {
                     _speedLineRenderer.lengthScale = stretch;
                     _cachedSpeedLineStretch = stretch;
@@ -1427,14 +1438,32 @@ namespace Hecton8.VFX
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
             if (playerBody != null)
-                speed = Mathf.Max(speed, playerBody.linearVelocity.magnitude);
+                speed = math.max(speed, ApproximateVectorMagnitude(playerBody.linearVelocity));
 
             ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
             Rigidbody submarineBody = submarineContext != null ? submarineContext.HullRigidbody : null;
             if (submarineBody != null)
-                speed = Mathf.Max(speed, submarineBody.linearVelocity.magnitude);
+                speed = math.max(speed, ApproximateVectorMagnitude(submarineBody.linearVelocity));
 
             return float.IsFinite(speed) ? speed : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ApproximateVectorMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (0.375f * mid) + (0.125f * min);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float DotVector(Vector3 a, Vector3 b)
+        {
+            return a.x * b.x + a.y * b.y + a.z * b.z;
         }
 
         private bool HasSubmarineVelocityFovSource()
@@ -1444,7 +1473,7 @@ namespace Hecton8.VFX
             if (submarineBody == null)
                 return false;
 
-            float startSpeed = Mathf.Max(0f, _swimmingFovWarpStartSpeed);
+            float startSpeed = math.max(0f, _swimmingFovWarpStartSpeed);
             return submarineBody.linearVelocity.sqrMagnitude > startSpeed * startSpeed;
         }
 
@@ -1464,8 +1493,8 @@ namespace Hecton8.VFX
 
             if (_fovBlendActive)
             {
-                _fovBlendElapsed = Mathf.Min(_fovBlendElapsed + dt, _fovBlendDuration);
-                float normalizedBlend = Mathf.Clamp01(_fovBlendElapsed / _fovBlendDuration);
+                _fovBlendElapsed = math.min(_fovBlendElapsed + dt, _fovBlendDuration);
+                float normalizedBlend = math.saturate(_fovBlendElapsed / _fovBlendDuration);
                 float easedBlend = EvaluateEaseOutQuad(normalizedBlend);
                 _currentFOVOffset = math.lerp(_fovBlendStart, _fovBlendTarget, easedBlend);
                 if (normalizedBlend >= 1f)
@@ -1484,21 +1513,21 @@ namespace Hecton8.VFX
             if (velocityWarpEligible && _swimmingFovWarpMaxOffset > 0f)
             {
                 float currentSpeed = ResolveCurrentCameraSpeed();
-                float speedRange = Mathf.Max(0.01f, _swimmingFovWarpFullSpeed - _swimmingFovWarpStartSpeed);
+                float speedRange = math.max(0.01f, _swimmingFovWarpFullSpeed - _swimmingFovWarpStartSpeed);
                 float speedT = math.saturate((currentSpeed - _swimmingFovWarpStartSpeed) / speedRange);
-                float smoothSpeedT = Mathf.SmoothStep(0f, 1f, speedT);
+                float smoothSpeedT = EvaluateSmoothStep01(speedT);
                 swimmingWarpTarget = smoothSpeedT * _swimmingFovWarpMaxOffset * _adaptiveFOVScale;
             }
 
             float warpBlendT = ResolvePadeApproach01(math.max(0.01f, _swimmingFovWarpSharpness), dt);
-            warpBlendT = Mathf.SmoothStep(0f, 1f, math.saturate(warpBlendT));
+            warpBlendT = EvaluateSmoothStep01(warpBlendT);
             _swimmingVelocityFovOffset = math.lerp(_swimmingVelocityFovOffset, swimmingWarpTarget, warpBlendT);
-            targetFOV = Mathf.Clamp(targetFOV + _swimmingVelocityFovOffset, MIN_FOV, MAX_FOV);
+            targetFOV = math.clamp(targetFOV + _swimmingVelocityFovOffset, MIN_FOV, MAX_FOV);
 
             if (_inputReclaimFovActive)
             {
-                _inputReclaimFovElapsed = Mathf.Min(_inputReclaimFovElapsed + Mathf.Max(0f, dt), _inputReclaimFovDuration);
-                float normalizedReclaim = Mathf.Clamp01(_inputReclaimFovElapsed / _inputReclaimFovDuration);
+                _inputReclaimFovElapsed = math.min(_inputReclaimFovElapsed + math.max(0f, dt), _inputReclaimFovDuration);
+                float normalizedReclaim = math.saturate(_inputReclaimFovElapsed / _inputReclaimFovDuration);
                 float easedReclaim = EvaluateEaseOutQuad(normalizedReclaim);
                 targetFOV = math.lerp(_inputReclaimFovStart, _inputReclaimFovTarget, easedReclaim);
                 if (normalizedReclaim >= 1f)
@@ -1538,8 +1567,8 @@ namespace Hecton8.VFX
             if (!_biomeBlendActive)
                 return;
 
-            _biomeBlendElapsed = Mathf.Min(_biomeBlendElapsed + dt, _biomeBlendDuration);
-            float normalizedBlend = Mathf.Clamp01(_biomeBlendElapsed / _biomeBlendDuration);
+            _biomeBlendElapsed = math.min(_biomeBlendElapsed + dt, _biomeBlendDuration);
+            float normalizedBlend = math.saturate(_biomeBlendElapsed / _biomeBlendDuration);
             float easedBlend = EvaluateEaseInOutQuad(normalizedBlend);
             ApplyBiomeBlend(_biomeBlendFrom, _targetBiome, easedBlend);
             if (normalizedBlend >= 1f)
@@ -1562,13 +1591,9 @@ namespace Hecton8.VFX
             }
 
             float targetFocusDistance = ResolveTargetFocusDistance();
-            _focusDistance = Mathf.SmoothDamp(
-                _focusDistance > 0f ? _focusDistance : targetFocusDistance,
-                targetFocusDistance,
-                ref _focusDistanceVelocity,
-                Mathf.Max(0.02f, _focusTransitionDuration),
-                Mathf.Infinity,
-                dt);
+            float currentFocusDistance = _focusDistance > 0f ? _focusDistance : targetFocusDistance;
+            float focusBlendT = ResolvePadeApproach01(2f / math.max(0.02f, _focusTransitionDuration), dt);
+            _focusDistance = math.lerp(currentFocusDistance, targetFocusDistance, focusBlendT);
 
             _interactionDoF.focusDistance.value = _focusDistance;
             _interactionDoF.active = true;
@@ -1595,16 +1620,16 @@ namespace Hecton8.VFX
                 _pauseDofOverrideEngaged = true;
             }
 
-            float easedBlend = EvaluateEaseInOutQuad(_pauseDepthOfFieldWeight);
+            float easedBlend = EvaluateSmoothStep01(_pauseDepthOfFieldWeight);
             float baseFocusDistance = _focusDistance > 0f ? _focusDistance : _worldFocusDistance;
-            _interactionDoF.focusDistance.value = Mathf.Lerp(
+            _interactionDoF.focusDistance.value = math.lerp(
                 baseFocusDistance,
                 PauseDofFocusDistance,
                 easedBlend);
-            _interactionDoF.focalLength.value = Mathf.Lerp(_pauseDofBaseFocalLength, PauseDofFocalLength, easedBlend);
-            _interactionDoF.aperture.value = Mathf.Lerp(_pauseDofBaseAperture, PauseDofAperture, easedBlend);
-            _interactionDoF.gaussianEnd.value = Mathf.Lerp(_pauseDofBaseGaussianEnd, PauseDofGaussianEnd, easedBlend);
-            _interactionDoF.gaussianMaxRadius.value = Mathf.Lerp(_pauseDofBaseGaussianMaxRadius, PauseDofGaussianMaxRadius, easedBlend);
+            _interactionDoF.focalLength.value = math.lerp(_pauseDofBaseFocalLength, PauseDofFocalLength, easedBlend);
+            _interactionDoF.aperture.value = math.lerp(_pauseDofBaseAperture, PauseDofAperture, easedBlend);
+            _interactionDoF.gaussianEnd.value = math.lerp(_pauseDofBaseGaussianEnd, PauseDofGaussianEnd, easedBlend);
+            _interactionDoF.gaussianMaxRadius.value = math.lerp(_pauseDofBaseGaussianMaxRadius, PauseDofGaussianMaxRadius, easedBlend);
             _interactionDoF.active = true;
         }
 
@@ -1634,20 +1659,20 @@ namespace Hecton8.VFX
         private float ResolveTargetFocusDistance()
         {
             if (PlayerPDA.IsOpen)
-                return Mathf.Max(0.01f, _pdaFocusDistance);
+                return math.max(0.01f, _pdaFocusDistance);
 
             if (HectonFabricatorUI.IsMenuOpen)
             {
                 if (_focusTargetTransform == null || IsFocusTargetInsidePdaThreshold())
-                    return Mathf.Max(0.01f, _pdaFocusDistance);
+                    return math.max(0.01f, _pdaFocusDistance);
 
-                return Mathf.Max(0.01f, _worldFocusDistance);
+                return math.max(0.01f, _worldFocusDistance);
             }
 
             if (_focusTargetTransform != null)
                 return ResolveCinematicTargetFocusDistance();
 
-            return Mathf.Max(0.01f, ResolveHudPlaneFocusDistance());
+            return math.max(0.01f, ResolveHudPlaneFocusDistance());
         }
 
         private bool IsFocusTargetInsidePdaThreshold()
@@ -1655,7 +1680,7 @@ namespace Hecton8.VFX
             if (_cameraTransform == null || _focusTargetTransform == null)
                 return false;
 
-            float threshold = Mathf.Max(0.01f, _pdaFocusThreshold);
+            float threshold = math.max(0.01f, _pdaFocusThreshold);
             double distanceSq = ResolveAupRuntimeDistanceSq(_cameraTransform.position, _focusTargetTransform.position);
             return distanceSq <= threshold * threshold;
         }
@@ -1663,11 +1688,11 @@ namespace Hecton8.VFX
         private float ResolveCinematicTargetFocusDistance()
         {
             if (_cameraTransform == null || _focusTargetTransform == null)
-                return Mathf.Max(0.01f, _hudFocusDistance);
+                return math.max(0.01f, _hudFocusDistance);
 
-            float nearFocus = Mathf.Max(0.01f, _pdaFocusDistance);
-            float farFocus = Mathf.Max(nearFocus, _worldFocusDistance);
-            float nearThreshold = Mathf.Max(0.01f, _pdaFocusThreshold);
+            float nearFocus = math.max(0.01f, _pdaFocusDistance);
+            float farFocus = math.max(nearFocus, _worldFocusDistance);
+            float nearThreshold = math.max(0.01f, _pdaFocusThreshold);
             double nearSq = nearThreshold * nearThreshold;
             double farSq = farFocus * farFocus;
             double distanceSq = ResolveAupRuntimeDistanceSq(_cameraTransform.position, _focusTargetTransform.position);
@@ -1676,8 +1701,11 @@ namespace Hecton8.VFX
             if (distanceSq >= farSq)
                 return farFocus;
 
-            float t = Mathf.Clamp01((float)((distanceSq - nearSq) / Math.Max(0.0001d, farSq - nearSq)));
-            return Mathf.Lerp(nearFocus, farFocus, t);
+            double focusSpanSq = farSq - nearSq;
+            if (focusSpanSq < 0.0001d)
+                focusSpanSq = 0.0001d;
+            float t = math.saturate((float)((distanceSq - nearSq) / focusSpanSq));
+            return math.lerp(nearFocus, farFocus, t);
         }
 
         private static double ResolveAupRuntimeDistanceSq(Vector3 fromRuntimePosition, Vector3 toRuntimePosition)
@@ -1690,18 +1718,18 @@ namespace Hecton8.VFX
         private float ResolveHudPlaneFocusDistance()
         {
             if (_cameraTransform == null)
-                return Mathf.Max(0.01f, _hudFocusDistance);
+                return math.max(0.01f, _hudFocusDistance);
 
             SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay == null || overlay.TargetCanvas == null)
-                return Mathf.Max(0.01f, _hudFocusDistance);
+                return math.max(0.01f, _hudFocusDistance);
 
             RectTransform canvasRect = overlay.TargetCanvas.transform as RectTransform;
             if (canvasRect == null)
-                return Mathf.Max(0.01f, _hudFocusDistance);
+                return math.max(0.01f, _hudFocusDistance);
 
-            float planeDistance = Vector3.Dot(_cameraTransform.forward, canvasRect.position - _cameraTransform.position);
-            return Mathf.Max(0.01f, planeDistance > 0f ? planeDistance : _hudFocusDistance);
+            float planeDistance = DotVector(_cameraTransform.forward, canvasRect.position - _cameraTransform.position);
+            return math.max(0.01f, planeDistance > 0f ? planeDistance : _hudFocusDistance);
         }
 
         private bool TryResolveCamera()
@@ -1853,7 +1881,7 @@ namespace Hecton8.VFX
             if (healthNormalized < 0.3f)
             {
                 // Calculate vignette intensity
-                float intensity = Mathf.Lerp(0f, 1f, (0.3f - healthNormalized) / 0.3f) * _adaptivePostFxScale;
+                float intensity = math.lerp(0f, 1f, (0.3f - healthNormalized) / 0.3f) * _adaptivePostFxScale;
 
                 // Direct Volume override assignment (not renderer-based, no MaterialPropertyBlock needed)
                 _healthVignette.intensity.value = intensity;
@@ -1879,10 +1907,10 @@ namespace Hecton8.VFX
             float o2Normalized = _survivalSystem != null ? _survivalSystem.OxygenNormalized : 1f;
             float oxygenIntensity = 0f;
             if (o2Normalized < 0.2f)
-                oxygenIntensity = Mathf.Lerp(0f, 0.8f, (0.2f - o2Normalized) / 0.2f);
+                oxygenIntensity = math.lerp(0f, 0.8f, (0.2f - o2Normalized) / 0.2f);
 
             float structuralFatigueIntensity = ResolveStructuralFatigueChromaticContribution();
-            float intensity = Mathf.Max(oxygenIntensity, structuralFatigueIntensity) * _adaptivePostFxScale;
+            float intensity = math.max(oxygenIntensity, structuralFatigueIntensity) * _adaptivePostFxScale;
 
             if (intensity > 0.001f)
             {
@@ -1904,7 +1932,7 @@ namespace Hecton8.VFX
             if (structuralGrid == null || !structuralGrid.isActiveAndEnabled || !structuralGrid.IsReady)
                 return 0f;
 
-            return Mathf.Clamp01(structuralGrid.FatiguePeakNormalized) * Mathf.Clamp01(_structuralFatigueChromaticAberrationMax);
+            return math.saturate(structuralGrid.FatiguePeakNormalized) * math.saturate(_structuralFatigueChromaticAberrationMax);
         }
 
         private void RefreshAdaptiveBudgetResponse()
@@ -1919,12 +1947,12 @@ namespace Hecton8.VFX
             DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             if (scaler != null && scaler.Enabled)
             {
-                renderScale = Mathf.Clamp01(scaler.CurrentRenderScale);
+                renderScale = math.saturate(scaler.CurrentRenderScale);
             }
 
-            float normalized = Mathf.Clamp01(
+            float normalized = math.saturate(
                 (renderScale - _adaptiveBudgetFloorRenderScale) /
-                Mathf.Max(0.0001f, 1f - _adaptiveBudgetFloorRenderScale));
+                math.max(0.0001f, 1f - _adaptiveBudgetFloorRenderScale));
 
             VRAMMonitor vramMonitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
             VRAMMonitor.VRAMPressureState pressureState = vramMonitor != null
@@ -1942,9 +1970,9 @@ namespace Hecton8.VFX
             _adaptiveRenderScale = renderScale;
             _adaptiveBudgetNormalized = normalized;
             _adaptiveVRAMPressureState = pressureState;
-            _adaptiveShakeScale = Mathf.Lerp(_adaptiveShakeFloor, 1f, normalized);
-            _adaptiveFOVScale = Mathf.Lerp(_adaptiveFOVFloor, 1f, normalized);
-            _adaptivePostFxScale = Mathf.Lerp(_adaptivePostFxFloor, 1f, normalized);
+            _adaptiveShakeScale = math.lerp(_adaptiveShakeFloor, 1f, normalized);
+            _adaptiveFOVScale = math.lerp(_adaptiveFOVFloor, 1f, normalized);
+            _adaptivePostFxScale = math.lerp(_adaptivePostFxFloor, 1f, normalized);
             _adaptiveMaxActiveShakes = MAX_ACTIVE_SHAKES;
 
             switch (pressureState)
@@ -1952,13 +1980,13 @@ namespace Hecton8.VFX
                 case VRAMMonitor.VRAMPressureState.Critical:
                     _adaptiveShakeScale *= _adaptiveVRAMCriticalShakeScale;
                     _adaptivePostFxScale *= _adaptiveVRAMCriticalPostFxScale;
-                    _adaptiveMaxActiveShakes = Mathf.Clamp(_adaptiveCriticalMaxActiveShakes, 1, MAX_ACTIVE_SHAKES);
+                    _adaptiveMaxActiveShakes = math.clamp(_adaptiveCriticalMaxActiveShakes, 1, MAX_ACTIVE_SHAKES);
                     break;
 
                 case VRAMMonitor.VRAMPressureState.Warning:
                     _adaptiveShakeScale *= _adaptiveVRAMWarningShakeScale;
                     _adaptivePostFxScale *= _adaptiveVRAMWarningPostFxScale;
-                    _adaptiveMaxActiveShakes = Mathf.Clamp(_adaptiveWarningMaxActiveShakes, 1, MAX_ACTIVE_SHAKES);
+                    _adaptiveMaxActiveShakes = math.clamp(_adaptiveWarningMaxActiveShakes, 1, MAX_ACTIVE_SHAKES);
                     break;
             }
 
@@ -2008,7 +2036,7 @@ namespace Hecton8.VFX
             if (_mainCamera == null || _cameraTransform == null) return;
 
             // Shake displacement vector
-            if (_shakeOffset.magnitude > 0.001f)
+            if (_shakeOffset.sqrMagnitude > 0.000001f)
             {
                 Gizmos.color = Color.red;
                 Gizmos.DrawLine(_cameraTransform.position, _cameraTransform.position + _shakeOffset);
@@ -2021,17 +2049,17 @@ namespace Hecton8.VFX
                 Gizmos.color = Color.yellow;
                 float currentFOV = _mainCamera.fieldOfView;
                 float coneDistance = 5f;
-                float coneRadius = Mathf.Tan(currentFOV * 0.5f * Mathf.Deg2Rad) * coneDistance;
-                
+                float coneRadius = math.tan(math.radians(currentFOV * 0.5f)) * coneDistance;
+
                 Vector3 forward = _cameraTransform.forward * coneDistance;
                 Vector3 right = _cameraTransform.right * coneRadius;
                 Vector3 up = _cameraTransform.up * coneRadius;
-                
+
                 Vector3 topLeft = _cameraTransform.position + forward + up - right;
                 Vector3 topRight = _cameraTransform.position + forward + up + right;
                 Vector3 bottomLeft = _cameraTransform.position + forward - up - right;
                 Vector3 bottomRight = _cameraTransform.position + forward - up + right;
-                
+
                 Gizmos.DrawLine(_cameraTransform.position, topLeft);
                 Gizmos.DrawLine(_cameraTransform.position, topRight);
                 Gizmos.DrawLine(_cameraTransform.position, bottomLeft);

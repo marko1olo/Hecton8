@@ -14,6 +14,9 @@ namespace Hecton8.Gameplay
     {
         private const float MinimumBlendSharpness = 0.01f;
         private const float MinimumBlendDeltaTime = 0.0001f;
+        private const float MinimumCameraFov = 1f;
+        private const float MaximumCameraFov = 179f;
+        private const float QuaternionUnitLengthSqEpsilon = 0.015625f;
 
         [Header("References")]
         [SerializeField, Tooltip("Camera transform driven by the rig.")]
@@ -43,9 +46,19 @@ namespace Hecton8.Gameplay
         public void Bind(Transform targetCameraTransform, Camera targetCameraComponent)
         {
             cameraTransform = targetCameraTransform;
-            cameraComponent = targetCameraComponent != null
-                ? targetCameraComponent
-                : targetCameraTransform != null ? targetCameraTransform.GetComponent<Camera>() : null;
+            if (targetCameraComponent != null)
+            {
+                cameraComponent = targetCameraComponent;
+            }
+            else if (targetCameraTransform != null)
+            {
+                targetCameraTransform.TryGetComponent(out cameraComponent);
+            }
+            else
+            {
+                cameraComponent = null;
+            }
+
             if (trackingSpaceRoot == null && targetCameraTransform != null)
                 trackingSpaceRoot = targetCameraTransform.parent;
             if (trackingSpaceRoot != null && _defaultTrackingSpaceParent == null)
@@ -102,30 +115,48 @@ namespace Hecton8.Gameplay
         private void ApplyCameraState(in HectonCameraState state)
         {
             ApplyPendingAupAnchor();
-            Quaternion targetRotation = state.TargetRotation;
-            Vector3 targetLocalPosition = state.TargetLocalPosition;
+            Quaternion targetRotation = SanitizeQuaternion(state.TargetRotation, _lastAppliedWorldRotation);
+            Vector3 targetLocalPosition = SanitizeVector3(state.TargetLocalPosition, _lastAppliedLocalPosition);
+            float safeDeltaTime = math.isfinite(state.DeltaTime) ? math.max(0f, state.DeltaTime) : 0f;
+            float targetFieldOfView = SanitizeFieldOfView(
+                state.TargetFieldOfView,
+                cameraComponent != null ? cameraComponent.fieldOfView : 60f);
             bool lockTrackingForAup = _hasLastAppliedTrackingState && Time.frameCount == _originShiftTrackingLockFrame;
             if (lockTrackingForAup)
             {
-                targetRotation = _lastAppliedWorldRotation;
-                targetLocalPosition = _lastAppliedLocalPosition;
+                cameraTransform.rotation = SanitizeQuaternion(_lastAppliedWorldRotation, targetRotation);
+                cameraTransform.localPosition = SanitizeVector3(_lastAppliedLocalPosition, targetLocalPosition);
                 _originShiftTrackingLockFrame = -1;
+                _lastAppliedLocalPosition = cameraTransform.localPosition;
+                _lastAppliedWorldRotation = cameraTransform.rotation;
+                return;
             }
             else if (_originShiftTrackingLockFrame >= 0 && Time.frameCount > _originShiftTrackingLockFrame)
             {
                 _originShiftTrackingLockFrame = -1;
             }
 
-            float rotationT = ResolvePresentationBlendT(state.RotationSharpness, state.DeltaTime);
-            cameraTransform.rotation = Quaternion.Slerp(cameraTransform.rotation, targetRotation, rotationT);
+            if (state.ApplyTransformDirectly)
+            {
+                cameraTransform.rotation = targetRotation;
+                cameraTransform.localPosition = targetLocalPosition;
+            }
+            else
+            {
+                float rotationT = ResolvePresentationBlendT(state.RotationSharpness, safeDeltaTime);
+                Quaternion currentRotation = SanitizeQuaternion(cameraTransform.rotation, targetRotation);
+                cameraTransform.rotation = ApproximateNlerpNoSqrt(currentRotation, targetRotation, rotationT);
 
-            float positionT = ResolvePresentationBlendT(state.PositionSharpness, state.DeltaTime);
-            cameraTransform.localPosition = Vector3.Lerp(cameraTransform.localPosition, targetLocalPosition, positionT);
+                float positionT = ResolvePresentationBlendT(state.PositionSharpness, safeDeltaTime);
+                Vector3 currentLocalPosition = SanitizeVector3(cameraTransform.localPosition, targetLocalPosition);
+                cameraTransform.localPosition = currentLocalPosition + ((targetLocalPosition - currentLocalPosition) * positionT);
+            }
 
             if (cameraComponent != null)
             {
-                float fovT = ResolvePresentationBlendT(state.FieldOfViewSharpness, state.DeltaTime);
-                cameraComponent.fieldOfView = math.lerp(cameraComponent.fieldOfView, state.TargetFieldOfView, fovT);
+                float fovT = ResolvePresentationBlendT(state.FieldOfViewSharpness, safeDeltaTime);
+                float currentFieldOfView = SanitizeFieldOfView(cameraComponent.fieldOfView, targetFieldOfView);
+                cameraComponent.fieldOfView = math.lerp(currentFieldOfView, targetFieldOfView, fovT);
             }
 
             _lastAppliedLocalPosition = cameraTransform.localPosition;
@@ -137,6 +168,57 @@ namespace Hecton8.Gameplay
         {
             float x = math.max(MinimumBlendSharpness, sharpness) * math.max(MinimumBlendDeltaTime, deltaTime);
             return math.saturate(x / (1f + 0.5f * x));
+        }
+
+        private static Vector3 SanitizeVector3(Vector3 value, Vector3 fallback)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z)
+                ? value
+                : fallback;
+        }
+
+        private static Quaternion SanitizeQuaternion(Quaternion value, Quaternion fallback)
+        {
+            float4 q = new float4(value.x, value.y, value.z, value.w);
+            float lengthSq = math.dot(q, q);
+            if (!math.all(math.isfinite(q)) || !math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                return IsFiniteQuaternion(fallback) ? fallback : Quaternion.identity;
+
+            if (math.abs(lengthSq - 1f) > QuaternionUnitLengthSqEpsilon)
+                q *= ApproximateInverseLengthNoSqrt(lengthSq);
+
+            return new Quaternion(q.x, q.y, q.z, q.w);
+        }
+
+        private static bool IsFiniteQuaternion(Quaternion value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z) &&
+                   math.isfinite(value.w);
+        }
+
+        private static float SanitizeFieldOfView(float value, float fallback)
+        {
+            float resolved = math.isfinite(value) ? value : fallback;
+            return math.clamp(resolved, MinimumCameraFov, MaximumCameraFov);
+        }
+
+        private static Quaternion ApproximateNlerpNoSqrt(Quaternion fromRotation, Quaternion toRotation, float blend01)
+        {
+            float4 from = new float4(fromRotation.x, fromRotation.y, fromRotation.z, fromRotation.w);
+            float4 to = new float4(toRotation.x, toRotation.y, toRotation.z, toRotation.w);
+            if (math.dot(from, to) < 0f)
+                to = -to;
+
+            float4 blended = math.lerp(from, to, math.saturate(blend01));
+            blended *= ApproximateInverseLengthNoSqrt(math.dot(blended, blended));
+            return new Quaternion(blended.x, blended.y, blended.z, blended.w);
+        }
+
+        private static float ApproximateInverseLengthNoSqrt(float lengthSq)
+        {
+            return math.rcp(0.5f + (0.5f * math.max(lengthSq, 0.000001f)));
         }
 
         private void ApplyPendingAupAnchor()
@@ -164,12 +246,11 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             if (!_registeredOriginShiftListener)
             {
                 HectonFloatingOrigin.RegisterListener(this);
-                _registeredOriginShiftListener = true;
+                _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
             }
         }
 

@@ -4,6 +4,7 @@ using Hecton8.Gameplay;
 using Hecton8.Modding;
 using System.Text;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -31,9 +32,11 @@ namespace Hecton8.UI
         private const float HoldDuration = 0.45f;
         private const float FadeSharpness = 5.2f;
         private const float HiddenAlphaCutoff = 0.01f;
+        private const int DumpPayloadCharCapacity = 16384;
         private const string OverlayName = "PDADeathMemoryDumpOverlay";
         private const string DefaultFinalLine = "LOCALIZATION MODULE... DESTROYED.";
 
+        private static readonly char[] s_emptyDumpChars = new char[1];
         private static readonly Color BackgroundColor = new Color(0f, 0f, 0f, 0.96f);
         private static readonly Color DumpTextColor = new Color(0.72f, 1f, 0.82f, 0.96f);
         // COLD ALLOC: string[12] — death-dump module token table — owner: PDADeathMemoryDump
@@ -61,8 +64,10 @@ namespace Hecton8.UI
         private readonly string[] _dumpLineLibrary = new string[LibraryLineCount];
         // COLD ALLOC: int[180] — visible-character thresholds for line-based reveal without per-frame string rebuilds — owner: PDADeathMemoryDump
         private readonly int[] _lineCharacterThresholds = new int[SequenceLineCount];
+        // COLD ALLOC: char[16384] — TMP payload staging buffer for death dump SetCharArray path — owner: PDADeathMemoryDump
+        private readonly char[] _dumpPayloadBuffer = new char[DumpPayloadCharCapacity];
         // COLD ALLOC: StringBuilder[16384] — fixed-capacity death-dump assembly buffer reused for line library and final payload — owner: PDADeathMemoryDump
-        private readonly StringBuilder _dumpBuilder = new StringBuilder(16384);
+        private readonly StringBuilder _dumpBuilder = new StringBuilder(DumpPayloadCharCapacity);
 
         [Header("── Font ──────────────────")]
         [Tooltip("Optional readable font override for the death memory dump overlay.")]
@@ -114,7 +119,7 @@ namespace Hecton8.UI
             {
                 case DumpState.Revealing:
                     _lineProgress += dt * LinesPerSecond;
-                    int visibleLines = Mathf.Min(_visibleLineTarget, Mathf.FloorToInt(_lineProgress));
+                    int visibleLines = math.min(_visibleLineTarget, (int)math.floor(_lineProgress));
                     int visibleCharacters = visibleLines > 0
                         ? _lineCharacterThresholds[visibleLines - 1]
                         : 0;
@@ -138,7 +143,7 @@ namespace Hecton8.UI
                     break;
 
                 case DumpState.Fade:
-                    _overlayGroup.alpha = Mathf.Lerp(_overlayGroup.alpha, 0f, 1f - Mathf.Exp(-FadeSharpness * dt));
+                    _overlayGroup.alpha = math.lerp(_overlayGroup.alpha, 0f, FastDecayBlend(FadeSharpness, dt));
                     if (_overlayGroup.alpha <= HiddenAlphaCutoff)
                     {
                         HideOverlay();
@@ -184,15 +189,15 @@ namespace Hecton8.UI
                 switch (i)
                 {
                     case 22:
-                        AppendTelemetryLine(_dumpBuilder, "PRESSURE VECTOR", Mathf.RoundToInt((float)record.PeakDepthMeters), "M");
+                        AppendTelemetryLine(_dumpBuilder, "PRESSURE VECTOR", (int)math.round((float)record.PeakDepthMeters), "M");
                         break;
 
                     case 61:
-                        AppendTelemetryLine(_dumpBuilder, "INTEGRITY TRACE", Mathf.RoundToInt(record.LowestIntegrityNormalized * 100f), "%");
+                        AppendTelemetryLine(_dumpBuilder, "INTEGRITY TRACE", (int)math.round(record.LowestIntegrityNormalized * 100f), "%");
                         break;
 
                     case 118:
-                        AppendTelemetryLine(_dumpBuilder, "LIFE TRACE", Mathf.RoundToInt((float)record.LifeDurationSeconds), "S");
+                        AppendTelemetryLine(_dumpBuilder, "LIFE TRACE", (int)math.round((float)record.LifeDurationSeconds), "S");
                         break;
 
                     default:
@@ -209,8 +214,12 @@ namespace Hecton8.UI
             _lineCharacterThresholds[writeIndex] = _dumpBuilder.Length;
             _visibleLineTarget = writeIndex + 1;
 
-            _dumpLabel.SetText(_dumpBuilder);
-            _dumpLabel.ForceMeshUpdate();
+            int payloadLength = math.min(_dumpBuilder.Length, _dumpPayloadBuffer.Length);
+            _dumpBuilder.CopyTo(0, _dumpPayloadBuffer, 0, payloadLength);
+            for (int i = 0; i < _visibleLineTarget; i++)
+                _lineCharacterThresholds[i] = math.min(_lineCharacterThresholds[i], payloadLength);
+
+            _dumpLabel.SetCharArray(_dumpPayloadBuffer, 0, payloadLength);
             _dumpLabel.maxVisibleCharacters = 0;
             if (_textRoot != null)
                 _textRoot.anchoredPosition = new Vector2(28f, -28f);
@@ -246,6 +255,15 @@ namespace Hecton8.UI
             _libraryBuilt = true;
         }
 
+        private static float FastDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            if (x >= 3.5f)
+                return 1f;
+
+            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
+        }
+
         private static void AppendTelemetryLine(StringBuilder builder, string label, int value, string suffix)
         {
             builder.Append("0x");
@@ -270,12 +288,12 @@ namespace Hecton8.UI
             unchecked
             {
                 int hash = 17;
-                hash = (hash * 31) + Mathf.RoundToInt((float)record.PeakDepthMeters);
-                hash = (hash * 31) + Mathf.RoundToInt((float)record.LifeDurationSeconds);
-                hash = (hash * 31) + Mathf.RoundToInt(record.LowestIntegrityNormalized * 1000f);
-                hash = (hash * 31) + Mathf.RoundToInt(record.Position.x * 10f);
-                hash = (hash * 31) + Mathf.RoundToInt(record.Position.y * 10f);
-                hash = (hash * 31) + Mathf.RoundToInt(record.Position.z * 10f);
+                hash = (hash * 31) + (int)math.round((float)record.PeakDepthMeters);
+                hash = (hash * 31) + (int)math.round((float)record.LifeDurationSeconds);
+                hash = (hash * 31) + (int)math.round(record.LowestIntegrityNormalized * 1000f);
+                hash = (hash * 31) + (int)math.round(record.Position.x * 10f);
+                hash = (hash * 31) + (int)math.round(record.Position.y * 10f);
+                hash = (hash * 31) + (int)math.round(record.Position.z * 10f);
                 return (hash & int.MaxValue) % LibraryLineCount;
             }
         }
@@ -362,7 +380,7 @@ namespace Hecton8.UI
 
             if (_dumpLabel != null)
             {
-                _dumpLabel.SetText(string.Empty);
+                _dumpLabel.SetCharArray(s_emptyDumpChars, 0, 0);
                 _dumpLabel.maxVisibleCharacters = int.MaxValue;
             }
         }
@@ -375,8 +393,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()

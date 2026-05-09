@@ -1,8 +1,8 @@
 ﻿# PROJECT ATLAS
 
-Version: 1.5.7
-Date: 2026-05-08
-Status: PENDING VERIFICATION
+Version: 1.5.23
+Date: 2026-05-09
+Status: PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`, `PROJECT_LTS_Compatibility_Layer.txt`
 
@@ -56,13 +56,13 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project`: `1247`
-Observed first-party C# physical line count under `Assets/_Project`: `691068`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1206`
-Observed first-party C# physical line count under `Assets/_Project/Scripts`: `675775`
+Observed first-party C# file count under `Assets/_Project`: `1255`
+Observed first-party C# physical line count under `Assets/_Project`: `743328`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1214`
+Observed first-party C# physical line count under `Assets/_Project/Scripts`: `728007`
 Line-count method: PowerShell over `System.IO.StreamReader.ReadLine()` for every matched file.
 
-SOURCE DRIFT DETECTED: previous same-day Atlas scan recorded `1233` / `1192` C# files and `667771` script physical lines; current May 8 manifest snapshot records `1247` / `1206` C# files and `675775` script physical lines.
+SOURCE DRIFT DETECTED: previous same-day Atlas scan recorded `1233` / `1192` C# files and `667771` script physical lines; current May 9 local autonomous compile snapshot records `1255` / `1214` C# files and `728007` script physical lines.
 
 MASSIVE REFACTOR DETECTED: same-day script line-count delta exceeds `500` lines. Treat all earlier May 7 source-count claims as superseded by this timestamped snapshot unless a newer report states otherwise.
 
@@ -71,10 +71,12 @@ It does not imply quality, cohesion, or compile health.
 
 Current build-master compile state:
 
-- `dotnet build .\Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false` failed.
-- Latest completed Core dependency build succeeded with `48 Warning(s)` and `0 Error(s)`; later source writes were observed, so this is not stable-source proof.
-- Latest build artifact: `CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log`.
-- Latest Unity MCP editor-console readback returned `0` error/warning entries on active scene `00_BOOTSTRAP`; this is not Play Mode or profiler proof.
+- `dotnet build ./Hecton8.Core.csproj --no-restore -m:1 -p:UseSharedCompilation=false -p:BuildInParallel=false -nr:false` succeeded in the latest completed attempt.
+- Latest Core dependency build succeeded with `0 Warning(s)` and `0 Error(s)`.
+- Latest build artifact: `CodexArtifacts/2026-05-09_R168_CORE_SERIAL_NORESTORE_BUILD.log`.
+- R168 supersedes R129-R167 after later source churn, repeated failed live-churn gates, stale clean snapshots, transient Input/Core boundary regressions, BLACKBOX export callback/thread drift, emergency-relay helper drift, R154 invalidation by an in-build source write, post-R155 input churn, R160 timestamp invalidation, R161 Input assembly regression, post-R163 source writes, post-R165 guarded diagnostic-log preprocessor edits, and the `HectonBiolumZone.cs` development-build diagnostics guard pass.
+- R168 is current local `dotnet` compile evidence, but not frozen-source proof: later `.cs` writes were observed after the R168 artifact end timestamp.
+- MCP proof is blocked by the May 8 hallucination check; do not use prior MCP-clean wording as current evidence.
 - Latest current-state report: `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`.
 
 ## 4. External / Package Surface
@@ -193,8 +195,8 @@ Canonical entry files inside this bundle:
 
 ### 6.3 Current Live Console Truth
 
-Latest documentation synchronization is `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`.
-Latest current MCP readback in that May 6 pass reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`, renderer `PC_Renderer`, and `37` render textures. The earlier May 4 sweep readback with `18` warnings during `01_MAIN_MENU` Play Mode transition is historical, not the current editor-console boundary.
+Latest documentation synchronization is `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`.
+Fresh Unity MCP/Console proof is blocked in the current session. Older MCP readbacks from May 4-May 6 are historical snapshots only and must not be used as current Unity Console, Play Mode, profiler, GCMonitor, player-build, scene-wiring, or memory-retention proof.
 
 This is not Play Mode proof and not runtime certification.
 
@@ -219,7 +221,7 @@ Authority files for this boundary:
 
 These points were revalidated against current source in this pass:
 
-- `GlobalRegistryContracts.cs` now contains `39` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, `36`, `37`, or `38` snapshots.
+- `GlobalRegistryContracts.cs` now contains `38` direct public interfaces, not the older `19`, `27`, `31`, `33`, `34`, `36`, `37`, `39`, or `40` snapshots.
 - `SpatialAudioManager` directly implements `IAudioService` and registers through `GlobalRegistry.RegisterAudioService(this)`.
 - `SuitHUDV4CanvasOverlay` is the direct first-party `IUIService` implementor found in current source scan.
 - current bootstrap authority is split across `BootstrapController`, `GameBootstrapper`, and `SceneBootstrap`; it is not a single-owner startup surface.
@@ -401,16 +403,16 @@ Mandates followed for this update:
 
 Current measured source and documentation surface:
 
-- `Assets/_Project`: `1233` C# files, `683064` physical lines.
-- `Assets/_Project/Scripts`: `1192` C# files, `667771` physical lines.
+- `Assets/_Project`: `1255` C# files, `742158` physical lines.
+- `Assets/_Project/Scripts`: `1214` C# files, `726837` physical lines.
 - Script LOC method: PowerShell `System.IO.StreamReader.ReadLine()` over every `*.cs` file.
-- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+19` files under `Assets/_Project`, `+19` files under `Assets/_Project/Scripts`, and `+11093` script physical lines.
+- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+41` files under `Assets/_Project`, `+41` files under `Assets/_Project/Scripts`, and `+69966` script physical lines.
 - MASSIVE REFACTOR DETECTED: the same-day script line delta is greater than `500`.
 - `.agents-skills`: `52` mandate files.
-- `Docs/**/*.md`: `443` markdown files.
-- Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `230`.
+- `Docs/**/*.md`: `444` markdown files.
+- Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `231`.
 - Active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports`: `163`.
-- Active `Docs/Reports/*.md`: `67`.
+- Active `Docs/Reports/*.md`: `68`.
 - Scripts created on `2026-05-07` by filesystem timestamp: `23`.
 - Scripts modified on `2026-05-07` by filesystem timestamp: `197`.
 - Git-untracked entries at the May 6 doc sync checkpoint: `15`.
@@ -560,14 +562,14 @@ Mandates followed for this update:
 
 Current measured source/docs surface:
 
-- `Assets/_Project`: `1233` C# files, `683064` physical lines.
-- `Assets/_Project/Scripts`: `1192` C# files, `667771` physical lines.
+- `Assets/_Project`: `1255` C# files, `742158` physical lines.
+- `Assets/_Project/Scripts`: `1214` C# files, `726837` physical lines.
 - Script LOC method: PowerShell `System.IO.StreamReader.ReadLine()` over every `*.cs` file.
-- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+19` files under `Assets/_Project`, `+19` files under `Assets/_Project/Scripts`, and `+11093` script physical lines.
+- SOURCE DRIFT DETECTED: previous same-day Atlas count was `1214` / `1173` C# files and `656678` script-line proxy count; current deltas are `+41` files under `Assets/_Project`, `+41` files under `Assets/_Project/Scripts`, and `+69966` script physical lines.
 - MASSIVE REFACTOR DETECTED: the same-day script line delta is greater than `500`.
 - Scripts directly under `Assets/_Project/Scripts`: `337`.
 - Strict `StartCoroutine(` hits under `Assets/_Project/Scripts`: `0`.
-- `Docs`: `871` non-meta files in the current filesystem view.
+- `Docs`: `874` non-meta files in the current filesystem view.
 - `Docs/ARCHIVARIUS REPORTS`: `120` non-meta files in the current filesystem view.
 - Active non-obsolete `Docs/**/*.md` markdown header debt: `0` missing `Date:`, `0` missing `Status:`.
 - Active non-report markdown header debt: `0`.
@@ -576,17 +578,17 @@ These counts are orientation data only. They are not readiness metrics and shoul
 
 Current active forensic reports to read before older atlas claims:
 
-1. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
-2. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
-3. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-4. `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
-5. `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
-6. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
-7. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
-8. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
-9. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
-10. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
-11. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
+1. `Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md`
+2. `Docs/Reports/2026-05-08_ACTIVE_DOCUMENTATION_MANIFEST.json`
+3. `Docs/Reports/2026-05-07_MAIN_DOCUMENTATION_CURRENT_STATE_REFRESH.md`
+4. `Docs/Reports/2026-05-06_DOCUMENTATION_SYNCHRONIZATION_PASS.md`
+5. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+6. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+7. `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
+8. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
+9. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
+10. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
+11. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
 12. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
 
 Current risk corrections:
@@ -600,9 +602,11 @@ Current risk corrections:
 
 Verification state:
 
-- Unity console: latest May 4 current MCP recheck returned `0` error/warning entries. The earlier May 4 documentation sweep saw `18` warning entries from `GlobalRegistry` unregister-for-non-registered tick buckets and `SystemDispatcher` slow-threshold telemetry during `01_MAIN_MENU` Play Mode transition; that snapshot is historical.
-- Runtime: latest MCP recheck reported active scene `00_BOOTSTRAP` with Play Mode off. Earlier MCP reported active scene `01_MAIN_MENU` and Play Mode transition state. Gameplay proof was not captured.
+- Unity console: no fresh Unity MCP/Console proof is available in the current session; `list_mcp_resources` returned an empty resource list. Older May 4-May 8 console snapshots are historical and must not be treated as current proof.
+- Runtime: latest usable MCP recheck is historical only and reported active scene `00_BOOTSTRAP` with Play Mode off. Earlier MCP reported active scene `01_MAIN_MENU` and Play Mode transition state. Gameplay proof was not captured.
 - GC/frame/memory: no fresh profiler or GCMonitor measurement.
 
-STATUS: PENDING VERIFICATION
+STATUS: PENDING FINAL UNITY PROOF
+
+
 

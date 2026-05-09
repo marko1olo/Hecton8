@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Interaction;
@@ -19,14 +18,27 @@ namespace Hecton8.UI
     {
         private const uint PhysicalPanelToolId = 0x50414E4Cu;
         private const float MinimumDeltaTime = 0.0001f;
-        private const int RegistryInitialCapacity = 64;
         private const byte LeftMotorMask = 0b0001;
         private const byte RightMotorMask = 0b0010;
         private const byte MicroHapticPriority = 1;
-        private const string LeftHandTag = "LeftHand";
-        private const string RightHandTag = "RightHand";
-
-        private static readonly Dictionary<Collider, IPhysicalPanelButtonReceiver> _receiversByCollider = new Dictionary<Collider, IPhysicalPanelButtonReceiver>(RegistryInitialCapacity); // COLD ALLOC: Dictionary<Collider,IPhysicalPanelButtonReceiver>[64] - collider to physical panel button registry - owner: PhysicalPanelButton
+        private const float HoldDispatchIntervalSeconds = 0.033333335f;
+        private const int MaxParentResolveDepth = 32;
+        private const float MinimumPressDepthMeters = 0.001f;
+        private const float MaximumPressDepthMeters = 0.05f;
+        private const float MinimumVisualSpeed = 1f;
+        private const float MaximumVisualSpeed = 60f;
+        private const float MinimumSignalCooldownSeconds = 0.02f;
+        private const float MaximumSignalCooldownSeconds = 1f;
+        private const float MinimumPressHapticDurationSeconds = 0.01f;
+        private const float MaximumPressHapticDurationSeconds = 0.12f;
+        private const float MaximumPressHapticLowFrequency = 0.4f;
+        private const float MaximumPressHapticHighFrequency = 0.6f;
+        private const float MaximumPressHapticFrequencyHz = 80f;
+        private const float MaximumClickVolume = 1f;
+        private const float MinimumClickPitch = 0.25f;
+        private const float MaximumClickPitch = 2.5f;
+        private const float MaximumButtonDeltaSeconds = 0.05f;
+        private const float VisualSettleEpsilon = 0.0005f;
 
         [Header("References")]
         [SerializeField, Tooltip("Trigger volume depressed by the player kinematic hand.")]
@@ -85,8 +97,20 @@ namespace Hecton8.UI
         private Vector3 _baseLocalPosition;
         private int _clickOcclusionMask;
         private int _lastHandInsideFrame = -1;
-        private float _nextSignalTime;
+        private float _buttonClock;
+        private float _signalCooldownRemaining;
+        private float _holdEventRemaining;
         private float _pressed01;
+        private float _resolvedPressDepthMeters = 0.012f;
+        private float _resolvedDepressSpeed = 22f;
+        private float _resolvedReleaseSpeed = 14f;
+        private float _resolvedSignalCooldownSeconds = 0.18f;
+        private float _resolvedPressHapticLowFrequency = 0.06f;
+        private float _resolvedPressHapticHighFrequency = 0.18f;
+        private float _resolvedPressHapticDurationSeconds = 0.035f;
+        private float _resolvedPressHapticFrequencyHz = 54f;
+        private float _resolvedClickVolume = 0.42f;
+        private float _resolvedClickPitch = 1f;
         private bool _registered;
         private bool _pressDispatched;
         private bool _acousticRuntimeAcquired;
@@ -102,16 +126,14 @@ namespace Hecton8.UI
         /// <returns>True when the collider maps to an enabled physical panel button.</returns>
         public static bool TryResolve(Collider collider, out IPhysicalPanelButtonReceiver receiver)
         {
-            receiver = null;
-            return collider != null &&
-                   _receiversByCollider.TryGetValue(collider, out receiver) &&
-                   receiver != null;
+            return PhysicalHandReceiverRegistry.TryResolve(collider, out receiver);
         }
 
         private void Awake()
         {
             _cachedTransform = transform;
             _clickOcclusionMask = AcousticOcclusionUtility.BuildSensoryMask();
+            CacheScalarConfig();
             ResolveReferences();
             if (buttonMesh != null)
                 _baseLocalPosition = buttonMesh.localPosition;
@@ -119,19 +141,26 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            CacheScalarConfig();
             ResolveReferences();
             RegisterCollider();
             AcquireAcousticRuntime();
-            TryRegister();
+            RefreshTickRegistration(false);
         }
 
         private void OnDisable()
         {
+            if (_pressDispatched)
+                DispatchPanelEvent(DiegeticPanelInputEventType.Up);
+
             Unregister();
             ReleaseAcousticRuntime();
             UnregisterCollider();
             _lastHandInsideFrame = -1;
             _pressDispatched = false;
+            _buttonClock = 0f;
+            _signalCooldownRemaining = 0f;
+            _holdEventRemaining = 0f;
             _pressed01 = 0f;
             if (buttonMesh != null)
                 buttonMesh.localPosition = _baseLocalPosition;
@@ -146,15 +175,21 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float dt)
         {
+            float safeDeltaTime = SanitizeButtonDeltaSeconds(dt);
+            _buttonClock += safeDeltaTime;
+            if (_signalCooldownRemaining > 0f)
+                _signalCooldownRemaining = math.max(0f, _signalCooldownRemaining - safeDeltaTime);
+
             bool handInside = _lastHandInsideFrame == Time.frameCount;
             float target = handInside ? 1f : 0f;
-            float speed = handInside ? depressSpeed : releaseSpeed;
-            float alpha = 1f - math.exp(-speed * math.max(dt, MinimumDeltaTime));
-            _pressed01 = math.lerp(_pressed01, target, alpha);
+            float speed = handInside ? _resolvedDepressSpeed : _resolvedReleaseSpeed;
+            float alpha = FastDecayBlend(speed, safeDeltaTime);
+            float currentPressed = math.isfinite(_pressed01) ? _pressed01 : 0f;
+            _pressed01 = math.lerp(currentPressed, target, alpha);
 
             if (buttonMesh != null)
             {
-                Vector3 offset = new Vector3(0f, 0f, -pressDepthMeters * _pressed01);
+                Vector3 offset = new Vector3(0f, 0f, -_resolvedPressDepthMeters * _pressed01);
                 buttonMesh.localPosition = _baseLocalPosition + offset;
             }
 
@@ -165,8 +200,29 @@ namespace Hecton8.UI
             }
             else if (handInside && _pressDispatched)
             {
-                DispatchPanelEvent(DiegeticPanelInputEventType.Hold);
+                _holdEventRemaining -= safeDeltaTime;
+                if (_holdEventRemaining <= 0f)
+                {
+                    DispatchPanelEvent(DiegeticPanelInputEventType.Hold);
+                    _holdEventRemaining = HoldDispatchIntervalSeconds;
+                }
             }
+
+            RefreshTickRegistration(handInside);
+        }
+
+        private static float FastDecayBlend(float speed, float deltaTime)
+        {
+            float safeSpeed = math.isfinite(speed) ? math.max(0f, speed) : 0f;
+            float safeDeltaTime = SanitizeButtonDeltaSeconds(deltaTime);
+            if (safeSpeed <= 0f || safeDeltaTime <= 0f)
+                return 0f;
+
+            float x = safeSpeed * math.max(safeDeltaTime, MinimumDeltaTime);
+            if (x >= 3.5f)
+                return 1f;
+
+            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
         }
 
         /// <summary>
@@ -186,19 +242,28 @@ namespace Hecton8.UI
             if (activationVolume == null || interactionSignals == null || !interactionSignals.IsInitialized)
                 return false;
 
+            if (!IsFinite(handPosition))
+                return false;
+
             _lastHandInsideFrame = Time.frameCount;
-            float now = Time.unscaledTime;
-            if (now < _nextSignalTime)
+            TryRegister();
+            if (_pressDispatched)
+                return true;
+
+            if (_signalCooldownRemaining > 0f)
                 return true;
 
             Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(handPosition);
-            Vector3 safeDirection = (Vector3)math.normalizesafe((float3)handForward, (float3)transform.forward);
+            Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
+            if (!IsFinite(fallbackForward))
+                fallbackForward = Vector3.forward;
+            Vector3 safeDirection = ResolveApproxPressDirection(handForward, fallbackForward);
             InteractionPacket packet = new InteractionPacket(
                 PhysicalPanelToolId,
                 (float3)absoluteHitPoint,
                 (float3)safeDirection,
                 1f,
-                pressDepthMeters,
+                _resolvedPressDepthMeters,
                 (byte)ToolActionMode.Primary,
                 (byte)ToolStateBits.Active,
                 unchecked((uint)Time.frameCount));
@@ -214,7 +279,7 @@ namespace Hecton8.UI
             if (!interactionSignals.Publish(in signal, activationVolume))
                 return false;
 
-            _nextSignalTime = now + signalCooldownSeconds;
+            _signalCooldownRemaining = _resolvedSignalCooldownSeconds;
             EmitPressHaptic(handSourceCollider, fallbackHandSide);
             return true;
         }
@@ -229,6 +294,32 @@ namespace Hecton8.UI
             return TryQueueHandPress(handPosition, handForward, interactionSignals, handSourceCollider, fallbackHandSide);
         }
 
+        private static Vector3 ResolveApproxPressDirection(Vector3 handForward, Vector3 fallbackForward)
+        {
+            float3 direction = (float3)handForward;
+            if (!math.all(math.isfinite(direction)))
+                direction = (float3)fallbackForward;
+
+            float lengthSq = math.lengthsq(direction);
+            if (lengthSq <= 0.0001f)
+            {
+                direction = (float3)fallbackForward;
+                if (!math.all(math.isfinite(direction)))
+                    return Vector3.forward;
+
+                lengthSq = math.lengthsq(direction);
+                if (lengthSq <= 0.0001f)
+                    return Vector3.forward;
+            }
+
+            float3 absDirection = math.abs(direction);
+            float maxAxis = math.max(absDirection.x, math.max(absDirection.y, absDirection.z));
+            float minAxis = math.min(absDirection.x, math.min(absDirection.y, absDirection.z));
+            float midAxis = absDirection.x + absDirection.y + absDirection.z - maxAxis - minAxis;
+            float approxLength = math.max(0.0001f, maxAxis + (midAxis * 0.375f) + (minAxis * 0.1875f));
+            return (Vector3)(direction * math.rcp(approxLength));
+        }
+
         /// <inheritdoc />
         public void ApplyInteractionSignal(in InteractionSignal signal, Vector3 runtimeHitPoint)
         {
@@ -240,6 +331,8 @@ namespace Hecton8.UI
                 DispatchPanelEvent(DiegeticPanelInputEventType.Down);
                 PlayDiegeticClick(runtimeHitPoint);
                 _pressDispatched = true;
+                _holdEventRemaining = HoldDispatchIntervalSeconds;
+                TryRegister();
             }
         }
 
@@ -250,10 +343,10 @@ namespace Hecton8.UI
 
             byte motorMask = ResolveHapticMotorMask(handSourceCollider, fallbackHandSide);
             ToolHapticsRuntime.EnqueueSinusoidalCommand(
-                pressHapticLowFrequency,
-                pressHapticHighFrequency,
-                pressHapticDurationSeconds,
-                pressHapticFrequencyHz,
+                _resolvedPressHapticLowFrequency,
+                _resolvedPressHapticHighFrequency,
+                _resolvedPressHapticDurationSeconds,
+                _resolvedPressHapticFrequencyHz,
                 MicroHapticPriority,
                 motorMask);
         }
@@ -262,12 +355,11 @@ namespace Hecton8.UI
         {
             if (handSourceCollider != null)
             {
-                GameObject sourceObject = handSourceCollider.gameObject;
-                int sourceLayerBit = 1 << sourceObject.layer;
-                if ((leftHandSourceLayers.value & sourceLayerBit) != 0 || sourceObject.CompareTag(LeftHandTag))
+                int sourceLayerBit = 1 << handSourceCollider.gameObject.layer;
+                if ((leftHandSourceLayers.value & sourceLayerBit) != 0)
                     return LeftMotorMask;
 
-                if ((rightHandSourceLayers.value & sourceLayerBit) != 0 || sourceObject.CompareTag(RightHandTag))
+                if ((rightHandSourceLayers.value & sourceLayerBit) != 0)
                     return RightMotorMask;
             }
 
@@ -287,7 +379,7 @@ namespace Hecton8.UI
                 if (panelInteractable is IPanelInteractable explicitReceiver)
                     _panelInteractable = explicitReceiver;
                 else
-                    _panelInteractable = GetComponentInParent<IPanelInteractable>();
+                    TryResolveParentPanelInteractable(transform, out _panelInteractable);
             }
         }
 
@@ -296,7 +388,6 @@ namespace Hecton8.UI
             if (activationVolume == null)
                 return;
 
-            _receiversByCollider[activationVolume] = this;
             PhysicalHandReceiverRegistry.Register(activationVolume, this);
         }
 
@@ -306,11 +397,6 @@ namespace Hecton8.UI
                 return;
 
             PhysicalHandReceiverRegistry.Unregister(activationVolume, this);
-            if (_receiversByCollider.TryGetValue(activationVolume, out IPhysicalPanelButtonReceiver receiver) &&
-                ReferenceEquals(receiver, this))
-            {
-                _receiversByCollider.Remove(activationVolume);
-            }
         }
 
         private void DispatchPanelEvent(DiegeticPanelInputEventType eventType)
@@ -323,7 +409,7 @@ namespace Hecton8.UI
                 PanelId = panelId,
                 CanvasHitPoint = new float2(canvasHitPoint.x, canvasHitPoint.y),
                 EventType = eventType,
-                Timestamp = Time.unscaledTime
+                Timestamp = _buttonClock
             });
         }
 
@@ -340,7 +426,7 @@ namespace Hecton8.UI
 
             Transform listenerTransform = ResolveListenerTransform();
             Vector3 listenerPosition = listenerTransform != null ? listenerTransform.position : sourcePosition;
-            float resolvedVolume = clickVolume;
+            float resolvedVolume = _resolvedClickVolume;
             float lowPassCutoff = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
             if (_clickOcclusionMask != 0)
             {
@@ -369,13 +455,13 @@ namespace Hecton8.UI
                     pressClickSound,
                     sourcePosition,
                     resolvedVolume,
-                    clickPitch,
+                    _resolvedClickPitch,
                     null,
                     lowPassCutoff);
                 return;
             }
 
-            GlobalRegistry.Audio.PlayAtPoint(pressClickSound, sourcePosition, resolvedVolume, clickPitch);
+            GlobalRegistry.Audio.PlayAtPoint(pressClickSound, sourcePosition, resolvedVolume, _resolvedClickPitch);
         }
 
         private static Transform ResolveListenerTransform()
@@ -413,13 +499,104 @@ namespace Hecton8.UI
             return math.all(math.isfinite((float3)value));
         }
 
+        private static float SanitizeButtonDeltaSeconds(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0f, MaximumButtonDeltaSeconds) : 0f;
+        }
+
+        private void CacheScalarConfig()
+        {
+            _resolvedPressDepthMeters = ClampFiniteRange(
+                pressDepthMeters,
+                MinimumPressDepthMeters,
+                MaximumPressDepthMeters,
+                0.012f);
+            _resolvedDepressSpeed = ClampFiniteRange(
+                depressSpeed,
+                MinimumVisualSpeed,
+                MaximumVisualSpeed,
+                22f);
+            _resolvedReleaseSpeed = ClampFiniteRange(
+                releaseSpeed,
+                MinimumVisualSpeed,
+                MaximumVisualSpeed,
+                14f);
+            _resolvedSignalCooldownSeconds = ClampFiniteRange(
+                signalCooldownSeconds,
+                MinimumSignalCooldownSeconds,
+                MaximumSignalCooldownSeconds,
+                0.18f);
+            _resolvedPressHapticLowFrequency = ClampFiniteRange(
+                pressHapticLowFrequency,
+                0f,
+                MaximumPressHapticLowFrequency,
+                0.06f);
+            _resolvedPressHapticHighFrequency = ClampFiniteRange(
+                pressHapticHighFrequency,
+                0f,
+                MaximumPressHapticHighFrequency,
+                0.18f);
+            _resolvedPressHapticDurationSeconds = ClampFiniteRange(
+                pressHapticDurationSeconds,
+                MinimumPressHapticDurationSeconds,
+                MaximumPressHapticDurationSeconds,
+                0.035f);
+            _resolvedPressHapticFrequencyHz = ClampFiniteRange(
+                pressHapticFrequencyHz,
+                0f,
+                MaximumPressHapticFrequencyHz,
+                54f);
+            _resolvedClickVolume = ClampFiniteRange(clickVolume, 0f, MaximumClickVolume, 0.42f);
+            _resolvedClickPitch = ClampFiniteRange(clickPitch, MinimumClickPitch, MaximumClickPitch, 1f);
+        }
+
+        private static float ClampFiniteRange(float value, float min, float max, float fallback)
+        {
+            return math.isfinite(value) ? math.clamp(value, min, max) : fallback;
+        }
+
+        private static bool TryResolveParentPanelInteractable(Transform start, out IPanelInteractable component)
+        {
+            component = null;
+            Transform current = start;
+            int depth = 0;
+            while (current != null && depth++ < MaxParentResolveDepth)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+        }
+
+        private void RefreshTickRegistration(bool handInside)
+        {
+            if (handInside || _pressDispatched || _pressed01 > VisualSettleEpsilon)
+            {
+                TryRegister();
+                return;
+            }
+
+            if (_pressed01 != 0f)
+            {
+                _pressed01 = 0f;
+                if (buttonMesh != null)
+                    buttonMesh.localPosition = _baseLocalPosition;
+            }
+
+            _signalCooldownRemaining = 0f;
+            _holdEventRemaining = 0f;
+            Unregister();
         }
 
         private void Unregister()
@@ -440,12 +617,29 @@ namespace Hecton8.UI
             if (activationVolume != null)
                 activationVolume.isTrigger = true;
 
-            if (pressDepthMeters < 0.001f)
-                pressDepthMeters = 0.001f;
-            pressHapticLowFrequency = math.clamp(pressHapticLowFrequency, 0f, 0.4f);
-            pressHapticHighFrequency = math.clamp(pressHapticHighFrequency, 0f, 0.6f);
-            pressHapticDurationSeconds = math.clamp(pressHapticDurationSeconds, 0.01f, 0.12f);
-            pressHapticFrequencyHz = math.clamp(pressHapticFrequencyHz, 0f, 80f);
+            pressDepthMeters = ClampFiniteRange(
+                pressDepthMeters,
+                MinimumPressDepthMeters,
+                MaximumPressDepthMeters,
+                0.012f);
+            depressSpeed = ClampFiniteRange(depressSpeed, MinimumVisualSpeed, MaximumVisualSpeed, 22f);
+            releaseSpeed = ClampFiniteRange(releaseSpeed, MinimumVisualSpeed, MaximumVisualSpeed, 14f);
+            signalCooldownSeconds = ClampFiniteRange(
+                signalCooldownSeconds,
+                MinimumSignalCooldownSeconds,
+                MaximumSignalCooldownSeconds,
+                0.18f);
+            pressHapticLowFrequency = ClampFiniteRange(pressHapticLowFrequency, 0f, MaximumPressHapticLowFrequency, 0.06f);
+            pressHapticHighFrequency = ClampFiniteRange(pressHapticHighFrequency, 0f, MaximumPressHapticHighFrequency, 0.18f);
+            pressHapticDurationSeconds = ClampFiniteRange(
+                pressHapticDurationSeconds,
+                MinimumPressHapticDurationSeconds,
+                MaximumPressHapticDurationSeconds,
+                0.035f);
+            pressHapticFrequencyHz = ClampFiniteRange(pressHapticFrequencyHz, 0f, MaximumPressHapticFrequencyHz, 54f);
+            clickVolume = ClampFiniteRange(clickVolume, 0f, MaximumClickVolume, 0.42f);
+            clickPitch = ClampFiniteRange(clickPitch, MinimumClickPitch, MaximumClickPitch, 1f);
+            CacheScalarConfig();
         }
 #endif
     }

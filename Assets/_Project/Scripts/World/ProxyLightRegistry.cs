@@ -22,7 +22,7 @@ namespace Hecton8.World
         Panel = 1
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     internal struct ProxyLightData
     {
         public AbsoluteUniversePosition PositionAup;
@@ -148,6 +148,7 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeParallelHashMap(_slotByKey, nameof(ProxyLightRegistry), nameof(_slotByKey), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_keys, nameof(ProxyLightRegistry), nameof(_keys), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeQueue(_freeProxyLightSlots, MaxProxyLights, nameof(ProxyLightRegistry), nameof(_freeProxyLightSlots), NativeAllocationLifetime.Session);
+            PrewarmFreeProxyLightSlots();
             _keyCount = 0;
             _registeredCount = 0;
         }
@@ -236,7 +237,10 @@ namespace Hecton8.World
 
             float3 safeForward = math.normalizesafe(viewerForward);
             bool useForwardGate = math.lengthsq(safeForward) > 0.0001f && minimumForwardDot > -1f;
-            float maxDistanceSq = math.max(0.01f, maxDistanceMeters * maxDistanceMeters);
+            float safeMaxDistance = math.isfinite(maxDistanceMeters) && maxDistanceMeters > 0f
+                ? maxDistanceMeters
+                : 0.01f;
+            float maxDistanceSq = math.max(0.0001f, safeMaxDistance * safeMaxDistance);
             int visibleCount = 0;
 
             for (int i = 0; i < _keyCount && visibleCount < output.Length; i++)
@@ -254,7 +258,10 @@ namespace Hecton8.World
 
                 float3 cameraRelative = AbsoluteUniversePosition.ToCameraRelativeFloat3(in light.PositionAup, in viewerAup);
                 float distanceSq = math.lengthsq(cameraRelative);
-                float rangeSq = math.max(maxDistanceSq, light.RangeMeters * light.RangeMeters);
+                float lightRange = math.isfinite(light.RangeMeters) && light.RangeMeters > 0f
+                    ? light.RangeMeters
+                    : 0.01f;
+                float rangeSq = math.min(maxDistanceSq, math.max(0.0001f, lightRange * lightRange));
                 if (distanceSq > rangeSq)
                     continue;
 
@@ -327,6 +334,19 @@ namespace Hecton8.World
             _freeProxyLightSlots = default;
             _keyCount = 0;
             _registeredCount = 0;
+        }
+
+        private static void PrewarmFreeProxyLightSlots()
+        {
+            if (!_freeProxyLightSlots.IsCreated)
+                return;
+
+            for (int i = 0; i < MaxProxyLights; i++)
+                _freeProxyLightSlots.Enqueue(default);
+
+            while (_freeProxyLightSlots.TryDequeue(out _))
+            {
+            }
         }
 
         private static bool TryAcquireProxyLightSlot(out int slot)

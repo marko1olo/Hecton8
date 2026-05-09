@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -7,6 +8,7 @@ using Hecton8.Items;
 using Hecton8.SaveSystem;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -29,11 +31,14 @@ namespace Hecton8.Construction
         private const ulong GeneRapidGrowth = (ulong)GeneticTraitProfile.GeneticTraitMask.FastGrowing;
         private const ulong DefinedCultivationGeneMask = 0x000000000000000FUL;
         private const ulong SpliceMutationGeneMask = (GeneBioluminescent | GeneOxygenProducing | GeneToxic | GeneRapidGrowth) & DefinedCultivationGeneMask;
+        private const string NativeMemoryOwner = nameof(CultivationManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         /// <summary>
         /// Fixed cultivation slot payload shared with atmosphere jobs without managed allocation.
         /// </summary>
         [Serializable]
+        [StructLayout(LayoutKind.Sequential)]
         public struct CultivationSlotState
         {
             public int SeedItemHashId;
@@ -42,6 +47,7 @@ namespace Hecton8.Construction
             public float Quality01;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct XorShift32State
         {
             private uint _state;
@@ -123,7 +129,6 @@ namespace Hecton8.Construction
         private NativeArray<CultivationSlotState> _slots;
         private bool _registered;
         private uint _slowTickSequence;
-        private float _lastGrowthUnscaledTime;
         private int _hazardZoneId;
         private int _rotHazardZoneId;
 
@@ -162,13 +167,13 @@ namespace Hecton8.Construction
 
             // COLD ALLOC: NativeArray<CultivationSlotState>[4] - fixed cultivation slot runtime state - owner: CultivationManager
             _slots = new NativeArray<CultivationSlotState>(MaxCultivationSlots, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_slots, NativeMemoryOwner, nameof(_slots), NativeMemoryLifetime);
             _hazardZoneId = unchecked((int)EntityId.ToULong(GetEntityId()) * 397) ^ 0x43554C54;
             _rotHazardZoneId = _hazardZoneId ^ 0x524F54;
         }
 
         private void OnEnable()
         {
-            _lastGrowthUnscaledTime = Time.unscaledTime;
             TryRegister();
         }
 
@@ -187,8 +192,16 @@ namespace Hecton8.Construction
 
         private void OnDestroy()
         {
-            if (_slots.IsCreated)
-                _slots.Dispose();
+            ClearHazardState();
+            ClearRotHazardState();
+            if (targetModule != null)
+            {
+                targetModule.SetCultivationScrubberLoad(0f);
+                targetModule.SetCultivationLightingPowerCredit(0f);
+            }
+
+            TryUnregister();
+            DisposeSlots();
         }
 
         /// <summary>
@@ -266,7 +279,7 @@ namespace Hecton8.Construction
             if (items == null || quantities == null || !_slots.IsCreated)
                 return 0;
 
-            int copyCount = Mathf.Min(items.Length, quantities.Length);
+            int copyCount = math.min(items.Length, quantities.Length);
             int written = 0;
             ItemCatalog resolvedCatalog = itemCatalog != null ? itemCatalog : ResolveItemCatalog();
             for (int i = 0; i < _slots.Length && written < copyCount; i++)
@@ -288,7 +301,7 @@ namespace Hecton8.Construction
             if (geneticsMasks == null || growthValues == null || !_slots.IsCreated)
                 return 0;
 
-            int copyCount = Mathf.Min(Mathf.Min(geneticsMasks.Length, growthValues.Length), _slots.Length);
+            int copyCount = math.min(math.min(geneticsMasks.Length, growthValues.Length), _slots.Length);
             for (int i = 0; i < copyCount; i++)
             {
                 geneticsMasks[i] = unchecked((uint)_slots[i].GeneticsMask);
@@ -306,7 +319,7 @@ namespace Hecton8.Construction
             if (geneticsMasks == null || growthValues == null || !_slots.IsCreated)
                 return 0;
 
-            int copyCount = Mathf.Min(Mathf.Min(geneticsMasks.Length, growthValues.Length), _slots.Length);
+            int copyCount = math.min(math.min(geneticsMasks.Length, growthValues.Length), _slots.Length);
             for (int i = 0; i < copyCount; i++)
             {
                 geneticsMasks[i] = _slots[i].GeneticsMask;
@@ -324,7 +337,7 @@ namespace Hecton8.Construction
             if (geneticsMasks == null || growthValues == null || qualityValues == null || !_slots.IsCreated)
                 return 0;
 
-            int copyCount = Mathf.Min(Mathf.Min(Mathf.Min(geneticsMasks.Length, growthValues.Length), qualityValues.Length), _slots.Length);
+            int copyCount = math.min(math.min(math.min(geneticsMasks.Length, growthValues.Length), qualityValues.Length), _slots.Length);
             for (int i = 0; i < copyCount; i++)
             {
                 geneticsMasks[i] = unchecked((uint)_slots[i].GeneticsMask);
@@ -343,7 +356,7 @@ namespace Hecton8.Construction
             if (geneticsMasks == null || growthValues == null || qualityValues == null || !_slots.IsCreated)
                 return 0;
 
-            int copyCount = Mathf.Min(Mathf.Min(Mathf.Min(geneticsMasks.Length, growthValues.Length), qualityValues.Length), _slots.Length);
+            int copyCount = math.min(math.min(math.min(geneticsMasks.Length, growthValues.Length), qualityValues.Length), _slots.Length);
             for (int i = 0; i < copyCount; i++)
             {
                 geneticsMasks[i] = _slots[i].GeneticsMask;
@@ -410,9 +423,9 @@ namespace Hecton8.Construction
             if (!_slots.IsCreated)
                 return;
 
-            int safeCount = Mathf.Max(0, moduleDto.cultivationSlotCount);
-            safeCount = Mathf.Min(safeCount, moduleDto.cultivationSeedItemIds != null ? moduleDto.cultivationSeedItemIds.Length : 0);
-            safeCount = Mathf.Min(safeCount, MaxCultivationSlots);
+            int safeCount = math.max(0, moduleDto.cultivationSlotCount);
+            safeCount = math.min(safeCount, moduleDto.cultivationSeedItemIds != null ? moduleDto.cultivationSeedItemIds.Length : 0);
+            safeCount = math.min(safeCount, MaxCultivationSlots);
             for (int i = 0; i < safeCount; i++)
             {
                 string persistentId = moduleDto.cultivationSeedItemIds[i];
@@ -459,7 +472,7 @@ namespace Hecton8.Construction
             int floodedRotDeathCount = 0;
             ulong combinedTraitMask = 0UL;
             bool moduleFlooded = targetModule != null && targetModule.IsFlooded;
-            float growthDeltaSeconds = ResolveGrowthDeltaSeconds();
+            float growthDeltaSeconds = SlowTickDt;
 
             for (int i = 0; i < _slots.Length; i++)
             {
@@ -526,8 +539,8 @@ namespace Hecton8.Construction
             float requiredScrubberLoadWatts = toxicScrubberPowerWatts * 2f;
             if (floodedRotDeathCount > 0)
             {
-                float rotBaseLoadWatts = Mathf.Max(requiredScrubberLoadWatts, fallbackToxicScrubberPowerWatts * floodedRotDeathCount);
-                requiredScrubberLoadWatts = rotBaseLoadWatts * Mathf.Max(1f, floodedRotScrubberLoadMultiplier);
+                float rotBaseLoadWatts = math.max(requiredScrubberLoadWatts, fallbackToxicScrubberPowerWatts * floodedRotDeathCount);
+                requiredScrubberLoadWatts = rotBaseLoadWatts * math.max(1f, floodedRotScrubberLoadMultiplier);
             }
 
             targetModule.SetCultivationScrubberLoad(requiredScrubberLoadWatts);
@@ -539,7 +552,7 @@ namespace Hecton8.Construction
                 (!targetModule.HasPower || targetModule.PowerSupplyRatio < MinimumOperationalSupplyRatio);
             if (toxicHazardActive)
             {
-                RegisterToxicHazard(Mathf.Max(hazardIntensity, fallbackHazardIntensity), Mathf.Max(hazardRadius, fallbackHazardRadiusMeters));
+                RegisterToxicHazard(math.max(hazardIntensity, fallbackHazardIntensity), math.max(hazardRadius, fallbackHazardRadiusMeters));
             }
             else
             {
@@ -548,7 +561,7 @@ namespace Hecton8.Construction
 
             if (floodedRotDeathCount > 0)
             {
-                float rotIntensity = Mathf.Clamp01(floodedRotDeathCount * floodedRotIntensityPerDeadPlant);
+                float rotIntensity = math.saturate(floodedRotDeathCount * floodedRotIntensityPerDeadPlant);
                 targetModule.EmitCultivationRotIntoFloodWater(rotIntensity, floodedRotCo2Amplifier);
                 RegisterRotHazard(rotIntensity, floodedRotHazardRadiusMeters);
             }
@@ -572,7 +585,7 @@ namespace Hecton8.Construction
                 return false;
 
             int inserted = 0;
-            int desired = Mathf.Max(1, quantity);
+            int desired = math.max(1, quantity);
             for (int i = 0; i < desired; i++)
             {
                 if (!TryPlantSeedFromInventory(inventory, seedItemHashId))
@@ -589,8 +602,7 @@ namespace Hecton8.Construction
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -629,6 +641,16 @@ namespace Hecton8.Construction
                 _slots[i] = default;
         }
 
+        private void DisposeSlots()
+        {
+            if (!_slots.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(_slots);
+            _slots.Dispose();
+            _slots = default;
+        }
+
         private void ClearHazardState()
         {
             HazardZoneManager hazardZoneManager = Hecton8.Core.GlobalRegistry.HazardZones;
@@ -653,7 +675,7 @@ namespace Hecton8.Construction
             if (targetModule.TryGetInteriorHazardBounds(out Vector3 worldCenter, out float interiorRadius))
             {
                 center = worldCenter;
-                resolvedRadius = Mathf.Max(radiusMeters, interiorRadius * 0.55f);
+                resolvedRadius = math.max(radiusMeters, interiorRadius * 0.55f);
             }
 
             HazardZoneManager hazardZoneManager = HazardZoneManager.EnsureRuntimeInstance();
@@ -664,8 +686,8 @@ namespace Hecton8.Construction
             hazardZoneManager.RegisterZone(
                 _hazardZoneId,
                 center,
-                Mathf.Clamp01(intensity),
-                Mathf.Max(0.25f, resolvedRadius),
+                math.saturate(intensity),
+                math.max(0.25f, resolvedRadius),
                 HazardType.Toxicity,
                 visorGlitchBias,
                 toxicHazardProfile);
@@ -681,7 +703,7 @@ namespace Hecton8.Construction
             if (targetModule.TryGetInteriorHazardBounds(out Vector3 worldCenter, out float interiorRadius))
             {
                 center = worldCenter;
-                resolvedRadius = Mathf.Max(radiusMeters, interiorRadius * 0.45f);
+                resolvedRadius = math.max(radiusMeters, interiorRadius * 0.45f);
             }
 
             HazardZoneManager hazardZoneManager = HazardZoneManager.EnsureRuntimeInstance();
@@ -692,8 +714,8 @@ namespace Hecton8.Construction
             hazardZoneManager.RegisterZone(
                 _rotHazardZoneId,
                 center,
-                Mathf.Clamp01(intensity),
-                Mathf.Max(0.25f, resolvedRadius),
+                math.saturate(intensity),
+                math.max(0.25f, resolvedRadius),
                 HazardType.Biohazard,
                 visorGlitchBias,
                 toxicHazardProfile);
@@ -754,24 +776,9 @@ namespace Hecton8.Construction
 
         private static float NormalizeGrowth01(float growth01)
         {
-            return !float.IsNaN(growth01) && !float.IsInfinity(growth01)
-                ? Mathf.Clamp01(growth01)
+            return math.isfinite(growth01)
+                ? math.saturate(growth01)
                 : 0f;
-        }
-
-        private float ResolveGrowthDeltaSeconds()
-        {
-            if (!Application.isPlaying)
-                return SlowTickDt;
-
-            float now = Time.unscaledTime;
-            float deltaSeconds = _lastGrowthUnscaledTime > 0f ? now - _lastGrowthUnscaledTime : SlowTickDt;
-            _lastGrowthUnscaledTime = now;
-
-            if (float.IsNaN(deltaSeconds) || float.IsInfinity(deltaSeconds) || deltaSeconds <= 0f)
-                return SlowTickDt;
-
-            return Mathf.Min(deltaSeconds, SlowTickDt * 4f);
         }
 
         private int ResolveHybridSeedItemHash(int primarySeedHashId, int secondarySeedHashId, ulong resultMask)
@@ -809,7 +816,7 @@ namespace Hecton8.Construction
                 : 1f;
 
             return (geneticsMask & (ulong)GeneticTraitProfile.GeneticTraitMask.FastGrowing) != 0UL
-                ? Mathf.Max(2f, multiplier)
+                ? math.max(2f, multiplier)
                 : multiplier;
         }
 
@@ -863,16 +870,16 @@ namespace Hecton8.Construction
             if (geneticTraitProfile != null)
             {
                 geneticTraitProfile.ResolveHazardProfile(geneticsMask, out float profileIntensity, out float profileRadius);
-                intensity = Mathf.Max(intensity, profileIntensity);
-                radiusMeters = Mathf.Max(radiusMeters, profileRadius);
+                intensity = math.max(intensity, profileIntensity);
+                radiusMeters = math.max(radiusMeters, profileRadius);
                 return;
             }
 
             if ((geneticsMask & (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic) == 0UL)
                 return;
 
-            intensity = Mathf.Max(intensity, fallbackHazardIntensity);
-            radiusMeters = Mathf.Max(radiusMeters, fallbackHazardRadiusMeters);
+            intensity = math.max(intensity, fallbackHazardIntensity);
+            radiusMeters = math.max(radiusMeters, fallbackHazardRadiusMeters);
         }
 
         private ItemCatalog ResolveItemCatalog()
@@ -886,8 +893,8 @@ namespace Hecton8.Construction
 
         private static float NormalizeQuality01(float quality01)
         {
-            return !float.IsNaN(quality01) && !float.IsInfinity(quality01)
-                ? Mathf.Clamp01(quality01)
+            return math.isfinite(quality01)
+                ? math.saturate(quality01)
                 : 0f;
         }
 

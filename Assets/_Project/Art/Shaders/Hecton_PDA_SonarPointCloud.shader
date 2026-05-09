@@ -29,6 +29,7 @@ Shader "Hecton8/UI/PDA Sonar Point Cloud"
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 4.5
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -74,4 +75,5 @@ Shader "Hecton8/UI/PDA Sonar Point Cloud"
             ENDHLSL
         }
     }
+    FallBack Off
 }

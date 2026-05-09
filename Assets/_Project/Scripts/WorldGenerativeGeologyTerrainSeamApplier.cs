@@ -23,6 +23,7 @@ namespace Hecton8.World
         private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyTerrainSeamApplier);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int TerrainPatchBridgeSampleBudgetMx350 = 131072;
+        private const int TerrainStateCapacity = 8;
 
         internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance => GlobalRegistry.GeologyTerrainSeam;
 
@@ -72,7 +73,7 @@ namespace Hecton8.World
         private readonly Dictionary<int, TerrainApplyState> _terrainStates = new Dictionary<int, TerrainApplyState>(8);
         private readonly Dictionary<int, List<WorldGenerativeGeologySeamPlan>> _plansByTerrain = new Dictionary<int, List<WorldGenerativeGeologySeamPlan>>(8);
         private readonly Dictionary<int, List<SeismicTrenchState>> _trenchesByTerrain = new Dictionary<int, List<SeismicTrenchState>>(8);
-        private readonly HashSet<int> _touchedTerrainIds = new HashSet<int>();
+        private readonly HashSet<int> _touchedTerrainIds = new HashSet<int>(TerrainStateCapacity);
         private readonly List<int> _knownTerrainIds = new List<int>(8);
         private readonly List<SeismicTrenchState> _activeTrenches = new List<SeismicTrenchState>(8);
         private readonly List<int> _terrainBucketScratch = new List<int>(8);
@@ -707,7 +708,7 @@ namespace Hecton8.World
                 SeismicTrenchState trench = _activeTrenches[trenchIndex];
                 Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteStart);
                 Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(trench.AbsoluteEnd);
-                float lineLength = Vector3.Distance(runtimeStart, runtimeEnd);
+                float lineLength = (runtimeStart - runtimeEnd).magnitude;
                 int sampleCount = Mathf.Clamp(Mathf.CeilToInt(lineLength / 48f) + 1, 2, 8);
                 _terrainBucketScratch.Clear();
 

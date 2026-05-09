@@ -37,7 +37,6 @@
 
 using System;
 using System.Collections.Generic;
-using Hecton8.Bootstrap;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -266,40 +265,30 @@ namespace Hecton8.Core
     /// Batch flushing for all tracked entities.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class EntityChangeManager : MonoBehaviour, ITickable, IUpdatable
+    public sealed class EntityChangeManager : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
-        private static EntityChangeManager _instance;
+        // COLD ALLOC: Dictionary<string, EntityChangeDetector>[256] - entity change detector registry - owner: EntityChangeManager
         private static readonly Dictionary<string, EntityChangeDetector> _detectors = new Dictionary<string, EntityChangeDetector>(256);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
             _detectors.Clear();
         }
         private bool _registered = false;
+        private bool _serviceRegistered;
 
-        public static EntityChangeManager Instance
-        {
-            get
-            {
-                if (_instance == null)
-                {
-                    GameObject go = new GameObject("[EntityChangeManager]");
-                    _instance = go.AddComponent<EntityChangeManager>();
-                    GameBootstrapper.PersistRuntimeService(_instance);
-                }
-                return _instance;
-            }
-        }
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered;
 
         /// <summary>
         /// Get or create detector for an entity.
         /// </summary>
         public static EntityChangeDetector GetOrCreateDetector(string entityId)
         {
-            _ = Instance; // Ensure singleton
-
             if (!_detectors.TryGetValue(entityId, out var detector))
             {
                 detector = new EntityChangeDetector(entityId);
@@ -319,31 +308,64 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            EntityChangeManager registered = GlobalRegistry.EntityChanges;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
         }
 
         private void OnEnable()
         {
+            TryRegisterService();
+            if (Application.isPlaying && !_serviceRegistered)
+                return;
+
             TryRegister();
         }
 
         private void OnDisable()
         {
-            TryUnregister();
+            OnServiceShutdown();
         }
 
         private void OnDestroy()
         {
-            TryUnregister();
+            OnServiceShutdown();
+        }
 
-            if (_instance == this)
-                _instance = null;
+        /// <inheritdoc />
+        public void OnServiceShutdown()
+        {
+            TryUnregister();
+            TryUnregisterService();
+            _detectors.Clear();
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            EntityChangeManager registered = GlobalRegistry.EntityChanges;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            GlobalRegistry.RegisterEntityChangeManagerRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.EntityChanges, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterEntityChangeManagerRuntime(this);
+            _serviceRegistered = false;
         }
 
         public void Tick(float deltaTime)

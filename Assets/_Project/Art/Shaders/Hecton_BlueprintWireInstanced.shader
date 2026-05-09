@@ -31,6 +31,9 @@ Shader "Hecton8/Fabrication/BlueprintWireInstanced"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -93,11 +96,13 @@ Shader "Hecton8/Fabrication/BlueprintWireInstanced"
                 float3 viewDirWS = HectonCoreLitSafeNormalize(GetCameraPositionWS() - input.positionWS);
                 float fresnelBase = 1.0 - saturate(abs(dot(normalWS, viewDirWS)));
                 float fresnel = fresnelBase * fresnelBase * lerp(1.0, fresnelBase, 0.2);
-                float crawl = frac(sin(_Time.y * _FlickerSpeed) * 43758.5453123);
+                float crawl = HectonCoreLitTrianglePulse01(_Time.y * _FlickerSpeed + dot(floor(input.positionCS.xy), float2(0.017, 0.031)));
                 half alpha = (half)saturate(_BaseColor.a * (wire + fresnel * 0.55) * lerp(0.62, 1.15, crawl));
                 return half4(_BaseColor.rgb * (half)(1.0 + fresnel * 2.4), alpha);
             }
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

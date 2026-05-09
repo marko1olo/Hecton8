@@ -12,6 +12,7 @@ namespace Hecton8.Interaction
     using Hecton8.Input;
     using Hecton8.UI;
     using TMPro;
+    using Unity.Mathematics;
     using UnityEngine;
 
     [DisallowMultipleComponent]
@@ -36,9 +37,9 @@ namespace Hecton8.Interaction
         private InputManager _subscribedInputManager;
         private bool _hotSwapListenerRegistered;
 
-        // COLD ALLOC: char[192] - hover prompt rich-text buffer - owner: InteractionUI
+        // COLD ALLOC: char[192] — hover prompt rich-text buffer — owner: InteractionUI
         private readonly char[] _charBuffer = new char[192];
-        // COLD ALLOC: char[96] - cached interaction prefix staging buffer - owner: InteractionUI
+        // COLD ALLOC: char[96] — cached interaction prefix staging buffer — owner: InteractionUI
         private readonly char[] _prefixBuffer = new char[96];
 
         private void Awake()
@@ -266,7 +267,7 @@ namespace Hecton8.Interaction
 
             if (_promptCanvasGroup == null && !promptContainer.TryGetComponent(out _promptCanvasGroup))
             {
-                _promptCanvasGroup = promptContainer.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] - prompt visibility gating without SetActive - owner: InteractionUI
+                _promptCanvasGroup = promptContainer.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] — prompt visibility gating without SetActive — owner: InteractionUI
             }
 
             if (_promptCanvasGroup == null)
@@ -308,7 +309,7 @@ namespace Hecton8.Interaction
         private void CachePrefixLiteral(ReadOnlySpan<char> prefix, bool appendTrailingSpace)
         {
             int maxLength = _prefixBuffer.Length;
-            int safeLength = Mathf.Min(prefix.Length, appendTrailingSpace ? maxLength - 1 : maxLength);
+            int safeLength = math.min(prefix.Length, appendTrailingSpace ? maxLength - 1 : maxLength);
             prefix.Slice(0, safeLength).CopyTo(_prefixBuffer);
 
             int cursor = safeLength;
@@ -405,8 +406,7 @@ namespace Hecton8.Interaction
             if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -414,9 +414,7 @@ namespace Hecton8.Interaction
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.HotSwapListeners.Contains(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
         }
 
@@ -481,7 +479,7 @@ namespace Hecton8.Interaction
 
             if (!prefix.IsEmpty)
             {
-                int prefixLength = Mathf.Min(prefix.Length, bufferLength);
+                int prefixLength = math.min(prefix.Length, bufferLength);
                 prefix.Slice(0, prefixLength).CopyTo(_charBuffer);
                 offset += prefixLength;
             }
@@ -489,7 +487,7 @@ namespace Hecton8.Interaction
             if (!body.IsEmpty)
             {
                 int remaining = bufferLength - offset;
-                int bodyLength = Mathf.Min(body.Length, remaining);
+                int bodyLength = math.min(body.Length, remaining);
                 body.Slice(0, bodyLength).CopyTo(_charBuffer.AsSpan(offset));
                 offset += bodyLength;
             }

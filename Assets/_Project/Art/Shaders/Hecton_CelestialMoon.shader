@@ -61,6 +61,7 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
             #pragma fragment Frag
             #pragma target 3.5
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
             #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
@@ -122,9 +123,18 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
             {
                 float lenSq = dot(value, value);
                 if (lenSq <= 0.000001)
-                    return normalize(fallback);
+                    return fallback;
 
                 return value * rsqrt(lenSq);
+            }
+
+            half FastMaskPower(half value, half power)
+            {
+                half v2 = value * value;
+                half v4 = v2 * v2;
+                half low = lerp(value, v2, saturate(power - 1.0h));
+                half high = lerp(v2, v4, saturate((power - 2.0h) * 0.5h));
+                return power < 2.0h ? low : high;
             }
 
             float3 GetSkyColor(float3 rayDir)
@@ -191,7 +201,7 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
                 float aegirNightBoost = saturate(_NightBlend + _EclipseOcclusion * 0.8 + 0.2);
                 float3 aegirFill = _AegirFillColor.rgb * (aegirWrap * aegirWrap) * shadowMask * _AegirFillStrength * aegirNightBoost;
 
-                float rim = pow(1.0 - saturate(dot(N, V)), _RimPower);
+                float rim = FastMaskPower((half)(1.0 - saturate(dot(N, V))), _RimPower);
                 float rimNightBoost = saturate(0.35 + _NightBlend + _EclipseOcclusion);
                 float3 rimColor = _RimColor.rgb * rim * _RimStrength * rimNightBoost;
 

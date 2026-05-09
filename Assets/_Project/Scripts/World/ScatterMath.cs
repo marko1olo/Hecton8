@@ -15,7 +15,7 @@ namespace Hecton8.World
             in WorldProceduralScatterDirector.ScatterRuntimeRuleEntry runtimeRule)
         {
             if (fieldSample.isSecondaryDomain || fieldSample.verticalDomainWeight > 0f)
-                return Mathf.Max(0, fieldSample.verticalDomainIndex);
+                return math.max(0, fieldSample.verticalDomainIndex);
 
             return ResolveHeightLayerIndex(
                 fieldSample.caveProximity,
@@ -84,16 +84,16 @@ namespace Hecton8.World
             WorldPrefabFamilyProfile.ScatterLayer existingLayer = existing.Family.scatterLayer;
             float candidateSpacing = candidate.EffectiveSpacing;
             float existingSpacing = existing.EffectiveSpacing;
-            float maxSpacing = Mathf.Max(candidateSpacing, existingSpacing);
+            float maxSpacing = math.max(candidateSpacing, existingSpacing);
 
             if (candidateLayer == existingLayer)
             {
                 return candidateLayer switch
                 {
-                    WorldPrefabFamilyProfile.ScatterLayer.Ground => Mathf.Max(1.25f, maxSpacing * 0.52f),
-                    WorldPrefabFamilyProfile.ScatterLayer.Cluster => Mathf.Max(3f, maxSpacing * 0.92f),
-                    WorldPrefabFamilyProfile.ScatterLayer.Structure => Mathf.Max(12f, maxSpacing),
-                    WorldPrefabFamilyProfile.ScatterLayer.Spawn => Mathf.Max(14f, maxSpacing * 1.08f),
+                    WorldPrefabFamilyProfile.ScatterLayer.Ground => math.max(1.25f, maxSpacing * 0.52f),
+                    WorldPrefabFamilyProfile.ScatterLayer.Cluster => math.max(3f, maxSpacing * 0.92f),
+                    WorldPrefabFamilyProfile.ScatterLayer.Structure => math.max(12f, maxSpacing),
+                    WorldPrefabFamilyProfile.ScatterLayer.Spawn => math.max(14f, maxSpacing * 1.08f),
                     _ => maxSpacing
                 };
             }
@@ -101,17 +101,17 @@ namespace Hecton8.World
             bool candidatePocket = IsPocket(candidate.Family.proceduralDomain);
             bool existingPocket = IsPocket(existing.Family.proceduralDomain);
             if (candidatePocket && existingPocket)
-                return Mathf.Max(10f, maxSpacing * 1.35f);
+                return math.max(10f, maxSpacing * 1.35f);
 
             bool candidateStructure = IsStructure(candidate.Family.scatterLayer);
             bool existingStructure = IsStructure(existing.Family.scatterLayer);
             if (candidateStructure && existingStructure)
-                return Mathf.Max(14f, maxSpacing * 0.88f);
+                return math.max(14f, maxSpacing * 0.88f);
 
             bool candidateSpawn = candidateLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
             bool existingSpawn = existingLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
             if ((candidateSpawn && existingStructure) || (candidateStructure && existingSpawn))
-                return Mathf.Max(12f, Mathf.Max(candidateSpacing, existingSpacing) * 0.9f);
+                return math.max(12f, math.max(candidateSpacing, existingSpacing) * 0.9f);
 
             return 0f;
         }
@@ -119,9 +119,9 @@ namespace Hecton8.World
         public static float GetEffectiveSpacing(WorldPrefabFamilyProfile family, WorldProceduralPlacementRule rule)
         {
             if (rule != null && rule.minSpacingOverrideMeters > 0f)
-                return Mathf.Max(0.5f, rule.minSpacingOverrideMeters);
+                return math.max(0.5f, rule.minSpacingOverrideMeters);
 
-            return family != null ? Mathf.Max(0.5f, family.minSpacingMeters) : 1f;
+            return family != null ? math.max(0.5f, family.minSpacingMeters) : 1f;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

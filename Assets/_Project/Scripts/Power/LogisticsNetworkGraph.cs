@@ -929,6 +929,7 @@ namespace Hecton8.Power
                 NativeMemoryOwner,
                 _bfsQueueSentinelLabel,
                 NativeMemoryLifetime);
+            PrewarmQueue(ref _bfsQueue, safeNodeCapacity);
             _committedDistributionSummary = new DistributionSummary
             {
                 SupplyRatio = 1f,
@@ -1059,6 +1060,20 @@ namespace Hecton8.Power
             where TValue : unmanaged
         {
             NativeMemorySentinel.RegisterNativeParallelHashMap(map, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         private static void EnsureNativeListCapacity<T>(ref NativeList<T> list, int requiredLength, string label)
@@ -1445,6 +1460,10 @@ namespace Hecton8.Power
             EnsurePublishedStateCapacity(_nodeCount);
             _publishedNodeStateBackMap.Clear();
 
+            JobHandle publishDependency = _evaluateGraphPending
+                ? JobHandle.CombineDependencies(dependency, _evaluateGraphJobHandle)
+                : dependency;
+
             PublishNodeStatesJob job = new PublishNodeStatesJob
             {
                 Nodes = _nodeBuffer,
@@ -1455,7 +1474,7 @@ namespace Hecton8.Power
                 PublishedNodeStateMap = _publishedNodeStateBackMap.AsParallelWriter()
             };
 
-            _publishNodeStatesJobHandle = job.Schedule(_nodeCount, ParallelNodeBatchSize, dependency);
+            _publishNodeStatesJobHandle = job.Schedule(_nodeCount, ParallelNodeBatchSize, publishDependency);
             _publishNodeStatesPending = true;
         }
 

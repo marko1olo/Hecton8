@@ -1,8 +1,8 @@
-using System.Text;
-using Hecton8.Bootstrap;
+using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -21,6 +21,27 @@ namespace Hecton8.UI
         private static readonly Color DimLow = new Color(0.55f, 0.74f, 0.71f, 0.72f);
         private static readonly Color Warn = new Color(1f, 0.75f, 0.28f, 0.94f);
         private static readonly Color Rule = new Color(0.46f, 0.98f, 0.94f, 0.18f);
+        private static readonly Color ButtonUnavailable = new Color(0.14f, 0.12f, 0.08f, 0.72f);
+        // COLD ALLOC: string[16] - prefab child names for barter card construction without interpolation - owner: PDABarterTab
+        private static readonly string[] OfferCardNames =
+        {
+            "OfferCard_0",
+            "OfferCard_1",
+            "OfferCard_2",
+            "OfferCard_3",
+            "OfferCard_4",
+            "OfferCard_5",
+            "OfferCard_6",
+            "OfferCard_7",
+            "OfferCard_8",
+            "OfferCard_9",
+            "OfferCard_10",
+            "OfferCard_11",
+            "OfferCard_12",
+            "OfferCard_13",
+            "OfferCard_14",
+            "OfferCard_15"
+        };
 
         [Header("References")]
         [SerializeField] private PDAExchangeSystem exchangeSystem;
@@ -30,20 +51,21 @@ namespace Hecton8.UI
 
         [Header("Settings")]
         [SerializeField] private int barterTabIndex = 3;
-        [SerializeField] private int maxVisibleOffers = 5;
+        [SerializeField, Min(1)] private int maxVisibleOffers = 5;
         private bool _built;
         private TextMeshProUGUI _summaryText;
         private TextMeshProUGUI _directiveText;
         private TextMeshProUGUI _hintText;
         private RectTransform[] _cardRoots;
+        private CanvasGroup[] _cardCanvasGroups;
         private Image[] _cardBgs;
         private TextMeshProUGUI[] _cardTitles;
         private TextMeshProUGUI[] _cardBodies;
         private Image[] _cardButtonBgs;
         private TextMeshProUGUI[] _cardButtonLabels;
+        private PDABarterActionButton[] _cardButtons;
         private PDAExchangeSystem.OfferSnapshot[] _snapshotBuffer;
         private PDAExchangeSystem.TransactionSnapshot[] _transactionBuffer;
-        private readonly StringBuilder _sb = new StringBuilder(512);
         private PDAExchangeSystem _subscribedExchangeSystem;
 
         private bool IsTabActive =>
@@ -54,27 +76,8 @@ namespace Hecton8.UI
             playerPDA.ActiveTab == barterTabIndex;
 
         // ════════════════════════════════════════════════════════════════════════════════
-        //  CACHED STRING OPERATIONS — ZERO GC
+        //  POOLED CHAR BUFFER TEXT OPERATIONS
         // ════════════════════════════════════════════════════════════════════════════════
-
-        private static readonly string[] _cachedUpperStrings = new string[16];
-
-        private static string CachedToUpperInvariant(string input)
-        {
-            if (string.IsNullOrEmpty(input)) return input;
-
-            // Простой hash для кэширования (не криптографический)
-            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
-
-            string cached = _cachedUpperStrings[hash];
-            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
-                return cached;
-
-            // Создаем новую строку и кэшируем
-            string upper = input.ToUpperInvariant();
-            _cachedUpperStrings[hash] = upper;
-            return upper;
-        }
 
         private void Awake()
         {
@@ -110,19 +113,16 @@ namespace Hecton8.UI
                 if (playerContext != null)
                     playerPDA = playerContext.PlayerPDA;
 
-                if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                    playerTransform != null)
-                {
-                    playerTransform.TryGetComponent(out playerPDA);
-                }
-
                 if (playerPDA == null)
                     playerPDA = GetComponentInParent<PlayerPDA>();
             }
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
-            if (_snapshotBuffer == null || _snapshotBuffer.Length != Mathf.Max(1, maxVisibleOffers))
-                _snapshotBuffer = new PDAExchangeSystem.OfferSnapshot[Mathf.Max(1, maxVisibleOffers)];
+            int visibleOfferCapacity = ResolveVisibleOfferCapacity();
+            // COLD ALLOC: OfferSnapshot[visibleOfferCapacity] - PDA barter snapshot staging - owner: PDABarterTab
+            if (_snapshotBuffer == null || _snapshotBuffer.Length != visibleOfferCapacity)
+                _snapshotBuffer = new PDAExchangeSystem.OfferSnapshot[visibleOfferCapacity];
+            // COLD ALLOC: TransactionSnapshot[3] - latest barter transaction staging - owner: PDABarterTab
             if (_transactionBuffer == null || _transactionBuffer.Length < 3)
                 _transactionBuffer = new PDAExchangeSystem.TransactionSnapshot[3];
         }
@@ -224,12 +224,12 @@ namespace Hecton8.UI
             TextMeshProUGUI title = CreateText(self, "Title", labelFont, 18f, FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(18f, -18f), new Vector2(-18f, 24f));
             title.color = Primary;
-            title.SetText("EXCHANGE RELAY");
+            ApplyStaticText(title, "EXCHANGE RELAY".AsSpan());
 
             TextMeshProUGUI sub = CreateText(self, "Subtitle", labelFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Right);
             Anchor(sub.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(18f, -18f), new Vector2(-18f, 24f));
             sub.color = DimLow;
-            sub.SetText("field contracts, relay fabrication, and remote requisition routing");
+            ApplyStaticText(sub, "field contracts, relay fabrication, and remote requisition routing".AsSpan());
 
             CreateRule(self, -52f);
 
@@ -245,22 +245,27 @@ namespace Hecton8.UI
             _directiveText.fontSize = 11.5f;
             _directiveText.color = Primary;
 
-            _cardRoots = new RectTransform[maxVisibleOffers];
-            _cardBgs = new Image[maxVisibleOffers];
-            _cardTitles = new TextMeshProUGUI[maxVisibleOffers];
-            _cardBodies = new TextMeshProUGUI[maxVisibleOffers];
-            _cardButtonBgs = new Image[maxVisibleOffers];
-            _cardButtonLabels = new TextMeshProUGUI[maxVisibleOffers];
+            int visibleOfferCapacity = ResolveVisibleOfferCapacity();
+            // COLD ALLOC: UI card cache arrays[visibleOfferCapacity] - one-time PDA barter card cache - owner: PDABarterTab
+            _cardRoots = new RectTransform[visibleOfferCapacity];
+            _cardCanvasGroups = new CanvasGroup[visibleOfferCapacity];
+            _cardBgs = new Image[visibleOfferCapacity];
+            _cardTitles = new TextMeshProUGUI[visibleOfferCapacity];
+            _cardBodies = new TextMeshProUGUI[visibleOfferCapacity];
+            _cardButtonBgs = new Image[visibleOfferCapacity];
+            _cardButtonLabels = new TextMeshProUGUI[visibleOfferCapacity];
+            _cardButtons = new PDABarterActionButton[visibleOfferCapacity];
 
             float top = -232f;
             float cardHeight = 90f;
             float gap = 10f;
 
-            for (int i = 0; i < maxVisibleOffers; i++)
+            for (int i = 0; i < visibleOfferCapacity; i++)
             {
-                RectTransform card = CreatePanel(self, $"OfferCard_{i}", new Vector2(0f, 1f), new Vector2(1f, 1f),
+                RectTransform card = CreatePanel(self, ResolveOfferCardName(i), new Vector2(0f, 1f), new Vector2(1f, 1f),
                     new Vector2(18f, top - i * (cardHeight + gap)), new Vector2(-18f, top - i * (cardHeight + gap) - cardHeight));
                 _cardRoots[i] = card;
+                _cardCanvasGroups[i] = EnsureCanvasGroup(card.gameObject);
                 _cardBgs[i] = EnsureImage(card.gameObject);
                 _cardBgs[i].color = BoxBg;
 
@@ -281,14 +286,20 @@ namespace Hecton8.UI
 
                 PDABarterActionButton button = buttonRoot.gameObject.AddComponent<PDABarterActionButton>();
                 button.Init(this, i, _cardButtonBgs[i]);
+                _cardButtons[i] = button;
             }
 
             _hintText = CreateText(self, "Hint", labelFont, 10.5f, FontStyles.Italic, TextAlignmentOptions.Center);
             Anchor(_hintText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(24f, 4f), new Vector2(-24f, 14f));
             _hintText.color = DimLow;
-            _hintText.SetText("Relay contracts consume real cargo and route rewards back into your field inventory.");
+            ApplyStaticText(_hintText, "Relay contracts consume real cargo and route rewards back into your field inventory.".AsSpan());
 
             _built = true;
+        }
+
+        private static string ResolveOfferCardName(int index)
+        {
+            return (uint)index < (uint)OfferCardNames.Length ? OfferCardNames[index] : "OfferCard";
         }
 
         private void RefreshAll(bool immediate)
@@ -318,30 +329,18 @@ namespace Hecton8.UI
                     continue;
 
                 if (!snapshot.Unlocked) locked++;
-                else if (snapshot.Status == "CONTRACT CLOSED") closed++;
+                else if (snapshot.Status == PDAExchangeSystem.ExchangeStatus.ContractClosed) closed++;
                 else if (snapshot.CanExecute) ready++;
             }
 
-            _sb.Length = 0;
-            _sb.AppendLine("EXCHANGE BACKBONE");
-            _sb.Append("CATALOG      ").Append(offerCount).AppendLine();
-            _sb.Append("READY        ").Append(ready).AppendLine();
-            _sb.Append("LOCKED       ").Append(locked).AppendLine();
-            _sb.Append("FULFILLED    ").Append(closed).AppendLine();
             int txCount = exchangeSystem != null ? exchangeSystem.CopyRecentTransactions(_transactionBuffer) : 0;
-            if (txCount > 0)
-            {
-                PDAExchangeSystem.TransactionSnapshot tx = _transactionBuffer[0];
-                _sb.Append("LATEST       ").Append(string.IsNullOrWhiteSpace(tx.OfferName) ? "UNKNOWN" : CachedToUpperInvariant(tx.OfferName)).AppendLine();
-                _sb.Append("OUTPUT       ").Append(string.IsNullOrWhiteSpace(tx.RewardSummary) ? "NONE" : tx.RewardSummary).AppendLine();
-            }
-            _summaryText.SetText(_sb);
+            ApplySummaryText(offerCount, ready, locked, closed, txCount);
 
             if (_directiveText != null)
-                _directiveText.SetText(GetDirectiveText(ready, locked, closed));
+                ApplyStaticText(_directiveText, ResolveDirectiveText(ready, locked, closed));
 
             if (_hintText != null)
-                _hintText.SetText(GetHintText(txCount > 0 ? _transactionBuffer[0] : default));
+                RefreshHintText(txCount > 0 ? _transactionBuffer[0] : default, txCount > 0);
         }
 
         private void RefreshCards()
@@ -350,45 +349,31 @@ namespace Hecton8.UI
             for (int i = 0; i < _cardRoots.Length; i++)
             {
                 bool visible = i < count && _snapshotBuffer[i].Offer != null;
-                SetCanvasGroupVisible(_cardRoots[i], visible);
+                SetCanvasGroupVisible(_cardCanvasGroups[i], visible);
                 if (!visible)
                     continue;
 
                 PDAExchangeSystem.OfferSnapshot snapshot = _snapshotBuffer[i];
                 BarterOfferData offer = snapshot.Offer;
 
-                // ZERO-GC: Use StringBuilder to avoid string concatenation allocation
-                _sb.Clear();
-                _sb.Append(CachedToUpperInvariant(offer.offerName)).Append("  //  ").Append(CachedToUpperInvariant(offer.channelName));
-                _cardTitles[i].SetText(_sb);
-                
-                _sb.Clear();
-                _sb.Append("REQ  ").Append(exchangeSystem.BuildBundleSummary(offer.costs, "NONE")).AppendLine();
-                _sb.Append("OUT  ").Append(exchangeSystem.BuildBundleSummary(offer.rewards, "NO PAYOUT")).AppendLine();
-                if (!string.IsNullOrWhiteSpace(offer.requiredScanEntryId))
-                    _sb.Append("GATE ").Append(CachedToUpperInvariant(offer.requiredScanEntryId)).AppendLine();
-                _sb.Append("STAT ").Append(snapshot.Status);
-                _cardBodies[i].SetText(_sb);
+                ApplyOfferTitle(_cardTitles[i], offer);
+                ApplyOfferBody(_cardBodies[i], snapshot, offer);
 
                 _cardBgs[i].color = snapshot.CanExecute ? BoxActive : BoxBg;
-                _cardButtonBgs[i].color = snapshot.CanExecute ? BoxActive : new Color(0.14f, 0.12f, 0.08f, 0.72f);
+                _cardButtonBgs[i].color = snapshot.CanExecute ? BoxActive : ButtonUnavailable;
                 _cardButtonLabels[i].color = snapshot.CanExecute ? Primary : Warn;
-                _cardButtonLabels[i].SetText(GetActionLabel(snapshot));
+                ApplyStaticText(_cardButtonLabels[i], ResolveActionLabel(snapshot));
 
-                PDABarterActionButton button = _cardButtonBgs[i].GetComponent<PDABarterActionButton>();
+                PDABarterActionButton button = _cardButtons[i];
                 if (button != null)
                     button.SetVisualState(_cardButtonBgs[i].color);
             }
         }
 
-        private static void SetCanvasGroupVisible(RectTransform root, bool visible)
+        private static void SetCanvasGroupVisible(CanvasGroup canvasGroup, bool visible)
         {
-            if (root == null)
-                return;
-
-            CanvasGroup canvasGroup = root.GetComponent<CanvasGroup>();
             if (canvasGroup == null)
-                canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
+                return;
 
             canvasGroup.alpha = visible ? 1f : 0f;
             canvasGroup.interactable = visible;
@@ -404,37 +389,306 @@ namespace Hecton8.UI
             RefreshAll(true);
         }
 
-        private static string GetActionLabel(PDAExchangeSystem.OfferSnapshot snapshot)
+        private int ResolveVisibleOfferCapacity()
+        {
+            return math.max(1, maxVisibleOffers);
+        }
+
+        private static ReadOnlySpan<char> ResolveActionLabel(PDAExchangeSystem.OfferSnapshot snapshot)
         {
             if (!snapshot.Unlocked)
-                return "LOCKED";
-            if (snapshot.Status == "CONTRACT CLOSED")
-                return "CLOSED";
-            return snapshot.CanExecute ? "EXECUTE" : "UNAVAILABLE";
+                return "LOCKED".AsSpan();
+            if (snapshot.Status == PDAExchangeSystem.ExchangeStatus.ContractClosed)
+                return "CLOSED".AsSpan();
+            return snapshot.CanExecute ? "EXECUTE".AsSpan() : "UNAVAILABLE".AsSpan();
         }
 
-        private static string GetDirectiveText(int ready, int locked, int closed)
+        private static ReadOnlySpan<char> ResolveDirectiveText(int ready, int locked, int closed)
         {
             if (ready > 0)
-                return "Exchange relay has executable requisitions. Convert surplus field cargo into mission-ready support packages before the next sortie.";
+                return "Exchange relay has executable requisitions. Convert surplus field cargo into mission-ready support packages before the next sortie.".AsSpan();
             if (locked > 0)
-                return "Relay is waiting on additional scan intel before higher-value exchange contracts can be routed into the field stack.";
+                return "Relay is waiting on additional scan intel before higher-value exchange contracts can be routed into the field stack.".AsSpan();
             if (closed > 0)
-                return "Current relay queue is partially exhausted. Archive more intel or recover more cargo to refresh contract value.";
-            return "Exchange relay is online but no active requisitions are currently actionable.";
+                return "Current relay queue is partially exhausted. Archive more intel or recover more cargo to refresh contract value.".AsSpan();
+            return "Exchange relay is online but no active requisitions are currently actionable.".AsSpan();
         }
 
-        private string GetHintText(PDAExchangeSystem.TransactionSnapshot latest)
+        private void RefreshHintText(PDAExchangeSystem.TransactionSnapshot latest, bool hasLatest)
         {
-            if (!string.IsNullOrWhiteSpace(latest.OfferName))
+            if (_hintText == null)
+                return;
+
+            if (hasLatest)
             {
-                return "Last confirmed contract: " +
-                       CachedToUpperInvariant(latest.OfferName) +
-                       "  //  " +
-                       (string.IsNullOrWhiteSpace(latest.RewardSummary) ? "NO OUTPUT" : latest.RewardSummary);
+                string offerName = ResolveTransactionOfferName(latest);
+                if (!string.IsNullOrWhiteSpace(offerName))
+                {
+                    ApplyTransactionHintText(latest, offerName);
+                    return;
+                }
             }
 
-            return "Relay contracts consume real cargo and route rewards back into your field inventory.";
+            ApplyStaticText(_hintText, "Relay contracts consume real cargo and route rewards back into your field inventory.".AsSpan());
+        }
+
+        private static string ResolveTransactionOfferName(PDAExchangeSystem.TransactionSnapshot transaction)
+        {
+            if (transaction.Offer != null && !string.IsNullOrWhiteSpace(transaction.Offer.offerName))
+                return transaction.Offer.offerName;
+
+            return transaction.LegacyOfferName;
+        }
+
+        private void ApplySummaryText(int offerCount, int ready, int locked, int closed, int transactionCount)
+        {
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                Span<char> buffer = lease.Buffer.AsSpan();
+                int cursor = 0;
+                bool written =
+                    TryAppendLine(buffer, ref cursor, "EXCHANGE BACKBONE".AsSpan()) &&
+                    TryAppend(buffer, ref cursor, "CATALOG      ".AsSpan()) &&
+                    TryAppendInt(buffer, ref cursor, offerCount) &&
+                    TryAppendNewLine(buffer, ref cursor) &&
+                    TryAppend(buffer, ref cursor, "READY        ".AsSpan()) &&
+                    TryAppendInt(buffer, ref cursor, ready) &&
+                    TryAppendNewLine(buffer, ref cursor) &&
+                    TryAppend(buffer, ref cursor, "LOCKED       ".AsSpan()) &&
+                    TryAppendInt(buffer, ref cursor, locked) &&
+                    TryAppendNewLine(buffer, ref cursor) &&
+                    TryAppend(buffer, ref cursor, "FULFILLED    ".AsSpan()) &&
+                    TryAppendInt(buffer, ref cursor, closed) &&
+                    TryAppendNewLine(buffer, ref cursor);
+
+                if (written && transactionCount > 0)
+                {
+                    PDAExchangeSystem.TransactionSnapshot tx = _transactionBuffer[0];
+                    written =
+                        TryAppend(buffer, ref cursor, "LATEST       ".AsSpan()) &&
+                        TryAppendUpperInvariant(buffer, ref cursor, ResolveTransactionOfferName(tx), "UNKNOWN".AsSpan()) &&
+                        TryAppendNewLine(buffer, ref cursor) &&
+                        TryAppend(buffer, ref cursor, "OUTPUT       ".AsSpan()) &&
+                        TryAppendTransactionRewardSummary(buffer, ref cursor, tx, "NONE".AsSpan()) &&
+                        TryAppendNewLine(buffer, ref cursor);
+                }
+
+                if (written)
+                    _summaryText.SetCharArray(lease.Buffer, 0, cursor);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private void ApplyOfferTitle(TextMeshProUGUI label, BarterOfferData offer)
+        {
+            if (label == null || offer == null || !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                Span<char> buffer = lease.Buffer.AsSpan();
+                int cursor = 0;
+                if (TryAppendUpperInvariant(buffer, ref cursor, offer.offerName, "UNKNOWN".AsSpan()) &&
+                    TryAppend(buffer, ref cursor, "  //  ".AsSpan()) &&
+                    TryAppendUpperInvariant(buffer, ref cursor, offer.channelName, "FIELD".AsSpan()))
+                {
+                    label.SetCharArray(lease.Buffer, 0, cursor);
+                }
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private void ApplyOfferBody(TextMeshProUGUI label, PDAExchangeSystem.OfferSnapshot snapshot, BarterOfferData offer)
+        {
+            if (label == null || exchangeSystem == null || offer == null || !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                Span<char> buffer = lease.Buffer.AsSpan();
+                int cursor = 0;
+                bool written =
+                    TryAppend(buffer, ref cursor, "REQ  ".AsSpan()) &&
+                    exchangeSystem.TryAppendBundleSummary(buffer, ref cursor, offer.costs, "NONE".AsSpan()) &&
+                    TryAppendNewLine(buffer, ref cursor) &&
+                    TryAppend(buffer, ref cursor, "OUT  ".AsSpan()) &&
+                    exchangeSystem.TryAppendBundleSummary(buffer, ref cursor, offer.rewards, "NO PAYOUT".AsSpan()) &&
+                    TryAppendNewLine(buffer, ref cursor);
+
+                if (written && snapshot.HasRequiredScanEntry)
+                {
+                    written =
+                        TryAppend(buffer, ref cursor, "GATE #".AsSpan()) &&
+                        TryAppendHex8(buffer, ref cursor, snapshot.RequiredScanEntryHash) &&
+                        TryAppendNewLine(buffer, ref cursor);
+                }
+
+                written = written &&
+                    TryAppend(buffer, ref cursor, "STAT ".AsSpan()) &&
+                    TryAppendStatusLabel(buffer, ref cursor, snapshot.Status);
+
+                if (written)
+                    label.SetCharArray(lease.Buffer, 0, cursor);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private void ApplyTransactionHintText(PDAExchangeSystem.TransactionSnapshot latest, string offerName)
+        {
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                Span<char> buffer = lease.Buffer.AsSpan();
+                int cursor = 0;
+                if (TryAppend(buffer, ref cursor, "Last confirmed contract: ".AsSpan()) &&
+                    TryAppendUpperInvariant(buffer, ref cursor, offerName, "UNKNOWN".AsSpan()) &&
+                    TryAppend(buffer, ref cursor, "  //  ".AsSpan()) &&
+                    TryAppendTransactionRewardSummary(buffer, ref cursor, latest, "NO OUTPUT".AsSpan()))
+                {
+                    _hintText.SetCharArray(lease.Buffer, 0, cursor);
+                }
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private static void ApplyStaticText(TextMeshProUGUI label, ReadOnlySpan<char> text)
+        {
+            if (label == null || !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
+
+            try
+            {
+                Span<char> buffer = lease.Buffer.AsSpan();
+                int cursor = 0;
+                if (TryAppend(buffer, ref cursor, text))
+                    label.SetCharArray(lease.Buffer, 0, cursor);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
+
+        private bool TryAppendTransactionRewardSummary(
+            Span<char> buffer,
+            ref int cursor,
+            PDAExchangeSystem.TransactionSnapshot transaction,
+            ReadOnlySpan<char> emptyLabel)
+        {
+            if (transaction.Offer != null && exchangeSystem != null)
+                return exchangeSystem.TryAppendBundleSummary(buffer, ref cursor, transaction.Offer.rewards, emptyLabel);
+
+            ReadOnlySpan<char> reward = string.IsNullOrWhiteSpace(transaction.LegacyRewardSummary)
+                ? emptyLabel
+                : transaction.LegacyRewardSummary.AsSpan();
+            return TryAppend(buffer, ref cursor, reward);
+        }
+
+        private static bool TryAppendStatusLabel(Span<char> buffer, ref int cursor, PDAExchangeSystem.ExchangeStatus status)
+        {
+            switch (status)
+            {
+                case PDAExchangeSystem.ExchangeStatus.Ready:
+                    return TryAppend(buffer, ref cursor, "READY".AsSpan());
+                case PDAExchangeSystem.ExchangeStatus.NoOffer:
+                    return TryAppend(buffer, ref cursor, "NO OFFER".AsSpan());
+                case PDAExchangeSystem.ExchangeStatus.ScanLock:
+                    return TryAppend(buffer, ref cursor, "SCAN LOCK".AsSpan());
+                case PDAExchangeSystem.ExchangeStatus.ContractClosed:
+                    return TryAppend(buffer, ref cursor, "CONTRACT CLOSED".AsSpan());
+                case PDAExchangeSystem.ExchangeStatus.InventoryOffline:
+                    return TryAppend(buffer, ref cursor, "INVENTORY OFFLINE".AsSpan());
+                case PDAExchangeSystem.ExchangeStatus.CostDataInvalid:
+                    return TryAppend(buffer, ref cursor, "COST DATA INVALID".AsSpan());
+                case PDAExchangeSystem.ExchangeStatus.InsufficientMaterials:
+                    return TryAppend(buffer, ref cursor, "INSUFFICIENT MATERIALS".AsSpan());
+                default:
+                    return TryAppend(buffer, ref cursor, "NO OFFER".AsSpan());
+            }
+        }
+
+        private static bool TryAppendUpperInvariant(Span<char> buffer, ref int cursor, string value, ReadOnlySpan<char> fallback)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return TryAppend(buffer, ref cursor, fallback);
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (cursor >= buffer.Length)
+                    return false;
+
+                char c = value[i];
+                buffer[cursor++] = c >= 'a' && c <= 'z' ? (char)(c - 32) : c;
+            }
+
+            return true;
+        }
+
+        private static bool TryAppendHex8(Span<char> buffer, ref int cursor, uint value)
+        {
+            const string Hex = "0123456789ABCDEF";
+            for (int shift = 28; shift >= 0; shift -= 4)
+            {
+                if (cursor >= buffer.Length)
+                    return false;
+
+                buffer[cursor++] = Hex[(int)((value >> shift) & 0xFu)];
+            }
+
+            return true;
+        }
+
+        private static bool TryAppendLine(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
+        {
+            return TryAppend(buffer, ref cursor, value) && TryAppendNewLine(buffer, ref cursor);
+        }
+
+        private static bool TryAppendNewLine(Span<char> buffer, ref int cursor)
+        {
+            if (cursor >= buffer.Length)
+                return false;
+
+            buffer[cursor++] = '\n';
+            return true;
+        }
+
+        private static bool TryAppendInt(Span<char> buffer, ref int cursor, int value)
+        {
+            if ((uint)cursor > (uint)buffer.Length ||
+                !value.TryFormat(buffer.Slice(cursor), out int written))
+            {
+                return false;
+            }
+
+            cursor += written;
+            return true;
+        }
+
+        private static bool TryAppend(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
+        {
+            if (cursor < 0 || cursor + value.Length > buffer.Length)
+                return false;
+
+            value.CopyTo(buffer.Slice(cursor));
+            cursor += value.Length;
+            return true;
         }
 
         private static RectTransform CreatePanel(Transform parent, string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 offsetMin, Vector2 offsetMax)
@@ -465,6 +719,14 @@ namespace Hecton8.UI
             if (image == null)
                 image = go.AddComponent<Image>();
             return image;
+        }
+
+        private static CanvasGroup EnsureCanvasGroup(GameObject go)
+        {
+            CanvasGroup canvasGroup = go.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = go.AddComponent<CanvasGroup>();
+            return canvasGroup;
         }
 
         private static TextMeshProUGUI CreateText(Transform parent, string name, TMP_FontAsset font, float size, FontStyles style, TextAlignmentOptions alignment)
@@ -526,9 +788,9 @@ namespace Hecton8.UI
             {
                 Transform child = parent.GetChild(i);
                 if (Application.isPlaying)
-                    Object.Destroy(child.gameObject);
+                    UnityEngine.Object.Destroy(child.gameObject);
                 else
-                    Object.DestroyImmediate(child.gameObject);
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
         }
     }

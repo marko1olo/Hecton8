@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
@@ -51,11 +52,26 @@ namespace Hecton8.World
         private const byte CollapseChunkBurstSpawnedFlag = 1 << 0;
         private const int EntanglementStrainEventCapacity = 16;
         private const int MassiveDisplacementEventCapacity = 16;
+        private const int EventListenerCapacity = 16;
+        private const uint EntanglementStrainOverflowWarningHash = 0x5347454Fu;
+        private const uint MassiveDisplacementOverflowWarningHash = 0x53474D4Fu;
+        private const uint ListenerRejectedWarningHash = 0x5347524Au;
+        private const uint ListenerExceptionWarningHash = 0x53474558u;
+        private const uint EntanglementStrainContextHash = 0x53474553u;
+        private const uint MassiveDisplacementContextHash = 0x53474D53u;
+        private const uint ListenerContextHash = 0x53474C53u;
         private const int DebrisPetrificationTimerCapacity = 128;
         private const int DebrisPetrificationDisableBudgetPerSlowTick = 16;
         private const float DebrisPetrificationDelaySeconds = 4f;
         private const float DebrisPetrificationSlowTickSeconds = 0.5f;
+        private const int ScavengerBrgMetadataPlaceholderCount = 1;
+        private const float ScavengerInvTwoPi = 0.15915494309189535f;
+        private static readonly Quaternion _yawPositiveZ = new Quaternion(0f, 0f, 0f, 1f);
+        private static readonly Quaternion _yawNegativeZ = new Quaternion(0f, 1f, 0f, 0f);
+        private static readonly Quaternion _yawPositiveX = new Quaternion(0f, 0.70710678118f, 0f, 0.70710678118f);
+        private static readonly Quaternion _yawNegativeX = new Quaternion(0f, -0.70710678118f, 0f, 0.70710678118f);
 
+        [StructLayout(LayoutKind.Sequential)]
         internal struct SargassumFieldSample
         {
             public bool HasInfluence;
@@ -68,6 +84,7 @@ namespace Hecton8.World
             public float Occlusion01;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         public struct EntanglementStrainSignal
         {
             public int SourceInstanceId;
@@ -78,6 +95,7 @@ namespace Hecton8.World
             public float Shake01;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         public struct MassiveDisplacementSignal
         {
             public Vector3 PositionWS;
@@ -86,6 +104,7 @@ namespace Hecton8.World
             public float ExtremePanicRadiusWS;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct CellData
         {
             public float Density;
@@ -93,6 +112,7 @@ namespace Hecton8.World
             public float MaxY;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct NestedAttachmentState
         {
             public Vector3 SampleSpaceAnchorWS;
@@ -103,7 +123,7 @@ namespace Hecton8.World
             public float ReleaseLifetime;
             public float ReleaseAge;
             public int PrototypeIndex;
-            public bool Released;
+            public byte ReleasedFlag;
         }
 
         private enum DisruptionZoneMode : byte
@@ -112,6 +132,7 @@ namespace Hecton8.World
             MassiveDisplacement = 2
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct DisruptionZoneState
         {
             public Vector3 SampleSpaceCenterWS;
@@ -126,12 +147,14 @@ namespace Hecton8.World
             public byte Flags;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct DisruptionSample
         {
             public float Suppression01;
             public float SinkDepthWS;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct ScavengerHostState
         {
             public SargassumCollapseChunk Chunk;
@@ -141,6 +164,7 @@ namespace Hecton8.World
             public uint Seed;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct ExternalScavengerSiteState
         {
             public Vector3 AnchorWS;
@@ -149,18 +173,21 @@ namespace Hecton8.World
             public uint Seed;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct DebrisTimer
         {
             public int Slot;
             public float RemainingSeconds;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
         private struct DensitySourceData
         {
             public float3 OriginWS;
             public float Scale;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 12)]
         private struct DensityContributionData
         {
             public float Density;
@@ -192,6 +219,7 @@ namespace Hecton8.World
                 int minCellZ = (int)math.floor((source.OriginWS.z - influenceRadius) * InverseCellSize);
                 int maxCellZ = (int)math.floor((source.OriginWS.z + influenceRadius) * InverseCellSize);
                 float safeDistancePower = math.max(1f, DistancePower);
+                float influenceRadiusSq = math.max(influenceRadius * influenceRadius, 0.000001f);
 
                 for (int cellZ = minCellZ; cellZ <= maxCellZ; cellZ++)
                 {
@@ -200,12 +228,12 @@ namespace Hecton8.World
                         float cellCenterX = (cellX + 0.5f) * CellSize;
                         float cellCenterZ = (cellZ + 0.5f) * CellSize;
                         float2 planarDelta = new float2(source.OriginWS.x - cellCenterX, source.OriginWS.z - cellCenterZ);
-                        float planarDistance = math.length(planarDelta);
-                        if (planarDistance > influenceRadius)
+                        float planarDistanceSq = math.lengthsq(planarDelta);
+                        if (planarDistanceSq > influenceRadiusSq)
                             continue;
 
-                        float normalized = 1f - planarDistance / math.max(influenceRadius, 0.001f);
-                        float density = math.pow(math.saturate(normalized), safeDistancePower);
+                        float normalized = 1f - math.saturate(planarDistanceSq / influenceRadiusSq);
+                        float density = FastDensityFalloff01(normalized, safeDistancePower);
                         if (density <= 0.0001f)
                             continue;
 
@@ -242,8 +270,9 @@ namespace Hecton8.World
             public ShadowCastingMode ShadowCastingMode;
         }
 
-        private static SargassumGlobalDragManager _instance;
-        private static readonly RegistryBucket<ISargassumGlobalDragEventListener> _listeners = new RegistryBucket<ISargassumGlobalDragEventListener>(16);
+        private static readonly RegistryBucket<ISargassumGlobalDragEventListener> _listeners = new RegistryBucket<ISargassumGlobalDragEventListener>(EventListenerCapacity);
+        private static readonly ISargassumGlobalDragEventListener[] _deferredRegisterListeners = new ISargassumGlobalDragEventListener[EventListenerCapacity];
+        private static readonly ISargassumGlobalDragEventListener[] _deferredUnregisterListeners = new ISargassumGlobalDragEventListener[EventListenerCapacity];
         private static NativeQueue<EntanglementStrainSignal> _pendingEntanglementStrain;
         private static NativeQueue<EntanglementStrainSignal> _nextFrameEntanglementStrain;
         private static NativeQueue<MassiveDisplacementSignal> _pendingMassiveDisplacement;
@@ -252,6 +281,16 @@ namespace Hecton8.World
         private static int _nextFrameEntanglementStrainCount;
         private static int _pendingMassiveDisplacementCount;
         private static int _nextFrameMassiveDisplacementCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEntanglementStrainCount;
+        private static int _droppedMassiveDisplacementCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastEntanglementOverflowTelemetryFrame = -1;
+        private static int _lastMassiveDisplacementOverflowTelemetryFrame = -1;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatchingEvents;
         private NativeQueue<DebrisTimer> _debrisPetrificationTimers;
         // COLD ALLOC: Rigidbody[128] - managed handles for queued debris petrification timers - owner: SargassumGlobalDragManager
@@ -265,10 +304,21 @@ namespace Hecton8.World
             _pendingMassiveDisplacementCount +
             _nextFrameMassiveDisplacementCount;
 
+        /// <summary>Number of entanglement-strain payloads rejected because the fixed event lane was full.</summary>
+        public static int DroppedEntanglementStrainCount => _droppedEntanglementStrainCount;
+
+        /// <summary>Number of massive-displacement payloads rejected because the fixed event lane was full.</summary>
+        public static int DroppedMassiveDisplacementCount => _droppedMassiveDisplacementCount;
+
+        /// <summary>Number of listener registrations rejected because the fixed listener lane was full.</summary>
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+
+        /// <summary>Number of listener callback exceptions caught during event dispatch.</summary>
+        public static int ListenerExceptionCount => _listenerExceptionCount;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
             if (_pendingEntanglementStrain.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_pendingEntanglementStrain));
@@ -301,6 +351,18 @@ namespace Hecton8.World
             _nextFrameEntanglementStrainCount = 0;
             _pendingMassiveDisplacementCount = 0;
             _nextFrameMassiveDisplacementCount = 0;
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEntanglementStrainCount = 0;
+            _droppedMassiveDisplacementCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastEntanglementOverflowTelemetryFrame = -1;
+            _lastMassiveDisplacementOverflowTelemetryFrame = -1;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatchingEvents = false;
             _listeners.Clear();
         }
@@ -677,7 +739,6 @@ namespace Hecton8.World
         private DisruptionZoneState[] _disruptionZones;
         private ScavengerHostState[] _scavengerHosts;
         private ExternalScavengerSiteState[] _externalScavengerSites;
-        private Matrix4x4[] _scavengerMatrices;
         private NativeArray<Matrix4x4> _scavengerMatricesNative;
         private GraphicsBuffer _scavengerMatrixBuffer;
         private BatchRendererGroup _scavengerBatchRendererGroup;
@@ -691,6 +752,8 @@ namespace Hecton8.World
         private Material _registeredScavengerMaterial;
         private Material _scavengerBrgMaterial;
         private Material _scavengerBrgMaterialSource;
+        private Material _boundScavengerMatrixMaterial;
+        private GraphicsBuffer _boundScavengerMatrixBuffer;
         private bool _ownsScavengerBrgMaterial;
         private int _nestedPrototypeCapacity;
         private int _activeNestedPrototypeCount;
@@ -708,12 +771,15 @@ namespace Hecton8.World
         private Material _fallbackScavengerMaterial;
         private Shader _fallbackLitShader;
         private Bounds _scavengerDrawBounds;
+        private Bounds _registeredScavengerDrawBounds;
+        private bool _scavengerDrawBoundsRegistered;
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
         private bool _saveRegistered;
         private int _editorValidateDepth;
+        private int _cachedRenderLayer;
         private bool _hasFieldData;
         private float _inverseCellSize;
         private int _fieldRevision;
@@ -727,24 +793,49 @@ namespace Hecton8.World
         private int _pendingDensityTrackedInstances;
         private Bounds _pendingDensityFieldBounds;
         private bool _pendingDensityFieldBoundsInitialized;
+        private Vector4 _publishedGlobalDriftOffset;
+        private Vector4 _publishedSinkWorldRect;
+        private Texture _publishedSinkTexture;
+        private float _publishedMaxSinkDepth;
+        private bool _shaderGlobalsPublished;
 
         /// <summary>
-        /// Active singleton instance.
+        /// Active registry-owned instance.
         /// </summary>
-        public static SargassumGlobalDragManager Instance => _instance;
+        public static SargassumGlobalDragManager Instance => GlobalRegistry.SargassumDrag;
         public int SavePriority => 45;
         public int LoadPriority => 45;
 
         public static void Register(ISargassumGlobalDragEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatchingEvents)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         public static void Unregister(ISargassumGlobalDragEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatchingEvents)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            if (!_listeners.TryUnregister(listener))
+                return;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
         }
 
         /// <summary>
@@ -793,11 +884,16 @@ namespace Hecton8.World
         /// </summary>
         public static void RaiseEntanglementStrain(EntanglementStrainSignal signal)
         {
-            if (_listeners.Count <= 0 ||
-                _pendingEntanglementStrainCount + _nextFrameEntanglementStrainCount >= EntanglementStrainEventCapacity)
+            if (_listeners.Count <= 0)
                 return;
 
             EnsureEventQueues();
+            if (_pendingEntanglementStrainCount + _nextFrameEntanglementStrainCount >= EntanglementStrainEventCapacity)
+            {
+                ReportEntanglementStrainOverflow();
+                return;
+            }
+
             if (_isDispatchingEvents)
             {
                 _nextFrameEntanglementStrain.Enqueue(signal);
@@ -816,11 +912,16 @@ namespace Hecton8.World
         /// <param name="signal">Displacement payload.</param>
         public static void RaiseMassiveDisplacement(MassiveDisplacementSignal signal)
         {
-            if (_listeners.Count <= 0 ||
-                _pendingMassiveDisplacementCount + _nextFrameMassiveDisplacementCount >= MassiveDisplacementEventCapacity)
+            if (_listeners.Count <= 0)
                 return;
 
             EnsureEventQueues();
+            if (_pendingMassiveDisplacementCount + _nextFrameMassiveDisplacementCount >= MassiveDisplacementEventCapacity)
+            {
+                ReportMassiveDisplacementOverflow();
+                return;
+            }
+
             if (_isDispatchingEvents)
             {
                 _nextFrameMassiveDisplacement.Enqueue(signal);
@@ -842,13 +943,22 @@ namespace Hecton8.World
             _isDispatchingEvents = true;
             try
             {
-                completed = FlushEntanglementStrain();
-                if (completed)
-                    completed = FlushMassiveDisplacement();
+                if (_listeners.Count <= 0)
+                {
+                    DropQueuedEvents();
+                    completed = true;
+                }
+                else
+                {
+                    completed = FlushEntanglementStrain();
+                    if (completed)
+                        completed = FlushMassiveDisplacement();
+                }
             }
             finally
             {
                 _isDispatchingEvents = false;
+                ApplyDeferredListenerMutations();
             }
 
             if (!completed || HasPendingFrontEvents())
@@ -868,6 +978,7 @@ namespace Hecton8.World
                     nameof(SargassumGlobalDragManager),
                     nameof(_pendingEntanglementStrain),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEntanglementStrain, EntanglementStrainEventCapacity);
             }
 
             if (!_nextFrameEntanglementStrain.IsCreated)
@@ -879,6 +990,7 @@ namespace Hecton8.World
                     nameof(SargassumGlobalDragManager),
                     nameof(_nextFrameEntanglementStrain),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEntanglementStrain, EntanglementStrainEventCapacity);
             }
 
             if (!_pendingMassiveDisplacement.IsCreated)
@@ -890,6 +1002,7 @@ namespace Hecton8.World
                     nameof(SargassumGlobalDragManager),
                     nameof(_pendingMassiveDisplacement),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingMassiveDisplacement, MassiveDisplacementEventCapacity);
             }
 
             if (!_nextFrameMassiveDisplacement.IsCreated)
@@ -901,6 +1014,21 @@ namespace Hecton8.World
                     nameof(SargassumGlobalDragManager),
                     nameof(_nextFrameMassiveDisplacement),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameMassiveDisplacement, MassiveDisplacementEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -928,10 +1056,10 @@ namespace Hecton8.World
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISargassumGlobalDragEventListener listener = rawArray[i];
-                    if (listener == null)
+                    if (listener == null || IsDeferredUnregisterPending(listener))
                         continue;
 
-                    listener.OnSargassumEntanglementStrain(in signal);
+                    DispatchEntanglementStrainToListener(listener, in signal);
                 }
             }
 
@@ -965,10 +1093,10 @@ namespace Hecton8.World
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISargassumGlobalDragEventListener listener = rawArray[i];
-                    if (listener == null)
+                    if (listener == null || IsDeferredUnregisterPending(listener))
                         continue;
 
-                    listener.OnSargassumMassiveDisplacement(in signal);
+                    DispatchMassiveDisplacementToListener(listener, in signal);
                 }
             }
 
@@ -982,6 +1110,257 @@ namespace Hecton8.World
         {
             return (_pendingEntanglementStrain.IsCreated && !_pendingEntanglementStrain.IsEmpty())
                 || (_pendingMassiveDisplacement.IsCreated && !_pendingMassiveDisplacement.IsEmpty());
+        }
+
+        private static void DropQueuedEvents()
+        {
+            if (_pendingEntanglementStrain.IsCreated)
+            {
+                while (_pendingEntanglementStrain.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameEntanglementStrain.IsCreated)
+            {
+                while (_nextFrameEntanglementStrain.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_pendingMassiveDisplacement.IsCreated)
+            {
+                while (_pendingMassiveDisplacement.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameMassiveDisplacement.IsCreated)
+            {
+                while (_nextFrameMassiveDisplacement.TryDequeue(out _))
+                {
+                }
+            }
+
+            _pendingEntanglementStrainCount = 0;
+            _nextFrameEntanglementStrainCount = 0;
+            _pendingMassiveDisplacementCount = 0;
+            _nextFrameMassiveDisplacementCount = 0;
+        }
+
+        private static void DispatchEntanglementStrainToListener(ISargassumGlobalDragEventListener listener, in EntanglementStrainSignal signal)
+        {
+            try
+            {
+                listener.OnSargassumEntanglementStrain(in signal);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        private static void DispatchMassiveDisplacementToListener(ISargassumGlobalDragEventListener listener, in MassiveDisplacementSignal signal)
+        {
+            try
+            {
+                listener.OnSargassumMassiveDisplacement(in signal);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(ISargassumGlobalDragEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= EventListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(ISargassumGlobalDragEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= EventListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(ISargassumGlobalDragEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(ISargassumGlobalDragEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(ISargassumGlobalDragEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(ISargassumGlobalDragEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                ISargassumGlobalDragEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                ISargassumGlobalDragEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
+        }
+
+        private static void RegisterImmediate(ISargassumGlobalDragEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportEntanglementStrainOverflow()
+        {
+            _droppedEntanglementStrainCount++;
+            int frame = Time.frameCount;
+            if (_lastEntanglementOverflowTelemetryFrame == frame)
+                return;
+
+            _lastEntanglementOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                EntanglementStrainOverflowWarningHash,
+                EntanglementStrainContextHash,
+                Mathf.Max(1, _droppedEntanglementStrainCount));
+        }
+
+        private static void ReportMassiveDisplacementOverflow()
+        {
+            _droppedMassiveDisplacementCount++;
+            int frame = Time.frameCount;
+            if (_lastMassiveDisplacementOverflowTelemetryFrame == frame)
+                return;
+
+            _lastMassiveDisplacementOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                MassiveDisplacementOverflowWarningHash,
+                MassiveDisplacementContextHash,
+                Mathf.Max(1, _droppedMassiveDisplacementCount));
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerRejectedWarningHash,
+                ListenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerExceptionWarningHash,
+                ListenerContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
         }
 
         private static void PromoteNextFrameEvents()
@@ -1009,14 +1388,18 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            SargassumGlobalDragManager registered = GlobalRegistry.SargassumDrag;
+            if (registered != null && registered != this)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[SargassumGlobalDragManager] Duplicate instance detected. Destroying the newer component.", this);
+#endif
                 Destroy(this);
                 return;
             }
 
-            _instance = this;
+            TryRegisterService();
+            RefreshRenderLayerCache();
             SanitizeSettings();
             ResolveBridge();
             ResolveActiveNestingPrototypes();
@@ -1032,6 +1415,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            RefreshRenderLayerCache();
             if (!Application.isPlaying)
             {
                 SanitizeSettings();
@@ -1071,10 +1455,7 @@ namespace Hecton8.World
                 ReleaseScavengerResources();
             }
 
-            Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
-            Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
-            Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
-            Shader.SetGlobalTexture(_SinkTextureId, Texture2D.blackTexture);
+            PublishEmptyShaderGlobals();
         }
 
         private void OnDestroy()
@@ -1089,13 +1470,7 @@ namespace Hecton8.World
             ReleaseScavengerResources();
             ReleaseDensityBuildStorage();
             ReleaseDebrisPetrificationStorage();
-            Shader.SetGlobalVector(_GlobalDriftOffsetId, Vector4.zero);
-            Shader.SetGlobalVector(_SinkWorldRectId, Vector4.zero);
-            Shader.SetGlobalFloat(_MaxSinkDepthId, 0f);
-            Shader.SetGlobalTexture(_SinkTextureId, Texture2D.blackTexture);
-
-            if (_instance == this)
-                _instance = null;
+            PublishEmptyShaderGlobals();
         }
 
         /// <summary>
@@ -1103,6 +1478,7 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
+            RefreshRenderLayerCache();
             ProcessDebrisPetrificationTimers();
             ResolveBridge();
             RebuildDensityField();
@@ -1169,7 +1545,7 @@ namespace Hecton8.World
                     worldBounds = _debugNestedAttachmentBounds,
                     shadowCastingMode = prototype.ShadowCastingMode,
                     receiveShadows = true,
-                    layer = gameObject.layer,
+                    layer = _cachedRenderLayer,
                     lightProbeUsage = LightProbeUsage.Off
                 };
                 Graphics.RenderMeshInstanced(renderParams, prototype.Mesh, 0, _nestedMatricesByPrototype[prototypeIndex], matrixCount);
@@ -1340,14 +1716,16 @@ namespace Hecton8.World
 
                     float cellCenterX = (cellX + 0.5f) * cellSize;
                     float cellCenterZ = (cellZ + 0.5f) * cellSize;
-                    float planarDistance = Vector2.Distance(
-                        new Vector2(sampledPositionWS.x, sampledPositionWS.z),
-                        new Vector2(cellCenterX, cellCenterZ));
-                    float planarWeight = 1f - planarDistance / Mathf.Max(cellSize + effectiveRadius, 0.001f);
+                    float planarDeltaX = sampledPositionWS.x - cellCenterX;
+                    float planarDeltaZ = sampledPositionWS.z - cellCenterZ;
+                    float planarDistanceSq = (planarDeltaX * planarDeltaX) + (planarDeltaZ * planarDeltaZ);
+                    float influenceRadius = Mathf.Max(cellSize + effectiveRadius, 0.001f);
+                    float influenceRadiusSq = Mathf.Max(influenceRadius * influenceRadius, 0.000001f);
+                    float planarWeight = 1f - Mathf.Clamp01(planarDistanceSq / influenceRadiusSq);
                     if (planarWeight <= 0f)
                         continue;
 
-                    float weightedContribution = cell.Density * Mathf.Pow(planarWeight, Mathf.Max(1f, distancePower));
+                    float weightedContribution = cell.Density * FastDensityFalloff01(planarWeight, Mathf.Max(1f, distancePower));
                     accumulatedDensity += weightedContribution;
                     accumulatedWeight += weightedContribution;
                     weightedCenterX += cellCenterX * weightedContribution;
@@ -1381,10 +1759,10 @@ namespace Hecton8.World
                     weightedCenterY / accumulatedWeight,
                     weightedCenterZ / accumulatedWeight)
                 : strongestCenterWS;
-            sample.AnchorWS = Vector3.Lerp(centroidWS, strongestCenterWS, 0.65f) + _globalDriftOffset;
+            sample.AnchorWS = centroidWS + (strongestCenterWS - centroidWS) * 0.65f + _globalDriftOffset;
             sample.AnchorWS.y -= disruption.SinkDepthWS;
-            sample.SpeedMultiplier = Mathf.Lerp(1f, minSpeedMultiplier, sample.Density01);
-            float isotropicDragMultiplier = Mathf.Lerp(1f, maxDragMultiplier, sample.Density01);
+            sample.SpeedMultiplier = 1f + (minSpeedMultiplier - 1f) * sample.Density01;
+            float isotropicDragMultiplier = 1f + (maxDragMultiplier - 1f) * sample.Density01;
             float directionalDragScale = ResolveDirectionalDragScale(movementVelocityWS);
             sample.DragMultiplier = 1f + (isotropicDragMultiplier - 1f) * directionalDragScale;
             sample.Window01 = EvaluateCanopyWindow01(sampledPositionWS);
@@ -1539,8 +1917,9 @@ namespace Hecton8.World
                 return;
             }
 
-            Bounds fieldBounds = default;
             bool boundsInitialized = false;
+            Vector3 boundsMin = default;
+            Vector3 boundsMax = default;
             int trackedInstances = 0;
             Vector3 universeOffset = mapMagicVegetationBridge.TotalUniverseOffset;
             EnsureDensityBuildSourceCapacity(activeCount);
@@ -1570,17 +1949,12 @@ namespace Hecton8.World
                 int minCellZ = Mathf.FloorToInt((origin.z - influenceRadius) * _inverseCellSize);
                 int maxCellZ = Mathf.FloorToInt((origin.z + influenceRadius) * _inverseCellSize);
                 estimatedContributionCount += Mathf.Max(1, (maxCellX - minCellX + 1) * (maxCellZ - minCellZ + 1));
-
-                Bounds instanceBounds = new Bounds(origin, new Vector3(influenceRadius * 2f, verticalHalfExtent * 2f, influenceRadius * 2f));
-                if (!boundsInitialized)
-                {
-                    fieldBounds = instanceBounds;
-                    boundsInitialized = true;
-                }
-                else
-                {
-                    fieldBounds.Encapsulate(instanceBounds);
-                }
+                EncapsulateExtents(
+                    origin,
+                    new Vector3(influenceRadius, verticalHalfExtent, influenceRadius),
+                    ref boundsMin,
+                    ref boundsMax,
+                    ref boundsInitialized);
 
                 trackedInstances++;
             }
@@ -1608,7 +1982,7 @@ namespace Hecton8.World
             _densityBuildHandle = buildJob.Schedule(sourceCount, math.max(1, math.min(32, sourceCount / 4)));
             _densityBuildScheduled = true;
             _pendingDensityTrackedInstances = trackedInstances;
-            _pendingDensityFieldBounds = fieldBounds;
+            _pendingDensityFieldBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
             _pendingDensityFieldBoundsInitialized = boundsInitialized;
         }
 
@@ -1677,10 +2051,18 @@ namespace Hecton8.World
                 return;
 
             if (_densityBuildSources.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_densityBuildSources);
                 _densityBuildSources.Dispose();
+            }
 
             // COLD ALLOC: NativeArray<DensitySourceData>[capacity] - transient Burst source staging for canopy density rebuilds - owner: SargassumGlobalDragManager
             _densityBuildSources = new NativeArray<DensitySourceData>(safeCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _densityBuildSources,
+                nameof(SargassumGlobalDragManager),
+                nameof(_densityBuildSources),
+                NativeAllocationLifetime.Scene);
         }
 
         private void EnsureDensityContributionCapacity(int requiredCount)
@@ -1690,15 +2072,35 @@ namespace Hecton8.World
                 return;
 
             if (_densityContributions.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(
+                    nameof(SargassumGlobalDragManager),
+                    nameof(_densityContributions));
                 _densityContributions.Dispose();
+            }
 
             // COLD ALLOC: NativeParallelMultiHashMap<long,DensityContributionData>[capacity] - Burst-built cell contribution fanout before dictionary compaction - owner: SargassumGlobalDragManager
             _densityContributions = new NativeParallelMultiHashMap<long, DensityContributionData>(safeCount, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(
+                _densityContributions,
+                nameof(SargassumGlobalDragManager),
+                nameof(_densityContributions),
+                NativeAllocationLifetime.Scene);
         }
 
         private void ReleaseDensityBuildStorage()
         {
             JobHandle dependency = _densityBuildScheduled ? _densityBuildHandle : default;
+            if (_densityBuildSources.IsCreated)
+                NativeMemorySentinel.UnregisterNativeArray(_densityBuildSources);
+
+            if (_densityContributions.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(
+                    nameof(SargassumGlobalDragManager),
+                    nameof(_densityContributions));
+            }
+
             DisposeNativeArray(ref _densityBuildSources, dependency);
             DisposeNativeParallelMultiHashMap(ref _densityContributions, dependency);
             _densityBuildHandle = default;
@@ -1784,7 +2186,7 @@ namespace Hecton8.World
                 return false;
 
             bool changed = false;
-            float deltaTime = Mathf.Max(0f, dt);
+            float deltaTime = math.max(0f, dt);
             int index = 0;
             while (index < _activeDisruptionZoneCount)
             {
@@ -1847,7 +2249,7 @@ namespace Hecton8.World
                     continue;
 
                 float collapseStrength = Mathf.Clamp01(accumulatedCutAreaWS / Mathf.Max(buoyancyCollapseAreaThreshold, 0.001f));
-                float sinkDepth = Mathf.Lerp(buoyancyCollapseSinkDepth * 0.45f, buoyancyCollapseSinkDepth, collapseStrength);
+                float sinkDepth = LerpClamped(buoyancyCollapseSinkDepth * 0.45f, buoyancyCollapseSinkDepth, collapseStrength);
                 int zoneIndex = RegisterOrReinforceDisruptionZone(
                     cellCenterWS - _globalDriftOffset,
                     buoyancyCollapseRadius,
@@ -1893,7 +2295,7 @@ namespace Hecton8.World
             if (zone.Mode == 0)
                 zone.SampleSpaceCenterWS = sampleSpaceCenterWS;
             else
-                zone.SampleSpaceCenterWS = Vector3.Lerp(zone.SampleSpaceCenterWS, sampleSpaceCenterWS, 0.35f);
+                zone.SampleSpaceCenterWS = LerpVector3Clamped(zone.SampleSpaceCenterWS, sampleSpaceCenterWS, 0.35f);
 
             zone.RadiusWS = Mathf.Max(zone.RadiusWS, clampedRadius);
             zone.Strength01 = Mathf.Max(zone.Strength01, clampedStrength);
@@ -1966,29 +2368,28 @@ namespace Hecton8.World
                 return;
 
             int spawnCount = Mathf.Clamp(
-                Mathf.RoundToInt(Mathf.Lerp(1f, collapseChunkSpawnCount, Mathf.Clamp01(collapseStrength))),
+                Mathf.RoundToInt(LerpClamped(1f, collapseChunkSpawnCount, Mathf.Clamp01(collapseStrength))),
                 1,
                 collapseChunkSpawnCount);
 
             for (int chunkIndex = 0; chunkIndex < spawnCount; chunkIndex++)
             {
-                float angle = HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x85A308D3u) * Mathf.PI * 2f;
-                float radialT = Mathf.Sqrt(HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x13198A2Eu));
+                float radialT = HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x13198A2Eu);
                 float radius = collapseChunkSpawnRadius * radialT;
-                Vector3 spawnOffset = new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
+                Vector3 lateralDirection = ResolveHashPlanarDirection((uint)zoneIndex, (uint)chunkIndex, 0x85A308D3u, 0xA4093822u, Vector3.right);
+                Vector3 spawnOffset = lateralDirection * radius;
                 Vector3 spawnPosition = zoneCenterWS + spawnOffset;
-                spawnPosition.y += Mathf.Lerp(0.25f, 1.1f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x03707344u));
+                spawnPosition.y += LerpClamped(0.25f, 1.1f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x03707344u));
 
-                Vector3 lateralDirection = spawnOffset.sqrMagnitude > 0.0001f ? spawnOffset.normalized : Vector3.right;
                 Vector3 linearVelocity = new Vector3(
                     lateralDirection.x * collapseChunkHorizontalSpeed,
                     -collapseChunkDownwardSpeed,
                     lateralDirection.z * collapseChunkHorizontalSpeed);
                 Vector3 angularVelocity = new Vector3(
-                    Mathf.Lerp(-2.8f, 2.8f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0xA4093822u)),
-                    Mathf.Lerp(-1.9f, 1.9f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x299F31D0u)),
-                    Mathf.Lerp(-2.4f, 2.4f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x082EFA98u)));
-                float uniformScale = Mathf.Lerp(
+                    LerpClamped(-2.8f, 2.8f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0xA4093822u)),
+                    LerpClamped(-1.9f, 1.9f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x299F31D0u)),
+                    LerpClamped(-2.4f, 2.4f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x082EFA98u)));
+                float uniformScale = LerpClamped(
                     collapseChunkScaleMin,
                     collapseChunkScaleMax,
                     HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0xEC4E6C89u));
@@ -1997,9 +2398,9 @@ namespace Hecton8.World
                     collapseChunkPrefab,
                     spawnPosition,
                     Quaternion.Euler(
-                        Mathf.Lerp(-18f, 18f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x452821E6u)),
-                        Mathf.Lerp(0f, 360f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x38D01377u)),
-                        Mathf.Lerp(-18f, 18f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0xBE5466CFu))));
+                        LerpClamped(-18f, 18f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x452821E6u)),
+                        LerpClamped(0f, 360f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0x38D01377u)),
+                        LerpClamped(-18f, 18f, HashToFloat01((uint)zoneIndex, (uint)chunkIndex, 0xBE5466CFu))));
                 if (chunkInstance == null)
                     continue;
 
@@ -2044,51 +2445,54 @@ namespace Hecton8.World
 
             float severity01 = Mathf.Clamp01((impactSpeed - collapseCascadeImpactThreshold) / Mathf.Max(collapseCascadeImpactThreshold, 0.001f));
             Vector3 sampleSpaceImpact = impactPointWS - _globalDriftOffset;
-            float radiusScale = Mathf.Pow(collapseCascadeScaleMultiplier, Mathf.Max(0, fragmentDepth));
+            float radiusScale = FastPositivePowInt(collapseCascadeScaleMultiplier, Mathf.Max(0, fragmentDepth));
             RegisterOrReinforceDisruptionZone(
                 sampleSpaceImpact,
                 Mathf.Max(cellSize * 0.35f, buoyancyCollapseRadius * radiusScale),
-                Mathf.Lerp(0.2f, 0.55f, severity01),
-                Mathf.Lerp(buoyancyCollapseSinkDepth * 0.18f, buoyancyCollapseSinkDepth * 0.42f, severity01),
-                Mathf.Lerp(buoyancyCollapseSinkDuration * 0.35f, buoyancyCollapseSinkDuration * 0.65f, severity01),
+                LerpClamped(0.2f, 0.55f, severity01),
+                LerpClamped(buoyancyCollapseSinkDepth * 0.18f, buoyancyCollapseSinkDepth * 0.42f, severity01),
+                LerpClamped(buoyancyCollapseSinkDuration * 0.35f, buoyancyCollapseSinkDuration * 0.65f, severity01),
                 0f,
                 0f,
                 DisruptionZoneMode.CutCollapse);
 
-            Vector3 safeNormal = impactNormalWS.sqrMagnitude > 0.0001f ? impactNormalWS.normalized : Vector3.up;
+            Vector3 safeNormal = NormalizeVector3Fast(impactNormalWS, Vector3.up);
             Vector3 tangent = Vector3.Cross(safeNormal, Vector3.up);
             if (tangent.sqrMagnitude <= 0.0001f)
                 tangent = Vector3.Cross(safeNormal, Vector3.right);
-            tangent.Normalize();
-            Vector3 bitangent = Vector3.Cross(safeNormal, tangent).normalized;
+            tangent = NormalizeVector3Fast(tangent, Vector3.right);
+            Vector3 bitangent = NormalizeVector3Fast(Vector3.Cross(safeNormal, tangent), Vector3.forward);
             int spawnCount = Mathf.Clamp(
-                Mathf.RoundToInt(Mathf.Lerp(1f, collapseCascadeSpawnCount, severity01)),
+                Mathf.RoundToInt(LerpClamped(1f, collapseCascadeSpawnCount, severity01)),
                 1,
                 collapseCascadeSpawnCount);
 
             for (int chunkIndex = 0; chunkIndex < spawnCount; chunkIndex++)
             {
-                float angle = HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 1), 0x6C8E9CF5u) * Mathf.PI * 2f;
-                float radialT = Mathf.Sqrt(HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 5), 0x5D588B65u));
-                Vector3 lateralDirection =
-                    tangent * Mathf.Cos(angle) +
-                    bitangent * Mathf.Sin(angle);
+                float radialT = HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 5), 0x5D588B65u);
+                Vector3 lateralDirection = ResolveHashTangentDirection(
+                    (uint)fragmentDepth,
+                    (uint)(chunkIndex + 1),
+                    0x6C8E9CF5u,
+                    0xD1310BA6u,
+                    tangent,
+                    bitangent);
                 Vector3 spawnPosition = impactPointWS + safeNormal * 0.18f + lateralDirection * (collapseChunkSpawnRadius * 0.35f * radialT);
                 Vector3 linearVelocity =
-                    safeNormal * (collapseChunkHorizontalSpeed * collapseCascadeVelocityMultiplier * Mathf.Lerp(0.45f, 0.95f, severity01)) +
-                    lateralDirection * (collapseChunkHorizontalSpeed * collapseCascadeVelocityMultiplier * Mathf.Lerp(0.35f, 0.9f, severity01)) +
-                    Vector3.down * (collapseChunkDownwardSpeed * Mathf.Lerp(0.55f, 1.1f, severity01));
+                    safeNormal * (collapseChunkHorizontalSpeed * collapseCascadeVelocityMultiplier * LerpClamped(0.45f, 0.95f, severity01)) +
+                    lateralDirection * (collapseChunkHorizontalSpeed * collapseCascadeVelocityMultiplier * LerpClamped(0.35f, 0.9f, severity01)) +
+                    Vector3.down * (collapseChunkDownwardSpeed * LerpClamped(0.55f, 1.1f, severity01));
                 Vector3 angularVelocity = new Vector3(
-                    Mathf.Lerp(-3.4f, 3.4f, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 9), 0x8CB92BA7u)),
-                    Mathf.Lerp(-2.8f, 2.8f, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 13), 0x4CF5AD43u)),
-                    Mathf.Lerp(-3.1f, 3.1f, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 17), 0x9D12A0F1u)));
-                float parentScaleMultiplier = Mathf.Pow(collapseCascadeScaleMultiplier, Mathf.Max(1, fragmentDepth));
-                float uniformScale = Mathf.Lerp(collapseChunkScaleMin, collapseChunkScaleMax, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 21), 0x3D8E1129u)) * parentScaleMultiplier;
+                    LerpClamped(-3.4f, 3.4f, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 9), 0x8CB92BA7u)),
+                    LerpClamped(-2.8f, 2.8f, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 13), 0x4CF5AD43u)),
+                    LerpClamped(-3.1f, 3.1f, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 17), 0x9D12A0F1u)));
+                float parentScaleMultiplier = FastPositivePowInt(collapseCascadeScaleMultiplier, Mathf.Max(1, fragmentDepth));
+                float uniformScale = LerpClamped(collapseChunkScaleMin, collapseChunkScaleMax, HashToFloat01((uint)fragmentDepth, (uint)(chunkIndex + 21), 0x3D8E1129u)) * parentScaleMultiplier;
 
                 GameObject chunkInstance = poolManager.Spawn(
                     collapseChunkPrefab,
                     spawnPosition,
-                    Quaternion.LookRotation(lateralDirection.sqrMagnitude > 0.0001f ? lateralDirection : Vector3.forward, safeNormal));
+                    ResolveCardinalYawRotation(lateralDirection));
                 if (chunkInstance == null)
                     continue;
 
@@ -2130,11 +2534,12 @@ namespace Hecton8.World
                     continue;
 
                 Vector2 deltaXZ = sampleXZ - new Vector2(zone.SampleSpaceCenterWS.x, zone.SampleSpaceCenterWS.z);
-                float distance = deltaXZ.magnitude;
-                if (distance >= zone.RadiusWS)
+                float distanceSq = deltaXZ.sqrMagnitude;
+                float radiusSq = Mathf.Max(zone.RadiusWS * zone.RadiusWS, 0.000001f);
+                if (distanceSq >= radiusSq)
                     continue;
 
-                float radial01 = 1f - distance / Mathf.Max(zone.RadiusWS, 0.001f);
+                float radial01 = 1f - Mathf.Clamp01(distanceSq / radiusSq);
                 float influence01 = zone01 * radial01 * radial01;
                 if (influence01 > sample.Suppression01)
                     sample.Suppression01 = influence01;
@@ -2149,10 +2554,44 @@ namespace Hecton8.World
 
         private void PublishShaderGlobals()
         {
-            Shader.SetGlobalVector(_GlobalDriftOffsetId, _globalDriftOffset);
-            Shader.SetGlobalTexture(_SinkTextureId, _sinkFieldTexture != null ? _sinkFieldTexture : Texture2D.blackTexture);
-            Shader.SetGlobalVector(_SinkWorldRectId, _densityFieldWorldRect);
-            Shader.SetGlobalFloat(_MaxSinkDepthId, _debugMaxSinkDepth);
+            PublishShaderGlobals(_globalDriftOffset, _densityFieldWorldRect, _sinkFieldTexture != null ? _sinkFieldTexture : Texture2D.blackTexture, _debugMaxSinkDepth);
+        }
+
+        private void PublishEmptyShaderGlobals()
+        {
+            PublishShaderGlobals(Vector3.zero, Vector4.zero, Texture2D.blackTexture, 0f);
+        }
+
+        private void PublishShaderGlobals(Vector3 driftOffset, Vector4 sinkWorldRect, Texture sinkTexture, float maxSinkDepth)
+        {
+            Vector4 driftVector = new Vector4(driftOffset.x, driftOffset.y, driftOffset.z, 0f);
+            Texture resolvedSinkTexture = sinkTexture != null ? sinkTexture : Texture2D.blackTexture;
+
+            if (!_shaderGlobalsPublished || _publishedGlobalDriftOffset != driftVector)
+            {
+                Shader.SetGlobalVector(_GlobalDriftOffsetId, driftVector);
+                _publishedGlobalDriftOffset = driftVector;
+            }
+
+            if (!_shaderGlobalsPublished || _publishedSinkTexture != resolvedSinkTexture)
+            {
+                Shader.SetGlobalTexture(_SinkTextureId, resolvedSinkTexture);
+                _publishedSinkTexture = resolvedSinkTexture;
+            }
+
+            if (!_shaderGlobalsPublished || _publishedSinkWorldRect != sinkWorldRect)
+            {
+                Shader.SetGlobalVector(_SinkWorldRectId, sinkWorldRect);
+                _publishedSinkWorldRect = sinkWorldRect;
+            }
+
+            if (!_shaderGlobalsPublished || _publishedMaxSinkDepth != maxSinkDepth)
+            {
+                Shader.SetGlobalFloat(_MaxSinkDepthId, maxSinkDepth);
+                _publishedMaxSinkDepth = maxSinkDepth;
+            }
+
+            _shaderGlobalsPublished = true;
         }
 
         private void ResolveActiveNestingPrototypes()
@@ -2312,17 +2751,17 @@ namespace Hecton8.World
                 NestedAttachmentPrototype prototype = _activeNestingPrototypes[prototypeIndex];
                 float minScale = prototype.UniformScaleRange.x > 0f ? prototype.UniformScaleRange.x : 0.72f;
                 float maxScale = prototype.UniformScaleRange.y > minScale ? prototype.UniformScaleRange.y : minScale * 1.18f;
-                float uniformScale = Mathf.Lerp(
+                float uniformScale = LerpClamped(
                     Mathf.Max(0.1f, minScale),
                     Mathf.Max(minScale, maxScale),
                     HashToFloat01((uint)cellX, (uint)cellZ, 0x91E10DA5u));
-                float verticalOffset = Mathf.Lerp(
+                float verticalOffset = LerpClamped(
                     prototype.VerticalOffsetRange.x,
                     prototype.VerticalOffsetRange.y,
                     HashToFloat01((uint)cellX, (uint)cellZ, 0x52A3F15Du));
                 float yaw = HashToFloat01((uint)cellX, (uint)cellZ, 0xD23F4195u) * 360f;
-                float pitch = Mathf.Lerp(-10f, 10f, HashToFloat01((uint)cellX, (uint)cellZ, 0x3AF21D8Bu));
-                float roll = Mathf.Lerp(-14f, 14f, HashToFloat01((uint)cellX, (uint)cellZ, 0xF13A0BCDu));
+                float pitch = LerpClamped(-10f, 10f, HashToFloat01((uint)cellX, (uint)cellZ, 0x3AF21D8Bu));
+                float roll = LerpClamped(-14f, 14f, HashToFloat01((uint)cellX, (uint)cellZ, 0xF13A0BCDu));
                 Vector3 sampleSpaceAnchorWS = fieldSample.AnchorWS - _globalDriftOffset;
                 sampleSpaceAnchorWS.y = Mathf.Clamp(cellCenterWS.y + verticalOffset - _globalDriftOffset.y, cell.MinY, cell.MaxY);
 
@@ -2336,7 +2775,7 @@ namespace Hecton8.World
                     ReleaseLifetime = nestingReleaseLifetime,
                     ReleaseAge = 0f,
                     PrototypeIndex = prototypeIndex,
-                    Released = false
+                    ReleasedFlag = 0
                 };
                 _activeNestedAttachmentStateCount++;
             }
@@ -2599,7 +3038,8 @@ namespace Hecton8.World
             int instanceCapacity = Mathf.Max(1, hostCapacity * Mathf.Clamp(scavengersPerHost, 4, 32));
             if (_scavengerHosts != null &&
                 _externalScavengerSites != null &&
-                _scavengerMatrices != null &&
+                _scavengerMatricesNative.IsCreated &&
+                _scavengerMatricesNative.Length == instanceCapacity &&
                 _scavengerHosts.Length == hostCapacity &&
                 _externalScavengerSites.Length == externalSiteCapacity &&
                 _scavengerInstanceCapacity == instanceCapacity)
@@ -2614,9 +3054,8 @@ namespace Hecton8.World
             _scavengerHosts = new ScavengerHostState[hostCapacity];
             // COLD ALLOC: ExternalScavengerSiteState[externalSiteCapacity] - corpse/carcass scavenger targets without live chunk owners - owner: SargassumGlobalDragManager
             _externalScavengerSites = new ExternalScavengerSiteState[externalSiteCapacity];
-            // COLD ALLOC: Matrix4x4[instanceCapacity] - CPU-side transform payload for bottom scavenger instances - owner: SargassumGlobalDragManager
-            _scavengerMatrices = new Matrix4x4[instanceCapacity];
             _scavengerMatricesNative = new NativeArray<Matrix4x4>(instanceCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[instanceCapacity] - Burst-readable scavenger BRG culling payload mirror - owner: SargassumGlobalDragManager
+            NativeMemorySentinel.RegisterNativeArray(_scavengerMatricesNative, nameof(SargassumGlobalDragManager), nameof(_scavengerMatricesNative), NativeAllocationLifetime.Session);
             _scavengerInstanceCapacity = instanceCapacity;
         }
 
@@ -2652,7 +3091,8 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
-                _scavengerBatchMetadata = new NativeArray<MetadataValue>(0, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[0] - BRG metadata placeholder for scavenger scatter - owner: SargassumGlobalDragManager
+                _scavengerBatchMetadata = new NativeArray<MetadataValue>(ScavengerBrgMetadataPlaceholderCount, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for scavenger scatter - owner: SargassumGlobalDragManager
+                NativeMemorySentinel.RegisterNativeArray(_scavengerBatchMetadata, nameof(SargassumGlobalDragManager), nameof(_scavengerBatchMetadata), NativeAllocationLifetime.Session);
                 _scavengerBatchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for scavenger scatter - owner: SargassumGlobalDragManager
                 _scavengerBatchId = _scavengerBatchRendererGroup.AddBatch(_scavengerBatchMetadata, _scavengerBatchHandleBuffer.bufferHandle);
             }
@@ -2665,10 +3105,13 @@ namespace Hecton8.World
                 _scavengerMatrixBuffer.Release();
                 _scavengerMatrixBuffer = null;
                 _registeredScavengerBatchBuffer = null;
+                _boundScavengerMatrixBuffer = null;
+                _boundScavengerMatrixMaterial = null;
             }
 
             if (_scavengerMatricesNative.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_scavengerMatricesNative);
                 _scavengerMatricesNative.Dispose();
                 _scavengerMatricesNative = default;
             }
@@ -2679,7 +3122,6 @@ namespace Hecton8.World
             ReleaseScavengerBuffers();
             _scavengerHosts = null;
             _externalScavengerSites = null;
-            _scavengerMatrices = null;
             _scavengerInstanceCapacity = 0;
             _activeScavengerHostCount = 0;
             _activeExternalScavengerSiteCount = 0;
@@ -2712,6 +3154,8 @@ namespace Hecton8.World
                 _registeredScavengerBatchBuffer = null;
                 _registeredScavengerMesh = null;
                 _registeredScavengerMaterial = null;
+                _registeredScavengerDrawBounds = default;
+                _scavengerDrawBoundsRegistered = false;
             }
 
             if (_scavengerBatchHandleBuffer != null)
@@ -2721,7 +3165,10 @@ namespace Hecton8.World
             }
 
             if (_scavengerBatchMetadata.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_scavengerBatchMetadata);
                 _scavengerBatchMetadata.Dispose();
+            }
 
             ReleaseScavengerBrgMaterial();
         }
@@ -2749,6 +3196,8 @@ namespace Hecton8.World
             _debugScavengerInstanceCount = 0;
             _debugScavengerBounds = default;
             _scavengerDrawBounds = default;
+            _registeredScavengerDrawBounds = default;
+            _scavengerDrawBoundsRegistered = false;
 
         }
 
@@ -2768,8 +3217,12 @@ namespace Hecton8.World
             int writeHostIndex = 0;
             int matrixCount = 0;
             bool boundsInitialized = false;
-            Bounds drawBounds = default;
-            float safeDeltaTime = Mathf.Max(0f, dt);
+            Vector3 boundsMin = default;
+            Vector3 boundsMax = default;
+            float safeDeltaTime = math.max(0f, dt);
+            float consumeDurationInv = 1f / math.max(0.1f, scavengerConsumeDuration);
+            float externalSiteDurationInv = 1f / math.max(0.1f, externalScavengerSiteDuration);
+            int maxScavengersPerHost = math.max(1, scavengersPerHost);
 
             for (int readHostIndex = 0; readHostIndex < _activeScavengerHostCount; readHostIndex++)
             {
@@ -2781,50 +3234,40 @@ namespace Hecton8.World
                 host.SettledTime += safeDeltaTime;
                 if (host.SettledTime >= scavengerActivationDelay)
                 {
-                    float consumeDelta01 = safeDeltaTime / Mathf.Max(0.1f, scavengerConsumeDuration);
+                    float consumeDelta01 = safeDeltaTime * consumeDurationInv;
                     host.Chunk.ApplyScavengerConsumptionDelta(consumeDelta01);
                     if (host.Chunk == null || !host.Chunk.CanHostScavengers)
                         continue;
 
-                    host.Consumed01 = Mathf.Clamp01(host.Consumed01 + consumeDelta01);
-                    int instanceCount = Mathf.Clamp(
-                        Mathf.RoundToInt(Mathf.Lerp(scavengersPerHost, 2f, host.Consumed01)),
+                    host.Consumed01 = math.saturate(host.Consumed01 + consumeDelta01);
+                    int instanceCount = math.clamp(
+                        RoundToIntPositive(LerpClamped(maxScavengersPerHost, 2f, host.Consumed01)),
                         1,
-                        scavengersPerHost);
+                        maxScavengersPerHost);
+                    float invInstanceCount = 1f / instanceCount;
                     float activeTime = host.SettledTime - scavengerActivationDelay;
                     float consumeBias = 1f - host.Consumed01 * 0.35f;
+                    float bobPhaseBase = activeTime * 4.2f * ScavengerInvTwoPi;
 
                     for (int instanceIndex = 0; instanceIndex < instanceCount && matrixCount < _scavengerInstanceCapacity; instanceIndex++)
                     {
-                        float phase01 = (instanceIndex + 0.5f) / instanceCount;
+                        float phase01 = (instanceIndex + 0.5f) * invInstanceCount;
                         float radialHash = HashToFloat01(host.Seed, (uint)(instanceIndex + 1), 0xA53C91E5u);
                         float scaleHash = HashToFloat01(host.Seed, (uint)(instanceIndex + 7), 0x9E3779B9u);
                         float bobHash = HashToFloat01(host.Seed, (uint)(instanceIndex + 13), 0x7F4A7C15u);
-                        float angle = phase01 * Mathf.PI * 2f + activeTime * Mathf.Lerp(0.55f, 1.1f, radialHash);
-                        float radius = scavengerOrbitRadius * Mathf.Lerp(0.35f, 1f, radialHash) * consumeBias;
-                        Vector3 orbitOffset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
-                        float bob = Mathf.Sin(activeTime * 4.2f + bobHash * Mathf.PI * 2f) * scavengerBobAmplitude;
+                        float orbitPhase01 = phase01 + activeTime * LerpClamped(0.55f, 1.1f, radialHash) * ScavengerInvTwoPi;
+                        float radius = scavengerOrbitRadius * LerpClamped(0.35f, 1f, radialHash) * consumeBias;
+                        Vector3 orbitOffset = ResolveDiamondOrbitOffset(orbitPhase01, radius);
+                        float bob = TriangleWaveSigned01(bobPhaseBase + bobHash) * scavengerBobAmplitude;
                         Vector3 positionWS = host.AnchorWS + orbitOffset + new Vector3(0f, scavengerVerticalOffset + bob, 0f);
-                        Vector3 forward = new Vector3(-Mathf.Sin(angle), 0f, Mathf.Cos(angle));
-                        if (forward.sqrMagnitude <= 0.0001f)
-                            forward = Vector3.forward;
 
-                        float scale = Mathf.Lerp(scavengerScaleMin, scavengerScaleMax, scaleHash);
-                        _scavengerMatrices[matrixCount] = Matrix4x4.TRS(positionWS, Quaternion.LookRotation(forward, Vector3.up), Vector3.one * scale);
+                        float scale = LerpClamped(scavengerScaleMin, scavengerScaleMax, scaleHash);
+                        Matrix4x4 matrix = BuildScavengerCardinalMatrix(positionWS, orbitPhase01, scale);
                         if (_scavengerMatricesNative.IsCreated && matrixCount < _scavengerMatricesNative.Length)
-                            _scavengerMatricesNative[matrixCount] = _scavengerMatrices[matrixCount];
+                            _scavengerMatricesNative[matrixCount] = matrix;
                         matrixCount++;
 
-                        Bounds instanceBounds = new Bounds(positionWS, Vector3.one * Mathf.Max(0.2f, scale * 2.8f));
-                        if (!boundsInitialized)
-                        {
-                            drawBounds = instanceBounds;
-                            boundsInitialized = true;
-                        }
-                        else
-                        {
-                            drawBounds.Encapsulate(instanceBounds);
-                        }
+                        EncapsulateRadius(positionWS, math.max(0.1f, scale * 1.4f), ref boundsMin, ref boundsMax, ref boundsInitialized);
                     }
                 }
 
@@ -2841,44 +3284,34 @@ namespace Hecton8.World
                     if (site.RemainingTime <= 0f)
                         continue;
 
-                    site.RemainingTime = Mathf.Max(0f, site.RemainingTime - safeDeltaTime);
+                    site.RemainingTime = math.max(0f, site.RemainingTime - safeDeltaTime);
                     if (site.RemainingTime <= 0f)
                         continue;
 
-                    int instanceCount = Mathf.Clamp(scavengersPerHost / 2, 1, scavengersPerHost);
-                    float life01 = 1f - site.RemainingTime / Mathf.Max(0.1f, externalScavengerSiteDuration);
+                    int instanceCount = math.clamp(maxScavengersPerHost / 2, 1, maxScavengersPerHost);
+                    float invInstanceCount = 1f / instanceCount;
+                    float life01 = 1f - site.RemainingTime * externalSiteDurationInv;
                     float activeTime = (externalScavengerSiteDuration - site.RemainingTime) * 0.85f;
+                    float bobPhaseBase = activeTime * 3.4f * ScavengerInvTwoPi;
                     for (int instanceIndex = 0; instanceIndex < instanceCount && matrixCount < _scavengerInstanceCapacity; instanceIndex++)
                     {
-                        float phase01 = (instanceIndex + 0.5f) / instanceCount;
+                        float phase01 = (instanceIndex + 0.5f) * invInstanceCount;
                         float radialHash = HashToFloat01(site.Seed, (uint)(instanceIndex + 3), 0x6D2B79F5u);
                         float scaleHash = HashToFloat01(site.Seed, (uint)(instanceIndex + 11), 0xA53C91E5u);
                         float bobHash = HashToFloat01(site.Seed, (uint)(instanceIndex + 19), 0x9E3779B9u);
-                        float angle = phase01 * Mathf.PI * 2f + activeTime * Mathf.Lerp(0.35f, 0.9f, radialHash);
-                        float radius = site.RadiusWS * Mathf.Lerp(0.2f, 1f, radialHash) * Mathf.Lerp(1f, 0.55f, life01);
-                        Vector3 orbitOffset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
-                        float bob = Mathf.Sin(activeTime * 3.4f + bobHash * Mathf.PI * 2f) * scavengerBobAmplitude;
+                        float orbitPhase01 = phase01 + activeTime * LerpClamped(0.35f, 0.9f, radialHash) * ScavengerInvTwoPi;
+                        float radius = site.RadiusWS * LerpClamped(0.2f, 1f, radialHash) * LerpClamped(1f, 0.55f, life01);
+                        Vector3 orbitOffset = ResolveDiamondOrbitOffset(orbitPhase01, radius);
+                        float bob = TriangleWaveSigned01(bobPhaseBase + bobHash) * scavengerBobAmplitude;
                         Vector3 positionWS = site.AnchorWS + orbitOffset + new Vector3(0f, scavengerVerticalOffset + bob, 0f);
-                        Vector3 forward = new Vector3(-Mathf.Sin(angle), 0f, Mathf.Cos(angle));
-                        if (forward.sqrMagnitude <= 0.0001f)
-                            forward = Vector3.forward;
 
-                        float scale = Mathf.Lerp(scavengerScaleMin, scavengerScaleMax, scaleHash) * Mathf.Lerp(0.7f, 1f, 1f - life01);
-                        _scavengerMatrices[matrixCount] = Matrix4x4.TRS(positionWS, Quaternion.LookRotation(forward, Vector3.up), Vector3.one * scale);
+                        float scale = LerpClamped(scavengerScaleMin, scavengerScaleMax, scaleHash) * LerpClamped(0.7f, 1f, 1f - life01);
+                        Matrix4x4 matrix = BuildScavengerCardinalMatrix(positionWS, orbitPhase01, scale);
                         if (_scavengerMatricesNative.IsCreated && matrixCount < _scavengerMatricesNative.Length)
-                            _scavengerMatricesNative[matrixCount] = _scavengerMatrices[matrixCount];
+                            _scavengerMatricesNative[matrixCount] = matrix;
                         matrixCount++;
 
-                        Bounds instanceBounds = new Bounds(positionWS, Vector3.one * Mathf.Max(0.2f, scale * 2.8f));
-                        if (!boundsInitialized)
-                        {
-                            drawBounds = instanceBounds;
-                            boundsInitialized = true;
-                        }
-                        else
-                        {
-                            drawBounds.Encapsulate(instanceBounds);
-                        }
+                        EncapsulateRadius(positionWS, math.max(0.1f, scale * 1.4f), ref boundsMin, ref boundsMax, ref boundsInitialized);
                     }
 
                     _externalScavengerSites[writeExternalSiteIndex] = site;
@@ -2899,17 +3332,17 @@ namespace Hecton8.World
             _activeExternalScavengerSiteCount = writeExternalSiteIndex;
             _debugScavengerHostCount = writeHostIndex + writeExternalSiteIndex;
             _debugScavengerInstanceCount = matrixCount;
-            _scavengerDrawBounds = boundsInitialized ? drawBounds : default;
+            _scavengerDrawBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
             _debugScavengerBounds = _scavengerDrawBounds;
             UploadScavengerInstances(matrixCount);
         }
 
         private void UploadScavengerInstances(int instanceCount)
         {
-            if (_scavengerMatrixBuffer == null)
+            if (_scavengerMatrixBuffer == null || !_scavengerMatricesNative.IsCreated)
                 return;
             if (instanceCount > 0)
-                GraphicsBufferUploadUtility.UploadArray(_scavengerMatrixBuffer, _scavengerMatrices, instanceCount);
+                GraphicsBufferUploadUtility.UploadNativeArray(_scavengerMatrixBuffer, _scavengerMatricesNative, instanceCount);
         }
 
         private void DrawScavengers()
@@ -2922,10 +3355,24 @@ namespace Hecton8.World
             if (activeMesh == null || activeMaterial == null)
                 return;
 
-            activeMaterial.SetBuffer(_ScavengerMatricesId, _scavengerMatrixBuffer);
+            if (!ReferenceEquals(_boundScavengerMatrixMaterial, activeMaterial) ||
+                !ReferenceEquals(_boundScavengerMatrixBuffer, _scavengerMatrixBuffer))
+            {
+                activeMaterial.SetBuffer(_ScavengerMatricesId, _scavengerMatrixBuffer);
+                _boundScavengerMatrixMaterial = activeMaterial;
+                _boundScavengerMatrixBuffer = _scavengerMatrixBuffer;
+            }
+
             SyncScavengerBatchRegistration(activeMesh, activeMaterial);
             SyncScavengerBatchBuffer(_scavengerMatrixBuffer);
-            _scavengerBatchRendererGroup.SetGlobalBounds(_scavengerDrawBounds);
+            if (!_scavengerDrawBoundsRegistered ||
+                _registeredScavengerDrawBounds.center != _scavengerDrawBounds.center ||
+                _registeredScavengerDrawBounds.size != _scavengerDrawBounds.size)
+            {
+                _scavengerBatchRendererGroup.SetGlobalBounds(_scavengerDrawBounds);
+                _registeredScavengerDrawBounds = _scavengerDrawBounds;
+                _scavengerDrawBoundsRegistered = true;
+            }
         }
 
         private Material EnsureScavengerBrgMaterial()
@@ -3048,12 +3495,17 @@ namespace Hecton8.World
                 _scavengerBatchId,
                 _scavengerBatchMeshId,
                 _scavengerBatchMaterialId,
-                gameObject.layer,
+                _cachedRenderLayer,
                 subMeshIndex: 0,
                 ShadowCastingMode.Off,
                 receiveShadows: false,
                 MotionVectorGenerationMode.Camera);
             return default;
+        }
+
+        private void RefreshRenderLayerCache()
+        {
+            _cachedRenderLayer = gameObject.layer;
         }
 
         private Mesh BuildFallbackScavengerMesh()
@@ -3153,7 +3605,9 @@ namespace Hecton8.World
 
             SargassumCutManager cutManager = GlobalRegistry.SargassumCut;
             bool boundsInitialized = false;
-            Bounds drawBounds = default;
+            Vector3 boundsMin = default;
+            Vector3 boundsMax = default;
+            float safeDeltaTime = math.max(0f, dt);
             int totalVisible = 0;
 
             for (int stateIndex = 0; stateIndex < _activeNestedAttachmentStateCount; stateIndex++)
@@ -3164,22 +3618,21 @@ namespace Hecton8.World
 
                 DisruptionSample disruption = SampleDisruptionNoDrift(state.SampleSpaceAnchorWS);
                 Vector3 worldPosition = state.SampleSpaceAnchorWS + _globalDriftOffset + state.RenderOffsetWS;
-                if (!state.Released && disruption.SinkDepthWS > 0f)
+                bool released = state.ReleasedFlag != 0;
+                if (!released && disruption.SinkDepthWS > 0f)
                     worldPosition.y -= disruption.SinkDepthWS;
-                if (!state.Released &&
+                if (!released &&
                     cutManager != null &&
                     cutManager.SampleRecentCut01(worldPosition, nestingCutReleaseRadius, out float cut01) &&
                     cut01 >= nestingCutReleaseThreshold)
                 {
                     Vector3 releaseDirection = new Vector3(
-                        Mathf.Lerp(-1f, 1f, HashToFloat01((uint)stateIndex, 0xB5C0FBCFu, 0x51ED270Bu)),
+                        LerpClamped(-1f, 1f, HashToFloat01((uint)stateIndex, 0xB5C0FBCFu, 0x51ED270Bu)),
                         0f,
-                        Mathf.Lerp(-1f, 1f, HashToFloat01((uint)stateIndex, 0x9E3779B9u, 0xA54FF53Au)));
-                    if (releaseDirection.sqrMagnitude <= 0.0001f)
-                        releaseDirection = Vector3.right;
-
-                    releaseDirection.Normalize();
-                    state.Released = true;
+                        LerpClamped(-1f, 1f, HashToFloat01((uint)stateIndex, 0x9E3779B9u, 0xA54FF53Au)));
+                    releaseDirection = NormalizeVector3Fast(releaseDirection, Vector3.right);
+                    released = true;
+                    state.ReleasedFlag = 1;
                     state.ReleaseAge = 0f;
                     state.ReleaseVelocityWS = new Vector3(
                         releaseDirection.x * nestingReleaseHorizontalSpeed,
@@ -3187,17 +3640,17 @@ namespace Hecton8.World
                         releaseDirection.z * nestingReleaseHorizontalSpeed);
                 }
 
-                if (state.Released)
+                if (released)
                 {
-                    state.ReleaseAge += Mathf.Max(0f, dt);
+                    state.ReleaseAge += safeDeltaTime;
                     if (state.ReleaseAge >= state.ReleaseLifetime)
                     {
                         _nestedAttachmentStates[stateIndex] = state;
                         continue;
                     }
 
-                    state.ReleaseVelocityWS.y -= nestingReleaseGravity * Mathf.Max(0f, dt);
-                    state.RenderOffsetWS += state.ReleaseVelocityWS * Mathf.Max(0f, dt);
+                    state.ReleaseVelocityWS.y -= nestingReleaseGravity * safeDeltaTime;
+                    state.RenderOffsetWS += state.ReleaseVelocityWS * safeDeltaTime;
                     worldPosition = state.SampleSpaceAnchorWS + _globalDriftOffset + state.RenderOffsetWS;
                 }
 
@@ -3209,31 +3662,23 @@ namespace Hecton8.World
                     continue;
                 }
 
-                Matrix4x4 matrix = Matrix4x4.TRS(worldPosition, state.Rotation, Vector3.one * state.UniformScale);
+                Matrix4x4 matrix = BuildUniformMatrix(worldPosition, state.Rotation, state.UniformScale);
                 _nestedMatricesByPrototype[prototypeIndex][matrixCount] = matrix;
                 _nestedMatrixCounts[prototypeIndex] = matrixCount + 1;
                 totalVisible++;
 
-                Bounds instanceBounds = new Bounds(worldPosition, Vector3.one * Mathf.Max(1f, state.UniformScale * 2.6f));
-                if (!boundsInitialized)
-                {
-                    drawBounds = instanceBounds;
-                    boundsInitialized = true;
-                }
-                else
-                {
-                    drawBounds.Encapsulate(instanceBounds);
-                }
+                EncapsulateRadius(worldPosition, math.max(0.5f, state.UniformScale * 1.3f), ref boundsMin, ref boundsMax, ref boundsInitialized);
 
                 _nestedAttachmentStates[stateIndex] = state;
             }
 
             _debugNestedAttachmentCount = totalVisible;
-            _debugNestedAttachmentBounds = boundsInitialized ? drawBounds : default;
+            _debugNestedAttachmentBounds = boundsInitialized ? BuildBoundsFromMinMax(boundsMin, boundsMax) : default;
         }
 
         private void OnValidate()
         {
+            RefreshRenderLayerCache();
             _editorValidateDepth++;
             if (_editorValidateDepth > MaxEditorValidateDepth)
             {
@@ -3300,8 +3745,12 @@ namespace Hecton8.World
         {
             if (Application.isPlaying && !_saveRegistered)
             {
-                Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
-                _saveRegistered = true;
+                SaveManager saveRuntime = Hecton8.Core.GlobalRegistry.SaveRuntime;
+                if (saveRuntime != null)
+                {
+                    saveRuntime.Register(this);
+                    _saveRegistered = true;
+                }
             }
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -3309,26 +3758,27 @@ namespace Hecton8.World
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredSlowTick)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredLateFrameTick)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
         }
 
         private void TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            SargassumGlobalDragManager registered = GlobalRegistry.SargassumDrag;
+            if (registered != null && registered != this)
                 return;
 
             GlobalRegistry.RegisterSargassumDragRuntime(this);
@@ -3376,7 +3826,7 @@ namespace Hecton8.World
             Vector3 axisX = new Vector3(matrix.m00, matrix.m10, matrix.m20);
             Vector3 axisY = new Vector3(matrix.m01, matrix.m11, matrix.m21);
             Vector3 axisZ = new Vector3(matrix.m02, matrix.m12, matrix.m22);
-            return Mathf.Max(0.1f, Mathf.Max(axisX.magnitude, Mathf.Max(axisY.magnitude, axisZ.magnitude)));
+            return Mathf.Max(0.1f, Mathf.Max(ApproximateMagnitude(axisX), Mathf.Max(ApproximateMagnitude(axisY), ApproximateMagnitude(axisZ))));
         }
 
         private static long PackCellKey(int cellX, int cellZ)
@@ -3471,12 +3921,12 @@ namespace Hecton8.World
             if (flowDirection.sqrMagnitude <= 0.0001f)
                 return 1f;
 
-            movementXZ /= Mathf.Sqrt(movementMagnitudeSq);
+            movementXZ *= math.rsqrt(movementMagnitudeSq);
             float alongFlow01 = Mathf.Abs(Vector2.Dot(movementXZ, flowDirection));
             float crossFlow01 = 1f - alongFlow01;
             float anisotropy = Mathf.Clamp01(config.FlowAnisotropy);
-            float directionalBlend = Mathf.Lerp(1f, crossFlow01, anisotropy);
-            return Mathf.Lerp(alongFlowDragScale, 1f, directionalBlend);
+            float directionalBlend = 1f + (crossFlow01 - 1f) * anisotropy;
+            return alongFlowDragScale + (1f - alongFlowDragScale) * directionalBlend;
         }
 
         private float ResolveEntanglement01(float density01, float currentSpeed)
@@ -3520,11 +3970,235 @@ namespace Hecton8.World
 
         private static Vector2 NormalizeFlowDirection(Vector2 direction)
         {
-            if (direction.sqrMagnitude <= 0.0001f)
+            float magnitudeSq = direction.sqrMagnitude;
+            if (magnitudeSq <= 0.0001f)
                 return Vector2.right;
 
-            direction.Normalize();
-            return direction;
+            return direction * math.rsqrt(magnitudeSq);
+        }
+
+        private static Vector3 NormalizeVector3Fast(Vector3 vector, Vector3 fallback)
+        {
+            float magnitudeSq = vector.sqrMagnitude;
+            return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
+        }
+
+        private static void EncapsulateRadius(Vector3 center, float radius, ref Vector3 boundsMin, ref Vector3 boundsMax, ref bool boundsInitialized)
+        {
+            Vector3 extents = new Vector3(radius, radius, radius);
+            EncapsulateExtents(center, extents, ref boundsMin, ref boundsMax, ref boundsInitialized);
+        }
+
+        private static void EncapsulateExtents(Vector3 center, Vector3 extents, ref Vector3 boundsMin, ref Vector3 boundsMax, ref bool boundsInitialized)
+        {
+            Vector3 localMin = center - extents;
+            Vector3 localMax = center + extents;
+            if (!boundsInitialized)
+            {
+                boundsMin = localMin;
+                boundsMax = localMax;
+                boundsInitialized = true;
+                return;
+            }
+
+            boundsMin = new Vector3(
+                math.min(boundsMin.x, localMin.x),
+                math.min(boundsMin.y, localMin.y),
+                math.min(boundsMin.z, localMin.z));
+            boundsMax = new Vector3(
+                math.max(boundsMax.x, localMax.x),
+                math.max(boundsMax.y, localMax.y),
+                math.max(boundsMax.z, localMax.z));
+        }
+
+        private static Bounds BuildBoundsFromMinMax(Vector3 boundsMin, Vector3 boundsMax)
+        {
+            Vector3 size = boundsMax - boundsMin;
+            return new Bounds(boundsMin + size * 0.5f, size);
+        }
+
+        private static int RoundToIntPositive(float value)
+        {
+            if (!math.isfinite(value) || value <= 0f)
+                return 0;
+
+            return value >= int.MaxValue ? int.MaxValue : (int)(value + 0.5f);
+        }
+
+        private static Vector3 ResolveHashPlanarDirection(uint index, uint iteration, uint saltX, uint saltZ, Vector3 fallback)
+        {
+            Vector3 direction = new Vector3(
+                HashToSignedUnit(index, iteration, saltX),
+                0f,
+                HashToSignedUnit(index, iteration, saltZ));
+            return NormalizeVector3Fast(direction, fallback);
+        }
+
+        private static Vector3 ResolveHashTangentDirection(
+            uint index,
+            uint iteration,
+            uint saltX,
+            uint saltZ,
+            Vector3 tangent,
+            Vector3 bitangent)
+        {
+            Vector3 direction =
+                tangent * HashToSignedUnit(index, iteration, saltX) +
+                bitangent * HashToSignedUnit(index, iteration, saltZ);
+            return NormalizeVector3Fast(direction, tangent);
+        }
+
+        private static Vector3 ResolveDiamondOrbitOffset(float phase01, float radius)
+        {
+            float phase = Frac01(phase01) * 4f;
+            if (phase < 1f)
+                return new Vector3(1f - phase, 0f, phase) * radius;
+
+            if (phase < 2f)
+            {
+                float local = phase - 1f;
+                return new Vector3(-local, 0f, 1f - local) * radius;
+            }
+
+            if (phase < 3f)
+            {
+                float local = phase - 2f;
+                return new Vector3(local - 1f, 0f, -local) * radius;
+            }
+
+            float finalLocal = phase - 3f;
+            return new Vector3(finalLocal, 0f, finalLocal - 1f) * radius;
+        }
+
+        private static Vector3 ResolveDiamondOrbitForward(float phase01)
+        {
+            float phase = Frac01(phase01) * 4f;
+            if (phase < 1f)
+                return new Vector3(-1f, 0f, 1f);
+
+            if (phase < 2f)
+                return new Vector3(-1f, 0f, -1f);
+
+            if (phase < 3f)
+                return new Vector3(1f, 0f, -1f);
+
+            return new Vector3(1f, 0f, 1f);
+        }
+
+        private static Quaternion ResolveCardinalYawRotation(Vector3 forward)
+        {
+            if (math.abs(forward.x) > math.abs(forward.z))
+                return forward.x >= 0f ? _yawPositiveX : _yawNegativeX;
+
+            return forward.z >= 0f ? _yawPositiveZ : _yawNegativeZ;
+        }
+
+        private static Matrix4x4 BuildScavengerCardinalMatrix(Vector3 positionWS, float orbitPhase01, float uniformScale)
+        {
+            float phase = Frac01(orbitPhase01) * 4f;
+            float forwardSign = phase < 1f || phase >= 3f ? 1f : -1f;
+            float signedScale = uniformScale * forwardSign;
+
+            Matrix4x4 matrix = default;
+            matrix.m00 = signedScale;
+            matrix.m11 = uniformScale;
+            matrix.m22 = signedScale;
+            matrix.m03 = positionWS.x;
+            matrix.m13 = positionWS.y;
+            matrix.m23 = positionWS.z;
+            matrix.m33 = 1f;
+            return matrix;
+        }
+
+        private static Matrix4x4 BuildUniformMatrix(Vector3 positionWS, Quaternion rotation, float uniformScale)
+        {
+            float x2 = rotation.x + rotation.x;
+            float y2 = rotation.y + rotation.y;
+            float z2 = rotation.z + rotation.z;
+            float xx = rotation.x * x2;
+            float yy = rotation.y * y2;
+            float zz = rotation.z * z2;
+            float xy = rotation.x * y2;
+            float xz = rotation.x * z2;
+            float yz = rotation.y * z2;
+            float wx = rotation.w * x2;
+            float wy = rotation.w * y2;
+            float wz = rotation.w * z2;
+
+            Matrix4x4 matrix = default;
+            matrix.m00 = (1f - (yy + zz)) * uniformScale;
+            matrix.m01 = (xy - wz) * uniformScale;
+            matrix.m02 = (xz + wy) * uniformScale;
+            matrix.m03 = positionWS.x;
+            matrix.m10 = (xy + wz) * uniformScale;
+            matrix.m11 = (1f - (xx + zz)) * uniformScale;
+            matrix.m12 = (yz - wx) * uniformScale;
+            matrix.m13 = positionWS.y;
+            matrix.m20 = (xz - wy) * uniformScale;
+            matrix.m21 = (yz + wx) * uniformScale;
+            matrix.m22 = (1f - (xx + yy)) * uniformScale;
+            matrix.m23 = positionWS.z;
+            matrix.m33 = 1f;
+            return matrix;
+        }
+
+        private static float TriangleWaveSigned01(float phase01)
+        {
+            float cycle = Frac01(phase01);
+            return (1f - math.abs(cycle * 2f - 1f)) * 2f - 1f;
+        }
+
+        private static float Frac01(float value)
+        {
+            return value - math.floor(value);
+        }
+
+        private static float HashToSignedUnit(uint index, uint iteration, uint salt)
+        {
+            return HashToFloat01(index, iteration, salt) * 2f - 1f;
+        }
+
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return from + ((to - from) * math.saturate(t));
+        }
+
+        private static Vector3 LerpVector3Clamped(Vector3 from, Vector3 to, float t)
+        {
+            float clampedT = math.saturate(t);
+            return from + ((to - from) * clampedT);
+        }
+
+        private static float FastDensityFalloff01(float weight01, float distancePower)
+        {
+            float x = math.saturate(weight01);
+            float x2 = x * x;
+            float x4 = x2 * x2;
+            float blend12 = math.saturate(distancePower - 1f);
+            float blend24 = math.saturate((distancePower - 2f) * 0.5f);
+            return math.lerp(math.lerp(x, x2, blend12), x4, blend24);
+        }
+
+        private static float FastPositivePowInt(float baseValue, int exponent)
+        {
+            float safeBase = math.max(0f, baseValue);
+            int safeExponent = math.max(0, exponent);
+            float result = 1f;
+            for (int i = 0; i < safeExponent; i++)
+                result *= safeBase;
+
+            return result;
+        }
+
+        private static float ApproximateMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + mid * 0.375f + min * 0.125f;
         }
 
         private void CreateDensityTexture()
@@ -3704,14 +4378,16 @@ namespace Hecton8.World
 
                     float cellCenterX = (cellX + 0.5f) * cellSize;
                     float cellCenterZ = (cellZ + 0.5f) * cellSize;
-                    float planarDistance = Vector2.Distance(
-                        new Vector2(sampledPositionWS.x, sampledPositionWS.z),
-                        new Vector2(cellCenterX, cellCenterZ));
-                    float planarWeight = 1f - planarDistance / Mathf.Max(cellSize + effectiveRadius, 0.001f);
+                    float planarDeltaX = sampledPositionWS.x - cellCenterX;
+                    float planarDeltaZ = sampledPositionWS.z - cellCenterZ;
+                    float planarDistanceSq = (planarDeltaX * planarDeltaX) + (planarDeltaZ * planarDeltaZ);
+                    float influenceRadius = Mathf.Max(cellSize + effectiveRadius, 0.001f);
+                    float influenceRadiusSq = Mathf.Max(influenceRadius * influenceRadius, 0.000001f);
+                    float planarWeight = 1f - Mathf.Clamp01(planarDistanceSq / influenceRadiusSq);
                     if (planarWeight <= 0f)
                         continue;
 
-                    accumulatedDensity += cell.Density * Mathf.Pow(planarWeight, Mathf.Max(1f, distancePower));
+                    accumulatedDensity += cell.Density * FastDensityFalloff01(planarWeight, Mathf.Max(1f, distancePower));
                 }
             }
 
@@ -3842,6 +4518,7 @@ namespace Hecton8.World
                 nameof(SargassumGlobalDragManager),
                 nameof(_debrisPetrificationTimers),
                 NativeAllocationLifetime.Scene);
+            PrewarmQueue(ref _debrisPetrificationTimers, DebrisPetrificationTimerCapacity);
             return _debrisPetrificationTimers.IsCreated;
         }
 

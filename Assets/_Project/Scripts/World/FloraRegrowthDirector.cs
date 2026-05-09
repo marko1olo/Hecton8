@@ -1325,7 +1325,7 @@ namespace Hecton8.World
         {
             uint state = seedUid != 0u ? seedUid : 0x91E10DA5u;
             float angle = NextSeed01(ref state) * Mathf.PI * 2f;
-            float radius = Mathf.Sqrt(NextSeed01(ref state)) * 1.65f;
+            float radius = NextSeed01(ref state) * 1.65f;
             return new Vector3(Mathf.Cos(angle) * radius, Mathf.Lerp(0.12f, 0.45f, NextSeed01(ref state)), Mathf.Sin(angle) * radius);
         }
 

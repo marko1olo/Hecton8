@@ -283,6 +283,7 @@ namespace Hecton8.Bootstrap
                     nameof(SceneBootstrap),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -294,6 +295,21 @@ namespace Hecton8.Bootstrap
                     nameof(SceneBootstrap),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -1043,7 +1059,7 @@ namespace Hecton8.Bootstrap
             GameObject temporaryWorldGenObject = null;
             string temporaryWorldGenType = null;
 
-            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
+            MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;
             if (mapMagicBridge != null && mapMagicBridge.IsAvailable)
             {
                 if (IsTemporaryRuntimeShellObject(mapMagicBridge.gameObject))
@@ -1237,7 +1253,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private async Awaitable WaitForWorldReadyAsync(CancellationToken ct)
         {
-            var populator = Hecton8.Core.ScavengePopulator.Instance;
+            var populator = Hecton8.Core.GlobalRegistry.ScavengePopulator;
 
             if (populator == null)
             {

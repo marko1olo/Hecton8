@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -21,8 +22,7 @@ namespace Hecton8.Gameplay
         private const string RightCalfAttachmentName = "Swim_RightCalfAttachment";
         private const string LeftFinAttachmentName = "Swim_LeftFinAttachment";
         private const string RightFinAttachmentName = "Swim_RightFinAttachment";
-        private const float BodyTwoPi = 6.28318530718f;
-
+        [StructLayout(LayoutKind.Sequential)]
         private struct BodyModePose
         {
             public float BodyWeight;
@@ -456,11 +456,11 @@ namespace Hecton8.Gameplay
                 _hasInitializedBodyVisibleState = true;
             }
 
-            float visibilityT = 1f - math.exp(-bodyVisibilityBlendSpeed * dt);
+            float visibilityT = ResolveDecayBlend(bodyVisibilityBlendSpeed, dt);
             _bodyVisualWeight = math.lerp(_bodyVisualWeight, bodyTargetWeight, visibilityT);
             _lowerBodyVisualWeight = math.lerp(_lowerBodyVisualWeight, lowerBodyTargetWeight, visibilityT);
 
-            float poseT = 1f - math.exp(-bodyPoseFollowSpeed * dt);
+            float poseT = ResolveDecayBlend(bodyPoseFollowSpeed, dt);
             float propulsion = swimPresentationController.CurrentPropulsionPulse;
             float strokeImpulse = swimPresentationController.CurrentStrokePowerImpulse;
             float strokePhase = swimPresentationController.CurrentStrokePhase;
@@ -474,7 +474,7 @@ namespace Hecton8.Gameplay
             float toolMotionScale = math.lerp(1f, 1f - toolBodyStabilizeSuppression, toolBlend);
             float bodyBulkScale = suitScale + sprintBoost * 0.45f;
             float lowerBodyBulkScale = suitScale + sprintBoost * 0.32f;
-            float strokeCos = math.cos(strokePhase * BodyTwoPi);
+            float strokeCos = ApproximateCosCycle01(strokePhase);
             float surfaceWaveRoll = mode == PlayerSwimPresentationMode.SurfaceTread ? strokeCos * 1.8f : 0f;
             float streamline = pose.Streamline + (mode == PlayerSwimPresentationMode.UnderwaterSprint ? sprintStreamlineBias : 0f);
 
@@ -543,8 +543,8 @@ namespace Hecton8.Gameplay
 
             float kickPhase = strokePhase * pose.KickCadenceScale;
             float rightPhaseOffset = math.lerp(0.5f, 0f, pose.KickSync);
-            float leftKick = math.sin(kickPhase * BodyTwoPi);
-            float rightKick = math.sin((kickPhase + rightPhaseOffset) * BodyTwoPi);
+            float leftKick = ApproximateSinCycle01(kickPhase);
+            float rightKick = ApproximateSinCycle01(kickPhase + rightPhaseOffset);
             ApplyLegPose(
                 true,
                 pose,
@@ -812,7 +812,7 @@ namespace Hecton8.Gameplay
             float finPitch = pose.FinPitch + kickWave * 6.5f + descend * 7f - ascend * 5f + obstaclePressure * 5f;
             float finYaw = sideSign * (pose.FinSplay + steeringBias * 4.5f + obstacleDifference * 2.5f);
             float finRoll = sideSign * (kickWave * 5f + turnSway * 4f);
-            Quaternion finRotation = Quaternion.Euler(finPitch, finYaw, finRoll);
+            Quaternion finRotation = ResolveEulerRotationNoTrig(new Vector3(finPitch, finYaw, finRoll));
             float finLength = (isLeft ? _leftFinBaseScale.z : _rightFinBaseScale.z) * finLengthScale * (1f + streamline * 0.85f);
             Vector3 finDirection = finRotation * Vector3.forward;
             Vector3 finTipLocal = ankleLocal + finDirection * finLength;
@@ -873,9 +873,9 @@ namespace Hecton8.Gameplay
             if (partRenderer != null && partRenderer.enabled != rendererVisible)
                 partRenderer.enabled = rendererVisible;
 
-            part.localPosition = Vector3.Lerp(part.localPosition, targetLocalPosition, poseT);
-            Quaternion targetRotation = Quaternion.Euler(targetLocalEuler);
-            part.localRotation = Quaternion.Slerp(part.localRotation, targetRotation, poseT);
+            part.localPosition = ApproximateVectorLerp(part.localPosition, targetLocalPosition, poseT);
+            Quaternion targetRotation = ResolveEulerRotationNoTrig(targetLocalEuler);
+            part.localRotation = ApproximateNlerpNoSqrt(part.localRotation, targetRotation, poseT);
             part.localScale = targetScale;
         }
 
@@ -894,20 +894,23 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 direction = endLocal - startLocal;
-            float length = direction.magnitude;
-            if (length <= 0.0001f)
+            float lengthSq = direction.sqrMagnitude;
+            float length;
+            if (lengthSq <= 0.00000001f)
             {
                 direction = Vector3.forward;
                 length = 0.0001f;
             }
             else
             {
-                direction /= length;
+                float inverseLength = math.rsqrt(lengthSq);
+                length = lengthSq * inverseLength;
+                direction *= inverseLength;
             }
 
             Vector3 midpoint = (startLocal + endLocal) * 0.5f;
             Vector3 upAxis = math.abs(Vector3.Dot(direction, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
-            Quaternion targetRotation = Quaternion.LookRotation(direction, upAxis);
+            Quaternion targetRotation = ResolveLookRotationNoTrig(direction, upAxis);
             Vector3 targetScale = baseScale;
             targetScale.x *= thicknessScale * math.saturate(visibilityWeight);
             targetScale.y *= thicknessScale * math.saturate(visibilityWeight) * verticalCompression;
@@ -917,8 +920,8 @@ namespace Hecton8.Gameplay
             if (segmentRenderer != null && segmentRenderer.enabled != rendererVisible)
                 segmentRenderer.enabled = rendererVisible;
 
-            segment.localPosition = Vector3.Lerp(segment.localPosition, midpoint, poseT);
-            segment.localRotation = Quaternion.Slerp(segment.localRotation, targetRotation, poseT);
+            segment.localPosition = ApproximateVectorLerp(segment.localPosition, midpoint, poseT);
+            segment.localRotation = ApproximateNlerpNoSqrt(segment.localRotation, targetRotation, poseT);
             segment.localScale = targetScale;
         }
 

@@ -1,6 +1,8 @@
-using Hecton8.Bootstrap;
+using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Hecton8.UI;
+using Hecton8.World;
 using TMPro;
 using Unity.Mathematics;
 using UnityEngine;
@@ -13,7 +15,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/PDA Marker HUD Element")]
-    public sealed class PDAMarkerHUDElement : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PDAMarkerHUDElement : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener
     {
         private sealed class MarkerIconDisplay
         {
@@ -27,6 +29,11 @@ namespace Hecton8.PDA
             public TMP_Text distanceText;
             public uint cachedTitleHash;
             public int cachedDistanceMeters;
+            public MarkerIconType cachedIconType;
+            public byte cachedCanvasAlpha;
+            public byte cachedColorAlpha;
+            public bool cachedVisible;
+            public bool hasCanvasState;
             public char[] titleBuffer;
             public char[] distanceBuffer;
         }
@@ -52,8 +59,15 @@ namespace Hecton8.PDA
         private const float CameraRetryInterval = 2f;
         private const int MaxCachedDistanceMeters = 2000;
 
-        // COLD ALLOC: string[2001] - cached HUD distance labels - owner: PDAMarkerHUDElement
-        private static readonly string[] DistanceLabelCache = BuildDistanceLabelCache();
+        private static readonly Color ResourceMarkerColor = new Color(0.20f, 0.85f, 0.55f, 1f);
+        private static readonly Color HazardMarkerColor = new Color(1.00f, 0.34f, 0.22f, 1f);
+        private static readonly Color ShelterMarkerColor = new Color(0.42f, 0.72f, 1.00f, 1f);
+        private static readonly Color ObjectiveMarkerColor = new Color(1.00f, 0.84f, 0.30f, 1f);
+        private static readonly Color VehicleMarkerColor = new Color(0.74f, 0.64f, 1.00f, 1f);
+        private static readonly Color BeaconMarkerColor = new Color(0.30f, 1.00f, 1.00f, 1f);
+        private static readonly Color GenericMarkerColor = new Color(0.90f, 0.95f, 1.00f, 1f);
+        // COLD ALLOC: List<Graphic>[8] - temporary prefab graphic raycast pruning scratch - owner: PDAMarkerHUDElement
+        private static readonly List<Graphic> s_GraphicRaycastDisableScratch = new List<Graphic>(8);
 
         // COLD ALLOC: MarkerIconDisplay[64] - UI marker pool - owner: PDAMarkerHUDElement
         private readonly MarkerIconDisplay[] _iconDisplays = new MarkerIconDisplay[PDAMarkerRegistryDTO.MaxEntries];
@@ -62,7 +76,11 @@ namespace Hecton8.PDA
 
         private Camera _mainCamera;
         private bool _registeredToTick;
-        private float _nextCameraResolveTime;
+        private bool _registeredToPDAEvents;
+        private bool _markersDirty = true;
+        private int _markerCount;
+        private int _activeDisplayCount;
+        private float _cameraRetryTimer;
 
         private void Awake()
         {
@@ -72,27 +90,30 @@ namespace Hecton8.PDA
         private void OnEnable()
         {
             TryRegisterWithTickManager();
+            TryRegisterWithPDAEvents();
+            _markersDirty = true;
+            _cameraRetryTimer = 0f;
         }
 
         private void OnDisable()
         {
+            UnregisterFromPDAEvents();
             UnregisterFromTickManager();
             HideAllDisplays();
         }
 
         private void OnDestroy()
         {
+            UnregisterFromPDAEvents();
             UnregisterFromTickManager();
+            PDAEvents.AssertUnregistered(this, nameof(PDAMarkerHUDElement));
         }
 
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            if (!TryResolveCamera())
-            {
-                HideAllDisplays();
-                return;
-            }
+            float safeDeltaTime = math.max(0f, deltaTime);
+            _cameraRetryTimer = math.max(0f, _cameraRetryTimer - safeDeltaTime);
 
             PDAMarkerRegistry markerRegistry = GlobalRegistry.PDAMarkers;
             if (markerRegistry == null)
@@ -101,13 +122,62 @@ namespace Hecton8.PDA
                 return;
             }
 
-            int markerCount = markerRegistry.CopyMarkers(_markerBuffer, hudOnly: true);
-            for (int i = 0; i < _iconDisplays.Length; i++)
+            if (_markersDirty)
             {
-                if (i < markerCount)
-                    UpdateDisplay(_iconDisplays[i], _markerBuffer[i]);
-                else
-                    SetDisplayVisible(_iconDisplays[i], false);
+                _markerCount = markerRegistry.CopyMarkers(_markerBuffer, hudOnly: true);
+                _markersDirty = false;
+            }
+
+            if (_markerCount <= 0)
+            {
+                HideAllDisplays();
+                return;
+            }
+
+            if (!TryResolveCamera())
+            {
+                HideAllDisplays();
+                return;
+            }
+
+            if (!TryResolveObserverAup(out AbsoluteUniversePosition observerAup))
+            {
+                HideAllDisplays();
+                return;
+            }
+
+            int displayCount = math.min(_markerCount, _iconDisplays.Length);
+            double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
+            double fadeStartDistanceSq = (double)fadeStartDistance * fadeStartDistance;
+            double fadeDistanceSqSpan = math.max(0.001d, maxDisplayDistanceSq - fadeStartDistanceSq);
+            float screenWidth = Screen.width;
+            float screenHeight = Screen.height;
+
+            for (int i = 0; i < displayCount; i++)
+            {
+                UpdateDisplay(
+                    _iconDisplays[i],
+                    _markerBuffer[i],
+                    in observerAup,
+                    maxDisplayDistanceSq,
+                    fadeStartDistanceSq,
+                    fadeDistanceSqSpan,
+                    screenWidth,
+                    screenHeight);
+            }
+
+            for (int i = displayCount; i < _activeDisplayCount; i++)
+                SetDisplayVisible(_iconDisplays[i], false);
+
+            _activeDisplayCount = displayCount;
+        }
+
+        /// <inheritdoc />
+        public void OnPDAEvent(in PDAEventPayload payload)
+        {
+            if ((PDAEventType)payload.EventType == PDAEventType.MarkerChanged)
+            {
+                _markersDirty = true;
             }
         }
 
@@ -128,6 +198,8 @@ namespace Hecton8.PDA
                 if (canvasGroup == null)
                     canvasGroup = iconObject.AddComponent<CanvasGroup>();
 
+                DisableGraphicRaycasts(iconObject);
+
                 MarkerIconDisplay display = new MarkerIconDisplay
                 {
                     rectTransform = rectTransform,
@@ -137,6 +209,9 @@ namespace Hecton8.PDA
                     distanceText = ResolveChildText(iconObject.transform, "Distance"),
                     cachedTitleHash = uint.MaxValue,
                     cachedDistanceMeters = int.MinValue,
+                    cachedIconType = (MarkerIconType)byte.MaxValue,
+                    cachedCanvasAlpha = byte.MaxValue,
+                    cachedColorAlpha = byte.MaxValue,
                     titleBuffer = new char[MarkerIconDisplay.TitleBufferCapacity], // COLD ALLOC: char[128] — per-marker HUD title staging buffer for zero-GC TMP writes — owner: PDAMarkerHUDElement
                     distanceBuffer = new char[MarkerIconDisplay.DistanceBufferCapacity] // COLD ALLOC: char[16] — per-marker HUD distance staging buffer for zero-GC TMP writes — owner: PDAMarkerHUDElement
                 };
@@ -152,79 +227,106 @@ namespace Hecton8.PDA
                 return true;
 
             _mainCamera = null;
-            if (Time.unscaledTime < _nextCameraResolveTime)
+            if (_cameraRetryTimer > 0f)
                 return false;
 
-            _nextCameraResolveTime = Time.unscaledTime + CameraRetryInterval;
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                _mainCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
-            }
+            _cameraRetryTimer = CameraRetryInterval;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                _mainCamera = playerContext.PlayerCamera;
 
             return _mainCamera != null && _mainCamera.isActiveAndEnabled;
         }
 
-        private void UpdateDisplay(MarkerIconDisplay display, PDAMarkerSnapshot marker)
+        private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerMovement != null)
+            {
+                observerAup = playerContext.PlayerMovement.CurrentAup;
+                return true;
+            }
+
+            observerAup = default;
+            return false;
+        }
+
+        private void UpdateDisplay(
+            MarkerIconDisplay display,
+            PDAMarkerSnapshot marker,
+            in AbsoluteUniversePosition observerAup,
+            double maxDisplayDistanceSq,
+            double fadeStartDistanceSq,
+            double fadeDistanceSqSpan,
+            float screenWidth,
+            float screenHeight)
         {
             if (display == null || display.rectTransform == null || display.canvasGroup == null || _mainCamera == null)
                 return;
 
-            Vector3 cameraPosition = _mainCamera.transform.position;
-            float maxDisplayDistanceSq = maxDisplayDistance * maxDisplayDistance;
-            float distanceSq = (marker.Position - cameraPosition).sqrMagnitude;
+            AbsoluteUniversePosition markerAup = marker.PositionAup;
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in markerAup, in observerAup);
             if (distanceSq > maxDisplayDistanceSq)
             {
                 SetDisplayVisible(display, false);
                 return;
             }
 
-            float distance = distanceSq > 0.0001f ? distanceSq * math.rsqrt(distanceSq) : 0f;
-            Vector3 screenPoint = _mainCamera.WorldToScreenPoint(marker.Position);
+            float3 markerRuntime = markerAup.ToRuntimeFloat3();
+            Vector3 screenPoint = _mainCamera.WorldToScreenPoint(new Vector3(markerRuntime.x, markerRuntime.y, markerRuntime.z));
             if (screenPoint.z <= 0f)
             {
                 SetDisplayVisible(display, false);
                 return;
             }
 
-            float clampedX = Mathf.Clamp(screenPoint.x, screenMargin, Screen.width - screenMargin);
-            float clampedY = Mathf.Clamp(screenPoint.y, screenMargin, Screen.height - screenMargin);
-            display.rectTransform.position = new Vector3(clampedX, clampedY, 0f);
+            float clampedX = math.clamp(screenPoint.x, screenMargin, screenWidth - screenMargin);
+            float clampedY = math.clamp(screenPoint.y, screenMargin, screenHeight - screenMargin);
+            Vector3 iconPosition = display.rectTransform.position;
+            iconPosition.x = clampedX;
+            iconPosition.y = clampedY;
+            iconPosition.z = 0f;
+            display.rectTransform.position = iconPosition;
 
             float alpha = 1f;
-            if (distance > fadeStartDistance)
+            if (distanceSq > fadeStartDistanceSq)
+                alpha = 1f - math.saturate((float)((distanceSq - fadeStartDistanceSq) / fadeDistanceSqSpan));
+
+            byte alphaByte = QuantizeAlpha(alpha);
+            if (alphaByte == 0)
             {
-                float denominator = Mathf.Max(1f, maxDisplayDistance - fadeStartDistance);
-                alpha = 1f - ((distance - fadeStartDistance) / denominator);
+                SetDisplayVisible(display, false);
+                return;
             }
 
-            SetDisplayVisible(display, alpha > 0.001f);
-            display.canvasGroup.alpha = Mathf.Clamp01(alpha);
+            ApplyDisplayState(display, true, alphaByte);
 
             if (display.titleText != null)
             {
                 uint nextTitleHash = showLabels ? marker.TitleHashID : 0u;
                 if (display.cachedTitleHash != nextTitleHash)
                 {
-                    string nextTitle = showLabels ? marker.Title : string.Empty;
-                    ApplyText(display.titleText, display.titleBuffer, nextTitle);
+                    int titleLength = showLabels ? marker.CopyTitleTo(display.titleBuffer) : 0;
+                    display.titleText.SetCharArray(display.titleBuffer, 0, titleLength);
                     display.cachedTitleHash = nextTitleHash;
                 }
             }
 
             if (display.distanceText != null)
             {
-                int nextDistanceMeters = showDistance ? Mathf.RoundToInt(distance) : -1;
+                int nextDistanceMeters = showDistance ? (int)math.round(ApproximateDistanceMetersFromSq(distanceSq)) : -1;
                 if (display.cachedDistanceMeters != nextDistanceMeters)
                 {
-                    string nextDistance = showDistance ? ResolveDistanceLabel(nextDistanceMeters) : string.Empty;
-                    ApplyText(display.distanceText, display.distanceBuffer, nextDistance);
+                    int distanceLength = showDistance
+                        ? WriteDistanceLabel(nextDistanceMeters, display.distanceBuffer)
+                        : 0;
+                    display.distanceText.SetCharArray(display.distanceBuffer, 0, distanceLength);
                     display.cachedDistanceMeters = nextDistanceMeters;
                 }
             }
 
             if (display.iconImage != null)
-                display.iconImage.color = ResolveMarkerColor(marker.IconType, alpha);
+                ApplyMarkerColor(display, marker.IconType, alphaByte);
         }
 
         private static Color ResolveMarkerColor(MarkerIconType iconType, float alpha)
@@ -233,29 +335,29 @@ namespace Hecton8.PDA
             switch (iconType)
             {
                 case MarkerIconType.Resource:
-                    color = new Color(0.20f, 0.85f, 0.55f, alpha);
+                    color = ResourceMarkerColor;
                     break;
                 case MarkerIconType.Hazard:
-                    color = new Color(1.00f, 0.34f, 0.22f, alpha);
+                    color = HazardMarkerColor;
                     break;
                 case MarkerIconType.Shelter:
-                    color = new Color(0.42f, 0.72f, 1.00f, alpha);
+                    color = ShelterMarkerColor;
                     break;
                 case MarkerIconType.Objective:
-                    color = new Color(1.00f, 0.84f, 0.30f, alpha);
+                    color = ObjectiveMarkerColor;
                     break;
                 case MarkerIconType.Vehicle:
-                    color = new Color(0.74f, 0.64f, 1.00f, alpha);
+                    color = VehicleMarkerColor;
                     break;
                 case MarkerIconType.Beacon:
-                    color = new Color(0.30f, 1.00f, 1.00f, alpha);
+                    color = BeaconMarkerColor;
                     break;
                 default:
-                    color = new Color(0.90f, 0.95f, 1.00f, alpha);
+                    color = GenericMarkerColor;
                     break;
             }
 
-            color.a = Mathf.Clamp01(alpha);
+            color.a = math.saturate(alpha);
             return color;
         }
 
@@ -270,54 +372,109 @@ namespace Hecton8.PDA
 
         private static void SetDisplayVisible(MarkerIconDisplay display, bool visible)
         {
+            ApplyDisplayState(display, visible, visible ? (byte)255 : (byte)0);
+        }
+
+        private static void ApplyDisplayState(MarkerIconDisplay display, bool visible, byte alphaByte)
+        {
             if (display == null || display.canvasGroup == null)
                 return;
 
-            display.canvasGroup.alpha = visible ? display.canvasGroup.alpha : 0f;
-            display.canvasGroup.blocksRaycasts = false;
-            display.canvasGroup.interactable = false;
-        }
-
-        private static string ResolveDistanceLabel(int meters)
-        {
-            if (meters <= 0)
-                return DistanceLabelCache[0];
-
-            if (meters >= MaxCachedDistanceMeters)
-                return DistanceLabelCache[MaxCachedDistanceMeters];
-
-            return DistanceLabelCache[meters];
-        }
-
-        private static void ApplyText(TMP_Text text, char[] buffer, string value)
-        {
-            if (text == null || buffer == null)
-                return;
-
-            if (string.IsNullOrEmpty(value))
+            if (display.hasCanvasState &&
+                display.cachedVisible == visible &&
+                display.cachedCanvasAlpha == alphaByte)
             {
-                text.SetCharArray(buffer, 0, 0);
                 return;
             }
 
-            int copyLength = Mathf.Min(buffer.Length, value.Length);
-            value.CopyTo(0, buffer, 0, copyLength);
-            text.SetCharArray(buffer, 0, copyLength);
+            display.hasCanvasState = true;
+            display.cachedVisible = visible;
+            display.cachedCanvasAlpha = alphaByte;
+            display.canvasGroup.alpha = visible ? DecodeAlpha(alphaByte) : 0f;
+            if (display.canvasGroup.blocksRaycasts)
+                display.canvasGroup.blocksRaycasts = false;
+            if (display.canvasGroup.interactable)
+                display.canvasGroup.interactable = false;
         }
 
-        private static string[] BuildDistanceLabelCache()
+        private static void ApplyMarkerColor(MarkerIconDisplay display, MarkerIconType iconType, byte alphaByte)
         {
-            string[] cache = new string[MaxCachedDistanceMeters + 1];
-            for (int i = 0; i < cache.Length; i++)
-                cache[i] = i + " m";
+            if (display == null || display.iconImage == null)
+                return;
 
-            return cache;
+            if (display.cachedIconType == iconType && display.cachedColorAlpha == alphaByte)
+                return;
+
+            display.cachedIconType = iconType;
+            display.cachedColorAlpha = alphaByte;
+            display.iconImage.color = ResolveMarkerColor(iconType, DecodeAlpha(alphaByte));
+        }
+
+        private static byte QuantizeAlpha(float alpha)
+        {
+            int alphaInt = (int)math.round(math.saturate(alpha) * 255f);
+            return (byte)math.clamp(alphaInt, 0, 255);
+        }
+
+        private static float DecodeAlpha(byte alphaByte)
+        {
+            return alphaByte * (1f / 255f);
+        }
+
+        private static float ApproximateDistanceMetersFromSq(double distanceSq)
+        {
+            if (double.IsNaN(distanceSq) || double.IsInfinity(distanceSq))
+                return float.PositiveInfinity;
+            if (distanceSq <= 0d)
+                return 0f;
+
+            float clampedSq = (float)math.min(distanceSq, (double)float.MaxValue);
+            uint estimateBits = (math.asuint(clampedSq) >> 1) + 0x1FC00000u;
+            float estimate = math.asfloat(estimateBits);
+            return 0.5f * (estimate + (clampedSq / math.max(estimate, 0.0001f)));
+        }
+
+        private static int WriteDistanceLabel(int meters, char[] buffer)
+        {
+            if (buffer == null || buffer.Length < 3)
+                return 0;
+
+            int clampedMeters = math.clamp(meters, 0, MaxCachedDistanceMeters);
+            if (!clampedMeters.TryFormat(new System.Span<char>(buffer, 0, buffer.Length), out int cursor))
+                return 0;
+
+            if (cursor + 2 > buffer.Length)
+                return cursor;
+
+            buffer[cursor++] = ' ';
+            buffer[cursor++] = 'm';
+            return cursor;
+        }
+
+        private static void DisableGraphicRaycasts(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            s_GraphicRaycastDisableScratch.Clear();
+            root.GetComponentsInChildren(true, s_GraphicRaycastDisableScratch);
+            for (int i = 0; i < s_GraphicRaycastDisableScratch.Count; i++)
+            {
+                Graphic graphic = s_GraphicRaycastDisableScratch[i];
+                if (graphic != null)
+                    graphic.raycastTarget = false;
+            }
+
+            s_GraphicRaycastDisableScratch.Clear();
         }
 
         private void HideAllDisplays()
         {
-            for (int i = 0; i < _iconDisplays.Length; i++)
+            int count = math.min(_activeDisplayCount, _iconDisplays.Length);
+            for (int i = 0; i < count; i++)
                 SetDisplayVisible(_iconDisplays[i], false);
+
+            _activeDisplayCount = 0;
         }
 
         private void TryRegisterWithTickManager()
@@ -327,8 +484,7 @@ namespace Hecton8.PDA
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -338,6 +494,24 @@ namespace Hecton8.PDA
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = false;
+        }
+
+        private void TryRegisterWithPDAEvents()
+        {
+            if (_registeredToPDAEvents || !Application.isPlaying)
+                return;
+
+            PDAEvents.Register(this);
+            _registeredToPDAEvents = PDAEvents.IsRegistered(this);
+        }
+
+        private void UnregisterFromPDAEvents()
+        {
+            if (!_registeredToPDAEvents)
+                return;
+
+            PDAEvents.Unregister(this);
+            _registeredToPDAEvents = false;
         }
     }
 }

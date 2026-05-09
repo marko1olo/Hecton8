@@ -16,8 +16,7 @@ namespace Hecton8.World
             if (_registeredSlowTick || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredSlowTick = true;
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void OnDisable()

@@ -221,6 +221,7 @@ namespace Hecton8.Gameplay
                     nameof(LaserCutterEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -232,6 +233,21 @@ namespace Hecton8.Gameplay
                     nameof(LaserCutterEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -430,7 +446,7 @@ namespace Hecton8.Gameplay
     public sealed class LaserCutter : PlayerTool, IToolModule
     {
         private const string CutterCategory = "CUTTER";
-        private const int RecoveryProgressMessageCount = 101;
+        private const int RecoveryProgressMaxPercent = 100;
         private const float MaxRecoilImpulse = 12f;
         private const float MinEffectiveBeamPower = 0.02f;
         private const float LowPowerThresholdNormalized = 0.12f;
@@ -452,9 +468,6 @@ namespace Hecton8.Gameplay
             public string severity;
         }
 
-        // COLD ALLOC: String[101] — localized recovery progress HUD cache — owner: LaserCutter
-        private static string[] _recoveryProgressMessages;
-        private static GameLanguage _recoveryProgressLanguage = (GameLanguage)(-1);
         private static readonly int _LaserHitHeatId = Shader.PropertyToID("_LaserHitHeat");
 
         // ══════════════════════════════════════════════════════════
@@ -609,11 +622,10 @@ namespace Hecton8.Gameplay
         private HectonSurvivalSystem _cachedSurvivalSystem;
 
         // COLD ALLOC: persistent buffers for diagnosis and telemetry
-        private readonly FixedCharBuffer _diagnosisHeadline = new FixedCharBuffer(64);
-        private readonly FixedCharBuffer _diagnosisSummary = new FixedCharBuffer(256);
-        private readonly FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512);
-        // COLD ALLOC: char[128] — cached recovery progress message construction scratch — owner: LaserCutter
-        private static FixedCharBuffer s_recoveryProgressBuffer = new FixedCharBuffer(128);
+        private FixedCharBuffer _diagnosisHeadline = new FixedCharBuffer(64);
+        private FixedCharBuffer _diagnosisSummary = new FixedCharBuffer(256);
+        private FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512);
+        private FixedCharBuffer _recoveryFeedbackBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - cutter recovery HUD feedback scratch - owner: LaserCutter
         // COLD ALLOC: char[256] — scan archive text construction scratch — owner: LaserCutter
         private static FixedCharBuffer s_archiveStringBuffer = new FixedCharBuffer(256);
 
@@ -671,7 +683,7 @@ namespace Hecton8.Gameplay
             EnsurePlayerInventory();
             module.Deconstruct(_cachedInventory);
             ArchiveRecoveredModule(module);
-            ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_MODULE_RECOVERED, "LASER CUTTER - MODULE RECOVERED"));
+            PublishInfoMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_MODULE_RECOVERED, "LASER CUTTER - MODULE RECOVERED"));
             
             _telemetryBuffer.Clear();
             _telemetryBuffer.Append(ResolveLocalized(LocalizationKeys.LASER_LOG_MODULE_RECOVERY_MESSAGE_PREFIX, "Laser-assisted deconstruction completed on "));
@@ -787,7 +799,7 @@ namespace Hecton8.Gameplay
                         Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(overheatErrorClip, 0.5f);
                     
                     _lockoutSoundPlayed = true;
-                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_OVERHEAT_LOCKOUT, "LASER CUTTER - OVERHEAT LOCKOUT"));
+                    PublishWarningMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_OVERHEAT_LOCKOUT, "LASER CUTTER - OVERHEAT LOCKOUT"));
                 }
                 return;
             }
@@ -881,7 +893,7 @@ namespace Hecton8.Gameplay
                       EnterCooldownState();
                       SyncHeatOutputs();
                       PublishHeat();
-                      ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
+                      PublishInfoMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_STABLE, "LASER CUTTER - CORE STABLE"));
                   }
               }
 
@@ -922,11 +934,11 @@ namespace Hecton8.Gameplay
         public override string GetOperationalSummary()
         {
             _telemetryBuffer.Clear();
-            WriteOperationalSummary(_telemetryBuffer);
+            WriteOperationalSummary(ref _telemetryBuffer);
             return BuildStringFromBuffer(in _telemetryBuffer);
         }
 
-        public override void WriteOperationalSummary(FixedCharBuffer buffer)
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
         {
             if (_isLockedOut)
             {
@@ -986,6 +998,38 @@ namespace Hecton8.Gameplay
             return ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_READY, "Primary cuts. Secondary diagnoses and holds recovery mode on modules.");
         }
 
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
+            if (_isLockedOut)
+            {
+                AppendText(ref buffer, ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_LOCKOUT, "Wait for the core to cool before firing again."));
+                return;
+            }
+
+            if (_cachedDeconstructModule != null)
+            {
+                AppendText(ref buffer, ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_RECOVERY, "Hold the beam steady to finish recovery on the locked module."));
+                return;
+            }
+
+            if (!_diagnosisCached)
+                ReadDiagnosisNow();
+
+            if (_diagnosisSummary.Length > 0)
+            {
+                buffer.Append(in _diagnosisSummary);
+                return;
+            }
+
+            if (_heatLevel >= 0.75f)
+            {
+                AppendText(ref buffer, ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_HOT, "Core is running hot. Finish the cut or vent heat before lockout."));
+                return;
+            }
+
+            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.LASER_DIRECTIVE_READY, "Primary cuts. Secondary diagnoses and holds recovery mode on modules."));
+        }
+
         // ══════════════════════════════════════════════════════════
         //  HEAT MANAGEMENT
         // ══════════════════════════════════════════════════════════
@@ -1000,7 +1044,7 @@ namespace Hecton8.Gameplay
             SetOverheatedState();
             SetVisualsActive(false);
             ResetDeconstructState();
-            ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_OVERHEATED, "LASER CUTTER - CORE OVERHEATED"));
+            PublishWarningMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_CORE_OVERHEATED, "LASER CUTTER - CORE OVERHEATED"));
             FieldOperationLogSystem.RecordOperation(
                 ResolveLocalized(LocalizationKeys.LASER_CATEGORY, CutterCategory),
                 ResolveLocalized(LocalizationKeys.LASER_LOG_OVERHEAT_TITLE, "LASER CORE OVERHEATED"),
@@ -1055,10 +1099,11 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 direction = _cachedTransform.forward;
-            if (direction.sqrMagnitude < 0.0001f)
+            float directionSqrMagnitude = direction.sqrMagnitude;
+            if (directionSqrMagnitude < 0.0001f)
                 direction = Vector3.forward;
             else
-                direction.Normalize();
+                direction *= math.rsqrt(directionSqrMagnitude);
 
             Vector3 absoluteOrigin = ResolveAbsoluteUniversePoint(_cachedTransform.position);
             Vector3 absoluteHitPoint = ResolveAbsoluteUniversePoint(_hitInfo.point);
@@ -1129,10 +1174,11 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 direction = _cachedTransform.forward;
-            if (direction.sqrMagnitude < 0.0001f)
+            float directionSqrMagnitude = direction.sqrMagnitude;
+            if (directionSqrMagnitude < 0.0001f)
                 direction = Vector3.forward;
             else
-                direction.Normalize();
+                direction *= math.rsqrt(directionSqrMagnitude);
 
             float normalizedPower = ResolveNormalizedPower((runtimePower / math.max(damagePerSecond, 0.0001f)) * powerScale, heatMultiplier);
             if (normalizedPower < MinEffectiveBeamPower)
@@ -1163,11 +1209,13 @@ namespace Hecton8.Gameplay
             {
                 _deconstructProgress = 0f;
                 _cachedDeconstructTargetId = targetId;
-                _cachedDeconstructModule = _hitInfo.collider.GetComponent<BaseModule>() ?? _hitInfo.collider.GetComponentInParent<BaseModule>();
+                if (!_hitInfo.collider.TryGetComponent(out _cachedDeconstructModule))
+                    _cachedDeconstructModule = _hitInfo.collider.GetComponentInParent<BaseModule>();
             }
 
-            if (_hitInfo.normal.sqrMagnitude > 0.0001f)
-                _cachedDeconstructAnchorNormal = _hitInfo.normal.normalized;
+            float hitNormalSqrMagnitude = _hitInfo.normal.sqrMagnitude;
+            if (hitNormalSqrMagnitude > 0.0001f)
+                _cachedDeconstructAnchorNormal = _hitInfo.normal * math.rsqrt(hitNormalSqrMagnitude);
             else
                 _cachedDeconstructAnchorNormal = Vector3.up;
 
@@ -1175,7 +1223,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_deconstructBlockedReported)
                 {
-                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_NO_MODULE, "RECOVERY MODE - NO MODULE"));
+                    PublishWarningMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_NO_MODULE, "RECOVERY MODE - NO MODULE"));
                     _deconstructBlockedReported = true;
                 }
                 ApplyCutDamage(deltaTime);
@@ -1186,7 +1234,7 @@ namespace Hecton8.Gameplay
             {
                 if (!_deconstructBlockedReported)
                 {
-                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
+                    PublishWarningMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_RECOVERY_MODULE_LOCKED, "RECOVERY MODE - MODULE LOCKED"));
                     _deconstructBlockedReported = true;
                 }
                 ApplyCutDamage(deltaTime);
@@ -1203,15 +1251,15 @@ namespace Hecton8.Gameplay
             {
                 if (!_deconstructStartReported)
                 {
-                    ToolHitUtility.ShowInfo("RECOVERY MODE - LOAD THE CUT");
+                    PublishInfoMessage("RECOVERY MODE - LOAD THE CUT");
                     _deconstructStartReported = true;
                 }
 
                 if (Time.time >= _nextProgressFeedbackAt)
                 {
-                    int tensionPercent = Mathf.RoundToInt(tension01 * 100f);
-                    int pullPercent = Mathf.RoundToInt(pull01 * 100f);
-                    ToolHitUtility.ShowInfo("RECOVERY MODE - PULL BACK " + tensionPercent + "/" + pullPercent);
+                    int tensionPercent = (int)math.round(tension01 * 100f);
+                    int pullPercent = (int)math.round(pull01 * 100f);
+                    ShowRecoveryPullBackFeedback(tensionPercent, pullPercent);
                     _nextProgressFeedbackAt = Time.time + 0.6f;
                 }
                 return;
@@ -1221,14 +1269,14 @@ namespace Hecton8.Gameplay
             _deconstructProgress += progressGain;
             if (!_deconstructStartReported)
             {
-                ToolHitUtility.ShowInfo("RECOVERY MODE - TEAR IT FREE");
+                PublishInfoMessage("RECOVERY MODE - TEAR IT FREE");
                 _deconstructStartReported = true;
             }
 
             if (Time.time >= _nextProgressFeedbackAt)
             {
                 float progress01 = math.saturate(_deconstructProgress / math.max(deconstructThreshold, 0.01f));
-                ToolHitUtility.ShowInfo(GetRecoveryProgressMessage(progress01));
+                ShowRecoveryProgressFeedback(progress01);
                 _nextProgressFeedbackAt = Time.time + 0.6f;
             }
 
@@ -1237,7 +1285,7 @@ namespace Hecton8.Gameplay
                 EnsurePlayerInventory();
                 _cachedDeconstructModule.Deconstruct(_cachedInventory);
                 ArchiveRecoveredModule(_cachedDeconstructModule);
-                ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.LASER_HUD_MODULE_RECOVERED, "LASER CUTTER - MODULE RECOVERED"));
+                PublishInfoMessage(ResolveLocalized(LocalizationKeys.LASER_HUD_MODULE_RECOVERED, "LASER CUTTER - MODULE RECOVERED"));
                 
                 _telemetryBuffer.Clear();
                 _telemetryBuffer.Append(ResolveLocalized(LocalizationKeys.LASER_LOG_MODULE_RECOVERY_MESSAGE_PREFIX, "Laser-assisted deconstruction completed on "));
@@ -1268,27 +1316,50 @@ namespace Hecton8.Gameplay
             _cachedDeconstructAnchorNormal = Vector3.up;
         }
 
-        private static string GetRecoveryProgressMessage(float progress01)
+        private void ShowRecoveryPullBackFeedback(int tensionPercent, int pullPercent)
         {
-            EnsureRecoveryProgressMessages();
-            int percent = (int)(math.saturate(progress01) * 100f + 0.5f);
-            percent = math.clamp(percent, 0, RecoveryProgressMessageCount - 1);
-            return _recoveryProgressMessages[percent];
+            _recoveryFeedbackBuffer.Clear();
+            _recoveryFeedbackBuffer.Append("RECOVERY MODE - PULL BACK ");
+            _recoveryFeedbackBuffer.AppendInt(math.clamp(tensionPercent, 0, RecoveryProgressMaxPercent));
+            _recoveryFeedbackBuffer.Append("/");
+            _recoveryFeedbackBuffer.AppendInt(math.clamp(pullPercent, 0, RecoveryProgressMaxPercent));
+            ToolHitUtility.ShowInfo(in _recoveryFeedbackBuffer);
         }
 
-        private static void EnsureRecoveryProgressMessages()
+        private void ShowRecoveryProgressFeedback(float progress01)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
-            if (_recoveryProgressMessages != null && _recoveryProgressMessages.Length == RecoveryProgressMessageCount && _recoveryProgressLanguage == language)
-                return;
-
-            string[] messages = new string[RecoveryProgressMessageCount];
+            int percent = math.clamp((int)(math.saturate(progress01) * 100f + 0.5f), 0, RecoveryProgressMaxPercent);
             string template = ResolveLocalized(LocalizationKeys.LASER_RECOVERY_PROGRESS, "RECOVERY PROGRESS - {0}%");
-            for (int i = 0; i < RecoveryProgressMessageCount; i++)
-                messages[i] = BuildNumericTemplateString(template, i, ref s_recoveryProgressBuffer);
-            _recoveryProgressMessages = messages;
-            _recoveryProgressLanguage = language;
+
+            _recoveryFeedbackBuffer.Clear();
+            if (!_recoveryFeedbackBuffer.AppendTemplate(template.AsSpan(), LocNumericArg.Int(percent)))
+            {
+                _recoveryFeedbackBuffer.Clear();
+                _recoveryFeedbackBuffer.Append("RECOVERY PROGRESS - ");
+                _recoveryFeedbackBuffer.AppendInt(percent);
+                _recoveryFeedbackBuffer.Append("%");
+            }
+
+            ToolHitUtility.ShowInfo(in _recoveryFeedbackBuffer);
+        }
+
+        private void PublishInfoMessage(string message)
+        {
+            _telemetryBuffer.Clear();
+            if (AppendText(ref _telemetryBuffer, message))
+                ToolHitUtility.ShowInfo(in _telemetryBuffer);
+        }
+
+        private void PublishWarningMessage(string message)
+        {
+            _telemetryBuffer.Clear();
+            if (AppendText(ref _telemetryBuffer, message))
+                ToolHitUtility.ShowWarning(in _telemetryBuffer);
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
         }
 
         private static string BuildStringFromBuffer(in FixedCharBuffer buffer)
@@ -1296,37 +1367,11 @@ namespace Hecton8.Gameplay
             return buffer.Length > 0 ? new string(buffer.Buffer, 0, buffer.Length) : string.Empty;
         }
 
-        private static string BuildNumericTemplateString(string template, int value, ref FixedCharBuffer buffer)
-        {
-            buffer.Clear();
-            AppendTemplateValue(template, value, ref buffer);
-            return BuildStringFromBuffer(in buffer);
-        }
-
         private static string BuildTextTemplateString(string template, string value, ref FixedCharBuffer buffer)
         {
             buffer.Clear();
             AppendTemplateValue(template, value, ref buffer);
             return BuildStringFromBuffer(in buffer);
-        }
-
-        private static void AppendTemplateValue(string template, int value, ref FixedCharBuffer buffer)
-        {
-            if (string.IsNullOrEmpty(template))
-                return;
-
-            int tokenIndex = template.IndexOf("{0}", StringComparison.Ordinal);
-            if (tokenIndex < 0)
-            {
-                buffer.Append(template);
-                return;
-            }
-
-            buffer.Append(template.AsSpan(0, tokenIndex));
-            buffer.AppendInt(value);
-            int suffixIndex = tokenIndex + 3;
-            if (suffixIndex < template.Length)
-                buffer.Append(template.AsSpan(suffixIndex));
         }
 
         private static void AppendTemplateValue(string template, string value, ref FixedCharBuffer buffer)
@@ -1396,40 +1441,61 @@ namespace Hecton8.Gameplay
         private float ResolveDetachmentPull01(Vector3 anchorPoint)
         {
             EnsurePlayerBindings();
-            if (_cachedPlayerTransform == null)
+            if (_cachedPlayerTransform == null || !TryResolvePlayerAnchorOffset(anchorPoint, out Vector3 awayFromAnchor))
                 return 0f;
 
-            Vector3 awayFromAnchor = _cachedPlayerTransform.position - anchorPoint;
-            awayFromAnchor.y = 0f;
             float sqrMagnitude = awayFromAnchor.sqrMagnitude;
             if (sqrMagnitude <= 0.0001f)
                 return 0f;
 
-            awayFromAnchor *= 1f / Mathf.Sqrt(sqrMagnitude);
+            awayFromAnchor *= math.rsqrt(sqrMagnitude);
             Vector3 playerForward = _cachedPlayerTransform.forward;
             playerForward.y = 0f;
             float forwardSqrMagnitude = playerForward.sqrMagnitude;
             if (forwardSqrMagnitude > 0.0001f)
-                playerForward *= 1f / Mathf.Sqrt(forwardSqrMagnitude);
+                playerForward *= math.rsqrt(forwardSqrMagnitude);
             else
                 playerForward = awayFromAnchor;
 
-            float facingAway01 = Mathf.Clamp01((Vector3.Dot(playerForward, awayFromAnchor) + 1f) * 0.5f);
+            float facingAway01 = math.saturate((math.dot((float3)playerForward, (float3)awayFromAnchor) + 1f) * 0.5f);
             float backpedal01 = 0f;
             IInputService inputService = GlobalRegistry.Input;
             PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
                 ? inputService.GetState()
                 : default;
-            backpedal01 = Mathf.Clamp01(-inputState.MoveDelta.y);
+            backpedal01 = math.saturate(-inputState.MoveDelta.y);
 
             float awayVelocity01 = 0f;
             if (_cachedPlayerRigidbody != null && heavySalvagePullVelocityForFullIntent > 0.01f)
             {
-                float awayVelocity = Mathf.Max(0f, Vector3.Dot(_cachedPlayerRigidbody.linearVelocity, awayFromAnchor));
-                awayVelocity01 = Mathf.Clamp01(awayVelocity / heavySalvagePullVelocityForFullIntent);
+                float awayVelocity = math.max(0f, math.dot((float3)_cachedPlayerRigidbody.linearVelocity, (float3)awayFromAnchor));
+                awayVelocity01 = math.saturate(awayVelocity / heavySalvagePullVelocityForFullIntent);
             }
 
-            return Mathf.Max(awayVelocity01, backpedal01 * facingAway01);
+            return math.max(awayVelocity01, backpedal01 * facingAway01);
+        }
+
+        private bool TryResolvePlayerAnchorOffset(Vector3 anchorPoint, out Vector3 awayFromAnchor)
+        {
+            if (_cachedPlayerMovement != null)
+            {
+                AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPoint);
+                double3 delta = _cachedPlayerMovement.CurrentAup.ToAbsoluteDouble3() - anchorAup.ToAbsoluteDouble3();
+                awayFromAnchor = default;
+                awayFromAnchor.x = (float)delta.x;
+                awayFromAnchor.z = (float)delta.z;
+                return true;
+            }
+
+            if (_cachedPlayerTransform == null)
+            {
+                awayFromAnchor = default;
+                return false;
+            }
+
+            awayFromAnchor = _cachedPlayerTransform.position - anchorPoint;
+            awayFromAnchor.y = 0f;
+            return true;
         }
 
         private static void ArchiveRecoveredModule(BaseModule module)
@@ -1437,7 +1503,7 @@ namespace Hecton8.Gameplay
             if (module == null || Hecton8.Core.GlobalRegistry.ScanLog == null)
                 return;
 
-            ModuleMarker marker = module.GetComponent<ModuleMarker>();
+            module.TryGetComponent(out ModuleMarker marker);
             BuildableData data = marker != null ? marker.Data : null;
             if (data == null)
                 return;
@@ -1717,7 +1783,7 @@ namespace Hecton8.Gameplay
 
             int layerMask = ResolveCuttableRaycastMask();
             Vector3 origin = _cachedTransform.position;
-            Vector3 normalizedDirection = direction.normalized;
+            Vector3 normalizedDirection = direction * math.rsqrt(direction.sqrMagnitude);
             int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
                 origin,
                 CutHitSphereRadiusMeters,
@@ -1802,7 +1868,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             Vector3 toHit = hit.point - origin;
-            if (Vector3.Dot(hit.normal, direction) >= 0f)
+            if (math.dot((float3)hit.normal, (float3)direction) >= 0f)
                 return false;
 
             return toHit.sqrMagnitude > 0.0001f;
@@ -1837,10 +1903,11 @@ namespace Hecton8.Gameplay
             if (coupledCutStrength <= 0f || normalizedPower < MinEffectiveBeamPower)
                 return;
 
+            Vector3 absoluteHitPoint = ResolveAbsoluteUniversePoint(_hitInfo.point);
             EquipmentInteractionSignal boilSignal = new EquipmentInteractionSignal(
                 packet,
                 unchecked((int)EntityId.ToULong(_hitInfo.collider.GetEntityId())),
-                new float3(_hitInfo.point.x, _hitInfo.point.y, _hitInfo.point.z),
+                new float3(absoluteHitPoint.x, absoluteHitPoint.y, absoluteHitPoint.z),
                 new float3(_hitInfo.normal.x, _hitInfo.normal.y, _hitInfo.normal.z),
                 coupledCutStrength,
                 (byte)InteractionEffectType.Boil,

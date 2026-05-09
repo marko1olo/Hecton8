@@ -292,8 +292,7 @@ namespace Hecton8.Optimization
             if (!ReferenceEquals(GlobalRegistry.RenderTextureLifecycle, this))
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()

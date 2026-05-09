@@ -3,6 +3,7 @@ using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Caves
@@ -125,6 +126,10 @@ namespace Hecton8.Caves
             ResolvePlayerContext();
 
             Vector3 origin = transform.position;
+            float eruptionHeight = math.max(MinimumCylinderHeightMeters, _eruptionRadius * EruptionCylinderHeightMultiplier);
+            float cavitationHeight = math.max(eruptionHeight, _cavitationRadius * CavitationCylinderHeightMultiplier);
+            float eruptionRadiusSq = _eruptionRadius * _eruptionRadius;
+            float cavitationRadiusSq = _cavitationRadius * _cavitationRadius;
             bool playerBodyAffectedByOverlap = false;
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 origin,
@@ -146,15 +151,13 @@ namespace Hecton8.Caves
                 Vector3 point = body != null ? body.worldCenterOfMass : hitCollider.bounds.center;
                 Vector3 horizontal = point - origin;
                 horizontal.y = 0f;
-                float horizontalDistance = horizontal.magnitude;
+                float horizontalDistanceSq = (horizontal.x * horizontal.x) + (horizontal.z * horizontal.z);
                 float verticalOffset = point.y - origin.y;
-                float eruptionHeight = Mathf.Max(MinimumCylinderHeightMeters, _eruptionRadius * EruptionCylinderHeightMultiplier);
-                float cavitationHeight = Mathf.Max(eruptionHeight, _cavitationRadius * CavitationCylinderHeightMultiplier);
-                if (horizontalDistance > _cavitationRadius || verticalOffset < 0f || verticalOffset > cavitationHeight)
+                if (horizontalDistanceSq > cavitationRadiusSq || verticalOffset < 0f || verticalOffset > cavitationHeight)
                     continue;
 
-                float eruptionT = EvaluateCylinderAttenuation(horizontalDistance, _eruptionRadius, verticalOffset, eruptionHeight);
-                float cavitationT = EvaluateCylinderAttenuation(horizontalDistance, _cavitationRadius, verticalOffset, cavitationHeight);
+                float eruptionT = EvaluateCylinderAttenuationSq(horizontalDistanceSq, eruptionRadiusSq, verticalOffset, eruptionHeight);
+                float cavitationT = EvaluateCylinderAttenuationSq(horizontalDistanceSq, cavitationRadiusSq, verticalOffset, cavitationHeight);
 
                 if (body != null)
                 {
@@ -178,15 +181,12 @@ namespace Hecton8.Caves
             if (_playerMovement != null && _playerTransform != null)
             {
                 Vector3 playerOffset = _playerTransform.position - origin;
-                Vector3 playerHorizontal = new Vector3(playerOffset.x, 0f, playerOffset.z);
-                float playerDistance = playerHorizontal.magnitude;
+                float playerDistanceSq = (playerOffset.x * playerOffset.x) + (playerOffset.z * playerOffset.z);
                 float playerVerticalOffset = playerOffset.y;
-                float playerEruptionHeight = Mathf.Max(MinimumCylinderHeightMeters, _eruptionRadius * EruptionCylinderHeightMultiplier);
-                float playerCavitationHeight = Mathf.Max(playerEruptionHeight, _cavitationRadius * CavitationCylinderHeightMultiplier);
-                if (playerDistance <= _cavitationRadius && playerVerticalOffset >= 0f && playerVerticalOffset <= playerCavitationHeight)
+                if (playerDistanceSq <= cavitationRadiusSq && playerVerticalOffset >= 0f && playerVerticalOffset <= cavitationHeight)
                 {
-                    float eruptionT = EvaluateCylinderAttenuation(playerDistance, _eruptionRadius, playerVerticalOffset, playerEruptionHeight);
-                    float cavitationT = EvaluateCylinderAttenuation(playerDistance, _cavitationRadius, playerVerticalOffset, playerCavitationHeight);
+                    float eruptionT = EvaluateCylinderAttenuationSq(playerDistanceSq, eruptionRadiusSq, playerVerticalOffset, eruptionHeight);
+                    float cavitationT = EvaluateCylinderAttenuationSq(playerDistanceSq, cavitationRadiusSq, playerVerticalOffset, cavitationHeight);
 
                     if (!playerBodyAffectedByOverlap && eruptionT > 0f && _playerRigidbody != null)
                         PhysicsForceRouter.QueueForce(
@@ -196,7 +196,7 @@ namespace Hecton8.Caves
 
                     if (cavitationT > 0f)
                     {
-                        _playerMovement.ApplyEnvironmentalDrag(Mathf.Lerp(1f, _cavitationDragMultiplier, cavitationT));
+                        _playerMovement.ApplyEnvironmentalDrag(math.lerp(1f, _cavitationDragMultiplier, cavitationT));
                         if (!playerBodyAffectedByOverlap && _playerRigidbody != null)
                             PhysicsForceRouter.QueueForce(
                                 _playerRigidbody,
@@ -207,12 +207,12 @@ namespace Hecton8.Caves
             }
         }
 
-        private static float EvaluateCylinderAttenuation(float radialDistance, float radius, float verticalOffset, float height)
+        private static float EvaluateCylinderAttenuationSq(float radialDistanceSq, float radiusSq, float verticalOffset, float height)
         {
-            float safeRadius = Mathf.Max(0.01f, radius);
-            float safeHeight = Mathf.Max(0.01f, height);
-            float radialFactor = 1f - Mathf.Clamp01(radialDistance / safeRadius);
-            float verticalFactor = 1f - Mathf.Clamp01(verticalOffset / safeHeight);
+            float safeRadiusSq = math.max(0.0001f, radiusSq);
+            float safeHeight = math.max(0.01f, height);
+            float radialFactor = 1f - math.saturate(radialDistanceSq / safeRadiusSq);
+            float verticalFactor = 1f - math.saturate(verticalOffset / safeHeight);
             return radialFactor * verticalFactor;
         }
 

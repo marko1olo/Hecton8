@@ -67,6 +67,12 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private RuntimeState _state;
+            private Vector4 _appliedLootSphereAup;
+            private float _appliedIntensity = -1f;
+            private float _appliedLootActive = -1f;
+            private float _appliedDitherStrength = -1f;
+            private float _appliedScanlineStrength = -1f;
+            private bool _materialDirty = true;
 
             public DiagnosticPass()
             {
@@ -76,6 +82,9 @@ namespace Hecton8.Visor
 
             public void Setup(FeatureSettings settings, Material material, RuntimeState state)
             {
+                if (!ReferenceEquals(_material, material))
+                    _materialDirty = true;
+
                 _settings = settings;
                 _material = material;
                 _state = state;
@@ -112,7 +121,7 @@ namespace Hecton8.Visor
                 destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                UpdateMaterial(_material, _settings, _state);
+                UpdateMaterialIfNeeded(_material, _settings, _state);
 
                 using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton BIOS Diagnostic", out PassData passData, _profilingSampler))
                 {
@@ -143,13 +152,53 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private static void UpdateMaterial(Material material, FeatureSettings settings, RuntimeState state)
+            private void UpdateMaterialIfNeeded(Material material, FeatureSettings settings, RuntimeState state)
             {
-                material.SetFloat(ShaderConstants.IntensityId, math.saturate(state.Intensity));
-                material.SetFloat(ShaderConstants.LootActiveId, state.HasLoot ? 1f : 0f);
-                material.SetVector(ShaderConstants.LootSphereId, state.LootSphereAup);
-                material.SetFloat(ShaderConstants.DitherStrengthId, math.saturate(settings.ditherStrength));
-                material.SetFloat(ShaderConstants.ScanlineStrengthId, math.saturate(settings.scanlineStrength));
+                float intensity = math.saturate(state.Intensity);
+                float lootActive = state.HasLoot ? 1f : 0f;
+                float ditherStrength = math.saturate(settings.ditherStrength);
+                float scanlineStrength = math.saturate(settings.scanlineStrength);
+
+                if (_materialDirty || math.abs(_appliedIntensity - intensity) > 0.0005f)
+                {
+                    material.SetFloat(ShaderConstants.IntensityId, intensity);
+                    _appliedIntensity = intensity;
+                }
+
+                if (_materialDirty || math.abs(_appliedLootActive - lootActive) > 0.0005f)
+                {
+                    material.SetFloat(ShaderConstants.LootActiveId, lootActive);
+                    _appliedLootActive = lootActive;
+                }
+
+                if (_materialDirty || Vector4DistanceSq(_appliedLootSphereAup, state.LootSphereAup) > 0.000001f)
+                {
+                    material.SetVector(ShaderConstants.LootSphereId, state.LootSphereAup);
+                    _appliedLootSphereAup = state.LootSphereAup;
+                }
+
+                if (_materialDirty || math.abs(_appliedDitherStrength - ditherStrength) > 0.0005f)
+                {
+                    material.SetFloat(ShaderConstants.DitherStrengthId, ditherStrength);
+                    _appliedDitherStrength = ditherStrength;
+                }
+
+                if (_materialDirty || math.abs(_appliedScanlineStrength - scanlineStrength) > 0.0005f)
+                {
+                    material.SetFloat(ShaderConstants.ScanlineStrengthId, scanlineStrength);
+                    _appliedScanlineStrength = scanlineStrength;
+                }
+
+                _materialDirty = false;
+            }
+
+            private static float Vector4DistanceSq(Vector4 a, Vector4 b)
+            {
+                float x = a.x - b.x;
+                float y = a.y - b.y;
+                float z = a.z - b.z;
+                float w = a.w - b.w;
+                return x * x + y * y + z * z + w * w;
             }
         }
 
@@ -167,9 +216,11 @@ namespace Hecton8.Visor
         private DiagnosticPass _pass;
         private Material _material;
         private Vector4 _cachedLootSphereAup;
+        private int _lastLootRefreshFrame = -1;
         private int _lootRefreshCounter;
         private bool _lootCacheInitialized;
         private bool _cachedHasLoot;
+        private IPlayerRuntimeContext _cachedPlayerContext;
         private HectonPlayerMovement _cachedPlayerMovement;
 
         public override void Create()
@@ -189,6 +240,10 @@ namespace Hecton8.Visor
             if (settings == null || _pass == null || _material == null)
                 return;
 
+            CameraType cameraType = renderingData.cameraData.cameraType;
+            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
+                return;
+
             float intensity = settings.forceEnabled
                 ? math.saturate(settings.forcedIntensity)
                 : HectonBiosDiagnosticState.Intensity;
@@ -199,8 +254,17 @@ namespace Hecton8.Visor
             if (camera == null)
                 return;
 
-            if (!_lootCacheInitialized || (++_lootRefreshCounter & LootRefreshCallMask) == 0)
+            int frame = Time.frameCount;
+            bool refreshLootCache = !_lootCacheInitialized;
+            if (!refreshLootCache && _lastLootRefreshFrame != frame)
             {
+                _lastLootRefreshFrame = frame;
+                refreshLootCache = (++_lootRefreshCounter & LootRefreshCallMask) == 0;
+            }
+
+            if (refreshLootCache)
+            {
+                _lastLootRefreshFrame = frame;
                 HectonPlayerMovement playerMovement = ResolvePlayerMovement();
                 if (playerMovement != null)
                 {
@@ -226,10 +290,13 @@ namespace Hecton8.Visor
 
         private HectonPlayerMovement ResolvePlayerMovement()
         {
-            if (_cachedPlayerMovement != null)
-                return _cachedPlayerMovement;
-
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (!ReferenceEquals(_cachedPlayerContext, playerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                _cachedPlayerMovement = null;
+            }
+
             _cachedPlayerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             return _cachedPlayerMovement;
         }

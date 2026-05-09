@@ -32,7 +32,9 @@
 //   • Никаких new/LINQ в hot path.
 // ============================================================================
 
+using System;
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using System.Runtime.InteropServices;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -66,6 +68,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Unmanaged ending event payload.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct EndingEventPayload
     {
         public byte EventType;
@@ -89,13 +92,28 @@ namespace Hecton8.Gameplay
     {
         private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 8;
+        private const uint EventOverflowWarningHash = 0x454E4F46u;
+        private const uint ListenerRejectedWarningHash = 0x454E524Au;
+        private const uint ListenerExceptionWarningHash = 0x454E4558u;
+        private const uint EventContextHash = 0x454E4556u;
+        private const uint ListenerContextHash = 0x454E4C53u;
 
         // COLD ALLOC: RegistryBucket<IEndingEventListener>[8] - ending listeners drained by SystemDispatcher LateUpdate - owner: EndingEvents
         private static readonly RegistryBucket<IEndingEventListener> _listeners = new RegistryBucket<IEndingEventListener>(ListenerCapacity);
+        private static readonly IEndingEventListener[] _deferredRegisterListeners = new IEndingEventListener[ListenerCapacity];
+        private static readonly IEndingEventListener[] _deferredUnregisterListeners = new IEndingEventListener[ListenerCapacity];
         private static NativeQueue<EndingEventPayload> _pendingEvents;
         private static NativeQueue<EndingEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastEventOverflowTelemetryFrame = -1;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         /// <summary>
@@ -121,8 +139,18 @@ namespace Hecton8.Gameplay
             }
 
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastEventOverflowTelemetryFrame = -1;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -136,8 +164,13 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -149,8 +182,17 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            if (!_listeners.TryUnregister(listener))
+                return;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
         }
 
         public static void RaiseConditionMet()
@@ -201,13 +243,16 @@ namespace Hecton8.Gameplay
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IEndingEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnEndingEvent(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -225,7 +270,10 @@ namespace Hecton8.Gameplay
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportEventOverflow();
                 return;
+            }
 
             EndingEventPayload payload = new EndingEventPayload
             {
@@ -249,25 +297,249 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<EndingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] - deferred ending lane flushed by SystemDispatcher LateUpdate - owner: EndingEvents
+                _pendingEvents = new NativeQueue<EndingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — deferred ending lane flushed by SystemDispatcher LateUpdate — owner: EndingEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
                     nameof(EndingEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<EndingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] - next-frame ending lane prevents same-frame reentrant dispatch - owner: EndingEvents
+                _nextFrameEvents = new NativeQueue<EndingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] — next-frame ending lane prevents same-frame reentrant dispatch — owner: EndingEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
                     nameof(EndingEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static void DispatchToListener(IEndingEventListener listener, in EndingEventPayload payload)
+        {
+            try
+            {
+                listener.OnEndingEvent(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IEndingEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IEndingEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IEndingEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IEndingEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IEndingEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IEndingEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IEndingEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IEndingEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
+        }
+
+        private static void RegisterImmediate(IEndingEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportEventOverflow()
+        {
+            _droppedEventCount++;
+            int frame = Time.frameCount;
+            if (_lastEventOverflowTelemetryFrame == frame)
+                return;
+
+            _lastEventOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                EventOverflowWarningHash,
+                EventContextHash,
+                Mathf.Max(1, _droppedEventCount));
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerRejectedWarningHash,
+                ListenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerExceptionWarningHash,
+                ListenerContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
+        }
+
+        private static void DropQueuedEvents()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                while (_pendingEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                while (_nextFrameEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
         }
 
         private static void DrainWithoutDispatch()
@@ -350,14 +622,22 @@ namespace Hecton8.Gameplay
         [Header("── Quest IDs ───────────────────────────────")]
         [SerializeField] private string endingQuestId = "quest_atlas_core_reached";
 
+        private const string AtlasShutdownMessageId = "atlas6_shutdown";
+        private const string AtlasAmplifiedPublicMessageId = "atlas6_amplified_public";
+        private const string AtlasCoreReachedDiscoveryId = "atlas6_core_reached";
+        private const string EndingShutdownDiscoveryId = "ending_shutdown";
+        private const string EndingLeaveDiscoveryId = "ending_leave";
+        private const string EndingAmplifyDiscoveryId = "ending_amplify";
+        private static readonly uint _atlasShutdownMessageHash = AtlasSignalEvents.ComputeMessageHash(AtlasShutdownMessageId);
+        private static readonly uint _atlasAmplifiedPublicMessageHash = AtlasSignalEvents.ComputeMessageHash(AtlasAmplifiedPublicMessageId);
+        private static readonly uint _atlasCoreReachedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(AtlasCoreReachedDiscoveryId);
+        private static readonly uint _endingShutdownDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(EndingShutdownDiscoveryId);
+        private static readonly uint _endingLeaveDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(EndingLeaveDiscoveryId);
+        private static readonly uint _endingAmplifyDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(EndingAmplifyDiscoveryId);
+
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
-
-        public static EndingSystem Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -369,6 +649,7 @@ namespace Hecton8.Gameplay
         private bool _registered;
         private bool _serviceRegistered;
         private HectonSurvivalSystem _survivalSystem;
+        private uint _endingQuestHash;
 
         // ══════════════════════════════════════════════════════════
         //  ISaveable
@@ -390,16 +671,13 @@ namespace Hecton8.Gameplay
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
-        private void Awake()
-        {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
-        }
-
         private void OnEnable()
         {
+            CacheQuestHash();
+            if (!TryRegisterService())
+                return;
+
             TryRegister();
-            TryRegisterService();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
@@ -424,9 +702,6 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             TryUnregisterService();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -450,10 +725,10 @@ namespace Hecton8.Gameplay
 
             // Активируем квест
             QuestManager qm = GlobalRegistry.Quest;
-            if (qm != null && !string.IsNullOrEmpty(endingQuestId))
-                qm.ActivateQuest(endingQuestId);
+            if (qm != null && _endingQuestHash != 0u)
+                qm.ActivateQuest(_endingQuestHash);
 
-            NarrativeEvents.RaiseDiscoveryMade("atlas6_core_reached");
+            NarrativeEvents.RaiseDiscoveryMade(_atlasCoreReachedDiscoveryHash);
 
             NotificationEvents.PushWarning(ResolveLocalized(
                 LocalizationKeys.ENDING_CORE_REACHED,
@@ -482,13 +757,21 @@ namespace Hecton8.Gameplay
             _registered = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying || Instance != this)
-                return;
+            if (_serviceRegistered || !Application.isPlaying)
+                return true;
+
+            EndingSystem registeredRuntime = Hecton8.Core.GlobalRegistry.Ending;
+            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
 
             Hecton8.Core.GlobalRegistry.RegisterEndingRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.Ending, this);
+            return _serviceRegistered;
         }
 
         private void TryUnregisterService()
@@ -556,8 +839,8 @@ namespace Hecton8.Gameplay
 
             // Завершаем квест
             QuestManager qm = GlobalRegistry.Quest;
-            if (qm != null && !string.IsNullOrEmpty(endingQuestId))
-                qm.CompleteQuest(endingQuestId);
+            if (qm != null && _endingQuestHash != 0u)
+                qm.CompleteQuest(_endingQuestHash);
 
             _endingComplete = true;
             EndingEvents.RaiseSequenceComplete(choice);
@@ -570,13 +853,13 @@ namespace Hecton8.Gameplay
             // Атлас-6 выключен. Сигнал прекращается.
             AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal != null)
-                signal.DecodeSignal("atlas6_shutdown");
+                signal.DecodeSignal(_atlasShutdownMessageHash);
 
             Atlas6DirectiveSystem directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
             if (directive != null)
                 directive.RegisterBarterTransaction(); // Корпорация получила что хотела
 
-            NarrativeEvents.RaiseDiscoveryMade("ending_shutdown");
+            NarrativeEvents.RaiseDiscoveryMade(_endingShutdownDiscoveryHash);
 
             NotificationEvents.PushWarning(ResolveLocalized(
                 LocalizationKeys.ENDING_SHUTDOWN_COMPLETE,
@@ -586,7 +869,7 @@ namespace Hecton8.Gameplay
         private void ExecuteLeave()
         {
             // Атлас-6 продолжает работу. Сигнал активен.
-            NarrativeEvents.RaiseDiscoveryMade("ending_leave");
+            NarrativeEvents.RaiseDiscoveryMade(_endingLeaveDiscoveryHash);
 
             NotificationEvents.PushInfo(ResolveLocalized(
                 LocalizationKeys.ENDING_LEAVE_COMPLETE,
@@ -598,9 +881,9 @@ namespace Hecton8.Gameplay
             // Сигнал усилен — публичный. Атлас-6 выключается сам.
             AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal != null)
-                signal.DecodeSignal("atlas6_amplified_public");
+                signal.DecodeSignal(_atlasAmplifiedPublicMessageHash);
 
-            NarrativeEvents.RaiseDiscoveryMade("ending_amplify");
+            NarrativeEvents.RaiseDiscoveryMade(_endingAmplifyDiscoveryHash);
 
             // Публикуем в шейдер — максимальная интенсивность сигнала
             Shader.SetGlobalFloat(
@@ -609,6 +892,11 @@ namespace Hecton8.Gameplay
             NotificationEvents.PushWarning(ResolveLocalized(
                 LocalizationKeys.ENDING_AMPLIFY_COMPLETE,
                 "SIGNAL AMPLIFIED. THE WHOLE SECTOR CAN HEAR IT. ATLAS-6 IS ENDING THE PROGRAM. THE TRUTH IS OUT. CONSEQUENCES UNPREDICTABLE."));
+        }
+
+        private void CacheQuestHash()
+        {
+            _endingQuestHash = QuestFlagHashKernel.ComputeStableHash(endingQuestId);
         }
 
         private bool ResolveSurvivalSystem()
@@ -628,28 +916,34 @@ namespace Hecton8.Gameplay
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogInvalidEndingChoice(bool conditionMet, bool endingComplete)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning($"[Ending] Cannot choose ending: conditionMet={conditionMet}, complete={endingComplete}");
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogEndingChoiceExecuted(EndingChoice choice)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Ending] Choice executed: {choice}");
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogEndingConditionMet()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[Ending] Condition met — player at Atlas-6 core.");
+#endif
         }
 
         public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
         {
             if ((AtlasSignalEventType)payload.EventType == AtlasSignalEventType.Decoded)
-                HandleSignalDecoded(string.Empty);
+                HandleSignalDecoded();
         }
 
-        private void HandleSignalDecoded(string messageId)
+        private void HandleSignalDecoded()
         {
             // Полная расшифровка — условие может быть выполнено
             // SlowTick проверит глубину на следующем тике

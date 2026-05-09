@@ -30,6 +30,8 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -99,6 +101,15 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float rain = saturate(_RainIntensity);
                 float surfaceFade = saturate(1.0 - abs(input.positionWS.y - _CurrentWaterLevelY) * 4.0);
+                float impulseAge = saturate(_Time.y - _HectonSurfaceSplashImpulse.z);
+                float impulseLife = saturate(1.0 - impulseAge * 1.65) * saturate(_HectonSurfaceSplashImpulse.w);
+                [branch]
+                if ((rain <= 0.001 && impulseLife <= 0.001) || surfaceFade <= 0.001)
+                {
+                    clip(-1.0);
+                    return half4(0.0h, 0.0h, 0.0h, 0.0h);
+                }
+
                 float2 wind = _GlobalWind.xz;
                 float windLenSq = max(dot(wind, wind), 0.0001);
                 float2 windDir = wind * rsqrt(windLenSq);
@@ -108,8 +119,6 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
                 uv.y += _Time.y * _RippleSpeed * 0.36;
 
                 float cellRipple = CheapRainCellRipple01(uv, _Time.y * _RippleSpeed);
-                float impulseAge = saturate(_Time.y - _HectonSurfaceSplashImpulse.z);
-                float impulseLife = saturate(1.0 - impulseAge * 1.65) * saturate(_HectonSurfaceSplashImpulse.w);
                 float2 impulseDelta = input.positionWS.xz - _HectonSurfaceSplashImpulse.xy;
                 float impulseDistSq = dot(impulseDelta, impulseDelta);
                 float impulseRadius = lerp(0.45, 3.2, impulseAge);
@@ -121,9 +130,12 @@ Shader "Hecton/Weather/Ocean Rain Ripple Decal"
                 float telemetryGlitch = step(0.992, frac(dot(input.positionWS.xz, float2(0.071, 0.113)) + _Time.y * 23.0)) * impulseLife;
                 float ripple = saturate(cellRipple * rain * surfaceFade + impulseRipple + telemetryGlitch * 0.16 * surfaceFade);
                 half alpha = (half)(ripple * _RippleTint.a * _RippleStrength);
+                clip(alpha - 0.0005h);
                 return half4(_RippleTint.rgb * (half)(ripple * _RippleStrength), alpha);
             }
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

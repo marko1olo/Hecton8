@@ -17,6 +17,7 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -29,6 +30,8 @@ namespace Hecton8.UI
     [RequireComponent(typeof(CanvasGroup))]
     public sealed class ActionProgressHUD : MonoBehaviour, ITickable, IUpdatable
     {
+        private const float SubscriptionRetryIntervalSeconds = 0.25f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -76,10 +79,11 @@ namespace Hecton8.UI
         private FadeState _fadeState = FadeState.Hidden;
         private float _fadeTimer;
         private float _currentAlpha;
-        private float _targetAlpha;
         private bool _registered;
         private bool _eventSubscribed;
+        private float _subscriptionRetryTimer;
         private int _cachedActionTextVersion = -1;
+        private PlayerActionController _subscribedController;
 
         private static readonly char[] s_EatingTextChars = { 'E', 'a', 't', 'i', 'n', 'g', '.', '.', '.' };
         private static readonly char[] s_HealingTextChars = { 'A', 'p', 'p', 'l', 'y', 'i', 'n', 'g', '.', '.', '.' };
@@ -102,48 +106,74 @@ namespace Hecton8.UI
                 progressImage.type = Image.Type.Filled;
                 progressImage.fillMethod = Image.FillMethod.Radial360;
                 progressImage.fillAmount = 0f;
+                progressImage.raycastTarget = false;
             }
+
+            if (actionText != null)
+                actionText.raycastTarget = false;
         }
 
         private void OnEnable()
         {
-            SubscribeToEvents();
-            TryRegister();
+            SubscribeToEvents(force: true);
+            RefreshTickRegistration();
+        }
+
+        private void Start()
+        {
+            SubscribeToEvents(force: true);
+            RefreshTickRegistration();
         }
 
         private void OnDisable()
         {
             UnsubscribeFromEvents();
             TryUnregister();
+            ResetTransientState();
         }
 
         // ══════════════════════════════════════════════════════════
         //  EVENT SUBSCRIPTION
         // ══════════════════════════════════════════════════════════
 
-        private void SubscribeToEvents()
+        private void SubscribeToEvents(bool force)
         {
             if (_eventSubscribed) return;
 
+            if (!force && Application.isPlaying && _subscriptionRetryTimer > 0f)
+            {
+                return;
+            }
+
             PlayerActionController controller = GlobalRegistry.PlayerActions;
-            if (controller == null) return;
+            if (controller == null)
+            {
+                if (!force && Application.isPlaying)
+                    _subscriptionRetryTimer = SubscriptionRetryIntervalSeconds;
+                return;
+            }
 
             controller.OnActionProgress += OnActionProgress;
             controller.OnActionCompleted += OnActionCompleted;
             controller.OnActionCancelled += OnActionCancelled;
+            _subscribedController = controller;
             _eventSubscribed = true;
+            _subscriptionRetryTimer = 0f;
         }
 
         private void UnsubscribeFromEvents()
         {
             if (!_eventSubscribed) return;
 
-            PlayerActionController controller = GlobalRegistry.PlayerActions;
-            if (controller == null) return;
+            PlayerActionController controller = _subscribedController;
+            if (controller != null)
+            {
+                controller.OnActionProgress -= OnActionProgress;
+                controller.OnActionCompleted -= OnActionCompleted;
+                controller.OnActionCancelled -= OnActionCancelled;
+            }
 
-            controller.OnActionProgress -= OnActionProgress;
-            controller.OnActionCompleted -= OnActionCompleted;
-            controller.OnActionCancelled -= OnActionCancelled;
+            _subscribedController = null;
             _eventSubscribed = false;
         }
 
@@ -153,37 +183,48 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
+            float safeDeltaTime = math.max(0f, deltaTime);
+            _subscriptionRetryTimer = math.max(0f, _subscriptionRetryTimer - safeDeltaTime);
+            bool wasSubscribed = _eventSubscribed;
+            if (!_eventSubscribed)
+                SubscribeToEvents(force: false);
+
+            bool registrationStateDirty = wasSubscribed != _eventSubscribed;
+
             // Handle fade animations
             switch (_fadeState)
             {
                 case FadeState.FadingIn:
-                    _fadeTimer += deltaTime;
-                    if (_fadeTimer >= fadeInDuration)
+                    _fadeTimer += safeDeltaTime;
+                    if (fadeInDuration <= 0.0001f || _fadeTimer >= fadeInDuration)
                     {
-                        _currentAlpha = 1f;
+                        SetCanvasAlphaIfChanged(1f);
                         _fadeState = FadeState.Visible;
+                        registrationStateDirty = true;
                     }
                     else
                     {
-                        _currentAlpha = _fadeTimer / fadeInDuration;
+                        SetCanvasAlphaIfChanged(math.saturate(_fadeTimer / fadeInDuration));
                     }
-                    _canvasGroup.alpha = _currentAlpha;
                     break;
 
                 case FadeState.FadingOut:
-                    _fadeTimer += deltaTime;
-                    if (_fadeTimer >= fadeOutDuration)
+                    _fadeTimer += safeDeltaTime;
+                    if (fadeOutDuration <= 0.0001f || _fadeTimer >= fadeOutDuration)
                     {
-                        _currentAlpha = 0f;
+                        SetCanvasAlphaIfChanged(0f);
                         _fadeState = FadeState.Hidden;
+                        registrationStateDirty = true;
                     }
                     else
                     {
-                        _currentAlpha = 1f - (_fadeTimer / fadeOutDuration);
+                        SetCanvasAlphaIfChanged(1f - math.saturate(_fadeTimer / fadeOutDuration));
                     }
-                    _canvasGroup.alpha = _currentAlpha;
                     break;
             }
+
+            if (registrationStateDirty)
+                RefreshTickRegistration();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -193,17 +234,18 @@ namespace Hecton8.UI
         private void OnActionProgress(float progress)
         {
             // Start fade in on first progress update
-            if (_fadeState == FadeState.Hidden)
+            if (_fadeState == FadeState.Hidden || _fadeState == FadeState.FadingOut)
             {
                 _fadeState = FadeState.FadingIn;
-                _fadeTimer = 0f;
+                _fadeTimer = math.saturate(_currentAlpha) * fadeInDuration;
                 UpdateActionText();
+                RefreshTickRegistration();
             }
 
             // Update progress bar
             if (progressImage != null)
             {
-                progressImage.fillAmount = progress;
+                progressImage.fillAmount = math.saturate(progress);
             }
         }
 
@@ -233,7 +275,37 @@ namespace Hecton8.UI
             if (_fadeState == FadeState.Hidden) return;
 
             _fadeState = FadeState.FadingOut;
+            _fadeTimer = (1f - math.saturate(_currentAlpha)) * fadeOutDuration;
+            RefreshTickRegistration();
+        }
+
+        private void ResetTransientState()
+        {
+            _fadeState = FadeState.Hidden;
             _fadeTimer = 0f;
+            _currentAlpha = 0f;
+            _cachedActionTextVersion = -1;
+            _subscriptionRetryTimer = 0f;
+
+            if (_canvasGroup != null)
+            {
+                _canvasGroup.alpha = 0f;
+                _canvasGroup.blocksRaycasts = false;
+            }
+
+            if (progressImage != null)
+                progressImage.fillAmount = 0f;
+        }
+
+        private void SetCanvasAlphaIfChanged(float alpha)
+        {
+            float targetAlpha = math.saturate(alpha);
+            if (math.abs(_currentAlpha - targetAlpha) <= 0.0001f)
+                return;
+
+            _currentAlpha = targetAlpha;
+            if (_canvasGroup != null)
+                _canvasGroup.alpha = targetAlpha;
         }
 
         private void UpdateActionText()
@@ -293,8 +365,25 @@ namespace Hecton8.UI
 
             if (GlobalRegistry.Dispatcher == null) return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+        }
+
+        private void RefreshTickRegistration()
+        {
+            if (RequiresTickRegistration())
+            {
+                TryRegister();
+                return;
+            }
+
+            TryUnregister();
+        }
+
+        private bool RequiresTickRegistration()
+        {
+            return !_eventSubscribed ||
+                   _fadeState == FadeState.FadingIn ||
+                   _fadeState == FadeState.FadingOut;
         }
 
         private void TryUnregister()

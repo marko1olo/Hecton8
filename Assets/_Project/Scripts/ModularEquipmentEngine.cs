@@ -3,10 +3,7 @@ namespace Hecton8.Tools
     using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Power;
-    using Hecton8.World;
-    using Unity.Burst;
     using Unity.Collections;
-    using Unity.Jobs;
     using Unity.Mathematics;
     using UnityEngine;
     using UnityEngine.SceneManagement;
@@ -17,7 +14,7 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9918)]
-    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, ILateFrameTickable, IPowerGridTelemetryListener
+    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, ILateFrameTickable, IPowerGridTelemetryListener, IServiceHeartbeat, IServiceShutdown
     {
         private const int MaxTrackedTools = 16;
         private const float OverchargePowerMultiplier = 3f;
@@ -25,12 +22,7 @@ namespace Hecton8.Tools
         private const float OverchargeHeatScale = 1.75f;
         private const float OverchargeExplosionHeatThreshold = 1.5f;
         private const float OverchargeExplosionPlayerDamage = 45f;
-        private const double BatteryDrainJobWarningMilliseconds = 0.2d;
-
-        private static readonly uint _batteryDrainJobWarningHash =
-            unchecked((uint)Hecton.Localization.LocHash.Compute("ModularEquipment.BatteryDrainJob"));
-        private static readonly uint _batteryDrainJobContextHash =
-            unchecked((uint)Hecton.Localization.LocHash.Compute("ModularEquipment.LateFrameDrain"));
+        private const float OverchargeHeatGrowthInputMax = 2.25f;
 
         // COLD ALLOC: PlayerTool[16] — managed owner mirror for native tool slots — owner: ModularEquipmentEngine
         private readonly PlayerTool[] _toolOwners = new PlayerTool[MaxTrackedTools];
@@ -46,49 +38,27 @@ namespace Hecton8.Tools
         private NativeArray<float> _batteryDrainRates;
         private NativeArray<float> _batteryDrainDeltaSeconds;
         private NativeHashMap<uint, int> _toolIndexById;
-        private JobHandle _batteryDrainHandle;
         private bool _isInitialized;
         private bool _registeredService;
         private bool _registeredUpdatable;
         private bool _registeredLateFrame;
         private bool _telemetrySubscribed;
-        private bool _batteryDrainJobScheduled;
         private uint _pendingBatteryDrainMask;
         private float _latestSupplyRatio = 1f;
         private bool _wirelessBrownoutActive;
         private float _brownoutPulseTime;
 
         public bool IsInitialized => _isInitialized;
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ToolBatteryDrainJob : IJob
-        {
-            public NativeArray<ToolState> ToolStates;
-            public NativeArray<float> DrainRates;
-            public NativeArray<float> DeltaSeconds;
-            public int SlotCount;
-
-            public void Execute()
-            {
-                if (!ToolStates.IsCreated || !DrainRates.IsCreated || !DeltaSeconds.IsCreated)
-                    return;
-
-                int count = math.min(SlotCount, math.min(ToolStates.Length, math.min(DrainRates.Length, DeltaSeconds.Length)));
-                for (int i = 0; i < count; i++)
-                {
-                    float drainAmount = math.max(0f, DrainRates[i]) * math.max(0f, DeltaSeconds[i]);
-                    if (drainAmount > 0f)
-                    {
-                        ToolState state = ToolStates[i];
-                        state.CurrentBattery = math.max(0f, state.CurrentBattery - drainAmount);
-                        ToolStates[i] = state;
-                    }
-
-                    DrainRates[i] = 0f;
-                    DeltaSeconds[i] = 0f;
-                }
-            }
-        }
+        public ServiceHeartbeatState HeartbeatState => IsServiceReady ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+        public bool IsServiceReady =>
+            _isInitialized &&
+            _registeredService &&
+            ReferenceEquals(GlobalRegistry.ModularEquipment, this) &&
+            _toolStates.IsCreated &&
+            _toolStats.IsCreated &&
+            _toolIndexById.IsCreated &&
+            _batteryDrainRates.IsCreated &&
+            _batteryDrainDeltaSeconds.IsCreated;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -204,7 +174,7 @@ namespace Hecton8.Tools
                 if (IsOverchargeRequested(i))
                 {
                     float runtimeHeatRate = math.max(0.05f, _toolStats[i].HeatGenerationRate);
-                    float heatGrowth = math.exp(math.max(0f, state.InternalHeat) * OverchargeHeatExponent);
+                    float heatGrowth = EstimateOverchargeHeatGrowth(state.InternalHeat);
                     state.InternalHeat = math.max(0f, state.InternalHeat + (runtimeHeatRate * OverchargeHeatScale * heatGrowth * math.max(0f, deltaTime)));
                     if (state.InternalHeat > OverchargeExplosionHeatThreshold)
                     {
@@ -220,24 +190,16 @@ namespace Hecton8.Tools
 
         public void LateFrameTick()
         {
-            if (!_isInitialized || !_toolStates.IsCreated)
+            if (!_isInitialized ||
+                !_toolStates.IsCreated ||
+                !_batteryDrainRates.IsCreated ||
+                !_batteryDrainDeltaSeconds.IsCreated)
                 return;
 
-            CompleteBatteryDrainJobIfNeeded(false);
-            if (_pendingBatteryDrainMask == 0u || _batteryDrainJobScheduled)
+            if (_pendingBatteryDrainMask == 0u)
                 return;
 
-            _batteryDrainHandle = new ToolBatteryDrainJob
-            {
-                ToolStates = _toolStates,
-                DrainRates = _batteryDrainRates,
-                DeltaSeconds = _batteryDrainDeltaSeconds,
-                SlotCount = MaxTrackedTools
-            }.Schedule();
-            _batteryDrainJobScheduled = true;
-            _pendingBatteryDrainMask = 0u;
-
-            CompleteBatteryDrainJobIfNeeded(true);
+            ApplyPendingBatteryDrain();
         }
 
         public uint RegisterTool(PlayerTool tool)
@@ -512,12 +474,21 @@ namespace Hecton8.Tools
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             TryUnregisterTelemetry();
             TryUnregisterService();
             TryUnregisterUpdatable();
             TryUnregisterLateFrame();
-            CompleteBatteryDrainJobIfNeeded(true);
             DisposeNativeState();
         }
 
@@ -663,7 +634,7 @@ namespace Hecton8.Tools
             if (slotIndex < 0 || slotIndex >= MaxTrackedTools || !_slotUsed[slotIndex])
                 return false;
 
-            flickerScalar = math.saturate(0.5f + (0.5f * Mathf.Sin(Time.time * 8f)));
+            flickerScalar = math.saturate(0.5f + (0.5f * math.sin(Time.time * 8f)));
             return true;
         }
 
@@ -741,7 +712,7 @@ namespace Hecton8.Tools
             if (gameObject.scene != unloadedScene)
                 return;
 
-            DisposeNativeState();
+            ShutdownServiceState();
         }
 
         /// <summary>
@@ -796,8 +767,6 @@ namespace Hecton8.Tools
 
         private void DisposeNativeState()
         {
-            CompleteBatteryDrainJobIfNeeded(true);
-
             for (int i = 0; i < MaxTrackedTools; i++)
             {
                 _toolOwners[i] = null;
@@ -846,29 +815,37 @@ namespace Hecton8.Tools
             _pendingBatteryDrainMask = 0u;
         }
 
-        private void CompleteBatteryDrainJobIfNeeded(bool forceComplete)
+        private static float EstimateOverchargeHeatGrowth(float internalHeat)
         {
-            if (!_batteryDrainJobScheduled)
-                return;
+            float x = math.min(OverchargeHeatGrowthInputMax, math.max(0f, internalHeat) * OverchargeHeatExponent);
+            float x2 = x * x;
+            float numerator = 1f + (0.5f * x) + (0.083333336f * x2);
+            float denominator = math.max(0.125f, 1f - (0.5f * x) + (0.083333336f * x2));
+            return numerator * math.rcp(denominator);
+        }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-#endif
-            if (!DispatcherJobSwap.TryComplete(ref _batteryDrainHandle, forceComplete))
-                return;
+        private void ApplyPendingBatteryDrain()
+        {
+            uint pendingMask = _pendingBatteryDrainMask;
+            _pendingBatteryDrainMask = 0u;
 
-            _batteryDrainJobScheduled = false;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            double elapsedMilliseconds =
-                (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
-            if (elapsedMilliseconds > BatteryDrainJobWarningMilliseconds)
+            for (int i = 0; i < MaxTrackedTools; i++)
             {
-                GlobalTelemetryBus.PublishPerformanceWarning(
-                    _batteryDrainJobWarningHash,
-                    _batteryDrainJobContextHash,
-                    (float)elapsedMilliseconds);
+                uint slotBit = 1u << i;
+                if ((pendingMask & slotBit) == 0u)
+                    continue;
+
+                float drainAmount = math.max(0f, _batteryDrainRates[i]) * math.max(0f, _batteryDrainDeltaSeconds[i]);
+                if (drainAmount > 0f)
+                {
+                    ToolState state = _toolStates[i];
+                    state.CurrentBattery = math.max(0f, state.CurrentBattery - drainAmount);
+                    _toolStates[i] = state;
+                }
+
+                _batteryDrainRates[i] = 0f;
+                _batteryDrainDeltaSeconds[i] = 0f;
             }
-#endif
         }
     }
 }

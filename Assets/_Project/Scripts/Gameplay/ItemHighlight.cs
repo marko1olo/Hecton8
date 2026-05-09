@@ -23,6 +23,7 @@
 
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -72,12 +73,15 @@ namespace Hecton8.Gameplay
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private Transform _playerTransform;
+        private Transform _cachedTransform;
         private MaterialPropertyBlock _mpb;
         private bool _isHighlighted;
         private float _currentIntensity;
         private float _targetIntensity;
         private float _activationSqrDist;
         private float _fullIntensitySqrDist;
+        private float _inverseIntensitySqrRange;
+        private float _pulsePhase;
         private bool _tickRegistered;
 
         // â”€â”€ Shader property IDs (cached once) â”€â”€
@@ -102,12 +106,14 @@ namespace Hecton8.Gameplay
         {
             // COLD ALLOC: MaterialPropertyBlock[1] â€” per-object highlight props â€” owner: self
             _mpb = new MaterialPropertyBlock();
+            _cachedTransform = transform;
 
             if (targetRenderer == null)
                 targetRenderer = GetComponent<Renderer>();
 
             _activationSqrDist = activationDistance * activationDistance;
             _fullIntensitySqrDist = fullIntensityDistance * fullIntensityDistance;
+            _inverseIntensitySqrRange = 1f / math.max(Epsilon, _activationSqrDist - _fullIntensitySqrDist);
 
             // Initialize to no highlight
             _currentIntensity = 0f;
@@ -152,7 +158,7 @@ namespace Hecton8.Gameplay
             }
 
             // â”€â”€ Calculate distance to player â”€â”€
-            float sqrDist = (transform.position - _playerTransform.position).sqrMagnitude;
+            float sqrDist = (_cachedTransform.position - _playerTransform.position).sqrMagnitude;
 
             // â”€â”€ Determine target intensity â”€â”€
             if (sqrDist <= _fullIntensitySqrDist)
@@ -161,9 +167,7 @@ namespace Hecton8.Gameplay
             }
             else if (sqrDist <= _activationSqrDist)
             {
-                // Linear interpolation between full intensity and activation distance
-                float t = Mathf.InverseLerp(_activationSqrDist, _fullIntensitySqrDist, sqrDist);
-                _targetIntensity = t;
+                _targetIntensity = math.saturate((_activationSqrDist - sqrDist) * _inverseIntensitySqrRange);
             }
             else
             {
@@ -173,14 +177,15 @@ namespace Hecton8.Gameplay
             // â”€â”€ Apply pulse modulation â”€â”€
             if (_targetIntensity > 0f && pulseSpeed > 0f)
             {
-                float pulse = Mathf.Sin(Time.unscaledTime * pulseSpeed) * pulseAmplitude;
-                _targetIntensity = Mathf.Clamp01(_targetIntensity + pulse * _targetIntensity);
+                _pulsePhase = math.frac(_pulsePhase + math.max(0f, deltaTime) * pulseSpeed);
+                float pulse = EvaluateSignedTriangle(_pulsePhase) * pulseAmplitude;
+                _targetIntensity = math.saturate(_targetIntensity + pulse * _targetIntensity);
             }
 
             // â”€â”€ Smooth transition â”€â”€
             if (Mathf.Abs(_currentIntensity - _targetIntensity) > Epsilon)
             {
-                _currentIntensity = Mathf.Lerp(_currentIntensity, _targetIntensity, deltaTime * FadeSpeed);
+                _currentIntensity = math.lerp(_currentIntensity, _targetIntensity, math.saturate(deltaTime * FadeSpeed));
                 ApplyHighlightProperties();
             }
             else if (_currentIntensity != _targetIntensity)
@@ -228,8 +233,7 @@ namespace Hecton8.Gameplay
             if (_tickRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTick()
@@ -250,7 +254,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void SetHighlightIntensity(float intensity)
         {
-            _targetIntensity = Mathf.Clamp01(intensity);
+            _targetIntensity = math.saturate(intensity);
         }
 
         /// <summary>
@@ -270,6 +274,12 @@ namespace Hecton8.Gameplay
         /// Whether the item is currently being highlighted.
         /// </summary>
         public bool IsHighlighted => _currentIntensity > 0.1f;
+
+        private static float EvaluateSignedTriangle(float phase)
+        {
+            float wrapped = math.frac(phase);
+            return (1f - math.abs((wrapped * 2f) - 1f)) * 2f - 1f;
+        }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  EDITOR

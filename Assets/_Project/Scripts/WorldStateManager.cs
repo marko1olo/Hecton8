@@ -20,7 +20,6 @@ namespace Hecton8.World
             public long ChunkKey;
         }
 
-        private static WorldStateManager _instance;
         private static readonly Comparison<PickupPersistenceEntry> PickupPersistenceEntryCompare = ComparePickupPersistenceEntries;
 
         [Header("── Settings ───────────────────────────────")]
@@ -51,7 +50,6 @@ namespace Hecton8.World
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
         }
 
         /// <summary>
@@ -62,10 +60,10 @@ namespace Hecton8.World
             get
             {
 #if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
+                if (!Application.isPlaying)
                     return null;
 #endif
-                return _instance;
+                return GlobalRegistry.WorldState;
             }
         }
 
@@ -96,13 +94,14 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            WorldStateManager registered = GlobalRegistry.WorldState;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
+            TryRegisterService();
             GameBootstrapper.PersistRuntimeService(this);
 
             // COLD ALLOC: HashSet<string>[initialCapacity] — depleted node persistence set — owner: WorldStateManager
@@ -127,9 +126,6 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregisterService();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <summary>
@@ -245,9 +241,11 @@ namespace Hecton8.World
             {
                 if (nodeIndex >= WorldStateDTO.MaxNodes)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[WorldStateManager] Max depleted nodes ({WorldStateDTO.MaxNodes}) reached. " +
                         $"Truncating: {_depletedNodeIds.Count - nodeIndex} nodes not saved.");
+#endif
                     break;
                 }
 
@@ -289,8 +287,10 @@ namespace Hecton8.World
             ApplyToScene();
             UpdateDiagnostics();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log(
                 $"[WorldStateManager] Loaded {_depletedNodeIds.Count} depleted nodes and {_depletedPickupKeys.Count} depleted pickups.");
+#endif
         }
 
         /// <summary>
@@ -333,8 +333,10 @@ namespace Hecton8.World
 
             if (deactivatedNodes > 0)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log(
                     $"[WorldStateManager] Deactivated {deactivatedNodes} depleted nodes in scene.");
+#endif
             }
 
             ApplyPickupStateToScene();
@@ -352,6 +354,10 @@ namespace Hecton8.World
         private void TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            WorldStateManager registered = GlobalRegistry.WorldState;
+            if (registered != null && registered != this)
                 return;
 
             GlobalRegistry.RegisterWorldStateRuntime(this);
@@ -405,9 +411,11 @@ namespace Hecton8.World
             {
                 if (_packedPickupWords.Count >= WorldStateDTO.MaxPickupWords)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[WorldStateManager] Max depleted pickup words ({WorldStateDTO.MaxPickupWords}) reached. " +
                         $"Truncating: {_pickupPersistenceEntries.Count - i} pickups not saved.");
+#endif
                     break;
                 }
 
@@ -416,9 +424,11 @@ namespace Hecton8.World
                 {
                     if (_packedPickupChunkKeys.Count >= WorldStateDTO.MaxPickupChunks)
                     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         Debug.LogWarning(
                             $"[WorldStateManager] Max depleted pickup chunks ({WorldStateDTO.MaxPickupChunks}) reached. " +
                             "Truncating remaining pickup persistence.");
+#endif
                         break;
                     }
 
@@ -540,8 +550,10 @@ namespace Hecton8.World
 
             if (deactivatedPickups > 0)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log(
                     $"[WorldStateManager] Deactivated {deactivatedPickups} depleted pickups in scene.");
+#endif
             }
         }
 

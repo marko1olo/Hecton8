@@ -206,8 +206,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -289,7 +288,7 @@ namespace Hecton8.Gameplay
                 return 0.1f;
 
             float t = (depth - minDepth) * inverseDepthRange;
-            return Mathf.Lerp(1f, 0.1f, t);
+            return 1f - (0.9f * Mathf.Clamp01(t));
         }
 
         /// <summary>

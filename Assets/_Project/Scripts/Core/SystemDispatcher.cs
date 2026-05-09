@@ -52,7 +52,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9950)]
-    public sealed class SystemDispatcher : MonoBehaviour, IServiceHeartbeat
+    public sealed class SystemDispatcher : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
     {
         private const int LaneCount = 4;
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
@@ -73,9 +73,12 @@ namespace Hecton8.Core
         private const double LateFrameFlushPassSpikeMilliseconds = 0.5;
         private const float PauseDepthOfFieldBlendSeconds = 0.2f;
         private const float VisualStaticGlitchDurationSeconds = 1f;
+        private const float SafeGcCollectFrameBudgetSeconds = 0.014f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
         private const string AupNanInquisitorWarningMessage = "[SystemDispatcher] AUP NaN-Inquisitor detected invalid camera-relative results.";
+#endif
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
         private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Dispatcher.SlowTick");
@@ -203,6 +206,7 @@ namespace Hecton8.Core
         private static bool _visualStaticGlitchActive;
         private static float _visualStaticGlitchUntilTime;
         private static int _baseStressCascadeBreakerFrame = -1;
+        private static int _baseStressCascadeTableOverflowTelemetryFrame = -1;
         private static int _originShiftBootstrapLockCount;
 
         internal static float CurrentFrameDeltaTime { get; private set; }
@@ -225,12 +229,11 @@ namespace Hecton8.Core
         private static int _lastPostFixedGcDelta;
         private static int _lastPostFixedGcLaneIndex = -1;
         private static int _lastPostFixedGcItemIndex = -1;
-#endif
-        private static ushort _dominantLateFrameCircuitBreakerLaneCount;
         private static float _nextAupNanInquisitorLogTime;
         private static float _nextDispatcherPhaseWarningLogTime;
         private static float _nextFoveatedFrameWarningLogTime;
-        private static float _nextJobHandleWarningLogTime;
+#endif
+        private static ushort _dominantLateFrameCircuitBreakerLaneCount;
         private static float _pauseDepthOfFieldWeight;
         private static float _pauseDepthOfFieldBlendStartTime;
         private static float _pauseDepthOfFieldBlendStartWeight;
@@ -315,10 +318,11 @@ namespace Hecton8.Core
             System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
             ResetBaseStressCascadeCircuitBreakerState();
             System.Array.Clear(_arteryFlushMilliseconds, 0, _arteryFlushMilliseconds.Length);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _nextAupNanInquisitorLogTime = 0f;
             _nextDispatcherPhaseWarningLogTime = 0f;
             _nextFoveatedFrameWarningLogTime = 0f;
-            _nextJobHandleWarningLogTime = 0f;
+#endif
             _pauseDepthOfFieldWeight = 0f;
             _pauseDepthOfFieldBlendStartTime = 0f;
             _pauseDepthOfFieldBlendStartWeight = 0f;
@@ -366,11 +370,16 @@ namespace Hecton8.Core
             int slot = ResolveBaseStressCascadeSlot(safeIslandId);
             if (slot < 0)
             {
-                CrashTelemetryBuffer.ReportEventCascadeWarning();
-                GlobalTelemetryBus.PublishCatastrophicCascadePrevented(
-                    unchecked((uint)safeIslandId),
-                    eventHash != 0u ? eventHash : _BaseStressCascadeBreakerHash,
-                    1);
+                if (_baseStressCascadeTableOverflowTelemetryFrame != currentFrame)
+                {
+                    _baseStressCascadeTableOverflowTelemetryFrame = currentFrame;
+                    CrashTelemetryBuffer.ReportEventCascadeWarning();
+                    GlobalTelemetryBus.PublishCatastrophicCascadePrevented(
+                        unchecked((uint)safeIslandId),
+                        eventHash != 0u ? eventHash : _BaseStressCascadeBreakerHash,
+                        1);
+                }
+
                 return false;
             }
 
@@ -411,6 +420,25 @@ namespace Hecton8.Core
             int slot = FindBaseStressCascadeSlot(safeIslandId);
             return slot >= 0 ? _baseStressCascadeDroppedCounts[slot] : 0;
         }
+
+        internal static int DebugGetBaseStressCascadeConsumedCount(int islandId)
+        {
+            int safeIslandId = math.max(0, islandId);
+            int slot = FindBaseStressCascadeSlot(safeIslandId);
+            return slot >= 0 ? _baseStressCascadeIslandCounts[slot] : 0;
+        }
+
+        internal static int DebugGetBaseStressCascadeActiveSlotCount()
+        {
+            int activeSlotCount = 0;
+            for (int i = 0; i < BaseStressCascadeCircuitBreakerCapacity; i++)
+            {
+                if (_baseStressCascadeSlotFrames[i] == _baseStressCascadeBreakerFrame)
+                    activeSlotCount++;
+            }
+
+            return activeSlotCount;
+        }
 #endif
 
         private static void ResetBaseStressCascadeCircuitBreakerState()
@@ -421,6 +449,7 @@ namespace Hecton8.Core
         private static void ResetBaseStressCascadeCircuitBreakerStateForFrame(int frame)
         {
             _baseStressCascadeBreakerFrame = frame;
+            _baseStressCascadeTableOverflowTelemetryFrame = -1;
             for (int i = 0; i < BaseStressCascadeCircuitBreakerCapacity; i++)
             {
                 _baseStressCascadeIslandIds[i] = int.MinValue;
@@ -753,17 +782,32 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
-            if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Dispatcher, this))
+            if (_serviceRegistered)
             {
                 _foveatedSimulationManager.Dispose();
                 DisposeDispatcherRaycastBuffers();
                 ThreadSafeCommandQueue.Shutdown();
-                GlobalRegistry.UnregisterSystemDispatcher(this);
+                if (ReferenceEquals(GlobalRegistry.Dispatcher, this))
+                    GlobalRegistry.UnregisterSystemDispatcher(this);
             }
 
+            _slowTickAccumulator = 0f;
+            _fixedStepAccumulator = 0f;
+            CurrentFrameDeltaTime = 0f;
+            CurrentFrameUnscaledDeltaTime = 0f;
             _serviceRegistered = false;
         }
 
@@ -778,6 +822,7 @@ namespace Hecton8.Core
             ThreadSafeCommandQueue.Initialize();
             UIStateStore.EnsureInitialized();
             BaseAirlockEvents.Prewarm();
+            EnsureDispatcherRaycastBuffers();
             GlobalRegistry.RegisterSystemDispatcher(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Dispatcher, this);
         }
@@ -810,9 +855,13 @@ namespace Hecton8.Core
                         return;
                 }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
+#endif
                 _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
+#endif
                 PredatorCognitionDomain.BeginDispatcherFrame(Time.frameCount);
                 bool blockGameplayLanes = Application.isPlaying &&
                                           BootstrapState.HasActiveInstance &&
@@ -889,9 +938,9 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherLateFrame);
-#endif
             long completeDispatcherTimestamp = 0L;
             bool dispatcherPhaseTimingStarted = false;
+#endif
             if (IsOriginShiftBootstrapLocked)
                 return;
 
@@ -904,8 +953,10 @@ namespace Hecton8.Core
                 UpdatePauseFreezeFrameDitherState();
                 UpdateVisualStaticGlitchState();
                 TickPauseDepthOfField(Time.unscaledTime);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
                 dispatcherPhaseTimingStarted = true;
+#endif
                 CompleteFoveatedFrameJobs();
                 BeginLateFrameEventBudget();
                 SetActiveLateFrameEventLane(_LateFrameTickablesQueueHash);
@@ -966,8 +1017,10 @@ namespace Hecton8.Core
                 {
                     NativeArenaAllocator.Reset();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     if (dispatcherPhaseTimingStarted)
                         EndDispatcherPhaseTiming(completeDispatcherTimestamp, "FoveatedSimulationManager.CompleteFrameJobs");
+#endif
                 }
             }
         }
@@ -1230,7 +1283,8 @@ namespace Hecton8.Core
             if (objectPool != null)
                 objectPool.FlushInactivePoolsForMemoryPressure();
 
-            System.GC.Collect(0, System.GCCollectionMode.Optimized, false);
+            if (CurrentFrameDeltaTime > 0f && CurrentFrameDeltaTime < SafeGcCollectFrameBudgetSeconds)
+                System.GC.Collect(0, System.GCCollectionMode.Optimized, false);
         }
 
         internal static void MarkLateFrameEventDispatchDeferred()
@@ -1635,6 +1689,8 @@ namespace Hecton8.Core
 
             using (_slowTickProfilerMarker.Auto())
             {
+                HectonXRRuntimeState.SlowTickHeadAupCache();
+
                 for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
                 {
                     if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
@@ -1669,6 +1725,7 @@ namespace Hecton8.Core
                     nameof(SystemDispatcher),
                     nameof(_pendingDispatcherRaycastCommands),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingDispatcherRaycastCommands, MaxQueuedDispatcherRaycasts);
             }
 
             if (!_scheduledDispatcherRaycastCommands.IsCreated)
@@ -1689,6 +1746,20 @@ namespace Hecton8.Core
                     nameof(SystemDispatcher),
                     nameof(_scheduledDispatcherRaycastHits),
                     NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -1744,12 +1815,9 @@ namespace Hecton8.Core
 
             using (_dispatcherRaycastCompleteProfilerMarker.Auto())
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                CompleteJobHandleWithWarning(ref _scheduledDispatcherRaycastHandle, "SystemDispatcher.DispatcherRaycasts");
-#else
-                DispatcherJobSwap.TryComplete(ref _scheduledDispatcherRaycastHandle, forceComplete: true);
-#endif
-                _scheduledDispatcherRaycastHandle = default;
+                if (!DispatcherJobSwap.TryComplete(ref _scheduledDispatcherRaycastHandle, forceComplete: false))
+                    return;
+
                 _dispatcherRaycastsScheduled = false;
 
                 for (int i = 0; i < _scheduledDispatcherRaycastCount; i++)
@@ -1880,7 +1948,7 @@ namespace Hecton8.Core
             long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             using (_foveatedCompleteProfilerMarker.Auto())
             {
-                _foveatedSimulationManager.CompleteFrameJobs();
+                _foveatedSimulationManager.TryCompleteFrameJobs();
             }
 
             double elapsedMilliseconds =
@@ -1900,32 +1968,11 @@ namespace Hecton8.Core
 #else
             using (_foveatedCompleteProfilerMarker.Auto())
             {
-                _foveatedSimulationManager.CompleteFrameJobs();
+                _foveatedSimulationManager.TryCompleteFrameJobs();
             }
 #endif
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private static void CompleteJobHandleWithWarning(ref JobHandle handle, string systemName)
-        {
-            long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
-            double elapsedMilliseconds =
-                (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
-            if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
-            {
-                float now = Time.unscaledTime;
-                if (now >= _nextJobHandleWarningLogTime)
-                {
-                    _nextJobHandleWarningLogTime = now + DispatcherPhaseWarningLogIntervalSeconds;
-                    GlobalTelemetryBus.PublishJobBarrierStall(
-                        systemName,
-                        "LateFrameComplete",
-                        (float)elapsedMilliseconds);
-                }
-            }
-        }
-#endif
     }
 
     /// <summary>
@@ -1971,7 +2018,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9940)]
-    public sealed class RenderDispatcher : MonoBehaviour, IServiceHeartbeat
+    public sealed class RenderDispatcher : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
     {
         internal static RenderDispatcher ActiveRuntimeInstance { get; private set; }
 
@@ -2089,8 +2136,23 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+
+            OnDisable();
+            GlobalRenderContext.Clear();
+            _pendingRenderSettingsCamera = null;
+            _hasPendingRenderSettingsRestore = false;
 
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.RenderDispatcher, this))
                 GlobalRegistry.UnregisterRenderDispatcher(this);

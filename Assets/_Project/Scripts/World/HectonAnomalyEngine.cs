@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Environment;
 using Unity.Burst;
 using Unity.Collections;
@@ -10,6 +11,7 @@ namespace Hecton8.World
     /// <summary>
     /// Configuration for closed basin detection on a 2D heightmap.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct AnomalyBasinDetectionSettings
     {
         /// <summary>Heightmap width in samples.</summary>
@@ -52,6 +54,7 @@ namespace Hecton8.World
     /// <summary>
     /// Closed basin record emitted by the anomaly detector.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct AnomalyBasinRecord
     {
         /// <summary>One-based basin identifier. Zero means no valid basin.</summary>
@@ -97,6 +100,7 @@ namespace Hecton8.World
     /// <summary>
     /// Serializable continuation state for the interruptible closed-basin flood fill.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct AnomalyBasinFloodFillState
     {
         public int CandidateIndex;
@@ -105,10 +109,12 @@ namespace Hecton8.World
         public int SeedIndex;
         public int HeapCount;
         public int AcceptedCount;
+        public int ClearIndex;
         public int Phase;
         public float LipHeight;
         public float DeepestHeight;
         public byte FoundSpill;
+        public byte OpenBoundary;
         public byte Initialized;
     }
 
@@ -119,6 +125,7 @@ namespace Hecton8.World
     {
         private const int SerialBasinDetectionCellThreshold = 2048;
         private const int PillarEnvelopeBatchCount = 32768;
+        private const float TerrainSdfSnapHysteresisMeters = 0.05f;
 
         /// <summary>
         /// Schedules closed basin detection against a heightmap.
@@ -286,7 +293,8 @@ namespace Hecton8.World
                 SdfHeight = safeSdfHeight,
                 SdfDepth = safeSdfDepth,
                 VoxelSizeMeters = safeVoxelSize,
-                SdfOriginAup = sdfOriginAup
+                SdfOriginAup = sdfOriginAup,
+                SnapHysteresisMeters = TerrainSdfSnapHysteresisMeters
             };
 
             JobHandle densityHandle = job.Schedule(safeSdfWidth * safeSdfHeight * safeSdfDepth, 64, dependency);
@@ -302,7 +310,8 @@ namespace Hecton8.World
                 SdfHeight = safeSdfHeight,
                 SdfDepth = safeSdfDepth,
                 VoxelSizeMeters = safeVoxelSize,
-                SdfOriginAup = sdfOriginAup
+                SdfOriginAup = sdfOriginAup,
+                SnapHysteresisMeters = TerrainSdfSnapHysteresisMeters
             };
 
             return Unity.Jobs.IJobParallelForExtensions.Schedule(
@@ -875,6 +884,11 @@ namespace Hecton8.World
             int maxFloodCells = math.min(Settings.MaxFloodCells, cellCount);
             float epsilon = Settings.EqualHeightEpsilon;
             float deepestHeight = Heightmap[seedIndex];
+            if (!math.isfinite(deepestHeight))
+            {
+                nextStamp = stamp;
+                return default;
+            }
 
             if (!NextStamp(ref stamp))
             {
@@ -886,6 +900,7 @@ namespace Hecton8.World
             int acceptedCount = 0;
             float lipHeight = deepestHeight;
             bool foundSpill = false;
+            bool openBoundary = false;
 
             MarkVisited(seedIndex, stamp);
             HeapPush(ref heapCount, seedIndex);
@@ -897,6 +912,22 @@ namespace Hecton8.World
                 AcceptedCells[acceptedCount++] = cellIndex;
                 lipHeight = math.max(lipHeight, cellHeight);
 
+                int x = cellIndex % width;
+                int z = cellIndex / width;
+                if (IsOpenBoundaryEscape(
+                        x,
+                        z,
+                        width,
+                        height,
+                        cellHeight,
+                        deepestHeight,
+                        Settings.MinimumDepthMeters,
+                        epsilon))
+                {
+                    openBoundary = true;
+                    break;
+                }
+
                 if (cellHeight > deepestHeight + epsilon && HasUnvisitedLowerNeighbor(cellIndex, cellHeight, stamp, epsilon))
                 {
                     lipHeight = cellHeight;
@@ -904,8 +935,6 @@ namespace Hecton8.World
                     break;
                 }
 
-                int x = cellIndex % width;
-                int z = cellIndex / width;
                 for (int dz = -1; dz <= 1; dz++)
                 {
                     int nz = z + dz;
@@ -936,7 +965,7 @@ namespace Hecton8.World
             }
 
             nextStamp = stamp;
-            if (acceptedCount <= 0 || (acceptedCount >= maxFloodCells && heapCount > 0 && !foundSpill))
+            if (openBoundary || acceptedCount <= 0 || (acceptedCount >= maxFloodCells && heapCount > 0 && !foundSpill))
                 return default;
 
             float depth = lipHeight - deepestHeight;
@@ -951,13 +980,12 @@ namespace Hecton8.World
             int maxX = 0;
             int maxZ = 0;
             int maskedCount = 0;
-            float maskThreshold = foundSpill ? lipHeight - epsilon : lipHeight + epsilon;
 
             for (int i = 0; i < acceptedCount; i++)
             {
                 int cellIndex = AcceptedCells[i];
                 float cellHeight = Heightmap[cellIndex];
-                if (cellHeight > lipHeight + epsilon || cellHeight >= maskThreshold)
+                if (!IsBelowLip(cellHeight, lipHeight, epsilon))
                     continue;
 
                 int x = cellIndex % width;
@@ -1085,6 +1113,25 @@ namespace Hecton8.World
             VisitedStamp[index] = stamp;
         }
 
+        private static bool IsOpenBoundaryEscape(
+            int x,
+            int z,
+            int width,
+            int height,
+            float cellHeight,
+            float deepestHeight,
+            float minimumDepthMeters,
+            float epsilon)
+        {
+            return (x <= 0 || z <= 0 || x >= width - 1 || z >= height - 1) &&
+                   cellHeight - deepestHeight + epsilon < minimumDepthMeters;
+        }
+
+        private static bool IsBelowLip(float cellHeight, float lipHeight, float epsilon)
+        {
+            return math.isfinite(cellHeight) && cellHeight < lipHeight - epsilon;
+        }
+
         private static bool NextStamp(ref int stamp)
         {
             if (stamp == int.MaxValue)
@@ -1107,6 +1154,10 @@ namespace Hecton8.World
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct ClosedBasinFloodFillSliceJob : IJob
     {
+        private const int PhaseScanCandidate = 0;
+        private const int PhaseFlood = 1;
+        private const int PhaseClearVisitedStamp = 2;
+
         [ReadOnly] public NativeArray<float> Heightmap;
         public NativeArray<byte> CandidateMask;
         public NativeArray<byte> BasinMask;
@@ -1131,16 +1182,29 @@ namespace Hecton8.World
                     CandidateIndex = 0,
                     Stamp = 1,
                     BasinId = 1,
-                    Phase = 0,
+                    Phase = PhaseScanCandidate,
                     Initialized = 1
                 };
             }
 
             int cellCount = Settings.Width * Settings.Height;
+            SanitizeContinuationState(ref state, cellCount);
             SliceStatus[0] = 0;
             while (state.CandidateIndex < cellCount)
             {
-                if (state.Phase == 0)
+                if (state.Phase == PhaseClearVisitedStamp)
+                {
+                    if (!TryContinueVisitedStampClear(ref state, ref operations, operationBudget, cellCount))
+                    {
+                        Defer(state, operations);
+                        return;
+                    }
+
+                    state.Phase = PhaseScanCandidate;
+                    state.ClearIndex = 0;
+                }
+
+                if (state.Phase == PhaseScanCandidate)
                 {
                     if (!TryStartNextCandidate(ref state, ref operations, operationBudget, cellCount))
                     {
@@ -1152,7 +1216,7 @@ namespace Hecton8.World
                         break;
                 }
 
-                if (state.Phase == 1)
+                if (state.Phase == PhaseFlood)
                 {
                     if (!TryContinueFlood(ref state, ref operations, operationBudget))
                     {
@@ -1162,7 +1226,7 @@ namespace Hecton8.World
 
                     FinalizeCandidate(ref state);
                     state.CandidateIndex++;
-                    state.Phase = 0;
+                    state.Phase = PhaseScanCandidate;
                 }
             }
 
@@ -1191,26 +1255,114 @@ namespace Hecton8.World
                 int stamp = math.max(1, state.Stamp);
                 if (!NextStamp(ref stamp))
                 {
-                    stamp = 1;
-                    for (int i = 0; i < cellCount; i++)
-                        VisitedStamp[i] = 0;
+                    state.Stamp = 1;
+                    state.ClearIndex = 0;
+                    state.Phase = PhaseClearVisitedStamp;
+                    return false;
                 }
 
                 float deepestHeight = Heightmap[candidateIndex];
+                if (!math.isfinite(deepestHeight))
+                {
+                    BasinRecords[candidateIndex] = default;
+                    state.CandidateIndex++;
+                    continue;
+                }
+
                 state.Stamp = stamp;
                 state.SeedIndex = candidateIndex;
                 state.HeapCount = 0;
                 state.AcceptedCount = 0;
+                state.ClearIndex = 0;
                 state.LipHeight = deepestHeight;
                 state.DeepestHeight = deepestHeight;
                 state.FoundSpill = 0;
-                state.Phase = 1;
+                state.OpenBoundary = 0;
+                state.Phase = PhaseFlood;
                 MarkVisited(candidateIndex, stamp);
                 HeapPush(ref state.HeapCount, candidateIndex);
                 return true;
             }
 
             return true;
+        }
+
+        private bool TryContinueVisitedStampClear(
+            ref AnomalyBasinFloodFillState state,
+            ref int operations,
+            int operationBudget,
+            int cellCount)
+        {
+            int clearIndex = math.clamp(state.ClearIndex, 0, cellCount);
+            while (clearIndex < cellCount)
+            {
+                if (++operations >= operationBudget)
+                {
+                    state.ClearIndex = clearIndex;
+                    return false;
+                }
+
+                VisitedStamp[clearIndex] = 0;
+                clearIndex++;
+            }
+
+            state.ClearIndex = 0;
+            return true;
+        }
+
+        private static void SanitizeContinuationState(ref AnomalyBasinFloodFillState state, int cellCount)
+        {
+            state.CandidateIndex = math.clamp(state.CandidateIndex, 0, cellCount);
+            state.Stamp = math.max(1, state.Stamp);
+            state.BasinId = math.max(1, state.BasinId);
+
+            if (state.Phase < PhaseScanCandidate || state.Phase > PhaseClearVisitedStamp)
+            {
+                ResetToScanPhase(ref state);
+                return;
+            }
+
+            if (state.Phase == PhaseScanCandidate)
+            {
+                state.HeapCount = 0;
+                state.AcceptedCount = 0;
+                state.ClearIndex = 0;
+                return;
+            }
+
+            if (state.Phase == PhaseClearVisitedStamp)
+            {
+                state.ClearIndex = math.clamp(state.ClearIndex, 0, cellCount);
+                state.HeapCount = 0;
+                state.AcceptedCount = 0;
+                return;
+            }
+
+            if (state.SeedIndex < 0 ||
+                state.SeedIndex >= cellCount ||
+                state.HeapCount <= 0 ||
+                state.HeapCount > cellCount ||
+                state.AcceptedCount < 0 ||
+                state.AcceptedCount > cellCount ||
+                !math.isfinite(state.LipHeight) ||
+                !math.isfinite(state.DeepestHeight))
+            {
+                ResetToScanPhase(ref state);
+            }
+        }
+
+        private static void ResetToScanPhase(ref AnomalyBasinFloodFillState state)
+        {
+            state.SeedIndex = 0;
+            state.HeapCount = 0;
+            state.AcceptedCount = 0;
+            state.ClearIndex = 0;
+            state.Phase = PhaseScanCandidate;
+            state.LipHeight = 0f;
+            state.DeepestHeight = 0f;
+            state.FoundSpill = 0;
+            state.OpenBoundary = 0;
+            state.Initialized = 1;
         }
 
         private bool TryContinueFlood(ref AnomalyBasinFloodFillState state, ref int operations, int operationBudget)
@@ -1231,6 +1383,22 @@ namespace Hecton8.World
                 AcceptedCells[state.AcceptedCount++] = cellIndex;
                 state.LipHeight = math.max(state.LipHeight, cellHeight);
 
+                int x = cellIndex % width;
+                int z = cellIndex / width;
+                if (IsOpenBoundaryEscape(
+                        x,
+                        z,
+                        width,
+                        height,
+                        cellHeight,
+                        state.DeepestHeight,
+                        Settings.MinimumDepthMeters,
+                        epsilon))
+                {
+                    state.OpenBoundary = 1;
+                    break;
+                }
+
                 if (cellHeight > state.DeepestHeight + epsilon &&
                     HasUnvisitedLowerNeighbor(cellIndex, cellHeight, state.Stamp, epsilon))
                 {
@@ -1239,8 +1407,6 @@ namespace Hecton8.World
                     break;
                 }
 
-                int x = cellIndex % width;
-                int z = cellIndex / width;
                 for (int dz = -1; dz <= 1; dz++)
                 {
                     int nz = z + dz;
@@ -1282,7 +1448,9 @@ namespace Hecton8.World
             float epsilon = Settings.EqualHeightEpsilon;
             int seedIndex = state.SeedIndex;
 
-            if (state.AcceptedCount <= 0 || (state.AcceptedCount >= maxFloodCells && state.HeapCount > 0 && state.FoundSpill == 0))
+            if (state.OpenBoundary != 0 ||
+                state.AcceptedCount <= 0 ||
+                (state.AcceptedCount >= maxFloodCells && state.HeapCount > 0 && state.FoundSpill == 0))
             {
                 BasinRecords[seedIndex] = default;
                 return;
@@ -1304,13 +1472,12 @@ namespace Hecton8.World
             int maxZ = 0;
             int maskedCount = 0;
             float deepestHeight = state.DeepestHeight;
-            float maskThreshold = state.FoundSpill != 0 ? state.LipHeight - epsilon : state.LipHeight + epsilon;
 
             for (int i = 0; i < state.AcceptedCount; i++)
             {
                 int cellIndex = AcceptedCells[i];
                 float cellHeight = Heightmap[cellIndex];
-                if (cellHeight > state.LipHeight + epsilon || cellHeight >= maskThreshold)
+                if (!IsBelowLip(cellHeight, state.LipHeight, epsilon))
                     continue;
 
                 int x = cellIndex % width;
@@ -1447,6 +1614,25 @@ namespace Hecton8.World
         private void MarkVisited(int index, int stamp)
         {
             VisitedStamp[index] = stamp;
+        }
+
+        private static bool IsOpenBoundaryEscape(
+            int x,
+            int z,
+            int width,
+            int height,
+            float cellHeight,
+            float deepestHeight,
+            float minimumDepthMeters,
+            float epsilon)
+        {
+            return (x <= 0 || z <= 0 || x >= width - 1 || z >= height - 1) &&
+                   cellHeight - deepestHeight + epsilon < minimumDepthMeters;
+        }
+
+        private static bool IsBelowLip(float cellHeight, float lipHeight, float epsilon)
+        {
+            return math.isfinite(cellHeight) && cellHeight < lipHeight - epsilon;
         }
 
         private static bool NextStamp(ref int stamp)

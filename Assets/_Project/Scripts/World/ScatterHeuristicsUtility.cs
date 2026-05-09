@@ -1,4 +1,5 @@
 using UnityEngine;
+using Unity.Mathematics;
 
 namespace Hecton8.World
 {
@@ -83,10 +84,10 @@ namespace Hecton8.World
                 return shallowScale;
 
             if (depthMeters <= midEnd)
-                return Mathf.Lerp(shallowScale, midScale, Mathf.InverseLerp(nearEnd, midEnd, depthMeters));
+                return math.lerp(shallowScale, midScale, Mathf.InverseLerp(nearEnd, midEnd, depthMeters));
 
             if (depthMeters <= deepEnd)
-                return Mathf.Lerp(midScale, deepScale, Mathf.InverseLerp(midEnd, deepEnd, depthMeters));
+                return math.lerp(midScale, deepScale, Mathf.InverseLerp(midEnd, deepEnd, depthMeters));
 
             return abyssScale;
         }

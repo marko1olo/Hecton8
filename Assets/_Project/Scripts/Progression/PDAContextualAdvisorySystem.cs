@@ -5,6 +5,7 @@ using Hecton8.Gameplay;
 using Hecton8.Inventory;
 using Hecton8.Modding;
 using Hecton8.PDA;
+using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Unity.Mathematics;
@@ -44,6 +45,15 @@ namespace Hecton8.Progression
         private const float PressureExposureEmergencySeverity = 0.92f;
         private const float ColdStressExposureDurationSeconds = 18f;
         private const float HeatStressExposureDurationSeconds = 14f;
+        private const int AdvisoryNotificationCapacity = 8;
+        private const int OxygenDeathsAdvisoryIndex = 0;
+        private const int InventoryFullAdvisoryIndex = 1;
+        private const int PressureExposureAdvisoryIndex = 2;
+        private const int PressureDeathsAdvisoryIndex = 3;
+        private const int BaseEmergencyAdvisoryIndex = 4;
+        private const int StaleAirAdvisoryIndex = 5;
+        private const int ColdStressAdvisoryIndex = 6;
+        private const int HeatStressAdvisoryIndex = 7;
         private const string OxygenDeathsAdvisoryId = "advisory.oxygen_deaths";
         private const string InventoryFullAdvisoryId = "advisory.inventory_full";
         private const string PressureExposureAdvisoryId = "advisory.pressure_exposure";
@@ -55,6 +65,7 @@ namespace Hecton8.Progression
         private const string AdvisoryLogTitle = "SUIT ADVISORY";
         private const string OxygenDeathsMessage = "Repeated oxygen loss detected. Expand reserve discipline before the next descent. Carry refill margin and respect the ascent window.";
         private const string InventoryFullMessage = "Collection attempts are stalling against a saturated hold. Compress the loadout, discard dead weight, or route salvage back to shelter before continuing.";
+        private const string PressureExposureMessage = "Hull tolerance is being spent below the safe envelope. Pull back before pressure damage compounds.";
         private const string PressureDeathsMessage = "Pressure fatalities are repeating. The route is now beyond current hull readiness. Shorten the descent profile or install a deeper shell before pushing again.";
         private const string BaseEmergencyMessage = "Base emergencies are repeating faster than service recovery. Expansion is no longer the bottleneck. Stabilize power, hull, and compartment service before adding more structure.";
         private const string StaleAirMessage = "Shelter occupancy is outrunning breathable reserve recovery. A powered room is not automatically a safe room once scrubber margin collapses.";
@@ -69,19 +80,43 @@ namespace Hecton8.Progression
         private const string StaleAirMessageKey = "PDA_ADVISORY_STALE_AIR";
         private const string ColdStressMessageKey = "PDA_ADVISORY_COLD_STRESS";
         private const string HeatStressMessageKey = "PDA_ADVISORY_HEAT_STRESS";
-        private static readonly int _advisoryLogTitleKeyHash = LocHash.Compute(AdvisoryLogTitleKey);
-        private static readonly int _oxygenDeathsMessageKeyHash = LocHash.Compute(OxygenDeathsMessageKey);
-        private static readonly int _inventoryFullMessageKeyHash = LocHash.Compute(InventoryFullMessageKey);
-        private static readonly int _pressureExposureMessageKeyHash = LocHash.Compute(PressureExposureMessageKey);
-        private static readonly int _pressureDeathsMessageKeyHash = LocHash.Compute(PressureDeathsMessageKey);
-        private static readonly int _baseEmergencyMessageKeyHash = LocHash.Compute(BaseEmergencyMessageKey);
-        private static readonly int _staleAirMessageKeyHash = LocHash.Compute(StaleAirMessageKey);
-        private static readonly int _coldStressMessageKeyHash = LocHash.Compute(ColdStressMessageKey);
-        private static readonly int _heatStressMessageKeyHash = LocHash.Compute(HeatStressMessageKey);
+        private const int _advisoryLogTitleKeyHash = unchecked((int)0x25F3F866);
+        private const int _oxygenDeathsMessageKeyHash = unchecked((int)0x0737217F);
+        private const int _inventoryFullMessageKeyHash = unchecked((int)0x5C4CB0CB);
+        private const int _pressureExposureMessageKeyHash = unchecked((int)0xA3C36A84);
+        private const int _pressureDeathsMessageKeyHash = unchecked((int)0xA507BBC0);
+        private const int _baseEmergencyMessageKeyHash = unchecked((int)0x9F184C96);
+        private const int _staleAirMessageKeyHash = unchecked((int)0x96616DD7);
+        private const int _coldStressMessageKeyHash = unchecked((int)0xA3E639D6);
+        private const int _heatStressMessageKeyHash = unchecked((int)0xE3B51CDA);
+        private const int _oxygenDeathsLogEntryHash = unchecked((int)0x682DFDEE);
+        private const int _inventoryFullLogEntryHash = unchecked((int)0xD8A8B3C2);
+        private const int _pressureExposureLogEntryHash = unchecked((int)0xE281ED75);
+        private const int _pressureDeathsLogEntryHash = unchecked((int)0x1A597A51);
+        private const int _baseEmergencyLogEntryHash = unchecked((int)0xA383C68F);
+        private const int _staleAirLogEntryHash = unchecked((int)0xD42E18F6);
+        private const int _coldStressLogEntryHash = unchecked((int)0x207D3127);
+        private const int _heatStressLogEntryHash = unchecked((int)0x0C8BD38B);
+        private const uint _oxygenDeathsAdvisoryHash = 0xCC5A871Cu;
+        private const uint _inventoryFullAdvisoryHash = 0x0B015C60u;
+        private const uint _pressureExposureAdvisoryHash = 0x37D3A927u;
+        private const uint _pressureDeathsAdvisoryHash = 0xB12EE383u;
+        private const uint _baseEmergencyAdvisoryHash = 0xAB7324EDu;
+        private const uint _staleAirAdvisoryHash = 0xDDB60BA4u;
+        private const uint _coldStressAdvisoryHash = 0x63039935u;
+        private const uint _heatStressAdvisoryHash = 0xE8D6B359u;
+        private const int AdvisoryTelemetryCooldownFrames = 30;
+        private const uint _advisoryNotificationMissWarningHash = 0x50414E4Du;
+        private const uint _advisoryNotificationContextHash = 0x50414E43u;
 
+        // COLD ALLOC: uint[8] - pre-registered advisory notification hashes - owner: PDAContextualAdvisorySystem
+        private readonly uint[] _advisoryNotificationHashes = new uint[AdvisoryNotificationCapacity];
         private HectonSurvivalSystem _survivalSystem;
         private bool _registeredToTick;
         private bool _registeredToSave;
+        private bool _advisoryNotificationsCached;
+        private int _advisoryNotificationMissCount;
+        private int _lastAdvisoryNotificationMissTelemetryFrame;
         private int _oxygenDeathCount;
         private int _inventoryFullAttemptCount;
         private int _pressureDeathCount;
@@ -98,19 +133,20 @@ namespace Hecton8.Progression
         private HectonEventSubscription _gameLoadedSubscription;
         private HectonEventSubscription _playerSpawnedSubscription;
 
-        /// <summary>
-        /// Raised after a contextual advisory is pushed.
-        /// </summary>
-        public event Action<string, string> AdvisoryPushed;
-
         /// <inheritdoc />
         public int SavePriority => 206;
 
         /// <inheritdoc />
         public int LoadPriority => 206;
 
+        /// <summary>
+        /// Number of advisory notifications that could not be resolved after cache repair.
+        /// </summary>
+        public int AdvisoryNotificationMissCount => _advisoryNotificationMissCount;
+
         private void OnEnable()
         {
+            CacheAdvisoryNotifications();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
             SubscribeToEventBus();
@@ -121,6 +157,7 @@ namespace Hecton8.Progression
 
         private void Start()
         {
+            CacheAdvisoryNotifications();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
             RebindOwnerSubscriptions();
@@ -157,24 +194,40 @@ namespace Hecton8.Progression
             if (string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(message))
                 return;
 
-            if (!TryMarkIssued(id))
+            uint advisoryHash = QuestFlagHashKernel.ComputeStableHash(id);
+            PushAdvisory(advisoryHash, id, message);
+        }
+
+        private void PushAdvisory(uint advisoryHash, string id, string message)
+        {
+            if (advisoryHash == 0u || string.IsNullOrWhiteSpace(id) || string.IsNullOrWhiteSpace(message))
                 return;
 
-            string localizedMessage = ResolveAdvisoryMessage(id, message);
-            string localizedTitle = ResolveLocalized(AdvisoryLogTitleKey, AdvisoryLogTitle);
-            NotificationEvents.PushWarning(localizedMessage);
+            if (!TryMarkIssued(advisoryHash))
+                return;
+
+            CacheAdvisoryNotifications();
+            string localizedMessage = ResolveAdvisoryMessage(advisoryHash, message);
+            if (!TryPushRegisteredAdvisoryNotification(advisoryHash))
+                NotificationEvents.PushWarning(localizedMessage);
+
             IPDALogbookService logbookManager = GlobalRegistry.PDALogbook;
             if (logbookManager != null)
-                logbookManager.TryAppendEntry("pda.context." + id, localizedTitle, localizedMessage);
+            {
+                int messageHash = ResolveAdvisoryMessageHash(advisoryHash);
+                if (messageHash == 0)
+                    messageHash = LocHash.Compute(message);
 
-            HectonEventBus.Publish(new PlayerAdvisoryIssuedEvent(id, localizedMessage));
-            AdvisoryPushed?.Invoke(id, localizedMessage);
+                logbookManager.TryAppendEntry(ResolveAdvisoryLogEntryHash(advisoryHash), _advisoryLogTitleKeyHash, messageHash);
+            }
+
+            HectonEventBus.Publish(new PlayerAdvisoryIssuedEvent(advisoryHash, id, localizedMessage));
         }
 
         /// <inheritdoc />
         public void SlowTick()
         {
-            if (!ResolveOwners())
+            if (!ResolveOwnersHot())
                 return;
 
             if (_survivalSystem == null || !_survivalSystem.IsAlive)
@@ -191,16 +244,16 @@ namespace Hecton8.Progression
                 return;
 
             data.pdaAdvisories.issuedFlags = (int)_issuedFlags;
-            data.pdaAdvisories.oxygenDeathCount = Mathf.Max(0, _oxygenDeathCount);
-            data.pdaAdvisories.inventoryFullAttemptCount = Mathf.Max(0, _inventoryFullAttemptCount);
-            data.pdaAdvisories.pressureDeathCount = Mathf.Max(0, _pressureDeathCount);
-            data.pdaAdvisories.baseEmergencyCount = Mathf.Max(0, _baseEmergencyCount);
-            data.pdaAdvisories.staleAirIncidentCount = Mathf.Max(0, _staleAirIncidentCount);
-            data.pdaAdvisories.coldStressIncidentCount = Mathf.Max(0, _coldStressIncidentCount);
-            data.pdaAdvisories.heatStressIncidentCount = Mathf.Max(0, _heatStressIncidentCount);
-            data.pdaAdvisories.deepExposureSeconds = Mathf.Max(0f, _deepExposureSeconds);
-            data.pdaAdvisories.coldStressExposureSeconds = Mathf.Max(0f, _coldStressExposureSeconds);
-            data.pdaAdvisories.heatStressExposureSeconds = Mathf.Max(0f, _heatStressExposureSeconds);
+            data.pdaAdvisories.oxygenDeathCount = math.max(0, _oxygenDeathCount);
+            data.pdaAdvisories.inventoryFullAttemptCount = math.max(0, _inventoryFullAttemptCount);
+            data.pdaAdvisories.pressureDeathCount = math.max(0, _pressureDeathCount);
+            data.pdaAdvisories.baseEmergencyCount = math.max(0, _baseEmergencyCount);
+            data.pdaAdvisories.staleAirIncidentCount = math.max(0, _staleAirIncidentCount);
+            data.pdaAdvisories.coldStressIncidentCount = math.max(0, _coldStressIncidentCount);
+            data.pdaAdvisories.heatStressIncidentCount = math.max(0, _heatStressIncidentCount);
+            data.pdaAdvisories.deepExposureSeconds = math.max(0f, _deepExposureSeconds);
+            data.pdaAdvisories.coldStressExposureSeconds = math.max(0f, _coldStressExposureSeconds);
+            data.pdaAdvisories.heatStressExposureSeconds = math.max(0f, _heatStressExposureSeconds);
         }
 
         /// <inheritdoc />
@@ -223,17 +276,17 @@ namespace Hecton8.Progression
             if (data == null)
                 return;
 
-            _issuedFlags = (AdvisoryFlags)Mathf.Max(0, data.pdaAdvisories.issuedFlags);
-            _oxygenDeathCount = Mathf.Max(0, data.pdaAdvisories.oxygenDeathCount);
-            _inventoryFullAttemptCount = Mathf.Max(0, data.pdaAdvisories.inventoryFullAttemptCount);
-            _pressureDeathCount = Mathf.Max(0, data.pdaAdvisories.pressureDeathCount);
-            _baseEmergencyCount = Mathf.Max(0, data.pdaAdvisories.baseEmergencyCount);
-            _staleAirIncidentCount = Mathf.Max(0, data.pdaAdvisories.staleAirIncidentCount);
-            _coldStressIncidentCount = Mathf.Max(0, data.pdaAdvisories.coldStressIncidentCount);
-            _heatStressIncidentCount = Mathf.Max(0, data.pdaAdvisories.heatStressIncidentCount);
-            _deepExposureSeconds = Mathf.Max(0f, data.pdaAdvisories.deepExposureSeconds);
-            _coldStressExposureSeconds = Mathf.Max(0f, data.pdaAdvisories.coldStressExposureSeconds);
-            _heatStressExposureSeconds = Mathf.Max(0f, data.pdaAdvisories.heatStressExposureSeconds);
+            _issuedFlags = (AdvisoryFlags)math.max(0, data.pdaAdvisories.issuedFlags);
+            _oxygenDeathCount = math.max(0, data.pdaAdvisories.oxygenDeathCount);
+            _inventoryFullAttemptCount = math.max(0, data.pdaAdvisories.inventoryFullAttemptCount);
+            _pressureDeathCount = math.max(0, data.pdaAdvisories.pressureDeathCount);
+            _baseEmergencyCount = math.max(0, data.pdaAdvisories.baseEmergencyCount);
+            _staleAirIncidentCount = math.max(0, data.pdaAdvisories.staleAirIncidentCount);
+            _coldStressIncidentCount = math.max(0, data.pdaAdvisories.coldStressIncidentCount);
+            _heatStressIncidentCount = math.max(0, data.pdaAdvisories.heatStressIncidentCount);
+            _deepExposureSeconds = math.max(0f, data.pdaAdvisories.deepExposureSeconds);
+            _coldStressExposureSeconds = math.max(0f, data.pdaAdvisories.coldStressExposureSeconds);
+            _heatStressExposureSeconds = math.max(0f, data.pdaAdvisories.heatStressExposureSeconds);
         }
 
         /// <inheritdoc />
@@ -267,7 +320,7 @@ namespace Hecton8.Progression
 
             _inventoryFullAttemptCount++;
             if (_inventoryFullAttemptCount >= InventoryFullThreshold)
-                PushAdvisory(InventoryFullAdvisoryId, InventoryFullMessage);
+                PushAdvisory(_inventoryFullAdvisoryHash, InventoryFullAdvisoryId, InventoryFullMessage);
         }
 
         private void HandleSurvivalDeath()
@@ -282,7 +335,7 @@ namespace Hecton8.Progression
                     {
                         _oxygenDeathCount++;
                         if (_oxygenDeathCount >= OxygenDeathThreshold)
-                            PushAdvisory(OxygenDeathsAdvisoryId, OxygenDeathsMessage);
+                            PushAdvisory(_oxygenDeathsAdvisoryHash, OxygenDeathsAdvisoryId, OxygenDeathsMessage);
                     }
                     break;
                 case SurvivalDeathCause.PressureCollapse:
@@ -290,7 +343,7 @@ namespace Hecton8.Progression
                     {
                         _pressureDeathCount++;
                         if (_pressureDeathCount >= PressureDeathThreshold)
-                            PushAdvisory(PressureDeathsAdvisoryId, PressureDeathsMessage);
+                            PushAdvisory(_pressureDeathsAdvisoryHash, PressureDeathsAdvisoryId, PressureDeathsMessage);
                     }
                     break;
             }
@@ -306,7 +359,7 @@ namespace Hecton8.Progression
 
             _baseEmergencyCount++;
             if (_baseEmergencyCount >= BaseEmergencyThreshold)
-                PushAdvisory(BaseEmergencyAdvisoryId, BaseEmergencyMessage);
+                PushAdvisory(_baseEmergencyAdvisoryHash, BaseEmergencyAdvisoryId, BaseEmergencyMessage);
         }
 
         private void HandleModuleAirQualityWarning(float airQualityNormalized)
@@ -319,11 +372,12 @@ namespace Hecton8.Progression
 
             _staleAirIncidentCount++;
             if (_staleAirIncidentCount >= StaleAirThreshold)
-                PushAdvisory(StaleAirAdvisoryId, StaleAirMessage);
+                PushAdvisory(_staleAirAdvisoryHash, StaleAirAdvisoryId, StaleAirMessage);
         }
 
         private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
         {
+            RefreshAdvisoryNotifications();
             RebindOwnerSubscriptions();
         }
 
@@ -356,7 +410,7 @@ namespace Hecton8.Progression
         private void RebindOwnerSubscriptions()
         {
             UnbindOwnerSubscriptions();
-            ResolveOwners();
+            ResolveOwnersCold();
 
             if (_survivalSystem != null)
                 _survivalSystem.OnDeath += HandleSurvivalDeath;
@@ -368,7 +422,12 @@ namespace Hecton8.Progression
                 _survivalSystem.OnDeath -= HandleSurvivalDeath;
         }
 
-        private bool ResolveOwners()
+        private bool ResolveOwnersHot()
+        {
+            return _survivalSystem != null;
+        }
+
+        private bool ResolveOwnersCold()
         {
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
@@ -376,9 +435,9 @@ namespace Hecton8.Progression
             return _survivalSystem != null;
         }
 
-        private bool TryMarkIssued(string advisoryId)
+        private bool TryMarkIssued(uint advisoryHash)
         {
-            AdvisoryFlags advisoryFlag = ResolveAdvisoryFlag(advisoryId);
+            AdvisoryFlags advisoryFlag = ResolveAdvisoryFlag(advisoryHash);
             if (advisoryFlag == AdvisoryFlags.None)
                 return true;
 
@@ -389,86 +448,229 @@ namespace Hecton8.Progression
             return true;
         }
 
-        private static AdvisoryFlags ResolveAdvisoryFlag(string advisoryId)
+        private static AdvisoryFlags ResolveAdvisoryFlag(uint advisoryHash)
         {
-            if (string.Equals(advisoryId, OxygenDeathsAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _oxygenDeathsAdvisoryHash)
                 return AdvisoryFlags.OxygenDeaths;
 
-            if (string.Equals(advisoryId, InventoryFullAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _inventoryFullAdvisoryHash)
                 return AdvisoryFlags.InventoryFull;
 
-            if (string.Equals(advisoryId, PressureExposureAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _pressureExposureAdvisoryHash)
                 return AdvisoryFlags.PressureExposure;
 
-            if (string.Equals(advisoryId, PressureDeathsAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _pressureDeathsAdvisoryHash)
                 return AdvisoryFlags.PressureDeaths;
 
-            if (string.Equals(advisoryId, BaseEmergencyAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _baseEmergencyAdvisoryHash)
                 return AdvisoryFlags.BaseEmergency;
 
-            if (string.Equals(advisoryId, StaleAirAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _staleAirAdvisoryHash)
                 return AdvisoryFlags.StaleAir;
 
-            if (string.Equals(advisoryId, ColdStressAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _coldStressAdvisoryHash)
                 return AdvisoryFlags.ColdStress;
 
-            if (string.Equals(advisoryId, HeatStressAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _heatStressAdvisoryHash)
                 return AdvisoryFlags.HeatStress;
 
             return AdvisoryFlags.None;
         }
 
-        private static string ResolveAdvisoryMessage(string advisoryId, string fallback)
+        private static string ResolveAdvisoryMessage(uint advisoryHash, string fallback)
         {
-            string key = ResolveAdvisoryMessageKey(advisoryId, out int keyHash);
+            string key = ResolveAdvisoryMessageKey(advisoryHash, out int keyHash);
             return keyHash != 0 ? ResolveLocalized(key, fallback) : fallback;
         }
 
-        private static string ResolveAdvisoryMessageKey(string advisoryId, out int keyHash)
+        private void CacheAdvisoryNotifications()
         {
-            if (string.Equals(advisoryId, OxygenDeathsAdvisoryId, StringComparison.Ordinal))
+            if (_advisoryNotificationsCached)
+                return;
+
+            _advisoryNotificationHashes[OxygenDeathsAdvisoryIndex] =
+                NotificationEvents.RegisterMessage(ResolveAdvisoryMessage(_oxygenDeathsAdvisoryHash, OxygenDeathsMessage));
+            _advisoryNotificationHashes[InventoryFullAdvisoryIndex] =
+                NotificationEvents.RegisterMessage(ResolveAdvisoryMessage(_inventoryFullAdvisoryHash, InventoryFullMessage));
+            _advisoryNotificationHashes[PressureExposureAdvisoryIndex] =
+                NotificationEvents.RegisterMessage(ResolveAdvisoryMessage(_pressureExposureAdvisoryHash, PressureExposureMessage));
+            _advisoryNotificationHashes[PressureDeathsAdvisoryIndex] =
+                NotificationEvents.RegisterMessage(ResolveAdvisoryMessage(_pressureDeathsAdvisoryHash, PressureDeathsMessage));
+            _advisoryNotificationHashes[BaseEmergencyAdvisoryIndex] =
+                NotificationEvents.RegisterMessage(ResolveAdvisoryMessage(_baseEmergencyAdvisoryHash, BaseEmergencyMessage));
+            _advisoryNotificationHashes[StaleAirAdvisoryIndex] =
+                NotificationEvents.RegisterMessage(ResolveAdvisoryMessage(_staleAirAdvisoryHash, StaleAirMessage));
+            _advisoryNotificationHashes[ColdStressAdvisoryIndex] =
+                NotificationEvents.RegisterMessage(ResolveAdvisoryMessage(_coldStressAdvisoryHash, ColdStressMessage));
+            _advisoryNotificationHashes[HeatStressAdvisoryIndex] =
+                NotificationEvents.RegisterMessage(ResolveAdvisoryMessage(_heatStressAdvisoryHash, HeatStressMessage));
+
+            _advisoryNotificationsCached = true;
+        }
+
+        private void RefreshAdvisoryNotifications()
+        {
+            for (int i = 0; i < _advisoryNotificationHashes.Length; i++)
+                _advisoryNotificationHashes[i] = 0u;
+
+            _advisoryNotificationsCached = false;
+            CacheAdvisoryNotifications();
+        }
+
+        private bool TryPushRegisteredAdvisoryNotification(uint advisoryHash)
+        {
+            if (ResolveAdvisoryIndex(advisoryHash) < 0)
+                return false;
+
+            uint notificationHash = ResolveAdvisoryNotificationHash(advisoryHash);
+            if (notificationHash != 0u && NotificationEvents.TryResolveMessage(notificationHash, out _))
+            {
+                NotificationEvents.PushRegisteredWarning(notificationHash);
+                return true;
+            }
+
+            RefreshAdvisoryNotifications();
+            notificationHash = ResolveAdvisoryNotificationHash(advisoryHash);
+            if (notificationHash != 0u && NotificationEvents.TryResolveMessage(notificationHash, out _))
+            {
+                NotificationEvents.PushRegisteredWarning(notificationHash);
+                return true;
+            }
+
+            ReportAdvisoryNotificationMiss(advisoryHash);
+            return false;
+        }
+
+        private void ReportAdvisoryNotificationMiss(uint advisoryHash)
+        {
+            _advisoryNotificationMissCount++;
+
+            int frame = Time.frameCount;
+            if (frame < _lastAdvisoryNotificationMissTelemetryFrame)
+                return;
+
+            _lastAdvisoryNotificationMissTelemetryFrame = frame + AdvisoryTelemetryCooldownFrames;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _advisoryNotificationMissWarningHash,
+                advisoryHash != 0u ? advisoryHash : _advisoryNotificationContextHash,
+                _advisoryNotificationMissCount);
+        }
+
+        private uint ResolveAdvisoryNotificationHash(uint advisoryHash)
+        {
+            int index = ResolveAdvisoryIndex(advisoryHash);
+            return (uint)index < (uint)_advisoryNotificationHashes.Length ? _advisoryNotificationHashes[index] : 0u;
+        }
+
+        private static int ResolveAdvisoryIndex(uint advisoryHash)
+        {
+            if (advisoryHash == _oxygenDeathsAdvisoryHash)
+                return OxygenDeathsAdvisoryIndex;
+
+            if (advisoryHash == _inventoryFullAdvisoryHash)
+                return InventoryFullAdvisoryIndex;
+
+            if (advisoryHash == _pressureExposureAdvisoryHash)
+                return PressureExposureAdvisoryIndex;
+
+            if (advisoryHash == _pressureDeathsAdvisoryHash)
+                return PressureDeathsAdvisoryIndex;
+
+            if (advisoryHash == _baseEmergencyAdvisoryHash)
+                return BaseEmergencyAdvisoryIndex;
+
+            if (advisoryHash == _staleAirAdvisoryHash)
+                return StaleAirAdvisoryIndex;
+
+            if (advisoryHash == _coldStressAdvisoryHash)
+                return ColdStressAdvisoryIndex;
+
+            if (advisoryHash == _heatStressAdvisoryHash)
+                return HeatStressAdvisoryIndex;
+
+            return -1;
+        }
+
+        private static int ResolveAdvisoryLogEntryHash(uint advisoryHash)
+        {
+            if (advisoryHash == _oxygenDeathsAdvisoryHash)
+                return _oxygenDeathsLogEntryHash;
+
+            if (advisoryHash == _inventoryFullAdvisoryHash)
+                return _inventoryFullLogEntryHash;
+
+            if (advisoryHash == _pressureExposureAdvisoryHash)
+                return _pressureExposureLogEntryHash;
+
+            if (advisoryHash == _pressureDeathsAdvisoryHash)
+                return _pressureDeathsLogEntryHash;
+
+            if (advisoryHash == _baseEmergencyAdvisoryHash)
+                return _baseEmergencyLogEntryHash;
+
+            if (advisoryHash == _staleAirAdvisoryHash)
+                return _staleAirLogEntryHash;
+
+            if (advisoryHash == _coldStressAdvisoryHash)
+                return _coldStressLogEntryHash;
+
+            if (advisoryHash == _heatStressAdvisoryHash)
+                return _heatStressLogEntryHash;
+
+            return unchecked((int)advisoryHash);
+        }
+
+        private static int ResolveAdvisoryMessageHash(uint advisoryHash)
+        {
+            ResolveAdvisoryMessageKey(advisoryHash, out int keyHash);
+            return keyHash;
+        }
+
+        private static string ResolveAdvisoryMessageKey(uint advisoryHash, out int keyHash)
+        {
+            if (advisoryHash == _oxygenDeathsAdvisoryHash)
             {
                 keyHash = _oxygenDeathsMessageKeyHash;
                 return OxygenDeathsMessageKey;
             }
 
-            if (string.Equals(advisoryId, InventoryFullAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _inventoryFullAdvisoryHash)
             {
                 keyHash = _inventoryFullMessageKeyHash;
                 return InventoryFullMessageKey;
             }
 
-            if (string.Equals(advisoryId, PressureExposureAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _pressureExposureAdvisoryHash)
             {
                 keyHash = _pressureExposureMessageKeyHash;
                 return PressureExposureMessageKey;
             }
 
-            if (string.Equals(advisoryId, PressureDeathsAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _pressureDeathsAdvisoryHash)
             {
                 keyHash = _pressureDeathsMessageKeyHash;
                 return PressureDeathsMessageKey;
             }
 
-            if (string.Equals(advisoryId, BaseEmergencyAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _baseEmergencyAdvisoryHash)
             {
                 keyHash = _baseEmergencyMessageKeyHash;
                 return BaseEmergencyMessageKey;
             }
 
-            if (string.Equals(advisoryId, StaleAirAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _staleAirAdvisoryHash)
             {
                 keyHash = _staleAirMessageKeyHash;
                 return StaleAirMessageKey;
             }
 
-            if (string.Equals(advisoryId, ColdStressAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _coldStressAdvisoryHash)
             {
                 keyHash = _coldStressMessageKeyHash;
                 return ColdStressMessageKey;
             }
 
-            if (string.Equals(advisoryId, HeatStressAdvisoryId, StringComparison.Ordinal))
+            if (advisoryHash == _heatStressAdvisoryHash)
             {
                 keyHash = _heatStressMessageKeyHash;
                 return HeatStressMessageKey;
@@ -491,11 +693,11 @@ namespace Hecton8.Progression
 
             if (_survivalSystem.IsBeyondSafeDepth)
             {
-                _deepExposureSeconds += 0.5f * math.lerp(1f, 2f, _survivalSystem.PressureExposureSeverity01);
+                _deepExposureSeconds += 0.5f * (1f + _survivalSystem.PressureExposureSeverity01);
                 if (_deepExposureSeconds >= PressureExposureDurationSeconds ||
                     _survivalSystem.PressureExposureSeverity01 >= PressureExposureEmergencySeverity)
                 {
-                    PushAdvisory(PressureExposureAdvisoryId, BuildPressureExposureMessage());
+                    PushAdvisory(_pressureExposureAdvisoryHash, PressureExposureAdvisoryId, BuildPressureExposureMessage());
                 }
 
                 return;
@@ -508,13 +710,13 @@ namespace Hecton8.Progression
         {
             if (_survivalSystem.IsInColdStress)
             {
-                _coldStressExposureSeconds += 0.5f * math.lerp(1f, 2f, _survivalSystem.ColdStressSeverity01);
+                _coldStressExposureSeconds += 0.5f * (1f + _survivalSystem.ColdStressSeverity01);
                 if (!_coldStressLatched && _coldStressExposureSeconds >= ColdStressExposureDurationSeconds)
                 {
                     _coldStressLatched = true;
                     _coldStressIncidentCount++;
                     if ((_issuedFlags & AdvisoryFlags.ColdStress) == 0 && _coldStressIncidentCount >= ColdStressThreshold)
-                        PushAdvisory(ColdStressAdvisoryId, ColdStressMessage);
+                        PushAdvisory(_coldStressAdvisoryHash, ColdStressAdvisoryId, ColdStressMessage);
                 }
             }
             else
@@ -525,13 +727,13 @@ namespace Hecton8.Progression
 
             if (_survivalSystem.IsInHeatStress)
             {
-                _heatStressExposureSeconds += 0.5f * math.lerp(1f, 2f, _survivalSystem.HeatStressSeverity01);
+                _heatStressExposureSeconds += 0.5f * (1f + _survivalSystem.HeatStressSeverity01);
                 if (!_heatStressLatched && _heatStressExposureSeconds >= HeatStressExposureDurationSeconds)
                 {
                     _heatStressLatched = true;
                     _heatStressIncidentCount++;
                     if ((_issuedFlags & AdvisoryFlags.HeatStress) == 0 && _heatStressIncidentCount >= HeatStressThreshold)
-                        PushAdvisory(HeatStressAdvisoryId, HeatStressMessage);
+                        PushAdvisory(_heatStressAdvisoryHash, HeatStressAdvisoryId, HeatStressMessage);
                 }
             }
             else
@@ -543,16 +745,7 @@ namespace Hecton8.Progression
 
         private string BuildPressureExposureMessage()
         {
-            if (_survivalSystem == null || _survivalSystem.Stats == null)
-            {
-                return "Hull tolerance is being spent below the safe envelope. Pull back before pressure damage compounds.";
-            }
-
-            return string.Format(
-                "Hull tolerance is being spent below the safe envelope. Current overpressure is {0:0}m past the {1:0}m suit rating. Peak hull attrition is {2:0.0}/s. Pull back or install a deeper shell.",
-                _survivalSystem.OverpressureMeters,
-                _survivalSystem.Stats.SafeDepth,
-                _survivalSystem.PressureDamagePerSecond);
+            return PressureExposureMessage;
         }
 
         private void TryRegisterWithTickManager()
@@ -569,7 +762,7 @@ namespace Hecton8.Progression
             if (!_registeredToTick)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
 
             _registeredToTick = false;
         }

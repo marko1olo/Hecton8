@@ -15,6 +15,10 @@ namespace Hecton8.UI
     {
         private const string TabletScreenShaderPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader";
         private const float ReferenceResolveRetryIntervalSeconds = 0.5f;
+        private const float HoverRaycastPixelThresholdSq = 16f;
+        private const int PointerTargetCapacity = 256;
+        private const int PointerDiscoveryCapacity = 512;
+        private static readonly bool EnableGraphicRaycasterFallback = false;
         private static readonly string[] s_defaultTabNames =
         {
             "Tab_Inventory",
@@ -72,6 +76,20 @@ namespace Hecton8.UI
         private readonly List<Collider> _tabletColliders = new List<Collider>(4);
         // COLD ALLOC: List<CanvasGroup>[4] — tablet UI visibility cache — owner: DiegeticPDAController
         private readonly List<CanvasGroup> _tabletCanvasGroups = new List<CanvasGroup>(4);
+        // COLD ALLOC: List<MonoBehaviour>(512) — PDA pointer target discovery scratch — owner: DiegeticPDAController
+        private readonly List<MonoBehaviour> _pointerHandlerScratch = new List<MonoBehaviour>(PointerDiscoveryCapacity);
+        // COLD ALLOC: MonoBehaviour[256] — cached PDA pointer dispatch components — owner: DiegeticPDAController
+        private readonly MonoBehaviour[] _pointerTargetHandlers = new MonoBehaviour[PointerTargetCapacity];
+        // COLD ALLOC: RectTransform[256] — cached PDA pointer bounds — owner: DiegeticPDAController
+        private readonly RectTransform[] _pointerTargetRects = new RectTransform[PointerTargetCapacity];
+        // COLD ALLOC: GameObject[256] — cached PDA pointer target game objects — owner: DiegeticPDAController
+        private readonly GameObject[] _pointerTargetObjects = new GameObject[PointerTargetCapacity];
+        // COLD ALLOC: CanvasGroup[256] — cached PDA pointer visibility gates — owner: DiegeticPDAController
+        private readonly CanvasGroup[] _pointerTargetCanvasGroups = new CanvasGroup[PointerTargetCapacity];
+        // COLD ALLOC: Selectable[256] — cached PDA pointer interactable gates — owner: DiegeticPDAController
+        private readonly Selectable[] _pointerTargetSelectables = new Selectable[PointerTargetCapacity];
+        // COLD ALLOC: Graphic[256] — cached PDA pointer draw-depth hints — owner: DiegeticPDAController
+        private readonly Graphic[] _pointerTargetGraphics = new Graphic[PointerTargetCapacity];
 
         private bool _registeredToTickManager;
         private bool _uiConfigured;
@@ -88,12 +106,19 @@ namespace Hecton8.UI
         private GameObject _hoverTarget;
         private GameObject _pressedTarget;
         private GameObject _dragTarget;
+        private GameObject _pointerTargetRoot;
+        private float2 _lastPointerRaycastCanvasPosition;
         private bool _dragInProgress;
+        private bool _hasLastPointerRaycastCanvasPosition;
+        private bool _pointerTargetCacheDirty = true;
+        private bool _pointerTargetCacheOverflow;
+        private int _pointerTargetCount;
         private Material _runtimeTabletScreenMaterial;
-        private float _nextReferenceResolveTime;
+        private float _referenceResolveRetryTimer;
 
         private void Awake()
         {
+            CharBufferPool.Prewarm();
             ResolveReferences();
             ConfigureDiegeticPdaShell();
             ApplyPresentationState(PlayerPDA.IsOpen, force: true);
@@ -102,6 +127,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             ResolveReferences();
+            _referenceResolveRetryTimer = 0f;
             ConfigureDiegeticPdaShell();
             RegisterToTickManager();
         }
@@ -111,6 +137,9 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             _uiConfigured = false;
             ClearPointerState();
+            ClearPointerTargetCache();
+            _pointerTargetRoot = null;
+            _pointerTargetCacheDirty = true;
             ApplyPresentationCullState(false, false, force: true);
             DisposeRuntimeScreenMaterial();
         }
@@ -130,10 +159,23 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            ResolveReferencesThrottled();
+            float safeDeltaTime = math.max(0f, deltaTime);
+            bool openState = PlayerPDA.IsOpen;
+            if (!openState)
+            {
+                if (openState != _lastOpenState)
+                    ApplyPresentationState(false, force: true);
+                else
+                    ApplyPresentationCullState(false, false, force: false);
+                return;
+            }
+
+            if (openState != _lastOpenState)
+                _referenceResolveRetryTimer = 0f;
+
+            ResolveReferencesThrottled(safeDeltaTime);
             ConfigureDiegeticPdaShell();
 
-            bool openState = PlayerPDA.IsOpen;
             if (openState != _lastOpenState)
                 ApplyPresentationState(openState, force: true);
 
@@ -142,23 +184,26 @@ namespace Hecton8.UI
 
         public void ReceiveCanvasInput(in DiegeticPanelInputEvent inputEvent)
         {
-            if (!PlayerPDA.IsOpen || !_lastPresentationActive || !EnsureUiInteractionState())
+            if (!PlayerPDA.IsOpen || !_lastPresentationActive || !EnsureUiInteractionState(allowColdCreateFallback: false))
                 return;
 
-            _panelGraphicRaycaster.enabled = true;
-            _raycastResults.Clear();
+            if (_pressedTarget == null &&
+                (inputEvent.EventType == DiegeticPanelInputEventType.Hold ||
+                 inputEvent.EventType == DiegeticPanelInputEventType.Up))
+            {
+                return;
+            }
 
-            _pointerEventData.Reset();
-            _pointerEventData.position = new Vector2(inputEvent.CanvasHitPoint.x, inputEvent.CanvasHitPoint.y);
-            _pointerEventData.delta = Vector2.zero;
-            _pointerEventData.button = PointerEventData.InputButton.Left;
-            _pointerEventData.scrollDelta = Vector2.zero;
-            _pointerEventData.useDragThreshold = false;
+            if (inputEvent.EventType == DiegeticPanelInputEventType.Hover &&
+                _pressedTarget == null &&
+                !_dragInProgress &&
+                _hasLastPointerRaycastCanvasPosition &&
+                math.lengthsq(inputEvent.CanvasHitPoint - _lastPointerRaycastCanvasPosition) <= HoverRaycastPixelThresholdSq)
+            {
+                return;
+            }
 
-            _panelGraphicRaycaster.Raycast(_pointerEventData, _raycastResults);
-            GameObject hitTarget = _raycastResults.Count > 0 ? _raycastResults[0].gameObject : null;
-            if (_raycastResults.Count > 0)
-                _pointerEventData.pointerCurrentRaycast = _raycastResults[0];
+            GameObject hitTarget = ResolvePanelHitTarget(inputEvent.CanvasHitPoint);
             UpdateHoverTarget(hitTarget);
 
             switch (inputEvent.EventType)
@@ -183,8 +228,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -196,16 +240,19 @@ namespace Hecton8.UI
             _registeredToTickManager = false;
         }
 
-        private void ResolveReferencesThrottled()
+        private void ResolveReferencesThrottled(float deltaTime)
         {
             if (!NeedsReferenceResolve())
+            {
+                _referenceResolveRetryTimer = 0f;
+                return;
+            }
+
+            _referenceResolveRetryTimer = math.max(0f, _referenceResolveRetryTimer - deltaTime);
+            if (_referenceResolveRetryTimer > 0f)
                 return;
 
-            float now = Time.unscaledTime;
-            if (now < _nextReferenceResolveTime)
-                return;
-
-            _nextReferenceResolveTime = now + ReferenceResolveRetryIntervalSeconds;
+            _referenceResolveRetryTimer = ReferenceResolveRetryIntervalSeconds;
             ResolveReferences();
         }
 
@@ -216,7 +263,7 @@ namespace Hecton8.UI
                 diegeticPanelRoot == null ||
                 diegeticPanelCanvasGroup == null ||
                 _panelCanvas == null ||
-                _panelGraphicRaycaster == null)
+                (EnableGraphicRaycasterFallback && _panelGraphicRaycaster == null))
             {
                 return true;
             }
@@ -265,12 +312,15 @@ namespace Hecton8.UI
             if (_panelCanvas == null && diegeticPanelRoot != null)
                 diegeticPanelRoot.TryGetComponent(out _panelCanvas);
 
-            if (_panelGraphicRaycaster == null && _panelCanvas != null)
+            if (EnableGraphicRaycasterFallback && _panelGraphicRaycaster == null && _panelCanvas != null)
             {
                 _panelCanvas.TryGetComponent(out _panelGraphicRaycaster);
                 if (_panelGraphicRaycaster == null)
                     _panelGraphicRaycaster = _panelCanvas.gameObject.AddComponent<GraphicRaycaster>();
             }
+
+            if (!ReferenceEquals(_pointerTargetRoot, diegeticPanelRoot))
+                InvalidatePointerTargetCache();
 
             if (tabletHandAnchor == null)
             {
@@ -307,6 +357,8 @@ namespace Hecton8.UI
 
             EnsureTabRoutingCache(diegeticPanelRoot.transform);
             playerPda.ConfigureUI(diegeticPanelRoot, diegeticPanelCanvasGroup, configuredTabs);
+            EnsureUiInteractionState(allowColdCreateFallback: true);
+            RebuildPointerTargetCache();
             bool openState = PlayerPDA.IsOpen;
             bool presentationActive = IsPdaVisibleToCamera(openState);
             ApplyPresentationCullState(openState, presentationActive, force: true);
@@ -356,7 +408,9 @@ namespace Hecton8.UI
 
             ApplyPresentationCullState(openState, presentationActive, force: true);
 
-            if (!openState)
+            if (openState)
+                InvalidatePointerTargetCache();
+            else
                 ClearPointerState();
 
             if (openState && presentationActive && diegeticPanel != null)
@@ -373,6 +427,12 @@ namespace Hecton8.UI
 
             if (diegeticPanel != null && PausePanelCameraWhenCulled)
                 diegeticPanel.SetPresentationPaused(!presentationActive);
+
+            if (presentationActive)
+                InvalidatePointerTargetCache();
+
+            if (_panelGraphicRaycaster != null && _panelGraphicRaycaster.enabled)
+                _panelGraphicRaycaster.enabled = false;
 
             if (diegeticPanelCanvasGroup != null)
             {
@@ -412,9 +472,16 @@ namespace Hecton8.UI
             if (distanceSq <= 0.0001f)
                 return true;
 
-            float3 directionToPda = toPda * math.rsqrt(distanceSq);
-            float cameraDot = math.dot((float3)cameraTransform.forward, directionToPda);
-            return cameraDot >= cameraFrustumDotThreshold;
+            float cameraForwardDot = math.dot((float3)cameraTransform.forward, toPda);
+            float frustumThreshold = cameraFrustumDotThreshold;
+            float frustumThresholdSq = frustumThreshold * frustumThreshold;
+            float forwardDotSq = cameraForwardDot * cameraForwardDot;
+
+            // Squared cone gate: same normalized-dot threshold without the per-tick rsqrt.
+            if (frustumThreshold <= 0f)
+                return cameraForwardDot >= 0f || forwardDotSq <= distanceSq * frustumThresholdSq;
+
+            return cameraForwardDot > 0f && forwardDotSq >= distanceSq * frustumThresholdSq;
         }
 
         private Transform ResolveVisibilityAnchor()
@@ -488,26 +555,288 @@ namespace Hecton8.UI
             _tabletVisibilityInitialized = true;
         }
 
-        private bool EnsureUiInteractionState()
+        private bool EnsureUiInteractionState(bool allowColdCreateFallback)
         {
-            ResolveReferences();
-            if (_panelCanvas == null || _panelGraphicRaycaster == null)
+            if (allowColdCreateFallback || _panelCanvas == null)
+                ResolveReferences();
+
+            if (_panelCanvas == null)
                 return false;
 
             if (_eventSystem == null)
             {
+                if (!allowColdCreateFallback)
+                    return false;
+
                 _eventSystem = EventSystem.current;
-                if (_eventSystem == null)
+                if (_eventSystem == null && allowColdCreateFallback)
                 {
                     GameObject eventSystemRoot = new GameObject("DiegeticPDA_EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] — PDA pointer-dispatch fallback event system — owner: DiegeticPDAController
                     _eventSystem = eventSystemRoot.GetComponent<EventSystem>();
                 }
             }
 
-            if (_pointerEventData == null && _eventSystem != null)
+            if (_pointerEventData == null)
+            {
+                if (!allowColdCreateFallback || _eventSystem == null)
+                    return false;
+
                 _pointerEventData = new PointerEventData(_eventSystem); // COLD ALLOC: PointerEventData[1] — PDA pointer-dispatch cache — owner: DiegeticPDAController
 
+            }
+
             return _eventSystem != null && _pointerEventData != null;
+        }
+
+        private GameObject ResolvePanelHitTarget(float2 canvasHitPoint)
+        {
+            PreparePointerEventData(canvasHitPoint);
+
+            if (!_pointerTargetCacheOverflow && TryResolveCachedPointerTarget(canvasHitPoint, out GameObject cachedTarget))
+            {
+                _lastPointerRaycastCanvasPosition = canvasHitPoint;
+                _hasLastPointerRaycastCanvasPosition = true;
+                return cachedTarget;
+            }
+
+            if (!EnableGraphicRaycasterFallback)
+            {
+                _pointerEventData.pointerCurrentRaycast = default;
+                _lastPointerRaycastCanvasPosition = canvasHitPoint;
+                _hasLastPointerRaycastCanvasPosition = true;
+                return null;
+            }
+
+            GameObject hitTarget = ResolvePanelHitTargetWithRaycaster();
+            _lastPointerRaycastCanvasPosition = canvasHitPoint;
+            _hasLastPointerRaycastCanvasPosition = true;
+            return hitTarget;
+        }
+
+        private void PreparePointerEventData(float2 canvasHitPoint)
+        {
+            _raycastResults.Clear();
+            _pointerEventData.Reset();
+            _pointerEventData.position = new Vector2(canvasHitPoint.x, canvasHitPoint.y);
+            _pointerEventData.delta = Vector2.zero;
+            _pointerEventData.button = PointerEventData.InputButton.Left;
+            _pointerEventData.scrollDelta = Vector2.zero;
+            _pointerEventData.useDragThreshold = false;
+        }
+
+        private GameObject ResolvePanelHitTargetWithRaycaster()
+        {
+            if (_panelGraphicRaycaster == null)
+                return null;
+
+            bool wasRaycasterEnabled = _panelGraphicRaycaster.enabled;
+            if (!wasRaycasterEnabled)
+                _panelGraphicRaycaster.enabled = true;
+
+            _panelGraphicRaycaster.Raycast(_pointerEventData, _raycastResults);
+            GameObject hitTarget = _raycastResults.Count > 0 ? _raycastResults[0].gameObject : null;
+            if (_raycastResults.Count > 0)
+                _pointerEventData.pointerCurrentRaycast = _raycastResults[0];
+
+            if (!wasRaycasterEnabled)
+                _panelGraphicRaycaster.enabled = false;
+
+            return hitTarget;
+        }
+
+        private bool TryResolveCachedPointerTarget(float2 canvasHitPoint, out GameObject hitTarget)
+        {
+            hitTarget = null;
+
+            if (_pointerTargetCacheDirty)
+                RebuildPointerTargetCache();
+
+            if (_pointerTargetCount <= 0 || _pointerTargetCacheOverflow)
+                return false;
+
+            if (!TryCanvasHitPointToRootWorld(canvasHitPoint, out Vector3 worldPoint))
+                return false;
+
+            int bestIndex = -1;
+            int bestDepth = int.MinValue;
+            for (int i = 0; i < _pointerTargetCount; i++)
+            {
+                if (!IsCachedPointerTargetEnabled(i))
+                    continue;
+
+                RectTransform targetRect = _pointerTargetRects[i];
+                Vector3 localPoint = targetRect.InverseTransformPoint(worldPoint);
+                Rect rect = targetRect.rect;
+                if (localPoint.x < rect.xMin ||
+                    localPoint.x > rect.xMax ||
+                    localPoint.y < rect.yMin ||
+                    localPoint.y > rect.yMax)
+                {
+                    continue;
+                }
+
+                Graphic graphic = _pointerTargetGraphics[i];
+                int drawDepth = graphic != null ? graphic.depth : 0;
+                if (drawDepth > bestDepth || (drawDepth == bestDepth && i > bestIndex))
+                {
+                    bestDepth = drawDepth;
+                    bestIndex = i;
+                }
+            }
+
+            if (bestIndex < 0)
+                return false;
+
+            hitTarget = _pointerTargetObjects[bestIndex];
+            _pointerEventData.pointerCurrentRaycast = default;
+            return hitTarget != null;
+        }
+
+        private bool IsCachedPointerTargetEnabled(int index)
+        {
+            MonoBehaviour handler = _pointerTargetHandlers[index];
+            RectTransform rectTransform = _pointerTargetRects[index];
+            GameObject target = _pointerTargetObjects[index];
+            if (handler == null ||
+                rectTransform == null ||
+                target == null ||
+                !handler.isActiveAndEnabled ||
+                !target.activeInHierarchy)
+            {
+                return false;
+            }
+
+            CanvasGroup canvasGroup = _pointerTargetCanvasGroups[index];
+            if (canvasGroup != null &&
+                canvasGroup.isActiveAndEnabled &&
+                (!canvasGroup.interactable || !canvasGroup.blocksRaycasts || canvasGroup.alpha <= 0.001f))
+            {
+                return false;
+            }
+
+            Selectable selectable = _pointerTargetSelectables[index];
+            return selectable == null || selectable.IsInteractable();
+        }
+
+        private bool TryCanvasHitPointToRootWorld(float2 canvasHitPoint, out Vector3 worldPoint)
+        {
+            worldPoint = default;
+            if (_panelCanvas == null)
+                return false;
+
+            RectTransform canvasRect = _panelCanvas.transform as RectTransform;
+            if (canvasRect == null)
+                return false;
+
+            Rect rect = canvasRect.rect;
+            if (rect.width <= 0.001f || rect.height <= 0.001f)
+                return false;
+
+            Vector2Int referenceResolution = diegeticPanel != null
+                ? diegeticPanel.ReferenceResolutionPixels
+                : SanitizeTabletResolution(tabletRenderTextureResolution);
+
+            float2 uv = new float2(
+                math.saturate(canvasHitPoint.x / math.max(1, referenceResolution.x)),
+                math.saturate(canvasHitPoint.y / math.max(1, referenceResolution.y)));
+
+            Vector3 localPoint = new Vector3(
+                rect.xMin + (rect.width * uv.x),
+                rect.yMin + (rect.height * uv.y),
+                0f);
+            worldPoint = canvasRect.TransformPoint(localPoint);
+            return true;
+        }
+
+        private void RebuildPointerTargetCache()
+        {
+            ClearPointerTargetCache();
+            _pointerTargetRoot = diegeticPanelRoot;
+            _pointerTargetCacheDirty = false;
+
+            if (diegeticPanelRoot == null)
+                return;
+
+            diegeticPanelRoot.GetComponentsInChildren(true, _pointerHandlerScratch);
+            for (int i = 0; i < _pointerHandlerScratch.Count; i++)
+            {
+                MonoBehaviour handler = _pointerHandlerScratch[i];
+                if (handler == null || !IsPointerDispatchTarget(handler))
+                    continue;
+
+                RectTransform handlerRect = handler.transform as RectTransform;
+                if (handlerRect == null)
+                    continue;
+
+                GameObject target = handler.gameObject;
+                bool duplicateTarget = false;
+                for (int targetIndex = 0; targetIndex < _pointerTargetCount; targetIndex++)
+                {
+                    if (ReferenceEquals(_pointerTargetObjects[targetIndex], target))
+                    {
+                        duplicateTarget = true;
+                        break;
+                    }
+                }
+
+                if (duplicateTarget)
+                    continue;
+
+                if (_pointerTargetCount >= PointerTargetCapacity)
+                {
+                    _pointerTargetCacheOverflow = true;
+                    break;
+                }
+
+                CanvasGroup canvasGroup = handler.GetComponentInParent<CanvasGroup>();
+                handler.TryGetComponent(out Selectable selectable);
+                handler.TryGetComponent(out Graphic graphic);
+
+                _pointerTargetHandlers[_pointerTargetCount] = handler;
+                _pointerTargetRects[_pointerTargetCount] = handlerRect;
+                _pointerTargetObjects[_pointerTargetCount] = target;
+                _pointerTargetCanvasGroups[_pointerTargetCount] = canvasGroup;
+                _pointerTargetSelectables[_pointerTargetCount] = selectable;
+                _pointerTargetGraphics[_pointerTargetCount] = graphic;
+                _pointerTargetCount++;
+            }
+
+            _pointerHandlerScratch.Clear();
+        }
+
+        private void ClearPointerTargetCache()
+        {
+            for (int i = 0; i < _pointerTargetCount; i++)
+            {
+                _pointerTargetHandlers[i] = null;
+                _pointerTargetRects[i] = null;
+                _pointerTargetObjects[i] = null;
+                _pointerTargetCanvasGroups[i] = null;
+                _pointerTargetSelectables[i] = null;
+                _pointerTargetGraphics[i] = null;
+            }
+
+            _pointerTargetCount = 0;
+            _pointerTargetCacheOverflow = false;
+            _pointerHandlerScratch.Clear();
+        }
+
+        private void InvalidatePointerTargetCache()
+        {
+            _pointerTargetCacheDirty = true;
+        }
+
+        private static bool IsPointerDispatchTarget(MonoBehaviour handler)
+        {
+            return handler is IPointerClickHandler ||
+                   handler is IPointerDownHandler ||
+                   handler is IPointerUpHandler ||
+                   handler is IPointerEnterHandler ||
+                   handler is IPointerExitHandler ||
+                   handler is IDragHandler ||
+                   handler is IBeginDragHandler ||
+                   handler is IEndDragHandler ||
+                   handler is IDropHandler;
         }
 
         private void UpdateHoverTarget(GameObject hitTarget)
@@ -593,17 +922,41 @@ namespace Hecton8.UI
 
         private void ClearPointerState()
         {
-            if (_pointerEventData != null)
-                _pointerEventData.Reset();
+            if (_pressedTarget != null && _pointerEventData != null)
+                CancelActivePointerGesture();
 
             if (_hoverTarget != null && _pointerEventData != null)
                 ExecuteEvents.ExecuteHierarchy(_hoverTarget, _pointerEventData, ExecuteEvents.pointerExitHandler);
+
+            if (_pointerEventData != null)
+                _pointerEventData.Reset();
 
             _hoverTarget = null;
             _pressedTarget = null;
             _dragTarget = null;
             _dragInProgress = false;
+            _hasLastPointerRaycastCanvasPosition = false;
             _raycastResults.Clear();
+        }
+
+        private void CancelActivePointerGesture()
+        {
+            if (_pointerEventData == null)
+                return;
+
+            if (_dragInProgress && _pointerEventData.pointerDrag != null)
+                ExecuteEvents.Execute(_pointerEventData.pointerDrag, _pointerEventData, ExecuteEvents.endDragHandler);
+
+            if (_pressedTarget != null)
+                ExecuteEvents.ExecuteHierarchy(_pressedTarget, _pointerEventData, ExecuteEvents.pointerUpHandler);
+
+            _pressedTarget = null;
+            _dragTarget = null;
+            _dragInProgress = false;
+            _pointerEventData.pointerPress = null;
+            _pointerEventData.rawPointerPress = null;
+            _pointerEventData.pointerDrag = null;
+            _pointerEventData.dragging = false;
         }
 
         private Material ResolveTabletScreenMaterial()
@@ -636,16 +989,16 @@ namespace Hecton8.UI
         private static Vector2Int SanitizeTabletResolution(Vector2Int resolution)
         {
             return new Vector2Int(
-                Mathf.Clamp(resolution.x, 64, 512),
-                Mathf.Clamp(resolution.y, 64, 512));
+                math.clamp(resolution.x, 64, 512),
+                math.clamp(resolution.y, 64, 512));
         }
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
             tabletRenderTextureResolution = SanitizeTabletResolution(tabletRenderTextureResolution);
-            activeCameraDistanceMeters = Mathf.Max(0.5f, activeCameraDistanceMeters);
-            cameraFrustumDotThreshold = Mathf.Clamp(cameraFrustumDotThreshold, -0.2f, 0.8f);
+            activeCameraDistanceMeters = math.max(0.5f, activeCameraDistanceMeters);
+            cameraFrustumDotThreshold = math.clamp(cameraFrustumDotThreshold, -0.2f, 0.8f);
         }
 #endif
     }

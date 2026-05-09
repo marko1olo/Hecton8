@@ -99,6 +99,9 @@ namespace Hecton8.Physics
         /// </summary>
         public static void PublishSplashQueued(in SplashEvent splashEvent)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             Enqueue(in splashEvent);
         }
 
@@ -159,6 +162,7 @@ namespace Hecton8.Physics
                     nameof(FluidFeedbackEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -170,11 +174,29 @@ namespace Hecton8.Physics
                     nameof(FluidFeedbackEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
         private static bool Enqueue(in SplashEvent splashEvent)
         {
+            if (_listeners.Count <= 0)
+                return false;
+
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportOverflowOncePerFrame();

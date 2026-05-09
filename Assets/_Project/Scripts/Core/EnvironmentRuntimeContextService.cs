@@ -9,7 +9,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9925)]
-    public sealed class EnvironmentRuntimeContextService : MonoBehaviour, IEnvironmentRuntimeContext, IUpdatable, IServiceHeartbeat
+    public sealed class EnvironmentRuntimeContextService : MonoBehaviour, IEnvironmentRuntimeContext, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         private bool _isInitialized;
         private bool _registeredUpdatable;
@@ -131,8 +131,22 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             TryUnregisterUpdatable();
             TryUnregisterContext();
+            _isInitialized = false;
+            _constructionManager = null;
+            _moduleCatalog = null;
+            _hazardZoneManager = null;
 
             GlobalRegistry.ClearEnvironmentRuntimeContextRuntime(this);
         }

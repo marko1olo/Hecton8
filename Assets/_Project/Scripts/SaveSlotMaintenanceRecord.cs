@@ -33,45 +33,55 @@ namespace Hecton8.SaveSystem
 
         public static string GetPath(string slotName)
         {
-            return $"{slotName}.diag";
+            return SaveManager.GetDiagnosticSaveFilePath(slotName);
         }
 
         public void Save()
         {
-            if (string.IsNullOrEmpty(SlotName))
+            if (!SaveManager.TryResolveSafeSlotName(SlotName, out string safeSlotName))
                 return;
 
+            SlotName = safeSlotName;
             if (!SaveSidecarStorage.SaveMaintenanceRecord(this, out string error))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 UnityEngine.Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to save diag for '{SlotName}': {error}");
+#endif
+            }
         }
 
         public static SaveSlotMaintenanceRecord Load(string slotName)
         {
-            if (string.IsNullOrEmpty(slotName))
+            if (!SaveManager.TryResolveSafeSlotName(slotName, out string safeSlotName))
                 return null;
 
-            if (!SaveSidecarStorage.Exists(GetPath(slotName)))
+            if (!SaveSidecarStorage.Exists(GetPath(safeSlotName)))
                 return null;
 
             try
             {
-                return SaveSidecarStorage.LoadMaintenanceRecord(slotName, out SaveSlotMaintenanceRecord record, out string error)
+                return SaveSidecarStorage.LoadMaintenanceRecord(safeSlotName, out SaveSlotMaintenanceRecord record, out string error)
                     ? record
-                    : HandleLoadFailure(slotName, error);
+                    : HandleLoadFailure(safeSlotName, error);
             }
             catch (Exception ex)
             {
-                UnityEngine.Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to load diag for '{slotName}': {ex.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                UnityEngine.Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to load diag for '{safeSlotName}': {ex.Message}");
+#endif
                 return null;
             }
         }
 
         public static SaveSlotMaintenanceRecord Create(string slotName)
         {
+            if (!SaveManager.TryResolveSafeSlotName(slotName, out string safeSlotName))
+                return null;
+
             return new SaveSlotMaintenanceRecord
             {
-                SlotName = slotName,
-                LastKnownIntegrityState = SaveSlotIntegrityState.Empty.ToString(),
+                SlotName = safeSlotName,
+                LastKnownIntegrityState = SaveSlotInfo.ToStorageString(SaveSlotIntegrityState.Empty),
                 LastFailureContext = string.Empty,
                 LastFailureMessage = string.Empty,
                 LastAuditMessage = string.Empty,
@@ -81,7 +91,9 @@ namespace Hecton8.SaveSystem
 
         private static SaveSlotMaintenanceRecord HandleLoadFailure(string slotName, string error)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             UnityEngine.Debug.LogWarning($"[SaveSlotMaintenanceRecord] Failed to load diag for '{slotName}': {error}");
+#endif
             return null;
         }
     }

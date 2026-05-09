@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -115,22 +116,22 @@ namespace Hecton8.Atmosphere
                 strikeDirection.z = Mathf.Sin(randomA * Mathf.PI * 2f);
             }
 
-            strikeDirection.Normalize();
+            strikeDirection = ResolveSafeDirection(strikeDirection, Vector3.forward);
 
             Vector3 endPoint = impactPosition;
             Vector3 startPoint = endPoint + Vector3.up * lightningHeight;
             Vector3 side = Vector3.Cross(Vector3.up, strikeDirection);
             if (side.sqrMagnitude < 0.0001f)
                 side = Vector3.right;
-            side.Normalize();
+            side = ResolveSafeDirection(side, Vector3.right);
 
             Vector3 windOffset = new Vector3(windDirection.x, 0f, windDirection.y) * 3f;
 
             for (int i = 0; i < BoltPointCount; i++)
             {
                 float t = i / (BoltPointCount - 1f);
-                Vector3 point = Vector3.Lerp(startPoint, endPoint, t);
-                float jitterAmplitude = Mathf.Lerp(14f, 1.5f, t);
+                Vector3 point = startPoint + ((endPoint - startPoint) * t);
+                float jitterAmplitude = LerpClamped(14f, 1.5f, t);
                 float phase = (randomA * 13.37f) + (randomB * 7.11f) + (i * 1.618f);
                 point += side * (Mathf.Sin(phase) * jitterAmplitude);
                 point += windOffset * (1f - t) * 0.2f;
@@ -143,8 +144,9 @@ namespace Hecton8.Atmosphere
             _boltRenderer.positionCount = BoltPointCount;
             _boltRenderer.SetPositions(_boltPoints);
             float widthScale = Mathf.Max(0.5f, boltWidthMultiplier);
-            _boltRenderer.startWidth = Mathf.Lerp(0.9f, 1.6f, Mathf.Clamp01(flashStrength)) * widthScale;
-            _boltRenderer.endWidth = Mathf.Lerp(0.12f, 0.24f, Mathf.Clamp01(flashStrength)) * widthScale;
+            float flash01 = math.saturate(flashStrength);
+            _boltRenderer.startWidth = LerpClamped(0.9f, 1.6f, flash01) * widthScale;
+            _boltRenderer.endWidth = LerpClamped(0.12f, 0.24f, flash01) * widthScale;
             _boltRenderer.enabled = true;
 
             _boltTimer = BoltDurationSeconds;
@@ -200,7 +202,9 @@ namespace Hecton8.Atmosphere
                 if (!_loggedMissingBoltRenderer)
                 {
                     _loggedMissingBoltRenderer = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError("[SurfaceWeatherVfxRig] Missing authored LineRenderer. Add it to this rig or assign authoredBoltRenderer; runtime renderer creation is forbidden.", this);
+#endif
                 }
 
                 return;
@@ -235,7 +239,9 @@ namespace Hecton8.Atmosphere
             if (!_loggedMissingBoltMaterial)
             {
                 _loggedMissingBoltMaterial = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[SurfaceWeatherVfxRig] Missing lightningBoltMaterial asset. Runtime material creation is forbidden for lightning bolt rendering.", this);
+#endif
             }
 
             return null;
@@ -255,6 +261,19 @@ namespace Hecton8.Atmosphere
                 _boltPoints[i] -= shiftOffset;
 
             _boltRenderer.SetPositions(_boltPoints);
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
+        {
+            float sqrMagnitude = value.sqrMagnitude;
+            return sqrMagnitude > 0.000001f
+                ? value * math.rsqrt(sqrMagnitude)
+                : fallback;
+        }
+
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return math.lerp(from, to, math.saturate(t));
         }
 
         private void UpdateLightningState(float deltaTime)

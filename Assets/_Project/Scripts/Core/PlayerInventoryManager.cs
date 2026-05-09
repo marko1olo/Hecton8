@@ -11,7 +11,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9922)]
-    public sealed class PlayerInventoryManager : MonoBehaviour, IPlayerInventoryService, IUpdatable, IServiceHeartbeat
+    public sealed class PlayerInventoryManager : MonoBehaviour, IPlayerInventoryService, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         [Header("── Inventory Capacity ──────────────────")]
         [Tooltip("Authoritative player carry-capacity ceiling used by UI/readiness systems. Current inventory mass above this value is treated as encumbered.")]
@@ -138,8 +138,25 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             TryUnregisterUpdatable();
             TryUnregisterService();
+            _isInitialized = false;
+            _syncInProgress = false;
+            _playerObject = null;
+            _toolManager = null;
+            _inventory = null;
+            _playerBuilder = null;
+            _handAnchor = null;
         }
 
         private void SyncInventoryContext()

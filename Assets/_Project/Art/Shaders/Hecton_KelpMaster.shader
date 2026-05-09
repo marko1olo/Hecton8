@@ -87,10 +87,13 @@ Shader "Hecton8/Flora/KelpMaster"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #pragma shader_feature_local _QUALITY_MX350 _QUALITY_HIGH
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -149,8 +152,6 @@ Shader "Hecton8/Flora/KelpMaster"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
-            TEXTURE2D(_DetailMap);
-            SAMPLER(sampler_DetailMap);
             TEXTURE2D(_NormalMap);
             SAMPLER(sampler_NormalMap);
             TEXTURE2D(_MaskMap);
@@ -189,44 +190,83 @@ Shader "Hecton8/Flora/KelpMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            half3 ComputeTriplanarWeights(half3 normalWS)
+            half ResolveFloraDominantAxis(half3 normalWS, float3 positionWS)
             {
-                half sharpness = max(_TriplanarSharpness, 1.0h);
-                half3 weights = pow(saturate(abs(normalWS)), sharpness);
-                half weightSum = max(weights.x + weights.y + weights.z, 0.0001h);
-                return weights / weightSum;
+                half3 absNormal = abs(normalWS);
+                half jitter = (half)HectonCoreLitHash12(floor(positionWS.xz * 19.17)) - 0.5h;
+                half edgeNoise = jitter * 0.08h;
+                absNormal.x += edgeNoise;
+                absNormal.z -= edgeNoise;
+
+                if (absNormal.y >= absNormal.x && absNormal.y >= absNormal.z)
+                    return 1.0h;
+
+                return absNormal.x >= absNormal.z ? 0.0h : 2.0h;
             }
 
-            half4 SampleFloraTriplanar(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 weights)
+            float2 ResolveFloraAxisUv(float3 positionWS, half axis)
             {
-                half4 ySample = SAMPLE_TEXTURE2D(tex, samp, positionWS.xz * _TriplanarScale);
-                if (weights.y >= 0.999h)
-                    return ySample;
+                if (axis < 0.5h)
+                    return positionWS.zy * _TriplanarScale;
 
-                half4 xSample = SAMPLE_TEXTURE2D(tex, samp, positionWS.zy * _TriplanarScale);
-                half4 zSample = SAMPLE_TEXTURE2D(tex, samp, positionWS.xy * _TriplanarScale);
-                return xSample * weights.x + ySample * weights.y + zSample * weights.z;
+                if (axis < 1.5h)
+                    return positionWS.xz * _TriplanarScale;
+
+                return positionWS.xy * _TriplanarScale;
             }
 
-            half3 SampleFloraTriplanarNormal(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 weights, half strength)
+            half4 SampleFloraTriplanar(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half axis)
             {
-                half3 normalY = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, positionWS.xz * _TriplanarScale), strength);
-                normalY = half3(normalY.x, 0.0h, normalY.y);
-                if (weights.y >= 0.999h)
-                    return normalize(normalY);
+                return SAMPLE_TEXTURE2D(tex, samp, ResolveFloraAxisUv(positionWS, axis));
+            }
 
-                half3 normalX = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, positionWS.zy * _TriplanarScale), strength);
-                normalX = half3(0.0h, normalX.y, normalX.x);
-                half3 normalZ = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, positionWS.xy * _TriplanarScale), strength);
-                normalZ = half3(normalZ.x, normalZ.y, 0.0h);
-                return normalize(normalX * weights.x + normalY * weights.y + normalZ * weights.z);
+            half3 SampleFloraTriplanarNormal(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half axis, half strength)
+            {
+                half3 sampledNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, ResolveFloraAxisUv(positionWS, axis)), strength);
+                if (axis < 0.5h)
+                    return half3(0.0h, sampledNormal.y, sampledNormal.x);
+
+                if (axis < 1.5h)
+                    return half3(sampledNormal.x, 0.0h, sampledNormal.y);
+
+                return half3(sampledNormal.x, sampledNormal.y, 0.0h);
             }
 
             half ComputeCurvatureWetness(half3 normalWS)
             {
                 half3 dx = ddx(normalWS);
                 half3 dy = ddy(normalWS);
-                return saturate((length(dx) + length(dy)) * _CurvatureWetnessStrength);
+                half3 dxAbs = abs(dx);
+                half3 dyAbs = abs(dy);
+                half dxApprox = max(max(dxAbs.x, dxAbs.y), dxAbs.z);
+                half dyApprox = max(max(dyAbs.x, dyAbs.y), dyAbs.z);
+                return saturate((dxApprox + dyApprox) * (_CurvatureWetnessStrength * 1.35h));
+            }
+
+            half FastKelpPower01(half value, half exponent)
+            {
+                half v = saturate(value);
+                half v2 = v * v;
+                half v4 = v2 * v2;
+                half v8 = v4 * v4;
+                half low = lerp(v, v2, saturate(exponent - 1.0h));
+                half high = lerp(v2, v8, saturate((exponent - 2.0h) * 0.16666667h));
+                return lerp(low, high, step(2.0h, exponent));
+            }
+
+            half FastKelpSpecularPower01(half value, half exponent)
+            {
+                half v = saturate(value);
+                half v2 = v * v;
+                half v4 = v2 * v2;
+                half v8 = v4 * v4;
+                half v16 = v8 * v8;
+                half v32 = v16 * v16;
+                half v48 = v32 * v16;
+                half low = lerp(v8, v16, saturate((exponent - 8.0h) * 0.125h));
+                half mid = lerp(v16, v32, saturate((exponent - 16.0h) * 0.0625h));
+                half high = lerp(v32, v48, saturate((exponent - 32.0h) * 0.0625h));
+                return lerp(lerp(low, mid, step(16.0h, exponent)), high, step(32.0h, exponent));
             }
 
             Varyings Vert(Attributes input)
@@ -238,10 +278,10 @@ Shader "Hecton8/Flora/KelpMaster"
 
                 float3 positionOS = input.positionOS.xyz;
                 half heightMask = saturate(input.uv.y);
-                half driftWave = sin(_Time.y * (_SwaySpeed * 0.3h) + positionOS.y * 0.1h) * 0.15h * _BiolumCurrentResponse;
+                half driftWave = ((half)HectonCoreLitTrianglePulse01(_Time.y * (_SwaySpeed * 0.3h) + positionOS.y * 0.1h) * 2.0h - 1.0h) * 0.15h * _BiolumCurrentResponse;
                 half swayPhase = (positionOS.x + positionOS.z) * _SwayPhaseScale + input.color.r * 2.1h;
-                half primaryWave = sin(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency) * 0.7h;
-                half secondaryWave = sin(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 0.3h;
+                half primaryWave = ((half)HectonCoreLitTrianglePulse01(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency) * 2.0h - 1.0h) * 0.7h;
+                half secondaryWave = ((half)HectonCoreLitTrianglePulse01(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 2.0h - 1.0h) * 0.3h;
                 half swayWave = primaryWave + secondaryWave + driftWave;
                 half swayAmplitude = _SwayAmplitude;
                 #if defined(_QUALITY_MX350)
@@ -249,9 +289,11 @@ Shader "Hecton8/Flora/KelpMaster"
                 #endif
                 float3 positionWS_Interact = GetVertexPositionInputs(positionOS).positionWS;
                 float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washDist = length(washDir);
-                float washStrength = saturate(1.0 - washDist / _HectonPropWashPosition.w);
-                positionOS.xyz += normalize(washDir) * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
+                float washRadius = max(_HectonPropWashPosition.w, 0.0001);
+                float washDistSq = dot(washDir, washDir);
+                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
+                positionOS.xyz += washDirection * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
 
                 positionOS.xz += input.normalOS.xz * (swayWave * swayAmplitude * heightMask);
 
@@ -259,9 +301,9 @@ Shader "Hecton8/Flora/KelpMaster"
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
-                output.normalWS = normalize(normalInputs.normalWS);
-                output.tangentWS = half4(normalize(normalInputs.tangentWS), input.tangentOS.w);
-                output.bitangentWS = normalize(normalInputs.bitangentWS);
+                output.normalWS = (half3)HectonCoreLitSafeNormalize(normalInputs.normalWS);
+                output.tangentWS = half4((half3)HectonCoreLitSafeNormalize(normalInputs.tangentWS), input.tangentOS.w);
+                output.bitangentWS = (half3)HectonCoreLitSafeNormalize(normalInputs.bitangentWS);
                 output.color = input.color;
                 output.uv = input.uv;
                 output.viewDirWS = SafeNormalize(GetWorldSpaceViewDir(positionInputs.positionWS));
@@ -272,12 +314,13 @@ Shader "Hecton8/Flora/KelpMaster"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(LOD_FADE_CROSSFADE)
                 LODFadeCrossFade(input.positionCS);
                 #endif
 
-                half3 baseNormalWS = normalize(input.normalWS);
-                half3 tangentWS = normalize(input.tangentWS.xyz);
+                half3 baseNormalWS = (half3)HectonCoreLitSafeNormalize(input.normalWS);
+                half3 tangentWS = (half3)HectonCoreLitSafeNormalize(input.tangentWS.xyz);
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
                 half tintMask = saturate(input.color.r) * _VertexTintStrength;
                 half moisture = saturate(input.color.g);
@@ -287,38 +330,38 @@ Shader "Hecton8/Flora/KelpMaster"
                 half centerDistance = abs(widthMask - 0.5h) * 2.0h;
                 half midribMask = saturate(1.0h - centerDistance * centerDistance * 6.0h);
                 half edgeMask = saturate((centerDistance - 0.24h) / 0.76h);
-                half3 triplanarWeights = ComputeTriplanarWeights(baseNormalWS);
+                half triplanarAxis = ResolveFloraDominantAxis(baseNormalWS, input.positionWS);
 
                 float3 samplePositionWS = input.positionWS;
-                half4 maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarWeights);
+                half4 maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarAxis);
                 #if defined(_QUALITY_HIGH)
                 samplePositionWS -= viewDirWS * ((maskSample.b - 0.5h) * _HeightScale);
-                maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarWeights);
+                maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarAxis);
                 #endif
 
-                half3 baseTex = SampleFloraTriplanar(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), samplePositionWS, triplanarWeights).rgb;
+                half3 baseTex = SampleFloraTriplanar(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), samplePositionWS, triplanarAxis).rgb;
                 half3 triplanarNormalWS = SampleFloraTriplanarNormal(
                     TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap),
                     samplePositionWS,
-                    triplanarWeights,
+                    triplanarAxis,
                     _NormalStrength * _NormalScale);
                 float2 detailUv = samplePositionWS.xz * (_CausticScale * 0.08h)
                     + float2(_Time.y * _CausticSpeed, _Time.y * (_CausticSpeed * 0.73h));
-                half detailSample = SAMPLE_TEXTURE2D(_DetailMap, sampler_DetailMap, detailUv).r;
+                half detailSample = (half)HectonCoreLitValueNoise2(detailUv);
 
                 half curveSigned = (widthMask - 0.5h) * 2.0h;
-                half3 normalWS = normalize(
+                half3 normalWS = (half3)HectonCoreLitSafeNormalize(
                     baseNormalWS
                     + triplanarNormalWS
                     + tangentWS * (curveSigned * edgeMask * _BladeCurveNormalStrength)
                     + baseNormalWS * (midribMask * (_BladeCurveNormalStrength * 0.18h)));
 
                 Light mainLight = GetMainLight();
-                half3 lightDir = normalize(mainLight.direction);
+                half3 lightDir = (half3)HectonCoreLitSafeNormalize(mainLight.direction);
                 half NdotL = saturate(dot(normalWS, lightDir));
                 half wrapDiffuse = saturate(dot(normalWS, lightDir) * 0.5h + 0.5h);
                 half backLight = saturate(dot(-normalWS, lightDir));
-                half rim = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower);
+                half rim = FastKelpPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower);
                 half curvatureWetness = ComputeCurvatureWetness(normalWS);
                 half wetness = saturate(maskSample.g + moisture * _MoistureBoost + curvatureWetness);
                 half detailMask = lerp(1.0h, detailSample, saturate(_DetailStrength + edgeMask * _EdgeDetailBoost));
@@ -328,8 +371,8 @@ Shader "Hecton8/Flora/KelpMaster"
                 half glossMask = saturate(glossNoise + wetness * 0.28h + midribMask * _MidribGlossBoost - edgeMask * (_EdgeWearDarkening * 0.22h));
                 half roughness = saturate(lerp(0.7h, 0.2h, wetness));
                 half fieldPhase = _Time.y * _BiolumPulseFrequency + samplePositionWS.x * 0.08h + samplePositionWS.z * 0.05h + input.uv.y * 3.1h;
-                half pulse = 1.0h + sin(fieldPhase) * _BiolumPulseAmplitude;
-                half currentWave = 0.5h + 0.5h * sin(_Time.y * (_BiolumPulseFrequency * 0.72h) + samplePositionWS.x * 0.04h - samplePositionWS.z * 0.06h);
+                half pulse = 1.0h + ((half)HectonCoreLitTrianglePulse01(fieldPhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
+                half currentWave = (half)HectonCoreLitTrianglePulse01(_Time.y * (_BiolumPulseFrequency * 0.72h) + samplePositionWS.x * 0.04h - samplePositionWS.z * 0.06h);
                 half biolumMask = saturate((edgeMask * 0.38h + thicknessMask * 0.34h + maskSample.b * 0.32h + detailSample * 0.18h) * _BiolumMaskStrength);
                 half biolumField = lerp(1.0h, currentWave, saturate(_BiolumCurrentResponse));
                 half oceanZoneInfluence = saturate(_HectonOceanBiolumStrength);
@@ -351,19 +394,19 @@ Shader "Hecton8/Flora/KelpMaster"
                 half3 diffuse = albedo * (ambient + mainLight.color * wrapDiffuse);
 
                 // Master Grade SSS (Biological Translucency)
-                half sssForward = pow(saturate(dot(lightDir, viewDirWS)), _SSSPower);
-                half sssBack = pow(saturate(dot(-lightDir, viewDirWS)), _SSSPower * 0.5h);
+                half sssForward = FastKelpPower01(saturate(dot(lightDir, viewDirWS)), _SSSPower);
+                half sssBack = FastKelpPower01(saturate(dot(-lightDir, viewDirWS)), _SSSPower * 0.5h);
                 half sssMask = thicknessMask * causticMask;
                 half3 sssLighting = _SSSColor.rgb * ((sssForward + sssBack * 0.4h) * _SSSStrength * sssMask);
                 sssLighting += _SSSColor.rgb * (_SSSAmbient * ambient * thicknessMask);
 
                 half3 transmission = _TransmissionColor.rgb * (backLight * _TransmissionStrength * thicknessMask * causticMask);
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
-                half specular = pow(saturate(dot(normalize(lightDir + viewDirWS), normalWS)), lerp(12.0h, 48.0h, 1.0h - roughness)) * (1.0h - roughness) * 0.18h * glossMask;
+                half specular = FastKelpSpecularPower01(saturate(dot((half3)HectonCoreLitSafeNormalize(lightDir + viewDirWS), normalWS)), lerp(12.0h, 48.0h, 1.0h - roughness)) * (1.0h - roughness) * 0.18h * glossMask;
                 half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField);
                 biolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
                 biolum += volumeBiolum * (0.45h + thicknessMask * 0.55h);
-                half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
+                half fresnel = FastKelpPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 
                 half3 color = diffuse + transmission + rimLighting + specular + biolum + sssLighting;
                 color = lerp(color, unity_FogColor.rgb * 0.85h, saturate(fresnel * (0.55h + wetness * 0.45h)));
@@ -389,7 +432,10 @@ Shader "Hecton8/Flora/KelpMaster"
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile _ LOD_FADE_CROSSFADE
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
@@ -465,6 +511,11 @@ Shader "Hecton8/Flora/KelpMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            half FastKelpTriangleSigned(half phase)
+            {
+                return (1.0h - abs(frac(phase * 0.15915494h + 0.25h) * 2.0h - 1.0h)) * 2.0h - 1.0h;
+            }
+
             ShadowVaryings ShadowVert(ShadowAttributes input)
             {
                 ShadowVaryings output;
@@ -477,16 +528,18 @@ Shader "Hecton8/Flora/KelpMaster"
 
                 // Replicate sway from ForwardLit for shadow consistency.
                 half swayPhase = (positionOS.x + positionOS.z) * _SwayPhaseScale + input.color.r * 2.1h;
-                half primaryWave = sin(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency) * 0.7h;
-                half secondaryWave = sin(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 0.3h;
+                half primaryWave = FastKelpTriangleSigned(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency) * 0.7h;
+                half secondaryWave = FastKelpTriangleSigned(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 0.3h;
                 half swayWave = primaryWave + secondaryWave;
 
                 // Prop wash interaction.
                 float3 positionWS_Interact = TransformObjectToWorld(positionOS);
                 float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washDist = length(washDir);
-                float washStrength = saturate(1.0 - washDist / _HectonPropWashPosition.w);
-                positionOS.xyz += normalize(washDir) * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
+                float washRadius = max(_HectonPropWashPosition.w, 0.0001);
+                float washDistSq = dot(washDir, washDir);
+                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
+                positionOS.xyz += washDirection * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
                 positionOS.xz += input.normalOS.xz * (swayWave * _SwayAmplitude * heightMask);
 
                 float3 positionWS = TransformObjectToWorld(positionOS);
@@ -505,6 +558,7 @@ Shader "Hecton8/Flora/KelpMaster"
             half4 ShadowFrag(ShadowVaryings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(LOD_FADE_CROSSFADE)
                 LODFadeCrossFade(input.positionCS);
                 #endif
@@ -528,7 +582,10 @@ Shader "Hecton8/Flora/KelpMaster"
             #pragma vertex DepthVert
             #pragma fragment DepthFrag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile _ LOD_FADE_CROSSFADE
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
@@ -602,6 +659,11 @@ Shader "Hecton8/Flora/KelpMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            half FastKelpTriangleSigned(half phase)
+            {
+                return (1.0h - abs(frac(phase * 0.15915494h + 0.25h) * 2.0h - 1.0h)) * 2.0h - 1.0h;
+            }
+
             DepthVaryings DepthVert(DepthAttributes input)
             {
                 DepthVaryings output;
@@ -612,15 +674,17 @@ Shader "Hecton8/Flora/KelpMaster"
                 float3 positionOS = input.positionOS.xyz;
                 half heightMask = saturate(input.uv.y);
                 half swayPhase = (positionOS.x + positionOS.z) * _SwayPhaseScale + input.color.r * 2.1h;
-                half primaryWave = sin(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency) * 0.7h;
-                half secondaryWave = sin(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 0.3h;
+                half primaryWave = FastKelpTriangleSigned(_Time.y * _SwaySpeed + swayPhase + positionOS.y * _SwayFrequency) * 0.7h;
+                half secondaryWave = FastKelpTriangleSigned(_Time.y * (_SwaySpeed * 0.43h) + swayPhase * 1.5h + positionOS.y * (_SwayFrequency * 1.7h)) * 0.3h;
                 half swayWave = primaryWave + secondaryWave;
 
                 float3 positionWS_Interact = TransformObjectToWorld(positionOS);
                 float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washDist = length(washDir);
-                float washStrength = saturate(1.0 - washDist / _HectonPropWashPosition.w);
-                positionOS.xyz += normalize(washDir) * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
+                float washRadius = max(_HectonPropWashPosition.w, 0.0001);
+                float washDistSq = dot(washDir, washDir);
+                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
+                positionOS.xyz += washDirection * (washStrength * _HectonPropWashForce * _PropWashDisplacement * heightMask);
                 positionOS.xz += input.normalOS.xz * (swayWave * _SwayAmplitude * heightMask);
 
                 output.positionCS = TransformObjectToHClip(positionOS);
@@ -630,6 +694,7 @@ Shader "Hecton8/Flora/KelpMaster"
             half4 DepthFrag(DepthVaryings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(LOD_FADE_CROSSFADE)
                 LODFadeCrossFade(input.positionCS);
                 #endif

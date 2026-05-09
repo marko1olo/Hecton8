@@ -7,6 +7,7 @@ using Hecton.Localization;
 using Hecton8.Input;
 using System.Text;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -384,7 +385,7 @@ namespace Hecton8.UI
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
             int rebootProgressPercent = intrusionActive
-                ? Mathf.RoundToInt(_intrusionManager.RebootProgressNormalized * 100f)
+                ? (int)math.round(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
 
             if (stressBucket == _lastStressCorruptionBucket &&
@@ -586,14 +587,14 @@ namespace Hecton8.UI
             int readyTools = CountReadyTools();
             int assignedTools = toolManager != null ? CountAssignedTools() : 0;
             int activeTabIndex = playerPDA != null ? playerPDA.ActiveTab : -1;
-            int weightDeci = Mathf.RoundToInt(weight * 10f);
-            int oxygenPercent = Mathf.RoundToInt(oxygen * 100f);
-            int energyPercent = Mathf.RoundToInt(energy * 100f);
+            int weightDeci = (int)math.round(weight * 10f);
+            int oxygenPercent = (int)math.round(oxygen * 100f);
+            int energyPercent = (int)math.round(energy * 100f);
             bool pdaOpen = PlayerPDA.IsOpen;
             bool intrusionActive = _intrusionManager != null && _intrusionManager.IsHacked;
             bool mechModeActive = _playerMovement != null && _playerMovement.CurrentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
             int rebootProgressPercent = intrusionActive
-                ? Mathf.RoundToInt(_intrusionManager.RebootProgressNormalized * 100f)
+                ? (int)math.round(_intrusionManager.RebootProgressNormalized * 100f)
                 : 0;
 
             if (_tabText != null &&
@@ -623,7 +624,7 @@ namespace Hecton8.UI
                  _lastAssignedTools != assignedTools ||
                  _appliedLeftFooterVersion == int.MinValue))
             {
-                int safeAssignedTools = Mathf.Max(assignedTools, 1);
+                int safeAssignedTools = math.max(assignedTools, 1);
                 TryWriteNumericTemplate(
                     _localizedLeftFooterNumericTemplate.AsSpan(),
                     ref _leftFooterBuffer,
@@ -775,7 +776,7 @@ namespace Hecton8.UI
 
             Color severity = GetShellSeverityColor(energy, oxygen, weight, readyTools, assignedTools);
             if (mechModeActive)
-                severity = Color.Lerp(severity, MechModeTint, 0.42f);
+                severity = LerpColor(severity, MechModeTint, 0.42f);
             Color titleColor = mechModeActive ? MechModeText : Primary;
             Color tabColor = intrusionActive || energy < 0.25f || oxygen < 0.3f ? AlertText : (mechModeActive ? MechModeText : Dim);
             Color leftFooterColor = mechModeActive ? MechModeText : Dim;
@@ -934,9 +935,8 @@ namespace Hecton8.UI
             if (label == null || buffer == null)
                 return;
 
-            int safeLength = Mathf.Clamp(length, 0, buffer.Length);
+            int safeLength = math.clamp(length, 0, buffer.Length);
             label.SetCharArray(buffer, 0, safeLength);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static int CopyLiteralToBuffer(char[] buffer, int startIndex, string value)
@@ -944,7 +944,7 @@ namespace Hecton8.UI
             if (buffer == null || string.IsNullOrEmpty(value) || startIndex >= buffer.Length)
                 return startIndex;
 
-            int copyLength = Mathf.Min(value.Length, buffer.Length - startIndex);
+            int copyLength = math.min(value.Length, buffer.Length - startIndex);
             value.AsSpan(0, copyLength).CopyTo(buffer.AsSpan(startIndex, copyLength));
             return startIndex + copyLength;
         }
@@ -954,7 +954,7 @@ namespace Hecton8.UI
             if (buffer == null || value.IsEmpty || startIndex >= buffer.Length)
                 return startIndex;
 
-            int copyLength = Mathf.Min(value.Length, buffer.Length - startIndex);
+            int copyLength = math.min(value.Length, buffer.Length - startIndex);
             value.Slice(0, copyLength).CopyTo(buffer.AsSpan(startIndex, copyLength));
             return startIndex + copyLength;
         }
@@ -1243,6 +1243,16 @@ namespace Hecton8.UI
                 return Warning;
 
             return Stable;
+        }
+
+        private static Color LerpColor(Color from, Color to, float t)
+        {
+            float clampedT = math.saturate(t);
+            return new Color(
+                math.lerp(from.r, to.r, clampedT),
+                math.lerp(from.g, to.g, clampedT),
+                math.lerp(from.b, to.b, clampedT),
+                math.lerp(from.a, to.a, clampedT));
         }
 
         private static RectTransform FindExistingChild(Transform parent, string name)

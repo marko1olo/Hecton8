@@ -2,6 +2,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using System;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -25,6 +26,8 @@ namespace Hecton8.UI
         private const float RootHeight = 372f;
         private const float IconWidth = 72f;
         private const float IconHeight = 28f;
+        private const int InvalidCachedMetric = int.MinValue;
+        private const byte InvalidCachedStatus = byte.MaxValue;
         private const string RootName = "HectonSubmarineOsDisplay";
         private static readonly Color s_panelColor = new Color(0f, 0f, 0f, 0.72f);
         private static readonly Color s_onlineColor = new Color(0.92f, 0.96f, 0.96f, 0.98f);
@@ -95,9 +98,15 @@ namespace Hecton8.UI
         private int _typingSourceLength;
         private int _typingRenderBaseLength;
         private float _typingAccumulator;
+        private int _renderedPowerPercent = InvalidCachedMetric;
+        private int _renderedOxygenPercent = InvalidCachedMetric;
+        private int _renderedPressureKPa = InvalidCachedMetric;
+        private int _renderedNativeCopyMegabytes = InvalidCachedMetric;
 
         private bool _typingActive;
         private bool _registeredUpdatable;
+        private SubsystemStatus _renderedSubsystemStatus = (SubsystemStatus)InvalidCachedStatus;
+        private SubmarineEmergencyLevel _renderedEmergencyLevel = (SubmarineEmergencyLevel)InvalidCachedStatus;
         private HectonSubmarineOsSnapshot _snapshot;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -135,14 +144,20 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             s_instance = this;
-            EnsureUiBuilt();
+            EnsureUiBuilt(allowCreate: true);
             HectonSubmarineOsEvents.Unregister(this);
             HectonSubmarineOsEvents.Register(this);
-            TryRegister();
             RefreshStatusLabels();
             RefreshMetricsLabel();
             RefreshDroneFleetLabel();
             RefreshLogLabel();
+            if (_typingActive || _pendingEntryCount > 0)
+                TryRegister();
+        }
+
+        private void Start()
+        {
+            EnsureUiBuilt(allowCreate: true);
         }
 
         private void OnDisable()
@@ -177,15 +192,21 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            EnsureUiBuilt();
+            if (!EnsureUiBuilt(allowCreate: false))
+            {
+                TryUnregister();
+                return;
+            }
+
             if (!_typingActive)
             {
-                TryStartNextTypedEntry();
+                if (!TryStartNextTypedEntry())
+                    TryUnregister();
                 return;
             }
 
             _typingAccumulator += deltaTime * CharactersPerSecond;
-            int nextVisibleLength = Mathf.Min(_typingSourceLength, Mathf.FloorToInt(_typingAccumulator));
+            int nextVisibleLength = math.min(_typingSourceLength, (int)math.floor(_typingAccumulator));
             if (nextVisibleLength == _typingVisibleLength)
                 return;
 
@@ -200,7 +221,8 @@ namespace Hecton8.UI
                 _typingSourceLength = 0;
                 _typingRenderBaseLength = 0;
                 RefreshLogLabel();
-                TryStartNextTypedEntry();
+                if (!TryStartNextTypedEntry())
+                    TryUnregister();
             }
         }
 
@@ -212,8 +234,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -235,6 +256,7 @@ namespace Hecton8.UI
         private void HandleLogRequested(in HectonSubmarineOsLogRequest request)
         {
             InsertPendingEntry(request.Code, request.Priority);
+            TryRegister();
             if (!_typingActive)
                 TryStartNextTypedEntry();
         }
@@ -257,36 +279,37 @@ namespace Hecton8.UI
             _pendingEntryCount++;
         }
 
-        private void TryStartNextTypedEntry()
+        private bool TryStartNextTypedEntry()
         {
-            if (_pendingEntryCount <= 0)
-                return;
+            while (_pendingEntryCount > 0)
+            {
+                PendingEntry nextEntry = _pendingEntries[_pendingEntryHead];
+                _pendingEntries[_pendingEntryHead] = default;
+                _pendingEntryHead = (_pendingEntryHead + 1) % PendingEntryCapacity;
+                _pendingEntryCount--;
+                if (_pendingEntryCount == 0)
+                    _pendingEntryTail = _pendingEntryHead;
 
-            PendingEntry nextEntry = _pendingEntries[_pendingEntryHead];
-            _pendingEntries[_pendingEntryHead] = default;
-            _pendingEntryHead = (_pendingEntryHead + 1) % PendingEntryCapacity;
-            _pendingEntryCount--;
-            if (_pendingEntryCount == 0)
-                _pendingEntryTail = _pendingEntryHead;
+                int safeLength = BuildLogLine(nextEntry.Code, _typingBuffer);
+                if (safeLength <= 0)
+                    continue;
 
-            System.Array.Clear(_typingBuffer, 0, _typingBuffer.Length);
-            int safeLength = BuildLogLine(nextEntry.Code, _typingBuffer);
-            if (safeLength <= 0)
-                return;
+                _typingActive = true;
+                _typingAccumulator = 0f;
+                _typingVisibleLength = 0;
+                _typingSourceLength = safeLength;
+                RefreshLogLabel();
+                return true;
+            }
 
-            _typingActive = true;
-            _typingAccumulator = 0f;
-            _typingVisibleLength = 0;
-            _typingSourceLength = safeLength;
-            RefreshLogLabel();
+            return false;
         }
 
         private void CommitTypedLine()
         {
             int writeIndex = _historyLineWriteIndex;
             char[] historyLine = _historyLineStorage[writeIndex];
-            int safeLength = Mathf.Min(_typingSourceLength, HistoryLineCapacity);
-            System.Array.Clear(historyLine, 0, historyLine.Length);
+            int safeLength = math.min(_typingSourceLength, HistoryLineCapacity);
             CopyCharsUnsafe(_typingBuffer, 0, historyLine, 0, safeLength);
 
             _historyLineLengths[writeIndex] = safeLength;
@@ -300,13 +323,27 @@ namespace Hecton8.UI
             if (_statusLabel == null)
                 return;
 
-            char[] source = ResolveStatusChars(_snapshot.EmergencyLevel);
-            int safeLength = Mathf.Min(source.Length, _statusBuffer.Length);
-            for (int i = 0; i < safeLength; i++)
-                _statusBuffer[i] = source[i];
+            SubmarineEmergencyLevel emergencyLevel = _snapshot.EmergencyLevel;
+            SubsystemStatus subsystemStatus = _snapshot.SubsystemStatus;
+            if (emergencyLevel == _renderedEmergencyLevel && subsystemStatus == _renderedSubsystemStatus)
+                return;
 
-            _statusLabel.SetCharArray(_statusBuffer, 0, safeLength);
-            RefreshSubsystemIcons();
+            if (emergencyLevel != _renderedEmergencyLevel)
+            {
+                char[] source = ResolveStatusChars(emergencyLevel);
+                int safeLength = math.min(source.Length, _statusBuffer.Length);
+                for (int i = 0; i < safeLength; i++)
+                    _statusBuffer[i] = source[i];
+
+                _statusLabel.SetCharArray(_statusBuffer, 0, safeLength);
+                _renderedEmergencyLevel = emergencyLevel;
+            }
+
+            if (subsystemStatus != _renderedSubsystemStatus)
+            {
+                RefreshSubsystemIcons(subsystemStatus);
+                _renderedSubsystemStatus = subsystemStatus;
+            }
         }
 
         private void RefreshMetricsLabel()
@@ -314,19 +351,35 @@ namespace Hecton8.UI
             if (_metricLabel == null)
                 return;
 
+            int powerPercent = ToPercent(_snapshot.PowerNormalized);
+            int oxygenPercent = ToPercent(_snapshot.OxygenNormalized);
+            int pressureKPa = (int)math.round(_snapshot.MaxPressureKPa);
+            long nativeCopyMegabytesRaw = GlobalTelemetryBus.NativeCopyMegabyteCount;
+            int nativeCopyMegabytes = nativeCopyMegabytesRaw > int.MaxValue ? int.MaxValue : (int)nativeCopyMegabytesRaw;
+            if (powerPercent == _renderedPowerPercent &&
+                oxygenPercent == _renderedOxygenPercent &&
+                pressureKPa == _renderedPressureKPa &&
+                nativeCopyMegabytes == _renderedNativeCopyMegabytes)
+            {
+                return;
+            }
+
             int cursor = 0;
             cursor = AppendLiteral(_metricBuffer, cursor, "PWR ");
-            cursor = AppendPercent(_metricBuffer, cursor, _snapshot.PowerNormalized);
+            cursor = AppendPercentValue(_metricBuffer, cursor, powerPercent);
             cursor = AppendLiteral(_metricBuffer, cursor, "  O2 ");
-            cursor = AppendPercent(_metricBuffer, cursor, _snapshot.OxygenNormalized);
+            cursor = AppendPercentValue(_metricBuffer, cursor, oxygenPercent);
             cursor = AppendLiteral(_metricBuffer, cursor, "  P ");
-            cursor = AppendInt(_metricBuffer, cursor, Mathf.RoundToInt(_snapshot.MaxPressureKPa));
+            cursor = AppendInt(_metricBuffer, cursor, pressureKPa);
             cursor = AppendLiteral(_metricBuffer, cursor, "kPa");
             cursor = AppendLiteral(_metricBuffer, cursor, "  MEM ");
-            long nativeCopyMegabytes = GlobalTelemetryBus.NativeCopyMegabyteCount;
-            cursor = AppendInt(_metricBuffer, cursor, nativeCopyMegabytes > int.MaxValue ? int.MaxValue : (int)nativeCopyMegabytes);
+            cursor = AppendInt(_metricBuffer, cursor, nativeCopyMegabytes);
             cursor = AppendLiteral(_metricBuffer, cursor, "MB");
-            _metricLabel.SetCharArray(_metricBuffer, 0, Mathf.Max(0, cursor));
+            _metricLabel.SetCharArray(_metricBuffer, 0, math.max(0, cursor));
+            _renderedPowerPercent = powerPercent;
+            _renderedOxygenPercent = oxygenPercent;
+            _renderedPressureKPa = pressureKPa;
+            _renderedNativeCopyMegabytes = nativeCopyMegabytes;
         }
 
         private void RefreshDroneFleetLabel()
@@ -364,7 +417,7 @@ namespace Hecton8.UI
                 cursor = AppendRange(_renderBuffer, cursor, _typingBuffer, 0, _typingSourceLength);
             }
 
-            int safeLength = Mathf.Clamp(cursor, 0, _renderBuffer.Length);
+            int safeLength = math.clamp(cursor, 0, _renderBuffer.Length);
             _logLabel.SetCharArray(_renderBuffer, 0, safeLength);
             ApplyTypingVisibleCharacters(safeLength);
         }
@@ -387,20 +440,20 @@ namespace Hecton8.UI
             }
 
             int safeRenderedLength = renderedLength > 0 ? renderedLength : _typingRenderBaseLength + _typingSourceLength;
-            int visibleCharacters = Mathf.Clamp(_typingRenderBaseLength + _typingVisibleLength, 0, safeRenderedLength);
+            int visibleCharacters = math.clamp(_typingRenderBaseLength + _typingVisibleLength, 0, safeRenderedLength);
             if (_logLabel.maxVisibleCharacters != visibleCharacters)
                 _logLabel.maxVisibleCharacters = visibleCharacters;
         }
 
-        private void RefreshSubsystemIcons()
+        private void RefreshSubsystemIcons(SubsystemStatus subsystemStatus)
         {
             if (_subsystemIconImages == null || _subsystemIconLabels == null)
                 return;
 
-            ApplyIconState(0, (_snapshot.SubsystemStatus & SubsystemStatus.Engines) != 0);
-            ApplyIconState(1, (_snapshot.SubsystemStatus & SubsystemStatus.LifeSupport) != 0);
-            ApplyIconState(2, (_snapshot.SubsystemStatus & SubsystemStatus.Lights) != 0);
-            ApplyIconState(3, (_snapshot.SubsystemStatus & SubsystemStatus.Sonar) != 0);
+            ApplyIconState(0, (subsystemStatus & SubsystemStatus.Engines) != 0);
+            ApplyIconState(1, (subsystemStatus & SubsystemStatus.LifeSupport) != 0);
+            ApplyIconState(2, (subsystemStatus & SubsystemStatus.Lights) != 0);
+            ApplyIconState(3, (subsystemStatus & SubsystemStatus.Sonar) != 0);
         }
 
         private void ApplyIconState(int index, bool active)
@@ -414,24 +467,27 @@ namespace Hecton8.UI
                 _subsystemIconLabels[index].color = color;
         }
 
-        private void EnsureUiBuilt()
+        private bool EnsureUiBuilt(bool allowCreate)
         {
             if (_root != null)
-                return;
+                return true;
+
+            if (!allowCreate)
+                return false;
 
             Canvas targetCanvas = ResolveTargetCanvas();
             if (targetCanvas == null)
-                return;
+                return false;
 
             GameObject rootObject = new GameObject(RootName, typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] — submarine OS overlay root — owner: HectonSubmarineOsDisplay
             rootObject.transform.SetParent(targetCanvas.transform, false);
-            _root = rootObject.GetComponent<RectTransform>();
+            rootObject.TryGetComponent(out _root);
             _root.anchorMin = new Vector2(0f, 1f);
             _root.anchorMax = new Vector2(0f, 1f);
             _root.pivot = new Vector2(0f, 1f);
             _root.anchoredPosition = new Vector2(34f, -128f);
             _root.sizeDelta = new Vector2(RootWidth, RootHeight);
-            Image panelImage = rootObject.GetComponent<Image>();
+            rootObject.TryGetComponent(out Image panelImage);
             panelImage.color = s_panelColor;
             panelImage.raycastTarget = false;
 
@@ -453,23 +509,25 @@ namespace Hecton8.UI
             CreateIconSlot(2, s_iconLights, new Vector2(0f, -16f));
             CreateIconSlot(3, s_iconSonar, new Vector2(78f, -16f));
 
+            InvalidateSnapshotRenderCaches();
             RefreshStatusLabels();
             RefreshMetricsLabel();
             RefreshDroneFleetLabel();
             RefreshLogLabel();
+            return true;
         }
 
         private void CreateIconSlot(int index, char[] labelChars, Vector2 anchoredPosition)
         {
             GameObject iconObject = new GameObject("SubsystemIcon", typeof(RectTransform), typeof(Image)); // COLD ALLOC: GameObject[1] — subsystem icon root — owner: HectonSubmarineOsDisplay
             iconObject.transform.SetParent(_root, false);
-            RectTransform iconRect = iconObject.GetComponent<RectTransform>();
+            iconObject.TryGetComponent(out RectTransform iconRect);
             iconRect.anchorMin = new Vector2(1f, 1f);
             iconRect.anchorMax = new Vector2(1f, 1f);
             iconRect.pivot = new Vector2(1f, 1f);
             iconRect.anchoredPosition = anchoredPosition;
             iconRect.sizeDelta = new Vector2(IconWidth, IconHeight);
-            Image iconImage = iconObject.GetComponent<Image>();
+            iconObject.TryGetComponent(out Image iconImage);
             iconImage.color = s_offlineColor;
             iconImage.raycastTarget = false;
             _subsystemIconImages[index] = iconImage;
@@ -484,14 +542,14 @@ namespace Hecton8.UI
         {
             GameObject textObject = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI), typeof(HectonTextNode)); // COLD ALLOC: GameObject[1] — runtime TMP owner for submarine OS display — owner: HectonSubmarineOsDisplay
             textObject.transform.SetParent(parent, false);
-            RectTransform rect = textObject.GetComponent<RectTransform>();
+            textObject.TryGetComponent(out RectTransform rect);
             rect.anchorMin = new Vector2(0f, 1f);
             rect.anchorMax = new Vector2(0f, 1f);
             rect.pivot = new Vector2(0f, 1f);
             rect.anchoredPosition = anchoredPosition;
             rect.sizeDelta = sizeDelta;
 
-            TextMeshProUGUI text = textObject.GetComponent<TextMeshProUGUI>();
+            textObject.TryGetComponent(out TextMeshProUGUI text);
             text.font = TMP_Settings.defaultFontAsset;
             text.fontSize = fontSize;
             text.color = s_onlineColor;
@@ -507,9 +565,11 @@ namespace Hecton8.UI
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null
-                ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>()
-                : null;
+            if (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance == null)
+                return null;
+
+            SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TryGetComponent(out Canvas canvas);
+            return canvas;
         }
 
         private static char[] ResolveStatusChars(SubmarineEmergencyLevel emergencyLevel)
@@ -534,6 +594,16 @@ namespace Hecton8.UI
             return chars != null && length > 0;
         }
 
+        private void InvalidateSnapshotRenderCaches()
+        {
+            _renderedEmergencyLevel = (SubmarineEmergencyLevel)InvalidCachedStatus;
+            _renderedSubsystemStatus = (SubsystemStatus)InvalidCachedStatus;
+            _renderedPowerPercent = InvalidCachedMetric;
+            _renderedOxygenPercent = InvalidCachedMetric;
+            _renderedPressureKPa = InvalidCachedMetric;
+            _renderedNativeCopyMegabytes = InvalidCachedMetric;
+        }
+
         private int BuildLogLine(HectonSubmarineOsLogCode code, char[] destination)
         {
             int cursor = 0;
@@ -552,7 +622,7 @@ namespace Hecton8.UI
                 case HectonSubmarineOsLogCode.HullPressureHigh:
                     cursor = AppendChars(destination, cursor, s_logPrefixWarn);
                     cursor = AppendChars(destination, cursor, s_logHullPressure);
-                    cursor = AppendInt(destination, cursor, Mathf.RoundToInt(_snapshot.MaxPressureKPa));
+                    cursor = AppendInt(destination, cursor, (int)math.round(_snapshot.MaxPressureKPa));
                     return AppendChars(destination, cursor, s_logKpaSuffix);
 
                 default:
@@ -607,9 +677,9 @@ namespace Hecton8.UI
             if (destination == null || string.IsNullOrEmpty(literal))
                 return cursor;
 
-            int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
             int remaining = destination.Length - safeCursor;
-            int safeLength = Mathf.Min(remaining, literal.Length);
+            int safeLength = math.min(remaining, literal.Length);
             for (int i = 0; i < safeLength; i++)
                 destination[safeCursor + i] = literal[i];
 
@@ -623,8 +693,12 @@ namespace Hecton8.UI
 
         private static int AppendPercent(char[] destination, int cursor, float normalizedValue)
         {
-            int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
-            int percent = Mathf.RoundToInt(Mathf.Clamp01(normalizedValue) * 100f);
+            return AppendPercentValue(destination, cursor, ToPercent(normalizedValue));
+        }
+
+        private static int AppendPercentValue(char[] destination, int cursor, int percent)
+        {
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
             Span<char> writableSpan = new Span<char>(destination, safeCursor, destination.Length - safeCursor);
             if (!percent.TryFormat(writableSpan, out int written))
                 return safeCursor;
@@ -638,7 +712,7 @@ namespace Hecton8.UI
 
         private static int AppendInt(char[] destination, int cursor, int value)
         {
-            int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
             Span<char> writableSpan = new Span<char>(destination, safeCursor, destination.Length - safeCursor);
             if (!value.TryFormat(writableSpan, out int written))
                 return safeCursor;
@@ -651,12 +725,17 @@ namespace Hecton8.UI
             if (destination == null || source == null || length <= 0)
                 return cursor;
 
-            int safeCursor = Mathf.Clamp(cursor, 0, destination.Length);
-            int safeStart = Mathf.Clamp(sourceStart, 0, source.Length);
-            int safeLength = Mathf.Clamp(length, 0, Mathf.Min(source.Length - safeStart, destination.Length - safeCursor));
+            int safeCursor = math.clamp(cursor, 0, destination.Length);
+            int safeStart = math.clamp(sourceStart, 0, source.Length);
+            int safeLength = math.clamp(length, 0, math.min(source.Length - safeStart, destination.Length - safeCursor));
             CopyCharsUnsafe(source, safeStart, destination, safeCursor, safeLength);
 
             return safeCursor + safeLength;
+        }
+
+        private static int ToPercent(float normalizedValue)
+        {
+            return (int)math.round(math.saturate(normalizedValue) * 100f);
         }
 
         private static unsafe void CopyCharsUnsafe(char[] source, int sourceStart, char[] destination, int destinationStart, int length)

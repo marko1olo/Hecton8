@@ -343,7 +343,7 @@ namespace Hecton8.World
             {
                 OriginPosition = originPosition,
                 ProbeDistance = math.max(1f, probeDistance),
-                ForwardDirection = forwardDirection / math.sqrt(directionLengthSq),
+                ForwardDirection = NormalizeForwardDirection(forwardDirection, directionLengthSq),
                 LayerMask = resolvedLayerMask,
                 IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
                 IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
@@ -441,7 +441,7 @@ namespace Hecton8.World
             {
                 OriginPosition = originPosition,
                 ProbeDistance = math.max(1f, probeDistance),
-                ForwardDirection = forwardDirection / math.sqrt(directionLengthSq),
+                ForwardDirection = NormalizeForwardDirection(forwardDirection, directionLengthSq),
                 LayerMask = resolvedLayerMask,
                 IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
                 IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
@@ -473,7 +473,7 @@ namespace Hecton8.World
 
             float normalizedDensity = ResolveDistanceShadow01(distanceMeters);
             float transmission01 = math.clamp(
-                math.exp(-normalizedDensity * VoxelDensityTransmissionScale),
+                FastTransmissionDecay(normalizedDensity * VoxelDensityTransmissionScale),
                 0.02f,
                 1f);
             result = new AcousticVoxelOcclusionResult(
@@ -482,6 +482,19 @@ namespace Hecton8.World
                 ResolveVoxelDensityLowPassCutoff(normalizedDensity),
                 normalizedDensity > 0.01f ? 1 : 0);
             return normalizedDensity > 0.01f;
+        }
+
+        private static Vector3 NormalizeForwardDirection(Vector3 direction, float lengthSq)
+        {
+            float invLength = math.rsqrt(math.max(lengthSq, MinimumPathDistanceMeters * MinimumPathDistanceMeters));
+            return direction * invLength;
+        }
+
+        private static float FastTransmissionDecay(float x)
+        {
+            float clamped = math.max(0f, x);
+            float x2 = clamped * clamped;
+            return math.saturate(1f / (1f + clamped + (0.48f * x2) + (0.235f * x2 * clamped)));
         }
 
         public static AcousticOcclusionResult EvaluateOcclusionPath(
@@ -568,7 +581,7 @@ namespace Hecton8.World
         {
             Vector3 sourceAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
             Vector3 listenerAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(listenerPosition);
-            return math.length((float3)(listenerAup - sourceAup));
+            return ApproximateMagnitude3D((float3)(listenerAup - sourceAup));
         }
 
         private static void ApplyFloraScattering(
@@ -579,7 +592,7 @@ namespace Hecton8.World
             ref int occludingHitCount)
         {
             Vector3 segment = listenerPosition - sourcePosition;
-            float segmentLength = segment.magnitude;
+            float segmentLength = ApproximateMagnitude3D((float3)segment);
             if (segmentLength < FloraScatteringMinimumSegmentMeters)
                 return;
 
@@ -608,6 +621,15 @@ namespace Hecton8.World
 
             transmission01 = math.max(FloraScatteringTransmissionFloor, transmission01);
             occludingHitCount += floraIntersections;
+        }
+
+        private static float ApproximateMagnitude3D(float3 value)
+        {
+            float3 absoluteValue = math.abs(value);
+            float maxAxis = math.max(absoluteValue.x, math.max(absoluteValue.y, absoluteValue.z));
+            float minAxis = math.min(absoluteValue.x, math.min(absoluteValue.y, absoluteValue.z));
+            float midAxis = absoluteValue.x + absoluteValue.y + absoluteValue.z - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375f + minAxis * 0.125f;
         }
 
         private static bool TryFindCachedResult(QueryKey queryKey, out AcousticOcclusionResult result)

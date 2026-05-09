@@ -120,12 +120,17 @@ namespace Hecton8.Interaction
         private Transform     _cameraTransform;
         private Hecton8.Interaction.PhysicalInteractionHandler _physicalInteractionHandler;
         private IInputService _subscribedInputService;
+        private QueryCacheContext _playerLookQueryCache;
         private Ray           _ray;
         private RaycastHit    _hitInfo;
-        // COLD ALLOC: RaycastHit[1] — single-hit interaction probe buffer — owner: PlayerInteraction
-        private readonly RaycastHit[] _raycastHits = new RaycastHit[1];
+        // COLD ALLOC: RaycastHit[4] - bounded interaction probe buffer - owner: PlayerInteraction
+        private const int MaxRaycastHits = 4;
+        private readonly RaycastHit[] _raycastHits = new RaycastHit[MaxRaycastHits];
         private static readonly int _DefaultInteractableLayerMask = HectonLayerMasks.InteractableLayerMask;
         private static string _activeInteractKey = "E";
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool _raycastBufferSaturationLogged;
+#endif
 
         /// <summary>
         /// Tracks whether this component successfully registered
@@ -163,16 +168,16 @@ namespace Hecton8.Interaction
             {
                 playerCamera = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Camera>(transform);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (playerCamera == null)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError(
                         "[PlayerInteraction] No player camera assigned or found in the local player hierarchy. " +
                         "Assign the player camera in the Inspector.", this);
+#endif
                     enabled = false;
                     return;
                 }
-#endif
             }
 
             _cameraTransform = playerCamera.transform;
@@ -180,6 +185,7 @@ namespace Hecton8.Interaction
             _registeredToTickManager = false;
             _hotSwapListenerRegistered = false;
             TryGetComponent(out _physicalInteractionHandler);
+            _playerLookQueryCache = GlobalQueryCacheManager.PlayerLook;
             RefreshActiveInteractKeyCache();
 
             // ────────────────────────────────────────────────────
@@ -222,8 +228,7 @@ namespace Hecton8.Interaction
         {
             if (!_registeredToTickManager && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             }
 
             TryRegisterHotSwapListener();
@@ -238,8 +243,7 @@ namespace Hecton8.Interaction
 
             if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+                _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
             }
 
             TryRegisterHotSwapListener();
@@ -282,11 +286,19 @@ namespace Hecton8.Interaction
 
         private void HandleInteractInput()
         {
-            if (_currentHovered == null)
-                return;
-
             if (IsGameplayInputBlockedByMenu())
                 return;
+
+            if (_currentHovered == null)
+            {
+                if (_physicalInteractionHandler != null &&
+                    _physicalInteractionHandler.TryBeginFloraHarvestSnap())
+                {
+                    return;
+                }
+
+                return;
+            }
 
             ExecuteInteraction();
         }
@@ -322,8 +334,7 @@ namespace Hecton8.Interaction
             if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -331,9 +342,7 @@ namespace Hecton8.Interaction
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.HotSwapListeners.Contains(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
         }
 
@@ -403,7 +412,7 @@ namespace Hecton8.Interaction
             _ray.origin    = origin;
             _ray.direction = camFwd;
 
-            float effectiveReach = reachDistance - rayOriginOffset;
+            float effectiveReach = math.max(0.01f, reachDistance - rayOriginOffset);
 
 #if UNITY_EDITOR
             Debug.DrawRay(
@@ -415,21 +424,31 @@ namespace Hecton8.Interaction
 #endif
 
             // USE GLOBAL CACHE — Zero Redundancy
-            var cache = GlobalQueryCacheManager.GetContext("PlayerLook");
+            QueryCacheContext cache = _playerLookQueryCache ?? GlobalQueryCacheManager.PlayerLook;
+            _playerLookQueryCache = cache;
             int resolvedInteractableMask = ResolveInteractableLayerMask();
-            if (!cache.TryGet(_ray, effectiveReach, resolvedInteractableMask, out QueryResult qResult))
+            const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Ignore;
+            if (!cache.TryGet(_ray, effectiveReach, resolvedInteractableMask, triggerMode, out QueryResult qResult))
             {
                 int hitCount = Physics.RaycastNonAlloc(
                     _ray,
                     _raycastHits,
                     effectiveReach,
                     resolvedInteractableMask,
-                    QueryTriggerInteraction.Ignore);
+                    triggerMode);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (hitCount >= _raycastHits.Length && !_raycastBufferSaturationLogged)
+                {
+                    _raycastBufferSaturationLogged = true;
+                    Debug.LogWarning(
+                        "[PlayerInteraction] Interaction raycast buffer saturated. " +
+                        "Increase MaxRaycastHits or narrow interactableMask.", this);
+                }
+#endif
 
-                bool hit = hitCount > 0;
-                _hitInfo = hit ? _raycastHits[0] : default;
+                bool hit = TryResolveNearestRegisteredRaycastHit(hitCount, out _hitInfo);
                 qResult = new QueryResult { hasHit = hit, hit = hit ? _hitInfo : default };
-                cache.Set(_ray, effectiveReach, resolvedInteractableMask, qResult);
+                cache.Set(_ray, effectiveReach, resolvedInteractableMask, triggerMode, qResult);
             }
             else
             {
@@ -438,13 +457,16 @@ namespace Hecton8.Interaction
 
             if (qResult.hasHit)
             {
-                if (qResult.hit.collider.TryGetComponent(out IInteractable interactable))
+                Collider hitCollider = qResult.hit.collider;
+                if (InteractableRegistry.TryResolve(hitCollider, out InteractableRegistry.TargetInfo targetInfo) &&
+                    targetInfo.Interactable != null)
                 {
+                    IInteractable interactable = targetInfo.Interactable;
                     if (ReferenceEquals(interactable, _currentHovered))
                         return;
 
                     ClearHover();
-                    SetHover(interactable);
+                    SetHover(interactable, targetInfo.PickupSource);
                     return;
                 }
             }
@@ -453,6 +475,31 @@ namespace Hecton8.Interaction
             {
                 ClearHover();
             }
+        }
+
+        private bool TryResolveNearestRegisteredRaycastHit(int hitCount, out RaycastHit nearestHit)
+        {
+            nearestHit = default;
+            float nearestDistance = float.MaxValue;
+            int count = math.min(hitCount, _raycastHits.Length);
+            for (int i = 0; i < count; i++)
+            {
+                RaycastHit candidate = _raycastHits[i];
+                _raycastHits[i] = default;
+                Collider candidateCollider = candidate.collider;
+                if (candidateCollider == null ||
+                    candidate.distance >= nearestDistance ||
+                    !InteractableRegistry.TryResolve(candidateCollider, out InteractableRegistry.TargetInfo targetInfo) ||
+                    targetInfo.Interactable == null)
+                {
+                    continue;
+                }
+
+                nearestDistance = candidate.distance;
+                nearestHit = candidate;
+            }
+
+            return nearestDistance < float.MaxValue;
         }
 
         private int ResolveInteractableLayerMask()
@@ -465,10 +512,10 @@ namespace Hecton8.Interaction
         // HOVER STATE MANAGEMENT
         // ====================================================================
 
-        private void SetHover(IInteractable target)
+        private void SetHover(IInteractable target, IInventoryPickupSource pickupSource)
         {
             _currentHovered = target;
-            _currentPickupSource = target as IInventoryPickupSource;
+            _currentPickupSource = pickupSource;
             _currentHovered.OnHoverStart();
 
             // Audio: subtle metallic click on hover acquisition.
@@ -544,7 +591,7 @@ namespace Hecton8.Interaction
             Vector3 origin =
                 _cameraTransform.position +
                 _cameraTransform.forward * rayOriginOffset;
-            float effectiveReach = reachDistance - rayOriginOffset;
+            float effectiveReach = math.max(0.01f, reachDistance - rayOriginOffset);
 
             Gizmos.color = _currentHovered != null
                 ? debugRayHitColor

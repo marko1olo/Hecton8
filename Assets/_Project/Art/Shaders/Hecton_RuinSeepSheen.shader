@@ -42,6 +42,7 @@ Shader "HECTON/Environment/RuinSeepSheen"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -97,12 +98,21 @@ Shader "HECTON/Environment/RuinSeepSheen"
                 return output;
             }
 
+            half FastMaskPower(half value, half power)
+            {
+                half v2 = value * value;
+                half v4 = v2 * v2;
+                half low = lerp(value, v2, saturate(power - 1.0h));
+                half high = lerp(v2, v4, saturate((power - 2.0h) * 0.5h));
+                return power < 2.0h ? low : high;
+            }
+
             half DeriveMask(float2 uv)
             {
                 half3 sampleRgb = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, uv).rgb;
                 half luminance = dot(sampleRgb, half3(0.2126h, 0.7152h, 0.0722h));
                 half mask = saturate((luminance - _LuminanceBias) / max(_EdgeSoftness, 0.001h));
-                return pow(mask, max(_LuminancePower, 0.001h));
+                return FastMaskPower(mask, max(_LuminancePower, 0.001h));
             }
 
             float ResolveInterleavedGradientNoise(float2 positionCS)
@@ -114,6 +124,7 @@ Shader "HECTON/Environment/RuinSeepSheen"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float2 baseUv = input.uv;
                 float2 flowUv = baseUv + float2(0.0, -_Time.y * _FlowSpeed);
@@ -123,7 +134,7 @@ Shader "HECTON/Environment/RuinSeepSheen"
 
                 float3 viewDirWS = SafeNormalize(_WorldSpaceCameraPos.xyz - input.positionWS);
                 float3 normalWS = SafeNormalize(input.normalWS);
-                half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), max(_FresnelPower, 0.001h)) * _FresnelStrength;
+                half fresnel = FastMaskPower(1.0h - saturate(dot(normalWS, viewDirWS)), max(_FresnelPower, 0.001h)) * _FresnelStrength;
                 half highlight = saturate(0.55h + fresnel);
 
                 half3 color = lerp(_TintColor.rgb, _HighlightColor.rgb, saturate(fresnel)) * highlight;

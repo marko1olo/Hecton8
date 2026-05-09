@@ -68,12 +68,12 @@ namespace Hecton8.Optimization
 
         // COLD ALLOC: Dictionary<uint, AssetRecord>[512] - global asset residency registry - owner: AssetLifecycleGovernor
         private readonly Dictionary<uint, AssetRecord> _registry = new Dictionary<uint, AssetRecord>(512);
-        // COLD ALLOC: Queue<uint>[128] - pending release queue drained on the next frame - owner: AssetLifecycleGovernor
-        private readonly Queue<uint> _pendingRelease = new Queue<uint>(128);
-        // COLD ALLOC: List<uint>[16] - eviction candidate scratch buffer - owner: AssetLifecycleGovernor
-        private readonly List<uint> _evictionCandidates = new List<uint>(16);
-        // COLD ALLOC: List<uint>[16] - retry candidate scratch buffer - owner: AssetLifecycleGovernor
-        private readonly List<uint> _retryCandidates = new List<uint>(16);
+        // COLD ALLOC: Queue<uint>[512] - pending release queue drained on cold tick and pressure passes - owner: AssetLifecycleGovernor
+        private readonly Queue<uint> _pendingRelease = new Queue<uint>(512);
+        // COLD ALLOC: List<uint>[64] - eviction candidate scratch buffer capped by hard reaper pass - owner: AssetLifecycleGovernor
+        private readonly List<uint> _evictionCandidates = new List<uint>(MaxHardReaperEvictions);
+        // COLD ALLOC: List<uint>[64] - retry candidate scratch buffer for failed async dispatches - owner: AssetLifecycleGovernor
+        private readonly List<uint> _retryCandidates = new List<uint>(MaxHardReaperEvictions);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         // COLD ALLOC: StringBuilder[512] - throttled diagnostics builder - owner: AssetLifecycleGovernor
 #endif
@@ -107,6 +107,7 @@ namespace Hecton8.Optimization
 
         private void OnDisable()
         {
+            ReleaseHardReaperAsyncHandles();
             SetHardReaperScannerInterferenceActive(false);
             TryUnregister();
             TryUnregisterService();
@@ -114,6 +115,7 @@ namespace Hecton8.Optimization
 
         private void OnDestroy()
         {
+            ReleaseHardReaperAsyncHandles();
             TryUnregister();
             TryUnregisterService();
             DisposeFallbackAssets();
@@ -343,6 +345,11 @@ namespace Hecton8.Optimization
             DrainPendingReleaseQueue(int.MaxValue);
         }
 
+        internal int DrainPendingReleaseQueueBudgeted(int maxCount)
+        {
+            return DrainPendingReleaseQueue(maxCount);
+        }
+
         internal int EvictLowestPriorityUnusedAssets(int maxCount, AssetPriorityTier minimumPriority)
         {
             if (maxCount <= 0 || _registry.Count == 0)
@@ -425,11 +432,19 @@ namespace Hecton8.Optimization
             if (!ReferenceEquals(GlobalRegistry.AssetLifecycle, this))
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            bool tickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
+            bool slowTickRegistered = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+            if (!tickRegistered || !slowTickRegistered)
+            {
+                if (tickRegistered)
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+                if (slowTickRegistered)
+                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                return;
+            }
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredTick = true;
+            _registeredSlowTick = true;
         }
 
         private bool TryRegisterService()
@@ -484,7 +499,7 @@ namespace Hecton8.Optimization
             _retryCandidates.Clear();
 
             Dictionary<uint, AssetRecord>.Enumerator enumerator = _registry.GetEnumerator();
-            while (enumerator.MoveNext())
+            while (enumerator.MoveNext() && _retryCandidates.Count < MaxHardReaperEvictions)
             {
                 AssetRecord record = enumerator.Current.Value;
                 if (record.RefCount <= 0 || record.ActiveRequestId != 0 || record.NextRetryTime <= 0f)
@@ -541,7 +556,7 @@ namespace Hecton8.Optimization
             _registry[key] = record;
         }
 
-        private void DrainPendingReleaseQueue(int maxCount)
+        private int DrainPendingReleaseQueue(int maxCount)
         {
             int drained = 0;
             while (_pendingRelease.Count > 0 && drained < maxCount)
@@ -560,6 +575,8 @@ namespace Hecton8.Optimization
 
                 ExecuteReleaseFlow(key);
             }
+
+            return drained;
         }
 
         private void EvaluateHardMemoryReaper(float now)
@@ -598,11 +615,8 @@ namespace Hecton8.Optimization
             int evicted = EvictLowestPriorityUnusedAssets(MaxHardReaperEvictions, AssetPriorityTier.Tier6Speculative);
             evicted += ReleaseDistantChunkAddressables(MaxHardReaperEvictions);
             PurgeAddressableCachesAsync();
-            _hardReaperUnloadOperation = Resources.UnloadUnusedAssets();
-            if (_hardReaperUnloadOperation != null && _hardReaperUnloadCompletedCallback != null)
-                _hardReaperUnloadOperation.completed += _hardReaperUnloadCompletedCallback;
-            else
-                _hardReaperUnloadComplete = true;
+            _hardReaperUnloadOperation = null;
+            _hardReaperUnloadComplete = true;
 
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _HardReaperSweepWarningHash,
@@ -644,6 +658,9 @@ namespace Hecton8.Optimization
             if (!ReferenceEquals(operation, _hardReaperUnloadOperation))
                 return;
 
+            if (_hardReaperUnloadCompletedCallback != null)
+                operation.completed -= _hardReaperUnloadCompletedCallback;
+
             _hardReaperUnloadComplete = true;
             _hardReaperUnloadOperation = null;
             TryCompleteHardReaperAsyncWindow();
@@ -679,6 +696,27 @@ namespace Hecton8.Optimization
 
             _hardReaperAsyncWindowActive = false;
             SetHardReaperScannerInterferenceActive(false);
+        }
+
+        private void ReleaseHardReaperAsyncHandles()
+        {
+            if (_hardReaperUnloadOperation != null && _hardReaperUnloadCompletedCallback != null)
+                _hardReaperUnloadOperation.completed -= _hardReaperUnloadCompletedCallback;
+
+            _hardReaperUnloadOperation = null;
+#if UNITY_ADDRESSABLES_EXIST
+            if (_hardReaperCleanBundleCacheHandle.IsValid())
+            {
+                if (_hardReaperCleanBundleCacheCompletedCallback != null)
+                    _hardReaperCleanBundleCacheHandle.Completed -= _hardReaperCleanBundleCacheCompletedCallback;
+
+                Addressables.Release(_hardReaperCleanBundleCacheHandle);
+                _hardReaperCleanBundleCacheHandle = default;
+            }
+#endif
+            _hardReaperAsyncWindowActive = false;
+            _hardReaperUnloadComplete = false;
+            _hardReaperBundleCacheCleanComplete = false;
         }
 
         private static void SetHardReaperScannerInterferenceActive(bool active)
@@ -792,6 +830,15 @@ namespace Hecton8.Optimization
             playerAup = default;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerContext == null)
+                return false;
+
+            if (playerContext.PlayerMovement != null)
+            {
+                playerAup = playerContext.PlayerMovement.CurrentAup;
+                return true;
+            }
+
             if (playerTransform == null)
                 return false;
 

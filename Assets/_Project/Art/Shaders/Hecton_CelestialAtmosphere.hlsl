@@ -14,12 +14,27 @@ float _CelestialZenithTransparency;
 
 static const float HECTON_INV_HALF_PI = 0.63661977236758134;
 
+float3 HectonCelestialSafeNormalize(float3 value, float3 fallback)
+{
+    float lengthSq = dot(value, value);
+    return lengthSq > 1e-6 ? value * rsqrt(lengthSq) : fallback;
+}
+
+float HectonCelestialFastMaskPower(float value, float power)
+{
+    float v2 = value * value;
+    float v4 = v2 * v2;
+    float low = lerp(value, v2, saturate(power - 1.0));
+    float high = lerp(v2, v4, saturate((power - 2.0) * 0.5));
+    return power < 2.0 ? low : high;
+}
+
 float HectonCelestialElevation01(float3 viewRay)
 {
-    float3 normalizedRay = normalize(viewRay);
+    float3 normalizedRay = HectonCelestialSafeNormalize(viewRay, float3(0.0, 1.0, 0.0));
     float clampedY = saturate(normalizedRay.y);
-    float elevation01 = asin(clampedY) * HECTON_INV_HALF_PI;
-    return pow(saturate(elevation01), max(_CelestialAtmosphereBlendPower, 0.01));
+    float elevation01 = saturate(clampedY * (1.18 - 0.18 * clampedY));
+    return HectonCelestialFastMaskPower(saturate(elevation01), max(_CelestialAtmosphereBlendPower, 0.01));
 }
 
 float4 BuildFallbackHectonCelestialAtmosphere(
@@ -57,8 +72,8 @@ float4 SampleHectonCelestialAtmosphere(
     if (_HectonAtmosphereScatteringLUTReady < 0.5)
         return authoredSample;
 
-    float3 normalizedSun = normalize(sunDirection);
-    float3 normalizedRay = normalize(viewRay);
+    float3 normalizedSun = HectonCelestialSafeNormalize(sunDirection, float3(0.0, 1.0, 0.0));
+    float3 normalizedRay = HectonCelestialSafeNormalize(viewRay, float3(0.0, 1.0, 0.0));
     float sunView01 = saturate(dot(normalizedRay, normalizedSun) * 0.5 + 0.5);
     float4 physicalSample = SAMPLE_TEXTURE2D(
         _HectonAtmosphereScatteringLUT,

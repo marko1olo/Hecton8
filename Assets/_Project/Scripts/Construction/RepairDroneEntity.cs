@@ -122,8 +122,12 @@ namespace Hecton8.Construction
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (!_listeners.Contains(listener))
+                return;
+
+            _listeners.Unregister(listener);
+            if (_listeners.Count <= 0)
+                DropQueuedPayloads();
         }
 
         /// <summary>Flushes queued repair-drone torch acoustic payloads.</summary>
@@ -131,6 +135,12 @@ namespace Hecton8.Construction
         {
             if (!_pendingEvents.IsCreated)
                 return;
+
+            if (_listeners.Count <= 0)
+            {
+                DropQueuedPayloads();
+                return;
+            }
 
             PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
@@ -159,7 +169,7 @@ namespace Hecton8.Construction
         /// <summary>Queues one repair-drone torch acoustic pulse.</summary>
         public static void Notify(in RepairDroneTorchAcousticEvent acousticEvent)
         {
-            if (acousticEvent.Clip == null)
+            if (_listeners.Count <= 0 || acousticEvent.Clip == null)
                 return;
 
             if (!TryReserveReferenceSlot(out int referenceSlot))
@@ -192,6 +202,7 @@ namespace Hecton8.Construction
                     nameof(RepairDroneTorchAcousticEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -203,6 +214,21 @@ namespace Hecton8.Construction
                     nameof(RepairDroneTorchAcousticEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -312,6 +338,29 @@ namespace Hecton8.Construction
                 _clipReferenceSlots[i] = null;
                 _referenceSlotOccupied[i] = false;
             }
+        }
+
+        private static void DropQueuedPayloads()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                while (_pendingEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                while (_nextFrameEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            ClearReferenceSlots();
+            _referenceWriteIndex = 0;
+            _referencePendingCount = 0;
         }
 
         private static void ReportOverflowOncePerFrame()

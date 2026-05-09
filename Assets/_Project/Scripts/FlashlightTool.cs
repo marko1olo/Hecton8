@@ -11,33 +11,65 @@ namespace Hecton8.Gameplay
     using Hecton8.Input;
     using Hecton8.Interaction;
     using Hecton8.Items;
-    using Hecton8.Scavenging;
     using Hecton8.Tools;
     using Hecton8.UI;
+    using Unity.Mathematics;
     using UnityEngine;
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Flashlight Tool")]
     public sealed class FlashlightTool : PlayerTool, IBatteryTool
     {
+        private const int ContextComponentResolveDepth = 16;
+
         private readonly struct LampAssessment
         {
             public readonly string Headline;
             public readonly string Summary;
             public readonly string Recommendation;
             public readonly string Severity;
+            public readonly int CooldownSeconds;
+            public readonly string BeamModeLabel;
+            public readonly byte Flags;
 
-            public LampAssessment(string headline, string summary, string recommendation, string severity)
+            private const byte FlagAppendCooldown = 1 << 0;
+            private const byte FlagAppendBeamMode = 1 << 1;
+
+            public LampAssessment(string headline, string summary, string recommendation, string severity, int cooldownSeconds = 0, string beamModeLabel = null, byte flags = 0)
             {
                 Headline = headline;
                 Summary = summary;
                 Recommendation = recommendation;
                 Severity = severity;
+                CooldownSeconds = cooldownSeconds;
+                BeamModeLabel = beamModeLabel;
+                Flags = flags;
             }
 
-            public string BuildHudMessage()
+            public static byte WithCooldown => FlagAppendCooldown;
+            public static byte WithBeamMode => FlagAppendBeamMode;
+
+            public bool TryWriteHudMessage(ref FixedCharBuffer buffer)
             {
-                return $"{Headline} | {Summary} | {Recommendation}";
+                if (!AppendText(ref buffer, Headline))
+                    return false;
+
+                if ((Flags & FlagAppendCooldown) != 0)
+                {
+                    if (!AppendText(ref buffer, " ") || !buffer.AppendInt(CooldownSeconds) || !AppendText(ref buffer, "S"))
+                        return false;
+                }
+
+                if ((Flags & FlagAppendBeamMode) != 0 && !string.IsNullOrEmpty(BeamModeLabel))
+                {
+                    if (!AppendText(ref buffer, " [") || !AppendText(ref buffer, BeamModeLabel) || !AppendText(ref buffer, "]"))
+                        return false;
+                }
+
+                return AppendText(ref buffer, " | ") &&
+                       AppendText(ref buffer, Summary) &&
+                       AppendText(ref buffer, " | ") &&
+                       AppendText(ref buffer, Recommendation);
             }
         }
 
@@ -108,7 +140,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             _installedBattery = battery;
-            SetRuntimeBatteryNormalized(charge);
+            SetRuntimeBatteryNormalized(math.saturate(charge));
             UpdateBatteryVisuals();
             UpdatePowerIndicator();
 
@@ -131,9 +163,9 @@ namespace Hecton8.Gameplay
             float batteryCharge = BatteryCharge;
             float flickerScalar = 1f;
             if (TryGetWirelessBrownoutFlicker(out float brownoutFlicker))
-                flickerScalar = Mathf.Clamp(brownoutFlicker, 0f, 1f);
+                flickerScalar = math.saturate(brownoutFlicker);
 
-            _mpb.SetFloat(_ToolBatteryNormalizedID, Mathf.Clamp01(batteryCharge));
+            _mpb.SetFloat(_ToolBatteryNormalizedID, math.saturate(batteryCharge));
             if (_installedBattery == null || batteryCharge <= 0f)
             {
                 _mpb.SetColor(_EmissionColorID, Color.black);
@@ -162,6 +194,9 @@ namespace Hecton8.Gameplay
         private int _cachedContextDirectiveFrame = -1;
         private bool _cachedHasContextDirective;
         private string _cachedContextDirective;
+        private Transform _cachedTransform;
+        private Hecton8.Physics.QueryCacheContext _playerLookQueryCache;
+        private FixedCharBuffer _assessmentHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — flashlight assessment HUD staging buffer — owner: FlashlightTool
 
         // ══════════════════════════════════════════════════════════
         //  IBatteryTool STATE
@@ -169,6 +204,8 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            _cachedTransform = transform;
+            _playerLookQueryCache = Hecton8.Physics.GlobalQueryCacheManager.PlayerLook;
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — power indicator emission — owner: FlashlightTool
         }
 
@@ -191,10 +228,10 @@ namespace Hecton8.Gameplay
 
         protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
         {
-            profile.MaxRange = Mathf.Max(0.1f, contextProbeRange);
+            profile.MaxRange = math.max(0.1f, contextProbeRange);
             profile.PowerScalar = 1f;
             profile.BatteryCapacity = 1f;
-            profile.BatteryDrainPerSecond = Metadata != null ? Mathf.Max(0f, Metadata.GetTotalEnergyConsumption()) : 0.02f;
+            profile.BatteryDrainPerSecond = Metadata != null ? math.max(0f, Metadata.GetTotalEnergyConsumption()) : 0.02f;
         }
 
         public override void OnUnequip()
@@ -250,7 +287,7 @@ namespace Hecton8.Gameplay
                 FieldOperationLogSystem.RecordOperation(
                     "FLASHLIGHT",
                     "DIVE LAMP COOLING",
-                    $"{cooling.Summary} | {cooling.Recommendation}",
+                    "Lamp thermal guard blocked activation; HUD assessment carries live cooling data.",
                     "WARN");
                 return;
             }
@@ -281,12 +318,11 @@ namespace Hecton8.Gameplay
             {
                 _flashlight.CycleBeamMode();
                 InvalidateSnapshotCache();
-                string mode = _flashlight.BeamModeLabel;
                 LampAssessment assessment = BuildAssessment();
                 FieldOperationLogSystem.RecordOperation(
                     "FLASHLIGHT",
-                    $"DIVE LAMP {mode} PROFILE",
-                    $"{assessment.Summary} | {assessment.Recommendation}",
+                    "DIVE LAMP PROFILE",
+                    "Beam profile cycled; HUD assessment carries live profile and directive data.",
                     "INFO");
                 PublishAssessment(assessment);
                 return;
@@ -296,7 +332,7 @@ namespace Hecton8.Gameplay
             FieldOperationLogSystem.RecordOperation(
                 "FLASHLIGHT",
                 "DIVE LAMP STATUS QUERY",
-                $"{status.Summary} | {status.Recommendation}",
+                "Status query archived; HUD assessment carries live lamp and context data.",
                 status.Severity);
             PublishAssessment(status);
         }
@@ -348,14 +384,18 @@ namespace Hecton8.Gameplay
         private void ResolveRuntimeReferences()
         {
             if (_flashlight == null)
-                _flashlight = GetComponentInParent<PlayerFlashlight>();
+                TryResolveTransformHierarchyComponent(_cachedTransform, out _flashlight);
 
             if (_flashlight == null)
             {
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                     playerTransform != null)
                 {
-                    _flashlight = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.Flashlight != null) ? Hecton8.Core.GlobalRegistry.Player.Flashlight : playerTransform.GetComponent<PlayerFlashlight>());
+                    IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                    if (playerContext != null && playerContext.Flashlight != null)
+                        _flashlight = playerContext.Flashlight;
+                    else
+                        playerTransform.TryGetComponent(out _flashlight);
                 }
             }
 
@@ -375,19 +415,13 @@ namespace Hecton8.Gameplay
 
             if (!_missingFlashlightWarned)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[FlashlightTool] No PlayerFlashlight found in scene.");
+#endif
                 _missingFlashlightWarned = true;
             }
 
             return false;
-        }
-
-        private void ShowInfo(string message)
-        {
-            if (_hudNotification != null)
-                _hudNotification.ShowInfo(message);
-            else
-                Debug.Log(message);
         }
 
         public override string GetOperationalSummary()
@@ -399,6 +433,17 @@ namespace Hecton8.Gameplay
                 return summary;
 
             return _flashlight.BuildOperationalSummary();
+        }
+
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
+            if (!TryResolveFlashlight())
+            {
+                AppendText(ref buffer, "DIVE LAMP // LINK OFFLINE");
+                return;
+            }
+
+            _flashlight.WriteOperationalSummary(ref buffer);
         }
 
         public override string GetOperationalDirective()
@@ -418,6 +463,25 @@ namespace Hecton8.Gameplay
                 return directive;
 
             return _flashlight.BuildOperationalRecommendation();
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
+            if (!TryResolveFlashlight())
+            {
+                AppendText(ref buffer, "Restore the lamp link before field deployment.");
+                return;
+            }
+
+            if (_cachedContextDirectiveFrame == Time.frameCount &&
+                _cachedHasContextDirective &&
+                !string.IsNullOrEmpty(_cachedContextDirective))
+            {
+                AppendText(ref buffer, _cachedContextDirective);
+                return;
+            }
+
+            _flashlight.WriteOperationalRecommendation(ref buffer);
         }
 
         private string BuildStatusSnapshot()
@@ -451,28 +515,37 @@ namespace Hecton8.Gameplay
             if (_flashlight.IsOverheated)
             {
                 return new LampAssessment(
-                    $"DIVE LAMP - COOLING {Mathf.CeilToInt(_flashlight.CooldownRemaining)}S",
+                    "DIVE LAMP - COOLING",
                     summary,
                     recommendation,
-                    "WARN");
+                    "WARN",
+                    (int)math.ceil(_flashlight.CooldownRemaining),
+                    null,
+                    LampAssessment.WithCooldown);
             }
 
             if (_flashlight.EnergyPercent <= 10f)
             {
                 return new LampAssessment(
-                    $"DIVE LAMP - LOW ENERGY [{_flashlight.BeamModeLabel}]",
+                    "DIVE LAMP - LOW ENERGY",
                     summary,
                     recommendation,
-                    "WARN");
+                    "WARN",
+                    0,
+                    _flashlight.BeamModeLabel,
+                    LampAssessment.WithBeamMode);
             }
 
             if (_flashlight.HeatLevel >= 0.7f)
             {
                 return new LampAssessment(
-                    $"DIVE LAMP - HEAT RISING [{_flashlight.BeamModeLabel}]",
+                    "DIVE LAMP - HEAT RISING",
                     summary,
                     recommendation,
-                    "WARN");
+                    "WARN",
+                    0,
+                    _flashlight.BeamModeLabel,
+                    LampAssessment.WithBeamMode);
             }
 
             string contextualRecommendation = TryGetForwardContextDirectiveCached(out string contextDirective)
@@ -481,11 +554,14 @@ namespace Hecton8.Gameplay
 
             return new LampAssessment(
                 _flashlight.IsOn
-                    ? $"DIVE LAMP - ON [{_flashlight.BeamModeLabel}]"
-                    : $"DIVE LAMP - STANDBY [{_flashlight.BeamModeLabel}]",
+                    ? "DIVE LAMP - ON"
+                    : "DIVE LAMP - STANDBY",
                 summary,
                 contextualRecommendation,
-                "INFO");
+                "INFO",
+                0,
+                _flashlight.BeamModeLabel,
+                LampAssessment.WithBeamMode);
         }
 
         private bool TryGetOperationalSnapshot(out string summary, out string recommendation)
@@ -547,19 +623,22 @@ namespace Hecton8.Gameplay
         {
             directive = null;
 
-            Transform probeOrigin = transform;
+            Transform probeOrigin = _cachedTransform;
             if (_flashlight == null || probeOrigin == null)
                 return false;
 
-            var cache = Hecton8.Physics.GlobalQueryCacheManager.GetContext("PlayerLook");
+            Hecton8.Physics.QueryCacheContext cache =
+                _playerLookQueryCache ?? Hecton8.Physics.GlobalQueryCacheManager.PlayerLook;
+            _playerLookQueryCache = cache;
             Ray ray = new Ray(probeOrigin.position, probeOrigin.forward);
             
-            if (!cache.TryGet(ray, contextProbeRange, contextMask, out Hecton8.Physics.QueryResult qResult))
+            const QueryTriggerInteraction triggerMode = QueryTriggerInteraction.Collide;
+            if (!cache.TryGet(ray, contextProbeRange, contextMask, triggerMode, out Hecton8.Physics.QueryResult qResult))
             {
-                if (!TryResolveQueuedRaycast(ray.origin, ray.direction, contextProbeRange, contextMask.value, QueryTriggerInteraction.Collide, out RaycastHit hit))
+                if (!TryResolveQueuedRaycast(ray.origin, ray.direction, contextProbeRange, contextMask.value, triggerMode, out RaycastHit hit))
                     return false;
                 qResult = new Hecton8.Physics.QueryResult { hasHit = true, hit = hit };
-                cache.Set(ray, contextProbeRange, contextMask, qResult);
+                cache.Set(ray, contextProbeRange, contextMask, triggerMode, qResult);
             }
 
             if (!qResult.hasHit) 
@@ -577,56 +656,110 @@ namespace Hecton8.Gameplay
                     return true;
             }
 
-            if (collider.GetComponent<ScannableTarget>() != null || collider.GetComponentInParent<ScannableTarget>() != null)
+            if (InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo) &&
+                TryBuildCachedContextDirective(in targetInfo, finalHit.distance, out directive))
             {
-                directive = finalHit.distance >= 10f
-                    ? "Use FOCUS to read distant probes and hazard points before closing in."
-                    : "Use STANDARD while you classify the probe and keep route awareness.";
                 return true;
             }
 
-            PickupItem pickup = collider.GetComponent<PickupItem>() ?? collider.GetComponentInParent<PickupItem>();
-            if (pickup != null)
-            {
-                directive = finalHit.distance <= 5f
-                    ? "Use FLOOD to sweep the nearby salvage pocket without overshooting the pickup."
-                    : "Use STANDARD until the pickup lane tightens, then widen to FLOOD.";
-                return true;
-            }
+            return TryBuildDistanceContextDirective(finalHit.distance, out directive);
+        }
 
-            ResourceNode node = collider.GetComponent<ResourceNode>() ?? collider.GetComponentInParent<ResourceNode>();
-            if (node != null)
+        private static bool TryResolveTransformHierarchyComponent<T>(Transform start, out T component)
+            where T : Component
+        {
+            component = null;
+            Transform current = start;
+            int depth = 0;
+            while (current != null && depth < ContextComponentResolveDepth)
             {
-                directive = finalHit.distance >= 9f
-                    ? "Use FOCUS to probe the node edge before committing cutter or sampler."
-                    : "Use STANDARD to hold visibility on the extraction face.";
-                return true;
-            }
+                if (current.TryGetComponent(out component))
+                    return component != null;
 
-            BaseModule module = collider.GetComponent<BaseModule>() ?? collider.GetComponentInParent<BaseModule>();
-            if (module != null)
-            {
-                directive = finalHit.distance >= 9f
-                    ? "Use FOCUS for distant module reads and service planning."
-                    : "Use STANDARD to maintain service visibility on the module face.";
-                return true;
+                current = current.parent;
+                depth++;
             }
 
             return false;
         }
 
+        private static bool TryBuildCachedContextDirective(in InteractableRegistry.TargetInfo targetInfo, float distance, out string directive)
+        {
+            if (targetInfo.Scannable != null)
+            {
+                directive = distance >= 10f
+                    ? "Use FOCUS to read distant probes and hazard points before closing in."
+                    : "Use STANDARD while you classify the probe and keep route awareness.";
+                return true;
+            }
+
+            if (targetInfo.Pickup != null || targetInfo.PickupSource != null)
+            {
+                directive = distance <= 5f
+                    ? "Use FLOOD to sweep the nearby salvage pocket without overshooting the pickup."
+                    : "Use STANDARD until the pickup lane tightens, then widen to FLOOD.";
+                return true;
+            }
+
+            if (targetInfo.ResourceNode != null)
+            {
+                directive = distance >= 9f
+                    ? "Use FOCUS to probe the node edge before committing cutter or sampler."
+                    : "Use STANDARD to hold visibility on the extraction face.";
+                return true;
+            }
+
+            if (targetInfo.BaseModule != null)
+            {
+                directive = distance >= 9f
+                    ? "Use FOCUS for distant module reads and service planning."
+                    : "Use STANDARD to maintain service visibility on the module face.";
+                return true;
+            }
+
+            directive = null;
+            return false;
+        }
+
+        private static bool TryBuildDistanceContextDirective(float distance, out string directive)
+        {
+            if (distance >= 10f)
+            {
+                directive = "Use FOCUS for distant reads before closing the route.";
+                return true;
+            }
+
+            if (distance <= 5f)
+            {
+                directive = "Use FLOOD to widen near-field visibility without oversteering.";
+                return true;
+            }
+
+            directive = "Use STANDARD to preserve route awareness and battery discipline.";
+            return true;
+        }
+
         private void PublishAssessment(LampAssessment assessment)
         {
+            _assessmentHudBuffer.Clear();
+            if (!assessment.TryWriteHudMessage(ref _assessmentHudBuffer))
+                return;
+
             if (_hudNotification != null)
             {
                 if (assessment.Severity == "WARN" || assessment.Severity == "CRITICAL")
-                    _hudNotification.ShowWarning(assessment.BuildHudMessage());
+                    _hudNotification.ShowWarning(in _assessmentHudBuffer);
                 else
-                    _hudNotification.ShowInfo(assessment.BuildHudMessage());
+                    _hudNotification.ShowInfo(in _assessmentHudBuffer);
                 return;
             }
 
-            Debug.Log(assessment.BuildHudMessage());
+            return;
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
         }
 
         // ══════════════════════════════════════════════════════════

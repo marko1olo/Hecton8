@@ -11,6 +11,7 @@ using Hecton8.Items;
 using Hecton.Localization;
 using TMPro;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,14 +21,6 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/HUD Notification")]
     public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable, INotificationEventListener, IInventoryEventListener
     {
-        private static HUDNotification _ActiveInstance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _ActiveInstance = null;
-        }
-
         private enum NotificationSeverity
         {
             Info = 0,
@@ -35,11 +28,10 @@ namespace Hecton8.UI
             Critical = 2
         }
 
-        private const int InventoryFullMessageCacheSize = 16;
         private const int MaxNotificationQueueCapacity = 8;
         private const int FixedBufferMessageCacheSize = MaxNotificationQueueCapacity + 1;
         private const int FixedBufferMessageCharCapacity = 512;
-        private const string InventoryFullMessagePrefix = "INVENTORY FULL \u2014 CANNOT STORE ";
+        private const string InventoryFullMessagePrefix = "INVENTORY FULL // CANNOT STORE ";
         private const string FallbackInventoryItemName = "ITEM";
 
         private struct NotificationRequest
@@ -68,9 +60,6 @@ namespace Hecton8.UI
         private static readonly Color CriticalText = new Color(1f, 0.52f, 0.42f, 0.98f);
         private static readonly Color InfoBg = new Color(0.02f, 0.08f, 0.1f, 0.7f);
         private static readonly Color InfoText = new Color(0.46f, 0.98f, 0.94f, 0.9f);
-        private static readonly string[] _inventoryFullItemNameCache = new string[InventoryFullMessageCacheSize];
-        private static readonly string[] _inventoryFullMessageCache = new string[InventoryFullMessageCacheSize];
-
         // COLD ALLOC: FixedBufferMessageCacheEntry[9] - active plus queued fixed-buffer HUD messages - owner: HUDNotification
         private readonly FixedBufferMessageCacheEntry[] _fixedBufferMessageCache =
             new FixedBufferMessageCacheEntry[FixedBufferMessageCacheSize];
@@ -78,6 +67,8 @@ namespace Hecton8.UI
         // COLD ALLOC: char[4608] - fixed-buffer HUD message cache backing store - owner: HUDNotification
         private readonly char[] _fixedBufferMessageCharacters =
             new char[FixedBufferMessageCacheSize * FixedBufferMessageCharCapacity];
+
+        private FixedCharBuffer _inventoryFullMessageBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - inventory-full notification staging buffer - owner: HUDNotification
 
         private RectTransform _notifRoot;
         private Image _notifBg;
@@ -100,8 +91,24 @@ namespace Hecton8.UI
 
         public static bool TryGetActive(out HUDNotification notification)
         {
-            notification = _ActiveInstance;
-            return notification != null;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.RegisteredPlayer;
+            if (TryUseRegisteredNotification(playerContext != null ? playerContext.HudNotification : null, out notification))
+                return true;
+
+            IPlayerSensoryService sensoryService = GlobalRegistry.RegisteredPlayerSensory;
+            return TryUseRegisteredNotification(sensoryService != null ? sensoryService.HudNotification : null, out notification);
+        }
+
+        private static bool TryUseRegisteredNotification(HUDNotification candidate, out HUDNotification notification)
+        {
+            if (candidate != null && candidate.isActiveAndEnabled)
+            {
+                notification = candidate;
+                return true;
+            }
+
+            notification = null;
+            return false;
         }
 
 #if UNITY_EDITOR
@@ -118,8 +125,6 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            _ActiveInstance = this;
-
             if (font == null) font = TMP_Settings.defaultFontAsset;
 
             InventoryEvents.Register(this);
@@ -131,9 +136,6 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            if (ReferenceEquals(_ActiveInstance, this))
-                _ActiveInstance = null;
-
             UnregisterFromTickManager();
             InventoryEvents.Unregister(this);
             NotificationEvents.Unregister(this);
@@ -161,13 +163,11 @@ namespace Hecton8.UI
             if (_timer > 0f)
             {
                 _timer -= deltaTime;
-                _currentAlpha = Mathf.Lerp(_currentAlpha, 1f,
-                    1f - Mathf.Exp(-fadeSpeed * deltaTime));
+                _currentAlpha = math.lerp(_currentAlpha, 1f, ResolveDecayBlend(fadeSpeed, deltaTime));
             }
             else
             {
-                _currentAlpha = Mathf.Lerp(_currentAlpha, 0f,
-                    1f - Mathf.Exp(-fadeSpeed * deltaTime));
+                _currentAlpha = math.lerp(_currentAlpha, 0f, ResolveDecayBlend(fadeSpeed, deltaTime));
 
                 if (_currentAlpha < 0.01f)
                 {
@@ -390,24 +390,14 @@ namespace Hecton8.UI
 
         private void OnInventoryFull(ItemData item)
         {
-            ShowWarning(GetInventoryFullMessage(item));
-        }
-
-        private static string GetInventoryFullMessage(ItemData item)
-        {
             string itemName = item != null ? item.itemName : null;
             if (string.IsNullOrWhiteSpace(itemName))
                 itemName = FallbackInventoryItemName;
 
-            int cacheIndex = (itemName.GetHashCode() & int.MaxValue) % InventoryFullMessageCacheSize;
-            string cachedItemName = _inventoryFullItemNameCache[cacheIndex];
-            if (!string.IsNullOrEmpty(cachedItemName) && string.Equals(cachedItemName, itemName, System.StringComparison.Ordinal))
-                return _inventoryFullMessageCache[cacheIndex];
-
-            string message = InventoryFullMessagePrefix + ZeroGCStringCache.CachedToUpperInvariant(itemName);
-            _inventoryFullItemNameCache[cacheIndex] = itemName;
-            _inventoryFullMessageCache[cacheIndex] = message;
-            return message;
+            _inventoryFullMessageBuffer.Clear();
+            AppendText(ref _inventoryFullMessageBuffer, InventoryFullMessagePrefix);
+            AppendUpperInvariant(ref _inventoryFullMessageBuffer, itemName);
+            ShowWarning(in _inventoryFullMessageBuffer);
         }
 
         private void RefreshStressCorruptionIfNeeded()
@@ -484,11 +474,39 @@ namespace Hecton8.UI
             if (manager != null)
                 return manager.TryApplyHullStressCorruptionIfNeeded(message, target, out length) && length > 0;
 
-            length = Mathf.Min(message.Length, target.Length);
+            length = math.min(message.Length, target.Length);
             if (length <= 0)
                 return false;
 
             message.Slice(0, length).CopyTo(target.AsSpan());
+            return true;
+        }
+
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value.AsSpan());
+        }
+
+        private static bool AppendUpperInvariant(ref FixedCharBuffer buffer, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            Span<char> scratch = stackalloc char[1];
+            for (int i = 0; i < value.Length; i++)
+            {
+                char c = value[i];
+                scratch[0] = c == '_' ? ' ' : char.ToUpperInvariant(c);
+                if (!buffer.Append(scratch))
+                    return false;
+            }
+
             return true;
         }
 
@@ -502,7 +520,7 @@ namespace Hecton8.UI
             if (messageHash == 0u)
                 return 0u;
 
-            int storedLength = Mathf.Min(source.Length, FixedBufferMessageCharCapacity);
+            int storedLength = math.min(source.Length, FixedBufferMessageCharCapacity);
             for (int i = 0; i < _fixedBufferMessageCache.Length; i++)
             {
                 if (IsFixedBufferMessageMatch(i, messageHash, source, storedLength))
@@ -548,7 +566,7 @@ namespace Hecton8.UI
         private int ResolveQueueCapacity()
         {
             EnsureQueue();
-            return Mathf.Clamp(maxQueuedNotifications, 1, _queue.Length);
+            return math.clamp(maxQueuedNotifications, 1, _queue.Length);
         }
 
         private void EnsureQueue()
@@ -556,7 +574,7 @@ namespace Hecton8.UI
             if (_queue.IsCreated)
                 return;
 
-            int capacity = Mathf.Clamp(maxQueuedNotifications, 1, MaxNotificationQueueCapacity);
+            int capacity = math.clamp(maxQueuedNotifications, 1, MaxNotificationQueueCapacity);
             _queue = new NativeArray<NotificationRequest>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<NotificationRequest>[capacity] - fixed HUD notification hash queue - owner: HUDNotification
             NativeMemorySentinel.RegisterNativeArray(_queue, nameof(HUDNotification), nameof(_queue), NativeAllocationLifetime.Scene);
             _queueCount = 0;

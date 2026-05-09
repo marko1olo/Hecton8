@@ -25,6 +25,7 @@ namespace Hecton8.Editor
         private const string HeightBLabel = "heightB";
         private const string SedimentLabel = "sediment";
         private const string WearLabel = "wear";
+        private const string HeightDeltaQueueLabel = "heightDeltas";
         private const string MetricsLabel = "metrics";
         private const string ShelfRawLabel = "shelfRaw";
         private const string ShelfQuantizedLabel = "shelfQuantized";
@@ -48,6 +49,16 @@ namespace Hecton8.Editor
         private const float CanyonDepthThreshold = 0.0002f;
         private const float CanyonWallStrength = 4f;
         private const float CanyonMaxLift01 = 0.02f;
+        private const int MinDropletsPerScheduleSlice = 100;
+        private const int MaxDropletsPerScheduleSlice = 1000;
+        private const int MaxErosionOperationsPerSlice = 1000;
+        private const int MaxTrackedHeightDeltaQueueCapacity = HydraulicErosionScheduler.RecommendedMaxTrackedHeightDeltaQueueCapacity;
+        private const int MaxHeightDeltaApplyPerJob = 8192;
+        private const int ErosionDropletCount = 300000;
+        private const int ErosionMaxLifetime = 72;
+        private const int SedimentaryFlatIterations = 2;
+        private const int ThermalSlumpIterations = 3;
+        private const bool RunCanyonWallPass = true;
         private static readonly UTF8Encoding JsonEncoding = new UTF8Encoding(false); // COLD ALLOC: UTF8Encoding[1] - editor smoke JSON artifact writer - owner: ErosionTestHarness
 
         /// <summary>
@@ -61,6 +72,7 @@ namespace Hecton8.Editor
             NativeArray<float> heightB = default;
             NativeArray<float> sediment = default;
             NativeArray<float> wear = default;
+            NativeQueue<HydraulicErosionHeightDelta> heightDeltas = default;
             NativeArray<ErosionSmokeMetrics> metrics = default;
             JobHandle handle = default;
             bool handleScheduled = false;
@@ -72,8 +84,20 @@ namespace Hecton8.Editor
                 heightB = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 sediment = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 wear = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                int dropletsPerSlice = ResolveDropletsPerSlice(
+                    MaxErosionOperationsPerSlice,
+                    ResolveCurrentErosionOperations(PixelCount, SedimentaryFlatIterations, ThermalSlumpIterations, RunCanyonWallPass));
+                heightDeltas = new NativeQueue<HydraulicErosionHeightDelta>(Allocator.TempJob); // COLD ALLOC: NativeQueue<HydraulicErosionHeightDelta>[tracked cap 8388608 entries, ~128 MiB payload upper-bound] - sliced editor erosion deltas; harness mirrors MapMagic queue budget for proof artifacts - owner: ErosionTestHarness
                 metrics = new NativeArray<ErosionSmokeMetrics>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                RegisterTempJobBuffers(before, heightA, heightB, sediment, wear, metrics);
+                RegisterTempJobBuffers(
+                    before,
+                    heightA,
+                    heightB,
+                    sediment,
+                    wear,
+                    heightDeltas,
+                    metrics,
+                    ResolveHeightDeltaQueueCapacity(dropletsPerSlice, ErosionMaxLifetime));
 
                 handle = new ErosionFractalHeightmapJob
                 {
@@ -97,8 +121,8 @@ namespace Hecton8.Editor
                     CoreWidth = Resolution - 8,
                     CoreHeight = Resolution - 8,
                     SubGridSize = ErosionSubGridSize,
-                    DropletCount = 300000,
-                    MaxLifetime = 72,
+                    DropletCount = ErosionDropletCount,
+                    MaxLifetime = ErosionMaxLifetime,
                     Seed = 347239u,
                     Inertia = ErosionInertia,
                     CapacityFactor = 4f,
@@ -120,11 +144,17 @@ namespace Hecton8.Editor
                     MinWater = 0.01f
                 };
 
-                handle = HydraulicErosionScheduler.ScheduleFourPhase(ref erosionJob, 1, handle);
+                handle = HydraulicErosionScheduler.ScheduleFourPhaseSlicedWithDeltaApply(
+                    ref erosionJob,
+                    dropletsPerSlice,
+                    1,
+                    heightDeltas,
+                    ResolveHeightDeltaApplyBudget(dropletsPerSlice, ErosionMaxLifetime),
+                    handle);
                 NativeArray<float> current = heightA;
                 NativeArray<float> next = heightB;
 
-                for (int i = 0; i < 2; i++)
+                for (int i = 0; i < SedimentaryFlatIterations; i++)
                 {
                     var flatJob = new SedimentaryFlatSmoothingJob
                     {
@@ -144,7 +174,7 @@ namespace Hecton8.Editor
                     Swap(ref current, ref next);
                 }
 
-                for (int i = 0; i < 3; i++)
+                for (int i = 0; i < ThermalSlumpIterations; i++)
                 {
                     var slumpJob = new ThermalSlumpingJob
                     {
@@ -154,7 +184,7 @@ namespace Hecton8.Editor
                         Width = Resolution,
                         Height = Resolution,
                         CellSizeMeters = 1f,
-                        HeightScaleMeters = 160f,
+                        HeightScaleMeters = ErosionHeightScaleMeters,
                         TalusAngleDegrees = 45f,
                         Strength = 0.32f,
                         WriteWearMask = false
@@ -164,20 +194,23 @@ namespace Hecton8.Editor
                     Swap(ref current, ref next);
                 }
 
-                var canyonJob = new CanyonWallSteepeningJob
+                if (RunCanyonWallPass)
                 {
-                    InputHeights01 = current,
-                    OutputHeights01 = next,
-                    ErosionDepthMask = wear,
-                    Width = Resolution,
-                    Height = Resolution,
-                    DepthThreshold = CanyonDepthThreshold,
-                    Strength = CanyonWallStrength,
-                    MaxLift01 = CanyonMaxLift01
-                };
+                    var canyonJob = new CanyonWallSteepeningJob
+                    {
+                        InputHeights01 = current,
+                        OutputHeights01 = next,
+                        ErosionDepthMask = wear,
+                        Width = Resolution,
+                        Height = Resolution,
+                        DepthThreshold = CanyonDepthThreshold,
+                        Strength = CanyonWallStrength,
+                        MaxLift01 = CanyonMaxLift01
+                    };
 
-                handle = canyonJob.Schedule(PixelCount, 64, handle);
-                Swap(ref current, ref next);
+                    handle = canyonJob.Schedule(PixelCount, 64, handle);
+                    Swap(ref current, ref next);
+                }
 
                 handle = new ErosionSmokeMetricsJob
                 {
@@ -215,6 +248,7 @@ namespace Hecton8.Editor
                 DisposeTracked(ref heightB);
                 DisposeTracked(ref sediment);
                 DisposeTracked(ref wear);
+                DisposeTrackedQueue(ref heightDeltas);
                 DisposeTracked(ref metrics);
             }
         }
@@ -328,19 +362,57 @@ namespace Hecton8.Editor
             };
         }
 
+        private static int ResolveDropletsPerSlice(int maxOperations, int currentOperations)
+        {
+            int maxOps = math.max(MinDropletsPerScheduleSlice, maxOperations);
+            int currentOps = math.max(0, currentOperations);
+            return math.clamp(maxOps - currentOps, MinDropletsPerScheduleSlice, MaxDropletsPerScheduleSlice);
+        }
+
+        private static int ResolveCurrentErosionOperations(
+            int cellCount,
+            int flatIterations,
+            int thermalSlumpIterations,
+            bool canyonWallPass)
+        {
+            int cellDebt = math.clamp(cellCount / 4096, 0, 96);
+            int flatDebt = math.max(0, flatIterations) * 64;
+            int thermalDebt = math.max(0, thermalSlumpIterations) * 96;
+            int canyonDebt = canyonWallPass ? 128 : 0;
+            return cellDebt + flatDebt + thermalDebt + canyonDebt;
+        }
+
+        private static int ResolveHeightDeltaQueueCapacity(int dropletsPerSlice, int maxLifetime)
+        {
+            return HydraulicErosionScheduler.ResolveTrackedHeightDeltaQueueCapacity(
+                dropletsPerSlice,
+                maxLifetime,
+                1024,
+                MaxTrackedHeightDeltaQueueCapacity);
+        }
+
+        private static int ResolveHeightDeltaApplyBudget(int dropletsPerSlice, int maxLifetime)
+        {
+            int queueCapacity = ResolveHeightDeltaQueueCapacity(dropletsPerSlice, maxLifetime);
+            return math.clamp(queueCapacity / 16, 1024, MaxHeightDeltaApplyPerJob);
+        }
+
         private static void RegisterTempJobBuffers(
             NativeArray<float> before,
             NativeArray<float> heightA,
             NativeArray<float> heightB,
             NativeArray<float> sediment,
             NativeArray<float> wear,
-            NativeArray<ErosionSmokeMetrics> metrics)
+            NativeQueue<HydraulicErosionHeightDelta> heightDeltas,
+            NativeArray<ErosionSmokeMetrics> metrics,
+            int heightDeltaQueueCapacity)
         {
             NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeQueue(heightDeltas, heightDeltaQueueCapacity, NativeMemoryOwner, HeightDeltaQueueLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(metrics, NativeMemoryOwner, MetricsLabel, NativeAllocationLifetime.TempJob);
         }
 
@@ -352,6 +424,16 @@ namespace Hecton8.Editor
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
+        }
+
+        private static void DisposeTrackedQueue(ref NativeQueue<HydraulicErosionHeightDelta> queue)
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, HeightDeltaQueueLabel);
+            queue.Dispose();
+            queue = default;
         }
 
         private static void WriteHeightPng(NativeArray<float> heights, string path)
@@ -480,8 +562,8 @@ namespace Hecton8.Editor
             builder.Append("{\n");
             AppendJsonProperty(builder, "schema", "hecton8.erosion_smoke_metrics.v1", true);
             AppendJsonProperty(builder, "resolution", Resolution, true);
-            AppendJsonProperty(builder, "dropletCount", 300000, true);
-            AppendJsonProperty(builder, "thermalIterations", 3, true);
+            AppendJsonProperty(builder, "dropletCount", ErosionDropletCount, true);
+            AppendJsonProperty(builder, "thermalIterations", ThermalSlumpIterations, true);
             AppendJsonProperty(builder, "minBefore", metrics.MinBefore, true);
             AppendJsonProperty(builder, "maxBefore", metrics.MaxBefore, true);
             AppendJsonProperty(builder, "minAfter", metrics.MinAfter, true);

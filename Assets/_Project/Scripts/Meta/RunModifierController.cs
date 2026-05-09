@@ -11,9 +11,8 @@ namespace Hecton8.Meta
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6350)]
     [AddComponentMenu("Hecton8/Meta/Run Modifier Controller")]
-    public sealed class RunModifierController : MonoBehaviour, ISaveable
+    public sealed class RunModifierController : MonoBehaviour, ISaveable, IServiceHeartbeat, IServiceShutdown
     {
-        private static RunModifierController _instance;
         private static RunModifiersDTO _pendingNewGameModifiers;
         private static bool _hasPendingNewGameModifiers;
 
@@ -21,11 +20,7 @@ namespace Hecton8.Meta
         private HectonEventSubscription _gameLoadedSubscription;
         private RunModifiersDTO _currentModifiers;
         private bool _deleteIssuedForCurrentRun;
-
-        /// <summary>
-        /// Active runtime owner for slot-scoped hardcore modifiers.
-        /// </summary>
-        public static RunModifierController Instance => _instance;
+        private bool _serviceRegistered;
 
         /// <summary>
         /// Current local-run modifier snapshot.
@@ -35,7 +30,20 @@ namespace Hecton8.Meta
         /// <summary>
         /// Returns true when the active run forces nightmare difficulty rules.
         /// </summary>
-        public static bool IsNightmareModeActive => _instance != null && _instance._currentModifiers.isNightmareMode;
+        public static bool IsNightmareModeActive
+        {
+            get
+            {
+                RunModifierController runtime = GlobalRegistry.RunModifiers;
+                return runtime != null && runtime._currentModifiers.isNightmareMode;
+            }
+        }
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered;
 
         /// <summary>
         /// Queues modifier flags for the next new-game bootstrap.
@@ -49,18 +57,22 @@ namespace Hecton8.Meta
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            RunModifierController registered = GlobalRegistry.RunModifiers;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
             ResetForCurrentContext();
         }
 
         private void OnEnable()
         {
+            TryRegisterService();
+            if (Application.isPlaying && !_serviceRegistered)
+                return;
+
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             SubscribeToEventBus();
             ResetForCurrentContext();
@@ -68,6 +80,9 @@ namespace Hecton8.Meta
 
         private void Start()
         {
+            if (Application.isPlaying && !_serviceRegistered)
+                return;
+
             ResetForCurrentContext();
         }
 
@@ -75,15 +90,45 @@ namespace Hecton8.Meta
         {
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             UnsubscribeFromEventBus();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            OnServiceShutdown();
+        }
+
+        /// <inheritdoc />
+        public void OnServiceShutdown()
+        {
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             UnsubscribeFromEventBus();
+            TryUnregisterService();
+        }
 
-            if (_instance == this)
-                _instance = null;
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            RunModifierController registered = GlobalRegistry.RunModifiers;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            GlobalRegistry.RegisterRunModifierRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.RunModifiers, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterRunModifierRuntime(this);
+            _serviceRegistered = false;
         }
 
         /// <summary>

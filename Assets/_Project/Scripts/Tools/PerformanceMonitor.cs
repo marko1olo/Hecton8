@@ -1,9 +1,8 @@
 using System;
-using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.BuildTools;
 using UnityEngine;
 using Unity.Profiling;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 
 namespace Hecton8.Tools
@@ -12,6 +11,7 @@ namespace Hecton8.Tools
     /// Performance monitoring system that captures frame time budgets after major passes.
     /// Provides guardrail data for CPU optimization decisions.
     /// </summary>
+    [DisallowMultipleComponent]
     [DefaultExecutionOrder(1000)] // Run after most systems
     public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable
     {
@@ -67,22 +67,12 @@ namespace Hecton8.Tools
         private bool _isCapturing;
         private bool _registeredToTickManager;
         private float _captureStartTime;
-        private List<float> _frameTimes;
+        private float[] _frameTimes;
+        private int _frameTimeCount;
         private float _lastLogTime;
-
-        // Singleton access
-        public static PerformanceMonitor Instance { get; private set; }
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-            GameBootstrapper.PersistRuntimeService(this);
             EnsureFrameBufferCapacity();
         }
 
@@ -106,30 +96,39 @@ namespace Hecton8.Tools
 
         private void OnDestroy()
         {
-            if (Instance == this)
-                Instance = null;
+            OnDisable();
+            _frameTimes = null;
+            _frameTimeCount = 0;
         }
 
         public void Tick(float dt)
         {
             if (!_isCapturing) return;
 
+            int captureLimit = ResolveCaptureLimit();
+            if (captureLimit <= 0)
+                return;
+
             // Capture current frame data
             float currentFrameTimeMs = dt * 1000f;
-            _frameTimes.Add(currentFrameTimeMs);
+            if (_frameTimeCount < captureLimit)
+                _frameTimes[_frameTimeCount++] = currentFrameTimeMs;
 
             // Check if capture is complete
-            if (_frameTimes.Count >= _captureFrameCount)
+            if (_frameTimeCount >= captureLimit)
             {
                 CompleteCapture();
+                return;
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             // Periodic logging
             if (_autoLogToConsole && Time.unscaledTime - _lastLogTime >= _logInterval)
             {
                 LogCurrentPerformance(currentFrameTimeMs);
                 _lastLogTime = Time.unscaledTime;
             }
+#endif
         }
 
         /// <summary>
@@ -143,7 +142,7 @@ namespace Hecton8.Tools
             _captureStartTime = Time.unscaledTime;
             _lastLogTime = Time.unscaledTime;
             EnsureFrameBufferCapacity();
-            _frameTimes.Clear();
+            _frameTimeCount = 0;
 
             LogCaptureStarted(_captureFrameCount);
         }
@@ -172,11 +171,13 @@ namespace Hecton8.Tools
         /// </summary>
         public string DescribeStatus()
         {
-            int sampleCount = _frameTimes != null ? _frameTimes.Count : 0;
+            int sampleCount = ResolveSampleCount();
             float elapsed = _isCapturing ? Time.unscaledTime - _captureStartTime : 0f;
-            float mean = sampleCount > 0 ? CalculateMean(_frameTimes) : 0f;
-            float worst = sampleCount > 0 ? CalculateMax(_frameTimes) : 0f;
-            float best = sampleCount > 0 ? CalculateMin(_frameTimes) : 0f;
+            float mean = 0f;
+            float worst = 0f;
+            float best = 0f;
+            if (sampleCount > 0)
+                CalculateStats(_frameTimes, sampleCount, out mean, out worst, out best);
 
             return
                 $"capturing={_isCapturing} samples={sampleCount}/{_captureFrameCount} elapsed={elapsed:F1}s " +
@@ -187,7 +188,7 @@ namespace Hecton8.Tools
         private void CompleteCapture()
         {
             _isCapturing = false;
-            int sampleCount = _frameTimes != null ? _frameTimes.Count : 0;
+            int sampleCount = ResolveSampleCount();
             var snapshot = CreateSnapshot();
 
             LogCaptureCompleted(snapshot, sampleCount);
@@ -199,12 +200,10 @@ namespace Hecton8.Tools
 
         private PerformanceSnapshot CreateSnapshot()
         {
-            if (_frameTimes.Count == 0) return default;
+            int sampleCount = ResolveSampleCount();
+            if (sampleCount == 0) return default;
 
-            // Calculate statistics
-            float meanFrameTime = CalculateMean(_frameTimes);
-            float worstFrameTime = CalculateMax(_frameTimes);
-            float bestFrameTime = CalculateMin(_frameTimes);
+            CalculateStats(_frameTimes, sampleCount, out float meanFrameTime, out float worstFrameTime, out float bestFrameTime);
 
             return new PerformanceSnapshot
             {
@@ -212,13 +211,13 @@ namespace Hecton8.Tools
                 MeanFrameTime = meanFrameTime,
                 WorstFrameTime = worstFrameTime,
                 BestFrameTime = bestFrameTime,
-                SampleCount = _frameTimes.Count
+                SampleCount = sampleCount
             };
         }
 
         private void LogCurrentPerformance(float currentFrameTimeMs)
         {
-            LogCurrentFrameTime(currentFrameTimeMs, _frameTimes != null ? _frameTimes.Count : 0);
+            LogCurrentFrameTime(currentFrameTimeMs, ResolveSampleCount());
         }
 
 #if UNITY_EDITOR
@@ -253,57 +252,56 @@ namespace Hecton8.Tools
         }
 #endif
 
-        private static float CalculateMean(List<float> values)
+        private static void CalculateStats(float[] values, int count, out float mean, out float worst, out float best)
         {
-            if (values.Count == 0) return 0f;
+            mean = 0f;
+            worst = 0f;
+            best = 0f;
+            if (values == null || count <= 0)
+                return;
 
             float sum = 0f;
-            foreach (float value in values)
-                sum += value;
-
-            return sum / values.Count;
-        }
-
-        private static float CalculateMax(List<float> values)
-        {
-            if (values.Count == 0) return 0f;
-
             float max = float.MinValue;
-            foreach (float value in values)
-                if (value > max) max = value;
-
-            return max;
-        }
-
-        private static float CalculateMin(List<float> values)
-        {
-            if (values.Count == 0) return float.MaxValue;
-
             float min = float.MaxValue;
-            foreach (float value in values)
+            for (int i = 0; i < count; i++)
+            {
+                float value = values[i];
+                sum += value;
+                if (value > max) max = value;
                 if (value < min) min = value;
+            }
 
-            return min;
+            mean = sum / count;
+            worst = max;
+            best = min;
         }
 
-        private static float CalculateMean(List<int> values)
+        private int ResolveCaptureLimit()
         {
-            if (values.Count == 0) return 0f;
+            if (_frameTimes == null || _frameTimes.Length == 0)
+                return 0;
 
-            float sum = 0f;
-            foreach (int value in values)
-                sum += value;
+            int configured = _captureFrameCount > 0 ? _captureFrameCount : 1;
+            return configured < _frameTimes.Length ? configured : _frameTimes.Length;
+        }
 
-            return sum / values.Count;
+        private int ResolveSampleCount()
+        {
+            if (_frameTimes == null || _frameTimes.Length == 0)
+                return 0;
+
+            int captureLimit = ResolveCaptureLimit();
+            return _frameTimeCount < captureLimit ? _frameTimeCount : captureLimit;
         }
 
         private void EnsureFrameBufferCapacity()
         {
-            int requiredCapacity = Mathf.Max(1, _captureFrameCount);
-            if (_frameTimes != null && _frameTimes.Capacity >= requiredCapacity)
+            int requiredCapacity = _captureFrameCount > 0 ? _captureFrameCount : 1;
+            if (_frameTimes != null && _frameTimes.Length >= requiredCapacity)
                 return;
 
-            _frameTimes = new List<float>(requiredCapacity); // COLD ALLOC: bounded capture buffer sized to the configured sample window
+            _frameTimes = new float[requiredCapacity]; // COLD ALLOC: float[captureFrameCount] - bounded performance capture frame-time samples - owner: PerformanceMonitor
+            _frameTimeCount = 0;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -347,6 +345,7 @@ namespace Hecton8.Tools
     /// Snapshot of performance data at a point in time.
     /// </summary>
     [Serializable]
+    [StructLayout(LayoutKind.Sequential)]
     public struct PerformanceSnapshot
     {
         public DateTime Timestamp;

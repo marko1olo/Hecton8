@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -92,18 +93,28 @@ namespace Hecton8.World
         {
             RebaseIfUpstreamChanged();
 
-            float nextOcclusion = Mathf.MoveTowards(
+            float nextOcclusion = MoveTowardsFast(
                 _appliedOcclusion,
                 _targetOcclusion,
-                Mathf.Max(0.01f, occlusionBlendRate) * Mathf.Max(0f, deltaTime));
+                math.max(0.01f, occlusionBlendRate) * math.max(0f, deltaTime));
 
-            if (Mathf.Abs(nextOcclusion - _appliedOcclusion) > BaselineEpsilon)
+            if (math.abs(nextOcclusion - _appliedOcclusion) > BaselineEpsilon)
             {
                 _appliedOcclusion = nextOcclusion;
                 ApplyCurrentOcclusion();
             }
 
             _debugAppliedOcclusion = _appliedOcclusion;
+        }
+
+        private static float MoveTowardsFast(float current, float target, float maxDelta)
+        {
+            float delta = target - current;
+            float safeDelta = math.max(0f, maxDelta);
+            if (math.abs(delta) <= safeDelta)
+                return target;
+
+            return current + (math.sign(delta) * safeDelta);
         }
 
         /// <summary>
@@ -162,7 +173,7 @@ namespace Hecton8.World
             }
 
             if (viewerCamera == null && viewerTransform != null)
-                viewerCamera = viewerTransform.GetComponent<Camera>();
+                viewerTransform.TryGetComponent(out viewerCamera);
 
             if (viewerTransform == null && viewerCamera != null)
                 viewerTransform = viewerCamera.transform;
@@ -273,33 +284,33 @@ namespace Hecton8.World
         private void RebaseIfUpstreamChanged()
         {
             float liveAmbientIntensity = RenderSettings.ambientIntensity;
-            if (Mathf.Abs(liveAmbientIntensity - _lastAppliedAmbientIntensity) > BaselineEpsilon)
+            if (math.abs(liveAmbientIntensity - _lastAppliedAmbientIntensity) > BaselineEpsilon)
                 _sourceAmbientIntensity = liveAmbientIntensity;
 
             float liveReflectionIntensity = RenderSettings.reflectionIntensity;
-            if (Mathf.Abs(liveReflectionIntensity - _lastAppliedReflectionIntensity) > BaselineEpsilon)
+            if (math.abs(liveReflectionIntensity - _lastAppliedReflectionIntensity) > BaselineEpsilon)
                 _sourceReflectionIntensity = liveReflectionIntensity;
         }
 
         private void ApplyOcclusionImmediate(float occlusion)
         {
-            _appliedOcclusion = Mathf.Clamp01(occlusion);
+            _appliedOcclusion = math.saturate(occlusion);
             ApplyCurrentOcclusion();
             _debugAppliedOcclusion = _appliedOcclusion;
         }
 
         private void ApplyCurrentOcclusion()
         {
-            float ambientScale = Mathf.Lerp(1f, caveAmbientIntensityScale, _appliedOcclusion);
-            float reflectionScale = Mathf.Lerp(1f, caveReflectionIntensityScale, _appliedOcclusion);
+            float ambientScale = math.lerp(1f, caveAmbientIntensityScale, _appliedOcclusion);
+            float reflectionScale = math.lerp(1f, caveReflectionIntensityScale, _appliedOcclusion);
 
-            float ambientIntensity = Mathf.Max(0f, _sourceAmbientIntensity * ambientScale);
-            float reflectionIntensity = Mathf.Max(0f, _sourceReflectionIntensity * reflectionScale);
+            float ambientIntensity = math.max(0f, _sourceAmbientIntensity * ambientScale);
+            float reflectionIntensity = math.max(0f, _sourceReflectionIntensity * reflectionScale);
 
-            if (Mathf.Abs(RenderSettings.ambientIntensity - ambientIntensity) > BaselineEpsilon)
+            if (math.abs(RenderSettings.ambientIntensity - ambientIntensity) > BaselineEpsilon)
                 RenderSettings.ambientIntensity = ambientIntensity;
 
-            if (Mathf.Abs(RenderSettings.reflectionIntensity - reflectionIntensity) > BaselineEpsilon)
+            if (math.abs(RenderSettings.reflectionIntensity - reflectionIntensity) > BaselineEpsilon)
                 RenderSettings.reflectionIntensity = reflectionIntensity;
 
             _lastAppliedAmbientIntensity = ambientIntensity;

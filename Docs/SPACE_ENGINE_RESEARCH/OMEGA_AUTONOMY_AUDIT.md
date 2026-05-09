@@ -121,4 +121,6 @@ Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_DIFF.patch
 
 ## Final Status
 
-OMEGA VERIFIED
+PENDING VERIFICATION.
+
+The standalone smoke artifact contains an `OMEGA_VERIFIED` status label, but that label is not promoted to project authority. Unity Console, Play Mode, profiler, GCMonitor, player-build, and memory-retention proof are absent for this document scope.

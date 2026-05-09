@@ -8,8 +8,9 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
-using UnityEngine.SceneManagement;
 using UnityEngine.Events;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine.UI;
 
 namespace Hecton.UI.MainMenu
@@ -71,15 +72,20 @@ namespace Hecton.UI.MainMenu
         [SerializeField] private float fadeDuration = 0.2f;
         [SerializeField] private string targetSceneName = "02_HECTON_WORLD";
 
-        private const int SlotCount = 3;
+        private const int SlotCount = SaveEvents.ManualSlotCount;
         private const float CancelInputDebounceSeconds = 0.35f;
-        private static readonly string[] SlotNames = { "slot_1", "slot_2", "slot_3" };
+        private const string UnknownSaveEventError = "Unknown error";
+        private static readonly string[] SlotNames =
+        {
+            SaveEvents.ResolveManualSlotName(0),
+            SaveEvents.ResolveManualSlotName(1),
+            SaveEvents.ResolveManualSlotName(2)
+        };
 
         private bool _isTransitioning;
         private bool _isSceneLoadInFlight;
         private bool _registeredToTickManager;
         private bool _settingsAvailable;
-        private bool _sceneActivationRequested;
         private bool _refreshSelectionRequested;
         private bool _isSaveLoadBusy;
         private bool _lastLoadUsedBackup;
@@ -92,7 +98,6 @@ namespace Hecton.UI.MainMenu
         private SaveManager _saveManager;
         private SaveSlotUI[] _slotUIs;
         private bool[] _slotButtonAvailability;
-        private AsyncOperation _sceneLoadOperation;
         private CanvasGroup _transitionFromPanel;
         private CanvasGroup _transitionToPanel;
         private CanvasGroup _currentPanel;
@@ -190,31 +195,32 @@ namespace Hecton.UI.MainMenu
 
         public void OnSaveEvent(in SaveEventPayload payload)
         {
-            string slotName = payload.SlotName.ToString();
             switch (payload.Type)
             {
                 case SaveEventType.SaveStarted:
-                    OnSaveStarted(slotName);
+                    OnSaveStarted(in payload);
                     return;
 
                 case SaveEventType.SaveCompleted:
-                    OnSaveCompleted(slotName);
+                    OnSaveCompleted(in payload);
                     return;
 
                 case SaveEventType.SaveFailed:
-                    OnSaveFailed(slotName, payload.Message.ToString());
+                    FixedString128Bytes saveFailedMessage = payload.Message;
+                    OnSaveFailed(SaveEvents.ResolveSlotName(in payload.SlotName), in saveFailedMessage);
                     return;
 
                 case SaveEventType.LoadStarted:
-                    OnLoadStarted(slotName);
+                    OnLoadStarted(in payload);
                     return;
 
                 case SaveEventType.LoadCompleted:
-                    OnLoadCompleted(slotName);
+                    OnLoadCompleted(in payload);
                     return;
 
                 case SaveEventType.LoadFailed:
-                    OnLoadFailed(slotName, payload.Message.ToString());
+                    FixedString128Bytes loadFailedMessage = payload.Message;
+                    OnLoadFailed(SaveEvents.ResolveSlotName(in payload.SlotName), in loadFailedMessage);
                     return;
             }
         }
@@ -300,17 +306,17 @@ namespace Hecton.UI.MainMenu
         private void CacheButtonActions()
         {
             if (_newGameClickAction == null)
-                _newGameClickAction = OnNewGameClicked; // COLD ALLOC: UnityAction[1] - cached main menu new-game listener - owner: MainMenuController
+                _newGameClickAction = OnNewGameClicked; // COLD ALLOC: UnityAction[1] — cached main menu new-game listener — owner: MainMenuController
             if (_loadGameClickAction == null)
-                _loadGameClickAction = OnLoadGameClicked; // COLD ALLOC: UnityAction[1] - cached main menu load-game listener - owner: MainMenuController
+                _loadGameClickAction = OnLoadGameClicked; // COLD ALLOC: UnityAction[1] — cached main menu load-game listener — owner: MainMenuController
             if (_settingsClickAction == null)
-                _settingsClickAction = OnSettingsClicked; // COLD ALLOC: UnityAction[1] - cached main menu settings listener - owner: MainMenuController
+                _settingsClickAction = OnSettingsClicked; // COLD ALLOC: UnityAction[1] — cached main menu settings listener — owner: MainMenuController
             if (_quitClickAction == null)
-                _quitClickAction = OnQuitClicked; // COLD ALLOC: UnityAction[1] - cached main menu quit listener - owner: MainMenuController
+                _quitClickAction = OnQuitClicked; // COLD ALLOC: UnityAction[1] — cached main menu quit listener — owner: MainMenuController
             if (_backFromSaveLoadClickAction == null)
-                _backFromSaveLoadClickAction = OnBackFromSaveLoadClicked; // COLD ALLOC: UnityAction[1] - cached save-load back listener - owner: MainMenuController
+                _backFromSaveLoadClickAction = OnBackFromSaveLoadClicked; // COLD ALLOC: UnityAction[1] — cached save-load back listener — owner: MainMenuController
             if (_backFromSettingsClickAction == null)
-                _backFromSettingsClickAction = OnBackFromSettingsClicked; // COLD ALLOC: UnityAction[1] - cached settings back listener - owner: MainMenuController
+                _backFromSettingsClickAction = OnBackFromSettingsClicked; // COLD ALLOC: UnityAction[1] — cached settings back listener — owner: MainMenuController
         }
 
         private static void BindButton(Button button, UnityAction callback)
@@ -796,9 +802,7 @@ namespace Hecton.UI.MainMenu
                 loadingTips.StopTipCycle();
 
             _loadingPercentTemplate = ResolveLoadingPercentTemplate();
-            _sceneActivationRequested = false;
             UpdateLoadingProgressVisual(0);
-            _sceneLoadOperation = null;
 
             ISceneService sceneService = Hecton8.Core.GlobalRegistry.Scene;
             SceneRuntimeService runtimeSceneService = sceneService as SceneRuntimeService;
@@ -884,7 +888,6 @@ namespace Hecton.UI.MainMenu
             EnsureMenuInputRoutingReady();
             HandleCancelInput();
             UpdatePanelTransition(unscaledDeltaTime);
-            UpdateSceneLoad();
             RefreshSelectionIfNeeded();
         }
 
@@ -1079,16 +1082,7 @@ namespace Hecton.UI.MainMenu
                 ? loc.GetOrFallback(loc.CurrentLanguage, LocalizationKeys.SLOT_PREFIX, "SLOT")
                 : "SLOT";
 
-            return string.Concat(slotPrefix, " ", ExtractSlotNumber(slotName));
-        }
-
-        private static string ExtractSlotNumber(string slotName)
-        {
-            int underscoreIndex = slotName.LastIndexOf('_');
-            if (underscoreIndex >= 0 && underscoreIndex < slotName.Length - 1)
-                return slotName.Substring(underscoreIndex + 1);
-
-            return slotName;
+            return string.Concat(slotPrefix, " ", SaveEvents.ResolveSlotNumber(slotName));
         }
 
         private static bool IsCorruptNoBackupError(string error)
@@ -1110,13 +1104,13 @@ namespace Hecton.UI.MainMenu
                 return;
             }
 
-            float duration = Mathf.Max(0.0001f, fadeDuration);
+            float duration = math.max(0.0001f, fadeDuration);
             _transitionElapsed += unscaledDeltaTime;
-            float t = Mathf.Clamp01(_transitionElapsed / duration);
+            float t = math.saturate(_transitionElapsed / duration);
 
             if (_panelTransitionState == PanelTransitionState.FadingOut)
             {
-                _transitionFromPanel.alpha = Mathf.Lerp(_transitionStartAlpha, 0f, t);
+                _transitionFromPanel.alpha = math.lerp(_transitionStartAlpha, 0f, t);
                 if (t < 1f)
                     return;
 
@@ -1142,47 +1136,13 @@ namespace Hecton.UI.MainMenu
             RequestSelectionRefresh();
         }
 
-        private void UpdateSceneLoad()
-        {
-            if (_sceneLoadOperation == null)
-                return;
-
-            if (_sceneLoadOperation.isDone)
-            {
-                // Stop loading tips when scene loads
-                if (loadingTips != null)
-                    loadingTips.StopTipCycle();
-
-                _sceneLoadOperation = null;
-                return;
-            }
-
-            float progress = Mathf.Clamp01(_sceneLoadOperation.progress / 0.9f);
-            int percent = Mathf.Clamp(Mathf.RoundToInt(progress * 100f), 0, 100);
-            UpdateLoadingProgressVisual(percent);
-
-            if (_sceneActivationRequested || _sceneLoadOperation.progress < 0.9f)
-                return;
-
-            if (!SceneBootstrap.TryValidateSceneRootBudget(targetSceneName, "main-menu-preactivation"))
-            {
-                _isSceneLoadInFlight = false;
-                _sceneLoadOperation = null;
-                return;
-            }
-
-            UpdateLoadingProgressVisual(100);
-            _sceneActivationRequested = true;
-            _sceneLoadOperation.allowSceneActivation = true;
-        }
-
         /// <summary>
         /// Updates loading progress visual with zero-GC dirty flag pattern.
         /// Uses TMP_Text.SetText(string, object) which is allocation-free.
         /// </summary>
         private void UpdateLoadingProgressVisual(int percent)
         {
-            percent = Mathf.Clamp(percent, 0, 100);
+            percent = math.clamp(percent, 0, 100);
 
             if (loadingProgressBar != null)
                 loadingProgressBar.value = percent / 100f;
@@ -1222,13 +1182,13 @@ namespace Hecton.UI.MainMenu
         /// <summary>
         /// Called when save operation starts. Sets busy flag and disables save/load buttons.
         /// </summary>
-        private void OnSaveStarted(string slotName)
+        private void OnSaveStarted(in SaveEventPayload payload)
         {
             _isSaveLoadBusy = true;
             SetSaveLoadButtonsInteractable(false);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[MainMenuController] Save started: {slotName}");
+            Debug.Log($"[MainMenuController] Save started: {SaveEvents.ResolveSlotName(in payload.SlotName)}");
 #endif
         }
 
@@ -1236,7 +1196,7 @@ namespace Hecton.UI.MainMenu
         /// Called when save operation completes successfully.
         /// Re-enables buttons and updates slot metadata.
         /// </summary>
-        private void OnSaveCompleted(string slotName)
+        private void OnSaveCompleted(in SaveEventPayload payload)
         {
             _isSaveLoadBusy = false;
             SetSaveLoadButtonsInteractable(true);
@@ -1261,7 +1221,7 @@ namespace Hecton.UI.MainMenu
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[MainMenuController] Save completed: {slotName}");
+            Debug.Log($"[MainMenuController] Save completed: {SaveEvents.ResolveSlotName(in payload.SlotName)}");
 #endif
 
             RequestSelectionRefresh();
@@ -1270,18 +1230,19 @@ namespace Hecton.UI.MainMenu
         /// <summary>
         /// Called when save operation fails. Displays error modal and re-enables buttons.
         /// </summary>
-        private void OnSaveFailed(string slotName, string error)
+        private void OnSaveFailed(string slotName, in FixedString128Bytes error)
         {
             _isSaveLoadBusy = false;
             SetSaveLoadButtonsInteractable(true);
 
             // Display error modal
             LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
+            string errorText = ResolveSaveEventError(in error);
             string displaySlotName = BuildSlotDisplayName(loc, slotName);
             string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_FAILED_TITLE) : "Save Failed";
             string message = loc != null
-                ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE, displaySlotName, error)
-                : $"Failed to save to {displaySlotName}.\n\n{error}";
+                ? loc.GetFormatted(LocalizationKeys.ERROR_SAVE_FAILED_MESSAGE, displaySlotName, errorText)
+                : $"Failed to save to {displaySlotName}.\n\n{errorText}";
 
             ModalWindow.ShowWithCustomLabels(
                 title,
@@ -1292,7 +1253,7 @@ namespace Hecton.UI.MainMenu
                 null);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[MainMenuController] Save failed: {slotName} - {error}");
+            Debug.LogError($"[MainMenuController] Save failed: {slotName} - {errorText}");
 #endif
 
             RequestSelectionRefresh();
@@ -1301,14 +1262,14 @@ namespace Hecton.UI.MainMenu
         /// <summary>
         /// Called when load operation starts. Sets busy flag and disables load buttons.
         /// </summary>
-        private void OnLoadStarted(string slotName)
+        private void OnLoadStarted(in SaveEventPayload payload)
         {
             _isSaveLoadBusy = true;
             _lastLoadUsedBackup = false;
             SetSaveLoadButtonsInteractable(false);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[MainMenuController] Load started: {slotName}");
+            Debug.Log($"[MainMenuController] Load started: {SaveEvents.ResolveSlotName(in payload.SlotName)}");
 #endif
         }
 
@@ -1316,7 +1277,7 @@ namespace Hecton.UI.MainMenu
         /// Called when load operation completes successfully.
         /// Re-enables buttons and proceeds with game start.
         /// </summary>
-        private void OnLoadCompleted(string slotName)
+        private void OnLoadCompleted(in SaveEventPayload payload)
         {
             _isSaveLoadBusy = false;
 
@@ -1327,6 +1288,7 @@ namespace Hecton.UI.MainMenu
 
                 // Display backup recovery notification
                 LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
+                string slotName = SaveEvents.ResolveSlotName(in payload.SlotName);
                 string displaySlotName = BuildSlotDisplayName(loc, slotName);
                 string title = loc != null ? loc.Get(LocalizationKeys.WARNING_BACKUP_USED_TITLE) : "Backup Loaded";
                 string message = loc != null
@@ -1345,7 +1307,7 @@ namespace Hecton.UI.MainMenu
             SetSaveLoadButtonsInteractable(true);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[MainMenuController] Load completed: {slotName} (backup used: {_lastLoadUsedBackup})");
+            Debug.Log($"[MainMenuController] Load completed: {SaveEvents.ResolveSlotName(in payload.SlotName)} (backup used: {_lastLoadUsedBackup})");
 #endif
 
             RequestSelectionRefresh();
@@ -1354,13 +1316,14 @@ namespace Hecton.UI.MainMenu
         /// <summary>
         /// Called when load operation fails. Displays error modal with retry/return options.
         /// </summary>
-        private void OnLoadFailed(string slotName, string error)
+        private void OnLoadFailed(string slotName, in FixedString128Bytes error)
         {
             _isSaveLoadBusy = false;
             SetSaveLoadButtonsInteractable(true);
 
+            string errorText = ResolveSaveEventError(in error);
             // Check if error indicates corrupt save with no backup
-            bool isCorruptNoBackup = IsCorruptNoBackupError(error);
+            bool isCorruptNoBackup = IsCorruptNoBackupError(errorText);
 
             LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             string displaySlotName = BuildSlotDisplayName(loc, slotName);
@@ -1376,8 +1339,8 @@ namespace Hecton.UI.MainMenu
             else
             {
                 message = loc != null
-                    ? loc.GetFormatted(LocalizationKeys.ERROR_LOAD_FAILED_MESSAGE, displaySlotName, error)
-                    : $"Failed to load {displaySlotName}.\n\n{error}";
+                    ? loc.GetFormatted(LocalizationKeys.ERROR_LOAD_FAILED_MESSAGE, displaySlotName, errorText)
+                    : $"Failed to load {displaySlotName}.\n\n{errorText}";
             }
 
             ModalWindow.ShowWithCustomLabels(
@@ -1389,10 +1352,15 @@ namespace Hecton.UI.MainMenu
                 ResolveCommonLabel(loc, LocalizationKeys.UI_RETURN_TO_MENU, "Return to Menu"));
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[MainMenuController] Load failed: {slotName} - {error}");
+            Debug.LogError($"[MainMenuController] Load failed: {slotName} - {errorText}");
 #endif
 
             RequestSelectionRefresh();
+        }
+
+        private static string ResolveSaveEventError(in FixedString128Bytes error)
+        {
+            return error.Length > 0 ? error.ToString() : UnknownSaveEventError;
         }
 
         private void SetSaveLoadButtonsInteractable(bool interactable)

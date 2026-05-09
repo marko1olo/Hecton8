@@ -14,6 +14,7 @@ namespace Hecton8.Environment
     public sealed class GlobalWeatherDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IWeatherService
     {
         private const float ExponentialBlendCompletion = 0.99f;
+        private const float ExponentialBlendRateScale = 4.6051702f;
         private const float TransitionCompletionThreshold = 0.999f;
         private const float CurrentSyncEpsilonSq = 0.000025f;
         private const float BiomeBlendChangeEpsilon = 0.0001f;
@@ -539,7 +540,7 @@ namespace Hecton8.Environment
             }
 
             CurrentMeta currentMeta = _runtimeSnapshot.CurrentMeta;
-            currentMeta.GlobalBaseVector = math.normalizesafe(currentVector, new float3(0f, 0f, 1f));
+            currentMeta.GlobalBaseVector = NormalizeSafe(currentVector, new float3(0f, 0f, 1f));
             currentMeta.GlobalScale = math.length(currentVector);
             currentMeta.ThermalIntensity = math.max(0f, thermalIntensity);
 
@@ -758,7 +759,7 @@ namespace Hecton8.Environment
                 float t = width > 1 ? (float)x / (width - 1) : 0f;
                 Color sourceFog = ResolveFogLutColor(sourceProfile, weatherSourceProfile, t, clampedWeatherInfluence);
                 Color targetFog = ResolveFogLutColor(targetProfile, weatherTargetProfile, t, clampedWeatherInfluence);
-                _noirFogLutPixels[x] = ClampOpaqueColor(Color.Lerp(sourceFog, targetFog, biomeBlend));
+                _noirFogLutPixels[x] = ClampOpaqueColor(LerpColorClamped(sourceFog, targetFog, biomeBlend));
             }
         }
 
@@ -769,15 +770,15 @@ namespace Hecton8.Environment
             Texture2D authoredFogLut = profile != null ? profile.FogColorLut : null;
             Color weatherFogNear = weatherProfile != null ? weatherProfile.FogColorNear : fogNear;
             Color weatherFogFar = weatherProfile != null ? weatherProfile.FogColorFar : fogFar;
-            Color fogSample = Color.Lerp(fogNear, fogFar, t);
+            Color fogSample = LerpColorClamped(fogNear, fogFar, t);
             if (authoredFogLut != null && authoredFogLut.isReadable)
             {
                 Color authoredSample = authoredFogLut.GetPixelBilinear(t, 0.5f);
                 authoredSample.a = 1f;
-                fogSample = Color.Lerp(fogSample, authoredSample, 0.5f);
+                fogSample = LerpColorClamped(fogSample, authoredSample, 0.5f);
             }
 
-            return Color.Lerp(fogSample, Color.Lerp(weatherFogNear, weatherFogFar, t), weatherInfluence);
+            return LerpColorClamped(fogSample, LerpColorClamped(weatherFogNear, weatherFogFar, t), weatherInfluence);
         }
 
         private void PublishNoirFogShaderState()
@@ -824,11 +825,21 @@ namespace Hecton8.Environment
 
         private static Color ClampOpaqueColor(Color color)
         {
-            color.r = Mathf.Clamp01(color.r);
-            color.g = Mathf.Clamp01(color.g);
-            color.b = Mathf.Clamp01(color.b);
+            color.r = math.saturate(color.r);
+            color.g = math.saturate(color.g);
+            color.b = math.saturate(color.b);
             color.a = 1f;
             return color;
+        }
+
+        private static Color LerpColorClamped(Color from, Color to, float t)
+        {
+            float clampedT = math.saturate(t);
+            return new Color(
+                math.lerp(from.r, to.r, clampedT),
+                math.lerp(from.g, to.g, clampedT),
+                math.lerp(from.b, to.b, clampedT),
+                math.lerp(from.a, to.a, clampedT));
         }
 
         private WeatherState ResolvePublishedMask()
@@ -863,12 +874,7 @@ namespace Hecton8.Environment
         private static float3 ResolveDirectionalVector(Vector3 direction, float magnitude)
         {
             float3 dir = new float3(direction.x, direction.y, direction.z);
-            if (math.lengthsq(dir) <= VectorNormalizeEpsilon)
-                dir = new float3(0f, 0f, 1f);
-            else
-                dir = math.normalize(dir);
-
-            return dir * math.max(0f, magnitude);
+            return NormalizeSafe(dir, new float3(0f, 0f, 1f)) * math.max(0f, magnitude);
         }
 
         private static GerstnerWaveComponent ResolveWaveComponent(
@@ -878,10 +884,7 @@ namespace Hecton8.Environment
             float speedScale)
         {
             float2 direction = new float2(authoring.directionXZ.x, authoring.directionXZ.y);
-            if (math.lengthsq(direction) <= VectorNormalizeEpsilon)
-                direction = new float2(1f, 0f);
-            else
-                direction = math.normalize(direction);
+            direction = NormalizeSafe(direction, new float2(1f, 0f));
 
             GerstnerWaveComponent component;
             component.DirectionXZ = direction;
@@ -957,8 +960,7 @@ namespace Hecton8.Environment
         {
             float clampedDeltaTime = math.max(0f, deltaTime);
             float duration = math.max(0.0001f, durationSeconds);
-            float blendRate = -math.log(1f - ExponentialBlendCompletion) / duration;
-            return 1f - math.exp(-blendRate * clampedDeltaTime);
+            return ApproximateOneMinusExpNegPositive((ExponentialBlendRateScale / duration) * clampedDeltaTime);
         }
 
         private float ResolveHoldDuration(PhaseProfile profile)
@@ -1041,15 +1043,9 @@ namespace Hecton8.Environment
 
         private static void SanitizeProfile(ref PhaseProfile profile)
         {
-            if (profile.windDirection.sqrMagnitude <= VectorNormalizeEpsilon)
-                profile.windDirection = Vector3.forward;
-            else
-                profile.windDirection.Normalize();
+            profile.windDirection = NormalizeSafe(profile.windDirection, Vector3.forward);
 
-            if (profile.currentDirection.sqrMagnitude <= VectorNormalizeEpsilon)
-                profile.currentDirection = Vector3.forward;
-            else
-                profile.currentDirection.Normalize();
+            profile.currentDirection = NormalizeSafe(profile.currentDirection, Vector3.forward);
 
             profile.windSpeed = math.max(0f, profile.windSpeed);
             profile.currentSpeed = math.max(0f, profile.currentSpeed);
@@ -1064,15 +1060,59 @@ namespace Hecton8.Environment
 
         private static void SanitizeWave(ref WaveBandAuthoring band)
         {
-            if (band.directionXZ.sqrMagnitude <= VectorNormalizeEpsilon)
-                band.directionXZ = Vector2.right;
-            else
-                band.directionXZ.Normalize();
+            band.directionXZ = NormalizeSafe(band.directionXZ, Vector2.right);
 
             band.amplitude = math.max(0f, band.amplitude);
             band.wavelength = math.max(0.01f, band.wavelength);
             band.steepness = math.max(0f, band.steepness);
             band.speedMultiplier = math.max(0.01f, band.speedMultiplier);
+        }
+
+        private static float3 NormalizeSafe(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > VectorNormalizeEpsilon
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float2 NormalizeSafe(float2 value, float2 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > VectorNormalizeEpsilon
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static Vector3 NormalizeSafe(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.sqrMagnitude;
+            return lengthSq > VectorNormalizeEpsilon
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static Vector2 NormalizeSafe(Vector2 value, Vector2 fallback)
+        {
+            float lengthSq = value.sqrMagnitude;
+            return lengthSq > VectorNormalizeEpsilon
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float ApproximateOneMinusExpNegPositive(float x)
+        {
+            return math.saturate(1f - ApproximateExpNegPositive(x));
+        }
+
+        private static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(x, 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
         }
     }
 }

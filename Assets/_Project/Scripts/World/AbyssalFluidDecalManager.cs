@@ -212,7 +212,7 @@ namespace Hecton8.World
         public void RegisterCableFluid(Vector3 positionWS, float radiusScale)
         {
             EnsureRenderingResources(true);
-            RegisterDecal(positionWS, cableFluidColor, Mathf.Lerp(0.8f, 2.2f, Mathf.Clamp01(radiusScale)), Mathf.Lerp(2.4f, 4.6f, Mathf.Clamp01(radiusScale)), 10f);
+            RegisterDecal(positionWS, cableFluidColor, LerpClamped(0.8f, 2.2f, radiusScale), LerpClamped(2.4f, 4.6f, radiusScale), 10f);
         }
 
         /// <summary>
@@ -221,7 +221,7 @@ namespace Hecton8.World
         public void RegisterRuptureFluid(Vector3 positionWS, float radiusScale)
         {
             EnsureRenderingResources(true);
-            RegisterDecal(positionWS, ruptureFluidColor, Mathf.Lerp(1.4f, 3.2f, Mathf.Clamp01(radiusScale)), Mathf.Lerp(3.6f, 7.5f, Mathf.Clamp01(radiusScale)), 14f);
+            RegisterDecal(positionWS, ruptureFluidColor, LerpClamped(1.4f, 3.2f, radiusScale), LerpClamped(3.6f, 7.5f, radiusScale), 14f);
         }
 
         /// <summary>
@@ -240,7 +240,7 @@ namespace Hecton8.World
         {
             EnsureRenderingResources(true);
             float clampedScale = Mathf.Clamp01(radiusScale);
-            RegisterDecal(positionWS, seismicDustColor, Mathf.Lerp(0.6f, 1.6f, clampedScale), Mathf.Lerp(2.2f, 5.4f, clampedScale), 8f);
+            RegisterDecal(positionWS, seismicDustColor, LerpClamped(0.6f, 1.6f, clampedScale), LerpClamped(2.2f, 5.4f, clampedScale), 8f);
         }
 
         /// <summary>
@@ -261,15 +261,15 @@ namespace Hecton8.World
             float3 resolvedImpulse = math.normalizesafe(impulse3, new float3(0f, 1f, 0f));
             float downwardBias = math.saturate(-resolvedImpulse.y * 0.5f + 0.5f);
             Color color = voxelCaveInDustColor;
-            color.a *= Mathf.Lerp(0.55f, 1f, clampedScale);
-            Vector3 liftedPosition = positionWS + Vector3.up * Mathf.Lerp(0.08f, 0.22f, clampedScale);
+            color.a *= LerpClamped(0.55f, 1f, clampedScale);
+            Vector3 liftedPosition = positionWS + Vector3.up * LerpClamped(0.08f, 0.22f, clampedScale);
             Vector3 cinematicDrift = ResolveVoxelCaveInDustDrift(position3, resolvedImpulse, clampedScale);
             RegisterDecal(
                 liftedPosition,
                 color,
-                Mathf.Lerp(0.45f, 1.1f, clampedScale),
-                Mathf.Lerp(1.8f, 4.8f, clampedScale) * Mathf.Lerp(0.86f, 1.16f, downwardBias),
-                Mathf.Lerp(3.6f, 7.2f, clampedScale),
+                LerpClamped(0.45f, 1.1f, clampedScale),
+                LerpClamped(1.8f, 4.8f, clampedScale) * LerpClamped(0.86f, 1.16f, downwardBias),
+                LerpClamped(3.6f, 7.2f, clampedScale),
                 cinematicDrift,
                 FluidDecalDriftModeCinematic);
         }
@@ -297,12 +297,12 @@ namespace Hecton8.World
             if (clampedIntensity <= 0.001f)
                 return;
 
-            float speed = math.sqrt(math.lengthsq(velocity3));
+            float speed = ApproximateMagnitude(velocity3);
             Color color = wakeSiltColor;
-            color.a *= Mathf.Lerp(0.35f, 1f, clampedIntensity);
-            float startRadius = Mathf.Lerp(0.45f, 1.4f, clampedIntensity);
-            float targetRadius = Mathf.Lerp(1.6f, 5.2f, clampedIntensity) + speed * 0.04f;
-            float lifetime = Mathf.Lerp(2.2f, 6.5f, clampedIntensity);
+            color.a *= LerpClamped(0.35f, 1f, clampedIntensity);
+            float startRadius = LerpClamped(0.45f, 1.4f, clampedIntensity);
+            float targetRadius = LerpClamped(1.6f, 5.2f, clampedIntensity) + speed * 0.04f;
+            float lifetime = LerpClamped(2.2f, 6.5f, clampedIntensity);
             RegisterDecal(positionWS, color, startRadius, targetRadius, lifetime);
         }
 
@@ -321,12 +321,12 @@ namespace Hecton8.World
             if (clampedIntensity <= 0.001f)
                 return;
 
-            float speed = math.sqrt(math.lengthsq(velocity3));
+            float speed = ApproximateMagnitude(velocity3);
             Color color = waterSplashFoamColor;
-            color.a *= Mathf.Lerp(0.45f, 1f, clampedIntensity);
-            float startRadius = Mathf.Lerp(0.35f, 1.15f, clampedIntensity);
-            float targetRadius = Mathf.Lerp(1.4f, 5.4f, clampedIntensity) + speed * 0.025f;
-            float lifetime = Mathf.Lerp(0.75f, 2.2f, clampedIntensity);
+            color.a *= LerpClamped(0.45f, 1f, clampedIntensity);
+            float startRadius = LerpClamped(0.35f, 1.15f, clampedIntensity);
+            float targetRadius = LerpClamped(1.4f, 5.4f, clampedIntensity) + speed * 0.025f;
+            float lifetime = LerpClamped(0.75f, 2.2f, clampedIntensity);
             RegisterDecal(positionWS, color, startRadius, targetRadius, lifetime);
         }
 
@@ -381,12 +381,15 @@ namespace Hecton8.World
                 if (decal.DriftMode != FluidDecalDriftModeCinematic)
                 {
                     Vector3 sampledCurrent = ResolveCurrentVelocity(decal.PositionWS);
-                    float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, currentAdvectionBlendSharpness) * deltaTime);
-                    decal.DriftVelocityWS = Vector3.Lerp(decal.DriftVelocityWS, sampledCurrent, blendT);
+                    float blendT = FastAdvectionBlend(currentAdvectionBlendSharpness, deltaTime);
+                    decal.DriftVelocityWS = new Vector3(
+                        math.lerp(decal.DriftVelocityWS.x, sampledCurrent.x, blendT),
+                        math.lerp(decal.DriftVelocityWS.y, sampledCurrent.y, blendT),
+                        math.lerp(decal.DriftVelocityWS.z, sampledCurrent.z, blendT));
                 }
 
                 decal.PositionWS += driftDelta + decal.DriftVelocityWS * (ambientCurrentInfluence * deltaTime);
-                decal.Radius = Mathf.MoveTowards(decal.Radius, decal.TargetRadius, spreadSpeed * deltaTime);
+                decal.Radius = MoveTowardsFast(decal.Radius, decal.TargetRadius, spreadSpeed * deltaTime);
                 _decalStates[i] = decal;
                 DrawDecal(decal);
             }
@@ -442,6 +445,46 @@ namespace Hecton8.World
             };
         }
 
+        private static float FastAdvectionBlend(float sharpness, float deltaTime)
+        {
+            float x = math.max(0.1f, sharpness) * math.max(0f, deltaTime);
+            return math.saturate((x * (6f + x)) / (6f + (4f * x) + (x * x)));
+        }
+
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return from + ((to - from) * math.saturate(t));
+        }
+
+        private static float MoveTowardsFast(float current, float target, float maxDelta)
+        {
+            float delta = target - current;
+            float safeDelta = math.max(0f, maxDelta);
+            if (math.abs(delta) <= safeDelta)
+                return target;
+
+            return current + (math.sign(delta) * safeDelta);
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
+        {
+            float lengthSq = direction.sqrMagnitude;
+            return lengthSq > 0.0001f
+                ? direction * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float ApproximateMagnitude(float3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
+        }
+
         private static Vector3 ResolveVoxelCaveInDustDrift(float3 position, float3 resolvedImpulse, float scale01)
         {
             uint seed = (uint)math.hash(new int4(
@@ -489,20 +532,20 @@ namespace Hecton8.World
             if (targetIndex < 0)
                 targetIndex = 0;
 
-            Vector3 normalizedDirection = directionWS.normalized;
+            Vector3 normalizedDirection = ResolveSafeDirection(directionWS, Vector3.up);
             float clampedIntensity = Mathf.Clamp01(intensity01);
             Color color = pressureSprayColor;
-            color.a *= Mathf.Lerp(0.45f, 1f, clampedIntensity);
+            color.a *= LerpClamped(0.45f, 1f, clampedIntensity);
             _pressureSprayStates[targetIndex] = new PressureSprayState
             {
                 Active = true,
                 PositionWS = positionWS,
                 DirectionWS = normalizedDirection,
-                Width = Mathf.Lerp(0.12f, 0.42f, clampedIntensity),
-                Length = Mathf.Lerp(1.4f, 5.8f, clampedIntensity),
-                Speed = Mathf.Lerp(0.45f, 3.2f, clampedIntensity),
-                RemainingLifetime = Mathf.Lerp(0.45f, 1.4f, clampedIntensity),
-                TotalLifetime = Mathf.Lerp(0.45f, 1.4f, clampedIntensity),
+                Width = LerpClamped(0.12f, 0.42f, clampedIntensity),
+                Length = LerpClamped(1.4f, 5.8f, clampedIntensity),
+                Speed = LerpClamped(0.45f, 3.2f, clampedIntensity),
+                RemainingLifetime = LerpClamped(0.45f, 1.4f, clampedIntensity),
+                TotalLifetime = LerpClamped(0.45f, 1.4f, clampedIntensity),
                 Color = color
             };
         }
@@ -552,7 +595,7 @@ namespace Hecton8.World
                 Vector3 toCamera = cameraTransform.position - center;
                 if (toCamera.sqrMagnitude <= 0.0001f)
                     toCamera = -cameraTransform.forward;
-                rotation = Quaternion.LookRotation(toCamera.normalized, cameraTransform.up);
+                rotation = Quaternion.LookRotation(ResolveSafeDirection(toCamera, -cameraTransform.forward), cameraTransform.up);
             }
             else
             {
@@ -563,8 +606,8 @@ namespace Hecton8.World
                 center,
                 rotation,
                 new Vector3(
-                    spray.Width * Mathf.Lerp(0.55f, 1f, alphaT),
-                    spray.Length * Mathf.Lerp(0.70f, 1f, alphaT),
+                    spray.Width * LerpClamped(0.55f, 1f, alphaT),
+                    spray.Length * LerpClamped(0.70f, 1f, alphaT),
                     1f));
             matrixCount++;
         }
@@ -681,7 +724,9 @@ namespace Hecton8.World
                 if (logIfMissing && !_loggedMissingDecalMaterial)
                 {
                     _loggedMissingDecalMaterial = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError("[AbyssalFluidDecalManager] Missing decalMaterial asset. Runtime material creation is forbidden for this draw path.", this);
+#endif
                 }
             }
         }

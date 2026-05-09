@@ -32,7 +32,8 @@ namespace Hecton8.Core
         ModCriticalMemoryEviction = 12,
         PerformanceWarning = 13,
         BootstrapDuration = 14,
-        CatastrophicCascadePrevented = 15
+        CatastrophicCascadePrevented = 15,
+        CriticalGcSpike = 16
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -57,6 +58,7 @@ namespace Hecton8.Core
         private const string ExportFolderName = "Telemetry";
         private const string BinaryExtension = ".tbin";
         private const string JsonExtension = ".json";
+        private const string ExportTimestampFormat = "yyyyMMdd_HHmmss_fffffff";
 
         private static NativeArray<TelemetryEvent> _ringBuffer;
         private static NativeArray<TelemetryEvent> _snapshotBuffer;
@@ -77,6 +79,8 @@ namespace Hecton8.Core
         private static int _snapshotCopiedCount;
         private static long _nativeCopyByteCount;
         private static int _nativeCopyOperationCount;
+        // COLD ALLOC: object[1] - first-use native telemetry buffer initialization gate - owner: GlobalTelemetryBus
+        private static readonly object _initGate = new object();
 
         private static class ManagedExportCallbacks
         {
@@ -103,26 +107,30 @@ namespace Hecton8.Core
 
         private static void DisposeStaticState()
         {
-            bool workerOwnsExportState =
-                Volatile.Read(ref _exportInFlight) != 0 ||
-                Volatile.Read(ref _mmfWriteInProgress) != 0;
-            JobHandle noDependency = default;
-            DisposeNativeArray(ref _ringBuffer, noDependency);
-            DisposeNativeArray(ref _snapshotBuffer, noDependency);
-
-            _writeCursor = 0;
-            _nextDrainTimeSeconds = DrainIntervalSeconds;
-            _snapshotInProgress = false;
-            _snapshotStartIndex = 0;
-            _snapshotTotalCount = 0;
-            _snapshotCopiedCount = 0;
-
-            if (!workerOwnsExportState)
+            lock (_initGate)
             {
-                _exportBytes = null;
-                _exportInFlight = 0;
-                _mmfWriteInProgress = 0;
-                ClearPendingExportState();
+                bool snapshotCopyInProgress = _snapshotInProgress;
+                bool writerOwnsExportState =
+                    Volatile.Read(ref _mmfWriteInProgress) != 0 ||
+                    (Volatile.Read(ref _exportInFlight) != 0 && !snapshotCopyInProgress);
+                JobHandle noDependency = default;
+                DisposeNativeArray(ref _ringBuffer, noDependency);
+                DisposeNativeArray(ref _snapshotBuffer, noDependency);
+
+                _writeCursor = 0;
+                _nextDrainTimeSeconds = DrainIntervalSeconds;
+                _snapshotInProgress = false;
+                _snapshotStartIndex = 0;
+                _snapshotTotalCount = 0;
+                _snapshotCopiedCount = 0;
+
+                if (!writerOwnsExportState)
+                {
+                    _exportBytes = null;
+                    _exportInFlight = 0;
+                    _mmfWriteInProgress = 0;
+                    ClearPendingExportState(clearDirectory: true);
+                }
             }
 
             Interlocked.Exchange(ref _nativeCopyByteCount, 0L);
@@ -279,6 +287,19 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Publishes a post-warmup Gen0 collection spike using precomputed stable hashes only.
+        /// </summary>
+        public static void PublishCriticalGcSpike(uint spikeHash, uint contextHash, int gen0CollectionsDelta)
+        {
+            Publish(
+                TelemetryEventType.CriticalGcSpike,
+                spikeHash,
+                contextHash,
+                math.max(1f, gen0CollectionsDelta),
+                default);
+        }
+
+        /// <summary>
         /// Publishes a BaseEvents cascade breaker trip using numeric IslandID/event hashes only.
         /// </summary>
         public static void PublishCatastrophicCascadePrevented(uint islandId, uint eventHash, int droppedCount)
@@ -406,7 +427,9 @@ namespace Hecton8.Core
                     return false;
 
                 CopySnapshotUnbounded(writeCursor - totalWritten, totalWritten);
-                PrepareExportState(totalWritten, DateTime.UtcNow.Ticks);
+                if (!PrepareExportState(totalWritten, DateTime.UtcNow.Ticks))
+                    return false;
+
                 return WritePreparedExportToMmf();
             }
             finally
@@ -450,22 +473,45 @@ namespace Hecton8.Core
 
         private static void EnsureInitialized()
         {
-            if (_ringBuffer.IsCreated)
+            if (_ringBuffer.IsCreated &&
+                _snapshotBuffer.IsCreated &&
+                _exportBytes != null &&
+                !string.IsNullOrEmpty(_pendingTelemetryDirectory))
+            {
                 return;
+            }
 
-            _ringBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] - global telemetry ring buffer - owner: GlobalTelemetryBus
-            _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] - telemetry export snapshot staging buffer - owner: GlobalTelemetryBus
-            NativeMemorySentinel.RegisterNativeArray(
-                _ringBuffer,
-                nameof(GlobalTelemetryBus),
-                nameof(_ringBuffer),
-                NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(
-                _snapshotBuffer,
-                nameof(GlobalTelemetryBus),
-                nameof(_snapshotBuffer),
-                NativeAllocationLifetime.Session);
-            _exportBytes = new byte[(Capacity * UnsafeUtility.SizeOf<TelemetryEvent>()) + BinaryHeaderSizeBytes]; // COLD ALLOC: byte[] telemetry export scratch - owner: GlobalTelemetryBus
+            lock (_initGate)
+            {
+                if (!_ringBuffer.IsCreated)
+                {
+                    _ringBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] - global telemetry ring buffer - owner: GlobalTelemetryBus
+                    NativeMemorySentinel.RegisterNativeArray(
+                        _ringBuffer,
+                        nameof(GlobalTelemetryBus),
+                        nameof(_ringBuffer),
+                        NativeAllocationLifetime.Session);
+                }
+
+                if (!_snapshotBuffer.IsCreated)
+                {
+                    _snapshotInProgress = false;
+                    _snapshotStartIndex = 0;
+                    _snapshotTotalCount = 0;
+                    _snapshotCopiedCount = 0;
+                    _snapshotBuffer = new NativeArray<TelemetryEvent>(Capacity, Allocator.Persistent); // COLD ALLOC: NativeArray<TelemetryEvent>[1024] - telemetry export snapshot staging buffer - owner: GlobalTelemetryBus
+                    NativeMemorySentinel.RegisterNativeArray(
+                        _snapshotBuffer,
+                        nameof(GlobalTelemetryBus),
+                        nameof(_snapshotBuffer),
+                        NativeAllocationLifetime.Session);
+                }
+
+                if (_exportBytes == null)
+                    _exportBytes = new byte[(Capacity * UnsafeUtility.SizeOf<TelemetryEvent>()) + BinaryHeaderSizeBytes]; // COLD ALLOC: byte[] telemetry export scratch - owner: GlobalTelemetryBus
+                if (string.IsNullOrEmpty(_pendingTelemetryDirectory))
+                    _pendingTelemetryDirectory = Path.Combine(Application.persistentDataPath, ExportFolderName);
+            }
         }
 
         private static uint ComputeHash(string value)
@@ -497,8 +543,13 @@ namespace Hecton8.Core
 
         private static void ContinueSnapshotCopy()
         {
-            if (!_snapshotInProgress || !_ringBuffer.IsCreated || !_snapshotBuffer.IsCreated)
+            if (!_snapshotInProgress)
                 return;
+            if (!_ringBuffer.IsCreated || !_snapshotBuffer.IsCreated)
+            {
+                AbortPendingSnapshotCopy();
+                return;
+            }
 
             int remaining = _snapshotTotalCount - _snapshotCopiedCount;
             int copyCount = math.min(remaining, SnapshotCopyBudgetPerLateFrame);
@@ -532,16 +583,45 @@ namespace Hecton8.Core
 
         private static void CompleteSnapshotCopy()
         {
-            PrepareExportState(_snapshotTotalCount, DateTime.UtcNow.Ticks);
+            try
+            {
+                if (!PrepareExportState(_snapshotTotalCount, DateTime.UtcNow.Ticks))
+                {
+                    AbortPendingSnapshotCopy();
+                    return;
+                }
+
+                _snapshotInProgress = false;
+                _snapshotStartIndex = 0;
+                _snapshotTotalCount = 0;
+                _snapshotCopiedCount = 0;
+                if (!ThreadPool.UnsafeQueueUserWorkItem(ManagedExportCallbacks.BackgroundExportCallback, null))
+                {
+                    ClearPendingExportState();
+                    Interlocked.Exchange(ref _exportInFlight, 0);
+                }
+            }
+            catch (Exception)
+            {
+                AbortPendingSnapshotCopy();
+            }
+        }
+
+        private static void AbortPendingSnapshotCopy()
+        {
             _snapshotInProgress = false;
             _snapshotStartIndex = 0;
             _snapshotTotalCount = 0;
             _snapshotCopiedCount = 0;
-            ThreadPool.QueueUserWorkItem(ManagedExportCallbacks.BackgroundExportCallback);
+            ClearPendingExportState();
+            Interlocked.Exchange(ref _exportInFlight, 0);
         }
 
-        private static void PrepareExportState(int eventCount, long generatedUtcTicks)
+        private static bool PrepareExportState(int eventCount, long generatedUtcTicks)
         {
+            if (eventCount <= 0 || _exportBytes == null || !_snapshotBuffer.IsCreated)
+                return false;
+
             int eventSizeBytes = UnsafeUtility.SizeOf<TelemetryEvent>();
             WriteHeader(eventCount, eventSizeBytes);
 
@@ -559,14 +639,15 @@ namespace Hecton8.Core
                             copyBytes))
                     {
                         UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(GlobalTelemetryBus));
+                        return false;
                     }
                 }
             }
 
-            _pendingTelemetryDirectory = Path.Combine(Application.persistentDataPath, ExportFolderName);
             _pendingGeneratedUtcTicks = generatedUtcTicks;
             _pendingEventCount = eventCount;
             _pendingByteCount = BinaryHeaderSizeBytes + (eventCount * eventSizeBytes);
+            return true;
         }
 
         private static void WriteHeader(int eventCount, int eventSizeBytes)
@@ -605,54 +686,78 @@ namespace Hecton8.Core
             try
             {
                 string telemetryDirectory = _pendingTelemetryDirectory;
+                byte[] exportBytes = _exportBytes;
                 if (string.IsNullOrEmpty(telemetryDirectory))
                     return false;
+                if (exportBytes == null)
+                    return false;
+
+                int pendingByteCount = _pendingByteCount;
+                int pendingEventCount = _pendingEventCount;
+                if (pendingEventCount <= 0 ||
+                    pendingByteCount <= BinaryHeaderSizeBytes ||
+                    pendingByteCount > exportBytes.Length)
+                {
+                    return false;
+                }
 
                 Directory.CreateDirectory(telemetryDirectory);
                 DateTime generatedUtc = _pendingGeneratedUtcTicks > 0L
                     ? new DateTime(_pendingGeneratedUtcTicks, DateTimeKind.Utc)
                     : DateTime.UtcNow;
 
-                string timestamp = generatedUtc.ToString("yyyyMMdd_HHmmss");
+                string timestamp = generatedUtc.ToString(ExportTimestampFormat);
                 _pendingBinaryPath = Path.Combine(telemetryDirectory, $"telemetry_{timestamp}{BinaryExtension}");
                 _pendingJsonPath = Path.Combine(telemetryDirectory, $"telemetry_{timestamp}{JsonExtension}");
 
-                if (_pendingByteCount > 0 && !string.IsNullOrEmpty(_pendingBinaryPath))
+                if (!string.IsNullOrEmpty(_pendingBinaryPath))
                 {
                     using (MemoryMappedFile mappedFile = MemoryMappedFile.CreateFromFile(
                                _pendingBinaryPath,
                                FileMode.Create,
                                null,
-                               _pendingByteCount,
+                               pendingByteCount,
                                MemoryMappedFileAccess.ReadWrite))
                     {
                         using (MemoryMappedViewStream mappedStream = mappedFile.CreateViewStream(
                                    0L,
-                                   _pendingByteCount,
+                                   pendingByteCount,
                                    MemoryMappedFileAccess.Write))
                         {
-                            mappedStream.Write(_exportBytes, 0, _pendingByteCount);
+                            mappedStream.Write(exportBytes, 0, pendingByteCount);
                             mappedStream.Flush();
                         }
                     }
                 }
 
-                if (_pendingEventCount > 0 && !string.IsNullOrEmpty(_pendingJsonPath))
+                if (!string.IsNullOrEmpty(_pendingJsonPath))
                 {
                     StringBuilder builder = new StringBuilder(192);
                     builder.Append("{\"version\":");
                     builder.Append(Version);
                     builder.Append(",\"eventCount\":");
-                    builder.Append(_pendingEventCount);
+                    builder.Append(pendingEventCount);
                     builder.Append(",\"binaryFile\":\"");
                     builder.Append(Path.GetFileName(_pendingBinaryPath));
                     builder.Append("\",\"generatedUtc\":\"");
-                    builder.Append(DateTime.UtcNow.ToString("O"));
+                    builder.Append(generatedUtc.ToString("O"));
                     builder.Append("\"}");
                     File.WriteAllText(_pendingJsonPath, builder.ToString(), Encoding.UTF8);
                 }
 
                 return true;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (Exception)
+            {
+                return false;
             }
             finally
             {
@@ -660,13 +765,14 @@ namespace Hecton8.Core
             }
         }
 
-        private static void ClearPendingExportState()
+        private static void ClearPendingExportState(bool clearDirectory = false)
         {
             _pendingEventCount = 0;
             _pendingByteCount = 0;
             _pendingBinaryPath = null;
             _pendingJsonPath = null;
-            _pendingTelemetryDirectory = null;
+            if (clearDirectory)
+                _pendingTelemetryDirectory = null;
             _pendingGeneratedUtcTicks = 0L;
         }
     }

@@ -1,10 +1,10 @@
-using System;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Meta
@@ -42,11 +42,6 @@ namespace Hecton8.Meta
         private int _achievementWriteIndex;
         private int _biomesSinceDamage;
         private float _lastIntegritySample = -1f;
-
-        /// <summary>
-        /// Raised after the director produces a new modifier snapshot.
-        /// </summary>
-        public event Action<DifficultyModifierData> ModifiersChanged;
 
         /// <summary>
         /// Current live difficulty modifiers.
@@ -103,7 +98,7 @@ namespace Hecton8.Meta
         /// <inheritdoc />
         public void SlowTick()
         {
-            if (!ResolveOwners())
+            if (!ResolveOwnersHot())
                 return;
 
             SampleIntegrityDrop();
@@ -167,7 +162,7 @@ namespace Hecton8.Meta
         private void RebindOwnerSubscriptions()
         {
             UnbindOwnerSubscriptions();
-            ResolveOwners();
+            ResolveOwnersCold();
 
             if (_survivalSystem != null)
                 _lastIntegritySample = _survivalSystem.Integrity;
@@ -181,20 +176,29 @@ namespace Hecton8.Meta
             _discoveryManager = null;
         }
 
-        private bool ResolveOwners()
+        private bool ResolveOwnersHot()
+        {
+            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
+            if (!ReferenceEquals(_discoveryManager, discoveryManager))
+            {
+                if (_discoveryManager != null)
+                    _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
+
+                _discoveryManager = discoveryManager;
+                if (_discoveryManager != null)
+                    _discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
+            }
+
+            return _survivalSystem != null || _discoveryManager != null;
+        }
+
+        private bool ResolveOwnersCold()
         {
             GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
             if (_survivalSystem == null && playerObject != null)
                 playerObject.TryGetComponent(out _survivalSystem);
 
-            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
-            if (discoveryManager != null && !ReferenceEquals(_discoveryManager, discoveryManager))
-            {
-                _discoveryManager = discoveryManager;
-                _discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
-            }
-
-            return _survivalSystem != null || discoveryManager != null;
+            return ResolveOwnersHot();
         }
 
         private void SampleIntegrityDrop()
@@ -226,15 +230,14 @@ namespace Hecton8.Meta
                     PredatorAggressionScale = 1.5f
                 };
 
-                if (Mathf.Abs(CurrentModifiers.DamageMultiplier - nightmareModifiers.DamageMultiplier) < 0.001f &&
-                    Mathf.Abs(CurrentModifiers.OxygenDepletionRate - nightmareModifiers.OxygenDepletionRate) < 0.001f &&
-                    Mathf.Abs(CurrentModifiers.PredatorAggressionScale - nightmareModifiers.PredatorAggressionScale) < 0.001f)
+                if (math.abs(CurrentModifiers.DamageMultiplier - nightmareModifiers.DamageMultiplier) < 0.001f &&
+                    math.abs(CurrentModifiers.OxygenDepletionRate - nightmareModifiers.OxygenDepletionRate) < 0.001f &&
+                    math.abs(CurrentModifiers.PredatorAggressionScale - nightmareModifiers.PredatorAggressionScale) < 0.001f)
                 {
                     return;
                 }
 
                 CurrentModifiers = nightmareModifiers;
-                ModifiersChanged?.Invoke(CurrentModifiers);
                 return;
             }
 
@@ -265,19 +268,18 @@ namespace Hecton8.Meta
 
             modifiers.PredatorAggressionScale *= EnvironmentalStrainManager.CurrentPredatorAggressionScale;
 
-            modifiers.DamageMultiplier = Mathf.Clamp(modifiers.DamageMultiplier, 0.75f, 1.35f);
-            modifiers.OxygenDepletionRate = Mathf.Clamp(modifiers.OxygenDepletionRate, 0.75f, 1.2f);
-            modifiers.PredatorAggressionScale = Mathf.Clamp(modifiers.PredatorAggressionScale, 0.85f, 1.6f);
+            modifiers.DamageMultiplier = math.clamp(modifiers.DamageMultiplier, 0.75f, 1.35f);
+            modifiers.OxygenDepletionRate = math.clamp(modifiers.OxygenDepletionRate, 0.75f, 1.2f);
+            modifiers.PredatorAggressionScale = math.clamp(modifiers.PredatorAggressionScale, 0.85f, 1.6f);
 
-            if (Mathf.Abs(CurrentModifiers.DamageMultiplier - modifiers.DamageMultiplier) < 0.001f &&
-                Mathf.Abs(CurrentModifiers.OxygenDepletionRate - modifiers.OxygenDepletionRate) < 0.001f &&
-                Mathf.Abs(CurrentModifiers.PredatorAggressionScale - modifiers.PredatorAggressionScale) < 0.001f)
+            if (math.abs(CurrentModifiers.DamageMultiplier - modifiers.DamageMultiplier) < 0.001f &&
+                math.abs(CurrentModifiers.OxygenDepletionRate - modifiers.OxygenDepletionRate) < 0.001f &&
+                math.abs(CurrentModifiers.PredatorAggressionScale - modifiers.PredatorAggressionScale) < 0.001f)
             {
                 return;
             }
 
             CurrentModifiers = modifiers;
-            ModifiersChanged?.Invoke(CurrentModifiers);
         }
 
         private void ResetTelemetryWindows()
@@ -324,9 +326,9 @@ namespace Hecton8.Meta
         {
             SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager != null)
-                return Mathf.Max(0f, saveManager.CurrentPlayTimeSeconds);
+                return math.max(0f, saveManager.CurrentPlayTimeSeconds);
 
-            return Mathf.Max(0f, Time.realtimeSinceStartup);
+            return math.max(0f, Time.realtimeSinceStartup);
         }
 
         private void TryRegisterService()

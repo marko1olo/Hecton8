@@ -173,10 +173,12 @@ namespace Hecton8.Gameplay
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         public static void AssertUnregistered(IBaseAirlockEventListener listener, string ownerName)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (listener == null || !_listeners.Contains(listener))
                 return;
 
             Debug.LogError($"[BaseAirlockEvents] {ownerName} was destroyed while still registered as an IBaseAirlockEventListener.");
+#endif
         }
 
         /// <summary>

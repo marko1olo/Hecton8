@@ -21,6 +21,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_HLODUnlitFog.shader";
 #endif
+        private const int BrgMetadataPlaceholderCount = 1;
 
         private static readonly int InstanceMatricesId = Shader.PropertyToID("_HectonHLODInstanceMatrices");
         private static readonly int InstanceFadeId = Shader.PropertyToID("_HectonHLODInstanceFade");
@@ -230,7 +231,8 @@ namespace Hecton8.World
                     userContext = IntPtr.Zero
                 });
 
-                _batchMetadata = new NativeArray<MetadataValue>(0, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[0] - BRG metadata placeholder for HLOD renderer - owner: HectonHLODRenderer
+                _batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for HLOD renderer - owner: HectonHLODRenderer
+                NativeMemorySentinel.RegisterNativeArray(_batchMetadata, nameof(HectonHLODRenderer), nameof(_batchMetadata), NativeAllocationLifetime.Session);
                 _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for HLOD renderer - owner: HectonHLODRenderer
                 _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
                 _batchRendererGroup.SetGlobalBounds(ResolveDrawBounds());
@@ -289,9 +291,16 @@ namespace Hecton8.World
             }
 
             if (_uploadedMatrices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_uploadedMatrices);
                 _uploadedMatrices.Dispose();
+            }
+
             if (_uploadedFade.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_uploadedFade);
                 _uploadedFade.Dispose();
+            }
 
             if (_uploadedMatrixBuffer != null)
             {
@@ -307,6 +316,8 @@ namespace Hecton8.World
 
             _uploadedMatrices = new NativeArray<Matrix4x4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - HLOD matrix upload cache - owner: HectonHLODRenderer
             _uploadedFade = new NativeArray<Vector4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Vector4>[NextPowerOfTwo(requiredCount)] - HLOD fade upload cache - owner: HectonHLODRenderer
+            NativeMemorySentinel.RegisterNativeArray(_uploadedMatrices, nameof(HectonHLODRenderer), nameof(_uploadedMatrices), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_uploadedFade, nameof(HectonHLODRenderer), nameof(_uploadedFade), NativeAllocationLifetime.Session);
             _uploadedMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Matrix4x4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD matrix buffer - owner: HectonHLODRenderer
             _uploadedFadeBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(nextCapacity); // COLD ALLOC: GraphicsBuffer[NextPowerOfTwo(requiredCount)] - HLOD fade buffer - owner: HectonHLODRenderer
         }
@@ -351,7 +362,10 @@ namespace Hecton8.World
             }
 
             if (_batchMetadata.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_batchMetadata);
                 _batchMetadata.Dispose();
+            }
 
             if (_uploadedMatrixBuffer != null)
             {
@@ -367,9 +381,16 @@ namespace Hecton8.World
             }
 
             if (_uploadedMatrices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_uploadedMatrices);
                 _uploadedMatrices.Dispose();
+            }
+
             if (_uploadedFade.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_uploadedFade);
                 _uploadedFade.Dispose();
+            }
 
         }
 

@@ -37,7 +37,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IGlobalRegistryHotSwapListener, IServiceHeartbeat
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IGlobalRegistryHotSwapListener, IServiceHeartbeat, IServiceShutdown
     {
         private const float SlowTickDeltaTime = 0.5f;
 
@@ -159,6 +159,7 @@ namespace Hecton8.Construction
         /// </summary>
         public void InitializeService()
         {
+            EnsureRuntimeStorage();
             _isInitialized = true;
             TryRegisterLogisticsService();
             TryRegisterTick();
@@ -175,16 +176,27 @@ namespace Hecton8.Construction
         {
             // â”€â”€ Service â”€â”€
             // â”€â”€ Pre-allocate â”€â”€
-            _spawnedModules = new List<GameObject>(initialCapacity);
-            _spawnedBaseModules = new List<BaseModule>(initialCapacity); // COLD ALLOC: List<BaseModule>[initialCapacity] - cached BaseModule registry for hot-path construction consumers - owner: ConstructionManager
-            // COLD ALLOC: HabitatGraphManager[1] — persistent placed-module CSR adjacency owner — owner: ConstructionManager
-            _habitatGraphManager = new HabitatGraphManager(initialCapacity);
+            EnsureRuntimeStorage();
             _ambientAccidentTimer = 0f;
+        }
+
+        private void EnsureRuntimeStorage()
+        {
+            int capacity = Mathf.Max(1, initialCapacity);
+            if (_spawnedModules == null)
+                _spawnedModules = new List<GameObject>(capacity); // COLD ALLOC: List<GameObject>[initialCapacity] - construction module registry - owner: ConstructionManager
+
+            if (_spawnedBaseModules == null)
+                _spawnedBaseModules = new List<BaseModule>(capacity); // COLD ALLOC: List<BaseModule>[initialCapacity] - cached BaseModule registry for hot-path construction consumers - owner: ConstructionManager
+
+            if (_habitatGraphManager == null)
+                _habitatGraphManager = new HabitatGraphManager(capacity); // COLD ALLOC: HabitatGraphManager[1] - persistent placed-module CSR adjacency owner - owner: ConstructionManager
         }
 
         private void OnEnable()
         {
             ActiveRuntimeInstance = this;
+            EnsureRuntimeStorage();
             _slowTickAccumulator = 0f;
             if (!_isInitialized)
                 return;
@@ -207,6 +219,34 @@ namespace Hecton8.Construction
 
         private void OnDisable()
         {
+            UnregisterRuntimeHooks();
+        }
+
+        private void OnDestroy()
+        {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
+            UnregisterRuntimeHooks();
+            _isInitialized = false;
+            _spawnedModules?.Clear();
+            _spawnedBaseModules?.Clear();
+            if (_habitatGraphManager != null)
+            {
+                _habitatGraphManager.Dispose();
+                _habitatGraphManager = null;
+            }
+        }
+
+        private void UnregisterRuntimeHooks()
+        {
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
@@ -216,25 +256,6 @@ namespace Hecton8.Construction
             _slowTickAccumulator = 0f;
             TryUnregisterSaveParticipant();
             TryUnregisterHotSwapListener();
-        }
-
-        private void OnDestroy()
-        {
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
-
-            TryUnregisterTick();
-            TryUnregisterLateFrameTick();
-            TryUnregisterLogisticsService();
-            TryUnregisterSaveParticipant();
-            TryUnregisterHotSwapListener();
-            _isInitialized = false;
-            if (_habitatGraphManager != null)
-            {
-                _habitatGraphManager.Dispose();
-                _habitatGraphManager = null;
-            }
-
         }
 
         public void Tick(float deltaTime)

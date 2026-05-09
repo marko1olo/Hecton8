@@ -326,7 +326,9 @@ private static readonly int _TerrainLayer = LayerMask.NameToLayer("Terrain");
 
 ---
 
-## XII. Historical Scan Status: ETA VERIFIED
+## XII. Historical Scan Label: ETA VERIFIED (Not Current Authority Status)
+
+Current authority status for this document is `PENDING VERIFICATION`. The original `ETA VERIFIED` label is retained only as historical scan provenance and must not be used as runtime, Unity Console, profiler, GCMonitor, or player-build proof.
 
 | Category | Status |
 |----------|--------|

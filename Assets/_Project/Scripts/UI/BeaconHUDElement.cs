@@ -4,7 +4,7 @@
 //
 // ARCHITECTURE:
 //   â€¢ ITickable for updates (no Update)
-//   â€¢ Zero GC: cached camera via SceneBootstrap, pre-allocated arrays
+//   â€¢ Zero GC: cached camera via GlobalRegistry, pre-allocated arrays
 //   â€¢ World-to-screen conversion for icon positioning
 //
 // FEATURES:
@@ -15,10 +15,14 @@
 
 namespace Hecton8.UI
 {
+    using System.Collections.Generic;
     using Hecton8.Core;
     using Hecton8.Gameplay;
+    using Hecton8.World;
     using Hecton.Localization;
+    using Unity.Mathematics;
     using UnityEngine;
+    using UnityEngine.UI;
 
     /// <summary>
     /// HUD element that displays deployed beacons on screen.
@@ -26,10 +30,13 @@ namespace Hecton8.UI
     /// </summary>
     public class BeaconHUDElement : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
-        private static readonly char[] s_EmptyChars = new char[1];
+        private static readonly char[] s_EmptyChars = new char[1]; // COLD ALLOC: char[1] — empty TMP payload sentinel — owner: BeaconHUDElement
         private const int BeaconLabelTextCapacity = 96;
+        private const int DistanceTextCapacity = 32;
         private const uint LabelHashSeed = 2166136261u;
         private const uint LabelHashPrime = 16777619u;
+        // COLD ALLOC: List<Graphic>[8] — temporary prefab graphic raycast pruning scratch — owner: BeaconHUDElement
+        private static readonly List<Graphic> s_GraphicRaycastDisableScratch = new List<Graphic>(8);
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -70,14 +77,16 @@ namespace Hecton8.UI
         private Transform _cachedTransform;
         private bool _registered;
         private GameLanguage _distanceLanguage = GameLanguage.English;
-        private float _cameraRetryTime;
+        private float _cameraRetryTimer;
+        private float _idlePollTimer;
         private const float CameraRetryInterval = 2f;
-        // COLD ALLOC: char[24] â€” localized distance pattern cache â€” owner: BeaconHUDElement
+        private const float IdlePollInterval = 0.25f;
+        // COLD ALLOC: char[24] — localized distance pattern cache — owner: BeaconHUDElement
         private readonly char[] _distancePatternBuffer = new char[24];
         private int _distancePatternLength = 6;
 
         // Pre-allocated array for beacon icons
-        private BeaconIconDisplay[] _iconDisplays = new BeaconIconDisplay[16]; // COLD ALLOC: max 16 beacon icons â€” owner: BeaconHUDElement
+        private BeaconIconDisplay[] _iconDisplays = new BeaconIconDisplay[16]; // COLD ALLOC: BeaconIconDisplay[16] — max visible beacon icon slots — owner: BeaconHUDElement
         private int _activeIconCount;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -87,7 +96,8 @@ namespace Hecton8.UI
         private void Awake()
         {
             _cachedTransform = transform;
-            _cameraRetryTime = 0f; // Allow immediate first resolve in Tick
+            _cameraRetryTimer = 0f; // Allow immediate first resolve in Tick
+            _idlePollTimer = 0f;
 
             // Pre-create icon pool
             if (beaconIconPrefab != null && iconContainer != null)
@@ -100,14 +110,17 @@ namespace Hecton8.UI
                         // COLD ALLOC: CanvasGroup[1] — missing beacon icon visibility proxy — owner: BeaconHUDElement
                         canvasGroup = icon.AddComponent<CanvasGroup>();
                     }
-                    _iconDisplays[i] = new BeaconIconDisplay
+                    DisableGraphicRaycasts(icon);
+
+                    _iconDisplays[i] = new BeaconIconDisplay // COLD ALLOC: BeaconIconDisplay[1] — pooled beacon HUD icon state — owner: BeaconHUDElement
                     {
                         gameObject = icon,
                         transform = icon.transform,
                         canvasGroup = canvasGroup,
                         labelText = ResolveChildText(icon.transform, "Label"),
                         distanceText = ResolveChildText(icon.transform, "Distance"),
-                        labelBuffer = new char[BeaconLabelTextCapacity] // COLD ALLOC: char[96] - beacon HUD label text staging buffer - owner: BeaconHUDElement
+                        labelBuffer = new char[BeaconLabelTextCapacity], // COLD ALLOC: char[96] — beacon HUD label text staging buffer — owner: BeaconHUDElement
+                        distanceBuffer = new char[DistanceTextCapacity] // COLD ALLOC: char[32] — beacon HUD distance text staging buffer — owner: BeaconHUDElement
                     };
 
                     ApplyDisplayVisible(_iconDisplays[i], false, 0f);
@@ -135,24 +148,45 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            if (_mainCamera == null || !_mainCamera.isActiveAndEnabled)
+            float safeDeltaTime = math.max(0f, deltaTime);
+            _cameraRetryTimer = math.max(0f, _cameraRetryTimer - safeDeltaTime);
+            int beaconCount = BeaconRegistry.Count;
+            if (_activeIconCount == 0 && beaconCount <= 0)
             {
-                _mainCamera = null;
-                if (Time.time < _cameraRetryTime)
+                _idlePollTimer = math.max(0f, _idlePollTimer - safeDeltaTime);
+                if (_idlePollTimer > 0f)
                     return;
 
-                _cameraRetryTime = Time.time + CameraRetryInterval;
+                _idlePollTimer = IdlePollInterval;
+            }
 
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                if (playerContext != null)
-                    _mainCamera = playerContext.PlayerCamera;
+            if (!TryResolveCamera())
+            {
+                HideAllIcons();
+                return;
+            }
 
-                if (_mainCamera == null)
-                    return;
+            if (beaconCount <= 0)
+            {
+                HideAllIcons();
+                return;
+            }
+
+            if (!TryResolveObserverAup(out AbsoluteUniversePosition observerAup))
+            {
+                HideAllIcons();
+                return;
             }
 
             DeployableBeacon[] beacons = BeaconRegistry.GetAllBeacons();
-            int beaconCount = BeaconRegistry.Count;
+            if (beacons == null || beacons.Length <= 0)
+            {
+                HideAllIcons();
+                return;
+            }
+
+            beaconCount = math.min(beaconCount, math.min(BeaconRegistry.Count, beacons.Length));
+            _idlePollTimer = 0f;
 
             // Hide excess icons
             for (int i = beaconCount; i < _activeIconCount; i++)
@@ -161,7 +195,12 @@ namespace Hecton8.UI
                     ApplyDisplayVisible(_iconDisplays[i], false, 0f);
             }
 
-            _activeIconCount = Mathf.Min(beaconCount, _iconDisplays.Length);
+            _activeIconCount = math.min(beaconCount, _iconDisplays.Length);
+            double maxDisplayDistanceSq = (double)maxDisplayDistance * maxDisplayDistance;
+            double fadeStartDistanceSq = (double)fadeStartDistance * fadeStartDistance;
+            double fadeDistanceSqSpan = math.max(0.001d, maxDisplayDistanceSq - fadeStartDistanceSq);
+            float screenWidth = Screen.width;
+            float screenHeight = Screen.height;
 
             // Update each beacon icon
             for (int i = 0; i < _activeIconCount; i++)
@@ -174,7 +213,15 @@ namespace Hecton8.UI
                     continue;
                 }
 
-                UpdateBeaconIcon(i, beacon);
+                UpdateBeaconIcon(
+                    i,
+                    beacon,
+                    in observerAup,
+                    maxDisplayDistanceSq,
+                    fadeStartDistanceSq,
+                    fadeDistanceSqSpan,
+                    screenWidth,
+                    screenHeight);
             }
         }
 
@@ -182,24 +229,63 @@ namespace Hecton8.UI
         //  PRIVATE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private void UpdateBeaconIcon(int index, DeployableBeacon beacon)
+        private bool TryResolveObserverAup(out AbsoluteUniversePosition observerAup)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerMovement != null)
+            {
+                observerAup = playerContext.PlayerMovement.CurrentAup;
+                return true;
+            }
+
+            observerAup = default;
+            return false;
+        }
+
+        private bool TryResolveCamera()
+        {
+            if (_mainCamera != null && _mainCamera.isActiveAndEnabled)
+                return true;
+
+            _mainCamera = null;
+            if (_cameraRetryTimer > 0f)
+                return false;
+
+            _cameraRetryTimer = CameraRetryInterval;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                _mainCamera = playerContext.PlayerCamera;
+
+            return _mainCamera != null && _mainCamera.isActiveAndEnabled;
+        }
+
+        private void UpdateBeaconIcon(
+            int index,
+            DeployableBeacon beacon,
+            in AbsoluteUniversePosition observerAup,
+            double maxDisplayDistanceSq,
+            double fadeStartDistanceSq,
+            double fadeDistanceSqSpan,
+            float screenWidth,
+            float screenHeight)
         {
             BeaconIconDisplay display = _iconDisplays[index];
             if (display == null || display.gameObject == null)
                 return;
 
-            Vector3 worldPos = beacon.Position;
-            Vector3 cameraPos = _mainCamera.transform.position;
-            float distance = Vector3.Distance(worldPos, cameraPos);
+            AbsoluteUniversePosition beaconAup = beacon.PositionAup;
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in observerAup, in beaconAup);
 
             // Check if too far
-            if (distance > maxDisplayDistance)
+            if (distanceSq > maxDisplayDistanceSq)
             {
                 ApplyDisplayVisible(display, false, 0f);
                 return;
             }
 
             // World to screen
+            float3 runtimePosition = beaconAup.ToRuntimeFloat3();
+            Vector3 worldPos = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             Vector3 screenPos = _mainCamera.WorldToScreenPoint(worldPos);
 
             // Check if behind camera
@@ -210,17 +296,16 @@ namespace Hecton8.UI
             }
 
             // Clamp to screen bounds
-            float clampedX = Mathf.Clamp(screenPos.x, screenMargin, Screen.width - screenMargin);
-            float clampedY = Mathf.Clamp(screenPos.y, screenMargin, Screen.height - screenMargin);
+            float clampedX = math.clamp(screenPos.x, screenMargin, screenWidth - screenMargin);
+            float clampedY = math.clamp(screenPos.y, screenMargin, screenHeight - screenMargin);
 
-            // Activate and position
-            display.transform.position = new Vector3(clampedX, clampedY, 0f);
+            ApplyDisplayPosition(display, clampedX, clampedY);
 
             // Calculate alpha based on distance
             float alpha = 1f;
-            if (distance > fadeStartDistance)
+            if (distanceSq > fadeStartDistanceSq)
             {
-                alpha = 1f - (distance - fadeStartDistance) / (maxDisplayDistance - fadeStartDistance);
+                alpha = 1f - math.saturate((float)((distanceSq - fadeStartDistanceSq) / fadeDistanceSqSpan));
             }
 
             ApplyDisplayVisible(display, true, alpha);
@@ -261,12 +346,16 @@ namespace Hecton8.UI
             {
                 if (showDistance)
                 {
-                    int roundedDistance = Mathf.RoundToInt(distance);
+                    float distance = ApproximateDistanceMetersFromSq(distanceSq);
+                    int roundedDistance = (int)math.round(distance);
                     if (!display.HasCachedDistance || display.CachedDistanceMeters != roundedDistance)
                     {
                         float localizedDistance = LocalizedMeasurementFormatter.ConvertDistanceMeters(distance, _distanceLanguage);
-                        LocNumericBuffer.Write(new System.ReadOnlySpan<char>(_distancePatternBuffer, 0, _distancePatternLength), LocNumericArg.Float(localizedDistance), out char[] buffer, out int length);
-                        display.distanceText.SetCharArray(buffer, 0, length);
+                        System.ReadOnlySpan<char> distancePattern = System.MemoryExtensions.AsSpan(_distancePatternBuffer, 0, _distancePatternLength);
+                        if (!LocNumericBuffer.TryWrite(distancePattern, display.distanceBuffer, LocNumericArg.Float(localizedDistance), out int length))
+                            length = 0;
+
+                        display.distanceText.SetCharArray(display.distanceBuffer, 0, length);
                         display.distanceText.UpdateVertexData(TMPro.TMP_VertexDataUpdateFlags.All);
                         display.CachedDistanceMeters = roundedDistance;
                         display.HasCachedDistance = true;
@@ -280,6 +369,19 @@ namespace Hecton8.UI
                     display.HasCachedDistance = false;
                 }
             }
+        }
+
+        private static float ApproximateDistanceMetersFromSq(double distanceSq)
+        {
+            if (double.IsNaN(distanceSq) || double.IsInfinity(distanceSq))
+                return float.PositiveInfinity;
+            if (distanceSq <= 0d)
+                return 0f;
+
+            float clampedSq = (float)math.min(distanceSq, (double)float.MaxValue);
+            uint estimateBits = (math.asuint(clampedSq) >> 1) + 0x1FC00000u;
+            float estimate = math.asfloat(estimateBits);
+            return 0.5f * (estimate + (clampedSq / math.max(estimate, 0.0001f)));
         }
 
         private static bool LabelBufferMatches(BeaconIconDisplay display, string displayLabel, int labelLength, bool truncated)
@@ -298,7 +400,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(displayLabel) || destination == null || destination.Length == 0)
                 return 0;
 
-            return Mathf.Min(displayLabel.Length, destination.Length);
+            return math.min(displayLabel.Length, destination.Length);
         }
 
         private static bool IsLabelTruncated(string displayLabel, int labelLength, char[] destination)
@@ -337,12 +439,37 @@ namespace Hecton8.UI
 
         private void HideAllIcons()
         {
-            for (int i = 0; i < _iconDisplays.Length; i++)
+            if (_activeIconCount <= 0)
+                return;
+
+            int count = math.min(_activeIconCount, _iconDisplays.Length);
+            for (int i = 0; i < count; i++)
             {
                 if (_iconDisplays[i] != null && _iconDisplays[i].gameObject != null)
                     ApplyDisplayVisible(_iconDisplays[i], false, 0f);
             }
+
             _activeIconCount = 0;
+        }
+
+        private static void ApplyDisplayPosition(BeaconIconDisplay display, float x, float y)
+        {
+            if (display == null || display.transform == null)
+                return;
+
+            int pixelX = (int)math.round(x);
+            int pixelY = (int)math.round(y);
+            if (display.HasCachedPosition &&
+                display.CachedPixelX == pixelX &&
+                display.CachedPixelY == pixelY)
+            {
+                return;
+            }
+
+            display.CachedPixelX = pixelX;
+            display.CachedPixelY = pixelY;
+            display.HasCachedPosition = true;
+            display.transform.position = new Vector3(pixelX, pixelY, 0f);
         }
 
         private static void ApplyDisplayVisible(BeaconIconDisplay display, bool visible, float alpha)
@@ -354,9 +481,44 @@ namespace Hecton8.UI
             if (canvasGroup == null)
                 return;
 
-            canvasGroup.alpha = visible ? Mathf.Clamp01(alpha) : 0f;
-            canvasGroup.blocksRaycasts = false;
-            canvasGroup.interactable = false;
+            float targetAlpha = visible ? math.saturate(alpha) : 0f;
+            if (display.HasCachedVisibility &&
+                display.CachedVisible == visible &&
+                math.abs(display.CachedAlpha - targetAlpha) <= 0.0001f &&
+                !canvasGroup.blocksRaycasts &&
+                !canvasGroup.interactable)
+            {
+                return;
+            }
+
+            if (math.abs(canvasGroup.alpha - targetAlpha) > 0.0001f)
+                canvasGroup.alpha = targetAlpha;
+            if (canvasGroup.blocksRaycasts)
+                canvasGroup.blocksRaycasts = false;
+            if (canvasGroup.interactable)
+                canvasGroup.interactable = false;
+            if (!visible)
+                display.HasCachedPosition = false;
+            display.CachedVisible = visible;
+            display.CachedAlpha = targetAlpha;
+            display.HasCachedVisibility = true;
+        }
+
+        private static void DisableGraphicRaycasts(GameObject root)
+        {
+            if (root == null)
+                return;
+
+            s_GraphicRaycastDisableScratch.Clear();
+            root.GetComponentsInChildren(true, s_GraphicRaycastDisableScratch);
+            for (int i = 0; i < s_GraphicRaycastDisableScratch.Count; i++)
+            {
+                Graphic graphic = s_GraphicRaycastDisableScratch[i];
+                if (graphic != null)
+                    graphic.raycastTarget = false;
+            }
+
+            s_GraphicRaycastDisableScratch.Clear();
         }
 
         private void RegisterToTick()
@@ -367,8 +529,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()
@@ -474,11 +635,18 @@ namespace Hecton8.UI
             public TMPro.TMP_Text labelText;
             public TMPro.TMP_Text distanceText;
             public char[] labelBuffer;
+            public char[] distanceBuffer;
             public int CachedLabelLength;
             public uint CachedLabelHash = LabelHashSeed;
             public bool HasCachedLabel;
             public int CachedDistanceMeters;
             public bool HasCachedDistance;
+            public bool CachedVisible;
+            public float CachedAlpha = -1f;
+            public bool HasCachedVisibility;
+            public int CachedPixelX;
+            public int CachedPixelY;
+            public bool HasCachedPosition;
         }
     }
 }

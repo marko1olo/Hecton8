@@ -4,7 +4,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
     {
         _BaseMap("Base Map", 2D) = "white" {}
         _NormalMap("Normal Map", 2D) = "bump" {}
-        _MaskMap("Mask Map", 2D) = "white" {}
+        _MaskMap("Packed Mask (R Metallic G AO B Smoothness A Emission)", 2D) = "white" {}
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
         [HDR] _SssColor("SSS Color", Color) = (0.44, 0.86, 0.92, 1)
@@ -114,6 +114,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
         struct Attributes
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
             float4 positionOS : POSITION;
             float3 normalOS : NORMAL;
             float4 tangentOS : TANGENT;
@@ -122,6 +123,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
         struct Varyings
         {
+            UNITY_VERTEX_OUTPUT_STEREO
             float4 positionCS : SV_POSITION;
             float3 positionWS : TEXCOORD0;
             float3 positionOS : TEXCOORD6;
@@ -132,25 +134,45 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half fogFactor : TEXCOORD5;
         };
 
+        float ApproximateMagnitude3D(float3 value)
+        {
+            float3 delta = abs(value);
+            float maxAxis = max(delta.x, max(delta.y, delta.z));
+            float minAxis = min(delta.x, min(delta.y, delta.z));
+            float midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375 + minAxis * 0.125;
+        }
+
+        float3 NormalizeApprox3D(float3 value)
+        {
+            return value * rcp(max(0.0001, ApproximateMagnitude3D(value)));
+        }
+
+        float CheapSignedWave(float phase)
+        {
+            float t = frac(phase * 0.15915494 + 0.25);
+            return 1.0 - abs(t * 2.0 - 1.0) * 2.0;
+        }
+
         float3x3 BuildTangentToWorld(float3 normalWS, float4 tangentWS)
         {
-            float3 tangent = normalize(tangentWS.xyz);
-            float3 bitangent = normalize(cross(normalWS, tangent) * tangentWS.w);
+            float3 tangent = NormalizeApprox3D(tangentWS.xyz);
+            float3 bitangent = NormalizeApprox3D(cross(normalWS, tangent) * tangentWS.w);
             return float3x3(tangent, bitangent, normalWS);
         }
 
-        float3 ApplyWetnessNormalWobble(float3 normalWS, float3 positionWS)
+        float3 ApplyWetnessNormalWobble(float3 normalWS, float3 positionWS, float velocityMagnitudeSq)
         {
             float3 velocityWS = _WetnessVelocityWS.xyz;
-            float velocityMagnitude = length(velocityWS);
-            if (velocityMagnitude <= 0.001 || _WetnessNormalWobble <= 0.0001 || _WetnessStrength <= 0.0001)
+            if (velocityMagnitudeSq <= 0.000001 || _WetnessNormalWobble <= 0.0001 || _WetnessStrength <= 0.0001)
                 return normalWS;
 
-            float3 velocityDir = velocityWS / velocityMagnitude;
-            float wobblePhase = _Time.y * (2.0 + velocityMagnitude * 0.2) + dot(positionWS, velocityDir) * 0.12;
-            float3 wobbleAxis = normalize(cross(normalWS, velocityDir + float3(0.0, 0.18, 0.0)));
-            float wobbleStrength = saturate(velocityMagnitude * 0.05) * _WetnessNormalWobble * _WetnessStrength;
-            return normalize(normalWS + wobbleAxis * (sin(wobblePhase) * wobbleStrength));
+            float3 velocityDir = NormalizeApprox3D(velocityWS);
+            float velocityGate = saturate(velocityMagnitudeSq * 0.0025);
+            float wobblePhase = _Time.y * (2.0 + velocityGate * 4.0) + dot(positionWS, velocityDir) * 0.12;
+            float3 wobbleAxis = NormalizeApprox3D(cross(normalWS, velocityDir + float3(0.0, 0.18, 0.0)));
+            float wobbleStrength = velocityGate * _WetnessNormalWobble * _WetnessStrength;
+            return NormalizeApprox3D(normalWS + wobbleAxis * (CheapSignedWave(wobblePhase) * wobbleStrength));
         }
 
         float3 ApplyFaunaVertexPresentation(float3 positionOS, float3 normalOS)
@@ -160,7 +182,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float tailMaskSquared = tailMaskBase * tailMaskBase;
             float tailMaskQuartic = tailMaskSquared * tailMaskSquared;
             float tailMask = lerp(tailMaskBase, tailMaskQuartic, saturate((_TailSwayMaskPower - 1.0) * 0.33333334));
-            float tailWave = sin(_Time.y * _TailSwaySpeed + worldPos.y * _TailSwayPhase + worldPos.x * 13.37);
+            float tailWave = CheapSignedWave(_Time.y * _TailSwaySpeed + worldPos.y * _TailSwayPhase + worldPos.x * 13.37);
             positionOS.x += tailWave * _TailSwayStrength * tailMask;
 
             float timedBloat01 = saturate((_Time.y - _CorpseBloatStartTime) / max(_CorpseBloatDuration, 0.001)) * step(0.0, _CorpseBloatStartTime);
@@ -169,24 +191,15 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             return positionOS;
         }
 
-        float ApproximatePulseDistance(float3 a, float3 b)
-        {
-            float3 delta = abs(a - b);
-            float maxAxis = max(delta.x, max(delta.y, delta.z));
-            float minAxis = min(delta.x, min(delta.y, delta.z));
-            float midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
-            return maxAxis + midAxis * 0.375 + minAxis * 0.125;
-        }
-
         half2 EvaluateWoundMask(float3 positionWS)
         {
             if (_HectonCreatureWoundCount < 0.5)
-                return 0.0h.xx;
+                return half2(0.0h, 0.0h);
 
             float3 toOwner = positionWS - _HectonCreatureWoundOwnerSphere.xyz;
             float ownerRadius = max(_HectonCreatureWoundOwnerSphere.w, 0.001);
             if (dot(toOwner, toOwner) > ownerRadius * ownerRadius)
-                return 0.0h.xx;
+                return half2(0.0h, 0.0h);
 
             float3 ownerLocalPosition = mul(_HectonCreatureWoundOwnerWorldToLocal, float4(positionWS, 1.0)).xyz;
             half woundMask = 0.0h;
@@ -199,9 +212,15 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
                 float4 wound = _HectonCreatureWounds[woundIndex];
                 float woundRadius = max(wound.w, 0.001);
-                float woundDistance = ApproximatePulseDistance(ownerLocalPosition, wound.xyz);
-                half woundContribution = saturate(1.0h - (half)(woundDistance / woundRadius));
-                half coreContribution = saturate(1.0h - (half)(woundDistance / max(woundRadius * 0.45, 0.001)));
+                float3 woundDelta = ownerLocalPosition - wound.xyz;
+                float woundRadiusSq = woundRadius * woundRadius;
+                float woundDistanceSq = dot(woundDelta, woundDelta);
+                if (woundDistanceSq > woundRadiusSq)
+                    continue;
+
+                float coreRadius = max(woundRadius * 0.45, 0.001);
+                half woundContribution = saturate(1.0h - (half)(woundDistanceSq / woundRadiusSq));
+                half coreContribution = saturate(1.0h - (half)(woundDistanceSq / (coreRadius * coreRadius)));
                 woundMask = max(woundMask, woundContribution * woundContribution);
                 burnMask = max(burnMask, coreContribution * coreContribution);
             }
@@ -237,10 +256,21 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             if (lifeMask <= 0.0001)
                 return 0.0;
 
-            float distanceToPulse = ApproximatePulseDistance(positionWS, pulse.xyz);
-            float band = saturate(1.0 - abs(distanceToPulse - radius) / bandWidth);
+            float3 pulseDelta = positionWS - pulse.xyz;
+            float distanceToPulseSq = dot(pulseDelta, pulseDelta);
+            float outerBandRadius = radius + bandWidth;
+            if (distanceToPulseSq > outerBandRadius * outerBandRadius)
+                return 0.0;
+
+            float innerBandRadius = max(radius - bandWidth, 0.0);
+            if (innerBandRadius > 0.0 && distanceToPulseSq < innerBandRadius * innerBandRadius)
+                return 0.0;
+
+            float radiusSq = radius * radius;
+            float bandSq = max((outerBandRadius * outerBandRadius) - (innerBandRadius * innerBandRadius), 0.001);
+            float band = saturate(1.0 - abs(distanceToPulseSq - radiusSq) / bandSq);
             band = band * band * (3.0 - 2.0 * band);
-            float cinematicFalloff = rcp(1.0 + distanceToPulse * 0.004);
+            float cinematicFalloff = rcp(1.0 + distanceToPulseSq * 0.000016);
             return band * lifeMask * active * cinematicFalloff;
         }
 
@@ -254,14 +284,17 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         void ClipLeviathanNoirSilhouette(float3 positionWS, float sonarReveal)
         {
             float hideEnabled = step(0.5, _HectonSonarNoirHideDistance);
-            float cameraDistance = ApproximatePulseDistance(_WorldSpaceCameraPos, positionWS);
-            float farNoirMask = hideEnabled * step(_HectonSonarNoirHideDistance, cameraDistance);
+            float3 cameraDelta = positionWS - _WorldSpaceCameraPos;
+            float hideDistanceSq = _HectonSonarNoirHideDistance * _HectonSonarNoirHideDistance;
+            float farNoirMask = hideEnabled * step(hideDistanceSq, dot(cameraDelta, cameraDelta));
             clip(lerp(1.0, sonarReveal - 0.012, farNoirMask));
         }
 
         Varyings Vert(Attributes input)
         {
             Varyings output;
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             float3 deformedPositionOS = HectonCoreLitSanitizePositionOS(ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS));
             VertexPositionInputs positionInputs = GetVertexPositionInputs(deformedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
@@ -278,6 +311,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
         half4 Frag(Varyings input) : SV_Target
         {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             half deathDitherFade = saturate((half)_DeathDitherFade);
             if (deathDitherFade > 0.001h)
                 clip((1.0h - deathDitherFade) - ResolveFaunaDither(input.positionCS));
@@ -288,21 +322,23 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half4 surface = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
             half4 packedMask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, input.uv);
             half3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalScale);
-            float3x3 tangentToWorld = BuildTangentToWorld(normalize(input.normalWS), input.tangentWS);
-            half3 normalWS = normalize(TransformTangentToWorld(tangentNormal, tangentToWorld));
-            normalWS = ApplyWetnessNormalWobble(normalWS, input.positionWS);
+            float3x3 tangentToWorld = BuildTangentToWorld(NormalizeApprox3D(input.normalWS), input.tangentWS);
+            half3 normalWS = NormalizeApprox3D(TransformTangentToWorld(tangentNormal, tangentToWorld));
+            float wetnessVelocityMagnitudeSq = dot(_WetnessVelocityWS.xyz, _WetnessVelocityWS.xyz);
+            normalWS = ApplyWetnessNormalWobble(normalWS, input.positionWS, wetnessVelocityMagnitudeSq);
 
-            half metallic = saturate(packedMask.r * _Metallic);
-            half ambientOcclusion = saturate(lerp(1.0h, packedMask.g, _OcclusionStrength));
-            half smoothness = saturate(packedMask.b * _Smoothness);
-            half emissionMask = saturate(packedMask.a);
-            half3 viewDirWS = normalize(input.viewDirWS);
+            HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
+            half metallic = decodedMask.metallic;
+            half ambientOcclusion = decodedMask.occlusion;
+            half smoothness = decodedMask.smoothness;
+            half emissionMask = decodedMask.emissionMask;
+            half3 viewDirWS = NormalizeApprox3D(input.viewDirWS);
             half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(input.positionWS, normalWS);
             half2 woundMasks = EvaluateWoundMask(input.positionWS);
             half woundMask = woundMasks.x;
             half woundBurnMask = woundMasks.y;
 
-            float wetnessSignal = saturate(length(_WetnessVelocityWS.xyz) * 0.05) * _WetnessStrength;
+            float wetnessSignal = saturate(wetnessVelocityMagnitudeSq * 0.0025) * _WetnessStrength;
             smoothness = saturate(smoothness + wetnessSignal * _WetnessSmoothnessBoost);
             smoothness = saturate(smoothness * (1.0h - woundMask * _WoundSmoothnessDrop));
             half3 woundColor = lerp(_WoundColor.rgb, _WoundBurnColor.rgb, woundBurnMask);
@@ -313,20 +349,24 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             Light mainLight = GetMainLight(shadowCoord);
             half3 lightDir = HectonCoreLitSafeNormalize(mainLight.direction);
             half nDotL = saturate(dot(normalWS, lightDir));
-            half3 halfDir = HectonCoreLitSafeNormalize(lightDir + viewDirWS);
             half specularStrength = lerp(0.05h, 0.22h, metallic);
-            half specularPower = lerp(24.0h, 112.0h, smoothness);
-            half specularBase = saturate(dot(normalWS, halfDir));
-            half specular2 = specularBase * specularBase;
-            half specular4 = specular2 * specular2;
-            half specular8 = specular4 * specular4;
-            half specular16 = specular8 * specular8;
-            half specular32 = specular16 * specular16;
-            half specular64 = specular32 * specular32;
-            half specularLow = specular16 * specular8;
-            half specularHigh = specular64 * specular32 * specular16;
-            half specular = lerp(specularLow, specularHigh, saturate((specularPower - 24.0h) * (1.0h / 88.0h))) * smoothness * specularStrength;
-            half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadow(input.positionWS, normalWS);
+            half specular = 0.0h;
+            half specularEnergy = smoothness * specularStrength;
+            if (nDotL > 0.0001h && specularEnergy > 0.0001h)
+            {
+                half3 halfDir = HectonCoreLitSafeNormalize(lightDir + viewDirWS);
+                half specularBase = saturate(dot(normalWS, halfDir));
+                half specular2 = specularBase * specularBase;
+                half specular4 = specular2 * specular2;
+                half specular8 = specular4 * specular4;
+                half specular16 = specular8 * specular8;
+                half specular32 = specular16 * specular16;
+                half specular64 = specular32 * specular32;
+                half specularLow = specular16 * specular8;
+                half specularHigh = specular64 * specular32 * specular16;
+                specular = lerp(specularLow, specularHigh, smoothness) * specularEnergy;
+            }
+            half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadowFromDirection(input.positionWS, normalWS, mainLight.direction);
             color += (surface.rgb * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation * contactShadow);
 
             half3 sss = HectonCoreLitEvaluateOrganicSss(
@@ -377,6 +417,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
             ENDHLSL
@@ -391,10 +433,13 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             HLSLPROGRAM
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile_shadowcaster
 
             struct ShadowVaryings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
             };
@@ -402,6 +447,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             ShadowVaryings ShadowVert(Attributes input)
             {
                 ShadowVaryings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 float3 deformedPositionOS = HectonCoreLitSanitizePositionOS(ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS));
                 output.positionCS = GetShadowPositionHClip(input);
                 output.positionWS = TransformObjectToWorld(deformedPositionOS);
@@ -410,6 +457,7 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
             half4 ShadowFrag(ShadowVaryings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 half deathDitherFade = saturate((half)_DeathDitherFade);
                 if (deathDitherFade > 0.001h)
                     clip((1.0h - deathDitherFade) - ResolveFaunaDither(input.positionCS));

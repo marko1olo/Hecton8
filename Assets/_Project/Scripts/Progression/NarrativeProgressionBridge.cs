@@ -8,6 +8,7 @@ using Hecton8.PDA;
 using Hecton8.Quest;
 using Hecton8.UI;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Progression
@@ -31,6 +32,8 @@ namespace Hecton8.Progression
         private static readonly uint _atlasSignalQuestHash = QuestFlagHashKernel.ComputeStableHash(AtlasSignalQuestId);
         private static readonly uint _atlasMarkerHash = QuestFlagHashKernel.ComputeStableHash(AtlasMarkerId);
         private static readonly uint _atlasMarkerTitleHash = QuestFlagHashKernel.ComputeStableHash(AtlasMarkerTitle);
+        private static readonly uint _exitLifePodDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(ExitLifePodDiscoveryId);
+        private static readonly uint _hullFailureDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(HullFailureDiscoveryId);
         private static readonly uint _hullFailureLogHash = QuestFlagHashKernel.ComputeStableHash(HullFailureLogId);
 
         [Header("First Hour AUP Gate")]
@@ -148,8 +151,8 @@ namespace Hecton8.Progression
                 return;
 
             _hullFailureIssued = true;
-            NarrativeEvents.RaiseDiscoveryMade(HullFailureDiscoveryId);
-            ProceduralAudioEvents.RaiseStructuralStressTriggered(transform.position, 1f, 0.72f);
+            NarrativeEvents.RaiseDiscoveryMade(_hullFailureDiscoveryHash);
+            ProceduralAudioEvents.RaiseStructuralStressTriggered(ResolvePlayerRuntimePosition(), 1f, 0.72f);
 
             AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
             if (audioLogs != null)
@@ -205,7 +208,9 @@ namespace Hecton8.Progression
 
             if (lifePodExitMinimumDistanceMeters > 0f)
             {
-                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+                if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                    return false;
+
                 AbsoluteUniversePosition podAup = AbsoluteUniversePosition.FromRuntimePosition(lifePodExitReferenceWorld);
                 double requiredDistanceSq = (double)lifePodExitMinimumDistanceMeters * lifePodExitMinimumDistanceMeters;
                 if (AbsoluteUniversePosition.DistanceSq(in playerAup, in podAup) < requiredDistanceSq)
@@ -213,8 +218,32 @@ namespace Hecton8.Progression
             }
 
             _exitLifePodIssued = true;
-            NarrativeEvents.RaiseDiscoveryMade(ExitLifePodDiscoveryId);
+            NarrativeEvents.RaiseDiscoveryMade(_exitLifePodDiscoveryHash);
             return true;
+        }
+
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerMovement != null)
+            {
+                playerAup = playerContext.PlayerMovement.CurrentAup;
+                return true;
+            }
+
+            playerAup = default;
+            return false;
+        }
+
+        private static Vector3 ResolvePlayerRuntimePosition()
+        {
+            if (TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                var runtime = playerAup.ToRuntimeFloat3();
+                return new Vector3(runtime.x, runtime.y, runtime.z);
+            }
+
+            return Vector3.zero;
         }
 
         private void TryPublishAtlasMarker(HectonBiomeMatrixProfile profile)
@@ -230,9 +259,10 @@ namespace Hecton8.Progression
             if (markerRegistry == null || atlasSignal == null)
                 return;
 
+            AbsoluteUniversePosition atlasCoreAup = atlasSignal.AtlasCoreAup;
             if (markerRegistry.TryCreateOrUpdateMarker(
                     _atlasMarkerHash,
-                    atlasSignal.AtlasCorePosition,
+                    in atlasCoreAup,
                     MarkerIconType.Objective,
                     _atlasMarkerTitleHash,
                     AtlasMarkerTitle,
@@ -374,7 +404,7 @@ namespace Hecton8.Progression
             if (biomeMarkerRules == null || biomeMarkerRules.Length == 0)
                 return;
 
-            int ruleCount = Mathf.Min(biomeMarkerRules.Length, MaxBiomeMarkerRules);
+            int ruleCount = math.min(biomeMarkerRules.Length, MaxBiomeMarkerRules);
             for (int i = 0; i < ruleCount; i++)
             {
                 BiomeMarkerRule rule = biomeMarkerRules[i];

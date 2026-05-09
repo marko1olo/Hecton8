@@ -37,6 +37,8 @@ Shader "Hecton/Celestial/Sun"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_fog
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
             #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
@@ -139,6 +141,8 @@ Shader "Hecton/Celestial/Sun"
             HLSLPROGRAM
             #pragma vertex DepthVert
             #pragma fragment DepthFrag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
             #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
@@ -168,6 +172,7 @@ Shader "Hecton/Celestial/Sun"
 
             half4 DepthFrag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 return 0;
             }
             ENDHLSL

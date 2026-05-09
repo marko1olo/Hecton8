@@ -23,8 +23,6 @@ namespace Hecton8.World
         private const float PreyKillSectorStrainPerUnit = 0.08f;
         private const float EcologicalCollapseThreshold = 0.8f;
 
-        private static EnvironmentalStrainManager _instance;
-
         private HectonEventSubscription _itemCollectedSubscription;
         private HectonEventSubscription _itemRecycledSubscription;
         private HectonEventSubscription _itemDiscardedSubscription;
@@ -44,7 +42,7 @@ namespace Hecton8.World
         /// <summary>
         /// Active runtime owner while the gameplay scene is loaded.
         /// </summary>
-        public static EnvironmentalStrainManager Instance => _instance;
+        public static EnvironmentalStrainManager Instance => GlobalRegistry.EnvironmentalStrain;
 
         /// <summary>
         /// Save priority keeps environmental state in the world band before player-facing consumers.
@@ -69,15 +67,23 @@ namespace Hecton8.World
         /// <summary>
         /// Aggression multiplier exported to the dynamic difficulty director.
         /// </summary>
-        public static float CurrentPredatorAggressionScale => _instance != null ? _instance.GetPredatorAggressionScale() : 1f;
+        public static float CurrentPredatorAggressionScale
+        {
+            get
+            {
+                EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
+                return registered != null ? registered.GetPredatorAggressionScale() : 1f;
+            }
+        }
 
         /// <summary>
         /// Resolves the normalized ecological strain carried by the 1 km sector containing the supplied world position.
         /// </summary>
         public static bool TryGetSectorStrain01(Vector3 worldPosition, out float strain01)
         {
-            if (_instance != null)
-                return _instance.TryResolveSectorStrain(worldPosition, out strain01);
+            EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
+            if (registered != null)
+                return registered.TryResolveSectorStrain(worldPosition, out strain01);
 
             strain01 = 0f;
             return false;
@@ -93,13 +99,11 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
-                return;
             }
-
-            _instance = this;
         }
 
         private void OnEnable()
@@ -139,15 +143,19 @@ namespace Hecton8.World
             _itemDiscardedSubscription?.Dispose();
             _itemDiscardedSubscription = null;
             TryUnregisterService();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         private void TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            EnvironmentalStrainManager registered = GlobalRegistry.EnvironmentalStrain;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterEnvironmentalStrainRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EnvironmentalStrain, this);
@@ -206,7 +214,7 @@ namespace Hecton8.World
         {
             float weightedDebt = _generalPollution + _microplasticStrain * 1.35f;
             float normalizedDebt = Mathf.Clamp01(weightedDebt / 250f);
-            return Mathf.Lerp(1f, 1.35f, normalizedDebt);
+            return 1f + normalizedDebt * 0.35f;
         }
 
         internal void AccumulateIndustrialStrain(float generalPollutionDelta, float microplasticDelta)

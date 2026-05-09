@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -28,7 +29,7 @@ namespace Hecton8.Construction
         [SerializeField] private Transform point2;
         [SerializeField] private Transform point3;
 
-        private readonly Vector3[] _runtimePoints = new Vector3[ControlPointCount]; // COLD ALLOC: Vector3[4] - pipe blueprint control points - owner: VRPipeBlueprintPreview
+        private readonly AbsoluteUniversePosition[] _runtimePointAups = new AbsoluteUniversePosition[ControlPointCount]; // COLD ALLOC: AbsoluteUniversePosition[4] - AUP-stable pipe blueprint control points - owner: VRPipeBlueprintPreview
         private readonly bool[] _hasRuntimePoint = new bool[ControlPointCount]; // COLD ALLOC: bool[4] - runtime point validity - owner: VRPipeBlueprintPreview
         private readonly Matrix4x4[] _matrices = new Matrix4x4[MaxPreviewInstances]; // COLD ALLOC: Matrix4x4[64] - instanced pipe blueprint matrices - owner: VRPipeBlueprintPreview
         private Vector3 _cachedPoint0;
@@ -40,6 +41,9 @@ namespace Hecton8.Construction
         private int _cachedMatrixCount;
         private uint _stateFlags = StateMatricesDirty;
         private bool _registeredLateFrame;
+        private Transform _cachedTransform;
+        private Material _preparedInstancingMaterial;
+        private int _cachedLayer;
 
         public bool PreviewActive
         {
@@ -47,21 +51,34 @@ namespace Hecton8.Construction
             set => previewActive = value;
         }
 
+        private void Awake()
+        {
+            CacheRuntimeReferences();
+        }
+
         private void OnEnable()
         {
-            TryRegisterLateFrameTickable();
+            CacheRuntimeReferences();
+            HectonXRRuntimeState.XRActiveChanged += HandleXRActiveChanged;
+            RefreshXRRegistration();
+            EnsureMaterialState();
         }
 
         private void OnDisable()
         {
+            HectonXRRuntimeState.XRActiveChanged -= HandleXRActiveChanged;
             TryUnregisterLateFrameTickable();
         }
 
         public void LateFrameTick()
         {
+            if (!HectonXRRuntimeState.IsXRActive)
+                return;
+
             if (!previewActive || segmentMesh == null || previewMaterial == null)
                 return;
 
+            EnsureMaterialState();
             if (ShouldRebuildMatrices())
                 RebuildMatrixCache();
 
@@ -77,7 +94,7 @@ namespace Hecton8.Construction
                 null,
                 ShadowCastingMode.Off,
                 false,
-                gameObject.layer,
+                _cachedLayer,
                 targetCamera,
                 LightProbeUsage.Off,
                 null);
@@ -88,10 +105,11 @@ namespace Hecton8.Construction
             if ((uint)index >= ControlPointCount)
                 return;
 
-            if (!_hasRuntimePoint[index] || (runtimePosition - _runtimePoints[index]).sqrMagnitude > PointDirtyDistanceSq)
+            AbsoluteUniversePosition runtimeAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            if (!_hasRuntimePoint[index] || AbsoluteUniversePosition.DistanceSq(in _runtimePointAups[index], in runtimeAup) > PointDirtyDistanceSq)
                 _stateFlags |= StateMatricesDirty;
 
-            _runtimePoints[index] = runtimePosition;
+            _runtimePointAups[index] = runtimeAup;
             _hasRuntimePoint[index] = true;
         }
 
@@ -150,7 +168,13 @@ namespace Hecton8.Construction
             if (authoredPoint != null)
                 return authoredPoint.position;
 
-            return _hasRuntimePoint[index] ? _runtimePoints[index] : transform.position;
+            if (_hasRuntimePoint[index])
+                return (Vector3)_runtimePointAups[index].ToRuntimeFloat3();
+
+            if (_cachedTransform == null)
+                CacheRuntimeReferences();
+
+            return _cachedTransform.position;
         }
 
         private void AppendSpan(Vector3 start, Vector3 end, ref int count)
@@ -182,7 +206,7 @@ namespace Hecton8.Construction
 
         private void TryRegisterLateFrameTickable()
         {
-            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredLateFrame || !Application.isPlaying || !HectonXRRuntimeState.IsXRActive || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
@@ -198,6 +222,53 @@ namespace Hecton8.Construction
             _registeredLateFrame = false;
         }
 
+        private void HandleXRActiveChanged(bool isActive)
+        {
+            _stateFlags |= StateMatricesDirty;
+            if (isActive)
+            {
+                TryRegisterLateFrameTickable();
+                return;
+            }
+
+            TryUnregisterLateFrameTickable();
+            _cachedMatrixCount = 0;
+        }
+
+        private void RefreshXRRegistration()
+        {
+            if (HectonXRRuntimeState.IsXRActive)
+            {
+                TryRegisterLateFrameTickable();
+                return;
+            }
+
+            TryUnregisterLateFrameTickable();
+        }
+
+        private void EnsureMaterialState()
+        {
+            if (previewMaterial == null)
+            {
+                _preparedInstancingMaterial = null;
+                return;
+            }
+
+            if (ReferenceEquals(_preparedInstancingMaterial, previewMaterial))
+                return;
+
+            if (!previewMaterial.enableInstancing)
+                previewMaterial.enableInstancing = true;
+
+            _preparedInstancingMaterial = previewMaterial;
+        }
+
+        private void CacheRuntimeReferences()
+        {
+            _cachedTransform = transform;
+            _cachedLayer = gameObject.layer;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
@@ -206,6 +277,8 @@ namespace Hecton8.Construction
             if (segmentRadiusMeters < 0.001f)
                 segmentRadiusMeters = 0.001f;
             _stateFlags |= StateMatricesDirty;
+            _preparedInstancingMaterial = null;
+            CacheRuntimeReferences();
         }
 #endif
     }

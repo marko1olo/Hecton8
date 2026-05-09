@@ -531,13 +531,13 @@ namespace Hecton8.Dev
                 _mainMenuController = VerificationRuntimeProbe.ResolveMainMenuController();
 
             if (_pauseVerifier == null)
-                _pauseVerifier = PauseSystemVerifier.Instance != null ? PauseSystemVerifier.Instance : GetComponent<PauseSystemVerifier>();
+                _pauseVerifier = GetComponent<PauseSystemVerifier>();
 
             if (_sceneVerifier == null)
-                _sceneVerifier = SceneTransitionVerifier.Instance != null ? SceneTransitionVerifier.Instance : GetComponent<SceneTransitionVerifier>();
+                _sceneVerifier = GetComponent<SceneTransitionVerifier>();
 
             if (_stateVerifier == null)
-                _stateVerifier = StateRecoveryVerifier.Instance != null ? StateRecoveryVerifier.Instance : GetComponent<StateRecoveryVerifier>();
+                _stateVerifier = GetComponent<StateRecoveryVerifier>();
         }
 
         private void TryLogMenuRouteDiagnostics(string reason)

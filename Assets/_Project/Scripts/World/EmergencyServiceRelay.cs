@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
@@ -9,8 +10,8 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Narrative;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
-using UObject = UnityEngine.Object;
 
 namespace Hecton8.World
 {
@@ -24,6 +25,7 @@ namespace Hecton8.World
     public sealed class EmergencyServiceRelay : MonoBehaviour, IInteractable
     {
         [Serializable]
+        [StructLayout(LayoutKind.Sequential)]
         public struct RewardEntry
         {
             [Tooltip("Reward item granted from the relay cache.")]
@@ -45,7 +47,11 @@ namespace Hecton8.World
             "HOLD THE SERVICE LINE. THE NEXT RELAY SITS A LITTLE DEEPER AND HANDS OFF THE NEXT VECTOR.";
         private const string DefaultDescriptorNote =
             "Emergency service relay with cached supplies and a maintenance-route handoff.";
-        private const string RewardGrantedFallback = "RELAY CACHE DISPENSED: {0} X{1}";
+        private const string DownloadedBelowFallback =
+            "SERVICE RELAY: NEXT VECTOR RESOLVED BELOW CURRENT DEPTH.";
+        private const string DownloadedFartherFallback =
+            "SERVICE RELAY: NEXT VECTOR RESOLVED ALONG THE SERVICE LINE.";
+        private const string RewardGrantedFallback = "RELAY CACHE DISPENSED.";
         private const string RewardInventoryFullFallback = "RELAY FOUND SUPPLIES, BUT INVENTORY IS FULL. FREE SPACE AND COME BACK.";
         private const string RewardEmptyFallback = "RELAY CACHE DISPENSED";
 
@@ -108,13 +114,48 @@ namespace Hecton8.World
 
         private FieldTargetDescriptor _descriptor;
         private InteractionHighlighter _highlighter;
+        private Transform _cachedTransform;
         private string _cachedInteractText = DefaultInteractVerb + " " + DefaultLabel;
+        private uint _relayHash;
+        private uint _chainHash;
+        private AbsoluteUniversePosition _cachedRelayAup;
+        private bool _hasCachedRelayAup;
 
         /// <summary>Unique discovery ID for this relay.</summary>
         public string RelayId => relayId;
 
+        /// <summary>Runtime discovery hash used by event lanes and director caches.</summary>
+        public uint RelayHash
+        {
+            get
+            {
+                EnsureCachedRuntimeIdentity();
+                return _relayHash;
+            }
+        }
+
         /// <summary>Chain owner ID used by the relay director.</summary>
         public string ChainId => string.IsNullOrWhiteSpace(chainId) ? DefaultChainId : chainId;
+
+        /// <summary>Runtime chain hash used by relay director caches.</summary>
+        public uint ChainHash
+        {
+            get
+            {
+                EnsureCachedRuntimeIdentity();
+                return _chainHash;
+            }
+        }
+
+        /// <summary>Authored relay AUP cached outside route-message playback.</summary>
+        public AbsoluteUniversePosition RelayAup
+        {
+            get
+            {
+                EnsureCachedRuntimeIdentity();
+                return _cachedRelayAup;
+            }
+        }
 
         /// <summary>Ordering inside the authored relay chain.</summary>
         public int RelayOrder => relayOrder;
@@ -133,8 +174,9 @@ namespace Hecton8.World
         {
             get
             {
+                EnsureCachedRuntimeIdentity();
                 HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
-                return narrativeDirector != null && !string.IsNullOrWhiteSpace(relayId) && narrativeDirector.HasDiscovery(relayId);
+                return narrativeDirector != null && _relayHash != 0u && narrativeDirector.HasDiscovery(_relayHash);
             }
         }
 
@@ -144,6 +186,8 @@ namespace Hecton8.World
 
         private void Awake()
         {
+            _cachedTransform = transform;
+            RefreshCachedRuntimeIdentity();
             TryResolveComponents();
             ApplyDescriptorSemantics();
             RebuildInteractText();
@@ -151,6 +195,10 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
+
+            RefreshCachedRuntimeIdentity();
             TryResolveComponents();
             ApplyDescriptorSemantics();
             RebuildInteractText();
@@ -161,7 +209,6 @@ namespace Hecton8.World
                 MarkRegistryDirty();
             }
 
-            EnsureRuntimeRelayDirector();
         }
 
         private void OnDisable()
@@ -211,10 +258,11 @@ namespace Hecton8.World
         public void Interact(Transform interactor)
         {
             InteractionEvents.RaiseInteractionStarted(this, interactor);
+            EnsureCachedRuntimeIdentity();
 
             bool firstActivation = !IsDiscovered;
-            if (firstActivation && !string.IsNullOrWhiteSpace(relayId))
-                NarrativeEvents.RaiseDiscoveryMade(relayId);
+            if (firstActivation && _relayHash != 0u)
+                NarrativeEvents.RaiseDiscoveryMade(_relayHash);
 
             string resolvedLoreMessage = FallbackOrLocalized(loreMessage, LocalizationKeys.RELAY_LORE_DEFAULT, DefaultLoreMessage);
             if (!string.IsNullOrWhiteSpace(resolvedLoreMessage))
@@ -256,54 +304,46 @@ namespace Hecton8.World
                     "SERVICE RELAY: local route ends here. LOOK FOR THE BIGGER TRACE, THE RUINS, AND AN INTACT MODULE.");
             }
 
-            float planarDistance = Vector3.Distance(transform.position, resolvedNextRelay.transform.position);
-            bool deeper = resolvedNextRelay.transform.position.y < transform.position.y;
+            AbsoluteUniversePosition currentAup = RelayAup;
+            AbsoluteUniversePosition nextAup = resolvedNextRelay.RelayAup;
+            bool deeper = ResolveVerticalDeltaMeters(in currentAup, in nextAup) < 0d;
             return deeper
-                ? ResolveFormatted(
-                    LocalizationKeys.RELAY_ROUTE_DOWNLOADED_BELOW,
-                    "SERVICE RELAY: coordinates loaded for {0}. BELOW // ~{1:0}M.",
-                    resolvedNextRelay.RelayLabel,
-                    planarDistance)
-                : ResolveFormatted(
-                    LocalizationKeys.RELAY_ROUTE_DOWNLOADED_FARTHER,
-                    "SERVICE RELAY: coordinates loaded for {0}. FARTHER // ~{1:0}M.",
-                    resolvedNextRelay.RelayLabel,
-                    planarDistance);
+                ? DownloadedBelowFallback
+                : DownloadedFartherFallback;
         }
 
-        private static void EnsureRuntimeRelayDirector()
+        private void EnsureCachedRuntimeIdentity()
         {
-            EmergencyServiceRelayDirector existingDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
-            if (existingDirector == null)
-                existingDirector = EmergencyServiceRelayDirector.ActiveRuntimeInstance;
-
-            if (!Application.isPlaying ||
-                existingDirector != null ||
-                s_ActiveRelays.Count <= 0)
-            {
-                return;
-            }
-
-            GameObject owner = null;
-            WorldRuntimeReferenceUtility.TryResolveManagersRoot(ref owner);
-
-            if (owner == null)
-            {
-                // COLD ALLOC: GameObject[1] — runtime relay owner fallback when scene authoring omits manager roots — owner: EmergencyServiceRelay
-                owner = new GameObject("EmergencyServiceRelayDirector_Root");
-            }
-
-            existingDirector = owner.GetComponent<EmergencyServiceRelayDirector>();
-            if (existingDirector != null)
+            if (_hasCachedRelayAup && _relayHash != 0u && _chainHash != 0u)
                 return;
 
-            owner.AddComponent<EmergencyServiceRelayDirector>();
+            RefreshCachedRuntimeIdentity();
+        }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(
-                "[EmergencyServiceRelay] Spawned EmergencyServiceRelayDirector from relay self-heal because runtime owner was missing. " +
-                "Owner='" + owner.name + "'. This is a fail-safe, not a substitute for authored setup.");
-#endif
+        private void RefreshCachedRuntimeIdentity()
+        {
+            _relayHash = string.IsNullOrWhiteSpace(relayId)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(relayId));
+
+            string resolvedChainId = string.IsNullOrWhiteSpace(chainId)
+                ? DefaultChainId
+                : chainId;
+            _chainHash = unchecked((uint)LocHash.Compute(resolvedChainId));
+            Transform relayTransform = _cachedTransform;
+            if (relayTransform == null)
+            {
+                relayTransform = transform;
+                _cachedTransform = relayTransform;
+            }
+
+            _cachedRelayAup = AbsoluteUniversePosition.FromRuntimePosition(relayTransform.position);
+            _hasCachedRelayAup = true;
+        }
+
+        private static double ResolveVerticalDeltaMeters(in AbsoluteUniversePosition from, in AbsoluteUniversePosition to)
+        {
+            return ((to.GridY - from.GridY) * (double)AbsoluteUniversePosition.CellSizeMeters) + ((double)to.LocalY - from.LocalY);
         }
 
         private static void MarkRegistryDirty()
@@ -351,7 +391,7 @@ namespace Hecton8.World
             for (int i = 0; i < rewards.Length; i++)
             {
                 ItemData item = rewards[i].item;
-                int quantity = Mathf.Max(0, rewards[i].quantity);
+                int quantity = math.max(0, rewards[i].quantity);
                 if (item == null || quantity <= 0)
                     continue;
 
@@ -379,15 +419,11 @@ namespace Hecton8.World
             for (int i = 0; i < rewards.Length; i++)
             {
                 ItemData item = rewards[i].item;
-                int quantity = Mathf.Max(0, rewards[i].quantity);
+                int quantity = math.max(0, rewards[i].quantity);
                 if (item == null || quantity <= 0)
                     continue;
 
-                return ResolveFormatted(
-                    LocalizationKeys.RELAY_REWARD_GRANTED,
-                    RewardGrantedFallback,
-                    item.itemName.ToUpperInvariant(),
-                    quantity);
+                return RewardGrantedFallback;
             }
 
             return ResolveLocalized(LocalizationKeys.RELAY_REWARD_EMPTY, RewardEmptyFallback);
@@ -430,22 +466,6 @@ namespace Hecton8.World
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
-        }
-
-        private static string ResolveFormatted(string key, string fallback, params object[] args)
-        {
-            string template = ResolveLocalized(key, fallback);
-            if (args == null || args.Length == 0)
-                return template;
-
-            try
-            {
-                return string.Format(template, args);
-            }
-            catch (FormatException)
-            {
-                return fallback;
-            }
         }
 
 #if UNITY_EDITOR
@@ -496,6 +516,7 @@ namespace Hecton8.World
 
             TryResolveComponents();
             ApplyDescriptorSemantics();
+            RefreshCachedRuntimeIdentity();
             RebuildInteractText();
 
             if (Application.isPlaying && isActiveAndEnabled)

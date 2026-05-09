@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.AI;
@@ -8,15 +9,58 @@ using Hecton8.Gameplay;
 using Hecton8.Interaction;
 using Hecton8.Narrative;
 using Hecton8.Physics;
+using Hecton8.Visor;
 using Hecton8.World;
+using NASAPunk.Visor;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Atmosphere
 {
+    internal static class DeferredAtmosphereNativeQueueWarmup
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static void Prewarm<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+    }
+
+    internal static class AtmosphereEventPayloadSanitizer
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float FiniteOrZero(float value)
+        {
+            return math.isfinite(value) ? value : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static Vector3 RuntimePositionOrZero(Vector3 runtimePosition)
+        {
+            float3 value = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            return math.all(math.isfinite(value)) ? runtimePosition : Vector3.zero;
+        }
+    }
+
     /// <summary>
     /// Pressure discontinuity emitted when a sealed bulkhead opens into unequal room pressures.
     /// </summary>
@@ -27,13 +71,15 @@ namespace Hecton8.Atmosphere
         /// </summary>
         public HighPressureEvent(int doorIndex, int roomA, int roomB, float pressureAKPa, float pressureBKPa, Vector3 runtimePosition)
         {
+            float safePressureA = AtmosphereEventPayloadSanitizer.FiniteNonNegativeOrZero(pressureAKPa);
+            float safePressureB = AtmosphereEventPayloadSanitizer.FiniteNonNegativeOrZero(pressureBKPa);
             DoorIndex = doorIndex;
             RoomA = roomA;
             RoomB = roomB;
-            PressureAKPa = pressureAKPa;
-            PressureBKPa = pressureBKPa;
-            PressureDeltaKPa = math.abs(pressureAKPa - pressureBKPa);
-            RuntimePosition = runtimePosition;
+            PressureAKPa = safePressureA;
+            PressureBKPa = safePressureB;
+            PressureDeltaKPa = math.abs(safePressureA - safePressureB);
+            RuntimePosition = AtmosphereEventPayloadSanitizer.RuntimePositionOrZero(runtimePosition);
         }
 
         /// <summary>Bulkhead edge index inside the compartment graph.</summary>
@@ -61,7 +107,7 @@ namespace Hecton8.Atmosphere
     /// <summary>
     /// Unmanaged high-pressure warning payload carried by the deferred event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public struct HighPressureEventPayload
     {
         public Vector3 RuntimePosition;
@@ -134,6 +180,8 @@ namespace Hecton8.Atmosphere
 
             if (!_listeners.Contains(listener))
                 _listeners.Register(listener);
+
+            EnsureInitialized();
         }
 
         /// <summary>Unregisters one high-pressure warning listener.</summary>
@@ -144,6 +192,11 @@ namespace Hecton8.Atmosphere
 
             if (_listeners.Contains(listener))
                 _listeners.Unregister(listener);
+        }
+
+        internal static void Shutdown()
+        {
+            ResetStaticState();
         }
 
         /// <summary>Flushes queued high-pressure warnings.</summary>
@@ -186,6 +239,9 @@ namespace Hecton8.Atmosphere
         /// <summary>Emits a high-pressure warning payload.</summary>
         public static void Notify(in HighPressureEvent pressureEvent)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             Enqueue(new HighPressureEventPayload
             {
                 RuntimePosition = pressureEvent.RuntimePosition,
@@ -208,6 +264,7 @@ namespace Hecton8.Atmosphere
                     nameof(HighPressureEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                DeferredAtmosphereNativeQueueWarmup.Prewarm(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -219,11 +276,15 @@ namespace Hecton8.Atmosphere
                     nameof(HighPressureEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                DeferredAtmosphereNativeQueueWarmup.Prewarm(ref _nextFrameEvents, PendingEventCapacity);
             }
         }
 
         private static bool Enqueue(in HighPressureEventPayload payload)
         {
+            if (_listeners.Count <= 0)
+                return false;
+
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportOverflowOncePerFrame();
@@ -303,8 +364,8 @@ namespace Hecton8.Atmosphere
         {
             NodeId = nodeId;
             RoomIndex = roomIndex;
-            TemperatureCelsius = temperatureCelsius;
-            RuntimePosition = runtimePosition;
+            TemperatureCelsius = AtmosphereEventPayloadSanitizer.FiniteOrZero(temperatureCelsius);
+            RuntimePosition = AtmosphereEventPayloadSanitizer.RuntimePositionOrZero(runtimePosition);
         }
 
         public uint NodeId { get; }
@@ -316,7 +377,7 @@ namespace Hecton8.Atmosphere
     /// <summary>
     /// Unmanaged fatal pressure implosion payload carried by the deferred event lane.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public struct FatalPressureImplosionEventPayload
     {
         public Vector3 RuntimePosition;
@@ -387,6 +448,8 @@ namespace Hecton8.Atmosphere
 
             if (!_listeners.Contains(listener))
                 _listeners.Register(listener);
+
+            EnsureInitialized();
         }
 
         /// <summary>Unregisters one fatal pressure implosion listener.</summary>
@@ -397,6 +460,11 @@ namespace Hecton8.Atmosphere
 
             if (_listeners.Contains(listener))
                 _listeners.Unregister(listener);
+        }
+
+        internal static void Shutdown()
+        {
+            ResetStaticState();
         }
 
         /// <summary>Flushes queued fatal pressure implosion payloads.</summary>
@@ -438,6 +506,9 @@ namespace Hecton8.Atmosphere
 
         public static void Notify(in FatalPressureImplosionEvent implosionEvent)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             Enqueue(new FatalPressureImplosionEventPayload
             {
                 RuntimePosition = implosionEvent.RuntimePosition,
@@ -458,6 +529,7 @@ namespace Hecton8.Atmosphere
                     nameof(FatalPressureImplosionEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                DeferredAtmosphereNativeQueueWarmup.Prewarm(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -469,11 +541,15 @@ namespace Hecton8.Atmosphere
                     nameof(FatalPressureImplosionEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                DeferredAtmosphereNativeQueueWarmup.Prewarm(ref _nextFrameEvents, PendingEventCapacity);
             }
         }
 
         private static bool Enqueue(in FatalPressureImplosionEventPayload payload)
         {
+            if (_listeners.Count <= 0)
+                return false;
+
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportOverflowOncePerFrame();
@@ -570,6 +646,8 @@ namespace Hecton8.Atmosphere
         private const float DefaultLowOxygenThreshold01 = 0.2f;
         private const float DefaultPlayerOxygenConsumptionPercentPerSecond = 0.5f;
         private const float DefaultAtmosphereSlowTickSeconds = 0.1f;
+        private const int MaxAtmosphereCatchupTicks = 4;
+        private const int MaxFakeAtmospherePlayerCountPerRoom = 4;
         private const float DefaultHeatWattsToCelsiusPerSecond = 0.001f;
         private const float DefaultOverheatBrownoutTemperatureCelsius = 80f;
         private const float DefaultOverheatMinimumVoltage = 0.18f;
@@ -578,9 +656,22 @@ namespace Hecton8.Atmosphere
         private const float DefaultRoomHazardRadiusPaddingMeters = 1.25f;
         private const float DefaultFireSmokeVisorGlitchBias = 1.15f;
         private const float DefaultLowOxygenAudioCooldownSeconds = 45f;
+        private const float DefaultFreezingRoomTemperatureCelsius = 0f;
+        private const float DefaultPressureScreechCooldownSeconds = 2.75f;
+        private const float DefaultPressureScreechVolume = 0.82f;
+        private const float DefaultPressureScreechPitchMin = 0.86f;
+        private const float DefaultPressureScreechPitchMax = 1.08f;
+        private const float DefaultToxicRoomVisorPulseCooldownSeconds = 0.35f;
+        private const float DefaultToxicRoomVisorGlitchDurationSeconds = 0.08f;
+        private const float DefaultToxicRoomVisorDistortionHoldSeconds = 0.06f;
+        private const float DefaultToxicRoomVisorDistortionRecovery = 6f;
+        private const float DefaultFireSmokeSootScreenRadiusScale = 0.08f;
+        private const float DefaultFireSmokeSootDitherStrength = 0.58f;
+        private const float DefaultFireSmokeSootDarkenStrength = 0.42f;
         private const float FakeHazardRadiusBaseMeters = 0.85f;
         private const float FakeHazardRadiusVolumeScale = 0.08f;
         private const float FakeHazardRadiusMaxMeters = 6f;
+        private const float BlendFactorPadeInstantThreshold = 8f;
         private const string NativeMemoryOwner = nameof(SubmarineAtmosphereSystem);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private const int PressureImpulseOverlapCapacity = 32;
@@ -603,7 +694,6 @@ namespace Hecton8.Atmosphere
         private const float DefaultBulkheadThermalConductivityWattsPerKelvin = 185f;
         private const float DefaultSealedBulkheadThermalCoupling = 0.35f;
         private const float DefaultOpenBulkheadThermalCoupling = 1f;
-        private const float ThermalConductionCadenceSeconds = 0.5f;
         private const float DefaultFabricatorHeatWattsScale = 0.92f;
         private const float DefaultDrillHeatWattsScale = 0.97f;
         private const float DefaultReactorHeatWattsScale = 1.15f;
@@ -636,6 +726,13 @@ namespace Hecton8.Atmosphere
         private const float DefaultExplosionPressureSpikeKPa = 55f;
         private const int BoilingFaunaContactCapacity = 16;
         private const float Epsilon = 0.0001f;
+        private const int RoomStatusToxicShift = 0;
+        private const int RoomStatusFreezingShift = 8;
+        private const int RoomStatusPressureShift = 16;
+        private const int RoomStatusFireShift = 24;
+        private const uint PressureScreechRngSeed = 0xA511E9B3u;
+
+        private static readonly Vector4 AtmosphereSootDefaultCenter = new Vector4(0.5f, 0.5f, 0f, 0f);
 
         private enum RoomStructuralMaterial : byte
         {
@@ -697,8 +794,18 @@ namespace Hecton8.Atmosphere
             public int RoomIndex;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        private struct PendingAtmosphereMutation
+        {
+            public float OxygenUnits;
+            public float TemperatureDeltaCelsius;
+            public float HydrogenPocketUnits;
+            public float OxygenPocketUnits;
+            public float PressureSpikeKPa;
+        }
+
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         private struct AtmosphereStepJob : IJob
         {
             [ReadOnly] public NativeArray<float> O2Front;
@@ -724,6 +831,7 @@ namespace Hecton8.Atmosphere
             public NativeArray<float> GasVolumeBack;
             public NativeArray<float> TemperatureBack;
             public NativeArray<float> SteamBack;
+            [WriteOnly] public NativeArray<uint> RoomStatusMaskBack;
 
             public int RoomCount;
             public int DoorCount;
@@ -731,28 +839,39 @@ namespace Hecton8.Atmosphere
             public float ReferencePressureKPa;
             public float MinimumGasVolumeCubicMeters;
             public float MaximumPressureKPa;
-            public float DoorConductance;
-            public float MaxTransferUnitsPerSecond;
             public float ReferenceTemperatureCelsius;
             public float FloodWaterTemperatureCelsius;
             public float MinimumTemperatureCelsius;
             public float MaximumTemperatureCelsius;
-            public float AirDensityKilogramsPerCubicMeter;
-            public float AirSpecificHeatJoulesPerKilogramKelvin;
-            public float WaterDensityKilogramsPerCubicMeter;
-            public float WaterSpecificHeatJoulesPerKilogramKelvin;
-            public float MinimumThermalCapacityJoulesPerKelvin;
-            public float ThermalConductionDeltaTime;
-            public float BulkheadThermalConductivityWattsPerKelvin;
-            public float SealedBulkheadThermalCoupling;
-            public float OpenBulkheadThermalCoupling;
-            public float ReferenceTemperatureKelvin;
             public float OxygenTankCapacity;
             public float HeatWattsToCelsiusPerSecond;
+            public float LowOxygenThresholdUnits;
+            public float FreezingTemperatureCelsius;
+            public float HighPressureStatusKPa;
 
             public void Execute()
             {
-                float tankCapacity = math.max(1f, OxygenTankCapacity);
+                float deltaTime = SanitizeNonNegative(DeltaTime);
+                float tankCapacity = math.max(1f, SanitizeFinite(OxygenTankCapacity, DefaultOxygenTankCapacity));
+                float referencePressure = math.max(1f, SanitizeFinite(ReferencePressureKPa, DefaultReferencePressureKPa));
+                float maximumPressure = math.max(referencePressure, SanitizeFinite(MaximumPressureKPa, DefaultMaximumPressureKPa));
+                float minimumGasVolume = math.max(0.001f, SanitizeFinite(MinimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
+                float minimumTemperature = math.min(
+                    SanitizeFinite(MinimumTemperatureCelsius, DefaultMinimumTemperatureCelsius),
+                    SanitizeFinite(MaximumTemperatureCelsius, DefaultMaximumTemperatureCelsius));
+                float maximumTemperature = math.max(
+                    SanitizeFinite(MinimumTemperatureCelsius, DefaultMinimumTemperatureCelsius),
+                    SanitizeFinite(MaximumTemperatureCelsius, DefaultMaximumTemperatureCelsius));
+                float referenceTemperature = SanitizeRange(
+                    ReferenceTemperatureCelsius,
+                    DefaultReferenceTemperatureCelsius,
+                    minimumTemperature,
+                    maximumTemperature);
+                float floodWaterTemperature = SanitizeRange(
+                    FloodWaterTemperatureCelsius,
+                    DefaultFloodWaterTemperatureCelsius,
+                    minimumTemperature,
+                    maximumTemperature);
                 for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
                 {
                     if (roomIndex >= RoomCount)
@@ -760,26 +879,26 @@ namespace Hecton8.Atmosphere
                         O2Back[roomIndex] = 0f;
                         CO2Back[roomIndex] = 0f;
                         InertBack[roomIndex] = 0f;
-                        PressureBack[roomIndex] = ReferencePressureKPa;
-                        GasVolumeBack[roomIndex] = MinimumGasVolumeCubicMeters;
-                        TemperatureBack[roomIndex] = ReferenceTemperatureCelsius;
+                        PressureBack[roomIndex] = referencePressure;
+                        GasVolumeBack[roomIndex] = minimumGasVolume;
+                        TemperatureBack[roomIndex] = referenceTemperature;
                         SteamBack[roomIndex] = 0f;
                         continue;
                     }
 
-                    float roomVolume = math.max(RoomVolumes[roomIndex], MinimumGasVolumeCubicMeters);
-                    float floodVolume = math.clamp(FloodVolumes[roomIndex], 0f, roomVolume - Epsilon);
-                    float gasVolume = math.max(MinimumGasVolumeCubicMeters, roomVolume - floodVolume);
-                    int playerCount = math.max(0, RoomPlayerCounts[roomIndex]);
+                    float roomVolume = math.max(SanitizeFinite(RoomVolumes[roomIndex], minimumGasVolume), minimumGasVolume);
+                    float floodVolume = math.clamp(SanitizeNonNegative(FloodVolumes[roomIndex]), 0f, roomVolume - Epsilon);
+                    float gasVolume = math.max(minimumGasVolume, roomVolume - floodVolume);
+                    int playerCount = math.clamp(RoomPlayerCounts[roomIndex], 0, MaxFakeAtmospherePlayerCountPerRoom);
 
-                    float oxygenDrain = math.max(0f, O2ConsumptionRates[roomIndex]) * playerCount * DeltaTime;
-                    float oxygen = math.clamp(O2Front[roomIndex] - oxygenDrain, 0f, tankCapacity);
+                    float oxygenDrain = SanitizeNonNegative(O2ConsumptionRates[roomIndex]) * playerCount * deltaTime;
+                    float oxygen = math.clamp(SanitizeFinite(O2Front[roomIndex], tankCapacity) - oxygenDrain, 0f, tankCapacity);
                     float carbonDioxide = math.clamp(
-                        CO2Front[roomIndex] + (math.max(0f, CO2GenerationRates[roomIndex]) * playerCount * DeltaTime),
+                        SanitizeNonNegative(CO2Front[roomIndex]) + (SanitizeNonNegative(CO2GenerationRates[roomIndex]) * playerCount * deltaTime),
                         0f,
                         tankCapacity);
                     float inert = 0f;
-                    float steam = math.max(0f, SteamFront[roomIndex]);
+                    float steam = SanitizeNonNegative(SteamFront[roomIndex]);
 
                     O2Back[roomIndex] = oxygen;
                     CO2Back[roomIndex] = carbonDioxide;
@@ -787,20 +906,17 @@ namespace Hecton8.Atmosphere
                     SteamBack[roomIndex] = steam;
                     GasVolumeBack[roomIndex] = gasVolume;
 
-                    float previousTemperature = math.clamp(
-                        TemperatureFront[roomIndex],
-                        MinimumTemperatureCelsius,
-                        MaximumTemperatureCelsius);
+                    float previousTemperature = SanitizeRange(TemperatureFront[roomIndex], referenceTemperature, minimumTemperature, maximumTemperature);
                     float floodFill01 = math.saturate(floodVolume / math.max(roomVolume, Epsilon));
-                    float floodBlend = math.saturate(floodFill01 * DeltaTime * 0.1f);
-                    float mixedTemperature = math.lerp(previousTemperature, FloodWaterTemperatureCelsius, floodBlend);
-                    float temperatureDelta = RoomHeatWatts[roomIndex] * math.max(0f, HeatWattsToCelsiusPerSecond) * DeltaTime;
+                    float floodBlend = math.saturate(floodFill01 * deltaTime * 0.1f);
+                    float mixedTemperature = math.lerp(previousTemperature, floodWaterTemperature, floodBlend);
+                    float temperatureDelta = SanitizeFinite(RoomHeatWatts[roomIndex], 0f) * SanitizeNonNegative(HeatWattsToCelsiusPerSecond) * deltaTime;
                     float roomTemperature = math.clamp(
                         mixedTemperature + temperatureDelta,
-                        MinimumTemperatureCelsius,
-                        MaximumTemperatureCelsius);
+                        minimumTemperature,
+                        maximumTemperature);
                     TemperatureBack[roomIndex] = roomTemperature;
-                    PressureBack[roomIndex] = ResolveFakePressure(roomVolume, floodVolume, steam, roomTemperature);
+                    PressureBack[roomIndex] = ResolveFakePressure(roomVolume, floodVolume, steam, roomTemperature, referencePressure, maximumPressure, referenceTemperature, maximumTemperature);
                 }
 
                 for (int doorIndex = 0; doorIndex < DoorCapacity; doorIndex++)
@@ -814,107 +930,79 @@ namespace Hecton8.Atmosphere
                     if (roomA < 0 || roomA >= RoomCount || roomB < 0 || roomB >= RoomCount)
                         continue;
 
-                    float transferLimit01 = math.saturate(MaxTransferUnitsPerSecond / tankCapacity);
-                    float doorBlend = math.min(0.5f, math.saturate(DoorConductance * DeltaTime) + transferLimit01);
-                    if (doorBlend <= Epsilon)
+                    float averageOxygen = (O2Back[roomA] + O2Back[roomB]) * 0.5f;
+                    float averageToxicity = (CO2Back[roomA] + CO2Back[roomB]) * 0.5f;
+                    float averageHeat = (TemperatureBack[roomA] + TemperatureBack[roomB]) * 0.5f;
+                    float averagePressure = (PressureBack[roomA] + PressureBack[roomB]) * 0.5f;
+
+                    O2Back[roomA] = averageOxygen;
+                    O2Back[roomB] = averageOxygen;
+                    CO2Back[roomA] = averageToxicity;
+                    CO2Back[roomB] = averageToxicity;
+                    TemperatureBack[roomA] = averageHeat;
+                    TemperatureBack[roomB] = averageHeat;
+                    PressureBack[roomA] = averagePressure;
+                    PressureBack[roomB] = averagePressure;
+                }
+
+                uint statusMask = 0u;
+                float lowOxygenThreshold = SanitizeNonNegative(LowOxygenThresholdUnits);
+                float pressureThreshold = math.max(referencePressure, SanitizeFinite(HighPressureStatusKPa, referencePressure));
+                for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+                {
+                    if (roomIndex >= RoomCount)
                         continue;
 
-                    float oxygenDelta = (O2Back[roomB] - O2Back[roomA]) * doorBlend;
-                    float toxicityDelta = (CO2Back[roomB] - CO2Back[roomA]) * doorBlend;
-                    float heatDelta = (TemperatureBack[roomB] - TemperatureBack[roomA]) * doorBlend;
-                    float pressureDelta = (PressureBack[roomB] - PressureBack[roomA]) * doorBlend;
+                    uint roomBit = 1u << roomIndex;
+                    if (O2Back[roomIndex] < lowOxygenThreshold)
+                        statusMask |= roomBit << RoomStatusToxicShift;
 
-                    O2Back[roomA] += oxygenDelta;
-                    O2Back[roomB] -= oxygenDelta;
-                    CO2Back[roomA] += toxicityDelta;
-                    CO2Back[roomB] -= toxicityDelta;
-                    TemperatureBack[roomA] += heatDelta;
-                    TemperatureBack[roomB] -= heatDelta;
-                    PressureBack[roomA] += pressureDelta;
-                    PressureBack[roomB] -= pressureDelta;
+                    if (TemperatureBack[roomIndex] <= FreezingTemperatureCelsius)
+                        statusMask |= roomBit << RoomStatusFreezingShift;
+
+                    if (PressureBack[roomIndex] >= pressureThreshold)
+                        statusMask |= roomBit << RoomStatusPressureShift;
                 }
+
+                RoomStatusMaskBack[0] = statusMask;
             }
 
-            private float ResolveFakePressure(float roomVolume, float floodVolume, float steamVolume, float temperatureCelsius)
+            private static float ResolveFakePressure(
+                float roomVolume,
+                float floodVolume,
+                float steamVolume,
+                float temperatureCelsius,
+                float referencePressure,
+                float maximumPressure,
+                float referenceTemperature,
+                float maximumTemperature)
             {
                 float flood01 = math.saturate(floodVolume / math.max(roomVolume, Epsilon));
                 float steam01 = math.saturate(steamVolume / math.max(roomVolume, Epsilon));
-                float heat01 = math.saturate((temperatureCelsius - ReferenceTemperatureCelsius) / math.max(1f, MaximumTemperatureCelsius - ReferenceTemperatureCelsius));
+                float heat01 = math.saturate((temperatureCelsius - referenceTemperature) / math.max(1f, maximumTemperature - referenceTemperature));
                 float pressure01 = math.saturate((flood01 * 0.65f) + (steam01 * 0.35f) + (heat01 * 0.2f));
                 return math.clamp(
-                    math.lerp(ReferencePressureKPa, MaximumPressureKPa, pressure01),
+                    math.lerp(referencePressure, maximumPressure, pressure01),
                     0f,
-                    MaximumPressureKPa);
+                    maximumPressure);
             }
 
-            private void ApplyBulkheadThermalConduction()
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float SanitizeFinite(float value, float fallback)
             {
-                float conductionDeltaTime = math.max(0f, ThermalConductionDeltaTime);
-                if (conductionDeltaTime <= Epsilon)
-                    return;
-
-                float conductivity = math.max(0f, BulkheadThermalConductivityWattsPerKelvin);
-                if (conductivity <= Epsilon)
-                    return;
-
-                float sealedCoupling = math.saturate(SealedBulkheadThermalCoupling);
-                float openCoupling = math.max(sealedCoupling, OpenBulkheadThermalCoupling);
-                for (int doorIndex = 0; doorIndex < DoorCount; doorIndex++)
-                {
-                    int2 pair = DoorPairs[doorIndex];
-                    int roomA = pair.x;
-                    int roomB = pair.y;
-                    if (roomA < 0 || roomA >= RoomCount || roomB < 0 || roomB >= RoomCount)
-                        continue;
-
-                    float temperatureA = TemperatureBack[roomA];
-                    float temperatureB = TemperatureBack[roomB];
-                    float temperatureDelta = temperatureA - temperatureB;
-                    if (math.abs(temperatureDelta) <= Epsilon)
-                        continue;
-
-                    float capacityA = ResolveRoomThermalCapacity(roomA);
-                    float capacityB = ResolveRoomThermalCapacity(roomB);
-                    float totalCapacity = capacityA + capacityB;
-                    if (totalCapacity <= Epsilon)
-                        continue;
-
-                    float equilibriumTemperature = ((temperatureA * capacityA) + (temperatureB * capacityB)) / totalCapacity;
-                    float maxTransferEnergy = math.abs(temperatureA - equilibriumTemperature) * capacityA;
-                    if (maxTransferEnergy <= Epsilon)
-                        continue;
-
-                    float coupling = DoorSealed[doorIndex] != 0 ? sealedCoupling : openCoupling;
-                    if (coupling <= Epsilon)
-                        continue;
-
-                    float transferEnergy = conductivity * coupling * temperatureDelta * conductionDeltaTime;
-                    float transferMagnitude = math.min(math.abs(transferEnergy), maxTransferEnergy);
-                    if (transferMagnitude <= Epsilon)
-                        continue;
-
-                    float signedEnergy = math.sign(transferEnergy) * transferMagnitude;
-                    TemperatureBack[roomA] = math.clamp(
-                        temperatureA - (signedEnergy / capacityA),
-                        MinimumTemperatureCelsius,
-                        MaximumTemperatureCelsius);
-                    TemperatureBack[roomB] = math.clamp(
-                        temperatureB + (signedEnergy / capacityB),
-                        MinimumTemperatureCelsius,
-                        MaximumTemperatureCelsius);
-                }
+                return math.isfinite(value) ? value : fallback;
             }
 
-            private float ResolveRoomThermalCapacity(int roomIndex)
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float SanitizeNonNegative(float value)
             {
-                float roomVolume = math.max(RoomVolumes[roomIndex], MinimumGasVolumeCubicMeters);
-                float floodVolume = math.clamp(FloodVolumes[roomIndex], 0f, roomVolume - Epsilon);
-                float gasVolume = math.max(MinimumGasVolumeCubicMeters, roomVolume - floodVolume);
-                float airMassKilograms = math.max(0f, gasVolume * math.max(0.1f, AirDensityKilogramsPerCubicMeter));
-                float waterMassKilograms = math.max(0f, floodVolume * math.max(1f, WaterDensityKilogramsPerCubicMeter));
-                float airCapacity = airMassKilograms * math.max(1f, AirSpecificHeatJoulesPerKilogramKelvin);
-                float waterCapacity = waterMassKilograms * math.max(1f, WaterSpecificHeatJoulesPerKilogramKelvin);
-                return math.max(MinimumThermalCapacityJoulesPerKelvin, airCapacity + waterCapacity);
+                return math.isfinite(value) ? math.max(0f, value) : 0f;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private static float SanitizeRange(float value, float fallback, float minimum, float maximum)
+            {
+                return math.clamp(math.isfinite(value) ? value : fallback, minimum, maximum);
             }
         }
 
@@ -931,10 +1019,14 @@ namespace Hecton8.Atmosphere
         [SerializeField, Min(1f)] private float referencePressureKPa = DefaultReferencePressureKPa;
 
         [Tooltip("Legacy pressure setting retained for authored data compatibility. Cheap solver uses one-pass hatch averaging.")]
+#pragma warning disable CS0414
         [SerializeField, Min(0f)] private float doorConductance = DefaultDoorConductance;
+#pragma warning restore CS0414
 
         [Tooltip("Legacy transfer cap retained for authored data compatibility. Cheap solver does not iterate gas transfer.")]
+#pragma warning disable CS0414
         [SerializeField, Min(0f)] private float maxTransferUnitsPerSecond = DefaultMaxTransferUnitsPerSecond;
+#pragma warning restore CS0414
 
         [Tooltip("Gas volume floor used to prevent divide-by-zero when a room is almost fully flooded.")]
         [SerializeField, Min(0.001f)] private float minimumGasVolumeCubicMeters = DefaultMinimumGasVolumeCubicMeters;
@@ -979,11 +1071,41 @@ namespace Hecton8.Atmosphere
         [Tooltip("Extra visor glitch bias while standing inside fake smoke.")]
         [SerializeField, Min(0f)] private float fireSmokeVisorGlitchBias = DefaultFireSmokeVisorGlitchBias;
 
+        [Tooltip("Screen-space soot radius scale applied by the fake smoke fullscreen pass.")]
+        [SerializeField, Range(0f, 0.25f)] private float fireSmokeSootScreenRadiusScale = DefaultFireSmokeSootScreenRadiusScale;
+
+        [Tooltip("Screen-space soot dither strength applied by the fake smoke fullscreen pass.")]
+        [SerializeField, Range(0f, 1f)] private float fireSmokeSootDitherStrength = DefaultFireSmokeSootDitherStrength;
+
+        [Tooltip("Screen-space darkening strength applied by the fake smoke fullscreen pass.")]
+        [SerializeField, Range(0f, 1f)] private float fireSmokeSootDarkenStrength = DefaultFireSmokeSootDarkenStrength;
+
         [Tooltip("Audio log played once per cooldown when the occupied room falls below low-O2 threshold.")]
         [SerializeField] private AudioLogData lowOxygenGaspingAudioLog;
 
         [Tooltip("Minimum seconds between low-O2 gasping audio log triggers.")]
         [SerializeField, Min(0f)] private float lowOxygenAudioCooldownSeconds = DefaultLowOxygenAudioCooldownSeconds;
+
+        [Tooltip("Temperature where the room status bit becomes Freezing.")]
+        [SerializeField] private float freezingRoomTemperatureCelsius = DefaultFreezingRoomTemperatureCelsius;
+
+        [Tooltip("Random metal screech clips used when the room Pressure bit is active.")]
+        [SerializeField] private AudioClip[] pressureScreechClips;
+
+        [Tooltip("Minimum seconds between high-pressure hull creak fakes.")]
+        [SerializeField, Min(0f)] private float pressureScreechCooldownSeconds = DefaultPressureScreechCooldownSeconds;
+
+        [Tooltip("World-space hull screech volume.")]
+        [SerializeField, Range(0f, 1f)] private float pressureScreechVolume = DefaultPressureScreechVolume;
+
+        [Tooltip("Minimum random pitch for high-pressure hull screech fakes.")]
+        [SerializeField, Range(0.25f, 2f)] private float pressureScreechPitchMin = DefaultPressureScreechPitchMin;
+
+        [Tooltip("Maximum random pitch for high-pressure hull screech fakes.")]
+        [SerializeField, Range(0.25f, 2f)] private float pressureScreechPitchMax = DefaultPressureScreechPitchMax;
+
+        [Tooltip("Minimum seconds between Toxic-room visor chromatic pulses.")]
+        [SerializeField, Min(0f)] private float toxicRoomVisorPulseCooldownSeconds = DefaultToxicRoomVisorPulseCooldownSeconds;
 
         [Header("── Thermodynamics ──────────────────")]
         [Tooltip("Reference dry-room temperature in Celsius used when room state is reset.")]
@@ -1014,16 +1136,26 @@ namespace Hecton8.Atmosphere
         [SerializeField, Min(1f)] private float minimumThermalCapacityJoulesPerKelvin = DefaultMinimumThermalCapacityJoulesPerKelvin;
 
         [Tooltip("Bulkhead thermal conductivity used by the room-to-room Fourier conduction pass in W/K.")]
+#pragma warning disable CS0414
         [SerializeField, Min(0f)] private float bulkheadThermalConductivityWattsPerKelvin = DefaultBulkheadThermalConductivityWattsPerKelvin;
+#pragma warning restore CS0414
 
         [Tooltip("Fraction of bulkhead conductivity applied while the connecting door is sealed.")]
+#pragma warning disable CS0414
         [SerializeField, Range(0f, 1f)] private float sealedBulkheadThermalCoupling = DefaultSealedBulkheadThermalCoupling;
+#pragma warning restore CS0414
 
         [Tooltip("Multiplier applied to bulkhead conductivity while the connecting door is open.")]
+#pragma warning disable CS0414
         [SerializeField, Min(0f)] private float openBulkheadThermalCoupling = DefaultOpenBulkheadThermalCoupling;
+#pragma warning restore CS0414
+
         [Header("Steam Phase Change")]
         [Tooltip("Legacy temperature reference retained for authored data compatibility.")]
+#pragma warning disable CS0414
         [SerializeField, Min(1f)] private float referenceTemperatureKelvin = DefaultReferenceTemperatureKelvin;
+#pragma warning restore CS0414
+
         [Tooltip("Expansion ratio applied when liquid seawater flashes into steam inside a flooded overheated room.")]
         [SerializeField, Min(1f)] private float steamExpansionRatio = DefaultSteamExpansionRatio;
         [Tooltip("Liquid-water vaporization rate in cubic meters per second for each Celsius above the boiling threshold.")]
@@ -1124,8 +1256,9 @@ namespace Hecton8.Atmosphere
         [Tooltip("Safety cap on one electrolysis explosion impulse.")]
         [SerializeField, Min(1f)] private float explosionMaximumImpulseNewtonSeconds = DefaultExplosionMaximumImpulseNewtonSeconds;
 
-        [Tooltip("Pressure spike injected into the room when a flooded overloaded node electrolyzes violently.")]
-        [SerializeField, Min(0f)] private float electrolysisPressureSpikeKPa = DefaultExplosionPressureSpikeKPa;
+        [Tooltip("Pressure spike injected into the room when a flooded overloaded node detonates violently.")]
+        [FormerlySerializedAs("electrolysisPressureSpikeKPa")]
+        [SerializeField, Min(0f)] private float explosionPressureSpikeKPa = DefaultExplosionPressureSpikeKPa;
 
         [Header("── Pressure Blowout ──────────────────")]
         [Tooltip("Radius around an opened bulkhead that receives the pressure blowout impulse.")]
@@ -1134,7 +1267,7 @@ namespace Hecton8.Atmosphere
         [Tooltip("Impulse duration used to convert raw pressure force into a one-shot rigidbody impulse.")]
         [SerializeField, Min(0.001f)] private float pressureImpulseDurationSeconds = DefaultPressureImpulseDurationSeconds;
 
-        [Tooltip("Distance falloff exponent applied to bodies near the bulkhead opening.")]
+        [Tooltip("Cheap squared-distance falloff bias applied to bodies near the bulkhead opening. Kept serialized under the legacy field name.")]
         [SerializeField, Min(0.25f)] private float pressureImpulseFalloffExponent = DefaultPressureImpulseFalloffExponent;
 
         [Tooltip("Safety cap on one blowout impulse magnitude in newton-seconds.")]
@@ -1157,13 +1290,18 @@ namespace Hecton8.Atmosphere
 
         private Transform _cachedTransform;
         private Transform _playerTransform;
+        private Camera _playerCamera;
         private Rigidbody _submarineBody;
         private bool _registered;
         private bool _topologySeeded;
         private bool _thermalEmittersSeeded;
+        private bool _emergencyVentPipesSeeded;
+        private int _topologyRoomCount = -1;
+        private int _topologyDoorCount = -1;
         private JobHandle _atmosphereJobHandle;
         private JobHandle _disposeHandle;
         private bool _atmosphereJobRunning;
+        private float _scheduledAtmosphereDeltaTime;
 
         private NativeArray<float> _roomVolumes;
         private NativeArray<float> _floodVolumes;
@@ -1187,6 +1325,8 @@ namespace Hecton8.Atmosphere
         private NativeArray<float> _hydrogenPocketFront;
         private NativeArray<float> _oxygenPocketFront;
         private NativeArray<float> _roomHeatWatts;
+        private NativeArray<uint> _roomStatusMaskFront;
+        private NativeArray<uint> _roomStatusMaskBack;
         private NativeArray<int2> _doorPairs;
         private NativeArray<byte> _doorSealed;
         private NativeArray<byte> _doorSealedPrevious;
@@ -1194,15 +1334,20 @@ namespace Hecton8.Atmosphere
         private readonly Collider[] _pressureImpulseOverlapBuffer = new Collider[PressureImpulseOverlapCapacity];
         // COLD ALLOC: Rigidbody[32] — unique-body scratch for pressure blowout dispatch — owner: SubmarineAtmosphereSystem
         private readonly Rigidbody[] _pressureImpulseBodyBuffer = new Rigidbody[PressureImpulseOverlapCapacity];
+        // COLD ALLOC: float[32] - precomputed pressure blowout falloff per unique body - owner: SubmarineAtmosphereSystem
+        private readonly float[] _pressureImpulseFalloffBuffer = new float[PressureImpulseOverlapCapacity];
         // COLD ALLOC: int[8] â€” per-room boiling hazard source IDs â€” owner: SubmarineAtmosphereSystem
         private readonly int[] _boilingHazardIds = new int[RoomCapacity];
-        // COLD ALLOC: int[8] - per-room low-O2 toxicity hazard source IDs - owner: SubmarineAtmosphereSystem
+        private uint _boilingHazardActiveMask;
+        // COLD ALLOC: int[8] — per-room low-O2 toxicity hazard source IDs — owner: SubmarineAtmosphereSystem
         private readonly int[] _toxicRoomHazardIds = new int[RoomCapacity];
-        // COLD ALLOC: int[8] - per-room fake smoke hazard source IDs - owner: SubmarineAtmosphereSystem
+        // COLD ALLOC: int[8] — per-room fake smoke hazard source IDs — owner: SubmarineAtmosphereSystem
         private readonly int[] _fireSmokeHazardIds = new int[RoomCapacity];
+        private uint _toxicRoomHazardActiveMask;
+        private uint _fireSmokeHazardActiveMask;
         // COLD ALLOC: BaseModule[8] — cached room-to-base brownout links — owner: SubmarineAtmosphereSystem
         private readonly BaseModule[] _brownoutRoomModules = new BaseModule[RoomCapacity];
-        // COLD ALLOC: BaseModule[8] - cached room-to-base module links for visual atmosphere fakes - owner: SubmarineAtmosphereSystem
+        // COLD ALLOC: BaseModule[8] — cached room-to-base module links for visual atmosphere fakes — owner: SubmarineAtmosphereSystem
         private readonly BaseModule[] _atmosphereRoomModules = new BaseModule[RoomCapacity];
         private uint _overheatVisualActiveMask;
         // COLD ALLOC: SpatialQueryHit[16] â€” fauna spillover query scratch for boiling rooms â€” owner: SubmarineAtmosphereSystem
@@ -1213,30 +1358,83 @@ namespace Hecton8.Atmosphere
         private readonly DrillHeatEmitter[] _drillHeatEmitters = new DrillHeatEmitter[HeatEmitterCapacity];
         // COLD ALLOC: ReactorHeatEmitter[24] — cached reactor heat sources mapped to rooms — owner: SubmarineAtmosphereSystem
         private readonly ReactorHeatEmitter[] _reactorHeatEmitters = new ReactorHeatEmitter[HeatEmitterCapacity];
-        // COLD ALLOC: bool[24] — one-shot reactor meltdown guards keyed to cached emitter slots — owner: SubmarineAtmosphereSystem
-        private readonly bool[] _reactorMeltdownTriggered = new bool[HeatEmitterCapacity];
+        private uint _reactorMeltdownTriggeredMask;
         // COLD ALLOC: List<Fabricator>[8] — cold-path fabricator scan scratch for thermal emitter cache — owner: SubmarineAtmosphereSystem
         private readonly System.Collections.Generic.List<Fabricator> _fabricatorScanBuffer = new System.Collections.Generic.List<Fabricator>(8);
         // COLD ALLOC: List<DeepDrillModule>[8] — cold-path drill scan scratch for thermal emitter cache — owner: SubmarineAtmosphereSystem
         private readonly System.Collections.Generic.List<DeepDrillModule> _drillScanBuffer = new System.Collections.Generic.List<DeepDrillModule>(8);
         // COLD ALLOC: List<BioReactor>[8] — cold-path reactor scan scratch for thermal emitter cache — owner: SubmarineAtmosphereSystem
         private readonly System.Collections.Generic.List<BioReactor> _reactorScanBuffer = new System.Collections.Generic.List<BioReactor>(8);
+        // COLD ALLOC: PendingAtmosphereMutation[8] — deferred authoritative room writes while Burst atmosphere job owns BackBuffer — owner: SubmarineAtmosphereSystem
+        private readonly PendingAtmosphereMutation[] _pendingAtmosphereMutations = new PendingAtmosphereMutation[RoomCapacity];
+        // COLD ALLOC: LogisticsPipeNode[8] - room-indexed emergency vent cache, avoids component scans in pressure path - owner: SubmarineAtmosphereSystem
+        private readonly LogisticsPipeNode[] _emergencyVentPipesByRoom = new LogisticsPipeNode[RoomCapacity];
+        // COLD ALLOC: List<LogisticsPipeNode>[16] - cold scan scratch for emergency vent cache seeding - owner: SubmarineAtmosphereSystem
         private readonly System.Collections.Generic.List<LogisticsPipeNode> _ventPipeScanBuffer = new System.Collections.Generic.List<LogisticsPipeNode>(16);
+        private uint _emergencyVentRoomMask;
         private int _fabricatorHeatEmitterCount;
         private int _drillHeatEmitterCount;
         private int _reactorHeatEmitterCount;
-        private float _thermalConductionAccumulator;
         private float _atmosphereStepAccumulator;
         private float _lowOxygenAudioCooldownRemaining;
+        private float _pressureScreechCooldownRemaining;
+        private float _toxicRoomVisorPulseCooldownRemaining;
+        private uint _pressureScreechRngState = PressureScreechRngSeed;
+        private uint _runtimeRoomStatusMask;
+        private uint _pendingAtmosphereMutationMask;
+        private bool _smokeOverlayRuntimeActive;
+        private bool _smokeOverlayRuntimeDirty = true;
+        private Vector4 _lastSmokeOverlayParams;
+        private Vector4 _lastSmokeOverlayCenter = AtmosphereSootDefaultCenter;
 
-        public int RoomCount => fluidDynamics != null ? fluidDynamics.CompartmentCount : 0;
+        public int RoomCount => fluidDynamics != null ? math.clamp(fluidDynamics.CompartmentCount, 0, RoomCapacity) : 0;
+
+        internal uint RuntimeRoomStatusMask => _runtimeRoomStatusMask;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FiniteOr(float value, float fallback)
+        {
+            return math.isfinite(value) ? value : fallback;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float FiniteClampedOr(float value, float fallback, float minimum, float maximum)
+        {
+            return math.clamp(math.isfinite(value) ? value : fallback, minimum, maximum);
+        }
+
+        private void ResolveSafeTemperatureBounds(out float minimumTemperature, out float maximumTemperature)
+        {
+            float rawMinimum = FiniteOr(minimumTemperatureCelsius, DefaultMinimumTemperatureCelsius);
+            float rawMaximum = FiniteOr(maximumTemperatureCelsius, DefaultMaximumTemperatureCelsius);
+            minimumTemperature = math.min(rawMinimum, rawMaximum);
+            maximumTemperature = math.max(rawMinimum, rawMaximum);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveSafeReferencePressureKPa()
+        {
+            return math.max(1f, FiniteOr(referencePressureKPa, DefaultReferencePressureKPa));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveSafeMaximumPressureKPa()
+        {
+            return math.max(ResolveSafeReferencePressureKPa(), FiniteOr(maximumPressureKPa, DefaultMaximumPressureKPa));
+        }
 
         public float GetRoomPressureKPa(int roomIndex)
         {
             if (!_pressureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
-                return referencePressureKPa;
+                return ResolveSafeReferencePressureKPa();
 
-            return _pressureFront[roomIndex];
+            return FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
         }
 
         public float GetRoomOxygenFraction(int roomIndex)
@@ -1244,7 +1442,7 @@ namespace Hecton8.Atmosphere
             if (!_o2Front.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
                 return DefaultInitialOxygenFraction;
 
-            return math.saturate(_o2Front[roomIndex] / math.max(1f, oxygenTankCapacity));
+            return math.saturate(FiniteNonNegativeOrZero(_o2Front[roomIndex]) / math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity)));
         }
 
         public float GetRoomCarbonDioxideFraction(int roomIndex)
@@ -1252,15 +1450,16 @@ namespace Hecton8.Atmosphere
             if (!_co2Front.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
                 return DefaultInitialCarbonDioxideFraction;
 
-            return math.saturate(_co2Front[roomIndex] / math.max(1f, oxygenTankCapacity));
+            return math.saturate(FiniteNonNegativeOrZero(_co2Front[roomIndex]) / math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity)));
         }
 
         public float GetRoomTemperatureCelsius(int roomIndex)
         {
             if (!_temperatureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
-                return referenceTemperatureCelsius;
+                return FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
 
-            return _temperatureFront[roomIndex];
+            ResolveSafeTemperatureBounds(out float minimumTemperature, out float maximumTemperature);
+            return FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minimumTemperature, maximumTemperature);
         }
 
         public float GetRoomFloodFillRatio(int roomIndex)
@@ -1268,13 +1467,19 @@ namespace Hecton8.Atmosphere
             if (!_floodVolumes.IsCreated || !_roomVolumes.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
                 return 0f;
 
-            float roomVolume = math.max(Epsilon, _roomVolumes[roomIndex]);
-            return math.saturate(_floodVolumes[roomIndex] / roomVolume);
+            float roomVolume = math.max(Epsilon, FiniteOr(_roomVolumes[roomIndex], Epsilon));
+            return math.saturate(FiniteNonNegativeOrZero(_floodVolumes[roomIndex]) / roomVolume);
         }
 
         public void InjectOxygenUnits(int roomIndex, float oxygenUnits)
         {
+            InjectOxygenUnitsInternal(roomIndex, oxygenUnits);
+        }
+
+        private float InjectOxygenUnitsInternal(int roomIndex, float oxygenUnits)
+        {
             if (oxygenUnits <= 0f ||
+                !math.isfinite(oxygenUnits) ||
                 !_o2Front.IsCreated ||
                 !_co2Front.IsCreated ||
                 !_inertFront.IsCreated ||
@@ -1283,24 +1488,21 @@ namespace Hecton8.Atmosphere
                 roomIndex < 0 ||
                 roomIndex >= RoomCount)
             {
-                return;
+                return 0f;
             }
 
-            CompleteAtmosphereJobForAuthoritativeWrite();
-            float currentOxygenUnits = math.max(0f, _o2Front[roomIndex]);
-            float maximumOxygenUnits = ResolveRoomMaxOxygenCapacityUnits(roomIndex);
-            float clampedOxygenDelta = math.min(oxygenUnits, math.max(0f, maximumOxygenUnits - currentOxygenUnits));
-            if (clampedOxygenDelta <= 0f)
-                return;
+            if (!TryPrepareAtmosphereFrontForWrite())
+                return QueuePendingOxygenUnits(roomIndex, oxygenUnits);
 
-            _o2Front[roomIndex] = currentOxygenUnits + clampedOxygenDelta;
-            RefreshRoomPressureImmediate(roomIndex);
+            return ApplyOxygenUnitsImmediate(roomIndex, oxygenUnits);
         }
 
         internal float TransferOxygenFromStorage(int roomIndex, float requestedOxygenUnits, ref float storageOxygenUnits)
         {
             if (requestedOxygenUnits <= 0f ||
+                !math.isfinite(requestedOxygenUnits) ||
                 storageOxygenUnits <= 0f ||
+                !math.isfinite(storageOxygenUnits) ||
                 !_o2Front.IsCreated ||
                 roomIndex < 0 ||
                 roomIndex >= RoomCount)
@@ -1308,18 +1510,21 @@ namespace Hecton8.Atmosphere
                 return 0f;
             }
 
-            CompleteAtmosphereJobForAuthoritativeWrite();
-            float currentOxygenUnits = math.max(0f, _o2Front[roomIndex]);
-            float capacity = ResolveRoomMaxOxygenCapacityUnits(roomIndex);
-            float transfer = math.min(
-                math.min(requestedOxygenUnits, storageOxygenUnits),
-                math.max(0f, capacity - currentOxygenUnits));
-            if (transfer <= Epsilon)
+            if (!TryPrepareAtmosphereFrontForWrite())
+            {
+                float queuedTransfer = QueuePendingOxygenUnits(roomIndex, math.min(requestedOxygenUnits, storageOxygenUnits));
+                if (queuedTransfer <= 0f)
+                    return 0f;
+
+                storageOxygenUnits = math.max(0f, storageOxygenUnits - queuedTransfer);
+                return queuedTransfer;
+            }
+
+            float transfer = ApplyOxygenUnitsImmediate(roomIndex, math.min(requestedOxygenUnits, storageOxygenUnits));
+            if (transfer <= 0f)
                 return 0f;
 
-            _o2Front[roomIndex] = currentOxygenUnits + transfer;
             storageOxygenUnits = math.max(0f, storageOxygenUnits - transfer);
-            RefreshRoomPressureImmediate(roomIndex);
             return transfer;
         }
 
@@ -1332,6 +1537,7 @@ namespace Hecton8.Atmosphere
             float oxygenUnitsPerMaturePlant)
         {
             if (oxygenUnitsPerMaturePlant <= 0f ||
+                !math.isfinite(oxygenUnitsPerMaturePlant) ||
                 !slots.IsCreated ||
                 roomIndex < 0 ||
                 roomIndex >= RoomCount)
@@ -1358,28 +1564,52 @@ namespace Hecton8.Atmosphere
             if (oxygenUnits <= 0f)
                 return 0f;
 
-            InjectOxygenUnits(roomIndex, oxygenUnits);
-            return oxygenUnits;
+            return InjectOxygenUnitsInternal(roomIndex, oxygenUnits);
         }
 
         public void InjectRoomTemperatureDeltaCelsius(int roomIndex, float deltaCelsius)
         {
-            if (deltaCelsius == 0f || !_temperatureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+            if (deltaCelsius == 0f ||
+                !math.isfinite(deltaCelsius) ||
+                !_temperatureFront.IsCreated ||
+                roomIndex < 0 ||
+                roomIndex >= RoomCount)
+            {
                 return;
+            }
 
-            CompleteAtmosphereJobForAuthoritativeWrite();
+            if (!TryPrepareAtmosphereFrontForWrite())
+            {
+                QueuePendingTemperatureDelta(roomIndex, deltaCelsius);
+                return;
+            }
+
+            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+            float currentTemperature = FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
             _temperatureFront[roomIndex] = math.clamp(
-                _temperatureFront[roomIndex] + deltaCelsius,
-                minimumTemperatureCelsius,
-                maximumTemperatureCelsius);
+                currentTemperature + deltaCelsius,
+                minTemperature,
+                maxTemperature);
+            RefreshRoomPressureImmediate(roomIndex);
         }
 
         public void InjectRoomHeatEnergyJoules(int roomIndex, float heatEnergyJoules)
         {
-            if (heatEnergyJoules <= 0f || !_temperatureFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+            if (heatEnergyJoules <= 0f ||
+                !math.isfinite(heatEnergyJoules) ||
+                !_temperatureFront.IsCreated ||
+                roomIndex < 0 ||
+                roomIndex >= RoomCount)
+            {
                 return;
+            }
 
-            CompleteAtmosphereJobForAuthoritativeWrite();
+            if (!TryPrepareAtmosphereFrontForWrite())
+            {
+                QueuePendingHeatEnergy(roomIndex, heatEnergyJoules);
+                return;
+            }
+
             float thermalCapacity = ResolveInstantThermalCapacity(roomIndex);
             if (thermalCapacity <= Epsilon)
                 return;
@@ -1388,15 +1618,19 @@ namespace Hecton8.Atmosphere
             if (!math.isfinite(deltaCelsius) || deltaCelsius <= 0f)
                 return;
 
+            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+            float currentTemperature = FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
             _temperatureFront[roomIndex] = math.clamp(
-                _temperatureFront[roomIndex] + deltaCelsius,
-                minimumTemperatureCelsius,
-                maximumTemperatureCelsius);
+                currentTemperature + deltaCelsius,
+                minTemperature,
+                maxTemperature);
+            RefreshRoomPressureImmediate(roomIndex);
         }
 
         public void TransferRoomHeatEnergyJoules(int sourceRoomIndex, int destinationRoomIndex, float heatEnergyJoules)
         {
             if (heatEnergyJoules <= 0f ||
+                !math.isfinite(heatEnergyJoules) ||
                 !_temperatureFront.IsCreated ||
                 sourceRoomIndex < 0 || sourceRoomIndex >= RoomCount ||
                 destinationRoomIndex < 0 || destinationRoomIndex >= RoomCount ||
@@ -1405,7 +1639,12 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            CompleteAtmosphereJobForAuthoritativeWrite();
+            if (!TryPrepareAtmosphereFrontForWrite())
+            {
+                QueuePendingHeatEnergy(sourceRoomIndex, -heatEnergyJoules);
+                QueuePendingHeatEnergy(destinationRoomIndex, heatEnergyJoules);
+                return;
+            }
 
             float sourceCapacity = ResolveInstantThermalCapacity(sourceRoomIndex);
             float destinationCapacity = ResolveInstantThermalCapacity(destinationRoomIndex);
@@ -1417,30 +1656,244 @@ namespace Hecton8.Atmosphere
             if (!math.isfinite(sourceDelta) || !math.isfinite(destinationDelta) || sourceDelta <= 0f || destinationDelta <= 0f)
                 return;
 
+            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+            float sourceTemperature = FiniteClampedOr(_temperatureFront[sourceRoomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
+            float destinationTemperature = FiniteClampedOr(_temperatureFront[destinationRoomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
             _temperatureFront[sourceRoomIndex] = math.clamp(
-                _temperatureFront[sourceRoomIndex] - sourceDelta,
-                minimumTemperatureCelsius,
-                maximumTemperatureCelsius);
+                sourceTemperature - sourceDelta,
+                minTemperature,
+                maxTemperature);
             _temperatureFront[destinationRoomIndex] = math.clamp(
-                _temperatureFront[destinationRoomIndex] + destinationDelta,
-                minimumTemperatureCelsius,
-                maximumTemperatureCelsius);
+                destinationTemperature + destinationDelta,
+                minTemperature,
+                maxTemperature);
+            RefreshRoomPressureImmediate(sourceRoomIndex);
+            RefreshRoomPressureImmediate(destinationRoomIndex);
         }
 
         public void InjectElectrolysisGasPocket(int roomIndex, float hydrogenUnits, float oxygenUnits, float pressureSpikeKPa)
         {
-            if (roomIndex < 0 || roomIndex >= RoomCount || !_hydrogenPocketFront.IsCreated || !_oxygenPocketFront.IsCreated)
+            if (roomIndex < 0 ||
+                roomIndex >= RoomCount ||
+                !_hydrogenPocketFront.IsCreated ||
+                !_oxygenPocketFront.IsCreated ||
+                (!IsPositiveFinite(hydrogenUnits) && !IsPositiveFinite(oxygenUnits) && !IsPositiveFinite(pressureSpikeKPa)))
+            {
+                return;
+            }
+
+            if (!TryPrepareAtmosphereFrontForWrite())
+            {
+                QueuePendingElectrolysisPocket(roomIndex, hydrogenUnits, oxygenUnits, pressureSpikeKPa);
+                return;
+            }
+
+            if (IsPositiveFinite(hydrogenUnits))
+                _hydrogenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]) + hydrogenUnits;
+
+            if (IsPositiveFinite(oxygenUnits))
+                _oxygenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex]) + oxygenUnits;
+
+            if (_pressureFront.IsCreated && IsPositiveFinite(pressureSpikeKPa))
+            {
+                float currentPressure = FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+                _pressureFront[roomIndex] = math.clamp(
+                    currentPressure + pressureSpikeKPa,
+                    0f,
+                    ResolveSafeMaximumPressureKPa());
+                RefreshRoomStatusBitsImmediate(roomIndex);
+            }
+        }
+
+        private bool TryPrepareAtmosphereFrontForWrite()
+        {
+            if (_atmosphereJobRunning)
+                return false;
+
+            ApplyPendingAtmosphereMutations();
+            return true;
+        }
+
+        private float ApplyOxygenUnitsImmediate(int roomIndex, float oxygenUnits)
+        {
+            if (oxygenUnits <= 0f || !math.isfinite(oxygenUnits) || !_o2Front.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
+                return 0f;
+
+            float currentOxygenUnits = FiniteNonNegativeOrZero(_o2Front[roomIndex]);
+            float maximumOxygenUnits = ResolveRoomMaxOxygenCapacityUnits(roomIndex);
+            float clampedOxygenDelta = math.min(oxygenUnits, math.max(0f, maximumOxygenUnits - currentOxygenUnits));
+            if (clampedOxygenDelta <= Epsilon)
+                return 0f;
+
+            _o2Front[roomIndex] = currentOxygenUnits + clampedOxygenDelta;
+            RefreshRoomPressureImmediate(roomIndex);
+            return clampedOxygenDelta;
+        }
+
+        private float QueuePendingOxygenUnits(int roomIndex, float oxygenUnits)
+        {
+            if (oxygenUnits <= 0f || !math.isfinite(oxygenUnits) || roomIndex < 0 || roomIndex >= RoomCount || !_o2Front.IsCreated)
+                return 0f;
+
+            ref PendingAtmosphereMutation mutation = ref _pendingAtmosphereMutations[roomIndex];
+            float currentOxygenUnits = FiniteNonNegativeOrZero(_o2Front[roomIndex]);
+            float pendingOxygenUnits = math.isfinite(mutation.OxygenUnits) ? math.max(0f, mutation.OxygenUnits) : 0f;
+            float maximumOxygenUnits = ResolveRoomMaxOxygenCapacityUnits(roomIndex);
+            float queuedOxygenUnits = math.min(
+                oxygenUnits,
+                math.max(0f, maximumOxygenUnits - currentOxygenUnits - pendingOxygenUnits));
+            if (queuedOxygenUnits <= Epsilon)
+                return 0f;
+
+            mutation.OxygenUnits = pendingOxygenUnits + queuedOxygenUnits;
+            _pendingAtmosphereMutationMask |= 1u << roomIndex;
+            return queuedOxygenUnits;
+        }
+
+        private void QueuePendingTemperatureDelta(int roomIndex, float deltaCelsius)
+        {
+            if (deltaCelsius == 0f || !math.isfinite(deltaCelsius) || roomIndex < 0 || roomIndex >= RoomCount)
                 return;
 
-            CompleteAtmosphereJobForAuthoritativeWrite();
-            _hydrogenPocketFront[roomIndex] = math.max(0f, _hydrogenPocketFront[roomIndex] + hydrogenUnits);
-            _oxygenPocketFront[roomIndex] = math.max(0f, _oxygenPocketFront[roomIndex] + oxygenUnits);
-            if (_pressureFront.IsCreated && pressureSpikeKPa > 0f)
+            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+            float currentTemperature = _temperatureFront.IsCreated
+                ? FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature)
+                : FiniteClampedOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius, minTemperature, maxTemperature);
+            ref PendingAtmosphereMutation mutation = ref _pendingAtmosphereMutations[roomIndex];
+            float pendingTemperatureDelta = math.isfinite(mutation.TemperatureDeltaCelsius)
+                ? mutation.TemperatureDeltaCelsius
+                : 0f;
+            float minDelta = minTemperature - currentTemperature;
+            float maxDelta = maxTemperature - currentTemperature;
+            float clampedPendingDelta = math.clamp(pendingTemperatureDelta + deltaCelsius, minDelta, maxDelta);
+            if (math.abs(clampedPendingDelta) <= Epsilon)
             {
-                _pressureFront[roomIndex] = math.clamp(
-                    _pressureFront[roomIndex] + pressureSpikeKPa,
-                    0f,
-                    maximumPressureKPa);
+                mutation.TemperatureDeltaCelsius = 0f;
+                return;
+            }
+
+            mutation.TemperatureDeltaCelsius = clampedPendingDelta;
+            _pendingAtmosphereMutationMask |= 1u << roomIndex;
+        }
+
+        private void QueuePendingHeatEnergy(int roomIndex, float heatEnergyJoules)
+        {
+            if (heatEnergyJoules == 0f || !math.isfinite(heatEnergyJoules) || roomIndex < 0 || roomIndex >= RoomCount)
+                return;
+
+            float thermalCapacity = ResolveInstantThermalCapacity(roomIndex);
+            if (thermalCapacity <= Epsilon)
+                return;
+
+            QueuePendingTemperatureDelta(roomIndex, heatEnergyJoules / thermalCapacity);
+        }
+
+        private void QueuePendingElectrolysisPocket(int roomIndex, float hydrogenUnits, float oxygenUnits, float pressureSpikeKPa)
+        {
+            if (roomIndex < 0 ||
+                roomIndex >= RoomCount ||
+                (!IsPositiveFinite(hydrogenUnits) && !IsPositiveFinite(oxygenUnits) && !IsPositiveFinite(pressureSpikeKPa)))
+            {
+                return;
+            }
+
+            ref PendingAtmosphereMutation mutation = ref _pendingAtmosphereMutations[roomIndex];
+            bool hasMutation = false;
+            if (IsPositiveFinite(hydrogenUnits))
+            {
+                float pendingHydrogenUnits = math.isfinite(mutation.HydrogenPocketUnits)
+                    ? math.max(0f, mutation.HydrogenPocketUnits)
+                    : 0f;
+                mutation.HydrogenPocketUnits = pendingHydrogenUnits + hydrogenUnits;
+                hasMutation = true;
+            }
+
+            if (IsPositiveFinite(oxygenUnits))
+            {
+                float pendingOxygenPocketUnits = math.isfinite(mutation.OxygenPocketUnits)
+                    ? math.max(0f, mutation.OxygenPocketUnits)
+                    : 0f;
+                mutation.OxygenPocketUnits = pendingOxygenPocketUnits + oxygenUnits;
+                hasMutation = true;
+            }
+
+            if (IsPositiveFinite(pressureSpikeKPa))
+            {
+                float maximumPressure = ResolveSafeMaximumPressureKPa();
+                float currentPressure = _pressureFront.IsCreated
+                    ? FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, maximumPressure)
+                    : ResolveSafeReferencePressureKPa();
+                float pendingPressureSpike = math.isfinite(mutation.PressureSpikeKPa)
+                    ? math.max(0f, mutation.PressureSpikeKPa)
+                    : 0f;
+                float clampedPressureSpike = math.min(
+                    pressureSpikeKPa,
+                    math.max(0f, maximumPressure - currentPressure - pendingPressureSpike));
+                if (clampedPressureSpike > Epsilon)
+                {
+                    mutation.PressureSpikeKPa = pendingPressureSpike + clampedPressureSpike;
+                    hasMutation = true;
+                }
+            }
+
+            if (hasMutation)
+                _pendingAtmosphereMutationMask |= 1u << roomIndex;
+        }
+
+        private void ApplyPendingAtmosphereMutations()
+        {
+            uint mutationMask = _pendingAtmosphereMutationMask;
+            if (mutationMask == 0u)
+                return;
+
+            _pendingAtmosphereMutationMask = 0u;
+            int roomCount = RoomCount;
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+            {
+                uint roomBit = 1u << roomIndex;
+                if ((mutationMask & roomBit) == 0u)
+                    continue;
+
+                PendingAtmosphereMutation mutation = _pendingAtmosphereMutations[roomIndex];
+                _pendingAtmosphereMutations[roomIndex] = default;
+                if (roomIndex >= roomCount)
+                    continue;
+
+                if (IsPositiveFinite(mutation.OxygenUnits))
+                    ApplyOxygenUnitsImmediate(roomIndex, mutation.OxygenUnits);
+
+                bool pressureDirty = false;
+                if (_temperatureFront.IsCreated &&
+                    mutation.TemperatureDeltaCelsius != 0f &&
+                    math.isfinite(mutation.TemperatureDeltaCelsius))
+                {
+                    ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+                    float currentTemperature = FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
+                    _temperatureFront[roomIndex] = math.clamp(
+                        currentTemperature + mutation.TemperatureDeltaCelsius,
+                        minTemperature,
+                        maxTemperature);
+                    pressureDirty = true;
+                }
+
+                if (pressureDirty)
+                    RefreshRoomPressureImmediate(roomIndex);
+
+                if (_hydrogenPocketFront.IsCreated && IsPositiveFinite(mutation.HydrogenPocketUnits))
+                    _hydrogenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]) + mutation.HydrogenPocketUnits;
+
+                if (_oxygenPocketFront.IsCreated && IsPositiveFinite(mutation.OxygenPocketUnits))
+                    _oxygenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex]) + mutation.OxygenPocketUnits;
+
+                if (_pressureFront.IsCreated && IsPositiveFinite(mutation.PressureSpikeKPa))
+                {
+                    float currentPressure = FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
+                    _pressureFront[roomIndex] = math.clamp(
+                        currentPressure + mutation.PressureSpikeKPa,
+                        0f,
+                        ResolveSafeMaximumPressureKPa());
+                    RefreshRoomStatusBitsImmediate(roomIndex);
+                }
             }
         }
 
@@ -1449,7 +1902,7 @@ namespace Hecton8.Atmosphere
             if (!_steamFront.IsCreated || roomIndex < 0 || roomIndex >= RoomCount)
                 return 0f;
 
-            return math.max(0f, _steamFront[roomIndex]);
+            return FiniteNonNegativeOrZero(_steamFront[roomIndex]);
         }
 
         internal void HandleExternalModuleBreach(Vector3 breachWorldPosition, float breachAreaSquareMeters)
@@ -1471,8 +1924,8 @@ namespace Hecton8.Atmosphere
             if (roomIndex < 0 || roomIndex >= RoomCount || !_temperatureFront.IsCreated)
                 return 1f;
 
-            float thresholdTemperature = math.max(referenceTemperatureCelsius, thermalFatigueThresholdCelsius);
-            if (_temperatureFront[roomIndex] < thresholdTemperature)
+            float thresholdTemperature = math.max(FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), FiniteOr(thermalFatigueThresholdCelsius, DefaultThermalFatigueThresholdCelsius));
+            if (GetRoomTemperatureCelsius(roomIndex) < thresholdTemperature)
                 return 1f;
 
             RoomStructuralMaterial structuralMaterial = roomIndex < rooms.Length
@@ -1480,8 +1933,8 @@ namespace Hecton8.Atmosphere
                 : RoomStructuralMaterial.Titanium;
 
             return structuralMaterial == RoomStructuralMaterial.Glass
-                ? math.max(0f, glassThermalFatigueMultiplier)
-                : math.max(0f, titaniumThermalFatigueMultiplier);
+                ? FiniteNonNegativeOrZero(glassThermalFatigueMultiplier)
+                : FiniteNonNegativeOrZero(titaniumThermalFatigueMultiplier);
         }
 
         private void SealAdjacentBulkheads(int breachedRoomIndex)
@@ -1514,10 +1967,15 @@ namespace Hecton8.Atmosphere
         internal Vector3 ResolveRoomRuntimePosition(int roomIndex)
         {
             if (fluidDynamics == null || roomIndex < 0 || roomIndex >= RoomCount)
-                return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+                return ResolveSubmarineFallbackRuntimePosition();
 
             Vector3 localCentroid = fluidDynamics.GetCompartmentCentroid(roomIndex);
             return _cachedTransform != null ? _cachedTransform.TransformPoint(localCentroid) : localCentroid;
+        }
+
+        private Vector3 ResolveSubmarineFallbackRuntimePosition()
+        {
+            return _submarineBody != null ? _submarineBody.worldCenterOfMass : Vector3.zero;
         }
 
         internal float ResolveRoomFloodFillNormalized(int roomIndex)
@@ -1543,7 +2001,7 @@ namespace Hecton8.Atmosphere
 
         internal float ResolveExternalDepthMeters()
         {
-            return fluidDynamics != null ? math.max(0f, fluidDynamics.ExternalDepthMeters) : 0f;
+            return fluidDynamics != null ? FiniteNonNegativeOrZero(fluidDynamics.ExternalDepthMeters) : 0f;
         }
 
         public void ApplyInteractionSignal(in Hecton8.Interaction.InteractionSignal signal, Vector3 runtimeHitPoint)
@@ -1560,8 +2018,8 @@ namespace Hecton8.Atmosphere
             if (roomIndex < 0 || roomIndex >= RoomCount || !_hydrogenPocketFront.IsCreated || !_oxygenPocketFront.IsCreated)
                 return;
 
-            float pocketIntensity = math.min(_hydrogenPocketFront[roomIndex], _oxygenPocketFront[roomIndex]);
-            if (pocketIntensity < math.saturate(explosivePocketThreshold))
+            float pocketIntensity = math.min(FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]), FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex]));
+            if (pocketIntensity < math.saturate(FiniteOr(explosivePocketThreshold, DefaultExplosionPocketThreshold)))
                 return;
 
             TriggerExplosivePocketDetonation(roomIndex, runtimeHitPoint, pocketIntensity);
@@ -1579,6 +2037,9 @@ namespace Hecton8.Atmosphere
         {
             CacheReferences();
             EnsureNativeState();
+            if (_roomVolumes.IsCreated)
+                PrewarmAtmosphereAuthoringCaches();
+
             TryRegister();
             RefreshDebugState();
         }
@@ -1601,25 +2062,40 @@ namespace Hecton8.Atmosphere
                 return;
 
             CacheReferences();
+            TryFinalizeDeferredNativeDisposal();
             if (fluidDynamics == null)
+            {
+                _atmosphereStepAccumulator = 0f;
+                ClearBoilingFloodHazards();
+                ClearAtmosphereFakes();
+                RefreshDebugState();
                 return;
+            }
 
             EnsureNativeState();
+            if (!_roomVolumes.IsCreated)
+            {
+                RefreshDebugState();
+                return;
+            }
+
+            if (_atmosphereJobRunning)
+            {
+                AccumulateAtmosphereStepTime(fixedDeltaTime);
+                RefreshDebugState();
+                return;
+            }
+
+            InvalidateTopologyIfShapeChanged();
             SyncFluidSnapshot();
             SeedTopologyIfNeeded();
             SeedThermalEmittersIfNeeded();
+            SeedEmergencyVentPipesIfNeeded();
             AccumulateRoomHeatSources();
             PublishDoorOpeningPressureEvents();
-            _thermalConductionAccumulator += fixedDeltaTime;
-            float thermalConductionDeltaTime = 0f;
-            if (_thermalConductionAccumulator + Epsilon >= ThermalConductionCadenceSeconds)
-            {
-                thermalConductionDeltaTime = _thermalConductionAccumulator;
-                _thermalConductionAccumulator = 0f;
-            }
 
-            _atmosphereStepAccumulator += fixedDeltaTime;
-            float slowTickSeconds = math.max(0.02f, atmosphereSlowTickSeconds);
+            AccumulateAtmosphereStepTime(fixedDeltaTime);
+            float slowTickSeconds = math.max(0.02f, FiniteOr(atmosphereSlowTickSeconds, DefaultAtmosphereSlowTickSeconds));
             if (_atmosphereStepAccumulator + Epsilon < slowTickSeconds)
             {
                 RefreshDebugState();
@@ -1628,8 +2104,24 @@ namespace Hecton8.Atmosphere
 
             float atmosphereDeltaTime = _atmosphereStepAccumulator;
             _atmosphereStepAccumulator = 0f;
-            ScheduleAtmosphereJob(atmosphereDeltaTime, thermalConductionDeltaTime);
+            ScheduleAtmosphereJob(atmosphereDeltaTime);
             RefreshDebugState();
+        }
+
+        private void PrewarmAtmosphereAuthoringCaches()
+        {
+            SeedTopologyIfNeeded();
+            SeedThermalEmittersIfNeeded();
+            SeedEmergencyVentPipesIfNeeded();
+        }
+
+        private void AccumulateAtmosphereStepTime(float fixedDeltaTime)
+        {
+            float slowTickSeconds = math.max(0.02f, FiniteOr(atmosphereSlowTickSeconds, DefaultAtmosphereSlowTickSeconds));
+            float maxAccumulatedSeconds = slowTickSeconds * MaxAtmosphereCatchupTicks;
+            _atmosphereStepAccumulator = math.min(
+                FiniteNonNegativeOrZero(_atmosphereStepAccumulator) + FiniteNonNegativeOrZero(fixedDeltaTime),
+                maxAccumulatedSeconds);
         }
 
         public void PostFixedTick(float fixedDeltaTime)
@@ -1642,35 +2134,33 @@ namespace Hecton8.Atmosphere
             if (fluidDynamics == null || !_temperatureFront.IsCreated || !_floodVolumes.IsCreated || !_roomVolumes.IsCreated)
                 return;
 
-            float depthMeters = math.max(0f, fluidDynamics.ExternalDepthMeters);
-            if (depthMeters < math.max(0f, deepFreezeDepthThresholdMeters))
+            float depthMeters = FiniteNonNegativeOrZero(fluidDynamics.ExternalDepthMeters);
+            if (depthMeters < FiniteNonNegativeOrZero(deepFreezeDepthThresholdMeters))
                 return;
 
             IPowerGridService powerGridService = GlobalRegistry.PowerGrid;
-            float totalConsumption = powerGridService != null ? math.max(0f, powerGridService.TotalConsumption) : 0f;
+            float totalConsumption = powerGridService != null ? FiniteNonNegativeOrZero(powerGridService.TotalConsumption) : 0f;
             float supplyRatio = totalConsumption > Epsilon
-                ? math.saturate(math.max(0f, powerGridService.TotalGeneration) / totalConsumption)
+                ? math.saturate(FiniteNonNegativeOrZero(powerGridService.TotalGeneration) / totalConsumption)
                 : 1f;
-            if (supplyRatio >= math.saturate(deepFreezeSupplyRatioThreshold))
+            if (supplyRatio >= math.saturate(FiniteOr(deepFreezeSupplyRatioThreshold, DefaultDeepFreezeSupplyRatioThreshold)))
                 return;
 
-            float targetTemperature = math.clamp(
-                deepFreezeTargetTemperatureCelsius,
-                minimumTemperatureCelsius,
-                maximumTemperatureCelsius);
-            float alpha = ResolveBlendFactor(math.max(0.1f, deepFreezeTauSeconds), fixedDeltaTime);
+            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+            float targetTemperature = FiniteClampedOr(deepFreezeTargetTemperatureCelsius, DefaultDeepFreezeTargetTemperatureCelsius, minTemperature, maxTemperature);
+            float alpha = ResolveBlendFactor(math.max(0.1f, FiniteOr(deepFreezeTauSeconds, DefaultDeepFreezeTauSeconds)), fixedDeltaTime);
             for (int roomIndex = 0; roomIndex < RoomCount; roomIndex++)
             {
-                float roomVolume = math.max(Epsilon, _roomVolumes[roomIndex]);
-                float floodFillRatio = math.saturate(_floodVolumes[roomIndex] / roomVolume);
+                float roomVolume = math.max(Epsilon, FiniteOr(_roomVolumes[roomIndex], Epsilon));
+                float floodFillRatio = math.saturate(FiniteNonNegativeOrZero(_floodVolumes[roomIndex]) / roomVolume);
                 if (floodFillRatio <= Epsilon)
                     continue;
 
-                float currentTemperature = _temperatureFront[roomIndex];
+                float currentTemperature = FiniteClampedOr(_temperatureFront[roomIndex], FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius), minTemperature, maxTemperature);
                 _temperatureFront[roomIndex] = math.clamp(
                     math.lerp(currentTemperature, targetTemperature, alpha),
-                    minimumTemperatureCelsius,
-                    maximumTemperatureCelsius);
+                    minTemperature,
+                    maxTemperature);
             }
         }
 
@@ -1685,16 +2175,19 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            float safeSteamExpansionRatio = math.max(1f, steamExpansionRatio);
-            float vaporizationRate = math.max(0f, steamGenerationRateCubicMetersPerSecondPerCelsius);
-            float condensationRate = math.max(0f, steamCondensationCoefficient);
+            float safeDeltaTime = FiniteNonNegativeOrZero(fixedDeltaTime);
+            float safeSteamExpansionRatio = math.max(1f, FiniteOr(steamExpansionRatio, DefaultSteamExpansionRatio));
+            float vaporizationRate = FiniteNonNegativeOrZero(steamGenerationRateCubicMetersPerSecondPerCelsius);
+            float condensationRate = FiniteNonNegativeOrZero(steamCondensationCoefficient);
             float hullShellTemperature = ResolveHullShellTemperatureCelsius();
+            float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
 
             for (int roomIndex = 0; roomIndex < RoomCount; roomIndex++)
             {
-                float roomTemperature = _temperatureFront[roomIndex];
-                float floodVolume = math.max(0f, _floodVolumes[roomIndex]);
-                float steamVolume = math.max(0f, _steamFront[roomIndex]);
+                float roomVolume = math.max(minimumGasVolume, FiniteOr(_roomVolumes[roomIndex], minimumGasVolume));
+                float roomTemperature = GetRoomTemperatureCelsius(roomIndex);
+                float floodVolume = math.clamp(FiniteNonNegativeOrZero(_floodVolumes[roomIndex]), 0f, roomVolume);
+                float steamVolume = FiniteNonNegativeOrZero(_steamFront[roomIndex]);
                 float boilingPoint = ResolveRoomBoilingPointCelsius(roomIndex);
 
                 if (floodVolume > Epsilon && roomTemperature > boilingPoint)
@@ -1702,11 +2195,12 @@ namespace Hecton8.Atmosphere
                     float overshootCelsius = roomTemperature - boilingPoint;
                     float liquidVaporized = math.min(
                         floodVolume,
-                        overshootCelsius * vaporizationRate * math.max(0f, fixedDeltaTime));
+                        overshootCelsius * vaporizationRate * safeDeltaTime);
                     if (liquidVaporized > Epsilon)
                     {
                         fluidDynamics.AddCompartmentFloodVolumeDelta(roomIndex, -liquidVaporized);
-                        _floodVolumes[roomIndex] = math.max(0f, _floodVolumes[roomIndex] - liquidVaporized);
+                        _floodVolumes[roomIndex] = math.max(0f, floodVolume - liquidVaporized);
+                        floodVolume = _floodVolumes[roomIndex];
                         steamVolume += liquidVaporized * safeSteamExpansionRatio;
                     }
                 }
@@ -1715,24 +2209,23 @@ namespace Hecton8.Atmosphere
                 {
                     float condensedSteamVolume = math.min(
                         steamVolume,
-                        (roomTemperature - hullShellTemperature) * condensationRate * math.max(0f, fixedDeltaTime));
+                        (roomTemperature - hullShellTemperature) * condensationRate * safeDeltaTime);
                     if (condensedSteamVolume > Epsilon)
                     {
                         steamVolume -= condensedSteamVolume;
                         float returnedLiquidVolume = condensedSteamVolume / safeSteamExpansionRatio;
                         fluidDynamics.AddCompartmentFloodVolumeDelta(roomIndex, returnedLiquidVolume);
-                        _floodVolumes[roomIndex] += returnedLiquidVolume;
+                        floodVolume = math.clamp(floodVolume + returnedLiquidVolume, 0f, roomVolume);
+                        _floodVolumes[roomIndex] = floodVolume;
                     }
                 }
 
                 if (_gasVolumeFront.IsCreated)
-                {
-                    float roomVolume = math.max(minimumGasVolumeCubicMeters, _roomVolumes[roomIndex]);
-                    _gasVolumeFront[roomIndex] = math.max(minimumGasVolumeCubicMeters, roomVolume - _floodVolumes[roomIndex]);
-                }
+                    _gasVolumeFront[roomIndex] = math.max(minimumGasVolume, roomVolume - floodVolume);
 
-                _steamFront[roomIndex] = math.max(0f, steamVolume);
+                _steamFront[roomIndex] = FiniteNonNegativeOrZero(steamVolume);
                 RecomputeInstantRoomPressure(roomIndex);
+                RefreshRoomStatusBitsOnly(roomIndex);
             }
         }
 
@@ -1747,34 +2240,35 @@ namespace Hecton8.Atmosphere
 
             for (int roomIndex = 0; roomIndex < RoomCount; roomIndex++)
             {
-                float roomPressure = _pressureFront[roomIndex];
+                float roomPressure = FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
                 if (roomPressure <= ventThresholdPressure)
                     continue;
 
                 if (!TryResolveEmergencyVentPipe(roomIndex, out LogisticsPipeNode ventPipe))
                 {
-                    if (roomPressure >= math.max(ventThresholdPressure, maximumPressureKPa * 0.98f))
+                    if (roomPressure >= math.max(ventThresholdPressure, ResolveSafeMaximumPressureKPa() * 0.98f))
                         TriggerSteamOverpressureFailure(roomIndex, roomPressure);
                     continue;
                 }
 
-                float releaseFraction = math.saturate(steamVentReleaseFraction);
+                float releaseFraction = math.saturate(FiniteOr(steamVentReleaseFraction, DefaultSteamVentReleaseFraction));
                 if (releaseFraction <= Epsilon)
                     continue;
 
-                _steamFront[roomIndex] = math.max(0f, _steamFront[roomIndex] * (1f - releaseFraction));
-                _hydrogenPocketFront[roomIndex] = math.max(0f, _hydrogenPocketFront[roomIndex] * (1f - releaseFraction));
-                _oxygenPocketFront[roomIndex] = math.max(0f, _oxygenPocketFront[roomIndex] * (1f - releaseFraction));
-                _o2Front[roomIndex] = math.max(0f, _o2Front[roomIndex] * (1f - (releaseFraction * 0.5f)));
-                _co2Front[roomIndex] = math.max(0f, _co2Front[roomIndex] * (1f - (releaseFraction * 0.5f)));
-                _inertFront[roomIndex] = math.max(0f, _inertFront[roomIndex] * (1f - (releaseFraction * 0.5f)));
+                _steamFront[roomIndex] = FiniteNonNegativeOrZero(_steamFront[roomIndex]) * (1f - releaseFraction);
+                _hydrogenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]) * (1f - releaseFraction);
+                _oxygenPocketFront[roomIndex] = FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex]) * (1f - releaseFraction);
+                _o2Front[roomIndex] = FiniteNonNegativeOrZero(_o2Front[roomIndex]) * (1f - (releaseFraction * 0.5f));
+                _co2Front[roomIndex] = FiniteNonNegativeOrZero(_co2Front[roomIndex]) * (1f - (releaseFraction * 0.5f));
+                _inertFront[roomIndex] = FiniteNonNegativeOrZero(_inertFront[roomIndex]) * (1f - (releaseFraction * 0.5f));
                 RecomputeInstantRoomPressure(roomIndex);
+                RefreshRoomStatusBitsOnly(roomIndex);
 
                 Vector3 ventPosition = ventPipe.ResolveVentRuntimePosition();
                 Vector3 ventDirection = ventPipe.ResolveVentDirection(_submarineBody.worldCenterOfMass);
-                float overshootKPa = math.max(0f, roomPressure - ventThresholdPressure);
+                float overshootKPa = FiniteNonNegativeOrZero(roomPressure - ventThresholdPressure);
                 float impulseMagnitude = overshootKPa *
-                                         math.max(0f, steamVentImpulsePerKilopascal) *
+                                         FiniteNonNegativeOrZero(steamVentImpulsePerKilopascal) *
                                          math.max(0.05f, releaseFraction);
                 if (impulseMagnitude > Epsilon)
                 {
@@ -1795,31 +2289,43 @@ namespace Hecton8.Atmosphere
                 return;
 
             Vector3 roomPosition = ResolveRoomRuntimePosition(roomIndex);
-            float overshoot01 = math.saturate((roomPressure - referencePressureKPa) / math.max(1f, maximumPressureKPa - referencePressureKPa));
+            float referencePressure = ResolveSafeReferencePressureKPa();
+            float maximumPressure = ResolveSafeMaximumPressureKPa();
+            float overshoot01 = math.saturate((FiniteOr(roomPressure, referencePressure) - referencePressure) / math.max(1f, maximumPressure - referencePressure));
             float explosionPocket = math.max(
                 overshoot01,
-                math.min(_hydrogenPocketFront[roomIndex], _oxygenPocketFront[roomIndex]));
-            TriggerExplosivePocketDetonation(roomIndex, roomPosition, math.max(explosivePocketThreshold, explosionPocket));
-            fluidDynamics.TriggerBreach(roomIndex, math.max(0.25f, overshoot01));
+                math.min(FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]), FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex])));
+            TriggerExplosivePocketDetonation(roomIndex, roomPosition, math.max(math.saturate(FiniteOr(explosivePocketThreshold, DefaultExplosionPocketThreshold)), explosionPocket));
+            fluidDynamics.TriggerBreach(roomIndex, math.max(0.25f, FiniteNonNegativeOrZero(overshoot01)));
         }
 
         private static float ResolveBlendFactor(float tauSeconds, float deltaTime)
         {
-            float safeTau = math.max(0.0001f, tauSeconds);
-            float safeDeltaTime = math.max(0f, deltaTime);
-            return math.saturate(1f - math.exp(-safeDeltaTime / safeTau));
+            float safeTau = math.max(0.0001f, FiniteOr(tauSeconds, 0.0001f));
+            float safeDeltaTime = FiniteNonNegativeOrZero(deltaTime);
+            float normalizedStep = math.min(safeDeltaTime / safeTau, BlendFactorPadeInstantThreshold);
+            return ResolveOneMinusExpPade(normalizedStep);
+        }
+
+        private static float ResolveOneMinusExpPade(float normalizedStep)
+        {
+            float x = FiniteNonNegativeOrZero(normalizedStep);
+            float numerator = x * (6f + x);
+            float denominator = 6f + (4f * x) + (x * x);
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
         }
 
         private void DecayExplosivePockets(float fixedDeltaTime)
         {
-            if (!_hydrogenPocketFront.IsCreated || !_oxygenPocketFront.IsCreated || fixedDeltaTime <= 0f)
+            float safeDeltaTime = FiniteNonNegativeOrZero(fixedDeltaTime);
+            if (!_hydrogenPocketFront.IsCreated || !_oxygenPocketFront.IsCreated || safeDeltaTime <= 0f)
                 return;
 
-            float decay = math.max(0f, explosivePocketDecayPerSecond) * fixedDeltaTime;
+            float decay = FiniteNonNegativeOrZero(explosivePocketDecayPerSecond) * safeDeltaTime;
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
             {
-                _hydrogenPocketFront[roomIndex] = math.max(0f, _hydrogenPocketFront[roomIndex] - decay);
-                _oxygenPocketFront[roomIndex] = math.max(0f, _oxygenPocketFront[roomIndex] - decay);
+                _hydrogenPocketFront[roomIndex] = math.max(0f, FiniteNonNegativeOrZero(_hydrogenPocketFront[roomIndex]) - decay);
+                _oxygenPocketFront[roomIndex] = math.max(0f, FiniteNonNegativeOrZero(_oxygenPocketFront[roomIndex]) - decay);
             }
         }
 
@@ -1830,10 +2336,10 @@ namespace Hecton8.Atmosphere
 
             Vector3 roomPosition = ResolveRoomRuntimePosition(roomIndex);
             Vector3 centerDirection = roomPosition - _submarineBody.worldCenterOfMass;
-            Vector3 forceDirection = SafeNormalize(Vector3.Lerp(centerDirection, Vector3.up, 0.35f), Vector3.up);
+            Vector3 forceDirection = ResolveFakeBlastDirection(centerDirection, 0.35f);
             float impulseMagnitude = math.min(
-                math.max(0f, pocketIntensity) * math.max(0f, explosionImpulsePerPocketUnit),
-                math.max(1f, explosionMaximumImpulseNewtonSeconds));
+                FiniteNonNegativeOrZero(pocketIntensity) * FiniteNonNegativeOrZero(explosionImpulsePerPocketUnit),
+                math.max(1f, FiniteOr(explosionMaximumImpulseNewtonSeconds, DefaultExplosionMaximumImpulseNewtonSeconds)));
 
             PhysicsForceRouter.QueueForceAtPosition(
                 _submarineBody,
@@ -1845,29 +2351,34 @@ namespace Hecton8.Atmosphere
             _oxygenPocketFront[roomIndex] = 0f;
             if (_pressureFront.IsCreated)
             {
+                float currentPressure = FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
                 _pressureFront[roomIndex] = math.min(
-                    maximumPressureKPa,
-                _pressureFront[roomIndex] + math.max(0f, electrolysisPressureSpikeKPa));
+                    ResolveSafeMaximumPressureKPa(),
+                    currentPressure + FiniteNonNegativeOrZero(explosionPressureSpikeKPa));
+                RefreshRoomStatusBitsImmediate(roomIndex);
             }
         }
 
         private float ResolveHullShellTemperatureCelsius()
         {
             if (fluidDynamics == null)
-                return floodWaterTemperatureCelsius;
+                return FiniteOr(floodWaterTemperatureCelsius, DefaultFloodWaterTemperatureCelsius);
 
-            float depthMeters = math.max(0f, fluidDynamics.ExternalDepthMeters);
+            float depthMeters = FiniteNonNegativeOrZero(fluidDynamics.ExternalDepthMeters);
             float abyssalCooling = math.saturate(depthMeters / 4000f);
-            return math.lerp(referenceTemperatureCelsius, floodWaterTemperatureCelsius, abyssalCooling);
+            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+            float referenceTemperature = FiniteClampedOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius, minTemperature, maxTemperature);
+            float floodTemperature = FiniteClampedOr(floodWaterTemperatureCelsius, DefaultFloodWaterTemperatureCelsius, minTemperature, maxTemperature);
+            return math.lerp(referenceTemperature, floodTemperature, abyssalCooling);
         }
 
         private float ResolveRoomBoilingPointCelsius(int roomIndex)
         {
-            float externalDepthMeters = fluidDynamics != null ? math.max(0f, fluidDynamics.ExternalDepthMeters) : 0f;
+            float externalDepthMeters = fluidDynamics != null ? FiniteNonNegativeOrZero(fluidDynamics.ExternalDepthMeters) : 0f;
             float pressureKPa = roomIndex >= 0 && roomIndex < RoomCount && _pressureFront.IsCreated
-                ? math.max(referencePressureKPa, _pressureFront[roomIndex])
-                : referencePressureKPa;
-            float pressureDepthEquivalent = math.max(0f, pressureKPa - referencePressureKPa);
+                ? math.max(ResolveSafeReferencePressureKPa(), FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa()))
+                : ResolveSafeReferencePressureKPa();
+            float pressureDepthEquivalent = math.max(0f, pressureKPa - ResolveSafeReferencePressureKPa());
             return 100f + ((externalDepthMeters + (pressureDepthEquivalent * 0.1f)) * 0.02f);
         }
 
@@ -1876,13 +2387,116 @@ namespace Hecton8.Atmosphere
             if (roomIndex < 0 || roomIndex >= RoomCount || !_pressureFront.IsCreated || !_gasVolumeFront.IsCreated)
                 return;
 
-            float temperatureCelsius = _temperatureFront.IsCreated ? _temperatureFront[roomIndex] : referenceTemperatureCelsius;
+            float temperatureCelsius = _temperatureFront.IsCreated ? GetRoomTemperatureCelsius(roomIndex) : FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
             _pressureFront[roomIndex] = ResolveInstantFakePressure(roomIndex, temperatureCelsius);
         }
 
         private void RefreshRoomPressureImmediate(int roomIndex)
         {
             RecomputeInstantRoomPressure(roomIndex);
+            RefreshRoomStatusBitsImmediate(roomIndex);
+        }
+
+        private void RefreshRoomStatusBitsOnly(int roomIndex)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCount || !_roomStatusMaskFront.IsCreated)
+                return;
+
+            uint roomBit = 1u << roomIndex;
+            uint roomStatusBits = ResolveRoomStatusBits(roomBit);
+            uint statusMask = ResolveRoomStatusMask(roomIndex, _roomStatusMaskFront[0]);
+            _roomStatusMaskFront[0] = statusMask;
+            _runtimeRoomStatusMask = (_runtimeRoomStatusMask & ~roomStatusBits) | (statusMask & roomStatusBits);
+        }
+
+        private void RefreshRoomStatusBitsImmediate(int roomIndex)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCount || !_roomStatusMaskFront.IsCreated)
+                return;
+
+            uint roomBit = 1u << roomIndex;
+            uint roomStatusBits = ResolveRoomStatusBits(roomBit);
+            uint statusMask = ResolveRoomStatusMask(roomIndex, _roomStatusMaskFront[0]);
+            _roomStatusMaskFront[0] = statusMask;
+            _runtimeRoomStatusMask = (_runtimeRoomStatusMask & ~roomStatusBits) | (statusMask & roomStatusBits);
+
+            float tankCapacity = math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity));
+            float lowOxygenThreshold = math.saturate(FiniteOr(lowOxygenThreshold01, DefaultLowOxygenThreshold01)) * tankCapacity;
+            bool hasOxygen = _o2Front.IsCreated;
+            float oxygenValue = hasOxygen ? FiniteNonNegativeOrZero(_o2Front[roomIndex]) : tankCapacity;
+            bool lowOxygen = (statusMask & (roomBit << RoomStatusToxicShift)) != 0u;
+            bool pressureStatus = (statusMask & (roomBit << RoomStatusPressureShift)) != 0u;
+
+            if (hasOxygen && _roomPlayerCounts.IsCreated && _roomPlayerCounts[roomIndex] > 0)
+            {
+                float roomOxygen01 = oxygenValue / tankCapacity;
+                if (math.isfinite(roomOxygen01))
+                    UIStateStore.WriteValue(UIValueSlotId.RoomOxygen01, math.saturate(roomOxygen01), Time.unscaledTime);
+                else
+                    UIStateStore.ClearValue(UIValueSlotId.RoomOxygen01);
+            }
+
+            Vector3 worldCenter = default;
+            float radius = 0f;
+            bool needsBounds = lowOxygen || pressureStatus;
+            bool hasBounds = needsBounds && TryResolveRoomHazardBounds(roomIndex, out worldCenter, out radius);
+            if (lowOxygen && hasBounds)
+            {
+                float oxygenDanger01 = math.saturate((lowOxygenThreshold - oxygenValue) / math.max(1f, lowOxygenThreshold));
+                RegisterToxicRoomHazard(roomIndex, worldCenter, oxygenDanger01 * FiniteNonNegativeOrZero(toxicRoomHazardIntensity), radius);
+            }
+            else
+            {
+                UnregisterToxicRoomHazard(roomIndex);
+            }
+
+            if (pressureStatus)
+                TryPlayPressureScreech(roomIndex, hasBounds ? worldCenter : ResolveSubmarineFallbackRuntimePosition());
+
+            float roomTemperature = _temperatureFront.IsCreated ? GetRoomTemperatureCelsius(roomIndex) : FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
+            if (_temperatureFront.IsCreated &&
+                (roomTemperature > FiniteOr(overheatBrownoutTemperatureCelsius, DefaultOverheatBrownoutTemperatureCelsius) ||
+                 (_overheatVisualActiveMask & roomBit) != 0u))
+            {
+                ApplyOverheatVoltageFake(roomIndex, ResolveModuleForRoom(roomIndex));
+            }
+        }
+
+        private uint ResolveRoomStatusMask(int roomIndex, uint sourceStatusMask)
+        {
+            uint roomBit = 1u << roomIndex;
+            uint roomStatusBits = ResolveRoomStatusBits(roomBit);
+            uint statusMask = sourceStatusMask & ~roomStatusBits;
+
+            float tankCapacity = math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity));
+            float lowOxygenThreshold = math.saturate(FiniteOr(lowOxygenThreshold01, DefaultLowOxygenThreshold01)) * tankCapacity;
+            bool hasOxygen = _o2Front.IsCreated;
+            float oxygenValue = hasOxygen ? FiniteNonNegativeOrZero(_o2Front[roomIndex]) : tankCapacity;
+            if (hasOxygen && oxygenValue < lowOxygenThreshold)
+                statusMask |= roomBit << RoomStatusToxicShift;
+
+            float roomTemperature = _temperatureFront.IsCreated ? GetRoomTemperatureCelsius(roomIndex) : FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
+            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+            if (_temperatureFront.IsCreated && roomTemperature <= FiniteClampedOr(freezingRoomTemperatureCelsius, DefaultFreezingRoomTemperatureCelsius, minTemperature, maxTemperature))
+                statusMask |= roomBit << RoomStatusFreezingShift;
+
+            float referencePressure = ResolveSafeReferencePressureKPa();
+            float pressureThreshold = math.max(referencePressure, FiniteOr(highPressureEventThresholdKPa, referencePressure));
+            if (_pressureFront.IsCreated &&
+                FiniteClampedOr(_pressureFront[roomIndex], referencePressure, 0f, ResolveSafeMaximumPressureKPa()) >= pressureThreshold)
+            {
+                statusMask |= roomBit << RoomStatusPressureShift;
+            }
+
+            return statusMask;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint ResolveRoomStatusBits(uint roomBit)
+        {
+            return (roomBit << RoomStatusToxicShift) |
+                   (roomBit << RoomStatusFreezingShift) |
+                   (roomBit << RoomStatusPressureShift);
         }
 
         private float ResolveInstantPressureWithTemperature(float totalGasUnits, float gasVolumeCubicMeters, float temperatureCelsius)
@@ -1895,20 +2509,50 @@ namespace Hecton8.Atmosphere
             if (roomIndex < 0 || roomIndex >= RoomCount)
                 return 0f;
 
-            return math.max(1f, oxygenTankCapacity);
+            return math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity));
         }
 
         private float ResolveEmergencyVentThresholdPressureKPa()
         {
-            float pressureCap = math.max(referencePressureKPa, maximumPressureKPa);
-            float ratioThreshold = math.saturate(steamVentMinimumPressureRatio);
+            float pressureCap = ResolveSafeMaximumPressureKPa();
+            float ratioThreshold = math.saturate(FiniteOr(steamVentMinimumPressureRatio, DefaultSteamVentMinimumPressureRatio));
             float hullThreshold = fluidDynamics != null ? fluidDynamics.HullPressureRatingKPa : pressureCap;
-            return math.min(hullThreshold, pressureCap * math.max(0.1f, ratioThreshold));
+            return math.min(FiniteOr(hullThreshold, pressureCap), pressureCap * math.max(0.1f, ratioThreshold));
         }
 
         private bool TryResolveEmergencyVentPipe(int roomIndex, out LogisticsPipeNode ventPipe)
         {
             ventPipe = null;
+            if (roomIndex < 0 || roomIndex >= RoomCapacity)
+                return false;
+
+            SeedEmergencyVentPipesIfNeeded();
+
+            uint roomBit = 1u << roomIndex;
+            if ((_emergencyVentRoomMask & roomBit) == 0u)
+                return false;
+
+            LogisticsPipeNode cachedPipe = _emergencyVentPipesByRoom[roomIndex];
+            if (cachedPipe == null || !cachedPipe.CanEmergencyVent)
+            {
+                _emergencyVentRoomMask &= ~roomBit;
+                _emergencyVentPipesByRoom[roomIndex] = null;
+                return false;
+            }
+
+            ventPipe = cachedPipe;
+            return true;
+        }
+
+        private void SeedEmergencyVentPipesIfNeeded()
+        {
+            if (_emergencyVentPipesSeeded || fluidDynamics == null || !_topologySeeded)
+                return;
+
+            _emergencyVentRoomMask = 0u;
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+                _emergencyVentPipesByRoom[roomIndex] = null;
+
             _ventPipeScanBuffer.Clear();
             GetComponentsInChildren(true, _ventPipeScanBuffer);
             int pipeCount = _ventPipeScanBuffer.Count;
@@ -1918,14 +2562,20 @@ namespace Hecton8.Atmosphere
                 if (pipe == null || !pipe.CanEmergencyVent)
                     continue;
 
-                if (pipe.ResolveAmbientRoomIndex() != roomIndex)
+                int roomIndex = pipe.ResolveAmbientRoomIndex();
+                if (roomIndex < 0 || roomIndex >= RoomCapacity)
                     continue;
 
-                ventPipe = pipe;
-                return true;
+                uint roomBit = 1u << roomIndex;
+                if ((_emergencyVentRoomMask & roomBit) != 0u)
+                    continue;
+
+                _emergencyVentPipesByRoom[roomIndex] = pipe;
+                _emergencyVentRoomMask |= roomBit;
             }
 
-            return false;
+            _ventPipeScanBuffer.Clear();
+            _emergencyVentPipesSeeded = true;
         }
 
         private void CacheReferences()
@@ -1943,7 +2593,16 @@ namespace Hecton8.Atmosphere
             {
                 IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
                 if (playerContext != null)
+                {
                     _playerTransform = playerContext.PlayerTransform;
+                    _playerCamera = playerContext.PlayerCamera;
+                }
+            }
+            else if (_playerCamera == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _playerCamera = playerContext.PlayerCamera;
             }
         }
 
@@ -1966,93 +2625,437 @@ namespace Hecton8.Atmosphere
 
         private void PublishAtmosphereFakes(float fixedDeltaTime)
         {
-            if (fixedDeltaTime > 0f)
-                _lowOxygenAudioCooldownRemaining = math.max(0f, _lowOxygenAudioCooldownRemaining - fixedDeltaTime);
+            float safeDeltaTime = FiniteNonNegativeOrZero(fixedDeltaTime);
+            if (safeDeltaTime > 0f)
+            {
+                _lowOxygenAudioCooldownRemaining = math.max(0f, FiniteNonNegativeOrZero(_lowOxygenAudioCooldownRemaining) - safeDeltaTime);
+                _pressureScreechCooldownRemaining = math.max(0f, FiniteNonNegativeOrZero(_pressureScreechCooldownRemaining) - safeDeltaTime);
+                _toxicRoomVisorPulseCooldownRemaining = math.max(0f, FiniteNonNegativeOrZero(_toxicRoomVisorPulseCooldownRemaining) - safeDeltaTime);
+            }
 
-            if (fluidDynamics == null || !_o2Front.IsCreated || !_temperatureFront.IsCreated)
+            if (fluidDynamics == null || !_o2Front.IsCreated || !_temperatureFront.IsCreated || !_roomStatusMaskFront.IsCreated)
             {
                 ClearAtmosphereFakes();
                 return;
             }
 
             int roomCount = RoomCount;
-            float lowOxygenValue = math.saturate(lowOxygenThreshold01) * math.max(1f, oxygenTankCapacity);
+            float tankCapacity = math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity));
+            float lowOxygenValue = math.saturate(FiniteOr(lowOxygenThreshold01, DefaultLowOxygenThreshold01)) * tankCapacity;
+            uint runtimeStatusMask = _roomStatusMaskFront[0] & ResolveActiveRoomStatusMask(roomCount);
+            bool smokeOverlayActive = false;
+            Vector4 smokeOverlayParams = Vector4.zero;
+            Vector4 smokeOverlayCenter = AtmosphereSootDefaultCenter;
+            bool hasOccupiedRoomOxygen = false;
+            float occupiedRoomOxygen01 = 1f;
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
             {
                 if (roomIndex >= roomCount)
                 {
-                    HectonHazardManager.Unregister(_toxicRoomHazardIds[roomIndex]);
-                    HectonHazardManager.Unregister(_fireSmokeHazardIds[roomIndex]);
+                    UnregisterToxicRoomHazard(roomIndex);
+                    UnregisterFireSmokeHazard(roomIndex);
                     ResetOverheatVisual(roomIndex);
                     continue;
                 }
 
-                float oxygenValue = _o2Front[roomIndex];
-                bool lowOxygen = oxygenValue < lowOxygenValue;
+                float oxygenValue = FiniteNonNegativeOrZero(_o2Front[roomIndex]);
+
+                uint roomBit = 1u << roomIndex;
+                bool lowOxygen = (runtimeStatusMask & (roomBit << RoomStatusToxicShift)) != 0u;
+                bool pressureStatus = (runtimeStatusMask & (roomBit << RoomStatusPressureShift)) != 0u;
+
                 bool playerOccupied = _roomPlayerCounts.IsCreated && _roomPlayerCounts[roomIndex] > 0;
+                if (playerOccupied)
+                {
+                    hasOccupiedRoomOxygen = true;
+                    occupiedRoomOxygen01 = math.saturate(oxygenValue / tankCapacity);
+                }
+
+                float oxygenDanger01 = lowOxygen
+                    ? math.saturate((lowOxygenValue - oxygenValue) / math.max(1f, lowOxygenValue))
+                    : 0f;
                 if (lowOxygen && playerOccupied)
+                {
                     TryPlayLowOxygenGaspingAudioLog();
+                    TryPulseToxicRoomVisor(oxygenDanger01);
+                }
 
                 BaseModule roomModule = ResolveModuleForRoom(roomIndex);
                 bool fireSmoke = roomModule != null && roomModule.CurrentFailureMode == BaseModuleFailureMode.Fire;
-                bool hasBounds = TryResolveRoomHazardBounds(roomIndex, out Vector3 worldCenter, out float radius);
+                if (fireSmoke)
+                    runtimeStatusMask |= roomBit << RoomStatusFireShift;
+
+                bool hasBounds = TryResolveRoomHazardBounds(roomIndex, roomModule, out Vector3 worldCenter, out float radius);
 
                 if (lowOxygen && hasBounds)
                 {
-                    float oxygenDanger01 = math.saturate((lowOxygenValue - oxygenValue) / math.max(1f, lowOxygenValue));
-                    HectonHazardManager.Register(
-                        _toxicRoomHazardIds[roomIndex],
-                        worldCenter,
-                        oxygenDanger01 * math.max(0f, toxicRoomHazardIntensity),
-                        radius,
-                        HazardType.Toxicity,
-                        1f);
+                    RegisterToxicRoomHazard(roomIndex, worldCenter, oxygenDanger01 * FiniteNonNegativeOrZero(toxicRoomHazardIntensity), radius);
                 }
                 else
                 {
-                    HectonHazardManager.Unregister(_toxicRoomHazardIds[roomIndex]);
+                    UnregisterToxicRoomHazard(roomIndex);
                 }
 
                 if (fireSmoke && hasBounds)
                 {
-                    HectonHazardManager.Register(
-                        _fireSmokeHazardIds[roomIndex],
+                    RegisterFireSmokeHazard(
+                        roomIndex,
                         worldCenter,
-                        math.max(0f, fireSmokeHazardIntensity),
+                        FiniteNonNegativeOrZero(fireSmokeHazardIntensity),
                         radius,
-                        HazardType.Toxicity,
-                        math.max(1f, fireSmokeVisorGlitchBias));
+                        math.max(1f, FiniteOr(fireSmokeVisorGlitchBias, DefaultFireSmokeVisorGlitchBias)));
+
+                    if (playerOccupied)
+                        AccumulateSmokeOverlayFake(worldCenter, radius, ref smokeOverlayActive, ref smokeOverlayParams, ref smokeOverlayCenter);
                 }
                 else
                 {
-                    HectonHazardManager.Unregister(_fireSmokeHazardIds[roomIndex]);
+                    UnregisterFireSmokeHazard(roomIndex);
                 }
+
+                if (pressureStatus)
+                    TryPlayPressureScreech(roomIndex, hasBounds ? worldCenter : ResolveRoomRuntimePosition(roomIndex));
 
                 ApplyOverheatVoltageFake(roomIndex, roomModule);
             }
+
+            PublishOccupiedRoomOxygenHud(hasOccupiedRoomOxygen, occupiedRoomOxygen01);
+            _runtimeRoomStatusMask = runtimeStatusMask;
+            PublishSmokeOverlayRuntimeState(smokeOverlayActive, in smokeOverlayParams, in smokeOverlayCenter);
+        }
+
+        private static void PublishOccupiedRoomOxygenHud(bool hasOccupiedRoomOxygen, float oxygen01)
+        {
+            if (!hasOccupiedRoomOxygen)
+            {
+                UIStateStore.ClearValue(UIValueSlotId.RoomOxygen01);
+                return;
+            }
+
+            if (!math.isfinite(oxygen01))
+            {
+                UIStateStore.ClearValue(UIValueSlotId.RoomOxygen01);
+                return;
+            }
+
+            UIStateStore.WriteValue(UIValueSlotId.RoomOxygen01, math.saturate(oxygen01), Time.unscaledTime);
         }
 
         private void ClearAtmosphereFakes()
         {
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
             {
-                HectonHazardManager.Unregister(_toxicRoomHazardIds[roomIndex]);
-                HectonHazardManager.Unregister(_fireSmokeHazardIds[roomIndex]);
+                UnregisterToxicRoomHazard(roomIndex);
+                UnregisterFireSmokeHazard(roomIndex);
                 ResetOverheatVisual(roomIndex);
             }
+
+            _runtimeRoomStatusMask = 0u;
+            ClearRoomStatusMasks();
+            _lowOxygenAudioCooldownRemaining = 0f;
+            _pressureScreechCooldownRemaining = 0f;
+            _toxicRoomVisorPulseCooldownRemaining = 0f;
+            UIStateStore.ClearValue(UIValueSlotId.RoomOxygen01);
+            PublishSmokeOverlayRuntimeState(false, default, default);
+            ClearRoomModuleCache();
+            ClearBrownoutRoomModuleCache();
+        }
+
+        private void RegisterToxicRoomHazard(int roomIndex, Vector3 worldCenter, float intensity, float radius)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCapacity)
+                return;
+
+            uint roomBit = 1u << roomIndex;
+            if (HectonHazardManager.Register(
+                    _toxicRoomHazardIds[roomIndex],
+                    worldCenter,
+                    FiniteNonNegativeOrZero(intensity),
+                    FiniteNonNegativeOrZero(radius),
+                    HazardType.Toxicity,
+                    1f))
+            {
+                _toxicRoomHazardActiveMask |= roomBit;
+                return;
+            }
+
+            UnregisterToxicRoomHazard(roomIndex);
+        }
+
+        private void UnregisterToxicRoomHazard(int roomIndex)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCapacity)
+                return;
+
+            uint roomBit = 1u << roomIndex;
+            if ((_toxicRoomHazardActiveMask & roomBit) == 0u)
+                return;
+
+            HectonHazardManager.Unregister(_toxicRoomHazardIds[roomIndex]);
+            _toxicRoomHazardActiveMask &= ~roomBit;
+        }
+
+        private void RegisterFireSmokeHazard(int roomIndex, Vector3 worldCenter, float intensity, float radius, float visorGlitchBias)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCapacity)
+                return;
+
+            uint roomBit = 1u << roomIndex;
+            if (HectonHazardManager.Register(
+                    _fireSmokeHazardIds[roomIndex],
+                    worldCenter,
+                    FiniteNonNegativeOrZero(intensity),
+                    FiniteNonNegativeOrZero(radius),
+                    HazardType.Toxicity,
+                    math.max(1f, FiniteOr(visorGlitchBias, DefaultFireSmokeVisorGlitchBias))))
+            {
+                _fireSmokeHazardActiveMask |= roomBit;
+                return;
+            }
+
+            UnregisterFireSmokeHazard(roomIndex);
+        }
+
+        private void UnregisterFireSmokeHazard(int roomIndex)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCapacity)
+                return;
+
+            uint roomBit = 1u << roomIndex;
+            if ((_fireSmokeHazardActiveMask & roomBit) == 0u)
+                return;
+
+            HectonHazardManager.Unregister(_fireSmokeHazardIds[roomIndex]);
+            _fireSmokeHazardActiveMask &= ~roomBit;
         }
 
         private void TryPlayLowOxygenGaspingAudioLog()
         {
-            if (_lowOxygenAudioCooldownRemaining > 0f || lowOxygenGaspingAudioLog == null)
+            if (_lowOxygenAudioCooldownRemaining > 0f)
                 return;
+
+            if (lowOxygenGaspingAudioLog == null)
+            {
+                _lowOxygenAudioCooldownRemaining = FiniteNonNegativeOrZero(lowOxygenAudioCooldownSeconds);
+                return;
+            }
 
             AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
             if (audioLogs == null)
+            {
+                _lowOxygenAudioCooldownRemaining = FiniteNonNegativeOrZero(lowOxygenAudioCooldownSeconds);
                 return;
+            }
 
             audioLogs.PlayLog(lowOxygenGaspingAudioLog);
-            _lowOxygenAudioCooldownRemaining = math.max(0f, lowOxygenAudioCooldownSeconds);
+            _lowOxygenAudioCooldownRemaining = FiniteNonNegativeOrZero(lowOxygenAudioCooldownSeconds);
+        }
+
+        private void TryPulseToxicRoomVisor(float oxygenDanger01)
+        {
+            if (_toxicRoomVisorPulseCooldownRemaining > 0f)
+                return;
+
+            IPlayerSensoryService sensoryService = GlobalRegistry.PlayerSensory;
+            VisorHUDController visorController = sensoryService != null ? sensoryService.VisorController : null;
+            if (visorController == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                visorController = playerContext != null ? playerContext.VisorController : null;
+            }
+
+            if (visorController == null)
+            {
+                _toxicRoomVisorPulseCooldownRemaining = FiniteNonNegativeOrZero(toxicRoomVisorPulseCooldownSeconds);
+                return;
+            }
+
+            float intensity = math.saturate(oxygenDanger01);
+            visorController.GlitchPulse(DefaultToxicRoomVisorGlitchDurationSeconds + (intensity * 0.08f));
+            visorController.TriggerEnvironmentalDistortion(
+                math.saturate(0.24f + (intensity * 0.48f)),
+                DefaultToxicRoomVisorDistortionHoldSeconds,
+                DefaultToxicRoomVisorDistortionRecovery);
+            _toxicRoomVisorPulseCooldownRemaining = FiniteNonNegativeOrZero(toxicRoomVisorPulseCooldownSeconds);
+        }
+
+        private void TryPlayPressureScreech(int roomIndex, Vector3 worldCenter)
+        {
+            if (_pressureScreechCooldownRemaining > 0f)
+                return;
+
+            AudioClip[] clips = pressureScreechClips;
+            int clipCount = clips != null ? clips.Length : 0;
+            if (clipCount <= 0)
+            {
+                _pressureScreechCooldownRemaining = FiniteNonNegativeOrZero(pressureScreechCooldownSeconds);
+                return;
+            }
+
+            IAudioService audioService = GlobalRegistry.Audio;
+            if (audioService == null)
+            {
+                _pressureScreechCooldownRemaining = FiniteNonNegativeOrZero(pressureScreechCooldownSeconds);
+                return;
+            }
+
+            uint random = NextPressureScreechRandom();
+            int clipIndex = (int)(random % (uint)clipCount);
+            AudioClip clip = null;
+            for (int i = 0; i < clipCount; i++)
+            {
+                clip = clips[(clipIndex + i) % clipCount];
+                if (clip != null)
+                    break;
+            }
+
+            if (clip == null)
+            {
+                _pressureScreechCooldownRemaining = FiniteNonNegativeOrZero(pressureScreechCooldownSeconds);
+                return;
+            }
+
+            float referencePressure = ResolveSafeReferencePressureKPa();
+            float maximumPressure = ResolveSafeMaximumPressureKPa();
+            float pressure = _pressureFront.IsCreated && roomIndex >= 0 && roomIndex < RoomCapacity
+                ? FiniteClampedOr(_pressureFront[roomIndex], referencePressure, 0f, maximumPressure)
+                : math.max(referencePressure, FiniteOr(highPressureEventThresholdKPa, referencePressure));
+            float pressureThreshold = math.max(referencePressure, FiniteOr(highPressureEventThresholdKPa, referencePressure));
+            float pressureRange = math.max(1f, maximumPressure - pressureThreshold);
+            float pressure01 = math.saturate((pressure - pressureThreshold) / pressureRange);
+            float resolvedVolume = math.saturate(FiniteOr(pressureScreechVolume, DefaultPressureScreechVolume)) * math.lerp(0.55f, 1f, pressure01);
+            float minPitch = math.min(FiniteOr(pressureScreechPitchMin, DefaultPressureScreechPitchMin), FiniteOr(pressureScreechPitchMax, DefaultPressureScreechPitchMax));
+            float maxPitch = math.max(FiniteOr(pressureScreechPitchMin, DefaultPressureScreechPitchMin), FiniteOr(pressureScreechPitchMax, DefaultPressureScreechPitchMax));
+            float pitchT = (NextPressureScreechRandom() & 0x00FFFFFFu) * (1f / 16777215f);
+            audioService.PlayAtPoint(clip, worldCenter, resolvedVolume, math.lerp(minPitch, maxPitch, pitchT));
+            _pressureScreechCooldownRemaining = FiniteNonNegativeOrZero(pressureScreechCooldownSeconds);
+        }
+
+        private void AccumulateSmokeOverlayFake(
+            Vector3 worldCenter,
+            float radius,
+            ref bool smokeOverlayActive,
+            ref Vector4 smokeOverlayParams,
+            ref Vector4 smokeOverlayCenter)
+        {
+            float intensity = math.saturate(FiniteOr(fireSmokeHazardIntensity, DefaultFireSmokeHazardIntensity));
+            if (intensity <= 0.001f)
+                return;
+
+            float screenRadius = math.saturate(math.max(0.01f, FiniteNonNegativeOrZero(radius) * FiniteNonNegativeOrZero(fireSmokeSootScreenRadiusScale)));
+            if (!smokeOverlayActive || intensity > smokeOverlayParams.x)
+            {
+                smokeOverlayActive = true;
+                smokeOverlayParams = new Vector4(
+                    intensity,
+                    screenRadius,
+                    math.saturate(FiniteOr(fireSmokeSootDitherStrength, DefaultFireSmokeSootDitherStrength)),
+                    math.saturate(FiniteOr(fireSmokeSootDarkenStrength, DefaultFireSmokeSootDarkenStrength)));
+                smokeOverlayCenter = TryResolveSmokeOverlayCenter(worldCenter, out Vector4 viewportCenter)
+                    ? viewportCenter
+                    : AtmosphereSootDefaultCenter;
+            }
+        }
+
+        private bool TryResolveSmokeOverlayCenter(Vector3 worldCenter, out Vector4 viewportCenter)
+        {
+            viewportCenter = default;
+            Camera playerCamera = _playerCamera;
+            if (playerCamera == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                {
+                    playerCamera = playerContext.PlayerCamera;
+                    _playerCamera = playerCamera;
+                }
+            }
+
+            if (playerCamera == null)
+                return false;
+
+            Vector3 viewportPoint = playerCamera.WorldToViewportPoint(worldCenter);
+            if (!math.isfinite(viewportPoint.x) || !math.isfinite(viewportPoint.y) || viewportPoint.z <= 0f)
+                return false;
+
+            viewportCenter = new Vector4(
+                math.saturate(viewportPoint.x),
+                math.saturate(viewportPoint.y),
+                0f,
+                0f);
+            return true;
+        }
+
+        private void PublishSmokeOverlayRuntimeState(bool active, in Vector4 smokeOverlayParams, in Vector4 smokeOverlayCenter)
+        {
+            if (!active)
+            {
+                if (!_smokeOverlayRuntimeActive && !_smokeOverlayRuntimeDirty)
+                    return;
+
+                HectonAtmosphereSootFeature.PublishRuntimeState(false, default, default);
+                _lastSmokeOverlayParams = Vector4.zero;
+                _lastSmokeOverlayCenter = AtmosphereSootDefaultCenter;
+                _smokeOverlayRuntimeActive = false;
+                _smokeOverlayRuntimeDirty = false;
+                return;
+            }
+
+            if (_smokeOverlayRuntimeActive &&
+                !_smokeOverlayRuntimeDirty &&
+                Vector4Equals(_lastSmokeOverlayParams, smokeOverlayParams) &&
+                Vector4Equals(_lastSmokeOverlayCenter, smokeOverlayCenter))
+            {
+                return;
+            }
+
+            HectonAtmosphereSootFeature.PublishRuntimeState(true, in smokeOverlayParams, in smokeOverlayCenter);
+            _lastSmokeOverlayParams = smokeOverlayParams;
+            _lastSmokeOverlayCenter = smokeOverlayCenter;
+            _smokeOverlayRuntimeActive = true;
+            _smokeOverlayRuntimeDirty = false;
+        }
+
+        private uint NextPressureScreechRandom()
+        {
+            uint state = _pressureScreechRngState != 0u ? _pressureScreechRngState : PressureScreechRngSeed;
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            _pressureScreechRngState = state != 0u ? state : PressureScreechRngSeed;
+            return _pressureScreechRngState;
+        }
+
+        private static bool Vector4Equals(Vector4 left, Vector4 right)
+        {
+            return left.x == right.x &&
+                   left.y == right.y &&
+                   left.z == right.z &&
+                   left.w == right.w;
+        }
+
+        private static uint ResolveActiveRoomStatusMask(int roomCount)
+        {
+            int safeRoomCount = math.clamp(roomCount, 0, RoomCapacity);
+            uint roomMask = safeRoomCount > 0 ? ((1u << safeRoomCount) - 1u) : 0u;
+            return (roomMask << RoomStatusToxicShift) |
+                   (roomMask << RoomStatusFreezingShift) |
+                   (roomMask << RoomStatusPressureShift) |
+                   (roomMask << RoomStatusFireShift);
+        }
+
+        private void ClearRoomStatusMasks()
+        {
+            if (_roomStatusMaskFront.IsCreated)
+                _roomStatusMaskFront[0] = 0u;
+
+            if (_roomStatusMaskBack.IsCreated)
+                _roomStatusMaskBack[0] = 0u;
+        }
+
+        private static bool IsPositiveFinite(float value)
+        {
+            return value > 0f && math.isfinite(value);
         }
 
         private void ApplyOverheatVoltageFake(int roomIndex, BaseModule roomModule)
@@ -2060,16 +3063,17 @@ namespace Hecton8.Atmosphere
             if (roomIndex < 0 || roomIndex >= RoomCapacity || !_temperatureFront.IsCreated)
                 return;
 
-            float threshold = overheatBrownoutTemperatureCelsius;
-            float temperature = _temperatureFront[roomIndex];
+            ResolveSafeTemperatureBounds(out _, out float maximumTemperature);
+            float threshold = FiniteOr(overheatBrownoutTemperatureCelsius, DefaultOverheatBrownoutTemperatureCelsius);
+            float temperature = GetRoomTemperatureCelsius(roomIndex);
             if (roomModule == null || temperature <= threshold)
             {
                 ResetOverheatVisual(roomIndex);
                 return;
             }
 
-            float heat01 = math.saturate((temperature - threshold) / math.max(1f, maximumTemperatureCelsius - threshold));
-            float voltage = math.lerp(1f, math.saturate(overheatMinimumVoltage), math.saturate(heat01));
+            float heat01 = math.saturate((temperature - threshold) / math.max(1f, maximumTemperature - threshold));
+            float voltage = math.lerp(1f, math.saturate(FiniteOr(overheatMinimumVoltage, DefaultOverheatMinimumVoltage)), math.saturate(heat01));
             roomModule.SetAmbientPowerVisualState(true, voltage);
             _overheatVisualActiveMask |= 1u << roomIndex;
         }
@@ -2086,7 +3090,7 @@ namespace Hecton8.Atmosphere
             BaseModule module = _atmosphereRoomModules[roomIndex];
             if (module != null)
             {
-                bool powerBrownout = module.CachedPowerSupplyRatio < math.saturate(brownoutOxygenSupplyRatioThreshold);
+                bool powerBrownout = module.CachedPowerSupplyRatio < math.saturate(FiniteOr(brownoutOxygenSupplyRatioThreshold, DefaultBrownoutOxygenSupplyRatioThreshold));
                 module.SetAmbientPowerVisualState(powerBrownout, powerBrownout ? module.CachedPowerSupplyRatio : 1f);
             }
 
@@ -2150,6 +3154,9 @@ namespace Hecton8.Atmosphere
 
         private void EnsureNativeState()
         {
+            if (!TryFinalizeDeferredNativeDisposal())
+                return;
+
             if (_roomVolumes.IsCreated)
                 return;
 
@@ -2183,15 +3190,24 @@ namespace Hecton8.Atmosphere
             _co2GenerationRates = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<int>[8] - local player occupancy counts consumed by the cheap atmosphere job - owner: SubmarineAtmosphereSystem
             _roomPlayerCounts = new NativeArray<int>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - front room heat snapshot for cheap atmosphere solve - owner: SubmarineAtmosphereSystem
             _temperatureFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - back room heat snapshot for cheap atmosphere solve - owner: SubmarineAtmosphereSystem
             _temperatureBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - front steam phase accumulator for room VFX state - owner: SubmarineAtmosphereSystem
             _steamFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - back steam phase accumulator for room VFX state - owner: SubmarineAtmosphereSystem
             _steamBack = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[8] — hydrogen-pocket accumulator for submerged overload electrolysis — owner: SubmarineAtmosphereSystem
             _hydrogenPocketFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[8] — oxygen-pocket accumulator for submerged overload electrolysis — owner: SubmarineAtmosphereSystem
             _oxygenPocketFront = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - room heat watt source cache consumed by Burst atmosphere job - owner: SubmarineAtmosphereSystem
             _roomHeatWatts = new NativeArray<float>(RoomCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<uint>[1] — front packed Safe/Toxic/Freezing/Pressure/Fire room status bitmask — owner: SubmarineAtmosphereSystem
+            _roomStatusMaskFront = new NativeArray<uint>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<uint>[1] — back packed Safe/Toxic/Freezing/Pressure/Fire room status bitmask — owner: SubmarineAtmosphereSystem
+            _roomStatusMaskBack = new NativeArray<uint>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<int2>[7] — door graph edges aligned to submarine bulkheads — owner: SubmarineAtmosphereSystem
             _doorPairs = new NativeArray<int2>(DoorCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<byte>[7] — sealed-door state copied from submarine bulkheads — owner: SubmarineAtmosphereSystem
@@ -2200,6 +3216,11 @@ namespace Hecton8.Atmosphere
             _doorSealedPrevious = new NativeArray<byte>(DoorCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
 
             RegisterNativeState();
+        }
+
+        private bool TryFinalizeDeferredNativeDisposal()
+        {
+            return DispatcherJobSwap.TryFinalizeCompleted(ref _disposeHandle);
         }
 
         private void RegisterNativeState()
@@ -2226,6 +3247,8 @@ namespace Hecton8.Atmosphere
             RegisterNativeArray(_hydrogenPocketFront, nameof(_hydrogenPocketFront));
             RegisterNativeArray(_oxygenPocketFront, nameof(_oxygenPocketFront));
             RegisterNativeArray(_roomHeatWatts, nameof(_roomHeatWatts));
+            RegisterNativeArray(_roomStatusMaskFront, nameof(_roomStatusMaskFront));
+            RegisterNativeArray(_roomStatusMaskBack, nameof(_roomStatusMaskBack));
             RegisterNativeArray(_doorPairs, nameof(_doorPairs));
             RegisterNativeArray(_doorSealed, nameof(_doorSealed));
             RegisterNativeArray(_doorSealedPrevious, nameof(_doorSealedPrevious));
@@ -2255,6 +3278,8 @@ namespace Hecton8.Atmosphere
             UnregisterNativeArray(_hydrogenPocketFront);
             UnregisterNativeArray(_oxygenPocketFront);
             UnregisterNativeArray(_roomHeatWatts);
+            UnregisterNativeArray(_roomStatusMaskFront);
+            UnregisterNativeArray(_roomStatusMaskBack);
             UnregisterNativeArray(_doorPairs);
             UnregisterNativeArray(_doorSealed);
             UnregisterNativeArray(_doorSealedPrevious);
@@ -2275,32 +3300,38 @@ namespace Hecton8.Atmosphere
             if (_topologySeeded || fluidDynamics == null)
                 return;
 
-            int roomCount = fluidDynamics.CompartmentCount;
+            int roomCount = RoomCount;
             if (roomCount <= 0)
                 return;
+            int doorCount = math.min(fluidDynamics.ConfiguredBulkheadCount, DoorCapacity);
 
+            ResolveSafeTemperatureBounds(out float minTemperature, out float maxTemperature);
+            float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
+            float tankCapacity = math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity));
+            float seedReferenceTemperature = FiniteClampedOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius, minTemperature, maxTemperature);
+            float seedReferencePressure = ResolveSafeReferencePressureKPa();
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
             {
                 if (roomIndex >= roomCount)
                 {
-                    _roomVolumes[roomIndex] = minimumGasVolumeCubicMeters;
-                    _gasVolumeFront[roomIndex] = minimumGasVolumeCubicMeters;
-                    _pressureFront[roomIndex] = referencePressureKPa;
+                    _roomVolumes[roomIndex] = minimumGasVolume;
+                    _gasVolumeFront[roomIndex] = minimumGasVolume;
+                    _pressureFront[roomIndex] = seedReferencePressure;
                     _o2Front[roomIndex] = 0f;
                     _co2Front[roomIndex] = 0f;
                     _inertFront[roomIndex] = 0f;
-                    _temperatureFront[roomIndex] = referenceTemperatureCelsius;
+                    _temperatureFront[roomIndex] = seedReferenceTemperature;
                     continue;
                 }
 
                 RoomDefinition definition = roomIndex < rooms.Length ? rooms[roomIndex] : default;
-                float roomVolume = definition.gasCapacityOverrideCubicMeters > Epsilon
+                float roomVolume = definition.gasCapacityOverrideCubicMeters > Epsilon && math.isfinite(definition.gasCapacityOverrideCubicMeters)
                     ? definition.gasCapacityOverrideCubicMeters
                     : fluidDynamics.GetCompartmentMaxFloodVolumeCubicMeters(roomIndex);
-                roomVolume = math.max(roomVolume, minimumGasVolumeCubicMeters);
+                roomVolume = math.max(FiniteOr(roomVolume, minimumGasVolume), minimumGasVolume);
 
-                float oxygenFraction = math.saturate(definition.initialOxygenFraction > Epsilon ? definition.initialOxygenFraction : DefaultInitialOxygenFraction);
-                float carbonDioxideFraction = math.saturate(definition.initialCarbonDioxideFraction > 0f ? definition.initialCarbonDioxideFraction : DefaultInitialCarbonDioxideFraction);
+                float oxygenFraction = math.saturate(definition.initialOxygenFraction > Epsilon && math.isfinite(definition.initialOxygenFraction) ? definition.initialOxygenFraction : DefaultInitialOxygenFraction);
+                float carbonDioxideFraction = math.saturate(definition.initialCarbonDioxideFraction > 0f && math.isfinite(definition.initialCarbonDioxideFraction) ? definition.initialCarbonDioxideFraction : DefaultInitialCarbonDioxideFraction);
                 if (oxygenFraction + carbonDioxideFraction > 0.95f)
                 {
                     float scale = 0.95f / math.max(oxygenFraction + carbonDioxideFraction, Epsilon);
@@ -2310,21 +3341,21 @@ namespace Hecton8.Atmosphere
 
                 _roomVolumes[roomIndex] = roomVolume;
                 _gasVolumeFront[roomIndex] = roomVolume;
-                _o2Front[roomIndex] = math.saturate(oxygenFraction / math.max(DefaultInitialOxygenFraction, Epsilon)) * math.max(1f, oxygenTankCapacity);
-                _co2Front[roomIndex] = math.saturate(carbonDioxideFraction) * math.max(1f, oxygenTankCapacity);
+                _o2Front[roomIndex] = math.saturate(oxygenFraction / math.max(DefaultInitialOxygenFraction, Epsilon)) * tankCapacity;
+                _co2Front[roomIndex] = math.saturate(carbonDioxideFraction) * tankCapacity;
                 _inertFront[roomIndex] = 0f;
-                _pressureFront[roomIndex] = referencePressureKPa;
-                _temperatureFront[roomIndex] = math.clamp(
-                    definition.initialTemperatureCelsius != 0f ? definition.initialTemperatureCelsius : referenceTemperatureCelsius,
-                    minimumTemperatureCelsius,
-                    maximumTemperatureCelsius);
-                _o2ConsumptionRates[roomIndex] = math.max(0f, definition.oxygenConsumptionUnitsPerSecond);
-                _co2GenerationRates[roomIndex] = math.max(0f, definition.carbonDioxideGenerationUnitsPerSecond);
+                _pressureFront[roomIndex] = seedReferencePressure;
+                float initialTemperature = definition.initialTemperatureCelsius != 0f && math.isfinite(definition.initialTemperatureCelsius)
+                    ? definition.initialTemperatureCelsius
+                    : seedReferenceTemperature;
+                _temperatureFront[roomIndex] = math.clamp(initialTemperature, minTemperature, maxTemperature);
+                _o2ConsumptionRates[roomIndex] = FiniteNonNegativeOrZero(definition.oxygenConsumptionUnitsPerSecond);
+                _co2GenerationRates[roomIndex] = FiniteNonNegativeOrZero(definition.carbonDioxideGenerationUnitsPerSecond);
             }
 
             for (int doorIndex = 0; doorIndex < DoorCapacity; doorIndex++)
             {
-                if (fluidDynamics.TryGetBulkheadDefinition(doorIndex, out int compartmentA, out int compartmentB, out bool isSealed))
+                if (doorIndex < doorCount && fluidDynamics.TryGetBulkheadDefinition(doorIndex, out int compartmentA, out int compartmentB, out bool isSealed))
                 {
                     _doorPairs[doorIndex] = new int2(compartmentA, compartmentB);
                     _doorSealed[doorIndex] = isSealed ? (byte)1 : (byte)0;
@@ -2337,7 +3368,35 @@ namespace Hecton8.Atmosphere
                 _doorSealedPrevious[doorIndex] = 1;
             }
 
+            _topologyRoomCount = roomCount;
+            _topologyDoorCount = doorCount;
             _topologySeeded = true;
+        }
+
+        private void InvalidateTopologyIfShapeChanged()
+        {
+            if (!_topologySeeded || fluidDynamics == null)
+                return;
+
+            int roomCount = RoomCount;
+            int doorCount = math.min(fluidDynamics.ConfiguredBulkheadCount, DoorCapacity);
+            if (roomCount == _topologyRoomCount && doorCount == _topologyDoorCount)
+                return;
+
+            _topologySeeded = false;
+            _thermalEmittersSeeded = false;
+            _emergencyVentPipesSeeded = false;
+            _emergencyVentRoomMask = 0u;
+            _fabricatorHeatEmitterCount = 0;
+            _drillHeatEmitterCount = 0;
+            _reactorHeatEmitterCount = 0;
+            _reactorMeltdownTriggeredMask = 0u;
+            _topologyRoomCount = -1;
+            _topologyDoorCount = -1;
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+                _emergencyVentPipesByRoom[roomIndex] = null;
+            ClearRoomModuleCache();
+            ClearBrownoutRoomModuleCache();
         }
 
         private void SeedThermalEmittersIfNeeded()
@@ -2360,7 +3419,7 @@ namespace Hecton8.Atmosphere
                 _fabricatorHeatEmitters[_fabricatorHeatEmitterCount++] = new FabricatorHeatEmitter
                 {
                     Fabricator = fabricator,
-                    RoomIndex = ResolveNearestRoomIndex(fabricator.transform.position)
+                    RoomIndex = ResolveThermalEmitterRoomIndex(fabricator)
                 };
             }
 
@@ -2375,7 +3434,7 @@ namespace Hecton8.Atmosphere
                 _drillHeatEmitters[_drillHeatEmitterCount++] = new DrillHeatEmitter
                 {
                     Drill = drill,
-                    RoomIndex = ResolveNearestRoomIndex(drill.transform.position)
+                    RoomIndex = ResolveThermalEmitterRoomIndex(drill)
                 };
             }
 
@@ -2390,14 +3449,48 @@ namespace Hecton8.Atmosphere
                 _reactorHeatEmitters[_reactorHeatEmitterCount++] = new ReactorHeatEmitter
                 {
                     Reactor = reactor,
-                    RoomIndex = ResolveNearestRoomIndex(reactor.transform.position)
+                    RoomIndex = ResolveThermalEmitterRoomIndex(reactor)
                 };
             }
 
             for (int i = _reactorHeatEmitterCount; i < HeatEmitterCapacity; i++)
-                _reactorMeltdownTriggered[i] = false;
+                _reactorMeltdownTriggeredMask &= ~(1u << i);
 
             _thermalEmittersSeeded = true;
+        }
+
+        private int ResolveThermalEmitterRoomIndex(Component emitter)
+        {
+            if (emitter == null)
+                return -1;
+
+            BaseModule hostModule = emitter.GetComponentInParent<BaseModule>();
+            if (hostModule != null)
+            {
+                int roomCount = math.min(RoomCount, RoomCapacity);
+                for (int roomIndex = 0; roomIndex < roomCount; roomIndex++)
+                {
+                    if (ReferenceEquals(ResolveModuleForRoom(roomIndex), hostModule))
+                        return roomIndex;
+                }
+
+                if (hostModule.TryGetInteriorAabbBounds(out Vector3 hostCenter, out _))
+                {
+                    AbsoluteUniversePosition hostAup = AbsoluteUniversePosition.FromRuntimePosition(hostCenter);
+                    return ResolveNearestRoomIndex(in hostAup);
+                }
+            }
+
+            return ResolveSubmarineCenterRoomIndex();
+        }
+
+        private int ResolveSubmarineCenterRoomIndex()
+        {
+            if (_submarineBody == null)
+                return -1;
+
+            AbsoluteUniversePosition submarineCenterAup = AbsoluteUniversePosition.FromRuntimePosition(_submarineBody.worldCenterOfMass);
+            return ResolveNearestRoomIndex(in submarineCenterAup);
         }
 
         private void SyncFluidSnapshot()
@@ -2405,7 +3498,8 @@ namespace Hecton8.Atmosphere
             if (fluidDynamics == null)
                 return;
 
-            int roomCount = fluidDynamics.CompartmentCount;
+            int roomCount = RoomCount;
+            float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
             {
                 if (_roomPlayerCounts.IsCreated)
@@ -2413,22 +3507,32 @@ namespace Hecton8.Atmosphere
 
                 if (roomIndex >= roomCount)
                 {
+                    _roomVolumes[roomIndex] = minimumGasVolume;
                     _floodVolumes[roomIndex] = 0f;
+                    _gasVolumeFront[roomIndex] = minimumGasVolume;
+                    _o2ConsumptionRates[roomIndex] = 0f;
+                    _co2GenerationRates[roomIndex] = 0f;
+                    _roomHeatWatts[roomIndex] = 0f;
                     continue;
                 }
 
                 RoomDefinition definition = roomIndex < rooms.Length ? rooms[roomIndex] : default;
-                float roomVolume = definition.gasCapacityOverrideCubicMeters > Epsilon
+                float roomVolume = definition.gasCapacityOverrideCubicMeters > Epsilon && math.isfinite(definition.gasCapacityOverrideCubicMeters)
                     ? definition.gasCapacityOverrideCubicMeters
                     : fluidDynamics.GetCompartmentMaxFloodVolumeCubicMeters(roomIndex);
-                _roomVolumes[roomIndex] = math.max(roomVolume, minimumGasVolumeCubicMeters);
-                _floodVolumes[roomIndex] = math.clamp(fluidDynamics.GetCompartmentFloodVolumeCubicMeters(roomIndex), 0f, _roomVolumes[roomIndex] - Epsilon);
+                _roomVolumes[roomIndex] = math.max(FiniteOr(roomVolume, minimumGasVolume), minimumGasVolume);
+                _floodVolumes[roomIndex] = math.clamp(
+                    FiniteNonNegativeOrZero(fluidDynamics.GetCompartmentFloodVolumeCubicMeters(roomIndex)),
+                    0f,
+                    _roomVolumes[roomIndex] - Epsilon);
+                if (_gasVolumeFront.IsCreated)
+                    _gasVolumeFront[roomIndex] = math.max(minimumGasVolume, _roomVolumes[roomIndex] - _floodVolumes[roomIndex]);
                 float oxygenConsumptionRate = math.max(
-                    math.max(0f, definition.oxygenConsumptionUnitsPerSecond),
-                    math.max(0f, playerOxygenConsumptionPercentPerSecond));
+                    FiniteNonNegativeOrZero(definition.oxygenConsumptionUnitsPerSecond),
+                    FiniteNonNegativeOrZero(playerOxygenConsumptionPercentPerSecond));
                 ApplyBrownoutOccupiedRoomOxygenDrain(roomIndex, ref oxygenConsumptionRate);
                 _o2ConsumptionRates[roomIndex] = oxygenConsumptionRate;
-                _co2GenerationRates[roomIndex] = math.max(0f, definition.carbonDioxideGenerationUnitsPerSecond);
+                _co2GenerationRates[roomIndex] = FiniteNonNegativeOrZero(definition.carbonDioxideGenerationUnitsPerSecond);
             }
 
             if (_roomPlayerCounts.IsCreated && TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
@@ -2438,7 +3542,7 @@ namespace Hecton8.Atmosphere
                     _roomPlayerCounts[occupiedRoomIndex] = 1;
             }
 
-            int doorCount = fluidDynamics.ConfiguredBulkheadCount;
+            int doorCount = math.min(fluidDynamics.ConfiguredBulkheadCount, DoorCapacity);
             for (int doorIndex = 0; doorIndex < DoorCapacity; doorIndex++)
             {
                 if (doorIndex < doorCount && fluidDynamics.TryGetBulkheadDefinition(doorIndex, out int compartmentA, out int compartmentB, out bool isSealed))
@@ -2511,12 +3615,12 @@ namespace Hecton8.Atmosphere
 
         internal static bool ShouldSiphonOxygenDuringBrownout(float supplyRatio, float threshold, bool playerInsideModule)
         {
-            return playerInsideModule && supplyRatio < math.saturate(threshold);
+            return playerInsideModule && math.saturate(FiniteOr(supplyRatio, 1f)) < math.saturate(FiniteOr(threshold, DefaultBrownoutOxygenSupplyRatioThreshold));
         }
 
         internal static float ResolveBrownoutOxygenConsumptionRate(float currentConsumptionRate, float brownoutDrainRate)
         {
-            return math.max(math.max(0f, currentConsumptionRate), math.max(0f, brownoutDrainRate));
+            return math.max(FiniteNonNegativeOrZero(currentConsumptionRate), FiniteNonNegativeOrZero(brownoutDrainRate));
         }
 
         private bool IsPlayerInsideModuleAabb(BaseModule module)
@@ -2530,9 +3634,9 @@ namespace Hecton8.Atmosphere
 
             float3 playerRuntime = playerAup.ToRuntimeFloat3();
             Vector3 delta = new Vector3(playerRuntime.x, playerRuntime.y, playerRuntime.z) - worldCenter;
-            return Mathf.Abs(delta.x) <= halfExtents.x &&
-                   Mathf.Abs(delta.y) <= halfExtents.y &&
-                   Mathf.Abs(delta.z) <= halfExtents.z;
+            return math.abs(delta.x) <= FiniteNonNegativeOrZero(halfExtents.x) &&
+                   math.abs(delta.y) <= FiniteNonNegativeOrZero(halfExtents.y) &&
+                   math.abs(delta.z) <= FiniteNonNegativeOrZero(halfExtents.z);
         }
 
         private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
@@ -2543,6 +3647,7 @@ namespace Hecton8.Atmosphere
                 return false;
 
             _playerTransform = playerContext.PlayerTransform;
+            _playerCamera = playerContext.PlayerCamera;
             playerAup = playerContext.PlayerMovement.CurrentAup;
             return true;
         }
@@ -2552,7 +3657,7 @@ namespace Hecton8.Atmosphere
             if (!_roomHeatWatts.IsCreated || fluidDynamics == null)
                 return;
 
-            int roomCount = fluidDynamics.CompartmentCount;
+            int roomCount = RoomCount;
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
             {
                 if (roomIndex >= roomCount)
@@ -2562,7 +3667,7 @@ namespace Hecton8.Atmosphere
                 }
 
                 RoomDefinition definition = roomIndex < rooms.Length ? rooms[roomIndex] : default;
-                _roomHeatWatts[roomIndex] = math.max(0f, definition.passiveHeatWatts);
+                _roomHeatWatts[roomIndex] = FiniteNonNegativeOrZero(definition.passiveHeatWatts);
             }
 
             for (int i = 0; i < _fabricatorHeatEmitterCount; i++)
@@ -2572,7 +3677,7 @@ namespace Hecton8.Atmosphere
                     continue;
 
                 if (emitter.Fabricator.IsCrafting)
-                    _roomHeatWatts[emitter.RoomIndex] += math.abs(emitter.Fabricator.PowerRating) * math.max(0f, fabricatorHeatWattsScale);
+                    _roomHeatWatts[emitter.RoomIndex] += math.abs(FiniteOr(emitter.Fabricator.PowerRating, 0f)) * FiniteNonNegativeOrZero(fabricatorHeatWattsScale);
             }
 
             for (int i = 0; i < _drillHeatEmitterCount; i++)
@@ -2581,7 +3686,7 @@ namespace Hecton8.Atmosphere
                 if (emitter.Drill == null || emitter.RoomIndex < 0 || emitter.RoomIndex >= roomCount)
                     continue;
 
-                _roomHeatWatts[emitter.RoomIndex] += math.abs(emitter.Drill.PowerRating) * math.max(0f, drillHeatWattsScale);
+                _roomHeatWatts[emitter.RoomIndex] += math.abs(FiniteOr(emitter.Drill.PowerRating, 0f)) * FiniteNonNegativeOrZero(drillHeatWattsScale);
             }
 
             for (int i = 0; i < _reactorHeatEmitterCount; i++)
@@ -2590,7 +3695,7 @@ namespace Hecton8.Atmosphere
                 if (emitter.Reactor == null || emitter.RoomIndex < 0 || emitter.RoomIndex >= roomCount)
                     continue;
 
-                _roomHeatWatts[emitter.RoomIndex] += math.max(0f, emitter.Reactor.PowerRating) * math.max(0f, reactorHeatWattsScale);
+                _roomHeatWatts[emitter.RoomIndex] += FiniteNonNegativeOrZero(emitter.Reactor.PowerRating) * FiniteNonNegativeOrZero(reactorHeatWattsScale);
             }
         }
 
@@ -2599,13 +3704,14 @@ namespace Hecton8.Atmosphere
             if (_submarineBody == null || fluidDynamics == null || !_temperatureFront.IsCreated || !_floodVolumes.IsCreated || !_roomVolumes.IsCreated)
                 return;
 
-            float thresholdTemperature = math.max(DefaultReactorMeltdownTemperatureCelsius, reactorMeltdownTemperatureCelsius);
-            float minimumImpulse = math.max(1f, reactorMeltdownMinimumImpulseNewtonSeconds);
-            float maximumImpulse = math.max(minimumImpulse, reactorMeltdownMaximumImpulseNewtonSeconds);
-            float upwardBias = math.saturate(reactorMeltdownUpwardBias);
-            float impulseDuration = math.max(0.001f, reactorMeltdownImpulseDurationSeconds);
-            float impulsePerWattSecond = math.max(0f, reactorMeltdownImpulsePerWattSecond);
-            float floodAmplification = math.max(1f, reactorMeltdownFloodAmplification);
+            ResolveSafeTemperatureBounds(out _, out float maximumTemperature);
+            float thresholdTemperature = math.min(maximumTemperature, math.max(DefaultReactorMeltdownTemperatureCelsius, FiniteOr(reactorMeltdownTemperatureCelsius, DefaultReactorMeltdownTemperatureCelsius)));
+            float minimumImpulse = math.max(1f, FiniteOr(reactorMeltdownMinimumImpulseNewtonSeconds, DefaultReactorMeltdownMinimumImpulseNewtonSeconds));
+            float maximumImpulse = math.max(minimumImpulse, FiniteOr(reactorMeltdownMaximumImpulseNewtonSeconds, DefaultReactorMeltdownMaximumImpulseNewtonSeconds));
+            float upwardBias = math.saturate(FiniteOr(reactorMeltdownUpwardBias, DefaultReactorMeltdownUpwardBias));
+            float impulseDuration = math.max(0.001f, FiniteOr(reactorMeltdownImpulseDurationSeconds, DefaultReactorMeltdownImpulseDurationSeconds));
+            float impulsePerWattSecond = FiniteNonNegativeOrZero(reactorMeltdownImpulsePerWattSecond);
+            float floodAmplification = math.max(1f, FiniteOr(reactorMeltdownFloodAmplification, DefaultReactorMeltdownFloodAmplification));
 
             for (int emitterIndex = 0; emitterIndex < _reactorHeatEmitterCount; emitterIndex++)
             {
@@ -2613,25 +3719,30 @@ namespace Hecton8.Atmosphere
                 if (emitter.Reactor == null || emitter.RoomIndex < 0 || emitter.RoomIndex >= RoomCount)
                     continue;
 
-                if (_reactorMeltdownTriggered[emitterIndex])
+                uint emitterBit = 1u << emitterIndex;
+                if ((_reactorMeltdownTriggeredMask & emitterBit) != 0u)
                     continue;
 
-                float roomTemperature = _temperatureFront[emitter.RoomIndex];
+                float roomTemperature = GetRoomTemperatureCelsius(emitter.RoomIndex);
                 if (roomTemperature < thresholdTemperature)
                     continue;
 
-                Vector3 reactorWorldPosition = emitter.Reactor.transform.position;
+                BaseModule roomModule = ResolveModuleForRoom(emitter.RoomIndex);
+                Vector3 reactorWorldPosition = TryResolveRoomHazardBounds(emitter.RoomIndex, roomModule, out Vector3 roomWorldCenter, out _)
+                    ? roomWorldCenter
+                    : _submarineBody.worldCenterOfMass;
                 Vector3 centerDirection = _submarineBody.worldCenterOfMass - reactorWorldPosition;
-                Vector3 forceDirection = SafeNormalize(Vector3.Lerp(centerDirection, Vector3.up, upwardBias), Vector3.up);
+                Vector3 forceDirection = ResolveFakeBlastDirection(centerDirection, upwardBias);
 
-                float roomVolume = math.max(minimumGasVolumeCubicMeters, _roomVolumes[emitter.RoomIndex]);
-                float floodRatio = math.saturate(_floodVolumes[emitter.RoomIndex] / roomVolume);
+                float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
+                float roomVolume = math.max(minimumGasVolume, FiniteOr(_roomVolumes[emitter.RoomIndex], minimumGasVolume));
+                float floodRatio = math.saturate(FiniteNonNegativeOrZero(_floodVolumes[emitter.RoomIndex]) / roomVolume);
                 float floodMultiplier = math.lerp(1f, floodAmplification, floodRatio);
                 float temperatureOvershoot = math.max(0f, roomTemperature - thresholdTemperature);
                 float thermalScale = 1f + math.saturate(temperatureOvershoot / math.max(1f, thresholdTemperature));
                 float baseImpulseMagnitude = math.max(
                     minimumImpulse,
-                    math.max(0f, emitter.Reactor.PowerRating) * impulsePerWattSecond * impulseDuration);
+                    FiniteNonNegativeOrZero(emitter.Reactor.PowerRating) * impulsePerWattSecond * impulseDuration);
                 float impulseMagnitude = math.clamp(
                     baseImpulseMagnitude * floodMultiplier * thermalScale,
                     minimumImpulse,
@@ -2642,7 +3753,7 @@ namespace Hecton8.Atmosphere
                     forceDirection * impulseMagnitude,
                     reactorWorldPosition,
                     ForceMode.Impulse);
-                _reactorMeltdownTriggered[emitterIndex] = true;
+                _reactorMeltdownTriggeredMask |= emitterBit;
             }
         }
 
@@ -2651,9 +3762,11 @@ namespace Hecton8.Atmosphere
             if (!_topologySeeded || !_pressureFront.IsCreated || !_doorSealedPrevious.IsCreated || fluidDynamics == null)
                 return;
 
-            int roomCount = fluidDynamics.CompartmentCount;
+            int roomCount = RoomCount;
             int doorCount = math.min(fluidDynamics.ConfiguredBulkheadCount, DoorCapacity);
-            float thresholdKPa = math.max(0f, highPressureEventThresholdKPa);
+            float referencePressure = ResolveSafeReferencePressureKPa();
+            float maximumPressure = ResolveSafeMaximumPressureKPa();
+            float thresholdKPa = math.max(referencePressure, FiniteOr(highPressureEventThresholdKPa, referencePressure));
             for (int doorIndex = 0; doorIndex < DoorCapacity; doorIndex++)
             {
                 byte currentState = doorIndex < doorCount ? _doorSealed[doorIndex] : (byte)1;
@@ -2667,8 +3780,8 @@ namespace Hecton8.Atmosphere
                 if (pair.x < 0 || pair.x >= roomCount || pair.y < 0 || pair.y >= roomCount)
                     continue;
 
-                float pressureA = _pressureFront[pair.x];
-                float pressureB = _pressureFront[pair.y];
+                float pressureA = FiniteClampedOr(_pressureFront[pair.x], referencePressure, 0f, maximumPressure);
+                float pressureB = FiniteClampedOr(_pressureFront[pair.y], referencePressure, 0f, maximumPressure);
                 if (math.abs(pressureA - pressureB) <= Epsilon)
                     continue;
 
@@ -2690,7 +3803,7 @@ namespace Hecton8.Atmosphere
         private Vector3 ResolveDoorRuntimePosition(int roomA, int roomB)
         {
             if (fluidDynamics == null)
-                return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+                return ResolveSubmarineFallbackRuntimePosition();
 
             Vector3 centroidA = fluidDynamics.GetCompartmentCentroid(roomA);
             Vector3 centroidB = fluidDynamics.GetCompartmentCentroid(roomB);
@@ -2703,8 +3816,14 @@ namespace Hecton8.Atmosphere
             if (fluidDynamics == null)
                 return;
 
-            float highPressureKPa = math.max(pressureA, pressureB);
-            float lowPressureKPa = math.min(pressureA, pressureB);
+            float referencePressure = ResolveSafeReferencePressureKPa();
+            float maximumPressure = ResolveSafeMaximumPressureKPa();
+            float highPressureKPa = math.max(
+                FiniteClampedOr(pressureA, referencePressure, 0f, maximumPressure),
+                FiniteClampedOr(pressureB, referencePressure, 0f, maximumPressure));
+            float lowPressureKPa = math.min(
+                FiniteClampedOr(pressureA, referencePressure, 0f, maximumPressure),
+                FiniteClampedOr(pressureB, referencePressure, 0f, maximumPressure));
             float pressureDeltaKPa = highPressureKPa - lowPressureKPa;
             if (pressureDeltaKPa <= Epsilon)
                 return;
@@ -2713,11 +3832,11 @@ namespace Hecton8.Atmosphere
             if (direction.sqrMagnitude <= Epsilon)
                 return;
 
-            float doorAreaSquareMeters = math.max(Epsilon, fluidDynamics.GetBulkheadDoorAreaSquareMeters(doorIndex));
+            float doorAreaSquareMeters = math.max(Epsilon, FiniteOr(fluidDynamics.GetBulkheadDoorAreaSquareMeters(doorIndex), Epsilon));
             float forceMagnitudeNewtons = pressureDeltaKPa * 1000f * doorAreaSquareMeters;
             float impulseMagnitude = math.min(
-                forceMagnitudeNewtons * math.max(0.001f, pressureImpulseDurationSeconds),
-                math.max(1f, maximumPressureImpulseNewtonSeconds));
+                forceMagnitudeNewtons * math.max(0.001f, FiniteOr(pressureImpulseDurationSeconds, DefaultPressureImpulseDurationSeconds)),
+                math.max(1f, FiniteOr(maximumPressureImpulseNewtonSeconds, DefaultMaximumPressureImpulseNewtonSeconds)));
 
             PressureImpulseEvent pressureImpulseEvent = new PressureImpulseEvent(
                 doorIndex,
@@ -2728,7 +3847,7 @@ namespace Hecton8.Atmosphere
                 lowPressureKPa,
                 direction * forceMagnitudeNewtons,
                 direction * impulseMagnitude,
-                math.max(0.25f, pressureImpulseRadiusMeters));
+                math.max(0.25f, FiniteOr(pressureImpulseRadiusMeters, DefaultPressureImpulseRadiusMeters)));
             PhysicsEventBus.NotifyPressureImpulse(in pressureImpulseEvent);
             ApplyPressureBlowoutImpulse(in pressureImpulseEvent);
         }
@@ -2742,12 +3861,12 @@ namespace Hecton8.Atmosphere
             Vector3 centroidB = fluidDynamics.GetCompartmentCentroid(roomB);
             Vector3 localDirection = pressureA >= pressureB ? (centroidB - centroidA) : (centroidA - centroidB);
             Vector3 worldDirection = _cachedTransform != null ? _cachedTransform.TransformDirection(localDirection) : localDirection;
-            return SafeNormalize(worldDirection, _cachedTransform != null ? _cachedTransform.forward : Vector3.forward);
+            return ResolveFakeAxisDirection(worldDirection, _cachedTransform != null ? _cachedTransform.forward : Vector3.forward);
         }
 
         private void ApplyPressureBlowoutImpulse(in PressureImpulseEvent pressureImpulseEvent)
         {
-            float radius = math.max(0.25f, pressureImpulseEvent.InfluenceRadiusMeters);
+            float radius = math.max(0.25f, FiniteOr(pressureImpulseEvent.InfluenceRadiusMeters, DefaultPressureImpulseRadiusMeters));
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
                 pressureImpulseEvent.RuntimePosition,
                 radius,
@@ -2758,6 +3877,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             float radiusSq = math.max(Epsilon, radius * radius);
+            float falloffBias = math.saturate(FiniteOr(pressureImpulseFalloffExponent, DefaultPressureImpulseFalloffExponent) - 1f) * 0.1f;
             int uniqueBodyCount = 0;
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
@@ -2770,35 +3890,6 @@ namespace Hecton8.Atmosphere
                 if (body == null || body.isKinematic || body == _submarineBody)
                     continue;
 
-                bool duplicate = false;
-                for (int uniqueIndex = 0; uniqueIndex < uniqueBodyCount; uniqueIndex++)
-                {
-                    if (_pressureImpulseBodyBuffer[uniqueIndex] != body)
-                        continue;
-
-                    duplicate = true;
-                    break;
-                }
-
-                if (duplicate)
-                    continue;
-
-                _pressureImpulseBodyBuffer[uniqueBodyCount++] = body;
-                if (uniqueBodyCount >= PressureImpulseOverlapCapacity)
-                    break;
-            }
-
-            float impulseMagnitude = math.min(
-                pressureImpulseEvent.PressureDeltaKPa * 1000f * math.max(Epsilon, pressureImpulseEvent.DoorAreaSquareMeters) * math.max(0.001f, pressureImpulseDurationSeconds),
-                math.max(1f, maximumPressureImpulseNewtonSeconds));
-            float falloffBias = math.saturate(pressureImpulseFalloffExponent - 1f) * 0.1f;
-            for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
-            {
-                Rigidbody body = _pressureImpulseBodyBuffer[bodyIndex];
-                _pressureImpulseBodyBuffer[bodyIndex] = null;
-                if (body == null)
-                    continue;
-
                 Vector3 toDoor = pressureImpulseEvent.RuntimePosition - body.worldCenterOfMass;
                 float normalizedDistance = math.saturate(1f - (toDoor.sqrMagnitude / radiusSq));
                 if (normalizedDistance <= 0f)
@@ -2808,26 +3899,96 @@ namespace Hecton8.Atmosphere
                 if (falloff <= Epsilon)
                     continue;
 
+                bool duplicate = false;
+                for (int uniqueIndex = 0; uniqueIndex < uniqueBodyCount; uniqueIndex++)
+                {
+                    if (_pressureImpulseBodyBuffer[uniqueIndex] != body)
+                        continue;
+
+                    _pressureImpulseFalloffBuffer[uniqueIndex] = math.max(_pressureImpulseFalloffBuffer[uniqueIndex], falloff);
+                    duplicate = true;
+                    break;
+                }
+
+                if (duplicate)
+                    continue;
+
+                _pressureImpulseBodyBuffer[uniqueBodyCount] = body;
+                _pressureImpulseFalloffBuffer[uniqueBodyCount] = falloff;
+                uniqueBodyCount++;
+                if (uniqueBodyCount >= PressureImpulseOverlapCapacity)
+                    break;
+            }
+
+            float impulseMagnitude = math.min(
+                FiniteNonNegativeOrZero(pressureImpulseEvent.PressureDeltaKPa) * 1000f * math.max(Epsilon, FiniteOr(pressureImpulseEvent.DoorAreaSquareMeters, Epsilon)) * math.max(0.001f, FiniteOr(pressureImpulseDurationSeconds, DefaultPressureImpulseDurationSeconds)),
+                math.max(1f, FiniteOr(maximumPressureImpulseNewtonSeconds, DefaultMaximumPressureImpulseNewtonSeconds)));
+            for (int bodyIndex = 0; bodyIndex < uniqueBodyCount; bodyIndex++)
+            {
+                Rigidbody body = _pressureImpulseBodyBuffer[bodyIndex];
+                _pressureImpulseBodyBuffer[bodyIndex] = null;
+                float falloff = _pressureImpulseFalloffBuffer[bodyIndex];
+                _pressureImpulseFalloffBuffer[bodyIndex] = 0f;
+                if (body == null)
+                    continue;
+
+                if (falloff <= Epsilon)
+                    continue;
+
                 Vector3 direction = pressureImpulseEvent.Direction;
                 Vector3 impulse = direction * (impulseMagnitude * falloff);
                 PhysicsForceRouter.QueueForce(body, impulse, ForceMode.Impulse);
             }
         }
 
-        private static Vector3 SafeNormalize(Vector3 value, Vector3 fallback)
+        private static Vector3 ResolveFakeBlastDirection(Vector3 centerDirection, float upwardBias)
         {
-            float lengthSq = value.sqrMagnitude;
+            float x = FiniteOr(centerDirection.x, 0f);
+            float z = FiniteOr(centerDirection.z, 0f);
+            float lateralXSq = x * x;
+            float lateralZSq = z * z;
+            if (lateralXSq + lateralZSq <= 0.000001f)
+                return Vector3.up;
+
+            bool highArc = FiniteOr(upwardBias, 0f) >= 0.5f;
+            float lateral = highArc ? 0.6f : 0.94f;
+            float vertical = highArc ? 0.8f : 0.35f;
+            if (lateralXSq >= lateralZSq)
+                return new Vector3(x >= 0f ? lateral : -lateral, vertical, 0f);
+
+            return new Vector3(0f, vertical, z >= 0f ? lateral : -lateral);
+        }
+
+        private static Vector3 ResolveFakeAxisDirection(Vector3 value, Vector3 fallback)
+        {
+            Vector3 safeValue = new Vector3(FiniteOr(value.x, 0f), FiniteOr(value.y, 0f), FiniteOr(value.z, 0f));
+            float lengthSq = safeValue.sqrMagnitude;
             if (lengthSq <= 0.000001f)
                 return fallback;
 
-            return value * math.rsqrt(lengthSq);
+            float absX = math.abs(safeValue.x);
+            float absY = math.abs(safeValue.y);
+            float absZ = math.abs(safeValue.z);
+            if (absX >= absY && absX >= absZ)
+                return safeValue.x >= 0f ? Vector3.right : Vector3.left;
+
+            if (absY >= absZ)
+                return safeValue.y >= 0f ? Vector3.up : Vector3.down;
+
+            return safeValue.z >= 0f ? Vector3.forward : Vector3.back;
         }
 
-        private void ScheduleAtmosphereJob(float fixedDeltaTime, float thermalConductionDeltaTime)
+        private void ScheduleAtmosphereJob(float fixedDeltaTime)
         {
             if (_atmosphereJobRunning || fluidDynamics == null || !_o2Front.IsCreated)
                 return;
 
+            int roomCount = RoomCount;
+            int doorCount = math.min(fluidDynamics.ConfiguredBulkheadCount, DoorCapacity);
+            ResolveSafeTemperatureBounds(out float minimumTemperature, out float maximumTemperature);
+            float referencePressure = ResolveSafeReferencePressureKPa();
+            float maximumPressure = ResolveSafeMaximumPressureKPa();
+            float tankCapacity = math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity));
             AtmosphereStepJob job = new AtmosphereStepJob
             {
                 O2Front = _o2Front,
@@ -2852,32 +4013,25 @@ namespace Hecton8.Atmosphere
                 GasVolumeBack = _gasVolumeBack,
                 TemperatureBack = _temperatureBack,
                 SteamBack = _steamBack,
-                RoomCount = fluidDynamics.CompartmentCount,
-                DoorCount = fluidDynamics.ConfiguredBulkheadCount,
-                DeltaTime = fixedDeltaTime,
-                ReferencePressureKPa = math.max(1f, referencePressureKPa),
-                MinimumGasVolumeCubicMeters = math.max(0.001f, minimumGasVolumeCubicMeters),
-                MaximumPressureKPa = math.max(referencePressureKPa, maximumPressureKPa),
-                DoorConductance = math.max(0f, doorConductance),
-                MaxTransferUnitsPerSecond = math.max(0f, maxTransferUnitsPerSecond),
-                ReferenceTemperatureCelsius = referenceTemperatureCelsius,
-                FloodWaterTemperatureCelsius = floodWaterTemperatureCelsius,
-                MinimumTemperatureCelsius = math.min(minimumTemperatureCelsius, maximumTemperatureCelsius),
-                MaximumTemperatureCelsius = math.max(minimumTemperatureCelsius, maximumTemperatureCelsius),
-                AirDensityKilogramsPerCubicMeter = math.max(0.1f, airDensityKilogramsPerCubicMeter),
-                AirSpecificHeatJoulesPerKilogramKelvin = math.max(1f, airSpecificHeatJoulesPerKilogramKelvin),
-                WaterDensityKilogramsPerCubicMeter = math.max(1f, waterDensityKilogramsPerCubicMeter),
-                WaterSpecificHeatJoulesPerKilogramKelvin = math.max(1f, waterSpecificHeatJoulesPerKilogramKelvin),
-                MinimumThermalCapacityJoulesPerKelvin = math.max(1f, minimumThermalCapacityJoulesPerKelvin),
-                ThermalConductionDeltaTime = math.max(0f, thermalConductionDeltaTime),
-                BulkheadThermalConductivityWattsPerKelvin = math.max(0f, bulkheadThermalConductivityWattsPerKelvin),
-                SealedBulkheadThermalCoupling = math.saturate(sealedBulkheadThermalCoupling),
-                OpenBulkheadThermalCoupling = math.max(0f, openBulkheadThermalCoupling),
-                ReferenceTemperatureKelvin = math.max(1f, referenceTemperatureKelvin),
-                OxygenTankCapacity = math.max(1f, oxygenTankCapacity),
-                HeatWattsToCelsiusPerSecond = math.max(0f, heatWattsToCelsiusPerSecond)
+                RoomStatusMaskBack = _roomStatusMaskBack,
+                RoomCount = roomCount,
+                DoorCount = doorCount,
+                DeltaTime = FiniteNonNegativeOrZero(fixedDeltaTime),
+                ReferencePressureKPa = referencePressure,
+                MinimumGasVolumeCubicMeters = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters)),
+                MaximumPressureKPa = maximumPressure,
+                ReferenceTemperatureCelsius = FiniteClampedOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius, minimumTemperature, maximumTemperature),
+                FloodWaterTemperatureCelsius = FiniteClampedOr(floodWaterTemperatureCelsius, DefaultFloodWaterTemperatureCelsius, minimumTemperature, maximumTemperature),
+                MinimumTemperatureCelsius = minimumTemperature,
+                MaximumTemperatureCelsius = maximumTemperature,
+                OxygenTankCapacity = tankCapacity,
+                HeatWattsToCelsiusPerSecond = FiniteNonNegativeOrZero(heatWattsToCelsiusPerSecond),
+                LowOxygenThresholdUnits = math.saturate(FiniteOr(lowOxygenThreshold01, DefaultLowOxygenThreshold01)) * tankCapacity,
+                FreezingTemperatureCelsius = FiniteClampedOr(freezingRoomTemperatureCelsius, DefaultFreezingRoomTemperatureCelsius, minimumTemperature, maximumTemperature),
+                HighPressureStatusKPa = math.max(referencePressure, FiniteOr(highPressureEventThresholdKPa, referencePressure))
             };
 
+            _scheduledAtmosphereDeltaTime = FiniteNonNegativeOrZero(fixedDeltaTime);
             _atmosphereJobHandle = job.Schedule();
             _atmosphereJobRunning = true;
         }
@@ -2891,21 +4045,35 @@ namespace Hecton8.Atmosphere
                 return;
 
             _atmosphereJobRunning = false;
+            SwapAtmosphereBuffers();
+            ApplyPendingAtmosphereMutations();
+            ApplyCompletedAtmosphereStepSideEffects(ResolveCompletedAtmosphereDeltaTime(fixedDeltaTime));
+        }
 
-            SwapBuffers(ref _o2Front, ref _o2Back);
-            SwapBuffers(ref _co2Front, ref _co2Back);
-            SwapBuffers(ref _inertFront, ref _inertBack);
-            SwapBuffers(ref _pressureFront, ref _pressureBack);
-            SwapBuffers(ref _gasVolumeFront, ref _gasVolumeBack);
-            SwapBuffers(ref _temperatureFront, ref _temperatureBack);
-            SwapBuffers(ref _steamFront, ref _steamBack);
-            PublishAtmosphereFakes(fixedDeltaTime);
+        private float ResolveCompletedAtmosphereDeltaTime(float fallbackDeltaTime)
+        {
+            float deltaTime = _scheduledAtmosphereDeltaTime > 0f
+                ? _scheduledAtmosphereDeltaTime
+                : FiniteNonNegativeOrZero(fallbackDeltaTime);
+            _scheduledAtmosphereDeltaTime = 0f;
+            return deltaTime;
+        }
+
+        private void ApplyCompletedAtmosphereStepSideEffects(float atmosphereDeltaTime)
+        {
+            ApplyAbyssalBlackoutFreeze(atmosphereDeltaTime);
+            ProcessSteamPhaseCycle(atmosphereDeltaTime);
+            TryEmergencyAtmosphericVenting(atmosphereDeltaTime);
+            DecayExplosivePockets(atmosphereDeltaTime);
+            EvaluateReactorMeltdowns();
+            UpdateBoilingFloodHazards(atmosphereDeltaTime);
+            PublishAtmosphereFakes(atmosphereDeltaTime);
         }
 
         private void RefreshDebugState()
         {
-            int roomCount = fluidDynamics != null ? fluidDynamics.CompartmentCount : 0;
-            int doorCount = fluidDynamics != null ? fluidDynamics.ConfiguredBulkheadCount : 0;
+            int roomCount = RoomCount;
+            int doorCount = fluidDynamics != null ? math.min(fluidDynamics.ConfiguredBulkheadCount, DoorCapacity) : 0;
             _debugRoomCount = roomCount;
             _debugDoorCount = doorCount;
 
@@ -2928,21 +4096,21 @@ namespace Hecton8.Atmosphere
             float maxTemperature = minimumTemperatureCelsius;
             float steamSum = 0f;
             float maxSteam = 0f;
+            float tankCapacity = math.max(1f, FiniteOr(oxygenTankCapacity, DefaultOxygenTankCapacity));
             for (int roomIndex = 0; roomIndex < roomCount; roomIndex++)
             {
-                float pressure = _pressureFront[roomIndex];
+                float pressure = FiniteClampedOr(_pressureFront[roomIndex], ResolveSafeReferencePressureKPa(), 0f, ResolveSafeMaximumPressureKPa());
                 pressureSum += pressure;
                 maxPressure = math.max(maxPressure, pressure);
-                float temperature = _temperatureFront.IsCreated ? _temperatureFront[roomIndex] : referenceTemperatureCelsius;
+                float temperature = _temperatureFront.IsCreated ? GetRoomTemperatureCelsius(roomIndex) : FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius);
                 temperatureSum += temperature;
                 maxTemperature = math.max(maxTemperature, temperature);
-                float steamVolume = _steamFront.IsCreated ? _steamFront[roomIndex] : 0f;
+                float steamVolume = _steamFront.IsCreated ? FiniteNonNegativeOrZero(_steamFront[roomIndex]) : 0f;
                 steamSum += steamVolume;
                 maxSteam = math.max(maxSteam, steamVolume);
 
-                float tankCapacity = math.max(1f, oxygenTankCapacity);
-                oxygenFractionSum += math.saturate(_o2Front[roomIndex] / tankCapacity);
-                carbonDioxideFractionSum += math.saturate(_co2Front[roomIndex] / tankCapacity);
+                oxygenFractionSum += math.saturate(FiniteNonNegativeOrZero(_o2Front[roomIndex]) / tankCapacity);
+                carbonDioxideFractionSum += math.saturate(FiniteNonNegativeOrZero(_co2Front[roomIndex]) / tankCapacity);
             }
 
             float inverseRoomCount = 1f / math.max(roomCount, 1);
@@ -2963,6 +4131,7 @@ namespace Hecton8.Atmosphere
             UnregisterNativeState();
             JobHandle dependency = _atmosphereJobRunning ? _atmosphereJobHandle : default;
             _atmosphereJobRunning = false;
+            _scheduledAtmosphereDeltaTime = 0f;
             DisposeDeferred(ref _roomVolumes, dependency);
             DisposeDeferred(ref _floodVolumes, dependency);
             DisposeDeferred(ref _o2Front, dependency);
@@ -2985,11 +4154,20 @@ namespace Hecton8.Atmosphere
             DisposeDeferred(ref _hydrogenPocketFront, dependency);
             DisposeDeferred(ref _oxygenPocketFront, dependency);
             DisposeDeferred(ref _roomHeatWatts, dependency);
+            DisposeDeferred(ref _roomStatusMaskFront, dependency);
+            DisposeDeferred(ref _roomStatusMaskBack, dependency);
             DisposeDeferred(ref _doorPairs, dependency);
             DisposeDeferred(ref _doorSealed, dependency);
             DisposeDeferred(ref _doorSealedPrevious, dependency);
             _topologySeeded = false;
+            _topologyRoomCount = -1;
+            _topologyDoorCount = -1;
             _thermalEmittersSeeded = false;
+            _emergencyVentPipesSeeded = false;
+            _emergencyVentRoomMask = 0u;
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+                _emergencyVentPipesByRoom[roomIndex] = null;
+            ClearPendingAtmosphereMutations();
         }
 
         private void DisposeDeferred<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
@@ -3001,13 +4179,8 @@ namespace Hecton8.Atmosphere
             array = default;
         }
 
-        private void CompleteAtmosphereJobForAuthoritativeWrite()
+        private void SwapAtmosphereBuffers()
         {
-            if (!_atmosphereJobRunning)
-                return;
-
-            DispatcherJobSwap.TryComplete(ref _atmosphereJobHandle, true);
-            _atmosphereJobRunning = false;
             SwapBuffers(ref _o2Front, ref _o2Back);
             SwapBuffers(ref _co2Front, ref _co2Back);
             SwapBuffers(ref _inertFront, ref _inertBack);
@@ -3015,41 +4188,67 @@ namespace Hecton8.Atmosphere
             SwapBuffers(ref _gasVolumeFront, ref _gasVolumeBack);
             SwapBuffers(ref _temperatureFront, ref _temperatureBack);
             SwapBuffers(ref _steamFront, ref _steamBack);
+            SwapBuffers(ref _roomStatusMaskFront, ref _roomStatusMaskBack);
+        }
+
+        private void ClearPendingAtmosphereMutations()
+        {
+            _pendingAtmosphereMutationMask = 0u;
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+                _pendingAtmosphereMutations[roomIndex] = default;
+        }
+
+        private void ClearRoomModuleCache()
+        {
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+                _atmosphereRoomModules[roomIndex] = null;
+        }
+
+        private void ClearBrownoutRoomModuleCache()
+        {
+            for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
+                _brownoutRoomModules[roomIndex] = null;
         }
 
         private float ResolveInstantPressure(float totalGasUnits, float gasVolumeCubicMeters)
         {
-            return ResolveInstantPressureWithTemperature(totalGasUnits, gasVolumeCubicMeters, referenceTemperatureCelsius);
+            return ResolveInstantPressureWithTemperature(totalGasUnits, gasVolumeCubicMeters, FiniteOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius));
         }
 
         private float ResolveInstantFakePressure(int roomIndex, float temperatureCelsius)
         {
             if (roomIndex < 0 || roomIndex >= RoomCount)
-                return referencePressureKPa;
+                return ResolveSafeReferencePressureKPa();
 
+            float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
             float roomVolume = _roomVolumes.IsCreated
-                ? math.max(_roomVolumes[roomIndex], minimumGasVolumeCubicMeters)
-                : minimumGasVolumeCubicMeters;
+                ? math.max(FiniteOr(_roomVolumes[roomIndex], minimumGasVolume), minimumGasVolume)
+                : minimumGasVolume;
             float floodVolume = _floodVolumes.IsCreated
-                ? math.clamp(_floodVolumes[roomIndex], 0f, roomVolume)
+                ? math.clamp(FiniteNonNegativeOrZero(_floodVolumes[roomIndex]), 0f, roomVolume)
                 : 0f;
             float steamVolume = _steamFront.IsCreated
-                ? math.max(0f, _steamFront[roomIndex])
+                ? FiniteNonNegativeOrZero(_steamFront[roomIndex])
                 : 0f;
             return ResolveSimplePressureKPa(roomVolume, floodVolume, steamVolume, temperatureCelsius);
         }
 
         private float ResolveSimplePressureKPa(float roomVolume, float floodVolume, float steamVolume, float temperatureCelsius)
         {
-            float safeRoomVolume = math.max(minimumGasVolumeCubicMeters, roomVolume);
+            ResolveSafeTemperatureBounds(out float minimumTemperature, out float maximumTemperature);
+            float referenceTemperature = FiniteClampedOr(referenceTemperatureCelsius, DefaultReferenceTemperatureCelsius, minimumTemperature, maximumTemperature);
+            float safeRoomVolume = math.max(math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters)), FiniteOr(roomVolume, DefaultMinimumGasVolumeCubicMeters));
             float flood01 = math.saturate(floodVolume / safeRoomVolume);
             float steam01 = math.saturate(steamVolume / safeRoomVolume);
-            float heat01 = math.saturate((temperatureCelsius - referenceTemperatureCelsius) / math.max(1f, maximumTemperatureCelsius - referenceTemperatureCelsius));
+            float safeTemperature = FiniteClampedOr(temperatureCelsius, referenceTemperature, minimumTemperature, maximumTemperature);
+            float heat01 = math.saturate((safeTemperature - referenceTemperature) / math.max(1f, maximumTemperature - referenceTemperature));
+            float referencePressure = ResolveSafeReferencePressureKPa();
+            float maximumPressure = ResolveSafeMaximumPressureKPa();
             float pressure01 = math.saturate((flood01 * 0.65f) + (steam01 * 0.35f) + (heat01 * 0.2f));
             return math.clamp(
-                math.lerp(referencePressureKPa, maximumPressureKPa, pressure01),
+                math.lerp(referencePressure, maximumPressure, pressure01),
                 0f,
-                math.max(referencePressureKPa, maximumPressureKPa));
+                maximumPressure);
         }
 
         private void UpdateBoilingFloodHazards(float fixedDeltaTime)
@@ -3060,35 +4259,36 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            int roomCount = fluidDynamics.CompartmentCount;
-            float thresholdTemperature = boilingFloodTemperatureCelsius;
-            float minimumFillRatio = math.saturate(boilingFloodMinimumFillRatio);
-            float hazardBaseIntensity = math.max(0f, boilingHazardIntensity);
-            float faunaDamagePerStep = math.max(0f, boilingFaunaDamagePerSecond) * math.max(0f, fixedDeltaTime);
-            float maxTemperature = math.max(thresholdTemperature + 1f, maximumTemperatureCelsius);
+            int roomCount = RoomCount;
+            ResolveSafeTemperatureBounds(out float safeMinimumTemperature, out float safeMaximumTemperature);
+            float thresholdTemperature = FiniteClampedOr(boilingFloodTemperatureCelsius, DefaultBoilingFloodTemperatureCelsius, safeMinimumTemperature, safeMaximumTemperature);
+            float minimumFillRatio = math.saturate(FiniteOr(boilingFloodMinimumFillRatio, DefaultBoilingFloodMinimumFillRatio));
+            float hazardBaseIntensity = FiniteNonNegativeOrZero(boilingHazardIntensity);
+            float faunaDamagePerStep = FiniteNonNegativeOrZero(boilingFaunaDamagePerSecond) * FiniteNonNegativeOrZero(fixedDeltaTime);
+            float maxTemperature = math.max(thresholdTemperature + 1f, safeMaximumTemperature);
+            float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
 
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
             {
-                int hazardId = _boilingHazardIds[roomIndex];
                 if (roomIndex >= roomCount)
                 {
-                    HectonHazardManager.Unregister(hazardId);
+                    UnregisterBoilingHazard(roomIndex);
                     continue;
                 }
 
-                float roomVolume = math.max(minimumGasVolumeCubicMeters, _roomVolumes[roomIndex]);
-                float floodVolume = math.clamp(_floodVolumes[roomIndex], 0f, roomVolume);
+                float roomVolume = math.max(minimumGasVolume, FiniteOr(_roomVolumes[roomIndex], minimumGasVolume));
+                float floodVolume = math.clamp(FiniteNonNegativeOrZero(_floodVolumes[roomIndex]), 0f, roomVolume);
                 float fillRatio = math.saturate(floodVolume / roomVolume);
-                float temperature = _temperatureFront[roomIndex];
+                float temperature = GetRoomTemperatureCelsius(roomIndex);
                 if (temperature < thresholdTemperature || fillRatio < minimumFillRatio)
                 {
-                    HectonHazardManager.Unregister(hazardId);
+                    UnregisterBoilingHazard(roomIndex);
                     continue;
                 }
 
                 if (!TryResolveBoilingHazardBounds(roomIndex, roomVolume, out Vector3 worldCenter, out float radius))
                 {
-                    HectonHazardManager.Unregister(hazardId);
+                    UnregisterBoilingHazard(roomIndex);
                     continue;
                 }
 
@@ -3096,7 +4296,7 @@ namespace Hecton8.Atmosphere
                 float fill01 = math.saturate((fillRatio - minimumFillRatio) / math.max(0.01f, 1f - minimumFillRatio));
                 float intensity = hazardBaseIntensity * math.max(0.1f, math.max(temperature01, fill01));
 
-                HectonHazardManager.Register(hazardId, worldCenter, intensity, radius, HazardType.Heat);
+                RegisterBoilingHazard(roomIndex, worldCenter, intensity, radius);
                 ApplyBoilingFaunaDamage(worldCenter, radius, intensity * faunaDamagePerStep);
             }
         }
@@ -3104,28 +4304,72 @@ namespace Hecton8.Atmosphere
         private void ClearBoilingFloodHazards()
         {
             for (int roomIndex = 0; roomIndex < RoomCapacity; roomIndex++)
-                HectonHazardManager.Unregister(_boilingHazardIds[roomIndex]);
+                UnregisterBoilingHazard(roomIndex);
+        }
+
+        private void RegisterBoilingHazard(int roomIndex, Vector3 worldCenter, float intensity, float radius)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCapacity)
+                return;
+
+            uint roomBit = 1u << roomIndex;
+            if (HectonHazardManager.Register(_boilingHazardIds[roomIndex], worldCenter, intensity, radius, HazardType.Heat))
+            {
+                _boilingHazardActiveMask |= roomBit;
+                return;
+            }
+
+            UnregisterBoilingHazard(roomIndex);
+        }
+
+        private void UnregisterBoilingHazard(int roomIndex)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCapacity)
+                return;
+
+            uint roomBit = 1u << roomIndex;
+            if ((_boilingHazardActiveMask & roomBit) == 0u)
+                return;
+
+            HectonHazardManager.Unregister(_boilingHazardIds[roomIndex]);
+            _boilingHazardActiveMask &= ~roomBit;
         }
 
         private float ResolveInstantThermalCapacity(int roomIndex)
         {
             if (roomIndex < 0 || roomIndex >= RoomCount || !_roomVolumes.IsCreated || !_floodVolumes.IsCreated || !_gasVolumeFront.IsCreated)
-                return math.max(Epsilon, minimumThermalCapacityJoulesPerKelvin);
+                return math.max(Epsilon, FiniteOr(minimumThermalCapacityJoulesPerKelvin, DefaultMinimumThermalCapacityJoulesPerKelvin));
 
-            float gasVolume = math.max(minimumGasVolumeCubicMeters, _gasVolumeFront[roomIndex]);
-            float floodVolume = math.max(0f, _floodVolumes[roomIndex]);
-            float airMass = gasVolume * math.max(Epsilon, airDensityKilogramsPerCubicMeter);
-            float waterMass = floodVolume * math.max(Epsilon, waterDensityKilogramsPerCubicMeter);
-            float airCapacity = airMass * math.max(Epsilon, airSpecificHeatJoulesPerKilogramKelvin);
-            float waterCapacity = waterMass * math.max(Epsilon, waterSpecificHeatJoulesPerKilogramKelvin);
-            return math.max(minimumThermalCapacityJoulesPerKelvin, airCapacity + waterCapacity);
+            float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
+            float gasVolume = math.max(minimumGasVolume, FiniteOr(_gasVolumeFront[roomIndex], minimumGasVolume));
+            float floodVolume = FiniteNonNegativeOrZero(_floodVolumes[roomIndex]);
+            float airMass = gasVolume * math.max(Epsilon, FiniteOr(airDensityKilogramsPerCubicMeter, DefaultAirDensityKilogramsPerCubicMeter));
+            float waterMass = floodVolume * math.max(Epsilon, FiniteOr(waterDensityKilogramsPerCubicMeter, DefaultWaterDensityKilogramsPerCubicMeter));
+            float airCapacity = airMass * math.max(Epsilon, FiniteOr(airSpecificHeatJoulesPerKilogramKelvin, DefaultAirSpecificHeatJoulesPerKilogramKelvin));
+            float waterCapacity = waterMass * math.max(Epsilon, FiniteOr(waterSpecificHeatJoulesPerKilogramKelvin, DefaultWaterSpecificHeatJoulesPerKilogramKelvin));
+            return math.max(math.max(Epsilon, FiniteOr(minimumThermalCapacityJoulesPerKelvin, DefaultMinimumThermalCapacityJoulesPerKelvin)), airCapacity + waterCapacity);
         }
 
         private static float ResolveFakeHazardRadius(float roomVolume, float paddingMeters)
         {
-            float safePadding = math.max(0f, paddingMeters);
-            float volumeRadius = FakeHazardRadiusBaseMeters + (math.max(0f, roomVolume) * FakeHazardRadiusVolumeScale);
+            float safePadding = FiniteNonNegativeOrZero(paddingMeters);
+            float volumeRadius = FakeHazardRadiusBaseMeters + (FiniteNonNegativeOrZero(roomVolume) * FakeHazardRadiusVolumeScale);
             return math.clamp(volumeRadius + safePadding, 0.5f, FakeHazardRadiusMaxMeters + safePadding);
+        }
+
+        private static bool TryResolveModuleInteriorHazardBounds(BaseModule module, float paddingMeters, out Vector3 worldCenter, out float radius)
+        {
+            worldCenter = Vector3.zero;
+            radius = 0f;
+            if (module == null || !module.TryGetInteriorAabbBounds(out worldCenter, out Vector3 halfExtents))
+                return false;
+
+            float safePadding = FiniteNonNegativeOrZero(paddingMeters);
+            float maxExtent = math.max(
+                FiniteNonNegativeOrZero(halfExtents.x),
+                math.max(FiniteNonNegativeOrZero(halfExtents.y), FiniteNonNegativeOrZero(halfExtents.z)));
+            radius = math.clamp((maxExtent * 1.75f) + safePadding, 0.5f, FakeHazardRadiusMaxMeters + safePadding);
+            return radius > 0f;
         }
 
         private bool TryResolveBoilingHazardBounds(int roomIndex, float roomVolume, out Vector3 worldCenter, out float radius)
@@ -3134,6 +4378,9 @@ namespace Hecton8.Atmosphere
             radius = 0f;
             if (fluidDynamics == null || _cachedTransform == null)
                 return false;
+
+            if (TryResolveModuleInteriorHazardBounds(ResolveModuleForRoom(roomIndex), boilingHazardRadiusPaddingMeters, out worldCenter, out radius))
+                return true;
 
             Vector3 localCentroid = fluidDynamics.GetCompartmentCentroid(roomIndex);
             worldCenter = _cachedTransform.TransformPoint(localCentroid);
@@ -3144,14 +4391,23 @@ namespace Hecton8.Atmosphere
 
         private bool TryResolveRoomHazardBounds(int roomIndex, out Vector3 worldCenter, out float radius)
         {
+            return TryResolveRoomHazardBounds(roomIndex, ResolveModuleForRoom(roomIndex), out worldCenter, out radius);
+        }
+
+        private bool TryResolveRoomHazardBounds(int roomIndex, BaseModule roomModule, out Vector3 worldCenter, out float radius)
+        {
             worldCenter = Vector3.zero;
             radius = 0f;
             if (fluidDynamics == null || _cachedTransform == null || roomIndex < 0 || roomIndex >= RoomCount)
                 return false;
 
+            if (TryResolveModuleInteriorHazardBounds(roomModule, roomHazardRadiusPaddingMeters, out worldCenter, out radius))
+                return true;
+
+            float minimumGasVolume = math.max(0.001f, FiniteOr(minimumGasVolumeCubicMeters, DefaultMinimumGasVolumeCubicMeters));
             float roomVolume = _roomVolumes.IsCreated
-                ? math.max(_roomVolumes[roomIndex], minimumGasVolumeCubicMeters)
-                : math.max(fluidDynamics.GetCompartmentMaxFloodVolumeCubicMeters(roomIndex), minimumGasVolumeCubicMeters);
+                ? math.max(FiniteOr(_roomVolumes[roomIndex], minimumGasVolume), minimumGasVolume)
+                : math.max(FiniteOr(fluidDynamics.GetCompartmentMaxFloodVolumeCubicMeters(roomIndex), minimumGasVolume), minimumGasVolume);
             Vector3 localCentroid = fluidDynamics.GetCompartmentCentroid(roomIndex);
             worldCenter = _cachedTransform.TransformPoint(localCentroid);
             radius = ResolveFakeHazardRadius(roomVolume, roomHazardRadiusPaddingMeters);
@@ -3195,7 +4451,7 @@ namespace Hecton8.Atmosphere
 
         private int ResolveNearestRoomIndexLocal(Vector3 localPosition)
         {
-            int roomCount = fluidDynamics.CompartmentCount;
+            int roomCount = RoomCount;
             if (roomCount <= 0)
                 return -1;
 

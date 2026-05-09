@@ -41,6 +41,9 @@ namespace Hecton8.Economy
         private const float TitaniumHoardingIngredientMultiplier = 4f;
         private const int DefaultTitaniumCriticalThreshold = 4;
         private const int DefaultTitaniumDirectiveHarvestUnits = 4;
+        private const string DefaultDirectiveTitleFallback = "ATLAS-6 DIRECTIVE: RESOURCE RESTOCK";
+        private const string DefaultDirectiveDescriptionFallback =
+            "Recovered stock is below Atlas-6 operating threshold. Harvest additional critical stock to stabilize fabrication reserves.";
         private static readonly int _TitaniumDirectiveHashId = LocHash.Compute(DefaultTitaniumDirectiveItemId);
 
         [Serializable]
@@ -357,12 +360,10 @@ namespace Hecton8.Economy
             else
                 _collectedByItemHash[itemHashId] = payload.Quantity;
 
-            if (InteractionEvents.TryResolveInteractor(in payload, out Transform interactor) &&
-                interactor != null)
+            if (TryResolvePlayerAup(out AbsoluteUniversePosition extractionAup))
             {
-                Vector3 position = interactor.position;
-                TrackKnownCluster(itemHashId, position);
-                AccumulateSectorExtraction(itemHashId, position, payload.Quantity);
+                TrackKnownCluster(itemHashId, in extractionAup);
+                AccumulateSectorExtraction(itemHashId, in extractionAup, payload.Quantity);
             }
 
             unchecked
@@ -454,10 +455,7 @@ namespace Hecton8.Economy
             if (questManager == null || inventory == null)
                 return;
 
-            Transform playerTransform = GlobalRegistry.Player != null ? GlobalRegistry.Player.PlayerTransform : null;
-            AbsoluteUniversePosition playerAup = playerTransform != null
-                ? AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position)
-                : default;
+            bool hasPlayerAup = TryResolvePlayerAup(out AbsoluteUniversePosition playerAup);
             for (int definitionIndex = 0; definitionIndex < _cachedDirectiveCount; definitionIndex++)
             {
                 int itemHashId = _directiveItemHashes[definitionIndex];
@@ -467,7 +465,7 @@ namespace Hecton8.Economy
                 uint questHash = _directiveQuestHashes[definitionIndex];
                 uint markerTargetHash = _directiveMarkerTargetHashes[definitionIndex];
                 Vector3 markerWorldPosition = default;
-                if (markerTargetHash == 0u)
+                if (markerTargetHash == 0u && hasPlayerAup)
                     TryResolveNearestKnownCluster(itemHashId, in playerAup, out markerWorldPosition);
 
                 bool shouldActivate = inventory.CountTotal(itemHashId) < Mathf.Max(0, _directiveCriticalThresholds[definitionIndex]);
@@ -502,8 +500,7 @@ namespace Hecton8.Economy
             if (!string.IsNullOrWhiteSpace(definition.directiveTitle))
                 return definition.directiveTitle;
 
-            string itemName = definition.item != null ? definition.item.itemName : "RESOURCE";
-            return $"ATLAS-6 DIRECTIVE: RESTOCK {itemName.ToUpperInvariant()}";
+            return DefaultDirectiveTitleFallback;
         }
 
         private string ResolveDirectiveDescription(DirectiveResourceDefinition definition)
@@ -511,17 +508,15 @@ namespace Hecton8.Economy
             if (!string.IsNullOrWhiteSpace(definition.directiveDescription))
                 return definition.directiveDescription;
 
-            string itemName = definition.item != null ? definition.item.itemName : "critical structural stock";
-            return $"Recovered stock is below Atlas-6 operating threshold. Harvest additional {itemName} to stabilize fabrication reserves.";
+            return DefaultDirectiveDescriptionFallback;
         }
 
-        private void TrackKnownCluster(int itemHashId, Vector3 worldPosition)
+        private void TrackKnownCluster(int itemHashId, in AbsoluteUniversePosition worldAup)
         {
             int definitionIndex = FindDirectiveDefinitionIndex(itemHashId);
             if (definitionIndex < 0)
                 return;
 
-            AbsoluteUniversePosition worldAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
             int sliceStart = definitionIndex * KnownClustersPerResource;
             int bestSlot = -1;
             double bestDistanceSq = double.MaxValue;
@@ -610,12 +605,25 @@ namespace Hecton8.Economy
             return -1;
         }
 
-        private void AccumulateSectorExtraction(int itemHashId, Vector3 worldPosition, int quantity)
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerMovement != null)
+            {
+                playerAup = playerContext.PlayerMovement.CurrentAup;
+                return true;
+            }
+
+            playerAup = default;
+            return false;
+        }
+
+        private void AccumulateSectorExtraction(int itemHashId, in AbsoluteUniversePosition worldAup, int quantity)
         {
             if (itemHashId == 0 || quantity <= 0)
                 return;
 
-            int sectorKey = PackSectorKey(worldPosition);
+            int sectorKey = PackSectorKey(in worldAup);
             int firstFreeSlot = -1;
             for (int i = 0; i < _sectorExtractionRecords.Length; i++)
             {
@@ -705,12 +713,6 @@ namespace Hecton8.Economy
                 hash *= LocHash.FnvPrime;
                 return hash;
             }
-        }
-
-        private static int PackSectorKey(Vector3 runtimePosition)
-        {
-            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
-            return PackSectorKey(in aup);
         }
 
         private static int PackSectorKey(in AbsoluteUniversePosition aup)

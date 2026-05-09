@@ -5,6 +5,7 @@
 
 namespace Hecton8.Gameplay
 {
+    using Unity.Mathematics;
     using UnityEngine;
 
     /// <summary>
@@ -70,6 +71,12 @@ namespace Hecton8.Gameplay
         private Vector3 _cameraLocalOffset;
         private float _cameraPitchOffset;
         private float _cameraRollOffset;
+
+        private const float BlendSpeedFloor = 0.01f;
+        private const float BlendDenominatorFloor = 0.0001f;
+        private const float PadeOneTwelfth = 0.0833333333f;
+        private const float InvTwoPi = 0.1591549431f;
+        private const float HalfPi = 1.5707963268f;
 
         /// <summary>
         /// Gets the current sticky max-speed multiplier.
@@ -178,11 +185,11 @@ namespace Hecton8.Gameplay
             float entanglement01)
         {
             _fieldActive = active;
-            _fieldSpeedMultiplier = active ? Mathf.Clamp(speedMultiplier, 0.1f, 1f) : 1f;
-            _fieldDragMultiplier = active ? Mathf.Max(1f, dragMultiplier) : 1f;
-            _fieldDensity01 = active ? Mathf.Clamp01(density01) : 0f;
+            _fieldSpeedMultiplier = active ? math.clamp(speedMultiplier, 0.1f, 1f) : 1f;
+            _fieldDragMultiplier = active ? math.max(1f, dragMultiplier) : 1f;
+            _fieldDensity01 = active ? math.saturate(density01) : 0f;
             _fieldEntanglementAnchorWS = active ? entanglementAnchorWS : _currentEntanglementAnchorWS;
-            _fieldEntanglement01 = active ? Mathf.Clamp01(entanglement01) : 0f;
+            _fieldEntanglement01 = active ? math.saturate(entanglement01) : 0f;
             SyncDebugState();
         }
 
@@ -217,18 +224,18 @@ namespace Hecton8.Gameplay
             float resolvedTargetDragMultiplier = _targetDragMultiplier;
             if (_fieldActive)
             {
-                resolvedTargetSpeedMultiplier = Mathf.Min(resolvedTargetSpeedMultiplier, _fieldSpeedMultiplier);
-                resolvedTargetDragMultiplier = Mathf.Max(resolvedTargetDragMultiplier, _fieldDragMultiplier);
+                resolvedTargetSpeedMultiplier = math.min(resolvedTargetSpeedMultiplier, _fieldSpeedMultiplier);
+                resolvedTargetDragMultiplier = math.max(resolvedTargetDragMultiplier, _fieldDragMultiplier);
             }
 
             float blendSpeed = shouldRecover ? exitBlendSpeed : enterBlendSpeed;
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, blendSpeed) * deltaTime);
-            _currentSpeedMultiplier = Mathf.Lerp(_currentSpeedMultiplier, resolvedTargetSpeedMultiplier, blendT);
-            _currentDragMultiplier = Mathf.Lerp(_currentDragMultiplier, resolvedTargetDragMultiplier, blendT);
+            float blendT = FastExpDecayBlend01(blendSpeed, deltaTime);
+            _currentSpeedMultiplier = math.lerp(_currentSpeedMultiplier, resolvedTargetSpeedMultiplier, blendT);
+            _currentDragMultiplier = math.lerp(_currentDragMultiplier, resolvedTargetDragMultiplier, blendT);
 
-            float entanglementBlendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, entanglementBlendSpeed) * deltaTime);
-            _currentEntanglement01 = Mathf.Lerp(_currentEntanglement01, _fieldEntanglement01, entanglementBlendT);
-            _currentEntanglementAnchorWS = Vector3.Lerp(_currentEntanglementAnchorWS, _fieldEntanglementAnchorWS, entanglementBlendT);
+            float entanglementBlendT = FastExpDecayBlend01(entanglementBlendSpeed, deltaTime);
+            _currentEntanglement01 = math.lerp(_currentEntanglement01, _fieldEntanglement01, entanglementBlendT);
+            _currentEntanglementAnchorWS = LerpVector3(_currentEntanglementAnchorWS, _fieldEntanglementAnchorWS, entanglementBlendT);
             AdvanceCameraTension(deltaTime);
             SyncDebugState();
         }
@@ -258,8 +265,8 @@ namespace Hecton8.Gameplay
 
         private void RegisterInfluence(float speedMultiplier, float dragMultiplier)
         {
-            _targetSpeedMultiplier = Mathf.Min(_targetSpeedMultiplier, Mathf.Clamp(speedMultiplier, 0.1f, 1f));
-            _targetDragMultiplier = Mathf.Max(_targetDragMultiplier, Mathf.Max(1f, dragMultiplier));
+            _targetSpeedMultiplier = math.min(_targetSpeedMultiplier, math.clamp(speedMultiplier, 0.1f, 1f));
+            _targetDragMultiplier = math.max(_targetDragMultiplier, math.max(1f, dragMultiplier));
             _exitGraceTimer = exitGraceTime;
         }
 
@@ -289,26 +296,49 @@ namespace Hecton8.Gameplay
 
         private void AdvanceCameraTension(float deltaTime)
         {
-            float tension = Mathf.Clamp01(_currentEntanglement01);
+            float tension = math.saturate(_currentEntanglement01);
             if (tension <= 0.0001f)
             {
-                float recoverBlendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, entanglementBlendSpeed) * deltaTime);
-                _cameraLocalOffset = Vector3.Lerp(_cameraLocalOffset, Vector3.zero, recoverBlendT);
-                _cameraPitchOffset = Mathf.Lerp(_cameraPitchOffset, 0f, recoverBlendT);
-                _cameraRollOffset = Mathf.Lerp(_cameraRollOffset, 0f, recoverBlendT);
+                float recoverBlendT = FastExpDecayBlend01(entanglementBlendSpeed, deltaTime);
+                _cameraLocalOffset = LerpVector3(_cameraLocalOffset, Vector3.zero, recoverBlendT);
+                _cameraPitchOffset = math.lerp(_cameraPitchOffset, 0f, recoverBlendT);
+                _cameraRollOffset = math.lerp(_cameraRollOffset, 0f, recoverBlendT);
                 return;
             }
 
-            _entanglementShakeTime += deltaTime * Mathf.Lerp(cameraShakeFrequency * 0.65f, cameraShakeFrequency * 1.4f, tension);
-            float sinA = Mathf.Sin(_entanglementShakeTime);
-            float sinB = Mathf.Sin(_entanglementShakeTime * 1.73f + 0.67f);
-            float cosA = Mathf.Cos(_entanglementShakeTime * 1.21f + 1.14f);
+            _entanglementShakeTime += deltaTime * math.lerp(cameraShakeFrequency * 0.65f, cameraShakeFrequency * 1.4f, tension);
+            float sinA = TriangleWaveSigned(_entanglementShakeTime * InvTwoPi);
+            float sinB = TriangleWaveSigned((_entanglementShakeTime * 1.73f + 0.67f) * InvTwoPi);
+            float cosA = TriangleWaveSigned((_entanglementShakeTime * 1.21f + 1.14f + HalfPi) * InvTwoPi);
             float amplitude = cameraShakeAmplitude * tension;
             _cameraLocalOffset.x = sinA * amplitude;
             _cameraLocalOffset.y = cosA * (amplitude * 0.42f);
-            _cameraLocalOffset.z = -Mathf.Abs(sinB) * (amplitude * 0.75f);
+            _cameraLocalOffset.z = -math.abs(sinB) * (amplitude * 0.75f);
             _cameraPitchOffset = sinB * cameraPitchAmplitude * tension;
             _cameraRollOffset = cosA * cameraRollAmplitude * tension;
+        }
+
+        private static float FastExpDecayBlend01(float blendSpeed, float deltaTime)
+        {
+            float x = math.max(BlendSpeedFloor, blendSpeed) * math.max(0f, deltaTime);
+            float x2 = x * x;
+            float numerator = 1f - 0.5f * x + x2 * PadeOneTwelfth;
+            float denominator = 1f + 0.5f * x + x2 * PadeOneTwelfth;
+            return math.saturate(1f - numerator / math.max(BlendDenominatorFloor, denominator));
+        }
+
+        private static Vector3 LerpVector3(Vector3 current, Vector3 target, float t)
+        {
+            return new Vector3(
+                math.lerp(current.x, target.x, t),
+                math.lerp(current.y, target.y, t),
+                math.lerp(current.z, target.z, t));
+        }
+
+        private static float TriangleWaveSigned(float phase)
+        {
+            float cycle = phase - math.floor(phase);
+            return 1f - math.abs((cycle * 4f) - 2f);
         }
     }
 }

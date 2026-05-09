@@ -71,6 +71,8 @@ namespace Hecton8.Editor
         private const string VolumetricFeatureTypeName = "Hecton8.Visor.HectonScooterVolumetricShaftsFeature";
         private const string SsdoFeatureTypeName = "Hecton8.Visor.HectonAbyssalSsdoFeature";
         private const string VisorFluidFeatureTypeName = "Hecton8.Visor.HectonVisorFluidDistortionFeature";
+        private const string AtmosphereSootFeatureTypeName = "Hecton8.Visor.HectonAtmosphereSootFeature";
+        private const string AtmosphereSootShaderAssetPath = "Assets/_Project/Art/Shaders/Hidden_Hecton_AtmosphereSootOverlay.shader";
 
         [InitializeOnLoadMethod]
         private static void QueueInitialRepair()
@@ -303,9 +305,11 @@ namespace Hecton8.Editor
             rendererChanged |= EnsureRequiredRendererFeature<HectonAbyssalSsdoFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonScooterVolumetricShaftsFeature>(rendererData);
             rendererChanged |= EnsureRequiredRendererFeature<HectonVisorFluidDistortionFeature>(rendererData);
+            rendererChanged |= EnsureRequiredRendererFeature<HectonAtmosphereSootFeature>(rendererData);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, SsdoFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, VolumetricFeatureTypeName, RenderPassEvent.BeforeRenderingTransparents);
             rendererChanged |= EnsureRequiredFeatureState(rendererData, VisorFluidFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
+            rendererChanged |= EnsureRequiredFeatureState(rendererData, AtmosphereSootFeatureTypeName, RenderPassEvent.BeforeRenderingPostProcessing);
             if (!rendererChanged)
                 return false;
 
@@ -485,10 +489,20 @@ namespace Hecton8.Editor
             }
 
             SerializedObject serializedFeature = new SerializedObject(feature);
+            bool serializedChanged = false;
             if (TryResolveInjectionPointProperty(serializedFeature, out SerializedProperty injectionPointProperty) &&
                 injectionPointProperty.intValue != (int)expectedInjectionPoint)
             {
                 injectionPointProperty.intValue = (int)expectedInjectionPoint;
+                serializedChanged = true;
+                changed = true;
+            }
+
+            if (string.Equals(featureTypeName, AtmosphereSootFeatureTypeName, StringComparison.Ordinal))
+                serializedChanged |= EnsureShaderReference(serializedFeature.FindProperty("settings.shader"), AtmosphereSootShaderAssetPath);
+
+            if (serializedChanged)
+            {
                 serializedFeature.ApplyModifiedPropertiesWithoutUndo();
                 feature.Create();
                 changed = true;
@@ -512,7 +526,8 @@ namespace Hecton8.Editor
             {
                 expectedInjectionPoint = RenderPassEvent.BeforeRenderingTransparents;
             }
-            else if (string.Equals(featureTypeName, VisorFluidFeatureTypeName, StringComparison.Ordinal))
+            else if (string.Equals(featureTypeName, VisorFluidFeatureTypeName, StringComparison.Ordinal) ||
+                     string.Equals(featureTypeName, AtmosphereSootFeatureTypeName, StringComparison.Ordinal))
             {
                 expectedInjectionPoint = RenderPassEvent.BeforeRenderingPostProcessing;
             }
@@ -953,6 +968,19 @@ namespace Hecton8.Editor
                 return false;
 
             property.objectReferenceValue = material;
+            return true;
+        }
+
+        private static bool EnsureShaderReference(SerializedProperty property, string assetPath)
+        {
+            if (property == null || property.objectReferenceValue != null)
+                return false;
+
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(assetPath);
+            if (shader == null)
+                return false;
+
+            property.objectReferenceValue = shader;
             return true;
         }
 

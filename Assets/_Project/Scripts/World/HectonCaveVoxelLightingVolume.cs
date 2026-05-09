@@ -12,6 +12,8 @@ namespace Hecton8.World
     public sealed class HectonCaveVoxelLightingVolume : MonoBehaviour, ITickable, IUpdatable
     {
         private const int MaxOverlapHits = 8;
+        private const string NativeMemoryOwner = nameof(HectonCaveVoxelLightingVolume);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         internal static HectonCaveVoxelLightingVolume ActiveRuntimeInstance { get; private set; }
 
         private static readonly int _CaveVoxelActiveId = Shader.PropertyToID("_HectonCaveVoxelActive");
@@ -268,6 +270,8 @@ namespace Hecton8.World
             _occupancyVolume = new NativeArray<byte>(voxelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<byte>[voxelCount] - player-centered encoded cave signed-distance volume - owner: HectonCaveVoxelLightingVolume
             _sdfVolume = new NativeArray<byte>(voxelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_occupancyVolume, NativeMemoryOwner, nameof(_occupancyVolume), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_sdfVolume, NativeMemoryOwner, nameof(_sdfVolume), NativeMemoryLifetime);
             // COLD ALLOC: Collider[8] - reusable overlap-box hit cache for cave lighting volume voxelization - owner: HectonCaveVoxelLightingVolume
             _overlapHits = new Collider[MaxOverlapHits];
             // COLD ALLOC: Vector3[voxelCount] - current voxel-center cache for local cave SDF encoding - owner: HectonCaveVoxelLightingVolume
@@ -298,10 +302,16 @@ namespace Hecton8.World
         private void ReleaseResources()
         {
             if (_occupancyVolume.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_occupancyVolume);
                 _occupancyVolume.Dispose();
+            }
 
             if (_sdfVolume.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_sdfVolume);
                 _sdfVolume.Dispose();
+            }
 
             if (_voxelDensityTexture != null)
                 Destroy(_voxelDensityTexture);
@@ -336,7 +346,7 @@ namespace Hecton8.World
                 (halfExtents.x * 2f) / Mathf.Max(1, _resolutionRuntime),
                 (halfExtents.y * 2f) / Mathf.Max(1, _resolutionRuntime),
                 (halfExtents.z * 2f) / Mathf.Max(1, _resolutionRuntime));
-            cellDiagonal = cellSize.magnitude;
+            cellDiagonal = EstimateLength3D(cellSize);
             sdfRange = Mathf.Max(cellDiagonal * Mathf.Max(1f, sdfRangeInCellDiagonals), cellDiagonal);
         }
 
@@ -470,7 +480,8 @@ namespace Hecton8.World
             }
 
             float boundaryBias = _scanCellDiagonal * 0.5f;
-            float inverseSdfRange = _scanSdfRange > 0.0001f ? 1f / _scanSdfRange : 0f;
+            float boundaryBiasSq = boundaryBias * boundaryBias;
+            float inverseSdfRangeSq = _scanSdfRange > 0.0001f ? 1f / (_scanSdfRange * _scanSdfRange) : 0f;
 
             for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
             {
@@ -487,11 +498,11 @@ namespace Hecton8.World
                         nearestDistanceSq = candidateDistanceSq;
                 }
 
-                float unsignedDistance = nearestDistanceSq < float.MaxValue
-                    ? Mathf.Max(0f, Mathf.Sqrt(nearestDistanceSq) - boundaryBias)
-                    : _scanSdfRange;
-                float signedDistance = occupied ? -unsignedDistance : unsignedDistance;
-                float encoded = Mathf.Clamp01((signedDistance * inverseSdfRange) * 0.5f + 0.5f);
+                float unsignedDistance01 = nearestDistanceSq < float.MaxValue
+                    ? Mathf.Clamp01(Mathf.Max(0f, nearestDistanceSq - boundaryBiasSq) * inverseSdfRangeSq)
+                    : 1f;
+                float signedDistance01 = occupied ? -unsignedDistance01 : unsignedDistance01;
+                float encoded = Mathf.Clamp01(signedDistance01 * 0.5f + 0.5f);
                 _sdfVolume[voxelIndex] = (byte)Mathf.RoundToInt(encoded * 255f);
             }
         }
@@ -530,6 +541,17 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_CaveVoxelActiveId, 0f);
             Shader.SetGlobalVector(_CaveVoxelHalfExtentsId, Vector4.zero);
             Shader.SetGlobalMatrix(_CaveVoxelWorldToLocalId, Matrix4x4.identity);
+        }
+
+        private static float EstimateLength3D(Vector3 value)
+        {
+            float ax = Mathf.Abs(value.x);
+            float ay = Mathf.Abs(value.y);
+            float az = Mathf.Abs(value.z);
+            float maxAxis = Mathf.Max(ax, Mathf.Max(ay, az));
+            float minAxis = Mathf.Min(ax, Mathf.Min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
         }
     }
 }

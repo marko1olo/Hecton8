@@ -38,7 +38,9 @@ void StampDamageVolume(uint3 dispatchThreadId : SV_DispatchThreadID)
     {
         float4 positionRadius = _HectonDamageVolumeStampCommands[stampIndex].PositionRadius;
         float radius = max(positionRadius.w, 0.0001);
-        float normalized = saturate(1.0 - length(worldPosition - positionRadius.xyz) / radius);
+        float radiusSq = radius * radius;
+        float3 delta = worldPosition - positionRadius.xyz;
+        float normalized = saturate(1.0 - dot(delta, delta) / radiusSq);
         float stamp = normalized * normalized * saturate(_HectonDamageVolumeStampCommands[stampIndex].StrengthPadding.x);
         current = max(current, stamp);
     }

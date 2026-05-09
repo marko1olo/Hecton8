@@ -11,6 +11,8 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class MissionManager : MonoBehaviour, IQuestEventListener
     {
+        private const int MissionCacheCapacity = 32;
+
         public sealed class MissionInstance
         {
             public MissionInstance(string missionId)
@@ -22,28 +24,21 @@ namespace Hecton8.Gameplay
         }
 
         // COLD ALLOC: Dictionary<uint,MissionInstance>[32] - compatibility facade active mission cache keyed by FNV quest hash - owner: MissionManager
-        private readonly Dictionary<uint, MissionInstance> _activeMissions = new Dictionary<uint, MissionInstance>(32);
+        private readonly Dictionary<uint, MissionInstance> _activeMissions = new Dictionary<uint, MissionInstance>(MissionCacheCapacity);
         // COLD ALLOC: HashSet<uint>[32] - compatibility facade completed mission cache keyed by FNV quest hash - owner: MissionManager
-        private readonly HashSet<uint> _completedMissions = new HashSet<uint>();
+        private readonly HashSet<uint> _completedMissions = new HashSet<uint>(MissionCacheCapacity);
         private bool _serviceRegistered;
 
-        public static MissionManager Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            Instance = null;
-        }
+        public static MissionManager Instance => GlobalRegistry.Missions;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            MissionManager registered = GlobalRegistry.Missions;
+            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
                 return;
             }
-
-            Instance = this;
         }
 
         private void OnEnable()
@@ -61,15 +56,19 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregisterService();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         private void TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+            if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            MissionManager registered = GlobalRegistry.Missions;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterMissionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Missions, this);

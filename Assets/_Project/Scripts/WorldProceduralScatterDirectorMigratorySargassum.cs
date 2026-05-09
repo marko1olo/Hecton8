@@ -1,5 +1,6 @@
 using Hecton8.Gameplay;
 using Hecton8.Core;
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -102,6 +103,7 @@ namespace Hecton8.World
         private float _lastMigratorySargassumTickTime;
         private float _nextMigratorySargassumKillZoneTime;
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct MigratorySargassumSourceState
         {
             public long SourceKey;
@@ -111,6 +113,7 @@ namespace Hecton8.World
             public byte Active;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct MigratorySargassumIslandState
         {
             public long SourceKey;
@@ -143,9 +146,13 @@ namespace Hecton8.World
                 float3 desiredVelocity = float3.zero;
                 if (flowMagnitudeSq > 0.0001f)
                 {
-                    float flowMagnitude = math.sqrt(flowMagnitudeSq);
-                    float desiredSpeed = math.min(MaxSpeed, flowMagnitude * DriftScale);
-                    desiredVelocity = (flow / flowMagnitude) * desiredSpeed;
+                    float speedScale = DriftScale;
+                    float maxSpeedSq = MaxSpeed * MaxSpeed;
+                    float driftSpeedSq = flowMagnitudeSq * DriftScale * DriftScale;
+                    if (driftSpeedSq > maxSpeedSq)
+                        speedScale = MaxSpeed * math.rsqrt(flowMagnitudeSq);
+
+                    desiredVelocity = flow * speedScale;
                 }
 
                 float blend = math.saturate(DeltaTime * VelocityDamping);
@@ -327,16 +334,16 @@ namespace Hecton8.World
             if (!IsMigratorySargassumSourceFamily(placement.Family))
                 return false;
 
-            float sourceRadius = Mathf.Max(placement.Family.clusterRadiusMeters, placement.EffectiveSpacing);
-            if (sourceRadius < Mathf.Max(1f, migratorySargassumMinimumSourceRadiusMeters))
+            float sourceRadius = math.max(placement.Family.clusterRadiusMeters, placement.EffectiveSpacing);
+            if (sourceRadius < math.max(1f, migratorySargassumMinimumSourceRadiusMeters))
                 return false;
 
-            if (placement.DepthMeters < Mathf.Max(1f, migratorySargassumMinimumWaterDepthMeters))
+            if (placement.DepthMeters < math.max(1f, migratorySargassumMinimumWaterDepthMeters))
                 return false;
 
-            float waterColumnLift = Mathf.Max(
-                Mathf.Max(1f, migratorySargassumMinimumLiftMeters),
-                placement.DepthMeters - Mathf.Max(0f, migratorySargassumSurfaceClearanceMeters));
+            float waterColumnLift = math.max(
+                math.max(1f, migratorySargassumMinimumLiftMeters),
+                placement.DepthMeters - math.max(0f, migratorySargassumSurfaceClearanceMeters));
             Vector3 absolutePosition = placement.Position;
             absolutePosition.y += waterColumnLift;
 
@@ -348,7 +355,7 @@ namespace Hecton8.World
                     absolutePosition.x,
                     absolutePosition.y,
                     absolutePosition.z)),
-                RadiusMeters = Mathf.Clamp(sourceRadius, migratorySargassumMinimumRadiusMeters, migratorySargassumMaximumRadiusMeters),
+                RadiusMeters = math.clamp(sourceRadius, migratorySargassumMinimumRadiusMeters, migratorySargassumMaximumRadiusMeters),
                 Active = 1
             };
             return true;
@@ -449,7 +456,7 @@ namespace Hecton8.World
                 return;
 
             float deltaTime = _lastMigratorySargassumTickTime > 0f
-                ? Mathf.Clamp(now - _lastMigratorySargassumTickTime, 0f, MigratorySargassumMaximumDeltaTimeSeconds)
+                ? math.clamp(now - _lastMigratorySargassumTickTime, 0f, MigratorySargassumMaximumDeltaTimeSeconds)
                 : 0f;
             _lastMigratorySargassumTickTime = now;
 
@@ -468,9 +475,9 @@ namespace Hecton8.World
                 Islands = _migratorySargassumIslands,
                 FlowSamples = _migratorySargassumFlowSamples,
                 DeltaTime = deltaTime,
-                DriftScale = Mathf.Max(0f, migratorySargassumFlowDriftScale),
-                MaxSpeed = Mathf.Max(0f, migratorySargassumMaxSpeedMetersPerSecond),
-                VelocityDamping = Mathf.Max(0f, migratorySargassumVelocityDamping)
+                DriftScale = math.max(0f, migratorySargassumFlowDriftScale),
+                MaxSpeed = math.max(0f, migratorySargassumMaxSpeedMetersPerSecond),
+                VelocityDamping = math.max(0f, migratorySargassumVelocityDamping)
             };
             _migratorySargassumJobHandle = job.Schedule(_migratorySargassumIslandCount, 8);
             _migratorySargassumJobRunning = true;
@@ -481,14 +488,14 @@ namespace Hecton8.World
             if (!_migratorySargassumIslands.IsCreated || _migratorySargassumSpatialHash == null)
                 return;
 
-            float halfHeight = Mathf.Max(0.1f, migratorySargassumHalfHeightMeters);
+            float halfHeight = math.max(0.1f, migratorySargassumHalfHeightMeters);
             for (int i = 0; i < _migratorySargassumIslandCount; i++)
             {
                 MigratorySargassumIslandState island = _migratorySargassumIslands[i];
                 if (island.Active == 0)
                     continue;
 
-                float radius = Mathf.Max(MigratorySargassumMinimumSpatialRadiusMeters, island.RadiusMeters);
+                float radius = math.max(MigratorySargassumMinimumSpatialRadiusMeters, island.RadiusMeters);
                 AbsoluteUniversePosition position = island.Position;
                 float3 halfExtents = new float3(radius, halfHeight, radius);
                 ulong flags = (ulong)(SpatialInteractionFlags.Signal | SpatialInteractionFlags.ChemicalReceiver);
@@ -504,19 +511,23 @@ namespace Hecton8.World
                 }
                 else
                 {
-                    _migratorySargassumSpatialHash.UpdateEntry(
+                    if (!_migratorySargassumSpatialHash.TryUpdateEntry(
                         handle,
                         in position,
                         halfExtents,
                         (int)SpatialTargetKind.Signal,
                         flags,
-                        island.SourceHash);
+                        island.SourceHash))
+                    {
+                        _migratorySargassumSpatialHash.Unregister(handle);
+                        _migratorySargassumSpatialHandles[i] = 0;
+                    }
                 }
 
                 Vector3 runtimePosition = ToRuntimeMigratorySargassumPosition(in island.Position);
                 WorldSpatialHashGrid.RegisterTransientEvent(
                     runtimePosition,
-                    Mathf.Min(radius, Mathf.Max(0.5f, migratorySargassumChemicalSignalRadiusMeters)),
+                    math.min(radius, math.max(0.5f, migratorySargassumChemicalSignalRadiusMeters)),
                     migratorySargassumChemicalSignalIntensity,
                     migratorySargassumChemicalSignalLifetimeSeconds,
                     SpatialTransientEventType.ChemicalCloud,
@@ -531,11 +542,11 @@ namespace Hecton8.World
             if (now < _nextMigratorySargassumKillZoneTime || _migratorySargassumIslandCount <= 0)
                 return;
 
-            _nextMigratorySargassumKillZoneTime = now + Mathf.Max(0.1f, migratorySargassumKillZoneCadenceSeconds);
+            _nextMigratorySargassumKillZoneTime = now + math.max(0.1f, migratorySargassumKillZoneCadenceSeconds);
             if (!TryResolveMigratorySargassumOrganicManager(out DestructibleOrganicManager organicManager))
                 return;
 
-            float radiusScale = Mathf.Max(0.1f, migratorySargassumKillZoneRadiusScale);
+            float radiusScale = math.max(0.1f, migratorySargassumKillZoneRadiusScale);
             for (int i = 0; i < _migratorySargassumIslandCount; i++)
             {
                 MigratorySargassumIslandState island = _migratorySargassumIslands[i];
@@ -578,7 +589,7 @@ namespace Hecton8.World
                 if (verticalDelta <= 0f)
                     continue;
 
-                float radius = Mathf.Max(MigratorySargassumMinimumSpatialRadiusMeters, island.RadiusMeters);
+                float radius = math.max(MigratorySargassumMinimumSpatialRadiusMeters, island.RadiusMeters);
                 float dx = islandAbsolutePosition.x - absoluteSeabedPosition.x;
                 float dz = islandAbsolutePosition.z - absoluteSeabedPosition.z;
                 float radiusSq = radius * radius;
@@ -586,9 +597,9 @@ namespace Hecton8.World
                 if (planarSq > radiusSq)
                     continue;
 
-                float planarOcclusion = 1f - Mathf.Clamp01(planarSq / Mathf.Max(0.001f, radiusSq));
-                float verticalOcclusion = Mathf.Clamp01(verticalDelta / Mathf.Max(1f, migratorySargassumMinimumWaterDepthMeters));
-                bestOcclusion = Mathf.Max(bestOcclusion, planarOcclusion * verticalOcclusion);
+                float planarOcclusion = 1f - math.saturate(planarSq / math.max(0.001f, radiusSq));
+                float verticalOcclusion = math.saturate(verticalDelta / math.max(1f, migratorySargassumMinimumWaterDepthMeters));
+                bestOcclusion = math.max(bestOcclusion, planarOcclusion * verticalOcclusion);
             }
 
             occlusion01 = bestOcclusion;

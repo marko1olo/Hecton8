@@ -16,7 +16,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9930)]
-    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IUpdatable, IServiceHeartbeat
+    public sealed class PlayerRuntimeContextService : MonoBehaviour, IPlayerRuntimeContext, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         private bool _isInitialized;
         private bool _registeredUpdatable;
@@ -34,6 +34,7 @@ namespace Hecton8.Core
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private TraumaDispatcher _traumaDispatcher;
         private Camera _playerCamera;
+        private Transform _playerCameraTransform;
         private PlayerPDA _playerPda;
         private PlayerBuilder _playerBuilder;
         private VisorHUDController _visorController;
@@ -96,6 +97,26 @@ namespace Hecton8.Core
         }
 
         /// <inheritdoc />
+        public HectonSurvivalSystem SurvivalSystem
+        {
+            get
+            {
+                SyncPlayerContext();
+                return _survivalSystem;
+            }
+        }
+
+        /// <inheritdoc />
+        public TraumaDispatcher TraumaDispatcher
+        {
+            get
+            {
+                SyncPlayerContext();
+                return _traumaDispatcher;
+            }
+        }
+
+        /// <inheritdoc />
         public PlayerToolManager ToolManager
         {
             get
@@ -112,6 +133,16 @@ namespace Hecton8.Core
             {
                 SyncPlayerContext();
                 return _inventory;
+            }
+        }
+
+        /// <inheritdoc />
+        public PlayerTransportCoordinator PlayerTransportCoordinator
+        {
+            get
+            {
+                SyncPlayerContext();
+                return _playerTransportCoordinator;
             }
         }
 
@@ -338,8 +369,22 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             TryUnregisterUpdatable();
             TryUnregisterContext();
+            _isInitialized = false;
+            _syncInProgress = false;
+            _dynamicContextReferencesEnabled = false;
+            ClearCachedPlayerReferences();
 
             GlobalRegistry.ClearPlayerRuntimeContextRuntime(this);
         }
@@ -363,6 +408,33 @@ namespace Hecton8.Core
 
             _playerRootOverride = playerRoot;
             SyncPlayerContext();
+        }
+
+        private void ClearCachedPlayerReferences()
+        {
+            _playerRootOverride = null;
+            _playerObject = null;
+            _playerTransform = null;
+            _playerMovement = null;
+            _playerRigidbody = null;
+            _survivalSystem = null;
+            _toolManager = null;
+            _inventory = null;
+            _playerTransportCoordinator = null;
+            _traumaDispatcher = null;
+            _playerCamera = null;
+            _playerCameraTransform = null;
+            _playerPda = null;
+            _playerBuilder = null;
+            _visorController = null;
+            _flashlight = null;
+            _thrusterAudio = null;
+            _underwaterVisuals = null;
+            _handAnchor = null;
+            _playerCollider = null;
+            _hudNotification = null;
+            _visorResolveBuffer.Clear();
+            _runtimeContext.Clear();
         }
 
         private void SyncPlayerContext()
@@ -408,6 +480,7 @@ namespace Hecton8.Core
             _playerTransportCoordinator = null;
             _traumaDispatcher = null;
             _playerCamera = null;
+            _playerCameraTransform = null;
             _playerPda = null;
             _playerBuilder = null;
             _visorController = null;
@@ -469,14 +542,17 @@ namespace Hecton8.Core
             if (!_runtimeContext.IsBound || _playerTransform == null)
                 return;
 
-            float3 velocity = _playerRigidbody != null ? (float3)_playerRigidbody.linearVelocity : float3.zero;
-            float3 forward = _playerTransform.forward;
-            float3 cameraForward = _playerCamera != null ? (float3)_playerCamera.transform.forward : forward;
-            float depthMeters = _survivalSystem != null ? _survivalSystem.Depth : 0f;
+            float3 velocity = SafeFiniteVector(_playerRigidbody != null ? (float3)_playerRigidbody.linearVelocity : float3.zero);
+            float3 forward = SafeDirection((float3)_playerTransform.forward, new float3(0f, 0f, 1f));
+            Transform playerCameraTransform = ResolvePlayerCameraTransform();
+            float3 cameraForward = SafeDirection(playerCameraTransform != null ? (float3)playerCameraTransform.forward : forward, forward);
+            float depthMeters = SanitizeNonNegative(_survivalSystem != null ? _survivalSystem.Depth : 0f);
             float transportSpeedMultiplier = _playerTransportCoordinator != null
-                ? math.max(0.01f, _playerTransportCoordinator.ResolveTransportSpeedMultiplier())
+                ? math.max(0.01f, SanitizeNonNegative(_playerTransportCoordinator.ResolveTransportSpeedMultiplier()))
                 : 1f;
-            float underwaterStress01 = _playerMovement != null ? math.saturate(_playerMovement.CurrentUnderwaterStressIntensity01) : 0f;
+            float underwaterStress01 = _playerMovement != null ? Sanitize01(_playerMovement.CurrentUnderwaterStressIntensity01) : 0f;
+            Vector3 fallbackPlayerPosition = default;
+            bool fallbackPlayerPositionResolved = false;
 
             uint flags = (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot;
             if (_playerMovement != null)
@@ -503,16 +579,28 @@ namespace Hecton8.Core
                 flags |= (uint)PlayerRuntimeSnapshotFlags.Underwater;
 
             PlayerMovementRuntimeState movementState = default;
-            movementState.WorldPosition = _playerTransform.position;
-            movementState.PredictedWorldPosition = _playerMovement != null
-                ? _playerMovement.PredictedRuntimePosition
-                : movementState.WorldPosition + (velocity * 0.1f);
-            movementState.PredictedAup = _playerMovement != null
-                ? _playerMovement.PredictedAup
-                : Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(new Vector3(
+            if (_playerMovement != null)
+            {
+                float3 currentRuntimePosition = SafeFiniteVector(_playerMovement.CurrentAup.ToRuntimeFloat3());
+                float3 predictedRuntimePosition = SafeFiniteVector((float3)_playerMovement.PredictedRuntimePosition, currentRuntimePosition);
+                movementState.WorldPosition = currentRuntimePosition;
+                movementState.PredictedWorldPosition = predictedRuntimePosition;
+                movementState.PredictedAup = math.all(math.isfinite((float3)_playerMovement.PredictedRuntimePosition))
+                    ? _playerMovement.PredictedAup
+                    : _playerMovement.CurrentAup;
+            }
+            else
+            {
+                fallbackPlayerPosition = ToVector3(SafeFiniteVector((float3)_playerTransform.position));
+                fallbackPlayerPositionResolved = true;
+                movementState.WorldPosition = fallbackPlayerPosition;
+                movementState.PredictedWorldPosition = movementState.WorldPosition + (velocity * 0.1f);
+                movementState.PredictedAup = Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(new Vector3(
                     movementState.PredictedWorldPosition.x,
                     movementState.PredictedWorldPosition.y,
                     movementState.PredictedWorldPosition.z));
+            }
+
             movementState.Velocity = velocity;
             movementState.Forward = forward;
             movementState.CameraForward = cameraForward;
@@ -523,10 +611,84 @@ namespace Hecton8.Core
             _runtimeContext.PublishMovementState(in movementState);
 
             PlayerLookState lookState = default;
-            lookState.EyePosition = _playerCamera != null ? (float3)_playerCamera.transform.position : (float3)_playerTransform.position;
-            lookState.AimForward = math.normalizesafe(cameraForward, forward);
+            if (playerCameraTransform != null)
+            {
+                lookState.EyePosition = SafeFiniteVector((float3)playerCameraTransform.position, movementState.WorldPosition);
+            }
+            else
+            {
+                if (!fallbackPlayerPositionResolved)
+                    fallbackPlayerPosition = ToVector3(SafeFiniteVector((float3)_playerTransform.position, movementState.WorldPosition));
+
+                lookState.EyePosition = (float3)fallbackPlayerPosition;
+            }
+            lookState.AimForward = SafeDirection(cameraForward, forward);
             lookState.Flags = flags;
             _runtimeContext.PublishLookState(in lookState);
+        }
+
+        private Transform ResolvePlayerCameraTransform()
+        {
+            if (_playerCameraTransform != null)
+                return _playerCameraTransform;
+
+            if (_playerCamera == null)
+                return null;
+
+            _playerCameraTransform = _playerCamera.transform;
+            return _playerCameraTransform;
+        }
+
+        private void AssignPlayerCamera(Camera playerCamera)
+        {
+            if (ReferenceEquals(_playerCamera, playerCamera))
+            {
+                if (_playerCamera != null && _playerCameraTransform == null)
+                    _playerCameraTransform = _playerCamera.transform;
+
+                return;
+            }
+
+            _playerCamera = playerCamera;
+            _playerCameraTransform = playerCamera != null ? playerCamera.transform : null;
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
+        }
+
+        private static float Sanitize01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            return math.isfinite(value) ? math.max(0f, value) : 0f;
+        }
+
+        private static float3 SafeFiniteVector(float3 value)
+        {
+            return math.all(math.isfinite(value)) ? value : float3.zero;
+        }
+
+        private static float3 SafeFiniteVector(float3 value, float3 fallback)
+        {
+            return math.all(math.isfinite(value)) ? value : SafeFiniteVector(fallback);
+        }
+
+        private static float3 SafeDirection(float3 direction, float3 fallback)
+        {
+            float directionSqr = math.lengthsq(direction);
+            if (math.all(math.isfinite(direction)) && directionSqr > 0.000001f)
+                return direction * math.rsqrt(directionSqr);
+
+            float fallbackSqr = math.lengthsq(fallback);
+            if (math.all(math.isfinite(fallback)) && fallbackSqr > 0.000001f)
+                return fallback * math.rsqrt(fallbackSqr);
+
+            return new float3(0f, 0f, 1f);
         }
 
         private void RefreshDynamicContextReferences()
@@ -570,7 +732,7 @@ namespace Hecton8.Core
                 if (playerSensoryService is PlayerSensoryManager playerSensoryManager)
                 {
                     if (_playerCamera == null)
-                        _playerCamera = playerSensoryManager.CachedPlayerCamera;
+                        AssignPlayerCamera(playerSensoryManager.CachedPlayerCamera);
 
                     if (_flashlight == null)
                         _flashlight = playerSensoryManager.CachedFlashlight;
@@ -590,7 +752,7 @@ namespace Hecton8.Core
                 else
                 {
                     if (_playerCamera == null)
-                        _playerCamera = playerSensoryService.PlayerCamera;
+                        AssignPlayerCamera(playerSensoryService.PlayerCamera);
 
                     if (_flashlight == null)
                         _flashlight = playerSensoryService.Flashlight;
@@ -648,7 +810,10 @@ namespace Hecton8.Core
                 if (playerCameraTransform != null)
                 {
                     if (_playerCamera == null)
-                        playerCameraTransform.TryGetComponent(out _playerCamera);
+                    {
+                        playerCameraTransform.TryGetComponent(out Camera resolvedCamera);
+                        AssignPlayerCamera(resolvedCamera);
+                    }
 
                     if (_flashlight == null)
                         playerCameraTransform.TryGetComponent(out _flashlight);

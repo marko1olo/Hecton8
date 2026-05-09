@@ -18,6 +18,7 @@ namespace Hecton8.UI
     using Hecton8.Bootstrap;
     using Hecton8.Core;
     using Hecton8.Gameplay;
+    using Unity.Mathematics;
     using UnityEngine;
     using UnityEngine.UI;
 
@@ -95,10 +96,13 @@ namespace Hecton8.UI
         private float _lastThirst = -1f;
 
         private float _flashTimer;
+        private bool _barsForcedEmpty;
 
         private const float WarningThreshold = 0.3f;
         private const float CriticalThreshold = 0.15f;
         private const float Epsilon = 0.001f;
+        private const float TwoPi = 6.28318530718f;
+        private const float InvTwoPi = 0.15915494309f;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -127,9 +131,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            // Update flash timer
-            _flashTimer += deltaTime * flashSpeed;
-            float flashValue = enableFlash ? (Mathf.Sin(_flashTimer * Mathf.PI * 2f) * 0.5f + 0.5f) : 1f;
+            _barsForcedEmpty = false;
 
             // Update bars only if values changed
             float oxygen = _survivalSystem.OxygenNormalized;
@@ -137,25 +139,38 @@ namespace Hecton8.UI
             float hunger = _survivalSystem.HungerNormalized;
             float thirst = _survivalSystem.ThirstNormalized;
 
-            if (Mathf.Abs(oxygen - _lastOxygen) > Epsilon || ShouldRefreshCriticalFlash(oxygen))
+            bool shouldFlash =
+                enableFlash &&
+                (oxygen <= CriticalThreshold ||
+                 health <= CriticalThreshold ||
+                 hunger <= CriticalThreshold ||
+                 thirst <= CriticalThreshold);
+            float flashValue = 1f;
+            if (shouldFlash)
+            {
+                _flashTimer += deltaTime * flashSpeed;
+                flashValue = EvaluateCheapFlash01(_flashTimer * TwoPi);
+            }
+
+            if (math.abs(oxygen - _lastOxygen) > Epsilon || ShouldRefreshCriticalFlash(oxygen))
             {
                 UpdateBar(oxygenBar, oxygen, oxygenNormalColor, oxygenWarningColor, oxygenCriticalColor, flashValue);
                 _lastOxygen = oxygen;
             }
 
-            if (Mathf.Abs(health - _lastHealth) > Epsilon || ShouldRefreshCriticalFlash(health))
+            if (math.abs(health - _lastHealth) > Epsilon || ShouldRefreshCriticalFlash(health))
             {
                 UpdateBar(healthBar, health, healthNormalColor, healthWarningColor, healthCriticalColor, flashValue);
                 _lastHealth = health;
             }
 
-            if (Mathf.Abs(hunger - _lastHunger) > Epsilon || ShouldRefreshCriticalFlash(hunger))
+            if (math.abs(hunger - _lastHunger) > Epsilon || ShouldRefreshCriticalFlash(hunger))
             {
                 UpdateBar(hungerBar, hunger, hungerNormalColor, hungerWarningColor, hungerCriticalColor, flashValue);
                 _lastHunger = hunger;
             }
 
-            if (Mathf.Abs(thirst - _lastThirst) > Epsilon || ShouldRefreshCriticalFlash(thirst))
+            if (math.abs(thirst - _lastThirst) > Epsilon || ShouldRefreshCriticalFlash(thirst))
             {
                 UpdateBar(thirstBar, thirst, thirstNormalColor, thirstWarningColor, thirstCriticalColor, flashValue);
                 _lastThirst = thirst;
@@ -171,16 +186,17 @@ namespace Hecton8.UI
             if (bar == null)
                 return;
 
-            bar.fillAmount = normalized;
+            float safeNormalized = math.saturate(normalized);
+            bar.fillAmount = safeNormalized;
 
             // Determine color based on level
             Color targetColor;
-            if (normalized <= CriticalThreshold)
+            if (safeNormalized <= CriticalThreshold)
             {
                 // Critical - flash between critical and darker
-                targetColor = Color.Lerp(critical * 0.3f, critical, flashValue);
+                targetColor = LerpColorClamped(critical * 0.3f, critical, flashValue);
             }
-            else if (normalized <= WarningThreshold)
+            else if (safeNormalized <= WarningThreshold)
             {
                 targetColor = warning;
             }
@@ -194,15 +210,40 @@ namespace Hecton8.UI
 
         private void SetAllBarsEmpty()
         {
+            if (_barsForcedEmpty)
+                return;
+
             if (oxygenBar != null) oxygenBar.fillAmount = 0f;
             if (healthBar != null) healthBar.fillAmount = 0f;
             if (hungerBar != null) hungerBar.fillAmount = 0f;
             if (thirstBar != null) thirstBar.fillAmount = 0f;
+            _lastOxygen = 0f;
+            _lastHealth = 0f;
+            _lastHunger = 0f;
+            _lastThirst = 0f;
+            _barsForcedEmpty = true;
+        }
+
+        private static float EvaluateCheapFlash01(float phaseRadians)
+        {
+            float phase01 = math.frac((phaseRadians * InvTwoPi) + 0.25f);
+            float triangle = 1f - math.abs(phase01 * 2f - 1f);
+            return triangle * triangle;
         }
 
         private bool ShouldRefreshCriticalFlash(float normalized)
         {
             return enableFlash && normalized <= CriticalThreshold;
+        }
+
+        private static Color LerpColorClamped(Color from, Color to, float t)
+        {
+            float u = math.saturate(t);
+            return new Color(
+                from.r + (to.r - from.r) * u,
+                from.g + (to.g - from.g) * u,
+                from.b + (to.b - from.b) * u,
+                from.a + (to.a - from.a) * u);
         }
 
         private void ResolveSurvivalSystem()
@@ -224,8 +265,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTick()

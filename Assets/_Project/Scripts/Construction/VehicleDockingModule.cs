@@ -20,6 +20,7 @@ namespace Hecton8.Construction
     public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IFixedTickable, IUpdatable, IPowerComponent, IPoolable
     {
         private const int TransportLookupCacheCapacity = 16;
+        private const float MaxDockingFixedDeltaSeconds = 0.05f;
 
         [Header("── Docking ──────────────────")]
         [Tooltip("Optional snap anchor applied when a rigidbody transport is docked. Falls back to this transform.")]
@@ -267,10 +268,20 @@ namespace Hecton8.Construction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this) ||
-                          GlobalRegistry.FixedTickables.Contains(this);
+            bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+            bool fixedRegistered = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
+            if (!updateRegistered || !fixedRegistered)
+            {
+                if (updateRegistered)
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                if (fixedRegistered)
+                    GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+
+                _registered = false;
+                return;
+            }
+
+            _registered = true;
         }
 
         private void TryUnregister()
@@ -278,12 +289,8 @@ namespace Hecton8.Construction
             if (!_registered)
                 return;
 
-            if (GlobalRegistry.Updatables.Contains(this))
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-
-            if (GlobalRegistry.FixedTickables.Contains(this))
-                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
-
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
@@ -398,6 +405,9 @@ namespace Hecton8.Construction
                 return;
 
             Transform anchor = dockAnchor != null ? dockAnchor : _cachedTransform;
+            if (anchor == null || !IsFiniteVector(anchor.position) || !IsFiniteQuaternion(anchor.rotation))
+                return;
+
             if (_dockedBody != null)
             {
                 _dockedBody.MovePosition(anchor.position);
@@ -410,13 +420,17 @@ namespace Hecton8.Construction
 
         private void AdvanceDockingPose(float fixedDeltaTime)
         {
-            float duration = Mathf.Max(0.25f, dockingDurationSeconds);
-            _dockingElapsedSeconds = Mathf.Min(duration, _dockingElapsedSeconds + Mathf.Max(0.0001f, fixedDeltaTime));
+            float duration = ResolveSafeDockingDurationSeconds();
+            float safeFixedDeltaTime = SanitizeFixedDeltaSeconds(fixedDeltaTime);
+            _dockingElapsedSeconds = math.min(duration, _dockingElapsedSeconds + safeFixedDeltaTime);
             Transform anchor = dockAnchor != null ? dockAnchor : _cachedTransform;
+            if (anchor == null || !IsFiniteVector(anchor.position) || !IsFiniteQuaternion(anchor.rotation))
+                return;
+
             Vector3 anchorPosition = anchor.position;
             Quaternion anchorRotation = anchor.rotation;
             _dockingTargetAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
-            float normalizedTime = Mathf.Clamp01(_dockingElapsedSeconds / duration);
+            float normalizedTime = math.saturate(_dockingElapsedSeconds / duration);
             float easedTime = normalizedTime * normalizedTime * (3f - (2f * normalizedTime));
             Vector3 evaluatedPosition = ResolveRuntimeAupLerp(_dockingStartAup, _dockingTargetAup, easedTime, anchorPosition);
             quaternion startRotationQ = new quaternion(
@@ -474,14 +488,30 @@ namespace Hecton8.Construction
 
         private void SanitizeDockingSettings()
         {
-            dockingDurationSeconds = Mathf.Clamp(dockingDurationSeconds, 0.25f, 8f);
-            dockingPositionSpring = Mathf.Max(0f, dockingPositionSpring);
-            dockingPositionDamping = Mathf.Max(0f, dockingPositionDamping);
-            maxDockingForce = Mathf.Max(1f, maxDockingForce);
-            dockingRotationSpring = Mathf.Max(0f, dockingRotationSpring);
-            dockingRotationDamping = Mathf.Max(0f, dockingRotationDamping);
-            dockingCaptureDistanceEpsilon = Mathf.Max(0.001f, dockingCaptureDistanceEpsilon);
-            dockingCaptureAngleEpsilonDegrees = Mathf.Max(0.01f, dockingCaptureAngleEpsilonDegrees);
+            dockingDurationSeconds = math.isfinite(dockingDurationSeconds)
+                ? math.clamp(dockingDurationSeconds, 0.25f, 8f)
+                : 2f;
+            dockingPositionSpring = math.isfinite(dockingPositionSpring)
+                ? math.max(0f, dockingPositionSpring)
+                : 20f;
+            dockingPositionDamping = math.isfinite(dockingPositionDamping)
+                ? math.max(0f, dockingPositionDamping)
+                : 8f;
+            maxDockingForce = math.isfinite(maxDockingForce)
+                ? math.max(1f, maxDockingForce)
+                : 65000f;
+            dockingRotationSpring = math.isfinite(dockingRotationSpring)
+                ? math.max(0f, dockingRotationSpring)
+                : 18f;
+            dockingRotationDamping = math.isfinite(dockingRotationDamping)
+                ? math.max(0f, dockingRotationDamping)
+                : 7f;
+            dockingCaptureDistanceEpsilon = math.isfinite(dockingCaptureDistanceEpsilon)
+                ? math.max(0.001f, dockingCaptureDistanceEpsilon)
+                : 0.025f;
+            dockingCaptureAngleEpsilonDegrees = math.isfinite(dockingCaptureAngleEpsilonDegrees)
+                ? math.max(0.01f, dockingCaptureAngleEpsilonDegrees)
+                : 1f;
         }
 
         private static Vector3 ResolveRuntimeAupLerp(
@@ -492,16 +522,36 @@ namespace Hecton8.Construction
         {
             double3 start = from.ToAbsoluteDouble3();
             double3 target = to.ToAbsoluteDouble3();
-            double3 resolved = start + ((target - start) * (double)Mathf.Clamp01(normalizedTime));
+            double3 resolved = start + ((target - start) * (double)math.saturate(normalizedTime));
             float3 runtime = AbsoluteUniversePosition.FromAbsolutePosition(resolved).ToRuntimeFloat3();
             Vector3 runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
             return IsFiniteVector(runtimePosition) ? runtimePosition : fallbackPosition;
+        }
+
+        private float ResolveSafeDockingDurationSeconds()
+        {
+            return math.isfinite(dockingDurationSeconds)
+                ? math.clamp(dockingDurationSeconds, 0.25f, 8f)
+                : 2f;
+        }
+
+        private static float SanitizeFixedDeltaSeconds(float fixedDeltaTime)
+        {
+            return math.isfinite(fixedDeltaTime)
+                ? math.clamp(fixedDeltaTime, 0.0001f, MaxDockingFixedDeltaSeconds)
+                : 0.02f;
         }
 
         private static bool IsFiniteVector(Vector3 value)
         {
             return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
                      float.IsInfinity(value.x) || float.IsInfinity(value.y) || float.IsInfinity(value.z));
+        }
+
+        private static bool IsFiniteQuaternion(Quaternion value)
+        {
+            float4 q = new float4(value.x, value.y, value.z, value.w);
+            return math.all(math.isfinite(q)) && math.lengthsq(q) > 0.000001f;
         }
 
         private void BeginDockingControlLock(MonoBehaviour transportBehaviour)

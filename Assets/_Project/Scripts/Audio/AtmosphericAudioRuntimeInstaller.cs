@@ -20,10 +20,10 @@ namespace Hecton8.Audio
 
             EnsureProceduralAudioRenderer(playerObject);
 
-            if (playerObject.GetComponent<DeepPsychosisController>() == null)
+            if (!playerObject.TryGetComponent(out DeepPsychosisController _))
                 playerObject.AddComponent<DeepPsychosisController>();
 
-            if (playerObject.GetComponent<PlayerStressVFX>() == null)
+            if (!playerObject.TryGetComponent(out PlayerStressVFX _))
                 playerObject.AddComponent<PlayerStressVFX>();
 
             // Projected caustics are shader-only on MX350; no player-owned compute projector is installed.
@@ -44,9 +44,7 @@ namespace Hecton8.Audio
             if (listener == null)
                 return;
 
-            PlayerCriticalProceduralAudioRenderer renderer =
-                listener.GetComponent<PlayerCriticalProceduralAudioRenderer>();
-            if (renderer == null)
+            if (!listener.TryGetComponent(out PlayerCriticalProceduralAudioRenderer renderer))
                 renderer = listener.gameObject.AddComponent<PlayerCriticalProceduralAudioRenderer>();
 
             renderer.BindToPlayer(playerObject);
@@ -54,8 +52,7 @@ namespace Hecton8.Audio
             PlayerThrusterAudio legacyThrusterAudio = playerContext != null ? playerContext.ThrusterAudio : null;
             if (legacyThrusterAudio != null)
             {
-                AudioSource legacySource = legacyThrusterAudio.GetComponent<AudioSource>();
-                if (legacySource != null && legacySource.isPlaying)
+                if (legacyThrusterAudio.TryGetComponent(out AudioSource legacySource) && legacySource.isPlaying)
                     legacySource.Stop();
 
                 legacyThrusterAudio.enabled = false;

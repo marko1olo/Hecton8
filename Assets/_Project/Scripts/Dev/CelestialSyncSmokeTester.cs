@@ -22,6 +22,7 @@ namespace Hecton8.Dev
     {
         private const float PenumbraEpsilon = 0.0001f;
         private const float PitchRatioTolerance = 0.0005f;
+        private const float EclipseMinus150CentsPitchRatio = 0.91700405f;
 
         [Header("References")]
         [SerializeField] private HectonCelestialEngine celestialEngine;
@@ -116,33 +117,22 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (celestialEngine == null)
-                celestialEngine = GlobalRegistry.CelestialEngine != null
-                    ? GlobalRegistry.CelestialEngine
-                    : UnityEngine.Object.FindAnyObjectByType<HectonCelestialEngine>(FindObjectsInactive.Include);
+                celestialEngine = GlobalRegistry.CelestialEngine;
 
             if (eclipseGameplaySystem == null)
-                eclipseGameplaySystem = GlobalRegistry.EclipseGameplay != null
-                    ? GlobalRegistry.EclipseGameplay
-                    : UnityEngine.Object.FindAnyObjectByType<EclipseGameplaySystem>(FindObjectsInactive.Include);
-
-            if (depthCacheBootstrap == null)
-                depthCacheBootstrap = UnityEngine.Object.FindAnyObjectByType<HectonCrestOceanDepthCacheBootstrap>(FindObjectsInactive.Include);
+                eclipseGameplaySystem = GlobalRegistry.EclipseGameplay;
 
             if (ecosystemDirector == null)
-                ecosystemDirector = UnityEngine.Object.FindAnyObjectByType<EcosystemDirector>(FindObjectsInactive.Include);
+                ecosystemDirector = GlobalRegistry.EcosystemDirector as EcosystemDirector;
 
             if (biolumController == null)
-                biolumController = UnityEngine.Object.FindAnyObjectByType<HectonBiolumController>(FindObjectsInactive.Include);
+                biolumController = GlobalRegistry.BiolumController;
 
             if (spatialAudioManager == null)
-                spatialAudioManager = SpatialAudioManager.ActiveRuntimeInstance != null
-                    ? SpatialAudioManager.ActiveRuntimeInstance
-                    : UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
+                spatialAudioManager = SpatialAudioManager.ActiveRuntimeInstance;
 
             if (randomEventSystem == null)
-                randomEventSystem = GlobalRegistry.RandomEvents != null
-                    ? GlobalRegistry.RandomEvents
-                    : UnityEngine.Object.FindAnyObjectByType<RandomEventSystem>(FindObjectsInactive.Include);
+                randomEventSystem = GlobalRegistry.RandomEvents;
         }
 
         private bool ValidateReferences()
@@ -221,9 +211,8 @@ namespace Hecton8.Dev
             float previousCents = spatialAudioManager.EclipseAcousticPitchShiftCents;
             spatialAudioManager.SetEclipseAcousticPitchShiftCents(-150f);
 
-            float expectedRatio = Mathf.Pow(2f, -150f / 1200f);
             _debugEclipsePitchRatio = spatialAudioManager.EclipseAcousticPitchRatio;
-            bool valid = Mathf.Abs(_debugEclipsePitchRatio - expectedRatio) <= PitchRatioTolerance;
+            bool valid = Mathf.Abs(_debugEclipsePitchRatio - EclipseMinus150CentsPitchRatio) <= PitchRatioTolerance;
 
             spatialAudioManager.SetEclipseAcousticPitchShiftCents(previousCents);
 

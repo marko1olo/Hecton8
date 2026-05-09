@@ -2,6 +2,7 @@ using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Hecton8.Physics;
+using Unity.Mathematics;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -326,10 +327,12 @@ namespace Hecton8.World
             if (_hasSnag || collision == null || collision.contactCount <= 0 || chunkRigidbody == null)
                 return;
 
-            float impactSpeed = collision.relativeVelocity.magnitude;
-            if (impactSpeed < snagImpactSpeedThreshold)
+            float impactSpeedSq = collision.relativeVelocity.sqrMagnitude;
+            float snagImpactSpeedThresholdSq = snagImpactSpeedThreshold * snagImpactSpeedThreshold;
+            if (impactSpeedSq < snagImpactSpeedThresholdSq)
                 return;
 
+            float impactSpeed = math.sqrt(impactSpeedSq);
             int collisionLayerMask = 1 << collision.collider.gameObject.layer;
             if ((snagLayers.value & collisionLayerMask) == 0)
                 return;
@@ -502,7 +505,7 @@ namespace Hecton8.World
         private void TryConfigureSnag(Vector3 contactPointWS, Vector3 contactNormalWS, Rigidbody preferredBody, bool useVoxelRockSpring)
         {
             Rigidbody connectedBody = preferredBody;
-            Vector3 safeNormal = contactNormalWS.sqrMagnitude > 0.0001f ? contactNormalWS.normalized : Vector3.up;
+            Vector3 safeNormal = ResolveSafeDirection(contactNormalWS, Vector3.up);
             Vector3 connectedAnchorWS = contactPointWS + safeNormal * snagSurfaceOffset;
 
             int hitCount = UnityEngine.Physics.OverlapSphereNonAlloc(
@@ -552,11 +555,12 @@ namespace Hecton8.World
                 : _snagConnectedAnchor;
             Vector3 localAnchorWS = transform.TransformPoint(_snagLocalAnchor);
             Vector3 separation = localAnchorWS - connectedAnchorWS;
-            float distance = separation.magnitude;
-            if (distance <= 0.0001f)
+            float distanceSq = separation.sqrMagnitude;
+            if (distanceSq <= 0.00000001f)
                 return;
 
-            Vector3 directionAwayFromAnchor = separation / distance;
+            float distance = math.sqrt(distanceSq);
+            Vector3 directionAwayFromAnchor = separation * math.rsqrt(distanceSq);
             float extension = distance - snagMaxDistance;
             if (extension <= 0f)
                 return;
@@ -600,7 +604,7 @@ namespace Hecton8.World
 
             float speed01 = Mathf.Clamp01(downwardSpeed / Mathf.Max(0.1f, siltTrailFullSpeed));
             ParticleSystem.EmissionModule emission = siltTrail.emission;
-            emission.rateOverTime = Mathf.Lerp(siltTrailBaseRate, siltTrailMaxRate, speed01);
+            emission.rateOverTime = LerpClamped(siltTrailBaseRate, siltTrailMaxRate, speed01);
             if (!siltTrail.isPlaying)
                 siltTrail.Play(true);
         }
@@ -746,7 +750,7 @@ namespace Hecton8.World
 
         private void UpdateConsumedScale()
         {
-            float scaleMultiplier = Mathf.Lerp(1f, 0.26f, _scavengerConsume01);
+            float scaleMultiplier = LerpClamped(1f, 0.26f, _scavengerConsume01);
             transform.localScale = _defaultLocalScale * Mathf.Max(0.1f, scaleMultiplier);
         }
 
@@ -791,12 +795,25 @@ namespace Hecton8.World
                     if (scrap == null || !scrap.TryGetComponent(out Rigidbody scrapRigidbody))
                         continue;
 
-                    scrapRigidbody.linearVelocity = ScrapEjectDirections[i].normalized * scrapEjectSpeed;
+                    scrapRigidbody.linearVelocity = ResolveSafeDirection(ScrapEjectDirections[i], Vector3.up) * scrapEjectSpeed;
                 }
             }
 
             if (poolManager != null)
                 poolManager.Despawn(gameObject);
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
+        {
+            float sqrMagnitude = value.sqrMagnitude;
+            return sqrMagnitude > 0.000001f
+                ? value * math.rsqrt(sqrMagnitude)
+                : fallback;
+        }
+
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return math.lerp(from, to, math.saturate(t));
         }
 
 #if UNITY_EDITOR

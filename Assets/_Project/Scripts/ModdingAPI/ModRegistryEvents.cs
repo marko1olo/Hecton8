@@ -301,24 +301,40 @@ namespace Hecton8.Modding
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<ModRegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] - deferred coalesced mod registry event lane - owner: ModRegistryEvents
+                _pendingEvents = new NativeQueue<ModRegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — deferred coalesced mod registry event lane — owner: ModRegistryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
                     nameof(ModRegistryEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<ModRegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] - next-frame mod registry lane prevents same-frame reentrant dispatch - owner: ModRegistryEvents
+                _nextFrameEvents = new NativeQueue<ModRegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] — next-frame mod registry lane prevents same-frame reentrant dispatch — owner: ModRegistryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
                     nameof(ModRegistryEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 

@@ -3,6 +3,7 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using Hecton8.Audio;
+using Hecton8.Core;
 using System.Collections.Generic;
 
 namespace Hecton8.UI
@@ -15,7 +16,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Canvas))]
     [AddComponentMenu("Hecton8/UI/UI Audio Feedback")]
-    public sealed class UIAudioFeedback : MonoBehaviour
+    public sealed class UIAudioFeedback : MonoBehaviour, IServiceHeartbeat, IServiceShutdown, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -72,9 +73,12 @@ namespace Hecton8.UI
         // FIELDS
         // ══════════════════════════════════════════════════════════
 
-        private Hecton8.Core.IAudioService _audioManager;
+        private IAudioService _audioManager;
         private float _lastSliderTickTime;
-        private static UIAudioFeedback _instance;
+        private bool _runtimeRegistered;
+        private bool _hotSwapRegistered;
+        private bool _controlsRegistered;
+        private float _nextDebugLogTime;
         private UnityAction _primaryButtonClickAction;
         private UnityAction _secondaryButtonClickAction;
         private UnityAction _destructiveButtonClickAction;
@@ -91,6 +95,8 @@ namespace Hecton8.UI
         // Stats
         private int _totalSoundsPlayed;
         private int _throttledSounds;
+        public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+        public bool IsServiceReady => _runtimeRegistered;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -98,7 +104,12 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _instance = this;
+            UIAudioFeedback registered = GlobalRegistry.UIAudioFeedback;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
             _primaryButtonClickAction = OnPrimaryButtonClicked; // COLD ALLOC: UnityAction[1] — cached primary button audio listener — owner: UIAudioFeedback
             _secondaryButtonClickAction = OnSecondaryButtonClicked; // COLD ALLOC: UnityAction[1] — cached secondary button audio listener — owner: UIAudioFeedback
             _destructiveButtonClickAction = OnDestructiveButtonClicked; // COLD ALLOC: UnityAction[1] — cached destructive button audio listener — owner: UIAudioFeedback
@@ -109,20 +120,43 @@ namespace Hecton8.UI
 
         private void Start()
         {
-            _audioManager = Hecton8.Core.GlobalRegistry.Audio;
-            RegisterAllButtons();
-            RegisterAllSliders();
-            RegisterAllToggles();
+            if (!_runtimeRegistered && !TryRegisterRuntime())
+                return;
+
+            BindAudioAndRegisterControls();
+            TryRegisterHotSwapListener();
+        }
+
+        private void OnEnable()
+        {
+            if (!TryRegisterRuntime())
+                return;
+
+            BindAudioAndRegisterControls();
+            TryRegisterHotSwapListener();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterControls();
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntime();
+            _audioManager = null;
         }
 
         private void OnDestroy()
         {
-            UnregisterAllButtons();
-            UnregisterAllSliders();
-            UnregisterAllToggles();
+            TryUnregisterControls();
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntime();
+        }
 
-            if (_instance == this)
-                _instance = null;
+        public void OnServiceShutdown()
+        {
+            TryUnregisterControls();
+            TryUnregisterHotSwapListener();
+            TryUnregisterRuntime();
+            _audioManager = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -131,32 +165,37 @@ namespace Hecton8.UI
 
         public static void PlayPanelOpen()
         {
-            if (_instance != null && _instance.panelOpen != null)
-                _instance.PlaySound(_instance.panelOpen, _instance.volume);
+            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            if (instance != null && instance.panelOpen != null)
+                instance.PlaySound(instance.panelOpen, instance.volume);
         }
 
         public static void PlayPanelClose()
         {
-            if (_instance != null && _instance.panelClose != null)
-                _instance.PlaySound(_instance.panelClose, _instance.volume);
+            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            if (instance != null && instance.panelClose != null)
+                instance.PlaySound(instance.panelClose, instance.volume);
         }
 
         public static void PlayClickPrimary()
         {
-            if (_instance != null && _instance.clickPrimary != null)
-                _instance.PlaySound(_instance.clickPrimary, _instance.volume);
+            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            if (instance != null && instance.clickPrimary != null)
+                instance.PlaySound(instance.clickPrimary, instance.volume);
         }
 
         public static void PlayClickSecondary()
         {
-            if (_instance != null && _instance.clickSecondary != null)
-                _instance.PlaySound(_instance.clickSecondary, _instance.volume);
+            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            if (instance != null && instance.clickSecondary != null)
+                instance.PlaySound(instance.clickSecondary, instance.volume);
         }
 
         public static void PlayClickDestructive()
         {
-            if (_instance != null && _instance.clickDestructive != null)
-                _instance.PlaySound(_instance.clickDestructive, _instance.volume);
+            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            if (instance != null && instance.clickDestructive != null)
+                instance.PlaySound(instance.clickDestructive, instance.volume);
         }
 
         /// <summary>
@@ -164,10 +203,11 @@ namespace Hecton8.UI
         /// </summary>
         public static void GetStats(out int totalPlayed, out int throttled)
         {
-            if (_instance != null)
+            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            if (instance != null)
             {
-                totalPlayed = _instance._totalSoundsPlayed;
-                throttled = _instance._throttledSounds;
+                totalPlayed = instance._totalSoundsPlayed;
+                throttled = instance._throttledSounds;
             }
             else
             {
@@ -181,11 +221,99 @@ namespace Hecton8.UI
         /// </summary>
         public static void ResetStats()
         {
-            if (_instance != null)
+            UIAudioFeedback instance = GlobalRegistry.UIAudioFeedback;
+            if (instance != null)
             {
-                _instance._totalSoundsPlayed = 0;
-                _instance._throttledSounds = 0;
+                instance._totalSoundsPlayed = 0;
+                instance._throttledSounds = 0;
             }
+        }
+
+        public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Audio)
+                return;
+
+            _audioManager = currentService as IAudioService;
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot == GlobalRegistryServiceSlot.Audio)
+                _audioManager = currentService as IAudioService;
+        }
+
+        private bool TryRegisterRuntime()
+        {
+            if (_runtimeRegistered)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
+            UIAudioFeedback registered = GlobalRegistry.UIAudioFeedback;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
+            GlobalRegistry.RegisterUIAudioFeedbackRuntime(this);
+            _runtimeRegistered = ReferenceEquals(GlobalRegistry.UIAudioFeedback, this);
+            return _runtimeRegistered;
+        }
+
+        private void TryUnregisterRuntime()
+        {
+            if (!_runtimeRegistered)
+                return;
+
+            GlobalRegistry.UnregisterUIAudioFeedbackRuntime(this);
+            _runtimeRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapRegistered || !Application.isPlaying)
+                return;
+
+            _hotSwapRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapRegistered)
+                return;
+
+            GlobalRegistry.UnregisterHotSwapListener(this);
+            _hotSwapRegistered = false;
+        }
+
+        private void BindAudioAndRegisterControls()
+        {
+            _audioManager = GlobalRegistry.Audio;
+
+            if (_controlsRegistered)
+                return;
+
+            RegisterAllButtons();
+            RegisterAllSliders();
+            RegisterAllToggles();
+            _controlsRegistered = true;
+        }
+
+        private void TryUnregisterControls()
+        {
+            if (!_controlsRegistered)
+                return;
+
+            UnregisterAllButtons();
+            UnregisterAllSliders();
+            UnregisterAllToggles();
+            _controlsRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -457,7 +585,7 @@ namespace Hecton8.UI
         {
             if (_audioManager == null)
             {
-                _audioManager = Hecton8.Core.GlobalRegistry.Audio;
+                _audioManager = GlobalRegistry.Audio;
                 if (_audioManager == null)
                     return;
             }
@@ -468,7 +596,12 @@ namespace Hecton8.UI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (debugLog)
             {
-                Debug.Log($"[UIAudioFeedback] Played: {clip.name} | Volume: {vol:F2} | Total: {_totalSoundsPlayed} | Throttled: {_throttledSounds}");
+                float now = Time.unscaledTime;
+                if (now >= _nextDebugLogTime)
+                {
+                    _nextDebugLogTime = now + 1f;
+                    Debug.Log("[UIAudioFeedback] Playback event.", this);
+                }
             }
 #endif
         }

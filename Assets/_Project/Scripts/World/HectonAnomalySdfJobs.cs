@@ -8,7 +8,7 @@ using Unity.Mathematics;
 namespace Hecton8.World
 {
     /// <summary>
-    /// Burst kernel that forces SDF density to exactly match a terrain heightfield top surface.
+    /// Burst kernel that locks SDF density to a terrain heightfield, with hysteresis for micro-deltas.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct SnapSDFToTerrainJob : Unity.Jobs.IJobParallelFor
@@ -48,6 +48,9 @@ namespace Hecton8.World
         /// <summary>Absolute universe origin of the SDF volume.</summary>
         public double3 SdfOriginAup;
 
+        /// <summary>Density delta below this meter threshold is left untouched to suppress precision micro-tears.</summary>
+        public float SnapHysteresisMeters;
+
         /// <inheritdoc />
         public void Execute(int index)
         {
@@ -61,7 +64,11 @@ namespace Hecton8.World
             double absY = SdfOriginAup.y + y * (double)VoxelSizeMeters;
             double absZ = SdfOriginAup.z + z * (double)VoxelSizeMeters;
             float terrainHeight = SampleTerrainHeight(absX, absZ);
-            Sdf[index] = terrainHeight - (float)absY;
+            float density = terrainHeight - (float)absY;
+            if (SnapHysteresisMeters > 0f && math.abs(density - Sdf[index]) < SnapHysteresisMeters)
+                return;
+
+            Sdf[index] = density;
         }
 
         private float SampleTerrainHeight(double absX, double absZ)
@@ -96,7 +103,7 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// Burst kernel that forces the nearest terrain-roof voxel in each XZ column to exact zero density.
+    /// Burst kernel that locks the nearest terrain-roof voxel in each XZ column, with hysteresis for micro-deltas.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct SnapSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
@@ -131,7 +138,7 @@ namespace Hecton8.World
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // A full SDF-index pass was rejected for the production path because it schedules SdfWidth*SdfHeight*SdfDepth
         // lanes to update two cells per column. This column pass schedules only SdfWidth*SdfDepth lanes while keeping
-        // deterministic AUP sampling and exact top-surface density writes.
+        // deterministic AUP sampling and bounded top-surface density writes.
         [NativeDisableParallelForRestriction]
         public NativeArray<float> Sdf;
 
@@ -149,6 +156,9 @@ namespace Hecton8.World
 
         /// <summary>Absolute universe origin of the SDF volume.</summary>
         public double3 SdfOriginAup;
+
+        /// <summary>Density delta below this meter threshold is left untouched to suppress precision micro-tears.</summary>
+        public float SnapHysteresisMeters;
 
         /// <summary>
         /// Applies the terrain seam lock for one XZ column lane.
@@ -171,18 +181,22 @@ namespace Hecton8.World
             int lowerY = (int)math.trunc(terrainY);
             int upperY = lowerY + 1;
 
-            WriteExactTerrainDensity(x, lowerY, z, terrainHeight);
-            WriteExactTerrainDensity(x, upperY, z, terrainHeight);
+            WriteTerrainDensityWithHysteresis(x, lowerY, z, terrainHeight);
+            WriteTerrainDensityWithHysteresis(x, upperY, z, terrainHeight);
         }
 
-        private void WriteExactTerrainDensity(int x, int y, int z, float terrainHeight)
+        private void WriteTerrainDensityWithHysteresis(int x, int y, int z, float terrainHeight)
         {
             if (y < 0 || y >= SdfHeight)
                 return;
 
             int index = x + y * SdfWidth + z * SdfWidth * SdfHeight;
             float absY = (float)(SdfOriginAup.y + y * (double)VoxelSizeMeters);
-            Sdf[index] = terrainHeight - absY;
+            float density = terrainHeight - absY;
+            if (SnapHysteresisMeters > 0f && math.abs(density - Sdf[index]) < SnapHysteresisMeters)
+                return;
+
+            Sdf[index] = density;
         }
 
         private float SampleTerrainHeight(double absX, double absZ)
@@ -217,7 +231,7 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// Burst kernel that writes the same exact terrain seam lock into primary and secondary SDF arrays.
+    /// Burst kernel that writes the same terrain seam lock into primary and secondary SDF arrays, with micro-delta hysteresis.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct SnapDualSDFTopCellsToTerrainJob : Unity.Jobs.IJobParallelFor
@@ -250,12 +264,23 @@ namespace Hecton8.World
         // SAFETY_JUSTIFICATION_PARAGRAPH_3:
         // A full SDF-index pass was rejected for the production path because it schedules SdfWidth*SdfHeight*SdfDepth
         // lanes to update two cells per column. This column pass schedules only SdfWidth*SdfDepth lanes while keeping
-        // deterministic AUP sampling and exact top-surface density writes.
+        // deterministic AUP sampling and bounded top-surface density writes.
         [NativeDisableParallelForRestriction]
         public NativeArray<float> Sdf;
 
         /// <summary>Second SDF density array written only when an offline validation path explicitly requests it.</summary>
-        // Production seam locking writes one authoritative SDF field to avoid dual-write cache-line bouncing.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // SecondarySdf mirrors the exact same XZ-column ownership used by Sdf when WriteSecondary is non-zero.
+        // Unity cannot infer that the scheduled index is a column id rather than a flat SDF index, but each lane
+        // owns one unique (x,z) column and writes only that column's bounded lower/upper terrain-crossing y cells.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Alternatives rejected: scheduling a second full-grid validation pass would add SdfWidth*SdfHeight*SdfDepth
+        // lanes to validate two samples per column; duplicating the primary job externally would double terrain
+        // sampling and break the single dependency fence used by the cold validation path.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // The invariant is guarded by WriteSecondary. Production keeps it zero, so SecondarySdf is untouched. When
+        // validation enables it, Sdf and SecondarySdf are distinct caller-owned arrays, and this job is the only
+        // writer in the dependency chain before any consumer reads either field.
         [NativeDisableParallelForRestriction]
         public NativeArray<float> SecondarySdf;
 
@@ -277,6 +302,9 @@ namespace Hecton8.World
         /// <summary>Absolute universe origin of the SDF volume.</summary>
         public double3 SdfOriginAup;
 
+        /// <summary>Density delta below this meter threshold is left untouched to suppress precision micro-tears.</summary>
+        public float SnapHysteresisMeters;
+
         /// <inheritdoc />
         public void Execute(int index)
         {
@@ -296,11 +324,11 @@ namespace Hecton8.World
             int lowerY = (int)math.trunc(terrainY);
             int upperY = lowerY + 1;
 
-            WriteExactTerrainDensity(x, lowerY, z, terrainHeight);
-            WriteExactTerrainDensity(x, upperY, z, terrainHeight);
+            WriteTerrainDensityWithHysteresis(x, lowerY, z, terrainHeight);
+            WriteTerrainDensityWithHysteresis(x, upperY, z, terrainHeight);
         }
 
-        private void WriteExactTerrainDensity(int x, int y, int z, float terrainHeight)
+        private void WriteTerrainDensityWithHysteresis(int x, int y, int z, float terrainHeight)
         {
             if (y < 0 || y >= SdfHeight)
                 return;
@@ -308,14 +336,24 @@ namespace Hecton8.World
             int index = x + y * SdfWidth + z * SdfWidth * SdfHeight;
             float absY = (float)(SdfOriginAup.y + y * (double)VoxelSizeMeters);
             float density = terrainHeight - absY;
-            Sdf[index] = density;
+            if (ShouldSnap(Sdf[index], density))
+                Sdf[index] = density;
 
             if (WriteSecondary == 0)
                 return;
 
             if (SecondarySdf.IsCreated &&
                 (uint)index < (uint)SecondarySdf.Length)
-                SecondarySdf[index] = density;
+            {
+                if (ShouldSnap(SecondarySdf[index], density))
+                    SecondarySdf[index] = density;
+            }
+        }
+
+        private bool ShouldSnap(float currentDensity, float targetDensity)
+        {
+            return SnapHysteresisMeters <= 0f ||
+                   math.abs(targetDensity - currentDensity) >= SnapHysteresisMeters;
         }
 
         private float SampleTerrainHeight(double absX, double absZ)
@@ -409,13 +447,13 @@ namespace Hecton8.World
             if (x < 0 || x >= SdfWidth || z < 0 || z >= SdfDepth)
                 return;
 
-            float absX = (float)(SdfOriginAup.x + x * (double)VoxelSizeMeters);
-            float absY = (float)(SdfOriginAup.y + localYIndex * (double)VoxelSizeMeters);
-            float absZ = (float)(SdfOriginAup.z + z * (double)VoxelSizeMeters);
+            double absXd = SdfOriginAup.x + x * (double)VoxelSizeMeters;
+            double absYd = SdfOriginAup.y + localYIndex * (double)VoxelSizeMeters;
+            double absZd = SdfOriginAup.z + z * (double)VoxelSizeMeters;
             float3 local = new float3(
-                absX - (float)pillarBaseAup.x,
-                absY - (float)(pillarBaseAup.y + halfHeight),
-                absZ - (float)pillarBaseAup.z);
+                (float)(absXd - pillarBaseAup.x),
+                (float)(absYd - (pillarBaseAup.y + (double)halfHeight)),
+                (float)(absZd - pillarBaseAup.z));
 
             float radialSq = math.lengthsq(local.xz);
             if (math.abs(local.y) > halfHeight + VoxelSizeMeters ||
@@ -426,7 +464,7 @@ namespace Hecton8.World
             float radial = -math.max(VoxelSizeMeters, EdgeWarpMeters);
             if (radialSq > innerRadius * innerRadius)
             {
-                float3 noisePosition = new float3(absX, absY * 0.35f, absZ) * NoiseFrequency;
+                float3 noisePosition = new float3((float)absXd, (float)(absYd * 0.35d), (float)absZd) * NoiseFrequency;
                 float warp = (AnomalySdfNoise.FastHashNoise3D(noisePosition) * 2f - 1f) * EdgeWarpMeters;
                 float warpedRadius = math.max(0.001f, RadiusMeters + warp);
                 radial = AnomalySdfNoise.FastMagnitude(radialSq) - warpedRadius;
@@ -513,11 +551,11 @@ namespace Hecton8.World
             if (x < 0 || x >= SdfWidth || z < 0 || z >= SdfDepth)
                 return;
 
-            float absX = (float)(SdfOriginAup.x + x * (double)VoxelSizeMeters);
-            float absZ = (float)(SdfOriginAup.z + z * (double)VoxelSizeMeters);
+            double absXd = SdfOriginAup.x + x * (double)VoxelSizeMeters;
+            double absZd = SdfOriginAup.z + z * (double)VoxelSizeMeters;
 
-            float dx = absX - (float)pillarBaseAup.x;
-            float dz = absZ - (float)pillarBaseAup.z;
+            float dx = (float)(absXd - pillarBaseAup.x);
+            float dz = (float)(absZd - pillarBaseAup.z);
             float radialSq = dx * dx + dz * dz;
             if (radialSq > maxRadiusSq)
                 return;
@@ -526,7 +564,7 @@ namespace Hecton8.World
             if (radialSq > innerRadiusSq)
             {
                 float radialDistance = AnomalySdfNoise.FastMagnitude(radialSq);
-                float3 noisePosition = new float3(absX, 0f, absZ) * NoiseFrequency;
+                float3 noisePosition = new float3((float)absXd, 0f, (float)absZd) * NoiseFrequency;
                 float warp = (AnomalySdfNoise.FastHashNoise3D(noisePosition) * 2f - 1f) * EdgeWarpMeters;
                 float warpedRadius = math.max(0.001f, RadiusMeters + warp);
                 radial = radialDistance - warpedRadius;
@@ -553,25 +591,23 @@ namespace Hecton8.World
             double3 chunkMinAup,
             double3 chunkMaxAup)
         {
-            float radius = math.max(0.001f, radiusMeters);
-            float height = math.max(0.001f, heightMeters);
-            float3 pillarMin = new float3(
-                (float)pillarBaseAup.x - radius,
-                (float)pillarBaseAup.y,
-                (float)pillarBaseAup.z - radius);
-            float3 pillarMax = new float3(
-                (float)pillarBaseAup.x + radius,
-                (float)pillarBaseAup.y + height,
-                (float)pillarBaseAup.z + radius);
-            float3 chunkMin = new float3((float)chunkMinAup.x, (float)chunkMinAup.y, (float)chunkMinAup.z);
-            float3 chunkMax = new float3((float)chunkMaxAup.x, (float)chunkMaxAup.y, (float)chunkMaxAup.z);
+            double radius = math.max(0.001d, (double)radiusMeters);
+            double height = math.max(0.001d, (double)heightMeters);
+            double3 pillarMin = new double3(
+                pillarBaseAup.x - radius,
+                pillarBaseAup.y,
+                pillarBaseAup.z - radius);
+            double3 pillarMax = new double3(
+                pillarBaseAup.x + radius,
+                pillarBaseAup.y + height,
+                pillarBaseAup.z + radius);
 
-            return !(chunkMin.x > pillarMax.x ||
-                     chunkMax.x < pillarMin.x ||
-                     chunkMin.y > pillarMax.y ||
-                     chunkMax.y < pillarMin.y ||
-                     chunkMin.z > pillarMax.z ||
-                     chunkMax.z < pillarMin.z);
+            return !(chunkMinAup.x > pillarMax.x ||
+                     chunkMaxAup.x < pillarMin.x ||
+                     chunkMinAup.y > pillarMax.y ||
+                     chunkMaxAup.y < pillarMin.y ||
+                     chunkMinAup.z > pillarMax.z ||
+                     chunkMaxAup.z < pillarMin.z);
         }
     }
 
@@ -634,7 +670,7 @@ namespace Hecton8.World
                 SdfOriginAup.y + y * (double)VoxelSizeMeters,
                 SdfOriginAup.z + z * (double)VoxelSizeMeters);
 
-            float2 direction = math.normalizesafe(DirectionXZ, new float2(1f, 0f));
+            float2 direction = DirectionXZ;
             float2 delta = new float2(
                 (float)(abs.x - FissureTopAup.x),
                 (float)(abs.z - FissureTopAup.z));
@@ -731,8 +767,9 @@ namespace Hecton8.World
             float3 gridPos = new float3(x, y, z);
             float3 noisePos = gridPos * VoxelSizeMeters * NoiseFrequency;
             float noise = AnomalySdfNoise.FractalNoise3D(noisePos) * 2f - 1f;
-            float2 lateralDir = math.normalize(new float2(gx, gz));
-            float2 displacementCells = lateralDir * (noise * LateralAmplitudeMeters / VoxelSizeMeters);
+            float lateralSq = gx * gx + gz * gz;
+            float invLateral = math.rsqrt(math.max(lateralSq, 0.0000001f));
+            float2 displacementCells = new float2(gx, gz) * (invLateral * noise * LateralAmplitudeMeters / VoxelSizeMeters);
             float displaced = SampleTrilinear(gridPos - new float3(displacementCells.x, 0f, displacementCells.y));
             OutputSdf[index] = math.lerp(baseValue, displaced, Strength);
         }

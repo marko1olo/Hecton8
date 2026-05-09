@@ -141,6 +141,25 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
+        /// Number of modules whose blueprint gate is currently open.
+        /// </summary>
+        public int ViewableCount
+        {
+            get
+            {
+                int viewableCount = 0;
+                int count = Count;
+                for (int i = 0; i < count; i++)
+                {
+                    if (IsModuleBlueprintViewable(GetAt(i)))
+                        viewableCount++;
+                }
+
+                return viewableCount;
+            }
+        }
+
+        /// <summary>
         /// Read-only доступ к массиву модулей для runtime-циклов и UI.
         /// </summary>
         public IReadOnlyList<BuildableData> Modules
@@ -252,6 +271,31 @@ namespace Hecton8.Construction
         }
 
         /// <summary>
+        /// Returns the buildable at a viewable-only catalog index, skipping locked blueprints.
+        /// </summary>
+        public BuildableData GetViewableAt(int index)
+        {
+            if (index < 0)
+                return null;
+
+            int viewableIndex = 0;
+            int count = Count;
+            for (int i = 0; i < count; i++)
+            {
+                BuildableData data = GetAt(i);
+                if (!IsModuleBlueprintViewable(data))
+                    continue;
+
+                if (viewableIndex == index)
+                    return data;
+
+                viewableIndex++;
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Возвращает индекс BuildableData в каталоге или -1, если его нет.
         /// </summary>
         public int IndexOf(BuildableData data)
@@ -273,6 +317,31 @@ namespace Hecton8.Construction
                     if (ReferenceEquals(_runtimeModules[i], data))
                         return count + i;
                 }
+            }
+
+            return -1;
+        }
+
+        /// <summary>
+        /// Returns the viewable-only index of a buildable, or -1 when the module is locked or absent.
+        /// </summary>
+        public int IndexOfViewable(BuildableData data)
+        {
+            if (data == null)
+                return -1;
+
+            int viewableIndex = 0;
+            int count = Count;
+            for (int i = 0; i < count; i++)
+            {
+                BuildableData candidate = GetAt(i);
+                if (!IsModuleBlueprintViewable(candidate))
+                    continue;
+
+                if (ReferenceEquals(candidate, data))
+                    return viewableIndex;
+
+                viewableIndex++;
             }
 
             return -1;
@@ -318,6 +387,11 @@ namespace Hecton8.Construction
             }
         }
 
+        private static bool IsModuleBlueprintViewable(BuildableData data)
+        {
+            return data != null && data.IsBlueprintViewable();
+        }
+
         private void AddLookupAlias(string id, BuildableData data)
         {
             if (string.IsNullOrEmpty(id) || data == null)
@@ -328,7 +402,9 @@ namespace Hecton8.Construction
                 if (!ReferenceEquals(existing, data))
                 {
                     RegisterLookupAmbiguity(id, existing, data);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning($"[ModuleCatalog] Duplicate ID alias '{id}'. Skipping duplicate entry.", data);
+#endif
                 }
 
                 return;

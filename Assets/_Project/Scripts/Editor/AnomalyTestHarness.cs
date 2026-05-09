@@ -48,6 +48,9 @@ namespace Hecton8.Editor
         private const string FloodHeapLabel = "floodHeap";
         private const string VisitedStampLabel = "visitedStamp";
         private const string AcceptedCellsLabel = "acceptedCells";
+        private const string SliceStatusLabel = "sliceStatus";
+        private const string PendingFloodStatesLabel = "pendingFloodStates";
+        private const string DeferredFloodStatesLabel = "deferredFloodStates";
         private const string CliffInputSdfLabel = "cliffInputSdf";
         private const string CliffOutputSdfLabel = "cliffOutputSdf";
         private const string FeatureHeightmapLabel = "featureHeightmap";
@@ -66,11 +69,155 @@ namespace Hecton8.Editor
         public static void Run()
         {
             RunPerfectBowlAssertion();
+            RunOpenEdgeBowlRejectionAssertion();
+            RunBrineToxicMudGridAssertion();
+            RunBrinePoolGeneratorStaleRootAssertion();
+            RunTimeSlicedPerfectBowlAssertion();
+            RunTimeSlicedStampOverflowAssertion();
+            RunTimeSlicedCorruptStateRecoveryAssertion();
             RunCliffOverhangAssertion();
             RunFeatureDetectionAssertion();
             RunSeamStitchAssertion();
             RunSdfInjectionAssertion();
             Debug.Log("ANOMALY_TEST_HARNESS_PASS");
+        }
+
+        /// <summary>
+        /// Validates toxic mud registry id, dimension, AUP, and unregister invariants.
+        /// </summary>
+        public static void RunBrineToxicMudGridAssertion()
+        {
+            const int validCellId = 990001;
+            const int invalidCellId = 990002;
+            AbsoluteUniversePosition center = AbsoluteUniversePosition.FromAbsolutePosition(new double3(100.0, 20.0, 200.0));
+            AbsoluteUniversePosition aboveSurface = AbsoluteUniversePosition.FromAbsolutePosition(new double3(100.0, 21.0, 200.0));
+            AbsoluteUniversePosition belowVolume = AbsoluteUniversePosition.FromAbsolutePosition(new double3(100.0, 14.0, 200.0));
+            AbsoluteUniversePosition edgeOnEllipse = AbsoluteUniversePosition.FromAbsolutePosition(new double3(105.0, 20.0, 200.0));
+            AbsoluteUniversePosition outsideNear = AbsoluteUniversePosition.FromAbsolutePosition(new double3(105.25, 20.0, 200.0));
+            AbsoluteUniversePosition outsideXZ = AbsoluteUniversePosition.FromAbsolutePosition(new double3(110.0, 20.0, 200.0));
+            AbsoluteUniversePosition invalidLocalAup = center;
+            invalidLocalAup.LocalY = float.NaN;
+
+            HectonBrineToxicMudGrid.ClearForEditorTests();
+            try
+            {
+                Assert.AreEqual(0, HectonBrineToxicMudGrid.RegisteredCellCount, "Brine toxic mud grid did not start empty.");
+
+                HectonBrineToxicMudGrid.RegisterCell(0, in center, 10f, 12f, 5f);
+                HectonBrineToxicMudGrid.RegisterCell(invalidCellId, in center, 0f, 12f, 5f);
+                HectonBrineToxicMudGrid.RegisterCell(invalidCellId, in center, 10f, -1f, 5f);
+                HectonBrineToxicMudGrid.RegisterCell(invalidCellId, in center, 10f, 12f, 0f);
+                HectonBrineToxicMudGrid.RegisterCell(invalidCellId, new Vector3(float.NaN, 20f, 200f), 10f, 12f, 5f);
+                Assert.AreEqual(0, HectonBrineToxicMudGrid.RegisteredCellCount, "Brine toxic mud grid accepted an invalid cell.");
+
+                HectonBrineToxicMudGrid.RegisterCell(validCellId, in center, 10f, 12f, 5f);
+                Assert.AreEqual(1, HectonBrineToxicMudGrid.RegisteredCellCount, "Brine toxic mud grid did not register exactly one valid cell.");
+                Assert.IsTrue(HectonBrineToxicMudGrid.HasRegisteredCells, "Brine toxic mud grid did not report active cells.");
+                Assert.IsTrue(HectonBrineToxicMudGrid.IsRegisteredCell(validCellId), "Brine toxic mud grid did not find the valid cell id.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.IsRegisteredCell(invalidCellId), "Brine toxic mud grid retained an invalid cell id.");
+                Assert.IsTrue(HectonBrineToxicMudGrid.ContainsAupSubmergedPosition(in center), "Brine toxic mud grid did not contain the center AUP.");
+                Assert.IsTrue(HectonBrineToxicMudGrid.OverlapsAupSubmergedVolume(in center, 0.5f, 0.5f), "Brine toxic mud grid did not overlap a centered query volume.");
+                Assert.IsTrue(HectonBrineToxicMudGrid.ContainsAupSubmergedPosition(in edgeOnEllipse), "Brine toxic mud grid excluded the exact ellipse boundary.");
+                Assert.IsTrue(HectonBrineToxicMudGrid.ContainsAupXZ(in aboveSurface), "Brine toxic mud grid lost the XZ footprint above the surface.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsAupSubmergedPosition(in aboveSurface), "Brine toxic mud grid marked an above-surface point as submerged.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupSubmergedVolume(in aboveSurface, 0.5f, 0.25f), "Brine toxic mud grid marked an above-surface volume as submerged.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsAupXZ(in invalidLocalAup), "Brine toxic mud grid accepted a non-finite AUP local coordinate.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupXZ(in center, -0.5f), "Brine toxic mud grid accepted a negative XZ query radius.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupXZ(in center, float.PositiveInfinity), "Brine toxic mud grid accepted an infinite XZ query radius.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupSubmergedVolume(in center, 0.5f, float.NaN), "Brine toxic mud grid accepted a NaN vertical query extent.");
+                HectonBrineToxicMudGrid.RegisterCell(validCellId, new Vector3(float.NaN, 20f, 200f), 10f, 12f, 5f);
+                Assert.AreEqual(0, HectonBrineToxicMudGrid.RegisteredCellCount, "Non-finite runtime cell update did not unregister stale brine state.");
+
+                HectonBrineToxicMudGrid.RegisterCell(validCellId, in center, 10f, 12f, 5f);
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsAupSubmergedPosition(in belowVolume), "Brine toxic mud grid contained a point below the brine volume.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsRuntimeXZ(new Vector3(float.NaN, 20f, 200f)), "Brine toxic mud grid accepted a non-finite runtime XZ query.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsRuntimeSubmergedPosition(new Vector3(100f, float.PositiveInfinity, 200f)), "Brine toxic mud grid accepted a non-finite runtime submerged query.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsAupXZ(new float3(float.NaN, 20f, 200f)), "Brine toxic mud grid accepted a non-finite float3 XZ query.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsAupSubmergedPosition(new float3(100f, float.NaN, 200f)), "Brine toxic mud grid accepted a non-finite float3 submerged query.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupXZ(in outsideNear, float.PositiveInfinity), "Brine toxic mud grid expanded an infinite XZ query radius.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.OverlapsAupSubmergedVolume(in outsideNear, float.PositiveInfinity, 0.5f), "Brine toxic mud grid expanded an infinite submerged query radius.");
+                Assert.IsFalse(HectonBrineToxicMudGrid.ContainsAupSubmergedPosition(in outsideXZ), "Brine toxic mud grid contained a point outside the brine ellipse.");
+
+                HectonBrineToxicMudGrid.RegisterCell(validCellId, in center, 10f, 0f, 5f);
+                Assert.AreEqual(0, HectonBrineToxicMudGrid.RegisteredCellCount, "Invalid cell update did not unregister stale brine state.");
+            }
+            finally
+            {
+                HectonBrineToxicMudGrid.ClearForEditorTests();
+            }
+        }
+
+        /// <summary>
+        /// Validates that an existing generated brine root is cleaned even when no pools are currently tracked.
+        /// </summary>
+        public static void RunBrinePoolGeneratorStaleRootAssertion()
+        {
+            NativeArray<byte> basinMask = default;
+            NativeArray<AnomalyBasinRecord> basinRecords = default;
+            GameObject host = null;
+
+            try
+            {
+                // COLD ALLOC: NativeArray stale brine generator buffers[1] - deterministic editor brine generator validation - owner: AnomalyTestHarness
+                basinMask = new NativeArray<byte>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                basinRecords = new NativeArray<AnomalyBasinRecord>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
+
+                // COLD ALLOC: GameObject[1] - editor brine generator host - owner: AnomalyTestHarness
+                host = new GameObject("AnomalyHarnessBrineGeneratorHost");
+                HectonBrinePoolMeshGenerator generator = host.AddComponent<HectonBrinePoolMeshGenerator>();
+
+                // COLD ALLOC: GameObject[1] - stale generated brine pool root - owner: AnomalyTestHarness
+                var root = new GameObject("Generated Brine Pools");
+                root.transform.SetParent(host.transform, false);
+                // COLD ALLOC: GameObject[1] - stale generated brine pool child - owner: AnomalyTestHarness
+                var staleChild = new GameObject("StaleBrinePool");
+                staleChild.transform.SetParent(root.transform, false);
+
+                int created = generator.BuildBrinePools(basinMask, basinRecords, 1, 1, 1f, Vector3.zero);
+                Assert.AreEqual(0, created, "Empty brine generator input created a brine pool.");
+                Assert.AreEqual(1, host.transform.childCount, "Brine generator created a duplicate generated-pools root.");
+                Assert.IsTrue(root.transform == host.transform.GetChild(0), "Brine generator did not reuse the existing generated-pools root.");
+                Assert.AreEqual(HectonLayerMasks.BrineToxicity, root.layer, "Brine generator did not normalize the existing root to the brine toxicity layer.");
+                Assert.AreEqual(0, root.transform.childCount, "Brine generator did not clear stale untracked generated pool children.");
+
+                // COLD ALLOC: GameObject[1] - stale child for invalid brine rebuild rollback - owner: AnomalyTestHarness
+                var invalidInputChild = new GameObject("InvalidInputStaleBrinePool");
+                invalidInputChild.transform.SetParent(root.transform, false);
+                created = generator.BuildBrinePools(basinMask, basinRecords, 0, 1, 1f, Vector3.zero);
+                Assert.AreEqual(0, created, "Invalid brine generator input created a brine pool.");
+                Assert.AreEqual(0, root.transform.childCount, "Brine generator did not clear stale children on invalid input.");
+
+                basinMask[0] = 1;
+                basinRecords[0] = new AnomalyBasinRecord
+                {
+                    BasinId = 1,
+                    DeepestIndex = 0,
+                    DeepestX = 0,
+                    DeepestZ = 0,
+                    MinX = 0,
+                    MinZ = 0,
+                    MaxX = 0,
+                    MaxZ = 0,
+                    CellCount = 1,
+                    DeepestHeight = 10f,
+                    LipHeight = 10f,
+                    AreaMetersSq = 1f,
+                    Valid = 1
+                };
+                created = generator.BuildBrinePools(basinMask, basinRecords, 1, 1, 1f, Vector3.zero);
+                Assert.AreEqual(0, created, "Brine generator accepted a basin record with no positive lip depth.");
+                Assert.AreEqual(0, root.transform.childCount, "Brine generator created geometry for an invalid lip record.");
+            }
+            finally
+            {
+                if (host != null)
+                    UnityEngine.Object.DestroyImmediate(host);
+
+                DisposeTracked(ref basinMask);
+                DisposeTracked(ref basinRecords);
+            }
         }
 
         /// <summary>
@@ -88,7 +235,7 @@ namespace Hecton8.Editor
 
             try
             {
-                // COLD ALLOC: NativeArray anomaly buffers[PixelCount] — deterministic editor anomaly validation — owner: AnomalyTestHarness
+                // COLD ALLOC: NativeArray anomaly buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
                 heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
@@ -144,6 +291,445 @@ namespace Hecton8.Editor
         }
 
         /// <summary>
+        /// Validates that an edge-open depression is rejected and does not leak basin mask cells.
+        /// </summary>
+        public static void RunOpenEdgeBowlRejectionAssertion()
+        {
+            NativeArray<float> heightmap = default;
+            NativeArray<byte> basinMask = default;
+            NativeArray<byte> candidateMask = default;
+            NativeArray<AnomalyBasinRecord> basinRecords = default;
+            NativeArray<int> floodHeap = default;
+            NativeArray<int> visitedStamp = default;
+            NativeArray<int> acceptedCells = default;
+
+            try
+            {
+                // COLD ALLOC: NativeArray open-edge basin buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
+                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
+
+                FillOpenEdgeBowl(heightmap);
+                var settings = new AnomalyBasinDetectionSettings
+                {
+                    Width = Resolution,
+                    Height = Resolution,
+                    CellSizeMeters = 1f,
+                    MinimumDepthMeters = 50f,
+                    MaxFloodCells = PixelCount,
+                    EqualHeightEpsilon = 0.000001f
+                };
+
+                JobHandle handle = HectonAnomalyEngine.ScheduleClosedBasinDetection(
+                    heightmap,
+                    basinMask,
+                    basinRecords,
+                    candidateMask,
+                    floodHeap,
+                    visitedStamp,
+                    acceptedCells,
+                    settings);
+
+                // COLD SYNC JOB: Editor test harness must inspect deterministic rejection immediately.
+                handle.Complete();
+
+                Assert.AreEqual(0, CountValidRecords(basinRecords), "Open-edge bowl emitted a closed basin record.");
+                Assert.AreEqual(0, CountMaskCells(basinMask), "Open-edge bowl leaked cells into the basin mask.");
+            }
+            finally
+            {
+                DisposeTracked(ref heightmap);
+                DisposeTracked(ref basinMask);
+                DisposeTracked(ref candidateMask);
+                DisposeTracked(ref basinRecords);
+                DisposeTracked(ref floodHeap);
+                DisposeTracked(ref visitedStamp);
+                DisposeTracked(ref acceptedCells);
+            }
+        }
+
+        /// <summary>
+        /// Runs the deterministic bowl assertion through the interruptible flood-fill resume path.
+        /// </summary>
+        public static void RunTimeSlicedPerfectBowlAssertion()
+        {
+            NativeArray<float> heightmap = default;
+            NativeArray<byte> basinMask = default;
+            NativeArray<byte> candidateMask = default;
+            NativeArray<AnomalyBasinRecord> basinRecords = default;
+            NativeArray<int> floodHeap = default;
+            NativeArray<int> visitedStamp = default;
+            NativeArray<int> acceptedCells = default;
+            NativeArray<int> sliceStatus = default;
+            NativeQueue<AnomalyBasinFloodFillState> pendingFloodStates = default;
+            NativeQueue<AnomalyBasinFloodFillState> deferredFloodStates = default;
+
+            try
+            {
+                // COLD ALLOC: NativeArray anomaly slice buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
+                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                // COLD ALLOC: NativeArray<int>[2] - sliced flood-fill status slots - owner: AnomalyTestHarness
+                sliceStatus = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - current sliced flood-fill state lane - owner: AnomalyTestHarness
+                pendingFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
+                // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - deferred sliced flood-fill state lane - owner: AnomalyTestHarness
+                deferredFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
+                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
+                NativeMemorySentinel.RegisterNativeArray(sliceStatus, NativeMemoryOwner, SliceStatusLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates, 1, NativeMemoryOwner, PendingFloodStatesLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeQueue(deferredFloodStates, 1, NativeMemoryOwner, DeferredFloodStatesLabel, NativeAllocationLifetime.TempJob);
+
+                FillPerfectBowl(heightmap);
+                var settings = new AnomalyBasinDetectionSettings
+                {
+                    Width = Resolution,
+                    Height = Resolution,
+                    CellSizeMeters = 1f,
+                    MinimumDepthMeters = 50f,
+                    MaxFloodCells = PixelCount,
+                    EqualHeightEpsilon = 0.000001f,
+                    MaxFloodFillOperationsPerSlice = 64
+                };
+
+                var scanJob = new ClosedBasinDetectionJob
+                {
+                    Heightmap = heightmap,
+                    CandidateMask = candidateMask,
+                    BasinMask = basinMask,
+                    BasinRecords = basinRecords,
+                    Settings = settings.Sanitized()
+                };
+                JobHandle scanHandle = scanJob.Schedule(PixelCount, 64);
+                // COLD SYNC JOB: Editor test harness must inspect deterministic scanned candidates immediately.
+                scanHandle.Complete();
+
+                NativeQueue<AnomalyBasinFloodFillState> pending = pendingFloodStates;
+                NativeQueue<AnomalyBasinFloodFillState> deferred = deferredFloodStates;
+                int slices = 0;
+                int status = 0;
+                while (slices < 32)
+                {
+                    JobHandle sliceHandle = HectonAnomalyEngine.ScheduleClosedBasinFloodFillSlice(
+                        heightmap,
+                        basinMask,
+                        basinRecords,
+                        candidateMask,
+                        floodHeap,
+                        visitedStamp,
+                        acceptedCells,
+                        pending,
+                        deferred,
+                        sliceStatus,
+                        settings);
+
+                    // COLD SYNC JOB: Editor test harness must inspect deterministic slice state immediately.
+                    sliceHandle.Complete();
+                    slices++;
+                    status = sliceStatus[0];
+                    if (status == 2)
+                        break;
+
+                    Assert.AreEqual(1, status, "Sliced basin flood fill did not defer an unfinished basin state.");
+                    NativeQueue<AnomalyBasinFloodFillState> swap = pending;
+                    pending = deferred;
+                    deferred = swap;
+                }
+
+                Assert.AreEqual(2, status, "Sliced basin flood fill did not complete within the deterministic slice guard.");
+                Assert.IsTrue(slices > 1, "Sliced basin flood fill completed without exercising queue-backed resume.");
+
+                AnomalyBasinRecord record = FindFirstValidRecord(basinRecords);
+                Assert.IsTrue(record.Valid == 1, "Sliced closed basin detector did not emit a valid bowl basin.");
+                Assert.IsTrue(record.DeepestX == Center, "Sliced basin center X is not exact.");
+                Assert.IsTrue(record.DeepestZ == Center, "Sliced basin center Z is not exact.");
+                Assert.AreEqual(0f, record.DeepestHeight, "Sliced basin depth is not exact.");
+                Assert.AreEqual(ExpectedLipHeight, record.LipHeight, "Sliced basin lip height is not exact.");
+                Assert.IsTrue(record.CellCount == ExpectedBowlMaskedCells, "Sliced basin mask cell count is not exact.");
+            }
+            finally
+            {
+                DisposeTracked(ref heightmap);
+                DisposeTracked(ref basinMask);
+                DisposeTracked(ref candidateMask);
+                DisposeTracked(ref basinRecords);
+                DisposeTracked(ref floodHeap);
+                DisposeTracked(ref visitedStamp);
+                DisposeTracked(ref acceptedCells);
+                DisposeTracked(ref sliceStatus);
+                DisposeTrackedQueue(ref pendingFloodStates, PendingFloodStatesLabel);
+                DisposeTrackedQueue(ref deferredFloodStates, DeferredFloodStatesLabel);
+            }
+        }
+
+        /// <summary>
+        /// Proves stamp overflow clears the visited buffer across resumable slices instead of one blocking pass.
+        /// </summary>
+        public static void RunTimeSlicedStampOverflowAssertion()
+        {
+            const int visitedSentinel = 1515870810;
+            int seedIndex = Center + Center * Resolution;
+            NativeArray<float> heightmap = default;
+            NativeArray<byte> basinMask = default;
+            NativeArray<byte> candidateMask = default;
+            NativeArray<AnomalyBasinRecord> basinRecords = default;
+            NativeArray<int> floodHeap = default;
+            NativeArray<int> visitedStamp = default;
+            NativeArray<int> acceptedCells = default;
+            NativeArray<int> sliceStatus = default;
+            NativeQueue<AnomalyBasinFloodFillState> pendingFloodStates = default;
+            NativeQueue<AnomalyBasinFloodFillState> deferredFloodStates = default;
+
+            try
+            {
+                // COLD ALLOC: NativeArray anomaly stamp-overflow buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
+                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                // COLD ALLOC: NativeArray<int>[2] - stamp-overflow sliced flood-fill status slots - owner: AnomalyTestHarness
+                sliceStatus = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - stamp-overflow current state lane - owner: AnomalyTestHarness
+                pendingFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
+                // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - stamp-overflow deferred state lane - owner: AnomalyTestHarness
+                deferredFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
+                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
+                NativeMemorySentinel.RegisterNativeArray(sliceStatus, NativeMemoryOwner, SliceStatusLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates, 1, NativeMemoryOwner, PendingFloodStatesLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeQueue(deferredFloodStates, 1, NativeMemoryOwner, DeferredFloodStatesLabel, NativeAllocationLifetime.TempJob);
+
+                FillPerfectBowl(heightmap);
+                candidateMask[seedIndex] = 1;
+                for (int i = 0; i < visitedStamp.Length; i++)
+                    visitedStamp[i] = visitedSentinel;
+
+                var settings = new AnomalyBasinDetectionSettings
+                {
+                    Width = Resolution,
+                    Height = Resolution,
+                    CellSizeMeters = 1f,
+                    MinimumDepthMeters = 50f,
+                    MaxFloodCells = PixelCount,
+                    EqualHeightEpsilon = 0.000001f,
+                    MaxFloodFillOperationsPerSlice = 64
+                };
+
+                pendingFloodStates.Enqueue(new AnomalyBasinFloodFillState
+                {
+                    CandidateIndex = seedIndex,
+                    Stamp = int.MaxValue,
+                    BasinId = 1,
+                    Initialized = 1
+                });
+
+                JobHandle sliceHandle = HectonAnomalyEngine.ScheduleClosedBasinFloodFillSlice(
+                    heightmap,
+                    basinMask,
+                    basinRecords,
+                    candidateMask,
+                    floodHeap,
+                    visitedStamp,
+                    acceptedCells,
+                    pendingFloodStates,
+                    deferredFloodStates,
+                    sliceStatus,
+                    settings);
+                // COLD SYNC JOB: Editor harness inspects deterministic stamp-overflow state immediately.
+                sliceHandle.Complete();
+
+                Assert.AreEqual(1, sliceStatus[0], "Stamp-overflow flood fill did not defer before clearing.");
+                Assert.IsTrue(deferredFloodStates.TryDequeue(out AnomalyBasinFloodFillState state), "Stamp-overflow flood fill did not persist deferred state.");
+                Assert.AreEqual(2, state.Phase, "Stamp-overflow flood fill did not enter visited-stamp clear phase.");
+                Assert.AreEqual(0, state.ClearIndex, "Stamp-overflow flood fill cleared cells in the candidate-start slice.");
+                Assert.AreEqual(visitedSentinel, visitedStamp[0], "Stamp-overflow flood fill performed a blocking full clear in the candidate-start slice.");
+
+                pendingFloodStates.Enqueue(state);
+                sliceHandle = HectonAnomalyEngine.ScheduleClosedBasinFloodFillSlice(
+                    heightmap,
+                    basinMask,
+                    basinRecords,
+                    candidateMask,
+                    floodHeap,
+                    visitedStamp,
+                    acceptedCells,
+                    pendingFloodStates,
+                    deferredFloodStates,
+                    sliceStatus,
+                    settings);
+                // COLD SYNC JOB: Editor harness inspects deterministic partial clear state immediately.
+                sliceHandle.Complete();
+
+                Assert.AreEqual(1, sliceStatus[0], "Stamp-overflow flood fill completed the visited clear inside one slice.");
+                Assert.IsTrue(deferredFloodStates.TryDequeue(out state), "Stamp-overflow flood fill did not persist partial clear state.");
+                Assert.AreEqual(2, state.Phase, "Stamp-overflow flood fill left clear phase before the visited buffer was fully cleared.");
+                Assert.IsTrue(state.ClearIndex > 0 && state.ClearIndex < PixelCount, "Stamp-overflow flood fill clear index was not partial.");
+                Assert.AreEqual(0, visitedStamp[0], "Stamp-overflow flood fill did not clear the first visited stamp.");
+                Assert.AreEqual(visitedSentinel, visitedStamp[state.ClearIndex], "Stamp-overflow flood fill cleared beyond the saved clear index.");
+
+                pendingFloodStates.Enqueue(state);
+                NativeQueue<AnomalyBasinFloodFillState> pending = pendingFloodStates;
+                NativeQueue<AnomalyBasinFloodFillState> deferred = deferredFloodStates;
+                int status = 0;
+                for (int slices = 0; slices < 16; slices++)
+                {
+                    sliceHandle = HectonAnomalyEngine.ScheduleClosedBasinFloodFillSlice(
+                        heightmap,
+                        basinMask,
+                        basinRecords,
+                        candidateMask,
+                        floodHeap,
+                        visitedStamp,
+                        acceptedCells,
+                        pending,
+                        deferred,
+                        sliceStatus,
+                        settings);
+                    // COLD SYNC JOB: Editor harness advances the deterministic stamp-overflow resume path.
+                    sliceHandle.Complete();
+                    status = sliceStatus[0];
+                    if (status == 2)
+                        break;
+
+                    Assert.AreEqual(1, status, "Stamp-overflow flood fill did not preserve resumable state.");
+                    NativeQueue<AnomalyBasinFloodFillState> swap = pending;
+                    pending = deferred;
+                    deferred = swap;
+                }
+
+                Assert.AreEqual(2, status, "Stamp-overflow flood fill did not resume to completion.");
+                AnomalyBasinRecord record = FindFirstValidRecord(basinRecords);
+                Assert.IsTrue(record.Valid == 1, "Stamp-overflow flood fill did not emit a basin after budgeted clear.");
+                Assert.AreEqual(ExpectedLipHeight, record.LipHeight, "Stamp-overflow flood fill basin lip changed after budgeted clear.");
+            }
+            finally
+            {
+                DisposeTracked(ref heightmap);
+                DisposeTracked(ref basinMask);
+                DisposeTracked(ref candidateMask);
+                DisposeTracked(ref basinRecords);
+                DisposeTracked(ref floodHeap);
+                DisposeTracked(ref visitedStamp);
+                DisposeTracked(ref acceptedCells);
+                DisposeTracked(ref sliceStatus);
+                DisposeTrackedQueue(ref pendingFloodStates, PendingFloodStatesLabel);
+                DisposeTrackedQueue(ref deferredFloodStates, DeferredFloodStatesLabel);
+            }
+        }
+
+        /// <summary>
+        /// Proves malformed resumable flood-fill state is clamped back to scan phase instead of stalling a worker.
+        /// </summary>
+        public static void RunTimeSlicedCorruptStateRecoveryAssertion()
+        {
+            NativeArray<float> heightmap = default;
+            NativeArray<byte> basinMask = default;
+            NativeArray<byte> candidateMask = default;
+            NativeArray<AnomalyBasinRecord> basinRecords = default;
+            NativeArray<int> floodHeap = default;
+            NativeArray<int> visitedStamp = default;
+            NativeArray<int> acceptedCells = default;
+            NativeArray<int> sliceStatus = default;
+            NativeQueue<AnomalyBasinFloodFillState> pendingFloodStates = default;
+            NativeQueue<AnomalyBasinFloodFillState> deferredFloodStates = default;
+
+            try
+            {
+                // COLD ALLOC: NativeArray corrupt-state flood-fill buffers[PixelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
+                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                // COLD ALLOC: NativeArray<int>[2] - corrupt-state sliced flood-fill status slots - owner: AnomalyTestHarness
+                sliceStatus = new NativeArray<int>(2, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - corrupt-state current state lane - owner: AnomalyTestHarness
+                pendingFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
+                // COLD ALLOC: NativeQueue<AnomalyBasinFloodFillState>[1] - corrupt-state deferred state lane - owner: AnomalyTestHarness
+                deferredFloodStates = new NativeQueue<AnomalyBasinFloodFillState>(Allocator.TempJob);
+                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
+                NativeMemorySentinel.RegisterNativeArray(sliceStatus, NativeMemoryOwner, SliceStatusLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeQueue(pendingFloodStates, 1, NativeMemoryOwner, PendingFloodStatesLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeQueue(deferredFloodStates, 1, NativeMemoryOwner, DeferredFloodStatesLabel, NativeAllocationLifetime.TempJob);
+
+                pendingFloodStates.Enqueue(new AnomalyBasinFloodFillState
+                {
+                    CandidateIndex = -17,
+                    Stamp = -3,
+                    BasinId = -5,
+                    SeedIndex = PixelCount + 8,
+                    HeapCount = PixelCount + 8,
+                    AcceptedCount = -1,
+                    ClearIndex = -4,
+                    Phase = 99,
+                    LipHeight = float.NaN,
+                    DeepestHeight = float.NaN,
+                    Initialized = 1
+                });
+
+                var settings = new AnomalyBasinDetectionSettings
+                {
+                    Width = Resolution,
+                    Height = Resolution,
+                    CellSizeMeters = 1f,
+                    MinimumDepthMeters = 50f,
+                    MaxFloodCells = PixelCount,
+                    EqualHeightEpsilon = 0.000001f,
+                    MaxFloodFillOperationsPerSlice = PixelCount + 32
+                };
+
+                JobHandle sliceHandle = HectonAnomalyEngine.ScheduleClosedBasinFloodFillSlice(
+                    heightmap,
+                    basinMask,
+                    basinRecords,
+                    candidateMask,
+                    floodHeap,
+                    visitedStamp,
+                    acceptedCells,
+                    pendingFloodStates,
+                    deferredFloodStates,
+                    sliceStatus,
+                    settings);
+
+                // COLD SYNC JOB: Editor test harness must inspect deterministic corrupt-state recovery immediately.
+                sliceHandle.Complete();
+
+                Assert.AreEqual(2, sliceStatus[0], "Corrupt flood-fill state was not recovered to a completed scan.");
+                Assert.AreEqual(0, CountValidRecords(basinRecords), "Corrupt flood-fill state emitted a basin record.");
+                Assert.AreEqual(0, CountMaskCells(basinMask), "Corrupt flood-fill state leaked basin mask cells.");
+                Assert.IsFalse(deferredFloodStates.TryDequeue(out _), "Corrupt flood-fill state was deferred again instead of being sanitized.");
+            }
+            finally
+            {
+                DisposeTracked(ref heightmap);
+                DisposeTracked(ref basinMask);
+                DisposeTracked(ref candidateMask);
+                DisposeTracked(ref basinRecords);
+                DisposeTracked(ref floodHeap);
+                DisposeTracked(ref visitedStamp);
+                DisposeTracked(ref acceptedCells);
+                DisposeTracked(ref sliceStatus);
+                DisposeTrackedQueue(ref pendingFloodStates, PendingFloodStatesLabel);
+                DisposeTrackedQueue(ref deferredFloodStates, DeferredFloodStatesLabel);
+            }
+        }
+
+        /// <summary>
         /// Runs a deterministic stitched-cliff SDF assertion for lateral overhang displacement.
         /// </summary>
         public static void RunCliffOverhangAssertion()
@@ -153,7 +739,7 @@ namespace Hecton8.Editor
 
             try
             {
-                // COLD ALLOC: NativeArray cliff SDF buffers[CliffVoxelCount] — deterministic editor anomaly validation — owner: AnomalyTestHarness
+                // COLD ALLOC: NativeArray cliff SDF buffers[CliffVoxelCount] - deterministic editor anomaly validation - owner: AnomalyTestHarness
                 inputSdf = new NativeArray<float>(CliffVoxelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 outputSdf = new NativeArray<float>(CliffVoxelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 NativeMemorySentinel.RegisterNativeArray(inputSdf, NativeMemoryOwner, CliffInputSdfLabel, NativeAllocationLifetime.TempJob);
@@ -421,6 +1007,25 @@ namespace Hecton8.Editor
             }
         }
 
+        private static void FillOpenEdgeBowl(NativeArray<float> heightmap)
+        {
+            for (int i = 0; i < heightmap.Length; i++)
+                heightmap[i] = ExpectedLipHeight;
+
+            int centerX = 1;
+            for (int z = 0; z < Resolution; z++)
+            {
+                for (int x = 0; x < Resolution; x++)
+                {
+                    int dx = math.abs(x - centerX);
+                    int dz = math.abs(z - Center);
+                    int chebyshev = math.max(dx, dz);
+                    if (chebyshev <= Center)
+                        heightmap[x + z * Resolution] = chebyshev * PerfectBowlStepMeters;
+                }
+            }
+        }
+
         private static void FillVerticalCliffSdf(NativeArray<float> sdf)
         {
             for (int z = 0; z < CliffSdfDepth; z++)
@@ -456,6 +1061,30 @@ namespace Hecton8.Editor
             return default;
         }
 
+        private static int CountValidRecords(NativeArray<AnomalyBasinRecord> records)
+        {
+            int count = 0;
+            for (int i = 0; i < records.Length; i++)
+            {
+                if (records[i].Valid != 0)
+                    count++;
+            }
+
+            return count;
+        }
+
+        private static int CountMaskCells(NativeArray<byte> mask)
+        {
+            int count = 0;
+            for (int i = 0; i < mask.Length; i++)
+            {
+                if (mask[i] != 0)
+                    count++;
+            }
+
+            return count;
+        }
+
         private static void RegisterTempJobBuffers(
             NativeArray<float> heightmap,
             NativeArray<byte> basinMask,
@@ -482,6 +1111,16 @@ namespace Hecton8.Editor
             NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
+        }
+
+        private static void DisposeTrackedQueue<T>(ref NativeQueue<T> queue, string label) where T : unmanaged
+        {
+            if (!queue.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, label);
+            queue.Dispose();
+            queue = default;
         }
     }
 }

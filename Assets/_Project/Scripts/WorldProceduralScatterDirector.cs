@@ -49,7 +49,7 @@ namespace Hecton8.World
         /// Current capacity of the packed biome influence GPU buffer.
         /// </summary>
         public int DebugBiomeInfluenceGpuBufferCapacity => _debugBiomeInfluenceGpuBufferCapacity;
-        internal float CurrentSpawnBudgetScale => Mathf.Max(0.35f, _debugPatternSpawnBudgetScale);
+        internal float CurrentSpawnBudgetScale => math.max(0.35f, _debugPatternSpawnBudgetScale);
         internal float CurrentFaunaActivationScale
         {
             get
@@ -99,6 +99,9 @@ namespace Hecton8.World
         private static bool _candidateMapCapacityExceededWarningLogged;
         private static bool _candidateMapNearCapacityWarningLogged;
         private static bool _placementPoolExhaustedWarningLogged;
+        private int _observerAbsolutePositionCacheFrame = -1;
+        private bool _observerAbsolutePositionCacheValid;
+        private Vector3 _observerAbsolutePositionCache;
 #if UNITY_EDITOR
         private static bool _assemblyReloadHookRegistered;
 #endif
@@ -965,7 +968,9 @@ namespace Hecton8.World
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogFirstSlowTick(UnityEngine.Object context)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             UnityEngine.Debug.Log("[WorldScatterRuntime] First slow tick reached.", context);
+#endif
         }
 
         public void LateFrameTick()
@@ -981,6 +986,7 @@ namespace Hecton8.World
         public void SetChunkStreamingProfile(WorldChunkStreamingProfile profile)
         {
             chunkStreamingProfile = profile;
+            InvalidateLayerRadiiCache();
             RefreshRuntimeStreamingSettings();
             InvalidateScatterRefreshSample("chunk-profile");
         }
@@ -1114,11 +1120,12 @@ namespace Hecton8.World
 
         private bool CanPrimeBootstrapScatterFromCurrentTerrainSource()
         {
-            if (playerTransform == null || fieldSampler == null)
+            if (fieldSampler == null ||
+                !TryGetObserverAbsolutePosition(out Vector3 observerAbsolutePosition))
                 return false;
 
             if (!fieldSampler.TryResolveSeafloorSource(
-                    playerTransform.position,
+                    ToRuntimeScatterPosition(observerAbsolutePosition),
                     out WorldProceduralFieldSampler.SeafloorSource seafloorSource))
             {
                 return false;
@@ -1268,9 +1275,10 @@ namespace Hecton8.World
                 return false;
             }
 
+            Vector3 observerRuntimePosition = ToRuntimeScatterPosition(observerAbsolutePosition);
             if (_scatterRefreshSampleState.UsedFallbackOnly &&
                 fieldSampler != null &&
-                fieldSampler.TryResolveSeafloorSource(playerTransform.position, out WorldProceduralFieldSampler.SeafloorSource upgradedSource) &&
+                fieldSampler.TryResolveSeafloorSource(observerRuntimePosition, out WorldProceduralFieldSampler.SeafloorSource upgradedSource) &&
                 upgradedSource == WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight)
             {
                 _debugLastScatterRefreshReason = "terrain-source-upgraded";
@@ -1288,7 +1296,7 @@ namespace Hecton8.World
 
             if (enableForcedScatterRefresh && scatterForcedRefreshInterval > 0f)
             {
-                float forcedInterval = Mathf.Max(0.5f, scatterForcedRefreshInterval);
+                float forcedInterval = math.max(0.5f, scatterForcedRefreshInterval);
                 if (Application.isPlaying && Time.unscaledTime - _scatterRefreshSampleState.Time >= forcedInterval)
                 {
                     _debugLastScatterRefreshReason = "forced-interval";
@@ -1300,16 +1308,16 @@ namespace Hecton8.World
             {
                 if (centerCellX != _scatterRefreshSampleState.CenterCellX || centerCellZ != _scatterRefreshSampleState.CenterCellZ)
                 {
-                    int cellDeltaX = Mathf.Abs(centerCellX - _scatterRefreshSampleState.CenterCellX);
-                    int cellDeltaZ = Mathf.Abs(centerCellZ - _scatterRefreshSampleState.CenterCellZ);
-                    int maxCellDelta = Mathf.Max(cellDeltaX, cellDeltaZ);
+                    int cellDeltaX = math.abs(centerCellX - _scatterRefreshSampleState.CenterCellX);
+                    int cellDeltaZ = math.abs(centerCellZ - _scatterRefreshSampleState.CenterCellZ);
+                    int maxCellDelta = math.max(cellDeltaX, cellDeltaZ);
                     if (_runtimeStreamingState.RadiusCells > 2 && maxCellDelta <= 1)
                     {
                         _debugLastScatterRefreshReason = "cell-drift-buffer";
                         return true;
                     }
 
-                    float cellRefreshThreshold = Mathf.Max(Mathf.Max(0.5f, scatterRefreshDistanceThreshold), Mathf.Max(1f, _runtimeStreamingState.CellSize));
+                    float cellRefreshThreshold = math.max(math.max(0.5f, scatterRefreshDistanceThreshold), math.max(1f, _runtimeStreamingState.CellSize));
                     if ((observerAbsolutePosition - _scatterRefreshSampleState.AbsolutePosition).sqrMagnitude < cellRefreshThreshold * cellRefreshThreshold)
                     {
                         _debugLastScatterRefreshReason = "cell-hysteresis";
@@ -1324,7 +1332,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            float threshold = Mathf.Max(0.5f, scatterRefreshDistanceThreshold);
+            float threshold = math.max(0.5f, scatterRefreshDistanceThreshold);
             bool sameDistanceBucket = (observerAbsolutePosition - _scatterRefreshSampleState.AbsolutePosition).sqrMagnitude < threshold * threshold;
             _debugLastScatterRefreshReason = sameDistanceBucket ? "same-distance" : "distance-threshold";
             return sameDistanceBucket;
@@ -1337,9 +1345,9 @@ namespace Hecton8.World
 
         private int ResolveActiveScatterSamplingRadiusCells(int runtimeRadiusCells)
         {
-            int resolvedRadiusCells = Mathf.Max(2, runtimeRadiusCells);
+            int resolvedRadiusCells = math.max(2, runtimeRadiusCells);
             if (Application.isPlaying && _bootstrapRuntimeState.AllowPrimePass)
-                resolvedRadiusCells = Mathf.Min(resolvedRadiusCells, Mathf.Max(2, bootstrapPrimeRadiusCells));
+                resolvedRadiusCells = math.min(resolvedRadiusCells, math.max(2, bootstrapPrimeRadiusCells));
 
             return resolvedRadiusCells;
         }
@@ -1408,7 +1416,7 @@ namespace Hecton8.World
             int localSpawnBudget)
         {
             int placementBudget = localGroundBudget + localClusterBudget + localStructureBudget + localSpawnBudget;
-            return Mathf.Clamp(placementBudget * 2 + 6, 12, 64);
+            return math.clamp(placementBudget * 2 + 6, 12, 64);
         }
 
         private static void RefreshWorstCandidate(
@@ -1438,22 +1446,26 @@ namespace Hecton8.World
         [Conditional("DEVELOPMENT_BUILD")]
         private static void LogCandidateMapCapacityExceeded(int capacity, long key)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_candidateMapCapacityExceededWarningLogged)
                 return;
 
             _candidateMapCapacityExceededWarningLogged = true;
             UnityEngine.Debug.LogWarning(CandidateMapCapacityExceededWarning);
+#endif
         }
 
         [Conditional("UNITY_EDITOR")]
         [Conditional("DEVELOPMENT_BUILD")]
         private static void LogCandidateMapNearCapacity(int count, int capacity)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_candidateMapNearCapacityWarningLogged)
                 return;
 
             _candidateMapNearCapacityWarningLogged = true;
             UnityEngine.Debug.LogWarning(CandidateMapNearCapacityWarning);
+#endif
         }
 
         private void ResolveCombinedBudgetScales(
@@ -1551,7 +1563,7 @@ namespace Hecton8.World
             if (!TryGetObserverAbsolutePosition(out Vector3 center))
                 return false;
 
-            float size = Mathf.Max(6f, _runtimeStreamingState.CellSize);
+            float size = math.max(6f, _runtimeStreamingState.CellSize);
             centerCellX = WorldToScatterCellIndex(center.x, size);
             centerCellZ = WorldToScatterCellIndex(center.z, size);
             return true;
@@ -1559,7 +1571,7 @@ namespace Hecton8.World
 
         private static int WorldToScatterCellIndex(float coordinate, float size)
         {
-            return Mathf.FloorToInt(coordinate / size);
+            return (int)math.floor(coordinate / size);
         }
 
         private void ClearScatterWorkingBuffers()
@@ -1619,11 +1631,13 @@ namespace Hecton8.World
         [Conditional("DEVELOPMENT_BUILD")]
         private static void LogPlacementPoolExhausted()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_placementPoolExhaustedWarningLogged)
                 return;
 
             _placementPoolExhaustedWarningLogged = true;
             UnityEngine.Debug.LogWarning(PlacementPoolExhaustedWarning);
+#endif
         }
 
         private static void RetainPlacement(ScatterPlacement placement)
@@ -2438,7 +2452,7 @@ namespace Hecton8.World
                                          (_activeInstances.Count == 0 || _reconcileRuntimeState.HasPendingStartupPlacements);
                 int remainingInitialCreateBudget = initialWarmupPass
                     ? (spreadInitialScatterWarmupAcrossTicks
-                        ? Mathf.Max(1, maxInitialScatterCreatesPerRebuild)
+                        ? math.max(1, maxInitialScatterCreatesPerRebuild)
                         : int.MaxValue)
                     : int.MaxValue;
                 _reconcileRuntimeState.HasPendingStartupPlacements = false;
@@ -2858,16 +2872,16 @@ namespace Hecton8.World
                 useExactStartupWarmup,
                 initialWarmupPass
                     ? (useExactStartupWarmup
-                        ? Mathf.Max(0, maxPoolWarmupPerRebuild)
+                        ? math.max(0, maxPoolWarmupPerRebuild)
                         : int.MaxValue)
                     : 0,
                 initialWarmupPass
                     ? (useExactStartupWarmup
-                        ? Mathf.Max(0, maxPoolWarmupPerPrefabPerRebuild)
+                        ? math.max(0, maxPoolWarmupPerPrefabPerRebuild)
                         : int.MaxValue)
                     : 0,
                 initialWarmupPass
-                    ? Mathf.Max(0, initialCreateBudget)
+                    ? math.max(0, initialCreateBudget)
                     : int.MaxValue,
                 RuntimeDiagnosticsTrace.IsActive);
             return true;
@@ -2932,9 +2946,11 @@ namespace Hecton8.World
                 if (warmupContext.RemainingWarmupBudget <= 0)
                     break;
 
-                GameObject prefab = warmupContext.PrefabWarmupPrefabs[pair.Key];
+                if (!warmupContext.PrefabWarmupPrefabs.TryGetValue(pair.Key, out GameObject prefab) || prefab == null)
+                    continue;
+
                 warmupContext.PrefabWarmupFamilyHashes.TryGetValue(pair.Key, out int familyHash);
-                int directDemandCount = Mathf.Max(0, pair.Value);
+                int directDemandCount = math.max(0, pair.Value);
                 int reserveCount = ResolveWarmupReserveCount(
                     familyHash,
                     directDemandCount,
@@ -2949,16 +2965,16 @@ namespace Hecton8.World
                     if (effectivePerPrefabLimit <= 0 || warmupContext.RemainingWarmupBudget <= 0)
                         continue;
 
-                    int warmupCount = Mathf.Min(
-                        missingCount,
-                        effectivePerPrefabLimit,
+                    int warmupCount = math.min(
+                        math.min(missingCount, effectivePerPrefabLimit),
                         warmupContext.RemainingWarmupBudget);
                     if (warmupCount > 0)
                     {
                         int availableBeforeWarmup = availableCount;
                         warmupContext.Pool.Warmup(prefab, warmupCount);
-                        warmupContext.RemainingWarmupBudget = Mathf.Max(0, warmupContext.RemainingWarmupBudget - warmupCount);
+                        warmupContext.RemainingWarmupBudget = math.max(0, warmupContext.RemainingWarmupBudget - warmupCount);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         if (warmupContext.DiagnosticsTraceActive)
                         {
                             int prefabInstanceId = unchecked((int)EntityId.ToULong(prefab.GetEntityId()));
@@ -2966,11 +2982,12 @@ namespace Hecton8.World
                                 "pool",
                                 $"warmup familyHash={familyHash} prefabId={prefabInstanceId} count={warmupCount} availableBefore={availableBeforeWarmup} reserve={reserveCount} reserveTopUp={reserveTopUp} missing={missingCount} startup={warmupContext.UseExactStartupWarmup}");
                         }
+#endif
                     }
                 }
 
                 int availableAfterWarmup = warmupContext.Pool.GetAvailableCount(prefab);
-                int allowedCount = Mathf.Min(directDemandCount, availableAfterWarmup);
+                int allowedCount = math.min(directDemandCount, availableAfterWarmup);
                 if (allowedCount > 0)
                     warmupContext.PrefabCreateAllowances[pair.Key] = allowedCount;
             }
@@ -3022,9 +3039,9 @@ namespace Hecton8.World
             Dictionary<int, GameObject> prefabWarmupPrefabs = _memory.PrefabWarmupPrefabs;
             Dictionary<int, int> prefabWarmupFamilyHashes = _memory.PrefabWarmupFamilyHashes;
             if (prefabWarmupCounts.TryGetValue(prefabId, out int count))
-                prefabWarmupCounts[prefabId] = count + Mathf.Max(0, requiredCount);
+                prefabWarmupCounts[prefabId] = count + math.max(0, requiredCount);
             else
-                prefabWarmupCounts.Add(prefabId, Mathf.Max(0, requiredCount));
+                prefabWarmupCounts.Add(prefabId, math.max(0, requiredCount));
 
             prefabWarmupPrefabs[prefabId] = prefab;
             prefabWarmupFamilyHashes[prefabId] = familyHash;
@@ -3051,11 +3068,11 @@ namespace Hecton8.World
 
         private int GetStartupWarmupReserve(int familyHash)
         {
-            int configuredReserve = Mathf.Max(0, startupVariantWarmupReserve);
+            int configuredReserve = math.max(0, startupVariantWarmupReserve);
             if (configuredReserve <= 0)
                 return 0;
 
-            return Mathf.Min(configuredReserve, GetHotspotWarmupReserve(familyHash));
+            return math.min(configuredReserve, GetHotspotWarmupReserve(familyHash));
         }
 
         private int ResolveWarmupReserveCount(int familyHash, int directDemandCount, bool initialWarmupPass)
@@ -3070,7 +3087,7 @@ namespace Hecton8.World
             if (configuredReserve <= 0)
                 return 0;
 
-            return Mathf.Max(configuredReserve, directDemandCount);
+            return math.max(configuredReserve, directDemandCount);
         }
 
         private ScatterPlacementReconcilePlan ResolveReconcilePlan(
@@ -3165,7 +3182,7 @@ namespace Hecton8.World
                 return true;
 
             ResolveLayerRadii(placement.StreamingLayer, out float nearRadius, out float midRadius, out _);
-            float allowedRadius = Mathf.Max(nearRadius, midRadius);
+            float allowedRadius = math.max(nearRadius, midRadius);
             return GetHorizontalDistanceSqr(placement.Position, observerPosition) <= allowedRadius * allowedRadius;
         }
 
@@ -3258,7 +3275,7 @@ namespace Hecton8.World
                 ? ScatterMath.ResolveDeterministicFloraYawDegrees(
                     placement.StableHash,
                     new Unity.Mathematics.float3(resolvedPosition.x, resolvedPosition.y, resolvedPosition.z))
-                : Mathf.Abs(placement.StableHash % 360);
+                : math.abs(placement.StableHash % 360);
             Quaternion rotation = Quaternion.Euler(0f, yawDegrees, 0f);
             bool snappedToTerrain = TrySnapFloraPlacementToMapMagicTerrain(
                 placement,
@@ -3281,7 +3298,7 @@ namespace Hecton8.World
                 environmentalVegetationBridge.TrySnapScatterPlacement(
                     placement.RuntimePosition,
                     surfaceYOffset,
-                    floraFamily ? Mathf.Min(placement.Rule.maxTiltAngleDegrees, FloraScatterMaxTiltAngleDegrees) : placement.Rule.maxTiltAngleDegrees,
+                    floraFamily ? math.min(placement.Rule.maxTiltAngleDegrees, FloraScatterMaxTiltAngleDegrees) : placement.Rule.maxTiltAngleDegrees,
                     yawDegrees,
                     out Vector3 snappedRuntimePosition,
                     out Quaternion snappedRotation))
@@ -3313,7 +3330,7 @@ namespace Hecton8.World
 
             Vector3 runtimePosition = ToRuntimeScatterPosition(resolvedPosition);
             if (enableAbyssalSiltFalseCeiling &&
-                Mathf.Abs(runtimePosition.y - abyssalSiltFalseCeilingY) <= 0.5f)
+                math.abs(runtimePosition.y - abyssalSiltFalseCeilingY) <= 0.5f)
             {
                 return false;
             }
@@ -3326,22 +3343,27 @@ namespace Hecton8.World
 
             if (mapMagicBridge == null ||
                 !mapMagicBridge.TryGetHeightAUP(resolvedPosition, out float terrainHeight) ||
-                !mapMagicBridge.TryGetNormalAUP(resolvedPosition, Mathf.Max(1f, cellSize * 0.25f), out Vector3 terrainNormal) ||
+                !mapMagicBridge.TryGetNormalAUP(resolvedPosition, math.max(1f, cellSize * 0.25f), out Vector3 terrainNormal) ||
                 !IsScatterSurfaceNormalSpawnable(terrainNormal))
             {
                 return false;
             }
 
             float maxTiltAngleDegrees = placement.Rule != null
-                ? Mathf.Min(placement.Rule.maxTiltAngleDegrees, FloraScatterMaxTiltAngleDegrees)
+                ? math.min(placement.Rule.maxTiltAngleDegrees, FloraScatterMaxTiltAngleDegrees)
                 : FloraScatterMaxTiltAngleDegrees;
             Vector3 clampedUp = ClampScatterUpVector(terrainNormal, maxTiltAngleDegrees);
             Quaternion alignRotation = Quaternion.FromToRotation(Vector3.up, clampedUp);
-            Quaternion yawRotation = Quaternion.AngleAxis(Mathf.Repeat(yawDegrees, 360f), clampedUp);
+            Quaternion yawRotation = Quaternion.AngleAxis(RepeatDegrees360(yawDegrees), clampedUp);
             runtimePosition.y = terrainHeight + surfaceYOffset;
             resolvedPosition = ToAbsoluteScatterPosition(runtimePosition);
             rotation = yawRotation * alignRotation;
             return true;
+        }
+
+        private static float RepeatDegrees360(float degrees)
+        {
+            return degrees - math.floor(degrees * (1f / 360f)) * 360f;
         }
 
         private bool TrySnapRiftSideDebrisPlacementToMapMagicTerrain(
@@ -3498,13 +3520,13 @@ namespace Hecton8.World
                 _placementLastSeenTimes,
                 _removalBuffer,
                 now,
-                Mathf.Max(0.25f, missingPlacementGraceSeconds) * 1.5f);
+                math.max(0.25f, missingPlacementGraceSeconds) * 1.5f);
             EvictStaleRetainedPlacements(in evictionContext);
         }
 
         private void ResetPlacementGrid()
         {
-            int bucketCount = Mathf.Min(_gridPlacementBucketCount, _gridPlacementBuckets.Count);
+            int bucketCount = math.min(_gridPlacementBucketCount, _gridPlacementBuckets.Count);
             for (int i = 0; i < bucketCount; i++)
                 _gridPlacementBuckets[i].Clear();
 
@@ -3598,7 +3620,7 @@ namespace Hecton8.World
                 _placementLastSeenTimes,
                 observerPosition,
                 now,
-                Mathf.Max(0.25f, missingPlacementGraceSeconds));
+                math.max(0.25f, missingPlacementGraceSeconds));
             RestoreRecentDesiredPlacements(in restoreContext);
         }
 
@@ -3626,33 +3648,34 @@ namespace Hecton8.World
             out float midRadius,
             out float farRadius)
         {
+            float runtimeCellSize = math.max(6f, _runtimeStreamingState.CellSize > 0f ? _runtimeStreamingState.CellSize : cellSize);
             int index = (int)layer;
             if (index < 0 || index >= 8)
             {
-                nearRadius = Mathf.Max(24f, cellSize * 2f);
-                midRadius = Mathf.Max(nearRadius + cellSize, nearRadius * 1.8f);
-                farRadius = Mathf.Max(midRadius + cellSize, midRadius * 1.5f);
+                nearRadius = math.max(24f, runtimeCellSize * 2f);
+                midRadius = math.max(nearRadius + runtimeCellSize, nearRadius * 1.8f);
+                farRadius = math.max(midRadius + runtimeCellSize, midRadius * 1.5f);
                 return;
             }
 
             bool radiiCacheMissing = _layerNearRadii[index] <= 0f || _layerMidRadii[index] <= 0f || _layerFarRadii[index] <= 0f;
-            if (_cachedLayerRadiiCellSize != cellSize || !ReferenceEquals(_cachedLayerRadiiProfile, chunkStreamingProfile) || radiiCacheMissing)
+            if (_cachedLayerRadiiCellSize != runtimeCellSize || !ReferenceEquals(_cachedLayerRadiiProfile, chunkStreamingProfile) || radiiCacheMissing)
             {
-                _cachedLayerRadiiCellSize = cellSize;
+                _cachedLayerRadiiCellSize = runtimeCellSize;
                 _cachedLayerRadiiProfile = chunkStreamingProfile;
                 for (int i = 0; i < 8; i++)
                 {
                     WorldStreamingLayer l = (WorldStreamingLayer)i;
-                    float n = Mathf.Max(24f, cellSize * 2f);
-                    float m = Mathf.Max(n + cellSize, n * 1.8f);
-                    float f = Mathf.Max(m + cellSize, m * 1.5f);
+                    float n = math.max(24f, runtimeCellSize * 2f);
+                    float m = math.max(n + runtimeCellSize, n * 1.8f);
+                    float f = math.max(m + runtimeCellSize, m * 1.5f);
 
                     if (chunkStreamingProfile != null)
                     {
                         WorldChunkStreamingProfile.LayerProfile layerProfile = chunkStreamingProfile.GetLayerProfileOrDefault(l);
-                        n = Mathf.Max(24f, chunkStreamingProfile.fullSimulationRadius * Mathf.Max(0.35f, layerProfile.nearRadiusScale));
-                        m = Mathf.Max(n + _runtimeStreamingState.CellSize, chunkStreamingProfile.midSimulationRadius * Mathf.Max(0.35f, layerProfile.midRadiusScale));
-                        f = Mathf.Max(m + _runtimeStreamingState.CellSize, chunkStreamingProfile.visualResidencyRadius * Mathf.Max(0.35f, layerProfile.farRadiusScale));
+                        n = math.max(24f, chunkStreamingProfile.fullSimulationRadius * math.max(0.35f, layerProfile.nearRadiusScale));
+                        m = math.max(n + runtimeCellSize, chunkStreamingProfile.midSimulationRadius * math.max(0.35f, layerProfile.midRadiusScale));
+                        f = math.max(m + runtimeCellSize, chunkStreamingProfile.visualResidencyRadius * math.max(0.35f, layerProfile.farRadiusScale));
                     }
                     _layerNearRadii[i] = n;
                     _layerMidRadii[i] = m;
@@ -3665,29 +3688,41 @@ namespace Hecton8.World
             farRadius = _layerFarRadii[index];
         }
 
+        private void InvalidateLayerRadiiCache()
+        {
+            _cachedLayerRadiiCellSize = -1f;
+            _cachedLayerRadiiProfile = null;
+            for (int i = 0; i < 8; i++)
+            {
+                _layerNearRadii[i] = 0f;
+                _layerMidRadii[i] = 0f;
+                _layerFarRadii[i] = 0f;
+            }
+        }
+
         private int ResolveRuntimeBudget(int authoredBudget, WorldStreamingLayer layer, int minValue, int maxValue)
         {
-            int clampedBudget = Mathf.Clamp(authoredBudget, minValue, maxValue);
+            int clampedBudget = math.clamp(authoredBudget, minValue, maxValue);
             if (chunkStreamingProfile == null)
                 return clampedBudget;
 
             WorldChunkStreamingProfile.LayerProfile layerProfile = chunkStreamingProfile.GetLayerProfileOrDefault(layer);
             float densityScale = math.lerp(0.7f, 1.45f, math.saturate(layerProfile.maxActivationsPerTick / 24f));
-            int scaledBudget = Mathf.RoundToInt(clampedBudget * densityScale);
-            return Mathf.Clamp(scaledBudget, minValue, maxValue);
+            int scaledBudget = (int)math.round(clampedBudget * densityScale);
+            return math.clamp(scaledBudget, minValue, maxValue);
         }
 
         private void RefreshRuntimeStreamingSettings()
         {
-            _runtimeStreamingState.CellSize = Mathf.Max(6f, cellSize);
-            _runtimeStreamingState.RadiusCells = Mathf.Max(2, radiusCells);
+            _runtimeStreamingState.CellSize = math.max(6f, cellSize);
+            _runtimeStreamingState.RadiusCells = math.max(2, radiusCells);
             _runtimeStreamingState.ChunkSize = 192f;
             _runtimeStreamingState.MacroZoneSize = 768f;
 
             if (chunkStreamingProfile != null)
             {
-                _runtimeStreamingState.ChunkSize = Mathf.Max(_runtimeStreamingState.CellSize, chunkStreamingProfile.chunkSizeMeters);
-                _runtimeStreamingState.MacroZoneSize = Mathf.Max(_runtimeStreamingState.ChunkSize, chunkStreamingProfile.macroZoneSizeMeters);
+                _runtimeStreamingState.ChunkSize = math.max(_runtimeStreamingState.CellSize, chunkStreamingProfile.chunkSizeMeters);
+                _runtimeStreamingState.MacroZoneSize = math.max(_runtimeStreamingState.ChunkSize, chunkStreamingProfile.macroZoneSizeMeters);
             }
 
             _debugRuntimeCellSize = _runtimeStreamingState.CellSize;
@@ -3790,7 +3825,7 @@ namespace Hecton8.World
                 sample.canyonSignal,
                 sample.compositionPotential);
 
-            return fit * Mathf.Max(0.15f, geologyProfile.compositionWeight);
+            return fit * math.max(0.15f, geologyProfile.compositionWeight);
         }
 
         private static float GetGenerativeGeologyContextBonus(
@@ -3910,7 +3945,7 @@ namespace Hecton8.World
                 return true;
 
             ResolveLayerRadii(placement.StreamingLayer, out float nearRadius, out _, out _);
-            float allowedRadius = nearRadius * Mathf.Clamp01(proxyGeneratedGeologyNearRadiusScale);
+            float allowedRadius = nearRadius * math.saturate(proxyGeneratedGeologyNearRadiusScale);
             if (allowedRadius <= 0.01f)
                 return false;
 
@@ -4115,16 +4150,16 @@ namespace Hecton8.World
 
             int familyHash = family.FamilyHash;
             if (familyHash == _FamilyCoralLowHash)
-                return Mathf.Clamp(coralLowFinalRadiusScale, 0.25f, 1f);
+                return math.clamp(coralLowFinalRadiusScale, 0.25f, 1f);
 
             if (familyHash == _FamilyRockSmallFloorHash)
-                return Mathf.Clamp(rockSmallFloorFinalRadiusScale, 0.25f, 3f);
+                return math.clamp(rockSmallFloorFinalRadiusScale, 0.25f, 3f);
 
             if (familyHash == _FamilyRockClusterMediumHash)
-                return Mathf.Clamp(rockClusterMediumFinalRadiusScale, 0.25f, 3f);
+                return math.clamp(rockClusterMediumFinalRadiusScale, 0.25f, 3f);
 
             if (familyHash == _FamilyRockArchLargeHash)
-                return Mathf.Clamp(rockArchLargeFinalRadiusScale, 0.25f, 3f);
+                return math.clamp(rockArchLargeFinalRadiusScale, 0.25f, 3f);
 
             return 1f;
         }
@@ -4388,7 +4423,7 @@ namespace Hecton8.World
             }
 
             NativeArray<byte> acceptanceResults = _memory.CandidateAcceptanceBatchResults.AsArray();
-            int candidateCount = Mathf.Min(ordered.Count, acceptanceResults.Length);
+            int candidateCount = math.min(ordered.Count, acceptanceResults.Length);
             Dictionary<long, int> windowCounts = layer == WorldPrefabFamilyProfile.ScatterLayer.Structure
                 ? _structureWindowCounts
                 : _spawnWindowCounts;
@@ -4459,8 +4494,8 @@ namespace Hecton8.World
                 ResolvePatternClusterRatioStart(pattern),
                 null,
                 null,
-                Mathf.Max(ResolvePatternPassiveSpawnMin(pattern, biomeProfile), ResolvePatternSpawnTargetMax(pattern, biomeProfile)),
-                Mathf.Max(0, ResolvePatternPredatorSpawnMax(pattern, biomeProfile)));
+                math.max(ResolvePatternPassiveSpawnMin(pattern, biomeProfile), ResolvePatternSpawnTargetMax(pattern, biomeProfile)),
+                math.max(0, ResolvePatternPredatorSpawnMax(pattern, biomeProfile)));
         }
 
         private bool CanAcceptPatternAccentBudget(
@@ -4546,8 +4581,8 @@ namespace Hecton8.World
                     return false;
 
                 int roleCount = GetClusterAccentCount(clusterAccentCounts, role);
-                int totalAfterPlacement = Mathf.Max(1, clusterCount + 1);
-                int allowed = Mathf.Max(1, Mathf.CeilToInt(maxRatio * totalAfterPlacement));
+                int totalAfterPlacement = math.max(1, clusterCount + 1);
+                int allowed = math.max(1, (int)math.ceil(maxRatio * totalAfterPlacement));
                 return roleCount < allowed;
             }
 
@@ -4616,9 +4651,9 @@ namespace Hecton8.World
 
         private static int EstimateScatterWindowCapacity(int cellDiameter, int stride)
         {
-            int safeStride = Mathf.Max(1, stride);
-            int windowsPerAxis = Mathf.CeilToInt(cellDiameter / (float)safeStride) + 2;
-            return Mathf.Max(16, windowsPerAxis * windowsPerAxis);
+            int safeStride = math.max(1, stride);
+            int windowsPerAxis = (int)math.ceil(cellDiameter / (float)safeStride) + 2;
+            return math.max(16, windowsPerAxis * windowsPerAxis);
         }
 
         private static void EnsureScatterWindowBudgetCapacity(Dictionary<long, int> counts, int requiredCapacity)
@@ -4631,11 +4666,11 @@ namespace Hecton8.World
 
         private static long ComposeWindowKey(int cellX, int cellZ, int stride, int heightLayerIndex)
         {
-            int safeStride = Mathf.Max(1, stride);
-            ulong windowX = (uint)Mathf.FloorToInt(cellX / (float)safeStride);
-            ulong windowZ = (uint)Mathf.FloorToInt(cellZ / (float)safeStride);
+            int safeStride = math.max(1, stride);
+            ulong windowX = (uint)(int)math.floor(cellX / (float)safeStride);
+            ulong windowZ = (uint)(int)math.floor(cellZ / (float)safeStride);
             ulong strideBits = (uint)safeStride;
-            ulong heightBits = (uint)Mathf.Max(0, heightLayerIndex);
+            ulong heightBits = (uint)math.max(0, heightLayerIndex);
             return (long)(
                 (windowX & 0xFFFFFUL) |
                 ((windowZ & 0xFFFFFUL) << 20) |
@@ -11322,12 +11357,12 @@ namespace Hecton8.World
                 return !_floraGpuiLastFrustumChunkVisible;
             }
 
-            float chunkSize = Mathf.Max(1f, _runtimeStreamingState.ChunkSize);
-            float padding = Mathf.Max(0f, floraGpuiFrustumPaddingMeters);
+            float chunkSize = math.max(1f, _runtimeStreamingState.ChunkSize);
+            float padding = math.max(0f, floraGpuiFrustumPaddingMeters);
             Vector3 absoluteChunkCenter = WorldChunkCoordinate.ToWorldCenter(chunkCoord, chunkSize, placement.Position.y);
             Vector3 runtimeChunkCenter = ToRuntimeScatterPosition(absoluteChunkCenter);
             float horizontalSize = chunkSize + padding + padding;
-            float verticalSize = Mathf.Max(96f, chunkSize * 0.75f) + padding + padding;
+            float verticalSize = math.max(96f, chunkSize * 0.75f) + padding + padding;
             Bounds chunkBounds = new Bounds(
                 runtimeChunkCenter,
                 new Vector3(horizontalSize, verticalSize, horizontalSize));
@@ -11362,6 +11397,7 @@ namespace Hecton8.World
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
+            InvalidateObserverAbsolutePositionCache();
             RebuildFloraGpuiMatricesForCommittedOrigin();
         }
 

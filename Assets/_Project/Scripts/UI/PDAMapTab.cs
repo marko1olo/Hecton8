@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Audio;
@@ -35,7 +34,7 @@ namespace Hecton8.UI
         private static readonly bool UseHeadlessCartography = true;
         private const int CartographyTextureSize = 128;
         private const float AcousticOverlayRadiusMeters = 160f;
-        private const int PointCloudAxis = 16;
+        private const int PointCloudAxis = 12;
         private const int PointCloudCapacity = PointCloudAxis * PointCloudAxis * PointCloudAxis;
         private const int SonarPointStrideBytes = 32;
         private const int MaxMarkerVisuals = 64;
@@ -276,7 +275,6 @@ namespace Hecton8.UI
         private readonly CanvasGroup[] _markerVisualGroups = new CanvasGroup[MaxMarkerVisuals]; // COLD ALLOC: CanvasGroup[64] - marker visibility controls without SetActive - owner: PDAMapTab
         private readonly Image[] _markerVisualImages = new Image[MaxMarkerVisuals]; // COLD ALLOC: Image[64] - marker icon tint targets - owner: PDAMapTab
         private readonly uint[] _markerHashByVisualSlot = new uint[MaxMarkerVisuals]; // COLD ALLOC: uint[64] - marker hash to visual slot ownership - owner: PDAMapTab
-        private readonly Dictionary<uint, int> _markerVisualSlotByHash = new Dictionary<uint, int>(MaxMarkerVisuals); // COLD ALLOC: Dictionary<uint,int>[64] - marker visual slot lookup - owner: PDAMapTab
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _pdaEventsRegistered;
@@ -306,6 +304,8 @@ namespace Hecton8.UI
         private CharBufferPool.Lease _statusBufferLease;
         private readonly Vector3[] _mapWorldCorners = new Vector3[4]; // COLD ALLOC: Vector3[4] - PDA map point-cloud basis corners - owner: PDAMapTab
         private RectTransform _markerOverlayRoot;
+        private int _appliedThreatPingCount = -1;
+        private bool _threatPingsDirty = true;
 
         private void Awake()
         {
@@ -327,6 +327,7 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             CompleteCartographyJobIfNeeded(applyTexture: false);
             ClearPendingMarkerUpdates();
+            ClearMarkerVisualSlots();
             ReleaseStatusBuffer();
         }
 
@@ -337,6 +338,7 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             CompleteCartographyJobIfNeeded(applyTexture: false);
             ClearPendingMarkerUpdates();
+            ClearMarkerVisualSlots();
             ReleaseStatusBuffer();
             ReleaseResources();
         }
@@ -352,7 +354,7 @@ namespace Hecton8.UI
 
             if (_refreshCountdown <= 0f)
             {
-                _refreshCountdown = Mathf.Max(0.05f, sourceRefreshInterval);
+                _refreshCountdown = math.max(0.05f, sourceRefreshInterval);
                 RefreshMapSource(force: false);
             }
 
@@ -389,8 +391,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
             TryRegisterLateFrame();
         }
 
@@ -414,8 +415,7 @@ namespace Hecton8.UI
             if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
         }
 
         private void TryRegisterPDAEvents()
@@ -579,11 +579,21 @@ namespace Hecton8.UI
                 _activeVolume = null;
                 _activeVolumeVersion = -1;
                 _activeThreatPingCount = 0;
+                _threatPingsDirty = true;
                 WriteEmpBlindStatus();
                 return;
             }
 
-            Vector3 playerPosition = ResolvePlayerPosition();
+            if (!TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
+            {
+                _activeVolume = null;
+                _activeVolumeVersion = -1;
+                _activeThreatPingCount = 0;
+                _threatPingsDirty = true;
+                WriteOfflineStatus();
+                return;
+            }
+
             if (UseHeadlessCartography)
             {
                 if (!ScheduleHeadlessCartography(playerPosition, force))
@@ -591,6 +601,7 @@ namespace Hecton8.UI
                     _activeVolume = null;
                     _activeVolumeVersion = -1;
                     _activeThreatPingCount = 0;
+                    _threatPingsDirty = true;
                     WriteOfflineStatus();
                     return;
                 }
@@ -606,6 +617,7 @@ namespace Hecton8.UI
                 _activeVolume = null;
                 _activeVolumeVersion = -1;
                 _activeThreatPingCount = 0;
+                _threatPingsDirty = true;
                 WriteOfflineStatus();
                 return;
             }
@@ -621,6 +633,7 @@ namespace Hecton8.UI
                 _activeVolume = volume;
                 _activeVolumeVersion = -1;
                 _activeThreatPingCount = 0;
+                _threatPingsDirty = true;
                 WriteOfflineStatus();
                 return;
             }
@@ -821,7 +834,7 @@ namespace Hecton8.UI
                 _pointCloudPoints = new NativeArray<SonarPointCloudPoint>(
                     PointCloudCapacity,
                     Allocator.Persistent,
-                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarPointCloudPoint>[4096] - PDA sonar point-cloud upload payload - owner: PDAMapTab
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarPointCloudPoint>[1728] - PDA sonar point-cloud upload payload - owner: PDAMapTab
                 NativeMemorySentinel.RegisterNativeArray(
                     _pointCloudPoints,
                     nameof(PDAMapTab),
@@ -834,7 +847,7 @@ namespace Hecton8.UI
                 _pointCloudBuffer = new GraphicsBuffer(
                     GraphicsBuffer.Target.Structured,
                     PointCloudCapacity,
-                    SonarPointStrideBytes); // COLD ALLOC: GraphicsBuffer[4096 x 32B] - GPU-resident PDA sonar point cloud - owner: PDAMapTab
+                    SonarPointStrideBytes); // COLD ALLOC: GraphicsBuffer[1728 x 32B] - GPU-resident PDA sonar point cloud - owner: PDAMapTab
             }
 
             if (_pointCloudMaterial != null)
@@ -922,7 +935,7 @@ namespace Hecton8.UI
             if (normal.sqrMagnitude < 0.000001f)
                 return;
 
-            normal.Normalize();
+            normal *= math.rcp(math.max(ApproximateMagnitudeNoSqrt(normal), 0.0001f));
             Matrix4x4 localToWorld = Matrix4x4.identity;
             localToWorld.SetColumn(0, new Vector4(right.x, right.y, right.z, 0f));
             localToWorld.SetColumn(1, new Vector4(up.x, up.y, up.z, 0f));
@@ -934,7 +947,10 @@ namespace Hecton8.UI
             _pointCloudMaterial.SetFloat(PointSizeId, pointCloudPointSize);
             _pointCloudMaterial.SetFloat(OpacityId, pointCloudOpacity);
 
-            Bounds bounds = new Bounds(center, new Vector3(right.magnitude, up.magnitude, pointCloudDepthMeters + 0.01f));
+            Bounds bounds = new Bounds(center, new Vector3(
+                ApproximateMagnitudeNoSqrt(right),
+                ApproximateMagnitudeNoSqrt(up),
+                pointCloudDepthMeters + 0.01f));
             RenderParams renderParams = new RenderParams(_pointCloudMaterial)
             {
                 worldBounds = bounds,
@@ -943,6 +959,17 @@ namespace Hecton8.UI
                 receiveShadows = false
             };
             Graphics.RenderPrimitives(renderParams, MeshTopology.Points, _pointCloudVertexCount);
+        }
+
+        private static float ApproximateMagnitudeNoSqrt(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.5f) + (minAxis * 0.25f);
         }
 
         private void EnqueueMarkerUpdate(uint markerHashId)
@@ -1006,6 +1033,7 @@ namespace Hecton8.UI
             {
                 if (!markerRegistry.TryGetMarkerByHash(markerHashId, out PDAMarkerSnapshot marker))
                 {
+                    ClearMarkerVisualSlot(markerHashId);
                     processed++;
                     continue;
                 }
@@ -1026,10 +1054,12 @@ namespace Hecton8.UI
             if (markerRoot == null || group == null || markerImage == null || _markerOverlayRoot == null)
                 return;
 
-            Vector3 playerPosition = ResolvePlayerPosition();
-            float radius = Mathf.Max(1f, AcousticOverlayRadiusMeters);
-            float normalizedX = Mathf.Clamp01(((marker.Position.x - playerPosition.x) / (radius * 2f)) + 0.5f);
-            float normalizedY = Mathf.Clamp01(((marker.Position.z - playerPosition.z) / (radius * 2f)) + 0.5f);
+            float radius = math.max(1f, AcousticOverlayRadiusMeters);
+            if (!TryResolveMarkerOverlayDelta(in marker, out float deltaX, out float deltaZ))
+                return;
+
+            float normalizedX = math.saturate((deltaX / (radius * 2f)) + 0.5f);
+            float normalizedY = math.saturate((deltaZ / (radius * 2f)) + 0.5f);
             Rect overlayRect = _markerOverlayRoot.rect;
             markerRoot.anchoredPosition = new Vector2(
                 (normalizedX - 0.5f) * overlayRect.width,
@@ -1049,7 +1079,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            if (_markerVisualSlotByHash.TryGetValue(markerHashId, out slot))
+            if (TryFindMarkerVisualSlot(markerHashId, out slot))
                 return true;
 
             slot = _nextMarkerVisualSlot;
@@ -1058,11 +1088,81 @@ namespace Hecton8.UI
                 _nextMarkerVisualSlot = 0;
 
             uint previousHash = _markerHashByVisualSlot[slot];
-            if (previousHash != 0u)
-                _markerVisualSlotByHash.Remove(previousHash);
-
             _markerHashByVisualSlot[slot] = markerHashId;
-            _markerVisualSlotByHash[markerHashId] = slot;
+            if (previousHash != 0u && previousHash != markerHashId)
+                ClearMarkerVisual(slot);
+            return true;
+        }
+
+        private bool TryFindMarkerVisualSlot(uint markerHashId, out int slot)
+        {
+            slot = -1;
+            if (markerHashId == 0u)
+                return false;
+
+            for (int i = 0; i < _markerHashByVisualSlot.Length; i++)
+            {
+                if (_markerHashByVisualSlot[i] != markerHashId)
+                    continue;
+
+                slot = i;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ClearMarkerVisualSlot(uint markerHashId)
+        {
+            if (!TryFindMarkerVisualSlot(markerHashId, out int slot))
+                return;
+
+            _markerHashByVisualSlot[slot] = 0u;
+            ClearMarkerVisual(slot);
+        }
+
+        private void ClearMarkerVisualSlots()
+        {
+            for (int i = 0; i < _markerHashByVisualSlot.Length; i++)
+            {
+                _markerHashByVisualSlot[i] = 0u;
+                ClearMarkerVisual(i);
+            }
+
+            _nextMarkerVisualSlot = 0;
+        }
+
+        private void ClearMarkerVisual(int slot)
+        {
+            if ((uint)slot >= (uint)_markerVisualGroups.Length)
+                return;
+
+            CanvasGroup group = _markerVisualGroups[slot];
+            if (group != null)
+            {
+                group.alpha = 0f;
+                group.blocksRaycasts = false;
+                group.interactable = false;
+            }
+
+            Image image = _markerVisualImages[slot];
+            if (image != null)
+                image.color = Color.clear;
+        }
+
+        private static bool TryResolveMarkerOverlayDelta(in PDAMarkerSnapshot marker, out float deltaX, out float deltaZ)
+        {
+            deltaX = 0f;
+            deltaZ = 0f;
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return false;
+
+            AbsoluteUniversePosition markerAup = marker.PositionAup;
+            double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            double x = (((double)markerAup.GridX - playerAup.GridX) * cellSize) + markerAup.LocalX - playerAup.LocalX;
+            double z = (((double)markerAup.GridZ - playerAup.GridZ) * cellSize) + markerAup.LocalZ - playerAup.LocalZ;
+            deltaX = (float)math.clamp(x, (double)float.MinValue, (double)float.MaxValue);
+            deltaZ = (float)math.clamp(z, (double)float.MinValue, (double)float.MaxValue);
             return true;
         }
 
@@ -1135,6 +1235,7 @@ namespace Hecton8.UI
                 RefreshThreatPingsFromSpatialDensity(densityMap, densityDimensions);
                 TryAppendGhostSignalPing();
                 RecountThreatPings();
+                _threatPingsDirty = true;
                 return;
             }
 
@@ -1143,6 +1244,7 @@ namespace Hecton8.UI
             {
                 TryAppendGhostSignalPing();
                 RecountThreatPings();
+                _threatPingsDirty = true;
                 return;
             }
 
@@ -1158,77 +1260,95 @@ namespace Hecton8.UI
             {
                 TryAppendGhostSignalPing();
                 RecountThreatPings();
+                _threatPingsDirty = true;
                 return;
             }
 
+            int safeAzimuthBins = math.max(1, azimuthBins);
+            int safeElevationBins = math.max(1, elevationBins);
+            int filledPingCount = 0;
+            int weakestIndex = 0;
+            float weakestIntensity = 0f;
             for (int cellIndex = 0; cellIndex < gridEnergy.Length; cellIndex++)
             {
                 float intensity = gridEnergy[cellIndex];
                 if (intensity <= 0.025f)
                     continue;
 
-                int weakestIndex = -1;
-                float weakestIntensity = float.PositiveInfinity;
-                for (int existingIndex = 0; existingIndex < MaxThreatPings; existingIndex++)
-                {
-                    float existingIntensity = _threatPings[existingIndex].w;
-                    if (existingIntensity < weakestIntensity)
-                    {
-                        weakestIntensity = existingIntensity;
-                        weakestIndex = existingIndex;
-                    }
-                }
-
-                if (weakestIndex < 0 || intensity <= weakestIntensity)
+                if (filledPingCount >= MaxThreatPings && intensity <= weakestIntensity)
                     continue;
 
-                int azimuthIndex = cellIndex % azimuthBins;
-                int elevationIndex = cellIndex / azimuthBins;
-                float azimuthRadians = ((azimuthIndex + 0.5f) / Mathf.Max(1, azimuthBins)) * Mathf.PI * 2f;
-                float elevation01 = (elevationIndex + 0.5f) / Mathf.Max(1, elevationBins);
-                float elevationRadians = Mathf.Lerp(-Mathf.PI * 0.25f, Mathf.PI * 0.25f, elevation01);
-                float cosElevation = Mathf.Cos(elevationRadians);
-
-                Vector3 localPosition = new Vector3(
-                    Mathf.Sin(azimuthRadians) * cosElevation,
-                    Mathf.Sin(elevationRadians),
-                    Mathf.Cos(azimuthRadians) * cosElevation) * 0.38f;
-                _threatPings[weakestIndex] = new Vector4(
-                    localPosition.x,
-                    localPosition.y,
-                    localPosition.z,
-                    Mathf.Clamp01(intensity));
+                int azimuthIndex = cellIndex % safeAzimuthBins;
+                int elevationIndex = cellIndex / safeAzimuthBins;
+                Vector3 localPosition = ResolveCheapRadarGridPingPosition(
+                    azimuthIndex,
+                    safeAzimuthBins,
+                    elevationIndex,
+                    safeElevationBins);
+                InsertThreatPing(localPosition, intensity, ref filledPingCount, ref weakestIndex, ref weakestIntensity);
             }
 
             TryAppendGhostSignalPing();
             RecountThreatPings();
+            _threatPingsDirty = true;
+        }
+
+        private static Vector3 ResolveCheapRadarGridPingPosition(
+            int azimuthIndex,
+            int azimuthBins,
+            int elevationIndex,
+            int elevationBins)
+        {
+            float azimuth01 = (azimuthIndex + 0.5f) * math.rcp(math.max(1, azimuthBins));
+            float phase4 = azimuth01 * 4f;
+            int quadrant = math.min(3, (int)math.floor(phase4));
+            float t = phase4 - quadrant;
+
+            float x;
+            float z;
+            if (quadrant == 0)
+            {
+                x = t;
+                z = 1f - t;
+            }
+            else if (quadrant == 1)
+            {
+                x = 1f - t;
+                z = -t;
+            }
+            else if (quadrant == 2)
+            {
+                x = -t;
+                z = -(1f - t);
+            }
+            else
+            {
+                x = -(1f - t);
+                z = t;
+            }
+
+            float elevationSigned = ((elevationIndex + 0.5f) * math.rcp(math.max(1, elevationBins)) - 0.5f) * 2f;
+            float y = elevationSigned * 0.70710677f;
+            float horizontalScale = 1f - (math.abs(elevationSigned) * 0.29289323f);
+            return new Vector3(x * horizontalScale, y, z * horizontalScale) * 0.38f;
         }
 
         private void RefreshThreatPingsFromSpatialDensity(NativeArray<float> densityMap, Vector3Int dimensions)
         {
-            int safeWidth = Mathf.Max(1, dimensions.x);
-            int safeHeight = Mathf.Max(1, dimensions.y);
-            int safeDepth = Mathf.Max(1, dimensions.z);
-            int maxCells = Mathf.Min(densityMap.Length, safeWidth * safeHeight * safeDepth);
+            int safeWidth = math.max(1, dimensions.x);
+            int safeHeight = math.max(1, dimensions.y);
+            int safeDepth = math.max(1, dimensions.z);
+            int maxCells = math.min(densityMap.Length, safeWidth * safeHeight * safeDepth);
+            int filledPingCount = 0;
+            int weakestIndex = 0;
+            float weakestIntensity = 0f;
             for (int cellIndex = 0; cellIndex < maxCells; cellIndex++)
             {
                 float intensity = densityMap[cellIndex];
                 if (intensity <= 0.025f)
                     continue;
 
-                int weakestIndex = -1;
-                float weakestIntensity = float.PositiveInfinity;
-                for (int existingIndex = 0; existingIndex < MaxThreatPings; existingIndex++)
-                {
-                    float existingIntensity = _threatPings[existingIndex].w;
-                    if (existingIntensity < weakestIntensity)
-                    {
-                        weakestIntensity = existingIntensity;
-                        weakestIndex = existingIndex;
-                    }
-                }
-
-                if (weakestIndex < 0 || intensity <= weakestIntensity)
+                if (filledPingCount >= MaxThreatPings && intensity <= weakestIntensity)
                     continue;
 
                 int z = cellIndex / (safeWidth * safeHeight);
@@ -1238,14 +1358,40 @@ namespace Hecton8.UI
                     ((x + 0.5f) / safeWidth) - 0.5f,
                     ((y + 0.5f) / safeHeight) - 0.5f,
                     ((z + 0.5f) / safeDepth) - 0.5f) * 0.76f;
-                _threatPings[weakestIndex] = new Vector4(
-                    localPosition.x,
-                    localPosition.y,
-                    localPosition.z,
-                    Mathf.Clamp01(intensity));
+                InsertThreatPing(localPosition, intensity, ref filledPingCount, ref weakestIndex, ref weakestIntensity);
             }
 
             RecountThreatPings();
+        }
+
+        private void InsertThreatPing(
+            Vector3 localPosition,
+            float intensity,
+            ref int filledPingCount,
+            ref int weakestIndex,
+            ref float weakestIntensity)
+        {
+            Vector4 ping = new Vector4(
+                localPosition.x,
+                localPosition.y,
+                localPosition.z,
+                math.saturate(intensity));
+
+            if (filledPingCount < MaxThreatPings)
+            {
+                int insertIndex = filledPingCount;
+                _threatPings[insertIndex] = ping;
+                filledPingCount++;
+                if (filledPingCount == MaxThreatPings)
+                    ResolveWeakestThreatPing(out weakestIndex, out weakestIntensity);
+                return;
+            }
+
+            if (ping.w <= weakestIntensity)
+                return;
+
+            _threatPings[weakestIndex] = ping;
+            ResolveWeakestThreatPing(out weakestIndex, out weakestIntensity);
         }
 
         private void TryAppendGhostSignalPing()
@@ -1263,17 +1409,7 @@ namespace Hecton8.UI
                     out Vector4 ghostPing))
                 return;
 
-            int weakestIndex = -1;
-            float weakestIntensity = float.PositiveInfinity;
-            for (int existingIndex = 0; existingIndex < MaxThreatPings; existingIndex++)
-            {
-                float existingIntensity = _threatPings[existingIndex].w;
-                if (existingIntensity < weakestIntensity)
-                {
-                    weakestIntensity = existingIntensity;
-                    weakestIndex = existingIndex;
-                }
-            }
+            ResolveWeakestThreatPing(out int weakestIndex, out float weakestIntensity);
 
             if (weakestIndex < 0)
                 return;
@@ -1285,6 +1421,21 @@ namespace Hecton8.UI
             }
 
             _threatPings[weakestIndex] = ghostPing;
+        }
+
+        private void ResolveWeakestThreatPing(out int weakestIndex, out float weakestIntensity)
+        {
+            weakestIndex = -1;
+            weakestIntensity = float.PositiveInfinity;
+            for (int existingIndex = 0; existingIndex < MaxThreatPings; existingIndex++)
+            {
+                float existingIntensity = _threatPings[existingIndex].w;
+                if (existingIntensity < weakestIntensity)
+                {
+                    weakestIntensity = existingIntensity;
+                    weakestIndex = existingIndex;
+                }
+            }
         }
 
         private void RecountThreatPings()
@@ -1303,26 +1454,61 @@ namespace Hecton8.UI
                 return;
 
             _runtimeMapMaterial.SetFloat(TimePhaseId, _animationTime);
+            if (!_threatPingsDirty && _appliedThreatPingCount == _activeThreatPingCount)
+                return;
+
             _runtimeMapMaterial.SetInt(ThreatPingCountId, _activeThreatPingCount);
             _runtimeMapMaterial.SetVectorArray(ThreatPingsId, _threatPings);
+            _appliedThreatPingCount = _activeThreatPingCount;
+            _threatPingsDirty = false;
         }
 
-        private static Vector3 ResolvePlayerPosition()
+        private static bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
         {
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
-                return playerTransform.position;
+            if (TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                playerPosition = playerAup.ToRuntimeFloat3();
+                return true;
+            }
 
-            return Vector3.zero;
+            playerPosition = default;
+            return false;
+        }
+
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
+            {
+                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    playerAup = movementState.PredictedAup;
+                    return true;
+                }
+            }
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement != null)
+            {
+                playerAup = playerMovement.CurrentAup;
+                return true;
+            }
+
+            playerAup = default;
+            return false;
         }
 
         private static float ResolvePlayerDepthMeters()
         {
             BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
             if (biomeMatrixDirector != null)
-                return Mathf.Max(0f, biomeMatrixDirector.CurrentDepthMeters);
+                return math.max(0f, biomeMatrixDirector.CurrentDepthMeters);
 
-            Vector3 playerPosition = ResolvePlayerPosition();
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                return 0f;
+
             double absoluteY = playerAup.ToAbsoluteDouble3().y;
             return (float)math.max(0d, -absoluteY);
         }
@@ -1399,7 +1585,7 @@ namespace Hecton8.UI
             if (buffer == null || string.IsNullOrEmpty(literal) || offset >= buffer.Length)
                 return 0;
 
-            int safeLength = Mathf.Min(literal.Length, buffer.Length - offset);
+            int safeLength = math.min(literal.Length, buffer.Length - offset);
             literal.AsSpan(0, safeLength).CopyTo(buffer.AsSpan(offset, safeLength));
             return safeLength;
         }
@@ -1409,7 +1595,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(literal) || offset >= buffer.Length)
                 return 0;
 
-            int safeLength = Mathf.Min(literal.Length, buffer.Length - offset);
+            int safeLength = math.min(literal.Length, buffer.Length - offset);
             literal.AsSpan(0, safeLength).CopyTo(buffer.Slice(offset, safeLength));
             return safeLength;
         }
@@ -1424,11 +1610,11 @@ namespace Hecton8.UI
 
         private static Vector4 ResolveLocalVolumeHalfExtent(Vector3Int gridDimensions, Vector3 voxelCellSize)
         {
-            float worldSizeX = Mathf.Max(1, gridDimensions.x - 1) * Mathf.Max(0.0001f, voxelCellSize.x);
-            float worldSizeY = Mathf.Max(1, gridDimensions.y - 1) * Mathf.Max(0.0001f, voxelCellSize.y);
-            float worldSizeZ = Mathf.Max(1, gridDimensions.z - 1) * Mathf.Max(0.0001f, voxelCellSize.z);
+            float worldSizeX = math.max(1, gridDimensions.x - 1) * math.max(0.0001f, voxelCellSize.x);
+            float worldSizeY = math.max(1, gridDimensions.y - 1) * math.max(0.0001f, voxelCellSize.y);
+            float worldSizeZ = math.max(1, gridDimensions.z - 1) * math.max(0.0001f, voxelCellSize.z);
             Vector3 worldHalfExtent = new Vector3(worldSizeX, worldSizeY, worldSizeZ) * 0.5f;
-            float dominantHalfExtent = Mathf.Max(0.0001f, Mathf.Max(worldHalfExtent.x, Mathf.Max(worldHalfExtent.y, worldHalfExtent.z)));
+            float dominantHalfExtent = math.max(0.0001f, math.max(worldHalfExtent.x, math.max(worldHalfExtent.y, worldHalfExtent.z)));
             float localScale = 0.55f / dominantHalfExtent;
             Vector3 localHalfExtent = worldHalfExtent * localScale;
             return new Vector4(localHalfExtent.x, localHalfExtent.y, localHalfExtent.z, 0f);

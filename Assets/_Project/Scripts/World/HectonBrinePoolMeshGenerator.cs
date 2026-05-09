@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -15,19 +14,18 @@ namespace Hecton8.World
     [AddComponentMenu("Hecton8/World/Brine Pool Mesh Generator")]
     public sealed class HectonBrinePoolMeshGenerator : MonoBehaviour
     {
-        private const string NativeMemoryOwner = nameof(HectonBrinePoolMeshGenerator);
-        private const string BoundsLabel = "brinePoolBounds";
         private const uint InvalidInputWarningHash = 0x414E4249u;
         private const uint EmptyBoundsWarningHash = 0x414E4245u;
         private const uint PoolCapWarningHash = 0x414E4250u;
+        private const uint DuplicateHazardWarningHash = 0x414E4244u;
         private const uint BrineGeneratorContextHash = 0x414E4252u;
         private const int MaxGeneratedBrinePools = 32;
         private const string BrineToxicityLayerName = "BrineToxicity";
+        private const string GeneratedBrinePoolsRootName = "Generated Brine Pools";
         private const string BrinePoolObjectName = "BrinePool";
         private const float BrineSurfaceNormalTile = 64f;
+        private const int BrineSurfaceSegmentCount = 32;
         private static readonly int BrineToxicityLayer = LayerMask.NameToLayer(BrineToxicityLayerName);
-        private static readonly int BrineNormalTileId = Shader.PropertyToID("_BrineNormalTile");
-        private static readonly int BrineNormalPanSpeedId = Shader.PropertyToID("_BrineNormalPanSpeed");
 
         [Header("Rendering")]
         [Tooltip("Material assigned to generated flat brine pool surfaces.")]
@@ -49,7 +47,7 @@ namespace Hecton8.World
         [Tooltip("Stable id base added to generated basin ids for hazard registration.")]
         [SerializeField] private int hazardIdBase = 870000;
 
-        // COLD ALLOC: List<ActiveBrinePool>[32] — spawned brine pool bookkeeping — owner: HectonBrinePoolMeshGenerator
+        // COLD ALLOC: List<ActiveBrinePool>[32] - spawned brine pool bookkeeping - owner: HectonBrinePoolMeshGenerator
         private readonly List<ActiveBrinePool> _activePools = new List<ActiveBrinePool>(MaxGeneratedBrinePools);
 
         private Transform _poolRoot;
@@ -66,71 +64,107 @@ namespace Hecton8.World
             float cellSizeMeters,
             Vector3 runtimeOrigin)
         {
-            ClearBrinePools();
-
-            int cellCount = math.max(1, width) * math.max(1, height);
-            if (basinMask.Length < cellCount || basinRecords.Length < cellCount)
+            if (!TryResolveCellCount(width, height, out int cellCount) ||
+                !basinMask.IsCreated ||
+                !basinRecords.IsCreated ||
+                !math.isfinite(cellSizeMeters) ||
+                !math.isfinite(colliderDepthMeters) ||
+                !math.isfinite(hazardIntensity) ||
+                !math.isfinite(hazardVisorGlitchBias) ||
+                !IsFiniteRuntimePosition(runtimeOrigin) ||
+                cellSizeMeters <= 0f ||
+                colliderDepthMeters <= 0f ||
+                hazardIntensity <= 0f ||
+                hazardVisorGlitchBias < 0f ||
+                basinMask.Length < cellCount ||
+                basinRecords.Length < cellCount)
             {
+                ClearBrinePools();
                 GlobalTelemetryBus.PublishPerformanceWarning(InvalidInputWarningHash, BrineGeneratorContextHash, cellCount);
                 return 0;
             }
 
+            ClearBrinePools();
             EnsureRoot();
-            NativeArray<AnomalyBrinePoolBounds> bounds = default;
-            try
+            int created = 0;
+            float safeCellSize = math.max(0.001f, cellSizeMeters);
+            for (int i = 0; i < cellCount; i++)
             {
-                // COLD ALLOC: NativeArray<AnomalyBrinePoolBounds>[cellCount] — brine mesh bake bounds — owner: HectonBrinePoolMeshGenerator
-                bounds = new NativeArray<AnomalyBrinePoolBounds>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(bounds, NativeMemoryOwner, BoundsLabel, NativeAllocationLifetime.TempJob);
-
-                var boundsJob = new ResolveBrinePoolBoundsJob
+                if (!TryResolvePoolBoundsFromRecord(
+                        basinRecords[i],
+                        basinMask,
+                        width,
+                        height,
+                        out AnomalyBrinePoolBounds poolBounds))
                 {
-                    BasinMask = basinMask,
-                    BasinRecords = basinRecords,
-                    Bounds = bounds,
-                    Width = math.max(1, width),
-                    Height = math.max(1, height)
-                };
-
-                JobHandle handle = boundsJob.Schedule(cellCount, 64);
-                // COLD SYNC JOB: brine mesh baking must resolve bounds before GameObject creation; not a frame tick path.
-                handle.Complete();
-
-                int created = 0;
-                float safeCellSize = math.max(0.001f, cellSizeMeters);
-                for (int i = 0; i < bounds.Length; i++)
-                {
-                    AnomalyBrinePoolBounds poolBounds = bounds[i];
-                    if (poolBounds.Valid == 0)
-                        continue;
-
-                    if (created >= MaxGeneratedBrinePools)
-                    {
-                        GlobalTelemetryBus.PublishPerformanceWarning(PoolCapWarningHash, BrineGeneratorContextHash, created);
-                        break;
-                    }
-
-                    GameObject poolObject = CreatePoolObject(poolBounds, safeCellSize, runtimeOrigin, out Vector3 runtimeCenter);
-                    int hazardId = hazardIdBase + poolBounds.BasinId;
-                    RegisterBrineHazard(runtimeCenter, poolBounds, safeCellSize, hazardId);
-
-                    _activePools.Add(new ActiveBrinePool
-                    {
-                        GameObject = poolObject,
-                        HazardId = hazardId
-                    });
-                    created++;
+                    continue;
                 }
 
-                if (created == 0)
-                    GlobalTelemetryBus.PublishPerformanceWarning(EmptyBoundsWarningHash, BrineGeneratorContextHash, cellCount);
+                if (created >= MaxGeneratedBrinePools)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(PoolCapWarningHash, BrineGeneratorContextHash, created);
+                    break;
+                }
 
-                return created;
+                if (!TryResolveHazardId(poolBounds.BasinId, out int hazardId))
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(InvalidInputWarningHash, BrineGeneratorContextHash, poolBounds.BasinId);
+                    continue;
+                }
+
+                if (IsTrackedHazardId(hazardId))
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(DuplicateHazardWarningHash, BrineGeneratorContextHash, hazardId);
+                    continue;
+                }
+
+                AbsoluteUniversePosition poolCenterAup = ResolvePoolCenterAup(poolBounds, safeCellSize, runtimeOrigin);
+                Vector3 runtimeCenter = poolCenterAup.ToRuntimeFloat3();
+                GameObject poolObject = CreatePoolObject(poolBounds, safeCellSize, runtimeCenter);
+                if (!TryRegisterBrineHazard(in poolCenterAup, poolBounds, safeCellSize, hazardId))
+                {
+                    DestroyPoolObject(poolObject);
+                    GlobalTelemetryBus.PublishPerformanceWarning(InvalidInputWarningHash, BrineGeneratorContextHash, hazardId);
+                    continue;
+                }
+
+                _activePools.Add(new ActiveBrinePool
+                {
+                    GameObject = poolObject,
+                    HazardId = hazardId
+                });
+                created++;
             }
-            finally
-            {
-                DisposeTracked(ref bounds);
-            }
+
+            if (created == 0)
+                GlobalTelemetryBus.PublishPerformanceWarning(EmptyBoundsWarningHash, BrineGeneratorContextHash, cellCount);
+
+            return created;
+        }
+
+        private static bool TryResolveCellCount(int width, int height, out int cellCount)
+        {
+            cellCount = 0;
+            if (width <= 0 || height <= 0)
+                return false;
+
+            long total = (long)width * height;
+            if (total > int.MaxValue)
+                return false;
+
+            cellCount = (int)total;
+            return true;
+        }
+
+        private bool TryResolveHazardId(int basinId, out int hazardId)
+        {
+            hazardId = 0;
+            long resolved = (long)hazardIdBase + basinId;
+            if (resolved <= 0L || resolved > int.MaxValue)
+                return false;
+
+            hazardId = (int)resolved;
+            return true;
         }
 
         /// <summary>
@@ -138,6 +172,9 @@ namespace Hecton8.World
         /// </summary>
         public void ClearBrinePools()
         {
+            BindExistingRootIfPresent();
+            DestroyUntrackedPoolChildren();
+
             for (int i = 0; i < _activePools.Count; i++)
             {
                 ActiveBrinePool pool = _activePools[i];
@@ -146,13 +183,21 @@ namespace Hecton8.World
                 if (pool.GameObject == null)
                     continue;
 
-                if (Application.isPlaying)
-                    Destroy(pool.GameObject);
-                else
-                    DestroyImmediate(pool.GameObject);
+                DestroyPoolObject(pool.GameObject);
             }
 
             _activePools.Clear();
+        }
+
+        private static void DestroyPoolObject(GameObject poolObject)
+        {
+            if (poolObject == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(poolObject);
+            else
+                DestroyImmediate(poolObject);
         }
 
         private void OnDestroy()
@@ -166,26 +211,72 @@ namespace Hecton8.World
             if (_poolRoot != null)
                 return;
 
-            Transform existing = transform.Find("Generated Brine Pools");
+            BindExistingRootIfPresent();
+            if (_poolRoot != null)
+                return;
+
+            // COLD ALLOC: GameObject[1] - brine pool container - owner: HectonBrinePoolMeshGenerator
+            var rootObject = new GameObject(GeneratedBrinePoolsRootName);
+            rootObject.transform.SetParent(transform, false);
+            rootObject.layer = ResolveBrinePhysicsLayer();
+            _poolRoot = rootObject.transform;
+        }
+
+        private void BindExistingRootIfPresent()
+        {
+            if (_poolRoot != null)
+                return;
+
+            Transform existing = transform.Find(GeneratedBrinePoolsRootName);
             if (existing != null)
             {
                 existing.gameObject.layer = ResolveBrinePhysicsLayer();
                 _poolRoot = existing;
                 return;
             }
+        }
 
-            // COLD ALLOC: GameObject[1] — brine pool container — owner: HectonBrinePoolMeshGenerator
-            var rootObject = new GameObject("Generated Brine Pools");
-            rootObject.transform.SetParent(transform, false);
-            rootObject.layer = ResolveBrinePhysicsLayer();
-            _poolRoot = rootObject.transform;
+        private void DestroyUntrackedPoolChildren()
+        {
+            if (_poolRoot == null)
+                return;
+
+            for (int i = _poolRoot.childCount - 1; i >= 0; i--)
+            {
+                Transform child = _poolRoot.GetChild(i);
+                if (child == null || IsTrackedPoolObject(child.gameObject))
+                    continue;
+
+                DestroyPoolObject(child.gameObject);
+            }
+        }
+
+        private bool IsTrackedPoolObject(GameObject poolObject)
+        {
+            for (int i = 0; i < _activePools.Count; i++)
+            {
+                if (_activePools[i].GameObject == poolObject)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool IsTrackedHazardId(int hazardId)
+        {
+            for (int i = 0; i < _activePools.Count; i++)
+            {
+                if (_activePools[i].HazardId == hazardId)
+                    return true;
+            }
+
+            return false;
         }
 
         private GameObject CreatePoolObject(
             AnomalyBrinePoolBounds poolBounds,
             float cellSizeMeters,
-            Vector3 runtimeOrigin,
-            out Vector3 runtimeCenter)
+            Vector3 runtimeCenter)
         {
             float minWorldX = poolBounds.MinX * cellSizeMeters;
             float maxWorldX = (poolBounds.MaxX + 1) * cellSizeMeters;
@@ -193,34 +284,113 @@ namespace Hecton8.World
             float maxWorldZ = (poolBounds.MaxZ + 1) * cellSizeMeters;
             float sizeX = math.max(cellSizeMeters, maxWorldX - minWorldX);
             float sizeZ = math.max(cellSizeMeters, maxWorldZ - minWorldZ);
-            Vector3 center = runtimeOrigin + new Vector3((minWorldX + maxWorldX) * 0.5f, poolBounds.LipHeight, (minWorldZ + maxWorldZ) * 0.5f);
-            runtimeCenter = center;
 
-            // COLD ALLOC: GameObject[1] — generated brine pool mesh and hazard — owner: HectonBrinePoolMeshGenerator
+            // COLD ALLOC: GameObject[1] - generated brine pool mesh and hazard - owner: HectonBrinePoolMeshGenerator
             var poolObject = new GameObject(BrinePoolObjectName);
             poolObject.transform.SetParent(_poolRoot, false);
-            poolObject.transform.position = center;
+            poolObject.transform.position = runtimeCenter;
             poolObject.transform.localScale = new Vector3(sizeX, 1f, sizeZ);
             poolObject.layer = ResolveBrinePhysicsLayer();
 
             MeshFilter meshFilter = poolObject.AddComponent<MeshFilter>();
             MeshRenderer meshRenderer = poolObject.AddComponent<MeshRenderer>();
             if (brineMaterial != null)
-            {
-                ConfigureBrineMaterial(brineMaterial);
                 meshRenderer.sharedMaterial = brineMaterial;
-            }
 
             Mesh poolMesh = EnsureSharedPoolMesh();
             meshFilter.sharedMesh = poolMesh;
             CreateFogVolume(poolObject.transform, poolMesh);
 
-            MeshCollider collider = poolObject.AddComponent<MeshCollider>();
-            collider.sharedMesh = poolMesh;
-            // Cinematic hazard fake: HazardZoneManager owns toxic incursion checks; the baked collider remains as disabled authoring fallback.
+            float safeColliderDepth = math.max(0.001f, colliderDepthMeters);
+            BoxCollider collider = poolObject.AddComponent<BoxCollider>();
+            collider.center = new Vector3(0f, safeColliderDepth * -0.5f, 0f);
+            collider.size = new Vector3(1f, safeColliderDepth, 1f);
+            collider.isTrigger = true;
+            // Cinematic hazard fake: HazardZoneManager owns toxic incursion checks; this disabled trigger only satisfies ToxinHazard's collider contract.
             collider.enabled = false;
             poolObject.AddComponent<ToxinHazard>();
             return poolObject;
+        }
+
+        private static AbsoluteUniversePosition ResolvePoolCenterAup(
+            AnomalyBrinePoolBounds poolBounds,
+            float cellSizeMeters,
+            Vector3 runtimeOrigin)
+        {
+            double safeCellSize = math.max(0.001d, (double)cellSizeMeters);
+            double minWorldX = poolBounds.MinX * safeCellSize;
+            double maxWorldX = (poolBounds.MaxX + 1) * safeCellSize;
+            double minWorldZ = poolBounds.MinZ * safeCellSize;
+            double maxWorldZ = (poolBounds.MaxZ + 1) * safeCellSize;
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeOrigin);
+            double3 originAbsolute = originAup.ToAbsoluteDouble3();
+            return AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                originAbsolute.x + (minWorldX + maxWorldX) * 0.5d,
+                originAbsolute.y + poolBounds.LipHeight,
+                originAbsolute.z + (minWorldZ + maxWorldZ) * 0.5d));
+        }
+
+        private static bool TryResolvePoolBoundsFromRecord(
+            AnomalyBasinRecord record,
+            NativeArray<byte> basinMask,
+            int width,
+            int height,
+            out AnomalyBrinePoolBounds poolBounds)
+        {
+            poolBounds = default;
+            if (record.Valid == 0 ||
+                record.BasinId <= 0 ||
+                record.CellCount <= 0 ||
+                record.MinX < 0 ||
+                record.MinZ < 0 ||
+                record.MaxX >= width ||
+                record.MaxZ >= height ||
+                record.MinX > record.MaxX ||
+                record.MinZ > record.MaxZ ||
+                !math.isfinite(record.DeepestHeight) ||
+                !math.isfinite(record.LipHeight) ||
+                record.LipHeight <= record.DeepestHeight)
+                return false;
+
+            int maskedCount = 0;
+            int minX = width;
+            int minZ = height;
+            int maxX = 0;
+            int maxZ = 0;
+            for (int z = record.MinZ; z <= record.MaxZ; z++)
+            {
+                int rowOffset = z * width;
+                for (int x = record.MinX; x <= record.MaxX; x++)
+                {
+                    if (basinMask[rowOffset + x] == 0)
+                        continue;
+
+                    minX = math.min(minX, x);
+                    minZ = math.min(minZ, z);
+                    maxX = math.max(maxX, x);
+                    maxZ = math.max(maxZ, z);
+                    maskedCount++;
+                }
+            }
+
+            if (maskedCount <= 0)
+                return false;
+
+            if (maskedCount != record.CellCount)
+                return false;
+
+            poolBounds = new AnomalyBrinePoolBounds
+            {
+                BasinId = record.BasinId,
+                MinX = minX,
+                MinZ = minZ,
+                MaxX = maxX,
+                MaxZ = maxZ,
+                MaskedCount = maskedCount,
+                LipHeight = record.LipHeight,
+                Valid = 1
+            };
+            return true;
         }
 
         private void CreateFogVolume(Transform poolTransform, Mesh poolMesh)
@@ -228,7 +398,7 @@ namespace Hecton8.World
             if (brineFogMaterial == null || poolMesh == null)
                 return;
 
-            // COLD ALLOC: GameObject[1] — generated brine fog render proxy — owner: HectonBrinePoolMeshGenerator
+            // COLD ALLOC: GameObject[1] - generated brine fog render proxy - owner: HectonBrinePoolMeshGenerator
             var fogObject = new GameObject("BrinePoolFog");
             fogObject.transform.SetParent(poolTransform, false);
             fogObject.transform.localPosition = new Vector3(0f, -0.05f, 0f);
@@ -245,49 +415,55 @@ namespace Hecton8.World
             if (_sharedPoolMesh != null)
                 return _sharedPoolMesh;
 
-            // COLD ALLOC: Mesh[1] — generated brine surface quad — owner: HectonBrinePoolMeshGenerator
+            // COLD ALLOC: Mesh[1] - generated brine surface ellipse - owner: HectonBrinePoolMeshGenerator
             var mesh = new Mesh
             {
-                name = "BrinePoolUnitQuadMesh"
+                name = "BrinePoolUnitEllipseMesh"
             };
 
-            // COLD ALLOC: Vector3[4] - one-time shared brine quad vertices - owner: HectonBrinePoolMeshGenerator
-            Vector3[] vertices =
+            int vertexCount = BrineSurfaceSegmentCount + 1;
+            int indexCount = BrineSurfaceSegmentCount * 3;
+            // COLD ALLOC: Vector3[33] - one-time shared brine ellipse vertices - owner: HectonBrinePoolMeshGenerator
+            Vector3[] vertices = new Vector3[vertexCount];
+            // COLD ALLOC: Vector2[33] - one-time shared brine ellipse uvs - owner: HectonBrinePoolMeshGenerator
+            Vector2[] uvs = new Vector2[vertexCount];
+            // COLD ALLOC: Vector3[33] - one-time shared brine ellipse normals - owner: HectonBrinePoolMeshGenerator
+            Vector3[] normals = new Vector3[vertexCount];
+            // COLD ALLOC: int[96] - one-time shared brine ellipse indices - owner: HectonBrinePoolMeshGenerator
+            int[] triangles = new int[indexCount];
+
+            vertices[0] = Vector3.zero;
+            uvs[0] = new Vector2(BrineSurfaceNormalTile * 0.5f, BrineSurfaceNormalTile * 0.5f);
+            normals[0] = Vector3.up;
+            for (int i = 0; i < BrineSurfaceSegmentCount; i++)
             {
-                new Vector3(-0.5f, 0f, -0.5f),
-                new Vector3(0.5f, 0f, -0.5f),
-                new Vector3(-0.5f, 0f, 0.5f),
-                new Vector3(0.5f, 0f, 0.5f)
-            };
-            // COLD ALLOC: Vector2[4] - one-time shared brine quad uvs - owner: HectonBrinePoolMeshGenerator
-            Vector2[] uvs =
+                float angle = (i / (float)BrineSurfaceSegmentCount) * math.PI * 2f;
+                float x = math.cos(angle) * 0.5f;
+                float z = math.sin(angle) * 0.5f;
+                int vertexIndex = i + 1;
+                vertices[vertexIndex] = new Vector3(x, 0f, z);
+                uvs[vertexIndex] = new Vector2(
+                    (x + 0.5f) * BrineSurfaceNormalTile,
+                    (z + 0.5f) * BrineSurfaceNormalTile);
+                normals[vertexIndex] = Vector3.up;
+            }
+
+            for (int i = 0; i < BrineSurfaceSegmentCount; i++)
             {
-                new Vector2(0f, 0f),
-                new Vector2(BrineSurfaceNormalTile, 0f),
-                new Vector2(0f, BrineSurfaceNormalTile),
-                new Vector2(BrineSurfaceNormalTile, BrineSurfaceNormalTile)
-            };
-            // COLD ALLOC: Vector3[4] - one-time shared brine quad normals - owner: HectonBrinePoolMeshGenerator
-            Vector3[] normals =
-            {
-                Vector3.up,
-                Vector3.up,
-                Vector3.up,
-                Vector3.up
-            };
-            // COLD ALLOC: int[6] - one-time shared brine quad indices - owner: HectonBrinePoolMeshGenerator
-            int[] triangles = { 0, 2, 1, 1, 2, 3 };
+                int triangleIndex = i * 3;
+                int current = i + 1;
+                int next = ((i + 1) % BrineSurfaceSegmentCount) + 1;
+                triangles[triangleIndex] = 0;
+                triangles[triangleIndex + 1] = next;
+                triangles[triangleIndex + 2] = current;
+            }
+
             mesh.SetVertices(vertices);
             mesh.uv = uvs;
             mesh.SetNormals(normals);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
-            JobHandle bakeHandle = new BrinePoolMeshBakeJob
-            {
-                MeshId = mesh.GetEntityId()
-            }.Schedule();
-            // COLD SYNC JOB: one-time shared brine quad bake before MeshCollider fallback assignment; not a frame tick path.
-            bakeHandle.Complete();
+            mesh.UploadMeshData(true);
             _sharedPoolMesh = mesh;
             return mesh;
         }
@@ -305,37 +481,45 @@ namespace Hecton8.World
             _sharedPoolMesh = null;
         }
 
-        private void RegisterBrineHazard(Vector3 runtimeCenter, AnomalyBrinePoolBounds poolBounds, float cellSizeMeters, int hazardId)
+        private bool TryRegisterBrineHazard(in AbsoluteUniversePosition centerAup, AnomalyBrinePoolBounds poolBounds, float cellSizeMeters, int hazardId)
         {
             float sizeX = math.max(cellSizeMeters, (poolBounds.MaxX - poolBounds.MinX + 1) * cellSizeMeters);
             float sizeZ = math.max(cellSizeMeters, (poolBounds.MaxZ - poolBounds.MinZ + 1) * cellSizeMeters);
-            float radius = math.sqrt((sizeX * sizeX) + (sizeZ * sizeZ)) * 0.5f;
-            HectonBrineToxicMudGrid.RegisterCell(hazardId, runtimeCenter, sizeX, sizeZ, colliderDepthMeters);
-            HectonHazardManager.Register(hazardId, runtimeCenter, hazardIntensity, radius, HazardType.Toxicity, hazardVisorGlitchBias);
+            if (hazardId <= 0 ||
+                cellSizeMeters <= 0f ||
+                colliderDepthMeters <= 0f ||
+                hazardIntensity <= 0f ||
+                hazardVisorGlitchBias < 0f ||
+                !math.isfinite(sizeX) ||
+                !math.isfinite(sizeZ) ||
+                !math.isfinite(poolBounds.LipHeight) ||
+                !math.isfinite(colliderDepthMeters))
+                return false;
+
+            float radius = math.max(math.max(sizeX, sizeZ) * 0.5f, math.max(0.001f, colliderDepthMeters));
+            HectonBrineToxicMudGrid.RegisterCell(hazardId, in centerAup, sizeX, sizeZ, colliderDepthMeters);
+            if (!HectonBrineToxicMudGrid.IsRegisteredCell(hazardId))
+                return false;
+
+            if (!HectonHazardManager.Register(hazardId, in centerAup, hazardIntensity, radius, HazardType.Toxicity, hazardVisorGlitchBias))
+            {
+                HectonBrineToxicMudGrid.UnregisterCell(hazardId);
+                return false;
+            }
+
+            return true;
         }
 
-        private static void ConfigureBrineMaterial(Material material)
+        private static bool IsFiniteRuntimePosition(Vector3 position)
         {
-            if (material.HasProperty(BrineNormalTileId))
-                material.SetFloat(BrineNormalTileId, BrineSurfaceNormalTile);
-
-            if (material.HasProperty(BrineNormalPanSpeedId))
-                material.SetVector(BrineNormalPanSpeedId, new Vector4(0.012f, 0.004f, -0.006f, 0.009f));
+            return math.isfinite(position.x) &&
+                   math.isfinite(position.y) &&
+                   math.isfinite(position.z);
         }
 
         private static int ResolveBrinePhysicsLayer()
         {
-            return BrineToxicityLayer >= 0 ? BrineToxicityLayer : HectonLayerMasks.TriggerZone;
-        }
-
-        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
+            return BrineToxicityLayer >= 0 ? BrineToxicityLayer : HectonLayerMasks.BrineToxicity;
         }
 
         private struct ActiveBrinePool
@@ -344,15 +528,5 @@ namespace Hecton8.World
             public int HazardId;
         }
 
-        private struct BrinePoolMeshBakeJob : IJob
-        {
-            public EntityId MeshId;
-
-            public void Execute()
-            {
-                if (EntityId.ToULong(MeshId) != 0ul)
-                    global::UnityEngine.Physics.BakeMesh(MeshId, false);
-            }
-        }
     }
 }

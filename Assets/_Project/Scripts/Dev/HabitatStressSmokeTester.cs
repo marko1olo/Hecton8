@@ -4,7 +4,6 @@
 // ============================================================================
 
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
 using System.Text;
 using Hecton8.Construction;
@@ -34,9 +33,16 @@ namespace Hecton8.Debugging
         public int ShaderUpdateCount;
         public int QueueOverflow;
         public int CircuitBreakerAllowed;
+        public int CircuitBreakerReportedAllowed;
         public int CircuitBreakerDropped;
         public int CircuitBreakerReportedDropped;
+        public int CircuitBreakerBudget;
+        public int CircuitBreakerSlotCapacity;
+        public int CircuitBreakerSlotFillAllowed;
+        public int CircuitBreakerOverflowDropped;
+        public int CircuitBreakerActiveSlotCount;
         public bool CircuitBreakerPassed;
+        public bool CircuitBreakerOverflowPassed;
         public double ElapsedMilliseconds;
         public int SentinelBefore;
         public int SentinelAfter;
@@ -59,6 +65,7 @@ namespace Hecton8.Debugging
         private const int CircuitBreakerIslandId = 7;
         private const int CircuitBreakerProbeCount = 20;
         private const int CircuitBreakerBudget = 16;
+        private const int CircuitBreakerSlotCapacity = 64;
         private static readonly uint s_CircuitBreakerSmokeHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HabitatStressSmokeTester.CircuitBreaker"));
         private static readonly int s_ModuleAmbienceDataId = Shader.PropertyToID("_HectonModuleAmbienceDataBuffer");
         private static readonly int s_ModuleWaterLevelsId = Shader.PropertyToID("_HectonModuleWaterLevelsBuffer");
@@ -67,8 +74,10 @@ namespace Hecton8.Debugging
         private static readonly Vector4[] s_shaderAmbiencePayload = new Vector4[ShaderPayloadCapacity];
         // COLD ALLOC: Vector4[64] - editor smoke shader upload staging array - owner: HabitatStressSmokeTester
         private static readonly Vector4[] s_shaderPayload = new Vector4[ShaderPayloadCapacity];
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         // COLD ALLOC: StringBuilder[768] - editor smoke JSON report builder - owner: HabitatStressSmokeTester
         private static readonly StringBuilder s_reportBuilder = new StringBuilder(768);
+#endif
         private static ComputeBuffer s_shaderAmbiencePayloadBuffer;
         private static ComputeBuffer s_shaderPayloadBuffer;
 
@@ -83,8 +92,8 @@ namespace Hecton8.Debugging
         public static HabitatStressSmokeReport Run()
         {
             HabitatStressSmokeReport report = RunHeadless();
-            WriteReport(ref report);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            WriteReport(ref report);
             Debug.Log("[HabitatStressSmokeTester] " + (report.Passed ? "PASS " : "FAIL ") + report.ReportPath);
 #endif
             return report;
@@ -222,9 +231,15 @@ namespace Hecton8.Debugging
             int sentinelDelta = sentinelAfter - sentinelBefore;
             RunCircuitBreakerProbe(
                 out int circuitBreakerAllowed,
+                out int circuitBreakerReportedAllowed,
                 out int circuitBreakerDropped,
                 out int circuitBreakerReportedDropped,
                 out bool circuitBreakerPassed);
+            RunCircuitBreakerOverflowProbe(
+                out int circuitBreakerSlotFillAllowed,
+                out int circuitBreakerOverflowDropped,
+                out int circuitBreakerActiveSlotCount,
+                out bool circuitBreakerOverflowPassed);
             bool passed =
                 finalDirtyResult.RupturedSeedCount == RupturedNodeCount &&
                 finalDirtyResult.VisitedNodeCount == expectedVisited &&
@@ -232,6 +247,7 @@ namespace Hecton8.Debugging
                 finalDirtyResult.QueueOverflow == 0 &&
                 sentinelDelta == 0 &&
                 circuitBreakerPassed &&
+                circuitBreakerOverflowPassed &&
                 bestMilliseconds <= BudgetMilliseconds;
 
             return new HabitatStressSmokeReport
@@ -246,9 +262,16 @@ namespace Hecton8.Debugging
                 ShaderUpdateCount = finalDirtyResult.ShaderUpdateCount,
                 QueueOverflow = finalDirtyResult.QueueOverflow,
                 CircuitBreakerAllowed = circuitBreakerAllowed,
+                CircuitBreakerReportedAllowed = circuitBreakerReportedAllowed,
                 CircuitBreakerDropped = circuitBreakerDropped,
                 CircuitBreakerReportedDropped = circuitBreakerReportedDropped,
+                CircuitBreakerBudget = CircuitBreakerBudget,
+                CircuitBreakerSlotCapacity = CircuitBreakerSlotCapacity,
+                CircuitBreakerSlotFillAllowed = circuitBreakerSlotFillAllowed,
+                CircuitBreakerOverflowDropped = circuitBreakerOverflowDropped,
+                CircuitBreakerActiveSlotCount = circuitBreakerActiveSlotCount,
                 CircuitBreakerPassed = circuitBreakerPassed,
+                CircuitBreakerOverflowPassed = circuitBreakerOverflowPassed,
                 ElapsedMilliseconds = bestMilliseconds,
                 SentinelBefore = sentinelBefore,
                 SentinelAfter = sentinelAfter,
@@ -403,6 +426,7 @@ namespace Hecton8.Debugging
 
         private static void RunCircuitBreakerProbe(
             out int allowed,
+            out int reportedAllowed,
             out int dropped,
             out int reportedDropped,
             out bool passed)
@@ -421,13 +445,46 @@ namespace Hecton8.Debugging
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+            reportedAllowed = SystemDispatcher.DebugGetBaseStressCascadeConsumedCount(CircuitBreakerIslandId);
             reportedDropped = SystemDispatcher.DebugGetBaseStressCascadeDroppedCount(CircuitBreakerIslandId);
 #else
+            reportedAllowed = allowed;
             reportedDropped = dropped;
 #endif
             passed = allowed == CircuitBreakerBudget &&
+                     reportedAllowed == allowed &&
                      dropped == CircuitBreakerProbeCount - CircuitBreakerBudget &&
                      reportedDropped == dropped;
+        }
+
+        private static void RunCircuitBreakerOverflowProbe(
+            out int slotFillAllowed,
+            out int overflowDropped,
+            out int activeSlotCount,
+            out bool passed)
+        {
+            slotFillAllowed = 0;
+            overflowDropped = 0;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            SystemDispatcher.ResetBaseStressCascadeCircuitBreakerForSmokeTest();
+#endif
+            for (int islandIndex = 0; islandIndex < CircuitBreakerSlotCapacity; islandIndex++)
+            {
+                if (SystemDispatcher.TryConsumeBaseStressCascadeEvent(islandIndex, s_CircuitBreakerSmokeHash))
+                    slotFillAllowed++;
+            }
+
+            if (!SystemDispatcher.TryConsumeBaseStressCascadeEvent(CircuitBreakerSlotCapacity, s_CircuitBreakerSmokeHash))
+                overflowDropped++;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            activeSlotCount = SystemDispatcher.DebugGetBaseStressCascadeActiveSlotCount();
+#else
+            activeSlotCount = CircuitBreakerSlotCapacity;
+#endif
+            passed = slotFillAllowed == CircuitBreakerSlotCapacity &&
+                     overflowDropped == 1 &&
+                     activeSlotCount == CircuitBreakerSlotCapacity;
         }
 
         private static NativeArray<T> AllocateSmokeArray<T>(int length, string label)
@@ -449,6 +506,7 @@ namespace Hecton8.Debugging
             array = default;
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static void WriteReport(ref HabitatStressSmokeReport report)
         {
             Directory.CreateDirectory(OutputFolder);
@@ -473,15 +531,81 @@ namespace Hecton8.Debugging
             builder.Append("  \"shaderUpdateCount\":").Append(report.ShaderUpdateCount).Append(",\n");
             builder.Append("  \"queueOverflow\":").Append(report.QueueOverflow).Append(",\n");
             builder.Append("  \"circuitBreakerAllowed\":").Append(report.CircuitBreakerAllowed).Append(",\n");
+            builder.Append("  \"circuitBreakerReportedAllowed\":").Append(report.CircuitBreakerReportedAllowed).Append(",\n");
             builder.Append("  \"circuitBreakerDropped\":").Append(report.CircuitBreakerDropped).Append(",\n");
             builder.Append("  \"circuitBreakerReportedDropped\":").Append(report.CircuitBreakerReportedDropped).Append(",\n");
+            builder.Append("  \"circuitBreakerBudget\":").Append(report.CircuitBreakerBudget).Append(",\n");
+            builder.Append("  \"circuitBreakerSlotCapacity\":").Append(report.CircuitBreakerSlotCapacity).Append(",\n");
+            builder.Append("  \"circuitBreakerSlotFillAllowed\":").Append(report.CircuitBreakerSlotFillAllowed).Append(",\n");
+            builder.Append("  \"circuitBreakerOverflowDropped\":").Append(report.CircuitBreakerOverflowDropped).Append(",\n");
+            builder.Append("  \"circuitBreakerActiveSlotCount\":").Append(report.CircuitBreakerActiveSlotCount).Append(",\n");
             builder.Append("  \"circuitBreakerPassed\":").Append(report.CircuitBreakerPassed ? "true" : "false").Append(",\n");
-            builder.Append("  \"elapsedMilliseconds\":").Append(report.ElapsedMilliseconds.ToString("F4", CultureInfo.InvariantCulture)).Append(",\n");
-            builder.Append("  \"budgetMilliseconds\":").Append(BudgetMilliseconds.ToString("F1", CultureInfo.InvariantCulture)).Append(",\n");
+            builder.Append("  \"circuitBreakerOverflowPassed\":").Append(report.CircuitBreakerOverflowPassed ? "true" : "false").Append(",\n");
+            AppendJsonFixed(ref report, builder);
+            builder.Append(",\n");
+            builder.Append("  \"budgetMilliseconds\":");
+            AppendFixed1(builder, BudgetMilliseconds);
+            builder.Append(",\n");
             builder.Append("  \"sentinelBefore\":").Append(report.SentinelBefore).Append(",\n");
             builder.Append("  \"sentinelAfter\":").Append(report.SentinelAfter).Append(",\n");
             builder.Append("  \"sentinelDelta\":").Append(report.SentinelDelta).Append("\n");
             builder.Append("}\n");
         }
+
+        private static void AppendJsonFixed(ref HabitatStressSmokeReport report, StringBuilder builder)
+        {
+            builder.Append("  \"elapsedMilliseconds\":");
+            AppendFixed4(builder, report.ElapsedMilliseconds);
+        }
+
+        private static void AppendFixed1(StringBuilder builder, double value)
+        {
+            AppendFixed(builder, value, 1);
+        }
+
+        private static void AppendFixed4(StringBuilder builder, double value)
+        {
+            AppendFixed(builder, value, 4);
+        }
+
+        private static void AppendFixed(StringBuilder builder, double value, int fractionalDigits)
+        {
+            if (double.IsNaN(value) || double.IsInfinity(value))
+            {
+                builder.Append('0');
+                return;
+            }
+
+            if (value < 0d)
+            {
+                builder.Append('-');
+                value = -value;
+            }
+
+            long scale = 1;
+            for (int i = 0; i < fractionalDigits; i++)
+                scale *= 10L;
+
+            double scaledDouble = value * scale;
+            long scaled = scaledDouble >= long.MaxValue
+                ? long.MaxValue
+                : (long)(scaledDouble + 0.5d);
+            long whole = scaled / scale;
+            long fraction = scaled - whole * scale;
+            builder.Append(whole);
+            if (fractionalDigits <= 0)
+                return;
+
+            builder.Append('.');
+            long divisor = scale / 10L;
+            for (int i = 0; i < fractionalDigits; i++)
+            {
+                long digit = divisor > 0L ? fraction / divisor : 0L;
+                builder.Append((char)('0' + digit));
+                fraction -= digit * divisor;
+                divisor /= 10L;
+            }
+        }
+#endif
     }
 }

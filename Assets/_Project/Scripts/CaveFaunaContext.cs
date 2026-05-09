@@ -24,8 +24,9 @@
 // ║    GetFaunaContextForCave(CavePreset, depth) -> CaveFaunaPreset           ║
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
-using UnityEngine;
 using Hecton8.Caves;
+using Unity.Mathematics;
+using UnityEngine;
 
 namespace Hecton8.Caves
 {
@@ -169,15 +170,17 @@ namespace Hecton8.Caves
         /// </summary>
         public CaveFaunaPreset AdjustForCaveMood(float mood, float hazard)
         {
+            float moodT = math.saturate(mood);
+            float hazardT = math.saturate(hazard);
             var adjusted = new CaveFaunaPreset
             {
-                presetName = this.presetName + " (Adjusted)",
-                faunaDensity = Mathf.Lerp(this.faunaDensity, this.faunaDensity * 1.3f, mood),
-                passivityLevel = Mathf.Lerp(this.passivityLevel, this.passivityLevel * 0.7f, hazard),
-                territoriality = Mathf.Lerp(this.territoriality, this.territoriality * 1.5f, hazard),
-                smallPassiveRatio = Mathf.Lerp(this.smallPassiveRatio, this.smallPassiveRatio * 0.8f, hazard),
-                territorialRatio = Mathf.Lerp(this.territorialRatio, this.territorialRatio * 1.3f, hazard),
-                rareCreatureRatio = Mathf.Lerp(this.rareCreatureRatio, this.rareCreatureRatio * 1.5f, hazard),
+                presetName = this.presetName,
+                faunaDensity = math.lerp(this.faunaDensity, this.faunaDensity * 1.3f, moodT),
+                passivityLevel = math.lerp(this.passivityLevel, this.passivityLevel * 0.7f, hazardT),
+                territoriality = math.lerp(this.territoriality, this.territoriality * 1.5f, hazardT),
+                smallPassiveRatio = math.lerp(this.smallPassiveRatio, this.smallPassiveRatio * 0.8f, hazardT),
+                territorialRatio = math.lerp(this.territorialRatio, this.territorialRatio * 1.3f, hazardT),
+                rareCreatureRatio = math.lerp(this.rareCreatureRatio, this.rareCreatureRatio * 1.5f, hazardT),
                 floorSpawnBias = this.floorSpawnBias,
                 wallSpawnBias = this.wallSpawnBias,
                 openWaterBias = this.openWaterBias

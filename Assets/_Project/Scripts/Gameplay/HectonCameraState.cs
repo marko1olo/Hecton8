@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -5,8 +6,11 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Immutable camera target state produced by locomotion and consumed by the camera rig owner.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 16)]
     public struct HectonCameraState
     {
+        public const uint ApplyTransformDirectlyFlag = 1u << 0;
+
         /// <summary>
         /// Desired world-space camera rotation after locomotion, recoil, and traversal offsets are composed.
         /// </summary>
@@ -26,6 +30,16 @@ namespace Hecton8.Gameplay
         /// Delta time used to smooth camera transitions for this frame.
         /// </summary>
         public float DeltaTime;
+
+        /// <summary>
+        /// Bitfield for hot camera-state switches.
+        /// </summary>
+        public uint Flags;
+
+        /// <summary>
+        /// True when transform pose must be applied without interpolation, e.g. VR comfort/head-pose stability.
+        /// </summary>
+        public bool ApplyTransformDirectly => (Flags & ApplyTransformDirectlyFlag) != 0u;
 
         /// <summary>
         /// Exponential sharpness used for rotation smoothing.

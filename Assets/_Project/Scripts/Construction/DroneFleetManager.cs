@@ -217,6 +217,9 @@ namespace Hecton8.Construction
 
         internal static void RaiseSnapshotUpdated(in HectonDroneFleetSnapshot snapshot)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             Enqueue(new HectonDroneFleetSnapshotPayload
             {
                 ActiveHubCount = snapshot.ActiveHubCount,
@@ -303,6 +306,7 @@ namespace Hecton8.Construction
                     nameof(HectonDroneFleetEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -314,11 +318,15 @@ namespace Hecton8.Construction
                     nameof(HectonDroneFleetEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
         }
 
         private static bool Enqueue(in HectonDroneFleetSnapshotPayload payload)
         {
+            if (_listeners.Count <= 0)
+                return false;
+
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportOverflowOncePerFrame();
@@ -336,6 +344,20 @@ namespace Hecton8.Construction
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         private static void ReportOverflowOncePerFrame()
@@ -383,7 +405,10 @@ namespace Hecton8.Construction
         private const int DefaultMaxClaimsPerTarget = 2;
         private const int InvalidHubId = 0;
         private const int EmptyTaskIndex = -1;
+        private const string NativeMemoryOwner = nameof(DroneFleetManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const float MinimumScoreDistanceMeters = 0.75f;
+        private const float MinimumScoreDistanceMetersSq = MinimumScoreDistanceMeters * MinimumScoreDistanceMeters;
         private const float RuptureCriticalityBonus = 2.5f;
         private const float FloodCriticalityBonus = 2f;
         private const float BreachCriticalityBonus = 3f;
@@ -675,11 +700,7 @@ namespace Hecton8.Construction
             s_PhantomVerticalAmplitudePropertyId = 0;
             s_PhantomScalePropertyId = 0;
 
-            if (s_TaskClaimCounts.IsCreated)
-            {
-                s_TaskClaimCounts.Dispose();
-                s_TaskClaimCounts = default;
-            }
+            DisposeNativeArray(ref s_TaskClaimCounts);
         }
 
         internal static HectonDroneFleetSnapshot CurrentSnapshot
@@ -951,15 +972,16 @@ namespace Hecton8.Construction
 
                 if (IsEligibleRepairTarget(hubGrid, module, dispatchIntegrityThreshold))
                 {
-                    float distanceMeters = Vector3.Distance(hubPosition, module.transform.position);
+                    Vector3 modulePosition = module.transform.position;
+                    float distanceSq = (hubPosition - modulePosition).sqrMagnitude;
                     float taskCriticality = ResolveCriticalityWeight(module);
-                    float taskScore = ComputeTaskAssignmentScore(distanceMeters, taskCriticality);
+                    float taskScore = ComputeTaskAssignmentScoreFromDistanceSq(distanceSq, taskCriticality);
                     ConsiderTaskCandidate(new RepairTaskCandidate
                     {
                         Kind = DroneFleetTaskKind.RepairModule,
                         Module = module,
                         ModuleIndex = moduleIndex,
-                        Position = module.transform.position,
+                        Position = modulePosition,
                         Radius = 0f,
                         Score = taskScore,
                         CriticalityWeight = taskCriticality
@@ -974,9 +996,9 @@ namespace Hecton8.Construction
                     continue;
                 }
 
-                float parasiteDistanceMeters = Vector3.Distance(hubPosition, parasiteTarget.Position);
+                float parasiteDistanceSq = (hubPosition - parasiteTarget.Position).sqrMagnitude;
                 float parasiteCriticality = ResolveParasiteCriticalityWeight(module, in parasiteTarget);
-                float parasiteScore = ComputeTaskAssignmentScore(parasiteDistanceMeters, parasiteCriticality);
+                float parasiteScore = ComputeTaskAssignmentScoreFromDistanceSq(parasiteDistanceSq, parasiteCriticality);
                 ConsiderTaskCandidate(new RepairTaskCandidate
                 {
                     Kind = DroneFleetTaskKind.CutParasite,
@@ -1013,6 +1035,12 @@ namespace Hecton8.Construction
             return (1f / clampedDistance) * Mathf.Max(0.1f, criticalityWeight);
         }
 
+        private static float ComputeTaskAssignmentScoreFromDistanceSq(float distanceSq, float criticalityWeight)
+        {
+            float inverseDistance = math.rsqrt(math.max(MinimumScoreDistanceMetersSq, distanceSq));
+            return inverseDistance * math.max(0.1f, criticalityWeight);
+        }
+
         private static void EnsureInitialized()
         {
             if (!s_DroneStates.IsCreated)
@@ -1041,6 +1069,15 @@ namespace Hecton8.Construction
             s_FleetTelemetryAccumulator = new NativeArray<int>((int)DroneFleetTelemetryAccumulatorSlot.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[5] - Burst fleet telemetry accumulator - owner: DroneFleetManager
             s_HeadlessTasksByHub = new NativeParallelMultiHashMap<int, HeadlessDroneTask>(HeadlessTaskCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,HeadlessDroneTask>[64] - hub-keyed drone task fanout - owner: DroneFleetManager
             s_HeadlessDroneSpatialHash = new NativeParallelMultiHashMap<int, int>(HeadlessDroneCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[8] - real drone boid spatial hash - owner: DroneFleetManager
+            RegisterNativeArray(s_DroneStates, nameof(s_DroneStates));
+            RegisterNativeArray(s_DroneStateBackBuffer, nameof(s_DroneStateBackBuffer));
+            RegisterNativeArray(s_DroneRenderMatrices, nameof(s_DroneRenderMatrices));
+            RegisterNativeArray(s_DroneRenderMatrixBackBuffer, nameof(s_DroneRenderMatrixBackBuffer));
+            RegisterNativeArray(s_DroneRenderInstances, nameof(s_DroneRenderInstances));
+            RegisterNativeArray(s_HeadlessTaskClaimOwners, nameof(s_HeadlessTaskClaimOwners));
+            RegisterNativeArray(s_FleetTelemetryAccumulator, nameof(s_FleetTelemetryAccumulator));
+            RegisterNativeParallelMultiHashMap(s_HeadlessTasksByHub, nameof(s_HeadlessTasksByHub));
+            RegisterNativeParallelMultiHashMap(s_HeadlessDroneSpatialHash, nameof(s_HeadlessDroneSpatialHash));
             s_DroneHubs = new RepairDroneHub[HeadlessDroneCapacity]; // COLD ALLOC: RepairDroneHub[8] - managed hub owner lookup for late-frame service commits - owner: DroneFleetManager
             s_DroneSlotDroneIds = new int[HeadlessDroneCapacity]; // COLD ALLOC: int[8] - managed active drone id slots safe during job execution - owner: DroneFleetManager
             s_DroneSlotDestroyed = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - permanently consumed suicide-weld slots - owner: DroneFleetManager
@@ -1061,59 +1098,15 @@ namespace Hecton8.Construction
 
         private static void ReleaseHeadlessNativeMemory()
         {
-            if (s_DroneStates.IsCreated)
-            {
-                s_DroneStates.Dispose();
-                s_DroneStates = default;
-            }
-
-            if (s_DroneStateBackBuffer.IsCreated)
-            {
-                s_DroneStateBackBuffer.Dispose();
-                s_DroneStateBackBuffer = default;
-            }
-
-            if (s_DroneRenderMatrices.IsCreated)
-            {
-                s_DroneRenderMatrices.Dispose();
-                s_DroneRenderMatrices = default;
-            }
-
-            if (s_DroneRenderMatrixBackBuffer.IsCreated)
-            {
-                s_DroneRenderMatrixBackBuffer.Dispose();
-                s_DroneRenderMatrixBackBuffer = default;
-            }
-
-            if (s_DroneRenderInstances.IsCreated)
-            {
-                s_DroneRenderInstances.Dispose();
-                s_DroneRenderInstances = default;
-            }
-
-            if (s_HeadlessTaskClaimOwners.IsCreated)
-            {
-                s_HeadlessTaskClaimOwners.Dispose();
-                s_HeadlessTaskClaimOwners = default;
-            }
-
-            if (s_FleetTelemetryAccumulator.IsCreated)
-            {
-                s_FleetTelemetryAccumulator.Dispose();
-                s_FleetTelemetryAccumulator = default;
-            }
-
-            if (s_HeadlessTasksByHub.IsCreated)
-            {
-                s_HeadlessTasksByHub.Dispose();
-                s_HeadlessTasksByHub = default;
-            }
-
-            if (s_HeadlessDroneSpatialHash.IsCreated)
-            {
-                s_HeadlessDroneSpatialHash.Dispose();
-                s_HeadlessDroneSpatialHash = default;
-            }
+            DisposeNativeArray(ref s_DroneStates);
+            DisposeNativeArray(ref s_DroneStateBackBuffer);
+            DisposeNativeArray(ref s_DroneRenderMatrices);
+            DisposeNativeArray(ref s_DroneRenderMatrixBackBuffer);
+            DisposeNativeArray(ref s_DroneRenderInstances);
+            DisposeNativeArray(ref s_HeadlessTaskClaimOwners);
+            DisposeNativeArray(ref s_FleetTelemetryAccumulator);
+            DisposeNativeParallelMultiHashMap(ref s_HeadlessTasksByHub, nameof(s_HeadlessTasksByHub));
+            DisposeNativeParallelMultiHashMap(ref s_HeadlessDroneSpatialHash, nameof(s_HeadlessDroneSpatialHash));
 
             s_DroneHubs = null;
             s_DroneSlotDroneIds = null;
@@ -2859,12 +2852,48 @@ namespace Hecton8.Construction
 
             if (!s_TaskClaimCounts.IsCreated || s_TaskClaimCounts.Length < requiredCount)
             {
-                if (s_TaskClaimCounts.IsCreated)
-                    s_TaskClaimCounts.Dispose();
+                DisposeNativeArray(ref s_TaskClaimCounts);
 
                 int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(requiredCount, InitialTaskCapacity));
                 s_TaskClaimCounts = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[nextCapacity] - per-module active-claim locks for fleet dispatch - owner: DroneFleetManager
+                RegisterNativeArray(s_TaskClaimCounts, nameof(s_TaskClaimCounts));
             }
+        }
+
+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
+        }
+
+        private static void RegisterNativeParallelMultiHashMap<TKey, TValue>(NativeParallelMultiHashMap<TKey, TValue> map, string label)
+            where TKey : unmanaged, System.IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(map, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
+            ref NativeParallelMultiHashMap<TKey, TValue> map,
+            string label)
+            where TKey : unmanaged, System.IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(NativeMemoryOwner, label);
+            map.Dispose();
+            map = default;
         }
 
         private static void ConsiderTaskCandidate(

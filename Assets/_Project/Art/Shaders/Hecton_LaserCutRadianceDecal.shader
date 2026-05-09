@@ -28,6 +28,8 @@ Shader "HECTON/World/LaserCutRadianceDecal"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -74,14 +76,18 @@ Shader "HECTON/World/LaserCutRadianceDecal"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 half2 centeredUv = input.uv * 2.0h - 1.0h;
                 half radialSq = saturate(1.0h - dot(centeredUv, centeredUv));
                 half core = smoothstep(_CoreRadius, 1.0h, radialSq);
                 half edge = radialSq * radialSq;
                 half alpha = saturate((core + edge) * input.fade);
+                clip(alpha - 0.0005h);
                 return half4(_Color.rgb * (_Intensity * alpha), alpha);
             }
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

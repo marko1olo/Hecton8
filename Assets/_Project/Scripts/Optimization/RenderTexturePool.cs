@@ -31,6 +31,19 @@ namespace Hecton8.Optimization
         
         // COLD ALLOC: Dictionary<ulong, Queue<RenderTexture>>[16] — RGBA32 pool — owner: RenderTexturePool
         private readonly Dictionary<ulong, Queue<RenderTexture>> _poolRGBA32 = new Dictionary<ulong, Queue<RenderTexture>>(16);
+
+        // COLD ALLOC: Queue<RenderTexture>[16] - prewarmed screen-size R8 RT bucket - owner: RenderTexturePool
+        private readonly Queue<RenderTexture> _screenR8Queue = new Queue<RenderTexture>(16);
+        // COLD ALLOC: Queue<RenderTexture>[16] - prewarmed screen-size RG16 RT bucket - owner: RenderTexturePool
+        private readonly Queue<RenderTexture> _screenRG16Queue = new Queue<RenderTexture>(16);
+        // COLD ALLOC: Queue<RenderTexture>[16] - prewarmed screen-size ARGB64 RT bucket - owner: RenderTexturePool
+        private readonly Queue<RenderTexture> _screenARGB64Queue = new Queue<RenderTexture>(16);
+        // COLD ALLOC: Queue<RenderTexture>[16] - prewarmed screen-size DefaultHDR RT bucket - owner: RenderTexturePool
+        private readonly Queue<RenderTexture> _screenDefaultHdrQueue = new Queue<RenderTexture>(16);
+        // COLD ALLOC: Queue<RenderTexture>[16] - prewarmed screen-size ARGB32 RT bucket - owner: RenderTexturePool
+        private readonly Queue<RenderTexture> _screenARGB32Queue = new Queue<RenderTexture>(16);
+        // COLD ALLOC: Queue<RenderTexture>[16] - prewarmed screen-size Default RT bucket - owner: RenderTexturePool
+        private readonly Queue<RenderTexture> _screenDefaultQueue = new Queue<RenderTexture>(16);
         
         private int _totalRentCalls;
         private int _totalReuseCount;
@@ -68,6 +81,7 @@ namespace Hecton8.Optimization
         private void OnEnable()
         {
             CaptureScreenSetup();
+            PrewarmCurrentScreenQueues();
             if (TryRegisterService())
                 SceneManager.sceneUnloaded += HandleSceneUnloaded;
         }
@@ -81,7 +95,7 @@ namespace Hecton8.Optimization
         private void OnDestroy()
         {
             TryUnregisterService();
-            ClearAllPools();
+            ClearAllPools(preserveScreenBuckets: false);
         }
         
         // ── PUBLIC API ─────────────────────────────────────────────────────────────
@@ -125,6 +139,7 @@ namespace Hecton8.Optimization
                         staleLifecycle.RegisterDisposal(rt);
 
                     rt.Release();
+                    Destroy(rt);
                 }
             }
             
@@ -167,6 +182,7 @@ namespace Hecton8.Optimization
                     mismatchLifecycle.RegisterDisposal(rt);
 
                 rt.Release();
+                Destroy(rt);
                 return;
             }
             
@@ -175,8 +191,13 @@ namespace Hecton8.Optimization
             
             if (!pool.TryGetValue(key, out Queue<RenderTexture> queue))
             {
-                queue = new Queue<RenderTexture>(16);
-                pool[key] = queue;
+                RenderTextureLifecycleTracker unpooledLifecycle = GlobalRegistry.RenderTextureLifecycle;
+                if (unpooledLifecycle != null)
+                    unpooledLifecycle.RegisterDisposal(rt);
+
+                rt.Release();
+                Destroy(rt);
+                return;
             }
             
             if (queue.Count >= 16)
@@ -187,6 +208,7 @@ namespace Hecton8.Optimization
                     lifecycle.RegisterDisposal(rt);
 
                 rt.Release();
+                Destroy(rt);
                 return;
             }
             
@@ -200,10 +222,18 @@ namespace Hecton8.Optimization
         /// </summary>
         public void ClearAllPools()
         {
+            ClearAllPools(preserveScreenBuckets: true);
+        }
+
+        private void ClearAllPools(bool preserveScreenBuckets)
+        {
             ClearPool(_poolR8);
             ClearPool(_poolRG16);
             ClearPool(_poolRGBA16);
             ClearPool(_poolRGBA32);
+
+            if (preserveScreenBuckets)
+                PrewarmCurrentScreenQueues();
         }
 
         /// <summary>
@@ -252,10 +282,30 @@ namespace Hecton8.Optimization
 
             _lastScreenWidth = currentWidth;
             _lastScreenHeight = currentHeight;
-            DiscardOffResolutionPoolEntries(_poolR8);
-            DiscardOffResolutionPoolEntries(_poolRG16);
-            DiscardOffResolutionPoolEntries(_poolRGBA16);
-            DiscardOffResolutionPoolEntries(_poolRGBA32);
+            ClearPool(_poolR8);
+            ClearPool(_poolRG16);
+            ClearPool(_poolRGBA16);
+            ClearPool(_poolRGBA32);
+            PrewarmCurrentScreenQueues();
+        }
+
+        private void PrewarmCurrentScreenQueues()
+        {
+            BindQueue(_poolR8, CalculateRTKey(_lastScreenWidth, _lastScreenHeight, RenderTextureFormat.R8), _screenR8Queue);
+            BindQueue(_poolRG16, CalculateRTKey(_lastScreenWidth, _lastScreenHeight, RenderTextureFormat.RG16), _screenRG16Queue);
+            BindQueue(_poolRGBA16, CalculateRTKey(_lastScreenWidth, _lastScreenHeight, RenderTextureFormat.ARGB64), _screenARGB64Queue);
+            BindQueue(_poolRGBA16, CalculateRTKey(_lastScreenWidth, _lastScreenHeight, RenderTextureFormat.DefaultHDR), _screenDefaultHdrQueue);
+            BindQueue(_poolRGBA32, CalculateRTKey(_lastScreenWidth, _lastScreenHeight, RenderTextureFormat.ARGB32), _screenARGB32Queue);
+            BindQueue(_poolRGBA32, CalculateRTKey(_lastScreenWidth, _lastScreenHeight, RenderTextureFormat.Default), _screenDefaultQueue);
+        }
+
+        private static void BindQueue(Dictionary<ulong, Queue<RenderTexture>> pool, ulong key, Queue<RenderTexture> queue)
+        {
+            if (pool.ContainsKey(key))
+                return;
+
+            queue.Clear();
+            pool.Add(key, queue);
         }
 
         private bool TryRegisterService()
@@ -302,6 +352,7 @@ namespace Hecton8.Optimization
                             lifecycle.RegisterDisposal(rt);
 
                         rt.Release();
+                        Destroy(rt);
                     }
                 }
             }
@@ -318,35 +369,6 @@ namespace Hecton8.Optimization
             return total;
         }
 
-        private void DiscardOffResolutionPoolEntries(Dictionary<ulong, Queue<RenderTexture>> pool)
-        {
-            Dictionary<ulong, Queue<RenderTexture>>.Enumerator enumerator = pool.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                Queue<RenderTexture> queue = enumerator.Current.Value;
-                int count = queue.Count;
-                for (int i = 0; i < count; i++)
-                {
-                    RenderTexture rt = queue.Dequeue();
-                    if (rt == null)
-                        continue;
-
-                    if (rt.width == _lastScreenWidth && rt.height == _lastScreenHeight)
-                    {
-                        queue.Enqueue(rt);
-                        continue;
-                    }
-
-                    RenderTextureLifecycleTracker lifecycle = GlobalRegistry.RenderTextureLifecycle;
-                    if (lifecycle != null)
-                        lifecycle.RegisterDisposal(rt);
-
-                    rt.Release();
-                    Destroy(rt);
-                }
-            }
-        }
-        
         private void HandleSceneUnloaded(Scene scene)
         {
             ClearAllPools();

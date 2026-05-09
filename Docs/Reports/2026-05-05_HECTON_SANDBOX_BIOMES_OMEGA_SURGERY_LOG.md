@@ -295,7 +295,7 @@ Third-pass validation blockers:
 
 ## Planetary Shelf Sculpting Pass
 
-Status: `MACRO SHELF VERIFIED` by standalone smoke harness.
+Status: `PENDING VERIFICATION`; standalone smoke harness recorded the historical `MACRO SHELF VERIFIED` label only.
 
 Mandates applied:
 

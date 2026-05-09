@@ -74,7 +74,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 #include "./../../../GPUInstancer/Shaders/Include/GPUInstancerInclude.cginc"
-#pragma instancing_options procedural:setupGPUI
+#pragma instancing_options procedural:setupGPUI assumeuniformscaling
 #pragma multi_compile_instancing
 
             #pragma target 3.5
@@ -84,6 +84,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile _ LOD_FADE_CROSSFADE
             #pragma shader_feature_local _QUALITY_MX350 _QUALITY_HIGH
+            #pragma skip_variants _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_ON DYNAMICLIGHTMAP_ON DIRLIGHTMAP_COMBINED LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -129,8 +130,6 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
-            TEXTURE2D(_DetailMap);
-            SAMPLER(sampler_DetailMap);
             TEXTURE2D(_NormalMap);
             SAMPLER(sampler_NormalMap);
             TEXTURE2D(_DetailNormalMap);
@@ -166,44 +165,78 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            half3 ComputeTriplanarWeights(half3 normalWS)
+            void ResolveFloraDominantAxisProjection(float3 positionWS, half3 normalWS, out float2 uv, out half dominantAxis)
             {
-                half sharpness = max(_TriplanarSharpness, 1.0h);
-                half3 weights = pow(saturate(abs(normalWS)), sharpness);
-                half weightSum = max(weights.x + weights.y + weights.z, 0.0001h);
-                return weights / weightSum;
+                half3 absNormal = max(abs(normalWS), half3(0.0001h, 0.0001h, 0.0001h));
+                half maxAxis = max(absNormal.x, max(absNormal.y, absNormal.z));
+                half tiling = max(_TriplanarScale, 0.001h);
+
+                if (absNormal.x >= absNormal.y && absNormal.x >= absNormal.z)
+                {
+                    uv = positionWS.zy * tiling;
+                    dominantAxis = 0.0h;
+                }
+                else if (absNormal.z >= absNormal.y)
+                {
+                    uv = positionWS.xy * tiling;
+                    dominantAxis = 2.0h;
+                }
+                else
+                {
+                    uv = positionWS.xz * tiling;
+                    dominantAxis = 1.0h;
+                }
+
+                half edgeBand = saturate((1.0h - maxAxis) * max(_TriplanarSharpness, 1.0h));
+                float stochastic = HectonCoreLitValueNoise2(floor(positionWS.xz * tiling * 31.0 + dominantAxis * 13.17)) * 2.0 - 1.0;
+                uv += float2(stochastic, -stochastic) * edgeBand * 0.037;
             }
 
-            half4 SampleFloraTriplanar(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 weights)
+            half4 SampleFloraDominantAxis(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS)
             {
-                half4 ySample = SAMPLE_TEXTURE2D(tex, samp, positionWS.xz * _TriplanarScale);
-                if (weights.y >= 0.999h)
-                    return ySample;
-
-                half4 xSample = SAMPLE_TEXTURE2D(tex, samp, positionWS.zy * _TriplanarScale);
-                half4 zSample = SAMPLE_TEXTURE2D(tex, samp, positionWS.xy * _TriplanarScale);
-                return xSample * weights.x + ySample * weights.y + zSample * weights.z;
+                float2 uv;
+                half dominantAxis;
+                ResolveFloraDominantAxisProjection(positionWS, normalWS, uv, dominantAxis);
+                return SAMPLE_TEXTURE2D(tex, samp, uv);
             }
 
-            half3 SampleFloraTriplanarNormal(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 weights, half strength)
+            half3 SampleFloraDominantAxisNormal(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS, half strength)
             {
-                half3 normalY = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, positionWS.xz * _TriplanarScale), strength);
-                normalY = half3(normalY.x, 0.0h, normalY.y);
-                if (weights.y >= 0.999h)
-                    return normalize(normalY);
+                float2 uv;
+                half dominantAxis;
+                ResolveFloraDominantAxisProjection(positionWS, normalWS, uv, dominantAxis);
+                half3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, uv), strength);
 
-                half3 normalX = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, positionWS.zy * _TriplanarScale), strength);
-                normalX = half3(0.0h, normalX.y, normalX.x);
-                half3 normalZ = UnpackNormalScale(SAMPLE_TEXTURE2D(tex, samp, positionWS.xy * _TriplanarScale), strength);
-                normalZ = half3(normalZ.x, normalZ.y, 0.0h);
-                return normalize(normalX * weights.x + normalY * weights.y + normalZ * weights.z);
+                if (dominantAxis < 0.5h)
+                    return (half3)HectonCoreLitSafeNormalize(half3(0.0h, tangentNormal.y, tangentNormal.x));
+
+                if (dominantAxis > 1.5h)
+                    return (half3)HectonCoreLitSafeNormalize(half3(tangentNormal.x, tangentNormal.y, 0.0h));
+
+                return (half3)HectonCoreLitSafeNormalize(half3(tangentNormal.x, 0.0h, tangentNormal.y));
+            }
+
+            half FastCoralSpecularPower01(half value, half exponent)
+            {
+                half v = saturate(value);
+                half v2 = v * v;
+                half v4 = v2 * v2;
+                half v8 = v4 * v4;
+                half v16 = v8 * v8;
+                half v32 = v16 * v16;
+                half v64 = v32 * v32;
+                half v128 = v64 * v64;
+                half v256 = v128 * v128;
+                half low = lerp(v8, v16, saturate((exponent - 8.0h) * 0.125h));
+                half mid = lerp(v16, v64, saturate((exponent - 16.0h) * 0.02083333h));
+                half high = lerp(v64, v256, saturate((exponent - 64.0h) * 0.00520833h));
+                return lerp(lerp(low, mid, step(16.0h, exponent)), high, step(64.0h, exponent));
             }
 
             half ComputeCurvatureWetness(half3 normalWS)
             {
-                half3 dx = ddx(normalWS);
-                half3 dy = ddy(normalWS);
-                return saturate((length(dx) + length(dy)) * _CurvatureWetnessStrength);
+                half3 derivative = abs(ddx(normalWS)) + abs(ddy(normalWS));
+                return saturate(dot(derivative, half3(0.5h, 0.5h, 0.5h)) * _CurvatureWetnessStrength);
             }
 
             Varyings Vert(Attributes input)
@@ -217,7 +250,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
                 output.positionCS = positionInputs.positionCS;
                 output.positionWS = positionInputs.positionWS;
-                output.normalWS = normalize(normalInputs.normalWS);
+                output.normalWS = (half3)HectonCoreLitSafeNormalize(normalInputs.normalWS);
                 output.color = input.color;
                 output.uv = input.uv;
                 output.viewDirWS = SafeNormalize(GetWorldSpaceViewDir(positionInputs.positionWS));
@@ -228,50 +261,49 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(LOD_FADE_CROSSFADE)
                 LODFadeCrossFade(input.positionCS);
                 #endif
 
-                half3 baseNormalWS = normalize(input.normalWS);
+                half3 baseNormalWS = (half3)HectonCoreLitSafeNormalize(input.normalWS);
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
                 half tintMask = saturate(input.color.r) * _VertexTintStrength;
                 half moisture = saturate(input.color.g);
                 half age = saturate(input.color.b);
-                half3 triplanarWeights = ComputeTriplanarWeights(baseNormalWS);
-
                 float3 samplePositionWS = input.positionWS;
-                half4 maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarWeights);
+                half4 maskSample = SampleFloraDominantAxis(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, baseNormalWS);
                 #if defined(_QUALITY_HIGH)
                 samplePositionWS -= viewDirWS * ((maskSample.b - 0.5h) * _HeightScale);
-                maskSample = SampleFloraTriplanar(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, triplanarWeights);
+                maskSample = SampleFloraDominantAxis(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), samplePositionWS, baseNormalWS);
                 #endif
 
-                half3 baseTex = SampleFloraTriplanar(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), samplePositionWS, triplanarWeights).rgb;
+                half3 baseTex = SampleFloraDominantAxis(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), samplePositionWS, baseNormalWS).rgb;
                 // NOTE: baseNormalWS already declared at L229 — no redeclaration.
-                half3 triplanarNormalWS = SampleFloraTriplanarNormal(
+                half3 triplanarNormalWS = SampleFloraDominantAxisNormal(
                         TEXTURE2D_ARGS(_NormalMap, sampler_NormalMap),
                         samplePositionWS,
-                        triplanarWeights,
+                        baseNormalWS,
                         _NormalStrength * _NormalScale);
                 
                 // Micro-Porosity Detail Normal
-                half3 detailNormalWS = SampleFloraTriplanarNormal(
+                half3 detailNormalWS = SampleFloraDominantAxisNormal(
                         TEXTURE2D_ARGS(_DetailNormalMap, sampler_DetailNormalMap),
                         samplePositionWS * _MicroPorosityScale,
-                        triplanarWeights,
+                        baseNormalWS,
                         _DetailNormalStrength);
 
-                half3 normalWS = normalize(baseNormalWS + triplanarNormalWS + detailNormalWS);
+                half3 normalWS = (half3)HectonCoreLitSafeNormalize(baseNormalWS + triplanarNormalWS + detailNormalWS);
                 float2 detailUv = samplePositionWS.xz * (_CausticScale * 0.06h)
                     + float2(_Time.y * _CausticSpeed, _Time.y * (_CausticSpeed * 0.61h));
-                half detailSample = SAMPLE_TEXTURE2D(_DetailMap, sampler_DetailMap, detailUv).r;
+                half detailSample = (half)HectonCoreLitValueNoise2(detailUv);
 
                 Light mainLight = GetMainLight();
-                half3 lightDir = normalize(mainLight.direction);
+                half3 lightDir = (half3)HectonCoreLitSafeNormalize(mainLight.direction);
                 half NdotL = saturate(dot(normalWS, lightDir));
                 half wrapDiffuse = saturate(dot(normalWS, lightDir) * 0.5h + 0.5h);
                 half backLight = saturate(dot(-normalWS, lightDir));
-                half rim = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower);
+                half rim = (half)HectonCoreLitFastPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower);
 
                 half floorZoneInfluence = saturate(_HectonFloorBiolumStrength);
                 half oceanZoneInfluence = saturate(_HectonOceanBiolumStrength * 0.35h);
@@ -287,7 +319,8 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 half glossNoise = lerp(1.0h, maskSample.g, _SpecularNoiseStrength);
                 half roughness = saturate(lerp(0.7h, 0.2h, wetness));
                 half causticMask = saturate(0.68h + detailSample * _CausticStrength + maskSample.a * 0.18h);
-                half pulse = 1.0h + sin(_Time.y * _BiolumPulseFrequency + samplePositionWS.x * 0.07h + samplePositionWS.z * 0.05h + detailSample * 2.4h) * _BiolumPulseAmplitude;
+                half pulsePhase = _Time.y * _BiolumPulseFrequency + samplePositionWS.x * 0.07h + samplePositionWS.z * 0.05h + detailSample * 2.4h;
+                half pulse = 1.0h + ((half)HectonCoreLitTrianglePulse01(pulsePhase) * 2.0h - 1.0h) * _BiolumPulseAmplitude;
                 half biolumMask = saturate((cavity * 0.42h + maskSample.a * 0.28h + maskSample.b * 0.24h + detailSample * 0.18h) * _BiolumMaskStrength);
 
                 half3 accent = lerp(_BaseColor.rgb, _AccentColor.rgb, saturate(maskSample.r + tintMask * 0.48h));
@@ -305,20 +338,20 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
                 
                 // PBR Specular
-                half3 halfDir = normalize(lightDir + viewDirWS);
+                half3 halfDir = (half3)HectonCoreLitSafeNormalize(lightDir + viewDirWS);
                 half NdotH = saturate(dot(normalWS, halfDir));
-                half specularBase = pow(NdotH, lerp(8.0h, 60.0h, 1.0h - roughness)) * (1.0h - roughness);
+                half specularBase = FastCoralSpecularPower01(NdotH, lerp(8.0h, 60.0h, 1.0h - roughness)) * (1.0h - roughness);
                 half3 specular = specularBase * 0.22h * glossNoise * mainLight.color;
 
                 // Secondary "Slime" Specular (Master Grade Polish)
                 half slimeRoughness = saturate(roughness * 0.4h);
-                half slimeNdotH = pow(NdotH, lerp(128.0h, 256.0h, 1.0h - slimeRoughness));
+                half slimeNdotH = FastCoralSpecularPower01(NdotH, lerp(128.0h, 256.0h, 1.0h - slimeRoughness));
                 half3 slimeSpecular = slimeNdotH * wetness * 0.45h * mainLight.color;
 
                 half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse);
                 biolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
                 biolum += volumeBiolum * (0.5h + thickness * 0.5h);
-                half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
+                half fresnel = (half)HectonCoreLitFastPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 
                 half3 color = diffuse + subsurface + rimLighting + specular + slimeSpecular + biolum;
                 color = lerp(color, unity_FogColor.rgb * 0.88h, saturate(fresnel * (0.5h + wetness * 0.5h)));
@@ -343,7 +376,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 #include "./../../../GPUInstancer/Shaders/Include/GPUInstancerInclude.cginc"
-#pragma instancing_options procedural:setupGPUI
+#pragma instancing_options procedural:setupGPUI assumeuniformscaling
 #pragma multi_compile_instancing
 
             #pragma target 3.5
@@ -394,6 +427,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             half4 ShadowFrag(ShadowVaryings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(LOD_FADE_CROSSFADE)
                 LODFadeCrossFade(input.positionCS);
                 #endif
@@ -416,7 +450,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 #include "./../../../GPUInstancer/Shaders/Include/GPUInstancerInclude.cginc"
-#pragma instancing_options procedural:setupGPUI
+#pragma instancing_options procedural:setupGPUI assumeuniformscaling
 #pragma multi_compile_instancing
 
             #pragma target 3.5
@@ -453,6 +487,7 @@ Shader "GPUInstancer/Hecton8/Flora/CoralMaster"
             half4 DepthFrag(DepthVaryings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(LOD_FADE_CROSSFADE)
                 LODFadeCrossFade(input.positionCS);
                 #endif

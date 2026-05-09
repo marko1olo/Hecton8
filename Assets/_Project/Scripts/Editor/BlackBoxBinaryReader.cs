@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -11,10 +12,21 @@ namespace Hecton8.EditorTools
     {
         private const ulong BinaryMagic = 0x00384E4F54434548ul;
         private const int TelemetryEntrySizeBytes = 64;
+        private const int CrashExportHeaderSizeBytes = 16;
         private const float SpikeFrameTimeSeconds = 0.033f;
+        private const uint NativeFragmentationRiskBit = 1u << 23;
+        private const uint StaleBufferCrimeBit = 1u << 24;
+        private const uint BlackBoxExportFaultBit = 1u << 25;
+        private const uint NativeTransientLeakBit = 1u << 26;
+        private const uint BlackBoxExportDroppedBit = 1u << 27;
+        private const uint BlackBoxExportSuppressedBit = 1u << 28;
+        private const uint MemoryFaultMask = NativeFragmentationRiskBit | StaleBufferCrimeBit | BlackBoxExportFaultBit | NativeTransientLeakBit | BlackBoxExportDroppedBit | BlackBoxExportSuppressedBit;
+        private const long MaxPreviewEntries = 3600L;
         private const string FileName = "BLACKBOX_CRASH.bin";
         private const string MissingFileStatus = "BLACKBOX_CRASH.bin not found.";
         private const string InvalidHeaderStatus = "Invalid black box header.";
+        private const string TruncatedFileStatus = "Truncated black box payload.";
+        private const string CappedFramesPrefix = "Loaded capped frames: ";
         private const string LoadedFramesPrefix = "Loaded frames: ";
 
         private readonly List<TelemetryEntry> _entries = new List<TelemetryEntry>(4096);
@@ -24,22 +36,42 @@ namespace Hecton8.EditorTools
         private Label _statusLabel;
         private PreviewElement _previewElement;
 
+        [StructLayout(LayoutKind.Explicit, Size = TelemetryEntrySizeBytes)]
         private struct TelemetryEntry
         {
+            [FieldOffset(0)]
             public uint FrameIndex;
+            [FieldOffset(4)]
             public uint SystemMask;
+            [FieldOffset(8)]
             public float DeltaTime;
+            [FieldOffset(12)]
             public float LatencyMs;
+            [FieldOffset(16)]
             public float GpuFrameTime;
+            [FieldOffset(20)]
             public float MemoryUsedMb;
+            [FieldOffset(24)]
             public Vector3 PlayerAup;
+            [FieldOffset(36)]
             public uint ActiveChunkCount;
+            [FieldOffset(40)]
             public uint ErrorFlags;
+            [FieldOffset(44)]
             public uint ExportReason;
+            [FieldOffset(48)]
             public uint AupShiftSequence;
-            public uint VelocityPacked;
-            public uint GcAllocBytes;
+            [FieldOffset(52)]
+            public uint Payload0;
+            [FieldOffset(56)]
+            public uint Payload1;
+            [FieldOffset(60)]
             public uint LastOriginShiftFrame;
+
+            public uint VelocityPacked => Payload0;
+            public uint GcAllocBytes => Payload1;
+            public uint AllocationHash => Payload0;
+            public uint PackedMegabytes => Payload1;
         }
 
         [MenuItem("Hecton8/Forensics/Black Box Binary Reader")]
@@ -115,23 +147,47 @@ namespace Hecton8.EditorTools
             }
 
             using (FileStream stream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
-            using (System.IO.BinaryReader reader = new System.IO.BinaryReader(stream))
             {
-                ulong magic = reader.ReadUInt64();
-                uint entryCount = reader.ReadUInt32();
-                uint structSize = reader.ReadUInt32();
-                if (magic != BinaryMagic || structSize != TelemetryEntrySizeBytes)
+                if (stream.Length < CrashExportHeaderSizeBytes)
                 {
                     _status = InvalidHeaderStatus;
                     SyncVisualState();
                     return;
                 }
 
-                for (uint i = 0; i < entryCount && stream.Position + TelemetryEntrySizeBytes <= stream.Length; i++)
-                    _entries.Add(ReadEntry(reader));
+                using (System.IO.BinaryReader reader = new System.IO.BinaryReader(stream))
+                {
+                    ulong magic = reader.ReadUInt64();
+                    uint entryCount = reader.ReadUInt32();
+                    uint structSize = reader.ReadUInt32();
+                    if (magic != BinaryMagic || structSize != TelemetryEntrySizeBytes)
+                    {
+                        _status = InvalidHeaderStatus;
+                        SyncVisualState();
+                        return;
+                    }
+
+                    long remainingBytes = stream.Length - CrashExportHeaderSizeBytes;
+                    long rawReadableEntryCount = remainingBytes > 0L
+                        ? System.Math.Min((long)entryCount, remainingBytes / TelemetryEntrySizeBytes)
+                        : 0L;
+                    bool payloadTruncated = rawReadableEntryCount < entryCount;
+                    long readableEntryCount = rawReadableEntryCount;
+                    bool cappedPreview = readableEntryCount > MaxPreviewEntries;
+                    if (readableEntryCount > MaxPreviewEntries)
+                        readableEntryCount = MaxPreviewEntries;
+
+                    for (long i = 0; i < readableEntryCount; i++)
+                        _entries.Add(ReadEntry(reader));
+
+                    _status = payloadTruncated
+                        ? TruncatedFileStatus
+                        : cappedPreview
+                            ? CappedFramesPrefix + _entries.Count
+                        : LoadedFramesPrefix + _entries.Count;
+                }
             }
 
-            _status = LoadedFramesPrefix + _entries.Count;
             SyncVisualState();
         }
 
@@ -149,8 +205,8 @@ namespace Hecton8.EditorTools
             entry.ErrorFlags = reader.ReadUInt32();
             entry.ExportReason = reader.ReadUInt32();
             entry.AupShiftSequence = reader.ReadUInt32();
-            entry.VelocityPacked = reader.ReadUInt32();
-            entry.GcAllocBytes = reader.ReadUInt32();
+            entry.Payload0 = reader.ReadUInt32();
+            entry.Payload1 = reader.ReadUInt32();
             entry.LastOriginShiftFrame = reader.ReadUInt32();
             return entry;
         }
@@ -184,6 +240,9 @@ namespace Hecton8.EditorTools
                 for (int i = 0; i < _entries.Count; i++)
                 {
                     TelemetryEntry entry = _entries[i];
+                    if (!IsFinite(entry.PlayerAup))
+                        continue;
+
                     Vector2 normalized = new Vector2(
                         (entry.PlayerAup.x - min.x) / span.x,
                         (entry.PlayerAup.z - min.y) / span.y);
@@ -193,7 +252,12 @@ namespace Hecton8.EditorTools
 
                     if (hasPrevious)
                     {
-                        painter.strokeColor = entry.DeltaTime > SpikeFrameTimeSeconds ? Color.red : Color.green;
+                        bool memoryFault = (entry.ErrorFlags & MemoryFaultMask) != 0u;
+                        painter.strokeColor = entry.DeltaTime > SpikeFrameTimeSeconds
+                            ? Color.red
+                            : memoryFault
+                                ? Color.yellow
+                                : Color.green;
                         painter.lineWidth = 2f;
                         painter.BeginPath();
                         painter.MoveTo(previous);
@@ -201,9 +265,10 @@ namespace Hecton8.EditorTools
                         painter.Stroke();
                     }
 
-                    if (entry.DeltaTime > SpikeFrameTimeSeconds)
+                    if (entry.DeltaTime > SpikeFrameTimeSeconds ||
+                        (entry.ErrorFlags & MemoryFaultMask) != 0u)
                     {
-                        painter.fillColor = Color.red;
+                        painter.fillColor = entry.DeltaTime > SpikeFrameTimeSeconds ? Color.red : Color.yellow;
                         painter.BeginPath();
                         painter.Arc(point, 3f, 0f, 360f);
                         painter.Fill();
@@ -218,14 +283,35 @@ namespace Hecton8.EditorTools
             {
                 min = new Vector2(float.MaxValue, float.MaxValue);
                 max = new Vector2(float.MinValue, float.MinValue);
+                bool hasPoint = false;
                 for (int i = 0; i < _entries.Count; i++)
                 {
                     Vector3 aup = _entries[i].PlayerAup;
+                    if (!IsFinite(aup))
+                        continue;
+
                     min.x = Mathf.Min(min.x, aup.x);
                     min.y = Mathf.Min(min.y, aup.z);
                     max.x = Mathf.Max(max.x, aup.x);
                     max.y = Mathf.Max(max.y, aup.z);
+                    hasPoint = true;
                 }
+
+                if (!hasPoint)
+                {
+                    min = Vector2.zero;
+                    max = Vector2.one;
+                }
+            }
+
+            private static bool IsFinite(Vector3 value)
+            {
+                return !float.IsNaN(value.x) &&
+                    !float.IsInfinity(value.x) &&
+                    !float.IsNaN(value.y) &&
+                    !float.IsInfinity(value.y) &&
+                    !float.IsNaN(value.z) &&
+                    !float.IsInfinity(value.z);
             }
         }
     }

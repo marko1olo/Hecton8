@@ -417,6 +417,7 @@ namespace Hecton8.Inventory
             }
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 12)]
         public struct CraftReservation
         {
             public int AnchorIndex;
@@ -1044,18 +1045,47 @@ namespace Hecton8.Inventory
             if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || quantity <= 0 || reservations == null)
                 return false;
 
-            if (CountAvailableTotal(itemHashId) < quantity)
+            int startReservationCount = reservationCount;
+            if (!TryReserveAvailableQuantityForCraft(itemHashId, quantity, reservations, ref reservationCount, out int reservedQuantity))
+                return false;
+
+            if (reservedQuantity >= quantity)
+                return true;
+
+            ReleaseCraftReservationsRange(reservations, startReservationCount, reservationCount);
+            reservationCount = startReservationCount;
+            return false;
+        }
+
+        /// <summary>
+        /// Reserves up to <paramref name="maxQuantity"/> local inventory items for crafting in one inventory pass.
+        /// </summary>
+        /// <param name="itemHashId">Baked item hash to reserve.</param>
+        /// <param name="maxQuantity">Maximum quantity to reserve from local inventory.</param>
+        /// <param name="reservations">Caller-owned reservation output buffer.</param>
+        /// <param name="reservationCount">Current reservation count, advanced by successful reservations.</param>
+        /// <param name="reservedQuantity">Actual quantity reserved from local inventory.</param>
+        /// <returns>False only when inputs are invalid or the reservation buffer cannot hold the result.</returns>
+        public bool TryReserveAvailableQuantityForCraft(
+            int itemHashId,
+            int maxQuantity,
+            CraftReservation[] reservations,
+            ref int reservationCount,
+            out int reservedQuantity)
+        {
+            reservedQuantity = 0;
+            if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || maxQuantity <= 0 || reservations == null)
                 return false;
 
             int startReservationCount = reservationCount;
-            int remaining = quantity;
+            int remaining = maxQuantity;
             for (int anchorIndex = 0; anchorIndex < _stackCounts.Length && remaining > 0; anchorIndex++)
             {
                 if (!_grid.HasAnchor(anchorIndex) || _grid.GetAnchorHashId(anchorIndex) != itemHashId)
                     continue;
 
-                int stackCount = Mathf.Max(1, (int)_stackCounts[anchorIndex]);
-                int available = Mathf.Max(0, stackCount - GetReservedCraftCount(anchorIndex));
+                int stackCount = math.max(1, (int)_stackCounts[anchorIndex]);
+                int available = math.max(0, stackCount - GetReservedCraftCount(anchorIndex));
                 if (available <= 0)
                     continue;
 
@@ -1063,11 +1093,12 @@ namespace Hecton8.Inventory
                 {
                     ReleaseCraftReservationsRange(reservations, startReservationCount, reservationCount);
                     reservationCount = startReservationCount;
+                    reservedQuantity = 0;
                     return false;
                 }
 
-                int take = Mathf.Min(available, remaining);
-                _craftLockedCounts[anchorIndex] = (ushort)Mathf.Min(ushort.MaxValue, _craftLockedCounts[anchorIndex] + take);
+                int take = math.min(available, remaining);
+                _craftLockedCounts[anchorIndex] = (ushort)math.min(ushort.MaxValue, _craftLockedCounts[anchorIndex] + take);
                 _anchorStateFlags[anchorIndex] |= CraftingLockedMask;
                 reservations[reservationCount++] = new CraftReservation
                 {
@@ -1076,13 +1107,7 @@ namespace Hecton8.Inventory
                     ItemHashId = itemHashId
                 };
                 remaining -= take;
-            }
-
-            if (remaining > 0)
-            {
-                ReleaseCraftReservationsRange(reservations, startReservationCount, reservationCount);
-                reservationCount = startReservationCount;
-                return false;
+                reservedQuantity += take;
             }
 
             return true;
@@ -1785,26 +1810,43 @@ namespace Hecton8.Inventory
             byte compressedGenetics = CompressItemGenetics(geneticsMask);
 
             bool allAdded = true;
-            for (int i = 0; i < quantity; i++)
+            int remainingQuantity = quantity;
+            if (descriptor.Stackable)
             {
-                if (descriptor.Stackable && TryStackItemWithState(descriptor.HashId, descriptor.MaxStack, runtimeDescriptor.StateFlags, timestampNow, compressedGenetics, resolvedQualityMilli))
-                {
-                    TotalWeight += descriptor.Weight;
-                    addedQuantity++;
-                    continue;
-                }
+                int stackedQuantity = TryStackQuantityWithState(
+                    descriptor.HashId,
+                    descriptor.MaxStack,
+                    runtimeDescriptor.StateFlags,
+                    timestampNow,
+                    compressedGenetics,
+                    resolvedQualityMilli,
+                    remainingQuantity);
 
+                if (stackedQuantity > 0)
+                {
+                    TotalWeight += descriptor.Weight * stackedQuantity;
+                    addedQuantity += stackedQuantity;
+                    remainingQuantity -= stackedQuantity;
+                }
+            }
+
+            while (remainingQuantity > 0)
+            {
+                int quantityForSlot = descriptor.Stackable
+                    ? math.min(math.max(1, (int)descriptor.MaxStack), remainingQuantity)
+                    : 1;
                 if (_grid.TryAddItem(in descriptor, out int placedX, out int placedY))
                 {
                     int anchorIndex = AnchorIndex(placedX, placedY);
-                    _stackCounts[anchorIndex] = 1;
+                    _stackCounts[anchorIndex] = (ushort)quantityForSlot;
                     _itemStateFlags[anchorIndex] = runtimeDescriptor.StateFlags;
                     _itemGenetics[anchorIndex] = compressedGenetics;
                     _qualityMilli[anchorIndex] = resolvedQualityMilli;
                     _lastUpdateUnixSeconds[anchorIndex] = (runtimeDescriptor.StateFlags & BiologicalItemStateMask) != 0 ? timestampNow : 0u;
                     SetAnchorPhysicalMetadata(anchorIndex, runtimeDescriptor.MassKg, runtimeDescriptor.VolumeM3, runtimeDescriptor.RadiationSvPerSecond);
-                    TotalWeight += descriptor.Weight;
-                    addedQuantity++;
+                    TotalWeight += descriptor.Weight * quantityForSlot;
+                    addedQuantity += quantityForSlot;
+                    remainingQuantity -= quantityForSlot;
                 }
                 else
                 {
@@ -1824,11 +1866,19 @@ namespace Hecton8.Inventory
             return allAdded;
         }
 
-        private bool TryStackItemWithState(int itemHashId, int maxStack, ushort itemStateFlags, uint timestampNow, byte geneticsMask, ushort qualityMilli)
+        private int TryStackQuantityWithState(
+            int itemHashId,
+            int maxStack,
+            ushort itemStateFlags,
+            uint timestampNow,
+            byte geneticsMask,
+            ushort qualityMilli,
+            int quantity)
         {
-            if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || maxStack <= 1)
-                return false;
+            if (_grid == null || !_stackCounts.IsCreated || itemHashId == 0 || maxStack <= 1 || quantity <= 0)
+                return 0;
 
+            int remainingQuantity = quantity;
             for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
             {
                 if (!_grid.HasAnchor(anchorIndex) || _grid.GetAnchorHashId(anchorIndex) != itemHashId || IsCraftLockedFlagSet(anchorIndex))
@@ -1841,19 +1891,24 @@ namespace Hecton8.Inventory
                     continue;
                 }
 
-                if (_stackCounts[anchorIndex] < maxStack)
-                {
-                    _stackCounts[anchorIndex]++;
-                    _itemStateFlags[anchorIndex] = itemStateFlags;
-                    _itemGenetics[anchorIndex] = geneticsMask;
-                    _qualityMilli[anchorIndex] = qualityMilli;
-                    if ((itemStateFlags & BiologicalItemStateMask) != 0 && _lastUpdateUnixSeconds[anchorIndex] == 0u)
-                        _lastUpdateUnixSeconds[anchorIndex] = timestampNow;
-                    return true;
-                }
+                int stackCount = math.max(1, (int)_stackCounts[anchorIndex]);
+                if (stackCount >= maxStack)
+                    continue;
+
+                int transfer = math.min(maxStack - stackCount, remainingQuantity);
+                _stackCounts[anchorIndex] = (ushort)(stackCount + transfer);
+                _itemStateFlags[anchorIndex] = itemStateFlags;
+                _itemGenetics[anchorIndex] = geneticsMask;
+                _qualityMilli[anchorIndex] = qualityMilli;
+                if ((itemStateFlags & BiologicalItemStateMask) != 0 && _lastUpdateUnixSeconds[anchorIndex] == 0u)
+                    _lastUpdateUnixSeconds[anchorIndex] = timestampNow;
+
+                remainingQuantity -= transfer;
+                if (remainingQuantity <= 0)
+                    break;
             }
 
-            return false;
+            return quantity - remainingQuantity;
         }
 
         private bool CanAcceptQuantity(int itemHashId, int quantity)
@@ -1881,12 +1936,12 @@ namespace Hecton8.Inventory
                     if (!_grid.HasAnchor(anchorIndex) || _grid.GetAnchorHashId(anchorIndex) != descriptor.HashId || IsCraftLockedFlagSet(anchorIndex))
                         continue;
 
-                    int stackCount = Mathf.Max(1, (int)_scavengeSimStackCounts[anchorIndex]);
+                    int stackCount = math.max(1, (int)_scavengeSimStackCounts[anchorIndex]);
                     if (stackCount >= descriptor.MaxStack)
                         continue;
 
                     int stackCapacity = descriptor.MaxStack - stackCount;
-                    int transfer = Mathf.Min(stackCapacity, remaining);
+                    int transfer = math.min(stackCapacity, remaining);
                     _scavengeSimStackCounts[anchorIndex] = (ushort)(stackCount + transfer);
                     remaining -= transfer;
                 }
@@ -1897,7 +1952,9 @@ namespace Hecton8.Inventory
                 if (!TryReservePlacementInSimulation(in descriptor))
                     return false;
 
-                remaining--;
+                remaining -= descriptor.Stackable
+                    ? math.min(math.max(1, (int)descriptor.MaxStack), remaining)
+                    : 1;
             }
 
             return true;

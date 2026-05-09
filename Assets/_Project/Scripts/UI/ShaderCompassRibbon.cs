@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -12,10 +13,12 @@ namespace Hecton8.UI
     public sealed class ShaderCompassRibbon : MonoBehaviour, IUpdatable
     {
         private const string RootName = "ShaderCompassRibbon";
-        private const string CompassShaderName = "Hecton8/UI/CompassRibbon";
         private const float RootWidth = 420f;
         private const float RootHeight = 26f;
         private const float OffsetEpsilon = 0.0001f;
+        private const float InvFullCircle = 1f / 360f;
+        private const float CameraResolveRetryIntervalSeconds = 0.25f;
+        private const float MaximumCompassDeltaSeconds = 0.1f;
 
         private static readonly int CompassOffsetId = Shader.PropertyToID("_CompassOffset");
 
@@ -29,16 +32,22 @@ namespace Hecton8.UI
         private Image _ribbonImage;
         private Material _runtimeMaterial;
         private float _lastOffset = -1f;
+        private float _lastRootAlpha = -1f;
+        private float _cameraResolveRetryRemaining;
 
         private void OnEnable()
         {
-            ResolveViewCamera();
-            EnsureUiBuilt();
+            _cameraResolveRetryRemaining = 0f;
+            ResolveViewCamera(0f);
+            EnsureUiBuilt(allowCreate: true);
             TryRegister();
         }
 
         private void Start()
         {
+            _cameraResolveRetryRemaining = 0f;
+            ResolveViewCamera(0f);
+            EnsureUiBuilt(allowCreate: true);
             TryRegister();
         }
 
@@ -60,8 +69,13 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            ResolveViewCamera();
-            EnsureUiBuilt();
+            float safeDeltaTime = SanitizeDeltaTime(deltaTime);
+            ResolveViewCamera(safeDeltaTime);
+            if (!EnsureUiBuilt(allowCreate: false))
+            {
+                ApplyRootAlpha(0f);
+                return;
+            }
 
             if (_viewCamera == null || _runtimeMaterial == null)
             {
@@ -70,8 +84,8 @@ namespace Hecton8.UI
             }
 
             float yaw = _viewCamera.transform.eulerAngles.y;
-            float offset = Mathf.Repeat(yaw / 360f, 1f);
-            if (Mathf.Abs(offset - _lastOffset) > OffsetEpsilon)
+            float offset = math.frac(yaw * InvFullCircle);
+            if (math.abs(offset - _lastOffset) > OffsetEpsilon)
             {
                 _runtimeMaterial.SetFloat(CompassOffsetId, offset);
                 _lastOffset = offset;
@@ -80,35 +94,51 @@ namespace Hecton8.UI
             ApplyRootAlpha(1f);
         }
 
-        private void ResolveViewCamera()
+        private void ResolveViewCamera(float deltaTime)
         {
-            if (_viewCamera != null)
+            if (_viewCamera != null && _viewCamera.isActiveAndEnabled)
                 return;
+
+            _viewCamera = null;
+            if (Application.isPlaying)
+            {
+                if (_cameraResolveRetryRemaining > 0f)
+                {
+                    _cameraResolveRetryRemaining = math.max(0f, _cameraResolveRetryRemaining - deltaTime);
+                    if (_cameraResolveRetryRemaining > 0f)
+                        return;
+                }
+
+                _cameraResolveRetryRemaining = CameraResolveRetryIntervalSeconds;
+            }
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (playerContext != null && playerContext.PlayerCamera != null)
                 _viewCamera = playerContext.PlayerCamera;
         }
 
-        private void EnsureUiBuilt()
+        private bool EnsureUiBuilt(bool allowCreate)
         {
             if (_uiBuilt)
-                return;
+                return true;
 
-            Canvas targetCanvas = ResolveTargetCanvas();
+            if (!allowCreate)
+                return false;
+
+            Canvas targetCanvas = ResolveTargetCanvas(allowComponentFallback: true);
             if (targetCanvas == null)
-                return;
+                return false;
 
             RectTransform canvasRoot = HectonUIScaler.ResolveContentRoot(targetCanvas);
             if (canvasRoot == null)
-                return;
+                return false;
 
             _root = FindExistingChild(canvasRoot, RootName);
             if (_root == null)
             {
                 GameObject rootObject = new GameObject(RootName, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
                 rootObject.layer = canvasRoot.gameObject.layer;
-                _root = rootObject.GetComponent<RectTransform>();
+                rootObject.TryGetComponent(out _root);
                 _root.SetParent(canvasRoot, false);
             }
 
@@ -120,14 +150,14 @@ namespace Hecton8.UI
             _root.localScale = Vector3.one;
             _root.SetAsLastSibling();
 
-            _canvasGroup = _root.GetComponent<CanvasGroup>();
+            _root.TryGetComponent(out _canvasGroup);
             if (_canvasGroup == null)
                 _canvasGroup = _root.gameObject.AddComponent<CanvasGroup>();
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
             _canvasGroup.alpha = 0f;
 
-            _ribbonImage = _root.GetComponent<Image>();
+            _root.TryGetComponent(out _ribbonImage);
             if (_ribbonImage == null)
                 _ribbonImage = _root.gameObject.AddComponent<Image>();
 
@@ -139,6 +169,7 @@ namespace Hecton8.UI
                 _ribbonImage.material = _runtimeMaterial;
 
             _uiBuilt = true;
+            return true;
         }
 
         private void EnsureRuntimeMaterial()
@@ -147,14 +178,11 @@ namespace Hecton8.UI
                 return;
 
             if (compassShader == null)
-                compassShader = Shader.Find(CompassShaderName);
-
-            if (compassShader == null)
                 return;
 
             _runtimeMaterial = new Material(compassShader)
             {
-                name = "HUD_CompassRibbon_Runtime"
+                hideFlags = HideFlags.DontSave
             }; // COLD ALLOC: Material[1] — shader-driven compass ribbon material — owner: ShaderCompassRibbon
         }
 
@@ -163,8 +191,7 @@ namespace Hecton8.UI
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -178,17 +205,29 @@ namespace Hecton8.UI
 
         private void ApplyRootAlpha(float alpha)
         {
-            if (_canvasGroup != null)
-                _canvasGroup.alpha = alpha;
+            if (_canvasGroup == null || math.abs(_lastRootAlpha - alpha) <= 0.0001f)
+                return;
+
+            _canvasGroup.alpha = alpha;
+            _lastRootAlpha = alpha;
         }
 
-        private static Canvas ResolveTargetCanvas()
+        private static Canvas ResolveTargetCanvas(bool allowComponentFallback)
         {
             SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null && overlay.TargetCanvas != null)
                 return overlay.TargetCanvas;
 
-            return overlay != null ? overlay.GetComponent<Canvas>() : null;
+            if (!allowComponentFallback || overlay == null)
+                return null;
+
+            overlay.TryGetComponent(out Canvas canvas);
+            return canvas;
+        }
+
+        private static float SanitizeDeltaTime(float deltaTime)
+        {
+            return math.isfinite(deltaTime) ? math.clamp(deltaTime, 0f, MaximumCompassDeltaSeconds) : 0f;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string name)

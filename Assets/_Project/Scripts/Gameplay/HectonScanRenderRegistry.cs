@@ -21,6 +21,7 @@ namespace Hecton8.Gameplay
     public static class HectonScanRenderRegistry
     {
         public const int MaxTargets = 512;
+        private const int MaxSubMeshesPerTarget = 8;
         private const uint ActiveLootMask = HectonScanRenderFlags.IsScanned | HectonScanRenderFlags.Loot;
 
         // COLD ALLOC: Renderer[512] - scanner render target registry - owner: HectonScanRenderRegistry
@@ -31,12 +32,71 @@ namespace Hecton8.Gameplay
         private static readonly AbsoluteUniversePosition[] s_lootCenterAups = new AbsoluteUniversePosition[MaxTargets];
         // COLD ALLOC: float[512] - cached scanner loot proxy radii - owner: HectonScanRenderRegistry
         private static readonly float[] s_lootRadii = new float[MaxTargets];
+        // COLD ALLOC: int[512] - cached renderer submesh draw counts - owner: HectonScanRenderRegistry
+        private static readonly int[] s_subMeshCounts = new int[MaxTargets];
+        // COLD ALLOC: int[512] - renderer bounds refresh frame cache for multi-camera visor passes - owner: HectonScanRenderRegistry
+        private static readonly int[] s_lootSphereRefreshFrames = new int[MaxTargets];
 
         private static int s_count;
         private static uint s_registeredFlagMask;
+        private static int s_activeLootCount;
 
         public static int Count => s_count;
-        public static bool HasRegisteredFlags(uint requiredMask) => s_count > 0 && (s_registeredFlagMask & requiredMask) == requiredMask;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            for (int i = 0; i < s_count; i++)
+            {
+                s_renderers[i] = null;
+                s_flags[i] = 0u;
+                s_lootCenterAups[i] = default;
+                s_lootRadii[i] = 0f;
+                s_subMeshCounts[i] = 0;
+                s_lootSphereRefreshFrames[i] = 0;
+            }
+
+            s_count = 0;
+            s_registeredFlagMask = 0u;
+            s_activeLootCount = 0;
+        }
+
+        public static bool TryGetFlags(Renderer renderer, out uint flags)
+        {
+            int index = IndexOf(renderer);
+            if (index < 0)
+            {
+                flags = HectonScanRenderFlags.None;
+                return false;
+            }
+
+            flags = s_flags[index];
+            return true;
+        }
+
+        public static bool HasAnyTargetWithFlags(uint requiredMask)
+        {
+            if (requiredMask == HectonScanRenderFlags.None || s_count <= 0 || (s_registeredFlagMask & requiredMask) != requiredMask)
+                return false;
+
+            for (int i = 0; i < s_count; i++)
+            {
+                Renderer renderer = s_renderers[i];
+                if (renderer == null)
+                {
+                    RemoveAtSwapBack(i);
+                    i--;
+                    continue;
+                }
+
+                if ((s_flags[i] & requiredMask) == requiredMask && IsRendererDrawable(renderer))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
 
         public static bool Register(Renderer renderer, uint initialFlags)
         {
@@ -46,9 +106,12 @@ namespace Hecton8.Gameplay
             int existingIndex = IndexOf(renderer);
             if (existingIndex >= 0)
             {
+                bool wasActiveLoot = IsActiveLoot(s_flags[existingIndex]);
                 s_flags[existingIndex] |= initialFlags;
+                if (!wasActiveLoot && IsActiveLoot(s_flags[existingIndex]))
+                    s_activeLootCount++;
                 s_registeredFlagMask |= s_flags[existingIndex];
-                RefreshLootSphere(existingIndex, renderer);
+                RefreshRendererMetadata(existingIndex, renderer);
                 return true;
             }
 
@@ -58,8 +121,10 @@ namespace Hecton8.Gameplay
             int index = s_count++;
             s_renderers[index] = renderer;
             s_flags[index] = initialFlags;
+            if (IsActiveLoot(initialFlags))
+                s_activeLootCount++;
             s_registeredFlagMask |= initialFlags;
-            RefreshLootSphere(index, renderer);
+            RefreshRendererMetadata(index, renderer);
             return true;
         }
 
@@ -84,6 +149,7 @@ namespace Hecton8.Gameplay
                 return Register(renderer, flags);
             }
 
+            bool wasActiveLoot = IsActiveLoot(s_flags[index]);
             if (enabled)
             {
                 s_flags[index] |= flags;
@@ -92,10 +158,21 @@ namespace Hecton8.Gameplay
             else
             {
                 s_flags[index] &= ~flags;
-                RebuildRegisteredFlagMask();
             }
 
-            RefreshLootSphere(index, renderer);
+            bool isActiveLoot = IsActiveLoot(s_flags[index]);
+            if (isActiveLoot != wasActiveLoot)
+                s_activeLootCount += isActiveLoot ? 1 : -1;
+            if (!enabled && s_flags[index] == HectonScanRenderFlags.None)
+            {
+                RemoveAtSwapBack(index);
+                return true;
+            }
+
+            if (!enabled)
+                RebuildRegisteredState();
+
+            RefreshRendererMetadata(index, renderer);
             return true;
         }
 
@@ -123,15 +200,17 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
-                if ((s_flags[i] & requiredMask) != requiredMask ||
-                    !renderer.enabled ||
-                    !renderer.gameObject.activeInHierarchy)
+                if ((s_flags[i] & requiredMask) != requiredMask || !IsRendererDrawable(renderer))
                 {
                     continue;
                 }
 
-                cmd.DrawRenderer(renderer, material, 0, 0);
-                drawCount++;
+                int subMeshCount = math.max(1, s_subMeshCounts[i]);
+                for (int subMeshIndex = 0; subMeshIndex < subMeshCount && drawCount < maxDraws; subMeshIndex++)
+                {
+                    cmd.DrawRenderer(renderer, material, subMeshIndex, 0);
+                    drawCount++;
+                }
             }
 
             return drawCount;
@@ -140,6 +219,8 @@ namespace Hecton8.Gameplay
         public static bool TryFindNearestLootSphereAup(in AbsoluteUniversePosition observerAup, float maxDistance, float radiusPadding, out Vector4 lootSphereAup)
         {
             lootSphereAup = default;
+            if (s_activeLootCount <= 0)
+                return false;
 
             double maxDistanceSq = maxDistance > 0f ? (double)maxDistance * maxDistance : double.MaxValue;
             double bestDistanceSq = maxDistanceSq;
@@ -159,6 +240,12 @@ namespace Hecton8.Gameplay
                     continue;
                 }
 
+                if (!IsRendererActive(renderer))
+                {
+                    continue;
+                }
+
+                RefreshLootSphere(i, renderer);
                 float cachedRadius = s_lootRadii[i];
                 if (cachedRadius <= 0f)
                     continue;
@@ -168,13 +255,18 @@ namespace Hecton8.Gameplay
                 if (distanceSq > bestDistanceSq)
                     continue;
 
-                bestDistanceSq = distanceSq;
                 float radius = cachedRadius + math.max(0f, radiusPadding);
-                double3 absoluteCenter = centerAup.ToAbsoluteDouble3();
+                float3 runtimeCenter = centerAup.ToRuntimeFloat3();
+                Vector3 totalOffset = HectonFloatingOrigin.CurrentTotalOffset;
+                float3 shaderCenter = runtimeCenter + new float3(totalOffset.x, totalOffset.y, totalOffset.z);
+                if (!math.all(math.isfinite(shaderCenter)))
+                    continue;
+
+                bestDistanceSq = distanceSq;
                 lootSphereAup = new Vector4(
-                    (float)absoluteCenter.x,
-                    (float)absoluteCenter.y,
-                    (float)absoluteCenter.z,
+                    shaderCenter.x,
+                    shaderCenter.y,
+                    shaderCenter.z,
                     math.max(0.1f, radius));
                 found = true;
             }
@@ -212,19 +304,51 @@ namespace Hecton8.Gameplay
             if ((uint)index >= (uint)s_count)
                 return;
 
+            if (IsActiveLoot(s_flags[index]))
+                s_activeLootCount--;
+
             s_renderers[index] = s_renderers[lastIndex];
             s_flags[index] = s_flags[lastIndex];
             s_lootCenterAups[index] = s_lootCenterAups[lastIndex];
             s_lootRadii[index] = s_lootRadii[lastIndex];
+            s_subMeshCounts[index] = s_subMeshCounts[lastIndex];
+            s_lootSphereRefreshFrames[index] = s_lootSphereRefreshFrames[lastIndex];
             s_renderers[lastIndex] = null;
             s_flags[lastIndex] = 0u;
             s_lootCenterAups[lastIndex] = default;
             s_lootRadii[lastIndex] = 0f;
+            s_subMeshCounts[lastIndex] = 0;
+            s_lootSphereRefreshFrames[lastIndex] = 0;
             s_count = lastIndex;
             if (s_count == 0)
+            {
                 s_registeredFlagMask = 0u;
+                s_activeLootCount = 0;
+            }
             else
-                RebuildRegisteredFlagMask();
+            {
+                RebuildRegisteredState();
+            }
+        }
+
+        private static void RefreshRendererMetadata(int index, Renderer renderer)
+        {
+            if ((uint)index >= MaxTargets || renderer == null)
+                return;
+
+            s_subMeshCounts[index] = ResolveSubMeshCount(renderer);
+            RefreshLootSphere(index, renderer);
+        }
+
+        private static int ResolveSubMeshCount(Renderer renderer)
+        {
+            if (renderer is SkinnedMeshRenderer skinnedRenderer && skinnedRenderer.sharedMesh != null)
+                return math.clamp(skinnedRenderer.sharedMesh.subMeshCount, 1, MaxSubMeshesPerTarget);
+
+            if (renderer.TryGetComponent(out MeshFilter meshFilter) && meshFilter.sharedMesh != null)
+                return math.clamp(meshFilter.sharedMesh.subMeshCount, 1, MaxSubMeshesPerTarget);
+
+            return 1;
         }
 
         private static void RefreshLootSphere(int index, Renderer renderer)
@@ -236,21 +360,63 @@ namespace Hecton8.Gameplay
             {
                 s_lootCenterAups[index] = default;
                 s_lootRadii[index] = 0f;
+                s_lootSphereRefreshFrames[index] = 0;
                 return;
             }
 
+            int frame = Time.frameCount;
+            if (s_lootSphereRefreshFrames[index] == frame && s_lootRadii[index] > 0f)
+                return;
+
             Bounds bounds = renderer.bounds;
-            s_lootCenterAups[index] = AbsoluteUniversePosition.FromRuntimePosition(bounds.center);
-            s_lootRadii[index] = math.max(0.1f, math.cmax((float3)bounds.extents));
+            Vector3 boundsCenter = bounds.center;
+            Vector3 boundsExtents = bounds.extents;
+            float3 center = new float3(boundsCenter.x, boundsCenter.y, boundsCenter.z);
+            float3 extents = new float3(boundsExtents.x, boundsExtents.y, boundsExtents.z);
+            if (!math.all(math.isfinite(center)) || !math.all(math.isfinite(extents)))
+            {
+                s_lootCenterAups[index] = default;
+                s_lootRadii[index] = 0f;
+                s_lootSphereRefreshFrames[index] = frame;
+                return;
+            }
+
+            s_lootCenterAups[index] = AbsoluteUniversePosition.FromRuntimePosition(boundsCenter);
+            s_lootRadii[index] = math.max(0.1f, math.cmax(extents));
+            s_lootSphereRefreshFrames[index] = frame;
         }
 
-        private static void RebuildRegisteredFlagMask()
+        private static bool IsActiveLoot(uint flags)
+        {
+            return (flags & ActiveLootMask) == ActiveLootMask;
+        }
+
+        private static bool IsRendererActive(Renderer renderer)
+        {
+            return renderer != null &&
+                   renderer.enabled &&
+                   !renderer.forceRenderingOff &&
+                   renderer.gameObject.activeInHierarchy;
+        }
+
+        private static bool IsRendererDrawable(Renderer renderer)
+        {
+            return IsRendererActive(renderer) && renderer.isVisible;
+        }
+
+        private static void RebuildRegisteredState()
         {
             uint mask = 0u;
+            int activeLootCount = 0;
             for (int i = 0; i < s_count; i++)
+            {
                 mask |= s_flags[i];
+                if (IsActiveLoot(s_flags[i]))
+                    activeLootCount++;
+            }
 
             s_registeredFlagMask = mask;
+            s_activeLootCount = activeLootCount;
         }
 
     }

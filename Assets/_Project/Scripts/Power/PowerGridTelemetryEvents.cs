@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Collections;
 using UnityEngine;
@@ -7,6 +8,7 @@ namespace Hecton8.Power
     /// <summary>
     /// Aggregate runtime power snapshot published by <see cref="PowerGridManager"/>.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct PowerGridTelemetrySnapshot
     {
         public PowerGridTelemetrySnapshot(
@@ -202,6 +204,9 @@ namespace Hecton8.Power
         /// </summary>
         public static void Raise(in PowerGridTelemetrySnapshot snapshot)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
@@ -221,24 +226,40 @@ namespace Hecton8.Power
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<PowerGridTelemetrySnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] - deferred aggregate power telemetry lane flushed by SystemDispatcher LateUpdate - owner: PowerGridTelemetryEvents
+                _pendingEvents = new NativeQueue<PowerGridTelemetrySnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] — deferred aggregate power telemetry lane flushed by SystemDispatcher LateUpdate — owner: PowerGridTelemetryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
                     nameof(PowerGridTelemetryEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<PowerGridTelemetrySnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] - next-frame power telemetry lane prevents same-frame reentrant dispatch - owner: PowerGridTelemetryEvents
+                _nextFrameEvents = new NativeQueue<PowerGridTelemetrySnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] — next-frame power telemetry lane prevents same-frame reentrant dispatch — owner: PowerGridTelemetryEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
                     nameof(PowerGridTelemetryEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 

@@ -38,6 +38,10 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
             HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -46,6 +50,7 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float4 positionOS : POSITION;
                 float4 color : COLOR;
                 float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -53,6 +58,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 float4 positionCS : SV_POSITION;
                 float4 color : COLOR;
                 float2 uv : TEXCOORD0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             CBUFFER_START(UnityPerMaterial)
@@ -74,6 +81,9 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
             Varyings vert(Attributes input)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
                 output.color = input.color;
                 output.uv = input.uv;
@@ -93,11 +103,44 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                 return clamped * clamped;
             }
 
+            float FastTriangleSine01(float phase)
+            {
+                return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+            }
+
+            float ApproximateAngle01(float2 centered)
+            {
+                float ax = abs(centered.x);
+                float ay = abs(centered.y);
+                float majorAxis = max(max(ax, ay), 0.00001);
+                float octant = min(ax, ay) * rcp(majorAxis) * 0.125;
+                float xMajor = step(ay, ax);
+                float xPositive = step(0.0, centered.x);
+                float yPositive = step(0.0, centered.y);
+
+                float angleXMajorPositive = lerp(1.0 - octant, octant, yPositive);
+                float angleXMajorNegative = lerp(0.5 + octant, 0.5 - octant, yPositive);
+                float angleXMajor = lerp(angleXMajorNegative, angleXMajorPositive, xPositive);
+
+                float angleYMajorPositive = lerp(0.25 + octant, 0.25 - octant, xPositive);
+                float angleYMajorNegative = lerp(0.75 - octant, 0.75 + octant, xPositive);
+                float angleYMajor = lerp(angleYMajorNegative, angleYMajorPositive, yPositive);
+
+                return frac(lerp(angleYMajor, angleXMajor, xMajor) + 0.5);
+            }
+
             half4 frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 centered = (input.uv * 2.0) - 1.0;
                 float radialSqr = dot(centered, centered);
-                float angle01 = frac((atan2(centered.y, centered.x) * (1.0 / TWO_PI)) + 0.5);
+                float innerCullSqr = SquareSaturate(max(0.0, _InnerEdge - 0.025));
+                float outerCullSqr = SquareSaturate(min(0.999, _InnerEdge + _BandThickness + 0.32));
+                if (radialSqr < innerCullSqr || radialSqr > outerCullSqr)
+                    return 0;
+
+                float angle01 = ApproximateAngle01(centered);
                 float intensity = SAMPLE_TEXTURE2D(_AcousticRadarTex, sampler_AcousticRadarTex, float2(angle01, 0.5)).r;
                 float neighbourA = SAMPLE_TEXTURE2D(_AcousticRadarTex, sampler_AcousticRadarTex, float2(frac(angle01 + 0.004), 0.5)).r;
                 float neighbourB = SAMPLE_TEXTURE2D(_AcousticRadarTex, sampler_AcousticRadarTex, float2(frac(angle01 - 0.004), 0.5)).r;
@@ -113,8 +156,8 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
                     return 0;
 
                 float timeValue = _Time.y;
-                float wave = 0.5 + (0.5 * sin((angle01 * TWO_PI * 10.0) + (timeValue * _PulseFrequency * TWO_PI)));
-                float sweep = 0.5 + (0.5 * sin((radialSqr * 30.0) - (timeValue * 7.5) + (angle01 * TWO_PI * 4.0)));
+                float wave = FastTriangleSine01((angle01 * TWO_PI * 10.0) + (timeValue * _PulseFrequency * TWO_PI));
+                float sweep = FastTriangleSine01((radialSqr * 30.0) - (timeValue * 7.5) + (angle01 * TWO_PI * 4.0));
                 float glitchSeed = Hash21(floor(input.uv * float2(160.0, 96.0)) + floor(timeValue * 12.0));
                 float sonarDistortion = saturate(_HectonSonarRadarDistortion.z);
                 float screamDistortion = saturate(_HectonSonarRadarDistortion.y);
@@ -137,4 +180,6 @@ Shader "Hecton8/UI/AcousticRadarOverlay"
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

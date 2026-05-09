@@ -19,6 +19,8 @@ namespace Hecton8.Core
         private static readonly Vector2 CascadeMediumSplitsNormalized = new Vector2(8f / MaxShadowDistanceMeters, 25f / MaxShadowDistanceMeters);
         // COLD ALLOC: Light[16] — registered dynamic shadow-light slots for runtime budget enforcement — owner: HectonUrpShadowBudgetGuard
         private static readonly Light[] _trackedDynamicShadowLights = new Light[MaxTrackedDynamicShadowLights];
+        // COLD ALLOC: Transform[16] - cached dynamic shadow-light transforms for render hot-path distance checks - owner: HectonUrpShadowBudgetGuard
+        private static readonly Transform[] _trackedDynamicShadowTransforms = new Transform[MaxTrackedDynamicShadowLights];
         // COLD ALLOC: LightShadows[16] — original shadow modes for registered dynamic shadow-light slots — owner: HectonUrpShadowBudgetGuard
         private static readonly LightShadows[] _trackedDynamicShadowModes = new LightShadows[MaxTrackedDynamicShadowLights];
         // COLD ALLOC: bool[16] - cached eligibility for the single allowed forward spotlight shadow caster - owner: HectonUrpShadowBudgetGuard
@@ -26,12 +28,12 @@ namespace Hecton8.Core
 
         private static UniversalRenderPipelineAsset _lastResolvedAsset;
         private static int _lastQualityLevel = -1;
+        private static int _lastDynamicShadowBudgetFrame = -1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
             EnsureRuntimeShadowBudget();
-            EnforceSceneShadowDictatorshipCold();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
@@ -40,20 +42,30 @@ namespace Hecton8.Core
 
         public static void RegisterDynamicShadowLight(Light light)
         {
-            if (light == null)
-                return;
+            RegisterDynamicShadowLightInternal(light, requireForwardName: true);
+        }
 
-            if (!IsAllowedForwardSpotlightCold(light))
+        public static bool RegisterAuthoritativeForwardSpotlight(Light light)
+        {
+            return RegisterDynamicShadowLightInternal(light, requireForwardName: false);
+        }
+
+        private static bool RegisterDynamicShadowLightInternal(Light light, bool requireForwardName)
+        {
+            if (light == null)
+                return false;
+
+            if (!IsAllowedForwardSpotlightCold(light, requireForwardName))
             {
                 if (light.shadows != LightShadows.None)
                     light.shadows = LightShadows.None;
-                return;
+                return false;
             }
 
             for (int i = 0; i < _trackedDynamicShadowLights.Length; i++)
             {
                 if (_trackedDynamicShadowLights[i] == light)
-                    return;
+                    return true;
             }
 
             for (int i = 0; i < _trackedDynamicShadowLights.Length; i++)
@@ -62,10 +74,13 @@ namespace Hecton8.Core
                     continue;
 
                 _trackedDynamicShadowLights[i] = light;
+                _trackedDynamicShadowTransforms[i] = light.transform;
                 _trackedDynamicShadowModes[i] = light.shadows;
                 _trackedDynamicShadowEligibility[i] = true;
-                return;
+                return true;
             }
+
+            return false;
         }
 
         public static void UnregisterDynamicShadowLight(Light light)
@@ -80,17 +95,15 @@ namespace Hecton8.Core
 
                 if (light.shadows != LightShadows.None)
                     light.shadows = LightShadows.None;
-                _trackedDynamicShadowLights[i] = null;
-                _trackedDynamicShadowModes[i] = LightShadows.None;
-                _trackedDynamicShadowEligibility[i] = false;
+                ClearTrackedDynamicShadowLightSlot(i);
                 return;
             }
         }
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            EnsureRuntimeShadowBudget();
-            EnforceSceneShadowDictatorshipCold();
+            if (!EnsureRuntimeShadowBudget())
+                EnforceSceneShadowDictatorshipCold();
         }
 
         private static void HandleBeginCameraRendering(ScriptableRenderContext context, Camera camera)
@@ -98,19 +111,24 @@ namespace Hecton8.Core
             if (camera == null || camera.cameraType != CameraType.Game)
                 return;
 
+            int frame = Time.frameCount;
+            if (_lastDynamicShadowBudgetFrame == frame)
+                return;
+
+            _lastDynamicShadowBudgetFrame = frame;
             EnsureRuntimeShadowBudget();
             ApplyDynamicShadowCasterBudget(camera.transform.position);
         }
 
-        private static void EnsureRuntimeShadowBudget()
+        private static bool EnsureRuntimeShadowBudget()
         {
             UniversalRenderPipelineAsset urpAsset = ResolveActiveUrpAsset();
             if (urpAsset == null)
-                return;
+                return false;
 
             int qualityLevel = QualitySettings.GetQualityLevel();
             if (urpAsset == _lastResolvedAsset && qualityLevel == _lastQualityLevel)
-                return;
+                return false;
 
             bool lowTier = qualityLevel <= 1;
             int atlasResolution = lowTier ? LowTierShadowAtlasResolution : HighTierShadowAtlasResolution;
@@ -136,7 +154,13 @@ namespace Hecton8.Core
 
             _lastResolvedAsset = urpAsset;
             _lastQualityLevel = qualityLevel;
-            EnforceSceneShadowDictatorshipCold();
+            if (HasLoadedRuntimeScene())
+            {
+                EnforceSceneShadowDictatorshipCold();
+                return true;
+            }
+
+            return false;
         }
 
         private static void ApplyDynamicShadowCasterBudget(Vector3 viewerPosition)
@@ -148,15 +172,20 @@ namespace Hecton8.Core
             for (int i = 0; i < _trackedDynamicShadowLights.Length; i++)
             {
                 Light light = _trackedDynamicShadowLights[i];
-                if (light == null ||
-                    !_trackedDynamicShadowEligibility[i] ||
-                    !light.isActiveAndEnabled ||
-                    !light.gameObject.activeInHierarchy)
+                Transform lightTransform = _trackedDynamicShadowTransforms[i];
+                if (light == null || lightTransform == null)
+                {
+                    ClearTrackedDynamicShadowLightSlot(i);
+                    continue;
+                }
+
+                if (!_trackedDynamicShadowEligibility[i] ||
+                    !light.isActiveAndEnabled)
                 {
                     continue;
                 }
 
-                float distanceSq = (light.transform.position - viewerPosition).sqrMagnitude;
+                float distanceSq = (lightTransform.position - viewerPosition).sqrMagnitude;
                 if (distanceSq > maxDistanceSq)
                     continue;
 
@@ -171,7 +200,10 @@ namespace Hecton8.Core
             {
                 Light light = _trackedDynamicShadowLights[i];
                 if (light == null)
+                {
+                    ClearTrackedDynamicShadowLightSlot(i);
                     continue;
+                }
 
                 bool shouldCastShadow = i == nearestIndexA && _trackedDynamicShadowEligibility[i];
                 LightShadows targetShadowMode = shouldCastShadow ? ResolveAllowedShadowMode(_trackedDynamicShadowModes[i]) : LightShadows.None;
@@ -180,8 +212,25 @@ namespace Hecton8.Core
             }
         }
 
+        private static void ClearTrackedDynamicShadowLightSlot(int index)
+        {
+            if ((uint)index >= MaxTrackedDynamicShadowLights)
+                return;
+
+            _trackedDynamicShadowLights[index] = null;
+            _trackedDynamicShadowTransforms[index] = null;
+            _trackedDynamicShadowModes[index] = LightShadows.None;
+            _trackedDynamicShadowEligibility[index] = false;
+        }
+
         private static void EnforceSceneShadowDictatorshipCold()
         {
+            if (!HasLoadedRuntimeScene())
+                return;
+
+            if (TryEnforceTrackedShadowDictatorship())
+                return;
+
             Light[] sceneLights = Object.FindObjectsByType<Light>(FindObjectsInactive.Include);
             Light bestForwardSpot = null;
             float bestForwardSpotScore = float.MinValue;
@@ -225,10 +274,66 @@ namespace Hecton8.Core
                 RegisterDynamicShadowLight(bestForwardSpot);
         }
 
+        private static bool TryEnforceTrackedShadowDictatorship()
+        {
+            Light bestForwardSpot = null;
+            int bestForwardSpotIndex = -1;
+            float bestForwardSpotScore = float.MinValue;
+
+            for (int i = 0; i < _trackedDynamicShadowLights.Length; i++)
+            {
+                Light light = _trackedDynamicShadowLights[i];
+                if (light == null)
+                {
+                    ClearTrackedDynamicShadowLightSlot(i);
+                    continue;
+                }
+
+                if (!_trackedDynamicShadowEligibility[i] ||
+                    !light.isActiveAndEnabled)
+                    continue;
+
+                float spotScore = light.intensity * Mathf.Max(0.1f, light.range);
+                if (spotScore <= bestForwardSpotScore)
+                    continue;
+
+                bestForwardSpotScore = spotScore;
+                bestForwardSpot = light;
+                bestForwardSpotIndex = i;
+            }
+
+            if (bestForwardSpot == null)
+                return false;
+
+            for (int i = 0; i < _trackedDynamicShadowLights.Length; i++)
+            {
+                Light light = _trackedDynamicShadowLights[i];
+                if (light == null)
+                    continue;
+
+                LightShadows targetShadowMode = i == bestForwardSpotIndex
+                    ? ResolveAllowedShadowMode(_trackedDynamicShadowModes[i])
+                    : LightShadows.None;
+
+                if (light.shadows != targetShadowMode)
+                    light.shadows = targetShadowMode;
+            }
+
+            return true;
+        }
+
         private static bool IsAllowedForwardSpotlightCold(Light light)
+        {
+            return IsAllowedForwardSpotlightCold(light, requireForwardName: true);
+        }
+
+        private static bool IsAllowedForwardSpotlightCold(Light light, bool requireForwardName)
         {
             if (light == null || light.type != LightType.Spot)
                 return false;
+
+            if (!requireForwardName)
+                return true;
 
             Transform cursor = light.transform;
             while (cursor != null)
@@ -262,6 +367,12 @@ namespace Hecton8.Core
                 return defaultUrpAsset;
 
             return UniversalRenderPipeline.asset;
+        }
+
+        private static bool HasLoadedRuntimeScene()
+        {
+            Scene activeScene = SceneManager.GetActiveScene();
+            return activeScene.IsValid() && activeScene.isLoaded;
         }
     }
 }

@@ -14,15 +14,11 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/UI Tooltip")]
-    public sealed class UITooltip : MonoBehaviour, ITickable
+    public sealed class UITooltip : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         // ══════════════════════════════════════════════════════════
-        // SINGLETON
+        // REGISTRY SERVICE
         // ══════════════════════════════════════════════════════════
-
-        private static UITooltip _instance;
-
-        public static UITooltip Instance => _instance;
 
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -52,13 +48,25 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private bool _registered;
+        private bool _runtimeRegistered;
         private bool _isVisible;
         private bool _isFading;
         private float _showTimer;
         private float _fadeTimer;
         private string _currentText;
+        private Vector2 _lastPointerPosition;
+        private Vector2 _lastTooltipSize;
+        private Vector2 _lastCanvasSize;
         private Canvas _canvas;
         private RectTransform _canvasRect;
+        private bool _hasPositionCache;
+        private bool _pendingPositionRefresh;
+        private int _currentTextLength;
+        // COLD ALLOC: char[512] - tooltip TMP staging buffer, never resized - owner: UITooltip
+        private readonly char[] _textBuffer = new char[TooltipTextCapacity];
+        private const int TooltipTextCapacity = 512;
+        public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+        public bool IsServiceReady => _runtimeRegistered;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -66,13 +74,12 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            UITooltip registered = GlobalRegistry.UITooltip;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
 
             _canvas = GetComponentInParent<Canvas>();
             if (_canvas != null)
@@ -88,21 +95,27 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            TryRegister();
+            TryRegisterRuntime();
         }
 
         private void OnDisable()
         {
             TryUnregister();
-            Hide();
+            TryUnregisterRuntime();
+            HideInternal();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterRuntime();
+        }
 
-            if (_instance == this)
-                _instance = null;
+        public void OnServiceShutdown()
+        {
+            TryUnregister();
+            TryUnregisterRuntime();
+            HideInternal();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -114,10 +127,11 @@ namespace Hecton8.UI
         /// </summary>
         public static void Show(string text)
         {
-            if (_instance == null || string.IsNullOrEmpty(text))
+            UITooltip instance = GlobalRegistry.UITooltip;
+            if (instance == null || string.IsNullOrEmpty(text))
                 return;
 
-            _instance.ShowInternal(text);
+            instance.ShowInternal(text);
         }
 
         /// <summary>
@@ -125,10 +139,11 @@ namespace Hecton8.UI
         /// </summary>
         public static void Hide()
         {
-            if (_instance == null)
+            UITooltip instance = GlobalRegistry.UITooltip;
+            if (instance == null)
                 return;
 
-            _instance.HideInternal();
+            instance.HideInternal();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -144,7 +159,13 @@ namespace Hecton8.UI
                 if (_isFading)
                 {
                     _fadeTimer += dt;
-                    float t = Mathf.Clamp01(_fadeTimer / fadeDuration);
+                    float fadeDurationSafe = fadeDuration > 0.0001f ? fadeDuration : 0.0001f;
+                    float t = _fadeTimer / fadeDurationSafe;
+                    if (t > 1f)
+                        t = 1f;
+                    else if (t < 0f)
+                        t = 0f;
+
                     if (tooltipCanvasGroup != null)
                         tooltipCanvasGroup.alpha = t;
 
@@ -160,11 +181,42 @@ namespace Hecton8.UI
                     ShowTooltip();
                 }
             }
+
+            RefreshTickRegistration();
         }
 
         // ══════════════════════════════════════════════════════════
         // PRIVATE
         // ══════════════════════════════════════════════════════════
+
+        private bool TryRegisterRuntime()
+        {
+            if (_runtimeRegistered)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
+            UITooltip registered = GlobalRegistry.UITooltip;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
+            GlobalRegistry.RegisterUITooltipRuntime(this);
+            _runtimeRegistered = ReferenceEquals(GlobalRegistry.UITooltip, this);
+            return _runtimeRegistered;
+        }
+
+        private void TryUnregisterRuntime()
+        {
+            if (!_runtimeRegistered)
+                return;
+
+            GlobalRegistry.UnregisterUITooltipRuntime(this);
+            _runtimeRegistered = false;
+        }
 
         private void TryRegister()
         {
@@ -174,8 +226,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -183,7 +234,7 @@ namespace Hecton8.UI
             if (!_registered)
                 return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
             _registered = false;
         }
@@ -194,8 +245,11 @@ namespace Hecton8.UI
                 return;
 
             _currentText = text;
+            _currentTextLength = CopyStringToBuffer(text, _textBuffer);
             _showTimer = showDelay;
             _isVisible = false;
+            _pendingPositionRefresh = true;
+            TryRegister();
         }
 
         private void ShowTooltip()
@@ -203,19 +257,20 @@ namespace Hecton8.UI
             if (tooltipPanel == null || tooltipText == null || tooltipCanvasGroup == null)
                 return;
 
-            tooltipText.SetText(_currentText);
+            tooltipText.SetCharArray(_textBuffer, 0, _currentTextLength);
 
-            // Force layout rebuild to get correct size
-            LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipPanel);
+            // Defer layout rebuild; immediate rebuild spikes the whole tooltip canvas.
+            LayoutRebuilder.MarkLayoutForRebuild(tooltipPanel);
 
             // Clamp width
             Vector2 size = tooltipPanel.sizeDelta;
             if (size.x > maxWidth)
             {
                 tooltipPanel.sizeDelta = new Vector2(maxWidth, size.y);
-                LayoutRebuilder.ForceRebuildLayoutImmediate(tooltipPanel);
+                LayoutRebuilder.MarkLayoutForRebuild(tooltipPanel);
             }
 
+            _pendingPositionRefresh = true;
             UpdatePosition();
 
             _isVisible = true;
@@ -232,6 +287,10 @@ namespace Hecton8.UI
             _isFading = false;
             _showTimer = 0f;
             _currentText = null;
+            _currentTextLength = 0;
+            _hasPositionCache = false;
+            _pendingPositionRefresh = false;
+            TryUnregister();
 
             if (tooltipCanvasGroup != null)
             {
@@ -251,6 +310,21 @@ namespace Hecton8.UI
                 return;
 
             Vector2 mousePos = pointer.position.ReadValue();
+            Vector2 size = tooltipPanel.sizeDelta;
+            Vector2 canvasSize = _canvasRect.sizeDelta;
+            if (!_pendingPositionRefresh && _hasPositionCache)
+            {
+                Vector2 pointerDelta = mousePos - _lastPointerPosition;
+                Vector2 sizeDelta = size - _lastTooltipSize;
+                Vector2 canvasDelta = canvasSize - _lastCanvasSize;
+                if (pointerDelta.sqrMagnitude < 0.01f &&
+                    sizeDelta.sqrMagnitude < 0.01f &&
+                    canvasDelta.sqrMagnitude < 0.01f)
+                {
+                    return;
+                }
+            }
+
             Vector2 localPoint;
 
             RectTransformUtility.ScreenPointToLocalPointInRectangle(
@@ -262,18 +336,59 @@ namespace Hecton8.UI
             localPoint += cursorOffset;
 
             // Clamp to canvas bounds
-            Vector2 size = tooltipPanel.sizeDelta;
-            Vector2 canvasSize = _canvasRect.sizeDelta;
-
             float minX = -canvasSize.x * 0.5f;
             float maxX = canvasSize.x * 0.5f - size.x;
             float minY = -canvasSize.y * 0.5f + size.y;
             float maxY = canvasSize.y * 0.5f;
 
-            localPoint.x = Mathf.Clamp(localPoint.x, minX, maxX);
-            localPoint.y = Mathf.Clamp(localPoint.y, minY, maxY);
+            if (localPoint.x < minX)
+                localPoint.x = minX;
+            else if (localPoint.x > maxX)
+                localPoint.x = maxX;
+
+            if (localPoint.y < minY)
+                localPoint.y = minY;
+            else if (localPoint.y > maxY)
+                localPoint.y = maxY;
 
             tooltipPanel.anchoredPosition = localPoint;
+            _lastPointerPosition = mousePos;
+            _lastTooltipSize = size;
+            _lastCanvasSize = canvasSize;
+            _hasPositionCache = true;
+            _pendingPositionRefresh = false;
+        }
+
+        private void RefreshTickRegistration()
+        {
+            if (_isVisible || _isFading || _showTimer > 0f)
+                TryRegister();
+            else
+                TryUnregister();
+        }
+
+        private static int CopyStringToBuffer(string value, char[] buffer)
+        {
+            if (buffer == null || string.IsNullOrEmpty(value))
+                return 0;
+
+            int length = value.Length;
+            if (length <= buffer.Length)
+            {
+                value.CopyTo(0, buffer, 0, length);
+                return length;
+            }
+
+            int copyLength = buffer.Length;
+            value.CopyTo(0, buffer, 0, copyLength);
+            if (copyLength >= 3)
+            {
+                buffer[copyLength - 3] = '.';
+                buffer[copyLength - 2] = '.';
+                buffer[copyLength - 1] = '.';
+            }
+
+            return copyLength;
         }
     }
 

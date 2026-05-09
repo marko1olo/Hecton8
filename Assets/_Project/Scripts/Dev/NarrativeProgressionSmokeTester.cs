@@ -96,7 +96,7 @@ namespace Hecton8.Dev
 
             singletonResidue = CountContains(audioLogSystem, "AudioLogSystem Instance") +
                                CountContains(atlasSignalSystem, "AtlasSignalSystem Instance");
-            queueTokenCount = CountContains(audioLogSystem, "EnqueuePlayback(data);") +
+            queueTokenCount = CountContains(audioLogSystem, "EnqueuePlayback(logHash);") +
                               CountContains(audioLogSystem, "TryStartNextQueuedLog();") +
                               CountContains(audioLogSystem, "_QueueFullWarningHash");
             telemetryTokenCount = CountContains(audioLogSystem, "PublishPerformanceWarning(_QueueFullWarningHash") +

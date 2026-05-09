@@ -32,11 +32,15 @@ namespace Hecton8.World
         private const float SleepSimulationDistanceMeters = 200f;
         private const float StatisticalDematerializeDistanceMeters = 200f;
         private const float StatisticalRematerializeDistanceMeters = 180f;
+        private const float StatisticalDematerializeDistanceSq = StatisticalDematerializeDistanceMeters * StatisticalDematerializeDistanceMeters;
+        private const float StatisticalRematerializeDistanceSq = StatisticalRematerializeDistanceMeters * StatisticalRematerializeDistanceMeters;
+        private const int StatisticalMigrationKeepAliveSlowTickStride = 10;
         private const float StatisticalFibonacciGoldenAngle = 2.39996323f;
         private const float StatisticalTwoPi = 6.28318530718f;
         private const int PopulationDensityCellSizeMeters = 32;
         private const int PopulationDensityMinRadiusMeters = 4;
         private const int InactiveStatisticalSwarmRingCapacity = 16;
+        private const int TargetBoidsPerGrazingAnchor = 48;
         private const float MinimumPopulationBudgetScale = 0.35f;
         private const string NativeMemoryOwner = nameof(SargassumMicroFaunaBoids);
         private const int ComputeDisableReasonDispatchFailure = 1;
@@ -78,6 +82,66 @@ namespace Hecton8.World
             public byte RadiusMeters;
         }
 
+        private struct NativeRingBuffer<T> : IDisposable where T : struct
+        {
+            private NativeArray<T> _items;
+            private int _head;
+            private int _count;
+
+            public int Count => _count;
+            public bool IsCreated => _items.IsCreated;
+
+            public void EnsureCapacity(int capacity, string label)
+            {
+                if (capacity <= 0)
+                    return;
+
+                if (_items.IsCreated && _items.Length == capacity)
+                    return;
+
+                Dispose();
+                _items = new NativeArray<T>(capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<T>[capacity] - persistent statistical swarm ring buffer - owner: SargassumMicroFaunaBoids
+                NativeMemorySentinel.RegisterNativeArray(_items, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
+                _head = 0;
+                _count = 0;
+            }
+
+            public void PushOverwrite(in T value)
+            {
+                if (!_items.IsCreated || _items.Length <= 0)
+                    return;
+
+                _items[_head] = value;
+                _head++;
+                if (_head >= _items.Length)
+                    _head = 0;
+                _count = math.min(_count + 1, _items.Length);
+            }
+
+            public void Clear()
+            {
+                _head = 0;
+                _count = 0;
+            }
+
+            public void Dispose()
+            {
+                Dispose(default);
+            }
+
+            public void Dispose(JobHandle dependency)
+            {
+                if (!_items.IsCreated)
+                    return;
+
+                NativeMemorySentinel.UnregisterNativeArray(_items);
+                _items.Dispose(dependency);
+                _items = default;
+                _head = 0;
+                _count = 0;
+            }
+        }
+
         [Flags]
         private enum BoidStateFlags : uint
         {
@@ -86,7 +150,8 @@ namespace Hecton8.World
             Hunting = 1u << 1,
             Fleeing = 1u << 2,
             Consumed = 1u << 3,
-            AggressiveMutation = 1u << 4
+            AggressiveMutation = 1u << 4,
+            VisualMutationResolved = 1u << 5
         }
 
         [Flags]
@@ -227,6 +292,7 @@ namespace Hecton8.World
             public Vector3 Padding;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 28)]
         private readonly struct StaticObstacleData
         {
             public readonly float3 Center;
@@ -259,6 +325,20 @@ namespace Hecton8.World
             public NativeArray<int> OutputCount;
             public float BodyRadius;
 
+            private static float ApproxVisualSegmentLength(float3 a, float3 b)
+            {
+                float3 delta = math.abs(b - a);
+                float maxAxis = math.cmax(delta);
+                float minAxis = math.cmin(delta);
+                float midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
+                return maxAxis + midAxis * 0.5f + minAxis * 0.25f;
+            }
+
+            private static float3 FastSafeDirection(float3 delta, float3 fallback)
+            {
+                return CheapNormalizeL1(delta, fallback);
+            }
+
             public void Execute()
             {
                 if (!OutputCount.IsCreated || OutputCount.Length <= 0 || !OutputNodes.IsCreated)
@@ -271,7 +351,7 @@ namespace Hecton8.World
 
                 float totalLength = 0f;
                 for (int i = 1; i < safePathCount; i++)
-                    totalLength += math.distance(SourcePath[i - 1], SourcePath[i]);
+                    totalLength += ApproxVisualSegmentLength(SourcePath[i - 1], SourcePath[i]);
 
                 if (totalLength <= 0.001f)
                     return;
@@ -294,7 +374,7 @@ namespace Hecton8.World
                             break;
 
                         pathIterationCount++;
-                        float segmentLength = math.distance(SourcePath[pathCursor - 1], SourcePath[pathCursor]);
+                        float segmentLength = ApproxVisualSegmentLength(SourcePath[pathCursor - 1], SourcePath[pathCursor]);
                         if (traversed + segmentLength >= targetDistance || pathCursor >= safePathCount - 1)
                         {
                             float segmentT = segmentLength > 0.0001f
@@ -325,13 +405,13 @@ namespace Hecton8.World
                 {
                     float3 nodePosition = OutputNodes[nodeIndex].Position;
                     if (nodeIndex > 0)
-                        cumulativeDistance += math.distance(OutputNodes[nodeIndex - 1].Position, nodePosition);
+                        cumulativeDistance += ApproxVisualSegmentLength(OutputNodes[nodeIndex - 1].Position, nodePosition);
 
                     float3 tangent;
                     if (nodeIndex < targetCount - 1)
-                        tangent = math.normalizesafe(OutputNodes[nodeIndex + 1].Position - nodePosition, new float3(0f, 0f, 1f));
+                        tangent = FastSafeDirection(OutputNodes[nodeIndex + 1].Position - nodePosition, new float3(0f, 0f, 1f));
                     else
-                        tangent = math.normalizesafe(nodePosition - OutputNodes[math.max(0, nodeIndex - 1)].Position, new float3(0f, 0f, 1f));
+                        tangent = FastSafeDirection(nodePosition - OutputNodes[math.max(0, nodeIndex - 1)].Position, new float3(0f, 0f, 1f));
 
                     float distance01 = totalLength > 0.0001f ? math.saturate(cumulativeDistance / totalLength) : 0f;
                     float bodyRadius = math.lerp(BodyRadius, math.max(0.5f, BodyRadius * 0.18f), distance01);
@@ -348,7 +428,7 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 736)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 768)]
         private struct SimulationFrameConstants
         {
             public float4 Simulation0;
@@ -397,6 +477,8 @@ namespace Hecton8.World
             public float4 SonarScatter0;
             public float4 AcousticPanic0;
             public float4 AcousticPanic1;
+            public float4 AbyssalFlowWeatherCurrent;
+            public float4 PlayerDirection;
         }
 
         private const int BoidStride = 32;
@@ -405,7 +487,8 @@ namespace Hecton8.World
         private const int FormationBeaconStride = 32;
         private const int FormationObstacleStride = 32;
         private const int LeviathanNodeStride = 32;
-        private const int PbdCorrectionStride = sizeof(int) * 4;
+        private const int PbdCorrectionScalarCount = 4;
+        private const int PbdCorrectionRawStride = sizeof(int);
         private const int ThreatGridStride = sizeof(uint);
         private const int ThreatVoxelStride = sizeof(uint);
         private const int SpatialGridCountStride = sizeof(int);
@@ -444,9 +527,11 @@ namespace Hecton8.World
         private const float SubmarineWakeBaseHalfLengthMeters = 18f;
         private const float SubmarineWakeMaxHalfLengthMeters = 55f;
         private const float SubmarineWakeHalfLengthSpeedScale = 1.6f;
+        private const float LodDitherHibernationStart01 = 0.82f;
+        private const float LodDitherHibernationInvRange = 1f / (1f - LodDitherHibernationStart01);
         private const uint HashSeed = 0x9E3779B9u;
         private const float SimulationPhaseWrapSeconds = 60f;
-        private const int SimulationFrameConstantsStride = 736;
+        private const int SimulationFrameConstantsStride = 768;
         private const int BoidDataPositionOffsetBytes = 0;
         private const int BoidDataVelocityOffsetBytes = 12;
         private const int BoidDataPanicOffsetBytes = 24;
@@ -454,6 +539,9 @@ namespace Hecton8.World
         private const int BoidDataStateFlagsOffsetBytes = 28;
         private const int BoidDataAlignmentBytes = 4;
         private const uint ComputeThreadGroupSizeX = 64;
+        private const float BoundsCubeSphereRadiusScale = 1.7320508f;
+        private const float RenderConeCullNearDistanceSq = FullSimulationDistanceMeters * FullSimulationDistanceMeters;
+        private const float RenderConeCullDotThreshold = -0.2f;
         private const string MainKernelName = "CSMain";
         private const string ClearLatchStatsKernelName = "ClearLatchStats";
         private const string ClearSpatialGridKernelName = "ClearSpatialGrid";
@@ -512,7 +600,6 @@ namespace Hecton8.World
         private static readonly int _PlayerRightId = Shader.PropertyToID("_PlayerRightWS");
         private static readonly int _PlayerUpId = Shader.PropertyToID("_PlayerUpWS");
         private static readonly int _PlayerForwardId = Shader.PropertyToID("_PlayerForwardWS");
-        private static readonly int _PlayerDirectionId = Shader.PropertyToID("_PlayerDirection");
         private static readonly int _PlayerSpeedId = Shader.PropertyToID("_PlayerSpeed");
         private static readonly int _PanicPlayerSpeedThresholdId = Shader.PropertyToID("_PanicPlayerSpeedThreshold");
         private static readonly int _PanicPlayerRadiusId = Shader.PropertyToID("_PanicPlayerRadius");
@@ -539,15 +626,14 @@ namespace Hecton8.World
         private static readonly int _CutMaskActiveId = Shader.PropertyToID("_CutMaskActive");
         private static readonly int _GlobalDriftOffsetId = Shader.PropertyToID("_GlobalDriftOffset");
         private static readonly int _GlobalDriftDeltaId = Shader.PropertyToID("_GlobalDriftDelta");
-        private static readonly int _AbyssalFlowWeatherCurrentId = Shader.PropertyToID("_AbyssalFlowWeatherCurrent");
         private static readonly int _DeepModeId = Shader.PropertyToID("_DeepMode");
-        private static readonly int _BoidGroupBoundsId = Shader.PropertyToID("_BoidGroupBounds");
         private static readonly int _DeepClusterWeightId = Shader.PropertyToID("_DeepClusterWeight");
         private static readonly int _HeadlightPanicId = Shader.PropertyToID("_HeadlightPanic");
         private static readonly int _ParasiteModeId = Shader.PropertyToID("_ParasiteMode");
         private static readonly int _ParasiteAffinityWeightId = Shader.PropertyToID("_ParasiteAffinityWeight");
         private static readonly int _ParasiteAggressionId = Shader.PropertyToID("_ParasiteAggression");
         private static readonly int _VelocitySleepScaleId = Shader.PropertyToID("_VelocitySleepScale");
+        private static readonly int _LodDitherKeep01Id = Shader.PropertyToID("_LodDitherKeep01");
         private static readonly int _ParasiteLatchRadiusId = Shader.PropertyToID("_ParasiteLatchRadius");
         private static readonly int _LatchStatsId = Shader.PropertyToID("_LatchStats");
         private static readonly int _FormationModeId = Shader.PropertyToID("_FormationMode");
@@ -1059,24 +1145,16 @@ namespace Hecton8.World
         private float leviathanShockwaveSpeedThreshold = 8.5f;
 
         [SerializeField, Range(2f, 32f)]
-        [Tooltip("Radius used when the leviathan shockwave pushes nearby rigidbodies and registered field debris.")]
+        [Tooltip("Radius used when the leviathan emits a visual shockwave into the boid compute threat field.")]
         private float leviathanShockwaveRadius = 15f;
 
         [SerializeField, Range(2f, 96f)]
-        [Tooltip("Impulse magnitude applied to nearby rigidbodies when the leviathan head emits a high-speed shockwave.")]
+        [Tooltip("Visual shockwave intensity scalar. This never applies Rigidbody impulses.")]
         private float leviathanShockwaveImpulse = 18f;
 
-        [SerializeField, Range(0f, 2f)]
-        [Tooltip("Additional upward bias applied to leviathan shockwaves so floating debris gets kicked clear of the path.")]
-        private float leviathanShockwaveVerticalLift = 0.24f;
-
         [SerializeField, Range(0.05f, 1.5f)]
-        [Tooltip("Cooldown between consecutive shockwave force bursts while the leviathan keeps sprinting.")]
+        [Tooltip("Cooldown between consecutive visual shockwave pulses while the leviathan keeps sprinting.")]
         private float leviathanShockwaveCadence = 0.18f;
-
-        [SerializeField, Range(4, 32)]
-        [Tooltip("Maximum rigidbody candidates processed per leviathan shockwave without allocations.")]
-        private int leviathanShockwaveHitCapacity = 12;
 
         [Header("â”€â”€ Rendering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField]
@@ -1211,12 +1289,6 @@ namespace Hecton8.World
         private float _debugSonarScatter01;
 
         private MaterialPropertyBlock _materialPropertyBlock;
-        // COLD ALLOC: Plane[6] - cached frustum plane array reused for no-alloc visibility tests - owner: SargassumMicroFaunaBoids
-        private readonly Plane[] _frustumPlanes = new Plane[6];
-        // COLD ALLOC: PopulationDensityPoint[16] - fixed inactive statistical swarm token ring; active buffers are retained and reused - owner: SargassumMicroFaunaBoids
-        private readonly PopulationDensityPoint[] _inactiveStatisticalSwarmRing = new PopulationDensityPoint[InactiveStatisticalSwarmRingCapacity];
-        // COLD ALLOC: AbsoluteUniversePosition[16] - fixed inactive statistical swarm center ring paired with density tokens - owner: SargassumMicroFaunaBoids
-        private readonly AbsoluteUniversePosition[] _inactiveStatisticalSwarmCenterRing = new AbsoluteUniversePosition[InactiveStatisticalSwarmRingCapacity];
 
         private BoidData[] _spawnData;
         private GrazingAnchorData[] _grazingAnchors;
@@ -1227,8 +1299,6 @@ namespace Hecton8.World
         private float[] _deepBiolumZoneScores;
         private BeaconNetworkSystem.BeaconSnapshot[] _formationBeaconSnapshots;
         private Collider[] _formationObstacleColliders;
-        private SpatialQueryHit[] _leviathanShockwaveSpatialHits;
-        private Rigidbody[] _leviathanShockwaveRigidbodies;
         private NativeArray<StaticObstacleData> _staticObstacleCache;
         private NativeArray<float3> _leviathanPathScratchNative;
         private NativeArray<LeviathanNodeData> _leviathanNodeFrontNative;
@@ -1254,6 +1324,9 @@ namespace Hecton8.World
         private GraphicsBuffer _spatialGridCountBuffer;
         private GraphicsBuffer _spatialGridCellBuffer;
         private GraphicsBuffer _simulationFrameBuffer;
+        private bool _latchStatsBufferRawTarget;
+        private bool _pbdCorrectionBufferRawTarget;
+        private bool _spatialGridCountBufferRawTarget;
         private Bounds _renderBounds;
         private Vector4 _densityWorldRect;
         private int _kernelIndex = -1;
@@ -1276,7 +1349,10 @@ namespace Hecton8.World
         private bool _serviceRegistered;
         private bool _hasSpawnData;
         private bool _computeKernelBindingsValid;
+        private bool _computeStaticBuffersBound;
         private bool _computeDispatchDisabled;
+        private Texture _boundComputeDensityTexture;
+        private Texture _boundComputeCutMaskTexture;
         private Vector3 _fieldCenter;
         private Vector3 _fieldExtents;
         private Vector3 _previousDriftOffset;
@@ -1286,10 +1362,19 @@ namespace Hecton8.World
         private bool _lastDeepLeviathanMode;
         private float _simulationTime;
         private float _simulationPhaseOffset;
+        private float _cachedVatSwayAmplitudeScale = 1f;
         private float _spatialGridCellSizeWS = 1f;
         private Vector3 _spatialGridOriginWS = Vector3.zero;
         private Vector3Int _spatialGridResolution = Vector3Int.one;
         private int _activeBoidCount;
+        private int _migrationPopulationCount;
+        private int _lastRequestedMigrationPopulationCount;
+        private AbsoluteUniversePosition _registeredMigrationPopulationCenterAup;
+        private int3 _registeredMigrationPopulationAupCell;
+        private byte _registeredMigrationPopulationSpecies;
+        private bool _registeredMigrationPopulationValid;
+        private int _boidMeshVertexCount;
+        private int _cachedRenderLayer;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private int _activeGrazingAnchorCount;
         private int _activeMassiveThreatCount;
@@ -1359,11 +1444,29 @@ namespace Hecton8.World
         private JobHandle _leviathanNodeBuildHandle;
         private bool _leviathanNodeBuildScheduled;
         private SimulationLodTier _lastSimulationLodTier = SimulationLodTier.Full;
+        private int _viewPoseCacheFrame = -1;
+        private bool _viewPoseCacheValid;
+        private Vector3 _viewPoseCachePosition;
+        private Vector3 _viewPoseCacheForward;
+        private int _playerRuntimeSnapshotCacheFrame = -1;
+        private bool _playerRuntimeSnapshotCacheValid;
+        private PlayerMovementRuntimeState _playerRuntimeSnapshotMovement;
+        private PlayerLookState _playerRuntimeSnapshotLook;
+        private int _playerMotionCacheFrame = -1;
+        private bool _playerMotionCacheValid;
+        private Vector3 _playerMotionCachePosition;
+        private Vector3 _playerMotionCacheVelocity;
+        private bool _playerTransformProbeAttempted;
+        private bool _playerComponentProbeAttempted;
+        private bool _viewCameraProbeAttempted;
+        private bool _runtimeServiceProbeAttempted;
         private PopulationDensityPoint _statisticalPopulationPoint;
         private AbsoluteUniversePosition _statisticalPopulationCenterAup;
         private bool _statisticalPopulationActive;
-        private int _inactiveStatisticalSwarmRingHead;
-        private int _inactiveStatisticalSwarmRingCount;
+        private int _statisticalPopulationBaseCount;
+        private int _statisticalMigrationKeepAliveTickCountdown;
+        private NativeRingBuffer<PopulationDensityPoint> _inactiveStatisticalSwarmRing;
+        private NativeRingBuffer<AbsoluteUniversePosition> _inactiveStatisticalSwarmCenterRing;
 
         /// <summary>
         /// Current active boid count.
@@ -1380,6 +1483,9 @@ namespace Hecton8.World
             _computeDispatchDisabled = false;
             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
             SanitizeSettings();
+            RefreshRenderLayerCache();
+            RefreshRenderScaleCache();
+            ResetDependencyProbeCache();
             ResolveDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayload();
@@ -1390,7 +1496,11 @@ namespace Hecton8.World
         private void OnEnable()
         {
             _computeDispatchDisabled = false;
+            InvalidateViewPoseCache();
+            ResetDependencyProbeCache();
             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
+            RefreshRenderLayerCache();
+            RefreshRenderScaleCache();
             ResolveDependencies();
             EnsureBuffers();
             RefreshThreatVoxelPayload();
@@ -1406,6 +1516,8 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            InvalidateViewPoseCache();
+            ResetDependencyProbeCache();
             TryUnregisterService();
             SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
@@ -1465,11 +1577,13 @@ namespace Hecton8.World
             ResetThreatVoxelSnapshot();
             _lastDeepLeviathanMode = false;
             TryUnregister();
+            ClearStatisticalPopulationPoint();
             CompletePendingReadbackAndReleaseBuffers();
         }
 
         private void OnDestroy()
         {
+            ResetDependencyProbeCache();
             TryUnregisterService();
             SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
@@ -1488,6 +1602,7 @@ namespace Hecton8.World
             if (shiftData.ShiftOffset.sqrMagnitude <= 0.0001f)
                 return;
 
+            InvalidateViewPoseCache();
             ApplyRuntimeOffsetToSwarmData(-shiftData.ShiftOffset);
         }
 
@@ -1497,8 +1612,6 @@ namespace Hecton8.World
         /// <param name="dt">Frame delta supplied by GameTickManager.</param>
         public void Tick(float dt)
         {
-            ResolveDependencies();
-
             if (_statisticalPopulationActive)
             {
                 _debugVisible = false;
@@ -1506,8 +1619,17 @@ namespace Hecton8.World
                 return;
             }
 
+            ResolveDependencies();
+
             if (!_hasSpawnData || boidMaterial == null || boidMesh == null)
                 return;
+
+            if (_activeBoidCount <= 0)
+            {
+                _debugVisible = false;
+                _debugHibernation01 = 1f;
+                return;
+            }
 
             if (!_threatVoxelDataValid && _mapMagicVegetationBridge != null)
                 RefreshThreatVoxelPayload();
@@ -1532,7 +1654,7 @@ namespace Hecton8.World
             _formationModeActive = IsFormationModeActive();
             float deltaTime = math.max(0f, dt);
             float leviathanBlendTarget = _leviathanModeActive ? 1f : 0f;
-            float leviathanBlendT = 1f - math.exp(-math.max(leviathanModeBlendSharpness, 0.01f) * deltaTime);
+            float leviathanBlendT = ResolveDecayBlend(math.max(leviathanModeBlendSharpness, 0.01f), deltaTime);
             _leviathanModeBlend = math.lerp(_leviathanModeBlend, leviathanBlendTarget, leviathanBlendT);
             if (_headlightPanicTimer > 0f)
             {
@@ -1556,6 +1678,7 @@ namespace Hecton8.World
             UpdateMassiveThreats();
             UpdateParasiteLatchReadback(deltaTime);
             float hibernation01 = 0f;
+            bool shouldRender = ShouldRenderSwarm(cameraDistanceSq);
             bool dispatchedSimulation = TryConsumeSimulationStep(
                 deltaTime,
                 cameraDistanceSq,
@@ -1563,9 +1686,10 @@ namespace Hecton8.World
                 out hibernation01,
                 out SimulationLodTier simulationLodTier);
             bool shouldDispatchSleepVelocityWrite = simulationLodTier == SimulationLodTier.Sleep && _sleepVelocityWritePending;
-            bool shouldRender = ShouldRenderSwarm(cameraDistanceSq);
+            bool shouldDispatchSimulation = dispatchedSimulation && (shouldRender || ShouldMaintainOffscreenBoidSimulation(simulationLodTier));
             bool leaderFollowerSchooling = _formationModeActive && !_parasiteModeActive && _leviathanModeBlend < 0.001f;
-            if (dispatchedSimulation || shouldDispatchSleepVelocityWrite)
+            bool shouldCollectLatchStats = ShouldCollectLatchStats(simulationLodTier, leaderFollowerSchooling);
+            if (shouldDispatchSimulation || shouldDispatchSleepVelocityWrite)
             {
                 if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
                     UpdateSpatialGridLayout();
@@ -1574,7 +1698,9 @@ namespace Hecton8.World
                 {
                     try
                     {
-                        DispatchClearLatchStats();
+                        if (shouldCollectLatchStats)
+                            DispatchClearLatchStats();
+
                         if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
                         {
                             DispatchClearSpatialGrid();
@@ -1586,7 +1712,7 @@ namespace Hecton8.World
                         boidCompute.Dispatch(_kernelIndex, _dispatchGroupCount, 1, 1);
                         if (simulationLodTier == SimulationLodTier.Sleep)
                             _sleepVelocityWritePending = false;
-                        if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
+                        if (shouldCollectLatchStats)
                             TryRequestParasiteLatchReadback();
 
                         _frameParity ^= 1;
@@ -1616,14 +1742,20 @@ namespace Hecton8.World
         /// </summary>
         public void SlowTick()
         {
-            ResolveDependencies();
-            float cameraDistanceSq = ResolveCameraDistanceSq();
+            RefreshRenderLayerCache();
+            RefreshRenderScaleCache();
             if (_statisticalPopulationActive)
             {
-                TryRematerializeStatisticalPopulation(cameraDistanceSq);
+                float statisticalCameraDistanceSq = ResolveCameraDistanceSq();
+                RefreshStatisticalMigrationPopulation(force: false);
+                TryRematerializeStatisticalPopulation(statisticalCameraDistanceSq);
                 return;
             }
 
+            ResetDependencyProbeCache();
+            ResolveDependencies();
+
+            float cameraDistanceSq = ResolveCameraDistanceSq();
             if (TryDematerializeStatisticalPopulation(cameraDistanceSq))
                 return;
 
@@ -1647,7 +1779,7 @@ namespace Hecton8.World
         /// <param name="fixedDeltaTime">Fixed delta supplied by GameTickManager.</param>
         public void FixedTick(float fixedDeltaTime)
         {
-            float safeFixedDeltaTime = Mathf.Max(0f, fixedDeltaTime);
+            float safeFixedDeltaTime = math.max(0f, fixedDeltaTime);
             if (_leviathanStrikeCooldownTimer > 0f)
             {
                 _leviathanStrikeCooldownTimer -= safeFixedDeltaTime;
@@ -1662,7 +1794,7 @@ namespace Hecton8.World
                     _leviathanShockwaveCooldownTimer = 0f;
             }
 
-            UpdateLeviathanPhysicalState(Mathf.Max(safeFixedDeltaTime, 0.0001f));
+                UpdateLeviathanPhysicalState(math.max(safeFixedDeltaTime, 0.0001f));
             ApplyParasiteHullStress();
             ApplyParasiteEnvironmentalDrag();
             if (!_leviathanModeActive || !_leviathanHeadValid || _leviathanModeBlend < 0.5f)
@@ -1675,17 +1807,38 @@ namespace Hecton8.World
         private void ResolveDependencies()
         {
             IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
-            if (biolumManager == null)
-                biolumManager = Hecton8.Core.GlobalRegistry.BiolumManager;
+            bool missingRuntimeServices = biolumManager == null ||
+                                          dragManager == null ||
+                                          cutManager == null ||
+                                          _worldZoneDirector == null ||
+                                          _biomeMatrixDirector == null ||
+                                          _mapMagicVegetationBridge == null;
+            if (!_runtimeServiceProbeAttempted && missingRuntimeServices)
+            {
+                if (biolumManager == null)
+                    biolumManager = Hecton8.Core.GlobalRegistry.BiolumManager;
 
-            if (dragManager == null)
-                dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
+                if (dragManager == null)
+                    dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
 
-            if (cutManager == null)
-                cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
+                if (cutManager == null)
+                    cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
 
-            if (playerTransform == null)
-                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+                if (_worldZoneDirector == null)
+                    _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+
+                if (_biomeMatrixDirector == null)
+                    _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+
+                if (_mapMagicVegetationBridge == null)
+                    _mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+
+                _runtimeServiceProbeAttempted = true;
+            }
+            else if (!missingRuntimeServices)
+            {
+                _runtimeServiceProbeAttempted = true;
+            }
 
             if (playerContext != null && playerContext.IsInitialized)
             {
@@ -1695,139 +1848,169 @@ namespace Hecton8.World
                 _playerFlashlight ??= playerContext.Flashlight;
             }
 
-            if (_playerRigidbody == null && playerTransform != null)
-                _playerRigidbody = playerTransform.GetComponent<Rigidbody>();
+            if (playerTransform == null && !_playerTransformProbeAttempted)
+            {
+                WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
+                _playerTransformProbeAttempted = true;
+            }
+            else if (playerTransform != null)
+            {
+                _playerTransformProbeAttempted = true;
+            }
 
-            if (_playerMovement == null && playerTransform != null)
-                playerTransform.TryGetComponent(out _playerMovement);
+            bool missingPlayerComponents = _playerRigidbody == null ||
+                                           _playerMovement == null ||
+                                           _playerTransportCoordinator == null ||
+                                           _playerHealth == null ||
+                                           _playerFlashlight == null;
+            if (!_playerComponentProbeAttempted && missingPlayerComponents && playerTransform != null)
+            {
+                if (_playerRigidbody == null)
+                    playerTransform.TryGetComponent(out _playerRigidbody);
 
-            if (_playerTransportCoordinator == null && playerTransform != null)
-                playerTransform.TryGetComponent(out _playerTransportCoordinator);
+                if (_playerMovement == null)
+                    playerTransform.TryGetComponent(out _playerMovement);
 
-            if (_playerHealth == null && playerTransform != null)
-                playerTransform.TryGetComponent(out _playerHealth);
+                if (_playerTransportCoordinator == null)
+                    playerTransform.TryGetComponent(out _playerTransportCoordinator);
 
-            if (_playerFlashlight == null && playerTransform != null)
-                _playerFlashlight = playerTransform.GetComponent<PlayerFlashlight>();
+                if (_playerHealth == null)
+                    playerTransform.TryGetComponent(out _playerHealth);
 
-            if (_worldZoneDirector == null)
-                _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
+                if (_playerFlashlight == null)
+                    playerTransform.TryGetComponent(out _playerFlashlight);
 
-            if (_biomeMatrixDirector == null)
-                _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+                _playerComponentProbeAttempted = true;
+            }
+            else if (!missingPlayerComponents)
+            {
+                _playerComponentProbeAttempted = true;
+            }
 
-            if (_mapMagicVegetationBridge == null)
-                _mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-
-            if (viewCamera == null && playerTransform != null)
+            if (viewCamera == null && playerTransform != null && !_viewCameraProbeAttempted)
+            {
                 viewCamera = ComponentReferenceUtility.ResolveOwnedComponent<Camera>(playerTransform);
+                _viewCameraProbeAttempted = true;
+            }
+            else if (viewCamera != null)
+            {
+                _viewCameraProbeAttempted = true;
+            }
 
             if (_playerFlashlight != null)
                 _flashlightOn = _playerFlashlight.IsOn;
         }
 
+        private void ResetDependencyProbeCache()
+        {
+            _playerTransformProbeAttempted = false;
+            _playerComponentProbeAttempted = false;
+            _viewCameraProbeAttempted = false;
+            _runtimeServiceProbeAttempted = false;
+        }
+
         private void SanitizeSettings()
         {
-            boidCount = Mathf.Clamp(boidCount, 128, 2048);
+            boidCount = math.clamp(boidCount, 128, 2048);
             boidCount = VRAMEnforcer.ApplyBoidPopulationBudget(boidCount, 128, 2048);
-            maxSpawnAttempts = Mathf.Clamp(maxSpawnAttempts, 4, 32);
-            densityThreshold = Mathf.Clamp01(densityThreshold);
-            windowThreshold = Mathf.Clamp(windowThreshold, 0f, 0.75f);
-            cruiseSpeed = Mathf.Max(0.1f, cruiseSpeed);
-            maxSpeed = Mathf.Max(cruiseSpeed, maxSpeed);
-            panicSpeedBoost = Mathf.Max(0f, panicSpeedBoost);
-            perceptionRadius = Mathf.Max(0.25f, perceptionRadius);
-            separationRadius = Mathf.Clamp(separationRadius, 0.1f, perceptionRadius);
-            boidBodyRadius = Mathf.Clamp(boidBodyRadius, 0.02f, separationRadius * 0.5f);
-            consumedCollapseSpeed = Mathf.Clamp(consumedCollapseSpeed, 2f, 24f);
-            gradientWorldStep = Mathf.Max(0.05f, gradientWorldStep);
-            waterLevel = Mathf.Max(0f, waterLevel);
-            minDepthBelowSurface = Mathf.Max(0.1f, minDepthBelowSurface);
-            maxDepthBelowSurface = Mathf.Max(minDepthBelowSurface + 0.1f, maxDepthBelowSurface);
-            panicThreshold = Mathf.Clamp01(panicThreshold);
-            panicDecay = Mathf.Max(0.1f, panicDecay);
-            grazingAnchorCount = Mathf.Clamp(grazingAnchorCount, 4, 96);
-            grazingRadius = Mathf.Clamp(grazingRadius, 0.25f, 6f);
-            grazingWeight = Mathf.Clamp(grazingWeight, 0f, 4f);
-            canopyAffinityWeight = Mathf.Clamp(canopyAffinityWeight, 0f, 4f);
-            grazingDensityThreshold = Mathf.Clamp01(grazingDensityThreshold);
-            grazingRestSpeedScale = Mathf.Clamp(grazingRestSpeedScale, 0.05f, 0.6f);
-            grazingRestHoldThreshold = Mathf.Clamp01(grazingRestHoldThreshold);
-            panicPlayerSpeedThreshold = Mathf.Clamp(panicPlayerSpeedThreshold, 0.5f, 8f);
-            panicPlayerRadius = Mathf.Clamp(panicPlayerRadius, 0.5f, 12f);
-            cameraAvoidRadius = Mathf.Clamp(cameraAvoidRadius, 0.25f, 3f);
-            cameraAvoidWeight = Mathf.Clamp(cameraAvoidWeight, 0f, 8f);
-            voxelAvoidanceLookAheadDistance = Mathf.Clamp(voxelAvoidanceLookAheadDistance, 0.25f, 12f);
+            maxSpawnAttempts = math.clamp(maxSpawnAttempts, 4, 32);
+            densityThreshold = math.saturate(densityThreshold);
+            windowThreshold = math.clamp(windowThreshold, 0f, 0.75f);
+            cruiseSpeed = math.max(0.1f, cruiseSpeed);
+            maxSpeed = math.max(cruiseSpeed, maxSpeed);
+            panicSpeedBoost = math.max(0f, panicSpeedBoost);
+            perceptionRadius = math.max(0.25f, perceptionRadius);
+            separationRadius = math.clamp(separationRadius, 0.1f, perceptionRadius);
+            boidBodyRadius = math.clamp(boidBodyRadius, 0.02f, separationRadius * 0.5f);
+            consumedCollapseSpeed = math.clamp(consumedCollapseSpeed, 2f, 24f);
+            gradientWorldStep = math.max(0.05f, gradientWorldStep);
+            waterLevel = math.max(0f, waterLevel);
+            minDepthBelowSurface = math.max(0.1f, minDepthBelowSurface);
+            maxDepthBelowSurface = math.max(minDepthBelowSurface + 0.1f, maxDepthBelowSurface);
+            panicThreshold = math.saturate(panicThreshold);
+            panicDecay = math.max(0.1f, panicDecay);
+            grazingAnchorCount = math.clamp(grazingAnchorCount, 4, 96);
+            grazingRadius = math.clamp(grazingRadius, 0.25f, 6f);
+            grazingWeight = math.clamp(grazingWeight, 0f, 4f);
+            canopyAffinityWeight = math.clamp(canopyAffinityWeight, 0f, 4f);
+            grazingDensityThreshold = math.saturate(grazingDensityThreshold);
+            grazingRestSpeedScale = math.clamp(grazingRestSpeedScale, 0.05f, 0.6f);
+            grazingRestHoldThreshold = math.saturate(grazingRestHoldThreshold);
+            panicPlayerSpeedThreshold = math.clamp(panicPlayerSpeedThreshold, 0.5f, 8f);
+            panicPlayerRadius = math.clamp(panicPlayerRadius, 0.5f, 12f);
+            cameraAvoidRadius = math.clamp(cameraAvoidRadius, 0.25f, 3f);
+            cameraAvoidWeight = math.clamp(cameraAvoidWeight, 0f, 8f);
+            voxelAvoidanceLookAheadDistance = math.clamp(voxelAvoidanceLookAheadDistance, 0.25f, 12f);
             voxelAvoidanceWeight = 0f;
-            maxMassiveThreatCount = Mathf.Clamp(maxMassiveThreatCount, 1, 8);
-            massiveThreatPanicRadius = Mathf.Clamp(massiveThreatPanicRadius, 50f, 96f);
-            massiveThreatWeight = Mathf.Clamp(massiveThreatWeight, 0f, 12f);
-            deepBiolumAnchorCapacity = Mathf.Clamp(deepBiolumAnchorCapacity, 1, 16);
-            deepBiolumSearchRadius = Mathf.Clamp(deepBiolumSearchRadius, 10f, 250f);
-            deepBaitBallRadius = Mathf.Clamp(deepBaitBallRadius, 0.5f, 12f);
-            deepBaitBallHeight = Mathf.Clamp(deepBaitBallHeight, 0.25f, 8f);
-            deepClusterWeight = Mathf.Clamp(deepClusterWeight, 0f, 8f);
-            deepHeadlightPanicDuration = Mathf.Clamp(deepHeadlightPanicDuration, 0.1f, 10f);
-            deepHeadlightPanicRadiusScale = Mathf.Clamp(deepHeadlightPanicRadiusScale, 1f, 6f);
-            boidVatFrameCount = Mathf.Max(1, boidVatFrameCount);
-            boidVatPlaybackSpeed = Mathf.Max(0f, boidVatPlaybackSpeed);
-            boidVatInstancePhaseScale = Mathf.Max(0f, boidVatInstancePhaseScale);
-            boidVatPositionScale = Mathf.Max(0.0001f, boidVatPositionScale);
-            boidVatNormalBlend = Mathf.Clamp01(boidVatNormalBlend);
-            parasiteDroneWorldYThreshold = Mathf.Clamp(parasiteDroneWorldYThreshold, -4000f, -1000f);
-            parasiteAffinityWeight = Mathf.Clamp(parasiteAffinityWeight, 0f, 12f);
-            parasiteHullStressIntensity = Mathf.Clamp01(parasiteHullStressIntensity);
-            parasiteHullStressLightBoost = Mathf.Clamp01(parasiteHullStressLightBoost);
-            parasiteLatchRadius = Mathf.Clamp(parasiteLatchRadius, 0.5f, 8f);
-            parasiteMaxLatchedDronesForFullDrag = Mathf.Clamp(parasiteMaxLatchedDronesForFullDrag, 1, 96);
-            parasiteMaxEnvironmentalDragMultiplier = Mathf.Clamp(parasiteMaxEnvironmentalDragMultiplier, 1f, 4f);
-            parasiteLatchReadbackInterval = Mathf.Clamp(parasiteLatchReadbackInterval, 0.05f, 0.5f);
-            parasiteHarvesterLatchThreshold = Mathf.Clamp(parasiteHarvesterLatchThreshold, 1, 32);
-            parasiteHarvesterFullLatchCount = Mathf.Clamp(parasiteHarvesterFullLatchCount, parasiteHarvesterLatchThreshold, 96);
-            formationBeaconCapacity = Mathf.Clamp(formationBeaconCapacity, 1, 8);
-            formationBeaconSearchRadius = Mathf.Clamp(formationBeaconSearchRadius, 8f, 250f);
-            formationWeight = Mathf.Clamp(formationWeight, 0f, 8f);
-            formationRingThickness = Mathf.Clamp(formationRingThickness, 0.1f, 12f);
-            formationPulseAmplitude = Mathf.Clamp(formationPulseAmplitude, 0f, 2f);
-            formationPulseSpeed = Mathf.Clamp(formationPulseSpeed, 0.1f, 4f);
-            formationBreakPanicThreshold = Mathf.Clamp01(formationBreakPanicThreshold);
-            formationObstacleCapacity = Mathf.Clamp(formationObstacleCapacity, 1, 16);
-            formationObstacleSearchRadius = Mathf.Clamp(formationObstacleSearchRadius, 4f, 80f);
-            formationObstacleWeight = Mathf.Clamp(formationObstacleWeight, 0f, 8f);
-            leviathanNodeCapacity = Mathf.Clamp(leviathanNodeCapacity, 8, 64);
-            leviathanThreatThreshold = Mathf.Clamp01(leviathanThreatThreshold);
-            leviathanHotspotMinDistance = Mathf.Clamp(leviathanHotspotMinDistance, 10f, 200f);
-            leviathanHotspotMaxDistance = Mathf.Clamp(leviathanHotspotMaxDistance, leviathanHotspotMinDistance, 400f);
-            leviathanBodyWeight = Mathf.Clamp(leviathanBodyWeight, 0f, 8f);
-            leviathanForwardWeight = Mathf.Clamp(leviathanForwardWeight, 0f, 8f);
-            leviathanBodyRadius = Mathf.Clamp(leviathanBodyRadius, 0.5f, 12f);
-            leviathanWaveAmplitude = Mathf.Clamp(leviathanWaveAmplitude, 0f, 2f);
-            leviathanWaveFrequency = Mathf.Clamp(leviathanWaveFrequency, 0.1f, 6f);
-            leviathanSurroundThreatThreshold = Mathf.Clamp(leviathanSurroundThreatThreshold, 0.6f, 1f);
-            leviathanSurroundRadius = Mathf.Clamp(leviathanSurroundRadius, 4f, 48f);
-            leviathanSurroundWeight = Mathf.Clamp(leviathanSurroundWeight, 0f, 8f);
-            leviathanSurroundSpinSpeed = Mathf.Clamp(leviathanSurroundSpinSpeed, 0.1f, 4f);
-            leviathanModeBlendSharpness = Mathf.Clamp(leviathanModeBlendSharpness, 0.1f, 12f);
+            maxMassiveThreatCount = math.clamp(maxMassiveThreatCount, 1, 8);
+            massiveThreatPanicRadius = math.clamp(massiveThreatPanicRadius, 50f, 96f);
+            massiveThreatWeight = math.clamp(massiveThreatWeight, 0f, 12f);
+            deepBiolumAnchorCapacity = math.clamp(deepBiolumAnchorCapacity, 1, 16);
+            deepBiolumSearchRadius = math.clamp(deepBiolumSearchRadius, 10f, 250f);
+            deepBaitBallRadius = math.clamp(deepBaitBallRadius, 0.5f, 12f);
+            deepBaitBallHeight = math.clamp(deepBaitBallHeight, 0.25f, 8f);
+            deepClusterWeight = math.clamp(deepClusterWeight, 0f, 8f);
+            deepHeadlightPanicDuration = math.clamp(deepHeadlightPanicDuration, 0.1f, 10f);
+            deepHeadlightPanicRadiusScale = math.clamp(deepHeadlightPanicRadiusScale, 1f, 6f);
+            boidVatFrameCount = math.max(1, boidVatFrameCount);
+            boidVatPlaybackSpeed = math.max(0f, boidVatPlaybackSpeed);
+            boidVatInstancePhaseScale = math.max(0f, boidVatInstancePhaseScale);
+            boidVatPositionScale = math.max(0.0001f, boidVatPositionScale);
+            boidVatNormalBlend = math.saturate(boidVatNormalBlend);
+            parasiteDroneWorldYThreshold = math.clamp(parasiteDroneWorldYThreshold, -4000f, -1000f);
+            parasiteAffinityWeight = math.clamp(parasiteAffinityWeight, 0f, 12f);
+            parasiteHullStressIntensity = math.saturate(parasiteHullStressIntensity);
+            parasiteHullStressLightBoost = math.saturate(parasiteHullStressLightBoost);
+            parasiteLatchRadius = math.clamp(parasiteLatchRadius, 0.5f, 8f);
+            parasiteMaxLatchedDronesForFullDrag = math.clamp(parasiteMaxLatchedDronesForFullDrag, 1, 96);
+            parasiteMaxEnvironmentalDragMultiplier = math.clamp(parasiteMaxEnvironmentalDragMultiplier, 1f, 4f);
+            parasiteLatchReadbackInterval = math.clamp(parasiteLatchReadbackInterval, 0.05f, 0.5f);
+            parasiteHarvesterLatchThreshold = math.clamp(parasiteHarvesterLatchThreshold, 1, 32);
+            parasiteHarvesterFullLatchCount = math.clamp(parasiteHarvesterFullLatchCount, parasiteHarvesterLatchThreshold, 96);
+            formationBeaconCapacity = math.clamp(formationBeaconCapacity, 1, 8);
+            formationBeaconSearchRadius = math.clamp(formationBeaconSearchRadius, 8f, 250f);
+            formationWeight = math.clamp(formationWeight, 0f, 8f);
+            formationRingThickness = math.clamp(formationRingThickness, 0.1f, 12f);
+            formationPulseAmplitude = math.clamp(formationPulseAmplitude, 0f, 2f);
+            formationPulseSpeed = math.clamp(formationPulseSpeed, 0.1f, 4f);
+            formationBreakPanicThreshold = math.saturate(formationBreakPanicThreshold);
+            formationObstacleCapacity = math.clamp(formationObstacleCapacity, 1, 16);
+            formationObstacleSearchRadius = math.clamp(formationObstacleSearchRadius, 4f, 80f);
+            formationObstacleWeight = math.clamp(formationObstacleWeight, 0f, 8f);
+            leviathanNodeCapacity = math.clamp(leviathanNodeCapacity, 8, 64);
+            leviathanThreatThreshold = math.saturate(leviathanThreatThreshold);
+            leviathanHotspotMinDistance = math.clamp(leviathanHotspotMinDistance, 10f, 200f);
+            leviathanHotspotMaxDistance = math.clamp(leviathanHotspotMaxDistance, leviathanHotspotMinDistance, 400f);
+            leviathanBodyWeight = math.clamp(leviathanBodyWeight, 0f, 8f);
+            leviathanForwardWeight = math.clamp(leviathanForwardWeight, 0f, 8f);
+            leviathanBodyRadius = math.clamp(leviathanBodyRadius, 0.5f, 12f);
+            leviathanWaveAmplitude = math.clamp(leviathanWaveAmplitude, 0f, 2f);
+            leviathanWaveFrequency = math.clamp(leviathanWaveFrequency, 0.1f, 6f);
+            leviathanSurroundThreatThreshold = math.clamp(leviathanSurroundThreatThreshold, 0.6f, 1f);
+            leviathanSurroundRadius = math.clamp(leviathanSurroundRadius, 4f, 48f);
+            leviathanSurroundWeight = math.clamp(leviathanSurroundWeight, 0f, 8f);
+            leviathanSurroundSpinSpeed = math.clamp(leviathanSurroundSpinSpeed, 0.1f, 4f);
+            leviathanModeBlendSharpness = math.clamp(leviathanModeBlendSharpness, 0.1f, 12f);
             simulationCullDistance = SleepSimulationDistanceMeters;
             hibernationStartDistance = FullSimulationDistanceMeters;
-            hibernationMaxStepSeconds = Mathf.Clamp(hibernationMaxStepSeconds, 1f / 60f, 0.5f);
-            hibernationMinTimeScale = Mathf.Clamp(hibernationMinTimeScale, 0.1f, 1f);
-            leviathanStrikeRadius = Mathf.Clamp(leviathanStrikeRadius, 1f, 24f);
-            leviathanStrikeTraumaWeight = Mathf.Clamp01(leviathanStrikeTraumaWeight);
-            leviathanStrikeImpulse = Mathf.Clamp(leviathanStrikeImpulse, 1f, 120f);
-            leviathanStrikeDamage = Mathf.Clamp(leviathanStrikeDamage, 0.1f, 100f);
-            leviathanStrikeCooldown = Mathf.Clamp(leviathanStrikeCooldown, 0.05f, 2f);
-            leviathanShockwaveSpeedThreshold = Mathf.Clamp(leviathanShockwaveSpeedThreshold, 2f, 40f);
-            leviathanShockwaveRadius = Mathf.Clamp(leviathanShockwaveRadius, 2f, 32f);
-            leviathanShockwaveImpulse = Mathf.Clamp(leviathanShockwaveImpulse, 2f, 96f);
-            leviathanShockwaveVerticalLift = Mathf.Clamp(leviathanShockwaveVerticalLift, 0f, 2f);
-            leviathanShockwaveCadence = Mathf.Clamp(leviathanShockwaveCadence, 0.05f, 1.5f);
-            leviathanShockwaveHitCapacity = Mathf.Clamp(leviathanShockwaveHitCapacity, 4, 32);
-            _activeBoidCount = Mathf.Clamp(_activeBoidCount <= 0 ? boidCount : _activeBoidCount, 128, boidCount);
+            hibernationMaxStepSeconds = math.clamp(hibernationMaxStepSeconds, 1f / 60f, 0.5f);
+            hibernationMinTimeScale = math.clamp(hibernationMinTimeScale, 0.1f, 1f);
+            leviathanStrikeRadius = math.clamp(leviathanStrikeRadius, 1f, 24f);
+            leviathanStrikeTraumaWeight = math.saturate(leviathanStrikeTraumaWeight);
+            leviathanStrikeImpulse = math.clamp(leviathanStrikeImpulse, 1f, 120f);
+            leviathanStrikeDamage = math.clamp(leviathanStrikeDamage, 0.1f, 100f);
+            leviathanStrikeCooldown = math.clamp(leviathanStrikeCooldown, 0.05f, 2f);
+            leviathanShockwaveSpeedThreshold = math.clamp(leviathanShockwaveSpeedThreshold, 2f, 40f);
+            leviathanShockwaveRadius = math.clamp(leviathanShockwaveRadius, 2f, 32f);
+            leviathanShockwaveImpulse = math.clamp(leviathanShockwaveImpulse, 2f, 96f);
+            leviathanShockwaveCadence = math.clamp(leviathanShockwaveCadence, 0.05f, 1.5f);
+            _activeBoidCount = math.clamp(_activeBoidCount <= 0 ? boidCount : _activeBoidCount, 128, boidCount);
         }
 
         private void EnsureBuffers()
         {
+            _boidMeshVertexCount = boidMesh != null ? boidMesh.vertexCount : 0;
+
             if (_spawnData == null || _spawnData.Length != boidCount)
             {
                 // COLD ALLOC: BoidData[boidCount] - CPU staging array for deterministic spawn uploads - owner: SargassumMicroFaunaBoids
@@ -1881,36 +2064,27 @@ namespace Hecton8.World
             if (_formationObstacleColliders == null || _formationObstacleColliders.Length != formationObstacleCapacity * 2)
             {
                 // COLD ALLOC: Collider[32] - non-alloc overlap buffer for nearby formation obstacle harvesting - owner: SargassumMicroFaunaBoids
-                _formationObstacleColliders = new Collider[Mathf.Max(2, formationObstacleCapacity * 2)];
+                _formationObstacleColliders = new Collider[math.max(2, formationObstacleCapacity * 2)];
             }
 
-            if (_leviathanShockwaveSpatialHits == null || _leviathanShockwaveSpatialHits.Length != leviathanShockwaveHitCapacity)
-            {
-                // COLD ALLOC: SpatialQueryHit[leviathanShockwaveHitCapacity] - vegetation spatial-hash hit cache for leviathan shockwave debris pushes - owner: SargassumMicroFaunaBoids
-                _leviathanShockwaveSpatialHits = new SpatialQueryHit[leviathanShockwaveHitCapacity];
-            }
-
-            if (_leviathanShockwaveRigidbodies == null || _leviathanShockwaveRigidbodies.Length != leviathanShockwaveHitCapacity)
-            {
-                // COLD ALLOC: Rigidbody[leviathanShockwaveHitCapacity] - deduplicated rigidbody targets processed by leviathan shockwaves - owner: SargassumMicroFaunaBoids
-                _leviathanShockwaveRigidbodies = new Rigidbody[leviathanShockwaveHitCapacity];
-            }
-
-            EnsureBuffer(ref _boidsBufferA, boidCount, BoidStride);
-            EnsureBuffer(ref _boidsBufferB, boidCount, BoidStride);
-            EnsureBuffer(ref _grazingAnchorBuffer, grazingAnchorCount, GrazingAnchorStride);
-            EnsureBuffer(ref _massiveThreatBuffer, maxMassiveThreatCount, MassiveThreatStride);
-            EnsureBuffer(ref _formationBeaconBuffer, formationBeaconCapacity, FormationBeaconStride);
-            EnsureBuffer(ref _formationObstacleBuffer, formationObstacleCapacity, FormationObstacleStride);
-            EnsureBuffer(ref _leviathanNodeBuffer, leviathanNodeCapacity, LeviathanNodeStride);
-            EnsureBuffer(ref _latchStatsBuffer, LatchStatsElementCount, LatchStatsStride);
-            EnsureBuffer(ref _pbdCorrectionBuffer, boidCount, PbdCorrectionStride);
-            EnsureBuffer(ref _threatGridBuffer, Mathf.Max(1, _threatGridCellCount), ThreatGridStride);
-            EnsureBuffer(ref _threatVoxelBuffer, Mathf.Max(1, _threatVoxelCellCount), ThreatVoxelStride);
-            EnsureBuffer(ref _spatialGridCountBuffer, SpatialGridMaxCellCount, SpatialGridCountStride);
-            EnsureBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
-            EnsureBuffer(ref _simulationFrameBuffer, 1, SimulationFrameConstantsStride);
-            EnsureNativeArrayCapacity(ref _staticObstacleCache, Mathf.Max(formationObstacleCapacity * 8, formationObstacleCapacity), nameof(_staticObstacleCache));
+            bool buffersChanged = false;
+            buffersChanged |= EnsureBuffer(ref _boidsBufferA, boidCount, BoidStride);
+            buffersChanged |= EnsureBuffer(ref _boidsBufferB, boidCount, BoidStride);
+            buffersChanged |= EnsureBuffer(ref _grazingAnchorBuffer, grazingAnchorCount, GrazingAnchorStride);
+            buffersChanged |= EnsureBuffer(ref _massiveThreatBuffer, maxMassiveThreatCount, MassiveThreatStride);
+            buffersChanged |= EnsureBuffer(ref _formationBeaconBuffer, formationBeaconCapacity, FormationBeaconStride);
+            buffersChanged |= EnsureBuffer(ref _formationObstacleBuffer, formationObstacleCapacity, FormationObstacleStride);
+            buffersChanged |= EnsureBuffer(ref _leviathanNodeBuffer, leviathanNodeCapacity, LeviathanNodeStride);
+            buffersChanged |= EnsureRawBuffer(ref _latchStatsBuffer, ref _latchStatsBufferRawTarget, LatchStatsElementCount, LatchStatsStride);
+            buffersChanged |= EnsureRawBuffer(ref _pbdCorrectionBuffer, ref _pbdCorrectionBufferRawTarget, boidCount * PbdCorrectionScalarCount, PbdCorrectionRawStride);
+            buffersChanged |= EnsureBufferCapacity(ref _threatGridBuffer, math.max(1, _threatGridCellCount), ThreatGridStride);
+            buffersChanged |= EnsureBuffer(ref _threatVoxelBuffer, math.max(1, _threatVoxelCellCount), ThreatVoxelStride);
+            buffersChanged |= EnsureRawBuffer(ref _spatialGridCountBuffer, ref _spatialGridCountBufferRawTarget, SpatialGridMaxCellCount, SpatialGridCountStride);
+            buffersChanged |= EnsureBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
+            buffersChanged |= EnsureBuffer(ref _simulationFrameBuffer, 1, SimulationFrameConstantsStride);
+            if (buffersChanged)
+                _computeStaticBuffersBound = false;
+            EnsureNativeArrayCapacity(ref _staticObstacleCache, math.max(formationObstacleCapacity * 8, formationObstacleCapacity), nameof(_staticObstacleCache));
             EnsureNativeArrayCapacity(ref _leviathanNodeFrontNative, leviathanNodeCapacity, nameof(_leviathanNodeFrontNative));
             EnsureNativeArrayCapacity(ref _leviathanNodeBackNative, leviathanNodeCapacity, nameof(_leviathanNodeBackNative));
             EnsureNativeArrayCapacity(ref _leviathanNodeCountNative, 1, nameof(_leviathanNodeCountNative));
@@ -1918,6 +2092,8 @@ namespace Hecton8.World
             EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1, nameof(_foveatedSimulationFrontNative));
             EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1, nameof(_foveatedSimulationBackNative));
             EnsureNativeArrayCapacity(ref _simulationFrameNative, 1, nameof(_simulationFrameNative));
+            _inactiveStatisticalSwarmRing.EnsureCapacity(InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmRing));
+            _inactiveStatisticalSwarmCenterRing.EnsureCapacity(InactiveStatisticalSwarmRingCapacity, nameof(_inactiveStatisticalSwarmCenterRing));
 
             if (!ValidateGpuStructLayouts())
                 return;
@@ -1934,33 +2110,105 @@ namespace Hecton8.World
         private bool RefreshActiveBoidCount()
         {
             int previousActiveBoidCount = _activeBoidCount;
+            int previousMigrationPopulationCount = _migrationPopulationCount;
             if (TryResolveEcosystemPopulationCount(out int ecosystemPopulationCount))
             {
                 float populationBudgetScale = ResolvePopulationBudgetScale();
-                int budgetCap = Mathf.Clamp(Mathf.RoundToInt(boidCount * populationBudgetScale), 0, boidCount);
-                int migrationPopulationCount = MigrationDirector.ResolveVisibleBoidCount(ResolvePopulationSpeciesByte(), _fieldCenter, ecosystemPopulationCount);
-                _activeBoidCount = Mathf.Clamp(Mathf.Min(migrationPopulationCount, budgetCap), 0, boidCount);
+                int budgetCap = math.clamp(RoundToIntPositive(boidCount * populationBudgetScale), 0, boidCount);
+                _lastRequestedMigrationPopulationCount = math.max(0, ecosystemPopulationCount);
+                byte species = ResolvePopulationSpeciesByte();
+                int migrationPopulationCount = RegisterMigrationPopulationAndTrack(species, _fieldCenter, ecosystemPopulationCount);
+                int visibleBoidCount = MigrationDirector.ResolveVisibleBoidCountFromMigrationPopulation(migrationPopulationCount);
+                _migrationPopulationCount = math.max(0, migrationPopulationCount);
+                _activeBoidCount = math.clamp(math.min(visibleBoidCount, budgetCap), 0, boidCount);
                 _debugPopulationBudgetScale = boidCount > 0 ? (_activeBoidCount / (float)boidCount) : 0f;
             }
             else
             {
                 float populationBudgetScale = ResolvePopulationBudgetScale();
-                int budgetPopulationCount = Mathf.RoundToInt(boidCount * populationBudgetScale);
-                int migrationPopulationCount = MigrationDirector.ResolveVisibleBoidCount(ResolvePopulationSpeciesByte(), _fieldCenter, budgetPopulationCount);
-                _activeBoidCount = Mathf.Clamp(migrationPopulationCount, 128, boidCount);
-                _debugPopulationBudgetScale = populationBudgetScale;
+                int budgetPopulationCount = RoundToIntPositive(boidCount * populationBudgetScale);
+                _lastRequestedMigrationPopulationCount = math.max(0, budgetPopulationCount);
+                byte species = ResolvePopulationSpeciesByte();
+                int migrationPopulationCount = RegisterMigrationPopulationAndTrack(species, _fieldCenter, budgetPopulationCount);
+                int visibleBoidCount = MigrationDirector.ResolveVisibleBoidCountFromMigrationPopulation(migrationPopulationCount);
+                _migrationPopulationCount = math.max(0, migrationPopulationCount);
+                _activeBoidCount = math.clamp(visibleBoidCount, 0, boidCount);
+                _debugPopulationBudgetScale = boidCount > 0 ? (_activeBoidCount / (float)boidCount) : 0f;
             }
 
             _debugActiveBoidCount = _activeBoidCount;
             RefreshDispatchGroupCount();
-            return previousActiveBoidCount != _activeBoidCount;
+            return previousActiveBoidCount != _activeBoidCount ||
+                   previousMigrationPopulationCount != _migrationPopulationCount;
+        }
+
+        private int ResolveActiveBoidUploadCount()
+        {
+            return math.clamp(_activeBoidCount, 0, boidCount);
+        }
+
+        private void UploadSpawnDataToBoidBuffers(int uploadCount)
+        {
+            int safeUploadCount = math.clamp(uploadCount, 0, boidCount);
+            if (safeUploadCount <= 0)
+                return;
+
+            GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, _spawnData, safeUploadCount);
+            GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, _spawnData, safeUploadCount);
+        }
+
+        private int ResolveTargetGrazingAnchorCount(int boidPopulation)
+        {
+            int safePopulation = math.clamp(boidPopulation, 0, boidCount);
+            if (safePopulation <= 0 || grazingAnchorCount <= 0)
+                return 0;
+
+            return math.clamp(CeilDivPositive(safePopulation, TargetBoidsPerGrazingAnchor), 1, grazingAnchorCount);
+        }
+
+        private void UploadGrazingAnchors()
+        {
+            _activeGrazingAnchorCount = math.clamp(_activeGrazingAnchorCount, 0, grazingAnchorCount);
+            _debugGrazingAnchorCount = _activeGrazingAnchorCount;
+            if (_activeGrazingAnchorCount <= 0 || _grazingAnchorBuffer == null || _grazingAnchors == null)
+                return;
+
+            GraphicsBufferUploadUtility.UploadArray(_grazingAnchorBuffer, _grazingAnchors, _activeGrazingAnchorCount);
+        }
+
+        private void UploadFormationBeacons()
+        {
+            _debugFormationBeaconCount = math.clamp(_debugFormationBeaconCount, 0, formationBeaconCapacity);
+            if (_debugFormationBeaconCount <= 0 || _formationBeaconBuffer == null || _formationBeacons == null)
+                return;
+
+            GraphicsBufferUploadUtility.UploadArray(_formationBeaconBuffer, _formationBeacons, _debugFormationBeaconCount);
+        }
+
+        private void UploadFormationObstacles()
+        {
+            _debugFormationObstacleCount = math.clamp(_debugFormationObstacleCount, 0, formationObstacleCapacity);
+            if (_debugFormationObstacleCount <= 0 || _formationObstacleBuffer == null || _formationObstacles == null)
+                return;
+
+            GraphicsBufferUploadUtility.UploadArray(_formationObstacleBuffer, _formationObstacles, _debugFormationObstacleCount);
+        }
+
+        private void UploadMassiveThreats()
+        {
+            _activeMassiveThreatCount = math.clamp(_activeMassiveThreatCount, 0, maxMassiveThreatCount);
+            _debugMassiveThreatCount = _activeMassiveThreatCount;
+            if (_activeMassiveThreatCount <= 0 || _massiveThreatBuffer == null || _massiveThreats == null)
+                return;
+
+            GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
         }
 
         private bool TryResolveEcosystemPopulationCount(out int ecosystemPopulationCount)
         {
             ecosystemPopulationCount = 0;
             IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
-            if (ecosystemDirector == null || !ecosystemDirector.IsInitialized || playerTransform == null)
+            if (ecosystemDirector == null || !ecosystemDirector.IsInitialized)
             {
                 _ecosystemFitness = 0f;
                 _ecosystemSpeedMultiplier = 1f;
@@ -1968,7 +2216,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            if (!ecosystemDirector.TryGetSectorPopulation(playerTransform.position, out EcosystemSectorPopulationSample sample))
+            if (!ecosystemDirector.TryGetSectorPopulation(_fieldCenter, out EcosystemSectorPopulationSample sample))
             {
                 _ecosystemFitness = 0f;
                 _ecosystemSpeedMultiplier = 1f;
@@ -1976,10 +2224,10 @@ namespace Hecton8.World
                 return false;
             }
 
-            ecosystemPopulationCount = Mathf.Max(0, sample.PreyPopulation);
-            _ecosystemFitness = Mathf.Clamp01(sample.Fitness);
-            _ecosystemSpeedMultiplier = Mathf.Max(0.25f, sample.SpeedMultiplier);
-            _ecosystemCamouflageIndex = Mathf.Clamp01(sample.CamouflageIndex);
+            ecosystemPopulationCount = math.max(0, sample.PreyPopulation);
+            _ecosystemFitness = math.saturate(sample.Fitness);
+            _ecosystemSpeedMultiplier = math.max(0.25f, sample.SpeedMultiplier);
+            _ecosystemCamouflageIndex = math.saturate(sample.CamouflageIndex);
             _debugEcosystemFitness = _ecosystemFitness;
             return true;
         }
@@ -1992,13 +2240,14 @@ namespace Hecton8.World
 
             float spawnBudgetScale = scatterDirector.CurrentSpawnBudgetScale;
             float faunaActivationScale = scatterDirector.CurrentFaunaActivationScale;
-            return Mathf.Clamp(spawnBudgetScale * faunaActivationScale, MinimumPopulationBudgetScale, 1f);
+            return math.clamp(spawnBudgetScale * faunaActivationScale, MinimumPopulationBudgetScale, 1f);
         }
 
         private void RefreshDispatchGroupCount()
         {
-            _dispatchGroupCount = Mathf.Max(1, Mathf.CeilToInt(_activeBoidCount / Mathf.Max(1f, _threadGroupSizeX)));
-            _clearSpatialGridDispatchGroupCount = Mathf.Max(1, Mathf.CeilToInt(SpatialGridMaxCellCount / (float)SpatialGridClearThreadGroupSize));
+            int safeThreadGroupSize = math.max(1, (int)_threadGroupSizeX);
+            _dispatchGroupCount = math.max(1, CeilDivPositive(_activeBoidCount, safeThreadGroupSize));
+            _clearSpatialGridDispatchGroupCount = math.max(1, CeilDivPositive(SpatialGridMaxCellCount, SpatialGridClearThreadGroupSize));
             _debugDispatchGroups = _dispatchGroupCount;
         }
 
@@ -2052,7 +2301,8 @@ namespace Hecton8.World
             }
 
             int cellCount = (int)cellCountLong;
-            EnsureBuffer(ref _threatGridBuffer, cellCount, ThreatGridStride);
+            if (EnsureBufferCapacity(ref _threatGridBuffer, cellCount, ThreatGridStride))
+                _computeStaticBuffersBound = false;
             EnsureNativeArrayCapacity(ref _threatGridUploadNative, cellCount, nameof(_threatGridUploadNative));
 
             for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
@@ -2062,14 +2312,14 @@ namespace Hecton8.World
             _threatGridCellCount = cellCount;
             _threatGridResolution = gridResolution;
             _threatGridCenterWS = gridCenter;
-            _threatGridCellSizeWS = Mathf.Max(cellSize, ThreatVoxelCellEpsilon);
+            _threatGridCellSizeWS = math.max(cellSize, ThreatVoxelCellEpsilon);
             _threatGridDataValid = true;
         }
 
-        private static void EnsureBuffer(ref GraphicsBuffer buffer, int count, int stride)
+        private static bool EnsureBuffer(ref GraphicsBuffer buffer, int count, int stride)
         {
             if (buffer != null && buffer.count == count && buffer.stride == stride)
-                return;
+                return false;
 
             if (buffer != null)
             {
@@ -2083,6 +2333,37 @@ namespace Hecton8.World
                 GraphicsBuffer.UsageFlags.LockBufferForWrite,
                 count,
                 stride);
+            return true;
+        }
+
+        private static bool EnsureRawBuffer(ref GraphicsBuffer buffer, ref bool rawTargetValid, int count, int stride)
+        {
+            if (buffer != null && rawTargetValid && buffer.count == count && buffer.stride == stride)
+                return false;
+
+            if (buffer != null)
+            {
+                buffer.Release();
+                buffer = null;
+            }
+
+            // COLD ALLOC: Raw GraphicsBuffer[count] - byte-addressed GPU atomics for counters/corrections - owner: SargassumMicroFaunaBoids
+            buffer = new GraphicsBuffer(
+                GraphicsBuffer.Target.Raw,
+                GraphicsBuffer.UsageFlags.LockBufferForWrite,
+                count,
+                stride);
+            rawTargetValid = true;
+            return true;
+        }
+
+        private static bool EnsureBufferCapacity(ref GraphicsBuffer buffer, int minimumCount, int stride)
+        {
+            int safeMinimumCount = math.max(1, minimumCount);
+            if (buffer != null && buffer.stride == stride && buffer.count >= safeMinimumCount)
+                return false;
+
+            return EnsureBuffer(ref buffer, safeMinimumCount, stride);
         }
 
         private void RefreshSpawnData(bool force)
@@ -2119,29 +2400,21 @@ namespace Hecton8.World
                         BuildFormationData();
                     }
 
-                    if (_formationBeacons != null)
-                        GraphicsBufferUploadUtility.UploadArray(_formationBeaconBuffer, _formationBeacons, _debugFormationBeaconCount);
-                    if (_formationObstacles != null)
-                        GraphicsBufferUploadUtility.UploadArray(_formationObstacleBuffer, _formationObstacles, _debugFormationObstacleCount);
                     UploadActiveLeviathanSnapshot();
                     _hasSpawnData = true;
                     _lastDeepLeviathanMode = leviathanSpawnMode;
                     return;
                 }
 
-                if (!BuildDeepSpawnData())
+                int deepSpawnUploadCount = ResolveActiveBoidUploadCount();
+                if (!BuildDeepSpawnData(deepSpawnUploadCount))
                 {
                     _hasSpawnData = false;
                     return;
                 }
 
-                GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, _spawnData, boidCount);
-                GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, _spawnData, boidCount);
-                GraphicsBufferUploadUtility.UploadArray(_grazingAnchorBuffer, _grazingAnchors, _activeGrazingAnchorCount);
-                if (_formationBeacons != null)
-                    GraphicsBufferUploadUtility.UploadArray(_formationBeaconBuffer, _formationBeacons, _debugFormationBeaconCount);
-                if (_formationObstacles != null)
-                    GraphicsBufferUploadUtility.UploadArray(_formationObstacleBuffer, _formationObstacles, _debugFormationObstacleCount);
+                UploadSpawnDataToBoidBuffers(deepSpawnUploadCount);
+                UploadGrazingAnchors();
                 UploadActiveLeviathanSnapshot();
                 _frameParity = 0;
                 _previousDriftOffset = Vector3.zero;
@@ -2170,15 +2443,11 @@ namespace Hecton8.World
                 return;
 
             _densityWorldRect = densityWorldRect;
-            BuildSpawnSet(densityWorldRect, dragManager.GlobalDriftOffset);
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, _spawnData, boidCount);
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, _spawnData, boidCount);
+            int spawnUploadCount = ResolveActiveBoidUploadCount();
+            BuildSpawnSet(densityWorldRect, dragManager.GlobalDriftOffset, spawnUploadCount);
+            UploadSpawnDataToBoidBuffers(spawnUploadCount);
             BuildGrazingAnchors(densityWorldRect, dragManager.GlobalDriftOffset);
-            GraphicsBufferUploadUtility.UploadArray(_grazingAnchorBuffer, _grazingAnchors, _activeGrazingAnchorCount);
-            if (_formationBeacons != null)
-                GraphicsBufferUploadUtility.UploadArray(_formationBeaconBuffer, _formationBeacons, _debugFormationBeaconCount);
-            if (_formationObstacles != null)
-                GraphicsBufferUploadUtility.UploadArray(_formationObstacleBuffer, _formationObstacles, _debugFormationObstacleCount);
+            UploadGrazingAnchors();
             UploadActiveLeviathanSnapshot();
             _frameParity = 0;
             _previousDriftOffset = dragManager.GlobalDriftOffset;
@@ -2191,24 +2460,27 @@ namespace Hecton8.World
         {
             if (_statisticalPopulationActive ||
                 _activeBoidCount <= 0 ||
-                cameraDistanceSq <= StatisticalDematerializeDistanceMeters * StatisticalDematerializeDistanceMeters)
+                cameraDistanceSq <= StatisticalDematerializeDistanceSq)
             {
                 return false;
             }
 
             _statisticalPopulationCenterAup = AbsoluteUniversePosition.FromRuntimePosition(_fieldCenter);
+            _statisticalPopulationBaseCount = ResolveStatisticalMigrationBaseCount();
+            int statisticalMigrationPopulationCount = ResolveStatisticalMigrationPopulationCount();
             _statisticalPopulationPoint = new PopulationDensityPoint
             {
                 CenterCellId = BuildPopulationDensityCellId(in _statisticalPopulationCenterAup),
-                Count = (ushort)Mathf.Clamp(_activeBoidCount, 0, ushort.MaxValue),
+                Count = (ushort)math.clamp(statisticalMigrationPopulationCount, 0, ushort.MaxValue),
                 Species = ResolvePopulationSpeciesByte(),
-                RadiusMeters = (byte)Mathf.Clamp(
-                    Mathf.CeilToInt(Mathf.Max(_fieldExtents.x, Mathf.Max(_fieldExtents.y, _fieldExtents.z))),
+                RadiusMeters = (byte)math.clamp(
+                    CeilToIntPositive(math.max(_fieldExtents.x, math.max(_fieldExtents.y, _fieldExtents.z))),
                     PopulationDensityMinRadiusMeters,
                     byte.MaxValue)
             };
 
             _statisticalPopulationActive = true;
+            RefreshStatisticalMigrationPopulation(force: true);
             PushInactiveStatisticalSwarm(in _statisticalPopulationPoint, in _statisticalPopulationCenterAup);
             RecycleStatisticalActiveBoidStorage();
             _hasSpawnData = false;
@@ -2222,7 +2494,7 @@ namespace Hecton8.World
             if (!_statisticalPopulationActive)
                 return true;
 
-            if (cameraDistanceSq > StatisticalRematerializeDistanceMeters * StatisticalRematerializeDistanceMeters)
+            if (cameraDistanceSq > StatisticalRematerializeDistanceSq)
                 return false;
 
             if (boidCompute == null || boidMaterial == null || boidMesh == null)
@@ -2233,28 +2505,28 @@ namespace Hecton8.World
             if (!EnsureComputeKernelBindings())
                 return false;
 
-            int rematerializedCount = Mathf.Clamp(_statisticalPopulationPoint.Count, 0, boidCount);
+            int rematerializedCount = ResolveStatisticalRematerializedCount();
             if (rematerializedCount <= 0)
             {
-                _statisticalPopulationActive = false;
+                ClearStatisticalPopulationPoint();
                 _hasSpawnData = false;
                 return false;
             }
 
             BuildStatisticalRematerializedSpawnSet(rematerializedCount);
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferA, _spawnData, boidCount);
-            GraphicsBufferUploadUtility.UploadArray(_boidsBufferB, _spawnData, boidCount);
-            GraphicsBufferUploadUtility.UploadArray(_grazingAnchorBuffer, _grazingAnchors, _activeGrazingAnchorCount);
+            UploadSpawnDataToBoidBuffers(rematerializedCount);
+            UploadGrazingAnchors();
             UploadActiveLeviathanSnapshot();
 
             _activeBoidCount = rematerializedCount;
             _debugActiveBoidCount = rematerializedCount;
             RefreshDispatchGroupCount();
             _frameParity = 0;
-            _previousDriftOffset = Vector3.zero;
+            _previousDriftOffset = dragManager != null ? dragManager.GlobalDriftOffset : Vector3.zero;
             _sleepVelocityWritePending = true;
             _lastSimulationLodTier = SimulationLodTier.Sleep;
             _statisticalPopulationActive = false;
+            _statisticalMigrationKeepAliveTickCountdown = 0;
             _hasSpawnData = true;
             PrimeFoveatedSimulationDecision(0f, cameraDistanceSq);
             return true;
@@ -2272,49 +2544,179 @@ namespace Hecton8.World
             _debugActiveBoidCount = 0;
             _dispatchGroupCount = 1;
             _debugDispatchGroups = 1;
+            _activeGrazingAnchorCount = 0;
+            _debugGrazingAnchorCount = 0;
+            _activeMassiveThreatCount = 0;
+            _debugMassiveThreatCount = 0;
+            _debugFormationBeaconCount = 0;
+            _debugFormationObstacleCount = 0;
+            ClearLeviathanSnapshot();
             _sleepVelocityWritePending = false;
             _parasiteLatchReadbackTimer = 0f;
         }
 
+        private int ResolveStatisticalMigrationBaseCount()
+        {
+            if (_lastRequestedMigrationPopulationCount > 0)
+                return _lastRequestedMigrationPopulationCount;
+
+            if (_migrationPopulationCount > 0)
+                return _migrationPopulationCount;
+
+            return math.max(0, _activeBoidCount);
+        }
+
+        private int ResolveStatisticalMigrationPopulationCount()
+        {
+            int count = _migrationPopulationCount > 0 ? _migrationPopulationCount : _activeBoidCount;
+            return math.clamp(count, 0, ushort.MaxValue);
+        }
+
+        private int ResolveStatisticalRematerializedCount()
+        {
+            int baseCount = _statisticalPopulationBaseCount > 0
+                ? _statisticalPopulationBaseCount
+                : _statisticalPopulationPoint.Count;
+            Vector3 center = ToVector3(_statisticalPopulationCenterAup.ToRuntimeFloat3());
+            _fieldCenter = center;
+            if (TryResolveEcosystemPopulationCount(out int ecosystemPopulationCount))
+                baseCount = ecosystemPopulationCount;
+
+            _lastRequestedMigrationPopulationCount = math.max(0, baseCount);
+            int migrationPopulationCount = RegisterMigrationPopulationAndTrack(
+                _statisticalPopulationPoint.Species,
+                center,
+                baseCount);
+            _migrationPopulationCount = math.max(0, migrationPopulationCount);
+            int visibleBoidCount = MigrationDirector.ResolveVisibleBoidCountFromMigrationPopulation(migrationPopulationCount);
+            int budgetCap = math.clamp(RoundToIntPositive(boidCount * ResolvePopulationBudgetScale()), 0, boidCount);
+            return math.clamp(math.min(visibleBoidCount, budgetCap), 0, boidCount);
+        }
+
         private void PushInactiveStatisticalSwarm(in PopulationDensityPoint point, in AbsoluteUniversePosition centerAup)
         {
-            _inactiveStatisticalSwarmRing[_inactiveStatisticalSwarmRingHead] = point;
-            _inactiveStatisticalSwarmCenterRing[_inactiveStatisticalSwarmRingHead] = centerAup;
-            _inactiveStatisticalSwarmRingHead = (_inactiveStatisticalSwarmRingHead + 1) % InactiveStatisticalSwarmRingCapacity;
-            _inactiveStatisticalSwarmRingCount = Mathf.Min(_inactiveStatisticalSwarmRingCount + 1, InactiveStatisticalSwarmRingCapacity);
+            _inactiveStatisticalSwarmRing.PushOverwrite(in point);
+            _inactiveStatisticalSwarmCenterRing.PushOverwrite(in centerAup);
+        }
+
+        private void RefreshStatisticalMigrationPopulation(bool force)
+        {
+            if (!_statisticalPopulationActive)
+                return;
+
+            if (!force && _statisticalMigrationKeepAliveTickCountdown > 0)
+            {
+                _statisticalMigrationKeepAliveTickCountdown--;
+                return;
+            }
+
+            _statisticalMigrationKeepAliveTickCountdown = StatisticalMigrationKeepAliveSlowTickStride;
+            Vector3 center = ToVector3(_statisticalPopulationCenterAup.ToRuntimeFloat3());
+            _fieldCenter = center;
+            _renderBounds.center = center;
+            _debugRenderBounds = _renderBounds;
+            int baseCount = _statisticalPopulationBaseCount > 0 ? _statisticalPopulationBaseCount : _statisticalPopulationPoint.Count;
+            if (TryResolveEcosystemPopulationCount(out int ecosystemPopulationCount))
+                baseCount = ecosystemPopulationCount;
+
+            baseCount = math.max(0, baseCount);
+            _statisticalPopulationBaseCount = baseCount;
+            _lastRequestedMigrationPopulationCount = math.max(0, baseCount);
+            int migrationPopulationCount = RegisterMigrationPopulationAndTrack(
+                _statisticalPopulationPoint.Species,
+                center,
+                baseCount);
+            _migrationPopulationCount = math.max(0, migrationPopulationCount);
+            _statisticalPopulationPoint.Count = (ushort)math.clamp(migrationPopulationCount, 0, ushort.MaxValue);
+        }
+
+        private void ClearStatisticalMigrationPopulation()
+        {
+            if (!_statisticalPopulationActive && !_registeredMigrationPopulationValid)
+                return;
+
+            ClearRegisteredMigrationPopulation();
+        }
+
+        private int RegisterMigrationPopulationAndTrack(byte species, Vector3 center, int basePopulationCount)
+        {
+            int safeBasePopulationCount = math.max(0, basePopulationCount);
+            if (safeBasePopulationCount <= 0)
+            {
+                ClearRegisteredMigrationPopulation();
+                return 0;
+            }
+
+            AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(center);
+            int3 aupCell = MigrationDirector.ResolveMigrationPopulationAupCell(center);
+            ClearRegisteredMigrationPopulationIfChanged(species, aupCell);
+            int migrationPopulationCount = MigrationDirector.RegisterStatisticalSwarmPopulationAndResolveCount(
+                species,
+                center,
+                safeBasePopulationCount);
+
+            if (migrationPopulationCount > 0)
+            {
+                _registeredMigrationPopulationCenterAup = centerAup;
+                _registeredMigrationPopulationAupCell = aupCell;
+                _registeredMigrationPopulationSpecies = species;
+                _registeredMigrationPopulationValid = true;
+            }
+            else
+            {
+                ClearRegisteredMigrationPopulation();
+            }
+
+            return migrationPopulationCount;
+        }
+
+        private void ClearRegisteredMigrationPopulationIfChanged(byte species, in int3 aupCell)
+        {
+            if (!_registeredMigrationPopulationValid ||
+                (_registeredMigrationPopulationSpecies == species &&
+                 _registeredMigrationPopulationAupCell.x == aupCell.x &&
+                 _registeredMigrationPopulationAupCell.y == aupCell.y &&
+                 _registeredMigrationPopulationAupCell.z == aupCell.z))
+            {
+                return;
+            }
+
+            ClearRegisteredMigrationPopulation();
+        }
+
+        private void ClearRegisteredMigrationPopulation()
+        {
+            if (_registeredMigrationPopulationValid)
+            {
+                Vector3 center = ToVector3(_registeredMigrationPopulationCenterAup.ToRuntimeFloat3());
+                MigrationDirector.RegisterStatisticalSwarmPopulation(
+                    _registeredMigrationPopulationSpecies,
+                    center,
+                    0);
+            }
+
+            _registeredMigrationPopulationCenterAup = default;
+            _registeredMigrationPopulationAupCell = default;
+            _registeredMigrationPopulationSpecies = 0;
+            _registeredMigrationPopulationValid = false;
+            _migrationPopulationCount = 0;
         }
 
         private void BuildStatisticalRematerializedSpawnSet(int rematerializedCount)
         {
-            Vector3 center = (Vector3)_statisticalPopulationCenterAup.ToRuntimeFloat3();
-            float radius = Mathf.Max(PopulationDensityMinRadiusMeters, _statisticalPopulationPoint.RadiusMeters);
+            Vector3 center = ToVector3(_statisticalPopulationCenterAup.ToRuntimeFloat3());
+            float radius = math.max(PopulationDensityMinRadiusMeters, _statisticalPopulationPoint.RadiusMeters);
             _fieldCenter = center;
             _fieldExtents = new Vector3(radius, radius * 0.45f, radius);
             _renderBounds = new Bounds(_fieldCenter, _fieldExtents * 2f);
             _debugRenderBounds = _renderBounds;
             _densityWorldRect = Vector4.zero;
 
-            for (int i = 0; i < boidCount; i++)
+            for (int i = 0; i < rematerializedCount; i++)
             {
-                if (i >= rematerializedCount)
-                {
-                    _spawnData[i] = new BoidData
-                    {
-                        Position = center,
-                        Velocity = Vector3.zero,
-                        Panic = 0f,
-                        StateFlags = 0u
-                    };
-                    continue;
-                }
-
                 Vector3 offset = BuildSphericalFibonacciOffset(i, rematerializedCount, radius, _statisticalPopulationPoint.CenterCellId);
                 Vector3 spawnPosition = center + offset;
-                Vector3 velocity = Vector3.Cross(Vector3.up, offset);
-                if (velocity.sqrMagnitude <= 0.0001f)
-                    velocity = BuildInitialVelocity(i);
-                else
-                    velocity = velocity.normalized * cruiseSpeed;
+                Vector3 velocity = BuildStatisticalTangentVelocity(offset, i);
 
                 _spawnData[i] = new BoidData
                 {
@@ -2325,25 +2727,22 @@ namespace Hecton8.World
                 };
             }
 
-            BuildStatisticalGrazingAnchors(center, radius);
+            BuildStatisticalGrazingAnchors(center, radius, rematerializedCount);
         }
 
-        private void BuildStatisticalGrazingAnchors(Vector3 center, float radius)
+        private void BuildStatisticalGrazingAnchors(Vector3 center, float radius, int rematerializedCount)
         {
-            _activeGrazingAnchorCount = Mathf.Min(grazingAnchorCount, 8);
-            float anchorRadius = Mathf.Max(grazingRadius, radius * 0.2f);
-            for (int i = 0; i < grazingAnchorCount; i++)
+            _activeGrazingAnchorCount = math.min(ResolveTargetGrazingAnchorCount(rematerializedCount), 8);
+            float anchorRadius = math.max(grazingRadius, radius * 0.2f);
+            for (int i = 0; i < _activeGrazingAnchorCount; i++)
             {
-                bool active = i < _activeGrazingAnchorCount;
-                Vector3 offset = active
-                    ? BuildSphericalFibonacciOffset(i, _activeGrazingAnchorCount, Mathf.Max(1f, radius * 0.35f), _statisticalPopulationPoint.CenterCellId ^ 0x6C8E9CF5)
-                    : Vector3.zero;
+                Vector3 offset = BuildSphericalFibonacciOffset(i, _activeGrazingAnchorCount, math.max(1f, radius * 0.35f), _statisticalPopulationPoint.CenterCellId ^ 0x6C8E9CF5);
                 _grazingAnchors[i] = new GrazingAnchorData
                 {
                     Position = center + offset,
                     Radius = anchorRadius,
-                    Strength = active ? 0.85f : 0f,
-                    Phase = active ? HashToFloat01((uint)i, 0u, 0xA4093822u) : 0f,
+                    Strength = 0.85f,
+                    Phase = HashToFloat01((uint)i, 0u, 0xA4093822u),
                     Padding = Vector2.zero
                 };
             }
@@ -2358,31 +2757,42 @@ namespace Hecton8.World
 
         private static Vector3 BuildSphericalFibonacciOffset(int index, int count, float radius, int centerCellSeed)
         {
-            float safeCount = Mathf.Max(1, count);
+            float safeCount = math.max(1, count);
             float y = 1f - (2f * (index + 0.5f) / safeCount);
-            float ringRadius = Mathf.Max(0f, 1f - y * y);
+            float ringRadius = math.max(0f, 1f - y * y);
             uint seed = unchecked((uint)centerCellSeed);
             float seedRotation = (seed & 0x0000FFFFu) * (StatisticalTwoPi / 65536f);
             float theta = index * StatisticalFibonacciGoldenAngle + seedRotation;
-            return new Vector3(Mathf.Cos(theta) * ringRadius, y * 0.45f, Mathf.Sin(theta) * ringRadius) * radius;
+            return new Vector3(CheapCosSigned(theta) * ringRadius, y * 0.45f, CheapSinSigned(theta) * ringRadius) * radius;
         }
 
         private static int BuildPopulationDensityCellId(in AbsoluteUniversePosition centerAup)
         {
-            int localX = Mathf.FloorToInt(centerAup.LocalX / PopulationDensityCellSizeMeters);
-            int localY = Mathf.FloorToInt(centerAup.LocalY / PopulationDensityCellSizeMeters);
-            int localZ = Mathf.FloorToInt(centerAup.LocalZ / PopulationDensityCellSizeMeters);
+            int localX = FloorToInt(centerAup.LocalX / PopulationDensityCellSizeMeters);
+            int localY = FloorToInt(centerAup.LocalY / PopulationDensityCellSizeMeters);
+            int localZ = FloorToInt(centerAup.LocalZ / PopulationDensityCellSizeMeters);
             unchecked
             {
-                int hash = (int)2166136261u;
-                hash = (hash ^ (int)centerAup.GridX) * 16777619;
-                hash = (hash ^ (int)centerAup.GridY) * 16777619;
-                hash = (hash ^ (int)centerAup.GridZ) * 16777619;
-                hash = (hash ^ localX) * 16777619;
-                hash = (hash ^ localY) * 16777619;
-                hash = (hash ^ localZ) * 16777619;
-                return hash;
+                uint hash = 2166136261u;
+                hash = HashPopulationDensityComponent(hash, FoldLongToUInt(centerAup.GridX));
+                hash = HashPopulationDensityComponent(hash, FoldLongToUInt(centerAup.GridY));
+                hash = HashPopulationDensityComponent(hash, FoldLongToUInt(centerAup.GridZ));
+                hash = HashPopulationDensityComponent(hash, (uint)localX);
+                hash = HashPopulationDensityComponent(hash, (uint)localY);
+                hash = HashPopulationDensityComponent(hash, (uint)localZ);
+                return (int)(hash & 0x7FFFFFFFu);
             }
+        }
+
+        private static uint FoldLongToUInt(long value)
+        {
+            ulong bits = unchecked((ulong)value);
+            return (uint)(bits ^ (bits >> 32));
+        }
+
+        private static uint HashPopulationDensityComponent(uint hash, uint value)
+        {
+            return (hash ^ value) * 16777619u;
         }
 
         private byte ResolvePopulationSpeciesByte()
@@ -2398,25 +2808,28 @@ namespace Hecton8.World
 
         private void ClearStatisticalPopulationPoint()
         {
+            ClearStatisticalMigrationPopulation();
             _statisticalPopulationPoint = default;
             _statisticalPopulationCenterAup = default;
             _statisticalPopulationActive = false;
-            _inactiveStatisticalSwarmRingHead = 0;
-            _inactiveStatisticalSwarmRingCount = 0;
+            _statisticalPopulationBaseCount = 0;
+            _lastRequestedMigrationPopulationCount = 0;
+            _statisticalMigrationKeepAliveTickCountdown = 0;
+            _inactiveStatisticalSwarmRing.Clear();
+            _inactiveStatisticalSwarmCenterRing.Clear();
         }
 
-        private bool BuildDeepSpawnData()
+        private bool BuildDeepSpawnData(int spawnCount)
         {
-            if (biolumManager == null || playerTransform == null || _deepBiolumZones == null || _deepBiolumZoneScores == null)
+            if (biolumManager == null || !TryResolvePlayerRuntimePosition(out Vector3 playerPosition) || _deepBiolumZones == null || _deepBiolumZoneScores == null)
                 return false;
 
-            System.Array.Clear(_deepBiolumZones, 0, _deepBiolumZones.Length);
-            System.Array.Clear(_deepBiolumZoneScores, 0, _deepBiolumZoneScores.Length);
             int zoneCount = biolumManager.CopyNearbyZonesNonAlloc(
-                playerTransform.position,
+                playerPosition,
                 deepBiolumSearchRadius,
                 _deepBiolumZones,
                 _deepBiolumZoneScores);
+            zoneCount = math.clamp(zoneCount, 0, math.min(_deepBiolumZones.Length, _deepBiolumZoneScores.Length));
             if (zoneCount <= 0)
                 return false;
 
@@ -2424,13 +2837,13 @@ namespace Hecton8.World
             BuildLeviathanData();
             if (_leviathanPathNodeCount > 1 && _leviathanThreatLevel >= leviathanThreatThreshold)
             {
-                BuildLeviathanSpawnSet();
+                BuildLeviathanSpawnSet(spawnCount);
                 BuildDeepGrazingAnchors(zoneCount);
                 HarvestFormationObstacles(_fieldCenter);
             }
             else
             {
-                BuildDeepSpawnSet(zoneCount);
+                BuildDeepSpawnSet(zoneCount, spawnCount);
                 BuildDeepGrazingAnchors(zoneCount);
                 BuildFormationData();
             }
@@ -2440,19 +2853,13 @@ namespace Hecton8.World
 
         private bool IsDeepModeActive()
         {
-            return playerTransform != null && playerTransform.position.y <= deepSeaWorldYThreshold;
+            return TryResolvePlayerRuntimePosition(out Vector3 playerPosition) && playerPosition.y <= deepSeaWorldYThreshold;
         }
 
         private bool IsParasiteModeActive()
         {
-            if (playerTransform == null || playerTransform.position.y > parasiteDroneWorldYThreshold)
+            if (!TryResolvePlayerRuntimePosition(out Vector3 playerPosition) || playerPosition.y > parasiteDroneWorldYThreshold)
                 return false;
-
-            if (_worldZoneDirector == null)
-                _worldZoneDirector = WorldZoneDirector.ActiveRuntimeInstance;
-
-            if (_biomeMatrixDirector == null)
-                _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
 
             if (_worldZoneDirector == null || _biomeMatrixDirector == null || _biomeMatrixDirector.CurrentDepthMeters < 2000f)
                 return false;
@@ -2484,7 +2891,7 @@ namespace Hecton8.World
             if (!_parasiteModeActive || _playerTransportCoordinator == null || !_playerTransportCoordinator.IsTransportActive())
                 return 0f;
 
-            return Mathf.Clamp01(Mathf.Max(_flashlightOn ? 1f : 0f, ResolveHeadlightPanic01()));
+            return math.saturate(math.max(_flashlightOn ? 1f : 0f, ResolveHeadlightPanic01()));
         }
 
         private bool IsFormationModeActive()
@@ -2499,13 +2906,7 @@ namespace Hecton8.World
             if (_formationBeacons == null || _formationObstacles == null)
                 return;
 
-            for (int i = 0; i < _formationBeacons.Length; i++)
-                _formationBeacons[i] = default;
-
-            for (int i = 0; i < _formationObstacles.Length; i++)
-                _formationObstacles[i] = default;
-
-            if (!_deepModeActive || playerTransform == null)
+            if (!_deepModeActive)
                 return;
 
             BeaconNetworkSystem beaconNetwork = Hecton8.Core.GlobalRegistry.BeaconNetwork;
@@ -2513,10 +2914,13 @@ namespace Hecton8.World
                 return;
 
             int snapshotCount = beaconNetwork.CopySnapshots(_formationBeaconSnapshots);
+            snapshotCount = math.clamp(snapshotCount, 0, _formationBeaconSnapshots.Length);
             if (snapshotCount <= 0)
                 return;
 
-            Vector3 origin = playerTransform.position;
+            if (!TryResolvePlayerRuntimePosition(out Vector3 origin))
+                return;
+
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
             HectonFluidEngine fluidRuntime = GlobalRegistry.Fluid;
             int formationCount = 0;
@@ -2528,7 +2932,7 @@ namespace Hecton8.World
                 if (AbsoluteUniversePosition.DistanceSq(in beaconAup, in originAup) > (double)formationBeaconSearchRadius * formationBeaconSearchRadius)
                     continue;
 
-                float beaconRadius = Mathf.Clamp(snapshot.LightRange * 2.2f, 4f, formationBeaconSearchRadius * 0.35f);
+                float beaconRadius = math.clamp(snapshot.LightRange * 2.2f, 4f, formationBeaconSearchRadius * 0.35f);
                 Vector2 leaderFlowXZ = Vector2.zero;
                 if (fluidRuntime != null &&
                     fluidRuntime.TrySampleModAbyssalFlow(beaconPosition, out float3 resolvedLeaderFlow))
@@ -2548,8 +2952,9 @@ namespace Hecton8.World
             }
 
             _debugFormationBeaconCount = formationCount;
-            if (_formationBeaconBuffer != null)
-                GraphicsBufferUploadUtility.UploadArray(_formationBeaconBuffer, _formationBeacons, _debugFormationBeaconCount);
+            UploadFormationBeacons();
+            if (formationCount <= 0)
+                return;
 
             RefreshStaticObstacleCache();
             HarvestFormationObstacles(origin);
@@ -2571,7 +2976,7 @@ namespace Hecton8.World
                 return;
             }
 
-            int safeCount = Mathf.Min(count, Mathf.Min(matrices.Length, Mathf.Min(metadata.Length, semanticTypes.Length)));
+            int safeCount = math.min(count, math.min(matrices.Length, math.min(metadata.Length, semanticTypes.Length)));
             for (int i = 0; i < safeCount && _staticObstacleCacheCount < _staticObstacleCache.Length; i++)
             {
                 HectonMapMagicVegetationBridge.VegetationSemanticType semanticType =
@@ -2584,10 +2989,10 @@ namespace Hecton8.World
                 Vector3 axisY = matrix.GetColumn(1);
                 Vector3 axisZ = matrix.GetColumn(2);
                 Vector3 extents = new Vector3(
-                    Mathf.Abs(axisX.x) + Mathf.Abs(axisX.y) + Mathf.Abs(axisX.z),
-                    Mathf.Abs(axisY.x) + Mathf.Abs(axisY.y) + Mathf.Abs(axisY.z),
-                    Mathf.Abs(axisZ.x) + Mathf.Abs(axisZ.y) + Mathf.Abs(axisZ.z));
-                float radius = Mathf.Max(extents.x, Mathf.Max(extents.y, extents.z));
+                    math.abs(axisX.x) + math.abs(axisX.y) + math.abs(axisX.z),
+                    math.abs(axisY.x) + math.abs(axisY.y) + math.abs(axisY.z),
+                    math.abs(axisZ.x) + math.abs(axisZ.y) + math.abs(axisZ.z));
+                float radius = math.max(extents.x, math.max(extents.y, extents.z));
                 if (radius <= 0.1f)
                     continue;
 
@@ -2605,18 +3010,20 @@ namespace Hecton8.World
                 return;
 
             int obstacleCount = 0;
-            float3 origin3 = origin;
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
             for (int i = 0; i < _staticObstacleCacheCount && obstacleCount < _formationObstacles.Length; i++)
             {
                 StaticObstacleData obstacle = _staticObstacleCache[i];
-                float radius = Mathf.Max(0.1f, obstacle.Radius);
+                float radius = math.max(0.1f, obstacle.Radius);
                 float maxDistance = formationObstacleSearchRadius + radius;
-                if (math.lengthsq(obstacle.Center - origin3) > maxDistance * maxDistance)
+                Vector3 obstaclePosition = new Vector3(obstacle.Center.x, obstacle.Center.y, obstacle.Center.z);
+                AbsoluteUniversePosition obstacleAup = AbsoluteUniversePosition.FromRuntimePosition(obstaclePosition);
+                if (AbsoluteUniversePosition.DistanceSq(in obstacleAup, in originAup) > (double)maxDistance * maxDistance)
                     continue;
 
                 _formationObstacles[obstacleCount] = new FormationObstacleData
                 {
-                    Position = new Vector3(obstacle.Center.x, obstacle.Center.y, obstacle.Center.z),
+                    Position = obstaclePosition,
                     Radius = radius,
                     Weight = 1f,
                     Padding = Vector3.zero
@@ -2625,18 +3032,18 @@ namespace Hecton8.World
             }
 
             _debugFormationObstacleCount = obstacleCount;
-            if (_formationObstacleBuffer != null)
-                GraphicsBufferUploadUtility.UploadArray(_formationObstacleBuffer, _formationObstacles, _debugFormationObstacleCount);
+            UploadFormationObstacles();
         }
 
         private void BuildLeviathanData()
         {
             _leviathanThreatLevel = 0f;
-            _leviathanHotspotWS = playerTransform != null ? playerTransform.position : Vector3.zero;
+            bool hasPlayerPosition = TryResolvePlayerRuntimePosition(out Vector3 playerPosition);
+            _leviathanHotspotWS = hasPlayerPosition ? playerPosition : Vector3.zero;
             _debugLeviathanNodeCount = _leviathanPathNodeCount;
             _debugLeviathanThreatLevel = 0f;
             _debugLeviathanHotspotWS = _leviathanHotspotWS;
-            if (!_leviathanNodeFrontNative.IsCreated || !_leviathanNodeBackNative.IsCreated || _mapMagicVegetationBridge == null || playerTransform == null)
+            if (!_leviathanNodeFrontNative.IsCreated || !_leviathanNodeBackNative.IsCreated || _mapMagicVegetationBridge == null || !hasPlayerPosition)
             {
                 ClearLeviathanSnapshot();
                 return;
@@ -2664,13 +3071,13 @@ namespace Hecton8.World
                 ScheduleLeviathanNodeBuild(path, pathCount);
             }
 
-            _mapMagicVegetationBridge.TryScheduleAbyssalPath(playerTransform.position, hotspotPosition, out _);
+            _mapMagicVegetationBridge.TryScheduleAbyssalPath(playerPosition, hotspotPosition, out _);
             _debugLeviathanNodeCount = _leviathanPathNodeCount;
         }
 
         private void ScheduleLeviathanNodeBuild(NativeArray<Vector3> path, int pathCount)
         {
-            int safePathCount = Mathf.Min(pathCount, path.Length);
+            int safePathCount = math.min(pathCount, path.Length);
             if (safePathCount < 2 || !_leviathanNodeBackNative.IsCreated || _leviathanNodeBackNative.Length <= 0)
                 return;
 
@@ -2687,7 +3094,7 @@ namespace Hecton8.World
                 SourceCount = safePathCount,
                 OutputNodes = _leviathanNodeBackNative,
                 OutputCount = _leviathanNodeCountNative,
-                BodyRadius = Mathf.Max(0.5f, leviathanBodyRadius)
+                BodyRadius = math.max(0.5f, leviathanBodyRadius)
             };
 
             _leviathanNodeBuildHandle = job.Schedule();
@@ -2698,11 +3105,11 @@ namespace Hecton8.World
         {
             positionWS = _fieldCenter;
             tangentWS = Vector3.forward;
-            radiusWS = Mathf.Max(0.5f, leviathanBodyRadius);
+            radiusWS = math.max(0.5f, leviathanBodyRadius);
             if (!_leviathanNodeFrontNative.IsCreated || _leviathanPathNodeCount < 2)
                 return false;
 
-            int safeCount = Mathf.Min(_leviathanPathNodeCount, _leviathanNodeFrontNative.Length);
+            int safeCount = math.min(_leviathanPathNodeCount, _leviathanNodeFrontNative.Length);
             LeviathanNodeData previousNode = _leviathanNodeFrontNative[0];
             for (int i = 1; i < safeCount; i++)
             {
@@ -2713,18 +3120,18 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float segmentLength01 = Mathf.Max(0.0001f, currentNode.Distance01 - previousNode.Distance01);
-                float segmentT = Mathf.Clamp01((distance01 - previousNode.Distance01) / segmentLength01);
-                positionWS = Vector3.Lerp(ToVector3(previousNode.Position), ToVector3(currentNode.Position), segmentT);
-                tangentWS = Vector3.Slerp(ToVector3(previousNode.Tangent), ToVector3(currentNode.Tangent), segmentT).normalized;
-                radiusWS = Mathf.Lerp(previousNode.Radius, currentNode.Radius, segmentT);
+                float segmentLength01 = math.max(0.0001f, currentNode.Distance01 - previousNode.Distance01);
+                float segmentT = math.saturate((distance01 - previousNode.Distance01) / segmentLength01);
+                positionWS = ToVector3(math.lerp(previousNode.Position, currentNode.Position, segmentT));
+                tangentWS = FastNormalizeVector3(ToVector3(math.lerp(previousNode.Tangent, currentNode.Tangent, segmentT)), Vector3.forward);
+                radiusWS = math.lerp(previousNode.Radius, currentNode.Radius, segmentT);
                 return true;
             }
 
             LeviathanNodeData tailNode = _leviathanNodeFrontNative[safeCount - 1];
             positionWS = ToVector3(tailNode.Position);
             Vector3 tailTangent = ToVector3(tailNode.Tangent);
-            tangentWS = tailTangent.sqrMagnitude > 0.0001f ? tailTangent : Vector3.forward;
+            tangentWS = FastNormalizeVector3(tailTangent, Vector3.forward);
             radiusWS = tailNode.Radius;
             return true;
         }
@@ -2737,7 +3144,7 @@ namespace Hecton8.World
             {
                 _leviathanHeadValid = false;
                 _leviathanHeadVelocityWS = Vector3.zero;
-                _leviathanHeadRadiusWS = Mathf.Max(0.5f, leviathanBodyRadius);
+                _leviathanHeadRadiusWS = math.max(0.5f, leviathanBodyRadius);
                 return;
             }
 
@@ -2752,45 +3159,35 @@ namespace Hecton8.World
         {
             headPositionWS = _fieldCenter;
             headForwardWS = Vector3.forward;
-            headRadiusWS = Mathf.Max(0.5f, leviathanBodyRadius);
+            headRadiusWS = math.max(0.5f, leviathanBodyRadius);
             if (!TrySampleLeviathanPath(0f, out Vector3 splinePosition, out Vector3 splineTangent, out float bodyRadius))
                 return false;
 
-            Vector3 safeTangent = splineTangent.sqrMagnitude > 0.0001f ? splineTangent.normalized : Vector3.forward;
-            Vector3 lateral = Vector3.Cross(Vector3.up, safeTangent);
-            if (lateral.sqrMagnitude <= 0.0001f)
-                lateral = Vector3.Cross(Vector3.right, safeTangent);
-            if (lateral.sqrMagnitude <= 0.0001f)
-                lateral = Vector3.forward;
-            lateral.Normalize();
-
-            Vector3 vertical = Vector3.Cross(safeTangent, lateral);
-            if (vertical.sqrMagnitude <= 0.0001f)
-                vertical = Vector3.up;
-            else
-                vertical.Normalize();
+            Vector3 safeTangent = FastNormalizeVector3(splineTangent, Vector3.forward);
+            Vector3 lateral = ResolveApproxRight(safeTangent);
+            Vector3 vertical = ResolveApproxUp(safeTangent, lateral);
 
             float simulationPhaseTime = GetAbsoluteSimulationTime();
-            float surroundAttack = Mathf.Clamp01((_leviathanThreatLevel - leviathanSurroundThreatThreshold) / Mathf.Max(1f - leviathanSurroundThreatThreshold, 0.001f));
+            float surroundAttack = math.saturate((_leviathanThreatLevel - leviathanSurroundThreatThreshold) / math.max(1f - leviathanSurroundThreatThreshold, 0.001f));
             float wavePhase = simulationPhaseTime * leviathanWaveFrequency;
-            float lateralWave = Mathf.Sin(wavePhase) * (bodyRadius * leviathanWaveAmplitude);
-            float verticalWaveOffset = Mathf.Cos(wavePhase * 0.63f) * (bodyRadius * leviathanWaveAmplitude * 0.35f);
+            float lateralWave = CheapSinSigned(wavePhase) * (bodyRadius * leviathanWaveAmplitude);
+            float verticalWaveOffset = CheapCosSigned(wavePhase * 0.63f) * (bodyRadius * leviathanWaveAmplitude * 0.35f);
             Vector3 leviathanTarget = splinePosition + lateral * lateralWave + vertical * verticalWaveOffset;
 
             Vector3 ringTarget = leviathanTarget;
-            if (playerTransform != null && surroundAttack > 0f)
+            if (surroundAttack > 0f && TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
             {
-                float ringRadius = Mathf.Max(leviathanSurroundRadius, bodyRadius * 2.4f);
-                float ringPulse = Mathf.Sin(simulationPhaseTime * (leviathanWaveFrequency * 0.7f));
+                float ringRadius = math.max(leviathanSurroundRadius, bodyRadius * 2.4f);
+                float ringPulse = CheapSinSigned(simulationPhaseTime * (leviathanWaveFrequency * 0.7f));
                 float ringAngle = simulationPhaseTime * leviathanSurroundSpinSpeed;
                 Vector3 ringOffset = new Vector3(
-                    Mathf.Cos(ringAngle),
+                    CheapCosSigned(ringAngle),
                     ringPulse * (bodyRadius * 0.18f),
-                    Mathf.Sin(ringAngle)) * (ringRadius + ringPulse * bodyRadius * 0.22f);
-                ringTarget = playerTransform.position + ringOffset;
+                    CheapSinSigned(ringAngle)) * (ringRadius + ringPulse * bodyRadius * 0.22f);
+                ringTarget = playerPosition + ringOffset;
             }
 
-            headPositionWS = Vector3.Lerp(leviathanTarget, ringTarget, surroundAttack) + safeTangent * Mathf.Max(bodyRadius * 0.55f, 0.6f);
+            headPositionWS = leviathanTarget + (ringTarget - leviathanTarget) * surroundAttack + safeTangent * math.max(bodyRadius * 0.55f, 0.6f);
             headForwardWS = safeTangent;
             headRadiusWS = bodyRadius;
             return true;
@@ -2803,46 +3200,47 @@ namespace Hecton8.World
             if (!TrySampleLeviathanPath(0f, out Vector3 currentSplinePoint, out Vector3 currentSplineTangent, out _) || _leviathanPathNodeCount < 2)
                 return false;
 
-            float sampleStep = 1f / Mathf.Max(1, _leviathanPathNodeCount - 1);
-            float nextDistance01 = Mathf.Clamp01(sampleStep);
+            float sampleStep = 1f / math.max(1, _leviathanPathNodeCount - 1);
+            float nextDistance01 = math.saturate(sampleStep);
             if (!TrySampleLeviathanPath(nextDistance01, out Vector3 nextSplinePoint, out Vector3 nextSplineTangent, out _))
                 nextSplinePoint = currentSplinePoint + currentSplineTangent;
 
             Vector3 splineDelta = nextSplinePoint - currentSplinePoint;
             if (splineDelta.sqrMagnitude <= 0.000001f)
                 splineDelta = currentSplineTangent.sqrMagnitude > 0.0001f
-                    ? (Vector3)math.normalizesafe((float3)currentSplineTangent, new float3(0f, 0f, 1f))
+                    ? FastNormalizeVector3(currentSplineTangent, Vector3.forward)
                     : Vector3.forward;
 
-            courseForwardWS = (Vector3)math.normalizesafe((float3)splineDelta, math.normalizesafe((float3)nextSplineTangent, new float3(0f, 0f, 1f)));
-            courseVelocityWS = splineDelta / Mathf.Max(dt, 0.0001f);
+            courseForwardWS = FastNormalizeVector3(splineDelta, FastNormalizeVector3(nextSplineTangent, Vector3.forward));
+            courseVelocityWS = splineDelta / math.max(dt, 0.0001f);
             return true;
         }
 
-        private void BuildLeviathanSpawnSet()
+        private void BuildLeviathanSpawnSet(int spawnCount)
         {
             if (_leviathanPathNodeCount < 2 || !_leviathanNodeFrontNative.IsCreated)
                 return;
 
             Vector3 boundsMin = ToVector3(_leviathanNodeFrontNative[0].Position);
             Vector3 boundsMax = boundsMin;
-            float radiusPadding = Mathf.Max(1f, leviathanBodyRadius * (1f + leviathanWaveAmplitude));
+            float radiusPadding = math.max(1f, leviathanBodyRadius * (1f + leviathanWaveAmplitude));
             for (int i = 0; i < _leviathanPathNodeCount; i++)
             {
                 Vector3 nodePosition = ToVector3(_leviathanNodeFrontNative[i].Position);
                 Vector3 nodeExtents = new Vector3(radiusPadding, radiusPadding, radiusPadding);
-                boundsMin = Vector3.Min(boundsMin, nodePosition - nodeExtents);
-                boundsMax = Vector3.Max(boundsMax, nodePosition + nodeExtents);
+                boundsMin = MinVector3(boundsMin, nodePosition - nodeExtents);
+                boundsMax = MaxVector3(boundsMax, nodePosition + nodeExtents);
             }
 
             _fieldCenter = (boundsMin + boundsMax) * 0.5f;
-            _fieldExtents = Vector3.Max((boundsMax - boundsMin) * 0.5f, new Vector3(2f, 2f, 2f));
-            _renderBounds = new Bounds(_fieldCenter, Vector3.Max(boundsMax - boundsMin, new Vector3(4f, 4f, 4f)));
+            _fieldExtents = MaxVector3((boundsMax - boundsMin) * 0.5f, new Vector3(2f, 2f, 2f));
+            _renderBounds = new Bounds(_fieldCenter, MaxVector3(boundsMax - boundsMin, new Vector3(4f, 4f, 4f)));
             _debugRenderBounds = _renderBounds;
 
-            for (int i = 0; i < boidCount; i++)
+            int safeSpawnCount = math.clamp(spawnCount, 0, boidCount);
+            for (int i = 0; i < safeSpawnCount; i++)
             {
-                float bodyT = boidCount > 1 ? i / (float)(boidCount - 1) : 0f;
+                float bodyT = safeSpawnCount > 1 ? i / (float)(safeSpawnCount - 1) : 0f;
                 if (!TrySampleLeviathanPath(bodyT, out Vector3 centerlinePosition, out Vector3 tangentWS, out float bodyRadius))
                 {
                     centerlinePosition = _fieldCenter;
@@ -2850,19 +3248,16 @@ namespace Hecton8.World
                     bodyRadius = leviathanBodyRadius;
                 }
 
-                Vector3 normalWS = Vector3.Cross(Vector3.up, tangentWS);
-                if (normalWS.sqrMagnitude <= 0.0001f)
-                    normalWS = Vector3.Cross(Vector3.forward, tangentWS);
-                normalWS.Normalize();
-                Vector3 binormalWS = Vector3.Cross(tangentWS, normalWS).normalized;
-                float angle = HashToFloat01((uint)i, 0u, 0x6A09E667u) * Mathf.PI * 2f;
+                Vector3 normalWS = ResolveApproxRight(tangentWS);
+                Vector3 binormalWS = ResolveApproxUp(tangentWS, normalWS);
+                float angle = HashToFloat01((uint)i, 0u, 0x6A09E667u) * StatisticalTwoPi;
                 float radialT = HashToFloat01((uint)i, 0u, 0xBB67AE85u);
                 float spawnSeed = HashToFloat01((uint)i, 0u, 0x94D049BBu);
-                float lateralWave = Mathf.Sin(bodyT * 15.7f + spawnSeed * 6.2831853f) * (bodyRadius * leviathanWaveAmplitude * 0.45f);
+                float lateralWave = CheapSinSigned(bodyT * 15.7f + spawnSeed * StatisticalTwoPi) * (bodyRadius * leviathanWaveAmplitude * 0.45f);
                 float radialDistance = bodyRadius * radialT * 0.78f;
                 Vector3 spawnOffset =
-                    normalWS * (Mathf.Cos(angle) * radialDistance + lateralWave) +
-                    binormalWS * (Mathf.Sin(angle) * radialDistance * 0.55f);
+                    normalWS * (CheapCosSigned(angle) * radialDistance + lateralWave) +
+                    binormalWS * (CheapSinSigned(angle) * radialDistance * 0.55f);
                 Vector3 spawnPosition = centerlinePosition + spawnOffset;
 
                 _spawnData[i] = new BoidData
@@ -2875,7 +3270,7 @@ namespace Hecton8.World
             }
         }
 
-        private void BuildDeepSpawnSet(int zoneCount)
+        private void BuildDeepSpawnSet(int zoneCount, int spawnCount)
         {
             HectonBiolumZone primaryZone = _deepBiolumZones[0];
             Vector3 primaryPosition = primaryZone != null ? primaryZone.GetZonePosition() : Vector3.zero;
@@ -2890,39 +3285,40 @@ namespace Hecton8.World
                 if (zone == null)
                     continue;
 
-                float score = Mathf.Max(0.0001f, _deepBiolumZoneScores[i]);
+                float score = math.max(0.0001f, _deepBiolumZoneScores[i]);
                 Vector3 zonePosition = zone.GetZonePosition();
                 weightedCenter += zonePosition * score;
                 weightSum += score;
 
                 Vector3 extents = new Vector3(deepBaitBallRadius, deepBaitBallHeight, deepBaitBallRadius);
-                boundsMin = Vector3.Min(boundsMin, zonePosition - extents);
-                boundsMax = Vector3.Max(boundsMax, zonePosition + extents);
+                boundsMin = MinVector3(boundsMin, zonePosition - extents);
+                boundsMax = MaxVector3(boundsMax, zonePosition + extents);
             }
 
             _fieldCenter = weightSum > 0.0001f ? weightedCenter / weightSum : primaryPosition;
-            _fieldExtents = Vector3.Max((boundsMax - boundsMin) * 0.5f, new Vector3(2f, 1f, 2f));
-            _renderBounds = new Bounds(_fieldCenter, Vector3.Max(boundsMax - boundsMin, new Vector3(4f, 2f, 4f)));
+            _fieldExtents = MaxVector3((boundsMax - boundsMin) * 0.5f, new Vector3(2f, 1f, 2f));
+            _renderBounds = new Bounds(_fieldCenter, MaxVector3(boundsMax - boundsMin, new Vector3(4f, 2f, 4f)));
             _debugRenderBounds = _renderBounds;
 
-            for (int i = 0; i < boidCount; i++)
+            int safeSpawnCount = math.clamp(spawnCount, 0, boidCount);
+            for (int i = 0; i < safeSpawnCount; i++)
             {
                 int zoneIndex = i % zoneCount;
                 HectonBiolumZone zone = _deepBiolumZones[zoneIndex];
                 Vector3 anchorPosition = zone != null ? zone.GetZonePosition() : _fieldCenter;
                 float radiusT = HashToFloat01((uint)i, 0u, 0xA2F98A1Du);
-                float angle = HashToFloat01((uint)i, 0u, 0x3C6EF372u) * Mathf.PI * 2f;
+                float angle = HashToFloat01((uint)i, 0u, 0x3C6EF372u) * StatisticalTwoPi;
                 float verticalT = HashToFloat01((uint)i, 0u, 0x1BF5C7D5u) * 2f - 1f;
                 Vector3 spawnPosition = anchorPosition;
-                spawnPosition.x += Mathf.Cos(angle) * deepBaitBallRadius * radiusT;
-                spawnPosition.z += Mathf.Sin(angle) * deepBaitBallRadius * radiusT;
+                spawnPosition.x += CheapCosSigned(angle) * deepBaitBallRadius * radiusT;
+                spawnPosition.z += CheapSinSigned(angle) * deepBaitBallRadius * radiusT;
                 spawnPosition.y += verticalT * deepBaitBallHeight;
 
                 Vector3 toCenter = anchorPosition - spawnPosition;
                 if (toCenter.sqrMagnitude <= 0.0001f)
                     toCenter = BuildInitialVelocity(i);
                 else
-                    toCenter.Normalize();
+                    toCenter = FastNormalizeVector3(toCenter, Vector3.forward);
 
                 _spawnData[i] = new BoidData
                 {
@@ -2937,8 +3333,8 @@ namespace Hecton8.World
         private void BuildDeepGrazingAnchors(int zoneCount)
         {
             _activeGrazingAnchorCount = 0;
-            Vector3 fallbackPosition = _fieldCenter;
-            for (int i = 0; i < zoneCount && _activeGrazingAnchorCount < grazingAnchorCount; i++)
+            int targetAnchorCount = math.min(zoneCount, ResolveTargetGrazingAnchorCount(ResolveActiveBoidUploadCount()));
+            for (int i = 0; i < zoneCount && _activeGrazingAnchorCount < targetAnchorCount; i++)
             {
                 HectonBiolumZone zone = _deepBiolumZones[i];
                 if (zone == null)
@@ -2948,32 +3344,20 @@ namespace Hecton8.World
                 {
                     Position = zone.GetZonePosition(),
                     Radius = deepBaitBallRadius,
-                    Strength = Mathf.Lerp(1.2f, 1.8f, Mathf.Clamp01(_deepBiolumZoneScores[i])),
+                    Strength = math.lerp(1.2f, 1.8f, math.saturate(_deepBiolumZoneScores[i])),
                     Phase = HashToFloat01((uint)i, 0u, 0xA4093822u),
                     Padding = Vector2.zero
                 };
                 _activeGrazingAnchorCount++;
             }
 
-            for (int i = _activeGrazingAnchorCount; i < grazingAnchorCount; i++)
-            {
-                _grazingAnchors[i] = new GrazingAnchorData
-                {
-                    Position = fallbackPosition,
-                    Radius = deepBaitBallRadius,
-                    Strength = 0f,
-                    Phase = 0f,
-                    Padding = Vector2.zero
-                };
-            }
-
             _debugGrazingAnchorCount = _activeGrazingAnchorCount;
         }
 
-        private void BuildSpawnSet(Vector4 densityWorldRect, Vector3 driftOffset)
+        private void BuildSpawnSet(Vector4 densityWorldRect, Vector3 driftOffset, int spawnCount)
         {
-            float sizeX = 1f / Mathf.Max(densityWorldRect.z, 0.0001f);
-            float sizeZ = 1f / Mathf.Max(densityWorldRect.w, 0.0001f);
+            float sizeX = 1f / math.max(densityWorldRect.z, 0.0001f);
+            float sizeZ = 1f / math.max(densityWorldRect.w, 0.0001f);
             float minX = densityWorldRect.x;
             float minZ = densityWorldRect.y;
             float minY = waterLevel - maxDepthBelowSurface;
@@ -2981,11 +3365,12 @@ namespace Hecton8.World
             Vector3 fallbackCenter = new Vector3(minX + sizeX * 0.5f + driftOffset.x, (minY + maxY) * 0.5f, minZ + sizeZ * 0.5f + driftOffset.z);
 
             _fieldCenter = fallbackCenter;
-            _fieldExtents = new Vector3(sizeX * 0.5f, Mathf.Max(1f, maxDepthBelowSurface), sizeZ * 0.5f);
-            _renderBounds = new Bounds(_fieldCenter, new Vector3(sizeX, Mathf.Max(2f, maxDepthBelowSurface + 2f), sizeZ));
+            _fieldExtents = new Vector3(sizeX * 0.5f, math.max(1f, maxDepthBelowSurface), sizeZ * 0.5f);
+            _renderBounds = new Bounds(_fieldCenter, new Vector3(sizeX, math.max(2f, maxDepthBelowSurface + 2f), sizeZ));
             _debugRenderBounds = _renderBounds;
 
-            for (int i = 0; i < boidCount; i++)
+            int safeSpawnCount = math.clamp(spawnCount, 0, boidCount);
+            for (int i = 0; i < safeSpawnCount; i++)
             {
                 Vector3 spawnPosition = fallbackCenter;
                 SargassumGlobalDragManager.SargassumFieldSample fieldSample = default;
@@ -2998,7 +3383,7 @@ namespace Hecton8.World
                     float w = HashToFloat01((uint)i, (uint)attempt, 0x1BF5C7D5u);
 
                     spawnPosition.x = minX + u * sizeX + driftOffset.x;
-                    spawnPosition.y = Mathf.Lerp(minY, maxY, w);
+                    spawnPosition.y = math.lerp(minY, maxY, w);
                     spawnPosition.z = minZ + v * sizeZ + driftOffset.z;
 
                     if (!dragManager.SampleDetailedInfluence(spawnPosition, 0.45f, cruiseSpeed, out fieldSample))
@@ -3029,16 +3414,24 @@ namespace Hecton8.World
 
         private void BuildGrazingAnchors(Vector4 densityWorldRect, Vector3 driftOffset)
         {
-            float sizeX = 1f / Mathf.Max(densityWorldRect.z, 0.0001f);
-            float sizeZ = 1f / Mathf.Max(densityWorldRect.w, 0.0001f);
+            int targetAnchorCount = ResolveTargetGrazingAnchorCount(ResolveActiveBoidUploadCount());
+            if (targetAnchorCount <= 0)
+            {
+                _activeGrazingAnchorCount = 0;
+                _debugGrazingAnchorCount = 0;
+                return;
+            }
+
+            float sizeX = 1f / math.max(densityWorldRect.z, 0.0001f);
+            float sizeZ = 1f / math.max(densityWorldRect.w, 0.0001f);
             float minX = densityWorldRect.x;
             float minZ = densityWorldRect.y;
             float minY = waterLevel - maxDepthBelowSurface;
             float maxY = waterLevel - minDepthBelowSurface;
-            Vector3 fallbackPosition = new Vector3(minX + sizeX * 0.5f + driftOffset.x, Mathf.Lerp(minY, maxY, 0.32f), minZ + sizeZ * 0.5f + driftOffset.z);
+            Vector3 fallbackPosition = new Vector3(minX + sizeX * 0.5f + driftOffset.x, math.lerp(minY, maxY, 0.32f), minZ + sizeZ * 0.5f + driftOffset.z);
 
             _activeGrazingAnchorCount = 0;
-            for (int i = 0; i < grazingAnchorCount; i++)
+            for (int i = 0; i < grazingAnchorCount && _activeGrazingAnchorCount < targetAnchorCount; i++)
             {
                 Vector3 anchorPosition = fallbackPosition;
                 SargassumGlobalDragManager.SargassumFieldSample fieldSample = default;
@@ -3051,7 +3444,7 @@ namespace Hecton8.World
                     float w = HashToFloat01((uint)i, (uint)attempt, 0x327B23C6u);
 
                     anchorPosition.x = minX + u * sizeX + driftOffset.x;
-                    anchorPosition.y = Mathf.Lerp(minY, maxY, Mathf.Lerp(0.18f, 0.58f, w));
+                    anchorPosition.y = math.lerp(minY, maxY, math.lerp(0.18f, 0.58f, w));
                     anchorPosition.z = minZ + v * sizeZ + driftOffset.z;
 
                     if (!dragManager.SampleDetailedInfluence(anchorPosition, grazingRadius * 0.35f, cruiseSpeed, out fieldSample))
@@ -3072,23 +3465,11 @@ namespace Hecton8.World
                 {
                     Position = anchorPosition,
                     Radius = grazingRadius,
-                    Strength = Mathf.Lerp(0.8f, 1.25f, fieldSample.Density01),
+                    Strength = math.lerp(0.8f, 1.25f, fieldSample.Density01),
                     Phase = HashToFloat01((uint)i, 0u, 0xA4093822u),
                     Padding = Vector2.zero
                 };
                 _activeGrazingAnchorCount++;
-            }
-
-            for (int i = _activeGrazingAnchorCount; i < grazingAnchorCount; i++)
-            {
-                _grazingAnchors[i] = new GrazingAnchorData
-                {
-                    Position = fallbackPosition,
-                    Radius = grazingRadius,
-                    Strength = 0f,
-                    Phase = 0f,
-                    Padding = Vector2.zero
-                };
             }
 
             _debugGrazingAnchorCount = _activeGrazingAnchorCount;
@@ -3096,14 +3477,135 @@ namespace Hecton8.World
 
         private Vector3 BuildInitialVelocity(int index)
         {
-            float angle = HashToFloat01((uint)index, 0u, 0xDEADBEEFu) * Mathf.PI * 2f;
-            float vertical = Mathf.Lerp(-0.15f, 0.15f, HashToFloat01((uint)index, 0u, 0x165667B1u));
-            Vector3 direction = new Vector3(Mathf.Cos(angle), vertical, Mathf.Sin(angle));
-            if (direction.sqrMagnitude <= 0.0001f)
-                direction = Vector3.forward;
+            int lane = (int)math.min(7f, HashToFloat01((uint)index, 0u, 0xDEADBEEFu) * 8f);
+            float vertical = math.lerp(-0.08f, 0.08f, HashToFloat01((uint)index, 0u, 0x165667B1u));
+            Vector3 direction;
+            switch (lane)
+            {
+                case 0:
+                    direction = new Vector3(1f, vertical, 0f);
+                    break;
+                case 1:
+                    direction = new Vector3(0.70710678f, vertical, 0.70710678f);
+                    break;
+                case 2:
+                    direction = new Vector3(0f, vertical, 1f);
+                    break;
+                case 3:
+                    direction = new Vector3(-0.70710678f, vertical, 0.70710678f);
+                    break;
+                case 4:
+                    direction = new Vector3(-1f, vertical, 0f);
+                    break;
+                case 5:
+                    direction = new Vector3(-0.70710678f, vertical, -0.70710678f);
+                    break;
+                case 6:
+                    direction = new Vector3(0f, vertical, -1f);
+                    break;
+                default:
+                    direction = new Vector3(0.70710678f, vertical, -0.70710678f);
+                    break;
+            }
 
-            direction.Normalize();
             return direction * cruiseSpeed;
+        }
+
+        private Vector3 BuildStatisticalTangentVelocity(Vector3 offset, int index)
+        {
+            float tangentX = offset.z;
+            float tangentZ = -offset.x;
+            float absX = math.abs(tangentX);
+            float absZ = math.abs(tangentZ);
+            if (math.max(absX, absZ) <= 0.0001f)
+                return BuildInitialVelocity(index);
+
+            float vertical = math.lerp(-0.08f, 0.08f, HashToFloat01((uint)index, 0u, 0x165667B1u));
+            if (absX >= absZ)
+                return new Vector3(tangentX < 0f ? -1f : 1f, vertical, 0f) * cruiseSpeed;
+
+            return new Vector3(0f, vertical, tangentZ < 0f ? -1f : 1f) * cruiseSpeed;
+        }
+
+        private bool EnsureStaticComputeBufferBindings()
+        {
+            if (_computeStaticBuffersBound)
+                return true;
+
+            if (boidCompute == null ||
+                _kernelIndex < 0 ||
+                _buildSpatialGridKernelIndex < 0 ||
+                _pbdSolveKernelIndex < 0 ||
+                _clearPbdCorrectionsKernelIndex < 0 ||
+                _clearSpatialGridKernelIndex < 0 ||
+                _simulationFrameBuffer == null ||
+                _pbdCorrectionBuffer == null ||
+                _spatialGridCountBuffer == null ||
+                _spatialGridCellBuffer == null ||
+                _grazingAnchorBuffer == null ||
+                _formationBeaconBuffer == null ||
+                _formationObstacleBuffer == null ||
+                _leviathanNodeBuffer == null ||
+                _massiveThreatBuffer == null ||
+                _threatGridBuffer == null ||
+                _threatVoxelBuffer == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                boidCompute.SetBuffer(_kernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _PbdCorrectionsId, _pbdCorrectionBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _SpatialGridCountsId, _spatialGridCountBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _SpatialGridCellsId, _spatialGridCellBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _GrazingAnchorsId, _grazingAnchorBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _FormationBeaconsId, _formationBeaconBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _FormationObstaclesId, _formationObstacleBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _LeviathanNodesId, _leviathanNodeBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _MassiveThreatsId, _massiveThreatBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _ThreatGridId, _threatGridBuffer);
+                boidCompute.SetBuffer(_kernelIndex, _ThreatVoxelGridId, _threatVoxelBuffer);
+
+                boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
+                boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _SpatialGridCountsId, _spatialGridCountBuffer);
+                boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _SpatialGridCellsId, _spatialGridCellBuffer);
+
+                boidCompute.SetBuffer(_pbdSolveKernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
+                boidCompute.SetBuffer(_pbdSolveKernelIndex, _SpatialGridCountsId, _spatialGridCountBuffer);
+                boidCompute.SetBuffer(_pbdSolveKernelIndex, _SpatialGridCellsId, _spatialGridCellBuffer);
+                boidCompute.SetBuffer(_pbdSolveKernelIndex, _PbdCorrectionsId, _pbdCorrectionBuffer);
+
+                boidCompute.SetBuffer(_clearPbdCorrectionsKernelIndex, _PbdCorrectionsId, _pbdCorrectionBuffer);
+                boidCompute.SetBuffer(_clearPbdCorrectionsKernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
+
+                boidCompute.SetBuffer(_clearSpatialGridKernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
+                boidCompute.SetBuffer(_clearSpatialGridKernelIndex, _SpatialGridCountsId, _spatialGridCountBuffer);
+
+                if (_latchStatsBuffer != null)
+                {
+                    boidCompute.SetBuffer(_kernelIndex, _LatchStatsId, _latchStatsBuffer);
+                    if (_clearStatsKernelIndex >= 0)
+                        boidCompute.SetBuffer(_clearStatsKernelIndex, _LatchStatsId, _latchStatsBuffer);
+                }
+            }
+            catch (Exception)
+            {
+                DisableComputeDispatch(ComputeDisableReasonBindingFailure);
+                return false;
+            }
+
+            _computeStaticBuffersBound = true;
+            return true;
+        }
+
+        private void SetMainKernelTextureIfChanged(int propertyId, Texture texture, ref Texture boundTexture)
+        {
+            if (ReferenceEquals(boundTexture, texture))
+                return;
+
+            boidCompute.SetTexture(_kernelIndex, propertyId, texture);
+            boundTexture = texture;
         }
 
         private bool BindSimulationUniforms(
@@ -3120,15 +3622,17 @@ namespace Hecton8.World
             GraphicsBuffer readBuffer = _frameParity == 0 ? _boidsBufferA : _boidsBufferB;
             GraphicsBuffer writeBuffer = _frameParity == 0 ? _boidsBufferB : _boidsBufferA;
 
-            Vector3 playerPosition = playerTransform != null ? playerTransform.position : _fieldCenter;
-            Vector3 playerVelocity = _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
-            Vector3 playerRight = playerTransform != null ? playerTransform.right : Vector3.right;
-            Vector3 playerUp = playerTransform != null ? playerTransform.up : Vector3.up;
-            Vector3 playerForward = playerTransform != null ? playerTransform.forward : Vector3.forward;
+            ResolvePlayerGpuFrame(
+                out Vector3 playerPosition,
+                out Vector3 playerVelocity,
+                out Vector3 playerRight,
+                out Vector3 playerUp,
+                out Vector3 playerForward,
+                out Vector3 cameraPosition);
             Vector3 playerDirection = playerPosition - _fieldCenter;
             if (playerDirection.sqrMagnitude <= 0.0001f)
                 playerDirection = playerForward;
-            playerDirection = (Vector3)math.normalizesafe((float3)playerDirection, (float3)playerForward);
+            playerDirection = FastNormalizeVector3(playerDirection, playerForward);
             float playerSpeedSq = playerVelocity.sqrMagnitude;
             float playerSpeed = math.min(
                 playerSpeedSq / math.max(0.001f, panicPlayerSpeedThreshold),
@@ -3148,7 +3652,9 @@ namespace Hecton8.World
                                  cutManager != null &&
                                  cutManager.TryGetCutMask(out cutMaskTexture, out cutMaskWorldRect);
             Texture densityTexture = !_deepModeActive && dragManager != null ? dragManager.DensityFieldTexture : Texture2D.blackTexture;
-            Vector3 cameraPosition = viewCamera != null ? viewCamera.transform.position : playerPosition;
+            if (densityTexture == null)
+                densityTexture = Texture2D.blackTexture;
+            Texture activeCutMaskTexture = cutMaskActive && cutMaskTexture != null ? cutMaskTexture : Texture2D.blackTexture;
             Vector3 abyssalFlowWeatherCurrent = Vector3.zero;
             HectonFluidEngine fluidRuntime = GlobalRegistry.Fluid;
             if (fluidRuntime != null &&
@@ -3161,8 +3667,8 @@ namespace Hecton8.World
             float transportCapsuleHalfLength = 0f;
             if (_playerTransportCoordinator != null && _playerTransportCoordinator.IsTransportActive())
             {
-                transportCapsuleRadius = Mathf.Max(boidBodyRadius * 6f, panicPlayerRadius * panicPlayerRadiusScale);
-                transportCapsuleHalfLength = Mathf.Max(transportCapsuleRadius, playerSpeed * 0.35f);
+                transportCapsuleRadius = math.max(boidBodyRadius * 6f, panicPlayerRadius * panicPlayerRadiusScale);
+                transportCapsuleHalfLength = math.max(transportCapsuleRadius, playerSpeed * 0.35f);
             }
 
             Vector3 submarineWakePosition = Vector3.zero;
@@ -3193,17 +3699,17 @@ namespace Hecton8.World
             float fragmentation01 = ResolveFragmentationStrength01(absoluteSimulationTime);
             float fragmentationHalfDistance = _fragmentationHalfDistanceWS;
             float sonarScatterStrength01 = absoluteSimulationTime < _sonarScatterExpireTime
-                ? Mathf.Clamp01(_sonarScatterStrength01)
+                ? math.saturate(_sonarScatterStrength01)
                 : 0f;
             float acousticPanicStrength01 = absoluteSimulationTime < _acousticPanicExpireTime
-                ? Mathf.Clamp01(_acousticPanicStrength01)
+                ? math.saturate(_acousticPanicStrength01)
                 : 0f;
             if (acousticPanicStrength01 <= 0f)
             {
                 _acousticPanicRadiusWS = 0f;
                 _acousticPanicStrength01 = 0f;
             }
-            float acousticPanicTimeRemaining = Mathf.Max(0f, _acousticPanicExpireTime - absoluteSimulationTime);
+            float acousticPanicTimeRemaining = math.max(0f, _acousticPanicExpireTime - absoluteSimulationTime);
 
             SimulationFrameConstants frameConstants = default;
             frameConstants.Simulation0 = new float4(simulationDt, waterLevel, minDepthBelowSurface, maxDepthBelowSurface);
@@ -3229,9 +3735,15 @@ namespace Hecton8.World
             frameConstants.Counts0 = new int4(
                 _activeBoidCount,
                 _activeGrazingAnchorCount,
-                _massiveThreats != null ? _massiveThreats.Length : 0,
+                _activeMassiveThreatCount,
                 _debugFormationBeaconCount);
-            frameConstants.Counts1 = new int4(_debugFormationObstacleCount, _leviathanPathNodeCount, (int)simulationLodTier, 0);
+            int gridBoundRange = math.max(math.max(_spatialGridResolution.x, math.max(_spatialGridResolution.y, _spatialGridResolution.z)) - 1, 0);
+            int pbdNeighbourCellRange = math.min(
+                4,
+                math.min(
+                    gridBoundRange,
+                    math.max(1, CeilToIntPositive(math.max(boidBodyRadius * 2f, 0.001f) / math.max(_spatialGridCellSizeWS, 0.001f)))));
+            frameConstants.Counts1 = new int4(_debugFormationObstacleCount, _leviathanPathNodeCount, (int)simulationLodTier, pbdNeighbourCellRange);
             frameConstants.DensityWorldRect = new float4(_densityWorldRect.x, _densityWorldRect.y, _densityWorldRect.z, _densityWorldRect.w);
             frameConstants.CutMaskWorldRect = new float4(cutMaskWorldRect.x, cutMaskWorldRect.y, cutMaskWorldRect.z, cutMaskWorldRect.w);
             frameConstants.DriftOffset = new float4(driftOffset.x, driftOffset.y, driftOffset.z, _deepModeActive ? 1f : 0f);
@@ -3272,7 +3784,7 @@ namespace Hecton8.World
                 leviathanSurroundSpinSpeed,
                 _leviathanModeBlend,
                 hibernationMinTimeScale);
-            frameConstants.CameraPosition = new float4(cameraPosition.x, cameraPosition.y, cameraPosition.z, 0f);
+            frameConstants.CameraPosition = new float4(cameraPosition.x, cameraPosition.y, cameraPosition.z, shouldRender ? 1f : -1f);
             frameConstants.ThreatGridMeta = new int4(
                 _threatGridResolution,
                 _threatGridDataValid ? 1 : 0,
@@ -3288,7 +3800,7 @@ namespace Hecton8.World
                 _threatVoxelDimensions.y,
                 _threatVoxelDimensions.z,
                 _threatVoxelSolidThreshold);
-            float ecosystemSpeedScale = Mathf.Max(0.25f, _ecosystemSpeedMultiplier);
+            float ecosystemSpeedScale = math.max(0.25f, _ecosystemSpeedMultiplier);
             float ecosystemCamouflageScale = math.lerp(1f, ecosystemCamouflageWeight, _ecosystemCamouflageIndex);
             float ecosystemFitnessScale = math.lerp(1f, 1.15f, _ecosystemFitness);
             frameConstants.ThreatVoxelOrigin = new float4(
@@ -3335,7 +3847,7 @@ namespace Hecton8.World
                 _fragmentationCenterBWS.x,
                 _fragmentationCenterBWS.y,
                 _fragmentationCenterBWS.z,
-                Mathf.Max(1f, fragmentationHalfDistance));
+                math.max(1f, fragmentationHalfDistance));
             frameConstants.SonarScatter0 = new float4(
                 _sonarScatterOriginWS.x,
                 _sonarScatterOriginWS.y,
@@ -3351,50 +3863,25 @@ namespace Hecton8.World
                 acousticPanicStrength01,
                 acousticPanicTimeRemaining,
                 0f);
+            frameConstants.AbyssalFlowWeatherCurrent = new float4(abyssalFlowWeatherCurrent.x, abyssalFlowWeatherCurrent.y, abyssalFlowWeatherCurrent.z, 0f);
+            frameConstants.PlayerDirection = new float4(playerDirection.x, playerDirection.y, playerDirection.z, 0f);
 
             try
             {
                 _simulationFrameNative[0] = frameConstants;
                 GraphicsBufferUploadUtility.UploadNativeArray(_simulationFrameBuffer, _simulationFrameNative, 1);
-                boidCompute.SetBuffer(_kernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
-                boidCompute.SetVector(_AbyssalFlowWeatherCurrentId, new Vector4(abyssalFlowWeatherCurrent.x, abyssalFlowWeatherCurrent.y, abyssalFlowWeatherCurrent.z, 0f));
-                boidCompute.SetVector(_PlayerDirectionId, new Vector4(playerDirection.x, playerDirection.y, playerDirection.z, 0f));
-                UploadBoidComputeCullPayload(shouldRender);
+                if (!EnsureStaticComputeBufferBindings())
+                    return false;
 
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferReadId, readBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferWriteId, writeBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _PbdCorrectionsId, _pbdCorrectionBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _SpatialGridCountsId, _spatialGridCountBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _SpatialGridCellsId, _spatialGridCellBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _GrazingAnchorsId, _grazingAnchorBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _FormationBeaconsId, _formationBeaconBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _FormationObstaclesId, _formationObstacleBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _LeviathanNodesId, _leviathanNodeBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _MassiveThreatsId, _massiveThreatBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _ThreatGridId, _threatGridBuffer);
-                boidCompute.SetBuffer(_kernelIndex, _ThreatVoxelGridId, _threatVoxelBuffer);
-                if (_latchStatsBuffer != null)
-                    boidCompute.SetBuffer(_kernelIndex, _LatchStatsId, _latchStatsBuffer);
 
-                boidCompute.SetTexture(_kernelIndex, _DensityTexId, densityTexture);
-                boidCompute.SetTexture(_kernelIndex, _CutMaskTexId, cutMaskActive ? cutMaskTexture : Texture2D.blackTexture);
+                SetMainKernelTextureIfChanged(_DensityTexId, densityTexture, ref _boundComputeDensityTexture);
+                SetMainKernelTextureIfChanged(_CutMaskTexId, activeCutMaskTexture, ref _boundComputeCutMaskTexture);
 
                 boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _BoidsBufferReadId, readBuffer);
-                boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
-                boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _SpatialGridCountsId, _spatialGridCountBuffer);
-                boidCompute.SetBuffer(_buildSpatialGridKernelIndex, _SpatialGridCellsId, _spatialGridCellBuffer);
 
                 boidCompute.SetBuffer(_pbdSolveKernelIndex, _BoidsBufferReadId, readBuffer);
-                boidCompute.SetBuffer(_pbdSolveKernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
-                boidCompute.SetBuffer(_pbdSolveKernelIndex, _SpatialGridCountsId, _spatialGridCountBuffer);
-                boidCompute.SetBuffer(_pbdSolveKernelIndex, _SpatialGridCellsId, _spatialGridCellBuffer);
-                boidCompute.SetBuffer(_pbdSolveKernelIndex, _PbdCorrectionsId, _pbdCorrectionBuffer);
-
-                boidCompute.SetBuffer(_clearPbdCorrectionsKernelIndex, _PbdCorrectionsId, _pbdCorrectionBuffer);
-                boidCompute.SetBuffer(_clearPbdCorrectionsKernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
-
-                boidCompute.SetBuffer(_clearSpatialGridKernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
-                boidCompute.SetBuffer(_clearSpatialGridKernelIndex, _SpatialGridCountsId, _spatialGridCountBuffer);
             }
             catch (Exception)
             {
@@ -3415,6 +3902,100 @@ namespace Hecton8.World
         {
         }
 
+        private void ResolvePlayerGpuFrame(
+            out Vector3 playerPosition,
+            out Vector3 playerVelocity,
+            out Vector3 playerRight,
+            out Vector3 playerUp,
+            out Vector3 playerForward,
+            out Vector3 cameraPosition)
+        {
+            playerPosition = _fieldCenter;
+            playerVelocity = Vector3.zero;
+            playerForward = Vector3.forward;
+            playerUp = Vector3.up;
+            playerRight = Vector3.right;
+            cameraPosition = _fieldCenter;
+
+            if (!TryResolvePlayerRuntimeSnapshot(
+                    out PlayerMovementRuntimeState movementState,
+                    out PlayerLookState lookState))
+            {
+                return;
+            }
+
+            bool hasMovementRoot = (movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+            bool hasLookRoot = (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u;
+            if (!hasMovementRoot && !hasLookRoot)
+                return;
+
+            if (hasLookRoot)
+                playerPosition = ToVector3(lookState.EyePosition);
+            else
+                playerPosition = ToVector3(movementState.WorldPosition);
+
+            if (hasMovementRoot)
+                playerVelocity = ToVector3(movementState.Velocity);
+
+            Vector3 runtimeForward = hasLookRoot ? ToVector3(lookState.AimForward) : Vector3.zero;
+            if (runtimeForward.sqrMagnitude <= 0.0001f && hasMovementRoot)
+                runtimeForward = ToVector3(movementState.CameraForward);
+            if (runtimeForward.sqrMagnitude <= 0.0001f && hasMovementRoot)
+                runtimeForward = ToVector3(movementState.Forward);
+
+            playerForward = FastNormalizeVector3(runtimeForward, Vector3.forward);
+            playerRight = ResolveApproxRight(playerForward);
+            cameraPosition = hasLookRoot ? ToVector3(lookState.EyePosition) : playerPosition;
+            if (cameraPosition.sqrMagnitude <= 0.0001f)
+                cameraPosition = playerPosition;
+        }
+
+        private bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
+        {
+            return TryResolvePlayerRuntimeMotion(out playerPosition, out _);
+        }
+
+        private bool TryResolvePlayerRuntimeMotion(out Vector3 playerPosition, out Vector3 playerVelocity)
+        {
+            int currentFrame = Time.frameCount;
+            if (_playerMotionCacheFrame != currentFrame)
+            {
+                _playerMotionCacheFrame = currentFrame;
+                _playerMotionCacheValid = TryResolvePlayerRuntimeMotionUncached(
+                    out _playerMotionCachePosition,
+                    out _playerMotionCacheVelocity);
+            }
+
+            playerPosition = _playerMotionCachePosition;
+            playerVelocity = _playerMotionCacheVelocity;
+            return _playerMotionCacheValid;
+        }
+
+        private bool TryResolvePlayerRuntimeMotionUncached(out Vector3 playerPosition, out Vector3 playerVelocity)
+        {
+            playerPosition = Vector3.zero;
+            playerVelocity = Vector3.zero;
+            if (!TryResolvePlayerRuntimeSnapshot(
+                    out PlayerMovementRuntimeState movementState,
+                    out PlayerLookState lookState))
+            {
+                return false;
+            }
+
+            if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                playerPosition = ToVector3(movementState.WorldPosition);
+                playerVelocity = ToVector3(movementState.Velocity);
+                return true;
+            }
+
+            if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
+                return false;
+
+            playerPosition = ToVector3(lookState.EyePosition);
+            return true;
+        }
+
         void ISargassumGlobalDragEventListener.OnSargassumMassiveDisplacement(in SargassumGlobalDragManager.MassiveDisplacementSignal signal)
         {
             HandleMassiveDisplacement(in signal);
@@ -3426,7 +4007,7 @@ namespace Hecton8.World
                 return;
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
-            float panicRadius = Mathf.Max(massiveThreatPanicRadius, Mathf.Max(signal.ExtremePanicRadiusWS, signal.RadiusWS * 3f));
+            float panicRadius = math.max(massiveThreatPanicRadius, math.max(signal.ExtremePanicRadiusWS, signal.RadiusWS * 3f));
             int targetIndex = -1;
             float weakestEndTime = float.MaxValue;
             Vector3 inferredDirectionWS = Vector3.zero;
@@ -3440,16 +4021,18 @@ namespace Hecton8.World
                     break;
                 }
 
-                float planarDistanceSq = (new Vector2(threat.Position.x, threat.Position.z) - new Vector2(signal.PositionWS.x, signal.PositionWS.z)).sqrMagnitude;
-                float mergeDistance = Mathf.Max(threat.PanicRadius, panicRadius) * 0.4f;
+                float planarDeltaX = threat.Position.x - signal.PositionWS.x;
+                float planarDeltaZ = threat.Position.z - signal.PositionWS.z;
+                float planarDistanceSq = (planarDeltaX * planarDeltaX) + (planarDeltaZ * planarDeltaZ);
+                float mergeDistance = math.max(threat.PanicRadius, panicRadius) * 0.4f;
                 if (planarDistanceSq <= mergeDistance * mergeDistance)
                 {
                     targetIndex = i;
                     Vector3 delta = signal.PositionWS - threat.Position;
                     if (delta.sqrMagnitude > 0.0001f)
-                        inferredDirectionWS = delta.normalized;
+                        inferredDirectionWS = FastNormalizeVector3(delta, Vector3.forward);
                     else if (threat.DirectionWS.sqrMagnitude > 0.0001f)
-                        inferredDirectionWS = threat.DirectionWS.normalized;
+                        inferredDirectionWS = FastNormalizeVector3(threat.DirectionWS, Vector3.forward);
                     break;
                 }
 
@@ -3464,42 +4047,40 @@ namespace Hecton8.World
                 targetIndex = 0;
 
             if (inferredDirectionWS.sqrMagnitude <= 0.0001f &&
-                playerTransform != null &&
-                playerTransform.gameObject.activeInHierarchy)
+                TryResolvePlayerRuntimeMotion(out Vector3 playerPosition, out Vector3 playerVelocity))
             {
                 AbsoluteUniversePosition signalAup = AbsoluteUniversePosition.FromRuntimePosition(signal.PositionWS);
-                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
                 if (AbsoluteUniversePosition.DistanceSq(in signalAup, in playerAup) <= (double)panicRadius * panicRadius &&
-                    playerTransform.TryGetComponent(out Rigidbody playerRigidbody) &&
-                    playerRigidbody.linearVelocity.sqrMagnitude > 0.0001f)
+                    playerVelocity.sqrMagnitude > 0.0001f)
                 {
-                    inferredDirectionWS = playerRigidbody.linearVelocity.normalized;
+                    inferredDirectionWS = FastNormalizeVector3(playerVelocity, Vector3.forward);
                 }
             }
 
             _massiveThreats[targetIndex] = new MassiveThreatData
             {
                 Position = signal.PositionWS,
-                InnerRadius = Mathf.Max(0.5f, signal.RadiusWS),
+                InnerRadius = math.max(0.5f, signal.RadiusWS),
                 PanicRadius = panicRadius,
                 Strength = 1f,
-                EndTime = absoluteSimulationTime + Mathf.Max(0.25f, signal.Duration),
+                EndTime = absoluteSimulationTime + math.max(0.25f, signal.Duration),
                 DirectionWS = inferredDirectionWS,
                 ThreatFlags = (uint)MassiveThreatFlags.None
             };
 
             RecalculateMassiveThreatCount();
-            if (_massiveThreatBuffer != null)
-                GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
+            UploadMassiveThreats();
 
             AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
             if ((_deepModeActive || _parasiteModeActive || _formationModeActive || _leviathanModeActive) && fluidDecals != null)
             {
-                float ruptureScale = Mathf.Clamp01(signal.RadiusWS / Mathf.Max(1f, deepBaitBallRadius * 2f));
+                float ruptureScale = math.saturate(signal.RadiusWS / math.max(1f, deepBaitBallRadius * 2f));
                 fluidDecals.RegisterRuptureFluid(signal.PositionWS, ruptureScale);
             }
 
-            Vector3 displacementDirection = _leviathanHeadVelocityWS.sqrMagnitude > 0.0001f
+            float headVelocitySq = _leviathanHeadVelocityWS.sqrMagnitude;
+            Vector3 displacementDirection = headVelocitySq > 0.0001f
                 ? _leviathanHeadVelocityWS
                 : (signal.PositionWS - _fieldCenter);
             TriggerFragmentation(signal.PositionWS, displacementDirection, signal.ExtremePanicRadiusWS, absoluteSimulationTime);
@@ -3537,7 +4118,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                float mergeDistance = Mathf.Max(threat.PanicRadius, panicRadiusWS) * 0.35f;
+                float mergeDistance = math.max(threat.PanicRadius, panicRadiusWS) * 0.35f;
                 if ((threat.Position - positionWS).sqrMagnitude <= mergeDistance * mergeDistance)
                 {
                     targetIndex = i;
@@ -3554,21 +4135,20 @@ namespace Hecton8.World
             if (targetIndex < 0)
                 targetIndex = 0;
 
-            Vector3 resolvedDirection = directionWS.sqrMagnitude > 0.0001f ? directionWS.normalized : Vector3.forward;
+            Vector3 resolvedDirection = FastNormalizeVector3(directionWS, Vector3.forward);
             _massiveThreats[targetIndex] = new MassiveThreatData
             {
                 Position = positionWS,
-                InnerRadius = Mathf.Max(0.5f, boidBodyRadius * 2f),
-                PanicRadius = Mathf.Max(4f, panicRadiusWS),
+                InnerRadius = math.max(0.5f, boidBodyRadius * 2f),
+                PanicRadius = math.max(4f, panicRadiusWS),
                 Strength = 1f,
-                EndTime = absoluteSimulationTime + Mathf.Max(0.15f, durationSeconds),
+                EndTime = absoluteSimulationTime + math.max(0.15f, durationSeconds),
                 DirectionWS = resolvedDirection,
                 ThreatFlags = (uint)MassiveThreatFlags.LeviathanHuntPulse
             };
 
             RecalculateMassiveThreatCount();
-            if (_massiveThreatBuffer != null)
-                GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
+            UploadMassiveThreats();
         }
 
         internal void RegisterPredatorFearBurst(
@@ -3596,7 +4176,7 @@ namespace Hecton8.World
                 if ((threat.ThreatFlags & (uint)MassiveThreatFlags.LeviathanHuntPulse) != 0u)
                     continue;
 
-                float mergeDistance = Mathf.Max(threat.PanicRadius, panicRadiusWS) * 0.45f;
+                float mergeDistance = math.max(threat.PanicRadius, panicRadiusWS) * 0.45f;
                 if ((threat.Position - positionWS).sqrMagnitude <= mergeDistance * mergeDistance)
                 {
                     targetIndex = i;
@@ -3613,21 +4193,20 @@ namespace Hecton8.World
             if (targetIndex < 0)
                 targetIndex = 0;
 
-            Vector3 resolvedDirection = directionWS.sqrMagnitude > 0.0001f ? directionWS.normalized : Vector3.forward;
+            Vector3 resolvedDirection = FastNormalizeVector3(directionWS, Vector3.forward);
             _massiveThreats[targetIndex] = new MassiveThreatData
             {
                 Position = positionWS,
-                InnerRadius = Mathf.Max(0.5f, boidBodyRadius * 1.5f),
-                PanicRadius = Mathf.Max(3f, panicRadiusWS),
-                Strength = Mathf.Clamp01(strength01),
-                EndTime = absoluteSimulationTime + Mathf.Max(0.15f, durationSeconds),
+                InnerRadius = math.max(0.5f, boidBodyRadius * 1.5f),
+                PanicRadius = math.max(3f, panicRadiusWS),
+                Strength = math.saturate(strength01),
+                EndTime = absoluteSimulationTime + math.max(0.15f, durationSeconds),
                 DirectionWS = resolvedDirection,
                 ThreatFlags = 0u
             };
 
             RecalculateMassiveThreatCount();
-            if (_massiveThreatBuffer != null)
-                GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
+            UploadMassiveThreats();
         }
 
         private void UpdateFragmentationState(
@@ -3641,17 +4220,20 @@ namespace Hecton8.World
                 _playerTransportCoordinator.IsTransportActive() &&
                 playerSpeed >= panicPlayerSpeedThreshold)
             {
-                Vector3 dashDirection = playerVelocity.sqrMagnitude > 0.0001f ? playerVelocity : playerForward;
-                TriggerFragmentation(playerPosition, dashDirection, Mathf.Max(panicPlayerRadius, boidBodyRadius * 6f), absoluteSimulationTime);
+                float playerVelocitySq = playerVelocity.sqrMagnitude;
+                Vector3 dashDirection = playerVelocitySq > 0.0001f ? playerVelocity : playerForward;
+                TriggerFragmentation(playerPosition, dashDirection, math.max(panicPlayerRadius, boidBodyRadius * 6f), absoluteSimulationTime);
             }
 
+            float leviathanHeadVelocitySq = _leviathanHeadVelocityWS.sqrMagnitude;
+            float leviathanShockwaveThresholdSq = leviathanShockwaveSpeedThreshold * leviathanShockwaveSpeedThreshold;
             if (_leviathanHeadValid &&
-                _leviathanHeadVelocityWS.sqrMagnitude >= leviathanShockwaveSpeedThreshold * leviathanShockwaveSpeedThreshold)
+                leviathanHeadVelocitySq >= leviathanShockwaveThresholdSq)
             {
                 TriggerFragmentation(
                     _leviathanHeadPositionWS,
                     _leviathanHeadVelocityWS,
-                    Mathf.Max(_leviathanHeadRadiusWS * 2.5f, leviathanShockwaveRadius * 0.45f),
+                    math.max(_leviathanHeadRadiusWS * 2.5f, leviathanShockwaveRadius * 0.45f),
                     absoluteSimulationTime);
             }
 
@@ -3674,7 +4256,7 @@ namespace Hecton8.World
                 return;
             }
 
-            _sonarScatterWaveFrontWS += Mathf.Max(0f, simulationDt) * Mathf.Max(0.1f, activeSonarWaveSpeed);
+            _sonarScatterWaveFrontWS += math.max(0f, simulationDt) * math.max(0.1f, activeSonarWaveSpeed);
         }
 
         private float ResolveFragmentationStrength01(float absoluteSimulationTime)
@@ -3684,31 +4266,25 @@ namespace Hecton8.World
                 !float.IsFinite(_fragmentationStartTime))
                 return 0f;
 
-            float duration = Mathf.Max(0.1f, _fragmentationExpireTime - _fragmentationStartTime);
-            float timeRemaining = Mathf.Max(0f, _fragmentationExpireTime - absoluteSimulationTime);
-            return Mathf.Clamp01(timeRemaining / Mathf.Max(0.1f, duration));
+            float duration = math.max(0.1f, _fragmentationExpireTime - _fragmentationStartTime);
+            float timeRemaining = math.max(0f, _fragmentationExpireTime - absoluteSimulationTime);
+            return math.saturate(timeRemaining / math.max(0.1f, duration));
         }
 
         private void TriggerFragmentation(Vector3 originWS, Vector3 dashVectorWS, float baseRadiusWS, float absoluteSimulationTime)
         {
             float dashVectorSq = dashVectorWS.sqrMagnitude;
-            Vector3 dashDirection = dashVectorSq > 0.0001f ? dashVectorWS * math.rsqrt(dashVectorSq) : Vector3.forward;
-            Vector3 splitAxis = Vector3.Cross(Vector3.up, dashDirection);
-            if (splitAxis.sqrMagnitude <= 0.0001f)
-                splitAxis = Vector3.Cross(Vector3.right, dashDirection);
-            if (splitAxis.sqrMagnitude <= 0.0001f)
-                splitAxis = Vector3.forward;
-            else
-                splitAxis = (Vector3)math.normalizesafe((float3)splitAxis, new float3(0f, 0f, 1f));
+            Vector3 dashDirection = dashVectorSq > 0.0001f ? FastNormalizeVector3(dashVectorWS, Vector3.forward) : Vector3.forward;
+            Vector3 splitAxis = ResolveApproxRight(dashDirection);
 
-            float offsetDistance = Mathf.Max(1f, baseRadiusWS * Mathf.Max(0.5f, fragmentationOffsetScale));
+            float offsetDistance = math.max(1f, baseRadiusWS * math.max(0.5f, fragmentationOffsetScale));
             _fragmentationCenterAWS = originWS + splitAxis * offsetDistance;
             _fragmentationCenterBWS = originWS - splitAxis * offsetDistance;
             _fragmentationHalfDistanceWS = offsetDistance;
-            float safeMinDuration = Mathf.Max(5f, fragmentationMinDurationSeconds);
-            float safeMaxDuration = Mathf.Max(safeMinDuration, fragmentationMaxDurationSeconds);
-            float panicSpeedSq = Mathf.Max(0.01f, panicPlayerSpeedThreshold * panicPlayerSpeedThreshold);
-            float duration01 = Mathf.Clamp01(dashVectorSq / panicSpeedSq);
+            float safeMinDuration = math.max(5f, fragmentationMinDurationSeconds);
+            float safeMaxDuration = math.max(safeMinDuration, fragmentationMaxDurationSeconds);
+            float panicSpeedSq = math.max(0.01f, panicPlayerSpeedThreshold * panicPlayerSpeedThreshold);
+            float duration01 = math.saturate(dashVectorSq / panicSpeedSq);
             _fragmentationStartTime = absoluteSimulationTime;
             _fragmentationExpireTime = absoluteSimulationTime + math.lerp(safeMinDuration, safeMaxDuration, duration01);
             _debugFragmentation01 = 1f;
@@ -3742,7 +4318,7 @@ namespace Hecton8.World
 
         private void HandleSonarPingSent(float intensity)
         {
-            float clampedIntensity = Mathf.Clamp01(intensity);
+            float clampedIntensity = math.saturate(intensity);
             if (clampedIntensity <= 0f)
             {
                 _sonarScatterStrength01 = 0f;
@@ -3750,10 +4326,10 @@ namespace Hecton8.World
                 return;
             }
 
-            Vector3 originWS = playerTransform != null ? playerTransform.position : _fieldCenter;
-            float maxFieldExtent = Mathf.Max(_fieldExtents.x, Mathf.Max(_fieldExtents.y, _fieldExtents.z));
-            float safeWaveSpeed = Mathf.Max(0.1f, activeSonarWaveSpeed);
-            float travelDistance = (maxFieldExtent * 2f) + Mathf.Max(0.25f, activeSonarWaveBandWidth);
+            Vector3 originWS = TryResolvePlayerRuntimePosition(out Vector3 playerPosition) ? playerPosition : _fieldCenter;
+            float maxFieldExtent = math.max(_fieldExtents.x, math.max(_fieldExtents.y, _fieldExtents.z));
+            float safeWaveSpeed = math.max(0.1f, activeSonarWaveSpeed);
+            float travelDistance = (maxFieldExtent * 2f) + math.max(0.25f, activeSonarWaveBandWidth);
 
             _sonarScatterOriginWS = originWS;
             _sonarScatterWaveFrontWS = 0f;
@@ -3774,17 +4350,17 @@ namespace Hecton8.World
             float strength01,
             uint seed)
         {
-            float clampedStrength = Mathf.Clamp01(strength01);
+            float clampedStrength = math.saturate(strength01);
             if (radiusWS <= 0.001f || durationSeconds <= 0.001f || clampedStrength <= 0.0001f)
                 return;
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
             _acousticPanicOriginWS = originWS;
-            _acousticPanicRadiusWS = Mathf.Max(1f, radiusWS);
-            _acousticPanicStrength01 = Mathf.Max(_acousticPanicStrength01, clampedStrength);
-            _acousticPanicExpireTime = Mathf.Max(
+            _acousticPanicRadiusWS = math.max(1f, radiusWS);
+            _acousticPanicStrength01 = math.max(_acousticPanicStrength01, clampedStrength);
+            _acousticPanicExpireTime = math.max(
                 _acousticPanicExpireTime,
-                absoluteSimulationTime + Mathf.Max(0.1f, durationSeconds));
+                absoluteSimulationTime + math.max(0.1f, durationSeconds));
             _acousticPanicSeed = seed != 0u ? seed : 0x9E3779B9u;
         }
 
@@ -3793,7 +4369,7 @@ namespace Hecton8.World
             if (!_deepModeActive || deepHeadlightPanicDuration <= 0.0001f)
                 return 0f;
 
-            return Mathf.Clamp01(_headlightPanicTimer / deepHeadlightPanicDuration);
+            return math.saturate(_headlightPanicTimer / deepHeadlightPanicDuration);
         }
 
         private void ApplyParasiteHullStress()
@@ -3805,7 +4381,7 @@ namespace Hecton8.World
             if (aggression01 <= 0f)
                 return;
 
-            float requestedStress = Mathf.Clamp01(Mathf.Lerp(parasiteHullStressIntensity, parasiteHullStressIntensity + parasiteHullStressLightBoost, aggression01));
+            float requestedStress = math.saturate(math.lerp(parasiteHullStressIntensity, parasiteHullStressIntensity + parasiteHullStressLightBoost, aggression01));
             if (requestedStress <= 0.0001f)
                 return;
 
@@ -3824,11 +4400,11 @@ namespace Hecton8.World
                 {
                     var latchData = _parasiteLatchReadbackRequest.GetData<int>();
                     _reportedLatchedDroneCount = latchData.Length > LatchStatsLatchedCountIndex
-                        ? Mathf.Clamp(latchData[LatchStatsLatchedCountIndex], 0, _activeBoidCount)
+                        ? math.clamp(latchData[LatchStatsLatchedCountIndex], 0, _activeBoidCount)
                         : 0;
                     if (_reportedLatchedDroneCount > 0 && latchData.Length >= LatchStatsElementCount)
                     {
-                        float divisor = LatchStatsQuantize * Mathf.Max(1, _reportedLatchedDroneCount);
+                        float divisor = LatchStatsQuantize * math.max(1, _reportedLatchedDroneCount);
                         _reportedParasiteCenterOfMassLS = new Vector3(
                             latchData[LatchStatsLatchedSumXIndex] / divisor,
                             latchData[LatchStatsLatchedSumYIndex] / divisor,
@@ -3839,10 +4415,11 @@ namespace Hecton8.World
                         _reportedParasiteCenterOfMassLS = Vector3.zero;
                     }
 
+                    Vector3 playerPosition = TryResolvePlayerRuntimePosition(out Vector3 resolvedPlayerPosition) ? resolvedPlayerPosition : _fieldCenter;
                     if (_reportedLatchedDroneCount >= parasiteHarvesterLatchThreshold &&
-                        TryResolveNearestHarvesterAnchor(playerTransform != null ? playerTransform.position : _fieldCenter, out Vector3 harvesterAnchorWS))
+                        TryResolveNearestHarvesterAnchor(playerPosition, out Vector3 harvesterAnchorWS))
                     {
-                        _reportedParasiteHarvesterPullWS = (harvesterAnchorWS - (playerTransform != null ? playerTransform.position : _fieldCenter)).normalized;
+                        _reportedParasiteHarvesterPullWS = FastNormalizeVector3(harvesterAnchorWS - playerPosition, Vector3.zero);
                     }
                     else
                     {
@@ -3854,11 +4431,11 @@ namespace Hecton8.World
                     _debugParasiteHarvesterPullWS = _reportedParasiteHarvesterPullWS;
 
                     _reportedWakeFleeCount = latchData.Length > LatchStatsWakeCountIndex
-                        ? Mathf.Clamp(latchData[LatchStatsWakeCountIndex], 0, _activeBoidCount)
+                        ? math.clamp(latchData[LatchStatsWakeCountIndex], 0, _activeBoidCount)
                         : 0;
                     if (_reportedWakeFleeCount >= WakeMinimumFleeBoids)
                     {
-                        float wakeDivisor = WakeStatsQuantize * Mathf.Max(1, _reportedWakeFleeCount);
+                        float wakeDivisor = WakeStatsQuantize * math.max(1, _reportedWakeFleeCount);
                         _reportedWakeCenterWS = new Vector3(
                             latchData[LatchStatsWakePosXIndex] / wakeDivisor,
                             latchData[LatchStatsWakePosYIndex] / wakeDivisor,
@@ -3867,23 +4444,15 @@ namespace Hecton8.World
                             latchData[LatchStatsWakeVelXIndex] / wakeDivisor,
                             latchData[LatchStatsWakeVelYIndex] / wakeDivisor,
                             latchData[LatchStatsWakeVelZIndex] / wakeDivisor);
-                        _reportedWakeFlowDirectionWS = averageWakeVelocity.sqrMagnitude > 0.0001f
-                            ? averageWakeVelocity.normalized
-                            : Vector3.zero;
+                        _reportedWakeFlowDirectionWS = FastNormalizeVector3(averageWakeVelocity, Vector3.zero);
 
-                        if (_reportedWakeFlowDirectionWS.sqrMagnitude > 0.0001f)
+                        if (_reportedWakeFlowDirectionWS.sqrMagnitude > 0.0001f && _mapMagicVegetationBridge != null)
                         {
-                            if (_mapMagicVegetationBridge == null)
-                                _mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-
-                            if (_mapMagicVegetationBridge != null)
-                            {
-                                _mapMagicVegetationBridge.RegisterSwarmWakeImpulse(
-                                    _reportedWakeCenterWS,
-                                    _reportedWakeFlowDirectionWS * WakeFlowStrength,
-                                    WakeFlowRadius,
-                                    WakeFlowLifetimeSeconds);
-                            }
+                            _mapMagicVegetationBridge.RegisterSwarmWakeImpulse(
+                                _reportedWakeCenterWS,
+                                _reportedWakeFlowDirectionWS * WakeFlowStrength,
+                                WakeFlowRadius,
+                                WakeFlowLifetimeSeconds);
                         }
                     }
                     else
@@ -3933,7 +4502,7 @@ namespace Hecton8.World
                 _debugParasiteHarvesterPullWS = Vector3.zero;
             }
 
-            _parasiteLatchReadbackTimer -= Mathf.Max(0f, dt);
+            _parasiteLatchReadbackTimer -= math.max(0f, dt);
         }
 
         private void TryRequestParasiteLatchReadback()
@@ -3955,7 +4524,7 @@ namespace Hecton8.World
             if (_playerMovement == null || !_parasiteModeActive || _playerTransportCoordinator == null || !_playerTransportCoordinator.IsTransportActive())
                 return;
 
-            float latch01 = Mathf.Clamp01(_reportedLatchedDroneCount / Mathf.Max(1f, parasiteMaxLatchedDronesForFullDrag));
+            float latch01 = math.saturate(_reportedLatchedDroneCount / math.max(1f, parasiteMaxLatchedDronesForFullDrag));
             _playerMovement.ApplyParasiteLatchInfluence(
                 _reportedLatchedDroneCount,
                 _reportedParasiteCenterOfMassLS,
@@ -3964,8 +4533,8 @@ namespace Hecton8.World
                 return;
 
             float aggression01 = ResolveParasiteAggression01();
-            float dragWeight = Mathf.Clamp01(latch01 * Mathf.Lerp(0.65f, 1f, aggression01));
-            float requestedDragMultiplier = Mathf.Lerp(1f, parasiteMaxEnvironmentalDragMultiplier, dragWeight);
+            float dragWeight = math.saturate(latch01 * math.lerp(0.65f, 1f, aggression01));
+            float requestedDragMultiplier = math.lerp(1f, parasiteMaxEnvironmentalDragMultiplier, dragWeight);
             if (requestedDragMultiplier <= 1.0001f)
                 return;
 
@@ -3974,21 +4543,22 @@ namespace Hecton8.World
 
         private void ApplyLeviathanPhysicalStrike()
         {
-            if ((_playerMovement == null && _playerHealth == null) || playerTransform == null || _leviathanStrikeCooldownTimer > 0f)
+            if ((_playerMovement == null && _playerHealth == null) || _leviathanStrikeCooldownTimer > 0f || !TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
                 return;
 
-            Vector3 toPlayer = playerTransform.position - _leviathanHeadPositionWS;
+            Vector3 toPlayer = playerPosition - _leviathanHeadPositionWS;
             if (toPlayer.sqrMagnitude > leviathanStrikeRadius * leviathanStrikeRadius)
                 return;
 
-            Vector3 strikeDirection = _leviathanHeadVelocityWS.sqrMagnitude > 0.0001f
-                ? _leviathanHeadVelocityWS.normalized
+            float leviathanHeadSpeedSq = _leviathanHeadVelocityWS.sqrMagnitude;
+            Vector3 strikeDirection = leviathanHeadSpeedSq > 0.0001f
+                ? FastNormalizeVector3(_leviathanHeadVelocityWS, _leviathanHeadForwardWS)
                 : _leviathanHeadForwardWS;
             if (strikeDirection.sqrMagnitude <= 0.0001f)
                 strikeDirection = Vector3.forward;
 
             float leviathanShockwaveSpeedThresholdSq = math.max(0.01f, leviathanShockwaveSpeedThreshold * leviathanShockwaveSpeedThreshold);
-            float speed01 = Mathf.Clamp01(_leviathanHeadVelocityWS.sqrMagnitude / leviathanShockwaveSpeedThresholdSq);
+            float speed01 = math.saturate(leviathanHeadSpeedSq / leviathanShockwaveSpeedThresholdSq);
             Vector3 traumaImpulse = strikeDirection * (leviathanStrikeImpulse * math.lerp(0.8f, 1.35f, speed01));
             if (_playerMovement != null)
                 _playerMovement.ApplyPhysicalTrauma(traumaImpulse, math.lerp(leviathanStrikeTraumaWeight * 0.65f, leviathanStrikeTraumaWeight, speed01));
@@ -4001,122 +4571,40 @@ namespace Hecton8.World
 
         private void ApplyLeviathanShockwave()
         {
-            if (_leviathanShockwaveCooldownTimer > 0f ||
-                _leviathanHeadVelocityWS.sqrMagnitude < leviathanShockwaveSpeedThreshold * leviathanShockwaveSpeedThreshold ||
-                _leviathanShockwaveRigidbodies == null)
-            {
-                return;
-            }
-
-            int rigidbodyCount = 0;
-            if (_leviathanShockwaveSpatialHits != null)
-            {
-                const SpatialTargetKind shockwaveKinds = SpatialTargetKind.Resource | SpatialTargetKind.Pickup | SpatialTargetKind.Module | SpatialTargetKind.Signal;
-                int spatialHitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
-                    _leviathanHeadPositionWS,
-                    leviathanShockwaveRadius,
-                    shockwaveKinds,
-                    _leviathanShockwaveSpatialHits);
-                for (int i = 0; i < spatialHitCount; i++)
-                {
-                    Transform candidateTransform = _leviathanShockwaveSpatialHits[i].Transform;
-                    if (candidateTransform == null || candidateTransform == playerTransform)
-                        continue;
-
-                    if (candidateTransform.TryGetComponent(out Rigidbody candidateBody))
-                        TryAppendShockwaveBody(candidateBody, ref rigidbodyCount);
-                }
-            }
-
-            if (rigidbodyCount <= 0)
+            float speedSq = _leviathanHeadVelocityWS.sqrMagnitude;
+            float thresholdSq = leviathanShockwaveSpeedThreshold * leviathanShockwaveSpeedThreshold;
+            if (_leviathanShockwaveCooldownTimer > 0f || speedSq < thresholdSq)
                 return;
 
-            float originDensity01 = 0f;
-            if (dragManager != null && dragManager.SampleInfluence(_leviathanHeadPositionWS, _leviathanHeadRadiusWS, out _, out _, out float sampledOriginDensity))
-                originDensity01 = sampledOriginDensity;
-
-            Vector3 headDirection = _leviathanHeadVelocityWS.sqrMagnitude > 0.0001f
-                ? _leviathanHeadVelocityWS.normalized
+            Vector3 headDirection = speedSq > 0.0001f
+                ? FastNormalizeVector3(_leviathanHeadVelocityWS, _leviathanHeadForwardWS)
                 : _leviathanHeadForwardWS;
-            float shockwaveSpeed01 = Mathf.Clamp01(_leviathanHeadVelocityWS.sqrMagnitude / math.max(0.001f, leviathanShockwaveSpeedThreshold * leviathanShockwaveSpeedThreshold));
-            float shockwaveDensityScale = math.lerp(0.8f, 1.25f, originDensity01);
-            float safeShockwaveRadius = Mathf.Max(leviathanShockwaveRadius, 0.001f);
-            float shockwaveRadiusSq = safeShockwaveRadius * safeShockwaveRadius;
-            for (int i = 0; i < rigidbodyCount; i++)
-            {
-                Rigidbody targetBody = _leviathanShockwaveRigidbodies[i];
-                _leviathanShockwaveRigidbodies[i] = null;
-                if (targetBody == null || targetBody == _playerRigidbody || targetBody.isKinematic)
-                    continue;
-
-                Vector3 bodyCenter = targetBody.worldCenterOfMass;
-                Vector3 radialDirection = bodyCenter - _leviathanHeadPositionWS;
-                float radialDistanceSq = radialDirection.sqrMagnitude;
-                if (radialDistanceSq <= 0.0001f)
-                    radialDirection = headDirection;
-                else
-                    radialDirection *= math.rsqrt(radialDistanceSq);
-
-                float distance01 = Mathf.Clamp01(1f - radialDistanceSq / shockwaveRadiusSq);
-                if (distance01 <= 0.0001f)
-                    continue;
-
-                Vector3 impulseDirection = (Vector3)math.lerp((float3)radialDirection, (float3)headDirection, 0.35f);
-                impulseDirection.y += leviathanShockwaveVerticalLift;
-                impulseDirection = (Vector3)math.normalizesafe((float3)impulseDirection, new float3(0f, 1f, 0f));
-
-                float impulseMagnitude = leviathanShockwaveImpulse *
-                                         math.lerp(0.7f, 1.35f, shockwaveSpeed01) *
-                                         shockwaveDensityScale *
-                                         distance01;
-                PhysicsForceRouter.QueueForce(
-                    targetBody,
-                    impulseDirection * impulseMagnitude,
-                    ForceMode.Impulse);
-            }
-
+            float speed01 = math.saturate(speedSq / math.max(0.001f, thresholdSq));
+            float visualRadius = math.max(2f, leviathanShockwaveRadius * math.lerp(0.75f, 1.25f, speed01));
+            float visualDuration = math.max(0.15f, leviathanShockwaveCadence + (leviathanShockwaveImpulse * 0.005f));
+            RegisterLeviathanThreatPulse(_leviathanHeadPositionWS, headDirection, visualRadius, visualDuration);
             _leviathanShockwaveCooldownTimer = leviathanShockwaveCadence;
-        }
-
-        private void TryAppendShockwaveBody(Rigidbody candidateBody, ref int rigidbodyCount)
-        {
-            if (candidateBody == null || _leviathanShockwaveRigidbodies == null)
-                return;
-
-            int capacity = Mathf.Min(_leviathanShockwaveRigidbodies.Length, leviathanShockwaveHitCapacity);
-            for (int i = 0; i < rigidbodyCount; i++)
-            {
-                if (_leviathanShockwaveRigidbodies[i] == candidateBody)
-                    return;
-            }
-
-            if (rigidbodyCount >= capacity)
-                return;
-
-            _leviathanShockwaveRigidbodies[rigidbodyCount] = candidateBody;
-            rigidbodyCount++;
         }
 
         private bool TryResolveNearestHarvesterAnchor(Vector3 origin, out Vector3 anchorWS)
         {
             anchorWS = origin;
             if (_mapMagicVegetationBridge == null)
-                _mapMagicVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-
-            if (_mapMagicVegetationBridge == null)
                 return false;
 
-            Vector3[] anchors = _mapMagicVegetationBridge.ActiveAbyssalAnchors;
+            NativeArray<Vector3> anchors = _mapMagicVegetationBridge.ActiveAbyssalAnchorsNative;
             int anchorCount = _mapMagicVegetationBridge.ActiveAbyssalAnchorCount;
-            if (anchors == null || anchorCount <= 0)
+            if (!anchors.IsCreated || anchorCount <= 0)
                 return false;
 
-            float nearestDistanceSq = float.PositiveInfinity;
-            int cappedCount = Mathf.Min(anchorCount, anchors.Length);
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            double nearestDistanceSq = double.PositiveInfinity;
+            int cappedCount = math.min(anchorCount, anchors.Length);
             for (int i = 0; i < cappedCount; i++)
             {
                 Vector3 candidate = anchors[i];
-                float distanceSq = (candidate - origin).sqrMagnitude;
+                AbsoluteUniversePosition candidateAup = AbsoluteUniversePosition.FromRuntimePosition(candidate);
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in candidateAup, in originAup);
                 if (distanceSq >= nearestDistanceSq)
                     continue;
 
@@ -4124,7 +4612,7 @@ namespace Hecton8.World
                 anchorWS = candidate;
             }
 
-            return !float.IsPositiveInfinity(nearestDistanceSq);
+            return !double.IsPositiveInfinity(nearestDistanceSq);
         }
 
         private void UpdateMassiveThreats()
@@ -4132,14 +4620,10 @@ namespace Hecton8.World
             if (_massiveThreats == null)
                 return;
 
-            float absoluteSimulationTime = GetAbsoluteSimulationTime();
-            _activeMassiveThreatCount = 0;
-            for (int i = 0; i < _massiveThreats.Length; i++)
-            {
-                if (_massiveThreats[i].EndTime > absoluteSimulationTime)
-                    _activeMassiveThreatCount++;
-            }
-            _debugMassiveThreatCount = _activeMassiveThreatCount;
+            int previousActiveThreatCount = _activeMassiveThreatCount;
+            RecalculateMassiveThreatCount();
+            if (previousActiveThreatCount != _activeMassiveThreatCount)
+                UploadMassiveThreats();
         }
 
         private void DispatchClearLatchStats()
@@ -4147,18 +4631,28 @@ namespace Hecton8.World
             if (_latchStatsBuffer == null || boidCompute == null || _clearStatsKernelIndex < 0)
                 return;
 
-            boidCompute.SetBuffer(_clearStatsKernelIndex, _LatchStatsId, _latchStatsBuffer);
             boidCompute.Dispatch(_clearStatsKernelIndex, 1, 1, 1);
+        }
+
+        private bool ShouldCollectLatchStats(SimulationLodTier simulationLodTier, bool leaderFollowerSchooling)
+        {
+            return simulationLodTier == SimulationLodTier.Full &&
+                   !leaderFollowerSchooling &&
+                   _latchStatsBuffer != null;
         }
 
         private void UpdateSpatialGridLayout()
         {
             float baseCellSize = 2f;
-            Vector3 fieldSize = Vector3.Max(_fieldExtents * 2f, Vector3.one * baseCellSize);
-            float axisClampCellSize = Mathf.Max(
+            Vector3 doubledExtents = _fieldExtents * 2f;
+            Vector3 fieldSize = new Vector3(
+                math.max(doubledExtents.x, baseCellSize),
+                math.max(doubledExtents.y, baseCellSize),
+                math.max(doubledExtents.z, baseCellSize));
+            float axisClampCellSize = math.max(
                 fieldSize.x / SpatialGridMaxAxisResolution,
-                Mathf.Max(fieldSize.y / SpatialGridMaxAxisResolution, fieldSize.z / SpatialGridMaxAxisResolution));
-            _spatialGridCellSizeWS = Mathf.Max(baseCellSize, axisClampCellSize);
+                math.max(fieldSize.y / SpatialGridMaxAxisResolution, fieldSize.z / SpatialGridMaxAxisResolution));
+            _spatialGridCellSizeWS = math.max(baseCellSize, axisClampCellSize);
 
             Vector3 fieldMin = _fieldCenter - _fieldExtents;
             Vector3 fieldMax = _fieldCenter + _fieldExtents;
@@ -4168,12 +4662,12 @@ namespace Hecton8.World
                 FloorToMultiple(fieldMin.y, _spatialGridCellSizeWS),
                 FloorToMultiple(fieldMin.z, _spatialGridCellSizeWS));
 
-            int resolutionX = Mathf.Clamp(Mathf.CeilToInt((fieldMax.x - _spatialGridOriginWS.x) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
-            int resolutionY = Mathf.Clamp(Mathf.CeilToInt((fieldMax.y - _spatialGridOriginWS.y) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
-            int resolutionZ = Mathf.Clamp(Mathf.CeilToInt((fieldMax.z - _spatialGridOriginWS.z) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
+            int resolutionX = math.clamp(CeilToIntPositive((fieldMax.x - _spatialGridOriginWS.x) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
+            int resolutionY = math.clamp(CeilToIntPositive((fieldMax.y - _spatialGridOriginWS.y) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
+            int resolutionZ = math.clamp(CeilToIntPositive((fieldMax.z - _spatialGridOriginWS.z) / _spatialGridCellSizeWS), 1, SpatialGridMaxAxisResolution);
             _spatialGridResolution = new Vector3Int(resolutionX, resolutionY, resolutionZ);
             int cellCount = resolutionX * resolutionY * resolutionZ;
-            _clearSpatialGridDispatchGroupCount = Mathf.Max(1, Mathf.CeilToInt(cellCount / (float)SpatialGridClearThreadGroupSize));
+            _clearSpatialGridDispatchGroupCount = math.max(1, CeilDivPositive(cellCount, SpatialGridClearThreadGroupSize));
         }
 
         private void DispatchClearSpatialGrid()
@@ -4194,15 +4688,11 @@ namespace Hecton8.World
 
         private float ResolveCameraDistanceSq()
         {
-            if (viewCamera == null)
-            {
-                ResolveDependencies();
-                if (viewCamera == null)
-                    return 0f;
-            }
+            if (!TryResolveApproxViewPose(out Vector3 cameraPosition, out _))
+                return 0f;
 
             AbsoluteUniversePosition boundsAup = AbsoluteUniversePosition.FromRuntimePosition(_renderBounds.center);
-            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(viewCamera.transform.position);
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(cameraPosition);
             double distanceSq = AbsoluteUniversePosition.DistanceSq(in boundsAup, in cameraAup);
             return distanceSq >= float.MaxValue ? float.MaxValue : (float)math.max(0d, distanceSq);
         }
@@ -4218,9 +4708,9 @@ namespace Hecton8.World
             if (_foveatedSimulationFrontNative.IsCreated && _foveatedSimulationFrontNative.Length > 0)
                 decision = _foveatedSimulationFrontNative[0];
 
-            simulationDeltaTime = Mathf.Max(0f, decision.SimulationDeltaTime);
-            hibernation01 = Mathf.Clamp01(decision.Hibernation01);
-            simulationLodTier = (SimulationLodTier)Mathf.Clamp(decision.Tier, (int)SimulationLodTier.Full, (int)SimulationLodTier.Sleep);
+            simulationDeltaTime = math.max(0f, decision.SimulationDeltaTime);
+            hibernation01 = math.saturate(decision.Hibernation01);
+            simulationLodTier = (SimulationLodTier)math.clamp(decision.Tier, (int)SimulationLodTier.Full, (int)SimulationLodTier.Sleep);
             _sleepVelocityWritePending = simulationLodTier == SimulationLodTier.Sleep && _lastSimulationLodTier != SimulationLodTier.Sleep;
             _lastSimulationLodTier = simulationLodTier;
             ScheduleFoveatedSimulationDecision(frameDeltaTime, cameraDistanceSq, decision.Accumulator);
@@ -4229,14 +4719,144 @@ namespace Hecton8.World
 
         private bool ShouldRenderSwarm(float cameraDistanceSq)
         {
-            if (viewCamera == null)
+            if (_activeBoidCount <= 0)
+                return false;
+
+            if (!TryResolveApproxViewPose(out _, out _))
                 return true;
 
             float maxDistanceSq = simulationCullDistance * simulationCullDistance;
             if (cameraDistanceSq > maxDistanceSq)
                 return false;
 
-            return CheckFrustumVisibility();
+            if (cameraDistanceSq <= RenderConeCullNearDistanceSq)
+                return true;
+
+            return IsRenderBoundsInsideApproxViewCone();
+        }
+
+        private bool ShouldMaintainOffscreenBoidSimulation(SimulationLodTier simulationLodTier)
+        {
+            if (simulationLodTier == SimulationLodTier.Sleep)
+                return true;
+
+            return _leviathanModeBlend > 0.001f ||
+                   _parasiteModeActive ||
+                   _formationModeActive ||
+                   _headlightPanicTimer > 0f;
+        }
+
+        private bool IsRenderBoundsInsideApproxViewCone()
+        {
+            if (!TryResolveApproxViewPose(out Vector3 cameraPosition, out Vector3 cameraForward))
+                return true;
+
+            Vector3 toCenter = _renderBounds.center - cameraPosition;
+            float distanceSq = math.max(0.0001f, toCenter.sqrMagnitude);
+            if (distanceSq <= RenderConeCullNearDistanceSq)
+                return true;
+
+            Vector3 safeForward = FastNormalizeVector3(cameraForward, Vector3.forward);
+            float approxDistance = math.abs(toCenter.x) + math.abs(toCenter.y) + math.abs(toCenter.z);
+            float inverseDistance = math.rcp(math.max(0.0001f, approxDistance));
+            float dot = ((toCenter.x * safeForward.x) + (toCenter.y * safeForward.y) + (toCenter.z * safeForward.z)) * inverseDistance;
+            Vector3 extents = _renderBounds.extents;
+            float radius = math.max(extents.x, math.max(extents.y, extents.z)) * BoundsCubeSphereRadiusScale;
+            float radiusPadding = radius * inverseDistance;
+            return dot + radiusPadding >= RenderConeCullDotThreshold;
+        }
+
+        private bool TryResolveApproxViewPose(out Vector3 cameraPosition, out Vector3 cameraForward)
+        {
+            int currentFrame = Time.frameCount;
+            if (_viewPoseCacheFrame == currentFrame)
+            {
+                cameraPosition = _viewPoseCachePosition;
+                cameraForward = _viewPoseCacheForward;
+                return _viewPoseCacheValid;
+            }
+
+            _viewPoseCacheFrame = currentFrame;
+            _viewPoseCacheValid = TryResolveApproxViewPoseUncached(out _viewPoseCachePosition, out _viewPoseCacheForward);
+            cameraPosition = _viewPoseCachePosition;
+            cameraForward = _viewPoseCacheForward;
+            return _viewPoseCacheValid;
+        }
+
+        private bool TryResolveApproxViewPoseUncached(out Vector3 cameraPosition, out Vector3 cameraForward)
+        {
+            if (TryResolvePlayerRuntimeSnapshot(
+                    out PlayerMovementRuntimeState movementState,
+                    out PlayerLookState lookState) &&
+                (lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                cameraPosition = ToVector3(lookState.EyePosition);
+                cameraForward = ToVector3(lookState.AimForward);
+                if (cameraForward.sqrMagnitude <= 0.0001f)
+                    cameraForward = ToVector3(movementState.CameraForward);
+                if (cameraForward.sqrMagnitude <= 0.0001f)
+                    cameraForward = ToVector3(movementState.Forward);
+
+                return cameraForward.sqrMagnitude > 0.0001f;
+            }
+
+            if (viewCamera != null)
+            {
+                Matrix4x4 cameraToWorld = viewCamera.cameraToWorldMatrix;
+                Vector4 positionColumn = cameraToWorld.GetColumn(3);
+                Vector4 forwardColumn = cameraToWorld.GetColumn(2);
+                cameraPosition = new Vector3(positionColumn.x, positionColumn.y, positionColumn.z);
+                cameraForward = new Vector3(forwardColumn.x, forwardColumn.y, forwardColumn.z);
+                return cameraForward.sqrMagnitude > 0.0001f;
+            }
+
+            cameraPosition = default;
+            cameraForward = default;
+            return false;
+        }
+
+        private bool TryResolvePlayerRuntimeSnapshot(
+            out PlayerMovementRuntimeState movementState,
+            out PlayerLookState lookState)
+        {
+            int currentFrame = Time.frameCount;
+            if (_playerRuntimeSnapshotCacheFrame != currentFrame)
+            {
+                _playerRuntimeSnapshotCacheFrame = currentFrame;
+                if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                    runtimeContext != null)
+                {
+                    _playerRuntimeSnapshotMovement = runtimeContext.MovementState;
+                    _playerRuntimeSnapshotLook = runtimeContext.LookState;
+                    _playerRuntimeSnapshotCacheValid = true;
+                }
+                else
+                {
+                    _playerRuntimeSnapshotMovement = default;
+                    _playerRuntimeSnapshotLook = default;
+                    _playerRuntimeSnapshotCacheValid = false;
+                }
+            }
+
+            movementState = _playerRuntimeSnapshotMovement;
+            lookState = _playerRuntimeSnapshotLook;
+            return _playerRuntimeSnapshotCacheValid;
+        }
+
+        private void InvalidateViewPoseCache()
+        {
+            _viewPoseCacheFrame = -1;
+            _viewPoseCacheValid = false;
+            _viewPoseCachePosition = default;
+            _viewPoseCacheForward = default;
+            _playerRuntimeSnapshotCacheFrame = -1;
+            _playerRuntimeSnapshotCacheValid = false;
+            _playerRuntimeSnapshotMovement = default;
+            _playerRuntimeSnapshotLook = default;
+            _playerMotionCacheFrame = -1;
+            _playerMotionCacheValid = false;
+            _playerMotionCachePosition = default;
+            _playerMotionCacheVelocity = default;
         }
 
         private void RecalculateMassiveThreatCount()
@@ -4249,32 +4869,61 @@ namespace Hecton8.World
             }
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            int writeIndex = 0;
             for (int i = 0; i < _massiveThreats.Length; i++)
             {
-                if (_massiveThreats[i].EndTime > absoluteSimulationTime)
-                    _activeMassiveThreatCount++;
+                MassiveThreatData threat = _massiveThreats[i];
+                if (threat.EndTime <= absoluteSimulationTime)
+                    continue;
+
+                if (writeIndex != i)
+                    _massiveThreats[writeIndex] = threat;
+                writeIndex++;
             }
 
+            for (int i = writeIndex; i < _massiveThreats.Length; i++)
+                _massiveThreats[i] = default;
+
+            _activeMassiveThreatCount = writeIndex;
             _debugMassiveThreatCount = _activeMassiveThreatCount;
+        }
+
+        private void RefreshRenderScaleCache()
+        {
+            _cachedVatSwayAmplitudeScale = MigrationDirector.ResolveVatSwayAmplitudeScale();
+        }
+
+        private void RefreshRenderLayerCache()
+        {
+            _cachedRenderLayer = gameObject.layer;
         }
 
         private void RenderCurrentBuffer()
         {
             GraphicsBuffer currentBuffer = _frameParity == 0 ? _boidsBufferA : _boidsBufferB;
+            if (_activeBoidCount <= 0 ||
+                currentBuffer == null ||
+                boidMesh == null ||
+                boidMaterial == null ||
+                _materialPropertyBlock == null)
+            {
+                return;
+            }
+
             bool vatEnabled = boidVatPositionTexture != null &&
                               boidVatNormalTexture != null &&
                               boidVatFrameCount > 1;
-            _materialPropertyBlock.Clear();
             _materialPropertyBlock.SetBuffer(_BoidsBufferId, currentBuffer);
             _materialPropertyBlock.SetFloat(_ParasiteModeId, _parasiteModeActive ? 1f : 0f);
             _materialPropertyBlock.SetFloat(_ParasiteAggressionId, _debugParasiteAggression01);
             _materialPropertyBlock.SetFloat(_VelocitySleepScaleId, _debugHibernation01 >= 0.999f ? 0f : 1f);
+            _materialPropertyBlock.SetFloat(_LodDitherKeep01Id, ResolveLodDitherKeep01(_debugHibernation01));
             _materialPropertyBlock.SetFloat(_VatEnabledId, vatEnabled ? 1f : 0f);
             _materialPropertyBlock.SetFloat(_VatFrameCountId, vatEnabled ? boidVatFrameCount : 1f);
-            _materialPropertyBlock.SetFloat(_VatVertexCountId, boidMesh != null ? boidMesh.vertexCount : 0f);
+            _materialPropertyBlock.SetFloat(_VatVertexCountId, _boidMeshVertexCount);
             _materialPropertyBlock.SetFloat(_VatPlaybackSpeedId, boidVatPlaybackSpeed);
             _materialPropertyBlock.SetFloat(_VatInstancePhaseScaleId, boidVatInstancePhaseScale);
-            _materialPropertyBlock.SetFloat(_VatPositionScaleId, boidVatPositionScale * MigrationDirector.ResolveVatSwayAmplitudeScale());
+            _materialPropertyBlock.SetFloat(_VatPositionScaleId, boidVatPositionScale * _cachedVatSwayAmplitudeScale);
             _materialPropertyBlock.SetFloat(_VatNormalBlendId, boidVatNormalBlend);
             if (vatEnabled)
             {
@@ -4282,7 +4931,7 @@ namespace Hecton8.World
                 _materialPropertyBlock.SetTexture(_VatNormalTexId, boidVatNormalTexture);
             }
 
-            int targetLayer = useGameObjectLayer ? gameObject.layer : 0;
+            int targetLayer = useGameObjectLayer ? _cachedRenderLayer : 0;
             RenderParams renderParams = new RenderParams(boidMaterial)
             {
                 worldBounds = _renderBounds,
@@ -4295,21 +4944,6 @@ namespace Hecton8.World
             Graphics.RenderMeshPrimitives(renderParams, boidMesh, 0, _activeBoidCount);
         }
 
-        private bool CheckFrustumVisibility()
-        {
-            GeometryUtility.CalculateFrustumPlanes(viewCamera, _frustumPlanes);
-            return GeometryUtility.TestPlanesAABB(_frustumPlanes, _renderBounds);
-        }
-
-        private void UploadBoidComputeCullPayload(bool shouldRender)
-        {
-            if (boidCompute == null)
-                return;
-
-            Vector3 groupCenter = _renderBounds.center;
-            boidCompute.SetVector(_BoidGroupBoundsId, new Vector4(groupCenter.x, groupCenter.y, groupCenter.z, shouldRender ? 0f : -1f));
-        }
-
         private void TryRegister()
         {
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -4317,26 +4951,22 @@ namespace Hecton8.World
 
             if (!_registeredTick)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredFixedTick)
             {
-                GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-                _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
+                _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredSlowTick)
             {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
             }
 
             if (!_registeredLateFrameTick)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+                _registeredLateFrameTick = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Environment);
             }
         }
 
@@ -4402,6 +5032,10 @@ namespace Hecton8.World
             ReleaseBuffer(ref _spatialGridCountBuffer);
             ReleaseBuffer(ref _spatialGridCellBuffer);
             ReleaseBuffer(ref _simulationFrameBuffer);
+            _latchStatsBufferRawTarget = false;
+            _pbdCorrectionBufferRawTarget = false;
+            _spatialGridCountBufferRawTarget = false;
+            _computeStaticBuffersBound = false;
         }
 
         private void CompletePendingReadbackAndReleaseBuffers()
@@ -4428,6 +5062,8 @@ namespace Hecton8.World
             ResetThreatGridSnapshot();
             ResetThreatVoxelSnapshot();
             DisposeNativeArrayDeferred(ref _simulationFrameNative, disposeDependency);
+            _inactiveStatisticalSwarmRing.Dispose(disposeDependency);
+            _inactiveStatisticalSwarmCenterRing.Dispose(disposeDependency);
             JobHandle.ScheduleBatchedJobs();
         }
 
@@ -4468,13 +5104,13 @@ namespace Hecton8.World
 
             _foveatedSimulationInputNative[0] = new FoveatedSimulationInput
             {
-                FrameDeltaTime = Mathf.Max(0f, frameDeltaTime),
-                CameraDistanceSq = Mathf.Max(0f, cameraDistanceSq),
+                FrameDeltaTime = math.max(0f, frameDeltaTime),
+                CameraDistanceSq = math.max(0f, cameraDistanceSq),
                 FullDistanceMeters = hibernationStartDistance,
                 SleepDistanceMeters = simulationCullDistance,
                 MaxStepSeconds = hibernationMaxStepSeconds,
                 MinTimeScale = hibernationMinTimeScale,
-                PreviousAccumulator = Mathf.Max(0f, previousAccumulator),
+                PreviousAccumulator = math.max(0f, previousAccumulator),
                 Padding = 0f
             };
         }
@@ -4546,10 +5182,105 @@ namespace Hecton8.World
             return new Vector3(value.x, value.y, value.z);
         }
 
+        private static Vector3 MinVector3(Vector3 a, Vector3 b)
+        {
+            return new Vector3(math.min(a.x, b.x), math.min(a.y, b.y), math.min(a.z, b.z));
+        }
+
+        private static Vector3 MaxVector3(Vector3 a, Vector3 b)
+        {
+            return new Vector3(math.max(a.x, b.x), math.max(a.y, b.y), math.max(a.z, b.z));
+        }
+
+        private static Vector3 FastNormalizeVector3(Vector3 value, Vector3 fallback)
+        {
+            float lengthL1 = math.abs(value.x) + math.abs(value.y) + math.abs(value.z);
+            return lengthL1 > 0.0001f
+                ? new Vector3(value.x / lengthL1, value.y / lengthL1, value.z / lengthL1)
+                : fallback;
+        }
+
+        private static float ResolveLodDitherKeep01(float hibernation01)
+        {
+            float fade01 = math.saturate((math.saturate(hibernation01) - LodDitherHibernationStart01) * LodDitherHibernationInvRange);
+            return 1f - fade01;
+        }
+
+        private static Vector3 ResolveApproxRight(Vector3 forward)
+        {
+            Vector3 right = new Vector3(forward.z, 0f, -forward.x);
+            return FastNormalizeVector3(right, Vector3.right);
+        }
+
+        private static Vector3 ResolveApproxUp(Vector3 forward, Vector3 right)
+        {
+            Vector3 up = new Vector3(
+                -forward.y * right.z,
+                forward.z * right.x - forward.x * right.z,
+                -forward.y * right.x);
+            return FastNormalizeVector3(up, Vector3.up);
+        }
+
+        private static float3 CheapNormalizeL1(float3 value, float3 fallback)
+        {
+            float lengthL1 = math.abs(value.x) + math.abs(value.y) + math.abs(value.z);
+            return lengthL1 > 0.0001f ? value / lengthL1 : fallback;
+        }
+
+        private static float CheapSinSigned(float radians)
+        {
+            return -CheapTriangleWaveSigned(radians - 1.57079632679f);
+        }
+
+        private static float CheapCosSigned(float radians)
+        {
+            return -CheapTriangleWaveSigned(radians);
+        }
+
+        private static float CheapTriangleWaveSigned(float radians)
+        {
+            float cycle = radians * (1f / StatisticalTwoPi);
+            cycle -= math.floor(cycle);
+            return 1f - 4f * math.abs(cycle - 0.5f);
+        }
+
+        private static int CeilDivPositive(int numerator, int denominator)
+        {
+            if (numerator <= 0)
+                return 0;
+
+            int safeDenominator = math.max(1, denominator);
+            return 1 + ((numerator - 1) / safeDenominator);
+        }
+
+        private static int CeilToIntPositive(float value)
+        {
+            if (!math.isfinite(value) || value <= 0f)
+                return 0;
+
+            return value >= int.MaxValue ? int.MaxValue : (int)math.ceil(value);
+        }
+
+        private static int FloorToInt(float value)
+        {
+            if (!math.isfinite(value))
+                return 0;
+
+            return value <= int.MinValue ? int.MinValue : value >= int.MaxValue ? int.MaxValue : (int)math.floor(value);
+        }
+
+        private static int RoundToIntPositive(float value)
+        {
+            if (!math.isfinite(value) || value <= 0f)
+                return 0;
+
+            return value >= int.MaxValue ? int.MaxValue : (int)(value + 0.5f);
+        }
+
         private static float FloorToMultiple(float value, float multiple)
         {
-            float safeMultiple = Mathf.Max(0.0001f, multiple);
-            return Mathf.Floor(value / safeMultiple) * safeMultiple;
+            float safeMultiple = math.max(0.0001f, multiple);
+            return math.floor(value / safeMultiple) * safeMultiple;
         }
 
         private static float HashToFloat01(uint index, uint iteration, uint salt)
@@ -4570,7 +5301,7 @@ namespace Hecton8.World
             if (_simulationTime < SimulationPhaseWrapSeconds)
                 return;
 
-            float wrappedDuration = Mathf.Floor(_simulationTime / SimulationPhaseWrapSeconds) * SimulationPhaseWrapSeconds;
+            float wrappedDuration = math.floor(_simulationTime / SimulationPhaseWrapSeconds) * SimulationPhaseWrapSeconds;
             _simulationTime -= wrappedDuration;
             _simulationPhaseOffset += wrappedDuration;
         }
@@ -4586,7 +5317,7 @@ namespace Hecton8.World
             _leviathanNodeBuildScheduled = false;
 
             int safeCount = (_leviathanNodeCountNative.IsCreated && _leviathanNodeCountNative.Length > 0)
-                ? Mathf.Clamp(_leviathanNodeCountNative[0], 0, _leviathanNodeBackNative.IsCreated ? _leviathanNodeBackNative.Length : 0)
+                ? math.clamp(_leviathanNodeCountNative[0], 0, _leviathanNodeBackNative.IsCreated ? _leviathanNodeBackNative.Length : 0)
                 : 0;
 
             (_leviathanNodeFrontNative, _leviathanNodeBackNative) = (_leviathanNodeBackNative, _leviathanNodeFrontNative);
@@ -4600,7 +5331,7 @@ namespace Hecton8.World
             if (_leviathanNodeBuffer == null || !_leviathanNodeFrontNative.IsCreated || _leviathanPathNodeCount <= 0)
                 return;
 
-            int safeCount = Mathf.Clamp(_leviathanPathNodeCount, 0, _leviathanNodeFrontNative.Length);
+            int safeCount = math.clamp(_leviathanPathNodeCount, 0, _leviathanNodeFrontNative.Length);
             if (safeCount <= 0)
                 return;
 
@@ -4781,6 +5512,9 @@ namespace Hecton8.World
             _threadGroupSizeX = ComputeThreadGroupSizeX;
             RefreshDispatchGroupCount();
             _computeKernelBindingsValid = false;
+            _computeStaticBuffersBound = false;
+            _boundComputeDensityTexture = null;
+            _boundComputeCutMaskTexture = null;
         }
 
         private void DisableComputeDispatch(int reasonCode)
@@ -4840,7 +5574,8 @@ namespace Hecton8.World
 
         private void DispatchOriginShiftToLiveBoidBuffers(Vector3 runtimeOffset)
         {
-            if (boidCount <= 0 ||
+            int boidShiftCount = ResolveActiveBoidUploadCount();
+            if (boidShiftCount <= 0 ||
                 boidCompute == null ||
                 _simulationFrameBuffer == null ||
                 _boidsBufferA == null ||
@@ -4852,7 +5587,8 @@ namespace Hecton8.World
             }
 
             Vector4 shiftVector = new Vector4(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z, 0f);
-            int dispatchGroups = Mathf.Max(1, Mathf.CeilToInt(boidCount / (float)Mathf.Max(1u, _threadGroupSizeX)));
+            int safeThreadGroupSize = math.max(1, (int)_threadGroupSizeX);
+            int dispatchGroups = math.max(1, (boidShiftCount + safeThreadGroupSize - 1) / safeThreadGroupSize);
 
             try
             {
@@ -4873,6 +5609,16 @@ namespace Hecton8.World
 
         private void ApplyRuntimeOffsetToSwarmData(Vector3 runtimeOffset)
         {
+            if (_statisticalPopulationActive)
+            {
+                _fieldCenter = ToVector3(_statisticalPopulationCenterAup.ToRuntimeFloat3());
+                _renderBounds.center = _fieldCenter;
+                _debugRenderBounds = _renderBounds;
+                ResetThreatGridSnapshot();
+                ResetThreatVoxelSnapshot();
+                return;
+            }
+
             _fieldCenter += runtimeOffset;
             _renderBounds.center += runtimeOffset;
             _debugRenderBounds = _renderBounds;
@@ -4890,15 +5636,15 @@ namespace Hecton8.World
                 for (int i = 0; i < _activeGrazingAnchorCount; i++)
                     _grazingAnchors[i].Position += runtimeOffset;
 
-                GraphicsBufferUploadUtility.UploadArray(_grazingAnchorBuffer, _grazingAnchors, _activeGrazingAnchorCount);
+                UploadGrazingAnchors();
             }
 
             if (_massiveThreats != null)
             {
-                for (int i = 0; i < _massiveThreats.Length; i++)
+                for (int i = 0; i < _activeMassiveThreatCount; i++)
                     _massiveThreats[i].Position += runtimeOffset;
 
-                GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
+                UploadMassiveThreats();
             }
 
             if (_formationBeacons != null)
@@ -4906,7 +5652,7 @@ namespace Hecton8.World
                 for (int i = 0; i < _debugFormationBeaconCount; i++)
                     _formationBeacons[i].Position += runtimeOffset;
 
-                GraphicsBufferUploadUtility.UploadArray(_formationBeaconBuffer, _formationBeacons, _debugFormationBeaconCount);
+                UploadFormationBeacons();
             }
 
             if (_formationObstacles != null)
@@ -4914,12 +5660,12 @@ namespace Hecton8.World
                 for (int i = 0; i < _debugFormationObstacleCount; i++)
                     _formationObstacles[i].Position += runtimeOffset;
 
-                GraphicsBufferUploadUtility.UploadArray(_formationObstacleBuffer, _formationObstacles, _debugFormationObstacleCount);
+                UploadFormationObstacles();
             }
 
             if (_leviathanNodeFrontNative.IsCreated)
             {
-                int frontCount = Mathf.Clamp(_leviathanPathNodeCount, 0, _leviathanNodeFrontNative.Length);
+                int frontCount = math.clamp(_leviathanPathNodeCount, 0, _leviathanNodeFrontNative.Length);
                 for (int i = 0; i < frontCount; i++)
                 {
                     LeviathanNodeData node = _leviathanNodeFrontNative[i];
@@ -4932,7 +5678,7 @@ namespace Hecton8.World
 
             if (_leviathanNodeBackNative.IsCreated)
             {
-                int backCount = Mathf.Clamp(_leviathanPathNodeCount, 0, _leviathanNodeBackNative.Length);
+                int backCount = math.clamp(_leviathanPathNodeCount, 0, _leviathanNodeBackNative.Length);
                 for (int i = 0; i < backCount; i++)
                 {
                     LeviathanNodeData node = _leviathanNodeBackNative[i];
@@ -4940,6 +5686,12 @@ namespace Hecton8.World
                     _leviathanNodeBackNative[i] = node;
                 }
             }
+        }
+
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
         }
 
 #if UNITY_EDITOR
@@ -4956,6 +5708,7 @@ namespace Hecton8.World
             try
             {
                 SanitizeSettings();
+                RefreshRenderLayerCache();
                 ResetComputeKernelBindings();
                 RefreshActiveBoidCount();
             }

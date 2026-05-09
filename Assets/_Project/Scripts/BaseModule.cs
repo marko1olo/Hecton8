@@ -227,6 +227,8 @@ namespace Hecton8.Gameplay
         private const float DefaultJointShearGroanCooldownSeconds = 4f;
         private const float DefaultHullCondensationStartDepthMeters = 2000f;
         private const float CinematicLeakFullDepthMeters = 4000f;
+        private const float CinematicIngressMinimumPressureScale = 350f;
+        private const float CinematicIngressMaximumPressureScale = 6400f;
         private const float CinematicLeakBaseIntensity01 = 0.12f;
         private const float DefaultHullCondensationFullDepthMeters = 5000f;
         private const float DefaultLowIntegrityGroanNoiseFrequency = 0.19f;
@@ -607,6 +609,9 @@ namespace Hecton8.Gameplay
         private float _oxygenHum01;
         private float _oxygenHumTarget01;
         private bool _oxygenHumActive;
+        private bool _oxygenHumSourceConfigured;
+        private AudioSource _configuredOxygenHumSource;
+        private AudioClip _configuredOxygenHumClip;
         private float _basePowerRating;
         private float _parasitePowerDrainWatts;
         private float _parasiteRootPowerDrainWatts;
@@ -974,6 +979,7 @@ namespace Hecton8.Gameplay
             ReadBuildablePower();
             ConfigureRuntimeComponentsFromSerializedState();
             InitializeAmbienceNoiseSeed();
+            ResetOxygenScrubberHumRuntime(true);
             ConfigureOxygenScrubberHumSource();
             _isDeconstructing = false;
             _ambientLightsBrownedOut = false;
@@ -983,9 +989,6 @@ namespace Hecton8.Gameplay
             _brownoutTransitionTarget01 = 0f;
             _ruptureGroanNoisePhase = 0f;
             _ruptureGroanPreviousNoise = -1f;
-            _oxygenHum01 = 0f;
-            _oxygenHumTarget01 = 0f;
-            _oxygenHumActive = false;
             _breachLatched = IsBreached;
             _cachedAtmosphereRoomIndex = -1;
             _hasBreachCenterOfMassTarget = false;
@@ -1033,6 +1036,7 @@ namespace Hecton8.Gameplay
             StopDrain();
             SetLeakActive(false);
             SetFloodedVisual(false);
+            ResetOxygenScrubberHumRuntime(true);
             _ambientLightsBrownedOut = false;
             _brownoutTransition01 = 0f;
             _brownoutTransitionTarget01 = 0f;
@@ -1165,10 +1169,10 @@ namespace Hecton8.Gameplay
             float displacementVolume = ResolveBuoyancyDisplacementVolumeCubicMeters();
             float dryMass = ResolveDryMassKilograms();
             float parasiteMass = ResolveParasiteAddedMassKilograms();
-            float effectiveMass = Mathf.Max(
+            float effectiveMass = math.max(
                 MinimumMassKilograms,
                 dryMass + parasiteMass + (floodFill01 * displacementVolume * SeawaterDensityKilogramsPerCubicMeter));
-            if (Mathf.Abs(_moduleRigidbody.mass - effectiveMass) >= BuoyancyMassUpdateThresholdKilograms)
+            if (math.abs(_moduleRigidbody.mass - effectiveMass) >= BuoyancyMassUpdateThresholdKilograms)
                 _moduleRigidbody.mass = effectiveMass;
 
             float retainedAirMassEquivalent = displacementVolume * (1f - floodFill01) * SeawaterDensityKilogramsPerCubicMeter;
@@ -1177,17 +1181,17 @@ namespace Hecton8.Gameplay
             float externalDepthMeters = ResolveExternalDepthMeters();
             if (floodFill01 > 0.5f && externalDepthMeters > hullCrushDepthMeters)
             {
-                float crushRatio = Mathf.Clamp01((externalDepthMeters - hullCrushDepthMeters) / 1000f);
+                float crushRatio = math.saturate((externalDepthMeters - hullCrushDepthMeters) / 1000f);
                 netAccelerationY -= maximumAcceleration * crushRatio;
             }
 
-            netAccelerationY = Mathf.Clamp(netAccelerationY, -maximumAcceleration, maximumAcceleration);
-            if (Mathf.Abs(netAccelerationY) > 0.0001f)
+            netAccelerationY = math.clamp(netAccelerationY, -maximumAcceleration, maximumAcceleration);
+            if (math.abs(netAccelerationY) > 0.0001f)
             {
                 PhysicsForceRouter.QueueForceAtPosition(
                     _moduleRigidbody,
                     Vector3.up * netAccelerationY,
-                    transform.position,
+                    ResolveModuleFallbackWorldPosition(),
                     ForceMode.Acceleration);
             }
 
@@ -1199,7 +1203,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
-            float dt = Mathf.Max(0f, deltaTime);
+            float dt = math.max(0f, deltaTime);
             bool shaderStateChanged = false;
             if (ShouldAdvanceBrownoutShaderState())
                 shaderStateChanged = AdvanceBrownoutShaderState(dt);
@@ -1262,6 +1266,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterUpdatable();
             ResetBrownoutShaderState();
+            ResetOxygenScrubberHumRuntime(false);
             s_activeModules.Remove(this);
             PhysicsEventBus.Unregister(this);
             TryUnregister();
@@ -1282,6 +1287,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterUpdatable();
             ResetBrownoutShaderState();
+            ResetOxygenScrubberHumRuntime(true);
             s_activeModules.Remove(this);
             PhysicsEventBus.Unregister(this);
             TryUnregister();
@@ -1685,7 +1691,7 @@ namespace Hecton8.Gameplay
             }
 
             if (!IsFiniteVector(applicationWorldPoint))
-                applicationWorldPoint = transform.position;
+                applicationWorldPoint = ResolveModuleFallbackWorldPosition();
 
             float forceNewtons = floodWaterMassKilograms * GravityAccelerationMetersPerSecondSquared;
             forceNewtons = Mathf.Min(ResolveMaximumHydroStructuralLoadNewtons(), forceNewtons);
@@ -1815,7 +1821,7 @@ namespace Hecton8.Gameplay
             if (deltaTime <= 0f || !float.IsFinite(deltaTime) || _integrityComponent.CurrentIntegrity <= 0f)
                 return;
 
-            float threshold01 = Mathf.Clamp01(lowIntegrityGroanThreshold01);
+            float threshold01 = math.saturate(lowIntegrityGroanThreshold01);
             float integrity01 = IntegrityStateNormalized;
             if (integrity01 >= threshold01)
             {
@@ -1823,20 +1829,20 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _ruptureGroanNoisePhase += Mathf.Max(0f, deltaTime) * Mathf.Max(0.01f, lowIntegrityGroanNoiseFrequency);
+            _ruptureGroanNoisePhase += math.max(0f, deltaTime) * math.max(0.01f, lowIntegrityGroanNoiseFrequency);
             float noiseValue = noise.snoise(new float2(_ruptureGroanNoisePhase, _brownoutNoiseSeed + 31.73f));
-            float threshold = Mathf.Clamp(lowIntegrityGroanNoiseThreshold, -1f, 1f);
+            float threshold = math.clamp(lowIntegrityGroanNoiseThreshold, -1f, 1f);
             bool crossedThreshold = noiseValue >= threshold && _ruptureGroanPreviousNoise < threshold;
             _ruptureGroanPreviousNoise = noiseValue;
             if (!crossedThreshold)
                 return;
 
-            float damage01 = Mathf.Clamp01((threshold01 - integrity01) / Mathf.Max(0.0001f, threshold01));
-            float stress01 = Mathf.Clamp01(Mathf.Max(lowIntegrityGroanStressFloor, damage01));
+            float damage01 = math.saturate((threshold01 - integrity01) / math.max(0.0001f, threshold01));
+            float stress01 = math.saturate(math.max(lowIntegrityGroanStressFloor, damage01));
             float pitchNoise = noise.snoise(new float2(_ruptureGroanNoisePhase * 3.17f, _brownoutNoiseSeed + 91.41f));
-            float pitch01 = Mathf.Clamp01(pitchNoise * 0.5f + 0.5f);
-            float pitchMin = Mathf.Max(0.1f, lowIntegrityGroanPitchMin);
-            float pitchMax = Mathf.Max(pitchMin, lowIntegrityGroanPitchMax);
+            float pitch01 = math.saturate(pitchNoise * 0.5f + 0.5f);
+            float pitchMin = math.max(0.1f, lowIntegrityGroanPitchMin);
+            float pitchMax = math.max(pitchMin, lowIntegrityGroanPitchMax);
             float pitch = math.lerp(pitchMin, pitchMax, pitch01) * math.lerp(1f, 0.82f, damage01);
 
             ResolveModuleAmbienceBounds(out Vector3 centerWS, out _);
@@ -2417,16 +2423,17 @@ namespace Hecton8.Gameplay
 
             float radius = pulseEvent.RadiusMeters;
             float radiusSq = radius * radius;
+            Vector3 moduleProbePosition = ResolveAtmosphereRoomProbeWorldPosition();
             if (radius > AupRadiusLogicThresholdMeters && radius < 250000f)
             {
-                AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+                AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(moduleProbePosition);
                 AbsoluteUniversePosition pulseAup = AbsoluteUniversePosition.FromRuntimePosition(pulseEvent.RuntimePosition);
                 if (AbsoluteUniversePosition.DistanceSq(in moduleAup, in pulseAup) > (double)radiusSq)
                     return;
             }
             else if (radius <= AupRadiusLogicThresholdMeters)
             {
-                Vector3 delta = transform.position - pulseEvent.RuntimePosition;
+                Vector3 delta = moduleProbePosition - pulseEvent.RuntimePosition;
                 if (delta.sqrMagnitude > radiusSq)
                     return;
             }
@@ -2451,7 +2458,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _solarEmpBlackoutRemainingSeconds = Mathf.Max(0f, _solarEmpBlackoutRemainingSeconds - Mathf.Max(0f, deltaTime));
+            _solarEmpBlackoutRemainingSeconds = math.max(0f, _solarEmpBlackoutRemainingSeconds - math.max(0f, deltaTime));
             _debugSolarEmpBlackoutSeconds = _solarEmpBlackoutRemainingSeconds;
             if (_solarEmpBlackoutRemainingSeconds > 0f)
                 return;
@@ -2546,7 +2553,7 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 localDirection = localGravityDirection.sqrMagnitude > 0.0001f
-                ? localGravityDirection.normalized
+                ? ResolveDominantLocalAxis(localGravityDirection)
                 : Vector3.down;
             Vector3 worldGravity = transform.TransformDirection(localDirection) * acceleration;
             if (IsFiniteVector(worldGravity))
@@ -2598,7 +2605,7 @@ namespace Hecton8.Gameplay
         private BaseModuleFailureMode ResolveCascadeFailureMode()
         {
             string prefabId = _moduleMarker != null ? _moduleMarker.PrefabId : string.Empty;
-            return _integrityComponent.ResolveCascadeFailureMode(prefabId, transform.position, _hasPower);
+            return _integrityComponent.ResolveCascadeFailureMode(prefabId, ResolveAtmosphereRoomProbeWorldPosition(), _hasPower);
         }
 
         private void RecordCascadeFailure(string title, string summary)
@@ -2825,7 +2832,8 @@ namespace Hecton8.Gameplay
                 return floodSurfacePlane.position.y;
 
             float localY = math.lerp(ResolveFloodSurfaceMinimumLocalY(), ResolveFloodSurfaceMaximumLocalY(), _cachedFloodLevel01);
-            return transform.TransformPoint(new Vector3(0f, localY, 0f)).y;
+            Matrix4x4 localToWorld = transform.localToWorldMatrix;
+            return localToWorld.m13 + (localToWorld.m11 * localY);
         }
 
         private static void PublishActiveModuleWaterLevelsToShader(bool force = false)
@@ -2852,13 +2860,13 @@ namespace Hecton8.Gameplay
                 }
 
                 module.ResolveModuleAmbienceBounds(out Vector3 centerWS, out float radiusMeters);
-                float moduleVoltage01 = Mathf.Clamp01(module._currentBrownoutFlicker01);
+                float moduleVoltage01 = Clamp01Finite(module._currentBrownoutFlicker01, 1f);
                 baseVoltage01 = Mathf.Min(baseVoltage01, moduleVoltage01);
                 if (!hasGlobalModuleSettings)
                 {
-                    baseFlickerSpeed = Mathf.Max(0.1f, module.brownoutFlickerSpeed);
-                    baseVoltageMinimum = Mathf.Clamp01(module.brownoutMinimumLightIntensityRatio);
-                    baseEmergencyColor = module.brownoutEmergencyEmissionColor;
+                    baseFlickerSpeed = MaxFinite(0.1f, module.brownoutFlickerSpeed, 19f);
+                    baseVoltageMinimum = Clamp01Finite(module.brownoutMinimumLightIntensityRatio, 0.04f);
+                    baseEmergencyColor = ResolveFiniteColor(module.brownoutEmergencyEmissionColor, baseEmergencyColor);
                     hasGlobalModuleSettings = true;
                 }
 
@@ -2886,9 +2894,9 @@ namespace Hecton8.Gameplay
 
         private float ResolveHullCondensationDepth01()
         {
-            float startDepth = Mathf.Max(0f, hullCondensationStartDepthMeters);
-            float fullDepth = Mathf.Max(startDepth + 1f, hullCondensationFullDepthMeters);
-            float depthMeters = _pressureCompressionDepthMeters > 0.25f
+            float startDepth = MaxFinite(0f, hullCondensationStartDepthMeters, 0f);
+            float fullDepth = MaxFinite(startDepth + 1f, hullCondensationFullDepthMeters, startDepth + 1f);
+            float depthMeters = _pressureCompressionDepthMeters > 0.25f && float.IsFinite(_pressureCompressionDepthMeters)
                 ? _pressureCompressionDepthMeters
                 : ResolveExternalDepthMeters();
             return Mathf.Clamp01((depthMeters - startDepth) / (fullDepth - startDepth));
@@ -2898,13 +2906,19 @@ namespace Hecton8.Gameplay
         {
             if (TryGetInteriorOverlapQuery(out centerWS, out Vector3 halfExtents, out _))
             {
-                radiusMeters = Mathf.Max(0.5f, halfExtents.magnitude + 0.25f);
+                if (!IsFiniteVector(centerWS))
+                    centerWS = ResolveInteriorHazardWorldPosition();
+
+                float maxExtent = math.max(
+                    MaxFinite(0f, halfExtents.x, 0f),
+                    math.max(MaxFinite(0f, halfExtents.y, 0f), MaxFinite(0f, halfExtents.z, 0f)));
+                radiusMeters = math.max(0.5f, (maxExtent * 1.75f) + 0.25f);
                 return;
             }
 
-            centerWS = transform.position;
-            float volumeRadius = Mathf.Pow(Mathf.Max(1f, ResolveBuoyancyDisplacementVolumeCubicMeters()), 0.33333334f);
-            radiusMeters = Mathf.Max(2f, volumeRadius * 1.75f);
+            centerWS = ResolveInteriorHazardWorldPosition();
+            float volumeRadius = 1f + (math.saturate((ResolveBuoyancyDisplacementVolumeCubicMeters() - 1f) * 0.008f) * 4f);
+            radiusMeters = math.max(2f, volumeRadius * 1.75f);
         }
 
         private void ApplyDeepSeaCompressionState(bool force)
@@ -2936,20 +2950,24 @@ namespace Hecton8.Gameplay
 
         private float ResolvePressureCompressionAxisScale(float depthMeters)
         {
-            float startDepthMeters = Mathf.Max(0f, deepCompressionStartDepthMeters);
-            if (depthMeters <= startDepthMeters)
+            float safeDepthMeters = MaxFinite(0f, depthMeters, 0f);
+            float startDepthMeters = MaxFinite(0f, deepCompressionStartDepthMeters, 0f);
+            if (safeDepthMeters <= startDepthMeters)
                 return 1f;
 
-            float hydrostaticPressureKPa = ResolveHydrostaticPressureKPa(depthMeters);
+            float hydrostaticPressureKPa = ResolveHydrostaticPressureKPa(safeDepthMeters);
             float startPressureKPa = ResolveHydrostaticPressureKPa(startDepthMeters);
-            float pressureRangeKPa = Mathf.Max(1f, deepCompressionFullPressureKPa - startPressureKPa);
+            float pressureRangeKPa = MaxFinite(1f, deepCompressionFullPressureKPa - startPressureKPa, 1f);
             float compression01 = Mathf.Clamp01((hydrostaticPressureKPa - startPressureKPa) / pressureRangeKPa);
-            return 1f - (compression01 * Mathf.Clamp(maximumDeepCompressionAxisLoss, 0f, 0.01f));
+            float axisLoss = float.IsFinite(maximumDeepCompressionAxisLoss)
+                ? Mathf.Clamp(maximumDeepCompressionAxisLoss, 0f, 0.01f)
+                : 0f;
+            return 1f - (compression01 * axisLoss);
         }
 
         private static float ResolveHydrostaticPressureKPa(float depthMeters)
         {
-            return SurfacePressureKPa + (Mathf.Max(0f, depthMeters) * SeawaterDensityKilogramsPerCubicMeter * GravityAccelerationMetersPerSecondSquared * 0.001f);
+            return SurfacePressureKPa + (MaxFinite(0f, depthMeters, 0f) * SeawaterDensityKilogramsPerCubicMeter * GravityAccelerationMetersPerSecondSquared * 0.001f);
         }
 
         private void ApplyPressureCompressionVisualScale(float axisScale)
@@ -3020,17 +3038,25 @@ namespace Hecton8.Gameplay
             float deltaTime,
             float pressureFlowCoefficient)
         {
-            if (depthMeters <= 0f || holeAreaSquareMeters <= 0f || deltaTime <= 0f || pressureFlowCoefficient <= 0f)
+            float safeDepthMeters = float.IsFinite(depthMeters) ? Mathf.Max(0f, depthMeters) : 0f;
+            float safeHoleArea = float.IsFinite(holeAreaSquareMeters) ? Mathf.Max(0f, holeAreaSquareMeters) : 0f;
+            float safeDeltaTime = float.IsFinite(deltaTime) ? Mathf.Max(0f, deltaTime) : 0f;
+            float safeFlowCoefficient = float.IsFinite(pressureFlowCoefficient) ? Mathf.Max(0f, pressureFlowCoefficient) : 0f;
+            if (safeDepthMeters <= 0f || safeHoleArea <= 0f || safeDeltaTime <= 0f || safeFlowCoefficient <= 0f)
                 return 0f;
 
-            float pressureDeltaPa = SeawaterDensityKilogramsPerCubicMeter *
-                                    GravityAccelerationMetersPerSecondSquared *
-                                    Mathf.Max(0f, depthMeters);
-            float volumeDelta = Mathf.Sqrt(Mathf.Max(0f, pressureDeltaPa)) *
-                                holeAreaSquareMeters *
-                                deltaTime *
-                                pressureFlowCoefficient;
+            float volumeDelta = ResolveCinematicIngressPressureScale(safeDepthMeters) *
+                                safeHoleArea *
+                                safeDeltaTime *
+                                safeFlowCoefficient;
             return float.IsFinite(volumeDelta) ? Mathf.Max(0f, volumeDelta) : 0f;
+        }
+
+        private static float ResolveCinematicIngressPressureScale(float depthMeters)
+        {
+            float depth01 = math.saturate(depthMeters / CinematicLeakFullDepthMeters);
+            float stagedDepth01 = depth01 * (2f - depth01);
+            return math.lerp(CinematicIngressMinimumPressureScale, CinematicIngressMaximumPressureScale, stagedDepth01);
         }
 
         private float ResolveLeakHoleAreaSquareMeters()
@@ -3090,12 +3116,13 @@ namespace Hecton8.Gameplay
                 if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) &&
                     atmosphereSystem != null)
                 {
-                    if (_cachedAtmosphereRoomIndex >= 0)
-                        return atmosphereSystem.ResolveRoomFloodFillNormalized(_cachedAtmosphereRoomIndex);
+                    if (TryResolveCachedAtmosphereRoomIndex(atmosphereSystem, out int cachedRoomIndex))
+                        return atmosphereSystem.ResolveRoomFloodFillNormalized(cachedRoomIndex);
 
-                    if (atmosphereSystem.TryResolveRoomFloodFillNormalized(transform.position, out int roomIndex, out float floodFill01))
+                    if (atmosphereSystem.TryResolveRoomFloodFillNormalized(ResolveAtmosphereRoomProbeWorldPosition(), out int roomIndex, out float floodFill01))
                     {
-                        _cachedAtmosphereRoomIndex = roomIndex;
+                        if (!_isUnmoored)
+                            _cachedAtmosphereRoomIndex = roomIndex;
                         return floodFill01;
                     }
                 }
@@ -3153,7 +3180,7 @@ namespace Hecton8.Gameplay
             Transform triggerTransform = interiorTrigger.transform;
             Vector3 localCenter = transform.InverseTransformPoint(triggerTransform.TransformPoint(interiorTrigger.center));
             Vector3 lossyScale = triggerTransform.lossyScale;
-            float halfHeight = interiorTrigger.size.y * 0.5f * Mathf.Abs(lossyScale.y);
+            float halfHeight = interiorTrigger.size.y * 0.5f * math.abs(lossyScale.y);
             minimumLocalY = localCenter.y - halfHeight;
             maximumLocalY = localCenter.y + halfHeight;
             return maximumLocalY > minimumLocalY;
@@ -3189,7 +3216,7 @@ namespace Hecton8.Gameplay
         {
             return HasOperationalPower &&
                    _ambientLightsBrownedOut &&
-                   _ambientVoltageSupplyRatio < Mathf.Clamp01(brownoutActivationVoltageRatio);
+                   _ambientVoltageSupplyRatio < Clamp01Finite(brownoutActivationVoltageRatio, 0.80f);
         }
 
         private bool ShouldAdvanceBrownoutShaderState()
@@ -3217,14 +3244,16 @@ namespace Hecton8.Gameplay
             if (!_ambientLightsBrownedOut)
                 return math.lerp(1f, 0f, math.saturate(_brownoutTransition01));
 
-            float voltage01 = Mathf.Clamp01(_ambientVoltageSupplyRatio / Mathf.Max(0.01f, brownoutActivationVoltageRatio));
-            return math.lerp(1f, Mathf.Max(Mathf.Clamp01(brownoutMinimumLightIntensityRatio), voltage01), math.saturate(_brownoutTransition01));
+            float activationVoltage = MaxFinite(0.01f, brownoutActivationVoltageRatio, 0.80f);
+            float voltage01 = Clamp01Finite(_ambientVoltageSupplyRatio / activationVoltage, 1f);
+            return math.lerp(1f, Mathf.Max(Clamp01Finite(brownoutMinimumLightIntensityRatio, 0.04f), voltage01), math.saturate(_brownoutTransition01));
         }
 
         private void AdvanceBrownoutTransition(float dt)
         {
-            float transitionSeconds = Mathf.Max(0.05f, brownoutEmergencyTransitionSeconds);
-            float transitionStep = math.saturate(Mathf.Max(0f, dt) / transitionSeconds);
+            float transitionSeconds = MaxFinite(0.05f, brownoutEmergencyTransitionSeconds, 0.5f);
+            float safeDeltaTime = float.IsFinite(dt) ? Mathf.Max(0f, dt) : 0f;
+            float transitionStep = math.saturate(safeDeltaTime / transitionSeconds);
             _brownoutTransition01 = math.lerp(_brownoutTransition01, _brownoutTransitionTarget01, transitionStep);
             if (Mathf.Abs(_brownoutTransition01 - _brownoutTransitionTarget01) <= BrownoutShaderStateEpsilon)
                 _brownoutTransition01 = _brownoutTransitionTarget01;
@@ -3241,7 +3270,19 @@ namespace Hecton8.Gameplay
         private void ConfigureOxygenScrubberHumSource()
         {
             if (oxygenScrubberHumSource == null)
+            {
+                _oxygenHumSourceConfigured = false;
+                _configuredOxygenHumSource = null;
+                _configuredOxygenHumClip = null;
                 return;
+            }
+
+            if (_oxygenHumSourceConfigured &&
+                ReferenceEquals(_configuredOxygenHumSource, oxygenScrubberHumSource) &&
+                ReferenceEquals(_configuredOxygenHumClip, oxygenScrubberHumLoop))
+            {
+                return;
+            }
 
             if (oxygenScrubberHumLoop != null && oxygenScrubberHumSource.clip != oxygenScrubberHumLoop)
                 oxygenScrubberHumSource.clip = oxygenScrubberHumLoop;
@@ -3249,6 +3290,32 @@ namespace Hecton8.Gameplay
             oxygenScrubberHumSource.playOnAwake = false;
             oxygenScrubberHumSource.volume = 0f;
             oxygenScrubberHumSource.pitch = ResolveOxygenScrubberHumFailPitch();
+            _configuredOxygenHumSource = oxygenScrubberHumSource;
+            _configuredOxygenHumClip = oxygenScrubberHumLoop;
+            _oxygenHumSourceConfigured = true;
+        }
+
+        private void ResetOxygenScrubberHumRuntime(bool invalidateConfiguration)
+        {
+            _oxygenHum01 = 0f;
+            _oxygenHumTarget01 = 0f;
+            _oxygenHumActive = false;
+
+            AudioSource source = oxygenScrubberHumSource;
+            if (source != null)
+            {
+                if (source.isPlaying)
+                    source.Stop();
+                source.volume = 0f;
+                source.pitch = ResolveOxygenScrubberHumFailPitch();
+            }
+
+            if (!invalidateConfiguration)
+                return;
+
+            _oxygenHumSourceConfigured = false;
+            _configuredOxygenHumSource = null;
+            _configuredOxygenHumClip = null;
         }
 
         private void UpdateOxygenScrubberHumTarget()
@@ -3265,11 +3332,17 @@ namespace Hecton8.Gameplay
             if (oxygenScrubberHumSource == null)
                 return;
 
-            ConfigureOxygenScrubberHumSource();
+            if (!_oxygenHumSourceConfigured ||
+                !ReferenceEquals(_configuredOxygenHumSource, oxygenScrubberHumSource) ||
+                !ReferenceEquals(_configuredOxygenHumClip, oxygenScrubberHumLoop))
+            {
+                ConfigureOxygenScrubberHumSource();
+            }
+
             float fadeSeconds = _oxygenHumTarget01 > _oxygenHum01
                 ? 0.25f
                 : math.max(0.1f, oxygenScrubberHumFailFadeSeconds);
-            float alpha = dt > 0f ? 1f - math.exp(-dt / fadeSeconds) : 1f;
+            float alpha = dt > 0f ? dt / (fadeSeconds + dt) : 1f;
             _oxygenHum01 = math.lerp(_oxygenHum01, _oxygenHumTarget01, alpha);
 
             if (_oxygenHum01 <= 0.001f)
@@ -3307,7 +3380,7 @@ namespace Hecton8.Gameplay
 
             Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
             if (sam != null)
-                sam.PlayAtPoint(clip, transform.position);
+                sam.PlayAtPoint(clip, ResolveInteriorHazardWorldPosition());
         }
 
         // ══════════════════════════════════════════════════════════
@@ -3451,9 +3524,69 @@ namespace Hecton8.Gameplay
         private Vector3 ResolveInteriorHazardWorldPosition()
         {
             if (interiorTrigger == null)
-                return transform.position;
+                return ResolveModuleFallbackWorldPosition();
 
             return interiorTrigger.transform.TransformPoint(interiorTrigger.center);
+        }
+
+        private Vector3 ResolveAtmosphereRoomProbeWorldPosition()
+        {
+            return TryGetInteriorAabbBounds(out Vector3 worldCenter, out _)
+                ? worldCenter
+                : ResolveInteriorHazardWorldPosition();
+        }
+
+        private int ResolveAtmosphereRoomIndex(SubmarineAtmosphereSystem atmosphereSystem)
+        {
+            if (atmosphereSystem == null)
+                return -1;
+
+            if (TryResolveCachedAtmosphereRoomIndex(atmosphereSystem, out int cachedRoomIndex))
+                return cachedRoomIndex;
+
+            _cachedAtmosphereRoomIndex = -1;
+            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(ResolveAtmosphereRoomProbeWorldPosition());
+            if (roomIndex >= 0 && !_isUnmoored)
+                _cachedAtmosphereRoomIndex = roomIndex;
+
+            return roomIndex;
+        }
+
+        private bool TryResolveCachedAtmosphereRoomIndex(SubmarineAtmosphereSystem atmosphereSystem, out int roomIndex)
+        {
+            roomIndex = _cachedAtmosphereRoomIndex;
+            if (_isUnmoored || atmosphereSystem == null || roomIndex < 0 || roomIndex >= atmosphereSystem.RoomCount)
+            {
+                _cachedAtmosphereRoomIndex = -1;
+                roomIndex = -1;
+                return false;
+            }
+
+            return true;
+        }
+
+        private Vector3 ResolveModuleFallbackWorldPosition()
+        {
+            return _moduleRigidbody != null
+                ? _moduleRigidbody.worldCenterOfMass
+                : transform.position;
+        }
+
+        private static Vector3 ResolveDominantLocalAxis(Vector3 localDirection)
+        {
+            float absX = math.abs(localDirection.x);
+            float absY = math.abs(localDirection.y);
+            float absZ = math.abs(localDirection.z);
+            if ((absX + absY + absZ) <= 0.0001f)
+                return Vector3.back;
+
+            if (absX >= absY && absX >= absZ)
+                return localDirection.x >= 0f ? Vector3.right : Vector3.left;
+
+            if (absY >= absZ)
+                return localDirection.y >= 0f ? Vector3.up : Vector3.down;
+
+            return localDirection.z >= 0f ? Vector3.forward : Vector3.back;
         }
 
         private bool TryGetInteriorOverlapQuery(out Vector3 worldCenter, out Vector3 halfExtents, out Quaternion worldRotation)
@@ -3468,9 +3601,9 @@ namespace Hecton8.Gameplay
             Transform triggerTransform = interiorTrigger.transform;
             Vector3 lossyScale = triggerTransform.lossyScale;
             Vector3 absoluteScale = new Vector3(
-                Mathf.Abs(lossyScale.x),
-                Mathf.Abs(lossyScale.y),
-                Mathf.Abs(lossyScale.z));
+                math.abs(lossyScale.x),
+                math.abs(lossyScale.y),
+                math.abs(lossyScale.z));
 
             worldCenter = triggerTransform.TransformPoint(interiorTrigger.center);
             halfExtents = Vector3.Scale(interiorTrigger.size * 0.5f, absoluteScale);
@@ -3482,12 +3615,13 @@ namespace Hecton8.Gameplay
         {
             if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) && atmosphereSystem != null)
             {
-                if (_cachedAtmosphereRoomIndex >= 0)
-                    return atmosphereSystem.ResolveRoomFloodFillNormalized(_cachedAtmosphereRoomIndex);
+                if (TryResolveCachedAtmosphereRoomIndex(atmosphereSystem, out int cachedRoomIndex))
+                    return atmosphereSystem.ResolveRoomFloodFillNormalized(cachedRoomIndex);
 
-                if (atmosphereSystem.TryResolveRoomFloodFillNormalized(transform.position, out int roomIndex, out float floodFill01))
+                if (atmosphereSystem.TryResolveRoomFloodFillNormalized(ResolveAtmosphereRoomProbeWorldPosition(), out int roomIndex, out float floodFill01))
                 {
-                    _cachedAtmosphereRoomIndex = roomIndex;
+                    if (!_isUnmoored)
+                        _cachedAtmosphereRoomIndex = roomIndex;
                     return floodFill01;
                 }
             }
@@ -3510,7 +3644,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveExternalDepthMetersAup(float seaLevelRuntimeY)
         {
-            Vector3 moduleRuntimePosition = transform.position;
+            Vector3 moduleRuntimePosition = ResolveAtmosphereRoomProbeWorldPosition();
             AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(moduleRuntimePosition);
             moduleRuntimePosition.y = seaLevelRuntimeY;
             AbsoluteUniversePosition seaLevelAup = AbsoluteUniversePosition.FromRuntimePosition(moduleRuntimePosition);
@@ -3531,11 +3665,13 @@ namespace Hecton8.Gameplay
 
         private float ResolveBuoyancyDisplacementVolumeCubicMeters()
         {
-            float volumeScale = Mathf.Clamp(_pressureCompressionVolumeScale, 0.1f, 1f);
+            float volumeScale = float.IsFinite(_pressureCompressionVolumeScale)
+                ? Mathf.Clamp(_pressureCompressionVolumeScale, 0.1f, 1f)
+                : 1f;
             if (moduleTemplate != null)
-                return Mathf.Max(0.1f, moduleTemplate.BuoyancyDisplacementVolumeCubicMeters * volumeScale);
+                return MaxFinite(0.1f, moduleTemplate.BuoyancyDisplacementVolumeCubicMeters * volumeScale, 0.1f);
 
-            return Mathf.Max(0.1f, buoyancyDisplacementVolumeCubicMeters * volumeScale);
+            return MaxFinite(0.1f, buoyancyDisplacementVolumeCubicMeters * volumeScale, 0.1f);
         }
 
         private float ResolveMaximumUnmooredAccelerationMetersPerSecondSquared()
@@ -3617,6 +3753,26 @@ namespace Hecton8.Gameplay
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
+        private static float Clamp01Finite(float value, float fallback)
+        {
+            return Mathf.Clamp01(float.IsFinite(value) ? value : fallback);
+        }
+
+        private static float MaxFinite(float minimum, float value, float fallback)
+        {
+            return Mathf.Max(minimum, float.IsFinite(value) ? value : fallback);
+        }
+
+        private static Color ResolveFiniteColor(Color value, Color fallback)
+        {
+            return float.IsFinite(value.r) &&
+                   float.IsFinite(value.g) &&
+                   float.IsFinite(value.b) &&
+                   float.IsFinite(value.a)
+                ? value
+                : fallback;
+        }
+
         private static bool IsFiniteQuaternion(Quaternion value)
         {
             return float.IsFinite(value.x) &&
@@ -3661,7 +3817,12 @@ namespace Hecton8.Gameplay
 
             float maxShift = ResolveMaximumFloodVisualLeanBiasMeters();
             if (localFloodBias.sqrMagnitude > (maxShift * maxShift))
-                localFloodBias = localFloodBias.normalized * maxShift;
+            {
+                float planarMax = math.max(math.abs(localFloodBias.x), math.abs(localFloodBias.z));
+                float scale = maxShift / math.max(0.0001f, planarMax);
+                localFloodBias.x *= scale;
+                localFloodBias.z *= scale;
+            }
 
             float normalizedX = Mathf.Clamp(localFloodBias.x / maxShift, -1f, 1f);
             float normalizedZ = Mathf.Clamp(localFloodBias.z / maxShift, -1f, 1f);
@@ -3687,11 +3848,19 @@ namespace Hecton8.Gameplay
             }
 
             float tauSeconds = ResolveFloodVisualLeanTauSeconds();
-            float alpha = 1f - Mathf.Exp(-fixedDeltaTime / tauSeconds);
-            pressureCompressionVisualRoot.localRotation = Quaternion.Slerp(
+            float alpha = ResolveOneMinusExpPade(fixedDeltaTime / tauSeconds);
+            pressureCompressionVisualRoot.localRotation = Quaternion.Lerp(
                 pressureCompressionVisualRoot.localRotation,
                 targetRotation,
                 alpha);
+        }
+
+        private static float ResolveOneMinusExpPade(float normalizedStep)
+        {
+            float x = float.IsFinite(normalizedStep) ? Mathf.Max(0f, normalizedStep) : 0f;
+            float numerator = x * (6f + x);
+            float denominator = 6f + (4f * x) + (x * x);
+            return Mathf.Clamp01(numerator / Mathf.Max(denominator, 0.0001f));
         }
 
         private void NotifyEmergencyLockdownStateChanged()
@@ -3944,18 +4113,12 @@ namespace Hecton8.Gameplay
             Vector3 forward = moduleTransform.forward;
             if (!IsFiniteVector(right) || right.sqrMagnitude <= 0.000001f)
                 right = Vector3.right;
-            else
-                right.Normalize();
 
             if (!IsFiniteVector(up) || up.sqrMagnitude <= 0.000001f)
                 up = Vector3.up;
-            else
-                up.Normalize();
 
             if (!IsFiniteVector(forward) || forward.sqrMagnitude <= 0.000001f)
                 forward = Vector3.forward;
-            else
-                forward.Normalize();
 
             Vector3 handCenter = runtimeHitPoint + up * RepairHandVerticalBiasMeters;
             Vector3 leftRuntime = handCenter - right * RepairHandHalfSpanMeters;
@@ -3992,7 +4155,7 @@ namespace Hecton8.Gameplay
                 runtimeAnchor = runtimeHitPoint;
 
             Vector3 surfaceNormal = IsFiniteVector(probe.HitNormal) && probe.HitNormal.sqrMagnitude > 0.000001f
-                ? probe.HitNormal.normalized
+                ? probe.HitNormal
                 : toolRotation * Vector3.forward;
             snapPoint = new Hecton8.Interaction.KinematicRepairSnapPoint
             {
@@ -4074,8 +4237,8 @@ namespace Hecton8.Gameplay
 
         private bool ShouldRunAmbienceTick()
         {
-            return Mathf.Abs(_brownoutTransition01 - _brownoutTransitionTarget01) > 0.001f ||
-                   Mathf.Abs(_oxygenHum01 - _oxygenHumTarget01) > 0.001f ||
+            return math.abs(_brownoutTransition01 - _brownoutTransitionTarget01) > 0.001f ||
+                   math.abs(_oxygenHum01 - _oxygenHumTarget01) > 0.001f ||
                    _oxygenHumActive;
         }
 
@@ -4135,7 +4298,7 @@ namespace Hecton8.Gameplay
             if (oxygenUnits <= 0f || !TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
                 return;
 
-            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
+            int roomIndex = ResolveAtmosphereRoomIndex(atmosphereSystem);
             if (roomIndex < 0)
                 return;
 
@@ -4155,7 +4318,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
+            int roomIndex = ResolveAtmosphereRoomIndex(atmosphereSystem);
             if (roomIndex < 0)
                 return;
 
@@ -4306,7 +4469,7 @@ namespace Hecton8.Gameplay
                 return transform.TransformPoint(new Vector3(localPosition.x, localPosition.y, localPosition.z));
             }
 
-            return transform.position;
+            return ResolveInteriorHazardWorldPosition();
         }
 
         internal float ResolveHostRoomTemperatureCelsius()
@@ -4317,7 +4480,7 @@ namespace Hecton8.Gameplay
                 return 0f;
             }
 
-            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
+            int roomIndex = ResolveAtmosphereRoomIndex(atmosphereSystem);
             return roomIndex >= 0
                 ? atmosphereSystem.GetRoomTemperatureCelsius(roomIndex)
                 : 0f;
@@ -4331,7 +4494,7 @@ namespace Hecton8.Gameplay
             if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
                 return false;
 
-            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
+            int roomIndex = ResolveAtmosphereRoomIndex(atmosphereSystem);
             if (roomIndex < 0)
                 return false;
 
@@ -4550,12 +4713,8 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 worldPoint = transform.TransformPoint(localPoint);
-            Vector3 worldDirection = transform.position - worldPoint;
-            if (worldDirection.sqrMagnitude < 0.0001f)
-                worldDirection = -transform.forward;
-
-            worldDirection.Normalize();
-            fluidDecals.RegisterPressureSpray(worldPoint, worldDirection, Mathf.Clamp01(intensity01));
+            Vector3 worldDirection = transform.TransformDirection(ResolveDominantLocalAxis(-localPoint));
+            fluidDecals.RegisterPressureSpray(worldPoint, worldDirection, math.saturate(intensity01));
         }
 
         internal bool TryGetInteriorHazardBounds(out Vector3 worldCenter, out float radius)
@@ -4566,7 +4725,8 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            radius = halfExtents.magnitude;
+            float maxExtent = math.max(halfExtents.x, math.max(halfExtents.y, halfExtents.z));
+            radius = maxExtent * 1.75f;
             return radius > 0.01f;
         }
 
@@ -4582,9 +4742,9 @@ namespace Hecton8.Gameplay
             Vector3 up = worldRotation * Vector3.up;
             Vector3 forward = worldRotation * Vector3.forward;
             halfExtents = new Vector3(
-                (Mathf.Abs(right.x) * orientedHalfExtents.x) + (Mathf.Abs(up.x) * orientedHalfExtents.y) + (Mathf.Abs(forward.x) * orientedHalfExtents.z),
-                (Mathf.Abs(right.y) * orientedHalfExtents.x) + (Mathf.Abs(up.y) * orientedHalfExtents.y) + (Mathf.Abs(forward.y) * orientedHalfExtents.z),
-                (Mathf.Abs(right.z) * orientedHalfExtents.x) + (Mathf.Abs(up.z) * orientedHalfExtents.y) + (Mathf.Abs(forward.z) * orientedHalfExtents.z));
+                (math.abs(right.x) * orientedHalfExtents.x) + (math.abs(up.x) * orientedHalfExtents.y) + (math.abs(forward.x) * orientedHalfExtents.z),
+                (math.abs(right.y) * orientedHalfExtents.x) + (math.abs(up.y) * orientedHalfExtents.y) + (math.abs(forward.y) * orientedHalfExtents.z),
+                (math.abs(right.z) * orientedHalfExtents.x) + (math.abs(up.z) * orientedHalfExtents.y) + (math.abs(forward.z) * orientedHalfExtents.z));
             return halfExtents.x > 0f && halfExtents.y > 0f && halfExtents.z > 0f;
         }
 
@@ -4610,7 +4770,7 @@ namespace Hecton8.Gameplay
             _implosionTriggered = true;
             ForceFlood();
 
-            Vector3 roomCenter = transform.position;
+            Vector3 roomCenter = ResolveInteriorHazardWorldPosition();
             float influenceRadius = ResolveImplosionImpulseRadiusMeters();
             if (TryGetInteriorHazardBounds(out Vector3 resolvedCenter, out float resolvedRadius))
             {
@@ -4675,7 +4835,7 @@ namespace Hecton8.Gameplay
                 return;
 
             Vector3 breachWorldPosition = transform.TransformPoint(localBreachPoint);
-            Vector3 roomCenter = transform.position;
+            Vector3 roomCenter = ResolveInteriorHazardWorldPosition();
             float influenceRadius = 3f;
             if (TryGetInteriorHazardBounds(out Vector3 resolvedCenter, out float resolvedRadius))
             {

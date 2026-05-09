@@ -55,18 +55,11 @@ namespace Hecton8.Physics
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private static FlowFieldVisualizer _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
-        public static FlowFieldVisualizer Instance
-        {
-            get { return _instance; }
-        }
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const NativeAllocationLifetime NativeTempJobLifetime = NativeAllocationLifetime.TempJob;
+        private const int SelectedVolumeCapacity = 32;
+        private const int ParticlePreviewCapacity = 32;
+        private const int ForceLabelBuilderCapacity = 32;
 
         [Header("── Profile ───────────────────────────────────")]
         [Tooltip("Профиль настроек (опционально). Автоматически применяет настройки при выборе.")]
@@ -135,7 +128,7 @@ namespace Hecton8.Physics
         [SerializeField] private bool onlySelectedVolumes = false;
 
         [Tooltip("Список выбранных CurrentVolume для визуализации")]
-        [SerializeField] private List<CurrentVolume> selectedVolumes = new List<CurrentVolume>();
+        [SerializeField] private List<CurrentVolume> selectedVolumes = new List<CurrentVolume>(SelectedVolumeCapacity); // COLD ALLOC: List<CurrentVolume>[32] — selected current-volume preview filter — owner: FlowFieldVisualizer
 
         [Header("── Visualization ────────────────────────────")]
         [Tooltip("Стиль визуализации стрелок")]
@@ -206,7 +199,7 @@ namespace Hecton8.Physics
             private readonly System.Func<ParticleSystem> _createFunc;
             private readonly System.Action<ParticleSystem> _getAction;
             private readonly System.Action<ParticleSystem> _releaseAction;
-            private readonly Queue<ParticleSystem> _pool = new Queue<ParticleSystem>();
+            private readonly Queue<ParticleSystem> _pool = new Queue<ParticleSystem>(ParticlePreviewCapacity); // COLD ALLOC: Queue<ParticleSystem>[32] - editor current-flow particle preview pool - owner: FlowFieldVisualizer.ParticlePool
 
             public ParticlePool(System.Func<ParticleSystem> createFunc,
                               System.Action<ParticleSystem> getAction = null,
@@ -247,9 +240,9 @@ namespace Hecton8.Physics
         private ParticlePool _particlePool;
 
         /// <summary>Активные particle systems с временем жизни</summary>
-        private readonly List<(ParticleSystem particle, float expireTime)> _activeParticles = new List<(ParticleSystem, float)>(32);
+        private readonly List<(ParticleSystem particle, float expireTime)> _activeParticles = new List<(ParticleSystem, float)>(ParticlePreviewCapacity); // COLD ALLOC: List<(ParticleSystem,float)>[32] — editor current-flow particle preview pool lease tracking — owner: FlowFieldVisualizer
 
-        private static readonly StringBuilder _forceLabelBuilder = new StringBuilder(32);
+        private static readonly StringBuilder _forceLabelBuilder = new StringBuilder(ForceLabelBuilderCapacity); // COLD ALLOC: StringBuilder[32] — editor force-label scratch buffer — owner: FlowFieldVisualizer
 
         /// <summary>Кэшированный GUIStyle для лейблов (меньше GC в OnDrawGizmos).</summary>
         private GUIStyle _cachedLabelStyle;
@@ -262,7 +255,8 @@ namespace Hecton8.Physics
         private NativeArray<float3> _nativeFlowResults;
         private NativeArray<CurrentVolumeJobData> _nativeVolumeData;
         private bool _isCalculationJobRunning = false;
-        private readonly List<CurrentVolume> _volumeScratch = new List<CurrentVolume>(32);
+        private uint _calculationShiftSequence;
+        private readonly List<CurrentVolume> _volumeScratch = new List<CurrentVolume>(SelectedVolumeCapacity); // COLD ALLOC: List<CurrentVolume>[32] — current-volume job-data gather scratch — owner: FlowFieldVisualizer
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct CurrentVolumeJobData
@@ -591,7 +585,7 @@ namespace Hecton8.Physics
 
             // Анимационный фактор для preview
             float animationFactor = animateInEditor ?
-                Mathf.Sin(Time.realtimeSinceStartup * animationSpeed) * 0.5f + 0.5f : 1f;
+                math.sin(Time.realtimeSinceStartup * animationSpeed) * 0.5f + 0.5f : 1f;
 
             // Рисуем стрелки для каждой точки grid'а
             UpdateActiveParticles();
@@ -614,8 +608,7 @@ namespace Hecton8.Physics
                     if (distSq > lodMaxDistanceSq || distSq < lodMinDistanceSq)
                         continue;
 
-                    float dot = Vector3.Dot(toPos, camForward);
-                    if (dot < lodDotThreshold * Mathf.Sqrt(distSq))
+                    if (IsOutsideLodConeSq(toPos, camForward, lodDotThreshold, distSq))
                         continue;
                 }
 
@@ -652,14 +645,34 @@ namespace Hecton8.Physics
         private void EnsureNativeJobBuffers(int totalPoints, Allocator allocator)
         {
             if (_nativeSamplePositions.IsCreated && _nativeSamplePositions.Length != totalPoints)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_nativeSamplePositions);
                 _nativeSamplePositions.Dispose();
+            }
             if (!_nativeSamplePositions.IsCreated)
+            {
                 _nativeSamplePositions = new NativeArray<float3>(totalPoints, allocator);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _nativeSamplePositions,
+                    nameof(FlowFieldVisualizer),
+                    nameof(_nativeSamplePositions),
+                    NativeMemoryLifetime);
+            }
 
             if (_nativeFlowResults.IsCreated && _nativeFlowResults.Length != totalPoints)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_nativeFlowResults);
                 _nativeFlowResults.Dispose();
+            }
             if (!_nativeFlowResults.IsCreated)
+            {
                 _nativeFlowResults = new NativeArray<float3>(totalPoints, allocator);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _nativeFlowResults,
+                    nameof(FlowFieldVisualizer),
+                    nameof(_nativeFlowResults),
+                    NativeMemoryLifetime);
+            }
         }
 
         private void UpdateCaches()
@@ -693,8 +706,9 @@ namespace Hecton8.Physics
 
                 if (showPerformanceStats)
                 {
+                    float throughput = _lastCalculationTime > 0f ? _lastPointCount / _lastCalculationTime : 0f;
                     sb.Append("  Last calc: ").Append(_lastCalculationTime.ToString("F3", CultureInfo.InvariantCulture)).Append("s (").Append(_lastPointCount).Append(" points)").AppendLine();
-                    sb.AppendLine($"  Throughput: {(_lastCalculationTime > 0f ? _lastPointCount / _lastCalculationTime : 0f):F0} pts/s");
+                    sb.Append("  Throughput: ").Append(throughput.ToString("F0", CultureInfo.InvariantCulture)).AppendLine(" pts/s");
                 }
 
                 Vector3 labelPos = transform.position + Vector3.up * (sampleHeight + 0.5f);
@@ -724,8 +738,9 @@ namespace Hecton8.Physics
         /// <summary>Освобождает все активные particle effects при отключении инструмента.</summary>
         private void ClearActiveParticles()
         {
-            foreach (var (ps, _) in _activeParticles)
+            for (int i = 0; i < _activeParticles.Count; i++)
             {
+                ParticleSystem ps = _activeParticles[i].particle;
                 if (ps != null && _particlePool != null)
                 {
                     _particlePool.Release(ps);
@@ -759,8 +774,9 @@ namespace Hecton8.Physics
             // Защита от слишком больших grid'ов
             if (totalPoints > maxGridResolution * maxGridResolution)
             {
-                Debug.LogWarning($"[FlowFieldVisualizer] Grid too large ({totalPoints} points). " +
-                    $"Clamping to {maxGridResolution}x{maxGridResolution}.", this);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[FlowFieldVisualizer] Grid resolution clamped to configured maximum.", this);
+#endif
                 gridResolution.x = Mathf.Min(gridResolution.x, maxGridResolution);
                 gridResolution.y = Mathf.Min(gridResolution.y, maxGridResolution);
                 totalPoints = gridResolution.x * gridResolution.y;
@@ -769,7 +785,9 @@ namespace Hecton8.Physics
             // Проверка на разумные размеры
             if (totalPoints <= 0)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[FlowFieldVisualizer] Invalid grid resolution. Must be > 0.", this);
+#endif
                 return;
             }
 
@@ -792,10 +810,11 @@ namespace Hecton8.Physics
         /// <summary>Запускает job-пересчёт для больших grid'ов</summary>
         private void StartAsyncCalculation(int totalPoints)
         {
-            if (_isCalculationJobRunning)
+            if (_isCalculationJobRunning || HectonFloatingOrigin.IsShiftInProgress)
                 return;
 
             _asyncStartTime = Time.realtimeSinceStartup;
+            _calculationShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             DisposeNativeJobBuffers();
 
             EnsureSampleBuffers(totalPoints);
@@ -809,6 +828,11 @@ namespace Hecton8.Physics
             }
 
             _nativeVolumeData = BuildVolumeJobData(Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeArray(
+                _nativeVolumeData,
+                nameof(FlowFieldVisualizer),
+                nameof(_nativeVolumeData),
+                NativeMemoryLifetime);
             HectonFluidEngine engine = GlobalRegistry.Fluid;
             bool includeGlobalCurrent = showGlobalCurrent && engine != null;
 
@@ -850,11 +874,23 @@ namespace Hecton8.Physics
 
             if (timedOut)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[FlowFieldVisualizer] Async flow calculation exceeded timeout. Completing on main thread.", this);
+#endif
             }
 
             if (!DispatcherJobSwap.TryComplete(ref _calculationJobHandle, timedOut))
                 return;
+
+            if (HectonFloatingOrigin.IsShiftInProgress ||
+                _calculationShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+            {
+                DisposeNativeJobBuffers();
+#if UNITY_EDITOR
+                UnityEditor.EditorApplication.update -= PumpAsyncJob;
+#endif
+                return;
+            }
 
             int totalPoints = _samplePositions.Length;
 
@@ -869,7 +905,7 @@ namespace Hecton8.Physics
             {
                 Vector3 flow = new Vector3(_nativeFlowResults[i].x, _nativeFlowResults[i].y, _nativeFlowResults[i].z);
                 _flowVectors[i] = flow;
-                _flowMagnitudes[i] = flow.magnitude;
+                _flowMagnitudes[i] = ApproximateVectorMagnitude(flow);
             }
 
             _lastCalculationTime = Time.realtimeSinceStartup - _asyncStartTime;
@@ -885,9 +921,13 @@ namespace Hecton8.Physics
         /// <summary>Выполняет фактический расчёт течений</summary>
         private void PerformCalculation(int totalPoints)
         {
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return;
+
             using (RecalculateMarker.Auto())
             {
                 float calculationStartTime = Time.realtimeSinceStartup;
+                uint calculationShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
                 EnsureSampleBuffers(totalPoints);
                 PrepareSamplePositions(totalPoints);
 
@@ -899,6 +939,9 @@ namespace Hecton8.Physics
                     var positions = new NativeArray<float3>(totalPoints, Allocator.TempJob);
                     var flowResults = new NativeArray<float3>(totalPoints, Allocator.TempJob);
                     var volumeData = BuildVolumeJobData(Allocator.TempJob);
+                    NativeMemorySentinel.RegisterNativeArray(positions, nameof(FlowFieldVisualizer), "syncPositions", NativeTempJobLifetime);
+                    NativeMemorySentinel.RegisterNativeArray(flowResults, nameof(FlowFieldVisualizer), "syncFlowResults", NativeTempJobLifetime);
+                    NativeMemorySentinel.RegisterNativeArray(volumeData, nameof(FlowFieldVisualizer), "syncVolumeData", NativeTempJobLifetime);
 
                     try
                     {
@@ -913,7 +956,7 @@ namespace Hecton8.Physics
                             SamplePositions = positions,
                             FlowVectors = flowResults,
                             VolumeData = volumeData,
-                            VolumeCount = volumeData.Length,
+                            VolumeCount = volumeData.IsCreated ? volumeData.Length : 0,
                             ShowGlobalCurrent = includeGlobalCurrent,
                             Time = Time.realtimeSinceStartup,
                             NoiseScale = includeGlobalCurrent ? engine.CurrentNoiseScale : 0f,
@@ -925,13 +968,18 @@ namespace Hecton8.Physics
 
                         JobHandle handle = samplingJob.Schedule(totalPoints, Mathf.Max(1, totalPoints / 8));
                         DispatcherJobSwap.TryComplete(ref handle, true);
+                        if (HectonFloatingOrigin.IsShiftInProgress ||
+                            calculationShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+                        {
+                            return;
+                        }
 
                         for (int i = 0; i < totalPoints; i++)
                         {
                             float3 sampledFlow = flowResults[i];
                             Vector3 flow = new Vector3(sampledFlow.x, sampledFlow.y, sampledFlow.z);
                             _flowVectors[i] = flow;
-                            _flowMagnitudes[i] = flow.magnitude;
+                            _flowMagnitudes[i] = ApproximateVectorMagnitude(flow);
                         }
 
                         _lastCalculationTime = Time.realtimeSinceStartup - calculationStartTime;
@@ -940,13 +988,22 @@ namespace Hecton8.Physics
                     finally
                     {
                         if (volumeData.IsCreated)
+                        {
+                            NativeMemorySentinel.UnregisterNativeArray(volumeData);
                             volumeData.Dispose();
+                        }
 
                         if (flowResults.IsCreated)
+                        {
+                            NativeMemorySentinel.UnregisterNativeArray(flowResults);
                             flowResults.Dispose();
+                        }
 
                         if (positions.IsCreated)
+                        {
+                            NativeMemorySentinel.UnregisterNativeArray(positions);
                             positions.Dispose();
+                        }
                     }
 
                     return;
@@ -956,12 +1013,54 @@ namespace Hecton8.Physics
                 {
                     Vector3 flow = SampleCurrentAt(_samplePositions[i]);
                     _flowVectors[i] = flow;
-                    _flowMagnitudes[i] = flow.magnitude;
+                    _flowMagnitudes[i] = ApproximateVectorMagnitude(flow);
                 }
 
                 _lastCalculationTime = Time.realtimeSinceStartup - calculationStartTime;
                 _lastPointCount = totalPoints;
             }
+        }
+
+        private static float ApproximateVectorMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.375f) + (min * 0.125f);
+        }
+
+        private static Vector3 NormalizeVectorRsqrt(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.x * value.x + value.y * value.y + value.z * value.z;
+            if (lengthSq <= 0.0001f)
+                return fallback;
+
+            float invLength = math.rsqrt(lengthSq);
+            return new Vector3(value.x * invLength, value.y * invLength, value.z * invLength);
+        }
+
+        private static Color BlendColorUnclamped(Color from, Color to, float t)
+        {
+            return new Color(
+                from.r + ((to.r - from.r) * t),
+                from.g + ((to.g - from.g) * t),
+                from.b + ((to.b - from.b) * t),
+                from.a + ((to.a - from.a) * t));
+        }
+
+        private static bool IsOutsideLodConeSq(Vector3 toPosition, Vector3 cameraForward, float dotThreshold, float distanceSq)
+        {
+            float dot = Vector3.Dot(toPosition, cameraForward);
+            float thresholdSq = dotThreshold * dotThreshold * distanceSq;
+            float dotSq = dot * dot;
+
+            if (dotThreshold >= 0f)
+                return dot <= 0f || dotSq < thresholdSq;
+
+            return dot < 0f && dotSq > thresholdSq;
         }
 
         private void PrepareSamplePositions(int totalPoints)
@@ -985,26 +1084,34 @@ namespace Hecton8.Physics
 
         private NativeArray<CurrentVolumeJobData> BuildVolumeJobData(Allocator allocator)
         {
-            if (!showLocalCurrents)
-                return new NativeArray<CurrentVolumeJobData>(0, allocator);
+            if (!showLocalCurrents || HectonFloatingOrigin.IsShiftInProgress)
+                return default;
 
             CollectVolumes(_volumeScratch);
+            if (_volumeScratch.Count <= 0)
+                return default;
 
             var volumeData = new NativeArray<CurrentVolumeJobData>(_volumeScratch.Count, allocator);
 
             for (int i = 0; i < _volumeScratch.Count; i++)
             {
                 CurrentVolume volume = _volumeScratch[i];
+                Transform volumeTransform = volume.transform;
+                Vector3 volumePosition = volumeTransform.position;
+                Quaternion volumeRotation = volumeTransform.rotation;
+                Vector3 localFlowDirection = NormalizeVectorRsqrt(volume.LocalDirection, Vector3.forward);
+                Vector3 worldFlowDirection = volumeTransform.TransformDirection(localFlowDirection);
+                Vector3 shapedFlowDirection = Vector3.Scale(
+                    worldFlowDirection,
+                    new Vector3(1f, volume.VerticalFactor, 1f));
                 volumeData[i] = new CurrentVolumeJobData
                 {
                     Shape = (int)volume.Shape,
-                    Position = new float3(volume.transform.position.x, volume.transform.position.y, volume.transform.position.z),
-                    Rotation = volume.transform.rotation,
+                    Position = new float3(volumePosition.x, volumePosition.y, volumePosition.z),
+                    Rotation = volumeRotation,
                     HalfSize = new float3(volume.BoxSize.x, volume.BoxSize.y, volume.BoxSize.z) * 0.5f,
                     SphereRadius = Mathf.Max(0.01f, volume.SphereRadius),
-                    Direction = Vector3.Scale(
-                        volume.transform.TransformDirection(volume.LocalDirection.normalized),
-                        new Vector3(1f, volume.VerticalFactor, 1f)).normalized,
+                    Direction = NormalizeVectorRsqrt(shapedFlowDirection, Vector3.forward),
                     Strength = volume.Strength,
                     VerticalFactor = volume.VerticalFactor,
                     EdgeSoftness = Mathf.Clamp01(volume.EdgeSoftness),
@@ -1023,12 +1130,18 @@ namespace Hecton8.Physics
             // Проверка selected volumes
             if (onlySelectedVolumes && selectedVolumes != null)
             {
-                selectedVolumes.RemoveAll(v => v == null);
+                for (int i = selectedVolumes.Count - 1; i >= 0; i--)
+                {
+                    if (selectedVolumes[i] == null)
+                        selectedVolumes.RemoveAt(i);
+                }
             }
 
             if (gridResolution.x > maxGridResolution || gridResolution.y > maxGridResolution)
             {
-                Debug.LogWarning($"[FlowFieldVisualizer] Grid too large. Clamping to {maxGridResolution}x{maxGridResolution}.", this);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[FlowFieldVisualizer] Grid too large. Clamping to configured maximum.", this);
+#endif
             }
 
             // Коррекция недопустимых значений
@@ -1058,6 +1171,9 @@ namespace Hecton8.Physics
 
             if (onlySelectedVolumes)
             {
+                if (selectedVolumes == null)
+                    return;
+
                 for (int i = 0; i < selectedVolumes.Count; i++)
                 {
                     CurrentVolume volume = selectedVolumes[i];
@@ -1068,10 +1184,10 @@ namespace Hecton8.Physics
                 return;
             }
 
-            IReadOnlyList<CurrentVolume> activeVolumes = CurrentVolume.ActiveVolumeList;
-            for (int i = 0; i < activeVolumes.Count; i++)
+            int activeVolumeCount = CurrentVolume.ActiveCount;
+            for (int i = 0; i < activeVolumeCount; i++)
             {
-                CurrentVolume volume = activeVolumes[i];
+                CurrentVolume volume = CurrentVolume.GetActiveVolumeAt(i);
                 if (volume != null && volume.isActiveAndEnabled)
                     output.Add(volume);
             }
@@ -1080,17 +1196,27 @@ namespace Hecton8.Physics
         private void DisposeNativeJobBuffers()
         {
             if (_nativeVolumeData.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_nativeVolumeData);
                 _nativeVolumeData.Dispose();
+            }
             if (_nativeSamplePositions.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_nativeSamplePositions);
                 _nativeSamplePositions.Dispose();
+            }
             if (_nativeFlowResults.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_nativeFlowResults);
                 _nativeFlowResults.Dispose();
+            }
 
             _nativeVolumeData = default;
             _nativeSamplePositions = default;
             _nativeFlowResults = default;
             _isCalculationJobRunning = false;
             _isCalculatingAsync = false;
+            _calculationShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
         }
 
         private void GetVisualizationCameraPose(out Vector3 cameraPosition, out Vector3 cameraForward)
@@ -1146,8 +1272,9 @@ namespace Hecton8.Physics
                 if (onlySelectedVolumes)
                 {
                     // Только выбранные volumes
-                    foreach (var volume in selectedVolumes)
+                    for (int i = 0; i < selectedVolumes.Count; i++)
                     {
+                        CurrentVolume volume = selectedVolumes[i];
                         if (volume != null && volume.isActiveAndEnabled)
                             totalFlow += volume.Sample(worldPos);
                     }
@@ -1173,15 +1300,15 @@ namespace Hecton8.Physics
                 return;
 
             // Цветовая кодировка силы с поддержкой HDR
-            float t = Mathf.Clamp01(magnitude / maxForceScale);
-            Color color = useHDRColors ?
-                Color.Lerp(Color.blue * 2f, Color.red * 3f, t) : // HDR цвета
-                Color.Lerp(Color.blue, Color.red, t);
+            float t = math.saturate(magnitude / math.max(maxForceScale, 0.0001f));
+            Color color = useHDRColors
+                ? BlendColorUnclamped(Color.blue * 2f, Color.red * 3f, t)
+                : BlendColorUnclamped(Color.blue, Color.red, t);
             Gizmos.color = color;
 
             // Направление и длина стрелки
-            Vector3 direction = flow.normalized;
-            float length = arrowLength * Mathf.Lerp(0.1f, 1f, t); // Минимальная длина для видимости
+            Vector3 direction = NormalizeVectorRsqrt(flow, Vector3.forward);
+            float length = arrowLength * math.lerp(0.1f, 1f, t); // Минимальная длина для видимости
 
             switch (arrowStyle)
             {
@@ -1220,8 +1347,10 @@ namespace Hecton8.Physics
 
             // Наконечник стрелки
             Vector3 arrowTip = position + direction * length;
-            Vector3 right = Vector3.Cross(direction, Vector3.up).normalized * arrowThickness;
-            if (right == Vector3.zero) right = Vector3.Cross(direction, Vector3.forward).normalized * arrowThickness;
+            Vector3 rightUnit = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.up), Vector3.zero);
+            if (rightUnit.sqrMagnitude <= 0.0001f)
+                rightUnit = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.forward), Vector3.right);
+            Vector3 right = rightUnit * arrowThickness;
 
             Vector3 left = -right;
             Vector3 back = -direction * arrowThickness * 2f;
@@ -1238,10 +1367,11 @@ namespace Hecton8.Physics
             float radius = arrowThickness * 2f;
 
             // Простой конус через Gizmos.DrawLine (Unity не имеет Gizmos.DrawCone)
-            Vector3 up = Vector3.Cross(direction, Vector3.right).normalized;
-            if (up == Vector3.zero) up = Vector3.Cross(direction, Vector3.forward).normalized;
+            Vector3 up = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.right), Vector3.zero);
+            if (up.sqrMagnitude <= 0.0001f)
+                up = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.forward), Vector3.up);
 
-            Vector3 right = Vector3.Cross(direction, up).normalized;
+            Vector3 right = NormalizeVectorRsqrt(Vector3.Cross(direction, up), Vector3.right);
 
             // Основание конуса
             Vector3 baseCenter = position + direction * length * 0.7f;
@@ -1254,7 +1384,7 @@ namespace Hecton8.Physics
         /// <summary>Рисует цветную точку</summary>
         private void DrawDot(Vector3 position, float magnitude)
         {
-            float size = Mathf.Lerp(0.05f, 0.2f, magnitude / maxForceScale);
+            float size = math.lerp(0.05f, 0.2f, math.saturate(magnitude / math.max(maxForceScale, 0.0001f)));
             Gizmos.DrawSphere(position, size);
         }
 
@@ -1290,7 +1420,9 @@ namespace Hecton8.Physics
                     var ps = go.GetComponent<ParticleSystem>();
                     if (ps == null)
                     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         Debug.LogError("[FlowFieldVisualizer] Particle prefab must contain ParticleSystem", this);
+#endif
                         DestroyImmediate(go);
                         return null;
                     }
@@ -1303,7 +1435,7 @@ namespace Hecton8.Physics
                 return;
 
             ps.transform.position = position;
-            ps.transform.rotation = Quaternion.LookRotation(flow.normalized);
+            ps.transform.rotation = Quaternion.LookRotation(NormalizeVectorRsqrt(flow, Vector3.forward));
 
             var main = ps.main;
             float lifetime = Mathf.Max(0.1f, 1f + magnitude * 0.5f);
@@ -1320,8 +1452,6 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            _instance = this;
-
             // Подписываемся на изменения настроек течений
             _subscribedFluidEngine = GlobalRegistry.Fluid;
             if (_subscribedFluidEngine != null)
@@ -1332,9 +1462,6 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
-            if (_instance == this)
-                _instance = null;
-
             // Отписываемся от событий
             if (_subscribedFluidEngine != null)
             {

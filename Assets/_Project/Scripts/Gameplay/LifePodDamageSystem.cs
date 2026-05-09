@@ -14,8 +14,11 @@ namespace Hecton8.Gameplay
     public sealed class LifePodDamageSystem : MonoBehaviour, IUpdatable
     {
         private const int MaxShortCircuitBits = 16;
-        private const byte HapticPriorityCritical = 3;
+        private const int MaxVisibleSparkInstances = 4;
+        private const int MaximumRenderLayer = 31;
+        private const byte HapticPriorityCritical = ToolHapticsRuntime.PriorityCritical;
         private const byte BothMotorMask = 0x03;
+        private const float MaxToolHapticFrequencyHz = 60f;
         private const uint DefaultImpactSeed = 0x9E3779B9u;
 
         [Header("Short Circuits")]
@@ -63,11 +66,24 @@ namespace Hecton8.Gameplay
         [SerializeField, Min(1f), Tooltip("Short-circuit haptic frequency.")]
         private float shortCircuitHapticFrequencyHz = 142f;
 
-        private Matrix4x4[] _sparkMatrices; // COLD ALLOC: Matrix4x4[16] - instanced spark draw buffer - owner: LifePodDamageSystem
+        private Matrix4x4[] _sparkMatrices;
+        private Vector3[] _sparkAnchorPositions;
+        private Quaternion[] _sparkAnchorRotations;
         private ushort _shortCircuitMask;
+        private ushort _sparkAnchorValidMask;
         private uint _rngState = DefaultImpactSeed;
         private float _sparkTimerSeconds;
         private float _sparkPhase;
+        private float _resolvedDefaultImpactSeverity01;
+        private float _resolvedSparkLifetimeSeconds;
+        private float _resolvedSparkFlickerRateHz;
+        private float _resolvedMinimumSparkScale;
+        private float _resolvedMaximumSparkScale;
+        private float _resolvedShortCircuitLowFrequency;
+        private float _resolvedShortCircuitHighFrequency;
+        private float _resolvedShortCircuitHapticDurationSeconds;
+        private float _resolvedShortCircuitHapticFrequencyHz;
+        private int _resolvedRenderLayer;
         private bool _registeredTick;
 
         /// <summary>
@@ -82,15 +98,22 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            _sparkMatrices = new Matrix4x4[MaxShortCircuitBits];
+            _sparkMatrices = new Matrix4x4[MaxVisibleSparkInstances]; // COLD ALLOC: Matrix4x4[4] — capped instanced spark draw buffer — owner: LifePodDamageSystem
+            _sparkAnchorPositions = new Vector3[MaxShortCircuitBits]; // COLD ALLOC: Vector3[16] — cached panel spark positions sampled only on impact/state change — owner: LifePodDamageSystem
+            _sparkAnchorRotations = new Quaternion[MaxShortCircuitBits]; // COLD ALLOC: Quaternion[16] — cached panel spark rotations sampled only on impact/state change — owner: LifePodDamageSystem
+            CacheScalarConfig();
             if (renderLayer == 0)
                 renderLayer = gameObject.layer;
         }
 
         private void OnEnable()
         {
+            CacheScalarConfig();
             if (_shortCircuitMask != 0)
+            {
+                CacheSparkAnchorPoses(_shortCircuitMask);
                 TryRegisterTick();
+            }
         }
 
         private void OnDisable()
@@ -103,7 +126,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void TriggerWaterImpact()
         {
-            TriggerWaterImpact(DefaultImpactSeed, defaultImpactSeverity01);
+            CacheScalarConfig();
+            TriggerWaterImpactCachedConfig(DefaultImpactSeed, _resolvedDefaultImpactSeverity01);
         }
 
         /// <summary>
@@ -111,18 +135,48 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void TriggerWaterImpact(uint impactSeed, float severity01)
         {
-            _rngState = impactSeed != 0u ? impactSeed : DefaultImpactSeed;
-            float clampedSeverity = math.saturate(severity01);
-            int toggleCount = math.clamp((int)math.ceil(clampedSeverity * MaxShortCircuitBits), 1, MaxShortCircuitBits);
+            CacheScalarConfig();
+            TriggerWaterImpactCachedConfig(impactSeed, severity01);
+        }
 
-            for (int i = 0; i < toggleCount; i++)
+        private void TriggerWaterImpactCachedConfig(uint impactSeed, float severity01)
+        {
+            _rngState = impactSeed != 0u ? impactSeed : DefaultImpactSeed;
+            float clampedSeverity = SaturateFinite01(severity01);
+            if (clampedSeverity <= 0f)
+                return;
+
+            int toggleCount = math.clamp((int)math.ceil(clampedSeverity * MaxShortCircuitBits), 1, MaxShortCircuitBits);
+            ushort toggleMask = 0;
+            int attempts = 0;
+
+            while (math.countbits((uint)toggleMask) < toggleCount && attempts < MaxShortCircuitBits * 4)
             {
                 int bitIndex = (int)(NextRandom() & 0x0Fu);
-                ToggleShortCircuitBit(bitIndex);
+                toggleMask |= (ushort)(1 << bitIndex);
+                attempts++;
             }
 
-            _sparkTimerSeconds = sparkLifetimeSeconds;
-            TryRegisterTick();
+            for (int bitIndex = 0; math.countbits((uint)toggleMask) < toggleCount && bitIndex < MaxShortCircuitBits; bitIndex++)
+                toggleMask |= (ushort)(1 << bitIndex);
+
+            if (toggleMask == 0)
+                return;
+
+            _shortCircuitMask = (ushort)(_shortCircuitMask ^ toggleMask);
+            _sparkAnchorValidMask = 0;
+            CacheSparkAnchorPoses(_shortCircuitMask);
+            QueueShortCircuitHaptic();
+            _sparkTimerSeconds = _resolvedSparkLifetimeSeconds;
+            if (_shortCircuitMask != 0)
+            {
+                TryRegisterTick();
+            }
+            else
+            {
+                _sparkAnchorValidMask = 0;
+                TryUnregisterTick();
+            }
         }
 
         /// <summary>
@@ -133,20 +187,29 @@ namespace Hecton8.Gameplay
             if ((uint)bitIndex >= MaxShortCircuitBits)
                 return;
 
+            CacheScalarConfig();
             ushort bit = (ushort)(1 << bitIndex);
             bool wasActive = (_shortCircuitMask & bit) != 0;
             if (wasActive == active)
                 return;
 
             if (active)
+            {
                 _shortCircuitMask |= bit;
+                CacheSparkAnchorPose(bitIndex);
+            }
             else
+            {
                 _shortCircuitMask = (ushort)(_shortCircuitMask & ~bit);
+                _sparkAnchorValidMask = (ushort)(_sparkAnchorValidMask & ~bit);
+                if (_shortCircuitMask == 0)
+                    _sparkTimerSeconds = 0f;
+            }
 
             QueueShortCircuitHaptic();
             if (_shortCircuitMask != 0)
             {
-                _sparkTimerSeconds = sparkLifetimeSeconds;
+                _sparkTimerSeconds = math.max(_sparkTimerSeconds, _resolvedSparkLifetimeSeconds);
                 TryRegisterTick();
             }
             else
@@ -161,6 +224,7 @@ namespace Hecton8.Gameplay
         public void ClearShortCircuits()
         {
             _shortCircuitMask = 0;
+            _sparkAnchorValidMask = 0;
             _sparkTimerSeconds = 0f;
             TryUnregisterTick();
         }
@@ -174,7 +238,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float safeDeltaTime = math.max(0f, deltaTime);
+            float safeDeltaTime = SanitizeAtLeast(deltaTime, 0f);
             _sparkTimerSeconds = math.max(0f, _sparkTimerSeconds - safeDeltaTime);
             if (_sparkTimerSeconds <= 0f)
             {
@@ -182,38 +246,35 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _sparkPhase += safeDeltaTime * sparkFlickerRateHz;
+            _sparkPhase = math.frac(_sparkPhase + safeDeltaTime * _resolvedSparkFlickerRateHz);
             DrawActiveSparks();
-        }
-
-        private void ToggleShortCircuitBit(int bitIndex)
-        {
-            ushort bit = (ushort)(1 << bitIndex);
-            _shortCircuitMask = (ushort)(_shortCircuitMask ^ bit);
-            QueueShortCircuitHaptic();
         }
 
         private void DrawActiveSparks()
         {
-            if (sparkQuadMesh == null || sparkMaterial == null || _sparkMatrices == null)
+            if (sparkQuadMesh == null ||
+                sparkMaterial == null ||
+                !sparkMaterial.enableInstancing ||
+                _sparkMatrices == null)
+            {
                 return;
+            }
 
             int activeCount = 0;
-            for (int bitIndex = 0; bitIndex < MaxShortCircuitBits; bitIndex++)
+            uint activeMask = _shortCircuitMask;
+            while (activeMask != 0u && activeCount < MaxVisibleSparkInstances)
             {
-                ushort bit = (ushort)(1 << bitIndex);
-                if ((_shortCircuitMask & bit) == 0)
-                    continue;
+                int bitIndex = math.tzcnt(activeMask);
+                activeMask &= activeMask - 1u;
 
-                Transform anchor = ResolveSparkAnchor(bitIndex);
-                if (anchor == null)
+                if (!TryResolveCachedSparkPose(bitIndex, out Vector3 position, out Quaternion rotation))
                     continue;
 
                 float flicker01 = ResolveSparkFlicker01(bitIndex);
-                float scale = math.lerp(minimumSparkScale, maximumSparkScale, flicker01);
+                float scale = math.lerp(_resolvedMinimumSparkScale, _resolvedMaximumSparkScale, flicker01);
                 _sparkMatrices[activeCount] = Matrix4x4.TRS(
-                    anchor.position,
-                    anchor.rotation,
+                    position,
+                    rotation,
                     new Vector3(scale, scale, scale));
                 activeCount++;
             }
@@ -230,7 +291,7 @@ namespace Hecton8.Gameplay
                 null,
                 ShadowCastingMode.Off,
                 false,
-                renderLayer,
+                _resolvedRenderLayer,
                 null,
                 LightProbeUsage.Off,
                 null);
@@ -244,9 +305,61 @@ namespace Hecton8.Gameplay
             return transform;
         }
 
+        private void CacheSparkAnchorPoses(ushort mask)
+        {
+            uint activeMask = mask;
+            while (activeMask != 0u)
+            {
+                int bitIndex = math.tzcnt(activeMask);
+                activeMask &= activeMask - 1u;
+                CacheSparkAnchorPose(bitIndex);
+            }
+        }
+
+        private bool CacheSparkAnchorPose(int bitIndex)
+        {
+            if ((uint)bitIndex >= MaxShortCircuitBits ||
+                _sparkAnchorPositions == null ||
+                _sparkAnchorRotations == null)
+            {
+                return false;
+            }
+
+            ushort bit = (ushort)(1 << bitIndex);
+            _sparkAnchorValidMask = (ushort)(_sparkAnchorValidMask & ~bit);
+            Transform anchor = ResolveSparkAnchor(bitIndex);
+            if (anchor == null)
+                return false;
+
+            Vector3 position = anchor.position;
+            Quaternion rotation = anchor.rotation;
+            if (!IsFinite(position) || !IsFinite(rotation))
+                return false;
+
+            _sparkAnchorPositions[bitIndex] = position;
+            _sparkAnchorRotations[bitIndex] = rotation;
+            _sparkAnchorValidMask = (ushort)(_sparkAnchorValidMask | bit);
+            return true;
+        }
+
+        private bool TryResolveCachedSparkPose(int bitIndex, out Vector3 position, out Quaternion rotation)
+        {
+            ushort bit = (ushort)(1 << bitIndex);
+            if ((_sparkAnchorValidMask & bit) != 0)
+            {
+                position = _sparkAnchorPositions[bitIndex];
+                rotation = _sparkAnchorRotations[bitIndex];
+                return true;
+            }
+
+            position = default;
+            rotation = default;
+            return false;
+        }
+
         private float ResolveSparkFlicker01(int bitIndex)
         {
-            float phase01 = math.frac(_sparkPhase + bitIndex * 0.61803395f);
+            float phase01 = math.frac(_sparkPhase + bitIndex * 0.618f);
             float triangle01 = 1f - math.abs((phase01 * 2f) - 1f);
             return math.saturate(triangle01);
         }
@@ -267,21 +380,67 @@ namespace Hecton8.Gameplay
                 return;
 
             ToolHapticsRuntime.EnqueueSinusoidalCommand(
-                shortCircuitLowFrequency,
-                shortCircuitHighFrequency,
-                shortCircuitHapticDurationSeconds,
-                shortCircuitHapticFrequencyHz,
+                _resolvedShortCircuitLowFrequency,
+                _resolvedShortCircuitHighFrequency,
+                _resolvedShortCircuitHapticDurationSeconds,
+                _resolvedShortCircuitHapticFrequencyHz,
                 HapticPriorityCritical,
                 BothMotorMask);
         }
 
+        private void CacheScalarConfig()
+        {
+            _resolvedDefaultImpactSeverity01 = SaturateFinite01(defaultImpactSeverity01);
+            _resolvedSparkLifetimeSeconds = SanitizeAtLeast(sparkLifetimeSeconds, 0.01f);
+            _resolvedSparkFlickerRateHz = SanitizeAtLeast(sparkFlickerRateHz, 0.01f);
+            _resolvedMinimumSparkScale = SanitizeAtLeast(minimumSparkScale, 0.001f);
+            _resolvedMaximumSparkScale = SanitizeAtLeast(maximumSparkScale, _resolvedMinimumSparkScale);
+            if (_resolvedMaximumSparkScale < _resolvedMinimumSparkScale)
+                _resolvedMaximumSparkScale = _resolvedMinimumSparkScale;
+
+            _resolvedShortCircuitLowFrequency = SaturateFinite01(shortCircuitLowFrequency);
+            _resolvedShortCircuitHighFrequency = SaturateFinite01(shortCircuitHighFrequency);
+            _resolvedShortCircuitHapticDurationSeconds = SanitizeAtLeast(shortCircuitHapticDurationSeconds, 0.01f);
+            _resolvedShortCircuitHapticFrequencyHz = math.clamp(
+                SanitizeAtLeast(shortCircuitHapticFrequencyHz, 1f),
+                1f,
+                MaxToolHapticFrequencyHz);
+            _resolvedRenderLayer = ClampRenderLayer(renderLayer != 0 ? renderLayer : gameObject.layer);
+        }
+
+        private static float SaturateFinite01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
+        private static float SanitizeAtLeast(float value, float minimum)
+        {
+            float resolved = math.isfinite(value) ? value : minimum;
+            return math.max(minimum, resolved);
+        }
+
+        private static int ClampRenderLayer(int value)
+        {
+            return math.clamp(value, 0, MaximumRenderLayer);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            float4 q = new float4(value.x, value.y, value.z, value.w);
+            return math.all(math.isfinite(q)) && math.lengthsq(q) > 0.000001f;
+        }
+
         private void TryRegisterTick()
         {
-            if (_registeredTick || !Application.isPlaying)
+            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = true;
+            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterTick()
@@ -292,5 +451,12 @@ namespace Hecton8.Gameplay
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredTick = false;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            CacheScalarConfig();
+        }
+#endif
     }
 }

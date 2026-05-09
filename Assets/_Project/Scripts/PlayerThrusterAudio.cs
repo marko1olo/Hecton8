@@ -95,11 +95,17 @@ namespace Hecton8.Audio
         private float _currentPitch;
         private float _modeBlend;
         private bool _registered;
+        private bool _transportCoordinatorLookupAttempted;
         private PlayerTransportFeelContract _transportFeelContractCurrent;
 
         private void Awake()
         {
-            _audioSource = GetComponent<AudioSource>();
+            TryGetComponent(out _audioSource);
+            if (_audioSource == null)
+            {
+                enabled = false;
+                return;
+            }
 
             _audioSource.clip = thrusterLoopClip;
             _audioSource.loop = true;
@@ -111,12 +117,14 @@ namespace Hecton8.Audio
 
             if (playerMovement != null)
             {
-                _playerRb = playerMovement.GetComponent<Rigidbody>();
+                playerMovement.TryGetComponent(out _playerRb);
                 if (playerToolManager == null)
                     playerMovement.TryGetComponent(out playerToolManager);
                 if (playerTransportCoordinator == null)
                     playerMovement.TryGetComponent(out playerTransportCoordinator);
             }
+
+            TryCacheTransportCoordinatorOnce();
 
             _currentVolume = 0f;
             _currentPitch = idlePitch;
@@ -125,6 +133,10 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
+            if (playerTransportCoordinator == null)
+                _transportCoordinatorLookupAttempted = false;
+            TryCacheTransportCoordinatorOnce();
+
             if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
             {
                 if (_audioSource != null && _audioSource.isPlaying)
@@ -155,7 +167,7 @@ namespace Hecton8.Audio
 
         public void Tick(float deltaTime)
         {
-            if (playerMovement == null || _playerRb == null)
+            if (playerMovement == null || _playerRb == null || _audioSource == null)
                 return;
 
             if (thrusterLoopClip == null)
@@ -203,24 +215,21 @@ namespace Hecton8.Audio
             if (transportBoost01 > 0f)
                 targetModeBlend = math.max(targetModeBlend, transportBoost01 * ResolveTransportModeBlendFloor());
 
-            float modeT = 1f - math.exp(-modeFadeSpeed * dt);
+            float modeT = ResolveDecayBlend(modeFadeSpeed, dt);
             _modeBlend = math.lerp(_modeBlend, targetModeBlend, modeT);
 
             float speedFactor = 0f;
             if (_modeBlend > 0.01f)
             {
                 Vector3 velocity = _playerRb.linearVelocity;
-                float speed = math.sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
                 float maxSpeed = playerMovement.CurrentSuit != null
                     ? playerMovement.CurrentSuit.maxSwimSpeed
                     : 12f;
 
-                if (locomotionMode == PlayerLocomotionMode.SurfaceSwim)
-                    speed = math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
-
-                speedFactor = maxSpeed > 0f
-                    ? math.clamp(speed / maxSpeed, 0f, 1f)
-                    : 0f;
+                speedFactor = ResolveSquaredSpeedFactor(
+                    velocity,
+                    maxSpeed,
+                    locomotionMode == PlayerLocomotionMode.SurfaceSwim);
 
                 if (transportBoost01 > 0f)
                     speedFactor = math.max(speedFactor, transportBoost01 * ResolveTransportIdleSpeedFloor());
@@ -239,8 +248,8 @@ namespace Hecton8.Audio
             targetPitch = math.clamp(targetPitch + drivePitchBoostValue, 0.1f, 3f);
             targetPitch = math.lerp(1f, targetPitch, transportAudioScale);
 
-            float volumeT = 1f - math.exp(-volumeResponseSpeed * dt);
-            float pitchT = 1f - math.exp(-pitchResponseSpeed * dt);
+            float volumeT = ResolveDecayBlend(volumeResponseSpeed, dt);
+            float pitchT = ResolveDecayBlend(pitchResponseSpeed, dt);
 
             _currentVolume = math.lerp(_currentVolume, targetVolume, volumeT);
             _currentPitch = math.lerp(_currentPitch, targetPitch, pitchT);
@@ -251,8 +260,7 @@ namespace Hecton8.Audio
 
         private float ResolveTransportBoost01()
         {
-            if (playerTransportCoordinator == null)
-                gameObject.TryGetComponent(out playerTransportCoordinator);
+            TryCacheTransportCoordinatorOnce();
 
             bool coordinatorOwnsTransport = playerTransportCoordinator != null && playerTransportCoordinator.HasActiveTransportSource();
             if (coordinatorOwnsTransport)
@@ -275,8 +283,7 @@ namespace Hecton8.Audio
 
         private PlayerTransportFeelContract ResolveTransportFeelContract()
         {
-            if (playerTransportCoordinator == null)
-                gameObject.TryGetComponent(out playerTransportCoordinator);
+            TryCacheTransportCoordinatorOnce();
 
             bool coordinatorOwnsTransport = playerTransportCoordinator != null && playerTransportCoordinator.HasActiveTransportSource();
             if (coordinatorOwnsTransport)
@@ -336,6 +343,36 @@ namespace Hecton8.Audio
             float downwardSpeed = math.max(0f, -velocity.y);
             float reference = math.max(diveVelocityReference, 0.01f);
             return math.saturate(downwardSpeed / reference);
+        }
+
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
+        }
+
+        private static float ResolveSquaredSpeedFactor(Vector3 velocity, float maxSpeed, bool surfaceOnly)
+        {
+            if (!(maxSpeed > 0f))
+                return 0f;
+
+            float speedSq = surfaceOnly
+                ? velocity.x * velocity.x + velocity.z * velocity.z
+                : velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z;
+            float maxSpeedSq = math.max(maxSpeed * maxSpeed, 0.0001f);
+            return math.saturate(speedSq / maxSpeedSq);
+        }
+
+        private void TryCacheTransportCoordinatorOnce()
+        {
+            if (playerTransportCoordinator != null || _transportCoordinatorLookupAttempted)
+                return;
+
+            _transportCoordinatorLookupAttempted = true;
+            if (playerMovement != null && playerMovement.TryGetComponent(out playerTransportCoordinator))
+                return;
+
+            gameObject.TryGetComponent(out playerTransportCoordinator);
         }
 
         private void TryRegister()

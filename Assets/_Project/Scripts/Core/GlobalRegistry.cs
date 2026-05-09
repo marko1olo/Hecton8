@@ -18,6 +18,7 @@ using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.Interaction;
 using Hecton8.Meta;
+using Hecton8.Modding;
 using Hecton8.Narrative;
 using Hecton8.Optimization;
 using Hecton8.PDA;
@@ -123,6 +124,8 @@ namespace Hecton8.Core
 
         private static IInputService _input;
         private static IInputBindingService _inputBinding;
+        private static InputManager _nativeInputManagerRuntime;
+        private static RaycastBatchHelper _raycastBatchRuntime;
         private static IPhysicsService _physics;
         private static IAudioService _audio;
         private static ISceneService _scene;
@@ -170,6 +173,7 @@ namespace Hecton8.Core
         private static HectonFluidEngine _fluidRuntime;
         private static AbyssalThermalManager _thermodynamicsRuntime;
         private static HectonNarrativeDirector _narrativeDirectorRuntime;
+        private static CorporateOrderSystem _corporateOrderRuntime;
         private static QuestManager _questRuntime;
         private static CullingManager _cullingRuntime;
         private static LODSystemManager _lodSystemRuntime;
@@ -177,6 +181,7 @@ namespace Hecton8.Core
         private static ImpostorSystem _impostorRuntime;
         private static DepthZoneDirector _depthZoneRuntime;
         private static HectonBiolumManager _biolumManagerRuntime;
+        private static HectonBiolumController _biolumControllerRuntime;
         private static LocalizationManager _localizationRuntime;
         private static AudioLogSystem _audioLogRuntime;
         private static AcousticZoneController _acousticZoneRuntime;
@@ -186,6 +191,14 @@ namespace Hecton8.Core
         private static EmergencyServiceRelayDirector _emergencyRelayRuntime;
         private static HectonAtmosphereManager _atmosphereRuntime;
         private static MapMagicBridge _mapMagicRuntime;
+        private static HectonMapMagicVegetationBridge _mapMagicVegetationRuntime;
+        private static ScavengePopulator _scavengePopulatorRuntime;
+        private static ModWorldPersistenceManager _modWorldPersistenceRuntime;
+        private static RunModifierController _runModifierRuntime;
+        private static MigrationDirector _migrationDirectorRuntime;
+        private static BasePollutionManager _basePollutionRuntime;
+        private static EntityChangeManager _entityChangeManagerRuntime;
+        private static PerformanceMonitor _performanceMonitorRuntime;
         private static BeaconNetworkSystem _beaconNetworkRuntime;
         private static ScanLogSystem _scanLogRuntime;
         private static ToolDurabilitySystem _toolDurabilityRuntime;
@@ -214,12 +227,16 @@ namespace Hecton8.Core
         private static DynamicDifficultyDirector _dynamicDifficultyRuntime;
         private static HectonDiscoveryManager _discoveryRuntime;
         private static ResourceScarcityDirector _resourceScarcityRuntime;
+        private static FieldOperationLogSystem _fieldOperationLogRuntime;
         private static PDAExchangeSystem _pdaExchangeRuntime;
         private static PlayerActionController _playerActionRuntime;
         private static PDAMarkerRegistry _pdaMarkerRuntime;
         private static PDAIntrusionManager _pdaIntrusionRuntime;
         private static AmbientWaterMotionManager _ambientWaterMotionRuntime;
         private static SuitUpgradeManager _suitUpgradeRuntime;
+        private static UIAudioFeedback _uiAudioFeedbackRuntime;
+        private static UITooltip _uiTooltipRuntime;
+        private static LoadingScreenController _loadingScreenRuntime;
         private static EndingSystem _endingRuntime;
         private static Atlas6DirectiveSystem _atlas6DirectiveRuntime;
         private static HazardZoneManager _hazardZoneRuntime;
@@ -252,6 +269,7 @@ namespace Hecton8.Core
         private static PlayerRuntimeContextService _playerRuntimeContextRuntime;
         private static PlayerSensoryManager _playerSensoryRuntime;
         private static RuntimePerformanceProfiler _runtimePerformanceProfilerRuntime;
+        private static ConnectionSplineBatchRenderer _connectionSplineBatchRendererRuntime;
         private static HectonHardwareProfile _hardwareProfile;
         private static bool _hasHardwareProfile;
         private static bool _dispatcherRegistrationErrorLogged;
@@ -267,6 +285,62 @@ namespace Hecton8.Core
         private static bool _suppressServiceReboundQueueing;
         private static GameBootstrapper _bootstrapperRuntime;
 
+        static GlobalRegistry()
+        {
+            ConfigureBootstrapRegistryBridge();
+        }
+
+        private static void ConfigureBootstrapRegistryBridge()
+        {
+            BootstrapRegistryBridge.Configure(
+                ResolveBootstrapRegistryBridgeService,
+                RegisterBootstrapRegistryBridgeService,
+                UnregisterBootstrapRegistryBridgeService);
+        }
+
+        private static object ResolveBootstrapRegistryBridgeService(BootstrapRegistryBridgeSlot slot)
+        {
+            switch (slot)
+            {
+                case BootstrapRegistryBridgeSlot.NativeInputManagerRuntime:
+                    return NativeInputManager;
+                case BootstrapRegistryBridgeSlot.UserOptionsRuntime:
+                    return _userOptionsRuntime;
+                default:
+                    return null;
+            }
+        }
+
+        private static void RegisterBootstrapRegistryBridgeService(BootstrapRegistryBridgeSlot slot, object service)
+        {
+            switch (slot)
+            {
+                case BootstrapRegistryBridgeSlot.NativeInputManagerRuntime:
+                    if (service is InputManager inputManager)
+                        RegisterNativeInputManagerRuntime(inputManager);
+                    return;
+                case BootstrapRegistryBridgeSlot.UserOptionsRuntime:
+                    if (service is UserOptionsPersistence userOptions)
+                        RegisterUserOptionsRuntime(userOptions);
+                    return;
+            }
+        }
+
+        private static void UnregisterBootstrapRegistryBridgeService(BootstrapRegistryBridgeSlot slot, object service)
+        {
+            switch (slot)
+            {
+                case BootstrapRegistryBridgeSlot.NativeInputManagerRuntime:
+                    if (service is InputManager inputManager)
+                        UnregisterNativeInputManagerRuntime(inputManager);
+                    return;
+                case BootstrapRegistryBridgeSlot.UserOptionsRuntime:
+                    if (service is UserOptionsPersistence userOptions)
+                        UnregisterUserOptionsRuntime(userOptions);
+                    return;
+            }
+        }
+
         /// <summary>
         /// Registry-owned bootstrap authority. This replaces local singleton ownership in GameBootstrapper.
         /// </summary>
@@ -276,6 +350,11 @@ namespace Hecton8.Core
         /// Registry-owned scene service component before and after interface registration.
         /// </summary>
         internal static SceneRuntimeService SceneRuntime => _sceneRuntime;
+
+        /// <summary>
+        /// Registry-owned shader-bent pipe/relay renderer.
+        /// </summary>
+        internal static ConnectionSplineBatchRenderer ConnectionSplineBatchRenderer => _connectionSplineBatchRendererRuntime;
 
         /// <summary>
         /// Registry-owned environment context component before and after interface registration.
@@ -350,6 +429,9 @@ namespace Hecton8.Core
         {
             get
             {
+                if (_nativeInputManagerRuntime != null)
+                    return _nativeInputManagerRuntime;
+
                 if (_input is InputDispatcher dispatcher)
                     return dispatcher.NativeInputManager;
 
@@ -361,6 +443,11 @@ namespace Hecton8.Core
         /// Registered input binding service slot.
         /// </summary>
         public static IInputBindingService InputBinding => _inputBinding;
+
+        /// <summary>
+        /// Optional registry-owned batched raycast helper.
+        /// </summary>
+        public static RaycastBatchHelper RaycastBatch => _raycastBatchRuntime;
 
         /// <summary>
         /// Registered input rebind service slot for mod/UI callers that should not know about Input System assets.
@@ -675,6 +762,11 @@ namespace Hecton8.Core
         public static HectonNarrativeDirector NarrativeDirector => _narrativeDirectorRuntime;
 
         /// <summary>
+        /// Registered corporate-order runtime owner.
+        /// </summary>
+        public static CorporateOrderSystem CorporateOrders => _corporateOrderRuntime;
+
+        /// <summary>
         /// Registered quest runtime owner.
         /// </summary>
         public static QuestManager Quest => _questRuntime;
@@ -708,6 +800,11 @@ namespace Hecton8.Core
         /// Registered world bioluminescence runtime owner.
         /// </summary>
         public static HectonBiolumManager BiolumManager => _biolumManagerRuntime;
+
+        /// <summary>
+        /// Registered bioluminescence shader-controller runtime owner.
+        /// </summary>
+        public static HectonBiolumController BiolumController => _biolumControllerRuntime;
 
         /// <summary>
         /// Registered localization runtime owner.
@@ -758,6 +855,46 @@ namespace Hecton8.Core
         /// Registered MapMagic bridge runtime owner.
         /// </summary>
         public static MapMagicBridge MapMagic => _mapMagicRuntime;
+
+        /// <summary>
+        /// Registered MapMagic vegetation runtime owner.
+        /// </summary>
+        public static HectonMapMagicVegetationBridge MapMagicVegetation => _mapMagicVegetationRuntime;
+
+        /// <summary>
+        /// Registered scavenge populator runtime owner.
+        /// </summary>
+        public static ScavengePopulator ScavengePopulator => _scavengePopulatorRuntime;
+
+        /// <summary>
+        /// Registered mod world persistence runtime owner.
+        /// </summary>
+        public static ModWorldPersistenceManager ModWorldPersistence => _modWorldPersistenceRuntime;
+
+        /// <summary>
+        /// Registered run-modifier runtime owner.
+        /// </summary>
+        public static RunModifierController RunModifiers => _runModifierRuntime;
+
+        /// <summary>
+        /// Registered global fauna migration runtime owner.
+        /// </summary>
+        public static MigrationDirector Migration => _migrationDirectorRuntime;
+
+        /// <summary>
+        /// Registered base-pollution runtime owner.
+        /// </summary>
+        public static BasePollutionManager BasePollution => _basePollutionRuntime;
+
+        /// <summary>
+        /// Registered entity-change manager runtime owner.
+        /// </summary>
+        public static EntityChangeManager EntityChanges => _entityChangeManagerRuntime;
+
+        /// <summary>
+        /// Registered core performance monitor runtime owner.
+        /// </summary>
+        public static PerformanceMonitor PerformanceMonitor => _performanceMonitorRuntime;
 
         /// <summary>
         /// Registered beacon-network runtime owner.
@@ -901,6 +1038,11 @@ namespace Hecton8.Core
         public static ResourceScarcityDirector ResourceScarcity => _resourceScarcityRuntime;
 
         /// <summary>
+        /// Registered field-operation log runtime owner.
+        /// </summary>
+        public static FieldOperationLogSystem FieldOperations => _fieldOperationLogRuntime;
+
+        /// <summary>
         /// Registered PDA exchange runtime owner.
         /// </summary>
         public static PDAExchangeSystem PDAExchange => _pdaExchangeRuntime;
@@ -929,6 +1071,21 @@ namespace Hecton8.Core
         /// Registered suit upgrade runtime owner.
         /// </summary>
         public static SuitUpgradeManager SuitUpgrades => _suitUpgradeRuntime;
+
+        /// <summary>
+        /// Registered UI audio feedback runtime owner.
+        /// </summary>
+        public static UIAudioFeedback UIAudioFeedback => _uiAudioFeedbackRuntime;
+
+        /// <summary>
+        /// Registered UI tooltip runtime owner.
+        /// </summary>
+        public static UITooltip UITooltip => _uiTooltipRuntime;
+
+        /// <summary>
+        /// Registered loading screen runtime owner.
+        /// </summary>
+        public static LoadingScreenController LoadingScreen => _loadingScreenRuntime;
 
         /// <summary>
         /// Registered ending runtime owner.
@@ -1126,8 +1283,11 @@ namespace Hecton8.Core
         private static void ResetStaticState()
         {
             ShutdownRegisteredServices();
+            ConfigureBootstrapRegistryBridge();
             _input = null;
             _inputBinding = null;
+            _nativeInputManagerRuntime = null;
+            _raycastBatchRuntime = null;
             _physics = null;
             _audio = null;
             _scene = null;
@@ -1171,6 +1331,7 @@ namespace Hecton8.Core
             _fluidRuntime = null;
             _thermodynamicsRuntime = null;
             _narrativeDirectorRuntime = null;
+            _corporateOrderRuntime = null;
             _questRuntime = null;
             _cullingRuntime = null;
             _lodSystemRuntime = null;
@@ -1178,6 +1339,7 @@ namespace Hecton8.Core
             _impostorRuntime = null;
             _depthZoneRuntime = null;
             _biolumManagerRuntime = null;
+            _biolumControllerRuntime = null;
             _localizationRuntime = null;
             _audioLogRuntime = null;
             _acousticZoneRuntime = null;
@@ -1188,6 +1350,14 @@ namespace Hecton8.Core
             _atmosphereRuntime = null;
             _celestialEngineRuntime = null;
             _mapMagicRuntime = null;
+            _mapMagicVegetationRuntime = null;
+            _scavengePopulatorRuntime = null;
+            _modWorldPersistenceRuntime = null;
+            _runModifierRuntime = null;
+            _migrationDirectorRuntime = null;
+            _basePollutionRuntime = null;
+            _entityChangeManagerRuntime = null;
+            _performanceMonitorRuntime = null;
             _beaconNetworkRuntime = null;
             _scanLogRuntime = null;
             _toolDurabilityRuntime = null;
@@ -1216,12 +1386,16 @@ namespace Hecton8.Core
             _dynamicDifficultyRuntime = null;
             _discoveryRuntime = null;
             _resourceScarcityRuntime = null;
+            _fieldOperationLogRuntime = null;
             _pdaExchangeRuntime = null;
             _playerActionRuntime = null;
             _pdaMarkerRuntime = null;
             _pdaIntrusionRuntime = null;
             _ambientWaterMotionRuntime = null;
             _suitUpgradeRuntime = null;
+            _uiAudioFeedbackRuntime = null;
+            _uiTooltipRuntime = null;
+            _loadingScreenRuntime = null;
             _endingRuntime = null;
             _atlas6DirectiveRuntime = null;
             _hazardZoneRuntime = null;
@@ -1254,6 +1428,7 @@ namespace Hecton8.Core
             _playerRuntimeContextRuntime = null;
             _playerSensoryRuntime = null;
             _runtimePerformanceProfilerRuntime = null;
+            _connectionSplineBatchRendererRuntime = null;
             _hardwareProfile = default;
             _hasHardwareProfile = false;
             _dispatcherRegistrationErrorLogged = false;
@@ -1352,6 +1527,22 @@ namespace Hecton8.Core
         public static void RegisterInputService(IInputService instance)
         {
             RegisterService(ref _input, instance);
+        }
+
+        /// <summary>
+        /// Registers the bootstrap-owned native input action owner.
+        /// </summary>
+        public static void RegisterNativeInputManagerRuntime(InputManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _nativeInputManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the optional batched raycast helper.
+        /// </summary>
+        public static void RegisterRaycastBatchRuntime(RaycastBatchHelper instance)
+        {
+            RegisterServiceAllowSameInstance(ref _raycastBatchRuntime, instance);
         }
 
         /// <summary>
@@ -1792,6 +1983,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative corporate-order runtime owner.
+        /// </summary>
+        public static void RegisterCorporateOrderRuntime(CorporateOrderSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _corporateOrderRuntime, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative quest runtime owner.
         /// </summary>
         public static void RegisterQuestRuntime(QuestManager instance)
@@ -1848,6 +2047,14 @@ namespace Hecton8.Core
         public static void RegisterBiolumManagerRuntime(HectonBiolumManager instance)
         {
             RegisterServiceAllowSameInstance(ref _biolumManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative bioluminescence shader-controller runtime owner.
+        /// </summary>
+        public static void RegisterBiolumControllerRuntime(HectonBiolumController instance)
+        {
+            RegisterServiceAllowSameInstance(ref _biolumControllerRuntime, instance);
         }
 
         /// <summary>
@@ -1953,6 +2160,70 @@ namespace Hecton8.Core
         public static void RegisterMapMagicRuntime(MapMagicBridge instance)
         {
             RegisterServiceAllowSameInstance(ref _mapMagicRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative MapMagic vegetation runtime owner.
+        /// </summary>
+        public static void RegisterMapMagicVegetationRuntime(HectonMapMagicVegetationBridge instance)
+        {
+            RegisterServiceAllowSameInstance(ref _mapMagicVegetationRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative scavenge populator runtime owner.
+        /// </summary>
+        public static void RegisterScavengePopulatorRuntime(ScavengePopulator instance)
+        {
+            RegisterServiceAllowSameInstance(ref _scavengePopulatorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative mod world persistence runtime owner.
+        /// </summary>
+        public static void RegisterModWorldPersistenceRuntime(ModWorldPersistenceManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _modWorldPersistenceRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative run-modifier runtime owner.
+        /// </summary>
+        public static void RegisterRunModifierRuntime(RunModifierController instance)
+        {
+            RegisterServiceAllowSameInstance(ref _runModifierRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative global fauna migration runtime owner.
+        /// </summary>
+        public static void RegisterMigrationDirectorRuntime(MigrationDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _migrationDirectorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative base-pollution runtime owner.
+        /// </summary>
+        public static void RegisterBasePollutionRuntime(BasePollutionManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _basePollutionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative entity-change manager runtime owner.
+        /// </summary>
+        public static void RegisterEntityChangeManagerRuntime(EntityChangeManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _entityChangeManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative core performance monitor runtime owner.
+        /// </summary>
+        public static void RegisterPerformanceMonitorRuntime(PerformanceMonitor instance)
+        {
+            RegisterServiceAllowSameInstance(ref _performanceMonitorRuntime, instance);
         }
 
         /// <summary>
@@ -2180,6 +2451,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative field-operation log runtime owner.
+        /// </summary>
+        public static void RegisterFieldOperationLogRuntime(FieldOperationLogSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _fieldOperationLogRuntime, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative PDA exchange runtime owner.
         /// </summary>
         public static void RegisterPDAExchangeRuntime(PDAExchangeSystem instance)
@@ -2225,6 +2504,30 @@ namespace Hecton8.Core
         public static void RegisterSuitUpgradeRuntime(SuitUpgradeManager instance)
         {
             RegisterServiceAllowSameInstance(ref _suitUpgradeRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative UI audio feedback runtime owner.
+        /// </summary>
+        public static void RegisterUIAudioFeedbackRuntime(UIAudioFeedback instance)
+        {
+            RegisterServiceAllowSameInstance(ref _uiAudioFeedbackRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative UI tooltip runtime owner.
+        /// </summary>
+        public static void RegisterUITooltipRuntime(UITooltip instance)
+        {
+            RegisterServiceAllowSameInstance(ref _uiTooltipRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative loading screen runtime owner.
+        /// </summary>
+        public static void RegisterLoadingScreenRuntime(LoadingScreenController instance)
+        {
+            RegisterServiceAllowSameInstance(ref _loadingScreenRuntime, instance);
         }
 
         /// <summary>
@@ -2407,6 +2710,22 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative shader-bent connection renderer runtime owner.
+        /// </summary>
+        internal static void RegisterConnectionSplineBatchRendererRuntime(ConnectionSplineBatchRenderer instance)
+        {
+            RegisterServiceAllowSameInstance(ref _connectionSplineBatchRendererRuntime, instance);
+        }
+
+        /// <summary>
+        /// Clears the authoritative shader-bent connection renderer runtime owner.
+        /// </summary>
+        internal static void UnregisterConnectionSplineBatchRendererRuntime(ConnectionSplineBatchRenderer instance)
+        {
+            UnregisterService(ref _connectionSplineBatchRendererRuntime, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative environment runtime component before interface boot.
         /// </summary>
         internal static void RegisterEnvironmentRuntimeContextRuntime(EnvironmentRuntimeContextService instance)
@@ -2523,6 +2842,22 @@ namespace Hecton8.Core
         public static void UnregisterInputService(IInputService instance)
         {
             UnregisterService(ref _input, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the bootstrap-owned native input action owner if the owner matches.
+        /// </summary>
+        public static void UnregisterNativeInputManagerRuntime(InputManager instance)
+        {
+            UnregisterService(ref _nativeInputManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the optional batched raycast helper if the owner matches.
+        /// </summary>
+        public static void UnregisterRaycastBatchRuntime(RaycastBatchHelper instance)
+        {
+            UnregisterService(ref _raycastBatchRuntime, instance);
         }
 
         /// <summary>
@@ -2951,6 +3286,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current corporate-order runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterCorporateOrderRuntime(CorporateOrderSystem instance)
+        {
+            UnregisterService(ref _corporateOrderRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current quest runtime owner if the owner matches.
         /// </summary>
         public static void UnregisterQuestRuntime(QuestManager instance)
@@ -3007,6 +3350,14 @@ namespace Hecton8.Core
         public static void UnregisterBiolumManagerRuntime(HectonBiolumManager instance)
         {
             UnregisterService(ref _biolumManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current bioluminescence shader-controller runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterBiolumControllerRuntime(HectonBiolumController instance)
+        {
+            UnregisterService(ref _biolumControllerRuntime, instance);
         }
 
         /// <summary>
@@ -3095,6 +3446,70 @@ namespace Hecton8.Core
         public static void UnregisterMapMagicRuntime(MapMagicBridge instance)
         {
             UnregisterService(ref _mapMagicRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current MapMagic vegetation runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterMapMagicVegetationRuntime(HectonMapMagicVegetationBridge instance)
+        {
+            UnregisterService(ref _mapMagicVegetationRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current scavenge populator runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterScavengePopulatorRuntime(ScavengePopulator instance)
+        {
+            UnregisterService(ref _scavengePopulatorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current mod world persistence runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterModWorldPersistenceRuntime(ModWorldPersistenceManager instance)
+        {
+            UnregisterService(ref _modWorldPersistenceRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current run-modifier runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterRunModifierRuntime(RunModifierController instance)
+        {
+            UnregisterService(ref _runModifierRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current global fauna migration runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterMigrationDirectorRuntime(MigrationDirector instance)
+        {
+            UnregisterService(ref _migrationDirectorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current base-pollution runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterBasePollutionRuntime(BasePollutionManager instance)
+        {
+            UnregisterService(ref _basePollutionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current entity-change manager runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterEntityChangeManagerRuntime(EntityChangeManager instance)
+        {
+            UnregisterService(ref _entityChangeManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current core performance monitor runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterPerformanceMonitorRuntime(PerformanceMonitor instance)
+        {
+            UnregisterService(ref _performanceMonitorRuntime, instance);
         }
 
         /// <summary>
@@ -3322,6 +3737,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current field-operation log runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterFieldOperationLogRuntime(FieldOperationLogSystem instance)
+        {
+            UnregisterService(ref _fieldOperationLogRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current PDA exchange runtime owner if the owner matches.
         /// </summary>
         public static void UnregisterPDAExchangeRuntime(PDAExchangeSystem instance)
@@ -3367,6 +3790,30 @@ namespace Hecton8.Core
         public static void UnregisterSuitUpgradeRuntime(SuitUpgradeManager instance)
         {
             UnregisterService(ref _suitUpgradeRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current UI audio feedback runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterUIAudioFeedbackRuntime(UIAudioFeedback instance)
+        {
+            UnregisterService(ref _uiAudioFeedbackRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current UI tooltip runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterUITooltipRuntime(UITooltip instance)
+        {
+            UnregisterService(ref _uiTooltipRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current loading screen runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterLoadingScreenRuntime(LoadingScreenController instance)
+        {
+            UnregisterService(ref _loadingScreenRuntime, instance);
         }
 
         /// <summary>
@@ -3548,19 +3995,35 @@ namespace Hecton8.Core
         /// <param name="layer">Dispatcher priority lane.</param>
         public static void RegisterUpdatable(IUpdatable item, PriorityLayer layer)
         {
+            TryRegisterUpdatable(item, layer);
+        }
+
+        /// <summary>
+        /// Registers an update owner into both the global bucket and its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Update owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        /// <returns>True when both registry and dispatcher lane accepted the item.</returns>
+        public static bool TryRegisterUpdatable(IUpdatable item, PriorityLayer layer)
+        {
             if (item == null)
-                return;
+                return false;
 
             if (!Application.isPlaying)
-                return;
+                return false;
 
             if (!TryEnsureDispatcherRegistration())
-                return;
+                return false;
             if (!_updatables.TryRegister(item))
-                return;
+                return false;
 
             if (!SystemDispatcher.Register(item, layer))
+            {
                 _updatables.Unregister(item);
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -3570,19 +4033,35 @@ namespace Hecton8.Core
         /// <param name="layer">Dispatcher priority lane.</param>
         public static void RegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
         {
+            TryRegisterFixedTickable(item, layer);
+        }
+
+        /// <summary>
+        /// Registers a fixed-update owner into both the global bucket and its fixed dispatcher lane.
+        /// </summary>
+        /// <param name="item">Fixed-update owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        /// <returns>True when both registry and dispatcher lane accepted the item.</returns>
+        public static bool TryRegisterFixedTickable(IFixedTickable item, PriorityLayer layer)
+        {
             if (item == null)
-                return;
+                return false;
 
             if (!Application.isPlaying)
-                return;
+                return false;
 
             if (!TryEnsureDispatcherRegistration())
-                return;
+                return false;
             if (!_fixedTickables.TryRegister(item))
-                return;
+                return false;
 
             if (!SystemDispatcher.Register(item, layer))
+            {
                 _fixedTickables.Unregister(item);
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -3592,19 +4071,35 @@ namespace Hecton8.Core
         /// <param name="layer">Dispatcher priority lane.</param>
         public static void RegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
         {
+            TryRegisterSlowTickable(item, layer);
+        }
+
+        /// <summary>
+        /// Registers a slow-tick owner into both the global bucket and its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Slow-tick owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        /// <returns>True when both registry and dispatcher lane accepted the item.</returns>
+        public static bool TryRegisterSlowTickable(ISlowTickable item, PriorityLayer layer)
+        {
             if (item == null)
-                return;
+                return false;
 
             if (!Application.isPlaying)
-                return;
+                return false;
 
             if (!TryEnsureDispatcherRegistration())
-                return;
+                return false;
             if (!_slowTickables.TryRegister(item))
-                return;
+                return false;
 
             if (!SystemDispatcher.Register(item, layer))
+            {
                 _slowTickables.Unregister(item);
+                return false;
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -3614,16 +4109,27 @@ namespace Hecton8.Core
         /// <param name="layer">Dispatcher priority lane.</param>
         public static void RegisterLateFrameTickable(ILateFrameTickable item, PriorityLayer layer)
         {
+            TryRegisterLateFrameTickable(item, layer);
+        }
+
+        /// <summary>
+        /// Registers an end-of-frame owner into its dispatcher late-frame lane.
+        /// </summary>
+        /// <param name="item">Late-frame owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        /// <returns>True when the dispatcher lane accepted the item.</returns>
+        public static bool TryRegisterLateFrameTickable(ILateFrameTickable item, PriorityLayer layer)
+        {
             if (item == null)
-                return;
+                return false;
 
             if (!Application.isPlaying)
-                return;
+                return false;
 
             if (!TryEnsureDispatcherRegistration())
-                return;
+                return false;
 
-            SystemDispatcher.Register(item, layer);
+            return SystemDispatcher.Register(item, layer);
         }
 
         /// <summary>
@@ -3633,16 +4139,27 @@ namespace Hecton8.Core
         /// <param name="layer">Dispatcher priority lane.</param>
         public static void RegisterPostFixedTickable(IPostFixedTickable item, PriorityLayer layer)
         {
+            TryRegisterPostFixedTickable(item, layer);
+        }
+
+        /// <summary>
+        /// Registers a post-fixed-step owner into its dispatcher lane.
+        /// </summary>
+        /// <param name="item">Post-fixed owner.</param>
+        /// <param name="layer">Dispatcher priority lane.</param>
+        /// <returns>True when the dispatcher lane accepted the item.</returns>
+        public static bool TryRegisterPostFixedTickable(IPostFixedTickable item, PriorityLayer layer)
+        {
             if (item == null)
-                return;
+                return false;
 
             if (!Application.isPlaying)
-                return;
+                return false;
 
             if (!TryEnsureDispatcherRegistration())
-                return;
+                return false;
 
-            SystemDispatcher.Register(item, layer);
+            return SystemDispatcher.Register(item, layer);
         }
 
         /// <summary>
@@ -3651,11 +4168,17 @@ namespace Hecton8.Core
         /// <param name="listener">Hot-swap listener.</param>
         public static void RegisterHotSwapListener(IGlobalRegistryHotSwapListener listener)
         {
-            if (listener == null)
-                return;
+            TryRegisterHotSwapListener(listener);
+        }
 
-            if (!_hotSwapListeners.Contains(listener))
-                _hotSwapListeners.TryRegister(listener);
+        /// <summary>
+        /// Attempts to register a service hot-swap listener without a caller-side registry scan.
+        /// </summary>
+        /// <param name="listener">Hot-swap listener.</param>
+        /// <returns>True when the listener was newly registered.</returns>
+        public static bool TryRegisterHotSwapListener(IGlobalRegistryHotSwapListener listener)
+        {
+            return listener != null && _hotSwapListeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -3666,8 +4189,7 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            if (!_registryEventListeners.Contains(listener))
-                _registryEventListeners.TryRegister(listener);
+            _registryEventListeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -3744,10 +4266,17 @@ namespace Hecton8.Core
         /// <param name="listener">Hot-swap listener.</param>
         public static void UnregisterHotSwapListener(IGlobalRegistryHotSwapListener listener)
         {
-            if (listener == null)
-                return;
+            TryUnregisterHotSwapListener(listener);
+        }
 
-            _hotSwapListeners.Unregister(listener);
+        /// <summary>
+        /// Attempts to unregister a service hot-swap listener without miss logging or a caller-side scan.
+        /// </summary>
+        /// <param name="listener">Hot-swap listener.</param>
+        /// <returns>True when the listener was present and removed.</returns>
+        public static bool TryUnregisterHotSwapListener(IGlobalRegistryHotSwapListener listener)
+        {
+            return listener != null && _hotSwapListeners.TryUnregister(listener);
         }
 
         /// <summary>
@@ -3758,8 +4287,7 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            if (_registryEventListeners.Contains(listener))
-                _registryEventListeners.Unregister(listener);
+            _registryEventListeners.TryUnregister(listener);
         }
 
         /// <summary>
@@ -4128,12 +4656,28 @@ namespace Hecton8.Core
             {
                 _pendingServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
                 NativeMemorySentinel.RegisterNativeQueue(_pendingServiceRebounds, MaxPendingServiceRebounds, nameof(GlobalRegistry), nameof(_pendingServiceRebounds), NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingServiceRebounds, MaxPendingServiceRebounds);
             }
 
             if (!_nextFrameServiceRebounds.IsCreated)
             {
                 _nextFrameServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - next-frame service rebound event lane - owner: GlobalRegistry
                 NativeMemorySentinel.RegisterNativeQueue(_nextFrameServiceRebounds, MaxPendingServiceRebounds, nameof(GlobalRegistry), nameof(_nextFrameServiceRebounds), NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameServiceRebounds, MaxPendingServiceRebounds);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -4227,6 +4771,8 @@ namespace Hecton8.Core
             switch (serviceSlot)
             {
                 case GlobalRegistryServiceSlot.Input: return _input;
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime: return _nativeInputManagerRuntime;
+                case GlobalRegistryServiceSlot.RaycastBatchRuntime: return _raycastBatchRuntime;
                 case GlobalRegistryServiceSlot.Physics: return _physics;
                 case GlobalRegistryServiceSlot.Audio: return _audio;
                 case GlobalRegistryServiceSlot.Scene: return _scene;
@@ -4255,6 +4801,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.FluidRuntime: return _fluidRuntime;
                 case GlobalRegistryServiceSlot.ThermodynamicsRuntime: return _thermodynamicsRuntime;
                 case GlobalRegistryServiceSlot.NarrativeDirectorRuntime: return _narrativeDirectorRuntime;
+                case GlobalRegistryServiceSlot.CorporateOrderRuntime: return _corporateOrderRuntime;
                 case GlobalRegistryServiceSlot.QuestRuntime: return _questRuntime;
                 case GlobalRegistryServiceSlot.TickManager: return _tickManager;
                 case GlobalRegistryServiceSlot.Dispatcher: return _dispatcher;
@@ -4293,6 +4840,7 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.WorldStateRuntime: return _worldStateRuntime;
                 case GlobalRegistryServiceSlot.UserOptionsRuntime: return _userOptionsRuntime;
                 case GlobalRegistryServiceSlot.BiolumManagerRuntime: return _biolumManagerRuntime;
+                case GlobalRegistryServiceSlot.BiolumControllerRuntime: return _biolumControllerRuntime;
                 case GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime: return _abyssalFluidDecalRuntime;
                 case GlobalRegistryServiceSlot.SargassumDragRuntime: return _sargassumDragRuntime;
                 case GlobalRegistryServiceSlot.SargassumCutRuntime: return _sargassumCutRuntime;
@@ -4308,12 +4856,16 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.DynamicDifficultyRuntime: return _dynamicDifficultyRuntime;
                 case GlobalRegistryServiceSlot.DiscoveryRuntime: return _discoveryRuntime;
                 case GlobalRegistryServiceSlot.ResourceScarcityRuntime: return _resourceScarcityRuntime;
+                case GlobalRegistryServiceSlot.FieldOperationLogRuntime: return _fieldOperationLogRuntime;
                 case GlobalRegistryServiceSlot.PDAExchangeRuntime: return _pdaExchangeRuntime;
                 case GlobalRegistryServiceSlot.PlayerActionRuntime: return _playerActionRuntime;
                 case GlobalRegistryServiceSlot.PDAMarkerRuntime: return _pdaMarkerRuntime;
                 case GlobalRegistryServiceSlot.PDAIntrusionRuntime: return _pdaIntrusionRuntime;
                 case GlobalRegistryServiceSlot.AmbientWaterMotionRuntime: return _ambientWaterMotionRuntime;
                 case GlobalRegistryServiceSlot.SuitUpgradeRuntime: return _suitUpgradeRuntime;
+                case GlobalRegistryServiceSlot.UIAudioFeedbackRuntime: return _uiAudioFeedbackRuntime;
+                case GlobalRegistryServiceSlot.UITooltipRuntime: return _uiTooltipRuntime;
+                case GlobalRegistryServiceSlot.LoadingScreenRuntime: return _loadingScreenRuntime;
                 case GlobalRegistryServiceSlot.EndingRuntime: return _endingRuntime;
                 case GlobalRegistryServiceSlot.Atlas6DirectiveRuntime: return _atlas6DirectiveRuntime;
                 case GlobalRegistryServiceSlot.HazardZoneRuntime: return _hazardZoneRuntime;
@@ -4334,6 +4886,14 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.CrashTelemetryRuntime: return _crashTelemetryRuntime;
                 case GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime: return _playerCriticalAudioRuntime;
                 case GlobalRegistryServiceSlot.MapMagicRuntime: return _mapMagicRuntime;
+                case GlobalRegistryServiceSlot.MapMagicVegetationRuntime: return _mapMagicVegetationRuntime;
+                case GlobalRegistryServiceSlot.ScavengePopulatorRuntime: return _scavengePopulatorRuntime;
+                case GlobalRegistryServiceSlot.ModWorldPersistenceRuntime: return _modWorldPersistenceRuntime;
+                case GlobalRegistryServiceSlot.RunModifierRuntime: return _runModifierRuntime;
+                case GlobalRegistryServiceSlot.MigrationDirectorRuntime: return _migrationDirectorRuntime;
+                case GlobalRegistryServiceSlot.BasePollutionRuntime: return _basePollutionRuntime;
+                case GlobalRegistryServiceSlot.EntityChangeManagerRuntime: return _entityChangeManagerRuntime;
+                case GlobalRegistryServiceSlot.PerformanceMonitorRuntime: return _performanceMonitorRuntime;
                 case GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime: return _proceduralFieldSamplerRuntime;
                 case GlobalRegistryServiceSlot.ResourceDistributionRuntime: return _resourceDistributionRuntime;
                 case GlobalRegistryServiceSlot.RandomEventRuntime: return _randomEventRuntime;
@@ -4347,17 +4907,32 @@ namespace Hecton8.Core
                 case GlobalRegistryServiceSlot.UnderwaterVisualsRuntime: return _underwaterVisualsRuntime;
                 case GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime: return _sargassumMicroFaunaRuntime;
                 case GlobalRegistryServiceSlot.FloatingOriginRuntime: return _floatingOriginRuntime;
+                case GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime: return _connectionSplineBatchRendererRuntime;
                 default: return null;
             }
         }
 
         private static void ShutdownRegisteredServices()
         {
-            for (int slot = 0; slot <= (int)GlobalRegistryServiceSlot.VRSomaticProvider; slot++)
+            for (int slot = 0; slot < (int)GlobalRegistryServiceSlot.Unknown; slot++)
             {
                 object service = ResolveRegisteredServiceObject((GlobalRegistryServiceSlot)slot);
                 if (service is IServiceShutdown shutdown)
-                    shutdown.OnServiceShutdown();
+                    ShutdownRegisteredService(shutdown);
+            }
+        }
+
+        private static void ShutdownRegisteredService(IServiceShutdown shutdown)
+        {
+            try
+            {
+                shutdown.OnServiceShutdown();
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
             }
         }
 
@@ -4377,7 +4952,7 @@ namespace Hecton8.Core
                 if (listener is IGlobalRegistryHotSwapRefListener refListener)
                     refListener.OnGlobalRegistryServiceRebound(serviceSlot, ref reboundService);
 
-                listener.OnGlobalRegistryServiceReplaced(serviceSlot, previousService, currentService);
+                listener.OnGlobalRegistryServiceReplaced(serviceSlot, previousService, reboundService);
             }
         }
 
@@ -4386,6 +4961,8 @@ namespace Hecton8.Core
             Type serviceType = typeof(T);
             if (serviceType == typeof(IInputService)) return GlobalRegistryServiceSlot.Input;
             if (serviceType == typeof(IInputBindingService)) return GlobalRegistryServiceSlot.InputBinding;
+            if (serviceType == typeof(InputManager)) return GlobalRegistryServiceSlot.NativeInputManagerRuntime;
+            if (serviceType == typeof(RaycastBatchHelper)) return GlobalRegistryServiceSlot.RaycastBatchRuntime;
             if (serviceType == typeof(IPhysicsService)) return GlobalRegistryServiceSlot.Physics;
             if (serviceType == typeof(IAudioService)) return GlobalRegistryServiceSlot.Audio;
             if (serviceType == typeof(ISceneService)) return GlobalRegistryServiceSlot.Scene;
@@ -4415,6 +4992,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(IWorldSeedProvider)) return GlobalRegistryServiceSlot.WorldSeedProvider;
             if (serviceType == typeof(WorldProceduralFieldSampler)) return GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime;
             if (serviceType == typeof(ResourceDistributionDirector)) return GlobalRegistryServiceSlot.ResourceDistributionRuntime;
+            if (serviceType == typeof(HectonMapMagicVegetationBridge)) return GlobalRegistryServiceSlot.MapMagicVegetationRuntime;
             if (serviceType == typeof(WorldGenerativeGeologyTerrainSeamApplier)) return GlobalRegistryServiceSlot.GeologyTerrainSeamRuntime;
             if (serviceType == typeof(WorldGenerativeGeologyVoxelBridgeDirector)) return GlobalRegistryServiceSlot.GeologyVoxelBridgeRuntime;
             if (serviceType == typeof(HectonVoxelEngine)) return GlobalRegistryServiceSlot.VoxelEngineRuntime;
@@ -4432,6 +5010,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;
             if (serviceType == typeof(AbyssalThermalManager)) return GlobalRegistryServiceSlot.ThermodynamicsRuntime;
             if (serviceType == typeof(HectonNarrativeDirector)) return GlobalRegistryServiceSlot.NarrativeDirectorRuntime;
+            if (serviceType == typeof(CorporateOrderSystem)) return GlobalRegistryServiceSlot.CorporateOrderRuntime;
             if (serviceType == typeof(QuestManager)) return GlobalRegistryServiceSlot.QuestRuntime;
             if (serviceType == typeof(CullingManager)) return GlobalRegistryServiceSlot.CullingRuntime;
             if (serviceType == typeof(LODSystemManager)) return GlobalRegistryServiceSlot.LODSystemRuntime;
@@ -4439,6 +5018,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(ImpostorSystem)) return GlobalRegistryServiceSlot.ImpostorRuntime;
             if (serviceType == typeof(DepthZoneDirector)) return GlobalRegistryServiceSlot.DepthZoneRuntime;
             if (serviceType == typeof(HectonBiolumManager)) return GlobalRegistryServiceSlot.BiolumManagerRuntime;
+            if (serviceType == typeof(HectonBiolumController)) return GlobalRegistryServiceSlot.BiolumControllerRuntime;
             if (serviceType == typeof(LocalizationManager)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(AudioLogSystem)) return GlobalRegistryServiceSlot.AudioLogRuntime;
             if (serviceType == typeof(CrashTelemetryBuffer)) return GlobalRegistryServiceSlot.CrashTelemetryRuntime;
@@ -4450,6 +5030,13 @@ namespace Hecton8.Core
             if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
             if (serviceType == typeof(HectonAtmosphereManager)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
             if (serviceType == typeof(MapMagicBridge)) return GlobalRegistryServiceSlot.MapMagicRuntime;
+            if (serviceType == typeof(ScavengePopulator)) return GlobalRegistryServiceSlot.ScavengePopulatorRuntime;
+            if (serviceType == typeof(ModWorldPersistenceManager)) return GlobalRegistryServiceSlot.ModWorldPersistenceRuntime;
+            if (serviceType == typeof(RunModifierController)) return GlobalRegistryServiceSlot.RunModifierRuntime;
+            if (serviceType == typeof(MigrationDirector)) return GlobalRegistryServiceSlot.MigrationDirectorRuntime;
+            if (serviceType == typeof(BasePollutionManager)) return GlobalRegistryServiceSlot.BasePollutionRuntime;
+            if (serviceType == typeof(EntityChangeManager)) return GlobalRegistryServiceSlot.EntityChangeManagerRuntime;
+            if (serviceType == typeof(PerformanceMonitor)) return GlobalRegistryServiceSlot.PerformanceMonitorRuntime;
             if (serviceType == typeof(BeaconNetworkSystem)) return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
             if (serviceType == typeof(ScanLogSystem)) return GlobalRegistryServiceSlot.ScanLogRuntime;
             if (serviceType == typeof(ToolDurabilitySystem)) return GlobalRegistryServiceSlot.ToolDurabilityRuntime;
@@ -4470,6 +5057,11 @@ namespace Hecton8.Core
             if (serviceType == typeof(SargassumCutManager)) return GlobalRegistryServiceSlot.SargassumCutRuntime;
             if (serviceType == typeof(SargassumMicroFaunaBoids)) return GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime;
             if (serviceType == typeof(HectonFloatingOrigin)) return GlobalRegistryServiceSlot.FloatingOriginRuntime;
+            if (serviceType == typeof(IConnectionSplineBatchRendererService) ||
+                serviceType == typeof(ConnectionSplineBatchRenderer))
+            {
+                return GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime;
+            }
             if (serviceType == typeof(SoundscapeSystem)) return GlobalRegistryServiceSlot.SoundscapeRuntime;
             if (serviceType == typeof(EnvironmentalStrainManager)) return GlobalRegistryServiceSlot.EnvironmentalStrainRuntime;
             if (serviceType == typeof(EcosystemHealthDirector)) return GlobalRegistryServiceSlot.EcosystemHealthRuntime;
@@ -4478,12 +5070,16 @@ namespace Hecton8.Core
             if (serviceType == typeof(DynamicDifficultyDirector)) return GlobalRegistryServiceSlot.DynamicDifficultyRuntime;
             if (serviceType == typeof(HectonDiscoveryManager)) return GlobalRegistryServiceSlot.DiscoveryRuntime;
             if (serviceType == typeof(ResourceScarcityDirector)) return GlobalRegistryServiceSlot.ResourceScarcityRuntime;
+            if (serviceType == typeof(FieldOperationLogSystem)) return GlobalRegistryServiceSlot.FieldOperationLogRuntime;
             if (serviceType == typeof(PDAExchangeSystem)) return GlobalRegistryServiceSlot.PDAExchangeRuntime;
             if (serviceType == typeof(PlayerActionController)) return GlobalRegistryServiceSlot.PlayerActionRuntime;
             if (serviceType == typeof(PDAMarkerRegistry)) return GlobalRegistryServiceSlot.PDAMarkerRuntime;
             if (serviceType == typeof(PDAIntrusionManager)) return GlobalRegistryServiceSlot.PDAIntrusionRuntime;
             if (serviceType == typeof(AmbientWaterMotionManager)) return GlobalRegistryServiceSlot.AmbientWaterMotionRuntime;
             if (serviceType == typeof(SuitUpgradeManager)) return GlobalRegistryServiceSlot.SuitUpgradeRuntime;
+            if (serviceType == typeof(UIAudioFeedback)) return GlobalRegistryServiceSlot.UIAudioFeedbackRuntime;
+            if (serviceType == typeof(UITooltip)) return GlobalRegistryServiceSlot.UITooltipRuntime;
+            if (serviceType == typeof(LoadingScreenController)) return GlobalRegistryServiceSlot.LoadingScreenRuntime;
             if (serviceType == typeof(EndingSystem)) return GlobalRegistryServiceSlot.EndingRuntime;
             if (serviceType == typeof(Atlas6DirectiveSystem)) return GlobalRegistryServiceSlot.Atlas6DirectiveRuntime;
             if (serviceType == typeof(HazardZoneManager)) return GlobalRegistryServiceSlot.HazardZoneRuntime;

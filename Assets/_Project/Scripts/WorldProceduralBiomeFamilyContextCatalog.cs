@@ -21,7 +21,9 @@ namespace Hecton8.World
                 return false;
 
             EnsureLookup();
-            return _lookup != null && _lookup.ContainsKey(family.familyId) && _lookup[family.familyId] != null;
+            return _lookup != null &&
+                   _lookup.TryGetValue(family.familyId, out WorldProceduralBiomeFamilyContextProfile profile) &&
+                   profile != null;
         }
 
         public WorldProceduralBiomeFamilyContextProfile GetProfile(HectonBiomeFamilyProfile family, out bool usedFallback)
@@ -56,11 +58,12 @@ namespace Hecton8.World
             if (_lookup != null)
                 return;
 
-            _lookup = new Dictionary<string, WorldProceduralBiomeFamilyContextProfile>();
-            if (profiles == null)
+            int profileCount = profiles != null ? profiles.Length : 0;
+            _lookup = new Dictionary<string, WorldProceduralBiomeFamilyContextProfile>(profileCount);
+            if (profileCount <= 0)
                 return;
 
-            for (int i = 0; i < profiles.Length; i++)
+            for (int i = 0; i < profileCount; i++)
             {
                 WorldProceduralBiomeFamilyContextProfile profile = profiles[i];
                 if (profile == null || profile.biomeFamily == null || string.IsNullOrWhiteSpace(profile.biomeFamily.familyId))

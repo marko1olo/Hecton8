@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Ecosystem;
+using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Systems.AI;
 using Hecton8.UI;
@@ -28,7 +29,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4037)]
-    public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IEcosystemDirectorService
+    public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IEcosystemDirectorService, IServiceHeartbeat, IServiceShutdown
     {
         internal static EcosystemDirector ActiveRuntimeInstance { get; private set; }
 
@@ -87,7 +88,7 @@ namespace Hecton8.World
         private static readonly int _BiolumFlashBangAUPId = Shader.PropertyToID("_BiolumFlashBangAUP");
         private static readonly int _BiolumFlashBangParamsId = Shader.PropertyToID("_BiolumFlashBangParams");
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 44)]
         private struct SectorPopulationState
         {
             public int2 SectorCoord;
@@ -102,16 +103,17 @@ namespace Hecton8.World
             public int BiomeId;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 64)]
         private struct ApexTerritorySample
         {
-            public float3 Position;
+            public AbsoluteUniversePositionBlit128 PositionAup;
             public float Radius;
             public float MassScore;
             public int BrainIndex;
+            public int Padding;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]
         private struct ApexTerritoryOverlapResult
         {
             public int RetreatBrainIndex;
@@ -165,7 +167,7 @@ namespace Hecton8.World
                     if (!sampleIsSmaller)
                         continue;
 
-                    float overlap01 = ComputeSmallerSphereOverlap01(sample.Position, sample.Radius, rival.Position, rival.Radius);
+                    float overlap01 = ComputeSmallerSphereOverlap01(in sample.PositionAup, sample.Radius, in rival.PositionAup, rival.Radius);
                     if (overlap01 <= OverlapThreshold01 || overlap01 <= bestOverlap01)
                         continue;
 
@@ -183,34 +185,41 @@ namespace Hecton8.World
                 Results[index] = result;
             }
 
-            private static float ComputeSmallerSphereOverlap01(float3 positionA, float radiusA, float3 positionB, float radiusB)
+            private static float ComputeSmallerSphereOverlap01(
+                in AbsoluteUniversePositionBlit128 positionA,
+                float radiusA,
+                in AbsoluteUniversePositionBlit128 positionB,
+                float radiusB)
             {
                 float safeRadiusA = math.max(0.001f, radiusA);
                 float safeRadiusB = math.max(0.001f, radiusB);
-                float centerDistance = math.distance(positionA, positionB);
-                float smallerRadius = math.min(safeRadiusA, safeRadiusB);
-                float smallerVolume = SphereVolume(smallerRadius);
-                if (smallerVolume <= 0.0001f)
+                float centerDistanceSq = ResolveAupDistanceSqClamped(in positionA, in positionB);
+                float sumRadius = safeRadiusA + safeRadiusB;
+                float sumRadiusSq = sumRadius * sumRadius;
+                if (centerDistanceSq >= sumRadiusSq)
                     return 0f;
 
-                if (centerDistance >= safeRadiusA + safeRadiusB)
-                    return 0f;
-
-                if (centerDistance <= math.abs(safeRadiusA - safeRadiusB))
+                float radiusDelta = math.abs(safeRadiusA - safeRadiusB);
+                if (centerDistanceSq <= radiusDelta * radiusDelta)
                     return 1f;
 
-                float sum = safeRadiusA + safeRadiusB;
-                float diff = safeRadiusA - safeRadiusB;
-                float cap = sum - centerDistance;
-                float numerator = math.PI * cap * cap *
-                                  (centerDistance * centerDistance + 2f * centerDistance * sum - 3f * diff * diff);
-                float overlapVolume = numerator / math.max(0.001f, 12f * centerDistance);
-                return math.saturate(overlapVolume / smallerVolume);
+                float smallerRadius = math.min(safeRadiusA, safeRadiusB);
+                float largerRadius = math.max(safeRadiusA, safeRadiusB);
+                float containmentBias = smallerRadius / largerRadius;
+                float overlapPressure01 = math.saturate(1f - centerDistanceSq / math.max(0.001f, sumRadiusSq));
+                return math.saturate(overlapPressure01 * (1f + containmentBias));
             }
 
-            private static float SphereVolume(float radius)
+            private static float ResolveAupDistanceSqClamped(
+                in AbsoluteUniversePositionBlit128 positionA,
+                in AbsoluteUniversePositionBlit128 positionB)
             {
-                return (4f * math.PI * radius * radius * radius) * (1f / 3f);
+                const double cellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
+                double dx = ((positionA.GridX - positionB.GridX) * cellSizeMeters) + ((double)positionA.Local.x - positionB.Local.x);
+                double dy = ((positionA.GridY - positionB.GridY) * cellSizeMeters) + ((double)positionA.Local.y - positionB.Local.y);
+                double dz = ((positionA.GridZ - positionB.GridZ) * cellSizeMeters) + ((double)positionA.Local.z - positionB.Local.z);
+                double distanceSq = dx * dx + dy * dy + dz * dz;
+                return distanceSq >= float.MaxValue ? float.MaxValue : (float)math.max(0d, distanceSq);
             }
         }
 
@@ -358,6 +367,8 @@ namespace Hecton8.World
         private int _hostilityTier;
         private bool _floraPredatorAupSaturationTelemetryIssued;
         private float _lastPublishedGlobalOceanPanic01 = -1f;
+        private int _lastPublishedFloraPredatorAupCount = -1;
+        private bool _floraPredatorAupGlobalsDirty = true;
         private int _nextHibernationPopulationSyncIndex;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
@@ -372,6 +383,12 @@ namespace Hecton8.World
         /// True once the runtime-native state is allocated and registered.
         /// </summary>
         public bool IsInitialized => _sectorFrontStates.IsCreated && _sectorBackStates.IsCreated && _sectorIndexByKey.IsCreated;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => IsServiceReady ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _registeredService && IsInitialized && ReferenceEquals(GlobalRegistry.EcosystemDirector, this);
 
         /// <summary>
         /// Normalized biome hostility score exposed to UI and pacing systems.
@@ -403,7 +420,7 @@ namespace Hecton8.World
         internal bool TryBuildEnvelope(Vector3 worldPosition, out EcosystemEnvelope envelope)
         {
             float depthMeters = 0f;
-            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
+            MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;
             if (mapMagicBridge != null)
                 depthMeters = math.max(0f, mapMagicBridge.WaterSurfaceLevel - worldPosition.y);
 
@@ -644,33 +661,8 @@ namespace Hecton8.World
 
         internal bool TryResolveNearestOrganicMass(Vector3 worldPosition, out Vector3 organicPosition)
         {
-            organicPosition = default;
-            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
-            if (organicManager == null)
-                return false;
-
-            float searchRadius = math.max(scavengerCorpseSearchRadiusMeters, herbivoreGrazeSearchRadiusMeters);
-            bool found = false;
-            float bestDistanceSq = float.MaxValue;
-            if (organicManager.TryResolveNearestCorpseResourceNode(worldPosition, searchRadius, out Vector3 corpsePosition, out _))
-            {
-                organicPosition = corpsePosition;
-                bestDistanceSq = (corpsePosition - worldPosition).sqrMagnitude;
-                found = true;
-            }
-
-            if (organicManager.TryResolveNearestConsumableFlora(worldPosition, searchRadius, out Vector3 floraPosition, out _))
-            {
-                float floraDistanceSq = (floraPosition - worldPosition).sqrMagnitude;
-                if (floraDistanceSq < bestDistanceSq)
-                {
-                    organicPosition = floraPosition;
-                    bestDistanceSq = floraDistanceSq;
-                    found = true;
-                }
-            }
-
-            return found;
+            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return TryResolveNearestOrganicMass(in queryAup, out organicPosition);
         }
 
         internal bool TryResolveNearestOrganicMass(in AbsoluteUniversePosition queryAup, out Vector3 organicPosition)
@@ -683,20 +675,21 @@ namespace Hecton8.World
             Vector3 worldPosition = queryAup.ToRuntimeFloat3();
             float searchRadius = math.max(scavengerCorpseSearchRadiusMeters, herbivoreGrazeSearchRadiusMeters);
             bool found = false;
-            float bestDistanceSq = float.MaxValue;
+            double bestDistanceSq = double.MaxValue;
             if (organicManager.TryResolveNearestCorpseResourceNode(in queryAup, searchRadius, out Vector3 corpsePosition, out _))
             {
                 organicPosition = corpsePosition;
-                bestDistanceSq = (corpsePosition - worldPosition).sqrMagnitude;
+                bestDistanceSq = ResolveRuntimeAupDistanceSq(in queryAup, corpsePosition);
                 found = true;
             }
 
             if (organicManager.TryResolveNearestConsumableFlora(worldPosition, searchRadius, out Vector3 floraPosition, out _))
             {
-                float floraDistanceSq = (floraPosition - worldPosition).sqrMagnitude;
+                double floraDistanceSq = ResolveRuntimeAupDistanceSq(in queryAup, floraPosition);
                 if (floraDistanceSq < bestDistanceSq)
                 {
                     organicPosition = floraPosition;
+                    bestDistanceSq = floraDistanceSq;
                     found = true;
                 }
             }
@@ -723,7 +716,7 @@ namespace Hecton8.World
         internal void PublishBiolumFlashBang(in AbsoluteUniversePosition flashAup, float currentTimeSeconds, float radiusMeters = 42f)
         {
             Vector3 flashPosition = flashAup.ToRuntimeFloat3();
-            Shader.SetGlobalVector(_BiolumFlashBangAUPId, new Vector4(flashPosition.x, flashPosition.y, flashPosition.z, Mathf.Max(0.1f, radiusMeters)));
+            Shader.SetGlobalVector(_BiolumFlashBangAUPId, new Vector4(flashPosition.x, flashPosition.y, flashPosition.z, math.max(0.1f, radiusMeters)));
             Shader.SetGlobalVector(_BiolumFlashBangParamsId, new Vector4(currentTimeSeconds, 0.1f, 4f, 0f));
         }
 
@@ -866,6 +859,21 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            ShutdownServiceState();
+        }
+
+        private void OnDestroy()
+        {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             if (ActiveRuntimeInstance == this)
                 ActiveRuntimeInstance = null;
 
@@ -908,7 +916,7 @@ namespace Hecton8.World
             }
             else
             {
-                Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+                PublishFloraPredatorAupGlobals(0);
                 PublishGlobalOceanPanic(0f);
             }
 
@@ -997,7 +1005,7 @@ namespace Hecton8.World
 
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             if (organicManager == null ||
-                !organicManager.TryConsumeFloraAtPosition(worldPosition, Mathf.Max(0.5f, searchRadiusMeters), out _))
+                !organicManager.TryConsumeFloraAtPosition(worldPosition, math.max(0.5f, searchRadiusMeters), out _))
             {
                 return false;
             }
@@ -1305,9 +1313,8 @@ namespace Hecton8.World
             // COLD ALLOC: FaunaBrain[16] - managed Apex brain lookup paired with Burst overlap result indices - owner: EcosystemDirector
             _apexTerritoryBrains = new FaunaBrain[ApexTerritoryOverlapCandidateCapacity];
             _floraPredatorAupBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer - owner: EcosystemDirector
-            Shader.SetGlobalBuffer(_PredatorAUPBufferId, _floraPredatorAupBuffer);
-            Shader.SetGlobalInt(_PredatorAUPCountId, 0);
-            Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(FloraPredatorStealthRadiusMeters, FloraPredatorStealthDimStrength, 0f, 0f));
+            _floraPredatorAupGlobalsDirty = true;
+            PublishFloraPredatorAupGlobals(0);
             Shader.SetGlobalColor(_GlobalOceanPanicColorId, new Color(1f, 0.05f, 0.035f, 1f));
             PublishGlobalOceanPanic(0f);
             _activeSectorCount = 0;
@@ -1353,6 +1360,8 @@ namespace Hecton8.World
                 _saveSnapshotSectors.Dispose(disposeDependency);
             ReleaseBuffer(ref _floraPredatorAupBuffer);
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+            _lastPublishedFloraPredatorAupCount = 0;
+            _floraPredatorAupGlobalsDirty = true;
             PublishGlobalOceanPanic(0f);
 
             _sectorFrontStates = default;
@@ -1424,7 +1433,7 @@ namespace Hecton8.World
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             _registeredSlowTickable = GlobalRegistry.SlowTickables.Contains(this);
         }
 
@@ -1433,7 +1442,7 @@ namespace Hecton8.World
             if (!_registeredSlowTickable)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredSlowTickable = false;
         }
 
@@ -1445,8 +1454,8 @@ namespace Hecton8.World
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _registeredLateFrameTickable = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameTickable = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregisterLateFrameTickable()
@@ -1454,7 +1463,7 @@ namespace Hecton8.World
             if (!_registeredLateFrameTickable)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registeredLateFrameTickable = false;
         }
 
@@ -1463,11 +1472,10 @@ namespace Hecton8.World
             if (HasPendingSimulationJob())
                 return;
 
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext == null || !playerContext.IsInitialized || playerContext.PlayerTransform == null)
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
-            ResolveOrCreateSectorSlot(QuantizeSector(playerContext.PlayerTransform.position), seedWithBaseline: true);
+            ResolveOrCreateSectorSlot(QuantizeSector(in playerAup), seedWithBaseline: true);
         }
 
         private void EnsureMigrationNeighborSectorsRegistered()
@@ -1545,12 +1553,11 @@ namespace Hecton8.World
         private bool TryResolveEclipseTier0Attractor(out Vector3 attractorPosition)
         {
             attractorPosition = default;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null)
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return false;
 
-            attractorPosition = playerTransform.position;
+            float3 playerRuntimePosition = playerAup.ToRuntimeFloat3();
+            attractorPosition = ToVector3(playerRuntimePosition);
             float waterLevel = ResolveWaterSurfaceLevel(attractorPosition);
             attractorPosition.y = waterLevel - eclipsePredatorTier0TargetDepthMeters;
             return true;
@@ -1577,7 +1584,7 @@ namespace Hecton8.World
 
         private static float ResolveWaterSurfaceLevel(Vector3 worldPosition)
         {
-            MapMagicBridge bridge = MapMagicBridge.Instance;
+            MapMagicBridge bridge = GlobalRegistry.MapMagic;
             if (bridge != null)
                 return bridge.WaterSurfaceLevel;
 
@@ -1654,13 +1661,17 @@ namespace Hecton8.World
                 if (brain == null || brain.IsDead || !brain.IsApexPredatorRuntime)
                     continue;
 
+                AbsoluteUniversePosition hitAup = hit.HasAbsolutePosition
+                    ? hit.AbsolutePosition
+                    : AbsoluteUniversePosition.FromRuntimePosition(hit.Position);
                 _apexTerritoryBrains[sampleCount] = brain;
                 _apexTerritorySamples[sampleCount] = new ApexTerritorySample
                 {
-                    Position = new float3(hit.Position.x, hit.Position.y, hit.Position.z),
+                    PositionAup = hitAup.ToAlignedBlit(),
                     Radius = brain.ApexTerritoryRadiusMeters,
                     MassScore = brain.ApexTerritoryMassScore,
-                    BrainIndex = sampleCount
+                    BrainIndex = sampleCount,
+                    Padding = 0
                 };
                 _apexTerritoryOverlapResults[sampleCount] = default;
                 sampleCount++;
@@ -1711,7 +1722,9 @@ namespace Hecton8.World
                 if (retreatBrain == null || retreatBrain.IsDead)
                     continue;
 
-                retreatBrain.ForceApexRetreat(ToVector3(_apexTerritorySamples[result.RivalBrainIndex].Position));
+                ApexTerritorySample rivalSample = _apexTerritorySamples[result.RivalBrainIndex];
+                AbsoluteUniversePosition rivalAup = AbsoluteUniversePosition.FromAlignedBlit(in rivalSample.PositionAup);
+                retreatBrain.ForceApexRetreat(ToVector3(rivalAup.ToRuntimeFloat3()));
             }
 
             for (int i = 0; i < count; i++)
@@ -1778,16 +1791,31 @@ namespace Hecton8.World
                 _floraPredatorAupSaturationTelemetryIssued = false;
             }
 
-            Shader.SetGlobalBuffer(_PredatorAUPBufferId, _floraPredatorAupBuffer);
-            Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);
-            Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(FloraPredatorStealthRadiusMeters, FloraPredatorStealthDimStrength, 0f, 0f));
+            PublishFloraPredatorAupGlobals(uploadCount);
             PublishGlobalOceanPanic(panic01);
+        }
+
+        private void PublishFloraPredatorAupGlobals(int uploadCount)
+        {
+            int safeUploadCount = math.clamp(uploadCount, 0, FloraPredatorAupBufferCapacity);
+            if (_floraPredatorAupGlobalsDirty && _floraPredatorAupBuffer != null)
+            {
+                Shader.SetGlobalBuffer(_PredatorAUPBufferId, _floraPredatorAupBuffer);
+                Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(FloraPredatorStealthRadiusMeters, FloraPredatorStealthDimStrength, 0f, 0f));
+                _floraPredatorAupGlobalsDirty = false;
+            }
+
+            if (_lastPublishedFloraPredatorAupCount == safeUploadCount)
+                return;
+
+            _lastPublishedFloraPredatorAupCount = safeUploadCount;
+            Shader.SetGlobalInt(_PredatorAUPCountId, safeUploadCount);
         }
 
         private void PublishGlobalOceanPanic(float panic01)
         {
-            float resolvedPanic01 = Mathf.Clamp01(panic01);
-            if (Mathf.Abs(_lastPublishedGlobalOceanPanic01 - resolvedPanic01) < 0.001f)
+            float resolvedPanic01 = math.saturate(panic01);
+            if (math.abs(_lastPublishedGlobalOceanPanic01 - resolvedPanic01) < 0.001f)
                 return;
 
             _lastPublishedGlobalOceanPanic01 = resolvedPanic01;
@@ -1797,12 +1825,41 @@ namespace Hecton8.World
         private static bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
         {
             playerPosition = default;
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null)
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return false;
 
-            playerPosition = playerTransform.position;
+            float3 runtimePosition = playerAup.ToRuntimeFloat3();
+            playerPosition = ToVector3(runtimePosition);
+            return true;
+        }
+
+        private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
+            {
+                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    playerAup = movementState.PredictedAup;
+                    return true;
+                }
+
+                PlayerLookState lookState = runtimeContext.LookState;
+                if ((lookState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    playerAup = AbsoluteUniversePosition.FromRuntimePosition(ToVector3(lookState.EyePosition));
+                    return true;
+                }
+            }
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement == null)
+                return false;
+
+            playerAup = playerMovement.CurrentAup;
             return true;
         }
 
@@ -1915,8 +1972,22 @@ namespace Hecton8.World
 
         private static int2 QuantizeSector(Vector3 worldPosition)
         {
-            float2 scaled = new float2(worldPosition.x, worldPosition.z) / SectorEdgeLengthMeters;
-            return (int2)math.floor(scaled);
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return QuantizeSector(in aup);
+        }
+
+        private static int2 QuantizeSector(in AbsoluteUniversePosition position)
+        {
+            double3 absolutePosition = position.ToAbsoluteDouble3();
+            return new int2(
+                (int)math.floor(absolutePosition.x / SectorEdgeLengthMeters),
+                (int)math.floor(absolutePosition.z / SectorEdgeLengthMeters));
+        }
+
+        private static double ResolveRuntimeAupDistanceSq(in AbsoluteUniversePosition originAup, Vector3 runtimePosition)
+        {
+            AbsoluteUniversePosition runtimeAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return AbsoluteUniversePosition.DistanceSq(in originAup, in runtimeAup);
         }
 
         private static Vector3 ToVector3(float3 value)

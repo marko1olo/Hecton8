@@ -81,11 +81,11 @@ public static class ModuleStatusEvents
         }
     }
 
-    // COLD ALLOC: RegistryBucket<IModuleStatusEventListener>[16] - module status listeners drained by SystemDispatcher LateUpdate - owner: ModuleStatusEvents
+    // COLD ALLOC: RegistryBucket<IModuleStatusEventListener>[16] — module status listeners drained by SystemDispatcher LateUpdate — owner: ModuleStatusEvents
     private static readonly RegistryBucket<IModuleStatusEventListener> _listeners = new RegistryBucket<IModuleStatusEventListener>(ListenerCapacity);
-    // COLD ALLOC: ModuleReferenceSlot[128] - managed BaseModule sidecar for unmanaged module status payloads - owner: ModuleStatusEvents
+    // COLD ALLOC: ModuleReferenceSlot[128] — managed BaseModule sidecar for unmanaged module status payloads — owner: ModuleStatusEvents
     private static readonly ModuleReferenceSlot[] _referenceSlots = new ModuleReferenceSlot[ReferenceSlotCapacity];
-    // COLD ALLOC: bool[128] - sidecar occupancy map prevents overwrite before deferred dispatch - owner: ModuleStatusEvents
+    // COLD ALLOC: bool[128] — sidecar occupancy map prevents overwrite before deferred dispatch — owner: ModuleStatusEvents
     private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
     private static NativeQueue<ModuleStatusEventPayload> _pendingEvents;
     private static NativeQueue<ModuleStatusEventPayload> _nextFrameEvents;
@@ -264,24 +264,40 @@ public static class ModuleStatusEvents
     {
         if (!_pendingEvents.IsCreated)
         {
-            _pendingEvents = new NativeQueue<ModuleStatusEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] - deferred module status event lane flushed by SystemDispatcher LateUpdate - owner: ModuleStatusEvents
+            _pendingEvents = new NativeQueue<ModuleStatusEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] — deferred module status event lane flushed by SystemDispatcher LateUpdate — owner: ModuleStatusEvents
             NativeMemorySentinel.RegisterNativeQueue(
                 _pendingEvents,
                 PendingEventCapacity,
                 nameof(ModuleStatusEvents),
                 nameof(_pendingEvents),
                 NativeAllocationLifetime.Session);
+            PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
         }
 
         if (!_nextFrameEvents.IsCreated)
         {
-            _nextFrameEvents = new NativeQueue<ModuleStatusEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] - next-frame module status lane prevents same-frame reentrant dispatch - owner: ModuleStatusEvents
+            _nextFrameEvents = new NativeQueue<ModuleStatusEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] — next-frame module status lane prevents same-frame reentrant dispatch — owner: ModuleStatusEvents
             NativeMemorySentinel.RegisterNativeQueue(
                 _nextFrameEvents,
                 PendingEventCapacity,
                 nameof(ModuleStatusEvents),
                 nameof(_nextFrameEvents),
                 NativeAllocationLifetime.Session);
+            PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+        }
+    }
+
+    private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+        where T : unmanaged
+    {
+        if (!queue.IsCreated || capacity <= 0)
+            return;
+
+        for (int i = 0; i < capacity; i++)
+            queue.Enqueue(default);
+
+        while (queue.TryDequeue(out _))
+        {
         }
     }
 

@@ -30,7 +30,9 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile _ HECTON_GPU_INDIRECT
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
 
             #define UNITY_INDIRECT_DRAW_ARGS IndirectDrawIndexedArgs
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -105,14 +107,16 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
 
             struct Attributes
             {
+                uint instanceID : SV_InstanceID;
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
                 float2 uv : TEXCOORD0;
-                UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float3 positionWS : TEXCOORD0;
                 float2 vegetationData : TEXCOORD1;
@@ -123,21 +127,48 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 return mul(matrixValue, float4(localPosition, 1.0)).xyz;
             }
 
-            float3 TransformDirection(float4x4 matrixValue, float3 direction)
+            float ApproxMagnitude2(float2 value)
             {
-                return normalize(mul((float3x3)matrixValue, direction));
+                float2 axis = abs(value);
+                float major = max(axis.x, axis.y);
+                float minor = min(axis.x, axis.y);
+                return major + minor * 0.375;
             }
 
-            float2 SafeNormalize2(float2 value)
+            float ApproxMagnitude3(float3 value)
             {
-                float lenSq = dot(value, value);
-                return lenSq > 0.0001 ? value * rsqrt(lenSq) : float2(1.0, 0.0);
+                float3 axis = abs(value);
+                float major = max(max(axis.x, axis.y), axis.z);
+                float minor = min(min(axis.x, axis.y), axis.z);
+                float mid = axis.x + axis.y + axis.z - major - minor;
+                return major + mid * 0.375 + minor * 0.125;
             }
 
             float3 SafeNormalize3(float3 value)
             {
-                float lenSq = dot(value, value);
-                return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+                float approxLen = ApproxMagnitude3(value);
+                return approxLen > 0.0001 ? value * rcp(approxLen) : float3(0.0, 1.0, 0.0);
+            }
+
+            float2 SafeNormalize2(float2 value)
+            {
+                float approxLen = ApproxMagnitude2(value);
+                return approxLen > 0.0001 ? value * rcp(approxLen) : float2(1.0, 0.0);
+            }
+
+            float3 TransformDirection(float4x4 matrixValue, float3 direction)
+            {
+                return SafeNormalize3(mul((float3x3)matrixValue, direction));
+            }
+
+            float TrianglePulse01(float phase)
+            {
+                return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+            }
+
+            float TriangleSigned(float phase)
+            {
+                return TrianglePulse01(phase) * 2.0 - 1.0;
             }
 
             float2 ResolvePlanarCurrentDirection()
@@ -150,12 +181,14 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
 
             float ResolvePlanarCurrentStrength()
             {
-                return max(length(_GlobalOceanFlow.xyz), _HectonVegetationCurrentStrength);
+                return max(ApproxMagnitude3(_GlobalOceanFlow.xyz), _HectonVegetationCurrentStrength);
             }
 
             float Hash21(float2 value)
             {
-                return frac(sin(dot(value, float2(12.9898, 78.233))) * 43758.5453);
+                float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
+                hash += dot(hash, hash.yzx + 33.33);
+                return frac((hash.x + hash.y) * hash.z);
             }
 
             float ResolveBayer4x4(float2 pixel)
@@ -228,13 +261,13 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                     return float3(0.0, 0.0, 0.0);
 
                 float3 flowSample = ResolveMarineSnowFlowField(positionWS);
-                float flowMagnitude = length(flowSample.xz) * max(_HectonFlowSynchronyParams.x, 1.0);
+                float flowMagnitude = ApproxMagnitude2(flowSample.xz) * max(_HectonFlowSynchronyParams.x, 1.0);
                 if (flowMagnitude <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
                 float3 flowDirection = SafeNormalize3(float3(flowSample.x, 0.0, flowSample.z));
                 float typeScale = instanceType < 0.5 ? 0.24 : (instanceType < 1.5 ? 0.42 : 0.18);
-                float flowWave = sin(ResolveFlowSynchronyPhase(positionWS, instanceNoise));
+                float flowWave = TriangleSigned(ResolveFlowSynchronyPhase(positionWS, instanceNoise));
                 return flowDirection * (flowWave * flowMagnitude * typeScale * bendMask);
             }
 
@@ -304,7 +337,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 float2 sample = worldXZ * 0.024 + _SargassumGlobalDriftOffset.xz * 0.014;
                 float coarse = Hash21(floor(sample));
                 float fine = Hash21(floor(sample * 1.87 + 21.0));
-                float wave = sin(sample.x * 1.18 + sample.y * 0.86 + _Time.y * 0.12) * 0.5 + 0.5;
+                float wave = TrianglePulse01(sample.x * 1.18 + sample.y * 0.86 + _Time.y * 0.12);
                 return saturate(coarse * 0.44 + fine * 0.34 + wave * 0.22);
             }
 
@@ -321,7 +354,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 float4 shallowWaterData = EvaluateShallowWaterFieldData(evaluationPositionWS);
                 float displacement = saturate(shallowWaterData.b);
                 float2 planarVelocity = DecodeShallowWaterVelocity(shallowWaterData.rg);
-                float velocityMagnitude = saturate(length(planarVelocity));
+                float velocityMagnitude = saturate(ApproxMagnitude2(planarVelocity));
                 if (displacement <= 0.0001 && velocityMagnitude <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
@@ -344,7 +377,8 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                     float speedFactor = saturate(interactionPoint.velocitySpeed.w * 0.18);
                     float3 delta = evaluationPositionWS - interactionPoint.positionRadius.xyz;
                     delta.y *= 0.22;
-                    float proximity = saturate(1.0 - length(delta) / max(interactionPoint.positionRadius.w, 0.05));
+                    float bendRadius = max(interactionPoint.positionRadius.w, 0.05);
+                    float proximity = saturate(1.0 - dot(delta, delta) / (bendRadius * bendRadius));
                     if (proximity <= 0.0001 || speedFactor <= 0.0001)
                         continue;
 
@@ -400,7 +434,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                     float4 impactSphere = _HectonImpactSpheres[i];
                     float radius = max(impactSphere.w, 0.05);
                     float3 delta = evaluationPositionWS - impactSphere.xyz;
-                    float proximity = saturate(1.0 - length(delta) / radius);
+                    float proximity = saturate(1.0 - dot(delta, delta) / (radius * radius));
                     if (proximity <= 0.0001)
                         continue;
 
@@ -486,10 +520,10 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 float2 currentVector = dot(sampledCurrentVector, sampledCurrentVector) > 0.0001
                     ? SafeNormalize2(sampledCurrentVector)
                     : ResolvePlanarCurrentDirection();
-                float currentStrength = max(length(sampledCurrentVector), ResolvePlanarCurrentStrength());
+                float currentStrength = max(ApproxMagnitude2(sampledCurrentVector), ResolvePlanarCurrentStrength());
                 float timeValue = _Time.y * max(instanceData.SwaySpeed, 0.05);
                 float healthSwayScale = lerp(0.35, 1.0, saturate(instanceData.HealthNormalized));
-                float swayWave = sin(timeValue * (0.55 + _HectonVegetationCurrentTimeScale * 0.35) + instanceNoise * 6.28318 + originWS.x * 0.015 + originWS.z * 0.01);
+                float swayWave = TriangleSigned(timeValue * (0.55 + _HectonVegetationCurrentTimeScale * 0.35) + instanceNoise * 6.28318 + originWS.x * 0.015 + originWS.z * 0.01);
                 float3 flowSynchronyOffset = ResolveFlowSynchronyOffset(basePositionWS, bendMask, instanceType, instanceNoise);
                 animatedPositionWS.xz += currentVector * (currentStrength * 0.28 * bendMask * swayWave * healthSwayScale);
                 animatedPositionWS.y += swayWave * (_HectonVegetationCurrentVerticalFactor * 0.12 * bendMask * healthSwayScale);
@@ -501,7 +535,7 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 float2 stateWeights = ResolveStateBlendWeights(instanceData.RuntimeState);
                 if (stateWeights.x > 0.0001 || stateWeights.y > 0.0001)
                 {
-                    float statePhase = sin(timeValue * (1.35 + max(instanceData.PulseFrequency, 0.05)) + instanceNoise * 9.0 + heightMask * 3.2);
+                    float statePhase = TriangleSigned(timeValue * (1.35 + max(instanceData.PulseFrequency, 0.05)) + instanceNoise * 9.0 + heightMask * 3.2);
                     animatedPositionWS.xz += ResolvePlanarCurrentDirection() * (statePhase * bendMask * 0.16 * stateWeights.x);
                     animatedPositionWS.y -= instanceHeight * bendMask * (0.06 * stateWeights.x + 0.18 * stateWeights.y);
                 }
@@ -533,14 +567,20 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
                 return animatedPositionWS;
             }
 
-            Varyings Vert(Attributes input, uint instanceID : SV_InstanceID)
+            Varyings Vert(Attributes input)
             {
                 Varyings output;
                 UNITY_SETUP_INSTANCE_ID(input);
-                uint sourceInstanceIndex = instanceID;
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+
+                uint sourceInstanceIndex = input.instanceID;
+#if UNITY_ANY_INSTANCING_ENABLED
+                sourceInstanceIndex = unity_InstanceID;
+#endif
                 #if defined(HECTON_GPU_INDIRECT)
                     InitIndirectDrawArgs(0);
-                    sourceInstanceIndex = _HectonVisibleInstanceIndices[GetIndirectInstanceID(instanceID)];
+                    sourceInstanceIndex = _HectonVisibleInstanceIndices[GetIndirectInstanceID(sourceInstanceIndex)];
                 #endif
                 float4x4 instanceMatrix = _HectonInstanceMatrices[sourceInstanceIndex];
                 HectonVegetationInstanceGpuData instanceData = _HectonVegetationInstanceData[sourceInstanceIndex];
@@ -555,6 +595,8 @@ Shader "Hidden/Hecton8/VegetationIndirectDepthOnly"
 
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 half cutMask = ResolveVegetationCutMask(input.vegetationData.x, input.positionWS);
                 half coverageVisibility = saturate((0.08h - cutMask) / 0.025h);
 

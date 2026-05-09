@@ -173,6 +173,7 @@ namespace Hecton8.Core
                     nameof(MapMagicBiomeEvents),
                     nameof(_pendingBiomeIds),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingBiomeIds, ExpectedPendingBiomeEventCapacity);
             }
 
             if (!_nextFrameBiomeIds.IsCreated)
@@ -184,6 +185,21 @@ namespace Hecton8.Core
                     nameof(MapMagicBiomeEvents),
                     nameof(_nextFrameBiomeIds),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameBiomeIds, ExpectedPendingBiomeEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -2044,6 +2060,7 @@ namespace Hecton8.Core
                 int x = index % Width;
                 int z = index / Width;
                 int radius = math.max(1, FalloffCells);
+                float radiusSq = math.max(1f, radius * radius);
                 float best = 0f;
                 for (int dz = -radius; dz <= radius; dz++)
                 {
@@ -2064,8 +2081,9 @@ namespace Hecton8.Core
                         if (BasinMask[neighbor] == 0)
                             continue;
 
-                        float distance = math.sqrt((float)((dx * dx) + (dz * dz)));
-                        float ridge = 1f - math.saturate((distance - 1f) / math.max(1f, radius));
+                        // Cinematic fake: squared falloff keeps the basin lip organic without a sqrt per neighbor sample.
+                        float distanceSq = (dx * dx) + (dz * dz);
+                        float ridge = 1f - math.saturate((distanceSq - 1f) / radiusSq);
                         best = math.max(best, ridge);
                     }
                 }

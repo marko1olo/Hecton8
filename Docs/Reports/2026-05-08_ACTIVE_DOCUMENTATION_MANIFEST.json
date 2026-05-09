@@ -1,36 +1,40 @@
 ﻿{
-    "generatedDate":  "2026-05-08",
-    "generatedLocalTime":  "2026-05-08 01:17:03 +04:00",
-    "status":  "PENDING VERIFICATION (CORE BUILD SUCCEEDED / MCP CONSOLE CLEAN)",
+    "generatedDate":  "2026-05-09",
+    "generatedLocalTime":  "2026-05-09 16:47:49 +04:00",
+    "status":  "PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)",
     "currentAuthorityReport":  "Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md",
     "unityMcpConsoleState":  {
-                                 "result":  "CLEAN",
-                                 "errors":  0,
-                                 "warnings":  0,
-                                 "message":  "read_console(error,warning) returned 0 log entries"
+                                 "result":  "BLOCKED",
+                                 "errors":  null,
+                                 "warnings":  null,
+                                 "message":  "Unity MCP resource listing returned no resources in this session; fresh Unity Console proof is still required"
                              },
     "unityMcpEditorState":  {
-                                "result":  "READY",
-                                "activeScene":  "Assets/_Project/Scenes/00_BOOTSTRAP.unity",
-                                "playMode":  "off",
-                                "compiling":  false,
-                                "domainReloadPending":  false,
-                                "readyForTools":  true
+                                "result":  "BLOCKED",
+                                "activeScene":  "PENDING FRESH MCP READ",
+                                "playMode":  "unknown",
+                                "compiling":  null,
+                                "domainReloadPending":  null,
+                                "readyForTools":  null
                             },
     "unityMcpPartialReadback":  {
-                                    "projectInfo":  "SUCCESS: Unity 6000.4.1f1, StandaloneWindows64",
-                                    "renderingStats":  "SUCCESS: 37 render textures, 56320492 bytes",
-                                    "rendererFeatures":  "SUCCESS: PC_Renderer, 10 features"
+                                    "projectInfo":  "BLOCKED: prior MCP readback not accepted as current proof",
+                                    "renderingStats":  "BLOCKED: prior MCP readback not accepted as current proof",
+                                    "rendererFeatures":  "BLOCKED: prior MCP readback not accepted as current proof"
                                 },
     "buildState":  {
-                       "command":  "dotnet build Hecton8.Core.csproj --no-restore -v:minimal /nr:false /p:UseSharedCompilation=false",
-                       "artifact":  "CodexArtifacts/2026-05-08_DOC_SYNC_CORE_BUILD3.log",
+                       "command":  "dotnet build .\\Hecton8.Core.csproj --no-restore -m:1 -p:UseSharedCompilation=false -p:BuildInParallel=false -nr:false",
+                       "artifact":  "CodexArtifacts/2026-05-09_R168_CORE_SERIAL_NORESTORE_BUILD.log",
                        "result":  "SUCCEEDED",
-                       "warnings":  48,
+                       "warnings":  0,
                        "errors":  0,
                        "firstPartyWarningLines":  0,
+                       "coveredCurrentSource":  false,
+                       "coverageNote":  "R168 dotnet build succeeded after repeated live-churn compile gates, stale clean snapshots, transient Input/Core boundary regressions, BLACKBOX export callback/thread drift, emergency-relay helper drift, PlayerSwim obstacle-probe drift, R154 invalidation by an in-build PersistentWorldRegistry.cs write, post-R155 InputManager.cs write, R160 timestamp invalidation, R161 Input assembly GlobalRegistry regression, post-R163 PhysicsApplySystem.cs / NativeMemorySentinel.cs writes, post-R165 guarded diagnostic-log preprocessor edits in LocalizationManager.cs and HectonBiolumManager.cs, and the HectonBiolumZone.cs development-build diagnostics guard pass. Later Assets/_Project C# writes were observed after the R168 artifact end timestamp, so this is compile evidence, not frozen-source coverage. Unity Console/Play Mode/profiler/GCMonitor/player-build proof remains absent.",
                        "blockers":  [
-
+                                        "PENDING_FINAL_UNITY_PROOF: Unity MCP/Console proof unavailable in this session",
+                                        "UNITY_RUNTIME_PROOF_ABSENT: no Play Mode/profiler/GCMonitor/player-build evidence captured",
+                                        "TIMESTAMP_GATE_CONTAMINATED: C# writes were observed after the R168 build end timestamp"
                                     ]
                    },
     "activeMarkdownCount":  231,
@@ -38,24 +42,37 @@
     "activeNonReportMarkdownCount":  163,
     "directReportMarkdownCount":  68,
     "activeJsonCount":  14,
+    "docsTotalFiles":  905,
     "headerDebt":  {
                        "missingDate":  0,
                        "missingStatus":  0
                    },
     "sourceCounts":  {
-                         "projectCsFiles":  1247,
-                         "projectPhysicalLines":  691068,
-                         "scriptsCsFiles":  1206,
-                         "scriptsPhysicalLines":  675775,
+                         "projectCsFiles":  1255,
+                         "projectPhysicalLines":  743328,
+                         "scriptsCsFiles":  1214,
+                         "scriptsPhysicalLines":  728007,
                          "directScripts":  337,
                          "lineCountMethod":  "System.IO.StreamReader.ReadLine",
-                         "globalRegistryContractInterfaces":  40
+                         "globalRegistryContractInterfaces":  38
                      },
-    "sourceCountsVolatility":  "VOLATILE: source writes were observed after the completed Core build and around manifest generation; counts are orientation, not stability proof.",
+    "sourceCountsSnapshotTime":  "2026-05-09 16:47:49 +04:00",
+    "sourceCountsVolatility":  "R168_COMPILE_PASSED_BUT_TIMESTAMP_GATE_CONTAMINATED: Assets/_Project C# writes were observed after the latest Core build artifact end timestamp; counts remain orientation and not runtime proof.",
+    "postBuildSourceWritesObservedCount":  9,
+    "postBuildSourceWritesObservedLowerBound":  9,
+    "postBuildLatestSourceWrite":  "2026-05-09 16:55:55 +04:00",
+    "postBuildLatestSourceWritePath":  "Assets/_Project/Scripts/ObjectPoolDiagnostics.cs",
+    "postBuildSourceWritesObservedMode":  "OBSERVED_AFTER_R168_ARTIFACT_END_TIMESTAMP",
     "postBuildSourceWritesObserved":  [
-                                          "Assets/_Project/Scripts/Dev/HabitatStressSmokeTester.cs",
-                                          "Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs",
-                                          "Assets/_Project/Scripts/BaseModule.cs"
+                                          "Assets/_Project/Scripts/UI/UIScreenShake.cs",
+                                          "Assets/_Project/Scripts/WorldCaveDirector.cs",
+                                          "Assets/_Project/Scripts/UI/BeaconHUDElement.cs",
+                                          "Assets/_Project/Scripts/World/HectonSpatialHash.cs",
+                                          "Assets/_Project/Scripts/Gameplay/VehicleMotor.cs",
+                                          "Assets/_Project/Scripts/SubmarineFluidDynamics.cs",
+                                          "Assets/_Project/Scripts/Core/UIStateStore.cs",
+                                          "Assets/_Project/Scripts/FieldLoadoutAdvisor.cs",
+                                          "Assets/_Project/Scripts/ObjectPoolDiagnostics.cs"
                                       ],
     "entries":  [
                     {
@@ -535,14 +552,14 @@
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
                         "title":  "ZERO_GC_UI_PIPELINE",
-                        "bytes":  10542,
+                        "bytes":  11188,
                         "requiresRuntimeProof":  true
                     },
                     {
                         "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/ASSET_DEPENDENCY_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "ASSET DEPENDENCY MAP Ã¢â‚¬â€ HECTON-8 Hard-Referenced / Addressables Migration",
+                        "title":  "ASSET DEPENDENCY MAP â€” HECTON-8 Hard-Referenced / Addressables Migration",
                         "bytes":  8252,
                         "requiresRuntimeProof":  true
                     },
@@ -550,7 +567,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/AUP_SURGERY_MAP.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "HECTON-8 Ã¢â‚¬â€ AUP SURGERY BYTE MAP",
+                        "title":  "HECTON-8 â€” AUP SURGERY BYTE MAP",
                         "bytes":  19943,
                         "requiresRuntimeProof":  true
                     },
@@ -558,7 +575,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/BUILD_DEPENDENCY_GRAPH.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "BUILD DEPENDENCY GRAPH Ã¢â‚¬â€ HECTON-8 Bootstrapper Bloat Check",
+                        "title":  "BUILD DEPENDENCY GRAPH â€” HECTON-8 Bootstrapper Bloat Check",
                         "bytes":  6968,
                         "requiresRuntimeProof":  true
                     },
@@ -622,7 +639,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/GLOSSARY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "HECTON-8 Ã¢â‚¬â€ GLOSSARY OF TERMS",
+                        "title":  "HECTON-8 â€” GLOSSARY OF TERMS",
                         "bytes":  43500,
                         "requiresRuntimeProof":  true
                     },
@@ -630,7 +647,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/HUD_EDITOR_SPEC.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "HUD EDITOR VISIBILITY SPEC Ã¢â‚¬â€ SuitHUDV4CanvasOverlay",
+                        "title":  "HUD EDITOR VISIBILITY SPEC â€” SuitHUDV4CanvasOverlay",
                         "bytes":  12221,
                         "requiresRuntimeProof":  true
                     },
@@ -684,10 +701,10 @@
                     },
                     {
                         "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md",
-                        "date":  "2026-05-08",
-                        "status":  "PENDING VERIFICATION",
+                        "date":  "2026-05-09",
+                        "status":  "PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)",
                         "title":  "PROJECT ATLAS",
-                        "bytes":  32337,
+                        "bytes":  32899,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -710,7 +727,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/SYSTEM_INTERCONNECT_MATRIX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "SYSTEM INTERCONNECT MATRIX Ã¢â‚¬â€ AbsoluteUniversePosition (AUP)",
+                        "title":  "SYSTEM INTERCONNECT MATRIX â€” AbsoluteUniversePosition (AUP)",
                         "bytes":  11319,
                         "requiresRuntimeProof":  true
                     },
@@ -743,7 +760,7 @@
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
                         "title":  "ASSET-TO-CODE DEPENDENCY MAP",
-                        "bytes":  7015,
+                        "bytes":  6997,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -766,8 +783,8 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_DATA_DICTIONARY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "HECTON-8 DATA DICTIONARY Ã¢â‚¬â€ DOD Struct Reference",
-                        "bytes":  13478,
+                        "title":  "HECTON-8 DATA DICTIONARY â€” DOD Struct Reference",
+                        "bytes":  13444,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -782,15 +799,15 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_DEEP_FORENSIC_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "DEEP FORENSIC AUDIT Ã¢â‚¬â€ HECTON-8 SYSTEM ARCHAEOLOGY \u0026 HARDWARE DICTATORSHIP",
-                        "bytes":  14046,
+                        "title":  "DEEP FORENSIC AUDIT â€” HECTON-8 SYSTEM ARCHAEOLOGY \u0026 HARDWARE DICTATORSHIP",
+                        "bytes":  14319,
                         "requiresRuntimeProof":  true
                     },
                     {
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_ETA2_SUPREME_SUMMARY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "ETA2_SUPREME_SUMMARY Ã¢â‚¬â€ Deep Core Archaeology Final Report",
+                        "title":  "ETA2_SUPREME_SUMMARY â€” Deep Core Archaeology Final Report",
                         "bytes":  7606,
                         "requiresRuntimeProof":  true
                     },
@@ -814,7 +831,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_LIAR_DETECTION.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "LIAR_DETECTION.md Ã¢â‚¬â€ Agent Integrity Audit",
+                        "title":  "LIAR_DETECTION.md â€” Agent Integrity Audit",
                         "bytes":  4448,
                         "requiresRuntimeProof":  true
                     },
@@ -822,7 +839,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_MEMORY_ALIGNMENT_FIX.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "MEMORY_ALIGNMENT_FIX.md Ã¢â‚¬â€ DOD Struct Layout Surgery",
+                        "title":  "MEMORY_ALIGNMENT_FIX.md â€” DOD Struct Layout Surgery",
                         "bytes":  7082,
                         "requiresRuntimeProof":  true
                     },
@@ -838,15 +855,15 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_SUPREME_AUDITOR_REPORT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "SUPREME AUDITOR Ã¢â‚¬â€ CONTINUOUS SMART AUDIT REPORT",
-                        "bytes":  30166,
+                        "title":  "SUPREME AUDITOR â€” CONTINUOUS SMART AUDIT REPORT",
+                        "bytes":  30254,
                         "requiresRuntimeProof":  true
                     },
                     {
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_VRAM_BUDGET_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "VRAM BUDGET AUDIT Ã¢â‚¬â€ HECTON-8",
+                        "title":  "VRAM BUDGET AUDIT â€” HECTON-8",
                         "bytes":  24220,
                         "requiresRuntimeProof":  true
                     },
@@ -854,7 +871,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-28_VRAM_EXECUTION_LIST.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "VRAM_EXECUTION_LIST.md Ã¢â‚¬â€ Top 20 VRAM Offenders",
+                        "title":  "VRAM_EXECUTION_LIST.md â€” Top 20 VRAM Offenders",
                         "bytes":  2884,
                         "requiresRuntimeProof":  true
                     },
@@ -974,7 +991,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/AUDIO_ROUTING_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "HECTON-8 Ã¢â‚¬â€ AUDIO MIXER ROUTING AUDIT",
+                        "title":  "HECTON-8 â€” AUDIO MIXER ROUTING AUDIT",
                         "bytes":  6800,
                         "requiresRuntimeProof":  true
                     },
@@ -982,7 +999,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/COMPUTE_BUFFER_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "COMPUTE BUFFER LIFECYCLE AUDIT Ã¢â‚¬â€ HECTON-8 First-Party Code",
+                        "title":  "COMPUTE BUFFER LIFECYCLE AUDIT â€” HECTON-8 First-Party Code",
                         "bytes":  10231,
                         "requiresRuntimeProof":  true
                     },
@@ -998,7 +1015,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/DEBUG_LOG_DELETION_QUEUE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "DEBUG.LOG DELETION QUEUE Ã¢â‚¬â€ Unsanitized First-Party Runtime Logs",
+                        "title":  "DEBUG.LOG DELETION QUEUE â€” Unsanitized First-Party Runtime Logs",
                         "bytes":  5182,
                         "requiresRuntimeProof":  true
                     },
@@ -1014,7 +1031,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/FRAME_TIMELINE.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "FRAME TIMELINE Ã¢â‚¬â€ HECTON-8 Runtime Execution Order",
+                        "title":  "FRAME TIMELINE â€” HECTON-8 Runtime Execution Order",
                         "bytes":  7797,
                         "requiresRuntimeProof":  true
                     },
@@ -1022,7 +1039,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/GOD_OBJECT_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "GOD OBJECT AUDIT Ã¢â‚¬â€ Player \u0026 Submarine Prefab Component Analysis",
+                        "title":  "GOD OBJECT AUDIT â€” Player \u0026 Submarine Prefab Component Analysis",
                         "bytes":  7242,
                         "requiresRuntimeProof":  true
                     },
@@ -1030,7 +1047,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/HARD_LINK_DEBT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "HARD LINK DEBT Ã¢â‚¬â€ Asset-to-Code Violation Map",
+                        "title":  "HARD LINK DEBT â€” Asset-to-Code Violation Map",
                         "bytes":  7058,
                         "requiresRuntimeProof":  true
                     },
@@ -1046,7 +1063,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/ITEM_ASSET_GUIDS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "HECTON-8 Ã¢â‚¬â€ ITEM ASSET GUID AUDIT",
+                        "title":  "HECTON-8 â€” ITEM ASSET GUID AUDIT",
                         "bytes":  4249,
                         "requiresRuntimeProof":  true
                     },
@@ -1070,7 +1087,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/RENDERGRAPH_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "RENDERGRAPH AUDIT Ã¢â‚¬â€ HECTON-8 First-Party URP Features",
+                        "title":  "RENDERGRAPH AUDIT â€” HECTON-8 First-Party URP Features",
                         "bytes":  6830,
                         "requiresRuntimeProof":  true
                     },
@@ -1078,7 +1095,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/SCENE_VRAM_FOOTPRINT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "LIVE SCENE VRAM SURVEILLANCE Ã¢â‚¬â€ `02_HECTON_WORLD.unity`",
+                        "title":  "LIVE SCENE VRAM SURVEILLANCE â€” `02_HECTON_WORLD.unity`",
                         "bytes":  5063,
                         "requiresRuntimeProof":  true
                     },
@@ -1086,7 +1103,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/SINGLETON_FIX_PRIORITY.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "SINGLETON ELIMINATION ROADMAP Ã¢â‚¬â€ HECTON-8",
+                        "title":  "SINGLETON ELIMINATION ROADMAP â€” HECTON-8",
                         "bytes":  20141,
                         "requiresRuntimeProof":  true
                     },
@@ -1094,7 +1111,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/SINGLETON_VIOLATIONS.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "SINGLETON WITCH HUNT Ã¢â‚¬â€ FIRST-PARTY VIOLATIONS",
+                        "title":  "SINGLETON WITCH HUNT â€” FIRST-PARTY VIOLATIONS",
                         "bytes":  15059,
                         "requiresRuntimeProof":  true
                     },
@@ -1102,7 +1119,7 @@
                         "path":  "Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/VRAM_BUDGET_AUDIT.md",
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
-                        "title":  "VRAM BUDGET AUDIT Ã¢â‚¬â€ First-Party Texture Accounting",
+                        "title":  "VRAM BUDGET AUDIT â€” First-Party Texture Accounting",
                         "bytes":  5901,
                         "requiresRuntimeProof":  true
                     },
@@ -1159,7 +1176,7 @@
                         "date":  "2026-05-08",
                         "status":  "PENDING VERIFICATION",
                         "title":  "HECTON-8 Global Architecture Map",
-                        "bytes":  11595,
+                        "bytes":  11699,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1231,7 +1248,7 @@
                         "date":  "2026-05-08",
                         "status":  "PENDING VERIFICATION",
                         "title":  "QUALITY_GATES.md",
-                        "bytes":  5934,
+                        "bytes":  6038,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1239,7 +1256,7 @@
                         "date":  "2026-05-08",
                         "status":  "PENDING VERIFICATION",
                         "title":  "Docs Index",
-                        "bytes":  23717,
+                        "bytes":  23825,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1503,7 +1520,7 @@
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
                         "title":  "HECTON-8 Sandbox Biomes Macro Shelf Surgery Log",
-                        "bytes":  22515,
+                        "bytes":  22570,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1519,7 +1536,7 @@
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
                         "title":  "2026-05-05 Omega Autonomy Forensic Hardening",
-                        "bytes":  13309,
+                        "bytes":  13374,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1647,7 +1664,7 @@
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION (BLOCKED BY MCP)",
                         "title":  "OMEGA Final Inquisition",
-                        "bytes":  6969,
+                        "bytes":  12341,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1668,10 +1685,10 @@
                     },
                     {
                         "path":  "Docs/Reports/2026-05-08_DOCUMENTATION_CONTINUATION_SYNC.md",
-                        "date":  "2026-05-08",
-                        "status":  "PENDING VERIFICATION (CORE BUILD SUCCEEDED / MCP CONSOLE CLEAN)",
+                        "date":  "2026-05-09",
+                        "status":  "PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)",
                         "title":  "2026-05-08 Documentation Continuation Sync",
-                        "bytes":  7887,
+                        "bytes":  34770,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1764,10 +1781,10 @@
                     },
                     {
                         "path":  "Docs/Reports/README.md",
-                        "date":  "2026-05-08",
-                        "status":  "PENDING VERIFICATION",
+                        "date":  "2026-05-09",
+                        "status":  "PENDING FINAL UNITY PROOF (R168 DOTNET BUILD PASSED / UNITY MCP BLOCKED / TIMESTAMP GATE CONTAMINATED)",
                         "title":  "Reports",
-                        "bytes":  26908,
+                        "bytes":  27657,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1791,7 +1808,7 @@
                         "date":  "2026-05-08",
                         "status":  "PENDING VERIFICATION",
                         "title":  "Root Docs Reference",
-                        "bytes":  5440,
+                        "bytes":  5511,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1855,7 +1872,7 @@
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
                         "title":  "OMEGA AUTONOMY AUDIT",
-                        "bytes":  6128,
+                        "bytes":  6383,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1863,7 +1880,7 @@
                         "date":  "2026-05-07",
                         "status":  "PENDING VERIFICATION",
                         "title":  "Omega Autonomy Codex Audit - Terrain/World Domain",
-                        "bytes":  4889,
+                        "bytes":  5192,
                         "requiresRuntimeProof":  true
                     },
                     {
@@ -1903,8 +1920,9 @@
                         "date":  "2026-05-08",
                         "status":  "PENDING VERIFICATION",
                         "title":  "SYSTEMS_CONTRACTS.md",
-                        "bytes":  8246,
+                        "bytes":  8350,
                         "requiresRuntimeProof":  true
                     }
                 ]
 }
+

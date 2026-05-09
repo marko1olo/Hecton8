@@ -48,7 +48,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            TryRegister();
+            RefreshTickRegistration();
         }
 
         private void OnDisable()
@@ -74,6 +74,7 @@ namespace Hecton8.UI
             _pendingFOV = fov;
             _isDirty = true;
             _dirtyTimer = 0f;
+            TryRegister();
         }
 
         /// <summary>
@@ -88,6 +89,7 @@ namespace Hecton8.UI
             _hasPendingPostProcessing = true;
             _isDirty = true;
             _dirtyTimer = 0f;
+            TryRegister();
         }
 
         /// <summary>
@@ -103,6 +105,7 @@ namespace Hecton8.UI
 
             _isDirty = false;
             _dirtyTimer = 0f;
+            RefreshTickRegistration();
         }
 
         /// <summary>
@@ -114,6 +117,7 @@ namespace Hecton8.UI
             _hasPendingPostProcessing = false;
             _isDirty = false;
             _dirtyTimer = 0f;
+            RefreshTickRegistration();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -126,7 +130,10 @@ namespace Hecton8.UI
                 _mainCameraResolveRetryTimer -= dt;
 
             if (!_isDirty)
+            {
+                RefreshTickRegistration();
                 return;
+            }
 
             _dirtyTimer += dt;
             if (_dirtyTimer < debounceTime)
@@ -141,6 +148,7 @@ namespace Hecton8.UI
 
             _isDirty = false;
             _dirtyTimer = 0f;
+            RefreshTickRegistration();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -178,7 +186,8 @@ namespace Hecton8.UI
                     return true;
                 }
 
-                Camera playerChildCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                Camera playerChildCamera = playerContext != null ? playerContext.PlayerCamera : null;
                 if (playerChildCamera != null)
                 {
                     mainCamera = playerChildCamera;
@@ -243,8 +252,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -254,6 +262,14 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private void RefreshTickRegistration()
+        {
+            if (_isDirty || _mainCameraResolveRetryTimer > 0f)
+                TryRegister();
+            else
+                TryUnregister();
         }
     }
 }

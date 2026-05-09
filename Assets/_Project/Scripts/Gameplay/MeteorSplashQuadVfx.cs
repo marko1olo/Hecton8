@@ -43,6 +43,8 @@ namespace Hecton8.Gameplay
         private bool _active;
         private bool _registeredToDispatcher;
         private Transform _cachedTransform;
+        private Vector3 _cachedOrigin;
+        private Quaternion _cachedRotation;
         private int _cachedLayer;
 
         public void OnSpawn()
@@ -78,15 +80,14 @@ namespace Hecton8.Gameplay
             if (!_active || s_quadMesh == null)
                 return;
 
-            Transform cachedTransform = _cachedTransform;
-            if (cachedTransform == null)
+            if (_cachedTransform == null)
                 return;
 
             _ageSeconds += deltaTime;
             float lifetime = math.max(0.1f, lifetimeSeconds);
             float age01 = math.saturate(_ageSeconds / lifetime);
-            Vector3 origin = cachedTransform.position;
-            Quaternion rotation = cachedTransform.rotation;
+            Vector3 origin = _cachedOrigin;
+            Quaternion rotation = _cachedRotation;
 
             if (splashMaterial != null)
             {
@@ -129,7 +130,10 @@ namespace Hecton8.Gameplay
 
         private void CacheRuntimeHandles()
         {
-            _cachedTransform = transform;
+            Transform cachedTransform = transform;
+            _cachedTransform = cachedTransform;
+            _cachedOrigin = cachedTransform.position;
+            _cachedRotation = cachedTransform.rotation;
             _cachedLayer = gameObject.layer;
         }
 
@@ -138,8 +142,7 @@ namespace Hecton8.Gameplay
             if (_registeredToDispatcher)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
+            _registeredToDispatcher = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterDispatcher()

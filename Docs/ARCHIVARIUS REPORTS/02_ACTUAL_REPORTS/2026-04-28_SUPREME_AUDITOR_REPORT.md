@@ -482,7 +482,7 @@ git log --oneline --follow Assets/_Project/Scripts/Atmosphere/HectonSurfaceWeath
 
 ---
 
-**STATUS:** âœ… **ETA CODEX VERIFIED**
+**STATUS:** PENDING VERIFICATION. Historical label was `ETA CODEX VERIFIED`; current authority does not accept it as runtime proof.
 
 ---
 

@@ -5,6 +5,9 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Core;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Physics
@@ -17,6 +20,9 @@ namespace Hecton8.Physics
         private const float SharedAmbientTimeScale = 0.11f;
         private const float SharedAmbientStrength = 0.9f;
         private const float SharedAmbientVerticalFactor = 0.08f;
+        private const int ActiveVolumeCapacity = 32;
+        private const float LargeVolumeAupCullThresholdMeters = 50f;
+        private const float LargeVolumeAupCullThresholdSq = LargeVolumeAupCullThresholdMeters * LargeVolumeAupCullThresholdMeters;
 
         public enum VolumeShape
         {
@@ -35,8 +41,21 @@ namespace Hecton8.Physics
             Downdraft = 6
         }
 
-        private static readonly List<CurrentVolume>    ActiveVolumes    = new List<CurrentVolume>(32);
-        private static readonly HashSet<CurrentVolume> ActiveVolumesSet = new HashSet<CurrentVolume>();
+        private static readonly List<CurrentVolume> ActiveVolumes =
+            new List<CurrentVolume>(ActiveVolumeCapacity); // COLD ALLOC: List<CurrentVolume>[32] — active authored-current registry — owner: CurrentVolume
+        private static readonly HashSet<CurrentVolume> ActiveVolumesSet =
+            new HashSet<CurrentVolume>(ActiveVolumeCapacity); // COLD ALLOC: HashSet<CurrentVolume>[32] — duplicate guard for authored-current registry — owner: CurrentVolume
+        private static int _sharedSampleTimeFrame = -1;
+        private static float _sharedSampleTime;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveVolumes.Clear();
+            ActiveVolumesSet.Clear();
+            _sharedSampleTimeFrame = -1;
+            _sharedSampleTime = 0f;
+        }
 
         [Header("Flow")]
         [SerializeField] private VolumeShape shape = VolumeShape.Box;
@@ -74,18 +93,45 @@ namespace Hecton8.Physics
         public Vector3 BoxSize => boxSize;
         public float SphereRadius => sphereRadius;
 
+        private int _sampleCacheFrame = -1;
+        private Vector3 _cachedPosition;
+        private Vector3 _cachedUp = Vector3.up;
+        private Vector3 _cachedForward = Vector3.forward;
+        private Vector3 _cachedDirectionalFlow = Vector3.forward;
+        private Matrix4x4 _cachedWorldToLocalMatrix = Matrix4x4.identity;
+        private AbsoluteUniversePosition _cachedAup;
+        private float _cachedSampleTime;
+        private float _cachedInfluenceRadiusSq = 64f;
+        private uint _sampleCacheShiftSequence;
+
         public static int ActiveCount => ActiveVolumes.Count;
 
-        public static IReadOnlyList<CurrentVolume> ActiveVolumeList => ActiveVolumes;
+        /// <summary>
+        /// Returns an active current volume by dense registry index.
+        /// </summary>
+        public static CurrentVolume GetActiveVolumeAt(int index)
+        {
+            return ActiveVolumes[index];
+        }
 
         public static Vector3 SampleAt(Vector3 worldPos)
         {
-            Vector3 total = Vector3.zero;
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return Vector3.zero;
+
             int count = ActiveVolumes.Count;
+            if (count == 0)
+                return Vector3.zero;
+
+            Vector3 total = Vector3.zero;
+            AbsoluteUniversePosition sampleAup = default;
+            bool sampleAupValid = false;
             for (int i = 0; i < count; i++)
             {
                 CurrentVolume volume = ActiveVolumes[i];
                 if (volume == null || !volume.isActiveAndEnabled)
+                    continue;
+                if (!volume.MayAffectRuntimePoint(worldPos, ref sampleAup, ref sampleAupValid))
                     continue;
 
                 total += volume.SampleInternal(worldPos);
@@ -96,9 +142,13 @@ namespace Hecton8.Physics
 
         internal static Vector3 SampleCombinedCurrent(Vector3 worldPos)
         {
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return Vector3.zero;
+
+            float sampleTime = ResolveFrameSampleTime();
             Unity.Mathematics.float3 ambient = CurrentManager.SampleCurrent(
                 new Unity.Mathematics.float3(worldPos.x, worldPos.y, worldPos.z),
-                Time.time,
+                sampleTime,
                 SharedAmbientNoiseScale,
                 SharedAmbientTimeScale,
                 SharedAmbientStrength,
@@ -113,6 +163,14 @@ namespace Hecton8.Physics
         /// <param name="worldPos">World-space position to evaluate.</param>
         public Vector3 Sample(Vector3 worldPos)
         {
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return Vector3.zero;
+
+            AbsoluteUniversePosition sampleAup = default;
+            bool sampleAupValid = false;
+            if (!MayAffectRuntimePoint(worldPos, ref sampleAup, ref sampleAupValid))
+                return Vector3.zero;
+
             return SampleInternal(worldPos);
         }
 
@@ -125,11 +183,12 @@ namespace Hecton8.Physics
         {
             flowPattern = targetPattern;
             localDirection = targetLocalDirection.sqrMagnitude > 0.0001f
-                ? targetLocalDirection.normalized
+                ? NormalizeVectorRsqrt(targetLocalDirection, Vector3.forward)
                 : Vector3.forward;
-            strength = Mathf.Max(0f, targetStrength);
-            verticalFactor = Mathf.Clamp(targetVerticalFactor, -1f, 1f);
-            vortexRadialPull = Mathf.Clamp(targetVortexRadialPull, -1f, 1f);
+            strength = math.max(0f, targetStrength);
+            verticalFactor = math.clamp(targetVerticalFactor, -1f, 1f);
+            vortexRadialPull = math.clamp(targetVortexRadialPull, -1f, 1f);
+            _sampleCacheFrame = -1;
         }
 
         internal void ApplySemanticBoundsPreset(
@@ -139,19 +198,20 @@ namespace Hecton8.Physics
         {
             shape = targetShape;
             boxSize = new Vector3(
-                Mathf.Max(0.01f, targetBoxSize.x),
-                Mathf.Max(0.01f, targetBoxSize.y),
-                Mathf.Max(0.01f, targetBoxSize.z));
-            sphereRadius = Mathf.Max(0.01f, targetSphereRadius);
+                math.max(0.01f, targetBoxSize.x),
+                math.max(0.01f, targetBoxSize.y),
+                math.max(0.01f, targetBoxSize.z));
+            sphereRadius = math.max(0.01f, targetSphereRadius);
+            _sampleCacheFrame = -1;
         }
 
         internal float GetApproximateInfluenceRadius()
         {
             if (shape == VolumeShape.Sphere)
-                return Mathf.Max(0.01f, sphereRadius);
+                return math.max(0.01f, sphereRadius);
 
             Vector3 halfExtents = boxSize * 0.5f;
-            return Mathf.Max(0.01f, halfExtents.magnitude);
+            return math.max(0.01f, ResolveL1MagnitudeUpperBound(halfExtents));
         }
 
         private void OnEnable()
@@ -168,6 +228,8 @@ namespace Hecton8.Physics
 
         private Vector3 SampleInternal(Vector3 worldPos)
         {
+            RefreshSampleCache();
+
             float weight = shape == VolumeShape.Box
                 ? ComputeBoxWeight(worldPos)
                 : ComputeSphereWeight(worldPos);
@@ -179,13 +241,13 @@ namespace Hecton8.Physics
             if (dir.sqrMagnitude <= 0.0001f)
                 return Vector3.zero;
 
-            dir.Normalize();
+            dir = NormalizeVectorRsqrt(dir, Vector3.zero);
 
             float pulse = 1f;
             if (pulseAmplitude > 0.0001f && pulseFrequency > 0.0001f)
             {
-                float t = Time.time * pulseFrequency + phaseOffset;
-                pulse += Mathf.Sin(t * Mathf.PI * 2f) * pulseAmplitude;
+                float t = _cachedSampleTime * pulseFrequency + phaseOffset;
+                pulse += math.sin(t * math.PI * 2f) * pulseAmplitude;
             }
 
             Vector3 result = dir * (strength * pulse * weight);
@@ -194,7 +256,7 @@ namespace Hecton8.Physics
             {
                 var noise = CurrentManager.SampleCurrent(
                     new Unity.Mathematics.float3(worldPos.x, worldPos.y, worldPos.z),
-                    Time.time + phaseOffset,
+                    _cachedSampleTime + phaseOffset,
                     turbulenceScale,
                     turbulenceTimeScale,
                     turbulenceStrength * weight,
@@ -206,9 +268,30 @@ namespace Hecton8.Physics
             return result;
         }
 
+        private bool MayAffectRuntimePoint(
+            Vector3 worldPos,
+            ref AbsoluteUniversePosition sampleAup,
+            ref bool sampleAupValid)
+        {
+            RefreshSampleCache();
+            if (_cachedInfluenceRadiusSq > LargeVolumeAupCullThresholdSq)
+            {
+                if (!sampleAupValid)
+                {
+                    sampleAup = AbsoluteUniversePosition.FromRuntimePosition(worldPos);
+                    sampleAupValid = true;
+                }
+
+                return AbsoluteUniversePosition.DistanceSq(in sampleAup, in _cachedAup) <= (double)_cachedInfluenceRadiusSq;
+            }
+
+            Vector3 delta = worldPos - _cachedPosition;
+            float distanceSq = delta.x * delta.x + delta.y * delta.y + delta.z * delta.z;
+            return distanceSq <= _cachedInfluenceRadiusSq;
+        }
+
         private Vector3 ComputeFlowDirection(Vector3 worldPos)
         {
-            Vector3 up = transform.up;
             switch (flowPattern)
             {
                 case FlowPattern.RadialInward:
@@ -218,54 +301,54 @@ namespace Hecton8.Physics
                     return ComputeRadialDirection(worldPos, false);
 
                 case FlowPattern.VortexClockwise:
-                    return ComputeVortexDirection(worldPos, up, true);
+                    return ComputeVortexDirection(worldPos, _cachedUp, true);
 
                 case FlowPattern.VortexCounterClockwise:
-                    return ComputeVortexDirection(worldPos, up, false);
+                    return ComputeVortexDirection(worldPos, _cachedUp, false);
 
                 case FlowPattern.Updraft:
-                    return up;
+                    return _cachedUp;
 
                 case FlowPattern.Downdraft:
-                    return -up;
+                    return -_cachedUp;
 
                 default:
-                    Vector3 directional = transform.TransformDirection(localDirection.normalized);
-                    directional.y *= verticalFactor;
-                    return directional;
+                    return _cachedDirectionalFlow;
             }
         }
 
         private Vector3 ComputeRadialDirection(Vector3 worldPos, bool inward)
         {
-            Vector3 delta = worldPos - transform.position;
+            Vector3 delta = worldPos - _cachedPosition;
             float vertical = delta.y;
             delta.y = 0f;
             if (delta.sqrMagnitude <= 0.0001f)
             {
-                return inward ? -transform.forward : transform.forward;
+                return inward ? -_cachedForward : _cachedForward;
             }
 
-            Vector3 radial = inward ? -delta.normalized : delta.normalized;
-            radial.y = Mathf.Clamp(verticalFactor * vertical * 0.1f, -1f, 1f);
+            Vector3 radial = NormalizeVectorRsqrt(delta, _cachedForward);
+            if (inward)
+                radial = -radial;
+            radial.y = math.clamp(verticalFactor * vertical * 0.1f, -1f, 1f);
             return radial;
         }
 
         private Vector3 ComputeVortexDirection(Vector3 worldPos, Vector3 axis, bool clockwise)
         {
-            Vector3 delta = worldPos - transform.position;
-            Vector3 radial = Vector3.ProjectOnPlane(delta, axis);
+            Vector3 delta = worldPos - _cachedPosition;
+            Vector3 radial = ProjectOnPlaneUnit(delta, axis);
             if (radial.sqrMagnitude <= 0.0001f)
             {
                 return axis * verticalFactor;
             }
 
             Vector3 tangent = clockwise
-                ? Vector3.Cross(axis, radial)
-                : Vector3.Cross(radial, axis);
+                ? CrossVector(axis, radial)
+                : CrossVector(radial, axis);
 
-            tangent.Normalize();
-            radial.Normalize();
+            tangent = NormalizeVectorRsqrt(tangent, Vector3.zero);
+            radial = NormalizeVectorRsqrt(radial, Vector3.zero);
 
             Vector3 dir = tangent + (-radial * vortexRadialPull) + (axis * verticalFactor);
             return dir;
@@ -273,29 +356,99 @@ namespace Hecton8.Physics
 
         private float ComputeBoxWeight(Vector3 worldPos)
         {
-            Vector3 local = transform.InverseTransformPoint(worldPos);
+            Vector3 local = _cachedWorldToLocalMatrix.MultiplyPoint3x4(worldPos);
             Vector3 half = boxSize * 0.5f;
 
-            if (Mathf.Abs(local.x) > half.x || Mathf.Abs(local.y) > half.y || Mathf.Abs(local.z) > half.z)
+            if (math.abs(local.x) > half.x || math.abs(local.y) > half.y || math.abs(local.z) > half.z)
                 return 0f;
 
-            float softness = Mathf.Clamp01(edgeSoftness);
-            float safeX = half.x > 0.001f ? 1f - Mathf.Abs(local.x) / half.x : 1f;
-            float safeY = half.y > 0.001f ? 1f - Mathf.Abs(local.y) / half.y : 1f;
-            float safeZ = half.z > 0.001f ? 1f - Mathf.Abs(local.z) / half.z : 1f;
-            float edge = Mathf.Min(safeX, Mathf.Min(safeY, safeZ));
-            return Mathf.Clamp01(edge / Mathf.Max(0.01f, softness));
+            float softness = math.saturate(edgeSoftness);
+            float safeX = half.x > 0.001f ? 1f - math.abs(local.x) / half.x : 1f;
+            float safeY = half.y > 0.001f ? 1f - math.abs(local.y) / half.y : 1f;
+            float safeZ = half.z > 0.001f ? 1f - math.abs(local.z) / half.z : 1f;
+            float edge = math.min(safeX, math.min(safeY, safeZ));
+            return math.saturate(edge / math.max(0.01f, softness));
         }
 
         private float ComputeSphereWeight(Vector3 worldPos)
         {
-            float radius = Mathf.Max(0.01f, sphereRadius);
-            float distance = Vector3.Distance(transform.position, worldPos);
-            if (distance >= radius)
+            float radius = math.max(0.01f, sphereRadius);
+            float distanceSq = (_cachedPosition - worldPos).sqrMagnitude;
+            float radiusSq = radius * radius;
+            if (distanceSq >= radiusSq)
                 return 0f;
 
-            float edge = 1f - distance / radius;
-            return Mathf.Clamp01(edge / Mathf.Max(0.01f, edgeSoftness));
+            float edge = 1f - distanceSq / math.max(radiusSq, 0.0001f);
+            return math.saturate(edge / math.max(0.01f, edgeSoftness));
+        }
+
+        private void RefreshSampleCache()
+        {
+            int frame = Time.frameCount;
+            uint shiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+            if (_sampleCacheFrame == frame && _sampleCacheShiftSequence == shiftSequence)
+                return;
+
+            Transform cachedTransform = transform;
+            _cachedPosition = cachedTransform.position;
+            _cachedUp = NormalizeVectorRsqrt(cachedTransform.up, Vector3.up);
+            _cachedForward = NormalizeVectorRsqrt(cachedTransform.forward, Vector3.forward);
+            _cachedWorldToLocalMatrix = cachedTransform.worldToLocalMatrix;
+            Vector3 safeLocalDirection = NormalizeVectorRsqrt(localDirection, Vector3.forward);
+            _cachedDirectionalFlow = cachedTransform.TransformDirection(safeLocalDirection);
+            _cachedDirectionalFlow.y *= verticalFactor;
+            float influenceRadius = GetApproximateInfluenceRadius();
+            _cachedInfluenceRadiusSq = influenceRadius * influenceRadius;
+            if (_cachedInfluenceRadiusSq > LargeVolumeAupCullThresholdSq)
+                _cachedAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedPosition);
+            _cachedSampleTime = ResolveFrameSampleTime();
+            _sampleCacheFrame = frame;
+            _sampleCacheShiftSequence = shiftSequence;
+        }
+
+        private static float ResolveFrameSampleTime()
+        {
+            int frame = Time.frameCount;
+            if (_sharedSampleTimeFrame != frame)
+            {
+                _sharedSampleTime = Time.time;
+                _sharedSampleTimeFrame = frame;
+            }
+
+            return _sharedSampleTime;
+        }
+
+        private static Vector3 NormalizeVectorRsqrt(Vector3 value, Vector3 fallback)
+        {
+            float sqrMagnitude = value.x * value.x + value.y * value.y + value.z * value.z;
+            if (sqrMagnitude <= 0.000001f)
+                return fallback;
+
+            float invMagnitude = math.rsqrt(sqrMagnitude);
+            return new Vector3(value.x * invMagnitude, value.y * invMagnitude, value.z * invMagnitude);
+        }
+
+        private static Vector3 ProjectOnPlaneUnit(Vector3 value, Vector3 unitNormal)
+        {
+            return value - unitNormal * DotVector(value, unitNormal);
+        }
+
+        private static float DotVector(Vector3 a, Vector3 b)
+        {
+            return a.x * b.x + a.y * b.y + a.z * b.z;
+        }
+
+        private static Vector3 CrossVector(Vector3 a, Vector3 b)
+        {
+            return new Vector3(
+                a.y * b.z - a.z * b.y,
+                a.z * b.x - a.x * b.z,
+                a.x * b.y - a.y * b.x);
+        }
+
+        private static float ResolveL1MagnitudeUpperBound(Vector3 value)
+        {
+            return math.abs(value.x) + math.abs(value.y) + math.abs(value.z);
         }
 
 #if UNITY_EDITOR
@@ -307,10 +460,10 @@ namespace Hecton8.Physics
             if (turbulenceScale < 0f) turbulenceScale = 0f;
             if (turbulenceTimeScale < 0f) turbulenceTimeScale = 0f;
             if (sphereRadius < 0.01f) sphereRadius = 0.01f;
-            vortexRadialPull = Mathf.Clamp(vortexRadialPull, -1f, 1f);
-            boxSize.x = Mathf.Max(0.01f, boxSize.x);
-            boxSize.y = Mathf.Max(0.01f, boxSize.y);
-            boxSize.z = Mathf.Max(0.01f, boxSize.z);
+            vortexRadialPull = math.clamp(vortexRadialPull, -1f, 1f);
+            boxSize.x = math.max(0.01f, boxSize.x);
+            boxSize.y = math.max(0.01f, boxSize.y);
+            boxSize.z = math.max(0.01f, boxSize.z);
         }
 
         private void OnDrawGizmosSelected()
@@ -325,7 +478,7 @@ namespace Hecton8.Physics
                 Gizmos.DrawSphere(Vector3.zero, sphereRadius);
 
             Gizmos.color = new Color(0.1f, 0.95f, 1f, 0.85f);
-            Gizmos.DrawRay(Vector3.zero, localDirection.normalized * 2f);
+            Gizmos.DrawRay(Vector3.zero, NormalizeVectorRsqrt(localDirection, Vector3.forward) * 2f);
             Gizmos.matrix = old;
         }
 #endif

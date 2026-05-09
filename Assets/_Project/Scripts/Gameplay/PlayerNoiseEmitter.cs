@@ -1,6 +1,8 @@
 using System;
 using Hecton8.AI;
 using Hecton8.Core;
+using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -14,8 +16,10 @@ namespace Hecton8.Gameplay
         private const float ToolUsePulseDuration = 0.6f;
         private const float PrimaryToolNoisePulse = 1f;
         private const float SecondaryToolNoisePulse = 0.75f;
+        private const float ReferenceRefreshInterval = 0.5f;
 
         private Transform _cachedTransform;
+        private HectonPlayerMovement _playerMovement;
         private Rigidbody _playerRigidbody;
         private PlayerFlashlight _playerFlashlight;
         private PlayerToolManager _playerToolManager;
@@ -25,6 +29,7 @@ namespace Hecton8.Gameplay
         private bool _registered;
         private float _toolUsePulseTimer;
         private float _toolUsePulseAmplitude;
+        private float _referenceRefreshTimer;
 
         /// <summary>
         /// Ensures the centralized player-noise emitter exists on the provided player root.
@@ -74,12 +79,25 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void Tick(float dt)
         {
-            ResolveReferences();
+            if (_playerToolManager == null ||
+                _playerMovement == null ||
+                _playerRigidbody == null ||
+                _playerFlashlight == null ||
+                _playerTransportCoordinator == null)
+            {
+                _referenceRefreshTimer -= math.max(0f, dt);
+                if (_referenceRefreshTimer <= 0f)
+                {
+                    ResolveReferences();
+                    _referenceRefreshTimer = ReferenceRefreshInterval;
+                }
+            }
+
             RefreshObservedToolSubscription();
 
             if (_toolUsePulseTimer > 0f)
             {
-                _toolUsePulseTimer = Mathf.Max(0f, _toolUsePulseTimer - dt);
+                _toolUsePulseTimer = math.max(0f, _toolUsePulseTimer - dt);
             }
             else
             {
@@ -90,7 +108,18 @@ namespace Hecton8.Gameplay
             if (_toolUsePulseTimer > 0f && ToolUsePulseDuration > 0f)
                 toolUseNoise01 = _toolUsePulseAmplitude * (_toolUsePulseTimer / ToolUsePulseDuration);
 
-            Vector3 playerPosition = _cachedTransform.position;
+            AbsoluteUniversePosition playerAup;
+            Vector3 playerPosition;
+            if (TryResolvePlayerAup(out playerAup))
+            {
+                playerPosition = playerAup.ToRuntimeFloat3();
+            }
+            else
+            {
+                playerPosition = _cachedTransform.position;
+                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            }
+
             float movementSpeedSqr = _playerRigidbody != null ? _playerRigidbody.linearVelocity.sqrMagnitude : 0f;
             bool flashlightOn = _playerFlashlight != null && _playerFlashlight.IsOn;
             float transportBoost01 = ResolveTransportBoost01();
@@ -98,6 +127,7 @@ namespace Hecton8.Gameplay
 
             NoiseSystem.ReportPlayerSignal(
                 playerPosition,
+                in playerAup,
                 movementSpeedSqr,
                 flashlightOn,
                 transportBoost01,
@@ -113,14 +143,21 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void ResolveReferences()
         {
             if (_cachedTransform == null)
                 _cachedTransform = transform;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+
+            if (_playerMovement == null && playerContext != null)
+                _playerMovement = playerContext.PlayerMovement;
+
+            if (_playerMovement == null)
+                _cachedTransform.TryGetComponent(out _playerMovement);
 
             if (_playerRigidbody == null)
                 _cachedTransform.TryGetComponent(out _playerRigidbody);
@@ -133,10 +170,31 @@ namespace Hecton8.Gameplay
 
             if (_playerToolManager == null)
             {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
                 if (playerContext != null)
                     _playerToolManager = playerContext.ToolManager;
             }
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (_playerMovement != null)
+            {
+                playerAup = _playerMovement.CurrentAup;
+                return true;
+            }
+
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            {
+                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    playerAup = movementState.PredictedAup;
+                    return true;
+                }
+            }
+
+            playerAup = default;
+            return false;
         }
 
         private void RefreshObservedToolSubscription()
@@ -175,7 +233,7 @@ namespace Hecton8.Gameplay
                 return 0f;
 
             IPlayerTransportSource transportSource = _playerToolManager.CurrentToolTransportSource;
-            return transportSource != null ? Mathf.Clamp01(transportSource.GetTransportBoost01()) : 0f;
+            return transportSource != null ? math.saturate(transportSource.GetTransportBoost01()) : 0f;
         }
 
         private float ResolveTransportFaunaSignature()
@@ -184,7 +242,7 @@ namespace Hecton8.Gameplay
             {
                 PlayerTransportPreset transportPreset = _playerTransportCoordinator.ResolveTransportPreset();
                 if (transportPreset != null)
-                    return Mathf.Max(0f, transportPreset.FaunaDetectionSignature);
+                    return math.max(0f, transportPreset.FaunaDetectionSignature);
             }
 
             if (_playerToolManager == null || _playerToolManager.IsSwapping)
@@ -194,7 +252,7 @@ namespace Hecton8.Gameplay
             if (transportFeelContract == null || transportFeelContract.Preset == null)
                 return 1f;
 
-            return Mathf.Max(0f, transportFeelContract.Preset.FaunaDetectionSignature);
+            return math.max(0f, transportFeelContract.Preset.FaunaDetectionSignature);
         }
     }
 }

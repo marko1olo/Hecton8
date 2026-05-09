@@ -46,6 +46,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.Audio;
 using Hecton8.Atmosphere;
 using Hecton8.Bootstrap;
@@ -56,6 +57,7 @@ using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 #if UNITY_EDITOR
@@ -66,17 +68,20 @@ namespace Hecton8.Audio
     /// <summary>
     /// Deferred acoustic-zone transition payload.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Size = 1)]
     public readonly struct AcousticZoneChangedEvent
     {
         /// <summary>Builds a new acoustic-zone transition payload.</summary>
         /// <param name="isInterior">True when the player entered a dry/interior zone.</param>
         public AcousticZoneChangedEvent(bool isInterior)
         {
-            IsInterior = isInterior;
+            _isInterior = isInterior ? (byte)1 : (byte)0;
         }
 
         /// <summary>True when the player is in a dry/interior zone.</summary>
-        public bool IsInterior { get; }
+        public bool IsInterior => _isInterior != 0;
+
+        private readonly byte _isInterior;
     }
 
     /// <summary>
@@ -96,18 +101,38 @@ namespace Hecton8.Audio
     {
         private const int ListenerCapacity = 4;
         private const int PendingZoneChangeCapacity = 4;
+        private static readonly uint _overflowWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.Overflow"));
+        private static readonly uint _zoneChangeQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.ZoneChange"));
+        private static readonly uint _listenerRejectedWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.ListenerRejected"));
+        private static readonly uint _listenerExceptionWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.ListenerException"));
+        private static readonly uint _listenerContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents.Listeners"));
 
-        // COLD ALLOC: RegistryBucket<IAcousticZoneEventListener>[4] - deferred acoustic-zone listeners - owner: AcousticZoneEvents
+        // COLD ALLOC: RegistryBucket<IAcousticZoneEventListener>[4] — deferred acoustic-zone listeners — owner: AcousticZoneEvents
         private static readonly RegistryBucket<IAcousticZoneEventListener> _listeners =
             new RegistryBucket<IAcousticZoneEventListener>(ListenerCapacity);
+        // COLD ALLOC: IAcousticZoneEventListener[4] - listener additions deferred while dispatching acoustic-zone changes - owner: AcousticZoneEvents
+        private static readonly IAcousticZoneEventListener[] _deferredRegisterListeners = new IAcousticZoneEventListener[ListenerCapacity];
+        // COLD ALLOC: IAcousticZoneEventListener[4] - listener removals deferred while dispatching acoustic-zone changes - owner: AcousticZoneEvents
+        private static readonly IAcousticZoneEventListener[] _deferredUnregisterListeners = new IAcousticZoneEventListener[ListenerCapacity];
         private static NativeQueue<AcousticZoneChangedEvent> _pendingZoneChanges;
         private static NativeQueue<AcousticZoneChangedEvent> _nextFrameZoneChanges;
         private static int _pendingZoneChangeCount;
         private static int _nextFrameZoneChangeCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedZoneChangeCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         /// <summary>Number of acoustic-zone payloads waiting for LateUpdate dispatch.</summary>
         public static int PendingCount => _pendingZoneChangeCount + _nextFrameZoneChangeCount;
+
+        internal static int DroppedZoneChangeCount => _droppedZoneChangeCount;
+        internal static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+        internal static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
@@ -127,10 +152,26 @@ namespace Hecton8.Audio
             }
 
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingZoneChangeCount = 0;
             _nextFrameZoneChangeCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedZoneChangeCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal static void ResetForSmokeTest()
+        {
+            ResetStaticState();
+        }
+#endif
 
         /// <summary>Registers one acoustic-zone listener.</summary>
         /// <param name="listener">Listener instance.</param>
@@ -140,8 +181,13 @@ namespace Hecton8.Audio
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>Unregisters one acoustic-zone listener.</summary>
@@ -151,17 +197,32 @@ namespace Hecton8.Audio
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            if (!_listeners.TryUnregister(listener))
+                return;
+
+            if (_listeners.Count <= 0)
+                DropQueuedZoneChanges();
         }
 
         /// <summary>Queues one acoustic-zone transition.</summary>
         /// <param name="payload">Zone transition payload.</param>
         public static void Raise(in AcousticZoneChangedEvent payload)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingZoneChangeCount + _nextFrameZoneChangeCount >= PendingZoneChangeCapacity)
+            {
+                ReportZoneChangeOverflow();
                 return;
+            }
 
             if (_isDispatching)
             {
@@ -179,6 +240,12 @@ namespace Hecton8.Audio
         {
             if (!_pendingZoneChanges.IsCreated)
                 return;
+
+            if (_listeners.Count <= 0)
+            {
+                DropQueuedZoneChanges();
+                return;
+            }
 
             PromoteNextFrameZoneChangesIfFrontEmpty();
             int scanBudget = _pendingZoneChangeCount > 0 ? _pendingZoneChangeCount : PendingZoneChangeCapacity;
@@ -201,13 +268,16 @@ namespace Hecton8.Audio
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IAcousticZoneEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnAcousticZoneChanged(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -222,24 +292,40 @@ namespace Hecton8.Audio
         {
             if (!_pendingZoneChanges.IsCreated)
             {
-                _pendingZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] - deferred acoustic-zone lane - owner: AcousticZoneEvents
+                _pendingZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] — deferred acoustic-zone lane — owner: AcousticZoneEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingZoneChanges,
                     PendingZoneChangeCapacity,
                     nameof(AcousticZoneEvents),
                     nameof(_pendingZoneChanges),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingZoneChanges, PendingZoneChangeCapacity);
             }
 
             if (!_nextFrameZoneChanges.IsCreated)
             {
-                _nextFrameZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] - next-frame acoustic-zone lane prevents same-frame reentrant dispatch - owner: AcousticZoneEvents
+                _nextFrameZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] — next-frame acoustic-zone lane prevents same-frame reentrant dispatch — owner: AcousticZoneEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameZoneChanges,
                     PendingZoneChangeCapacity,
                     nameof(AcousticZoneEvents),
                     nameof(_nextFrameZoneChanges),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameZoneChanges, PendingZoneChangeCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -258,6 +344,206 @@ namespace Hecton8.Audio
             _nextFrameZoneChanges = swap;
             _pendingZoneChangeCount = _nextFrameZoneChangeCount;
             _nextFrameZoneChangeCount = 0;
+        }
+
+        private static void DropQueuedZoneChanges()
+        {
+            if (_pendingZoneChanges.IsCreated)
+            {
+                while (_pendingZoneChanges.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameZoneChanges.IsCreated)
+            {
+                while (_nextFrameZoneChanges.TryDequeue(out _))
+                {
+                }
+            }
+
+            _pendingZoneChangeCount = 0;
+            _nextFrameZoneChangeCount = 0;
+        }
+
+        private static void ReportZoneChangeOverflow()
+        {
+            _droppedZoneChangeCount++;
+            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _zoneChangeQueueHash, PendingZoneChangeCapacity);
+        }
+
+        private static void DispatchToListener(IAcousticZoneEventListener listener, in AcousticZoneChangedEvent payload)
+        {
+            try
+            {
+                listener.OnAcousticZoneChanged(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IAcousticZoneEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IAcousticZoneEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IAcousticZoneEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IAcousticZoneEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IAcousticZoneEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IAcousticZoneEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IAcousticZoneEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IAcousticZoneEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+
+            if (_listeners.Count <= 0)
+                DropQueuedZoneChanges();
+        }
+
+        private static void RegisterImmediate(IAcousticZoneEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _listenerRejectedWarningHash,
+                _listenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _listenerExceptionWarningHash,
+                _listenerContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
         }
     }
 
@@ -299,6 +585,7 @@ namespace Hecton8.Audio
             Interior = 2
         }
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct AcousticGraphState
         {
             public float LowPassCutoffHz;
@@ -314,25 +601,7 @@ namespace Hecton8.Audio
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private static AcousticZoneController _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
-        public static AcousticZoneController Instance
-        {
-            get
-            {
-#if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
-                    return null;
-#endif
-                return _instance;
-            }
-        }
+        public static AcousticZoneController Instance => GlobalRegistry.AcousticZone;
 
         // ══════════════════════════════════════════════════════════
         //  GLOBAL EVENT — ACOUSTIC ZONE CHANGE
@@ -899,13 +1168,12 @@ namespace Hecton8.Audio
         private void Awake()
         {
             // ── Singleton ──
-            if (_instance != null && _instance != this)
+            AcousticZoneController registered = GlobalRegistry.AcousticZone;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
 
             _stateInitialized = false;
             _registeredToTickManager = false;
@@ -959,9 +1227,11 @@ namespace Hecton8.Audio
 
             if (!_registeredToTickManager)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
                     "[AcousticZoneController] GameTickManager not found at Start(). " +
                     "Acoustic transitions will NOT work.", this);
+#endif
             }
 
             ResolvePlayerAmbientSource();
@@ -1006,10 +1276,6 @@ namespace Hecton8.Audio
             SpectrumEvents.UnregisterSonarPingListener(this);
             ResetSourceLevelAcousticFallback();
 
-            if (_instance == this)
-            {
-                _instance = null;
-            }
         }
 
         private void TryRegister()
@@ -1055,6 +1321,13 @@ namespace Hecton8.Audio
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            AcousticZoneController registered = GlobalRegistry.AcousticZone;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterAcousticZoneRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AcousticZone, this);
@@ -1254,7 +1527,7 @@ namespace Hecton8.Audio
                 return;
 
             sam.PlayStatic2D(clip, madnessWhisperVolume, sam.InterfaceGroup);
-            _nextMadnessWhisperTime = Time.unscaledTime + Mathf.Max(0.1f, madnessWhisperCooldown);
+            _nextMadnessWhisperTime = Time.unscaledTime + math.max(0.1f, madnessWhisperCooldown);
         }
 
         private AudioMixerSnapshot ResolveSurfaceSnapshot()
@@ -1425,7 +1698,9 @@ namespace Hecton8.Audio
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogDiagnostic(string message)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log(message, this);
+#endif
         }
 
         private AcousticZoneState ResolveCurrentZone()
@@ -1471,8 +1746,8 @@ namespace Hecton8.Audio
 
         private bool ResolveMovementDrivenExteriorState(HectonPlayerMovement movement)
         {
-            float depth = Mathf.Max(0f, movement.CurrentDepth);
-            float immersion = Mathf.Clamp01(movement.WaterImmersionRatio);
+            float depth = math.max(0f, movement.CurrentDepth);
+            float immersion = math.saturate(movement.WaterImmersionRatio);
             bool headSubmerged = movement.IsPlayerSubmerged || depth > 0f;
 
             if (headSubmerged || depth >= acousticForceUnderwaterDepth)
@@ -1747,6 +2022,60 @@ namespace Hecton8.Audio
             return _playerMovement;
         }
 
+        private bool TryResolvePlayerImpactDistanceSq(Vector3 impactPoint, out double distanceSq)
+        {
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                distanceSq = 0d;
+                return false;
+            }
+
+            AbsoluteUniversePosition impactAup = AbsoluteUniversePosition.FromRuntimePosition(impactPoint);
+            distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in impactAup);
+            return true;
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            HectonPlayerMovement movement = ResolvePlayerMovement();
+            if (movement == null)
+            {
+                playerAup = default;
+                return false;
+            }
+
+            playerAup = movement.CurrentAup;
+            return true;
+        }
+
+        private bool TryResolvePlayerAupRuntimePosition(out Vector3 runtimePosition, out AbsoluteUniversePosition playerAup)
+        {
+            if (!TryResolvePlayerAup(out playerAup))
+            {
+                runtimePosition = default;
+                return false;
+            }
+
+            float3 runtime = playerAup.ToRuntimeFloat3();
+            runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+            return true;
+        }
+
+        private static float ApproximateOneMinusExpNegPositive(float x)
+        {
+            return math.saturate(1f - ApproximateExpNegPositive(x));
+        }
+
+        private static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(x, 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
+        }
+
         private AudioSource ResolvePlayerAmbientSource()
         {
             if ((object)playerUnderwaterAmbientSource != null && playerUnderwaterAmbientSource != null)
@@ -2004,16 +2333,16 @@ namespace Hecton8.Audio
                 targetPitch *= _currentSoundscapePitchScale;
                 if (_stormAmbientInterference > 0.001f)
                 {
-                    targetVolume *= Mathf.Lerp(1f, Mathf.Max(0.1f, 1f - stormAmbientDuckMax), _stormAmbientInterference);
-                    targetPitch *= Mathf.Lerp(1f, Mathf.Max(0.5f, 1f - stormAmbientPitchDropMax), _stormAmbientInterference);
+                    targetVolume *= math.lerp(1f, math.max(0.1f, 1f - stormAmbientDuckMax), _stormAmbientInterference);
+                    targetPitch *= math.lerp(1f, math.max(0.5f, 1f - stormAmbientPitchDropMax), _stormAmbientInterference);
                     targetPitch += _stormAmbientFlutter;
                 }
             }
 
-            if (Mathf.Abs(ambientSource.volume - targetVolume) > 0.01f)
+            if (math.abs(ambientSource.volume - targetVolume) > 0.01f)
                 ambientSource.volume = targetVolume;
 
-            if (Mathf.Abs(ambientSource.pitch - targetPitch) > 0.01f)
+            if (math.abs(ambientSource.pitch - targetPitch) > 0.01f)
                 ambientSource.pitch = targetPitch;
         }
 
@@ -2037,25 +2366,27 @@ namespace Hecton8.Audio
                 return;
             }
 
-            float stormInterference = Mathf.InverseLerp(stormStaticElectricalThreshold, 1f, _surfaceElectricalActivity);
+            float stormInterference = math.saturate(
+                (_surfaceElectricalActivity - stormStaticElectricalThreshold) /
+                math.max(0.0001f, 1f - stormStaticElectricalThreshold));
             _stormAmbientInterference = stormInterference;
             _debugStormInterference = stormInterference;
 
-            float flutterFrequency = Mathf.Lerp(stormAmbientFlutterFrequencyMin, stormAmbientFlutterFrequencyMax, stormInterference);
-            _stormAmbientFlutterPhase += deltaTime * flutterFrequency * Mathf.PI * 2f;
-            if (_stormAmbientFlutterPhase >= Mathf.PI * 2f)
-                _stormAmbientFlutterPhase -= Mathf.PI * 2f;
+            float flutterFrequency = math.lerp(stormAmbientFlutterFrequencyMin, stormAmbientFlutterFrequencyMax, stormInterference);
+            _stormAmbientFlutterPhase += deltaTime * flutterFrequency * math.PI * 2f;
+            if (_stormAmbientFlutterPhase >= math.PI * 2f)
+                _stormAmbientFlutterPhase -= math.PI * 2f;
 
-            _stormAmbientFlutter = Mathf.Sin(_stormAmbientFlutterPhase) * (stormAmbientPitchFlutterMax * stormInterference);
+            _stormAmbientFlutter = math.sin(_stormAmbientFlutterPhase) * (stormAmbientPitchFlutterMax * stormInterference);
 
             _stormInterferencePulseTimer -= deltaTime;
             if (_stormInterferencePulseTimer > 0f)
                 return;
 
             PlayStormInterferencePulse(stormInterference, zone);
-            _stormInterferencePulseTimer = Mathf.Lerp(
-                Mathf.Max(0.1f, stormStaticIntervalMax),
-                Mathf.Max(0.1f, stormStaticIntervalMin),
+            _stormInterferencePulseTimer = math.lerp(
+                math.max(0.1f, stormStaticIntervalMax),
+                math.max(0.1f, stormStaticIntervalMin),
                 stormInterference);
         }
 
@@ -2069,7 +2400,7 @@ namespace Hecton8.Audio
 
             HectonMapMagicVegetationBridge.VegetationAcousticType acousticType =
                 HectonMapMagicVegetationBridge.GlobalVegetationAcousticType;
-            float density = Mathf.Clamp01(HectonMapMagicVegetationBridge.GlobalVegetationAudioDensity);
+            float density = math.saturate(HectonMapMagicVegetationBridge.GlobalVegetationAudioDensity);
             if (acousticType == HectonMapMagicVegetationBridge.VegetationAcousticType.Silence ||
                 density <= underwaterVegetationDensityThreshold)
             {
@@ -2088,19 +2419,21 @@ namespace Hecton8.Audio
             if (clip == null || sam == null)
                 return;
 
-            float densityT = Mathf.InverseLerp(underwaterVegetationDensityThreshold, 1f, density);
-            float volume = Mathf.Lerp(underwaterVegetationVolumeMin, underwaterVegetationVolumeMax, densityT);
+            float densityT = math.saturate(
+                (density - underwaterVegetationDensityThreshold) /
+                math.max(0.0001f, 1f - underwaterVegetationDensityThreshold));
+            float volume = math.lerp(underwaterVegetationVolumeMin, underwaterVegetationVolumeMax, densityT);
             sam.PlayStatic2D(clip, volume, sam.AmbientGroup);
-            _underwaterVegetationPulseTimer = Mathf.Lerp(
-                Mathf.Max(0.1f, underwaterVegetationIntervalMax),
-                Mathf.Max(0.1f, underwaterVegetationIntervalMin),
+            _underwaterVegetationPulseTimer = math.lerp(
+                math.max(0.1f, underwaterVegetationIntervalMax),
+                math.max(0.1f, underwaterVegetationIntervalMin),
                 densityT);
         }
 
         private void UpdateFatalPressureLoopAudio(AcousticZoneState zone, float deltaTime)
         {
             HectonPlayerMovement movement = ResolvePlayerMovement();
-            float intensity = movement != null ? Mathf.Clamp01(movement.CurrentFatalPressureSequence01) : 0f;
+            float intensity = movement != null ? math.saturate(movement.CurrentFatalPressureSequence01) : 0f;
             if (zone != AcousticZoneState.Underwater || intensity <= 0.001f)
             {
                 _fatalPressureNoiseTimer = 0f;
@@ -2130,18 +2463,20 @@ namespace Hecton8.Audio
             if (clip == null || sam == null)
                 return;
 
-            float volume = Mathf.Lerp(fatalPressureNoiseVolumeMin, fatalPressureNoiseVolumeMax, intensity);
+            float volume = math.lerp(fatalPressureNoiseVolumeMin, fatalPressureNoiseVolumeMax, intensity);
             sam.PlayStatic2D(clip, volume, sam.InterfaceGroup);
-            _fatalPressureNoiseTimer = Mathf.Lerp(
-                Mathf.Max(0.05f, fatalPressureNoiseIntervalMax),
-                Mathf.Max(0.05f, fatalPressureNoiseIntervalMin),
+            _fatalPressureNoiseTimer = math.lerp(
+                math.max(0.05f, fatalPressureNoiseIntervalMax),
+                math.max(0.05f, fatalPressureNoiseIntervalMin),
                 intensity);
         }
 
         private void HandleSonarPingSent(float intensity)
         {
+            float clampedIntensity = math.saturate(intensity);
+
             if (enableRuntimeAcousticGraph)
-                _acousticSonarImpulse = Mathf.Max(_acousticSonarImpulse, Mathf.Clamp01(intensity));
+                _acousticSonarImpulse = math.max(_acousticSonarImpulse, clampedIntensity);
 
             if (PlayerCriticalProceduralAudioRenderer.IsRuntimeInstalled)
                 return;
@@ -2150,7 +2485,7 @@ namespace Hecton8.Audio
             if (sonarPingClip == null || sam == null)
                 return;
 
-            float volume = Mathf.Lerp(sonarPingVolumeMin, sonarPingVolumeMax, Mathf.Clamp01(intensity));
+            float volume = math.lerp(sonarPingVolumeMin, sonarPingVolumeMax, clampedIntensity);
             sam.PlayStatic2D(sonarPingClip, volume, sam.InterfaceGroup);
         }
 
@@ -2169,27 +2504,20 @@ namespace Hecton8.Audio
             if (!enableRuntimeAcousticGraph)
                 return;
 
-            AudioListener listener = _cachedPlayerAudioListener;
-            if ((object)listener == null || listener == null)
-            {
-                ResolvePlayerListenerFilters();
-                listener = _cachedPlayerAudioListener;
-            }
-
-            if ((object)listener == null || listener == null)
+            float radius = math.max(0.5f, acousticImpactImpulseRadius);
+            double radiusSq = (double)radius * radius;
+            if (!TryResolvePlayerImpactDistanceSq(impactSignal.Point, out double distanceSq))
                 return;
 
-            float radius = Mathf.Max(0.5f, acousticImpactImpulseRadius);
-            float distance = Vector3.Distance(listener.transform.position, impactSignal.Point);
-            if (distance > radius)
+            if (distanceSq > radiusSq)
                 return;
 
-            float proximity = 1f - Mathf.Clamp01(distance / radius);
-            float impulse = Mathf.Clamp01(impactSignal.Intensity * Mathf.Max(0.15f, proximity));
+            float proximity = 1f - math.saturate((float)(distanceSq / math.max(radiusSq, 0.0001d)));
+            float impulse = math.saturate(impactSignal.Intensity * math.max(0.15f, proximity));
             if (impactSignal.IsHeavy)
-                impulse = Mathf.Max(impulse, 0.35f * Mathf.Max(0.35f, proximity));
+                impulse = math.max(impulse, 0.35f * math.max(0.35f, proximity));
 
-            _acousticImpactImpulse = Mathf.Max(_acousticImpactImpulse, impulse);
+            _acousticImpactImpulse = math.max(_acousticImpactImpulse, impulse);
         }
 
         internal void PlayMantaMisfire(float intensity)
@@ -2198,7 +2526,7 @@ namespace Hecton8.Audio
             if (mantaMisfireClip == null || sam == null)
                 return;
 
-            float volume = Mathf.Lerp(mantaMisfireVolumeMin, mantaMisfireVolumeMax, Mathf.Clamp01(intensity));
+            float volume = math.lerp(mantaMisfireVolumeMin, mantaMisfireVolumeMax, math.saturate(intensity));
             sam.PlayStatic2D(mantaMisfireClip, volume, sam.InterfaceGroup);
         }
 
@@ -2223,7 +2551,7 @@ namespace Hecton8.Audio
             if (clip == null || sam == null)
                 return;
 
-            float volume = Mathf.Lerp(stormStaticVolumeMin, stormStaticVolumeMax, stormInterference);
+            float volume = math.lerp(stormStaticVolumeMin, stormStaticVolumeMax, stormInterference);
             if (zone == AcousticZoneState.Underwater)
                 volume *= stormStaticUnderwaterVolumeScale;
 
@@ -2249,8 +2577,8 @@ namespace Hecton8.Audio
 
         internal void SetSurfaceWeatherMix(float precipitationIntensity, float electricalActivity)
         {
-            float clampedPrecipitation = Mathf.Clamp01(precipitationIntensity);
-            float clampedElectrical = Mathf.Clamp01(electricalActivity);
+            float clampedPrecipitation = math.saturate(precipitationIntensity);
+            float clampedElectrical = math.saturate(electricalActivity);
             if (ApproximatelyEqual(_surfacePrecipitationIntensity, clampedPrecipitation) &&
                 ApproximatelyEqual(_surfaceElectricalActivity, clampedElectrical))
             {
@@ -2261,7 +2589,9 @@ namespace Hecton8.Audio
             _surfaceElectricalActivity = clampedElectrical;
             _debugStormInterference = clampedElectrical <= stormStaticElectricalThreshold
                 ? 0f
-                : Mathf.InverseLerp(stormStaticElectricalThreshold, 1f, clampedElectrical);
+                : math.saturate(
+                    (clampedElectrical - stormStaticElectricalThreshold) /
+                    math.max(0.0001f, 1f - stormStaticElectricalThreshold));
 
             if (_stateInitialized && _lastZone == AcousticZoneState.Surface)
                 TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceWeatherTransitionDuration);
@@ -2356,7 +2686,7 @@ namespace Hecton8.Audio
 
             float blendT = deltaTime <= 0f
                 ? 1f
-                : 1f - Mathf.Exp(-Mathf.Max(0.01f, acousticGraphFollowSharpness) * deltaTime);
+                : ApproximateOneMinusExpNegPositive(math.max(0.01f, acousticGraphFollowSharpness) * deltaTime);
 
             if (!_acousticGraphStateInitialized)
             {
@@ -2371,13 +2701,13 @@ namespace Hecton8.Audio
             }
             else
             {
-                _currentAcousticLowPassCutoffHz = Mathf.Lerp(_currentAcousticLowPassCutoffHz, targetState.LowPassCutoffHz, blendT);
-                _currentAcousticLowPassResonanceQ = Mathf.Lerp(_currentAcousticLowPassResonanceQ, targetState.LowPassResonanceQ, blendT);
-                _currentAcousticReverbDecayTime = Mathf.Lerp(_currentAcousticReverbDecayTime, targetState.ReverbDecayTime, blendT);
-                _currentAcousticReflectionsLevelDb = Mathf.Lerp(_currentAcousticReflectionsLevelDb, targetState.ReflectionsLevelDb, blendT);
-                _currentAcousticReverbLevelDb = Mathf.Lerp(_currentAcousticReverbLevelDb, targetState.ReverbLevelDb, blendT);
-                _currentAcousticRoomHighFrequencyDb = Mathf.Lerp(_currentAcousticRoomHighFrequencyDb, targetState.RoomHighFrequencyDb, blendT);
-                _currentAcousticDryLevelDb = Mathf.Lerp(_currentAcousticDryLevelDb, targetState.DryLevelDb, blendT);
+                _currentAcousticLowPassCutoffHz = math.lerp(_currentAcousticLowPassCutoffHz, targetState.LowPassCutoffHz, blendT);
+                _currentAcousticLowPassResonanceQ = math.lerp(_currentAcousticLowPassResonanceQ, targetState.LowPassResonanceQ, blendT);
+                _currentAcousticReverbDecayTime = math.lerp(_currentAcousticReverbDecayTime, targetState.ReverbDecayTime, blendT);
+                _currentAcousticReflectionsLevelDb = math.lerp(_currentAcousticReflectionsLevelDb, targetState.ReflectionsLevelDb, blendT);
+                _currentAcousticReverbLevelDb = math.lerp(_currentAcousticReverbLevelDb, targetState.ReverbLevelDb, blendT);
+                _currentAcousticRoomHighFrequencyDb = math.lerp(_currentAcousticRoomHighFrequencyDb, targetState.RoomHighFrequencyDb, blendT);
+                _currentAcousticDryLevelDb = math.lerp(_currentAcousticDryLevelDb, targetState.DryLevelDb, blendT);
             }
 
             _usingSourceLevelAcousticFallback = ApplyAcousticMixerState(
@@ -2395,14 +2725,13 @@ namespace Hecton8.Audio
             if (deltaTime <= 0f)
                 return;
 
-            _acousticImpactImpulse = Mathf.MoveTowards(
-                _acousticImpactImpulse,
+            float safeDeltaTime = math.max(0f, deltaTime);
+            _acousticImpactImpulse = math.max(
                 0f,
-                Mathf.Max(0.01f, acousticImpactImpulseDecay) * deltaTime);
-            _acousticSonarImpulse = Mathf.MoveTowards(
-                _acousticSonarImpulse,
+                _acousticImpactImpulse - (math.max(0.01f, acousticImpactImpulseDecay) * safeDeltaTime));
+            _acousticSonarImpulse = math.max(
                 0f,
-                Mathf.Max(0.01f, acousticSonarImpulseDecay) * deltaTime);
+                _acousticSonarImpulse - (math.max(0.01f, acousticSonarImpulseDecay) * safeDeltaTime));
         }
 
         private void UpdateEmitterOcclusionState(AudioListener listener)
@@ -2424,8 +2753,11 @@ namespace Hecton8.Audio
                 return;
 
             Transform listenerTransform = listener.transform;
-            Vector3 listenerPosition = listenerTransform.position;
+            if (!TryResolvePlayerAupRuntimePosition(out Vector3 listenerPosition, out _))
+                return;
+
             Transform listenerRoot = listenerTransform.root;
+            float3 listenerPosition3 = new float3(listenerPosition.x, listenerPosition.y, listenerPosition.z);
             float maxDistanceSqr = AcousticEmitterOcclusionMaxDistanceMeters * AcousticEmitterOcclusionMaxDistanceMeters;
             float weightedTransmission = 0f;
             float weightedCutoff = 0f;
@@ -2437,8 +2769,8 @@ namespace Hecton8.Audio
                 if (!(sample.Amplitude > 0.0001f))
                     continue;
 
-                Vector3 delta = sample.Position - listenerPosition;
-                float distanceSqr = delta.sqrMagnitude;
+                float3 samplePosition = new float3(sample.Position.x, sample.Position.y, sample.Position.z);
+                float distanceSqr = math.lengthsq(samplePosition - listenerPosition3);
                 if (distanceSqr > maxDistanceSqr)
                     continue;
 
@@ -2478,8 +2810,8 @@ namespace Hecton8.Audio
             if (!(totalWeight > 0.0001f))
                 return;
 
-            _emitterOcclusionTransmission01 = Mathf.Clamp01(weightedTransmission / totalWeight);
-            _emitterOcclusionLowPassCutoffHz = Mathf.Clamp(
+            _emitterOcclusionTransmission01 = math.saturate(weightedTransmission / totalWeight);
+            _emitterOcclusionLowPassCutoffHz = math.clamp(
                 weightedCutoff / totalWeight,
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
                 AcousticOcclusionUtility.OpenLowPassCutoffHertz);
@@ -2487,30 +2819,30 @@ namespace Hecton8.Audio
 
         private AcousticGraphState ResolveInteriorAcousticGraphState()
         {
-            float metallicImpulse = Mathf.Clamp01(_acousticImpactImpulse * Mathf.Max(0f, impactGraphMetallicBoost));
-            float sonarImpulse = Mathf.Clamp01(_acousticSonarImpulse);
+            float metallicImpulse = math.saturate(_acousticImpactImpulse * math.max(0f, impactGraphMetallicBoost));
+            float sonarImpulse = math.saturate(_acousticSonarImpulse);
             AcousticGraphState state;
-            state.LowPassCutoffHz = Mathf.Lerp(interiorGraphLowPassCutoff, 7200f, metallicImpulse);
-            state.LowPassResonanceQ = Mathf.Lerp(interiorGraphResonance, interiorGraphResonance + 0.22f, metallicImpulse);
-            state.ReverbDecayTime = Mathf.Clamp(
+            state.LowPassCutoffHz = math.lerp(interiorGraphLowPassCutoff, 7200f, metallicImpulse);
+            state.LowPassResonanceQ = math.lerp(interiorGraphResonance, interiorGraphResonance + 0.22f, metallicImpulse);
+            state.ReverbDecayTime = math.clamp(
                 interiorGraphDecayTime +
                 (interiorImpactDecayBoost * metallicImpulse) +
                 (0.22f * sonarImpulse),
                 0.05f,
                 12f);
-            state.ReflectionsLevelDb = Mathf.Clamp(
+            state.ReflectionsLevelDb = math.clamp(
                 interiorGraphReflectionsLevel + (550f * metallicImpulse),
                 -10000f,
                 1000f);
-            state.ReverbLevelDb = Mathf.Clamp(
+            state.ReverbLevelDb = math.clamp(
                 interiorGraphReverbLevel + (450f * sonarImpulse),
                 -10000f,
                 2000f);
-            state.RoomHighFrequencyDb = Mathf.Clamp(
+            state.RoomHighFrequencyDb = math.clamp(
                 interiorGraphRoomHighFrequency - (1600f * metallicImpulse),
                 -10000f,
                 0f);
-            state.DryLevelDb = Mathf.Clamp(
+            state.DryLevelDb = math.clamp(
                 interiorGraphDryLevel - (120f * sonarImpulse),
                 -10000f,
                 0f);
@@ -2521,31 +2853,31 @@ namespace Hecton8.Audio
         private AcousticGraphState ResolveUnderwaterAcousticGraphState()
         {
             float depth01 = ResolveUnderwaterGraphDepth01();
-            float sonarImpulse = Mathf.Clamp01(_acousticSonarImpulse * Mathf.Max(0f, sonarGraphOpenUpBoost));
-            float metallicImpulse = Mathf.Clamp01(_acousticImpactImpulse * Mathf.Max(0f, impactGraphMetallicBoost));
-            float baseCutoff = Mathf.Lerp(underwaterGraphShallowCutoff, underwaterGraphDeepCutoff, depth01);
-            float openedCutoff = Mathf.Min(interiorFallbackLowPassCutoff, baseCutoff + 2400f);
+            float sonarImpulse = math.saturate(_acousticSonarImpulse * math.max(0f, sonarGraphOpenUpBoost));
+            float metallicImpulse = math.saturate(_acousticImpactImpulse * math.max(0f, impactGraphMetallicBoost));
+            float baseCutoff = math.lerp(underwaterGraphShallowCutoff, underwaterGraphDeepCutoff, depth01);
+            float openedCutoff = math.min(interiorFallbackLowPassCutoff, baseCutoff + 2400f);
             AcousticGraphState state;
-            state.LowPassCutoffHz = Mathf.Clamp(Mathf.Lerp(baseCutoff, openedCutoff, sonarImpulse), 500f, 22000f);
-            state.LowPassResonanceQ = Mathf.Lerp(underwaterGraphResonance, underwaterGraphResonance + 0.18f, metallicImpulse);
-            state.ReverbDecayTime = Mathf.Clamp(
-                Mathf.Lerp(0.92f, underwaterGraphDecayTime, depth01) +
+            state.LowPassCutoffHz = math.clamp(math.lerp(baseCutoff, openedCutoff, sonarImpulse), 500f, 22000f);
+            state.LowPassResonanceQ = math.lerp(underwaterGraphResonance, underwaterGraphResonance + 0.18f, metallicImpulse);
+            state.ReverbDecayTime = math.clamp(
+                math.lerp(0.92f, underwaterGraphDecayTime, depth01) +
                 (0.2f * sonarImpulse),
                 0.05f,
                 12f);
-            state.ReflectionsLevelDb = Mathf.Clamp(
+            state.ReflectionsLevelDb = math.clamp(
                 underwaterGraphReflectionsLevel + (600f * sonarImpulse),
                 -10000f,
                 1000f);
-            state.ReverbLevelDb = Mathf.Clamp(
+            state.ReverbLevelDb = math.clamp(
                 underwaterGraphReverbLevel + (300f * sonarImpulse) - (120f * metallicImpulse),
                 -10000f,
                 2000f);
-            state.RoomHighFrequencyDb = Mathf.Clamp(
-                Mathf.Lerp(underwaterGraphRoomHighFrequency, underwaterGraphRoomHighFrequency + 1200f, sonarImpulse),
+            state.RoomHighFrequencyDb = math.clamp(
+                math.lerp(underwaterGraphRoomHighFrequency, underwaterGraphRoomHighFrequency + 1200f, sonarImpulse),
                 -10000f,
                 0f);
-            state.DryLevelDb = Mathf.Clamp(
+            state.DryLevelDb = math.clamp(
                 underwaterGraphDryLevel - (350f * depth01),
                 -10000f,
                 0f);
@@ -2555,37 +2887,39 @@ namespace Hecton8.Audio
 
         private void ApplyEmitterOcclusionToAcousticState(ref AcousticGraphState state)
         {
-            float occlusionShadow01 = Mathf.Clamp01(1f - _emitterOcclusionTransmission01);
+            float occlusionShadow01 = math.saturate(1f - _emitterOcclusionTransmission01);
             if (occlusionShadow01 <= 0.0001f)
                 return;
 
-            float occludedCutoffHz = Mathf.Clamp(
+            float occludedCutoffHz = math.clamp(
                 _emitterOcclusionLowPassCutoffHz,
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
                 AcousticOcclusionUtility.OpenLowPassCutoffHertz);
 
-            state.LowPassCutoffHz = Mathf.Clamp(
-                Mathf.Min(state.LowPassCutoffHz, Mathf.Lerp(state.LowPassCutoffHz, occludedCutoffHz, occlusionShadow01)),
+            state.LowPassCutoffHz = math.clamp(
+                math.min(state.LowPassCutoffHz, math.lerp(state.LowPassCutoffHz, occludedCutoffHz, occlusionShadow01)),
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
                 AcousticOcclusionUtility.OpenLowPassCutoffHertz);
-            state.LowPassResonanceQ = Mathf.Lerp(state.LowPassResonanceQ, state.LowPassResonanceQ + 0.18f, occlusionShadow01);
-            state.ReflectionsLevelDb = Mathf.Clamp(state.ReflectionsLevelDb + (420f * occlusionShadow01), -10000f, 1000f);
-            state.RoomHighFrequencyDb = Mathf.Clamp(state.RoomHighFrequencyDb - (2200f * occlusionShadow01), -10000f, 0f);
-            state.DryLevelDb = Mathf.Clamp(state.DryLevelDb - (260f * occlusionShadow01), -10000f, 0f);
+            state.LowPassResonanceQ = math.lerp(state.LowPassResonanceQ, state.LowPassResonanceQ + 0.18f, occlusionShadow01);
+            state.ReflectionsLevelDb = math.clamp(state.ReflectionsLevelDb + (420f * occlusionShadow01), -10000f, 1000f);
+            state.RoomHighFrequencyDb = math.clamp(state.RoomHighFrequencyDb - (2200f * occlusionShadow01), -10000f, 0f);
+            state.DryLevelDb = math.clamp(state.DryLevelDb - (260f * occlusionShadow01), -10000f, 0f);
         }
 
         private float ResolveUnderwaterGraphDepth01()
         {
             HectonPlayerMovement movement = ResolvePlayerMovement();
             float depth = movement != null
-                ? Mathf.Max(0f, movement.CurrentDepth)
+                ? math.max(0f, movement.CurrentDepth)
                 : ResolvePlayerDepthFallback();
             float immersion = movement != null
-                ? Mathf.Clamp01(movement.WaterImmersionRatio)
+                ? math.saturate(movement.WaterImmersionRatio)
                 : (_acousticUnderwaterState ? 1f : 0f);
-            float depth01 = Mathf.Clamp01(depth / Mathf.Max(1f, acousticDeepWaterReferenceDepth));
-            float immersion01 = Mathf.InverseLerp(acousticExitImmersionRatio, 1f, immersion);
-            return Mathf.Max(depth01, Mathf.Max(immersion01, ResolveSoundscapeTierDepth01()));
+            float depth01 = math.saturate(depth / math.max(1f, acousticDeepWaterReferenceDepth));
+            float immersion01 = math.saturate(
+                (immersion - acousticExitImmersionRatio) /
+                math.max(0.0001f, 1f - acousticExitImmersionRatio));
+            return math.max(depth01, math.max(immersion01, ResolveSoundscapeTierDepth01()));
         }
 
         private float ResolveSoundscapeTierDepth01()
@@ -2738,7 +3072,7 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            float transitionTime = Mathf.Max(0f, duration);
+            float transitionTime = math.max(0f, duration);
             snapshot.TransitionTo(transitionTime);
             ArmSnapshotTransitionLock(transitionTime);
             CacheResolvedSnapshotState(zone, snapshot);
@@ -2763,7 +3097,7 @@ namespace Hecton8.Audio
 
             if (surfaceRainSnapshot != null && _surfacePrecipitationIntensity >= 0.2f)
             {
-                float rainWeight = Mathf.Clamp01(_surfacePrecipitationIntensity) * surfaceRainSnapshotWeight;
+                float rainWeight = math.saturate(_surfacePrecipitationIntensity) * surfaceRainSnapshotWeight;
                 if (rainWeight > 0.001f)
                 {
                     _surfaceBlendSnapshots[snapshotCount] = surfaceRainSnapshot;
@@ -2775,7 +3109,7 @@ namespace Hecton8.Audio
 
             if (surfaceStormSnapshot != null && _surfaceElectricalActivity >= 0.55f)
             {
-                float stormWeight = Mathf.Clamp01(_surfaceElectricalActivity) * surfaceStormSnapshotWeight;
+                float stormWeight = math.saturate(_surfaceElectricalActivity) * surfaceStormSnapshotWeight;
                 if (stormWeight > 0.001f)
                 {
                     _surfaceBlendSnapshots[snapshotCount] = surfaceStormSnapshot;
@@ -2797,7 +3131,7 @@ namespace Hecton8.Audio
             if (IsActiveSurfaceBlendEquivalent(snapshotCount))
                 return false;
 
-            float transitionTime = Mathf.Max(0f, surfaceWeatherTransitionDuration > 0f ? surfaceWeatherTransitionDuration : duration);
+            float transitionTime = math.max(0f, surfaceWeatherTransitionDuration > 0f ? surfaceWeatherTransitionDuration : duration);
             if (IsSnapshotTransitionLocked())
             {
                 QueuePendingSnapshotTransition(AcousticZoneState.Surface, transitionTime);
@@ -2812,7 +3146,7 @@ namespace Hecton8.Audio
 
         private static bool ApproximatelyEqual(float a, float b)
         {
-            return Mathf.Abs(a - b) <= SurfaceWeatherStateEpsilon;
+            return math.abs(a - b) <= SurfaceWeatherStateEpsilon;
         }
 
         private static void ClearBlendTail(AudioMixerSnapshot[] snapshots, float[] weights, int startIndex)
@@ -2842,7 +3176,7 @@ namespace Hecton8.Audio
         private void QueuePendingSnapshotTransition(AcousticZoneState zone, float duration)
         {
             _pendingSnapshotZone = zone;
-            _pendingSnapshotDuration = Mathf.Max(0f, duration);
+            _pendingSnapshotDuration = math.max(0f, duration);
             _hasPendingSnapshotTransition = true;
         }
 
@@ -2925,13 +3259,13 @@ namespace Hecton8.Audio
             float dryLevelDb)
         {
             return !float.IsNaN(_lastAppliedAcousticLowPassCutoffHz) &&
-                   Mathf.Abs(_lastAppliedAcousticLowPassCutoffHz - lowPassCutoffHz) <= AcousticCutoffWriteEpsilonHz &&
-                   Mathf.Abs(_lastAppliedAcousticLowPassResonanceQ - lowPassResonanceQ) <= AcousticResonanceWriteEpsilon &&
-                   Mathf.Abs(_lastAppliedAcousticReverbDecayTime - reverbDecayTime) <= AcousticDecayWriteEpsilonSeconds &&
-                   Mathf.Abs(_lastAppliedAcousticReflectionsLevelDb - reflectionsLevelDb) <= AcousticDbWriteEpsilon &&
-                   Mathf.Abs(_lastAppliedAcousticReverbLevelDb - reverbLevelDb) <= AcousticDbWriteEpsilon &&
-                   Mathf.Abs(_lastAppliedAcousticRoomHighFrequencyDb - roomHighFrequencyDb) <= AcousticDbWriteEpsilon &&
-                   Mathf.Abs(_lastAppliedAcousticDryLevelDb - dryLevelDb) <= AcousticDbWriteEpsilon;
+                   math.abs(_lastAppliedAcousticLowPassCutoffHz - lowPassCutoffHz) <= AcousticCutoffWriteEpsilonHz &&
+                   math.abs(_lastAppliedAcousticLowPassResonanceQ - lowPassResonanceQ) <= AcousticResonanceWriteEpsilon &&
+                   math.abs(_lastAppliedAcousticReverbDecayTime - reverbDecayTime) <= AcousticDecayWriteEpsilonSeconds &&
+                   math.abs(_lastAppliedAcousticReflectionsLevelDb - reflectionsLevelDb) <= AcousticDbWriteEpsilon &&
+                   math.abs(_lastAppliedAcousticReverbLevelDb - reverbLevelDb) <= AcousticDbWriteEpsilon &&
+                   math.abs(_lastAppliedAcousticRoomHighFrequencyDb - roomHighFrequencyDb) <= AcousticDbWriteEpsilon &&
+                   math.abs(_lastAppliedAcousticDryLevelDb - dryLevelDb) <= AcousticDbWriteEpsilon;
         }
 
         private void CacheAppliedAcousticMixerState(
@@ -3004,7 +3338,9 @@ namespace Hecton8.Audio
                 return;
 
             warnedFlag = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning(message, this);
+#endif
         }
 
         private bool HasAnyResolvedSnapshotCoverage()
@@ -3032,10 +3368,37 @@ namespace Hecton8.Audio
                 return "Mixer: None";
 
             return string.Concat(
-                "Mixer snapshots=", _validatedMixerSnapshotCount.ToString(),
+                "Mixer snapshots=", ResolveSmallCountLabel(_validatedMixerSnapshotCount),
                 " named=", _validatedMixerHasNamedCoverage ? "yes" : "no",
                 " fx=", _validatedMixerHasEffectGraph ? "yes" : "no",
                 " acousticParams=", _acousticMixerBindingsValid ? "yes" : "no");
+        }
+
+        private static string ResolveSmallCountLabel(int value)
+        {
+            switch (value)
+            {
+                case 0:
+                    return "0";
+                case 1:
+                    return "1";
+                case 2:
+                    return "2";
+                case 3:
+                    return "3";
+                case 4:
+                    return "4";
+                case 5:
+                    return "5";
+                case 6:
+                    return "6";
+                case 7:
+                    return "7";
+                case 8:
+                    return "8";
+                default:
+                    return "9+";
+            }
         }
 
         private static string ResolveSoundscapeTierLabel(SoundscapeTier tier)

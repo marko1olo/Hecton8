@@ -283,43 +283,43 @@ namespace Hecton8.Modding
             if (!_pendingCommands.IsCreated)
             {
                 _pendingCommands = new NativeQueue<ModCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModCommand>[4096] - sandboxed mod command ring buffer - owner: ModCommandDispatcher
-                RegisterQueue(_pendingCommands, CommandCapacity, nameof(_pendingCommands));
+                RegisterQueue(ref _pendingCommands, CommandCapacity, nameof(_pendingCommands));
             }
 
             if (!_pendingAupCommands.IsCreated)
             {
                 _pendingAupCommands = new NativeQueue<ModAupCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModAupCommand>[4096] - AUP-stable mod command ring buffer - owner: ModCommandDispatcher
-                RegisterQueue(_pendingAupCommands, CommandCapacity, nameof(_pendingAupCommands));
+                RegisterQueue(ref _pendingAupCommands, CommandCapacity, nameof(_pendingAupCommands));
             }
 
             if (!_pendingRenderCommands.IsCreated)
             {
                 _pendingRenderCommands = new NativeQueue<ModRenderInstanceCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRenderInstanceCommand>[1024] - mod instancing request lane - owner: ModCommandDispatcher
-                RegisterQueue(_pendingRenderCommands, MaxModRenderInstancesPerFrame, nameof(_pendingRenderCommands));
+                RegisterQueue(ref _pendingRenderCommands, MaxModRenderInstancesPerFrame, nameof(_pendingRenderCommands));
             }
 
             if (!_pendingRaycastResults.IsCreated)
             {
                 _pendingRaycastResults = new NativeQueue<ModRaycastResultPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRaycastResultPayload>[128] - next-frame mod raycast callback lane - owner: ModCommandDispatcher
-                RegisterQueue(_pendingRaycastResults, MaxModRaycasts, nameof(_pendingRaycastResults));
+                RegisterQueue(ref _pendingRaycastResults, MaxModRaycasts, nameof(_pendingRaycastResults));
             }
 
             if (!_pendingRejectEvents.IsCreated)
             {
                 _pendingRejectEvents = new NativeQueue<ModInteractionRejectedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModInteractionRejectedPayload>[256] - unmanaged mod rejection event lane - owner: ModCommandDispatcher
-                RegisterQueue(_pendingRejectEvents, MaxDrainPerLateFrame, nameof(_pendingRejectEvents));
+                RegisterQueue(ref _pendingRejectEvents, MaxDrainPerLateFrame, nameof(_pendingRejectEvents));
             }
 
             if (!_pendingMemoryEvictionEvents.IsCreated)
             {
                 _pendingMemoryEvictionEvents = new NativeQueue<ModCriticalMemoryEvictionPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModCriticalMemoryEvictionPayload>[32] - unmanaged mod memory eviction event lane - owner: ModCommandDispatcher
-                RegisterQueue(_pendingMemoryEvictionEvents, ModCapacity, nameof(_pendingMemoryEvictionEvents));
+                RegisterQueue(ref _pendingMemoryEvictionEvents, ModCapacity, nameof(_pendingMemoryEvictionEvents));
             }
 
             if (!_pendingAupResponses.IsCreated)
             {
                 _pendingAupResponses = new NativeQueue<ModAupResponse>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModAupResponse>[256] - unmanaged mod AUP response event lane - owner: ModCommandDispatcher
-                RegisterQueue(_pendingAupResponses, MaxDrainPerLateFrame, nameof(_pendingAupResponses));
+                RegisterQueue(ref _pendingAupResponses, MaxDrainPerLateFrame, nameof(_pendingAupResponses));
             }
 
             if (!_modStatesByHash.IsCreated)
@@ -1493,7 +1493,7 @@ namespace Hecton8.Modding
                    math.abs(local.z) <= AupCellSizeMeters;
         }
 
-        private static void RegisterQueue<TPayload>(NativeQueue<TPayload> queue, int expectedCapacity, string label)
+        private static void RegisterQueue<TPayload>(ref NativeQueue<TPayload> queue, int expectedCapacity, string label)
             where TPayload : unmanaged
         {
             NativeMemorySentinel.RegisterNativeQueue(
@@ -1502,6 +1502,21 @@ namespace Hecton8.Modding
                 nameof(ModCommandDispatcher),
                 label,
                 NativeAllocationLifetime.Session);
+            PrewarmQueue(ref queue, expectedCapacity);
+        }
+
+        private static void PrewarmQueue<TPayload>(ref NativeQueue<TPayload> queue, int capacity)
+            where TPayload : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         private static void DisposeQueue<TPayload>(ref NativeQueue<TPayload> queue, string label)

@@ -87,7 +87,6 @@ namespace Hecton8.World
         private static readonly int _normalMapId = Shader.PropertyToID("_NormalMap");
         private static readonly int _legacyNormalMapId = Shader.PropertyToID("_Normal_Map");
         private static readonly int _impostorNormalAtlasId = Shader.PropertyToID("_ImpostorNormalAtlas");
-        private static readonly int _normalStrengthId = Shader.PropertyToID("_NormalStrength");
 
         [Header("Impostor Configuration")]
         [SerializeField, Tooltip("Distance threshold for impostor activation.")]
@@ -149,7 +148,7 @@ namespace Hecton8.World
         // COLD ALLOC: List<ImpostorInstance>[100] — active impostor instances — owner: ImpostorSystem
         private readonly List<ImpostorInstance> _activeImpostors = new List<ImpostorInstance>(100);
         // COLD ALLOC: HashSet<GameObject>[100] — registered candidate lookup — owner: ImpostorSystem
-        private readonly HashSet<GameObject> _registeredCandidates = new HashSet<GameObject>();
+        private readonly HashSet<GameObject> _registeredCandidates = new HashSet<GameObject>(100);
         // COLD ALLOC: Dictionary<EntityId, ImpostorTextureData>[100] — impostor texture cache — owner: ImpostorSystem
         private readonly Dictionary<EntityId, ImpostorTextureData> _textureCache = new Dictionary<EntityId, ImpostorTextureData>(100);
         // COLD ALLOC: Dictionary<EntityId, Renderer>[100] — pooled billboard renderer cache — owner: ImpostorSystem
@@ -159,6 +158,11 @@ namespace Hecton8.World
 
         private Camera _mainCamera;
         private Transform _cameraTransform;
+        private int _playerRuntimeContextCacheFrame = -1;
+        private bool _playerRuntimeContextCacheValid;
+        private PlayerRuntimeContext _playerRuntimeContextCache;
+        private int _viewerAupCacheFrame = -1;
+        private AbsoluteUniversePosition _viewerAupCache;
         private float _cameraResolveRetryTimer;
         private int _impostorTickCursor;
         private bool _registered;
@@ -204,6 +208,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            InvalidatePlayerRuntimeCache();
             TryRegisterService();
             TryRegister();
         }
@@ -211,6 +216,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             RestoreAllOriginalVisibility();
+            InvalidatePlayerRuntimeCache();
             TryUnregister();
             TryUnregisterService();
         }
@@ -218,6 +224,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             RestoreAllOriginalVisibility();
+            InvalidatePlayerRuntimeCache();
             TryUnregister();
             TryUnregisterService();
 
@@ -280,7 +287,7 @@ namespace Hecton8.World
 
             float thresholdScale = ResolveThresholdScale();
             float thresholdScaleSqr = thresholdScale * thresholdScale;
-            AbsoluteUniversePosition cameraAup = ResolveViewerAup(_cameraTransform);
+            AbsoluteUniversePosition cameraAup = ResolveViewerAup();
             int batchCount = Mathf.Min(_activeImpostors.Count, MaxHotPathImpostorsPerTick);
             for (int processed = 0; processed < batchCount && _activeImpostors.Count > 0; processed++)
             {
@@ -323,7 +330,7 @@ namespace Hecton8.World
                     }
                     else if (instance.BillboardObject != null)
                     {
-                        UpdateBillboardTransform(ref instance, originalPosition);
+                        UpdateBillboardTransform(ref instance, originalPosition, in cameraAup);
                     }
                 }
                 else if (instance.IsActive && sqrDistance < deactivationDistanceSqr)
@@ -432,18 +439,30 @@ namespace Hecton8.World
 
             if (_cameraResolveRetryTimer > 0f)
             {
-                _cameraResolveRetryTimer -= Mathf.Max(0f, dt);
+                _cameraResolveRetryTimer -= math.max(0f, dt);
                 return false;
             }
 
             _cameraResolveRetryTimer = CameraResolveRetryInterval;
             _mainCamera = _cameraReference;
+            if (_mainCamera == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                _mainCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            }
+
+            if (_mainCamera == null &&
+                TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
+            {
+                _mainCamera = runtimeContext.PlayerCamera;
+            }
+
             if (_mainCamera == null &&
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                if (!playerTransform.TryGetComponent(out _mainCamera))
-                    _mainCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+                playerTransform.TryGetComponent(out _mainCamera);
             }
 
             if (_mainCamera == null)
@@ -489,7 +508,8 @@ namespace Hecton8.World
             instance.BillboardRenderer = renderer;
             instance.IsActive = true;
             _impostorBillboards[instance.ImpostorID] = billboard;
-            UpdateBillboardTransform(ref instance, instance.OriginalTransform.position);
+            AbsoluteUniversePosition cameraAup = ResolveViewerAup();
+            UpdateBillboardTransform(ref instance, instance.OriginalTransform.position, in cameraAup);
             ApplyOriginalObjectVisibility(ref instance, false);
         }
 
@@ -527,17 +547,22 @@ namespace Hecton8.World
             Texture2D normalTexture = null;
             bool usesFallbackMaterial = false;
 
-            bool hasPrimaryMaterial = TryResolvePrimaryMaterial(obj, out sourceMaterial, out albedoTexture, out normalTexture);
+            bool hasPrimaryMaterial = TryResolvePrimaryMaterial(
+                obj,
+                out sourceMaterial,
+                out albedoTexture,
+                out normalTexture,
+                resolveNormalTexture: !useDistantGeologyMaterial);
             if (useDistantGeologyMaterial)
             {
-                Material geologyMaterial = BuildDistantGeologyBillboardMaterial(sourceMaterial, albedoTexture, normalTexture);
+                Material geologyMaterial = BuildDistantGeologyBillboardMaterial(sourceMaterial, albedoTexture);
                 if (geologyMaterial == null)
                     return false;
 
                 _textureCache[impostorID] = new ImpostorTextureData
                 {
                     AlbedoTexture = albedoTexture,
-                    NormalTexture = normalTexture,
+                    NormalTexture = null,
                     ImpostorMaterial = geologyMaterial,
                     UsesFallbackMaterial = false,
                     IsLoaded = true
@@ -682,7 +707,19 @@ namespace Hecton8.World
             }
         }
 
-        private void UpdateBillboardTransform(ref ImpostorInstance instance, Vector3 originalPosition)
+        private void InvalidatePlayerRuntimeCache()
+        {
+            _playerRuntimeContextCacheFrame = -1;
+            _playerRuntimeContextCacheValid = false;
+            _playerRuntimeContextCache = default;
+            _viewerAupCacheFrame = -1;
+            _viewerAupCache = default;
+        }
+
+        private void UpdateBillboardTransform(
+            ref ImpostorInstance instance,
+            Vector3 originalPosition,
+            in AbsoluteUniversePosition cameraAup)
         {
             GameObject billboardObject = instance.BillboardObject;
             if (billboardObject == null || _cameraTransform == null)
@@ -691,7 +728,6 @@ namespace Hecton8.World
             Transform billboardTransform = billboardObject.transform;
             Vector3 billboardPosition = originalPosition + instance.BillboardCenterOffset;
             AbsoluteUniversePosition billboardAup = AbsoluteUniversePosition.FromRuntimePosition(billboardPosition);
-            AbsoluteUniversePosition cameraAup = ResolveViewerAup(_cameraTransform);
             float3 cameraDeltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in cameraAup, in billboardAup);
             Vector3 cameraDelta = new Vector3(cameraDeltaAup.x, 0f, cameraDeltaAup.z);
             if (cameraDelta.sqrMagnitude <= 0.0001f)
@@ -699,26 +735,58 @@ namespace Hecton8.World
             if (cameraDelta.sqrMagnitude <= 0.0001f)
                 cameraDelta = Vector3.forward;
 
-            Quaternion billboardRotation = Quaternion.LookRotation(cameraDelta.normalized, Vector3.up);
+            Quaternion billboardRotation = Quaternion.LookRotation(cameraDelta, Vector3.up);
             billboardTransform.SetPositionAndRotation(billboardPosition, billboardRotation);
             billboardTransform.localScale = instance.BillboardScale;
         }
 
-        private static AbsoluteUniversePosition ResolveViewerAup(Transform cameraTransform)
+        private AbsoluteUniversePosition ResolveViewerAup()
         {
+            int frame = Time.frameCount;
+            if (_viewerAupCacheFrame == frame)
+                return _viewerAupCache;
+
+            _viewerAupCacheFrame = frame;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
             if (playerMovement != null)
-                return playerMovement.CurrentAup;
+            {
+                _viewerAupCache = playerMovement.CurrentAup;
+                return _viewerAupCache;
+            }
 
-            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            if (TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
             {
                 PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
                 if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
-                    return movementState.PredictedAup;
+                {
+                    _viewerAupCache = movementState.PredictedAup;
+                    return _viewerAupCache;
+                }
             }
 
-            return AbsoluteUniversePosition.FromRuntimePosition(cameraTransform.position);
+            _viewerAupCache = _cameraTransform != null
+                ? AbsoluteUniversePosition.FromRuntimePosition(_cameraTransform.position)
+                : default;
+            return _viewerAupCache;
+        }
+
+        private bool TryResolveCachedPlayerRuntimeContext(out PlayerRuntimeContext runtimeContext)
+        {
+            int frame = Time.frameCount;
+            if (_playerRuntimeContextCacheFrame != frame)
+            {
+                _playerRuntimeContextCacheFrame = frame;
+                _playerRuntimeContextCacheValid =
+                    PlayerRuntimeContextService.TryGetActiveRuntimeContext(out _playerRuntimeContextCache) &&
+                    _playerRuntimeContextCache != null;
+                if (!_playerRuntimeContextCacheValid)
+                    _playerRuntimeContextCache = default;
+            }
+
+            runtimeContext = _playerRuntimeContextCache;
+            return _playerRuntimeContextCacheValid;
         }
 
         private float ResolveThresholdScale()
@@ -755,7 +823,12 @@ namespace Hecton8.World
             return qualityScale * adaptiveScale;
         }
 
-        private bool TryResolvePrimaryMaterial(GameObject obj, out Material sourceMaterial, out Texture2D albedoTexture, out Texture2D normalTexture)
+        private bool TryResolvePrimaryMaterial(
+            GameObject obj,
+            out Material sourceMaterial,
+            out Texture2D albedoTexture,
+            out Texture2D normalTexture,
+            bool resolveNormalTexture = true)
         {
             sourceMaterial = null;
             albedoTexture = null;
@@ -778,7 +851,9 @@ namespace Hecton8.World
 
                 sourceMaterial = sharedMaterial;
                 albedoTexture = TryResolveTexture(sharedMaterial, _impostorAlbedoAtlasId, _baseMapId, _legacyBaseMapId, _mainTexId);
-                normalTexture = TryResolveTexture(sharedMaterial, _impostorNormalAtlasId, _bumpMapId, _normalMapId, _legacyNormalMapId);
+                normalTexture = resolveNormalTexture
+                    ? TryResolveTexture(sharedMaterial, _impostorNormalAtlasId, _bumpMapId, _normalMapId, _legacyNormalMapId)
+                    : null;
                 return true;
             }
 
@@ -810,7 +885,7 @@ namespace Hecton8.World
             return null;
         }
 
-        private Material BuildDistantGeologyBillboardMaterial(Material sourceMaterial, Texture2D albedoTexture, Texture2D normalTexture)
+        private Material BuildDistantGeologyBillboardMaterial(Material sourceMaterial, Texture2D albedoTexture)
         {
             Shader shader = ResolveDistantGeologyBillboardShader();
             if (shader == null)
@@ -821,21 +896,14 @@ namespace Hecton8.World
             material.enableInstancing = true;
 
             Texture2D resolvedAlbedo = albedoTexture;
-            Texture2D resolvedNormal = normalTexture;
             if (sourceMaterial != null)
             {
                 if (resolvedAlbedo == null)
                     resolvedAlbedo = TryResolveTexture(sourceMaterial, _impostorAlbedoAtlasId, _baseMapId, _legacyBaseMapId, _mainTexId);
-
-                if (resolvedNormal == null)
-                    resolvedNormal = TryResolveTexture(sourceMaterial, _impostorNormalAtlasId, _bumpMapId, _normalMapId, _legacyNormalMapId);
             }
 
             if (resolvedAlbedo != null && material.HasProperty(_baseMapId))
                 material.SetTexture(_baseMapId, resolvedAlbedo);
-
-            if (resolvedNormal != null && material.HasProperty(_normalMapId))
-                material.SetTexture(_normalMapId, resolvedNormal);
 
             Color tint = Color.white;
             if (sourceMaterial != null)
@@ -850,9 +918,6 @@ namespace Hecton8.World
                 material.SetColor(_baseColorId, tint);
             else if (material.HasProperty(_colorId))
                 material.SetColor(_colorId, tint);
-
-            if (material.HasProperty(_normalStrengthId))
-                material.SetFloat(_normalStrengthId, resolvedNormal != null ? 0.65f : 0f);
 
             return material;
         }

@@ -27,6 +27,7 @@ using Hecton8.Core;
 using Hecton8.Narrative;
 using Hecton8.World;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -39,6 +40,7 @@ namespace Hecton8.UI
         private const string PlaybackTimerTemplate = "{0:00}:{1:00}";
         private static readonly char[] PlaybackTimerTemplateChars = PlaybackTimerTemplate.ToCharArray();
         private const int MaxRegisteredCatalogTabs = 4;
+        private const float InvTwoPi = 1f / (Mathf.PI * 2f);
 
         // COLD ALLOC: RegistryBucket<PDADataLogTab>[4] - active PDA catalog sources for procedural lore lookup - owner: PDADataLogTab
         private static readonly RegistryBucket<PDADataLogTab> _registeredCatalogTabs = new RegistryBucket<PDADataLogTab>(MaxRegisteredCatalogTabs);
@@ -1370,8 +1372,7 @@ namespace Hecton8.UI
             if (_summaryDecryptActive)
             {
                 ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
-                _summaryLabel.ForceMeshUpdate();
-                _summaryVisibleCharacterTarget = _summaryLabel.textInfo.characterCount;
+                _summaryVisibleCharacterTarget = _resolvedSummaryBaseText.Length;
                 UpdateSummaryDecryptPresentation();
                 return;
             }
@@ -1401,14 +1402,12 @@ namespace Hecton8.UI
             BuildHexCipherText(_resolvedSummaryBaseText, ref _resolvedSummaryHexBuffer, out _resolvedSummaryHexLength);
 
             ApplyDynamicText(_summaryLabel, _resolvedSummaryBaseText, ref _summaryTextBuffer);
-            _summaryLabel.ForceMeshUpdate();
-            _summaryVisibleCharacterTarget = _summaryLabel.textInfo.characterCount;
+            _summaryVisibleCharacterTarget = _resolvedSummaryBaseText.Length;
 
             ApplyDynamicText(_summaryDecryptOverlayLabel, _resolvedSummaryHexBuffer, _resolvedSummaryHexLength);
             _summaryDecryptOverlayLabel.maxVisibleCharacters = int.MaxValue;
             SetElementVisible(_summaryDecryptOverlayLabel, true);
-            _summaryDecryptOverlayLabel.ForceMeshUpdate();
-            _summaryHexVisibleCharacterTarget = _summaryDecryptOverlayLabel.textInfo.characterCount;
+            _summaryHexVisibleCharacterTarget = _resolvedSummaryHexLength;
 
             UpdateSummaryDecryptPresentation();
             if (_summaryMadnessFx != null)
@@ -1420,10 +1419,10 @@ namespace Hecton8.UI
             if (!_summaryDecryptActive || _summaryLabel == null || _summaryDecryptOverlayLabel == null)
                 return;
 
-            float t = Mathf.Clamp01(_summaryDecryptTimer / SummaryDecryptDuration);
-            int summaryVisible = Mathf.Clamp(Mathf.CeilToInt(_summaryVisibleCharacterTarget * t), 0, _summaryVisibleCharacterTarget);
-            int hexVisible = Mathf.Clamp(
-                Mathf.CeilToInt(_summaryHexVisibleCharacterTarget * (1f - t)),
+            float t = math.saturate(_summaryDecryptTimer / SummaryDecryptDuration);
+            int summaryVisible = math.clamp((int)math.ceil(_summaryVisibleCharacterTarget * t), 0, _summaryVisibleCharacterTarget);
+            int hexVisible = math.clamp(
+                (int)math.ceil(_summaryHexVisibleCharacterTarget * (1f - t)),
                 0,
                 _summaryHexVisibleCharacterTarget);
 
@@ -1620,7 +1619,6 @@ namespace Hecton8.UI
             LocNumericBuffer.Write(new System.ReadOnlySpan<char>(PlaybackTimerTemplateChars), LocNumericArg.Int(minutes), LocNumericArg.Int(seconds), out char[] buffer, out int length);
             int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
             _playbackTimerLabel.SetCharArray(buffer, 0, safeLength);
-            _playbackTimerLabel.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static void SetUppercaseLabelText(TMP_Text label, string source, ref char[] buffer)
@@ -1630,7 +1628,6 @@ namespace Hecton8.UI
 
             WriteUppercaseToBuffer(source, ref buffer, out int length);
             label.SetCharArray(buffer, 0, length);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static void WriteUppercaseToBuffer(string source, ref char[] buffer, out int length)
@@ -1680,14 +1677,12 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(value))
             {
                 label.SetCharArray(System.Array.Empty<char>(), 0, 0);
-                label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
                 return;
             }
 
             EnsureCharCapacity(ref buffer, value.Length);
             value.AsSpan().CopyTo(buffer.AsSpan());
             label.SetCharArray(buffer, 0, value.Length);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static void ApplyDynamicText(TMP_Text label, char[] valueBuffer, int valueLength)
@@ -1698,13 +1693,11 @@ namespace Hecton8.UI
             if (valueBuffer == null || valueLength <= 0)
             {
                 label.SetCharArray(System.Array.Empty<char>(), 0, 0);
-                label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
                 return;
             }
 
             int safeLength = Mathf.Clamp(valueLength, 0, valueBuffer.Length);
             label.SetCharArray(valueBuffer, 0, safeLength);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static void ApplyTwoDigitText(TMP_Text label, int value, ref char[] buffer)
@@ -1717,7 +1710,6 @@ namespace Hecton8.UI
             buffer[0] = (char)('0' + (clamped / 10));
             buffer[1] = (char)('0' + (clamped % 10));
             label.SetCharArray(buffer, 0, 2);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static void ApplyCountLabelText(TMP_Text label, int discovered, int total, ref char[] buffer)
@@ -1741,7 +1733,6 @@ namespace Hecton8.UI
             logsLiteral.CopyTo(buffer.AsSpan(cursor));
             cursor += logsLiteral.Length;
             label.SetCharArray(buffer, 0, cursor);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static void SetElementVisible(Component component, bool visible)
@@ -1797,18 +1788,25 @@ namespace Hecton8.UI
             _hologramAnimationTime += deltaTime;
 
             Transform anchor = transform;
+            float bobWave = EvaluateCheapWaveSigned(_hologramAnimationTime * hologramBobFrequency);
             Vector3 worldPosition =
                 anchor.position +
-                anchor.up * (hologramHeight + Mathf.Sin(_hologramAnimationTime * hologramBobFrequency) * hologramBobAmplitude) +
+                anchor.up * (hologramHeight + bobWave * hologramBobAmplitude) +
                 anchor.forward * hologramForwardOffset;
 
-            Vector3 facing = worldPosition - playerCamera.transform.position;
-            Quaternion rotation = facing.sqrMagnitude > 0.0001f
-                ? Quaternion.LookRotation(facing.normalized, anchor.up) * Quaternion.Euler(0f, _hologramAnimationTime * hologramSpinDegreesPerSecond, 0f)
-                : Quaternion.identity;
+            Quaternion rotation =
+                playerCamera.transform.rotation *
+                Quaternion.Euler(0f, _hologramAnimationTime * hologramSpinDegreesPerSecond, 0f);
 
             _hologramMatrices[0] = Matrix4x4.TRS(worldPosition, rotation, Vector3.one * hologramScale);
             Graphics.DrawMeshInstanced(mesh, 0, _runtimeHologramMaterial, _hologramMatrices, 1, null, UnityEngine.Rendering.ShadowCastingMode.Off, false, gameObject.layer);
+        }
+
+        private static float EvaluateCheapWaveSigned(float phaseRadians)
+        {
+            float phase01 = math.frac((phaseRadians * InvTwoPi) + 0.25f);
+            float triangle = 1f - math.abs(phase01 * 2f - 1f);
+            return (triangle * 2f) - 1f;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

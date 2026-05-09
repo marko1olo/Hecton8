@@ -28,20 +28,6 @@ namespace Hecton8.Tools
         private float _sceneLoadStartTime;
         private bool _isTransitioning;
 
-        public static SceneTransitionVerifier Instance { get; private set; }
-
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-            GameBootstrapper.PersistRuntimeService(this);
-        }
-
         private void OnEnable()
         {
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -198,10 +184,14 @@ namespace Hecton8.Tools
                    !GameStartContextHolder.Current.IsValid;
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogVerification(string message)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_enableLogging)
                 Debug.Log($"[SceneTransitionVerifier] {message}");
+#endif
         }
     }
 }

@@ -680,19 +680,26 @@ namespace Hecton8.Gameplay
         {
             float dryAmbientTemperature = ResolveDryAmbientTemperatureCelsius();
             float floodBlend = _floodLevel > ThermalCollapseFloodThreshold
-                ? Mathf.InverseLerp(ThermalCollapseFloodThreshold, 1f, _floodLevel)
+                ? math.saturate((_floodLevel - ThermalCollapseFloodThreshold) / (1f - ThermalCollapseFloodThreshold))
                 : 0f;
-            float targetTemperature = Mathf.Lerp(dryAmbientTemperature, ExternalFloodWaterTemperatureCelsius, floodBlend);
-            float tau = Mathf.Lerp(DryAmbientTemperatureTauSeconds, FloodedAmbientTemperatureTauSeconds, floodBlend);
+            float targetTemperature = math.lerp(dryAmbientTemperature, ExternalFloodWaterTemperatureCelsius, floodBlend);
+            float tau = math.lerp(DryAmbientTemperatureTauSeconds, FloodedAmbientTemperatureTauSeconds, floodBlend);
             if (_baseModule != null &&
                 BaseDegradationSystem.TryGetParasiteThermalModifier(_baseModule, out float insulation01, out _) &&
                 targetTemperature < _moduleAmbientTemperatureCelsius)
             {
-                tau *= Mathf.Lerp(1f, 3f, insulation01);
+                tau *= math.lerp(1f, 3f, insulation01);
             }
 
-            float temperatureDecay = Mathf.Exp(-dt / Mathf.Max(0.01f, tau));
-            _moduleAmbientTemperatureCelsius = targetTemperature + (_moduleAmbientTemperatureCelsius - targetTemperature) * temperatureDecay;
+            float temperatureDecay = FastExponentialDecay(dt / math.max(0.01f, tau));
+            _moduleAmbientTemperatureCelsius = math.lerp(targetTemperature, _moduleAmbientTemperatureCelsius, temperatureDecay);
+        }
+
+        private static float FastExponentialDecay(float x)
+        {
+            float clamped = math.max(0f, x);
+            float x2 = clamped * clamped;
+            return math.saturate(1f / (1f + clamped + (0.48f * x2) + (0.235f * x2 * clamped)));
         }
 
         private void UpdateStructuralMemory(float dt)
@@ -788,7 +795,7 @@ namespace Hecton8.Gameplay
         private float ResolveDepthMeters()
         {
             float seaLevelY = 0f;
-            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
+            MapMagicBridge mapMagicBridge = GlobalRegistry.MapMagic;
             if (mapMagicBridge != null)
                 seaLevelY = mapMagicBridge.WaterSurfaceLevel;
             else if (Hecton8.Core.GlobalRegistry.Atmosphere != null)

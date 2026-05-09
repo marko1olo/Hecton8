@@ -230,6 +230,7 @@ namespace Hecton8.Gameplay
                     nameof(PlayerExpressionEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -241,6 +242,21 @@ namespace Hecton8.Gameplay
                     nameof(PlayerExpressionEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -388,7 +404,6 @@ namespace Hecton8.Gameplay
         private const string DefaultIdentityName = "STANDARD";
         private const string DefaultIdentitySummary = "No authored player-expression profile is active.";
 
-        private static PlayerExpressionManager _instance;
         private static PlayerExpressionProfile _activeProfile;
         private static SuitHUDProfile _activeHudProfileOverride;
         private static string _activeSuitLabelOverride;
@@ -428,8 +443,8 @@ namespace Hecton8.Gameplay
         private bool _pendingRecommendedSuitApply;
         private bool _serviceRegistered;
 
-        /// <summary>Singleton instance for the active scene/runtime.</summary>
-        public static PlayerExpressionManager Instance => _instance;
+        /// <summary>Registry-owned instance for the active scene/runtime.</summary>
+        public static PlayerExpressionManager Instance => GlobalRegistry.PlayerExpression;
 
         /// <summary>The currently active expression profile.</summary>
         public static PlayerExpressionProfile ActiveProfile => _activeProfile;
@@ -452,7 +467,6 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
             _activeProfile = null;
             _activeHudProfileOverride = null;
             _activeSuitLabelOverride = null;
@@ -460,13 +474,13 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            PlayerExpressionManager registered = GlobalRegistry.PlayerExpression;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
             AutoResolveReferences();
 
 #if UNITY_EDITOR
@@ -506,11 +520,11 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            bool wasRegisteredOwner = ReferenceEquals(GlobalRegistry.PlayerExpression, this);
             TryUnregisterService();
 
-            if (_instance == this)
+            if (wasRegisteredOwner)
             {
-                _instance = null;
                 _activeProfile = null;
                 _activeHudProfileOverride = null;
                 _activeSuitLabelOverride = null;
@@ -520,6 +534,10 @@ namespace Hecton8.Gameplay
         private void TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            PlayerExpressionManager registered = GlobalRegistry.PlayerExpression;
+            if (registered != null && registered != this)
                 return;
 
             GlobalRegistry.RegisterPlayerExpressionRuntime(this);
@@ -936,7 +954,9 @@ namespace Hecton8.Gameplay
             if (!verboseLogging)
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             UnityEngine.Debug.Log($"[PlayerExpression] Active profile: {profileId} ({displayName})", this);
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -945,7 +965,9 @@ namespace Hecton8.Gameplay
             if (!verboseLogging)
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             UnityEngine.Debug.Log($"[PlayerExpression] Suit applied: {profileId} -> {suitName}", this);
+#endif
         }
     }
 }

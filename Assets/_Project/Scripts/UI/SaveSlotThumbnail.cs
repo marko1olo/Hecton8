@@ -33,7 +33,7 @@ namespace Hecton8.UI
         /// </summary>
         public void CaptureThumbnail(string slotName)
         {
-            if (!captureOnSave || string.IsNullOrEmpty(slotName))
+            if (!captureOnSave || !SaveManager.IsSafeSlotName(slotName))
                 return;
 
             SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);
@@ -44,7 +44,7 @@ namespace Hecton8.UI
         /// </summary>
         public void LoadThumbnail(string slotName)
         {
-            if (string.IsNullOrEmpty(slotName))
+            if (!SaveManager.IsSafeSlotName(slotName))
             {
                 ShowNoThumbnail();
                 return;

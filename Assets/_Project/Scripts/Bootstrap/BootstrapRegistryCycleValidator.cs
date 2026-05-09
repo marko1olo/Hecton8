@@ -47,6 +47,7 @@ namespace Hecton8.Bootstrap
             GlobalRegistryServiceSlot.Scene,
             GlobalRegistryServiceSlot.InteractionSignals,
             GlobalRegistryServiceSlot.FloatingOriginRuntime,
+            GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime,
             GlobalRegistryServiceSlot.PhysicsStateManager,
             GlobalRegistryServiceSlot.Physics,
             GlobalRegistryServiceSlot.Debris,
@@ -57,7 +58,10 @@ namespace Hecton8.Bootstrap
             GlobalRegistryServiceSlot.Audio,
             GlobalRegistryServiceSlot.PowerGrid,
             GlobalRegistryServiceSlot.Logistics,
+            GlobalRegistryServiceSlot.NativeInputManagerRuntime,
             GlobalRegistryServiceSlot.Input,
+            GlobalRegistryServiceSlot.BeaconNetworkRuntime,
+            GlobalRegistryServiceSlot.ModWorldPersistenceRuntime,
             GlobalRegistryServiceSlot.Player,
             GlobalRegistryServiceSlot.PlayerInventory,
             GlobalRegistryServiceSlot.PlayerSensory,
@@ -72,6 +76,8 @@ namespace Hecton8.Bootstrap
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Scene, GlobalRegistryServiceSlot.Dispatcher),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.InteractionSignals, GlobalRegistryServiceSlot.Dispatcher),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.FloatingOriginRuntime, GlobalRegistryServiceSlot.Dispatcher),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime, GlobalRegistryServiceSlot.Dispatcher),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime, GlobalRegistryServiceSlot.FloatingOriginRuntime),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PhysicsStateManager, GlobalRegistryServiceSlot.FloatingOriginRuntime),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Physics, GlobalRegistryServiceSlot.Dispatcher),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Physics, GlobalRegistryServiceSlot.PhysicsStateManager),
@@ -88,19 +94,31 @@ namespace Hecton8.Bootstrap
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Logistics, GlobalRegistryServiceSlot.Save),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Logistics, GlobalRegistryServiceSlot.ObjectPool),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Logistics, GlobalRegistryServiceSlot.PowerGrid),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.NativeInputManagerRuntime, GlobalRegistryServiceSlot.Dispatcher),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Input, GlobalRegistryServiceSlot.NativeInputManagerRuntime),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Input, GlobalRegistryServiceSlot.Dispatcher),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.BeaconNetworkRuntime, GlobalRegistryServiceSlot.Dispatcher),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.BeaconNetworkRuntime, GlobalRegistryServiceSlot.Save),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.ModWorldPersistenceRuntime, GlobalRegistryServiceSlot.Dispatcher),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.ModWorldPersistenceRuntime, GlobalRegistryServiceSlot.Save),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.ModWorldPersistenceRuntime, GlobalRegistryServiceSlot.ObjectPool),
+            new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.ModWorldPersistenceRuntime, GlobalRegistryServiceSlot.Scene),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.Player, GlobalRegistryServiceSlot.Input),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerInventory, GlobalRegistryServiceSlot.Player),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerInventory, GlobalRegistryServiceSlot.ObjectPool),
             new BootstrapRegistryDependencyEdge(GlobalRegistryServiceSlot.PlayerSensory, GlobalRegistryServiceSlot.Player),
         };
 
-        // COLD ALLOC: startup graph validation scratch - owner: BootstrapRegistryCycleValidator
+        // COLD ALLOC: object[1] - startup graph validation scratch lock - owner: BootstrapRegistryCycleValidator
         private static readonly object _validationScratchLock = new object();
+        // COLD ALLOC: GlobalRegistryServiceSlot[startup node count] - startup graph topological order scratch - owner: BootstrapRegistryCycleValidator
         private static readonly GlobalRegistryServiceSlot[] _startupExecutionOrderScratch =
             new GlobalRegistryServiceSlot[_startupNodes.Length];
+        // COLD ALLOC: int[startup node count] - startup graph in-degree scratch - owner: BootstrapRegistryCycleValidator
         private static readonly int[] _inDegreeScratch = new int[_startupNodes.Length];
+        // COLD ALLOC: int[startup node count] - startup graph Kahn queue scratch - owner: BootstrapRegistryCycleValidator
         private static readonly int[] _queueScratch = new int[_startupNodes.Length];
+        // COLD ALLOC: int[256] - byte-sized service-slot to node-index lookup - owner: BootstrapRegistryCycleValidator
         private static readonly int[] _nodeIndexScratch = new int[256];
 
         /// <summary>
@@ -175,13 +193,22 @@ namespace Hecton8.Bootstrap
                 _nodeIndexScratch[i] = -1;
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                _nodeIndexScratch[(int)(byte)nodes[nodeIndex]] = nodeIndex;
+            {
+                int serviceSlotIndex = (int)(byte)nodes[nodeIndex];
+                if (_nodeIndexScratch[serviceSlotIndex] >= 0)
+                    return false;
+
+                _nodeIndexScratch[serviceSlotIndex] = nodeIndex;
+            }
 
             int queueHead = 0;
             int queueTail = 0;
 
             for (int edgeIndex = 0; edgeIndex < edges.Length; edgeIndex++)
             {
+                if (!IsValidEdge(edges, edgeIndex))
+                    return false;
+
                 int sourceIndex = ResolveNodeIndex(edges[edgeIndex].Source);
                 int dependencyIndex = ResolveNodeIndex(edges[edgeIndex].Dependency);
                 if (sourceIndex < 0 || dependencyIndex < 0)
@@ -219,6 +246,22 @@ namespace Hecton8.Bootstrap
             ReportCycle(nodes, edges, _inDegreeScratch);
             executionOrderCount = 0;
             return false;
+        }
+
+        private static bool IsValidEdge(BootstrapRegistryDependencyEdge[] edges, int edgeIndex)
+        {
+            BootstrapRegistryDependencyEdge edge = edges[edgeIndex];
+            if (edge.Source == edge.Dependency)
+                return false;
+
+            for (int previousIndex = 0; previousIndex < edgeIndex; previousIndex++)
+            {
+                BootstrapRegistryDependencyEdge previous = edges[previousIndex];
+                if (previous.Source == edge.Source && previous.Dependency == edge.Dependency)
+                    return false;
+            }
+
+            return true;
         }
 
         private static int ResolveNodeIndex(GlobalRegistryServiceSlot serviceSlot)
@@ -281,6 +324,7 @@ namespace Hecton8.Bootstrap
                 case GlobalRegistryServiceSlot.Scene: return nameof(GlobalRegistryServiceSlot.Scene);
                 case GlobalRegistryServiceSlot.InteractionSignals: return nameof(GlobalRegistryServiceSlot.InteractionSignals);
                 case GlobalRegistryServiceSlot.FloatingOriginRuntime: return nameof(GlobalRegistryServiceSlot.FloatingOriginRuntime);
+                case GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime: return nameof(GlobalRegistryServiceSlot.ConnectionSplineBatchRendererRuntime);
                 case GlobalRegistryServiceSlot.PhysicsStateManager: return nameof(GlobalRegistryServiceSlot.PhysicsStateManager);
                 case GlobalRegistryServiceSlot.Physics: return nameof(GlobalRegistryServiceSlot.Physics);
                 case GlobalRegistryServiceSlot.Debris: return nameof(GlobalRegistryServiceSlot.Debris);
@@ -291,7 +335,10 @@ namespace Hecton8.Bootstrap
                 case GlobalRegistryServiceSlot.Audio: return nameof(GlobalRegistryServiceSlot.Audio);
                 case GlobalRegistryServiceSlot.PowerGrid: return nameof(GlobalRegistryServiceSlot.PowerGrid);
                 case GlobalRegistryServiceSlot.Logistics: return nameof(GlobalRegistryServiceSlot.Logistics);
+                case GlobalRegistryServiceSlot.NativeInputManagerRuntime: return nameof(GlobalRegistryServiceSlot.NativeInputManagerRuntime);
                 case GlobalRegistryServiceSlot.Input: return nameof(GlobalRegistryServiceSlot.Input);
+                case GlobalRegistryServiceSlot.BeaconNetworkRuntime: return nameof(GlobalRegistryServiceSlot.BeaconNetworkRuntime);
+                case GlobalRegistryServiceSlot.ModWorldPersistenceRuntime: return nameof(GlobalRegistryServiceSlot.ModWorldPersistenceRuntime);
                 case GlobalRegistryServiceSlot.Player: return nameof(GlobalRegistryServiceSlot.Player);
                 case GlobalRegistryServiceSlot.PlayerInventory: return nameof(GlobalRegistryServiceSlot.PlayerInventory);
                 case GlobalRegistryServiceSlot.PlayerSensory: return nameof(GlobalRegistryServiceSlot.PlayerSensory);

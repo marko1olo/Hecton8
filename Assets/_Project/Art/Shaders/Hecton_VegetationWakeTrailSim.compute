@@ -35,7 +35,9 @@ float2 EncodeVelocity(float2 velocity)
 
 float Hash31(float3 value)
 {
-    return frac(sin(dot(value, float3(127.1, 311.7, 74.7))) * 43758.5453);
+    float3 hash = frac(value * float3(0.1031, 0.1030, 0.0973));
+    hash += dot(hash, hash.yzx + 33.33);
+    return frac((hash.x + hash.y) * hash.z);
 }
 
 float ValueNoise3(float3 samplePosition)
@@ -98,8 +100,8 @@ float4 ApplyWakeTrailStamps(float2 uv, float4 currentValue)
     {
         WakeTrailStampCommand stamp = _HectonWakeTrailStampCommands[stampIndex];
         float2 stampDirection = stamp.DirectionStrengthVertical.xy;
-        float stampDirectionLength = length(stampDirection);
-        stampDirection = stampDirectionLength > 0.0001 ? stampDirection / stampDirectionLength : float2(0.0, 1.0);
+        float stampDirectionLengthSq = dot(stampDirection, stampDirection);
+        stampDirection = stampDirectionLengthSq > 0.000001 ? stampDirection * rsqrt(stampDirectionLengthSq) : float2(0.0, 1.0);
         float2 stampBitangent = float2(-stampDirection.y, stampDirection.x);
 
         float2 delta = uv - stamp.UvEllipse.xy;
@@ -108,7 +110,7 @@ float4 ApplyWakeTrailStamps(float2 uv, float4 currentValue)
         float verticalImpulse = saturate(stamp.DirectionStrengthVertical.w);
         float along = dot(delta, stampDirection) / halfLength;
         float across = dot(delta, stampBitangent) / radius;
-        float shape = saturate(1.0 - sqrt(along * along + across * across));
+        float shape = saturate(1.0 - (along * along + across * across));
         float stampIntensity = shape * shape * saturate(stamp.DirectionStrengthVertical.z) * lerp(1.0, 1.55, verticalImpulse);
         if (stampIntensity <= 0.000001)
             continue;

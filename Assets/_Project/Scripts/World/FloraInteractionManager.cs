@@ -30,6 +30,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-105)]
     public sealed class FloraInteractionManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
     {
+        private const int MaxModuleParentResolveDepth = 16;
+
         private static FloraInteractionManager s_ActiveRuntimeInstance;
 
         [StructLayout(LayoutKind.Sequential)]
@@ -174,7 +176,7 @@ namespace Hecton8.World
                     if (distanceSq > radiusSq)
                         continue;
 
-                    float distance = math.sqrt(distanceSq);
+                    float distance = distanceSq * math.rsqrt(math.max(distanceSq, 0.000001f));
                     float activationTime = cascadeEvent.StartTimeSeconds + (distance / safeSpeed);
                     if (!found || activationTime < bestSeed)
                     {
@@ -1150,7 +1152,8 @@ namespace Hecton8.World
             UpdateSedimentCooldowns(deltaTime);
 
             Transform runtimePlayerTransform = ResolveRuntimePlayerTransform();
-            PublishEnvironmentGlobals(runtimePlayerTransform != null ? runtimePlayerTransform.position : Vector3.zero);
+            Vector3 targetPosition = runtimePlayerTransform != null ? runtimePlayerTransform.position : Vector3.zero;
+            PublishEnvironmentGlobals(targetPosition);
             PublishSubmarineWashGlobals();
             RefreshFlowFieldGlobals(deltaTime);
             if (runtimePlayerTransform == null)
@@ -1162,14 +1165,13 @@ namespace Hecton8.World
                 return;
             }
 
-            ResolvePlayerState(runtimePlayerTransform);
-            UpdateToxicSporeExposure(runtimePlayerTransform.position, deltaTime);
-            UpdateDefensiveSporeBursts(runtimePlayerTransform.position);
-            UpdateBioluminescentCascades(runtimePlayerTransform.position, deltaTime);
+            ResolvePlayerState(runtimePlayerTransform, targetPosition);
+            UpdateToxicSporeExposure(targetPosition, deltaTime);
+            UpdateDefensiveSporeBursts(targetPosition);
+            UpdateBioluminescentCascades(targetPosition, deltaTime);
 
-            Vector3 targetPosition = runtimePlayerTransform.position;
             Vector3 playerVelocity = UpdatePlayerSpringVelocity(ResolvePlayerVelocity(targetPosition, deltaTime), deltaTime);
-            float velocityMagnitude = playerVelocity.magnitude;
+            float velocityMagnitude = EstimateLength3D(playerVelocity);
             _lastPublishedPlayerVelocity = playerVelocity;
             _hasActiveScooterWake = false;
             _hasActiveSubmarineWake = false;
@@ -1177,9 +1179,14 @@ namespace Hecton8.World
             float targetRadius = _baseRadius + velocityMagnitude * _velocityRadiusMultiplier;
             float targetForce = Mathf.Clamp(velocityMagnitude * 0.85f, 0f, _maxInteractionForce);
 
-            _smoothPosition = Vector3.Lerp(_smoothPosition, targetPosition, deltaTime * _positionSmoothSpeed);
-            _smoothRadius = Mathf.Lerp(_smoothRadius, targetRadius, deltaTime * _intensitySmoothSpeed);
-            _smoothForce = Mathf.Lerp(_smoothForce, targetForce, deltaTime * _intensitySmoothSpeed);
+            float positionBlend = math.saturate(deltaTime * _positionSmoothSpeed);
+            _smoothPosition = new Vector3(
+                math.lerp(_smoothPosition.x, targetPosition.x, positionBlend),
+                math.lerp(_smoothPosition.y, targetPosition.y, positionBlend),
+                math.lerp(_smoothPosition.z, targetPosition.z, positionBlend));
+            float intensityBlend = math.saturate(deltaTime * _intensitySmoothSpeed);
+            _smoothRadius = math.lerp(_smoothRadius, targetRadius, intensityBlend);
+            _smoothForce = math.lerp(_smoothForce, targetForce, intensityBlend);
 
             int interactionCount = 0;
             float playerBendRadius = Mathf.Clamp(
@@ -1191,7 +1198,7 @@ namespace Hecton8.World
             interactionCount = AppendScooterInteractionPoint(playerVelocity, interactionCount, deltaTime);
             interactionCount = CollectDynamicInteractionPoints(targetPosition, interactionCount);
             interactionCount = AppendExternalInteractions(interactionCount);
-            UpdateWakeTrail(runtimePlayerTransform.position, playerVelocity, deltaTime);
+            UpdateWakeTrail(targetPosition, playerVelocity, deltaTime);
             TryEmitSedimentBursts(targetPosition, playerVelocity);
 
             Shader.SetGlobalVector(
@@ -1264,7 +1271,7 @@ namespace Hecton8.World
                     velocityWS.x,
                     velocityWS.y,
                     velocityWS.z,
-                    velocityWS.magnitude)
+                    EstimateLength3D(velocityWS))
             };
         }
 
@@ -1302,7 +1309,7 @@ namespace Hecton8.World
             return _playerTransformOverride;
         }
 
-        private void ResolvePlayerState(Transform runtimePlayerTransform)
+        private void ResolvePlayerState(Transform runtimePlayerTransform, Vector3 runtimePlayerPosition)
         {
             if (_playerTransform == runtimePlayerTransform)
             {
@@ -1311,18 +1318,18 @@ namespace Hecton8.World
             }
 
             _playerTransform = runtimePlayerTransform;
-            _playerRb = runtimePlayerTransform.GetComponent<Rigidbody>();
-            _playerMovement = runtimePlayerTransform.GetComponent<HectonPlayerMovement>();
+            runtimePlayerTransform.TryGetComponent(out _playerRb);
+            runtimePlayerTransform.TryGetComponent(out _playerMovement);
             _playerToolManager = ResolvePlayerToolManager(runtimePlayerTransform);
             _activeScooterTransform = _scooterTransformOverride;
-            _smoothPosition = runtimePlayerTransform.position;
-            _lastPlayerPosition = runtimePlayerTransform.position;
+            _smoothPosition = runtimePlayerPosition;
+            _lastPlayerPosition = runtimePlayerPosition;
             _hasLastPlayerPosition = true;
             _smoothedPlayerVelocity = Vector3.zero;
             _smoothedPlayerVelocityDamp = Vector3.zero;
             _smoothedScooterVelocity = Vector3.zero;
             _smoothedScooterVelocityDamp = Vector3.zero;
-            _smoothedScooterPosition = _activeScooterTransform != null ? _activeScooterTransform.position : runtimePlayerTransform.position;
+            _smoothedScooterPosition = _activeScooterTransform != null ? _activeScooterTransform.position : runtimePlayerPosition;
             _smoothedScooterPositionDamp = Vector3.zero;
             _hasSmoothedScooterPosition = _activeScooterTransform != null;
             ResolveScooterState();
@@ -1428,7 +1435,7 @@ namespace Hecton8.World
 
                 Vector3 velocity = hitBody.linearVelocity;
                 float radius = Mathf.Clamp(
-                    _dynamicObjectBaseRadius + velocity.magnitude * _dynamicVelocityRadiusMultiplier,
+                    _dynamicObjectBaseRadius + EstimateLength3D(velocity) * _dynamicVelocityRadiusMultiplier,
                     0.5f,
                     _maxBendRadius);
                 interactionCount = AppendInteractionPoint(hitBody.worldCenterOfMass, velocity, radius, interactionCount);
@@ -1451,7 +1458,7 @@ namespace Hecton8.World
                 targetVelocity,
                 ref _smoothedScooterVelocityDamp,
                 deltaTime);
-            float speed = smoothedVelocity.magnitude;
+            float speed = EstimateLength3D(smoothedVelocity);
             if (speed <= _interactionReleaseSpeed)
                 return interactionCount;
 
@@ -1524,10 +1531,13 @@ namespace Hecton8.World
             if (runtimePlayerTransform == null)
                 return null;
 
-            if (runtimePlayerTransform.TryGetComponent(out PlayerToolManager directToolManager))
-                return directToolManager;
+            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            if (playerContext != null && playerContext.ToolManager != null)
+                return playerContext.ToolManager;
 
-            return ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : runtimePlayerTransform.GetComponent<PlayerToolManager>());
+            return runtimePlayerTransform.TryGetComponent(out PlayerToolManager directToolManager)
+                ? directToolManager
+                : null;
         }
 
         private void ResolveScooterState()
@@ -1642,14 +1652,14 @@ namespace Hecton8.World
             if (_sedimentBurstParticleSystem == null)
                 return;
 
-            float playerSpeed = playerVelocity.magnitude;
+            float playerSpeed = EstimateLength3D(playerVelocity);
             if (_playerSedimentCooldownRemaining <= 0f && playerSpeed >= _playerSedimentMinSpeed && IsInsideDenseGrassZone(playerPosition))
             {
                 EmitSedimentBurst(playerPosition, playerVelocity, false);
                 _playerSedimentCooldownRemaining = _playerSedimentCooldown;
             }
 
-            float scooterSpeed = _smoothedScooterVelocity.magnitude;
+            float scooterSpeed = EstimateLength3D(_smoothedScooterVelocity);
             if (_hasActiveScooterWake &&
                 _scooterSedimentCooldownRemaining <= 0f &&
                 scooterSpeed >= _scooterSedimentMinSpeed &&
@@ -1685,13 +1695,11 @@ namespace Hecton8.World
             if (!_sedimentBurstParticleSystem.isPlaying)
                 _sedimentBurstParticleSystem.Play(true);
 
-            float speed = velocityWS.magnitude;
+            float speed = EstimateLength3D(velocityWS);
             float burstRadiusScale = Mathf.Clamp(_sedimentBurstRadius * 0.5f, 0.4f, 2f);
             int burstCount = Mathf.Clamp(Mathf.RoundToInt(speed * (scooterBurst ? 0.9f : 0.55f)), 2, _sedimentMaxBurstCount);
             Vector3 planarVelocity = new Vector3(velocityWS.x, 0f, velocityWS.z);
-            if (planarVelocity.sqrMagnitude <= 0.0001f)
-                planarVelocity = Vector3.forward;
-            planarVelocity.Normalize();
+            planarVelocity = NormalizeVector3Fast(planarVelocity, Vector3.forward);
 
             _sedimentEmitParams.position = positionWS + Vector3.down * 0.18f;
             _sedimentEmitParams.velocity = planarVelocity * Mathf.Min(speed * (0.16f + _sedimentBurstRadius * 0.015f), 3.2f) + Vector3.up * (scooterBurst ? 0.38f : 0.22f);
@@ -1730,7 +1738,7 @@ namespace Hecton8.World
                     velocity.x,
                     velocity.y,
                     velocity.z,
-                    velocity.magnitude)
+                    EstimateLength3D(velocity))
             };
             return interactionCount + 1;
         }
@@ -1768,7 +1776,7 @@ namespace Hecton8.World
             HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
             float waterLevel = fluidEngine != null ? fluidEngine.WaterLevel : DefaultVegetationWaterLevel;
             Vector3 currentVector = ResolveGlobalOceanFlow(samplePositionWS, fluidEngine);
-            float currentStrength = currentVector.magnitude;
+            float currentStrength = EstimateLength3D(currentVector);
             float currentNoiseScale = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentNoiseScale : 0f;
             float currentTimeScale = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentTimeScale : 0f;
             float currentVerticalFactor = fluidEngine != null && fluidEngine.EnablePhantomCurrent ? fluidEngine.CurrentVerticalFactor : 0f;
@@ -1818,7 +1826,7 @@ namespace Hecton8.World
                 new Vector4(
                     bloomWeight,
                     decayWeight,
-                    Mathf.Lerp(1f, _bloomEmissionBoost, bloomWeight),
+                    math.lerp(1f, _bloomEmissionBoost, bloomWeight),
                     _decayWiltStrength));
             Shader.SetGlobalFloat(_SeasonCycleId, cyclePhase);
             Shader.SetGlobalFloat(_SeasonCycleAliasId, cyclePhase);
@@ -1884,7 +1892,7 @@ namespace Hecton8.World
                 return;
             }
 
-            float speed = math.sqrt(speedSq);
+            float speed = EstimateLength3D(velocity);
             if (speed < _wakeTrailSubmarineMinSpeed)
             {
                 Shader.SetGlobalVector(_SubmarineWashSphereId, Vector4.zero);
@@ -1896,7 +1904,7 @@ namespace Hecton8.World
 
             Vector3 worldCenterOfMass = submarineHull.worldCenterOfMass;
             AbsoluteUniversePosition submarineAup = AbsoluteUniversePosition.FromRuntimePosition(worldCenterOfMass);
-            float3 safeVelocityDirection = math.normalizesafe(velocityVector, float3.zero);
+            float3 safeVelocityDirection = velocityVector * math.rsqrt(math.max(speedSq, 0.000001f));
             float radius = Mathf.Clamp(
                 _wakeTrailSubmarineRadius + speed * 0.16f,
                 _wakeTrailSubmarineRadius,
@@ -1940,7 +1948,7 @@ namespace Hecton8.World
             }
 
             if (_lastToxicSporeExposure01 > 0f)
-                _playerMovement.ApplyEnvironmentalDrag(Mathf.Lerp(1f, _toxicSporeDragMultiplier, _lastToxicSporeExposure01));
+                _playerMovement.ApplyEnvironmentalDrag(math.lerp(1f, _toxicSporeDragMultiplier, math.saturate(_lastToxicSporeExposure01)));
 
             _toxicSporeScanTimer -= deltaTime;
             if (_toxicSporeScanTimer > 0f)
@@ -2023,7 +2031,7 @@ namespace Hecton8.World
                 if (distanceSq > detectionRadiusSq)
                     continue;
 
-                float exposure01 = 1f - Mathf.Clamp01(Mathf.Sqrt(distanceSq) / detectionRadius);
+                float exposure01 = 1f - math.saturate(distanceSq / detectionRadiusSq);
                 if (exposure01 <= bestExposure01)
                     continue;
 
@@ -2329,8 +2337,10 @@ namespace Hecton8.World
                     continue;
                 }
 
+                Vector3 modulePosition = module.transform.position;
+                Vector3 reactorPosition = reactor.transform.position;
                 if (reactor.PowerRating <= 0.0001f ||
-                    (reactor.transform.position - module.transform.position).sqrMagnitude > validationRadiusSq)
+                    (reactorPosition - modulePosition).sqrMagnitude > validationRadiusSq)
                 {
                     _thermophileDwellSeconds.Remove(module);
                     continue;
@@ -2537,10 +2547,10 @@ namespace Hecton8.World
                         : 0f;
                     float infection01 = Mathf.Clamp01(node.InfectionStrength * scale01);
                     float thermalInsulation01 = Mathf.Clamp01(growth01 * infection01 * _parasiteThermalInsulationAtFullInfection);
-                    float overheatMultiplier = Mathf.Lerp(
+                    float overheatMultiplier = math.lerp(
                         1f,
                         Mathf.Max(1f, _parasiteBioReactorOverheatMultiplier),
-                        Mathf.Clamp01(growth01 * infection01));
+                        math.saturate(growth01 * infection01));
                     AccumulateModuleParasiteState(
                         module,
                         node.PowerDrainWatts * scale01,
@@ -2636,16 +2646,18 @@ namespace Hecton8.World
 
             bool found = false;
             float bestDistanceSq = float.MaxValue;
+            bool hasFixedHost = hostModule != null;
+            Vector3 fixedHostPosition = hasFixedHost ? hostModule.transform.position : default;
             for (int i = 0; i < _publishedParasiteAnchorCount; i++)
             {
                 Vector4 anchorData = _parasiteAnchorData[i];
                 Vector3 anchorPosition = new Vector3(anchorData.x, anchorData.y, anchorData.z);
                 float anchorRadius = Mathf.Max(0.25f, anchorData.w);
                 BaseModule resolvedHost = hostModule;
-                if (resolvedHost != null)
+                if (hasFixedHost)
                 {
                     float attachmentRadius = _moduleParasiteAttachmentRadius + anchorRadius;
-                    if ((anchorPosition - resolvedHost.transform.position).sqrMagnitude > attachmentRadius * attachmentRadius)
+                    if ((anchorPosition - fixedHostPosition).sqrMagnitude > attachmentRadius * attachmentRadius)
                         continue;
                 }
                 else if (!TryResolveNearestBaseModule(anchorPosition, _moduleParasiteAttachmentRadius + anchorRadius, out resolvedHost))
@@ -2695,8 +2707,8 @@ namespace Hecton8.World
             if (_destructibleOrganicManager == null)
                 return false;
 
-            Vector3 resolvedDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.down;
-            Vector3 resolvedNormal = hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : Vector3.up;
+            Vector3 resolvedDirection = NormalizeVector3Fast(direction, Vector3.down);
+            Vector3 resolvedNormal = NormalizeVector3Fast(hitNormal, Vector3.up);
             bool applied = _destructibleOrganicManager.TryApplyToolHit(
                 hitPoint,
                 resolvedNormal,
@@ -2775,7 +2787,9 @@ namespace Hecton8.World
                 if (hitTransform == null)
                     continue;
 
-                BaseModule candidate = hitTransform.GetComponentInParent<BaseModule>();
+                if (!TryResolveBaseModuleFromTransform(hitTransform, out BaseModule candidate))
+                    continue;
+
                 if (candidate == null || !candidate.isActiveAndEnabled)
                     continue;
 
@@ -2794,6 +2808,23 @@ namespace Hecton8.World
             }
 
             return module != null;
+        }
+
+        private static bool TryResolveBaseModuleFromTransform(Transform start, out BaseModule module)
+        {
+            module = null;
+            Transform current = start;
+            int depth = 0;
+            while (current != null && depth < MaxModuleParentResolveDepth)
+            {
+                if (current.TryGetComponent(out module))
+                    return module != null;
+
+                current = current.parent;
+                depth++;
+            }
+
+            return false;
         }
 
         private static bool IsMetalAttachmentLayer(int layer)
@@ -2838,7 +2869,7 @@ namespace Hecton8.World
             else if (growth01 > 1d)
                 growth01 = 1d;
 
-            return Mathf.Lerp(MinimumParasiteScale, 1f, (float)growth01);
+            return math.lerp(MinimumParasiteScale, 1f, (float)growth01);
         }
 
         private static bool IsFiniteDouble(double value)
@@ -2907,7 +2938,7 @@ namespace Hecton8.World
                     continue;
 
                 float potentialScale = Mathf.Clamp01(Mathf.Abs(targetPotential) / Mathf.Max(1f, Mathf.Abs(sourceModule.PowerRatingForHabitatGraph)));
-                float inheritedDrainWatts = state.PowerDrainWatts * Mathf.Lerp(_fungalMindSpreadDrainScale, 1f, potentialScale);
+                float inheritedDrainWatts = state.PowerDrainWatts * math.lerp(_fungalMindSpreadDrainScale, 1f, math.saturate(potentialScale));
                 float inheritedInfection = Mathf.Clamp01(Mathf.Max(state.InfectionLevel, state.RootInfectionLevel) * 0.75f);
                 AppendHeadlessParasiteNode(
                     targetModule,
@@ -3100,8 +3131,7 @@ namespace Hecton8.World
                 if (distanceSq > radiusSq)
                     continue;
 
-                float distance = Mathf.Sqrt(distanceSq);
-                float exposure01 = (1f - Mathf.Clamp01(distance / Mathf.Max(0.001f, radius))) * burst.Intensity;
+                float exposure01 = (1f - math.saturate(distanceSq / math.max(0.001f, radiusSq))) * burst.Intensity;
                 if (exposure01 <= strongestExposure)
                     continue;
 
@@ -3791,7 +3821,9 @@ namespace Hecton8.World
             else
                 packedFlags &= unchecked((byte)~(byte)HectonVegetationRuntimeFlags.PlayerContact);
 
-            instanceData.RuntimeFlags = packedFlags;
+            instanceData.RuntimeFlags = HectonVegetationRuntimeFlagEncoding.WithRuntimeFlags(
+                instanceData.RuntimeFlags,
+                packedFlags);
             metadata[index] = instanceData;
         }
 
@@ -3951,7 +3983,7 @@ namespace Hecton8.World
                     if (_predatorThreatMask.value != 0 && (_predatorThreatMask.value & (1 << hit.Layer)) == 0)
                         continue;
 
-                    bool leviathanThreat = hit.Transform.tag == "Leviathan";
+                    bool leviathanThreat = hit.Transform.CompareTag("Leviathan");
                     if (!leviathanThreat && hit.Owner is FaunaBrain brain && brain.SpeciesProfile != null)
                         leviathanThreat = brain.SpeciesProfile.isLeviathan;
                     if (!leviathanThreat)
@@ -3961,8 +3993,7 @@ namespace Hecton8.World
                         continue;
 
                     bestDistanceSqr = hit.DistanceSqr;
-                    float distance = Mathf.Sqrt(hit.DistanceSqr);
-                    aggressiveBioformThreat = 1f - Mathf.Clamp01(distance / predatorDimRadius);
+                    aggressiveBioformThreat = 1f - math.saturate(hit.DistanceSqr / (predatorDimRadius * predatorDimRadius));
                     predatorThreatPositionRadius = new Vector4(hit.Position.x, hit.Position.y, hit.Position.z, predatorDimRadius);
                 }
             }
@@ -4169,7 +4200,7 @@ namespace Hecton8.World
             float fade = Mathf.Max(0f, deltaTime / _wakeTrailFadeSeconds);
             float strongestStamp = 0f;
 
-            float playerSpeed = playerVelocity.magnitude;
+            float playerSpeed = EstimateLength3D(playerVelocity);
             if (playerSpeed >= _wakeTrailPlayerMinSpeed)
             {
                 QueueWakeTrailStamp(
@@ -4182,7 +4213,7 @@ namespace Hecton8.World
                 strongestStamp = Mathf.Max(strongestStamp, _wakeTrailPlayerStrength);
             }
 
-            float scooterSpeed = _smoothedScooterVelocity.magnitude;
+            float scooterSpeed = EstimateLength3D(_smoothedScooterVelocity);
             if (_hasActiveScooterWake && scooterSpeed >= _wakeTrailScooterMinSpeed)
             {
                 QueueWakeTrailStamp(
@@ -4200,7 +4231,7 @@ namespace Hecton8.World
             if (submarineHull != null)
             {
                 Vector3 submarineVelocity = submarineHull.linearVelocity;
-                float submarineSpeed = submarineVelocity.magnitude;
+                float submarineSpeed = EstimateLength3D(submarineVelocity);
                 if (submarineSpeed >= _wakeTrailSubmarineMinSpeed)
                 {
                     _hasActiveSubmarineWake = true;
@@ -4275,13 +4306,11 @@ namespace Hecton8.World
                 (positionWS.x - _wakeTrailWorldRect.x) * _wakeTrailWorldRect.z,
                 (positionWS.z - _wakeTrailWorldRect.y) * _wakeTrailWorldRect.w);
             Vector2 directionXZ = new Vector2(directionWS.x, directionWS.z);
-            float directionMagnitude = directionWS.magnitude;
+            float directionMagnitude = EstimateLength3D(directionWS);
             float verticalImpulse = directionMagnitude > 0.0001f
                 ? Mathf.Clamp01(Mathf.Abs(directionWS.y) / directionMagnitude) * Mathf.Clamp01(directionMagnitude * 0.12f)
                 : 0f;
-            if (directionXZ.sqrMagnitude <= 0.0001f)
-                directionXZ = Vector2.up;
-            directionXZ.Normalize();
+            directionXZ = NormalizeVector2Fast(directionXZ, Vector2.up);
 
             float uvRadius = radiusWS * _wakeTrailWorldRect.z;
             float uvLength = lengthWS * _wakeTrailWorldRect.z;
@@ -4642,6 +4671,29 @@ namespace Hecton8.World
 
             int bytesPerPixel = 4;
             return (long)texture.width * texture.height * bytesPerPixel;
+        }
+
+        private static float EstimateLength3D(Vector3 value)
+        {
+            float ax = Mathf.Abs(value.x);
+            float ay = Mathf.Abs(value.y);
+            float az = Mathf.Abs(value.z);
+            float maxAxis = Mathf.Max(ax, Mathf.Max(ay, az));
+            float minAxis = Mathf.Min(ax, Mathf.Min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
+        }
+
+        private static Vector3 NormalizeVector3Fast(Vector3 vector, Vector3 fallback)
+        {
+            float magnitudeSq = vector.sqrMagnitude;
+            return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
+        }
+
+        private static Vector2 NormalizeVector2Fast(Vector2 vector, Vector2 fallback)
+        {
+            float magnitudeSq = vector.sqrMagnitude;
+            return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
         }
 
 #if UNITY_EDITOR

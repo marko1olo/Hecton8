@@ -1,5 +1,6 @@
 using UnityEngine;
 using Hecton8.Core;
+using Hecton8.Quest;
 
 namespace Hecton8.Meta
 {
@@ -34,11 +35,16 @@ namespace Hecton8.Meta
             if (profile == null || string.IsNullOrWhiteSpace(upgradeId) || profile.purchasedUpgradeLevels == null)
                 return 0;
 
+            uint upgradeHash = QuestFlagHashKernel.ComputeStableHash(upgradeId);
+            if (upgradeHash == 0u)
+                return 0;
+
             int count = Mathf.Clamp(profile.purchasedUpgradeCount, 0, profile.purchasedUpgradeLevels.Length);
             for (int i = 0; i < count; i++)
             {
                 MetaUpgradeLevelRecord record = profile.purchasedUpgradeLevels[i];
-                if (string.Equals(record.upgradeId, upgradeId, System.StringComparison.Ordinal))
+                uint recordHash = record.upgradeHash != 0u ? record.upgradeHash : QuestFlagHashKernel.ComputeStableHash(record.upgradeId);
+                if (recordHash == upgradeHash)
                     return Mathf.Max(0, record.level);
             }
 

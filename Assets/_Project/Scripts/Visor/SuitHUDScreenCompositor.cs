@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.UI;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 #if UNITY_EDITOR
@@ -139,15 +140,15 @@ namespace NASAPunk.Visor
                 return;
             }
 
-            RefreshCompositor();
+            RefreshCompositor(allowOverlayCreation: false);
             _pendingRefresh = false;
         }
 
-        private void RefreshCompositor()
+        private void RefreshCompositor(bool allowOverlayCreation = true)
         {
             AutoResolveReferences();
             EnsureCanvasState();
-            EnsureOverlay();
+            EnsureOverlay(allowOverlayCreation);
             EnsureProjection();
             BindTexture();
         }
@@ -162,6 +163,7 @@ namespace NASAPunk.Visor
                 return;
 
             _nextAutoResolveAt = now + AutoResolveRetryInterval;
+            bool allowHierarchySearch = force || !Application.isPlaying;
 
             if (targetCanvas == null)
             {
@@ -174,7 +176,7 @@ namespace NASAPunk.Visor
                     if (candidateCanvas == null || candidateCanvas.transform.root != root)
                         continue;
 
-                    if (candidateCanvas.name == "Suit_HUD_Canvas")
+                    if (!allowHierarchySearch || candidateCanvas.name == "Suit_HUD_Canvas")
                     {
                         targetCanvas = candidateCanvas;
                         break;
@@ -187,7 +189,8 @@ namespace NASAPunk.Visor
                     {
                         SuitHUDV4CanvasOverlay overlay = s_overlayResolveBuffer[i];
                         Canvas candidateCanvas = overlay != null ? overlay.TargetCanvas : null;
-                        if (candidateCanvas != null && candidateCanvas.name == "Suit_HUD_Canvas")
+                        if (candidateCanvas != null &&
+                            (!allowHierarchySearch || candidateCanvas.name == "Suit_HUD_Canvas"))
                         {
                             targetCanvas = candidateCanvas;
                             break;
@@ -200,12 +203,15 @@ namespace NASAPunk.Visor
 
             if (visorController == null)
             {
-                Transform parent = transform.parent;
-                if (parent != null)
+                if (allowHierarchySearch)
                 {
-                    Transform visor = parent.Find("Suit_Visor");
-                    if (visor != null)
-                        visorController = visor.GetComponent<VisorHUDController>();
+                    Transform parent = transform.parent;
+                    if (parent != null)
+                    {
+                        Transform visor = parent.Find("Suit_Visor");
+                        if (visor != null)
+                            visor.TryGetComponent(out visorController);
+                    }
                 }
 
                 if (visorController == null)
@@ -255,68 +261,109 @@ namespace NASAPunk.Visor
 
             if (forceScreenSpaceOverlay)
             {
-                targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-                targetCanvas.worldCamera = null;
+                if (targetCanvas.renderMode != RenderMode.ScreenSpaceOverlay)
+                    targetCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                if (targetCanvas.worldCamera != null)
+                    targetCanvas.worldCamera = null;
             }
 
-            targetCanvas.overrideSorting = true;
-            targetCanvas.sortingOrder = overlaySortingOrder;
+            if (!targetCanvas.overrideSorting)
+                targetCanvas.overrideSorting = true;
+            if (targetCanvas.sortingOrder != overlaySortingOrder)
+                targetCanvas.sortingOrder = overlaySortingOrder;
         }
 
-        private void EnsureOverlay()
+        private void EnsureOverlay(bool allowOverlayCreation)
         {
             debugOverlayReady = false;
             if (targetCanvas == null)
                 return;
 
-            Transform overlayTransform = _overlayRect != null && _appliedOverlayName == overlayName
-                ? _overlayRect.transform
-                : targetCanvas.transform.Find(overlayName);
+            Transform canvasTransform = targetCanvas.transform;
+            Transform overlayTransform;
+            if (_overlayRect != null && _appliedOverlayName == overlayName && _overlayRect.parent == canvasTransform)
+            {
+                overlayTransform = _overlayRect.transform;
+            }
+            else
+            {
+                if (!allowOverlayCreation)
+                    return;
+
+                overlayTransform = canvasTransform.Find(overlayName);
+            }
+
             if (overlayTransform == null)
             {
+                if (!allowOverlayCreation)
+                    return;
+
+                // COLD ALLOC: GameObject[1] — compositor RawImage overlay hierarchy root — owner: SuitHUDScreenCompositor
                 GameObject overlayObject = new GameObject(overlayName, typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
-                overlayObject.transform.SetParent(targetCanvas.transform, false);
+                overlayObject.transform.SetParent(canvasTransform, false);
                 overlayTransform = overlayObject.transform;
             }
 
             if (showAsInsetPreview || !preserveExistingChildren)
-                overlayTransform.SetAsLastSibling();
-            else
+            {
+                int lastSiblingIndex = canvasTransform.childCount - 1;
+                if (overlayTransform.GetSiblingIndex() != lastSiblingIndex)
+                    overlayTransform.SetAsLastSibling();
+            }
+            else if (overlayTransform.GetSiblingIndex() != 0)
+            {
                 overlayTransform.SetAsFirstSibling();
+            }
 
             _overlayRect = overlayTransform as RectTransform;
-            _overlayImage = overlayTransform.GetComponent<RawImage>();
+            overlayTransform.TryGetComponent(out _overlayImage);
             _appliedOverlayName = overlayName;
 
             if (_overlayRect == null || _overlayImage == null)
                 return;
 
-            _overlayCanvasGroup = EnsureCanvasGroup(_overlayRect);
-            SetOverlayVisible(true);
+            _overlayCanvasGroup = EnsureCanvasGroup(_overlayRect, allowOverlayCreation);
+            SetOverlayVisible(true, allowOverlayCreation);
 
             if (showAsInsetPreview)
             {
-                _overlayRect.anchorMin = new Vector2(1f, 1f);
-                _overlayRect.anchorMax = new Vector2(1f, 1f);
-                _overlayRect.pivot = new Vector2(1f, 1f);
-                _overlayRect.sizeDelta = insetSize;
-                _overlayRect.anchoredPosition = new Vector2(-insetMargin.x, -insetMargin.y);
+                Vector2 cornerAnchor = Vector2.one;
+                Vector2 targetPosition = new Vector2(-insetMargin.x, -insetMargin.y);
+                if (_overlayRect.anchorMin != cornerAnchor)
+                    _overlayRect.anchorMin = cornerAnchor;
+                if (_overlayRect.anchorMax != cornerAnchor)
+                    _overlayRect.anchorMax = cornerAnchor;
+                if (_overlayRect.pivot != cornerAnchor)
+                    _overlayRect.pivot = cornerAnchor;
+                if (_overlayRect.sizeDelta != insetSize)
+                    _overlayRect.sizeDelta = insetSize;
+                if (_overlayRect.anchoredPosition != targetPosition)
+                    _overlayRect.anchoredPosition = targetPosition;
             }
             else
             {
-                _overlayRect.anchorMin = Vector2.zero;
-                _overlayRect.anchorMax = Vector2.one;
-                _overlayRect.offsetMin = Vector2.zero;
-                _overlayRect.offsetMax = Vector2.zero;
-                _overlayRect.anchoredPosition3D = Vector3.zero;
+                if (_overlayRect.anchorMin != Vector2.zero)
+                    _overlayRect.anchorMin = Vector2.zero;
+                if (_overlayRect.anchorMax != Vector2.one)
+                    _overlayRect.anchorMax = Vector2.one;
+                if (_overlayRect.offsetMin != Vector2.zero)
+                    _overlayRect.offsetMin = Vector2.zero;
+                if (_overlayRect.offsetMax != Vector2.zero)
+                    _overlayRect.offsetMax = Vector2.zero;
+                if (_overlayRect.anchoredPosition3D != Vector3.zero)
+                    _overlayRect.anchoredPosition3D = Vector3.zero;
             }
 
-            _overlayRect.localScale = Vector3.one;
-            _overlayRect.localRotation = Quaternion.identity;
+            if (_overlayRect.localScale != Vector3.one)
+                _overlayRect.localScale = Vector3.one;
+            if (_overlayRect.localRotation != Quaternion.identity)
+                _overlayRect.localRotation = Quaternion.identity;
 
             Color color = new Color(0.92f, 1f, 0.96f, overlayAlpha);
-            _overlayImage.color = color;
-            _overlayImage.raycastTarget = false;
+            if (_overlayImage.color != color)
+                _overlayImage.color = color;
+            if (_overlayImage.raycastTarget)
+                _overlayImage.raycastTarget = false;
             debugOverlayReady = true;
         }
 
@@ -335,33 +382,49 @@ namespace NASAPunk.Visor
             if (_overlayImage == null)
                 return;
 
-            _overlayImage.texture = sharedProjectionTexture;
+            if (_overlayImage.texture != sharedProjectionTexture)
+                _overlayImage.texture = sharedProjectionTexture;
             debugTextureAssigned = sharedProjectionTexture != null;
-            _overlayImage.enabled = !hideWhenTextureMissing || sharedProjectionTexture != null;
-            SetOverlayVisible(!hideWhenTextureMissing || sharedProjectionTexture != null);
+            bool targetEnabled = !hideWhenTextureMissing || sharedProjectionTexture != null;
+            if (_overlayImage.enabled != targetEnabled)
+                _overlayImage.enabled = targetEnabled;
+            SetOverlayVisible(targetEnabled);
         }
 
-        private void SetOverlayVisible(bool visible)
+        private void SetOverlayVisible(bool visible, bool allowCanvasGroupCreation = false)
         {
             if (_overlayCanvasGroup == null && _overlayRect != null)
-                _overlayCanvasGroup = EnsureCanvasGroup(_overlayRect);
+                _overlayCanvasGroup = EnsureCanvasGroup(_overlayRect, allowCanvasGroupCreation);
 
             if (_overlayCanvasGroup == null)
                 return;
 
-            _overlayCanvasGroup.alpha = visible ? 1f : 0f;
+            float targetAlpha = visible ? 1f : 0f;
+            if (_overlayCanvasGroup.alpha == targetAlpha &&
+                !_overlayCanvasGroup.interactable &&
+                !_overlayCanvasGroup.blocksRaycasts)
+            {
+                return;
+            }
+
+            _overlayCanvasGroup.alpha = targetAlpha;
             _overlayCanvasGroup.interactable = false;
             _overlayCanvasGroup.blocksRaycasts = false;
         }
 
-        private static CanvasGroup EnsureCanvasGroup(RectTransform rect)
+        private static CanvasGroup EnsureCanvasGroup(RectTransform rect, bool allowCreation)
         {
             if (rect == null)
                 return null;
 
-            CanvasGroup canvasGroup = rect.GetComponent<CanvasGroup>();
+            rect.TryGetComponent(out CanvasGroup canvasGroup);
             if (canvasGroup == null)
-                canvasGroup = rect.gameObject.AddComponent<CanvasGroup>();
+            {
+                if (!allowCreation)
+                    return null;
+
+                canvasGroup = rect.gameObject.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] — compositor overlay visibility latch — owner: SuitHUDScreenCompositor
+            }
 
             return canvasGroup;
         }
@@ -383,7 +446,7 @@ namespace NASAPunk.Visor
             if (!_tickRegistered)
                 return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
             _tickRegistered = false;
         }
@@ -399,8 +462,8 @@ namespace NASAPunk.Visor
 
         public void SetOverlayAlpha(float alpha)
         {
-            float clampedAlpha = Mathf.Clamp01(alpha);
-            if (Mathf.Approximately(overlayAlpha, clampedAlpha))
+            float clampedAlpha = math.saturate(alpha);
+            if (math.abs(overlayAlpha - clampedAlpha) <= 0.0001f)
                 return;
 
             overlayAlpha = clampedAlpha;

@@ -374,7 +374,7 @@ namespace Hecton8.Audio
 
             if (hitLayer == terrainLayerIndex)
             {
-                MapMagicBridge bridge = MapMagicBridge.Instance;
+                MapMagicBridge bridge = GlobalRegistry.MapMagic;
 
                 if (bridge != null
                     && bridge.TryGetBiomeIndex(

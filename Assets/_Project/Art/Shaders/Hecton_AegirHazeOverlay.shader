@@ -59,6 +59,7 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
             #pragma fragment OverlayFrag
             #pragma target 3.5
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON
             #pragma skip_variants POINT POINT_COOKIE SHADOWS_CUBE
             #pragma skip_variants _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS
@@ -127,6 +128,15 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
             }
 
+            half FastMaskPower(half value, half power)
+            {
+                half v2 = value * value;
+                half v4 = v2 * v2;
+                half low = lerp(value, v2, saturate(power - 1.0h));
+                half high = lerp(v2, v4, saturate((power - 2.0h) * 0.5h));
+                return power < 2.0h ? low : high;
+            }
+
             float ResolveTemporalFrameIndex()
             {
                 return max(_HectonFrameCount, floor(_Time.y * 60.0));
@@ -171,6 +181,7 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
             half4 OverlayFrag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float3 V = SafeNormalizeDir(input.viewDirWS, float3(0.0, 1.0, 0.0));
                 float3 sunDir = SafeNormalizeDir(_SunDirection.xyz, FALLBACK_SUN_DIR);
@@ -186,7 +197,7 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
                                   + _SkyColorNadir.rgb * nadirMask;
 
                 half hazeRaw = 1.0h - abs(horizonFactor);
-                half horizonVeil = saturate(pow(hazeRaw, _HazeFalloff) * _HazeIntensity);
+                half horizonVeil = saturate(FastMaskPower(hazeRaw, _HazeFalloff) * _HazeIntensity);
 
                 half sunViewDot = saturate(dot(V, -sunDir));
                 half3 hazeSunTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(1.0h, 0.7h, 0.3h), sunViewDot * _HazeSunTintStrength);
@@ -195,7 +206,7 @@ Shader "HECTON/Sky/Hecton_AegirHazeOverlay"
                 half discMask = smoothstep(_OverlayDiscOuterDot, _OverlayDiscInnerDot, aegirDot);
                 half discRange = max(0.0001h, _OverlayDiscInnerDot - _OverlayDiscOuterDot);
                 half discRadial = saturate((aegirDot - _OverlayDiscOuterDot) / discRange);
-                half edgeVeil = pow(1.0h - discRadial, _DiscEdgePower);
+                half edgeVeil = FastMaskPower(1.0h - discRadial, _DiscEdgePower);
 
                 half baseVeil = _DiscBaseVeil
                               + horizonVeil * 0.65h

@@ -179,8 +179,9 @@ namespace Hecton8.Gameplay
             if (_isTransitioning) return;
 
             // Determine direction based on player position
-            bool goingUp = Vector3.Distance(interactor.position, entryPoint.position) <
-                           Vector3.Distance(interactor.position, exitPoint.position);
+            Vector3 interactorPosition = interactor.position;
+            bool goingUp = (interactorPosition - entryPoint.position).sqrMagnitude <
+                           (interactorPosition - exitPoint.position).sqrMagnitude;
 
             TeleportPlayer(interactor, goingUp);
         }

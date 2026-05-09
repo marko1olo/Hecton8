@@ -21,6 +21,7 @@ using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -32,13 +33,14 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class PlayerActionController : MonoBehaviour, ITickable, IUpdatable
     {
+        private const float TwoPi = 6.28318530718f;
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SINGLETON
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private static PlayerActionController _instance;
         /// <summary>Singleton instance for external access (e.g., FloraProjectile interrupt).</summary>
-        public static PlayerActionController Instance => _instance;
+        public static PlayerActionController Instance => GlobalRegistry.PlayerActions;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -120,9 +122,7 @@ namespace Hecton8.Gameplay
         public bool IsActionInProgress => _state == ActionState.InProgress;
 
         /// <summary>Ð¢ÐµÐºÑƒÑ‰Ð¸Ð¹ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑ (0-1).</summary>
-        public float Progress => _state == ActionState.InProgress && _actionDuration > 0f
-            ? Mathf.Clamp01(_actionTimer / _actionDuration)
-            : 0f;
+        public float Progress => ResolveProgress01();
 
         /// <summary>ÐÐºÑ‚Ð¸Ð²Ð½Ñ‹Ð¹ Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚ (null ÐµÑÐ»Ð¸ Ð½ÐµÑ‚ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ).</summary>
         public ItemData ActiveItem => _activeItem;
@@ -204,13 +204,12 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            // Singleton assignment
-            if (_instance != null && _instance != this)
+            PlayerActionController registered = GlobalRegistry.PlayerActions;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
-            _instance = this;
 
             _cachedTransform = transform;
 
@@ -224,8 +223,6 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterService();
 
-            if (_instance == this)
-                _instance = null;
         }
 
         private void OnEnable()
@@ -255,6 +252,8 @@ namespace Hecton8.Gameplay
         {
             if (_state != ActionState.InProgress) return;
 
+            float safeDeltaTime = math.max(0f, deltaTime);
+
             // â”€â”€ ÐŸÑ€Ð¾Ð²ÐµÑ€ÐºÐ° Ð¿Ñ€ÐµÑ€Ñ‹Ð²Ð°Ð½Ð¸Ð¹ â”€â”€
             if (CheckInterrupts())
             {
@@ -263,13 +262,13 @@ namespace Hecton8.Gameplay
             }
 
             // â”€â”€ ÐžÐ±Ð½Ð¾Ð²Ð»ÐµÐ½Ð¸Ðµ Ñ‚Ð°Ð¹Ð¼ÐµÑ€Ð° â”€â”€
-            _actionTimer += deltaTime;
+            _actionTimer += safeDeltaTime;
 
             // â”€â”€ ÐšÐ°Ð¼ÐµÑ€Ð½Ñ‹Ð¹ Ñ„Ð¸Ð´Ð±ÐµÐº (Ð¼Ð¸ÐºÑ€Ð¾-Ð¿Ð¾ÐºÐ°Ñ‡Ð¸Ð²Ð°Ð½Ð¸Ðµ) â”€â”€
-            ApplyCameraJuice(deltaTime);
+            ApplyCameraJuice(safeDeltaTime);
 
             // â”€â”€ ÐŸÑƒÐ±Ð»Ð¸ÐºÐ°Ñ†Ð¸Ñ Ð¿Ñ€Ð¾Ð³Ñ€ÐµÑÑÐ° â”€â”€
-            float progress = Mathf.Clamp01(_actionTimer / _actionDuration);
+            float progress = ResolveProgress01();
             OnActionProgress?.Invoke(progress);
 
             // â”€â”€ Ð—Ð°Ð²ÐµÑ€ÑˆÐµÐ½Ð¸Ðµ â”€â”€
@@ -292,14 +291,21 @@ namespace Hecton8.Gameplay
             if (cameraJuiceProcessor == null) return;
 
             // Ð¡Ð¸Ð½ÑƒÑÐ¾Ð¸Ð´Ð°Ð»ÑŒÐ½Ð¾Ðµ Ð¿Ð¾ÐºÐ°Ñ‡Ð¸Ð²Ð°Ð½Ð¸Ðµ Ñ Ð·Ð°Ñ‚ÑƒÑ…Ð°Ð½Ð¸ÐµÐ¼ Ðº ÐºÐ¾Ð½Ñ†Ñƒ Ð´ÐµÐ¹ÑÑ‚Ð²Ð¸Ñ
-            _cameraBobPhase += deltaTime * actionCameraBobFrequency * Mathf.PI * 2f;
+            _cameraBobPhase += deltaTime * actionCameraBobFrequency * TwoPi;
 
-            float progress = _actionDuration > 0f ? Mathf.Clamp01(_actionTimer / _actionDuration) : 0f;
+            float progress = ResolveProgress01();
             float fadeOut = 1f - (progress * progress); // ÐšÐ²Ð°Ð´Ñ€Ð°Ñ‚Ð¸Ñ‡Ð½Ð¾Ðµ Ð·Ð°Ñ‚ÑƒÑ…Ð°Ð½Ð¸Ðµ
 
             // Ð ÐµÐ³Ð¸ÑÑ‚Ñ€Ð¸Ñ€ÑƒÐµÐ¼ Ð¼Ð¸ÐºÑ€Ð¾-bob ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€ Ñ Ð·Ð°Ñ‚ÑƒÑ…Ð°ÑŽÑ‰ÐµÐ¹ Ð¸Ð½Ñ‚ÐµÐ½ÑÐ¸Ð²Ð½Ð¾ÑÑ‚ÑŒÑŽ
             float intensity = actionCameraBobIntensity * fadeOut;
             cameraJuiceProcessor.RegisterActionBob(intensity, actionCameraBobFrequency);
+        }
+
+        private float ResolveProgress01()
+        {
+            return _state == ActionState.InProgress && _actionDuration > 0.0001f
+                ? math.saturate(_actionTimer / _actionDuration)
+                : 0f;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -315,8 +321,9 @@ namespace Hecton8.Gameplay
             if (_playerRigidbody != null)
             {
                 Vector3 velocity = _playerRigidbody.linearVelocity;
-                float speed = Mathf.Sqrt(velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z);
-                if (speed > movementInterruptThreshold)
+                float speedSqr = velocity.x * velocity.x + velocity.y * velocity.y + velocity.z * velocity.z;
+                float interruptThresholdSqr = movementInterruptThreshold * movementInterruptThreshold;
+                if (speedSqr > interruptThresholdSqr)
                     return true;
             }
 
@@ -441,8 +448,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
@@ -455,8 +461,15 @@ namespace Hecton8.Gameplay
 
         private void TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+            if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            PlayerActionController registered = GlobalRegistry.PlayerActions;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterPlayerActionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerActions, this);

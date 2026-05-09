@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -133,7 +134,7 @@ namespace Hecton8.World
             EnsureStorage();
 
             _anchorPositionWS = anchorPositionWS;
-            _anchorUpWS = anchorUpWS.sqrMagnitude > 0.0001f ? anchorUpWS.normalized : Vector3.up;
+            _anchorUpWS = ResolveSafeDirection(anchorUpWS, Vector3.up);
             _snapVelocityWS = Vector3.zero;
             _snapTimer = 0f;
             _snapDuration = 0f;
@@ -169,7 +170,7 @@ namespace Hecton8.World
                 InitializeAt(anchorPositionWS, anchorUpWS);
 
             _anchorPositionWS = anchorPositionWS;
-            _anchorUpWS = anchorUpWS.sqrMagnitude > 0.0001f ? anchorUpWS.normalized : Vector3.up;
+            _anchorUpWS = ResolveSafeDirection(anchorUpWS, Vector3.up);
             _points[0] = _anchorPositionWS;
             _velocities[0] = Vector3.zero;
             _snapTimer = 0f;
@@ -182,11 +183,12 @@ namespace Hecton8.World
             _oscillationTime += deltaTime;
             float clampedAttraction = Mathf.Clamp01(attraction01);
             float clampedWrap = Mathf.Clamp01(wrap01);
-            Vector3 velocityBias = attractorVelocityWS * Mathf.Lerp(0.08f, 0.42f, clampedWrap);
-            Vector3 wrapAxis = Vector3.Cross(_anchorUpWS, attractorVelocityWS.sqrMagnitude > 0.0001f ? attractorVelocityWS.normalized : Vector3.forward);
+            Vector3 velocityBias = attractorVelocityWS * LerpClamped(0.08f, 0.42f, clampedWrap);
+            Vector3 attractorDirection = ResolveSafeDirection(attractorVelocityWS, Vector3.forward);
+            Vector3 wrapAxis = Vector3.Cross(_anchorUpWS, attractorDirection);
             if (wrapAxis.sqrMagnitude <= 0.0001f)
                 wrapAxis = Vector3.Cross(_anchorUpWS, Vector3.right);
-            wrapAxis.Normalize();
+            wrapAxis = ResolveSafeDirection(wrapAxis, Vector3.up);
 
             for (int i = 1; i < _points.Length; i++)
             {
@@ -195,10 +197,10 @@ namespace Hecton8.World
                 Vector3 velocity = _velocities[i];
 
                 Vector3 restPosition = _points[i - 1] - _anchorUpWS * segmentLength;
-                Vector3 springForce = (restPosition - point) * Mathf.Lerp(3.6f, 6.8f, tail01);
+                Vector3 springForce = (restPosition - point) * LerpClamped(3.6f, 6.8f, tail01);
 
                 Vector3 toAttractor = attractorPositionWS - point;
-                Vector3 attractForce = toAttractor * (attractorSpring * Mathf.Lerp(0.2f, 1f, tail01) * clampedAttraction);
+                Vector3 attractForce = toAttractor * (attractorSpring * LerpClamped(0.2f, 1f, tail01) * clampedAttraction);
 
                 Vector3 wrapOffset = wrapAxis * Mathf.Sin((tail01 * 4.5f + _oscillationTime * 1.9f)) * segmentLength * 0.55f;
                 Vector3 wrapForce = wrapOffset * (wrapStrength * clampedWrap * Mathf.SmoothStep(0f, 1f, tail01));
@@ -234,7 +236,7 @@ namespace Hecton8.World
                 InitializeAt(anchorPositionWS, anchorUpWS);
 
             _anchorPositionWS = anchorPositionWS;
-            _anchorUpWS = anchorUpWS.sqrMagnitude > 0.0001f ? anchorUpWS.normalized : Vector3.up;
+            _anchorUpWS = ResolveSafeDirection(anchorUpWS, Vector3.up);
             _points[0] = _anchorPositionWS;
             _velocities[0] = Vector3.zero;
             _pendingElasticRupture = false;
@@ -257,8 +259,8 @@ namespace Hecton8.World
                 Vector3 velocity = _velocities[i];
 
                 Vector3 restPosition = _points[i - 1] - _anchorUpWS * segmentLength;
-                Vector3 springForce = (restPosition - point) * Mathf.Lerp(2.8f, 5.4f, tail01);
-                Vector3 recoilForce = _snapVelocityWS * (snapVelocityCarry * recoilGate * Mathf.Lerp(0.4f, 1f, tail01));
+                Vector3 springForce = (restPosition - point) * LerpClamped(2.8f, 5.4f, tail01);
+                Vector3 recoilForce = _snapVelocityWS * (snapVelocityCarry * recoilGate * LerpClamped(0.4f, 1f, tail01));
                 velocity += (springForce + recoilForce) * deltaTime;
                 velocity *= Mathf.Clamp01(1f - (damping + snapDamping * recoilGate) * deltaTime * 0.35f);
 
@@ -315,7 +317,7 @@ namespace Hecton8.World
             for (int i = 1; i < _velocities.Length; i++)
             {
                 float tail01 = i / (float)(_velocities.Length - 1);
-                _velocities[i] += recoilVelocityWS * Mathf.Lerp(0.35f, 1f, tail01);
+                _velocities[i] += recoilVelocityWS * LerpClamped(0.35f, 1f, tail01);
             }
         }
 
@@ -387,8 +389,8 @@ namespace Hecton8.World
             if (restLength <= 0.0001f)
                 return;
 
-            float tailDistance = Vector3.Distance(_points[_points.Length - 1], _anchorPositionWS);
-            float attractorDistance = Vector3.Distance(attractorPositionWS, _anchorPositionWS);
+            float tailDistance = (_points[_points.Length - 1] - _anchorPositionWS).magnitude;
+            float attractorDistance = (attractorPositionWS - _anchorPositionWS).magnitude;
             float effectiveDistance = Mathf.Max(tailDistance, attractorDistance);
             float stretchRatio = effectiveDistance / restLength;
             _debugStretchRatio = stretchRatio;
@@ -399,7 +401,7 @@ namespace Hecton8.World
             }
 
             float overStretch01 = Mathf.Clamp01((stretchRatio - elasticStretchLimit) / Mathf.Max(elasticStretchLimit, 0.001f));
-            _elasticBreakTimer += deltaTime * Mathf.Lerp(0.35f, 1.35f, Mathf.Clamp01(attraction01 + overStretch01));
+            _elasticBreakTimer += deltaTime * LerpClamped(0.35f, 1.35f, Mathf.Clamp01(attraction01 + overStretch01));
             if (_elasticBreakTimer < elasticBreakHoldTime || _pendingElasticRupture)
                 return;
 
@@ -410,7 +412,7 @@ namespace Hecton8.World
                 ruptureDirection = Vector3.up;
 
             _pendingElasticRuptureVelocityWS =
-                ruptureDirection.normalized * (segmentLength * elasticBreakRecoilMultiplier * Mathf.Lerp(1f, 3.2f, overStretch01)) +
+                ResolveSafeDirection(ruptureDirection, Vector3.up) * (segmentLength * elasticBreakRecoilMultiplier * LerpClamped(1f, 3.2f, overStretch01)) +
                 _velocities[_velocities.Length - 1] * elasticBreakRecoilMultiplier;
             _pendingElasticRupture = true;
             _elasticBreakTimer = 0f;
@@ -479,7 +481,7 @@ namespace Hecton8.World
         {
             if (lineRenderer != null)
             {
-                float chargeBlend = Mathf.Clamp01(_empCharge01 * Mathf.Lerp(0.35f, 1f, _empPulse01));
+                float chargeBlend = Mathf.Clamp01(_empCharge01 * LerpClamped(0.35f, 1f, _empPulse01));
                 Color drawColor = Color.Lerp(baseCableColor, empChargeColor, chargeBlend);
                 lineRenderer.startColor = drawColor;
                 lineRenderer.endColor = Color.Lerp(drawColor, empChargeColor, chargeBlend * 0.5f);
@@ -490,7 +492,7 @@ namespace Hecton8.World
             {
                 float sparkGate = Mathf.Clamp01((_empCharge01 - sparkChargeThreshold) / Mathf.Max(1f - sparkChargeThreshold, 0.001f));
                 var emission = _sparkParticles.emission;
-                emission.rateOverTime = sparkEmissionRate * sparkGate * Mathf.Lerp(0.25f, 1f, _empPulse01);
+                emission.rateOverTime = sparkEmissionRate * sparkGate * LerpClamped(0.25f, 1f, _empPulse01);
                 if (!_sparkParticles.isPlaying && sparkGate > 0f)
                     _sparkParticles.Play();
                 else if (_sparkParticles.isPlaying && sparkGate <= 0f && (lineRenderer == null || !lineRenderer.enabled))
@@ -506,6 +508,21 @@ namespace Hecton8.World
             int sparkIndex = Mathf.Min(2, _points.Length - 1);
             Transform sparkTransform = _sparkParticles.transform;
             sparkTransform.position = _points[sparkIndex];
+        }
+
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return from + (to - from) * math.saturate(t);
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
+        {
+            float lengthSq = direction.sqrMagnitude;
+            if (lengthSq <= 0.0001f)
+                return fallback;
+
+            float invLength = math.rsqrt(lengthSq);
+            return direction * invLength;
         }
 
         private void SyncRenderer()

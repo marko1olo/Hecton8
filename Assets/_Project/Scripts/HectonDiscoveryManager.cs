@@ -32,6 +32,7 @@ namespace Hecton8.Gameplay
         private const byte FaunaBestiaryBehaviorThreshold = 1;
         private const byte FaunaBestiaryDietThreshold = 5;
         private const byte FaunaBestiaryVulnerabilityThreshold = 10;
+        private const int DiscoveredBiomeCapacity = MaxBiomeId - MinBiomeId + 1;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR - REFERENCES
@@ -45,7 +46,8 @@ namespace Hecton8.Gameplay
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
-        private readonly HashSet<int> _discoveredBiomeIds = new HashSet<int>();
+        // COLD ALLOC: HashSet<int>[DiscoveredBiomeCapacity] - discovered biome ids keyed by biome registry id - owner: HectonDiscoveryManager
+        private readonly HashSet<int> _discoveredBiomeIds = new HashSet<int>(DiscoveredBiomeCapacity);
         // COLD ALLOC: Dictionary<uint,byte>[64] — runtime fauna bestiary observation counters keyed by scan entry hash — owner: HectonDiscoveryManager
         private readonly Dictionary<uint, byte> _faunaInteractionCounts = new Dictionary<uint, byte>(64);
         private bool _registeredWithSaveManager;

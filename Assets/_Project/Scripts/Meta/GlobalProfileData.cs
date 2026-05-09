@@ -10,7 +10,7 @@ namespace Hecton8.Meta
     public sealed class GlobalProfileData
     {
         /// <summary>Current file schema version.</summary>
-        public const int CurrentVersion = 2;
+        public const int CurrentVersion = 4;
 
         /// <summary>Maximum number of globally tracked unlocked achievements.</summary>
         public const int MaxUnlockedAchievements = 64;
@@ -130,6 +130,9 @@ namespace Hecton8.Meta
         /// <summary>Stable achievement identifier.</summary>
         public string achievementId;
 
+        /// <summary>FNV-1a stable achievement identifier hash.</summary>
+        public uint achievementHash;
+
         /// <summary>Player-facing title at the moment the record was captured.</summary>
         public string title;
 
@@ -146,6 +149,9 @@ namespace Hecton8.Meta
         /// <summary>Stable permanent-upgrade identifier.</summary>
         public string upgradeId;
 
+        /// <summary>FNV-1a stable permanent-upgrade identifier hash.</summary>
+        public uint upgradeHash;
+
         /// <summary>Purchased level owned by the profile.</summary>
         public int level;
     }
@@ -158,6 +164,9 @@ namespace Hecton8.Meta
     {
         /// <summary>Stable marathon-goal identifier.</summary>
         public string goalId;
+
+        /// <summary>FNV-1a stable marathon-goal identifier hash.</summary>
+        public uint goalHash;
 
         /// <summary>Player-facing title used in meta menus.</summary>
         public string title;

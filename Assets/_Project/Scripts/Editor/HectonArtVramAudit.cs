@@ -78,6 +78,7 @@ namespace Hecton8.EditorTools
             int scanned = 0;
             int nonPowerOfTwoCount = 0;
             int formatViolationCount = 0;
+            int normalTypeViolationCount = 0;
 
             for (int i = 0; i < textureGuids.Length; i++)
             {
@@ -91,30 +92,34 @@ namespace Hecton8.EditorTools
 
                 scanned++;
                 importer.GetSourceTextureWidthAndHeight(out int width, out int height);
+                bool normalNameCandidate = IsNormalMapName(assetPath);
+                bool isNormalMap = importer.textureType == TextureImporterType.NormalMap || normalNameCandidate;
                 TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
+                TextureImporterFormat expectedFormat = isNormalMap ? TextureImporterFormat.BC5 : TextureImporterFormat.BC7;
                 string formatLabel = ResolveFormatLabel(importer, standalone);
-                bool isNormalMap = IsNormalMap(assetPath, importer);
                 bool nonPowerOfTwo = !IsPowerOfTwo(width) || !IsPowerOfTwo(height);
-                bool formatViolation = isNormalMap
-                    ? !formatLabel.Contains("BC5")
-                    : !formatLabel.Contains("BC7");
+                bool formatViolation = !IsExpectedStandaloneFormat(standalone, expectedFormat);
+                bool normalTypeViolation = normalNameCandidate && importer.textureType != TextureImporterType.NormalMap;
 
                 if (nonPowerOfTwo)
                     nonPowerOfTwoCount++;
                 if (formatViolation)
                     formatViolationCount++;
+                if (normalTypeViolation)
+                    normalTypeViolationCount++;
 
-                if ((nonPowerOfTwo || formatViolation) && violations.Count < MaxLoggedComplianceViolations)
+                if ((nonPowerOfTwo || formatViolation || normalTypeViolation) && violations.Count < MaxLoggedComplianceViolations)
                 {
-                    string expectedFormat = isNormalMap ? "BC5(normal)" : "BC7";
+                    string expectedLabel = isNormalMap ? "BC5(normal)" : "BC7";
                     violations.Add(
-                        $"{assetPath} | {width}x{height} | {formatLabel} | expected={expectedFormat}" +
+                        $"{assetPath} | {width}x{height} | {formatLabel} | expected={expectedLabel}" +
                         $"{(nonPowerOfTwo ? " | nonPOT" : string.Empty)}" +
-                        $"{(formatViolation ? " | wrongFormat" : string.Empty)}");
+                        $"{(formatViolation ? " | wrongFormat" : string.Empty)}" +
+                        $"{(normalTypeViolation ? " | normalImporterTypeExpected" : string.Empty)}");
                 }
             }
 
-            return new TextureComplianceResult(scanned, nonPowerOfTwoCount, formatViolationCount, violations);
+            return new TextureComplianceResult(scanned, nonPowerOfTwoCount, formatViolationCount, normalTypeViolationCount, violations);
         }
 
         private static TextureVramEntry BuildEntry(string assetPath, TextureImporter importer, Texture texture)
@@ -123,7 +128,7 @@ namespace Hecton8.EditorTools
             int effectiveHeight = Mathf.Max(1, ResolveEffectiveDimension(texture.height, importer.maxTextureSize));
             bool hasMipMaps = importer.mipmapEnabled;
             bool isCube = importer.textureShape == TextureImporterShape.TextureCube;
-            bool isNormalMap = importer.textureType == TextureImporterType.NormalMap;
+            bool isNormalMap = IsNormalMap(assetPath, importer);
             string compressionLabel = isNormalMap ? "BC5" : "BC7";
 
             double estimatedBytes = (double)effectiveWidth * effectiveHeight;
@@ -153,9 +158,16 @@ namespace Hecton8.EditorTools
         private static string ResolveFormatLabel(TextureImporter importer, TextureImporterPlatformSettings platformSettings)
         {
             if (platformSettings != null && platformSettings.overridden)
-                return platformSettings.format.ToString();
+                return $"Standalone:{platformSettings.format}";
 
-            return importer.textureCompression.ToString();
+            return $"Default:{importer.textureCompression}";
+        }
+
+        private static bool IsExpectedStandaloneFormat(TextureImporterPlatformSettings platformSettings, TextureImporterFormat expectedFormat)
+        {
+            return platformSettings != null &&
+                   platformSettings.overridden &&
+                   platformSettings.format == expectedFormat;
         }
 
         private static bool IsNormalMap(string assetPath, TextureImporter importer)
@@ -163,6 +175,11 @@ namespace Hecton8.EditorTools
             if (importer.textureType == TextureImporterType.NormalMap)
                 return true;
 
+            return IsNormalMapName(assetPath);
+        }
+
+        private static bool IsNormalMapName(string assetPath)
+        {
             string lowerPath = assetPath.ToLowerInvariant();
             return lowerPath.Contains("normal") ||
                    lowerPath.Contains("_n.") ||
@@ -203,6 +220,7 @@ namespace Hecton8.EditorTools
             string header =
                 $"[HectonArtVramAudit] BC7/POT compliance: scanned={result.ScannedTextureCount}, " +
                 $"nonPOT={result.NonPowerOfTwoCount}, formatViolations={result.FormatViolationCount}, " +
+                $"normalTypeViolations={result.NormalTypeViolationCount}, " +
                 $"totalViolations={result.TotalViolationCount}.";
 
             if (result.TotalViolationCount > 0)
@@ -234,18 +252,21 @@ namespace Hecton8.EditorTools
             public int ScannedTextureCount { get; }
             public int NonPowerOfTwoCount { get; }
             public int FormatViolationCount { get; }
-            public int TotalViolationCount => NonPowerOfTwoCount + FormatViolationCount;
+            public int NormalTypeViolationCount { get; }
+            public int TotalViolationCount => NonPowerOfTwoCount + FormatViolationCount + NormalTypeViolationCount;
             public List<string> Violations { get; }
 
             public TextureComplianceResult(
                 int scannedTextureCount,
                 int nonPowerOfTwoCount,
                 int formatViolationCount,
+                int normalTypeViolationCount,
                 List<string> violations)
             {
                 ScannedTextureCount = scannedTextureCount;
                 NonPowerOfTwoCount = nonPowerOfTwoCount;
                 FormatViolationCount = formatViolationCount;
+                NormalTypeViolationCount = normalTypeViolationCount;
                 Violations = violations;
             }
         }

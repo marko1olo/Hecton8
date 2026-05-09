@@ -254,10 +254,20 @@ namespace Hecton8.World
         public static bool IsSphereVisible(NativeArray<Plane> cullingPlanes, Vector3 center, float radius)
         {
             int planeCount = cullingPlanes.IsCreated ? cullingPlanes.Length : 0;
+            float centerX = center.x;
+            float centerY = center.y;
+            float centerZ = center.z;
+            float negativeRadius = -radius;
             for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
             {
                 Plane plane = cullingPlanes[planeIndex];
-                if (plane.GetDistanceToPoint(center) < -radius)
+                Vector3 normal = plane.normal;
+                float signedDistance =
+                    (normal.x * centerX) +
+                    (normal.y * centerY) +
+                    (normal.z * centerZ) +
+                    plane.distance;
+                if (signedDistance < negativeRadius)
                     return false;
             }
 
@@ -269,7 +279,9 @@ namespace Hecton8.World
         /// </summary>
         public static bool IsBoundsVisible(NativeArray<Plane> cullingPlanes, Bounds bounds)
         {
-            float radius = bounds.extents.magnitude;
+            Vector3 extents = bounds.extents;
+            float maxAxis = math.cmax(math.abs(new float3(extents.x, extents.y, extents.z)));
+            float radius = maxAxis * 1.7320508f;
             return IsSphereVisible(cullingPlanes, bounds.center, radius);
         }
 

@@ -95,6 +95,12 @@ namespace Hecton8.Gameplay
             return descriptor != null;
         }
 
+        public static bool TryResolveDirect(Component source, out FieldTargetDescriptor descriptor)
+        {
+            descriptor = null;
+            return source != null && source.TryGetComponent(out descriptor);
+        }
+
         private void RegisterSpatialHandle()
         {
             if (!Application.isPlaying || !isActiveAndEnabled)

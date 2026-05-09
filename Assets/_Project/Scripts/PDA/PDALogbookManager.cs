@@ -1,12 +1,12 @@
 using System;
-using System.Collections.Generic;
-using Hecton8.Bootstrap;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Hecton.Localization;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.PDA
@@ -14,6 +14,7 @@ namespace Hecton8.PDA
     /// <summary>
     /// Immutable PDA journal entry snapshot used by UI and debug consumers.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct PDALogbookEntry
     {
         public PDALogbookEntry(int sequence, int dayIndex, float dayTimeHours, float playTimeSeconds, int titleHash, int messageHash, int originHash)
@@ -49,13 +50,43 @@ namespace Hecton8.PDA
         public int OriginHash { get; }
 
         /// <summary>Cold-path string reconstruction for legacy debug consumers.</summary>
-        public string Title => LocRegistry.ResolveRaw(TitleHash).ToString();
+        public string Title
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return LocRegistry.ResolveRaw(TitleHash).ToString();
+#else
+                return string.Empty;
+#endif
+            }
+        }
 
         /// <summary>Cold-path string reconstruction for legacy debug consumers.</summary>
-        public string Message => LocRegistry.ResolveRaw(MessageHash).ToString();
+        public string Message
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return LocRegistry.ResolveRaw(MessageHash).ToString();
+#else
+                return string.Empty;
+#endif
+            }
+        }
 
         /// <summary>Cold-path source identifier reconstruction is unavailable after hash compaction.</summary>
-        public string OriginKey => OriginHash != 0 ? OriginHash.ToString("X8") : string.Empty;
+        public string OriginKey
+        {
+            get
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                return OriginHash != 0 ? OriginHash.ToString("X8") : string.Empty;
+#else
+                return string.Empty;
+#endif
+            }
+        }
 
         /// <summary>Resolve the localized title buffer for zero-GC TMP rendering.</summary>
         public bool TryGetTitleBuffer(out char[] buffer, out int length)
@@ -110,15 +141,38 @@ namespace Hecton8.PDA
     [AddComponentMenu("Hecton8/PDA/PDA Logbook Manager")]
     public sealed class PDALogbookManager : MonoBehaviour, ISaveable, IPDALogbookService
     {
-        private const string FirstLaserCutterPersistentId = "Item_Tool_LaserCutter";
-        private const string FirstDeathOriginKey = "pda.log.death.first";
-        private const string FirstLaserCutterOriginKey = "pda.log.craft.first_laser_cutter";
-        private const string FirstLeviathanScanOriginKey = "pda.log.scan.first_leviathan";
+        private const int FirstDeathOriginHash = unchecked((int)0xED21B4CC);
+        private const int FirstLaserCutterOriginHash = unchecked((int)0x0710CD7A);
+        private const int FirstLeviathanScanOriginHash = unchecked((int)0x8F046E1C);
+        private const int FirstLaserCutterPersistentHash = unchecked((int)0x18070808);
+        private const int BiomeLogOriginSaltHash = unchecked((int)0x46BF9270);
+        private const int FirstLaserCutterTitleHash = unchecked((int)0x9AE083CA);
+        private const int FirstLaserCutterMessageHash = unchecked((int)0x17333DB8);
+        private const int FirstDeathTitleHash = unchecked((int)0x83578D04);
+        private const int BiomeDiscoveredTitleHash = unchecked((int)0x1529CF4D);
+        private const int BiomeDiscoveredMessageHash = unchecked((int)0xCCD5385A);
+        private const int FirstLeviathanScanTitleHash = unchecked((int)0x5F18881D);
+        private const int FirstLeviathanScanMessageHash = unchecked((int)0x8B4EF804);
+        private const int DeathOxygenMessageHash = unchecked((int)0xD6EDC09F);
+        private const int DeathPressureMessageHash = unchecked((int)0x1575F50E);
+        private const int DeathThermalMessageHash = unchecked((int)0x7B97E92A);
+        private const int DeathRadiationMessageHash = unchecked((int)0x09EC9793);
+        private const int DeathStarvationMessageHash = unchecked((int)0xB4E90ED7);
+        private const int DeathDehydrationMessageHash = unchecked((int)0x4DA2FC7D);
+        private const int DeathIntegrityMessageHash = unchecked((int)0xC20F21A5);
+        private const int DeathUnknownMessageHash = unchecked((int)0xDAC921D3);
+        private const uint LeviathanCategoryHash = 0xDD349361u;
+        private const uint BlackChoirLeviathanEntryHash = 0xC8D5E2B5u;
+        private const uint FurnaceMawLeviathanEntryHash = 0xDDB1978Eu;
+        private const uint GateWardenLeviathanEntryHash = 0x719F2909u;
+        private const uint HaloCrownLeviathanEntryHash = 0x35ED9DB0u;
+        private const uint RiftLancerLeviathanEntryHash = 0x5E944D3Bu;
+        private const uint VoidRibbonLeviathanEntryHash = 0x83B27BCBu;
 
-        // COLD ALLOC: List<PDALogbookEntry>[64] - runtime journal history - owner: PDALogbookManager
-        private readonly List<PDALogbookEntry> _entries = new List<PDALogbookEntry>(64);
-        // COLD ALLOC: HashSet<int>[512] - journal dedupe source hashes - owner: PDALogbookManager
-        private readonly HashSet<int> _seenOriginHashes = new HashSet<int>(512);
+        // COLD ALLOC: PDALogbookEntry[MaxEntries] - fixed journal ring without List reallocs - owner: PDALogbookManager
+        private readonly PDALogbookEntry[] _entries = new PDALogbookEntry[PDALogbookDTO.MaxEntries];
+        // COLD ALLOC: int[MaxSeenOrigins] - fixed dedupe source hashes without HashSet enumerators - owner: PDALogbookManager
+        private readonly int[] _seenOriginHashes = new int[PDALogbookDTO.MaxSeenOrigins];
 
         private HectonEventSubscription _itemCraftedSubscription;
         private HectonEventSubscription _gameLoadedSubscription;
@@ -128,10 +182,12 @@ namespace Hecton8.PDA
         private ScanLogSystem _scanLogSystem;
         private HectonDiscoveryManager _discoveryManager;
         private bool _registeredToSave;
+        private int _entryCount;
+        private int _seenOriginCount;
         private int _nextSequence = 1;
 
         /// <summary>Total number of retained journal entries.</summary>
-        public int EntryCount => _entries.Count;
+        public int EntryCount => _entryCount;
 
         /// <inheritdoc />
         public int SavePriority => 205;
@@ -178,12 +234,12 @@ namespace Hecton8.PDA
         /// </summary>
         public int CopyEntries(PDALogbookEntry[] buffer)
         {
-            if (buffer == null || buffer.Length == 0 || _entries.Count == 0)
+            if (buffer == null || buffer.Length == 0 || _entryCount == 0)
                 return 0;
 
-            int count = Mathf.Min(buffer.Length, _entries.Count);
+            int count = math.min(buffer.Length, _entryCount);
             for (int i = 0; i < count; i++)
-                buffer[i] = _entries[_entries.Count - 1 - i];
+                buffer[i] = _entries[_entryCount - 1 - i];
 
             return count;
         }
@@ -193,49 +249,49 @@ namespace Hecton8.PDA
         /// </summary>
         public bool TryGetLatestEntry(out PDALogbookEntry entry)
         {
-            if (_entries.Count <= 0)
+            if (_entryCount <= 0)
             {
                 entry = default;
                 return false;
             }
 
-            entry = _entries[_entries.Count - 1];
+            entry = _entries[_entryCount - 1];
             return true;
         }
 
         /// <summary>
-        /// Adds a deduplicated entry to the PDA journal.
+        /// Adds a deduplicated entry to the PDA journal by precomputed hashes.
         /// </summary>
-        public bool TryAppendEntry(string originKey, string title, string message)
+        public bool TryAppendEntry(int originHash, int titleHash, int messageHash)
         {
-            if (string.IsNullOrWhiteSpace(originKey) || string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(message))
-                return false;
-
-            int originHash = LocHash.Compute(originKey);
-            int titleHash = LocHash.Compute(title);
-            int messageHash = LocHash.Compute(message);
             if (originHash == 0 || titleHash == 0 || messageHash == 0)
                 return false;
 
-            if (!_seenOriginHashes.Add(originHash))
+            if (!TryAppendSeenOriginHash(originHash))
                 return false;
 
             PDAClockUtility.CaptureStamp(out int dayIndex, out float dayTimeHours, out float playTimeSeconds);
             PDALogbookEntry entry = new PDALogbookEntry(
                 _nextSequence++,
-                Mathf.Max(1, dayIndex),
-                Mathf.Clamp(dayTimeHours, 0f, 24f),
-                Mathf.Max(0f, playTimeSeconds),
+                math.max(1, dayIndex),
+                math.clamp(dayTimeHours, 0f, 24f),
+                math.max(0f, playTimeSeconds),
                 titleHash,
                 messageHash,
                 originHash);
 
-            if (_entries.Count >= PDALogbookDTO.MaxEntries)
-                _entries.RemoveAt(0);
+            if (_entryCount >= PDALogbookDTO.MaxEntries)
+            {
+                for (int i = 1; i < _entryCount; i++)
+                    _entries[i - 1] = _entries[i];
 
-            _entries.Add(entry);
+                _entryCount--;
+                _entries[_entryCount] = default;
+            }
+
+            _entries[_entryCount++] = entry;
             UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash), playTimeSeconds);
-            Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entries.Count, unchecked((uint)originHash));
+            Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entryCount, unchecked((uint)originHash));
             return true;
         }
 
@@ -246,10 +302,10 @@ namespace Hecton8.PDA
                 return;
 
             data.pdaLogbook.EnsureCapacity();
-            data.pdaLogbook.entryCount = Mathf.Min(_entries.Count, PDALogbookDTO.MaxEntries);
-            data.pdaLogbook.nextSequence = Mathf.Max(1, _nextSequence);
+            data.pdaLogbook.entryCount = math.min(_entryCount, PDALogbookDTO.MaxEntries);
+            data.pdaLogbook.nextSequence = math.max(1, _nextSequence);
 
-            int firstEntryIndex = Mathf.Max(0, _entries.Count - data.pdaLogbook.entryCount);
+            int firstEntryIndex = math.max(0, _entryCount - data.pdaLogbook.entryCount);
             for (int i = 0; i < data.pdaLogbook.entryCount; i++)
             {
                 PDALogbookEntry entry = _entries[firstEntryIndex + i];
@@ -271,13 +327,9 @@ namespace Hecton8.PDA
             for (int i = data.pdaLogbook.entryCount; i < PDALogbookDTO.MaxEntries; i++)
                 data.pdaLogbook.entries[i] = default;
 
-            int seenOriginCount = 0;
-            HashSet<int>.Enumerator enumerator = _seenOriginHashes.GetEnumerator();
-            while (enumerator.MoveNext() && seenOriginCount < PDALogbookDTO.MaxSeenOrigins)
-            {
-                data.pdaLogbook.seenOriginHashes[seenOriginCount] = enumerator.Current;
-                seenOriginCount++;
-            }
+            int seenOriginCount = math.min(_seenOriginCount, PDALogbookDTO.MaxSeenOrigins);
+            for (int i = 0; i < seenOriginCount; i++)
+                data.pdaLogbook.seenOriginHashes[i] = _seenOriginHashes[i];
 
             data.pdaLogbook.seenOriginCount = seenOriginCount;
             for (int i = seenOriginCount; i < PDALogbookDTO.MaxSeenOrigins; i++)
@@ -290,40 +342,40 @@ namespace Hecton8.PDA
         /// <inheritdoc />
         public void LoadFromSaveData(SaveData data)
         {
-            _entries.Clear();
-            _seenOriginHashes.Clear();
+            ClearEntries();
+            ClearSeenOriginHashes();
             _nextSequence = 1;
 
             if (data == null)
                 return;
 
             PDALogbookDTO dto = data.pdaLogbook;
-            int entryCount = Mathf.Clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
+            int entryCount = math.clamp(dto.entryCount, 0, dto.entries != null ? dto.entries.Length : 0);
             for (int i = 0; i < entryCount; i++)
             {
                 PDALogbookEntryDTO entry = dto.entries[i];
                 int titleHash = entry.titleHash != 0 ? entry.titleHash : LocHash.Compute(entry.title);
                 int messageHash = entry.messageHash != 0 ? entry.messageHash : LocHash.Compute(entry.message);
                 int originHash = entry.originHash != 0 ? entry.originHash : LocHash.Compute(entry.originKey);
-                _entries.Add(new PDALogbookEntry(
+                AppendLoadedEntry(new PDALogbookEntry(
                     entry.sequence,
-                    Mathf.Max(1, entry.dayIndex),
-                    Mathf.Clamp(entry.dayTimeHours, 0f, 24f),
-                    Mathf.Max(0f, entry.playTimeSeconds),
+                    math.max(1, entry.dayIndex),
+                    math.clamp(entry.dayTimeHours, 0f, 24f),
+                    math.max(0f, entry.playTimeSeconds),
                     titleHash,
                     messageHash,
                     originHash));
 
                 if (originHash != 0)
                 {
-                    _seenOriginHashes.Add(originHash);
+                    TryAppendSeenOriginHash(originHash);
                     UIStateStore.AppendPDALogEventHash(unchecked((uint)originHash), entry.playTimeSeconds);
                 }
             }
 
             int hashSeenCapacity = dto.seenOriginHashes != null ? dto.seenOriginHashes.Length : 0;
             int stringSeenCapacity = dto.seenOriginKeys != null ? dto.seenOriginKeys.Length : 0;
-            int seenOriginCount = Mathf.Clamp(dto.seenOriginCount, 0, Mathf.Max(hashSeenCapacity, stringSeenCapacity));
+            int seenOriginCount = math.clamp(dto.seenOriginCount, 0, math.max(hashSeenCapacity, stringSeenCapacity));
             for (int i = 0; i < seenOriginCount; i++)
             {
                 int originHash = i < hashSeenCapacity ? dto.seenOriginHashes[i] : 0;
@@ -331,12 +383,56 @@ namespace Hecton8.PDA
                     originHash = LocHash.Compute(dto.seenOriginKeys[i]);
 
                 if (originHash != 0)
-                    _seenOriginHashes.Add(originHash);
+                    TryAppendSeenOriginHash(originHash);
             }
 
-            _nextSequence = Mathf.Max(1, dto.nextSequence);
-            Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entries.Count, _entries.Count > 0 ? unchecked((uint)_entries[_entries.Count - 1].OriginHash) : 0u);
+            _nextSequence = math.max(1, dto.nextSequence);
+            Hecton8.UI.PDAEvents.RaiseLogbookChanged(_entryCount, _entryCount > 0 ? unchecked((uint)_entries[_entryCount - 1].OriginHash) : 0u);
             RebindOwnerSubscriptions();
+        }
+
+        private bool ContainsSeenOriginHash(int originHash)
+        {
+            for (int i = 0; i < _seenOriginCount; i++)
+            {
+                if (_seenOriginHashes[i] == originHash)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool TryAppendSeenOriginHash(int originHash)
+        {
+            if (originHash == 0 || ContainsSeenOriginHash(originHash) || _seenOriginCount >= PDALogbookDTO.MaxSeenOrigins)
+                return false;
+
+            _seenOriginHashes[_seenOriginCount++] = originHash;
+            return true;
+        }
+
+        private void AppendLoadedEntry(PDALogbookEntry entry)
+        {
+            if (_entryCount >= PDALogbookDTO.MaxEntries)
+                return;
+
+            _entries[_entryCount++] = entry;
+        }
+
+        private void ClearEntries()
+        {
+            for (int i = 0; i < _entryCount; i++)
+                _entries[i] = default;
+
+            _entryCount = 0;
+        }
+
+        private void ClearSeenOriginHashes()
+        {
+            for (int i = 0; i < _seenOriginCount; i++)
+                _seenOriginHashes[i] = 0;
+
+            _seenOriginCount = 0;
         }
 
         private void TryRegisterLogbookService()
@@ -438,13 +534,10 @@ namespace Hecton8.PDA
         private void HandleItemCrafted(ItemCraftedEvent craftedEvent)
         {
             ItemData item = craftedEvent != null ? craftedEvent.Item : null;
-            if (item == null || !item.MatchesPersistentId(FirstLaserCutterPersistentId))
+            if (item == null || !item.MatchesPersistentHash(FirstLaserCutterPersistentHash))
                 return;
 
-            TryAppendEntry(
-                FirstLaserCutterOriginKey,
-                "Daybook // First Cutter Fabricated",
-                "Synthesized the first laser cutter. Heavy access routes and sealed salvage are now viable.");
+            TryAppendEntry(FirstLaserCutterOriginHash, FirstLaserCutterTitleHash, FirstLaserCutterMessageHash);
         }
 
         private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
@@ -460,20 +553,12 @@ namespace Hecton8.PDA
         private void HandlePlayerDeath()
         {
             SurvivalDeathCause cause = _survivalSystem != null ? _survivalSystem.LastDeathCause : SurvivalDeathCause.None;
-            TryAppendEntry(
-                FirstDeathOriginKey,
-                "Daybook // First Fatality Recorded",
-                BuildDeathMessage(cause));
+            TryAppendEntry(FirstDeathOriginHash, FirstDeathTitleHash, ResolveDeathMessageHash(cause));
         }
 
         private void HandleBiomeDiscovered(int biomeId)
         {
-            HectonDiscoveryManager discoveryManager = _discoveryManager;
-            string biomeLabel = discoveryManager != null ? discoveryManager.GetBiomeName(biomeId) : $"BIOME {biomeId}";
-            TryAppendEntry(
-                $"pda.log.biome.{biomeId}",
-                "Daybook // New Biome Charted",
-                $"Entered {biomeLabel}. PDA cartography now marks this biome as confirmed terrain.");
+            TryAppendEntry(ResolveBiomeOriginHash(biomeId), BiomeDiscoveredTitleHash, BiomeDiscoveredMessageHash);
         }
 
         private void HandleEntryUnlocked(ScanLogSystem.ScanEntrySnapshot snapshot)
@@ -481,54 +566,58 @@ namespace Hecton8.PDA
             if (!LooksLikeLeviathanEntry(snapshot))
                 return;
 
-            TryAppendEntry(
-                FirstLeviathanScanOriginKey,
-                "Daybook // Leviathan Scan Archived",
-                $"Archived first leviathan-class scan record: {snapshot.Title}. Threat doctrine needs revision.");
+            TryAppendEntry(FirstLeviathanScanOriginHash, FirstLeviathanScanTitleHash, FirstLeviathanScanMessageHash);
         }
 
         private static bool LooksLikeLeviathanEntry(ScanLogSystem.ScanEntrySnapshot snapshot)
         {
-            return ContainsLeviathanToken(snapshot.Id) ||
-                   ContainsLeviathanToken(snapshot.Title) ||
-                   ContainsLeviathanToken(snapshot.Category) ||
-                   ContainsLeviathanToken(snapshot.Summary);
+            return snapshot.CategoryHash == LeviathanCategoryHash ||
+                   snapshot.IdHash == BlackChoirLeviathanEntryHash ||
+                   snapshot.IdHash == FurnaceMawLeviathanEntryHash ||
+                   snapshot.IdHash == GateWardenLeviathanEntryHash ||
+                   snapshot.IdHash == HaloCrownLeviathanEntryHash ||
+                   snapshot.IdHash == RiftLancerLeviathanEntryHash ||
+                   snapshot.IdHash == VoidRibbonLeviathanEntryHash;
         }
 
-        private static bool ContainsLeviathanToken(string value)
+        private static int ResolveBiomeOriginHash(int biomeId)
         {
-            return !string.IsNullOrWhiteSpace(value) &&
-                   value.IndexOf("leviathan", StringComparison.OrdinalIgnoreCase) >= 0;
+            unchecked
+            {
+                int originHash = (BiomeLogOriginSaltHash * 16777619) ^ biomeId;
+                return originHash != 0 ? originHash : BiomeLogOriginSaltHash;
+            }
         }
 
-        private static string BuildDeathMessage(SurvivalDeathCause cause)
+        private static int ResolveDeathMessageHash(SurvivalDeathCause cause)
         {
             switch (cause)
             {
                 case SurvivalDeathCause.OxygenDepletion:
-                    return "Recorded first fatality: oxygen depletion. Reserve planning and ascent discipline were insufficient.";
+                    return DeathOxygenMessageHash;
                 case SurvivalDeathCause.PressureCollapse:
-                    return "Recorded first fatality: pressure collapse. Hull tolerance and route depth limits were exceeded.";
+                    return DeathPressureMessageHash;
                 case SurvivalDeathCause.ThermalFailure:
-                    return "Recorded first fatality: thermal failure. Heat mitigation was not sufficient for the route.";
+                    return DeathThermalMessageHash;
                 case SurvivalDeathCause.RadiationExposure:
-                    return "Recorded first fatality: radiation exposure. Shielding discipline failed under sustained contamination.";
+                    return DeathRadiationMessageHash;
                 case SurvivalDeathCause.Starvation:
-                    return "Recorded first fatality: starvation. Resource planning failed before the expedition ended.";
+                    return DeathStarvationMessageHash;
                 case SurvivalDeathCause.Dehydration:
-                    return "Recorded first fatality: dehydration. Water discipline collapsed before return-to-base.";
+                    return DeathDehydrationMessageHash;
                 case SurvivalDeathCause.IntegrityFailure:
-                    return "Recorded first fatality: suit integrity failure. Structural damage outpaced field recovery.";
+                    return DeathIntegrityMessageHash;
                 default:
-                    return "Recorded first fatality. Cause unresolved in telemetry.";
+                    return DeathUnknownMessageHash;
             }
         }
 
         private HectonSurvivalSystem ResolveSurvivalSystem()
         {
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null &&
-                playerTransform.TryGetComponent(out HectonSurvivalSystem survivalSystem))
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null &&
+                playerContext.PlayerObject != null &&
+                playerContext.PlayerObject.TryGetComponent(out HectonSurvivalSystem survivalSystem))
             {
                 return survivalSystem;
             }

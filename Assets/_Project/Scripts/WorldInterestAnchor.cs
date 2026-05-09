@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -91,25 +92,49 @@ namespace Hecton8.World
 
         public float EvaluateInfluence(Vector3 playerPosition)
         {
-            Vector3 delta = transform.position - playerPosition;
-            delta.y = 0f;
-            float distance = delta.magnitude;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            return EvaluateInfluence(in playerAup);
+        }
 
-            if (distance <= fullInfluenceRadius)
-            {
-                _debugLastInfluence = 1f;
-                return 1f;
-            }
-
-            if (distance >= falloffRadius)
+        public float EvaluateInfluence(in AbsoluteUniversePosition playerAup)
+        {
+            AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            double distanceSq = PlanarDistanceSq(in anchorAup, in playerAup);
+            if (double.IsNaN(distanceSq) || double.IsInfinity(distanceSq))
             {
                 _debugLastInfluence = 0f;
                 return 0f;
             }
 
-            float t = Mathf.InverseLerp(falloffRadius, fullInfluenceRadius, distance);
+            float fullRadius = math.max(0f, fullInfluenceRadius);
+            float falloff = math.max(fullRadius + 0.0001f, falloffRadius);
+            double fullRadiusSq = (double)fullRadius * fullRadius;
+            double falloffRadiusSq = (double)falloff * falloff;
+
+            if (distanceSq <= fullRadiusSq)
+            {
+                _debugLastInfluence = 1f;
+                return 1f;
+            }
+
+            if (distanceSq >= falloffRadiusSq)
+            {
+                _debugLastInfluence = 0f;
+                return 0f;
+            }
+
+            float distance = math.sqrt((float)distanceSq);
+            float t = math.saturate((falloff - distance) / math.max(0.0001f, falloff - fullRadius));
             _debugLastInfluence = t;
             return t;
+        }
+
+        private static double PlanarDistanceSq(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            double deltaX = ((a.GridX - b.GridX) * cellSize) + (a.LocalX - b.LocalX);
+            double deltaZ = ((a.GridZ - b.GridZ) * cellSize) + (a.LocalZ - b.LocalZ);
+            return (deltaX * deltaX) + (deltaZ * deltaZ);
         }
 
         private static void RegisterActiveAnchor(WorldInterestAnchor anchor)

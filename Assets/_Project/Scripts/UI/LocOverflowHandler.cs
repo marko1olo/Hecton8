@@ -20,18 +20,19 @@ namespace Hecton8.UI
 
             RectTransform rect = text.rectTransform;
             float clampedScale = Mathf.Clamp(uniformScale, MinUniformScale, MaxUniformScale);
-            Matrix4x4 scaleMatrix = Matrix4x4.Scale(new Vector3(clampedScale, clampedScale, 1f));
-            Vector3 resolvedScale = ExtractScale(scaleMatrix);
+            float targetScaleX = baselineScale.x * clampedScale;
+            float targetScaleY = baselineScale.y * clampedScale;
             Vector3 currentScale = rect.localScale;
-            if (Mathf.Approximately(currentScale.x, resolvedScale.x) &&
-                Mathf.Approximately(currentScale.y, resolvedScale.y))
+            if (Mathf.Approximately(currentScale.x, targetScaleX) &&
+                Mathf.Approximately(currentScale.y, targetScaleY) &&
+                Mathf.Approximately(currentScale.z, baselineScale.z))
             {
                 return;
             }
 
             rect.localScale = new Vector3(
-                baselineScale.x * resolvedScale.x,
-                baselineScale.y * resolvedScale.y,
+                targetScaleX,
+                targetScaleY,
                 baselineScale.z);
         }
 
@@ -52,14 +53,6 @@ namespace Hecton8.UI
             float scaleX = preferredWidth > 0.001f ? rect.width / preferredWidth : MaxUniformScale;
             float scaleY = preferredHeight > 0.001f ? rect.height / preferredHeight : MaxUniformScale;
             return Mathf.Clamp(Mathf.Min(scaleX, scaleY), MinUniformScale, MaxUniformScale);
-        }
-
-        private static Vector3 ExtractScale(Matrix4x4 matrix)
-        {
-            Vector4 column0 = matrix.GetColumn(0);
-            Vector4 column1 = matrix.GetColumn(1);
-            Vector4 column2 = matrix.GetColumn(2);
-            return new Vector3(column0.magnitude, column1.magnitude, column2.magnitude);
         }
     }
 }

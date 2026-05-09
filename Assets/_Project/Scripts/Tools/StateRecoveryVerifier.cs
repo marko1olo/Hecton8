@@ -43,20 +43,6 @@ namespace Hecton8.Tools
         private PauseMenuController _pauseMenu;
         private MainMenuController _mainMenuController;
 
-        public static StateRecoveryVerifier Instance { get; private set; }
-
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-            GameBootstrapper.PersistRuntimeService(this);
-        }
-
         /// <summary>
         /// Verifies pause open/close recovery back to gameplay.
         /// </summary>
@@ -519,10 +505,14 @@ namespace Hecton8.Tools
             LogVerification($"FAIL {testName}: {reason}");
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogVerification(string message)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_enableLogging)
                 Debug.Log($"[StateRecoveryVerifier] {message}");
+#endif
         }
     }
 }

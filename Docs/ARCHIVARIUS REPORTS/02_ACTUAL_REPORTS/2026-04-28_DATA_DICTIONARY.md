@@ -15,7 +15,7 @@ Important boundary:
 
 Use this file as a reference map, not as blind implementation instructions.
 
-**Ð’ÐµÑ€ÑÐ¸Ñ:** 2026-04-28 | **Ð˜ÑÑ‚Ð¾Ñ€Ð¸Ñ‡ÐµÑÐºÐ¸Ð¹ ÑÑ‚Ð°Ñ‚ÑƒÑ Ð½Ð° Ð¼Ð¾Ð¼ÐµÐ½Ñ‚ ÑÐºÐ°Ð½Ð°:** ETA VERIFIED
+**Ð’ÐµÑ€ÑÐ¸Ñ:** 2026-04-28 | **Historical scan label:** ETA VERIFIED (not current authority status)
 
 ---
 
@@ -456,4 +456,4 @@ public struct WaveQueryJob : IJobParallelFor {
 
 ---
 
-**Historical Scan Status:** ETA VERIFIED â€” 11 critical structs documented, 6 alignment violations flagged
+**Historical Scan Label:** ETA VERIFIED - 11 critical structs documented, 6 alignment violations flagged. Current authority status remains `PENDING VERIFICATION`.

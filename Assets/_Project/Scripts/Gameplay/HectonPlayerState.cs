@@ -32,12 +32,14 @@ namespace Hecton8.Gameplay
             AbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             RuntimePosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             LinearVelocity = new float3(linearVelocity.x, linearVelocity.y, linearVelocity.z);
-            PredictedRuntimePosition = RuntimePosition + (LinearVelocity * PredictionHorizonSeconds);
-            PredictedAbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(
-                new Vector3(
-                    PredictedRuntimePosition.x,
-                    PredictedRuntimePosition.y,
-                    PredictedRuntimePosition.z));
+            PredictedAbsolutePosition = OffsetAup(in AbsolutePosition, LinearVelocity * PredictionHorizonSeconds);
+            PredictedRuntimePosition = PredictedAbsolutePosition.ToRuntimeFloat3();
+        }
+
+        private static AbsoluteUniversePosition OffsetAup(in AbsoluteUniversePosition origin, float3 runtimeOffset)
+        {
+            double3 absolute = origin.ToAbsoluteDouble3() + new double3(runtimeOffset.x, runtimeOffset.y, runtimeOffset.z);
+            return AbsoluteUniversePosition.FromAbsolutePosition(absolute);
         }
 
         public void SyncExternalKinematic(Vector3 acceleration, Vector3 velocityChange)

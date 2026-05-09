@@ -1,3 +1,4 @@
+using System;
 using Hecton8.Core;
 using Unity.Collections;
 
@@ -20,6 +21,10 @@ namespace Hecton8.World
     public static class EmergencyServiceRelayEvents
     {
         private const int PendingEventCapacity = 16;
+        private const int ListenerCapacity = 16;
+        private const uint ListenerRejectedWarningHash = 0x4552524Au;
+        private const uint ListenerExceptionWarningHash = 0x45524558u;
+        private const uint ListenerContextHash = 0x45524C53u;
 
         private struct RelayEventPayload
         {
@@ -27,15 +32,25 @@ namespace Hecton8.World
             public byte FirstActivation;
         }
 
-        private static readonly RegistryBucket<IEmergencyServiceRelayEventListener> _listeners = new RegistryBucket<IEmergencyServiceRelayEventListener>(16);
+        private static readonly RegistryBucket<IEmergencyServiceRelayEventListener> _listeners = new RegistryBucket<IEmergencyServiceRelayEventListener>(ListenerCapacity);
+        private static readonly IEmergencyServiceRelayEventListener[] _deferredRegisterListeners = new IEmergencyServiceRelayEventListener[ListenerCapacity];
+        private static readonly IEmergencyServiceRelayEventListener[] _deferredUnregisterListeners = new IEmergencyServiceRelayEventListener[ListenerCapacity];
         private static readonly System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay> _relaysByInstanceId = new System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay>(32);
         private static NativeQueue<RelayEventPayload> _pendingEvents;
         private static NativeQueue<RelayEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -56,21 +71,49 @@ namespace Hecton8.World
 
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterListeners.Length);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterListeners.Length);
             _relaysByInstanceId.Clear();
         }
 
         public static void Register(IEmergencyServiceRelayEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         public static void Unregister(IEmergencyServiceRelayEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            if (!_listeners.TryUnregister(listener))
+                return;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
         }
 
         /// <summary>
@@ -108,6 +151,12 @@ namespace Hecton8.World
             if (!_pendingEvents.IsCreated)
                 return;
 
+            if (_listeners.Count <= 0)
+            {
+                DropQueuedEvents();
+                return;
+            }
+
             PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
@@ -133,13 +182,14 @@ namespace Hecton8.World
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IEmergencyServiceRelayEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnEmergencyServiceRelayActivated(relay, firstActivation);
+                        if (listener != null && !IsDeferredUnregisterPending(listener))
+                            DispatchToListener(listener, relay, firstActivation);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -147,6 +197,7 @@ namespace Hecton8.World
             {
                 _pendingEventCount = 0;
                 PromoteNextFrameEventsIfFrontEmpty();
+                PruneRelayReferencesIfIdle();
             }
         }
 
@@ -161,6 +212,7 @@ namespace Hecton8.World
                     nameof(EmergencyServiceRelayEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -172,7 +224,224 @@ namespace Hecton8.World
                     nameof(EmergencyServiceRelayEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static void DispatchToListener(IEmergencyServiceRelayEventListener listener, EmergencyServiceRelay relay, bool firstActivation)
+        {
+            try
+            {
+                listener.OnEmergencyServiceRelayActivated(relay, firstActivation);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IEmergencyServiceRelayEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            CancelDeferredUnregister(listener);
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IEmergencyServiceRelayEventListener listener)
+        {
+            CancelDeferredRegister(listener);
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool IsDeferredRegisterPending(IEmergencyServiceRelayEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IEmergencyServiceRelayEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredRegister(IEmergencyServiceRelayEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                int tail = _deferredRegisterCount - i - 1;
+                if (tail > 0)
+                    Array.Copy(_deferredRegisterListeners, i + 1, _deferredRegisterListeners, i, tail);
+
+                _deferredRegisterListeners[--_deferredRegisterCount] = null;
+                return;
+            }
+        }
+
+        private static void CancelDeferredUnregister(IEmergencyServiceRelayEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                int tail = _deferredUnregisterCount - i - 1;
+                if (tail > 0)
+                    Array.Copy(_deferredUnregisterListeners, i + 1, _deferredUnregisterListeners, i, tail);
+
+                _deferredUnregisterListeners[--_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IEmergencyServiceRelayEventListener listener = _deferredUnregisterListeners[i];
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+
+                _deferredUnregisterListeners[i] = null;
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                RegisterImmediate(_deferredRegisterListeners[i]);
+                _deferredRegisterListeners[i] = null;
+            }
+
+            _deferredRegisterCount = 0;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
+        }
+
+        private static void RegisterImmediate(IEmergencyServiceRelayEventListener listener)
+        {
+            if (listener == null || _listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerRejectedWarningHash,
+                ListenerContextHash,
+                UnityEngine.Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException(Exception exception)
+        {
+            _listenerExceptionCount = UnityEngine.Mathf.Min(_listenerExceptionCount + 1, int.MaxValue);
+            LogListenerDispatchException(exception);
+
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerExceptionWarningHash,
+                ListenerContextHash,
+                UnityEngine.Mathf.Max(1, _listenerExceptionCount));
+        }
+
+        private static void DropQueuedEvents()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                while (_pendingEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                while (_nextFrameEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _relaysByInstanceId.Clear();
+        }
+
+        private static void PruneRelayReferencesIfIdle()
+        {
+            if (_pendingEventCount + _nextFrameEventCount <= 0)
+                _relaysByInstanceId.Clear();
         }
 
         private static void PromoteNextFrameEventsIfFrontEmpty()

@@ -227,6 +227,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
             BaseLogisticsNetwork.UnregisterStorage(this);
         }

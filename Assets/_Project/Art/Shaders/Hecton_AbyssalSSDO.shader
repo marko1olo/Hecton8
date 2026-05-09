@@ -15,6 +15,8 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
 
         HLSLINCLUDE
         #pragma target 4.5
+        #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+        #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
@@ -95,11 +97,8 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             return lerp(fallback, sampled, useBlueNoise);
         }
 
-        float2 Rotate2D(float2 value, float angle)
+        float2 Rotate2D(float2 value, float s, float c)
         {
-            float s;
-            float c;
-            sincos(angle, s, c);
             return float2(value.x * c - value.y * s, value.x * s + value.y * c);
         }
 
@@ -167,13 +166,16 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
 
             float accumulated = 0.0;
             int sampleCount = clamp(_HectonAbyssalSsdoSampleCount, 4, 6);
+            float angleSin;
+            float angleCos;
+            sincos(angle, angleSin, angleCos);
             [unroll(6)]
             for (int sampleIndex = 0; sampleIndex < 6; sampleIndex++)
             {
                 if (sampleIndex >= sampleCount)
                     break;
 
-                float2 rotatedDirection = Rotate2D(kKernel[sampleIndex], angle);
+                float2 rotatedDirection = Rotate2D(kKernel[sampleIndex], angleSin, angleCos);
                 float2 sampleUV = saturate(screenUV + rotatedDirection * uvRadius);
                 float sampleRawDepth;
                 float sampleDepthValid;
@@ -187,8 +189,9 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
                 if (distSq <= 0.0001 || distSq >= radiusMeters * radiusMeters)
                     continue;
 
-                float dist = sqrt(distSq);
-                float3 sampleDirectionWS = deltaWS * SafeRcp(dist);
+                float invDist = rsqrt(max(distSq, 0.0001));
+                float dist = distSq * invDist;
+                float3 sampleDirectionWS = deltaWS * invDist;
                 float rangeWeight = 1.0 - saturate(dist * SafeRcp(radiusMeters));
                 float horizonWeight = saturate(1.0 - dot(normalWS, sampleDirectionWS) - _HectonAbyssalSsdoBias);
                 float directionalWeight = saturate(dot(sampleDirectionWS, ambientDirectionWS));
@@ -318,4 +321,6 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

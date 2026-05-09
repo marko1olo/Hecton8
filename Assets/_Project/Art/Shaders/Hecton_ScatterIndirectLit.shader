@@ -3,7 +3,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
     Properties
     {
         _BaseMap("Base Map", 2D) = "white" {}
-        _MaskMap("Mask Map", 2D) = "white" {}
+        _MaskMap("Packed Mask (R Metallic G AO B Smoothness A Emission)", 2D) = "white" {}
         [NoScaleOffset] _HectonMicroNormalTex("Micro Normal 128", 2D) = "bump" {}
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
@@ -36,6 +36,8 @@ Shader "Hecton8/World/ScatterIndirectLit"
 
         HLSLINCLUDE
         #pragma target 4.5
+        #pragma multi_compile_instancing
+        #pragma instancing_options assumeuniformscaling
         #pragma multi_compile _ DOTS_INSTANCING_ON
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -89,6 +91,8 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float3 viewDirWS : TEXCOORD2;
             float2 uv : TEXCOORD3;
             half fogFactor : TEXCOORD4;
+            UNITY_VERTEX_INPUT_INSTANCE_ID
+            UNITY_VERTEX_OUTPUT_STEREO
         };
 
         ScatterInstanceGpuData ResolveScatterInstance(uint instanceID)
@@ -99,23 +103,39 @@ Shader "Hecton8/World/ScatterIndirectLit"
         void BuildScatterBasis(float3 normalWS, float rotation, float scale, out float3 rightWS, out float3 upWS, out float3 forwardWS)
         {
             upWS = HectonCoreLitSafeNormalize(normalWS);
-            float3 anchorRight = abs(upWS.y) > 0.99 ? float3(1.0, 0.0, 0.0) : normalize(cross(float3(0.0, 1.0, 0.0), upWS));
-            float3 anchorForward = normalize(cross(upWS, anchorRight));
+            float3 anchorRight = abs(upWS.y) > 0.99 ? float3(1.0, 0.0, 0.0) : HectonCoreLitSafeNormalize(cross(float3(0.0, 1.0, 0.0), upWS));
+            float3 anchorForward = HectonCoreLitSafeNormalize(cross(upWS, anchorRight));
             float sinAngle;
             float cosAngle;
             sincos(rotation, sinAngle, cosAngle);
             rightWS = (anchorRight * cosAngle + anchorForward * sinAngle) * scale;
-            forwardWS = normalize(cross(rightWS, upWS)) * scale;
+            forwardWS = (-anchorRight * sinAngle + anchorForward * cosAngle) * scale;
             upWS *= scale;
+        }
+
+        float3 ResolveScatterNormal(float3 normalOS, float3 rightWS, float3 upWS, float3 forwardWS, float invScale)
+        {
+            float3 rightAxisWS = rightWS * invScale;
+            float3 upAxisWS = upWS * invScale;
+            float3 forwardAxisWS = forwardWS * invScale;
+            return HectonCoreLitSafeNormalize(rightAxisWS * normalOS.x + upAxisWS * normalOS.y + forwardAxisWS * normalOS.z);
         }
 
         Varyings Vert(Attributes input)
         {
             Varyings output;
-            ScatterInstanceGpuData instanceData = ResolveScatterInstance(input.instanceID);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_TRANSFER_INSTANCE_ID(input, output);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+            uint instanceID = input.instanceID;
+        #if UNITY_ANY_INSTANCING_ENABLED
+            instanceID = unity_InstanceID;
+        #endif
+            ScatterInstanceGpuData instanceData = ResolveScatterInstance(instanceID);
             float3 positionWS = instanceData.PositionScale.xyz;
             float scale = max(instanceData.PositionScale.w, 0.05);
-            float3 normalWS = normalize(instanceData.NormalRotation.xyz);
+            float invScale = rcp(scale);
+            float3 normalWS = HectonCoreLitSafeNormalize(instanceData.NormalRotation.xyz);
             float rotation = instanceData.NormalRotation.w;
 
             float3 rightWS;
@@ -126,10 +146,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float3 localPosition = input.positionOS.xyz;
             float3 resolvedPositionWS = HectonCoreLitSanitizePositionWS(
                 positionWS + rightWS * localPosition.x + upWS * localPosition.y + forwardWS * localPosition.z);
-            float3 resolvedNormalWS = normalize(
-                normalize(rightWS) * input.normalOS.x +
-                normalize(upWS) * input.normalOS.y +
-                normalize(forwardWS) * input.normalOS.z);
+            float3 resolvedNormalWS = ResolveScatterNormal(input.normalOS, rightWS, upWS, forwardWS, invScale);
 
             output.positionWS = HectonCoreLitApplyStormRainDripVertexRipple(resolvedPositionWS, resolvedNormalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
             output.normalWS = resolvedNormalWS;
@@ -163,15 +180,29 @@ Shader "Hecton8/World/ScatterIndirectLit"
             half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
             half3 color = SampleSH(normalWS) * albedo * ambientOcclusion * caveAmbientFactor;
             half specularStrength = lerp(0.04h, 0.18h, metallic);
-            half specularPower = lerp(14.0h, 72.0h, smoothness);
 
             float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
             Light mainLight = GetMainLight(shadowCoord);
             half3 lightDir = HectonCoreLitSafeNormalize(mainLight.direction);
             half nDotL = saturate(dot(normalWS, lightDir));
-            half3 halfDir = HectonCoreLitSafeNormalize(lightDir + viewDirWS);
-            half specular = pow(saturate(dot(normalWS, halfDir)), specularPower) * smoothness * specularStrength;
-            half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadow(positionWS, normalWS);
+            half specular = 0.0h;
+            half specularEnergy = smoothness * specularStrength;
+            if (nDotL > 0.0001h && specularEnergy > 0.0001h)
+            {
+                half3 halfDir = HectonCoreLitSafeNormalize(lightDir + viewDirWS);
+                half specularBase = saturate(dot(normalWS, halfDir));
+                if (specularBase > 0.0001h)
+                {
+                    half specular2 = specularBase * specularBase;
+                    half specular4 = specular2 * specular2;
+                    half specular8 = specular4 * specular4;
+                    half specular16 = specular8 * specular8;
+                    half specular32 = specular16 * specular16;
+                    half specular64 = specular32 * specular32;
+                    specular = lerp(specular16, specular64, smoothness) * specularEnergy;
+                }
+            }
+            half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadowFromDirection(positionWS, normalWS, mainLight.direction);
             color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation * contactShadow);
             color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
             return color;
@@ -179,6 +210,8 @@ Shader "Hecton8/World/ScatterIndirectLit"
 
         half4 Frag(Varyings input) : SV_Target
         {
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             half4 surface = SampleSurface(input.uv);
             half4 packedMask = SamplePackedMask(input.uv);
             HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
@@ -186,9 +219,9 @@ Shader "Hecton8/World/ScatterIndirectLit"
             half ambientOcclusion = decodedMask.occlusion;
             half smoothness = decodedMask.smoothness;
             half emissionMask = decodedMask.emissionMask;
-            half3 normalWS = normalize(input.normalWS);
+            half3 normalWS = HectonCoreLitSafeNormalize(input.normalWS);
             normalWS = HectonCoreLitApplyTripleDetailMicroNormals(input.positionWS, normalWS, (half)_MicroNormalStrength, (half)_MicroNormalTiling, 2.0h);
-            half3 viewDirWS = normalize(input.viewDirWS);
+            half3 viewDirWS = HectonCoreLitSafeNormalize(input.viewDirWS);
             half3 albedo = surface.rgb;
             HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
 
@@ -206,12 +239,13 @@ Shader "Hecton8/World/ScatterIndirectLit"
             return half4(finalColor, 1.0h);
         }
 
-        float4 GetShadowPositionHClip(Attributes input)
+        float4 GetShadowPositionHClip(Attributes input, uint instanceID)
         {
-            ScatterInstanceGpuData instanceData = ResolveScatterInstance(input.instanceID);
+            ScatterInstanceGpuData instanceData = ResolveScatterInstance(instanceID);
             float3 positionWS = instanceData.PositionScale.xyz;
             float scale = max(instanceData.PositionScale.w, 0.05);
-            float3 normalWS = normalize(instanceData.NormalRotation.xyz);
+            float invScale = rcp(scale);
+            float3 normalWS = HectonCoreLitSafeNormalize(instanceData.NormalRotation.xyz);
             float rotation = instanceData.NormalRotation.w;
 
             float3 rightWS;
@@ -219,10 +253,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float3 forwardWS;
             BuildScatterBasis(normalWS, rotation, scale, rightWS, upWS, forwardWS);
             float3 resolvedPositionWS = positionWS + rightWS * input.positionOS.x + upWS * input.positionOS.y + forwardWS * input.positionOS.z;
-            float3 resolvedNormalWS = normalize(
-                normalize(rightWS) * input.normalOS.x +
-                normalize(upWS) * input.normalOS.y +
-                normalize(forwardWS) * input.normalOS.z);
+            float3 resolvedNormalWS = ResolveScatterNormal(input.normalOS, rightWS, upWS, forwardWS, invScale);
             resolvedPositionWS = HectonCoreLitApplyStormRainDripVertexRipple(resolvedPositionWS, resolvedNormalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
 
             float3 lightDirectionWS = _MainLightPosition.xyz;
@@ -263,17 +294,28 @@ Shader "Hecton8/World/ScatterIndirectLit"
             struct ShadowVaryings
             {
                 float4 positionCS : SV_POSITION;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             ShadowVaryings ShadowVert(Attributes input)
             {
                 ShadowVaryings output;
-                output.positionCS = GetShadowPositionHClip(input);
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                uint instanceID = input.instanceID;
+            #if UNITY_ANY_INSTANCING_ENABLED
+                instanceID = unity_InstanceID;
+            #endif
+                output.positionCS = GetShadowPositionHClip(input, instanceID);
                 return output;
             }
 
             half4 ShadowFrag(ShadowVaryings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 return 0.0h;
             }
             ENDHLSL

@@ -344,6 +344,7 @@ namespace Hecton8.Celestial
                     nameof(CelestialEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, ExpectedPendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -355,6 +356,21 @@ namespace Hecton8.Celestial
                     nameof(CelestialEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -1179,8 +1195,7 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregisterFromTickManager()
@@ -1286,10 +1301,10 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
             long timelineStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             float now = Time.time;
             float elapsed = _lastCelestialSlowTickTime > 0f
-                ? Mathf.Clamp(now - _lastCelestialSlowTickTime, CelestialTimelineStepSeconds, CelestialTimelineStepSeconds * CelestialTimelineMaxStepsPerSlowTick)
+                ? math.clamp(now - _lastCelestialSlowTickTime, CelestialTimelineStepSeconds, CelestialTimelineStepSeconds * CelestialTimelineMaxStepsPerSlowTick)
                 : CelestialTimelineStepSeconds;
             _lastCelestialSlowTickTime = now;
-            _celestialTimelineAccumulator = Mathf.Min(
+            _celestialTimelineAccumulator = math.min(
                 _celestialTimelineAccumulator + elapsed,
                 CelestialTimelineStepSeconds * CelestialTimelineMaxStepsPerSlowTick);
 
@@ -1324,14 +1339,14 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
 
         private void RunCelestialTimeline(float deltaTime)
         {
-            float celestialDeltaTime = deltaTime * Mathf.Max(0f, _debugCelestialTimeScale);
+            float celestialDeltaTime = deltaTime * math.max(0f, _debugCelestialTimeScale);
             _rotationAccumulator += (double)celestialDeltaTime;
             if (_rotationAccumulator > 10000.0)
                 _rotationAccumulator -= 10000.0;
             _rotationTimer = (float)_rotationAccumulator;
             _rotationPhase = (float)(_rotationAccumulator % 1.0);
 
-            _gameTime += celestialDeltaTime * Mathf.Max(0f, _cloudSpeed * ResolveCloudSpeedMultiplier());
+            _gameTime += celestialDeltaTime * math.max(0f, _cloudSpeed * ResolveCloudSpeedMultiplier());
 
             if (!_eclipseRadiusCalculated && aegirTransform != null && playerTransform != null)
             {
@@ -3016,20 +3031,22 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
         {
             if (aegirObserverRelativeBody != null)
             {
-                Vector3 currentDirection = aegirObserverRelativeBody.CurrentDirection;
-                if (currentDirection.sqrMagnitude > 0.0001f)
+                float3 currentDirection = (float3)aegirObserverRelativeBody.CurrentDirection;
+                float currentDirectionSq = math.lengthsq(currentDirection);
+                if (currentDirectionSq > 0.0001f)
                 {
-                    direction = math.normalize((float3)currentDirection);
+                    direction = currentDirection * math.rsqrt(currentDirectionSq);
                     return true;
                 }
             }
 
             if (aegirTransform != null)
             {
-                Vector3 localDirection = aegirTransform.localPosition;
-                if (localDirection.sqrMagnitude > 0.0001f)
+                float3 localDirection = (float3)aegirTransform.localPosition;
+                float localDirectionSq = math.lengthsq(localDirection);
+                if (localDirectionSq > 0.0001f)
                 {
-                    direction = math.normalize((float3)localDirection);
+                    direction = localDirection * math.rsqrt(localDirectionSq);
                     return true;
                 }
             }
@@ -4071,8 +4088,13 @@ public class HectonCelestialEngine : MonoBehaviour, ISlowTickable, IBiomeMatrixE
 
             AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromTransform.position);
             AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toTransform.position);
-            double distanceSq = AbsoluteUniversePosition.DistanceSq(in fromAup, in toAup);
-            return (float)math.sqrt(math.max(0d, distanceSq));
+            double3 delta = toAup.ToAbsoluteDouble3() - fromAup.ToAbsoluteDouble3();
+            double3 absDelta = math.abs(delta);
+            double maxAxis = math.cmax(absDelta);
+            double minAxis = math.cmin(absDelta);
+            double midAxis = absDelta.x + absDelta.y + absDelta.z - maxAxis - minAxis;
+            double cinematicDistance = maxAxis + (midAxis * 0.5d) + (minAxis * 0.25d);
+            return (float)math.min(cinematicDistance, (double)float.MaxValue);
         }
 
         private static float3 ResolveAupDirectionBetweenTransforms(Transform fromTransform, Transform toTransform)

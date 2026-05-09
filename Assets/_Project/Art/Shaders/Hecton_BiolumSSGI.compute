@@ -106,9 +106,10 @@ float4 EvaluateGatherPixel(uint2 outputPixel, uint2 outputSize)
             continue;
 
         float depthDelta = abs(sampleDepth - centerDepth);
-        float depthWeight = exp2(-depthDelta * max(0.01, _HectonSSGIDepthSigma));
+        float depthWeight = rcp(1.0 + depthDelta * max(0.01, _HectonSSGIDepthSigma));
         float2 offset = (float2)(samplePixel - centerPixel);
-        float spatialWeight = saturate(1.0 - (length(offset) / max(1.0, (float)radius * 1.45)));
+        float spatialRadius = max(1.0, (float)radius * 1.45);
+        float spatialWeight = saturate(1.0 - dot(offset, offset) / (spatialRadius * spatialRadius));
         float weight = sourceMask * depthWeight * spatialWeight;
         accumulated += sampleColor.rgb * weight;
         weightSum += weight;
@@ -174,9 +175,8 @@ void ResolveBiolumSSGI(uint3 dispatchThreadId : SV_DispatchThreadID)
                 continue;
 
             float depthDelta = abs(sampleDepth - centerDepth);
-            float depthWeight = exp2(-depthDelta * max(0.01, _HectonSSGIDepthSigma));
-            float spatialDistance = length(float2(offsetX, offsetY));
-            float spatialWeight = spatialDistance > 1.5 ? 0.12 : 0.24;
+            float depthWeight = rcp(1.0 + depthDelta * max(0.01, _HectonSSGIDepthSigma));
+            float spatialWeight = 0.24;
             float confidenceWeight = saturate(sampleGather.a);
             float weight = depthWeight * spatialWeight * confidenceWeight;
             accumulated += sampleGather.rgb * weight;

@@ -37,6 +37,7 @@ Shader "HECTON/World/AbyssalFluidDecal"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
@@ -109,7 +110,8 @@ Shader "HECTON/World/AbyssalFluidDecal"
                 float wakeOffsetZ = SampleWakeTrail(worldXZ + float2(0.0, 0.8)) - SampleWakeTrail(worldXZ + float2(0.0, -0.8));
                 float wakeMask = saturate((wakeCenter - _WakeThreshold) / max(0.001, 1.0 - _WakeThreshold));
                 float2 distortedUv = input.uv + float2(wakeOffsetX, wakeOffsetZ) * (_WakeDistortion * wakeMask);
-                half radial = length(distortedUv);
+                half2 radialAbs = abs(half2(distortedUv.x, distortedUv.y));
+                half radial = max(radialAbs.x, radialAbs.y) + min(radialAbs.x, radialAbs.y) * 0.375h;
                 half edge = saturate(1.0h - smoothstep(max(0.0h, 1.0h - _Softness), 1.0h, radial));
                 half centerBoost = saturate(1.0h - radial * 0.82h);
                 half tearMask = saturate(1.0h - wakeMask * _WakeTearStrength);

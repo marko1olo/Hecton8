@@ -123,14 +123,14 @@ namespace Hecton8.World
                 return false;
             }
 
-            float cellSize = Mathf.Max(6f, _runtimeStreamingState.CellSize);
+            float cellSize = math.max(6f, _runtimeStreamingState.CellSize);
             int radiusCells = ResolveActiveScatterSamplingRadiusCells(_runtimeStreamingState.RadiusCells);
             float now = Time.unscaledTime;
             int groundBudget = ResolveRuntimeBudget(groundPlacementsPerCell, WorldStreamingLayer.Flora, 0, 4);
             int clusterBudget = ResolveRuntimeBudget(clusterPlacementsPerCell, WorldStreamingLayer.Debris, 0, 3);
-            int structureStride = Mathf.Max(2, structureCellStride);
+            int structureStride = math.max(2, structureCellStride);
             int structureBudget = ResolveRuntimeBudget(structurePlacementsPerWindow, WorldStreamingLayer.Construction, 0, 2);
-            int spawnStride = Mathf.Max(2, spawnCellStride);
+            int spawnStride = math.max(2, spawnCellStride);
             int spawnBudget = ResolveRuntimeBudget(spawnPlacementsPerWindow, WorldStreamingLayer.Fauna, 0, 2);
             AbsoluteUniversePosition centerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
             float3 runtimeCenter3 = centerAup.ToRuntimeFloat3();
@@ -186,7 +186,7 @@ namespace Hecton8.World
                 _placementLastSeenTimes,
                 _removalBuffer,
                 context.Now,
-                Mathf.Max(0.25f, missingPlacementGraceSeconds) * 1.5f);
+                math.max(0.25f, missingPlacementGraceSeconds) * 1.5f);
             EvictStaleRetainedPlacements(in retentionEvictionContext);
 
             EnsureScatterWindowBudgetCapacity(_structureWindowCounts, EstimateScatterWindowCapacity(context.CellDiameter, context.StructureStride));
@@ -429,7 +429,7 @@ namespace Hecton8.World
                 PopulatePatternQuotaCache(fieldSample.resolvedPattern, fieldSample.biomeProfile);
                 int clusterRatioStart = _memory.CachedPatternClusterRatioStart;
                 int minimumSpawnPlacements = ResolveMinimumSpawnPlacements(fieldSample.resolvedPattern, fieldSample.biomeProfile);
-                int passiveSpawnMax = Mathf.Max(
+                int passiveSpawnMax = math.max(
                     _memory.CachedPatternPassiveSpawnMin,
                     _patternLayerTargetMaxBuffer[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn]);
                 int predatorSpawnMax = _memory.CachedPatternPredatorSpawnMax;
@@ -509,7 +509,7 @@ namespace Hecton8.World
                                 runtimeRule.DensityScaleFactor);
                         if (!deterministicClutter)
                         {
-                            heat = Mathf.Clamp01(
+                            heat = math.saturate(
                                 heat
                                 * GetCombinedHeatScale(
                                     activeFieldSample.resolvedPattern,
@@ -532,7 +532,7 @@ namespace Hecton8.World
                             : math.saturate((heat - effectiveMinHeat) / math.max(0.0001f, 1f - effectiveMinHeat));
                         float spawnProbability = deterministicClutter
                             ? 1f
-                            : Mathf.Clamp01(normalizedHeat * (0.45f + Mathf.Clamp(effectiveDensityScale, 0.1f, 4f) * 0.18f));
+                            : math.saturate(normalizedHeat * (0.45f + math.clamp(effectiveDensityScale, 0.1f, 4f) * 0.18f));
                         bool needsSpawnRescue = minimumSpawnPlacements > 0 &&
                                                 family != null &&
                                                 family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
@@ -1090,7 +1090,7 @@ namespace Hecton8.World
                 biomeTransitionContext.SecondaryScoreContext.HasBiomeProfile,
                 secondaryPreferredFamilyIndex,
                 patternScoreContext);
-            return Mathf.Max(primaryUpperBound, secondaryUpperBound);
+            return math.max(primaryUpperBound, secondaryUpperBound);
         }
 
         private bool TryPrepareScatterCandidateScoring(
@@ -1217,7 +1217,7 @@ namespace Hecton8.World
                 if (collectDetailedDiagnostics && rejectedResidencyFamily == "None")
                 {
                     rejectedResidencyFamily = family != null ? family.familyId : "None";
-                    rejectedResidencyDistance = residencyDistanceSqr > 0f ? Mathf.Sqrt(residencyDistanceSqr) : 0f;
+                    rejectedResidencyDistance = residencyDistanceSqr > 0f ? math.sqrt(residencyDistanceSqr) : 0f;
                     rejectedResidencyRadius = residencyRadius;
                 }
 
@@ -1656,7 +1656,7 @@ namespace Hecton8.World
                 _placementLastSeenTimes,
                 center,
                 now,
-                Mathf.Max(0.25f, missingPlacementGraceSeconds));
+                math.max(0.25f, missingPlacementGraceSeconds));
             RestoreRecentDesiredPlacements(in retentionRestoreContext);
         }
 

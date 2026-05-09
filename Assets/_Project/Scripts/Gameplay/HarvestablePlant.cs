@@ -244,17 +244,17 @@ namespace Hecton8.Gameplay
         private int FindNearestAvailableSegment(Vector3 hitPoint)
         {
             int nearestIndex = -1;
-            float nearestDistance = float.MaxValue;
+            float nearestDistanceSq = float.MaxValue;
 
             for (int i = 0; i < segments.Length; i++)
             {
                 if (!segments[i].isAvailable) continue;
                 if (segments[i].meshRenderer == null) continue;
 
-                float distance = Vector3.Distance(hitPoint, segments[i].meshRenderer.transform.position);
-                if (distance < nearestDistance)
+                float distanceSq = (hitPoint - segments[i].meshRenderer.transform.position).sqrMagnitude;
+                if (distanceSq < nearestDistanceSq)
                 {
-                    nearestDistance = distance;
+                    nearestDistanceSq = distanceSq;
                     nearestIndex = i;
                 }
             }
@@ -411,8 +411,7 @@ namespace Hecton8.Gameplay
             if (_isRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.Updatables.Contains(this);
+            _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromTick()

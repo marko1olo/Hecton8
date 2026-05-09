@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -6,6 +7,7 @@ namespace Hecton8.World
     /// Cartographer-published far-field HLOD instance payload.
     /// Coordinates stay in local runtime space and are shifted on GPU.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct HLODInstance
     {
         public Matrix4x4 LocalToWorld;

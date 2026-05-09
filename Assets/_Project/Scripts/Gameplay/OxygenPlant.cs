@@ -200,8 +200,7 @@ namespace Hecton8.Gameplay
             if (_isRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.Updatables.Contains(this);
+            _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromTick()

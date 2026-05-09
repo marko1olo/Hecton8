@@ -179,9 +179,9 @@ namespace Hecton8.Gameplay
 
             Quaternion currentLocalRotation = pelvisHandle.GetLocalRotation(stream);
             quaternion currentLocalRotationQ = ContextualPhysicalIkMath.ToMathematicsQuaternion(currentLocalRotation);
-            quaternion leanRotation = quaternion.EulerXYZ(frame.ComLeanRadians.x, 0.0f, frame.ComLeanRadians.y);
-            quaternion desiredLocalRotation = math.normalize(math.mul(currentLocalRotationQ, leanRotation));
-            quaternion blendedRotation = math.slerp(currentLocalRotationQ, desiredLocalRotation, math.saturate(PelvisRotationBlend));
+            quaternion leanRotation = ApproximateSmallEulerXzNoTrig(frame.ComLeanRadians.x, frame.ComLeanRadians.y);
+            quaternion desiredLocalRotation = NormalizeQuaternionNoSqrt(math.mul(currentLocalRotationQ, leanRotation));
+            quaternion blendedRotation = ApproximateNlerpNoSqrt(currentLocalRotationQ, desiredLocalRotation, PelvisRotationBlend);
             pelvisHandle.SetLocalRotation(stream, ContextualPhysicalIkMath.ToUnityQuaternion(blendedRotation));
             CacheLocalPosition(PelvisHandleIndex, blendedPosition);
             CacheLocalRotation(PelvisHandleIndex, blendedRotation);
@@ -232,13 +232,13 @@ namespace Hecton8.Gameplay
             if (extensionResistance01 > 0.0f)
             {
                 float3 targetDirection = ContextualPhysicalIkMath.SafeNormalize(target.WorldPosition - rootPosition, new float3(0.0f, 0.0f, 1.0f));
-                float3 bendDirection = ContextualPhysicalIkMath.SafeNormalize(
-                    ContextualPhysicalIkMath.ProjectOnPlane(polePosition - rootPosition, targetDirection),
-                    math.mul(parentWorldRotation, new float3(1.0f, 0.0f, 0.0f)));
+                float3 poleVector = polePosition - rootPosition;
+                float3 projectedPole = poleVector - (targetDirection * math.dot(poleVector, targetDirection));
+                float3 bendDirection = ContextualPhysicalIkMath.SafeNormalize(projectedPole, math.mul(parentWorldRotation, new float3(1.0f, 0.0f, 0.0f)));
                 float3 torqueAxis = ContextualPhysicalIkMath.SafeNormalize(math.cross(targetDirection, bendDirection), new float3(0.0f, 1.0f, 0.0f));
-                quaternion resistanceRotation = quaternion.AxisAngle(torqueAxis, -OverExtensionResistanceRadians * extensionResistance01);
-                desiredUpperWorldRotation = math.normalize(math.mul(resistanceRotation, desiredUpperWorldRotation));
-                desiredLowerWorldRotation = math.normalize(math.mul(resistanceRotation, desiredLowerWorldRotation));
+                quaternion resistanceRotation = ApproximateAxisRotationNoTrig(torqueAxis, -OverExtensionResistanceRadians * extensionResistance01);
+                desiredUpperWorldRotation = NormalizeQuaternionNoSqrt(math.mul(resistanceRotation, desiredUpperWorldRotation));
+                desiredLowerWorldRotation = NormalizeQuaternionNoSqrt(math.mul(resistanceRotation, desiredLowerWorldRotation));
             }
 
             quaternion desiredEndWorldRotation = ContextualPhysicalIkMath.AlignEndEffectorToNormal(currentEndWorldRotation, target.WorldNormal);
@@ -247,13 +247,13 @@ namespace Hecton8.Gameplay
             quaternion currentLowerLocalRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(lowerHandle.GetLocalRotation(stream));
             quaternion currentEndLocalRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(endHandle.GetLocalRotation(stream));
 
-            quaternion desiredUpperLocalRotation = math.normalize(math.mul(math.inverse(parentWorldRotation), desiredUpperWorldRotation));
-            quaternion desiredLowerLocalRotation = math.normalize(math.mul(math.inverse(desiredUpperWorldRotation), desiredLowerWorldRotation));
-            quaternion desiredEndLocalRotation = math.normalize(math.mul(math.inverse(desiredLowerWorldRotation), desiredEndWorldRotation));
+            quaternion desiredUpperLocalRotation = NormalizeQuaternionNoSqrt(math.mul(math.inverse(parentWorldRotation), desiredUpperWorldRotation));
+            quaternion desiredLowerLocalRotation = NormalizeQuaternionNoSqrt(math.mul(math.inverse(desiredUpperWorldRotation), desiredLowerWorldRotation));
+            quaternion desiredEndLocalRotation = NormalizeQuaternionNoSqrt(math.mul(math.inverse(desiredLowerWorldRotation), desiredEndWorldRotation));
 
-            quaternion blendedUpperLocalRotation = math.slerp(currentUpperLocalRotation, desiredUpperLocalRotation, weight);
-            quaternion blendedLowerLocalRotation = math.slerp(currentLowerLocalRotation, desiredLowerLocalRotation, weight);
-            quaternion blendedEndLocalRotation = math.slerp(currentEndLocalRotation, desiredEndLocalRotation, weight);
+            quaternion blendedUpperLocalRotation = ApproximateNlerpNoSqrt(currentUpperLocalRotation, desiredUpperLocalRotation, weight);
+            quaternion blendedLowerLocalRotation = ApproximateNlerpNoSqrt(currentLowerLocalRotation, desiredLowerLocalRotation, weight);
+            quaternion blendedEndLocalRotation = ApproximateNlerpNoSqrt(currentEndLocalRotation, desiredEndLocalRotation, weight);
 
             upperHandle.SetLocalRotation(stream, ContextualPhysicalIkMath.ToUnityQuaternion(blendedUpperLocalRotation));
             lowerHandle.SetLocalRotation(stream, ContextualPhysicalIkMath.ToUnityQuaternion(blendedLowerLocalRotation));
@@ -318,13 +318,13 @@ namespace Hecton8.Gameplay
                 float3 desiredDirection = ContextualPhysicalIkMath.SafeNormalize(solvedChildPosition - solvedBonePosition, currentDirection);
 
                 quaternion currentWorldRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(boneHandle.GetRotation(stream));
-                quaternion desiredWorldRotation = math.normalize(math.mul(
+                quaternion desiredWorldRotation = NormalizeQuaternionNoSqrt(math.mul(
                     ContextualPhysicalIkMath.FromToRotation(currentDirection, desiredDirection),
                     currentWorldRotation));
 
                 quaternion currentLocalRotation = ContextualPhysicalIkMath.ToMathematicsQuaternion(boneHandle.GetLocalRotation(stream));
-                quaternion desiredLocalRotation = math.normalize(math.mul(math.inverse(previousWorldRotation), desiredWorldRotation));
-                quaternion blendedLocalRotation = math.slerp(currentLocalRotation, desiredLocalRotation, weight);
+                quaternion desiredLocalRotation = NormalizeQuaternionNoSqrt(math.mul(math.inverse(previousWorldRotation), desiredWorldRotation));
+                quaternion blendedLocalRotation = ApproximateNlerpNoSqrt(currentLocalRotation, desiredLocalRotation, weight);
                 boneHandle.SetLocalRotation(stream, ContextualPhysicalIkMath.ToUnityQuaternion(blendedLocalRotation));
                 CacheLocalRotation(handleIndex, blendedLocalRotation);
                 previousWorldRotation = desiredWorldRotation;
@@ -405,17 +405,17 @@ namespace Hecton8.Gameplay
                     desiredBonePosition - previousWorldPosition);
                 float3 blendedLocalPosition = math.lerp(currentLocalPosition, desiredLocalPosition, weight);
 
-                quaternion desiredWorldRotation = math.normalize(math.mul(
+                quaternion desiredWorldRotation = NormalizeQuaternionNoSqrt(math.mul(
                     ContextualPhysicalIkMath.FromToRotation(currentDirection, desiredDirection),
                     currentWorldRotation));
-                quaternion desiredLocalRotation = math.normalize(math.mul(math.inverse(previousWorldRotation), desiredWorldRotation));
-                quaternion blendedLocalRotation = math.slerp(currentLocalRotation, desiredLocalRotation, weight);
+                quaternion desiredLocalRotation = NormalizeQuaternionNoSqrt(math.mul(math.inverse(previousWorldRotation), desiredWorldRotation));
+                quaternion blendedLocalRotation = ApproximateNlerpNoSqrt(currentLocalRotation, desiredLocalRotation, weight);
                 boneHandle.SetLocalPosition(stream, ContextualPhysicalIkMath.ToUnityVector3(blendedLocalPosition));
                 boneHandle.SetLocalRotation(stream, ContextualPhysicalIkMath.ToUnityQuaternion(blendedLocalRotation));
                 CacheLocalPosition(handleIndex, blendedLocalPosition);
                 CacheLocalRotation(handleIndex, blendedLocalRotation);
                 previousWorldPosition = previousWorldPosition + math.rotate(previousWorldRotation, blendedLocalPosition);
-                previousWorldRotation = math.normalize(math.mul(previousWorldRotation, blendedLocalRotation));
+                previousWorldRotation = NormalizeQuaternionNoSqrt(math.mul(previousWorldRotation, blendedLocalRotation));
             }
         }
 
@@ -474,11 +474,11 @@ namespace Hecton8.Gameplay
                     SecondaryStates[nextStateIndex].Position - SecondaryStates[stateIndex].Position,
                     currentDirection);
 
-                quaternion desiredWorldRotation = math.normalize(math.mul(
+                quaternion desiredWorldRotation = NormalizeQuaternionNoSqrt(math.mul(
                     ContextualPhysicalIkMath.FromToRotation(currentDirection, desiredDirection),
                     currentWorldRotation));
-                quaternion desiredLocalRotation = math.normalize(math.mul(math.inverse(previousWorldRotation), desiredWorldRotation));
-                quaternion blendedLocalRotation = math.slerp(currentLocalRotation, desiredLocalRotation, weight);
+                quaternion desiredLocalRotation = NormalizeQuaternionNoSqrt(math.mul(math.inverse(previousWorldRotation), desiredWorldRotation));
+                quaternion blendedLocalRotation = ApproximateNlerpNoSqrt(currentLocalRotation, desiredLocalRotation, weight);
                 boneHandle.SetLocalRotation(stream, ContextualPhysicalIkMath.ToUnityQuaternion(blendedLocalRotation));
                 CacheLocalRotation(handleIndex, blendedLocalRotation);
                 previousWorldRotation = desiredWorldRotation;
@@ -533,6 +533,52 @@ namespace Hecton8.Gameplay
                 return;
 
             MuscleBulgeOutput[0] = math.max(MuscleBulgeOutput[0], value);
+        }
+
+        private static quaternion ApproximateNlerpNoSqrt(quaternion from, quaternion to, float t)
+        {
+            float4 fromValue = from.value;
+            float4 toValue = to.value;
+            toValue = math.select(toValue, -toValue, math.dot(fromValue, toValue) < 0.0f);
+
+            float4 blended = math.lerp(fromValue, toValue, math.saturate(t));
+            float lenSq = math.max(math.dot(blended, blended), 0.000001f);
+            blended *= 1.5f - (0.5f * lenSq);
+            return new quaternion(blended);
+        }
+
+        private static quaternion NormalizeQuaternionNoSqrt(quaternion value)
+        {
+            float4 v = value.value;
+            float lenSq = math.max(math.dot(v, v), 0.000001f);
+            v *= math.rsqrt(lenSq);
+            return new quaternion(v);
+        }
+
+        private static quaternion ApproximateSmallEulerXzNoTrig(float pitchRadians, float rollRadians)
+        {
+            ApproximateSinCosNoTrig(pitchRadians * 0.5f, out float pitchSin, out float pitchCos);
+            ApproximateSinCosNoTrig(rollRadians * 0.5f, out float rollSin, out float rollCos);
+            quaternion pitch = new quaternion(pitchSin, 0.0f, 0.0f, pitchCos);
+            quaternion roll = new quaternion(0.0f, 0.0f, rollSin, rollCos);
+            float4 value = math.mul(pitch, roll).value;
+            float lenSq = math.max(math.dot(value, value), 0.000001f);
+            value *= 1.5f - (0.5f * lenSq);
+            return new quaternion(value);
+        }
+
+        private static quaternion ApproximateAxisRotationNoTrig(float3 axis, float angleRadians)
+        {
+            ApproximateSinCosNoTrig(angleRadians * 0.5f, out float sinHalf, out float cosHalf);
+            return new quaternion(axis.x * sinHalf, axis.y * sinHalf, axis.z * sinHalf, cosHalf);
+        }
+
+        private static void ApproximateSinCosNoTrig(float x, out float sin, out float cos)
+        {
+            float clamped = math.clamp(x, -1.5707964f, 1.5707964f);
+            float x2 = clamped * clamped;
+            sin = clamped * (1.0f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = 1.0f - (x2 * (0.5f - (x2 * 0.041666667f)));
         }
 
         private static ContextualPhysicalIkContactTarget ResolveTarget(in ContextualPhysicalIkTargetFrame frame, byte targetChannel)
@@ -592,6 +638,8 @@ namespace Hecton8.Gameplay
         private const float UpperArmVisibilityProxyRadiusSq = UpperArmVisibilityProxyRadius * UpperArmVisibilityProxyRadius;
         private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRig);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private static readonly float3 HeadToChestSocketLocalOffset = new float3(0.0f, -0.32f, -0.08f);
+        private static readonly float3 HeadForwardReferenceLocalOffset = new float3(0.0f, 0.0f, 0.25f);
         private static readonly int MuscleBulgeShaderId = Shader.PropertyToID("_MuscleBulge");
 
         [System.Serializable]
@@ -1210,21 +1258,6 @@ namespace Hecton8.Gameplay
             }
 
             Vector3 fallbackNormal = (Vector3)ContextualPhysicalIkMath.SafeNormalize(controllerRuntime - targetRuntime, new float3(0.0f, 1.0f, 0.0f));
-            KinematicRepairTargetProbe probe = new KinematicRepairTargetProbe(
-                controllerAup,
-                targetAup,
-                (Vector3)velocityDirection,
-                fallbackNormal,
-                0.0f,
-                0);
-
-            if (_predictiveRepairTarget.TryResolveKinematicRepairSnap(in probe, out KinematicRepairSnapPoint snapPoint))
-            {
-                AbsoluteUniversePosition handAup = isLeftHand ? snapPoint.LeftHandAup : snapPoint.RightHandAup;
-                targetRuntime = handAup.ToRuntimeFloat3();
-                if (IsFiniteVector(snapPoint.SurfaceNormal) && snapPoint.SurfaceNormal.sqrMagnitude > 0.000001f)
-                    fallbackNormal = snapPoint.SurfaceNormal;
-            }
 
             float range01 = math.saturate(1.0f - ((float)distanceSq / PredictiveRepairLatchDistanceSq));
             float direction01 = math.saturate((directionDot - requiredDot) / math.max(1.0f - requiredDot, 0.0001f));
@@ -1748,23 +1781,49 @@ namespace Hecton8.Gameplay
             if (!TryGetValidSpineChain(out SpineChainAuthoring validSpineChain))
                 return;
 
-            Transform rootBone = validSpineChain.bones[0];
-            Transform tipBone = validSpineChain.bones[validSpineChain.bones.Length - 1];
-            Vector3 rootPosition = rootBone.position;
-            Vector3 tipPosition = tipBone.position;
-            Vector3 chestPosition = validSpineChain.chestTarget != null
-                ? validSpineChain.chestTarget.position
-                : Vector3.Lerp(rootPosition, tipPosition, 0.6f);
-            Vector3 headPosition = validSpineChain.headTarget != null
-                ? validSpineChain.headTarget.position
-                : tipPosition;
-            Vector3 headForwardReference = validSpineChain.headForwardReference != null
-                ? validSpineChain.headForwardReference.position
-                : headPosition + (tipBone.forward * 0.25f);
+            Transform headSource = validSpineChain.headTarget != null
+                ? validSpineChain.headTarget
+                : validSpineChain.bones[validSpineChain.bones.Length - 1];
+            Vector3 headPosition = headSource.position;
+            if (!IsFiniteVector(headPosition))
+                return;
 
-            _spineTargets[0] = ContextualPhysicalIkMath.ToFloat3(chestPosition);
-            _spineTargets[1] = ContextualPhysicalIkMath.ToFloat3(headPosition);
-            _spineTargets[2] = ContextualPhysicalIkMath.ToFloat3(headForwardReference);
+            AbsoluteUniversePosition headAup = AbsoluteUniversePosition.FromRuntimePosition(headPosition);
+            double3 headAbsolute = headAup.ToAbsoluteDouble3();
+            Quaternion hmdRotation = headSource.rotation;
+
+            AbsoluteUniversePosition chestAup = OffsetAupLocal(in headAbsolute, hmdRotation, HeadToChestSocketLocalOffset);
+            AbsoluteUniversePosition forwardAup = OffsetAupLocal(in headAbsolute, hmdRotation, HeadForwardReferenceLocalOffset);
+
+            _spineTargets[0] = chestAup.ToRuntimeFloat3();
+            _spineTargets[1] = headAup.ToRuntimeFloat3();
+            _spineTargets[2] = forwardAup.ToRuntimeFloat3();
+        }
+
+        private static AbsoluteUniversePosition OffsetAupLocal(in double3 originAbsolute, Quaternion hmdRotation, float3 localOffset)
+        {
+            float3 yawOffset = RotateByHmdYawNoTrig(hmdRotation, localOffset);
+            double3 resolvedAbsolute = originAbsolute + new double3(yawOffset.x, yawOffset.y, yawOffset.z);
+            return AbsoluteUniversePosition.FromAbsolutePosition(resolvedAbsolute);
+        }
+
+        private static float3 RotateByHmdYawNoTrig(Quaternion hmdRotation, float3 localOffset)
+        {
+            float4 q = new float4(hmdRotation.x, hmdRotation.y, hmdRotation.z, hmdRotation.w);
+            if (!math.all(math.isfinite(q)))
+                return localOffset;
+
+            float yawSin = 2.0f * ((q.x * q.z) + (q.w * q.y));
+            float yawCos = 1.0f - (2.0f * ((q.x * q.x) + (q.y * q.y)));
+            float lenSq = math.max((yawSin * yawSin) + (yawCos * yawCos), 0.000001f);
+            float invLenApprox = 1.5f - (0.5f * lenSq);
+            yawSin *= invLenApprox;
+            yawCos *= invLenApprox;
+
+            return new float3(
+                (yawCos * localOffset.x) + (yawSin * localOffset.z),
+                localOffset.y,
+                (-yawSin * localOffset.x) + (yawCos * localOffset.z));
         }
 
         private void CaptureAppendageTargets()
@@ -2289,7 +2348,8 @@ namespace Hecton8.Gameplay
             Vector3 firstPosition = first.position;
             Vector3 secondPosition = second.position;
             float3 delta = ContextualPhysicalIkMath.ToFloat3(firstPosition - secondPosition);
-            return math.length(delta);
+            float lengthSq = math.lengthsq(delta);
+            return lengthSq * math.rsqrt(math.max(lengthSq, 0.00000001f));
         }
 
         private static bool IsFiniteVector(Vector3 value)

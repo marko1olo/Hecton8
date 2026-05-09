@@ -13,6 +13,7 @@
 
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using Hecton8.Items;
 using UnityEngine;
 
@@ -76,6 +77,9 @@ namespace Hecton8.Building
 
         [Tooltip("Семейство модуля для browser/filter/directive logic.")]
         public BuildableFamily family = BuildableFamily.Structure;
+
+        [Tooltip("Packed QuestState flag required before this blueprint is visible. 0 = visible by default.")]
+        [SerializeField] private uint blueprintQuestFlagId;
 
         // ─────────────────────── Prefabs ─────────────────────────
         [Header("Prefabs")]
@@ -201,6 +205,28 @@ namespace Hecton8.Building
         }
 
         public string FamilyLabel => ResolveFamilyLabel(family);
+
+        /// <summary>
+        /// Packed QuestState flag required before this construction blueprint is visible.
+        /// </summary>
+        public uint BlueprintQuestFlagId => blueprintQuestFlagId;
+
+        /// <summary>
+        /// True when this blueprint depends on a QuestDAG flag.
+        /// </summary>
+        public bool RequiresBlueprintQuestFlag => blueprintQuestFlagId != 0u;
+
+        /// <summary>
+        /// Returns true when this blueprint is allowed to appear in builder-facing catalogs.
+        /// </summary>
+        public bool IsBlueprintViewable()
+        {
+            if (blueprintQuestFlagId == 0u)
+                return true;
+
+            IQuestSystem questSystem = GlobalRegistry.QuestSystem;
+            return questSystem != null && questSystem.GetFlag(blueprintQuestFlagId);
+        }
 
         /// <summary>
         /// Returns true when the supplied ID matches the authored stable ID or the legacy asset name.

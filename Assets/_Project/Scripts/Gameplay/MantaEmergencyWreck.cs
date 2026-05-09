@@ -22,6 +22,7 @@ namespace Hecton8.Gameplay
         private const float PlayerResolveRetrySeconds = 1f;
         private const int MaxResidencySlots = 16;
         private const int InvalidResidencySlotIndex = -1;
+        private const float VelocityClampSafetyMultiplier = 1.5f;
 
         private struct ResidencyState
         {
@@ -90,7 +91,7 @@ namespace Hecton8.Gameplay
                         continue;
                     }
 
-                    state.remainingLifetime -= Mathf.Max(0f, deltaTime);
+                    state.remainingLifetime -= math.max(0f, deltaTime);
                     if (state.remainingLifetime <= 0f)
                     {
                         ReleaseResidencySlot(slotIndex);
@@ -148,7 +149,7 @@ namespace Hecton8.Gameplay
                     return true;
                 }
 
-                _playerResolveCooldown -= Mathf.Max(0f, deltaTime);
+                _playerResolveCooldown -= math.max(0f, deltaTime);
                 if (_playerResolveCooldown > 0f)
                 {
                     playerTransform = null;
@@ -256,9 +257,9 @@ namespace Hecton8.Gameplay
             EnsureResidencyRuntime();
             EnsureResidencySlotAllocated();
 
-            float clampedSeverity = Mathf.Clamp01(severity);
+            float clampedSeverity = math.saturate(severity);
             _emergencyActive = true;
-            _remainingLifetime = Mathf.Max(0.05f, bailoutLifetime);
+            _remainingLifetime = math.max(0.05f, bailoutLifetime);
             _dehydrationCheckTimer = DehydrationCheckIntervalSeconds;
 
             if (_pickupItem != null)
@@ -273,23 +274,34 @@ namespace Hecton8.Gameplay
             _rigidbody.angularDamping = activeAngularDamping;
             _rigidbody.WakeUp();
 
-            Vector3 launchVelocity = inheritedVelocity * Mathf.Lerp(0.94f, 1.08f, clampedSeverity) +
-                                     bailoutImpulse * Mathf.Lerp(0.12f, 0.28f, clampedSeverity);
-            launchVelocity.y -= Mathf.Lerp(0.05f, 0.45f, clampedSeverity);
-            _rigidbody.linearVelocity = launchVelocity;
+            float linearVelocityCap = ResolveLinearVelocityCap();
+            float angularVelocityCap = ResolveAngularVelocityCap();
+            Vector3 launchVelocity = inheritedVelocity * math.lerp(0.94f, 1.08f, clampedSeverity) +
+                                     bailoutImpulse * math.lerp(0.12f, 0.28f, clampedSeverity);
+            launchVelocity.y -= math.lerp(0.05f, 0.45f, clampedSeverity);
+            _rigidbody.linearVelocity = ResolveSafeVelocity(launchVelocity, linearVelocityCap);
 
-            Vector3 spinAxis = bailoutImpulse.sqrMagnitude > 0.0001f
-                ? Vector3.Cross(Vector3.up, bailoutImpulse.normalized)
+            float bailoutImpulseSq = bailoutImpulse.sqrMagnitude;
+            Vector3 spinAxis = bailoutImpulseSq > 0.0001f
+                ? Vector3.Cross(Vector3.up, bailoutImpulse * math.rsqrt(bailoutImpulseSq))
                 : transform.right;
-            if (spinAxis.sqrMagnitude <= 0.0001f)
+            float spinAxisSq = spinAxis.sqrMagnitude;
+            if (spinAxisSq <= 0.0001f)
+            {
                 spinAxis = transform.forward;
+                spinAxisSq = spinAxis.sqrMagnitude;
+            }
 
-            float spinSign = Mathf.Sign(Vector3.Dot(bailoutImpulse, transform.right));
+            float spinSign = math.sign(Vector3.Dot(bailoutImpulse, transform.right));
             if (spinSign == 0f)
                 spinSign = 1f;
 
-            _rigidbody.angularVelocity = spinAxis.normalized *
-                                         (spinSign * Mathf.Lerp(spinVelocityMin, spinVelocityMax, clampedSeverity));
+            Vector3 normalizedSpinAxis = spinAxisSq > 0.0001f
+                ? spinAxis * math.rsqrt(spinAxisSq)
+                : Vector3.forward;
+            Vector3 angularVelocity = normalizedSpinAxis *
+                                      (spinSign * math.lerp(spinVelocityMin, spinVelocityMax, clampedSeverity));
+            _rigidbody.angularVelocity = ResolveSafeVelocity(angularVelocity, angularVelocityCap);
 
             UpdateResidencyState(markDehydrated: false);
             TryRegisterFixedTick();
@@ -323,12 +335,12 @@ namespace Hecton8.Gameplay
 
             if (_collisionDamageCooldownTimer > 0f)
             {
-                _collisionDamageCooldownTimer -= Mathf.Max(0f, fixedDeltaTime);
+                _collisionDamageCooldownTimer -= math.max(0f, fixedDeltaTime);
                 if (_collisionDamageCooldownTimer < 0f)
                     _collisionDamageCooldownTimer = 0f;
             }
 
-            _remainingLifetime -= Mathf.Max(0f, fixedDeltaTime);
+            _remainingLifetime -= math.max(0f, fixedDeltaTime);
             if (_remainingLifetime <= 0f)
             {
                 _remainingLifetime = 0f;
@@ -339,7 +351,7 @@ namespace Hecton8.Gameplay
             if (_rigidbody == null)
                 return;
 
-            _dehydrationCheckTimer -= Mathf.Max(0f, fixedDeltaTime);
+            _dehydrationCheckTimer -= math.max(0f, fixedDeltaTime);
             if (_dehydrationCheckTimer <= 0f)
             {
                 _dehydrationCheckTimer = DehydrationCheckIntervalSeconds;
@@ -359,8 +371,9 @@ namespace Hecton8.Gameplay
             if (!_emergencyActive || _collisionDamageCooldownTimer > 0f || collision == null)
                 return;
 
-            float impactSpeed = collision.relativeVelocity.magnitude;
-            if (impactSpeed <= collisionDamageStartSpeed)
+            float impactSpeedSq = collision.relativeVelocity.sqrMagnitude;
+            float collisionDamageStartSpeedSq = collisionDamageStartSpeed * collisionDamageStartSpeed;
+            if (impactSpeedSq <= collisionDamageStartSpeedSq)
                 return;
 
             Collider hitCollider = collision.collider;
@@ -374,9 +387,11 @@ namespace Hecton8.Gameplay
             if (faunaBrain == null)
                 return;
 
-            float maxSpeed = Mathf.Max(collisionDamageStartSpeed + 0.01f, collisionDamageMaxSpeed);
-            float damageT = Mathf.InverseLerp(collisionDamageStartSpeed, maxSpeed, impactSpeed);
-            float damage = Mathf.Lerp(0f, collisionDamageAtMaxSpeed, damageT);
+            float impactSpeed = impactSpeedSq * math.rsqrt(impactSpeedSq);
+            float maxSpeed = math.max(collisionDamageStartSpeed + 0.01f, collisionDamageMaxSpeed);
+            float inverseDamageRange = 1f / math.max(0.0001f, maxSpeed - collisionDamageStartSpeed);
+            float damageT = math.saturate((impactSpeed - collisionDamageStartSpeed) * inverseDamageRange);
+            float damage = collisionDamageAtMaxSpeed * damageT;
             if (damage <= 0f)
                 return;
 
@@ -485,8 +500,8 @@ namespace Hecton8.Gameplay
             _residencySlotIndex = slotIndex;
             _residencyPrefabSource = state.prefabSource;
             _emergencyActive = true;
-            _remainingLifetime = Mathf.Max(0.05f, state.remainingLifetime);
-            _collisionDamageCooldownTimer = Mathf.Max(0f, state.collisionDamageCooldownTimer);
+            _remainingLifetime = math.max(0.05f, state.remainingLifetime);
+            _collisionDamageCooldownTimer = math.max(0f, state.collisionDamageCooldownTimer);
             _dehydrationCheckTimer = DehydrationCheckIntervalSeconds;
             _preserveResidencyOnDespawn = false;
 
@@ -504,8 +519,8 @@ namespace Hecton8.Gameplay
             _rigidbody.angularDamping = activeAngularDamping;
             _rigidbody.position = runtimePosition;
             _rigidbody.rotation = state.rotation;
-            _rigidbody.linearVelocity = state.linearVelocity;
-            _rigidbody.angularVelocity = state.angularVelocity;
+            _rigidbody.linearVelocity = ResolveSafeVelocity(state.linearVelocity, ResolveLinearVelocityCap());
+            _rigidbody.angularVelocity = ResolveSafeVelocity(state.angularVelocity, ResolveAngularVelocityCap());
             _rigidbody.WakeUp();
 
             UpdateResidencyState(markDehydrated: false);
@@ -582,8 +597,8 @@ namespace Hecton8.Gameplay
             Vector3 angularVelocity = Vector3.zero;
             if (_rigidbody != null)
             {
-                linearVelocity = _rigidbody.linearVelocity;
-                angularVelocity = _rigidbody.angularVelocity;
+                linearVelocity = ResolveSafeVelocity(_rigidbody.linearVelocity, ResolveLinearVelocityCap());
+                angularVelocity = ResolveSafeVelocity(_rigidbody.angularVelocity, ResolveAngularVelocityCap());
             }
 
             s_residencyStates[_residencySlotIndex] = new ResidencyState
@@ -622,6 +637,40 @@ namespace Hecton8.Gameplay
             s_activeDehydratedResidencySlotCount = 0;
             for (int i = 0; i < MaxResidencySlots; i++)
                 s_freeResidencySlots[i] = MaxResidencySlots - 1 - i;
+        }
+
+        private float ResolveLinearVelocityCap()
+        {
+            float authoredCap = math.max(collisionDamageMaxSpeed, sinkVelocityChangePerSecond * bailoutLifetime);
+            authoredCap *= VelocityClampSafetyMultiplier;
+            return float.IsFinite(authoredCap) ? math.max(1f, authoredCap) : 1f;
+        }
+
+        private float ResolveAngularVelocityCap()
+        {
+            float authoredCap = spinVelocityMax * VelocityClampSafetyMultiplier;
+            return float.IsFinite(authoredCap) ? math.max(1f, authoredCap) : 1f;
+        }
+
+        private static Vector3 ResolveSafeVelocity(Vector3 velocity, float maxMagnitude)
+        {
+            if (!IsFinite(velocity))
+                return Vector3.zero;
+
+            float speedSq = velocity.sqrMagnitude;
+            if (!float.IsFinite(speedSq) || speedSq <= 0.000001f)
+                return Vector3.zero;
+
+            float safeMax = math.max(0.01f, maxMagnitude);
+            float maxSq = safeMax * safeMax;
+            return speedSq <= maxSq
+                ? velocity
+                : velocity * (safeMax * math.rsqrt(speedSq));
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
         private static void EnsureResidencyRuntime()

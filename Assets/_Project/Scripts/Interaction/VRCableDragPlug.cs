@@ -7,9 +7,13 @@ namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/VR Cable Drag Plug")]
-    public sealed class VRCableDragPlug : MonoBehaviour, ILateFrameTickable, IOriginShiftListener
+    public sealed class VRCableDragPlug : MonoBehaviour, IInteractable, ILateFrameTickable, IOriginShiftListener
     {
         private const long CableLinkSalt = 0x5643524300000000L;
+        private const int MaxParentResolveDepth = 32;
+        private const float MaximumCableLengthMeters = 128f;
+        private const float MaximumCableRadiusMeters = 0.25f;
+        private const float MaximumSlackDepthMeters = 16f;
 
         [Header("Sockets")]
         [SerializeField] private Transform sourceSocket;
@@ -25,6 +29,9 @@ namespace Hecton8.Interaction
         [SerializeField] private bool renderDisconnectedPreview = true;
         [SerializeField] private Color poweredColor = new Color(0.25f, 0.95f, 1f, 0.95f);
         [SerializeField] private Color unpoweredColor = new Color(0.35f, 0.42f, 0.48f, 0.55f);
+        [SerializeField] private string grabPrompt = "Grab Cable Plug";
+        [SerializeField] private string dropPrompt = "Drop Cable Plug";
+        [SerializeField] private string disconnectPrompt = "Disconnect Cable Plug";
 
         private float3 _p0;
         private float3 _p1;
@@ -41,28 +48,61 @@ namespace Hecton8.Interaction
 
         public bool IsDragging => _dragging;
         public bool IsConnected => _connected;
-        public float MaxCableLengthSq => maxCableLengthMeters * maxCableLengthMeters;
+        public float MaxCableLengthSq
+        {
+            get { return ResolveSafeMaxCableLengthSq(); }
+        }
         public bool HasPower
         {
             get => hasPower;
             set => hasPower = value;
         }
 
+        public void OnHoverStart()
+        {
+        }
+
+        public void OnHoverEnd()
+        {
+        }
+
+        public void Interact(Transform interactor)
+        {
+            if (_dragging)
+            {
+                EndDrag();
+                return;
+            }
+
+            BeginDrag(interactor);
+        }
+
+        public string GetInteractText()
+        {
+            if (_dragging)
+                return dropPrompt;
+
+            return _connected ? disconnectPrompt : grabPrompt;
+        }
+
         private void Awake()
         {
             _linkId = CableLinkSalt ^ unchecked((long)EntityId.ToULong(GetEntityId()));
-            _manualPlugPosition = plugVisual != null ? plugVisual.position : transform.position;
-            _manualPlugForward = plugVisual != null ? plugVisual.forward : transform.forward;
+            _manualPlugPosition = ResolveAupRuntimePosition(plugVisual != null ? plugVisual : transform);
+            Vector3 initialForward = plugVisual != null ? plugVisual.forward : transform.forward;
+            _manualPlugForward = SafeNormalize(initialForward, Vector3.forward);
         }
 
         private void OnEnable()
         {
-            TryRegisterLateFrameTickable();
             TryRegisterOriginShiftListener();
+            RefreshLateFrameRegistration();
         }
 
         private void OnDisable()
         {
+            AbortRuntimeDragState(clearConnection: false);
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterOriginShiftListener();
             TryUnregisterLateFrameTickable();
             ConnectionSplineBatchRenderer.RemoveRelayLink(_linkId);
@@ -70,8 +110,13 @@ namespace Hecton8.Interaction
 
         public void LateFrameTick()
         {
-            if (sourceSocket == null)
+            if (!TryResolveAupRuntimePosition(sourceSocket, out _, out Vector3 sourceRuntimePosition))
+            {
+                AbortRuntimeDragState(clearConnection: true);
+                ConnectionSplineBatchRenderer.RemoveRelayLink(_linkId);
+                RefreshLateFrameRegistration();
                 return;
+            }
 
             if (_dragging && IsCableOverstretched())
             {
@@ -82,10 +127,11 @@ namespace Hecton8.Interaction
             if (!_connected && !_dragging && !renderDisconnectedPreview)
             {
                 ConnectionSplineBatchRenderer.RemoveRelayLink(_linkId);
+                RefreshLateFrameRegistration();
                 return;
             }
 
-            BuildControlPoints();
+            BuildControlPoints(sourceRuntimePosition);
             float3 startForward = LogisticsPipeBuilder.SafeNormalize(_p1 - _p0, new float3(0f, 0f, 1f));
             float3 endForward = LogisticsPipeBuilder.SafeNormalize(_p3 - _p2, new float3(0f, 0f, -1f));
             SplineDescriptor descriptor = LogisticsPipeBuilder.CreateSocketDescriptor(
@@ -93,7 +139,7 @@ namespace Hecton8.Interaction
                 _p3,
                 startForward,
                 endForward,
-                cableRadiusMeters,
+                ResolveSafeCableRadiusMeters(),
                 PipeRenderFlags.None);
             ConnectionSplineBatchRenderer.SubmitRelaySpline(_linkId, descriptor, hasPower, poweredColor, unpoweredColor);
         }
@@ -101,38 +147,92 @@ namespace Hecton8.Interaction
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             Vector3 offset = shiftData.ShiftOffset;
+            if (!IsFiniteVector(offset))
+                return;
+
             _manualPlugPosition -= offset;
         }
 
         public void BeginDrag(Transform handAnchor)
         {
+            if (sourceSocket == null)
+                return;
+
             _dragAnchor = handAnchor;
             ResolveReleaseHandler(handAnchor);
             _dragging = true;
             _connected = false;
+            RefreshLateFrameRegistration();
+        }
+
+        public void BeginDrag(Transform handAnchor, PhysicalInteractionHandler handler)
+        {
+            if (sourceSocket == null)
+                return;
+
+            _dragAnchor = handAnchor;
+            if (handler != null)
+                releaseHandler = handler;
+            else
+                ResolveReleaseHandler(handAnchor);
+
+            _dragging = true;
+            _connected = false;
+            RefreshLateFrameRegistration();
         }
 
         public void SetManualDragPose(Vector3 runtimePosition, Vector3 forward)
         {
-            _manualPlugPosition = runtimePosition;
-            if (forward.sqrMagnitude > 0.000001f)
+            _dragAnchor = null;
+            if (IsFiniteVector(runtimePosition))
+                _manualPlugPosition = runtimePosition;
+
+            if (IsFiniteVector(forward) && forward.sqrMagnitude > 0.000001f)
                 _manualPlugForward = SafeNormalize(forward, Vector3.forward);
             _dragging = true;
             _connected = false;
+            RefreshLateFrameRegistration();
         }
 
         public void ConnectToDestination(Transform socket, bool powered)
         {
+            if (!CanConnectToSocket(socket))
+            {
+                destinationSocket = null;
+                hasPower = false;
+                _connected = false;
+                RefreshLateFrameRegistration();
+                return;
+            }
+
             destinationSocket = socket;
             hasPower = powered;
+            _dragAnchor = null;
             _dragging = false;
             _connected = destinationSocket != null;
+            RefreshLateFrameRegistration();
         }
 
         public void Disconnect()
         {
+            EndDrag();
+        }
+
+        public void EndDrag()
+        {
+            ResolveRawEndPose(out _manualPlugPosition, out _manualPlugForward);
+            SanitizeEndPose(ref _manualPlugPosition, ref _manualPlugForward);
+            ClampEndToCableLength(ref _manualPlugPosition);
+            if (plugVisual != null)
+            {
+                plugVisual.position = _manualPlugPosition;
+                plugVisual.forward = SafeNormalize(_manualPlugForward, plugVisual.forward);
+            }
+
             _connected = false;
             _dragging = false;
+            _dragAnchor = null;
+            RefreshLateFrameRegistration();
         }
 
         public Vector3 EvaluateCablePoint(float t)
@@ -150,17 +250,25 @@ namespace Hecton8.Interaction
             p3 = new Vector3(_p3.x, _p3.y, _p3.z);
         }
 
-        private void BuildControlPoints()
+        private void BuildControlPoints(Vector3 start)
         {
-            Vector3 start = sourceSocket.position;
-            Vector3 startForward = sourceSocket.forward;
+            if (!IsFiniteVector(start))
+                start = Vector3.zero;
+
+            Vector3 startForward = IsFiniteVector(sourceSocket.forward) ? sourceSocket.forward : Vector3.forward;
             ResolveEndPose(out Vector3 end, out Vector3 endForward);
+            if (!IsFiniteVector(end))
+                end = start;
+            if (!IsFiniteVector(endForward))
+                endForward = Vector3.back;
 
             Vector3 chord = end - start;
             float spanSq = chord.sqrMagnitude;
-            float spanApprox = spanSq > 0.000001f ? spanSq / math.max(maxCableLengthMeters, 0.001f) : 0f;
+            float spanApprox = spanSq > 0.000001f
+                ? ApproximateMagnitudeNoSqrt(chord)
+                : 0f;
             float handle = math.clamp(spanApprox * 0.35f, 0.05f, 1.75f);
-            float sagAmount = math.min(slackDepthMeters, spanApprox * 0.35f);
+            float sagAmount = math.isfinite(spanApprox) ? math.min(ResolveSafeSlackDepthMeters(), spanApprox * 0.35f) : 0f;
 
             _p0 = start;
             Vector3 p1 = start + SafeNormalize(startForward, Vector3.forward) * handle;
@@ -175,25 +283,52 @@ namespace Hecton8.Interaction
         private bool IsCableOverstretched()
         {
             ResolveRawEndPose(out Vector3 end, out _);
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourceSocket.position);
+            if (!IsFiniteVector(end) || !TryResolveAup(sourceSocket, out AbsoluteUniversePosition sourceAup))
+                return true;
+
             AbsoluteUniversePosition endAup = AbsoluteUniversePosition.FromRuntimePosition(end);
-            return AbsoluteUniversePosition.DistanceSq(in sourceAup, in endAup) > MaxCableLengthSq;
+            return AbsoluteUniversePosition.DistanceSq(in sourceAup, in endAup) > ResolveSafeMaxCableLengthSq();
+        }
+
+        private bool CanConnectToSocket(Transform socket)
+        {
+            if (sourceSocket == null || socket == null)
+                return false;
+
+            if (!TryResolveAup(sourceSocket, out AbsoluteUniversePosition sourceAup) ||
+                !TryResolveAup(socket, out AbsoluteUniversePosition socketAup))
+            {
+                return false;
+            }
+
+            return AbsoluteUniversePosition.DistanceSq(in sourceAup, in socketAup) <= ResolveSafeMaxCableLengthSq();
         }
 
         private void ForceCableTensionSnapRelease()
         {
             ResolveRawEndPose(out _manualPlugPosition, out _manualPlugForward);
+            SanitizeEndPose(ref _manualPlugPosition, ref _manualPlugForward);
             ClampEndToCableLength(ref _manualPlugPosition);
             if (plugVisual != null)
+            {
                 plugVisual.position = _manualPlugPosition;
+                plugVisual.forward = SafeNormalize(_manualPlugForward, plugVisual.forward);
+            }
 
             if (releaseHandler != null)
                 releaseHandler.ForceRelease();
 
+            AbortRuntimeDragState(clearConnection: true);
+            ConnectionSplineBatchRenderer.RemoveRelayLink(_linkId);
+        }
+
+        private void AbortRuntimeDragState(bool clearConnection)
+        {
             _dragAnchor = null;
             _dragging = false;
-            _connected = false;
-            ConnectionSplineBatchRenderer.RemoveRelayLink(_linkId);
+            if (clearConnection)
+                _connected = false;
+            RefreshLateFrameRegistration();
         }
 
         private void ResolveReleaseHandler(Transform handAnchor)
@@ -201,14 +336,14 @@ namespace Hecton8.Interaction
             if (handAnchor == null)
                 return;
 
-            PhysicalInteractionHandler resolvedHandler = handAnchor.GetComponentInParent<PhysicalInteractionHandler>();
-            if (resolvedHandler != null)
+            if (TryResolveParentComponent(handAnchor, out PhysicalInteractionHandler resolvedHandler))
                 releaseHandler = resolvedHandler;
         }
 
         private void ResolveEndPose(out Vector3 end, out Vector3 endForward)
         {
             ResolveRawEndPose(out end, out endForward);
+            SanitizeEndPose(ref end, ref endForward);
             ClampEndToCableLength(ref end);
         }
 
@@ -216,16 +351,16 @@ namespace Hecton8.Interaction
         {
             if (_connected && destinationSocket != null)
             {
-                end = destinationSocket.position;
-                endForward = -destinationSocket.forward;
+                end = ResolveAupRuntimePosition(destinationSocket);
+                endForward = IsFiniteVector(destinationSocket.forward) ? -destinationSocket.forward : Vector3.back;
                 return;
             }
 
             Transform anchor = _dragAnchor != null ? _dragAnchor : plugVisual;
             if (anchor != null)
             {
-                end = anchor.position;
-                endForward = anchor.forward;
+                end = ResolveAupRuntimePosition(anchor);
+                endForward = IsFiniteVector(anchor.forward) ? anchor.forward : _manualPlugForward;
                 return;
             }
 
@@ -233,19 +368,35 @@ namespace Hecton8.Interaction
             endForward = _manualPlugForward;
         }
 
+        private void SanitizeEndPose(ref Vector3 end, ref Vector3 endForward)
+        {
+            if (!IsFiniteVector(end))
+            {
+                if (TryResolveAup(sourceSocket, out AbsoluteUniversePosition sourceAup))
+                    end = (Vector3)sourceAup.ToRuntimeFloat3();
+                else
+                    end = Vector3.zero;
+            }
+
+            endForward = SafeNormalize(endForward, Vector3.forward);
+        }
+
         private void ClampEndToCableLength(ref Vector3 end)
         {
             if (sourceSocket == null)
                 return;
 
-            Vector3 sourceRuntimePosition = sourceSocket.position;
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourceRuntimePosition);
+            if (!TryResolveAup(sourceSocket, out AbsoluteUniversePosition sourceAup) || !IsFiniteVector(end))
+                return;
+
             AbsoluteUniversePosition endAup = AbsoluteUniversePosition.FromRuntimePosition(end);
             double lengthSq = AbsoluteUniversePosition.DistanceSq(in sourceAup, in endAup);
-            float maxLengthSq = MaxCableLengthSq;
+            float safeMaxCableLength = ResolveSafeMaxCableLengthMeters();
+            float maxLengthSq = safeMaxCableLength * safeMaxCableLength;
             if (lengthSq <= maxLengthSq || lengthSq <= 0.000001f)
                 return;
 
+            Vector3 sourceRuntimePosition = (Vector3)sourceAup.ToRuntimeFloat3();
             float3 aupDelta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in endAup, in sourceAup);
             float deltaLengthSq = math.lengthsq(aupDelta);
             if (deltaLengthSq <= 0.000001f || !math.all(math.isfinite(aupDelta)))
@@ -254,8 +405,88 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            float3 clampedDelta = aupDelta * math.rsqrt(deltaLengthSq) * maxCableLengthMeters;
+            float inverseLength = math.rcp(math.max(ApproximateMagnitudeNoSqrt(aupDelta), 0.000001f));
+            float3 clampedDelta = aupDelta * inverseLength * safeMaxCableLength;
             end = sourceRuntimePosition + new Vector3(clampedDelta.x, clampedDelta.y, clampedDelta.z);
+        }
+
+        private float ResolveSafeMaxCableLengthMeters()
+        {
+            return math.isfinite(maxCableLengthMeters)
+                ? math.clamp(maxCableLengthMeters, 0.25f, MaximumCableLengthMeters)
+                : 8f;
+        }
+
+        private float ResolveSafeMaxCableLengthSq()
+        {
+            float safeMaxCableLength = ResolveSafeMaxCableLengthMeters();
+            return safeMaxCableLength * safeMaxCableLength;
+        }
+
+        private float ResolveSafeCableRadiusMeters()
+        {
+            return math.isfinite(cableRadiusMeters)
+                ? math.clamp(cableRadiusMeters, 0.001f, MaximumCableRadiusMeters)
+                : 0.028f;
+        }
+
+        private float ResolveSafeSlackDepthMeters()
+        {
+            return math.isfinite(slackDepthMeters)
+                ? math.clamp(slackDepthMeters, 0f, MaximumSlackDepthMeters)
+                : 0.45f;
+        }
+
+        private static AbsoluteUniversePosition ResolveAup(Transform source)
+        {
+            if (source == null)
+                return AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+
+            Vector3 position = source.position;
+            return IsFiniteVector(position)
+                ? AbsoluteUniversePosition.FromRuntimePosition(position)
+                : AbsoluteUniversePosition.FromRuntimePosition(Vector3.zero);
+        }
+
+        private static bool TryResolveAup(Transform source, out AbsoluteUniversePosition aup)
+        {
+            if (source == null)
+            {
+                aup = default;
+                return false;
+            }
+
+            Vector3 position = source.position;
+            if (!IsFiniteVector(position))
+            {
+                aup = default;
+                return false;
+            }
+
+            aup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            return true;
+        }
+
+        private static Vector3 ResolveAupRuntimePosition(Transform source)
+        {
+            return TryResolveAupRuntimePosition(source, out _, out Vector3 runtimePosition)
+                ? runtimePosition
+                : Vector3.zero;
+        }
+
+        private static bool TryResolveAupRuntimePosition(
+            Transform source,
+            out AbsoluteUniversePosition aup,
+            out Vector3 runtimePosition)
+        {
+            if (!TryResolveAup(source, out aup))
+            {
+                runtimePosition = Vector3.zero;
+                return false;
+            }
+
+            runtimePosition = (Vector3)aup.ToRuntimeFloat3();
+            return IsFiniteVector(runtimePosition);
         }
 
         private static float3 EvaluateCubic(float3 p0, float3 p1, float3 p2, float3 p3, float t)
@@ -277,13 +508,54 @@ namespace Hecton8.Interaction
             if (lengthSq <= 0.000001f || !math.all(math.isfinite(new float3(value.x, value.y, value.z))))
                 return fallback;
 
-            return value * math.rsqrt(lengthSq);
+            return value * math.rcp(math.max(ApproximateMagnitudeNoSqrt(value), 0.000001f));
+        }
+
+        private static float ApproximateMagnitudeNoSqrt(Vector3 value)
+        {
+            return ApproximateMagnitudeNoSqrt(new float3(value.x, value.y, value.z));
+        }
+
+        private static float ApproximateMagnitudeNoSqrt(float3 value)
+        {
+            float3 absValue = math.abs(value);
+            if (!math.all(math.isfinite(absValue)))
+                return 0f;
+
+            float largest = math.cmax(absValue);
+            float smallest = math.cmin(absValue);
+            float middle = absValue.x + absValue.y + absValue.z - largest - smallest;
+            return largest + (middle * 0.375f) + (smallest * 0.125f);
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
         }
 
         private static void ApplyQuadraticCatenarySag(ref Vector3 point, float t, float sagAmount)
         {
+            if (!math.isfinite(sagAmount) || sagAmount <= 0f)
+                return;
+
             float centered = (t * 2f) - 1f;
             point.y -= sagAmount * (1f - (centered * centered));
+        }
+
+        private static bool TryResolveParentComponent<T>(Transform start, out T component) where T : Component
+        {
+            component = null;
+            Transform current = start;
+            int depth = 0;
+            while (current != null && depth++ < MaxParentResolveDepth)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private void TryRegisterLateFrameTickable()
@@ -291,8 +563,26 @@ namespace Hecton8.Interaction
             if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
+        }
+
+        private void RefreshLateFrameRegistration()
+        {
+            if (!isActiveAndEnabled)
+            {
+                TryUnregisterLateFrameTickable();
+                return;
+            }
+
+            if (ShouldRunLateFrame())
+                TryRegisterLateFrameTickable();
+            else
+                TryUnregisterLateFrameTickable();
+        }
+
+        private bool ShouldRunLateFrame()
+        {
+            return sourceSocket != null && (_dragging || _connected || renderDisconnectedPreview);
         }
 
         private void TryUnregisterLateFrameTickable()
@@ -306,11 +596,11 @@ namespace Hecton8.Interaction
 
         private void TryRegisterOriginShiftListener()
         {
-            if (_registeredOriginShift)
+            if (_registeredOriginShift || !Application.isPlaying)
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _registeredOriginShift = true;
+            _registeredOriginShift = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void TryUnregisterOriginShiftListener()
@@ -325,12 +615,15 @@ namespace Hecton8.Interaction
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (cableRadiusMeters < 0.001f)
+            if (!math.isfinite(cableRadiusMeters) || cableRadiusMeters < 0.001f)
                 cableRadiusMeters = 0.001f;
-            if (slackDepthMeters < 0f)
+            cableRadiusMeters = math.min(cableRadiusMeters, MaximumCableRadiusMeters);
+            if (!math.isfinite(slackDepthMeters) || slackDepthMeters < 0f)
                 slackDepthMeters = 0f;
-            if (maxCableLengthMeters < 0.25f)
+            slackDepthMeters = math.min(slackDepthMeters, MaximumSlackDepthMeters);
+            if (!math.isfinite(maxCableLengthMeters) || maxCableLengthMeters < 0.25f)
                 maxCableLengthMeters = 0.25f;
+            maxCableLengthMeters = math.min(maxCableLengthMeters, MaximumCableLengthMeters);
         }
 #endif
     }

@@ -23,10 +23,16 @@ namespace Hecton8.Visor
         private const string DefaultCausticsTextureBPath = "Assets/Feel/MMTools/Tools/MMVFX/MMNoise/MMCellNoise.png";
 #endif
         private const float DependencyResolveRetryIntervalSeconds = 0.5f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const double CausticsPublishBudgetWarningMilliseconds = 0.2d;
         private const int CausticsPerformanceWarningCooldownFrames = 30;
+#endif
+        private const float InvTwoPi = 1f / (math.PI * 2f);
+        private const float ShaderVectorPublishEpsilon = 0.0001f;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const uint TelemetryWarningCausticsPublishOverBudgetHash = 0xC42257A1u;
         private const uint TelemetryContextCausticsProjectorManagerHash = 0x75C9CA57u;
+#endif
         private static readonly int _CausticsWorldRectId = Shader.PropertyToID("_HectonProjectedCausticsWorldRect");
         private static readonly int _CausticsParamsId = Shader.PropertyToID("_HectonProjectedCausticsParams");
         private static readonly int _CausticsColorId = Shader.PropertyToID("_HectonProjectedCausticsColor");
@@ -87,10 +93,22 @@ namespace Hecton8.Visor
         private Transform _playerTransform;
         private Camera _gameplayCamera;
         private Vector4 _worldRect;
-        private float _nextDependencyResolveTime;
+        private float _dependencyResolveRetryRemaining;
+        private float _shaderTimeSeconds;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private int _nextPerformanceWarningFrame;
+#endif
         private Texture2D _publishedCausticsTextureA;
         private Texture2D _publishedCausticsTextureB;
+        private Vector4 _publishedCausticsWorldRect;
+        private Vector4 _publishedCausticsColor;
+        private Vector4 _publishedCausticsSimulationParamsA;
+        private Vector4 _publishedCausticsSimulationParamsB;
+        private Vector4 _publishedCausticsSimulationParamsC;
+        private Vector4 _publishedCausticsTextureParams;
+        private Vector4 _publishedAbyssalFlowWeatherCurrent;
+        private Vector4 _publishedCausticsParams;
+        private bool _hasPublishedCausticsVectors;
 
         private void Awake()
         {
@@ -98,7 +116,7 @@ namespace Hecton8.Visor
             PublishCausticsTextureGlobals();
             _playerTransform = transform;
             ResolveDependencies();
-            PublishShaderOnlyGlobals(Time.unscaledTime);
+            PublishShaderOnlyGlobals(_shaderTimeSeconds);
         }
 
         private void OnEnable()
@@ -106,14 +124,16 @@ namespace Hecton8.Visor
             ResolveDefaultCausticsTextures();
             PublishCausticsTextureGlobals();
             TryRegisterTickHandlers();
-            PublishShaderOnlyGlobals(Time.unscaledTime);
+            PublishShaderOnlyGlobals(_shaderTimeSeconds);
         }
 
         private void OnDisable()
         {
             TryUnregisterTickHandlers();
+            _dependencyResolveRetryRemaining = 0f;
             Shader.SetGlobalVector(_CausticsParamsId, Vector4.zero);
             Shader.SetGlobalVector(_CausticsTextureParamsId, Vector4.zero);
+            InvalidatePublishedShaderVectorCache();
         }
 
         private void OnDestroy()
@@ -121,17 +141,23 @@ namespace Hecton8.Visor
             TryUnregisterTickHandlers();
             Shader.SetGlobalVector(_CausticsParamsId, Vector4.zero);
             Shader.SetGlobalVector(_CausticsTextureParamsId, Vector4.zero);
+            InvalidatePublishedShaderVectorCache();
         }
 
         public void Tick(float deltaTime)
         {
-            if (deltaTime < 0f)
+            if (deltaTime < 0f || !math.isfinite(deltaTime))
                 return;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             long publishStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            ResolveDependenciesThrottled();
-            PublishShaderOnlyGlobals(Time.unscaledTime);
+#endif
+            _shaderTimeSeconds += deltaTime;
+            ResolveDependenciesThrottled(deltaTime);
+            PublishShaderOnlyGlobals(_shaderTimeSeconds);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             PublishCausticsPerformanceWarningIfNeeded(publishStartTimestamp);
+#endif
         }
 
         public void SlowTick()
@@ -180,16 +206,19 @@ namespace Hecton8.Visor
 
         }
 
-        private void ResolveDependenciesThrottled()
+        private void ResolveDependenciesThrottled(float deltaTime)
         {
             if (!NeedsDependencyResolve())
                 return;
 
-            float now = Time.unscaledTime;
-            if (now < _nextDependencyResolveTime)
-                return;
+            if (_dependencyResolveRetryRemaining > 0f)
+            {
+                _dependencyResolveRetryRemaining = math.max(0f, _dependencyResolveRetryRemaining - deltaTime);
+                if (_dependencyResolveRetryRemaining > 0f)
+                    return;
+            }
 
-            _nextDependencyResolveTime = now + DependencyResolveRetryIntervalSeconds;
+            _dependencyResolveRetryRemaining = DependencyResolveRetryIntervalSeconds;
             ResolveDependencies();
         }
 
@@ -202,26 +231,40 @@ namespace Hecton8.Visor
 
         private void PublishShaderOnlyGlobals(float timeValue)
         {
-            UpdateWorldRect();
+            Vector3 runtimeAnchor = ResolveRuntimeAnchor();
+            UpdateWorldRect(runtimeAnchor);
             float waterLevel = ResolveWaterLevel();
-            Vector4 abyssalFlowWeatherCurrent = ResolveAbyssalFlowWeatherCurrent(timeValue);
+            Vector4 abyssalFlowWeatherCurrent = ResolveAbyssalFlowWeatherCurrent(timeValue, runtimeAnchor);
             Vector4 waveCoupling = ResolveFakeWaveCoupling(timeValue, in abyssalFlowWeatherCurrent);
 
             bool textureCausticsEnabled = causticsTextureA != null && causticsTextureB != null;
-            Shader.SetGlobalVector(_CausticsWorldRectId, _worldRect);
-            Shader.SetGlobalVector(_CausticsColorId, scatteringColor.linear);
-            Shader.SetGlobalVector(_CausticsSimulationParamsAId, new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed));
-            Shader.SetGlobalVector(_CausticsSimulationParamsBId, new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, waterLevel));
-            Shader.SetGlobalVector(_CausticsSimulationParamsCId, waveCoupling);
-            Shader.SetGlobalVector(_CausticsTextureParamsId, new Vector4(textureCausticsEnabled ? 1f : 0f, 0f, 0f, 0f));
-            Shader.SetGlobalVector(_AbyssalFlowWeatherCurrentId, abyssalFlowWeatherCurrent);
-            Shader.SetGlobalVector(
+            Color linearScatteringColor = scatteringColor.linear;
+            Vector4 causticsColor = new Vector4(
+                linearScatteringColor.r,
+                linearScatteringColor.g,
+                linearScatteringColor.b,
+                linearScatteringColor.a);
+            Vector4 simulationParamsA = new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed);
+            Vector4 simulationParamsB = new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, waterLevel);
+            Vector4 textureParams = new Vector4(textureCausticsEnabled ? 1f : 0f, 0f, 0f, 0f);
+            Vector4 causticsParams = new Vector4(
+                _fade01 * math.max(0f, causticsIntensity),
+                waterLevel,
+                depthFadeStart,
+                1f / math.max(0.01f, depthFadeRange));
+
+            SetGlobalVectorIfChanged(_CausticsWorldRectId, _worldRect, ref _publishedCausticsWorldRect);
+            SetGlobalVectorIfChanged(_CausticsColorId, causticsColor, ref _publishedCausticsColor);
+            SetGlobalVectorIfChanged(_CausticsSimulationParamsAId, simulationParamsA, ref _publishedCausticsSimulationParamsA);
+            SetGlobalVectorIfChanged(_CausticsSimulationParamsBId, simulationParamsB, ref _publishedCausticsSimulationParamsB);
+            SetGlobalVectorIfChanged(_CausticsSimulationParamsCId, waveCoupling, ref _publishedCausticsSimulationParamsC);
+            SetGlobalVectorIfChanged(_CausticsTextureParamsId, textureParams, ref _publishedCausticsTextureParams);
+            SetGlobalVectorIfChanged(_AbyssalFlowWeatherCurrentId, abyssalFlowWeatherCurrent, ref _publishedAbyssalFlowWeatherCurrent);
+            SetGlobalVectorIfChanged(
                 _CausticsParamsId,
-                new Vector4(
-                    _fade01 * math.max(0f, causticsIntensity),
-                    waterLevel,
-                    depthFadeStart,
-                    1f / math.max(0.01f, depthFadeRange)));
+                causticsParams,
+                ref _publishedCausticsParams);
+            _hasPublishedCausticsVectors = true;
         }
 
         private void PublishCausticsTextureGlobals()
@@ -252,11 +295,8 @@ namespace Hecton8.Visor
 #endif
         }
 
-        private void UpdateWorldRect()
+        private void UpdateWorldRect(in Vector3 anchor)
         {
-            Vector3 anchor = _gameplayCamera != null
-                ? _gameplayCamera.transform.position
-                : (_playerTransform != null ? _playerTransform.position : transform.position);
             float worldSize = math.max(16f, causticsWorldSize);
             float halfSize = worldSize * 0.5f;
             _worldRect = new Vector4(
@@ -279,16 +319,66 @@ namespace Hecton8.Visor
             if (!math.all(math.isfinite(flowXZ)))
                 flowXZ = float2.zero;
 
-            float flowMagnitude = math.min(math.length(flowXZ), 20f);
-            float phase = timeValue * (0.23f + flowMagnitude * 0.006f) + math.dot(flowXZ, new float2(0.071f, -0.053f));
-            float fakeDisplacement = (math.sin(phase) * 0.12f) + (math.sin(phase * 1.6180339f + 1.73f) * 0.045f);
-            fakeDisplacement *= math.saturate(0.35f + flowMagnitude * 0.08f);
+            float flowEnergy01 = math.saturate(math.lengthsq(flowXZ) * (1f / 400f));
+            float phase = timeValue * (0.23f + flowEnergy01 * 0.12f) + math.dot(flowXZ, new float2(0.071f, -0.053f));
+            float fakeDisplacement =
+                (EvaluateCheapWaveSigned(phase) * 0.12f) +
+                (EvaluateCheapWaveSigned(phase * 1.6180339f + 1.73f) * 0.045f);
+            fakeDisplacement *= math.saturate(0.35f + flowEnergy01 * 0.65f);
 
             _debugWaveDisplacement = fakeDisplacement;
             _debugWaveFlow = new Vector2(flowXZ.x, flowXZ.y);
             return new Vector4(fakeDisplacement, flowXZ.x, flowXZ.y, phase);
         }
 
+        private Vector3 ResolveRuntimeAnchor()
+        {
+            if (TryResolvePlayerAupRuntimePosition(out Vector3 aupRuntimePosition))
+                return aupRuntimePosition;
+
+            if (_gameplayCamera != null)
+                return _gameplayCamera.transform.position;
+
+            if (_playerTransform != null)
+                return _playerTransform.position;
+
+            return transform.position;
+        }
+
+        private static bool TryResolvePlayerAupRuntimePosition(out Vector3 runtimePosition)
+        {
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            {
+                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                {
+                    float3 runtime = movementState.PredictedAup.ToRuntimeFloat3();
+                    runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+                    return true;
+                }
+            }
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement != null)
+            {
+                float3 runtime = playerMovement.CurrentAup.ToRuntimeFloat3();
+                runtimePosition = new Vector3(runtime.x, runtime.y, runtime.z);
+                return true;
+            }
+
+            runtimePosition = default;
+            return false;
+        }
+
+        private static float EvaluateCheapWaveSigned(float phaseRadians)
+        {
+            float phase01 = math.frac((phaseRadians * InvTwoPi) + 0.25f);
+            float triangle = 1f - math.abs(phase01 * 2f - 1f);
+            return (triangle * 2f) - 1f;
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private void PublishCausticsPerformanceWarningIfNeeded(long publishStartTimestamp)
         {
             long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - publishStartTimestamp;
@@ -302,17 +392,14 @@ namespace Hecton8.Visor
                 TelemetryContextCausticsProjectorManagerHash,
                 (float)elapsedMilliseconds);
         }
+#endif
 
-        private Vector4 ResolveAbyssalFlowWeatherCurrent(float timeValue)
+        private Vector4 ResolveAbyssalFlowWeatherCurrent(float timeValue, in Vector3 samplePosition)
         {
             float3 flow = float3.zero;
             Hecton8.Physics.HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
             if (fluidEngine != null)
             {
-                Vector3 samplePosition = _playerTransform != null
-                    ? _playerTransform.position
-                    : transform.position;
-
                 if (!fluidEngine.TrySampleModAbyssalFlow(samplePosition, out flow))
                     flow = float3.zero;
             }
@@ -325,22 +412,46 @@ namespace Hecton8.Visor
             return resolved;
         }
 
+        private void SetGlobalVectorIfChanged(int propertyId, Vector4 value, ref Vector4 cachedValue)
+        {
+            if (_hasPublishedCausticsVectors && !Vector4Changed(cachedValue, value))
+                return;
+
+            Shader.SetGlobalVector(propertyId, value);
+            cachedValue = value;
+        }
+
+        private static bool Vector4Changed(Vector4 current, Vector4 next)
+        {
+            return math.abs(current.x - next.x) > ShaderVectorPublishEpsilon ||
+                   math.abs(current.y - next.y) > ShaderVectorPublishEpsilon ||
+                   math.abs(current.z - next.z) > ShaderVectorPublishEpsilon ||
+                   math.abs(current.w - next.w) > ShaderVectorPublishEpsilon;
+        }
+
+        private void InvalidatePublishedShaderVectorCache()
+        {
+            _hasPublishedCausticsVectors = false;
+            _publishedCausticsWorldRect = default;
+            _publishedCausticsColor = default;
+            _publishedCausticsSimulationParamsA = default;
+            _publishedCausticsSimulationParamsB = default;
+            _publishedCausticsSimulationParamsC = default;
+            _publishedCausticsTextureParams = default;
+            _publishedAbyssalFlowWeatherCurrent = default;
+            _publishedCausticsParams = default;
+        }
+
         private void TryRegisterTickHandlers()
         {
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_registeredTick)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registeredTick = GlobalRegistry.Updatables.Contains(this);
-            }
+                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
 
             if (!_registeredSlowTick)
-            {
-                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
-            }
+                _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickHandlers()

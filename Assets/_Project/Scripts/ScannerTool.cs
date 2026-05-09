@@ -1,3 +1,4 @@
+using System;
 using Hecton8.AtlasSignal;
 using Hecton8.Core;
 using Hecton8.Audio;
@@ -14,7 +15,6 @@ using Hecton8.World;
 using Hecton8.Narrative;
 using Hecton.Localization;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -38,6 +38,38 @@ namespace Hecton8.Gameplay
         private const float ScientificDeepSalinityPpt = 35.8f;
         private const float ScientificSalinityDepthRangeMeters = 1800f;
         private const float ScientificAttractantTraceThreshold01 = 0.1f;
+        private const float BearingDeadzoneTanSq = 0.031091204f; // tan(10 degrees)^2
+        private const int OperationalStringCacheHz = 10;
+        private const int PrefixedScannerStringCacheSize = 128;
+        private const string ItemEntryPrefix = "item.";
+        private const string ModuleEntryPrefix = "module.";
+        private const string ConstructionCategoryPrefix = "Construction/";
+        private const string WearMarginPrefix = "Structural wear margin: recoverable hull ";
+        private const string WearMarginSuffix = ". No authored service-cycle cap is currently limiting repairs.";
+        private const string WearCriticalPrefix = "Structural wear critical: recoverable hull capped at ";
+        private const string WearCriticalSuffix = ". Catastrophic failure now requires rebuild, not another field-service loop.";
+        private const string WearRemainingPrefix = "Structural wear: ";
+        private const string WearRemainingMiddle = " integrity permanently lost. Estimated catastrophic repair cycles remaining before rebuild: ";
+        private const string WearRemainingSuffix = ".";
+        private const string ServiceOxygenLeakSummary = "Service module is venting breathable reserves. Stabilize seals and restore compartment safety before reuse.";
+        private const string ServiceFireSummary = "Service module is in active fire state. Hull repair and immediate compartment suppression take priority.";
+        private const string ServiceShortCircuitSummary = "Service module is shorted and power-locked. Restore hull integrity and electrical service before restart.";
+        private const string ServiceStaleAirSummary = "Service module is holding stale breathable reserve. Restore scrubber margin before treating this compartment as safe shelter.";
+        private const string ServiceDamagedSummary = "Service module is damaged and should be prioritized for hull repair before deeper field work.";
+        private const string ServiceFloodedSummary = "Service module is flooded or venting and now reads as an emergency recovery target.";
+        private const string BaseModuleArchivedPrefix = "Base module archived. Power role: ";
+        private const string BaseModuleArchivedSuffix = ".";
+        // COLD ALLOC: string[128] - scanner prefixed-string cache prefixes for repeated discovery ids/categories - owner: ScannerTool
+        private static readonly string[] s_prefixedScannerStringPrefixCache = new string[PrefixedScannerStringCacheSize];
+        // COLD ALLOC: string[128] - scanner prefixed-string cache source ids/categories - owner: ScannerTool
+        private static readonly string[] s_prefixedScannerStringSourceCache = new string[PrefixedScannerStringCacheSize];
+        // COLD ALLOC: string[128] - scanner prefixed-string cache values for repeated discovery ids/categories - owner: ScannerTool
+        private static readonly string[] s_prefixedScannerStringValueCache = new string[PrefixedScannerStringCacheSize];
+        // COLD ALLOC: uint[128] - scanner prefixed-string cache hashes - owner: ScannerTool
+        private static readonly uint[] s_prefixedScannerStringHashCache = new uint[PrefixedScannerStringCacheSize];
+        // COLD ALLOC: byte[128] - scanner prefixed-string cache mode flags - owner: ScannerTool
+        private static readonly byte[] s_prefixedScannerStringFlagsCache = new byte[PrefixedScannerStringCacheSize];
+
         private enum ScanMode
         {
             Expedition = 0,
@@ -152,43 +184,61 @@ namespace Hecton8.Gameplay
             public int bioformContacts;
             public int floraContacts;
 
-            public string BuildHudMessage(ScanMode mode)
+            public bool TryWriteHudMessage(ScanMode mode, ref FixedCharBuffer buffer)
             {
                 if (totalContacts <= 0)
                 {
-                    return mode switch
+                    return AppendText(ref buffer, mode switch
                     {
                         ScanMode.Resource => ResolveLocalized(LocalizationKeys.SCANNER_HUD_NO_RESOURCE, "SCANNER - NO RESOURCE SIGNATURES | Sweep another extraction lane."),
                         ScanMode.Structure => ResolveLocalized(LocalizationKeys.SCANNER_HUD_NO_STRUCTURE, "SCANNER - NO STRUCTURAL CONTACTS | No buildable or databank return in this sector."),
                         _ => ResolveLocalized(LocalizationKeys.SCANNER_HUD_CLEAR, "SCANNER - CLEAR | No meaningful contacts in the active sweep.")
-                    };
+                    });
                 }
 
-                return mode switch
+                string recommendation = BuildRecommendation(mode);
+                switch (mode)
                 {
-                    ScanMode.Resource => string.Format(
-                        ResolveLocalized(LocalizationKeys.SCANNER_HUD_RESOURCE_CONTACTS, "SCANNER - RESOURCES {0} // PICKUPS {1} | {2}"),
-                        resourceContacts,
-                        pickupContacts,
-                        BuildRecommendation(mode)),
-                    ScanMode.Structure => string.Format(
-                        ResolveLocalized(LocalizationKeys.SCANNER_HUD_STRUCTURE_CONTACTS, "SCANNER - STRUCTURES {0} // ROUTE {1} | {2}"),
-                        structureContacts,
-                        routeContacts,
-                        BuildRecommendation(mode)),
-                    _ => floraContacts > 0
-                        ? string.Format(
-                            ResolveLocalized(LocalizationKeys.SCANNER_HUD_CONTACTS_WITH_FLORA, "SCANNER - CONTACTS {0} // BIO {1} // FLORA {2} | {3}"),
-                            totalContacts,
-                            bioformContacts,
-                            floraContacts,
-                            BuildRecommendation(mode))
-                        : string.Format(
+                    case ScanMode.Resource:
+                        return TryAppendScanHudTemplate(
+                            ref buffer,
+                            ResolveLocalized(LocalizationKeys.SCANNER_HUD_RESOURCE_CONTACTS, "SCANNER - RESOURCES {0} // PICKUPS {1} | {2}"),
+                            resourceContacts,
+                            pickupContacts,
+                            0,
+                            recommendation,
+                            '2');
+                    case ScanMode.Structure:
+                        return TryAppendScanHudTemplate(
+                            ref buffer,
+                            ResolveLocalized(LocalizationKeys.SCANNER_HUD_STRUCTURE_CONTACTS, "SCANNER - STRUCTURES {0} // ROUTE {1} | {2}"),
+                            structureContacts,
+                            routeContacts,
+                            0,
+                            recommendation,
+                            '2');
+                    default:
+                        if (floraContacts > 0)
+                        {
+                            return TryAppendScanHudTemplate(
+                                ref buffer,
+                                ResolveLocalized(LocalizationKeys.SCANNER_HUD_CONTACTS_WITH_FLORA, "SCANNER - CONTACTS {0} // BIO {1} // FLORA {2} | {3}"),
+                                totalContacts,
+                                bioformContacts,
+                                floraContacts,
+                                recommendation,
+                                '3');
+                        }
+
+                        return TryAppendScanHudTemplate(
+                            ref buffer,
                             ResolveLocalized(LocalizationKeys.SCANNER_HUD_CONTACTS, "SCANNER - CONTACTS {0} // BIO {1} | {2}"),
                             totalContacts,
                             bioformContacts,
-                            BuildRecommendation(mode))
-                };
+                            0,
+                            recommendation,
+                            '2');
+                }
             }
 
             public string BuildOperationTitle(ScanMode mode)
@@ -201,6 +251,7 @@ namespace Hecton8.Gameplay
                 };
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             public string BuildOperationSummary(ScanMode mode, float radius)
             {
                 if (totalContacts <= 0)
@@ -248,6 +299,92 @@ namespace Hecton8.Gameplay
                             radius,
                             bioformContacts,
                             BuildRecommendation(mode))
+                };
+            }
+#endif
+
+            public bool TryWriteOperationTitle(ScanMode mode, ref FixedCharBuffer buffer)
+            {
+                return AppendText(ref buffer, BuildOperationTitle(mode));
+            }
+
+            public bool TryWriteOperationSummary(ScanMode mode, float radius, ref FixedCharBuffer buffer)
+            {
+                int radiusMeters = Mathf.RoundToInt(radius);
+                if (totalContacts <= 0)
+                {
+                    return mode switch
+                    {
+                        ScanMode.Resource => TryAppendScanTemplate(
+                            ref buffer,
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_RESOURCE, "No harvestable or cached resource signatures were resolved inside the {0:0}m sweep. Recommendation: Shift to another extraction lane."),
+                            radiusMeters,
+                            0,
+                            0,
+                            0,
+                            null,
+                            '\0'),
+                        ScanMode.Structure => TryAppendScanTemplate(
+                            ref buffer,
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_STRUCTURE, "No modules, markers, or authored intel contacts were resolved inside the {0:0}m sweep. Recommendation: Continue transit or widen the structural search area."),
+                            radiusMeters,
+                            0,
+                            0,
+                            0,
+                            null,
+                            '\0'),
+                        _ => TryAppendScanTemplate(
+                            ref buffer,
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_NO_CONTACTS, "No meaningful contacts were resolved in the last {0:0}m hydroacoustic sweep. Recommendation: Advance to the next scouting point."),
+                            radiusMeters,
+                            0,
+                            0,
+                            0,
+                            null,
+                            '\0')
+                    };
+                }
+
+                string recommendation = BuildRecommendation(mode);
+                return mode switch
+                {
+                    ScanMode.Resource => TryAppendScanTemplate(
+                        ref buffer,
+                        ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_RESOURCE_CONTACTS, "{0} resource signatures and {1} cached pickups resolved inside {2:0}m. Recommendation: {3}"),
+                        resourceContacts,
+                        pickupContacts,
+                        radiusMeters,
+                        0,
+                        recommendation,
+                        '3'),
+                    ScanMode.Structure => TryAppendScanTemplate(
+                        ref buffer,
+                        ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_STRUCTURE_CONTACTS, "{0} structural contacts, {1} route markers, and {2} databank contacts resolved inside {3:0}m. Recommendation: {4}"),
+                        structureContacts,
+                        routeContacts,
+                        scannableContacts,
+                        radiusMeters,
+                        recommendation,
+                        '4'),
+                    _ => floraContacts > 0
+                        ? TryAppendScanTemplate(
+                            ref buffer,
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_CONTACTS_WITH_FLORA, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts and {3} flora signatures. Recommendation: {4}"),
+                            totalContacts,
+                            radiusMeters,
+                            bioformContacts,
+                            floraContacts,
+                            recommendation,
+                            '4')
+                        : TryAppendScanTemplate(
+                            ref buffer,
+                            ResolveLocalized(LocalizationKeys.SCANNER_SUMMARY_CONTACTS, "{0} contact signatures resolved inside {1:0}m pulse envelope, including {2} bioform-coded contacts. Recommendation: {3}"),
+                            totalContacts,
+                            radiusMeters,
+                            bioformContacts,
+                            0,
+                            recommendation,
+                            '3')
                 };
             }
 
@@ -359,6 +496,17 @@ namespace Hecton8.Gameplay
         private ScanResultSummary _lastResult;
         private float _lastResultTime = -999f;
         private bool _hasLastResult;
+        private FixedCharBuffer _scanHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — scanner result HUD staging buffer — owner: ScannerTool
+        private FixedCharBuffer _scanLogTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] — scanner operation log title staging buffer — owner: ScannerTool
+        private FixedCharBuffer _scanLogSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — scanner operation log summary staging buffer — owner: ScannerTool
+        private string _cachedOperationalSummaryString = string.Empty;
+        private string _cachedOperationalDirectiveString = string.Empty;
+        private int _summaryStringCacheBucket = int.MinValue;
+        private int _directiveStringCacheBucket = int.MinValue;
+        private int _summaryStringCacheLength;
+        private int _directiveStringCacheLength;
+        private uint _summaryStringCacheHash;
+        private uint _directiveStringCacheHash;
         private string _currentModeLabel;
         private string _currentModeSummary;
         private string _currentModeHudMessage;
@@ -399,6 +547,7 @@ namespace Hecton8.Gameplay
 
         internal bool PulseActive { get; private set; }
         internal Unity.Mathematics.float3 PulseOrigin { get; private set; }
+        internal AbsoluteUniversePosition PulseOriginAup { get; private set; }
         internal float PulseStartTime { get; private set; }
 
         internal float PulseDuration => pulseDuration;
@@ -501,14 +650,13 @@ namespace Hecton8.Gameplay
                 scannerPulseShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerPulseShaderPath);
             #endif
 
-            HectonScanMarkerSystem markerSystem = GetComponent<HectonScanMarkerSystem>();
-            if (markerSystem == null)
+            if (!TryGetComponent(out HectonScanMarkerSystem markerSystem))
                 markerSystem = gameObject.AddComponent<HectonScanMarkerSystem>(); // COLD ALLOC: HectonScanMarkerSystem[1] — scanner marker owner — owner: ScannerTool
 
             if (markerSystem != null)
                 markerSystem.Initialize(scannerMarkerShader);
 
-            if (GetComponent<ScannerPulseDrawer>() == null)
+            if (!TryGetComponent(out ScannerPulseDrawer _))
             {
                 var drawer = gameObject.AddComponent<ScannerPulseDrawer>(); // COLD ALLOC: ScannerPulseDrawer[1] — scanner pulse owner — owner: ScannerTool
                 drawer.Init(this);
@@ -519,6 +667,7 @@ namespace Hecton8.Gameplay
         {
             base.OnEquip();
             PulseActive = false;
+            InvalidateOperationalStringCache();
         }
 
         public override void OnUnequip()
@@ -526,6 +675,7 @@ namespace Hecton8.Gameplay
             base.OnUnequip();
             PulseActive = false;
             ResetScientificFocus();
+            InvalidateOperationalStringCache();
         }
 
         public override void UsePrimary(float deltaTime)
@@ -544,7 +694,7 @@ namespace Hecton8.Gameplay
             {
                 if (now >= _nextCooldownFeedbackAt)
                 {
-                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.SCANNER_HUD_RECHARGING, "SCANNER - RECHARGING"));
+                    PublishScanWarning(ResolveLocalized(LocalizationKeys.SCANNER_HUD_RECHARGING, "SCANNER - RECHARGING"));
                     _nextCooldownFeedbackAt = now + cooldownFeedbackInterval;
                 }
                 return;
@@ -552,16 +702,21 @@ namespace Hecton8.Gameplay
 
             _lastScanTime = now;
 
-            Unity.Mathematics.float3 origin = _cachedTransform.position;
+            Transform scannerTransform = _cachedTransform;
+            Vector3 scanPosition = scannerTransform.position;
+            Vector3 scanForward = scannerTransform.forward;
+            Vector3 scanUp = scannerTransform.up;
+            Unity.Mathematics.float3 origin = scanPosition;
             ScanResultSummary result = PerformScan(origin, _scanMode, effectiveScanRadius);
 
             PulseActive = true;
             PulseOrigin = origin;
+            PulseOriginAup = AbsoluteUniversePosition.FromRuntimePosition(scanPosition);
             PulseStartTime = now;
             HectonScannerProjectionState.Publish(
-                _cachedTransform.position,
-                _cachedTransform.forward,
-                _cachedTransform.up,
+                scanPosition,
+                scanForward,
+                scanUp,
                 effectiveScanRadius,
                 Mathf.Min(1.25f, effectiveCooldown),
                 1f);
@@ -569,27 +724,48 @@ namespace Hecton8.Gameplay
             if (pingClip != null && Hecton8.Core.GlobalRegistry.Audio != null)
             {
                 IAudioService audioService = Hecton8.Core.GlobalRegistry.Audio;
-                audioService.PlayAtPoint(pingClip, _cachedTransform.position, pingVolume, 1f, audioService.InterfaceGroup);
+                audioService.PlayAtPoint(pingClip, scanPosition, pingVolume, 1f, audioService.InterfaceGroup);
             }
 
             ScanEvents.RaiseScanTriggered(origin, effectiveScanRadius);
-            TryShowBloodWaypointWarning(_cachedTransform.position, now);
+            TryShowBloodWaypointWarning(scanPosition, now);
 
             if (now >= _nextResultFeedbackAt)
             {
-                ToolHitUtility.ShowInfo(result.BuildHudMessage(_scanMode));
+                _scanHudBuffer.Clear();
+                if (result.TryWriteHudMessage(_scanMode, ref _scanHudBuffer))
+                    ToolHitUtility.ShowInfo(in _scanHudBuffer);
                 _nextResultFeedbackAt = now + resultFeedbackInterval;
             }
 
-            FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
-                result.BuildOperationTitle(_scanMode),
-                result.BuildOperationSummary(_scanMode, effectiveScanRadius),
-                "INFO");
+            _scanLogTitleBuffer.Clear();
+            _scanLogSummaryBuffer.Clear();
+            if (result.TryWriteOperationTitle(_scanMode, ref _scanLogTitleBuffer) &&
+                result.TryWriteOperationSummary(_scanMode, effectiveScanRadius, ref _scanLogSummaryBuffer))
+            {
+                FieldOperationLogSystem.RecordOperation(
+                    ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
+                    in _scanLogTitleBuffer,
+                    in _scanLogSummaryBuffer,
+                    "INFO");
+            }
+            else
+            {
+                _scanLogTitleBuffer.Clear();
+                _scanLogSummaryBuffer.Clear();
+                AppendText(ref _scanLogTitleBuffer, "SCAN SWEEP ARCHIVED");
+                AppendText(ref _scanLogSummaryBuffer, "Scanner operation-log buffer overflowed; fixed-buffer HUD payload was not serialized.");
+                FieldOperationLogSystem.RecordOperation(
+                    ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
+                    in _scanLogTitleBuffer,
+                    in _scanLogSummaryBuffer,
+                    "WARN");
+            }
 
             _lastResult = result;
             _lastResultTime = now;
             _hasLastResult = true;
+            InvalidateOperationalStringCache();
         }
 
         public override void UseSecondary(float deltaTime)
@@ -603,8 +779,9 @@ namespace Hecton8.Gameplay
 
             _scanMode = NextMode(_scanMode);
             RefreshModeStrings();
+            InvalidateOperationalStringCache();
 
-            ToolHitUtility.ShowInfo(_currentModeHudMessage);
+            PublishScanInfo(_currentModeHudMessage);
             FieldOperationLogSystem.RecordOperation(
                 ResolveLocalized(LocalizationKeys.SCANNER_CATEGORY, "SCAN"),
                 _currentModeOperationTitle,
@@ -643,6 +820,23 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
+            int cacheBucket = ResolveOperationalStringCacheBucket();
+            if (_summaryStringCacheBucket == cacheBucket)
+                return _cachedOperationalSummaryString;
+
+            _scanHudBuffer.Clear();
+            WriteOperationalSummary(ref _scanHudBuffer);
+            return ResolveCachedOperationalString(
+                ref _summaryStringCacheBucket,
+                ref _summaryStringCacheLength,
+                ref _summaryStringCacheHash,
+                ref _cachedOperationalSummaryString,
+                cacheBucket);
+        }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private string GetOperationalSummaryLegacy()
+        {
             if (_scientificSnapshot.IsActive)
             {
                 int progressPercent = Mathf.Clamp(Mathf.RoundToInt(_scientificSnapshot.Progress01 * 100f), 0, 100);
@@ -664,9 +858,10 @@ namespace Hecton8.Gameplay
                     : summary;
             }
 
+            float now = Time.time;
             float effectiveCooldown = ResolveEffectiveScanCooldown();
             float effectiveScanRadius = ResolveEffectiveScanRadius();
-            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + effectiveCooldown) - Time.time);
+            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + effectiveCooldown) - now);
 
             // Сигнал Атлас-6 — показываем силу если обнаружен
             AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
@@ -698,7 +893,7 @@ namespace Hecton8.Gameplay
                     _currentModeLabel,
                     cooldownRemaining);
 
-            if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
+            if (_hasLastResult && now - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
                 return string.Format(
                     ResolveLocalized(LocalizationKeys.SCANNER_OPERATIONAL_LAST_CONTACTS, "SCANNER // {0} // LAST {1} CONTACTS"),
                     _currentModeLabel,
@@ -709,48 +904,76 @@ namespace Hecton8.Gameplay
                 _currentModeLabel,
                 effectiveScanRadius);
         }
+#endif
 
         public override string GetOperationalDirective()
         {
-            // Сигнал Атлас-6 — показываем направление
+            int cacheBucket = ResolveOperationalStringCacheBucket();
+            if (_directiveStringCacheBucket == cacheBucket)
+                return _cachedOperationalDirectiveString;
+
+            _scanHudBuffer.Clear();
+            WriteOperationalDirective(ref _scanHudBuffer);
+            return ResolveCachedOperationalString(
+                ref _directiveStringCacheBucket,
+                ref _directiveStringCacheLength,
+                ref _directiveStringCacheHash,
+                ref _cachedOperationalDirectiveString,
+                cacheBucket);
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
             AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal != null &&
                 signal.CurrentRevealStage >= AtlasNavigationRevealStage &&
                 _cachedTransform != null)
             {
                 Vector3 dir = signal.DirectionToCore;
-                float angle = Vector3.SignedAngle(_cachedTransform.forward, dir, Vector3.up);
-                string bearing = angle > 10f
-                    ? ResolveLocalized(LocalizationKeys.SCANNER_BEARING_RIGHT, "RIGHT")
-                    : angle < -10f
-                        ? ResolveLocalized(LocalizationKeys.SCANNER_BEARING_LEFT, "LEFT")
-                        : ResolveLocalized(LocalizationKeys.SCANNER_BEARING_DOWN, "DIRECTLY BELOW");
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.SCANNER_DIRECTIVE_ATLAS_SIGNAL, "ATLAS-6 RETURN HOLDS. DRIFT: {0} ({1:0} DEG). STRONGER RETURN BELOW."),
-                    bearing,
-                    Mathf.Abs(angle));
+                int bearing = ResolveHorizontalBearingBucket(_cachedTransform.forward, dir, out int approximateDegrees);
+                buffer.Append("ATLAS-6 RETURN HOLDS. DRIFT: ");
+                AppendText(
+                    ref buffer,
+                    bearing > 0
+                        ? ResolveLocalized(LocalizationKeys.SCANNER_BEARING_RIGHT, "RIGHT")
+                        : bearing < 0
+                            ? ResolveLocalized(LocalizationKeys.SCANNER_BEARING_LEFT, "LEFT")
+                            : ResolveLocalized(LocalizationKeys.SCANNER_BEARING_DOWN, "DIRECTLY BELOW"));
+                buffer.Append(" (");
+                buffer.AppendInt(approximateDegrees);
+                buffer.Append(" DEG). STRONGER RETURN BELOW.");
+                return;
             }
 
-            float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + ResolveEffectiveScanCooldown()) - Time.time);
+            float cooldownRemaining = math.max(0f, (_lastScanTime + ResolveEffectiveScanCooldown()) - Time.time);
             if (cooldownRemaining > 0.01f)
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.SCANNER_DIRECTIVE_RECHARGING, "Hold for recharge. Next pulse in {0:0.0} seconds."),
-                    cooldownRemaining);
+            {
+                buffer.Append("Hold for recharge. Next pulse in ");
+                AppendTenths(ref buffer, cooldownRemaining);
+                buffer.Append(" seconds.");
+                return;
+            }
 
             if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
-                return _lastResult.BuildRecommendation(_scanMode);
+            {
+                AppendText(ref buffer, _lastResult.BuildRecommendation(_scanMode));
+                return;
+            }
 
             if (GetConditionPerformanceScale() < 0.999f)
             {
-                return ResolveLocalized(
-                    LocalizationKeys.SCANNER_DIRECTIVE_RECHARGING,
-                    "Scanner lattice is drifting under corrosion. Expect shorter returns and slower recycle.");
+                AppendText(
+                    ref buffer,
+                    ResolveLocalized(
+                        LocalizationKeys.SCANNER_DIRECTIVE_RECHARGING,
+                        "Scanner lattice is drifting under corrosion. Expect shorter returns and slower recycle."));
+                return;
             }
 
-            return _currentModeSummary;
+            AppendText(ref buffer, _currentModeSummary);
         }
 
-        public override void WriteOperationalSummary(FixedCharBuffer buffer)
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
         {
             if (_scientificSnapshot.IsActive)
             {
@@ -767,7 +990,7 @@ namespace Hecton8.Gameplay
                 buffer.Append("%");
                 if (_scientificSnapshot.HasAttractantTrace)
                 {
-                    AppendScientificScentVector(buffer, _scientificSnapshot);
+                    AppendScientificScentVector(ref buffer, _scientificSnapshot);
                 }
                 else if (_scientificSnapshot.OrganicBlood01 > ScientificAttractantTraceThreshold01)
                 {
@@ -776,7 +999,261 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            base.WriteOperationalSummary(buffer);
+            float effectiveCooldown = ResolveEffectiveScanCooldown();
+            float effectiveScanRadius = ResolveEffectiveScanRadius();
+            float cooldownRemaining = math.max(0f, (_lastScanTime + effectiveCooldown) - Time.time);
+
+            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            if (signal != null && signal.CurrentRevealStage >= AtlasDetectionRevealStage)
+            {
+                float strength = signal.CurrentStrength;
+                buffer.Append("SCANNER // SIGNAL [");
+                AppendAtlasStrengthBar(ref buffer, strength);
+                buffer.Append("]");
+                if (signal.CurrentRevealStage < AtlasNavigationRevealStage)
+                {
+                    buffer.Append(cooldownRemaining > 0.01f ? " // PATTERN HOLD" : " // CONTACT");
+                    return;
+                }
+
+                buffer.Append(" ");
+                buffer.AppendInt(math.clamp((int)math.round(strength * 100f), 0, 100));
+                buffer.Append("% // ");
+                buffer.Append(cooldownRemaining > 0.01f ? "RECHARGING" : "READY");
+                return;
+            }
+
+            buffer.Append("SCANNER // ");
+            buffer.Append(string.IsNullOrEmpty(_currentModeLabel) ? "EXPEDITION" : _currentModeLabel);
+            if (cooldownRemaining > 0.01f)
+            {
+                buffer.Append(" // RECHARGING ");
+                AppendTenths(ref buffer, cooldownRemaining);
+                buffer.Append("S");
+                return;
+            }
+
+            if (_hasLastResult && Time.time - _lastResultTime <= 8f && _lastResult.totalContacts > 0)
+            {
+                buffer.Append(" // LAST ");
+                buffer.AppendInt(_lastResult.totalContacts);
+                buffer.Append(" CONTACTS");
+                return;
+            }
+
+            buffer.Append(" // READY ");
+            buffer.AppendInt(math.max(0, (int)math.round(effectiveScanRadius)));
+            buffer.Append("M");
+        }
+
+        private static void AppendAtlasStrengthBar(ref FixedCharBuffer buffer, float strength)
+        {
+            if (strength > 0.66f)
+            {
+                buffer.Append("###");
+                return;
+            }
+
+            if (strength > 0.33f)
+            {
+                buffer.Append("##-");
+                return;
+            }
+
+            buffer.Append("#--");
+        }
+
+        private static void AppendTenths(ref FixedCharBuffer buffer, float value)
+        {
+            int tenths = math.max(0, (int)math.ceil(value * 10f));
+            buffer.AppendInt(tenths / 10);
+            buffer.Append(".");
+            buffer.AppendInt(tenths % 10);
+        }
+
+        private static bool TryAppendScanHudTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            int arg0,
+            int arg1,
+            int arg2,
+            string textArg,
+            char textToken)
+        {
+            return TryAppendScanTemplate(ref buffer, template, arg0, arg1, arg2, 0, textArg, textToken);
+        }
+
+        private static bool TryAppendScanTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            int arg0,
+            int arg1,
+            int arg2,
+            int arg3,
+            string textArg,
+            char textToken)
+        {
+            if (string.IsNullOrEmpty(template))
+                return AppendText(ref buffer, textArg);
+
+            ReadOnlySpan<char> templateSpan = template.AsSpan();
+            bool wroteTemplateToken = false;
+            int segmentStart = 0;
+            for (int i = 0; i < templateSpan.Length; i++)
+            {
+                if (templateSpan[i] != '{' || i + 2 >= templateSpan.Length)
+                    continue;
+
+                char token = templateSpan[i + 1];
+                if (token != textToken && token != '0' && token != '1' && token != '2' && token != '3' && token != '4')
+                    continue;
+
+                int closeIndex = i + 2;
+                char tokenSuffix = templateSpan[closeIndex];
+                if (tokenSuffix != '}' && tokenSuffix != ':')
+                    continue;
+
+                while (closeIndex < templateSpan.Length && templateSpan[closeIndex] != '}')
+                    closeIndex++;
+
+                if (closeIndex >= templateSpan.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(templateSpan.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                if (!AppendScanHudArgument(ref buffer, token, arg0, arg1, arg2, arg3, textArg, textToken))
+                    return false;
+
+                wroteTemplateToken = true;
+                i = closeIndex;
+                segmentStart = i + 1;
+            }
+
+            if (!wroteTemplateToken)
+                return buffer.Append(templateSpan);
+
+            return segmentStart >= templateSpan.Length || buffer.Append(templateSpan.Slice(segmentStart));
+        }
+
+        private static bool AppendScanHudArgument(
+            ref FixedCharBuffer buffer,
+            char token,
+            int arg0,
+            int arg1,
+            int arg2,
+            int arg3,
+            string textArg,
+            char textToken)
+        {
+            if (token == textToken)
+                return AppendText(ref buffer, textArg);
+
+            switch (token)
+            {
+                case '0':
+                    return buffer.AppendInt(arg0);
+                case '1':
+                    return buffer.AppendInt(arg1);
+                case '2':
+                    return buffer.AppendInt(arg2);
+                case '3':
+                    return buffer.AppendInt(arg3);
+                case '4':
+                    return true;
+                default:
+                    return true;
+            }
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value.AsSpan());
+        }
+
+        private static int ResolveOperationalStringCacheBucket()
+        {
+            return (int)math.floor(Time.time * OperationalStringCacheHz);
+        }
+
+        private void InvalidateOperationalStringCache()
+        {
+            _summaryStringCacheBucket = int.MinValue;
+            _directiveStringCacheBucket = int.MinValue;
+        }
+
+        private string ResolveCachedOperationalString(
+            ref int cacheBucket,
+            ref int cachedLength,
+            ref uint cachedHash,
+            ref string cachedValue,
+            int nextBucket)
+        {
+            int length = _scanHudBuffer.Length;
+            if (length <= 0)
+            {
+                cachedValue = string.Empty;
+                cachedLength = 0;
+                cachedHash = 0u;
+                cacheBucket = nextBucket;
+                return cachedValue;
+            }
+
+            uint hash = ComputeCharBufferHash(_scanHudBuffer.Buffer, length);
+            if (cachedValue != null &&
+                cachedLength == length &&
+                cachedHash == hash &&
+                BufferMatchesString(_scanHudBuffer.Buffer, length, cachedValue))
+            {
+                cacheBucket = nextBucket;
+                return cachedValue;
+            }
+
+            cachedValue = new string(_scanHudBuffer.Buffer, 0, length);
+            cachedLength = length;
+            cachedHash = hash;
+            cacheBucket = nextBucket;
+            return cachedValue;
+        }
+
+        private static uint ComputeCharBufferHash(char[] buffer, int length)
+        {
+            uint hash = 2166136261u;
+            for (int i = 0; i < length; i++)
+            {
+                hash ^= buffer[i];
+                hash *= 16777619u;
+            }
+
+            return hash != 0u ? hash : 1u;
+        }
+
+        private static bool BufferMatchesString(char[] buffer, int length, string value)
+        {
+            if (value == null || value.Length != length)
+                return false;
+
+            for (int i = 0; i < length; i++)
+            {
+                if (buffer[i] != value[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private void PublishScanInfo(string message)
+        {
+            _scanHudBuffer.Clear();
+            if (AppendText(ref _scanHudBuffer, message))
+                ToolHitUtility.ShowInfo(in _scanHudBuffer);
+        }
+
+        private void PublishScanWarning(string message)
+        {
+            _scanHudBuffer.Clear();
+            if (AppendText(ref _scanHudBuffer, message))
+                ToolHitUtility.ShowWarning(in _scanHudBuffer);
         }
 
         private void TryShowBloodWaypointWarning(Vector3 scannerPosition, float now)
@@ -797,7 +1274,7 @@ namespace Hecton8.Gameplay
             if (distanceMeters > bloodWaypointWarningRadius || intensity01 <= ScientificAttractantTraceThreshold01)
                 return;
 
-            ToolHitUtility.ShowWarning("SCANNER - BLOOD DETECTED");
+            PublishScanWarning("SCANNER - BLOOD DETECTED");
             _nextBloodWaypointWarningAt = now + resultFeedbackInterval;
         }
 
@@ -807,7 +1284,7 @@ namespace Hecton8.Gameplay
             if (conditionScale >= 0.999f)
                 return scanCooldown;
 
-            return scanCooldown / Mathf.Max(0.45f, conditionScale);
+            return scanCooldown / math.max(0.45f, conditionScale);
         }
 
         private float ResolveEffectiveScanRadius()
@@ -816,7 +1293,7 @@ namespace Hecton8.Gameplay
             if (conditionScale >= 0.999f)
                 return scanRadius;
 
-            return scanRadius * Mathf.Lerp(0.72f, 1f, conditionScale);
+            return scanRadius * math.lerp(0.72f, 1f, conditionScale);
         }
 
         private ScanResultSummary PerformScan(Unity.Mathematics.float3 origin, ScanMode mode, float effectiveScanRadius)
@@ -992,10 +1469,22 @@ namespace Hecton8.Gameplay
                 }
             }
 
-#if UNITY_EDITOR
-            Debug.Log($"[Scanner] Pulse at {origin}: {result.totalContacts} contacts found ({hitCount} spatial contacts checked, radius {scanRadius}m, mode {DescribeMode(mode)})");
-#endif
+            LogScanPulse(origin, result.totalContacts, hitCount, scanRadius, mode);
             return result;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogScanPulse(
+            Unity.Mathematics.float3 origin,
+            int totalContacts,
+            int spatialContactCount,
+            float scanRadius,
+            ScanMode mode)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[Scanner] Pulse at {origin}: {totalContacts} contacts found ({spatialContactCount} spatial contacts checked, radius {scanRadius}m, mode {DescribeMode(mode)})");
+#endif
         }
 
         private static void CategorizeScannable(ScannableTarget scannable, ref ScanResultSummary result)
@@ -1111,7 +1600,7 @@ namespace Hecton8.Gameplay
                 : ZeroGCStringCache.CachedToUpperInvariant(item.itemName);
             string category = DescribeItemCategory(item.category);
             string summary = BuildPickupSummary(item, pickup.Quantity);
-            ScanEvents.RaiseEntryDiscovered($"item.{itemId}".ToLowerInvariant(), title, category, summary, ScanEntryKind.Item);
+            ScanEvents.RaiseEntryDiscovered(BuildLowerAsciiPrefixedEntryId(ItemEntryPrefix, itemId), title, category, summary, ScanEntryKind.Item);
             return true;
         }
 
@@ -1128,51 +1617,143 @@ namespace Hecton8.Gameplay
             string title = string.IsNullOrWhiteSpace(data.moduleName)
                 ? ResolveLocalized(LocalizationKeys.SCANNER_TITLE_UNIDENTIFIED_MODULE, "UNIDENTIFIED MODULE")
                 : ZeroGCStringCache.CachedToUpperInvariant(data.moduleName);
-            string category = $"Construction/{data.FamilyLabel}";
+            string category = BuildConstructionCategory(data.FamilyLabel);
             string summary = BuildModuleSummary(marker, data);
-            ScanEvents.RaiseEntryDiscovered($"module.{moduleId}".ToLowerInvariant(), title, category, summary, ScanEntryKind.Module);
+            ScanEvents.RaiseEntryDiscovered(BuildLowerAsciiPrefixedEntryId(ModuleEntryPrefix, moduleId), title, category, summary, ScanEntryKind.Module);
             return true;
+        }
+
+        private static string BuildLowerAsciiPrefixedEntryId(string prefix, string id)
+        {
+            return BuildCachedPrefixedString(prefix, id, foldAsciiLower: true);
+        }
+
+        private static string BuildConstructionCategory(string familyLabel)
+        {
+            if (string.IsNullOrEmpty(familyLabel))
+                return ConstructionCategoryPrefix;
+
+            return BuildCachedPrefixedString(ConstructionCategoryPrefix, familyLabel, foldAsciiLower: false);
+        }
+
+        private static string BuildCachedPrefixedString(string prefix, string source, bool foldAsciiLower)
+        {
+            string safePrefix = prefix ?? string.Empty;
+            string safeSource = source ?? string.Empty;
+            uint hash = ComputePrefixedStringCacheHash(safePrefix, safeSource, foldAsciiLower);
+            int cacheIndex = (int)(hash & (PrefixedScannerStringCacheSize - 1));
+            byte mode = foldAsciiLower ? (byte)1 : (byte)0;
+
+            if (s_prefixedScannerStringHashCache[cacheIndex] == hash &&
+                s_prefixedScannerStringFlagsCache[cacheIndex] == mode &&
+                string.Equals(s_prefixedScannerStringPrefixCache[cacheIndex], safePrefix, StringComparison.Ordinal) &&
+                string.Equals(s_prefixedScannerStringSourceCache[cacheIndex], safeSource, StringComparison.Ordinal))
+            {
+                string cachedValue = s_prefixedScannerStringValueCache[cacheIndex];
+                if (cachedValue != null)
+                    return cachedValue;
+            }
+
+            string builtValue = string.Create(safePrefix.Length + safeSource.Length, (safePrefix, safeSource, foldAsciiLower), static (buffer, state) =>
+            {
+                string prefixValue = state.Item1;
+                string sourceValue = state.Item2;
+                bool lower = state.Item3;
+                int write = 0;
+                for (int i = 0; i < prefixValue.Length; i++)
+                    buffer[write++] = lower ? FoldAsciiLower(prefixValue[i]) : prefixValue[i];
+                for (int i = 0; i < sourceValue.Length; i++)
+                    buffer[write++] = lower ? FoldAsciiLower(sourceValue[i]) : sourceValue[i];
+            });
+
+            s_prefixedScannerStringPrefixCache[cacheIndex] = safePrefix;
+            s_prefixedScannerStringSourceCache[cacheIndex] = safeSource;
+            s_prefixedScannerStringValueCache[cacheIndex] = builtValue;
+            s_prefixedScannerStringHashCache[cacheIndex] = hash;
+            s_prefixedScannerStringFlagsCache[cacheIndex] = mode;
+            return builtValue;
+        }
+
+        private static uint ComputePrefixedStringCacheHash(string prefix, string source, bool foldAsciiLower)
+        {
+            const uint FnvaOffsetBasis = 2166136261u;
+            const uint FnvaPrime = 16777619u;
+            unchecked
+            {
+                uint hash = FnvaOffsetBasis;
+                hash = AppendStringHash(hash, prefix, foldAsciiLower);
+                hash ^= 0xFFu;
+                hash *= FnvaPrime;
+                hash = AppendStringHash(hash, source, foldAsciiLower);
+                hash ^= foldAsciiLower ? 1u : 0u;
+                hash *= FnvaPrime;
+                return hash == 0u ? 1u : hash;
+            }
+        }
+
+        private static uint AppendStringHash(uint hash, string source, bool foldAsciiLower)
+        {
+            const uint FnvaPrime = 16777619u;
+            unchecked
+            {
+                for (int i = 0; i < source.Length; i++)
+                {
+                    char value = foldAsciiLower ? FoldAsciiLower(source[i]) : source[i];
+                    hash ^= value;
+                    hash *= FnvaPrime;
+                }
+
+                return hash;
+            }
+        }
+
+        private static char FoldAsciiLower(char value)
+        {
+            return (uint)(value - 'A') <= 'Z' - 'A'
+                ? (char)(value + ('a' - 'A'))
+                : value;
         }
 
         private static string BuildModuleSummary(ModuleMarker marker, BuildableData data)
         {
             BaseModule baseModule = null;
+            string wearSummary = string.Empty;
             if (marker != null)
             {
                 if (marker.TryGetComponent(out baseModule))
                 {
-                    string wearSummary = BuildModuleWearSummary(baseModule);
+                    wearSummary = BuildModuleWearSummary(baseModule);
                     switch (baseModule.CurrentFailureMode)
                     {
                         case BaseModuleFailureMode.OxygenLeak:
-                            return $"Service module is venting breathable reserves. Stabilize seals and restore compartment safety before reuse. {wearSummary}";
+                            return JoinWithSpace(ServiceOxygenLeakSummary, wearSummary);
                         case BaseModuleFailureMode.Fire:
-                            return $"Service module is in active fire state. Hull repair and immediate compartment suppression take priority. {wearSummary}";
+                            return JoinWithSpace(ServiceFireSummary, wearSummary);
                         case BaseModuleFailureMode.ShortCircuit:
-                            return $"Service module is shorted and power-locked. Restore hull integrity and electrical service before restart. {wearSummary}";
+                            return JoinWithSpace(ServiceShortCircuitSummary, wearSummary);
                     }
 
                     if (baseModule.IsAirQualityLow)
-                        return $"Service module is holding stale breathable reserve. Restore scrubber margin before treating this compartment as safe shelter. {wearSummary}";
+                        return JoinWithSpace(ServiceStaleAirSummary, wearSummary);
                 }
 
                 switch (marker.SpatialRole)
                 {
                     case FieldTargetRole.ServiceDamaged:
-                        return $"Service module is damaged and should be prioritized for hull repair before deeper field work. {BuildModuleWearSummary(baseModule)}";
+                        return JoinWithSpace(ServiceDamagedSummary, wearSummary);
                     case FieldTargetRole.ServiceFlooded:
-                        return $"Service module is flooded or venting and now reads as an emergency recovery target. {BuildModuleWearSummary(baseModule)}";
+                        return JoinWithSpace(ServiceFloodedSummary, wearSummary);
                 }
             }
 
             string baseSummary = string.IsNullOrWhiteSpace(data.description)
-                ? $"Base module archived. Power role: {DescribePowerRole(data)}."
-                : data.description.Trim();
+                ? FormatBaseModuleArchivedSummary(DescribePowerRole(data))
+                : TrimOrOriginal(data.description);
 
-            string wearAppendix = BuildModuleWearSummary(baseModule);
+            string wearAppendix = wearSummary;
             return string.IsNullOrWhiteSpace(wearAppendix)
                 ? baseSummary
-                : $"{baseSummary} {wearAppendix}";
+                : JoinWithSpace(baseSummary, wearAppendix);
         }
 
         private static string BuildModuleWearSummary(BaseModule baseModule)
@@ -1183,28 +1764,148 @@ namespace Hecton8.Gameplay
             float recoverableIntegrity = Mathf.Max(0f, baseModule.MaxRecoverableIntegrity);
             float originalIntegrity = Mathf.Max(1f, baseModule.MaxIntegrity);
             float permanentlyLostIntegrity = Mathf.Max(0f, originalIntegrity - recoverableIntegrity);
+            int recoverableIntegrityRounded = Mathf.RoundToInt(recoverableIntegrity);
+            int originalIntegrityRounded = Mathf.RoundToInt(originalIntegrity);
+            int permanentlyLostIntegrityRounded = Mathf.RoundToInt(permanentlyLostIntegrity);
             int remainingCycles = baseModule.RemainingRepairCycles;
 
             if (remainingCycles < 0)
-            {
-                return string.Format(
-                    "Structural wear margin: recoverable hull {0:0}/{1:0}. No authored service-cycle cap is currently limiting repairs.",
-                    recoverableIntegrity,
-                    originalIntegrity);
-            }
+                return FormatIntegrityPair(WearMarginPrefix, recoverableIntegrityRounded, originalIntegrityRounded, WearMarginSuffix);
 
             if (remainingCycles <= 0)
-            {
-                return string.Format(
-                    "Structural wear critical: recoverable hull capped at {0:0}/{1:0}. Catastrophic failure now requires rebuild, not another field-service loop.",
-                    recoverableIntegrity,
-                    originalIntegrity);
-            }
+                return FormatIntegrityPair(WearCriticalPrefix, recoverableIntegrityRounded, originalIntegrityRounded, WearCriticalSuffix);
 
-            return string.Format(
-                "Structural wear: {0:0} integrity permanently lost. Estimated catastrophic repair cycles remaining before rebuild: {1}.",
-                permanentlyLostIntegrity,
-                remainingCycles);
+            return FormatIntegrityWithCycles(permanentlyLostIntegrityRounded, remainingCycles);
+        }
+
+        private static string JoinWithSpace(string left, string right)
+        {
+            if (string.IsNullOrEmpty(left))
+                return right ?? string.Empty;
+            if (string.IsNullOrEmpty(right))
+                return left;
+
+            return string.Create(left.Length + 1 + right.Length, (left, right), static (buffer, state) =>
+            {
+                string leftValue = state.Item1;
+                string rightValue = state.Item2;
+                leftValue.AsSpan().CopyTo(buffer);
+                buffer[leftValue.Length] = ' ';
+                rightValue.AsSpan().CopyTo(buffer.Slice(leftValue.Length + 1));
+            });
+        }
+
+        private static string FormatIntegrityPair(string prefix, int current, int max, string suffix)
+        {
+            int length = prefix.Length + CountDecimalDigits(current) + 1 + CountDecimalDigits(max) + suffix.Length;
+            return string.Create(length, (prefix, current, max, suffix), static (buffer, state) =>
+            {
+                int write = 0;
+                AppendSpan(buffer, ref write, state.Item1);
+                AppendInt(buffer, ref write, state.Item2);
+                buffer[write++] = '/';
+                AppendInt(buffer, ref write, state.Item3);
+                AppendSpan(buffer, ref write, state.Item4);
+            });
+        }
+
+        private static string FormatIntegrityWithCycles(int lostIntegrity, int remainingCycles)
+        {
+            int length = WearRemainingPrefix.Length +
+                         CountDecimalDigits(lostIntegrity) +
+                         WearRemainingMiddle.Length +
+                         CountDecimalDigits(remainingCycles) +
+                         WearRemainingSuffix.Length;
+
+            return string.Create(length, (lostIntegrity, remainingCycles), static (buffer, state) =>
+            {
+                int write = 0;
+                AppendSpan(buffer, ref write, WearRemainingPrefix);
+                AppendInt(buffer, ref write, state.Item1);
+                AppendSpan(buffer, ref write, WearRemainingMiddle);
+                AppendInt(buffer, ref write, state.Item2);
+                AppendSpan(buffer, ref write, WearRemainingSuffix);
+            });
+        }
+
+        private static string FormatBaseModuleArchivedSummary(string powerRole)
+        {
+            string safePowerRole = powerRole ?? string.Empty;
+            return string.Create(
+                BaseModuleArchivedPrefix.Length + safePowerRole.Length + BaseModuleArchivedSuffix.Length,
+                safePowerRole,
+                static (buffer, source) =>
+                {
+                    int write = 0;
+                    AppendSpan(buffer, ref write, BaseModuleArchivedPrefix);
+                    AppendSpan(buffer, ref write, source);
+                    AppendSpan(buffer, ref write, BaseModuleArchivedSuffix);
+                });
+        }
+
+        private static string TrimOrOriginal(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return string.Empty;
+
+            int start = 0;
+            int end = value.Length - 1;
+            while (start <= end && char.IsWhiteSpace(value[start]))
+                start++;
+            while (end >= start && char.IsWhiteSpace(value[end]))
+                end--;
+
+            if (start > end)
+                return string.Empty;
+            if (start == 0 && end == value.Length - 1)
+                return value;
+
+            int length = end - start + 1;
+            return string.Create(length, (value, start), static (buffer, state) =>
+            {
+                state.Item1.AsSpan(state.Item2, buffer.Length).CopyTo(buffer);
+            });
+        }
+
+        private static void AppendSpan(Span<char> destination, ref int write, string source)
+        {
+            source.AsSpan().CopyTo(destination.Slice(write));
+            write += source.Length;
+        }
+
+        private static void AppendInt(Span<char> destination, ref int write, int value)
+        {
+            if (value.TryFormat(destination.Slice(write), out int written))
+                write += written;
+        }
+
+        private static int CountDecimalDigits(int value)
+        {
+            if (value == int.MinValue)
+                return 11;
+            if (value < 0)
+                return 1 + CountDecimalDigits(-value);
+
+            if (value < 10)
+                return 1;
+            if (value < 100)
+                return 2;
+            if (value < 1000)
+                return 3;
+            if (value < 10000)
+                return 4;
+            if (value < 100000)
+                return 5;
+            if (value < 1000000)
+                return 6;
+            if (value < 10000000)
+                return 7;
+            if (value < 100000000)
+                return 8;
+            if (value < 1000000000)
+                return 9;
+
+            return 10;
         }
 
         private static bool MatchesMode(
@@ -1294,6 +1995,47 @@ namespace Hecton8.Gameplay
             };
         }
 
+        private static int ResolveHorizontalBearingBucket(Vector3 forward, Vector3 direction, out int approximateDegrees)
+        {
+            float2 forwardFlat = new float2(forward.x, forward.z);
+            float2 directionFlat = new float2(direction.x, direction.z);
+            float scaleSq = math.lengthsq(forwardFlat) * math.lengthsq(directionFlat);
+            if (scaleSq <= 0.000001f)
+            {
+                approximateDegrees = 0;
+                return 0;
+            }
+
+            float crossY = (forwardFlat.y * directionFlat.x) - (forwardFlat.x * directionFlat.y);
+            float dot = math.dot(forwardFlat, directionFlat);
+            float crossSq = crossY * crossY;
+            if (dot > 0f && crossSq <= scaleSq * BearingDeadzoneTanSq)
+            {
+                approximateDegrees = 0;
+                return 0;
+            }
+
+            approximateDegrees = ResolveApproximateBearingDegrees(math.saturate(crossSq / scaleSq), dot);
+            return crossY >= 0f ? 1 : -1;
+        }
+
+        private static int ResolveApproximateBearingDegrees(float sinSq, float dot)
+        {
+            if (dot < 0f)
+                return sinSq < 0.25f ? 180 : sinSq < 0.75f ? 135 : 90;
+
+            if (sinSq < BearingDeadzoneTanSq)
+                return 0;
+            if (sinSq < 0.25f)
+                return 20;
+            if (sinSq < 0.5f)
+                return 45;
+            if (sinSq < 0.75f)
+                return 60;
+
+            return 90;
+        }
+
         private static string DescribeItemCategory(ItemCategory category)
         {
             switch (category)
@@ -1311,12 +2053,43 @@ namespace Hecton8.Gameplay
         {
             string description = string.IsNullOrWhiteSpace(item.description)
                 ? ResolveLocalized(LocalizationKeys.ITEM_SCANNER_SUMMARY_FALLBACK, "Portable field asset archived for suit databank reference.")
-                : item.description.Trim();
+                : TrimOrOriginal(item.description);
 
             if (quantity > 1)
-                return $"{description} Cached pickup quantity: {quantity}.";
+                return FormatPickupQuantitySummary(description, quantity);
 
             return description;
+        }
+
+        private const string PickupQuantitySummaryPrefix = " Cached pickup quantity: ";
+
+        private static string FormatPickupQuantitySummary(string description, int quantity)
+        {
+            int digitCount = CountPositiveIntegerDigits(quantity);
+            return string.Create(
+                description.Length + PickupQuantitySummaryPrefix.Length + digitCount + 1,
+                (description, quantity),
+                static (buffer, state) =>
+                {
+                    int write = 0;
+                    AppendSpan(buffer, ref write, state.Item1);
+                    AppendSpan(buffer, ref write, PickupQuantitySummaryPrefix);
+                    state.Item2.TryFormat(buffer.Slice(write), out int written);
+                    write += written;
+                    buffer[write] = '.';
+                });
+        }
+
+        private static int CountPositiveIntegerDigits(int value)
+        {
+            int digits = 1;
+            while (value >= 10)
+            {
+                value /= 10;
+                digits++;
+            }
+
+            return digits;
         }
 
         private static string DescribePowerRole(BuildableData data)
@@ -1530,22 +2303,19 @@ namespace Hecton8.Gameplay
             if (hitCollider == null)
                 return;
 
-            ScannableFragment fragment = hitCollider.GetComponent<ScannableFragment>();
-            if (fragment == null)
+            if (!hitCollider.TryGetComponent(out ScannableFragment fragment))
                 fragment = hitCollider.GetComponentInParent<ScannableFragment>();
 
             if (fragment != null)
                 resolvedFragment = fragment;
 
-            FaunaBrain faunaBrain = hitCollider.GetComponent<FaunaBrain>();
-            if (faunaBrain == null)
+            if (!hitCollider.TryGetComponent(out FaunaBrain faunaBrain))
                 faunaBrain = hitCollider.GetComponentInParent<FaunaBrain>();
 
             if (faunaBrain != null)
                 resolvedFauna = faunaBrain;
 
-            HectonVoxelVolume volume = hitCollider.GetComponent<HectonVoxelVolume>();
-            if (volume == null)
+            if (!hitCollider.TryGetComponent(out HectonVoxelVolume volume))
                 volume = hitCollider.GetComponentInParent<HectonVoxelVolume>();
 
             if (!chemistryProbeResolved)
@@ -1739,7 +2509,7 @@ namespace Hecton8.Gameplay
                 Mathf.Clamp01(chemicalLoad01),
                 Mathf.Clamp01(organicBlood01),
                 Mathf.Clamp01(attractantScent01),
-                scentDirection.sqrMagnitude > 0.0001f ? scentDirection.normalized : Vector3.zero,
+                ResolveSafeDirection(scentDirection, Vector3.zero),
                 attractantChannel,
                 Mathf.Max(0f, depthMeters),
                 faunaBrain,
@@ -1817,21 +2587,6 @@ namespace Hecton8.Gameplay
             return ScientificMaterialClass.MetallicSilt;
         }
 
-        private static float2 ResolveScientificConeOffset(int index)
-        {
-            if (index <= 0)
-                return float2.zero;
-
-            if (index <= 5)
-            {
-                float angleRadians = math.radians(90f - ((index - 1) * 72f));
-                return new float2(math.cos(angleRadians), math.sin(angleRadians)) * 0.45f;
-            }
-
-            float outerAngleRadians = math.radians((index - 6) * 60f);
-            return new float2(math.cos(outerAngleRadians), math.sin(outerAngleRadians));
-        }
-
         private static string DescribeScientificMaterial(ScientificMaterialClass materialClass)
         {
             switch (materialClass)
@@ -1870,6 +2625,7 @@ namespace Hecton8.Gameplay
                 : "WATER";
         }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static string BuildScientificScentVectorSuffix(ScientificScanSnapshot snapshot)
         {
             Vector3 direction = snapshot.ScentDirection;
@@ -1880,20 +2636,21 @@ namespace Hecton8.Gameplay
                 Mathf.RoundToInt(direction.y * 100f),
                 Mathf.RoundToInt(direction.z * 100f));
         }
+#endif
 
-        private static void AppendScientificScentVector(FixedCharBuffer buffer, ScientificScanSnapshot snapshot)
+        private static void AppendScientificScentVector(ref FixedCharBuffer buffer, ScientificScanSnapshot snapshot)
         {
             buffer.Append(" // ");
             buffer.Append(DescribeScientificAttractantChannel(snapshot.AttractantChannel));
             buffer.Append(" VEC ");
-            AppendScientificSignedComponent(buffer, Mathf.RoundToInt(snapshot.ScentDirection.x * 100f));
+            AppendScientificSignedComponent(ref buffer, Mathf.RoundToInt(snapshot.ScentDirection.x * 100f));
             buffer.Append(",");
-            AppendScientificSignedComponent(buffer, Mathf.RoundToInt(snapshot.ScentDirection.y * 100f));
+            AppendScientificSignedComponent(ref buffer, Mathf.RoundToInt(snapshot.ScentDirection.y * 100f));
             buffer.Append(",");
-            AppendScientificSignedComponent(buffer, Mathf.RoundToInt(snapshot.ScentDirection.z * 100f));
+            AppendScientificSignedComponent(ref buffer, Mathf.RoundToInt(snapshot.ScentDirection.z * 100f));
         }
 
-        private static void AppendScientificSignedComponent(FixedCharBuffer buffer, int value)
+        private static void AppendScientificSignedComponent(ref FixedCharBuffer buffer, int value)
         {
             if (value >= 0)
                 buffer.Append("+");
@@ -1906,8 +2663,11 @@ namespace Hecton8.Gameplay
             if (_cachedSurvivalSystem != null)
                 return;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
-                _cachedSurvivalSystem = playerTransform.GetComponent<HectonSurvivalSystem>();
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform.TryGetComponent(out HectonSurvivalSystem survivalSystem))
+            {
+                _cachedSurvivalSystem = survivalSystem;
+            }
         }
 
         private void ResolveScientificWaterMetrics(
@@ -1932,7 +2692,7 @@ namespace Hecton8.Gameplay
 
             toxicity01 = Mathf.Clamp01(HectonHazardManager.GetHazardIntensity(worldPosition, HazardType.Toxicity));
             float haloclineT = Mathf.Clamp01(depthMeters / ScientificSalinityDepthRangeMeters);
-            salinityPpt = Mathf.Lerp(ScientificSurfaceSalinityPpt, ScientificDeepSalinityPpt, haloclineT) +
+            salinityPpt = math.lerp(ScientificSurfaceSalinityPpt, ScientificDeepSalinityPpt, haloclineT) +
                           (chemicalLoad01 * 0.35f) +
                           (toxicity01 * 0.25f);
         }
@@ -1979,13 +2739,14 @@ namespace Hecton8.Gameplay
                 float radius = math.max(1f, waypoint.RadiusMeters);
                 float3 delta = waypoint.RuntimePosition - center;
                 float distanceSq = math.lengthsq(delta);
-                if (distanceSq > radius * radius)
+                float radiusSq = radius * radius;
+                if (distanceSq > radiusSq)
                     continue;
 
-                float falloff = SmoothStep01(1f - math.saturate(math.sqrt(distanceSq) / radius));
+                float falloff = SmoothStep01(1f - math.saturate(distanceSq / radiusSq));
                 float blood = math.saturate(waypoint.Channels.x * falloff);
                 float exhaust = math.saturate(waypoint.Channels.y * falloff);
-                float3 direction = math.normalizesafe(delta, float3.zero);
+                float3 direction = distanceSq > 0.000001f ? delta * math.rsqrt(distanceSq) : float3.zero;
                 bloodSignal01 = math.max(bloodSignal01, blood);
                 exhaustSignal01 = math.max(exhaustSignal01, exhaust);
                 if (blood > 0.0001f)
@@ -2002,9 +2763,9 @@ namespace Hecton8.Gameplay
             }
 
             if (bloodWeight > 0f)
-                bloodGradient = math.normalizesafe(bloodGradientWeighted / bloodWeight, float3.zero);
+                bloodGradient = ResolveSafeDirection(bloodGradientWeighted / bloodWeight);
             if (exhaustWeight > 0f)
-                exhaustGradient = math.normalizesafe(exhaustGradientWeighted / exhaustWeight, float3.zero);
+                exhaustGradient = ResolveSafeDirection(exhaustGradientWeighted / exhaustWeight);
 
             return bloodSignal01 > 0.0001f || exhaustSignal01 > 0.0001f;
         }
@@ -2013,6 +2774,18 @@ namespace Hecton8.Gameplay
         {
             float t = math.saturate(value);
             return t * t * (3f - 2f * t);
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
+        {
+            float lengthSq = direction.sqrMagnitude;
+            return lengthSq > 0.0001f ? direction * math.rsqrt(lengthSq) : fallback;
+        }
+
+        private static float3 ResolveSafeDirection(float3 direction)
+        {
+            float lengthSq = math.lengthsq(direction);
+            return lengthSq > 0.000001f ? direction * math.rsqrt(lengthSq) : float3.zero;
         }
 
         private static void ResolveScientificAttractantTrace(
@@ -2043,8 +2816,7 @@ namespace Hecton8.Gameplay
                 if (bloodGradientWeight > 0f)
                 {
                     float3 direction = bloodGradientAccumulator / bloodGradientWeight;
-                    if (math.lengthsq(direction) > 0.000001f)
-                        scentDirection = math.normalize(direction);
+                    scentDirection = ResolveSafeDirection(direction);
                 }
             }
             else
@@ -2054,8 +2826,7 @@ namespace Hecton8.Gameplay
                 if (exhaustGradientWeight > 0f)
                 {
                     float3 direction = exhaustGradientAccumulator / exhaustGradientWeight;
-                    if (math.lengthsq(direction) > 0.000001f)
-                        scentDirection = math.normalize(direction);
+                    scentDirection = ResolveSafeDirection(direction);
                 }
             }
         }
@@ -2128,13 +2899,13 @@ namespace Hecton8.Gameplay
             float c011 = DecodeScientificDensityAt(encodedSdf, gridDimensions, sdfRange, x0, y1, z1);
             float c111 = DecodeScientificDensityAt(encodedSdf, gridDimensions, sdfRange, x1, y1, z1);
 
-            float c00 = Mathf.Lerp(c000, c100, tx);
-            float c10 = Mathf.Lerp(c010, c110, tx);
-            float c01 = Mathf.Lerp(c001, c101, tx);
-            float c11 = Mathf.Lerp(c011, c111, tx);
-            float c0 = Mathf.Lerp(c00, c10, ty);
-            float c1 = Mathf.Lerp(c01, c11, ty);
-            return Mathf.Lerp(c0, c1, tz);
+            float c00 = math.lerp(c000, c100, tx);
+            float c10 = math.lerp(c010, c110, tx);
+            float c01 = math.lerp(c001, c101, tx);
+            float c11 = math.lerp(c011, c111, tx);
+            float c0 = math.lerp(c00, c10, ty);
+            float c1 = math.lerp(c01, c11, ty);
+            return math.lerp(c0, c1, tz);
         }
 
         private static float DecodeScientificDensityAt(
@@ -2160,35 +2931,36 @@ namespace Hecton8.Gameplay
     public sealed class ScannerPulseDrawer : MonoBehaviour, ITickable, IUpdatable
     {
         private const int PulseInstanceCapacity = 2;
-        private const string NativeMemoryOwner = nameof(ScannerPulseDrawer);
-
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int RingThicknessId = Shader.PropertyToID("_RingThickness");
+        private static readonly Quaternion PulseRotation = Quaternion.Euler(90f, 0f, 0f);
 
         private ScannerTool _scanner;
         private Material _runtimePulseMaterial;
         private Mesh _runtimePulseMesh;
-        private NativeArray<Matrix4x4> _pulseMatrices;
         // COLD ALLOC: Matrix4x4[2] — scanner pulse instanced draw mirror — owner: ScannerPulseDrawer
         private readonly Matrix4x4[] _pulseMatrixMirror = new Matrix4x4[PulseInstanceCapacity];
         private bool _registered;
         private bool _pulseMeshResolved;
+        private bool _pulseResourcesReady;
 
         internal void Init(ScannerTool scanner)
         {
             _scanner = scanner;
+            EnsurePulseResources();
         }
 
         private void Awake()
         {
-            if (_scanner == null)
-                _scanner = GetComponent<ScannerTool>();
+            if (_scanner == null && TryGetComponent(out ScannerTool scanner))
+                _scanner = scanner;
 
             EnsurePulseResources();
         }
 
         private void OnEnable()
         {
+            EnsurePulseResources();
             RegisterTick();
         }
 
@@ -2200,13 +2972,6 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             UnregisterTick();
-
-            if (_pulseMatrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_pulseMatrices);
-                _pulseMatrices.Dispose(default(JobHandle));
-                _pulseMatrices = default;
-            }
 
             if (_runtimePulseMaterial != null)
             {
@@ -2222,8 +2987,7 @@ namespace Hecton8.Gameplay
             if (_scanner == null || !_scanner.PulseActive || !_scanner.IsEquipped)
                 return;
 
-            EnsurePulseResources();
-            if (_runtimePulseMaterial == null || _runtimePulseMesh == null || !_pulseMatrices.IsCreated)
+            if (!_pulseResourcesReady)
                 return;
 
             float elapsed = Time.time - _scanner.PulseStartTime;
@@ -2237,22 +3001,20 @@ namespace Hecton8.Gameplay
             Color ringColor = new Color(baseColor.r, baseColor.g, baseColor.b, alpha);
             float baseThickness = _scanner.PulseThickness;
             float thickness = math.lerp(baseThickness, baseThickness * 0.3f, t);
+            Vector3 pulseRuntimeOrigin = (Vector3)_scanner.PulseOriginAup.ToRuntimeFloat3();
 
             _runtimePulseMaterial.SetColor(BaseColorId, ringColor);
             _runtimePulseMaterial.SetFloat(RingThicknessId, thickness / math.max(currentRadius, 0.001f));
 
             int visibleCount = 0;
-            Quaternion pulseRotation = Quaternion.Euler(90f, 0f, 0f);
-            Matrix4x4 primaryMatrix = Matrix4x4.TRS((Vector3)_scanner.PulseOrigin, pulseRotation, new Vector3(currentRadius * 2f, currentRadius * 2f, 1f));
-            _pulseMatrices[visibleCount] = primaryMatrix;
+            Matrix4x4 primaryMatrix = Matrix4x4.TRS(pulseRuntimeOrigin, PulseRotation, new Vector3(currentRadius * 2f, currentRadius * 2f, 1f));
             _pulseMatrixMirror[visibleCount] = primaryMatrix;
             visibleCount++;
 
             if (t < 0.8f)
             {
                 float innerRadius = currentRadius * 0.85f;
-                Matrix4x4 innerMatrix = Matrix4x4.TRS((Vector3)_scanner.PulseOrigin, pulseRotation, new Vector3(innerRadius * 2f, innerRadius * 2f, 1f));
-                _pulseMatrices[visibleCount] = innerMatrix;
+                Matrix4x4 innerMatrix = Matrix4x4.TRS(pulseRuntimeOrigin, PulseRotation, new Vector3(innerRadius * 2f, innerRadius * 2f, 1f));
                 _pulseMatrixMirror[visibleCount] = innerMatrix;
                 visibleCount++;
             }
@@ -2274,16 +3036,6 @@ namespace Hecton8.Gameplay
 
         private void EnsurePulseResources()
         {
-            if (!_pulseMatrices.IsCreated)
-            {
-                _pulseMatrices = new NativeArray<Matrix4x4>(PulseInstanceCapacity, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _pulseMatrices,
-                    NativeMemoryOwner,
-                    nameof(_pulseMatrices),
-                    NativeAllocationLifetime.Scene);
-            }
-
             if (!_pulseMeshResolved)
             {
                 _runtimePulseMesh = ResolvePulseMesh();
@@ -2291,7 +3043,10 @@ namespace Hecton8.Gameplay
             }
 
             if (_runtimePulseMaterial != null)
+            {
+                _pulseResourcesReady = _runtimePulseMesh != null;
                 return;
+            }
 
             Shader pulseShader = _scanner != null ? _scanner.ScannerPulseShader : null;
 #if UNITY_EDITOR
@@ -2299,13 +3054,17 @@ namespace Hecton8.Gameplay
                 pulseShader = AssetDatabase.LoadAssetAtPath<Shader>(ScannerTool.ScannerPulseShaderPath);
 #endif
             if (pulseShader == null)
+            {
+                _pulseResourcesReady = false;
                 return;
+            }
 
             _runtimePulseMaterial = new Material(pulseShader)
             {
                 enableInstancing = true,
                 hideFlags = HideFlags.DontSave
             };
+            _pulseResourcesReady = _runtimePulseMesh != null;
         }
 
         private void RegisterTick()
@@ -2315,8 +3074,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterTick()

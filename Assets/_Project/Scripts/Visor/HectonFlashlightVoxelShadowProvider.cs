@@ -1,6 +1,7 @@
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Visor
@@ -27,6 +28,7 @@ namespace Hecton8.Visor
         private const float DefaultShadowSoftness = 6.5f;
         private const float DefaultShadowStepCount = 7f;
         private const float LightResolveRetryIntervalSeconds = 0.5f;
+        private const float InvTwoPi = 0.15915494f;
 
         private static readonly int _FlashlightActiveId = Shader.PropertyToID("_HectonFlashlightActive");
         private static readonly int _FlashlightVoxelActiveId = Shader.PropertyToID("_HectonFlashlightVoxelActive");
@@ -192,7 +194,7 @@ namespace Hecton8.Visor
                 _restartQueued = true;
             }
 
-            int remainingSlices = Mathf.Max(1, slicesPerTick);
+            int remainingSlices = math.max(1, slicesPerTick);
             while (_scanInProgress && remainingSlices > 0 && _scanSliceCursor < _resolutionRuntime)
             {
                 ScanSlice(_scanSliceCursor);
@@ -202,9 +204,11 @@ namespace Hecton8.Visor
 
             if (_scanInProgress && _scanSliceCursor >= _resolutionRuntime)
             {
+                bool restartQueued = _restartQueued;
                 FinalizeScan();
-                if (_restartQueued)
+                if (restartQueued)
                 {
+                    _restartQueued = false;
                     BeginScan(
                         desiredCenterWs,
                         desiredRotationWs,
@@ -212,6 +216,9 @@ namespace Hecton8.Visor
                         desiredCellSize,
                         desiredCellDiagonal,
                         desiredSdfRange);
+                }
+                else
+                {
                     _restartQueued = false;
                 }
             }
@@ -250,7 +257,7 @@ namespace Hecton8.Visor
 
         private void EnsureResources()
         {
-            int clampedResolution = Mathf.Clamp(voxelResolution, 12, 20);
+            int clampedResolution = math.clamp(voxelResolution, 12, 20);
             if (_resolutionRuntime == clampedResolution &&
                 _occupancyVolume.IsCreated &&
                 _sdfVolume.IsCreated &&
@@ -402,19 +409,19 @@ namespace Hecton8.Visor
             out float sdfRange)
         {
             Transform lightTransform = light.transform;
-            float range = Mathf.Max(0.1f, light.range);
-            float coneHalfAngleRadians = Mathf.Max(1f, light.spotAngle * 0.5f) * Mathf.Deg2Rad;
-            float coneRadius = Mathf.Max(0.35f, Mathf.Tan(coneHalfAngleRadians) * range * coneRadiusPadding);
+            float range = math.max(0.1f, light.range);
+            float coneHalfAngleRadians = math.max(1f, light.spotAngle * 0.5f) * Mathf.Deg2Rad;
+            float coneRadius = math.max(0.35f, ApproximateTanPositive(coneHalfAngleRadians) * range * coneRadiusPadding);
 
             rotationWs = lightTransform.rotation;
             halfExtents = new Vector3(coneRadius, coneRadius, range * 0.5f);
             centerWs = lightTransform.position + lightTransform.forward * halfExtents.z;
             cellSize = new Vector3(
-                (halfExtents.x * 2f) / Mathf.Max(1, _resolutionRuntime),
-                (halfExtents.y * 2f) / Mathf.Max(1, _resolutionRuntime),
-                (halfExtents.z * 2f) / Mathf.Max(1, _resolutionRuntime));
-            cellDiagonal = cellSize.magnitude;
-            sdfRange = Mathf.Max(cellDiagonal * Mathf.Max(1f, sdfRangeInCellDiagonals), cellDiagonal);
+                (halfExtents.x * 2f) / math.max(1, _resolutionRuntime),
+                (halfExtents.y * 2f) / math.max(1, _resolutionRuntime),
+                (halfExtents.z * 2f) / math.max(1, _resolutionRuntime));
+            cellDiagonal = ApproximateMagnitude((float3)cellSize);
+            sdfRange = math.max(cellDiagonal * math.max(1f, sdfRangeInCellDiagonals), cellDiagonal);
         }
 
         private bool RequiresRefresh(Vector3 desiredCenterWs, Quaternion desiredRotationWs, Vector3 desiredHalfExtents)
@@ -425,10 +432,9 @@ namespace Hecton8.Visor
             if ((_publishedCenterWs - desiredCenterWs).sqrMagnitude > positionRefreshThreshold * positionRefreshThreshold)
                 return true;
 
-            float rotationDot = Mathf.Abs(Quaternion.Dot(_publishedRotationWs, desiredRotationWs));
-            rotationDot = Mathf.Clamp(rotationDot, -1f, 1f);
-            float rotationAngle = Mathf.Acos(rotationDot) * 2f * Mathf.Rad2Deg;
-            if (rotationAngle > rotationRefreshThresholdDegrees)
+            float rotationDot = math.saturate(math.abs(Quaternion.Dot(_publishedRotationWs, desiredRotationWs)));
+            float rotationRefreshHalfRadians = math.max(0f, rotationRefreshThresholdDegrees) * Mathf.Deg2Rad * 0.5f;
+            if (rotationDot < ApproximateSpotConeCos(rotationRefreshHalfRadians))
                 return true;
 
             if ((_publishedHalfExtents - desiredHalfExtents).sqrMagnitude > 0.01f)
@@ -449,13 +455,16 @@ namespace Hecton8.Visor
             _scanRotationWs = rotationWs;
             _scanHalfExtents = halfExtents;
             _scanCellSize = cellSize;
-            _scanCellHalfExtents = cellSize * (0.5f * Mathf.Clamp(occupancyPadding, 0.5f, 1f));
+            _scanCellHalfExtents = cellSize * (0.5f * math.clamp(occupancyPadding, 0.5f, 1f));
             _scanCellDiagonal = cellDiagonal;
             _scanSdfRange = sdfRange;
             _scanLocalToWorld = Matrix4x4.TRS(centerWs, rotationWs, Vector3.one);
             _scanSliceCursor = 0;
             _scanInProgress = true;
             _scanTickCount = 0;
+
+            if (!HasPotentialOccluderInCurrentScanVolume())
+                FinalizeEmptyScan();
         }
 
         private void ScanSlice(int zIndex)
@@ -518,6 +527,21 @@ namespace Hecton8.Visor
         private void FinalizeScan()
         {
             EncodeSignedDistanceField();
+            PublishSdfTextureFromCurrentScan();
+        }
+
+        private void FinalizeEmptyScan()
+        {
+            int voxelCount = _resolutionRuntime * _resolutionRuntime * _resolutionRuntime;
+            for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
+                _sdfVolume[voxelIndex] = byte.MaxValue;
+
+            PublishSdfTextureFromCurrentScan();
+            _restartQueued = false;
+        }
+
+        private void PublishSdfTextureFromCurrentScan()
+        {
             _voxelDensityTexture.SetPixelData(_sdfVolume, 0);
             _voxelDensityTexture.Apply(false, false);
 
@@ -527,10 +551,47 @@ namespace Hecton8.Visor
             _publishedSdfRange = _scanSdfRange;
             _publishedWorldToLocal = _scanLocalToWorld.inverse;
             _hasValidPublishedVolume = true;
-            _restartQueued = false;
             _scanInProgress = false;
             _scanSliceCursor = 0;
             Shader.SetGlobalTexture(_VoxelDensityTexId, _voxelDensityTexture);
+        }
+
+        private bool HasPotentialOccluderInCurrentScanVolume()
+        {
+            if (_overlapHits == null || _overlapHits.Length == 0)
+                return true;
+
+            int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(
+                _scanCenterWs,
+                _scanHalfExtents,
+                _overlapHits,
+                _scanRotationWs,
+                occluderLayers,
+                triggerInteraction);
+
+            if (hitCount >= _overlapHits.Length)
+            {
+                PublishPerformanceWarningRateLimited(
+                    TelemetryWarningOverlapSaturatedHash,
+                    ref _nextTelemetryOverlapSaturationTime,
+                    hitCount);
+                return true;
+            }
+
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                Collider hit = _overlapHits[hitIndex];
+                if (hit == null || !hit.enabled)
+                    continue;
+
+                Transform hitRoot = hit.transform.root;
+                if (_playerRoot != null && hitRoot == _playerRoot)
+                    continue;
+
+                return true;
+            }
+
+            return false;
         }
 
         private void EncodeSignedDistanceField()
@@ -577,6 +638,7 @@ namespace Hecton8.Visor
 
             float boundaryBias = _scanCellDiagonal * 0.5f;
             float inverseSdfRange = _scanSdfRange > 0.0001f ? 1f / _scanSdfRange : 0f;
+            float zeroBandDistanceSq = boundaryBias * math.max(_scanSdfRange, 0.0001f);
 
             for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
             {
@@ -590,15 +652,20 @@ namespace Hecton8.Visor
                 {
                     float candidateDistanceSq = (origin - searchSet[searchIndex]).sqrMagnitude;
                     if (candidateDistanceSq < nearestDistanceSq)
+                    {
                         nearestDistanceSq = candidateDistanceSq;
+                        if (nearestDistanceSq <= zeroBandDistanceSq)
+                            break;
+                    }
                 }
 
                 float unsignedDistance = nearestDistanceSq < float.MaxValue
-                    ? Mathf.Max(0f, Mathf.Sqrt(nearestDistanceSq) - boundaryBias)
+                    ? math.max(0f, ApproximateDistanceFromSq(nearestDistanceSq, _scanSdfRange) - boundaryBias)
                     : _scanSdfRange;
                 float signedDistance = occupied ? -unsignedDistance : unsignedDistance;
-                float encoded = Mathf.Clamp01((signedDistance * inverseSdfRange) * 0.5f + 0.5f);
-                _sdfVolume[voxelIndex] = (byte)Mathf.RoundToInt(encoded * 255f);
+                float encoded = math.saturate((signedDistance * inverseSdfRange) * 0.5f + 0.5f);
+                int encodedByte = (int)(encoded * 255f + 0.5f);
+                _sdfVolume[voxelIndex] = (byte)math.clamp(encodedByte, 0, 255);
             }
         }
 
@@ -610,17 +677,17 @@ namespace Hecton8.Visor
                 return;
             }
 
-            float outerAngleRadians = Mathf.Max(1f, _flashlightLight.spotAngle * 0.5f) * Mathf.Deg2Rad;
+            float outerAngleRadians = math.max(1f, _flashlightLight.spotAngle * 0.5f) * Mathf.Deg2Rad;
             float innerAngleRadians = outerAngleRadians * 0.76f;
-            float outerCos = Mathf.Cos(outerAngleRadians);
-            float innerCos = Mathf.Cos(innerAngleRadians);
+            float outerCos = ApproximateSpotConeCos(outerAngleRadians);
+            float innerCos = ApproximateSpotConeCos(innerAngleRadians);
             Vector3 lightPositionWs = _flashlightLight.transform.position;
             Vector3 lightDirectionWs = _flashlightLight.transform.forward;
             Color lightColor = _flashlightLight.color;
-            float lightRange = Mathf.Max(0.1f, _flashlightLight.range);
+            float lightRange = math.max(0.1f, _flashlightLight.range);
             float signalInstability01 = ResolveNoirSignalInstability(hasVoxelVolume);
-            float shadowFloor = Mathf.Clamp01(DefaultShadowFloor + signalInstability01 * 0.16f);
-            float lightIntensity = Mathf.Max(0f, _flashlightLight.intensity * (1f - signalInstability01 * 0.22f));
+            float shadowFloor = math.saturate(DefaultShadowFloor + signalInstability01 * 0.16f);
+            float lightIntensity = math.max(0f, _flashlightLight.intensity * (1f - signalInstability01 * 0.22f));
             _debugSignalInstability01 = signalInstability01;
 
             Shader.SetGlobalFloat(_FlashlightActiveId, 1f);
@@ -670,16 +737,56 @@ namespace Hecton8.Visor
             float rebuildSignal = _scanInProgress ? 0.55f : 0f;
             float restartSignal = _restartQueued ? 0.85f : 0f;
             float scanProgress = _resolutionRuntime > 0
-                ? Mathf.Clamp01(_scanSliceCursor / (float)_resolutionRuntime)
+                ? math.saturate(_scanSliceCursor / (float)_resolutionRuntime)
                 : 0f;
-            float carrier = Mathf.Sin((Time.frameCount * 0.6180339f) + scanProgress * 5.1f) * 0.5f + 0.5f;
-            float instability = Mathf.Max(staleSignal, Mathf.Max(rebuildSignal, restartSignal)) * carrier;
-            return Mathf.Clamp01(instability * noirSignalInstabilityStrength);
+            float carrier = EvaluateCheapCarrier01((Time.frameCount * 0.6180339f) + scanProgress * 5.1f);
+            float instability = math.max(staleSignal, math.max(rebuildSignal, restartSignal)) * carrier;
+            return math.saturate(instability * noirSignalInstabilityStrength);
+        }
+
+        private static float ApproximateMagnitude(float3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375f + minAxis * 0.125f;
+        }
+
+        private static float ApproximateDistanceFromSq(float distanceSq, float range)
+        {
+            return distanceSq > 0f
+                ? distanceSq / math.max(range, 0.0001f)
+                : 0f;
+        }
+
+        private static float ApproximateSpotConeCos(float angleRadians)
+        {
+            float x = math.clamp(angleRadians, 0f, 1.5707964f);
+            float x2 = x * x;
+            float x4 = x2 * x2;
+            return math.saturate(1f - 0.4967f * x2 + 0.03705f * x4);
+        }
+
+        private static float ApproximateTanPositive(float angleRadians)
+        {
+            float x = math.clamp(angleRadians, 0f, 1.4f);
+            float x2 = x * x;
+            return x * ((15f - x2) / math.max(0.0001f, 15f - 6f * x2));
+        }
+
+        private static float EvaluateCheapCarrier01(float phase)
+        {
+            float phase01 = math.frac((phase * InvTwoPi) + 0.25f);
+            float triangle = 1f - math.abs(phase01 * 2f - 1f);
+            return triangle * triangle;
         }
 
         private void PublishLongScanTelemetryIfNeeded()
         {
-            int safeSlicesPerTick = Mathf.Max(1, slicesPerTick);
+            int safeSlicesPerTick = math.max(1, slicesPerTick);
             int expectedTicks = (_resolutionRuntime + safeSlicesPerTick - 1) / safeSlicesPerTick;
             if (_scanTickCount <= expectedTicks + TelemetryScanTickOverrunSlack)
                 return;

@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -23,6 +24,7 @@ namespace Hecton8.World
     /// <summary>
     /// Configuration for ridge-derived pillar and fissure detection.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct AnomalyRidgeDetectionSettings
     {
         /// <summary>Heightmap width in samples.</summary>
@@ -92,6 +94,7 @@ namespace Hecton8.World
     /// <summary>
     /// Spawn-ready pillar or fissure anomaly feature.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct AnomalyFeatureRecord
     {
         /// <summary>One when the record is valid.</summary>

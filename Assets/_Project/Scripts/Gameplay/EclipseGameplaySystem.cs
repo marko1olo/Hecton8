@@ -21,6 +21,7 @@
 // ============================================================================
 
 using System;
+using System.Runtime.InteropServices;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
 using Hecton8.Audio;
@@ -55,6 +56,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     public static class EclipseGameplayEvents
     {
+        [StructLayout(LayoutKind.Sequential)]
         private struct EclipseGameplayEventPayload
         {
             public byte EventType;
@@ -125,6 +127,9 @@ namespace Hecton8.Gameplay
         /// <summary>Queues an eclipse phase change.</summary>
         public static void RaisePhaseChanged(bool active)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
                 return;
@@ -195,6 +200,9 @@ namespace Hecton8.Gameplay
 
         private static void EnqueueValue(byte eventType, float value)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
                 return;
@@ -251,24 +259,40 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] - deferred eclipse gameplay lane flushed by SystemDispatcher - owner: EclipseGameplayEvents
+                _pendingEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] — deferred eclipse gameplay lane flushed by SystemDispatcher — owner: EclipseGameplayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     ExpectedPendingEventCapacity,
                     nameof(EclipseGameplayEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, ExpectedPendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] - next-frame eclipse gameplay lane prevents same-frame reentrant dispatch - owner: EclipseGameplayEvents
+                _nextFrameEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] — next-frame eclipse gameplay lane prevents same-frame reentrant dispatch — owner: EclipseGameplayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     ExpectedPendingEventCapacity,
                     nameof(EclipseGameplayEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -464,7 +488,9 @@ namespace Hecton8.Gameplay
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogNightPredatorsRising()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[Eclipse] Night predators rising.");
+#endif
         }
 
         private void HandleEclipseStart()
@@ -544,7 +570,7 @@ namespace Hecton8.Gameplay
             float start = Mathf.Clamp(acousticPitchShiftStartOcclusion, 0f, 0.99f);
             float totality01 = Mathf.Clamp01((occlusion01 - start) / Mathf.Max(0.0001f, 1f - start));
             totality01 = totality01 * totality01 * (3f - 2f * totality01);
-            return Mathf.Lerp(0f, Mathf.Min(0f, totalEclipseAcousticPitchShiftCents), totality01);
+            return Mathf.Min(0f, totalEclipseAcousticPitchShiftCents) * totality01;
         }
 
         private static float ResolveEclipseOcclusion01()
@@ -613,13 +639,17 @@ namespace Hecton8.Gameplay
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogEclipseStarted()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[Eclipse] Eclipse started — gameplay consequences active.");
+#endif
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogEclipseEnded()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log("[Eclipse] Eclipse ended — temperature recovering.");
+#endif
         }
 
         private void TryRegister()

@@ -1,3 +1,4 @@
+using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
@@ -30,10 +31,22 @@ namespace Hecton8.Narrative
 
     public static class AudioLogEvents
     {
-        // COLD ALLOC: RegistryBucket<IAudioLogEventListener>[16] - audio log event listener registry drained on dispatcher LateUpdate - owner: AudioLogEvents
-        private static readonly RegistryBucket<IAudioLogEventListener> _listeners = new RegistryBucket<IAudioLogEventListener>(16);
+        private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 16;
         private const int ReferenceSlotCapacity = 128;
+        private const uint AudioLogQueueOverflowWarningHash = 0x414C514Fu; // ALQO
+        private const uint AudioLogReferenceSlotOverflowWarningHash = 0x414C5253u; // ALRS
+        private const uint AudioLogListenerRejectedWarningHash = 0x414C524Au; // ALRJ
+        private const uint AudioLogListenerExceptionWarningHash = 0x414C4558u; // ALEX
+        private const uint AudioLogQueueContextHash = 0x414C5155u; // ALQU
+        private const uint AudioLogReferenceSlotContextHash = 0x414C5246u; // ALRF
+        private const uint AudioLogListenerContextHash = 0x414C4953u; // ALIS
+        // COLD ALLOC: RegistryBucket<IAudioLogEventListener>[16] — audio log event listener registry drained on dispatcher LateUpdate — owner: AudioLogEvents
+        private static readonly RegistryBucket<IAudioLogEventListener> _listeners = new RegistryBucket<IAudioLogEventListener>(ListenerCapacity);
+        // COLD ALLOC: IAudioLogEventListener[16] — listener additions deferred while dispatching audio-log events — owner: AudioLogEvents
+        private static readonly IAudioLogEventListener[] _deferredRegisterListeners = new IAudioLogEventListener[ListenerCapacity];
+        // COLD ALLOC: IAudioLogEventListener[16] — listener removals deferred while dispatching audio-log events — owner: AudioLogEvents
+        private static readonly IAudioLogEventListener[] _deferredUnregisterListeners = new IAudioLogEventListener[ListenerCapacity];
         private struct AudioLogReferenceSlot
         {
             public AudioLogData LogData;
@@ -44,9 +57,9 @@ namespace Hecton8.Narrative
             }
         }
 
-        // COLD ALLOC: AudioLogReferenceSlot[128] - managed audio-log data sidecar resolved only during dispatch - owner: AudioLogEvents
+        // COLD ALLOC: AudioLogReferenceSlot[128] — managed audio-log data sidecar resolved only during dispatch — owner: AudioLogEvents
         private static readonly AudioLogReferenceSlot[] _referenceSlots = new AudioLogReferenceSlot[ReferenceSlotCapacity];
-        // COLD ALLOC: bool[128] - audio-log sidecar occupancy map - owner: AudioLogEvents
+        // COLD ALLOC: bool[128] — audio-log sidecar occupancy map — owner: AudioLogEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<AudioLogEventPayload> _pendingEvents;
         private static NativeQueue<AudioLogEventPayload> _nextFrameEvents;
@@ -54,9 +67,23 @@ namespace Hecton8.Narrative
         private static int _referencePendingCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _droppedReferenceSlotCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastQueueOverflowTelemetryFrame = -1;
+        private static int _lastReferenceSlotOverflowTelemetryFrame = -1;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DroppedReferenceSlotCount => _droppedReferenceSlotCount;
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -77,11 +104,23 @@ namespace Hecton8.Narrative
             }
 
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             ClearReferenceSlots();
             _referenceWriteIndex = 0;
             _referencePendingCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _droppedReferenceSlotCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastQueueOverflowTelemetryFrame = -1;
+            _lastReferenceSlotOverflowTelemetryFrame = -1;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -91,7 +130,13 @@ namespace Hecton8.Narrative
                 return;
 
             EnsureInitialized();
-            _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         public static void Unregister(IAudioLogEventListener listener)
@@ -99,7 +144,17 @@ namespace Hecton8.Narrative
             if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            if (!_listeners.TryUnregister(listener))
+                return;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
         }
 
         public static void FlushPending()
@@ -131,13 +186,16 @@ namespace Hecton8.Narrative
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IAudioLogEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnAudioLogEvent(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
 
                 ReleaseReferenceSlot(payload.ReferenceSlot);
@@ -184,38 +242,49 @@ namespace Hecton8.Narrative
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<AudioLogEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] - deferred audio-log event lane flushed by SystemDispatcher LateUpdate - owner: AudioLogEvents
+                _pendingEvents = new NativeQueue<AudioLogEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — deferred audio-log event lane flushed by SystemDispatcher LateUpdate — owner: AudioLogEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     PendingEventCapacity,
                     nameof(AudioLogEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<AudioLogEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] - next-frame audio-log event lane prevents same-frame reentrant dispatch - owner: AudioLogEvents
+                _nextFrameEvents = new NativeQueue<AudioLogEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] — next-frame audio-log event lane prevents same-frame reentrant dispatch — owner: AudioLogEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     PendingEventCapacity,
                     nameof(AudioLogEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
         }
 
         private static void Enqueue(AudioLogEventType type, uint logHash, float durationSeconds, AudioLogData data)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportQueueOverflow(type);
                 return;
+            }
 
             int referenceSlot = -1;
             if (data != null)
             {
                 if (!TryReserveReferenceSlot(out referenceSlot))
+                {
+                    ReportReferenceSlotOverflow(type);
                     return;
+                }
 
                 _referenceSlots[referenceSlot].LogData = data;
             }
@@ -238,6 +307,20 @@ namespace Hecton8.Narrative
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         private static void DrainWithoutDispatch()
@@ -298,6 +381,233 @@ namespace Hecton8.Narrative
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
             _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
+        }
+
+        private static void DispatchToListener(IAudioLogEventListener listener, in AudioLogEventPayload payload)
+        {
+            try
+            {
+                listener.OnAudioLogEvent(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IAudioLogEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IAudioLogEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IAudioLogEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IAudioLogEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IAudioLogEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IAudioLogEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IAudioLogEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IAudioLogEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+
+            if (_listeners.Count <= 0)
+                DropQueuedEvents();
+        }
+
+        private static void RegisterImmediate(IAudioLogEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportQueueOverflow(AudioLogEventType type)
+        {
+            _droppedEventCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastQueueOverflowTelemetryFrame == frame)
+                return;
+
+            _lastQueueOverflowTelemetryFrame = frame;
+            uint contextHash = AudioLogQueueContextHash ^ ((uint)type << 24);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                AudioLogQueueOverflowWarningHash,
+                contextHash,
+                PositiveCount(_droppedEventCount));
+        }
+
+        private static void ReportReferenceSlotOverflow(AudioLogEventType type)
+        {
+            _droppedReferenceSlotCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastReferenceSlotOverflowTelemetryFrame == frame)
+                return;
+
+            _lastReferenceSlotOverflowTelemetryFrame = frame;
+            uint contextHash = AudioLogReferenceSlotContextHash ^ ((uint)type << 24);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                AudioLogReferenceSlotOverflowWarningHash,
+                contextHash,
+                PositiveCount(_droppedReferenceSlotCount));
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                AudioLogListenerRejectedWarningHash,
+                AudioLogListenerContextHash,
+                PositiveCount(_droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                AudioLogListenerExceptionWarningHash,
+                AudioLogListenerContextHash,
+                PositiveCount(_listenerExceptionCount));
+        }
+
+        private static int PositiveCount(int count)
+        {
+            return count > 0 ? count : 1;
+        }
+
+        private static void DropQueuedEvents()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                while (_pendingEvents.TryDequeue(out AudioLogEventPayload payload))
+                    ReleaseReferenceSlot(payload.ReferenceSlot);
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                while (_nextFrameEvents.TryDequeue(out AudioLogEventPayload payload))
+                    ReleaseReferenceSlot(payload.ReferenceSlot);
+            }
+
+            _pendingEventCount = 0;
             _nextFrameEventCount = 0;
         }
 

@@ -6,6 +6,7 @@ Shader "Hecton8/UI/IGNDitheredBackground"
         _Color ("Tint", Color) = (1,1,1,1)
         _OpacityScale ("Opacity Scale", Range(0, 1)) = 1
         _DitherBias ("Dither Bias", Range(-0.25, 0.25)) = 0
+        [HideInInspector] _ClipRect ("Clip Rect", Vector) = (-32767,-32767,32767,32767)
     }
 
     SubShader
@@ -34,6 +35,8 @@ Shader "Hecton8/UI/IGNDitheredBackground"
             #pragma vertex vert
             #pragma fragment frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma multi_compile_local _ UNITY_UI_CLIP_RECT
             #pragma multi_compile _ _HUD_PHOSPHOR_MODE
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -53,6 +56,7 @@ Shader "Hecton8/UI/IGNDitheredBackground"
                 half4 color : COLOR;
                 float2 texcoord : TEXCOORD0;
                 float4 screenPos : TEXCOORD1;
+                float4 maskPosition : TEXCOORD2;
             };
 
             TEXTURE2D(_MainTex);
@@ -62,6 +66,7 @@ Shader "Hecton8/UI/IGNDitheredBackground"
                 half4 _Color;
                 float _OpacityScale;
                 float _DitherBias;
+                float4 _ClipRect;
             CBUFFER_END
 
             v2f vert(appdata_t input)
@@ -74,6 +79,7 @@ Shader "Hecton8/UI/IGNDitheredBackground"
                 output.texcoord = input.texcoord;
                 output.color = input.color * _Color;
                 output.screenPos = ComputeScreenPos(output.vertex);
+                output.maskPosition = input.vertex;
                 return output;
             }
 
@@ -88,10 +94,19 @@ Shader "Hecton8/UI/IGNDitheredBackground"
                 return temporalPhase * float2(19.0, 47.0);
             }
 
+            float UnityGet2DClipping(float2 position, float4 clipRect)
+            {
+                float2 inside = step(clipRect.xy, position.xy) * step(position.xy, clipRect.zw);
+                return inside.x * inside.y;
+            }
+
             half4 frag(v2f input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+#if defined(UNITY_UI_CLIP_RECT)
+                clip(UnityGet2DClipping(input.maskPosition.xy, _ClipRect) - 0.5);
+#endif
                 float2 screenUv = input.screenPos.xy / max(input.screenPos.w, 0.0001);
 #if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
                 screenUv = UnityStereoTransformScreenSpaceTex(screenUv);

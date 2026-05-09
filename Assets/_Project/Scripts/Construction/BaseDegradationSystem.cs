@@ -25,6 +25,8 @@ namespace Hecton8.Construction
         private const float ParasiteCollapseMinimumHorizontalHalfExtent = 2.5f;
         private const float ParasiteCollapseMinimumVerticalHalfExtent = 1.5f;
         private const float ParasiteCollapseMassExtentScale = 0.0125f;
+        private const float DecalStateChangeEpsilon = 0.0001f;
+        private const float DecalStateChangeEpsilonSq = DecalStateChangeEpsilon * DecalStateChangeEpsilon;
         private const int RustDecalAtlasIndex = 1;
         private const int CrackDecalAtlasIndex = 2;
         private const int ParasiteSporeHazardIdSalt = unchecked((int)0x58C20D40);
@@ -36,6 +38,7 @@ namespace Hecton8.Construction
         {
             public bool IsRuptured;
             public int ModuleRuntimeId;
+            public uint SyncStamp;
             public Vector3 AbsoluteUniversePosition;
             public Matrix4x4 DecalMatrix;
             public int DecalAtlasIndex;
@@ -71,10 +74,8 @@ namespace Hecton8.Construction
 
         // COLD ALLOC: Dictionary<UInt32,RuptureNodeState>[64] - last-known rupture state per habitat graph node - owner: BaseDegradationSystem
         private static readonly Dictionary<uint, RuptureNodeState> _ruptureStates = new Dictionary<uint, RuptureNodeState>(64);
-        // COLD ALLOC: List<UInt32>[64] - seen-node scratch for one habitat graph synchronization pass - owner: BaseDegradationSystem
-        private static readonly List<uint> _seenNodeIds = new List<uint>(64);
-        // COLD ALLOC: List<UInt32>[16] - stale-node scratch for rupture-state eviction after graph synchronization - owner: BaseDegradationSystem
-        private static readonly List<uint> _staleNodeIds = new List<uint>(16);
+        // COLD ALLOC: List<UInt32>[64] - stale-node scratch for rupture-state eviction after graph synchronization - owner: BaseDegradationSystem
+        private static readonly List<uint> _staleNodeIds = new List<uint>(64);
         // COLD ALLOC: List<Matrix4x4>[64] - global crack decal matrix cache for downstream decal render owners - owner: BaseDegradationSystem
         private static readonly List<Matrix4x4> _globalCrackDecalMatrices = new List<Matrix4x4>(64);
         // COLD ALLOC: List<Int32>[64] - global crack decal atlas index cache aligned with matrix cache - owner: BaseDegradationSystem
@@ -91,12 +92,13 @@ namespace Hecton8.Construction
         private static readonly Dictionary<int, PressureCompressionState> _pressureCompressionStates = new Dictionary<int, PressureCompressionState>(64);
         // COLD ALLOC: Dictionary<Int32,ParasiteStructuralState>[32] - mature parasite structural-collapse latch keyed by runtime module id - owner: BaseDegradationSystem
         private static readonly Dictionary<int, ParasiteStructuralState> _parasiteStructuralStates = new Dictionary<int, ParasiteStructuralState>(32);
+        private static uint _ruptureSyncStamp;
+        private static bool _globalDecalBufferDirty;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _ruptureStates.Clear();
-            _seenNodeIds.Clear();
             _staleNodeIds.Clear();
             _globalCrackDecalMatrices.Clear();
             _globalCrackDecalAtlasIndices.Clear();
@@ -106,10 +108,27 @@ namespace Hecton8.Construction
             _parasiteSporeHazards.Clear();
             _pressureCompressionStates.Clear();
             _parasiteStructuralStates.Clear();
+            _ruptureSyncStamp = 0u;
+            _globalDecalBufferDirty = false;
         }
 
-        internal static IReadOnlyList<Matrix4x4> GlobalCrackDecalMatrices => _globalCrackDecalMatrices;
-        internal static IReadOnlyList<int> GlobalCrackDecalAtlasIndices => _globalCrackDecalAtlasIndices;
+        internal static IReadOnlyList<Matrix4x4> GlobalCrackDecalMatrices
+        {
+            get
+            {
+                RebuildGlobalDecalBufferIfDirty();
+                return _globalCrackDecalMatrices;
+            }
+        }
+
+        internal static IReadOnlyList<int> GlobalCrackDecalAtlasIndices
+        {
+            get
+            {
+                RebuildGlobalDecalBufferIfDirty();
+                return _globalCrackDecalAtlasIndices;
+            }
+        }
 
         internal static void SynchronizePressureCompression(BaseModule baseModule, Matrix4x4 compressionMatrix, float volumeScale, float depthMeters)
         {
@@ -241,13 +260,13 @@ namespace Hecton8.Construction
 
         internal static void BeginRuptureSync()
         {
-            _seenNodeIds.Clear();
+            _ruptureSyncStamp++;
+            if (_ruptureSyncStamp == 0u)
+                _ruptureSyncStamp = 1u;
         }
 
         internal static void SynchronizeNode(GameObject moduleObject, uint nodeId, LogisticsNodeFlags flags, Vector3 ruptureWorldPosition)
         {
-            _seenNodeIds.Add(nodeId);
-
             bool isRuptured = (flags & LogisticsNodeFlags.Ruptured) != 0;
             bool hadPreviousState = _ruptureStates.TryGetValue(nodeId, out RuptureNodeState previousState);
             int moduleRuntimeId = ResolveModuleRuntimeId(moduleObject);
@@ -260,26 +279,37 @@ namespace Hecton8.Construction
                 if (moduleRuntimeId != 0)
                     _moduleRuptureStates[moduleRuntimeId] = false;
 
-                _ruptureStates.Remove(nodeId);
+                if (_ruptureStates.Remove(nodeId))
+                    MarkGlobalDecalBufferDirty();
                 return;
             }
 
             Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(ruptureWorldPosition);
             Matrix4x4 decalMatrix = BuildCrackDecalMatrix(moduleObject, ruptureWorldPosition);
+            int decalAtlasIndex = StructuralIntegrityProfile.DefaultRuptureDecalAtlasIndex;
+            bool decalStateChanged = !hadPreviousState ||
+                                     !previousState.IsRuptured ||
+                                     previousState.ModuleRuntimeId != moduleRuntimeId ||
+                                     previousState.DecalAtlasIndex != decalAtlasIndex ||
+                                     !ApproximatelySameVector(previousState.AbsoluteUniversePosition, absoluteUniversePosition) ||
+                                     !ApproximatelySameMatrix(previousState.DecalMatrix, decalMatrix);
 
             _ruptureStates[nodeId] = new RuptureNodeState
             {
                 IsRuptured = true,
                 ModuleRuntimeId = moduleRuntimeId,
+                SyncStamp = _ruptureSyncStamp,
                 AbsoluteUniversePosition = absoluteUniversePosition,
                 DecalMatrix = decalMatrix,
-                DecalAtlasIndex = StructuralIntegrityProfile.DefaultRuptureDecalAtlasIndex
+                DecalAtlasIndex = decalAtlasIndex
             };
 
             if (moduleRuntimeId != 0)
                 _moduleRuptureStates[moduleRuntimeId] = true;
 
             ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, true);
+            if (decalStateChanged)
+                MarkGlobalDecalBufferDirty();
 
             if (!hadPreviousState || !previousState.IsRuptured)
                 DispatchRuptureEffects(moduleObject, ruptureWorldPosition, decalMatrix);
@@ -291,7 +321,7 @@ namespace Hecton8.Construction
             Dictionary<uint, RuptureNodeState>.Enumerator enumerator = _ruptureStates.GetEnumerator();
             while (enumerator.MoveNext())
             {
-                if (!_seenNodeIds.Contains(enumerator.Current.Key))
+                if (enumerator.Current.Value.SyncStamp != _ruptureSyncStamp)
                     _staleNodeIds.Add(enumerator.Current.Key);
             }
 
@@ -303,10 +333,9 @@ namespace Hecton8.Construction
                     _moduleRuptureStates[staleState.ModuleRuntimeId] = false;
 
                 ConnectionSplineBatchRenderer.SetPipeNodeRuptured(nodeId, false);
-                _ruptureStates.Remove(nodeId);
+                if (_ruptureStates.Remove(nodeId))
+                    MarkGlobalDecalBufferDirty();
             }
-
-            RebuildGlobalDecalBuffer();
         }
 
         internal static void SynchronizeIntegrityState(BaseModule baseModule)
@@ -325,9 +354,9 @@ namespace Hecton8.Construction
 
             if (!isBelowThreshold && !hasParasiteVisual)
             {
-                _integritySocketStates[moduleInstanceId] = false;
+                _integritySocketStates.Remove(moduleInstanceId);
                 if (_integrityDecalStates.Remove(moduleInstanceId))
-                    RebuildGlobalDecalBuffer();
+                    MarkGlobalDecalBufferDirty();
                 return;
             }
 
@@ -337,12 +366,19 @@ namespace Hecton8.Construction
                     baseModule.IntegrityStateNormalized,
                     baseModule.BulkheadFloodStress01);
             Matrix4x4 decalMatrix = BuildIntegrityDecalMatrix(baseModule, parasiteVisual01);
-            _integrityDecalStates[moduleInstanceId] = new IntegrityDecalState
+            IntegrityDecalState nextDecalState = new IntegrityDecalState
             {
                 DecalMatrix = decalMatrix,
                 DecalAtlasIndex = decalAtlasIndex
             };
-            RebuildGlobalDecalBuffer();
+            bool hadPreviousDecalState = _integrityDecalStates.TryGetValue(moduleInstanceId, out IntegrityDecalState previousDecalState);
+            _integrityDecalStates[moduleInstanceId] = nextDecalState;
+            if (!hadPreviousDecalState ||
+                previousDecalState.DecalAtlasIndex != decalAtlasIndex ||
+                !ApproximatelySameMatrix(previousDecalState.DecalMatrix, decalMatrix))
+            {
+                MarkGlobalDecalBufferDirty();
+            }
 
             if (hadLatchedState || !isBelowThreshold)
                 return;
@@ -367,7 +403,7 @@ namespace Hecton8.Construction
             int moduleInstanceId = unchecked((int)EntityId.ToULong(baseModule.GetEntityId()));
             _integritySocketStates.Remove(moduleInstanceId);
             if (_integrityDecalStates.Remove(moduleInstanceId))
-                RebuildGlobalDecalBuffer();
+                MarkGlobalDecalBufferDirty();
         }
 
         internal static void SynchronizeParasiteSporeHazard(BaseModule baseModule)
@@ -557,14 +593,53 @@ namespace Hecton8.Construction
             }
         }
 
+        private static void MarkGlobalDecalBufferDirty()
+        {
+            _globalDecalBufferDirty = true;
+        }
+
+        private static void RebuildGlobalDecalBufferIfDirty()
+        {
+            if (!_globalDecalBufferDirty)
+                return;
+
+            _globalDecalBufferDirty = false;
+            RebuildGlobalDecalBuffer();
+        }
+
+        private static bool ApproximatelySameVector(Vector3 left, Vector3 right)
+        {
+            return (left - right).sqrMagnitude <= DecalStateChangeEpsilonSq;
+        }
+
+        private static bool ApproximatelySameMatrix(Matrix4x4 left, Matrix4x4 right)
+        {
+            for (int elementIndex = 0; elementIndex < 16; elementIndex++)
+            {
+                if (Mathf.Abs(left[elementIndex] - right[elementIndex]) > DecalStateChangeEpsilon)
+                    return false;
+            }
+
+            return true;
+        }
+
         private static Matrix4x4 BuildCrackDecalMatrix(GameObject moduleObject, Vector3 ruptureWorldPosition)
         {
-            Vector3 outward = moduleObject != null
-                ? ruptureWorldPosition - moduleObject.transform.position
-                : Vector3.forward;
+            Vector3 outward = Vector3.forward;
+            Vector3 fallbackForward = Vector3.forward;
+            if (moduleObject != null)
+            {
+                Transform moduleTransform = moduleObject.transform;
+                Matrix4x4 localToWorld = moduleTransform.localToWorldMatrix;
+                Vector3 moduleWorldPosition = localToWorld.GetColumn(3);
+                fallbackForward = localToWorld.GetColumn(2);
+                Vector3 ruptureAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(ruptureWorldPosition);
+                Vector3 moduleAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(moduleWorldPosition);
+                outward = ruptureAup - moduleAup;
+            }
 
             if (outward.sqrMagnitude <= 0.0001f)
-                outward = moduleObject != null ? moduleObject.transform.forward : Vector3.forward;
+                outward = fallbackForward;
 
             Quaternion rotation = Quaternion.LookRotation(outward.normalized, Vector3.up);
             Vector3 scale = Vector3.one * DefaultDecalScaleMeters;
@@ -574,14 +649,16 @@ namespace Hecton8.Construction
         private static Matrix4x4 BuildIntegrityDecalMatrix(BaseModule baseModule, float parasiteVisual01)
         {
             Transform moduleTransform = baseModule.transform;
-            Vector3 worldPosition = moduleTransform.position;
-            Vector3 forward = moduleTransform.forward;
+            Matrix4x4 localToWorld = moduleTransform.localToWorldMatrix;
+            Vector3 moduleWorldPosition = localToWorld.GetColumn(3);
+            Vector3 worldPosition = moduleWorldPosition;
+            Vector3 forward = localToWorld.GetColumn(2);
 
             if (baseModule.TryGetDegradationSockets(out BaseModuleTemplate.VfxSocket[] sockets) && sockets.Length > 0)
             {
                 BaseModuleTemplate.VfxSocket socket = sockets[0];
-                worldPosition = moduleTransform.TransformPoint(new Vector3(socket.LocalPosition.x, socket.LocalPosition.y, socket.LocalPosition.z));
-                Vector3 outward = worldPosition - moduleTransform.position;
+                worldPosition = localToWorld.MultiplyPoint3x4(new Vector3(socket.LocalPosition.x, socket.LocalPosition.y, socket.LocalPosition.z));
+                Vector3 outward = worldPosition - moduleWorldPosition;
                 if (outward.sqrMagnitude > 0.0001f)
                     forward = outward.normalized;
             }
@@ -607,14 +684,15 @@ namespace Hecton8.Construction
             if (moduleObject == null)
                 return;
 
-            Transform decalTransform = ResolveDecalTransform(moduleObject.transform, childName);
+            Transform moduleTransform = moduleObject.transform;
+            Transform decalTransform = ResolveDecalTransform(moduleTransform, childName);
             if (decalTransform == null)
                 return;
 
             Vector4 forwardColumn = decalMatrix.GetColumn(2);
             Vector3 forward = new Vector3(forwardColumn.x, forwardColumn.y, forwardColumn.z);
             if (forward.sqrMagnitude <= 0.0001f)
-                forward = moduleObject.transform.forward;
+                forward = moduleTransform.forward;
 
             decalTransform.gameObject.SetActive(true);
             decalTransform.SetPositionAndRotation(

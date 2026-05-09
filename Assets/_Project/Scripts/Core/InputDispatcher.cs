@@ -1,6 +1,8 @@
 using Hecton8.Input;
+using System.Runtime.InteropServices;
 using System.Threading;
 using Hecton8.Tools;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -16,10 +18,11 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9990)]
-    public sealed class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat, IDispatcherRaycastReceiver
+    public sealed class InputDispatcher : MonoBehaviour, IInputService, IUpdatable, ITickable, IServiceHeartbeat, IServiceShutdown, IDispatcherRaycastReceiver, IGlobalRegistryHotSwapListener, IGlobalRegistryHotSwapRefListener
     {
         private const int BufferedActionCapacity = 15;
         private const int XRInputStateCapacity = 2;
+        private const int XRControllerActiveBitCount = 5;
         private const int XRLookAtCommandCapacity = 1;
         private const int XRDeviceRescanIntervalFrames = 30;
         private const int XRLookAtSelectionRequestId = 8801;
@@ -39,11 +42,22 @@ namespace Hecton8.Core
         private const float LookCurveRangeSq = 1f - LookCurveDeadzoneSq;
         private const float XRAnalogNoiseFloor = 0.05f;
         private const float XRAnalogNoiseFloorSq = XRAnalogNoiseFloor * XRAnalogNoiseFloor;
+        private const float HapticMotorWriteEpsilon = 0.01f;
+        private const float XRHapticMotorWriteEpsilon = 0.015f;
+        private const float XRHapticImpulseDurationSeconds = 0.045f;
+        private const float XRHapticRefreshIntervalSeconds = 0.033f;
+        private const byte HapticLowMotorMask = 0b0001;
+        private const byte HapticHighMotorMask = 0b0010;
+        private const byte HapticBlendOverride = 0;
+        private const byte HapticBlendAdditive = 1;
         private const uint XRRuntimeFlagLookAtRayCommandEnabled = 1u << 0;
+        private const uint XRRuntimeFlagInputSnapshotActive = 1u << 1;
+        private const uint XRRuntimeFlagsAny = XRRuntimeFlagLookAtRayCommandEnabled | XRRuntimeFlagInputSnapshotActive;
         private static readonly QueryParameters XRLookAtEnabledQueryParameters = new QueryParameters(HectonLayerMasks.DefaultRaycastLayerMask, false, QueryTriggerInteraction.Ignore);
         private static readonly QueryParameters XRLookAtDisabledQueryParameters = new QueryParameters(HectonLayerMasks.NoLayers, false, QueryTriggerInteraction.Ignore);
         private static readonly RaycastCommand DisabledXRLookAtRayCommand = new RaycastCommand(Vector3.zero, Vector3.forward, XRLookAtDisabledQueryParameters, 0.01f);
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct BufferedActionEntry
         {
             public PlayerBufferedAction Action;
@@ -73,13 +87,16 @@ namespace Hecton8.Core
         private ButtonControl _rightSecondaryButton;
         private NativeArray<XRInputState> _xrInputStates;
         private NativeArray<RaycastCommand> _xrLookAtRayCommands;
+        private JobHandle _xrNativeDisposeHandle;
         private RaycastHit _lastXRLookAtHit;
-        private Vector3 _lastXRLookAtRayOriginAup;
+        private AbsoluteUniversePosition _lastXRLookAtRayOriginAup;
+        private Vector3 _lastXRLookAtRayOriginRuntimePosition;
         private Vector3 _lastXRLookAtRayDirection;
-        private Vector3 _lastXRLookAtHitPointAup;
+        private AbsoluteUniversePosition _lastXRLookAtHitPointAup;
         private int _lastXRLookAtPhysicsQueryFrame = -1;
         private bool _registeredUpdatable;
         private bool _registeredInputService;
+        private bool _registeredHotSwapListener;
         private bool _isInitialized;
         private bool _subscribedToNativeInput;
         private bool _subscribedToDeviceChanges;
@@ -91,6 +108,10 @@ namespace Hecton8.Core
         private uint _latchedActionBits;
         private float _appliedLowMotorSpeed;
         private float _appliedHighMotorSpeed;
+        private float _appliedLeftXRHapticAmplitude;
+        private float _appliedRightXRHapticAmplitude;
+        private float _nextLeftXRHapticWriteTime;
+        private float _nextRightXRHapticWriteTime;
         private float _lookBlendElapsed;
         private uint _xrRuntimeFlags;
         private bool _lookBlendActive;
@@ -192,10 +213,11 @@ namespace Hecton8.Core
 
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
-            EnsureXRNativeBuffers();
+            RefreshXRNativeBufferState();
             TryRegisterToDispatcher();
             _isInitialized = true;
             TryRegisterInputService();
+            TryRegisterHotSwapListener();
             CaptureState();
         }
 
@@ -206,7 +228,7 @@ namespace Hecton8.Core
 
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
-            EnsureXRNativeBuffers();
+            RefreshXRNativeBufferState();
         }
 
         private void OnEnable()
@@ -215,44 +237,78 @@ namespace Hecton8.Core
 
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
-            EnsureXRNativeBuffers();
+            RefreshXRNativeBufferState();
 
             if (_isInitialized)
             {
                 TryRegisterToDispatcher();
                 TryRegisterInputService();
+                TryRegisterHotSwapListener();
                 CaptureState();
             }
         }
 
         private void OnDisable()
         {
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
-
-            UnsubscribeFromNativeInput();
-            ResetGamepadHaptics();
-            UnsubscribeFromDeviceChanges();
-            TryUnregisterFromDispatcher();
-
-            TryUnregisterInputService();
-
-            ClearFrameState();
-            DisposeXRNativeBuffers(default);
+            ShutdownServiceState(resetInitialization: false, clearSubscribers: false);
         }
 
         private void OnDestroy()
+        {
+            ShutdownServiceState(resetInitialization: true, clearSubscribers: true);
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState(resetInitialization: true, clearSubscribers: true);
+        }
+
+        private void ShutdownServiceState(bool resetInitialization, bool clearSubscribers)
         {
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
             UnsubscribeFromNativeInput();
             ResetGamepadHaptics();
+            ResetXRHaptics();
             UnsubscribeFromDeviceChanges();
             TryUnregisterFromDispatcher();
-
             TryUnregisterInputService();
+            TryUnregisterHotSwapListener();
+            ClearFrameState();
+            ClearCachedInputDevices();
             DisposeXRNativeBuffers(default);
+
+            if (resetInitialization)
+            {
+                _nativeInputManager = null;
+                _isInitialized = false;
+            }
+
+            if (clearSubscribers)
+                ClearInputSubscribers();
+        }
+
+        private void ClearCachedInputDevices()
+        {
+            _cachedGamepad = null;
+            ClearCachedXRControllers();
+        }
+
+        private void ClearInputSubscribers()
+        {
+            OnInteract = null;
+            OnPrimaryAction = null;
+            OnSecondaryAction = null;
+            OnPDA = null;
+            OnInventory = null;
+            OnCancel = null;
+            OnTabNext = null;
+            OnTabPrevious = null;
+            OnToolSlot1 = null;
+            OnToolSlot2 = null;
+            OnToolSlot3 = null;
+            OnToolSlot4 = null;
         }
 
         /// <summary>
@@ -288,6 +344,20 @@ namespace Hecton8.Core
         internal NativeArray<RaycastCommand>.ReadOnly GetXRLookAtRayCommandsReadOnly()
         {
             return _xrLookAtRayCommands.IsCreated ? _xrLookAtRayCommands.AsReadOnly() : default;
+        }
+
+        internal bool TryGetXRInputState(byte controllerIndex, out XRInputState state)
+        {
+            state = default;
+            if (!_xrInputStates.IsCreated ||
+                !HectonXRRuntimeState.IsXRActive ||
+                controllerIndex >= _xrInputStates.Length)
+            {
+                return false;
+            }
+
+            state = _xrInputStates[controllerIndex];
+            return state.IsTracked != 0;
         }
 
         /// <summary>
@@ -387,7 +457,10 @@ namespace Hecton8.Core
         {
             SubscribeToDeviceChanges();
             ResolveCachedGamepad();
-            ResolveCachedXRControllers();
+            if (HectonXRRuntimeState.IsXRActive)
+                ResolveCachedXRControllers();
+            else
+                ClearCachedXRControllers();
         }
 
         private void SubscribeToNativeInput()
@@ -506,6 +579,12 @@ namespace Hecton8.Core
 
         private void HandleXRDeviceChange(XRController controller, InputDeviceChange change)
         {
+            if (!HectonXRRuntimeState.IsXRActive)
+            {
+                ClearCachedXRControllers();
+                return;
+            }
+
             switch (change)
             {
                 case InputDeviceChange.Added:
@@ -526,6 +605,13 @@ namespace Hecton8.Core
                     ResolveCachedXRControllers();
                     break;
             }
+        }
+
+        private void ClearCachedXRControllers()
+        {
+            ClearLeftXRController();
+            ClearRightXRController();
+            _nextXRDeviceRescanFrame = 0;
         }
 
         private void ResolveCachedXRControllers()
@@ -550,6 +636,14 @@ namespace Hecton8.Core
 
         private void BindLeftXRController(XRController controller)
         {
+            if (!ReferenceEquals(_cachedLeftXRController, controller))
+            {
+                ResetXRControllerHaptics(
+                    _cachedLeftXRController,
+                    ref _appliedLeftXRHapticAmplitude,
+                    ref _nextLeftXRHapticWriteTime);
+            }
+
             _cachedLeftXRController = controller != null && controller.added ? controller : null;
             ResolveXRControls(
                 _cachedLeftXRController,
@@ -565,6 +659,14 @@ namespace Hecton8.Core
 
         private void BindRightXRController(XRController controller)
         {
+            if (!ReferenceEquals(_cachedRightXRController, controller))
+            {
+                ResetXRControllerHaptics(
+                    _cachedRightXRController,
+                    ref _appliedRightXRHapticAmplitude,
+                    ref _nextRightXRHapticWriteTime);
+            }
+
             _cachedRightXRController = controller != null && controller.added ? controller : null;
             ResolveXRControls(
                 _cachedRightXRController,
@@ -580,6 +682,10 @@ namespace Hecton8.Core
 
         private void ClearLeftXRController()
         {
+            ResetXRControllerHaptics(
+                _cachedLeftXRController,
+                ref _appliedLeftXRHapticAmplitude,
+                ref _nextLeftXRHapticWriteTime);
             _cachedLeftXRController = null;
             _leftTriggerAxis = null;
             _leftGripAxis = null;
@@ -593,6 +699,10 @@ namespace Hecton8.Core
 
         private void ClearRightXRController()
         {
+            ResetXRControllerHaptics(
+                _cachedRightXRController,
+                ref _appliedRightXRHapticAmplitude,
+                ref _nextRightXRHapticWriteTime);
             _cachedRightXRController = null;
             _rightTriggerAxis = null;
             _rightGripAxis = null;
@@ -655,8 +765,7 @@ namespace Hecton8.Core
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
+            _registeredUpdatable = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private void TryUnregisterFromDispatcher()
@@ -686,6 +795,14 @@ namespace Hecton8.Core
             _registeredInputService = ReferenceEquals(GlobalRegistry.RegisteredInput, this);
         }
 
+        private void TryRegisterHotSwapListener()
+        {
+            if (_registeredHotSwapListener || !Application.isPlaying)
+                return;
+
+            _registeredHotSwapListener = GlobalRegistry.TryRegisterHotSwapListener(this);
+        }
+
         private void TryUnregisterInputService()
         {
             if (!_registeredInputService)
@@ -697,10 +814,34 @@ namespace Hecton8.Core
             _registeredInputService = false;
         }
 
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_registeredHotSwapListener)
+                return;
+
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
+            _registeredHotSwapListener = false;
+        }
+
+        public void OnGlobalRegistryServiceRebound(GlobalRegistryServiceSlot serviceSlot, ref object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.NativeInputManagerRuntime)
+                return;
+
+            BindNativeInputManager(currentService as InputManager);
+        }
+
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+        }
+
         private void CaptureState(float deltaTime = 0f)
         {
             EnsureInputBinding();
-            EnsureXRNativeBuffers();
+            RefreshXRNativeBufferState();
 
             int currentFrame = Time.frameCount;
             if (_lastCapturedFrame == currentFrame)
@@ -736,12 +877,54 @@ namespace Hecton8.Core
             _currentState = state;
             _pendingLookDelta = Vector2.zero;
             _latchedActionBits = 0u;
-            RefreshXRInputSnapshot();
-            StageXRLookAtRayCommand();
+            if (HectonXRRuntimeState.IsXRActive)
+            {
+                RefreshXRInputSnapshot();
+                StageXRLookAtRayCommand();
+            }
+            else
+            {
+                ClearXRRuntimeFrameStateIfActive();
+            }
+        }
+
+        private void RefreshXRNativeBufferState()
+        {
+            if (HectonXRRuntimeState.IsXRActive)
+            {
+                EnsureXRNativeBuffers();
+                return;
+            }
+
+            if (!HasXRRuntimeStateToClear())
+            {
+                return;
+            }
+
+            ClearCachedXRControllers();
+            ClearXRRuntimeFrameStateIfActive();
+            DisposeXRNativeBuffers(default);
+        }
+
+        private bool HasXRRuntimeStateToClear()
+        {
+            return _xrInputStates.IsCreated ||
+                   _xrLookAtRayCommands.IsCreated ||
+                   (_xrRuntimeFlags & XRRuntimeFlagsAny) != 0u ||
+                   _lastXRLookAtPhysicsQueryFrame >= 0 ||
+                   _lastXRLookAtHitFrame >= 0 ||
+                   _cachedLeftXRController != null ||
+                   _cachedRightXRController != null ||
+                   _appliedLeftXRHapticAmplitude > HapticMotorWriteEpsilon ||
+                   _appliedRightXRHapticAmplitude > HapticMotorWriteEpsilon;
         }
 
         private void EnsureXRNativeBuffers()
         {
+            DispatcherJobSwap.TryFinalizeCompleted(ref _xrNativeDisposeHandle);
+            if (!_xrNativeDisposeHandle.IsCompleted)
+                return;
+
             if (!_xrInputStates.IsCreated)
             {
                 _xrInputStates = new NativeArray<XRInputState>(XRInputStateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<XRInputState>[2] - OpenXR left/right frame cache - owner: InputDispatcher
@@ -766,20 +949,33 @@ namespace Hecton8.Core
 
         private void DisposeXRNativeBuffers(JobHandle dependency)
         {
+            DispatcherJobSwap.TryFinalizeCompleted(ref _xrNativeDisposeHandle);
+            bool hasPendingDispose = !_xrNativeDisposeHandle.IsCompleted;
+            JobHandle disposeHandle = hasPendingDispose
+                ? JobHandle.CombineDependencies(_xrNativeDisposeHandle, dependency)
+                : dependency;
+            bool scheduledDispose = false;
+
             if (_xrInputStates.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_xrInputStates);
-                _xrInputStates.Dispose(dependency);
+                disposeHandle = _xrInputStates.Dispose(disposeHandle);
                 _xrInputStates = default;
+                scheduledDispose = true;
             }
 
             if (_xrLookAtRayCommands.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_xrLookAtRayCommands);
-                _xrLookAtRayCommands.Dispose(dependency);
+                disposeHandle = _xrLookAtRayCommands.Dispose(disposeHandle);
                 _xrLookAtRayCommands = default;
+                scheduledDispose = true;
             }
 
+            if (!scheduledDispose)
+                return;
+
+            _xrNativeDisposeHandle = disposeHandle;
             JobHandle.ScheduleBatchedJobs();
         }
 
@@ -787,6 +983,12 @@ namespace Hecton8.Core
         {
             if (!_xrInputStates.IsCreated)
                 return;
+
+            if (!HectonXRRuntimeState.IsXRActive)
+            {
+                ClearXRInputSnapshotIfActive();
+                return;
+            }
 
             ResolveCachedXRControllers();
             _xrInputStates[0] = CaptureXRController(
@@ -811,6 +1013,21 @@ namespace Hecton8.Core
                 _rightJoystickButton,
                 _rightPrimaryButton,
                 _rightSecondaryButton);
+            _xrRuntimeFlags |= XRRuntimeFlagInputSnapshotActive;
+        }
+
+        private void ClearXRInputSnapshotIfActive(bool forceWrite = false)
+        {
+            if (!_xrInputStates.IsCreated)
+                return;
+
+            if (!forceWrite && (_xrRuntimeFlags & XRRuntimeFlagInputSnapshotActive) == 0u)
+                return;
+
+            for (int i = 0; i < _xrInputStates.Length; i++)
+                _xrInputStates[i] = default;
+
+            _xrRuntimeFlags &= ~XRRuntimeFlagInputSnapshotActive;
         }
 
         private static XRInputState CaptureXRController(
@@ -844,14 +1061,45 @@ namespace Hecton8.Core
             bool tracked = controller.isTracked != null && controller.isTracked.isPressed;
             state.IsTracked = tracked ? (byte)1 : (byte)0;
 
+            bool triggerActive = IsPressed(triggerButton, state.Trigger);
+            bool gripActive = IsPressed(gripButton, state.Grip);
+            bool joystickClickActive = IsPressed(joystickButton, 0f);
+            bool joystickActive = math.lengthsq(state.Joystick) >= XRAnalogNoiseFloorSq || joystickClickActive;
+            bool primaryActive = IsPressed(primaryButton, 0f);
+            bool secondaryActive = IsPressed(secondaryButton, 0f);
+
             uint buttons = 0u;
-            buttons |= IsPressed(triggerButton, state.Trigger) ? (uint)XRInputButton.Trigger : 0u;
-            buttons |= IsPressed(gripButton, state.Grip) ? (uint)XRInputButton.Grip : 0u;
-            buttons |= IsPressed(joystickButton, 0f) ? (uint)XRInputButton.JoystickClick : 0u;
-            buttons |= IsPressed(primaryButton, 0f) ? (uint)XRInputButton.Primary : 0u;
-            buttons |= IsPressed(secondaryButton, 0f) ? (uint)XRInputButton.Secondary : 0u;
+            buttons |= triggerActive ? (uint)XRInputButton.Trigger : 0u;
+            buttons |= gripActive ? (uint)XRInputButton.Grip : 0u;
+            buttons |= joystickClickActive ? (uint)XRInputButton.JoystickClick : 0u;
+            buttons |= primaryActive ? (uint)XRInputButton.Primary : 0u;
+            buttons |= secondaryActive ? (uint)XRInputButton.Secondary : 0u;
             state.ButtonsBitmask = buttons;
+            state.ActiveMask = BuildControllerActiveMask(
+                controllerIndex,
+                triggerActive,
+                gripActive,
+                joystickActive,
+                primaryActive,
+                secondaryActive);
             return state;
+        }
+
+        private static uint BuildControllerActiveMask(
+            byte controllerIndex,
+            bool triggerActive,
+            bool gripActive,
+            bool joystickActive,
+            bool primaryActive,
+            bool secondaryActive)
+        {
+            uint localMask = 0u;
+            localMask |= triggerActive ? (uint)XRInputActiveBit.Trigger : 0u;
+            localMask |= gripActive ? (uint)XRInputActiveBit.Grip : 0u;
+            localMask |= joystickActive ? (uint)XRInputActiveBit.Joystick : 0u;
+            localMask |= primaryActive ? (uint)XRInputActiveBit.Primary : 0u;
+            localMask |= secondaryActive ? (uint)XRInputActiveBit.Secondary : 0u;
+            return localMask << (controllerIndex * XRControllerActiveBitCount);
         }
 
         private static float ApplyXRAnalogNoiseFloor(float value)
@@ -876,6 +1124,12 @@ namespace Hecton8.Core
             if (!_xrLookAtRayCommands.IsCreated)
                 return;
 
+            if (!HectonXRRuntimeState.IsXRActive)
+            {
+                DisableXRLookAtRayCommand();
+                return;
+            }
+
             Transform viewTransform = ResolveLookAtViewTransform();
             if (viewTransform == null)
             {
@@ -883,9 +1137,8 @@ namespace Hecton8.Core
                 return;
             }
 
-            Vector3 origin = viewTransform.position;
-            Vector3 originAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(origin);
-            Vector3 direction = viewTransform.forward;
+            viewTransform.GetPositionAndRotation(out Vector3 origin, out Quaternion viewRotation);
+            Vector3 direction = viewRotation * Vector3.forward;
             float3 direction3 = new float3(direction.x, direction.y, direction.z);
             if (!math.all(math.isfinite(direction3)))
             {
@@ -893,13 +1146,16 @@ namespace Hecton8.Core
                 direction3 = new float3(0f, 0f, 1f);
             }
 
+            AbsoluteUniversePosition originAup = HectonXRRuntimeState.TryResolveCachedHeadAup(origin, out AbsoluteUniversePosition cachedHeadAup)
+                ? cachedHeadAup
+                : AbsoluteUniversePosition.FromRuntimePosition(origin);
             if (TryReuseXRLookAtHit(in originAup, in direction3))
             {
                 DisableXRLookAtRayCommand();
                 return;
             }
 
-            Vector3 rayOrigin = HectonFloatingOrigin.ToRuntimePosition(originAup);
+            Vector3 rayOrigin = (Vector3)originAup.ToRuntimeFloat3();
             RaycastCommand command = default;
             command.from = rayOrigin;
             command.direction = direction;
@@ -910,6 +1166,7 @@ namespace Hecton8.Core
                 _xrLookAtRayCommands[0] = command;
                 _xrRuntimeFlags |= XRRuntimeFlagLookAtRayCommandEnabled;
                 _lastXRLookAtRayOriginAup = originAup;
+                _lastXRLookAtRayOriginRuntimePosition = rayOrigin;
                 _lastXRLookAtRayDirection = direction;
                 return;
             }
@@ -926,7 +1183,33 @@ namespace Hecton8.Core
             _xrRuntimeFlags &= ~XRRuntimeFlagLookAtRayCommandEnabled;
         }
 
-        private bool TryReuseXRLookAtHit(in Vector3 originAup, in float3 direction)
+        private void ClearXRRuntimeFrameStateIfActive()
+        {
+            if (!_xrInputStates.IsCreated &&
+                !_xrLookAtRayCommands.IsCreated &&
+                (_xrRuntimeFlags & XRRuntimeFlagsAny) == 0u &&
+                _lastXRLookAtPhysicsQueryFrame < 0 &&
+                _lastXRLookAtHitFrame < 0)
+            {
+                return;
+            }
+
+            ClearXRInputSnapshotIfActive(forceWrite: true);
+
+            if (_xrLookAtRayCommands.IsCreated)
+                DisableXRLookAtRayCommand(forceWrite: true);
+
+            _lastXRLookAtHit = default;
+            _lastXRLookAtHitFrame = -1;
+            _lastXRLookAtRayOriginAup = default;
+            _lastXRLookAtRayOriginRuntimePosition = Vector3.zero;
+            _lastXRLookAtRayDirection = Vector3.forward;
+            _lastXRLookAtHitPointAup = default;
+            _lastXRLookAtPhysicsQueryFrame = -1;
+            _xrRuntimeFlags = 0u;
+        }
+
+        private bool TryReuseXRLookAtHit(in AbsoluteUniversePosition originAup, in float3 direction)
         {
             if (_lastXRLookAtPhysicsQueryFrame < 0)
                 return false;
@@ -934,9 +1217,7 @@ namespace Hecton8.Core
             if (Time.frameCount - _lastXRLookAtPhysicsQueryFrame > XRLookAtReuseMaxFrames)
                 return false;
 
-            float3 previousOriginAup = new float3(_lastXRLookAtRayOriginAup.x, _lastXRLookAtRayOriginAup.y, _lastXRLookAtRayOriginAup.z);
-            float3 currentOriginAup = new float3(originAup.x, originAup.y, originAup.z);
-            float3 originDelta = currentOriginAup - previousOriginAup;
+            float3 originDelta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in originAup, in _lastXRLookAtRayOriginAup);
             if (math.lengthsq(originDelta) > XRLookAtReuseOriginDriftSq)
                 return false;
 
@@ -950,8 +1231,7 @@ namespace Hecton8.Core
                 return true;
             }
 
-            float3 hitPointAup = new float3(_lastXRLookAtHitPointAup.x, _lastXRLookAtHitPointAup.y, _lastXRLookAtHitPointAup.z);
-            float3 toHit = hitPointAup - currentOriginAup;
+            float3 toHit = AbsoluteUniversePosition.ToCameraRelativeFloat3(in _lastXRLookAtHitPointAup, in originAup);
             float hitDistanceSq = math.lengthsq(toHit);
             if (hitDistanceSq <= 0.0001f || hitDistanceSq > XRLookAtSelectionDistanceSq)
                 return false;
@@ -985,6 +1265,41 @@ namespace Hecton8.Core
             return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
                    !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+
+        private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)
+        {
+            AbsoluteUniversePosition result = anchorAup;
+            result.LocalX += runtimeOffset.x;
+            result.LocalY += runtimeOffset.y;
+            result.LocalZ += runtimeOffset.z;
+            NormalizeAupLocalAxis(ref result.GridX, ref result.LocalX);
+            NormalizeAupLocalAxis(ref result.GridY, ref result.LocalY);
+            NormalizeAupLocalAxis(ref result.GridZ, ref result.LocalZ);
+            return result;
+        }
+
+        private static void NormalizeAupLocalAxis(ref long grid, ref float local)
+        {
+            const float cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            if (local >= 0f && local < cellSize)
+                return;
+
+            long gridDelta = (long)math.floor(local / cellSize);
+            grid += gridDelta;
+            local -= gridDelta * cellSize;
+            if (local < 0f)
+            {
+                local += cellSize;
+                grid--;
+                return;
+            }
+
+            if (local >= cellSize)
+            {
+                local -= cellSize;
+                grid++;
+            }
         }
 
         private void BeginLookHotSwapBlend()
@@ -1039,6 +1354,7 @@ namespace Hecton8.Core
 
         private void HandleJumpPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.Jump;
             BufferAction(PlayerBufferedAction.Jump);
         }
@@ -1052,21 +1368,25 @@ namespace Hecton8.Core
 
         private void HandleToolSlot1Pressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             OnToolSlot1?.Invoke();
         }
 
         private void HandleToolSlot2Pressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             OnToolSlot2?.Invoke();
         }
 
         private void HandleToolSlot3Pressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             OnToolSlot3?.Invoke();
         }
 
         private void HandleToolSlot4Pressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             OnToolSlot4?.Invoke();
         }
 
@@ -1086,31 +1406,37 @@ namespace Hecton8.Core
 
         private void HandlePDAPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             OnPDA?.Invoke();
         }
 
         private void HandleInventoryPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             OnInventory?.Invoke();
         }
 
         private void HandleCancelPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             OnCancel?.Invoke();
         }
 
         private void HandleTabNextPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             OnTabNext?.Invoke();
         }
 
         private void HandleTabPreviousPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             OnTabPrevious?.Invoke();
         }
 
         private void HandleSprintPressed()
         {
+            InputLatencyTracker.MarkInputCaptured();
             _latchedActionBits |= (uint)PlayerInputAction.Sprint;
         }
 
@@ -1123,36 +1449,37 @@ namespace Hecton8.Core
             _lastXRLookAtHitFrame = Time.frameCount;
             _lastXRLookAtPhysicsQueryFrame = Time.frameCount;
             if (hit.collider != null)
-                _lastXRLookAtHitPointAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(hit.point);
+                _lastXRLookAtHitPointAup = OffsetAupLocal(in _lastXRLookAtRayOriginAup, hit.point - _lastXRLookAtRayOriginRuntimePosition);
         }
 
         private void DrainToolHaptics()
         {
-            if (!ToolHapticsRuntime.TryGetRuntime(out ToolHapticsRuntime runtime) || runtime.FrontCount <= 0)
+            if (!ToolHapticsRuntime.TryGetRuntime(out ToolHapticsRuntime runtime) ||
+                !runtime.TryGetFrontBufferSnapshot(out NativeArray<ToolHapticsRuntime.HapticCommand>.ReadOnly commandBuffer, out int commandCount))
             {
                 ApplyGamepadHaptics(0f, 0f);
+                if (HectonXRRuntimeState.IsXRActive)
+                    ApplyXRHaptics(0f, 0f);
                 return;
             }
 
-            var commandBuffer = runtime.GetFrontBuffer();
             float lowMotor = 0f;
             float highMotor = 0f;
             byte lowPriority = 0;
             byte highPriority = 0;
             bool hasLowPriority = false;
             bool hasHighPriority = false;
-            int commandCount = runtime.FrontCount;
             for (int i = 0; i < commandCount; i++)
             {
                 ToolHapticsRuntime.HapticCommand command = commandBuffer[i];
                 if (command.DurationRemaining <= 0f)
                     continue;
 
-                float lowContribution = (command.MotorMask & 0b0001) != 0
-                    ? math.saturate(command.LowFreqIntensity)
+                float lowContribution = (command.MotorMask & HapticLowMotorMask) != 0
+                    ? ClampFinite01(command.LowFreqIntensity)
                     : 0f;
-                float highContribution = (command.MotorMask & 0b0010) != 0
-                    ? math.saturate(command.HighFreqIntensity)
+                float highContribution = (command.MotorMask & HapticHighMotorMask) != 0
+                    ? ClampFinite01(command.HighFreqIntensity)
                     : 0f;
 
                 ApplyHapticContribution(
@@ -1172,6 +1499,8 @@ namespace Hecton8.Core
             }
 
             ApplyGamepadHaptics(lowMotor, highMotor);
+            if (HectonXRRuntimeState.IsXRActive)
+                ApplyXRHaptics(lowMotor, highMotor);
         }
 
         private static void ApplyHapticContribution(
@@ -1197,11 +1526,11 @@ namespace Hecton8.Core
 
             switch (blendMode)
             {
-                case 0:
+                case HapticBlendOverride:
                     motorValue = contribution;
                     break;
 
-                case 1:
+                case HapticBlendAdditive:
                     motorValue = math.saturate(motorValue + contribution);
                     break;
 
@@ -1213,31 +1542,131 @@ namespace Hecton8.Core
 
         private void ApplyGamepadHaptics(float lowMotor, float highMotor)
         {
-            lowMotor = math.saturate(lowMotor);
-            highMotor = math.saturate(highMotor);
-            if (math.abs(lowMotor - _appliedLowMotorSpeed) <= 0.001f &&
-                math.abs(highMotor - _appliedHighMotorSpeed) <= 0.001f)
-            {
-                return;
-            }
+            lowMotor = ClampFinite01(lowMotor);
+            highMotor = ClampFinite01(highMotor);
 
             if (_cachedGamepad != null && !_cachedGamepad.added)
                 _cachedGamepad = null;
 
-            if (_cachedGamepad != null)
-                _cachedGamepad.SetMotorSpeeds(lowMotor, highMotor);
+            if (_cachedGamepad == null)
+            {
+                _appliedLowMotorSpeed = 0f;
+                _appliedHighMotorSpeed = 0f;
+                return;
+            }
 
+            if (math.abs(lowMotor - _appliedLowMotorSpeed) <= HapticMotorWriteEpsilon &&
+                math.abs(highMotor - _appliedHighMotorSpeed) <= HapticMotorWriteEpsilon)
+            {
+                return;
+            }
+
+            _cachedGamepad.SetMotorSpeeds(lowMotor, highMotor);
             _appliedLowMotorSpeed = lowMotor;
             _appliedHighMotorSpeed = highMotor;
         }
 
+        private void ApplyXRHaptics(float leftAmplitude, float rightAmplitude)
+        {
+            if (!HectonXRRuntimeState.IsXRActive)
+            {
+                ResetXRHaptics();
+                return;
+            }
+
+            ApplyXRControllerHaptic(
+                _cachedLeftXRController,
+                ClampFinite01(leftAmplitude),
+                ref _appliedLeftXRHapticAmplitude,
+                ref _nextLeftXRHapticWriteTime);
+            ApplyXRControllerHaptic(
+                _cachedRightXRController,
+                ClampFinite01(rightAmplitude),
+                ref _appliedRightXRHapticAmplitude,
+                ref _nextRightXRHapticWriteTime);
+        }
+
+        private static void ApplyXRControllerHaptic(
+            XRController controller,
+            float amplitude,
+            ref float appliedAmplitude,
+            ref float nextWriteTime)
+        {
+            if (!(controller is XRControllerWithRumble rumbleController) || !rumbleController.added)
+            {
+                appliedAmplitude = 0f;
+                nextWriteTime = 0f;
+                return;
+            }
+
+            float now = Time.unscaledTime;
+            bool hasAppliedOutput = appliedAmplitude > HapticMotorWriteEpsilon;
+            if (amplitude <= HapticMotorWriteEpsilon)
+            {
+                if (hasAppliedOutput)
+                    rumbleController.SendImpulse(0f, 0f);
+
+                appliedAmplitude = 0f;
+                nextWriteTime = 0f;
+                return;
+            }
+
+            bool changed = math.abs(amplitude - appliedAmplitude) > XRHapticMotorWriteEpsilon;
+            if (!changed && now < nextWriteTime)
+                return;
+
+            rumbleController.SendImpulse(amplitude, XRHapticImpulseDurationSeconds);
+            appliedAmplitude = amplitude;
+            nextWriteTime = now + XRHapticRefreshIntervalSeconds;
+        }
+
+        private static float ClampFinite01(float value)
+        {
+            return math.isfinite(value) ? math.saturate(value) : 0f;
+        }
+
         private void ResetGamepadHaptics()
         {
-            if (_cachedGamepad != null)
+            if (_cachedGamepad != null && !_cachedGamepad.added)
+                _cachedGamepad = null;
+
+            bool hadMotorOutput =
+                _appliedLowMotorSpeed > HapticMotorWriteEpsilon ||
+                _appliedHighMotorSpeed > HapticMotorWriteEpsilon;
+
+            if (_cachedGamepad != null && hadMotorOutput)
                 _cachedGamepad.SetMotorSpeeds(0f, 0f);
 
             _appliedLowMotorSpeed = 0f;
             _appliedHighMotorSpeed = 0f;
+        }
+
+        private void ResetXRHaptics()
+        {
+            ResetXRControllerHaptics(
+                _cachedLeftXRController,
+                ref _appliedLeftXRHapticAmplitude,
+                ref _nextLeftXRHapticWriteTime);
+            ResetXRControllerHaptics(
+                _cachedRightXRController,
+                ref _appliedRightXRHapticAmplitude,
+                ref _nextRightXRHapticWriteTime);
+        }
+
+        private static void ResetXRControllerHaptics(
+            XRController controller,
+            ref float appliedAmplitude,
+            ref float nextWriteTime)
+        {
+            if (appliedAmplitude > HapticMotorWriteEpsilon &&
+                controller is XRControllerWithRumble rumbleController &&
+                rumbleController.added)
+            {
+                rumbleController.SendImpulse(0f, 0f);
+            }
+
+            appliedAmplitude = 0f;
+            nextWriteTime = 0f;
         }
 
         private void ClearFrameState()
@@ -1248,6 +1677,10 @@ namespace Hecton8.Core
             _latchedActionBits = 0u;
             _appliedLowMotorSpeed = 0f;
             _appliedHighMotorSpeed = 0f;
+            _appliedLeftXRHapticAmplitude = 0f;
+            _appliedRightXRHapticAmplitude = 0f;
+            _nextLeftXRHapticWriteTime = 0f;
+            _nextRightXRHapticWriteTime = 0f;
             _lookBlendElapsed = 0f;
             _lookBlendActive = false;
             _lookBlendFrom = Vector2.zero;
@@ -1255,20 +1688,17 @@ namespace Hecton8.Core
             _currentState = default;
             _lastXRLookAtHit = default;
             _lastXRLookAtHitFrame = -1;
-            _lastXRLookAtRayOriginAup = Vector3.zero;
+            _lastXRLookAtRayOriginAup = default;
+            _lastXRLookAtRayOriginRuntimePosition = Vector3.zero;
             _lastXRLookAtRayDirection = Vector3.forward;
-            _lastXRLookAtHitPointAup = Vector3.zero;
+            _lastXRLookAtHitPointAup = default;
             _lastXRLookAtPhysicsQueryFrame = -1;
             _xrRuntimeFlags = 0u;
 
             for (int i = 0; i < BufferedActionCapacity; i++)
                 _bufferedActions[i].Action = PlayerBufferedAction.None;
 
-            if (_xrInputStates.IsCreated)
-            {
-                for (int i = 0; i < _xrInputStates.Length; i++)
-                    _xrInputStates[i] = default;
-            }
+            ClearXRInputSnapshotIfActive(forceWrite: true);
 
             if (_xrLookAtRayCommands.IsCreated)
                 DisableXRLookAtRayCommand(forceWrite: true);
@@ -1342,28 +1772,65 @@ namespace Hecton8.Core
         private const uint LatencyCrimeWarningHash = 2752459530u;
         private const uint AwaitableDebtContextHash = 3334278855u;
         private static int _pendingNextFrameContinuations;
+        private static int _peakNextFrameContinuations;
         private static int _lastLatencyCrimeReportFrame = -ReportCooldownFrames;
 
         public static int PendingNextFrameContinuations => Volatile.Read(ref _pendingNextFrameContinuations);
+
+        public static int ConsumePeakNextFrameContinuations()
+        {
+            int pending = PendingNextFrameContinuations;
+            int peak = Interlocked.Exchange(ref _peakNextFrameContinuations, pending);
+            return math.max(peak, pending);
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             Volatile.Write(ref _pendingNextFrameContinuations, 0);
+            Volatile.Write(ref _peakNextFrameContinuations, 0);
             _lastLatencyCrimeReportFrame = -ReportCooldownFrames;
         }
 
         public static async Awaitable NextFrameAsync(CancellationToken cancellationToken = default)
         {
-            Interlocked.Increment(ref _pendingNextFrameContinuations);
+            int pending = Interlocked.Increment(ref _pendingNextFrameContinuations);
+            RecordPeakNextFrameContinuations(pending);
             try
             {
                 await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
             }
             finally
             {
-                Interlocked.Decrement(ref _pendingNextFrameContinuations);
+                DecrementPendingNextFrameContinuations();
             }
+        }
+
+        private static void RecordPeakNextFrameContinuations(int pending)
+        {
+            int current;
+            do
+            {
+                current = Volatile.Read(ref _peakNextFrameContinuations);
+                if (pending <= current)
+                    return;
+            }
+            while (Interlocked.CompareExchange(ref _peakNextFrameContinuations, pending, current) != current);
+        }
+
+        private static void DecrementPendingNextFrameContinuations()
+        {
+            int current;
+            int next;
+            do
+            {
+                current = Volatile.Read(ref _pendingNextFrameContinuations);
+                if (current <= 0)
+                    return;
+
+                next = current - 1;
+            }
+            while (Interlocked.CompareExchange(ref _pendingNextFrameContinuations, next, current) != current);
         }
 
         public static void AuditLatencyDebt(int pendingContinuationCount, float latencyMs)

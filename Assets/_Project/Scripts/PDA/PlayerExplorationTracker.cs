@@ -1,9 +1,9 @@
 using System;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -27,9 +27,12 @@ namespace Hecton8.PDA
         private const int MaskWordCount = ExplorationMapDTO.MortonMaskWordCount;
         private const int MaskByteCount = ExplorationMapDTO.MortonMaskByteCount;
         private const int LocalMask = MaskAxisLength - 1;
+        private const int AupCellSizeMeters = 5000;
+        private const string NativeMemoryOwner = nameof(PlayerExplorationTracker);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 
         [Header("References")]
-        [Tooltip("Optional explicit player transform. When empty, the tracker resolves the current bootstrap player.")]
+        [Tooltip("Optional explicit player transform. When empty, the tracker resolves the current registry player.")]
         [SerializeField] private Transform playerTransform;
 
         [Header("Exploration Grid")]
@@ -46,17 +49,13 @@ namespace Hecton8.PDA
         private bool _registeredToSave;
         private bool _serviceRegistered;
         private bool _explorationMaskInitialized;
-        private Vector3 _lastSampledPosition;
+        private AbsoluteUniversePosition _lastSampledAup;
+        private HectonPlayerMovement _playerMovement;
+        private bool _hasLastSampledAup;
         private int _lastBitIndex = -1;
 
-        /// <summary>Live singleton instance for PDA map systems.</summary>
-        public static PlayerExplorationTracker Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            Instance = null;
-        }
+        /// <summary>Live registry-owned instance for PDA map systems.</summary>
+        public static PlayerExplorationTracker Instance => GlobalRegistry.PlayerExploration;
 
         /// <summary>Raised when a previously unexplored PDA chunk becomes visible.</summary>
         public event Action<Vector2Int> ChunkExplored;
@@ -75,22 +74,19 @@ namespace Hecton8.PDA
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            PlayerExplorationTracker registered = GlobalRegistry.PlayerExploration;
+            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(this);
                 return;
             }
 
-            Instance = this;
-            movementSampleDistance = Mathf.Max(0.25f, movementSampleDistance);
+            movementSampleDistance = math.max(0.25f, movementSampleDistance);
             InitializeExplorationMask();
         }
 
         private void OnEnable()
         {
-            if (Instance == null)
-                Instance = this;
-
             InitializeExplorationMask();
             TryRegisterService();
             TryRegisterWithTickManager();
@@ -114,9 +110,6 @@ namespace Hecton8.PDA
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
             TryUnregisterService();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         private void OnDestroy()
@@ -126,24 +119,25 @@ namespace Hecton8.PDA
             UnregisterFromSaveManager();
             TryUnregisterService();
             DisposeExplorationMask();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            if (!ResolvePlayerTransform(force: false))
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition currentAup))
                 return;
 
-            Vector3 currentPosition = playerTransform.position;
             float requiredDistance = movementSampleDistance;
-            if ((currentPosition - _lastSampledPosition).sqrMagnitude < requiredDistance * requiredDistance)
+            double requiredDistanceSq = (double)requiredDistance * requiredDistance;
+            if (_hasLastSampledAup &&
+                AbsoluteUniversePosition.DistanceSq(in currentAup, in _lastSampledAup) < requiredDistanceSq)
+            {
                 return;
+            }
 
-            _lastSampledPosition = currentPosition;
-            SampleCurrentChunk(force: false);
+            _lastSampledAup = currentAup;
+            _hasLastSampledAup = true;
+            SampleCurrentChunk(force: false, in currentAup);
         }
 
         /// <summary>
@@ -168,23 +162,13 @@ namespace Hecton8.PDA
         /// </summary>
         public bool TryWorldToChunk(Vector3 worldPosition, out Vector2Int chunkCoordinates)
         {
-            chunkCoordinates = default;
-            float chunkX = math.floor(worldPosition.x / ExplorationChunkSizeMeters);
-            float chunkZ = math.floor(worldPosition.z / ExplorationChunkSizeMeters);
-            if (!math.isfinite(chunkX) ||
-                !math.isfinite(chunkZ) ||
-                chunkX < -MaskOriginOffset ||
-                chunkZ < -MaskOriginOffset ||
-                chunkX >= MaskAxisLength - MaskOriginOffset ||
-                chunkZ >= MaskAxisLength - MaskOriginOffset)
+            if (!TryResolveAupFromRuntimePosition(worldPosition, out AbsoluteUniversePosition aup))
             {
+                chunkCoordinates = default;
                 return false;
             }
 
-            chunkCoordinates = new Vector2Int(
-                (int)chunkX,
-                (int)chunkZ);
-            return true;
+            return TryAupToChunk(in aup, out chunkCoordinates);
         }
 
         /// <summary>
@@ -302,10 +286,15 @@ namespace Hecton8.PDA
 
         private void SampleCurrentChunk(bool force)
         {
-            if (!ResolvePlayerTransform(force: false))
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
                 return;
 
-            if (!TryWorldToChunk(playerTransform.position, out Vector2Int currentChunk))
+            SampleCurrentChunk(force, in playerAup);
+        }
+
+        private void SampleCurrentChunk(bool force, in AbsoluteUniversePosition playerAup)
+        {
+            if (!TryAupToChunk(in playerAup, out Vector2Int currentChunk))
                 return;
 
             if (!TryEncodeBitIndex(currentChunk.x, 0, currentChunk.y, out int currentBitIndex))
@@ -316,6 +305,29 @@ namespace Hecton8.PDA
 
             _lastBitIndex = currentBitIndex;
             MarkChunkExplored(currentChunk);
+        }
+
+        private static bool TryAupToChunk(in AbsoluteUniversePosition aup, out Vector2Int chunkCoordinates)
+        {
+            chunkCoordinates = default;
+            double absoluteX = ((double)aup.GridX * AupCellSizeMeters) + aup.LocalX;
+            double absoluteZ = ((double)aup.GridZ * AupCellSizeMeters) + aup.LocalZ;
+            double chunkX = math.floor(absoluteX / ExplorationChunkSizeMeters);
+            double chunkZ = math.floor(absoluteZ / ExplorationChunkSizeMeters);
+            if (!math.isfinite(chunkX) ||
+                !math.isfinite(chunkZ) ||
+                chunkX < -MaskOriginOffset ||
+                chunkZ < -MaskOriginOffset ||
+                chunkX >= MaskAxisLength - MaskOriginOffset ||
+                chunkZ >= MaskAxisLength - MaskOriginOffset)
+            {
+                return false;
+            }
+
+            chunkCoordinates = new Vector2Int(
+                (int)chunkX,
+                (int)chunkZ);
+            return true;
         }
 
         private bool MarkChunkExplored(int chunkX, int chunkY, int chunkZ, bool raiseEvent)
@@ -386,16 +398,32 @@ namespace Hecton8.PDA
             _exploredChunkMask = new NativeBitArray(MaskBitCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeList<int>[ExplorationMapDTO.MaxExploredChunks] - explored bit-index enumeration cache - owner: PlayerExplorationTracker
             _exploredBitIndices = new NativeList<int>(ExplorationMapDTO.MaxExploredChunks, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeArray(
+                _exploredChunkMask.AsNativeArray<ulong>(),
+                NativeMemoryOwner,
+                nameof(_exploredChunkMask),
+                NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(
+                _exploredBitIndices,
+                NativeMemoryOwner,
+                nameof(_exploredBitIndices),
+                NativeMemoryLifetime);
             _explorationMaskInitialized = true;
         }
 
         private void DisposeExplorationMask()
         {
             if (_exploredChunkMask.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_exploredChunkMask.AsNativeArray<ulong>());
                 _exploredChunkMask.Dispose();
+            }
 
             if (_exploredBitIndices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_exploredBitIndices));
                 _exploredBitIndices.Dispose();
+            }
 
             _explorationMaskInitialized = false;
         }
@@ -461,7 +489,7 @@ namespace Hecton8.PDA
 
         private void LoadLegacyChunkKeys(ExplorationMapDTO dto)
         {
-            int count = Mathf.Clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
+            int count = math.clamp(dto.exploredChunkCount, 0, dto.exploredChunkKeys != null ? dto.exploredChunkKeys.Length : 0);
             for (int i = 0; i < count; i++)
             {
                 Vector2Int legacyChunk = PDAKeyUtility.UnpackChunkKey(dto.exploredChunkKeys[i]);
@@ -565,17 +593,70 @@ namespace Hecton8.PDA
 
         private bool ResolvePlayerTransform(bool force)
         {
-            if (!force && playerTransform != null)
+            if (!force && _playerMovement != null)
                 return true;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform bootstrapPlayerTransform) && bootstrapPlayerTransform != null)
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
             {
-                playerTransform = bootstrapPlayerTransform;
-                _lastSampledPosition = bootstrapPlayerTransform.position;
+                playerTransform = playerContext.PlayerTransform;
+                _playerMovement = playerContext.PlayerMovement;
+                if (_playerMovement != null)
+                {
+                    _lastSampledAup = _playerMovement.CurrentAup;
+                    _hasLastSampledAup = true;
+                    return true;
+                }
+            }
+
+            if (playerTransform != null && _playerMovement == null)
+                playerTransform.TryGetComponent(out _playerMovement);
+
+            if (_playerMovement != null)
+            {
+                _lastSampledAup = _playerMovement.CurrentAup;
+                _hasLastSampledAup = true;
                 return true;
             }
 
-            return playerTransform != null;
+            return false;
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (TryResolvePlayerAupFromContext(out playerAup))
+                return true;
+
+            if (!ResolvePlayerTransform(force: false))
+                return false;
+
+            if (_playerMovement == null)
+                return false;
+
+            playerAup = _playerMovement.CurrentAup;
+            return true;
+        }
+
+        private static bool TryResolvePlayerAupFromContext(out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null || playerContext.PlayerMovement == null)
+                return false;
+
+            playerAup = playerContext.PlayerMovement.CurrentAup;
+            return true;
+        }
+
+        private static bool TryResolveAupFromRuntimePosition(Vector3 runtimePosition, out AbsoluteUniversePosition playerAup)
+        {
+            playerAup = default;
+            float3 numericPosition = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+            if (!math.all(math.isfinite(numericPosition)))
+                return false;
+
+            playerAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return true;
         }
 
         private void HandleBiomeChanged(int biomeId)
@@ -601,8 +682,7 @@ namespace Hecton8.PDA
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void UnregisterFromTickManager()
@@ -644,6 +724,13 @@ namespace Hecton8.PDA
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
+            PlayerExplorationTracker registered = GlobalRegistry.PlayerExploration;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(this);
+                return;
+            }
+
             GlobalRegistry.RegisterPlayerExplorationRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerExploration, this);
         }
@@ -660,7 +747,7 @@ namespace Hecton8.PDA
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            movementSampleDistance = Mathf.Max(0.25f, movementSampleDistance);
+            movementSampleDistance = math.max(0.25f, movementSampleDistance);
         }
 #endif
     }

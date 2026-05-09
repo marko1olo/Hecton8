@@ -32,6 +32,7 @@ namespace Hecton8.World
         private const int VisibleIndexStride = sizeof(uint);
         private const int ThreadsPerGroup = 64;
         private const int FrustumPlaneCount = 6;
+        private const int BrgMetadataPlaceholderCount = 1;
         private const int MaxVegetationVisibilityPasses = 3;
         private const int MaxVegetationDrawCommands = 7;
         private const string GpuIndirectKeyword = "HECTON_GPU_INDIRECT";
@@ -40,6 +41,7 @@ namespace Hecton8.World
         private const byte VisibilityMaskShadow = 1 << 2;
 #if UNITY_EDITOR
         private const string ComputeShaderAssetPath = "Assets/_Project/Art/Shaders/FloraCulling.compute";
+        private const string AbyssalFlowFieldComputeAssetPath = "Assets/_Project/Art/Shaders/AbyssalFlowField.compute";
         private const string DepthPyramidComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_DepthPyramid.compute";
         private const string VegetationShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_IndirectVegetation.shader";
         private const string DepthShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_IndirectVegetationDepthOnly.shader";
@@ -51,6 +53,8 @@ namespace Hecton8.World
         private static readonly int _InstanceMatricesId = Shader.PropertyToID("_HectonInstanceMatrices");
         private static readonly int _InstanceDataId = Shader.PropertyToID("_HectonVegetationInstanceData");
         private static readonly int _FloraPhaseSeedsId = Shader.PropertyToID("_HectonFloraPhaseSeeds");
+        private static readonly int _FloraSnapFlagsId = Shader.PropertyToID("_HectonFloraSnapFlags");
+        private static readonly int _FloraSnapFlagsEnabledId = Shader.PropertyToID("_HectonFloraSnapFlagsEnabled");
         private static readonly int _VisibleInstanceIndicesId = Shader.PropertyToID("_HectonVisibleInstanceIndices");
         private static readonly int _ChunkWorldOffsetId = Shader.PropertyToID("_ChunkWorldOffset");
         private static readonly int _GlobalFloatingOffsetId = Shader.PropertyToID("_GlobalFloatingOffset");
@@ -100,6 +104,8 @@ namespace Hecton8.World
         private static readonly int _DepthPyramidSourceDepthId = Shader.PropertyToID("_HectonDepthPyramidSourceDepth");
         private static readonly int _DepthPyramidSourceId = Shader.PropertyToID("_HectonDepthPyramidSource");
         private static readonly int _DepthPyramidTargetId = Shader.PropertyToID("_HectonDepthPyramidTarget");
+        private static readonly int _SubmarineWashSphereId = Shader.PropertyToID("_HectonSubmarineWashSphere");
+        private static readonly int _SubmarineWashVelocityId = Shader.PropertyToID("_HectonSubmarineWashVelocity");
         private const int MaxScooterHeadlights = 2;
 
         [Header("Rendering")]
@@ -114,6 +120,10 @@ namespace Hecton8.World
         [SerializeField]
         [Tooltip("Compute shader that performs GPU frustum culling and per-instance LOD classification.")]
         private ComputeShader _cullingCompute;
+
+        [SerializeField]
+        [Tooltip("Abyssal flow compute shader kernel used to persist GPU-only snapped flora flags.")]
+        private ComputeShader _abyssalFlowFieldCompute;
 
         [SerializeField]
         [Tooltip("Compute shader that builds the vegetation Hi-Z depth pyramid consumed by the culling kernel.")]
@@ -295,6 +305,7 @@ namespace Hecton8.World
         private Camera _previousMotionCamera;
         private bool _hasPreviousMotionCameraPosition;
         private Vector3 _cachedCullCameraPosition;
+        private Vector3 _cachedCullCameraForward = Vector3.forward;
         private PlayerToolManager _playerToolManager;
         private float _nextToolManagerResolveTime;
         private BatchRendererGroup _batchRendererGroup;
@@ -343,10 +354,13 @@ namespace Hecton8.World
         private GraphicsBuffer _visibleIndicesLod0Buffer;
         private GraphicsBuffer _visibleIndicesLod1Buffer;
         private GraphicsBuffer _visibleIndicesShadowBuffer;
+        private GraphicsBuffer _floraSnapFlagBuffer;
         private GraphicsBuffer _indirectArgsLod0Buffer;
         private GraphicsBuffer _indirectArgsLod1Buffer;
         private GraphicsBuffer _indirectArgsShadowBuffer;
         private int _gpuVisibleIndexCapacity;
+        private int _floraSnapFlagCapacity;
+        private bool _floraSnapFlagBufferRequiresClear;
         private RenderTexture _depthPyramidTexture;
         private int _depthPyramidWidth;
         private int _depthPyramidHeight;
@@ -354,6 +368,8 @@ namespace Hecton8.World
         private int _cullFloraKernel = -1;
         private int _cullFloraShadowKernel = -1;
         private int _clearIndirectArgsKernel = -1;
+        private int _clearFloraSnapFlagsKernel = -1;
+        private int _flagSnappedFloraKernel = -1;
         private int _depthPyramidCopyKernel = -1;
         private int _depthPyramidDownsampleKernel = -1;
 
@@ -771,6 +787,7 @@ namespace Hecton8.World
             totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceMatrixBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_uploadedInstanceDataBuffer);
             totalBytes += EstimateGraphicsBufferBytes(_batchHandleBuffer);
+            totalBytes += EstimateGraphicsBufferBytes(_floraSnapFlagBuffer);
             return totalBytes;
         }
 
@@ -786,6 +803,11 @@ namespace Hecton8.World
                 _cullFloraShadowKernel = _cullingCompute.FindKernel("CullFloraShadowInstances");
                 _clearIndirectArgsKernel = _cullingCompute.FindKernel("ClearIndirectArgs");
             }
+            if (_abyssalFlowFieldCompute != null)
+            {
+                _clearFloraSnapFlagsKernel = _abyssalFlowFieldCompute.FindKernel("ClearFloraSnapFlags");
+                _flagSnappedFloraKernel = _abyssalFlowFieldCompute.FindKernel("FlagSnappedFlora");
+            }
             if (_depthPyramidCompute != null)
             {
                 _depthPyramidCopyKernel = _depthPyramidCompute.FindKernel("CopyDepthPyramidMip0");
@@ -794,7 +816,9 @@ namespace Hecton8.World
 
             if (!EnsureRenderMaterialResolved())
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonIndirectVegetationRenderer] Material is required and fallback shader resolution failed.", this);
+#endif
                 enabled = false;
                 return;
             }
@@ -814,7 +838,9 @@ namespace Hecton8.World
 
             if (ResolveNearRenderMesh() == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonIndirectVegetationRenderer] No near render mesh resolved.", this);
+#endif
                 enabled = false;
                 return;
             }
@@ -1048,6 +1074,7 @@ namespace Hecton8.World
             _instanceDataBuffer = null;
             _floraPhaseSeedBuffer = null;
             _legacyDataDirty = true;
+            _floraSnapFlagBufferRequiresClear = true;
         }
 
         /// <summary>
@@ -1062,6 +1089,7 @@ namespace Hecton8.World
 
             _instanceCount = clampedCount;
             _legacyDataDirty = true;
+            _floraSnapFlagBufferRequiresClear = true;
         }
 
         /// <summary>
@@ -1099,12 +1127,22 @@ namespace Hecton8.World
                 return;
 
             Camera cullCamera = _cameraOverride != null ? _cameraOverride : ResolveCullCamera();
+            Vector3 cullCameraPosition = _cachedCullCameraPosition;
+            Vector3 cullCameraForward = _cachedCullCameraForward;
             if (cullCamera != null)
-                _cachedCullCameraPosition = cullCamera.transform.position;
+            {
+                Transform cullTransform = cullCamera.transform;
+                cullCameraPosition = cullTransform.position;
+                cullCameraForward = cullTransform.forward;
+                _cachedCullCameraPosition = cullCameraPosition;
+                _cachedCullCameraForward = cullCameraForward;
+            }
 
             CreateAuxiliaryMaterials();
             Mesh farMesh = _farLodDistance > _nearLodDistance ? ResolveImpostorRenderMesh() : null;
-            if (TryRenderGpuIndirect(cullCamera, nearMesh, farMesh))
+            Vector3 rendererPosition = transform.position;
+            Bounds drawBounds = ResolveDrawBounds(rendererPosition);
+            if (TryRenderGpuIndirect(cullCamera, nearMesh, farMesh, cullCameraPosition, cullCameraForward, drawBounds))
                 return;
 
             EnsureBatchRendererGroupResources();
@@ -1114,13 +1152,17 @@ namespace Hecton8.World
             if (!TryBindBrgMaterials())
                 return;
 
-            Bounds drawBounds = _hasBoundsOverride
-                ? _explicitBounds
-                : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             SyncBatchRegistration(nearMesh, farMesh);
             SyncBatchBuffer(_instanceMatrixBuffer);
             _batchRendererGroup.SetGlobalBounds(drawBounds);
-            UpdateMotionVectorHistory();
+            UpdateMotionVectorHistory(cullCamera, cullCameraPosition);
+        }
+
+        private Bounds ResolveDrawBounds(Vector3 rendererPosition)
+        {
+            return _hasBoundsOverride
+                ? _explicitBounds
+                : new Bounds(rendererPosition + _boundsCenterOffset, _boundsSize);
         }
 
         private Mesh ResolveNearRenderMesh()
@@ -1181,7 +1223,8 @@ namespace Hecton8.World
                 userContext = IntPtr.Zero
             });
 
-            _batchMetadata = new NativeArray<MetadataValue>(0, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[0] - BRG metadata placeholder for vegetation renderer - owner: HectonIndirectVegetationRenderer
+            _batchMetadata = new NativeArray<MetadataValue>(BrgMetadataPlaceholderCount, Allocator.Persistent); // COLD ALLOC: NativeArray<MetadataValue>[1] - BRG metadata placeholder for vegetation renderer - owner: HectonIndirectVegetationRenderer
+            NativeMemorySentinel.RegisterNativeArray(_batchMetadata, nameof(HectonIndirectVegetationRenderer), nameof(_batchMetadata), NativeAllocationLifetime.Session);
             _batchHandleBuffer = HectonBatchRendererGroupUtility.CreateBatchHandleBuffer(); // COLD ALLOC: GraphicsBuffer[1] - BRG registration handle buffer for vegetation renderer - owner: HectonIndirectVegetationRenderer
             _batchId = _batchRendererGroup.AddBatch(_batchMetadata, _batchHandleBuffer.bufferHandle);
         }
@@ -1240,6 +1283,7 @@ namespace Hecton8.World
             }
 
             Vector4 globalFloatingOffset = ResolveVegetationFloatingOffset();
+            EnsureAndDispatchFloraSnapFlags(activeInstanceDataBuffer, globalFloatingOffset);
             ApplyMaterialBindings(_nearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
             ApplyMaterialBindings(_farBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 1f, null, false);
             ApplyMaterialBindings(_depthNearBrgMaterial, activeInstanceDataBuffer, globalFloatingOffset, 0f, null, false);
@@ -1332,6 +1376,15 @@ namespace Hecton8.World
             material.SetBuffer(_InstanceDataId, activeInstanceDataBuffer);
             if (_floraPhaseSeedBuffer != null)
                 material.SetBuffer(_FloraPhaseSeedsId, _floraPhaseSeedBuffer);
+            if (_floraSnapFlagBuffer != null)
+            {
+                material.SetBuffer(_FloraSnapFlagsId, _floraSnapFlagBuffer);
+                material.SetFloat(_FloraSnapFlagsEnabledId, 1f);
+            }
+            else
+            {
+                material.SetFloat(_FloraSnapFlagsEnabledId, 0f);
+            }
             material.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
             material.SetVector(_ChunkWorldOffsetId, globalFloatingOffset);
             material.SetFloat(_LodPassModeId, passMode);
@@ -1351,7 +1404,13 @@ namespace Hecton8.World
             }
         }
 
-        private bool TryRenderGpuIndirect(Camera cullCamera, Mesh nearMesh, Mesh farMesh)
+        private bool TryRenderGpuIndirect(
+            Camera cullCamera,
+            Mesh nearMesh,
+            Mesh farMesh,
+            Vector3 cameraPosition,
+            Vector3 cameraForward,
+            Bounds drawBounds)
         {
             if (!_preferGpuIndirectRendering ||
                 !SystemInfo.supportsComputeShaders ||
@@ -1369,9 +1428,6 @@ namespace Hecton8.World
             if (activeInstanceDataBuffer == null)
                 return false;
 
-            Bounds drawBounds = _hasBoundsOverride
-                ? _explicitBounds
-                : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
             if (_frustumPlaneCache == null || _frustumPlaneCache.Length != FrustumPlaneCount)
                 return false;
 
@@ -1389,9 +1445,9 @@ namespace Hecton8.World
             if (!TryBindGpuIndirectMaterials(activeInstanceDataBuffer, farMesh))
                 return false;
 
-            UpdateMotionVectorHistory();
+            UpdateMotionVectorHistory(cullCamera, cameraPosition);
             bool depthPyramidReady = BuildDepthPyramid(cullCamera);
-            DispatchGpuCulling(cullCamera, activeInstanceDataBuffer, depthPyramidReady);
+            DispatchGpuCulling(cullCamera, activeInstanceDataBuffer, depthPyramidReady, cameraPosition, cameraForward);
 
             RenderIndirectPass(_nearBrgMaterial, nearMesh, _indirectArgsLod0Buffer, drawBounds, ShadowCastingMode.Off, _receiveShadows, MotionVectorGenerationMode.Camera, cullCamera);
             if (farMesh != null && _farBrgMaterial != null && _indirectArgsLod1Buffer != null)
@@ -1442,7 +1498,12 @@ namespace Hecton8.World
             Graphics.RenderMeshIndirect(renderParams, mesh, argsBuffer, 1, 0);
         }
 
-        private void DispatchGpuCulling(Camera cullCamera, GraphicsBuffer activeInstanceDataBuffer, bool depthPyramidReady)
+        private void DispatchGpuCulling(
+            Camera cullCamera,
+            GraphicsBuffer activeInstanceDataBuffer,
+            bool depthPyramidReady,
+            Vector3 cameraPosition,
+            Vector3 cameraForward)
         {
             if (_cullingCompute == null ||
                 _cullFloraKernel < 0 ||
@@ -1455,8 +1516,6 @@ namespace Hecton8.World
             Vector4 globalFloatingOffset = ResolveVegetationFloatingOffset();
             Matrix4x4 viewProjection = GL.GetGPUProjectionMatrix(cullCamera.projectionMatrix, false) * cullCamera.worldToCameraMatrix;
             Matrix4x4 viewMatrix = cullCamera.worldToCameraMatrix;
-            Vector3 cameraPosition = cullCamera.transform.position;
-            Vector3 cameraForward = cullCamera.transform.forward;
 
             _visibleIndicesLod0Buffer.SetCounterValue(0u);
             _visibleIndicesLod1Buffer?.SetCounterValue(0u);
@@ -1522,6 +1581,7 @@ namespace Hecton8.World
             _cullingCompute.SetFloat(_GlobalBiolumIntensityId, Shader.GetGlobalFloat(_GlobalBiolumIntensityId));
 
             int dispatchGroups = Mathf.Max(1, (_instanceCount + ThreadsPerGroup - 1) / ThreadsPerGroup);
+            DispatchFloraSnapFlagUpdate(activeInstanceDataBuffer, globalFloatingOffset, dispatchGroups);
             _cullingCompute.Dispatch(_cullFloraKernel, dispatchGroups, 1, 1);
 
             if (_visibleIndicesShadowBuffer != null && _cullFloraShadowKernel >= 0)
@@ -1555,6 +1615,63 @@ namespace Hecton8.World
                 GraphicsBuffer.CopyCount(_visibleIndicesLod1Buffer, _indirectArgsLod1Buffer, sizeof(uint));
             if (_visibleIndicesShadowBuffer != null && _indirectArgsShadowBuffer != null)
                 GraphicsBuffer.CopyCount(_visibleIndicesShadowBuffer, _indirectArgsShadowBuffer, sizeof(uint));
+        }
+
+        private void DispatchFloraSnapFlagUpdate(GraphicsBuffer activeInstanceDataBuffer, Vector4 globalFloatingOffset, int dispatchGroups)
+        {
+            if (_abyssalFlowFieldCompute == null ||
+                _flagSnappedFloraKernel < 0 ||
+                _floraSnapFlagBuffer == null ||
+                _instanceMatrixBuffer == null ||
+                activeInstanceDataBuffer == null ||
+                _instanceCount <= 0)
+            {
+                return;
+            }
+
+            if (_floraSnapFlagBufferRequiresClear && _clearFloraSnapFlagsKernel >= 0)
+            {
+                _abyssalFlowFieldCompute.SetBuffer(_clearFloraSnapFlagsKernel, _FloraSnapFlagsId, _floraSnapFlagBuffer);
+                _abyssalFlowFieldCompute.SetInt(_SourceInstanceCountId, _instanceCount);
+                _abyssalFlowFieldCompute.Dispatch(_clearFloraSnapFlagsKernel, dispatchGroups, 1, 1);
+                _floraSnapFlagBufferRequiresClear = false;
+            }
+
+            Vector4 washVelocity = Shader.GetGlobalVector(_SubmarineWashVelocityId);
+            Vector4 washSphere = Shader.GetGlobalVector(_SubmarineWashSphereId);
+            if (washVelocity.w <= 10f || washSphere.w <= 0f)
+                return;
+
+            _abyssalFlowFieldCompute.SetBuffer(_flagSnappedFloraKernel, _SourceMatricesId, _instanceMatrixBuffer);
+            _abyssalFlowFieldCompute.SetBuffer(_flagSnappedFloraKernel, _SourceDataId, activeInstanceDataBuffer);
+            _abyssalFlowFieldCompute.SetBuffer(_flagSnappedFloraKernel, _FloraSnapFlagsId, _floraSnapFlagBuffer);
+            _abyssalFlowFieldCompute.SetInt(_SourceInstanceCountId, _instanceCount);
+            _abyssalFlowFieldCompute.SetVector(_GlobalFloatingOffsetId, globalFloatingOffset);
+            _abyssalFlowFieldCompute.SetVector(_SubmarineWashSphereId, washSphere);
+            _abyssalFlowFieldCompute.SetVector(_SubmarineWashVelocityId, washVelocity);
+            _abyssalFlowFieldCompute.Dispatch(_flagSnappedFloraKernel, dispatchGroups, 1, 1);
+        }
+
+        private void EnsureAndDispatchFloraSnapFlags(GraphicsBuffer activeInstanceDataBuffer, Vector4 globalFloatingOffset)
+        {
+            if (!SystemInfo.supportsComputeShaders ||
+                _abyssalFlowFieldCompute == null ||
+                _clearFloraSnapFlagsKernel < 0 ||
+                _flagSnappedFloraKernel < 0 ||
+                _instanceMatrixBuffer == null ||
+                activeInstanceDataBuffer == null ||
+                _instanceCount <= 0)
+            {
+                ReleaseFloraSnapFlagBuffer();
+                return;
+            }
+
+            EnsureFloraSnapFlagBufferCapacity(Mathf.NextPowerOfTwo(Mathf.Max(1, _instanceCount)));
+            if (_floraSnapFlagBuffer == null)
+                return;
+
+            int dispatchGroups = Mathf.Max(1, (_instanceCount + ThreadsPerGroup - 1) / ThreadsPerGroup);
+            DispatchFloraSnapFlagUpdate(activeInstanceDataBuffer, globalFloatingOffset, dispatchGroups);
         }
 
         private bool BuildDepthPyramid(Camera cullCamera)
@@ -1661,12 +1778,41 @@ namespace Hecton8.World
             EnsureIndirectArgsBuffer(ref _indirectArgsLod0Buffer);
             EnsureIndirectArgsBuffer(ref _indirectArgsLod1Buffer);
             EnsureIndirectArgsBuffer(ref _indirectArgsShadowBuffer);
+            if (_abyssalFlowFieldCompute != null && _clearFloraSnapFlagsKernel >= 0 && _flagSnappedFloraKernel >= 0)
+                EnsureFloraSnapFlagBufferCapacity(requiredCapacity);
+            else
+                ReleaseFloraSnapFlagBuffer();
         }
 
         private void EnsureIndirectArgsBuffer(ref GraphicsBuffer argsBuffer)
         {
             if (argsBuffer == null)
                 argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - GPU-cleared indirect indexed draw arguments for vegetation pass - owner: HectonIndirectVegetationRenderer
+        }
+
+        private void EnsureFloraSnapFlagBufferCapacity(int requiredCapacity)
+        {
+            if (requiredCapacity <= 0)
+                return;
+
+            if (_floraSnapFlagBuffer != null &&
+                _floraSnapFlagBuffer.IsValid() &&
+                _floraSnapFlagCapacity >= requiredCapacity)
+            {
+                return;
+            }
+
+            ReleaseGraphicsBuffer(ref _floraSnapFlagBuffer);
+            _floraSnapFlagBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, requiredCapacity, sizeof(uint)); // COLD ALLOC: GraphicsBuffer[visibleCapacity] — persistent GPU-only snapped flora flags — owner: HectonIndirectVegetationRenderer
+            _floraSnapFlagCapacity = requiredCapacity;
+            _floraSnapFlagBufferRequiresClear = true;
+        }
+
+        private void ReleaseFloraSnapFlagBuffer()
+        {
+            ReleaseGraphicsBuffer(ref _floraSnapFlagBuffer);
+            _floraSnapFlagCapacity = 0;
+            _floraSnapFlagBufferRequiresClear = false;
         }
 
         private bool ClearIndirectArgsBuffer(GraphicsBuffer argsBuffer, Mesh mesh)
@@ -1708,6 +1854,7 @@ namespace Hecton8.World
             ReleaseVisibleIndexBuffer(ref _visibleIndicesLod0Buffer);
             ReleaseVisibleIndexBuffer(ref _visibleIndicesLod1Buffer);
             ReleaseVisibleIndexBuffer(ref _visibleIndicesShadowBuffer);
+            ReleaseFloraSnapFlagBuffer();
             ReleaseGraphicsBuffer(ref _indirectArgsLod0Buffer);
             ReleaseGraphicsBuffer(ref _indirectArgsLod1Buffer);
             ReleaseGraphicsBuffer(ref _indirectArgsShadowBuffer);
@@ -1887,16 +2034,14 @@ namespace Hecton8.World
             _registeredBatchBuffer = matrixBuffer;
         }
 
-        private void UpdateMotionVectorHistory()
+        private void UpdateMotionVectorHistory(Camera renderCamera, Vector3 currentCameraPosition)
         {
             if (_motionNearBrgMaterial == null && _motionFarBrgMaterial == null)
                 return;
 
-            Camera renderCamera = _cameraOverride != null ? _cameraOverride : ResolveCullCamera();
             if (renderCamera == null)
                 return;
 
-            Vector3 currentCameraPosition = renderCamera.transform.position;
             Vector3 previousCameraPosition = _hasPreviousMotionCameraPosition && _previousMotionCamera == renderCamera
                 ? _previousMotionCameraPosition
                 : currentCameraPosition;
@@ -1926,14 +2071,24 @@ namespace Hecton8.World
             ReleaseCpuCullingData();
             _cpuCullingMatrices = new NativeArray<Matrix4x4>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<Matrix4x4>[NextPowerOfTwo(requiredCount)] - CPU BRG vegetation culling matrices - owner: HectonIndirectVegetationRenderer
             _cpuCullingData = new NativeArray<HectonVegetationInstanceData>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<HectonVegetationInstanceData>[NextPowerOfTwo(requiredCount)] - CPU BRG vegetation culling metadata - owner: HectonIndirectVegetationRenderer
+            NativeMemorySentinel.RegisterNativeArray(_cpuCullingMatrices, nameof(HectonIndirectVegetationRenderer), nameof(_cpuCullingMatrices), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_cpuCullingData, nameof(HectonIndirectVegetationRenderer), nameof(_cpuCullingData), NativeAllocationLifetime.Session);
         }
 
         private void ReleaseCpuCullingData()
         {
             if (_cpuCullingMatrices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_cpuCullingMatrices);
                 _cpuCullingMatrices.Dispose();
+            }
+
             if (_cpuCullingData.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_cpuCullingData);
                 _cpuCullingData.Dispose();
+            }
+
             _hasCpuCullingData = false;
         }
 
@@ -2083,9 +2238,7 @@ namespace Hecton8.World
                 return default;
             }
 
-            Bounds drawBounds = _hasBoundsOverride
-                ? _explicitBounds
-                : new Bounds(transform.position + _boundsCenterOffset, _boundsSize);
+            Bounds drawBounds = ResolveDrawBounds(transform.position);
             if (!HectonBatchRendererGroupUtility.IsBoundsVisible(cullingContext.cullingPlanes, drawBounds))
             {
                 HectonBatchRendererGroupUtility.WriteDirectDrawOutput(
@@ -2531,7 +2684,10 @@ namespace Hecton8.World
             }
 
             if (_batchMetadata.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_batchMetadata);
                 _batchMetadata.Dispose();
+            }
 
             ReleaseMaterialClone(ref _nearBrgMaterial);
             ReleaseMaterialClone(ref _farBrgMaterial);
@@ -2716,7 +2872,14 @@ namespace Hecton8.World
             if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
                 return;
 
-            _playerToolManager = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null) ? Hecton8.Core.GlobalRegistry.Player.ToolManager : playerTransform.GetComponent<PlayerToolManager>());
+            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+            if (playerContext != null && playerContext.ToolManager != null)
+            {
+                _playerToolManager = playerContext.ToolManager;
+                return;
+            }
+
+            playerTransform.TryGetComponent(out _playerToolManager);
         }
 
         private void ClearScooterHeadlightPayload()
@@ -2932,6 +3095,9 @@ namespace Hecton8.World
             if (_cullingCompute == null)
                 _cullingCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(ComputeShaderAssetPath);
 
+            if (_abyssalFlowFieldCompute == null)
+                _abyssalFlowFieldCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(AbyssalFlowFieldComputeAssetPath);
+
             if (_depthPyramidCompute == null)
                 _depthPyramidCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(DepthPyramidComputeAssetPath);
 
@@ -2947,6 +3113,8 @@ namespace Hecton8.World
             _cullFloraKernel = _cullingCompute != null ? _cullingCompute.FindKernel("CullFloraInstances") : -1;
             _cullFloraShadowKernel = _cullingCompute != null ? _cullingCompute.FindKernel("CullFloraShadowInstances") : -1;
             _clearIndirectArgsKernel = _cullingCompute != null ? _cullingCompute.FindKernel("ClearIndirectArgs") : -1;
+            _clearFloraSnapFlagsKernel = _abyssalFlowFieldCompute != null ? _abyssalFlowFieldCompute.FindKernel("ClearFloraSnapFlags") : -1;
+            _flagSnappedFloraKernel = _abyssalFlowFieldCompute != null ? _abyssalFlowFieldCompute.FindKernel("FlagSnappedFlora") : -1;
             _depthPyramidCopyKernel = _depthPyramidCompute != null ? _depthPyramidCompute.FindKernel("CopyDepthPyramidMip0") : -1;
             _depthPyramidDownsampleKernel = _depthPyramidCompute != null ? _depthPyramidCompute.FindKernel("DownsampleDepthPyramidMip") : -1;
         }

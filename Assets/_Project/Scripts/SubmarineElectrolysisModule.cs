@@ -102,8 +102,12 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (!_listeners.Contains(listener))
+                return;
+
+            _listeners.Unregister(listener);
+            if (_listeners.Count <= 0)
+                DropQueuedPayloads();
         }
 
         /// <summary>
@@ -111,6 +115,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void Notify(in ElectrolysisAcousticEvent acousticEvent)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             Enqueue(new ElectrolysisAcousticPayload
             {
                 Position = acousticEvent.Position,
@@ -128,6 +135,12 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
                 return;
+
+            if (_listeners.Count <= 0)
+            {
+                DropQueuedPayloads();
+                return;
+            }
 
             PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
@@ -185,6 +198,7 @@ namespace Hecton8.Gameplay
                     nameof(ElectrolysisAcousticEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -196,6 +210,21 @@ namespace Hecton8.Gameplay
                     nameof(ElectrolysisAcousticEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -244,6 +273,26 @@ namespace Hecton8.Gameplay
             _pendingEvents = _nextFrameEvents;
             _nextFrameEvents = swap;
             _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
+        }
+
+        private static void DropQueuedPayloads()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                while (_pendingEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                while (_nextFrameEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            _pendingEventCount = 0;
             _nextFrameEventCount = 0;
         }
     }
@@ -408,33 +457,37 @@ namespace Hecton8.Gameplay
             if (!_isOperating)
                 return;
 
-            float consumedPowerWatts = math.max(0f, powerDrawWatts);
-            float oxygenUnits = (consumedPowerWatts * SlowTickDeltaTime * 0.001f) * math.max(0f, oxygenUnitsPerKilowattSecond);
-            if (oxygenUnits <= 0f)
+            float consumedPowerWatts = FiniteNonNegativeOrZero(powerDrawWatts);
+            float oxygenUnits = (consumedPowerWatts * SlowTickDeltaTime * 0.001f) * FiniteNonNegativeOrZero(oxygenUnitsPerKilowattSecond);
+            if (!math.isfinite(oxygenUnits) || oxygenUnits <= 0f)
                 return;
 
             atmosphereSystem.InjectOxygenUnits(targetRoomIndex, oxygenUnits);
-            atmosphereSystem.InjectRoomTemperatureDeltaCelsius(targetRoomIndex, math.max(0f, temperatureRisePerSlowTickCelsius));
+            atmosphereSystem.InjectRoomTemperatureDeltaCelsius(targetRoomIndex, FiniteNonNegativeOrZero(temperatureRisePerSlowTickCelsius));
 
-            Vector3 position = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
+            Vector3 position = ResolveCinematicPulsePosition();
+            float safeThreatRadius = FiniteAtLeast(threatRadiusMeters, 1f);
+            float safeThreatStrength = FiniteNonNegativeOrZero(threatStrength);
+            float safeThreatHoldSeconds = FiniteAtLeast(threatHoldSeconds, 0.1f);
+            float safeThermalUpdraft = FiniteNonNegativeOrZero(thermalUpdraftMetersPerSecond);
             HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (bridge != null)
             {
-                bridge.ApplyExternalThreatPulse(position, threatRadiusMeters, threatStrength, threatHoldSeconds);
-                bridge.RegisterSwarmWakeImpulse(position, Vector3.up * math.max(0f, thermalUpdraftMetersPerSecond), threatRadiusMeters, threatHoldSeconds);
+                bridge.ApplyExternalThreatPulse(position, safeThreatRadius, safeThreatStrength, safeThreatHoldSeconds);
+                bridge.RegisterSwarmWakeImpulse(position, Vector3.up * safeThermalUpdraft, safeThreatRadius, safeThreatHoldSeconds);
             }
 
             ElectrolysisAcousticEvent acousticEvent = new ElectrolysisAcousticEvent(
                 position,
                 consumedPowerWatts,
                 oxygenUnits,
-                threatStrength,
-                threatRadiusMeters);
+                safeThreatStrength,
+                safeThreatRadius);
             ElectrolysisAcousticEvents.Notify(in acousticEvent);
 
             _debugLastDumpedPowerWatts = consumedPowerWatts;
             _debugLastOxygenUnits = oxygenUnits;
-            _debugLastThreatStrength = threatStrength;
+            _debugLastThreatStrength = safeThreatStrength;
         }
 
         /// <inheritdoc />
@@ -489,6 +542,32 @@ namespace Hecton8.Gameplay
             return oceanService != null && oceanService.ActiveProvider != null;
         }
 
+        private Vector3 ResolveCinematicPulsePosition()
+        {
+            if (hostModule != null &&
+                hostModule.TryGetInteriorAabbBounds(out Vector3 moduleCenter, out Vector3 moduleHalfExtents) &&
+                IsFiniteVector(moduleCenter) &&
+                moduleHalfExtents.sqrMagnitude > 0.0001f)
+            {
+                return moduleCenter;
+            }
+
+            if (fluidDynamics != null &&
+                _cachedTransform != null &&
+                targetRoomIndex >= 0 &&
+                targetRoomIndex < fluidDynamics.CompartmentCount)
+            {
+                Vector3 roomCenter = _cachedTransform.TransformPoint(fluidDynamics.GetCompartmentCentroid(targetRoomIndex));
+                if (IsFiniteVector(roomCenter))
+                    return roomCenter;
+            }
+
+            if (_cachedTransform != null && IsFiniteVector(_cachedTransform.position))
+                return _cachedTransform.position;
+
+            return Vector3.zero;
+        }
+
         private void NotifyGridBalanceChanged()
         {
             PowerGrid grid = powerNode != null ? powerNode.Grid : null;
@@ -527,6 +606,23 @@ namespace Hecton8.Gameplay
 #endif
 
             return true;
+        }
+
+        private static float FiniteNonNegativeOrZero(float value)
+        {
+            return math.isfinite(value) && value > 0f ? value : 0f;
+        }
+
+        private static float FiniteAtLeast(float value, float minimum)
+        {
+            return math.isfinite(value) && value > minimum ? value : minimum;
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
     }
 }

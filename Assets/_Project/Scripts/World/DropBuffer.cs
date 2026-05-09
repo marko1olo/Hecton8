@@ -26,6 +26,8 @@ namespace Hecton8.World
                     nameof(_queue),
                     NativeAllocationLifetime.Session);
             }
+
+            PrewarmQueue(ref _queue, _capacity);
         }
 
         /// <summary>True when the persistent native queue is available.</summary>
@@ -76,6 +78,20 @@ namespace Hecton8.World
             }
 
             _capacity = 0;
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
     }
 }

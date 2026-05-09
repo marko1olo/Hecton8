@@ -167,20 +167,59 @@ namespace Hecton8.UI
             // Pre-generate volume percentage strings (0-100%)
             for (int i = 0; i <= 100; i++)
             {
-                VolumePercentStrings[i] = i.ToString() + "%";
+                VolumePercentStrings[i] = CreatePercentString(i);
             }
 
             // Pre-generate FOV strings (60-110°)
             for (int i = 0; i <= 50; i++)
             {
-                FOVStrings[i] = (60 + i).ToString() + "°";
+                FOVStrings[i] = CreateDegreeString(60 + i);
             }
 
             // Pre-generate shadow distance strings (50-300m)
             for (int i = 0; i <= 250; i++)
             {
-                ShadowDistanceStrings[i] = (50 + i).ToString() + "m";
+                ShadowDistanceStrings[i] = CreateMeterString(50 + i);
             }
+        }
+
+        private static string CreatePercentString(int value)
+        {
+            return string.Create(CountPositiveDecimalDigits(value) + 1, value, static (buffer, number) =>
+            {
+                number.TryFormat(buffer, out int written);
+                buffer[written] = '%';
+            });
+        }
+
+        private static string CreateDegreeString(int value)
+        {
+            return string.Create(CountPositiveDecimalDigits(value) + 1, value, static (buffer, number) =>
+            {
+                number.TryFormat(buffer, out int written);
+                buffer[written] = '\u00B0';
+            });
+        }
+
+        private static string CreateMeterString(int value)
+        {
+            return string.Create(CountPositiveDecimalDigits(value) + 1, value, static (buffer, number) =>
+            {
+                number.TryFormat(buffer, out int written);
+                buffer[written] = 'm';
+            });
+        }
+
+        private static int CountPositiveDecimalDigits(int value)
+        {
+            if (value >= 1000)
+                return 4;
+            if (value >= 100)
+                return 3;
+            if (value >= 10)
+                return 2;
+
+            return 1;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -100,7 +100,7 @@ namespace Hecton8.Biolum
         // DIRTY-FLAG CACHING (Avoid redundant property updates)
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-        #if UNITY_EDITOR
+        #if UNITY_EDITOR || DEVELOPMENT_BUILD
         [SerializeField] protected bool _debugLogSpawn = false;
         [SerializeField] private int _debugTickInvocations = 0;
         [SerializeField] private int _debugEvaluateInvocations = 0;
@@ -185,7 +185,7 @@ namespace Hecton8.Biolum
         /// </summary>
         public void Tick(float deltaTime)
         {
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugTickInvocations++;
 #endif
             int frame = Time.frameCount;
@@ -193,13 +193,13 @@ namespace Hecton8.Biolum
             _lastUpdateFrame = frame;
 
             bool skippedLod = ShouldSkipLOD();
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugLastSkippedLod = skippedLod;
 #endif
             if (skippedLod) return;
 
             EvaluateBiolumState();
-#if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             _debugEvaluateInvocations++;
             _debugLastUpdatedFrame = frame;
 #endif
@@ -295,7 +295,7 @@ namespace Hecton8.Biolum
             light.intensity = intensity;
             _activeLightCount++;
 
-            #if UNITY_EDITOR
+            #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_debugLogSpawn) Debug.Log($"[Biolum] {_zoneKey} light {_activeLightCount - 1}");
             #endif
 
@@ -353,7 +353,7 @@ namespace Hecton8.Biolum
 
         protected float ScaleIntensityByMood(float baseIntensity)
         {
-            float mood = Mathf.Lerp(0.5f, 1.5f, _moodLevel);
+            float mood = 0.5f + Mathf.Clamp01(_moodLevel);
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
             float mgr = manager != null
                 ? manager._globalIntensityScale
@@ -363,7 +363,7 @@ namespace Hecton8.Biolum
 
         protected float ScaleRangeByHazard(float baseRange)
         {
-            float hazard = Mathf.Lerp(1.5f, 0.5f, _hazardLevel);
+            float hazard = 1.5f - Mathf.Clamp01(_hazardLevel);
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
             float mgr = manager != null
                 ? manager._globalRangeScale
@@ -389,11 +389,11 @@ namespace Hecton8.Biolum
                 ? manager.GetCameraPosition()
                 : Vector3.zero;
 
-            float dist = Vector3.Distance(_cachedTransform.position, camPos);
-            float lodThreshold = Mathf.Lerp(5f, 500f, _lodDistanceScale);
+            float lodThreshold = 5f + (500f - 5f) * Mathf.Clamp01(_lodDistanceScale);
+            float lodThresholdSq = lodThreshold * lodThreshold;
 
             // Skip 2 out of 3 frames if beyond threshold
-            return dist > lodThreshold && (Time.frameCount % 3) != 0;
+            return (_cachedTransform.position - camPos).sqrMagnitude > lodThresholdSq && (Time.frameCount % 3) != 0;
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

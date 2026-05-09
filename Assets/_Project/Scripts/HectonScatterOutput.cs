@@ -12,7 +12,7 @@
 // HOW IT WORKS:
 //   1. Receives TransitionsList from upstream scatter/adjust nodes.
 //   2. On Apply, iterates all positions WITHOUT creating arrays.
-//   3. Calls ScavengePopulator.Instance.RegisterSpawnPoint() per position.
+//   3. Calls GlobalRegistry.ScavengePopulator.RegisterSpawnPoint() per position.
 //   4. Nothing is written to TerrainData — this is a terminal node.
 //
 // INTEGRATION:
@@ -99,7 +99,7 @@ namespace Hecton8.MapMagicIntegration
         {
             // ScavengePopulator handles its own culling via CullDistantChunks.
             // If explicit purge is needed per-tile, we could call:
-            //   ScavengePopulator.Instance?.ReloadChunk(coord);
+            //   GlobalRegistry.ScavengePopulator?.ReloadChunk(coord);
             // But we don't have coord here easily, and culling handles it.
         }
 
@@ -141,12 +141,14 @@ namespace Hecton8.MapMagicIntegration
             /// </summary>
             public void Apply(Terrain terrain)
             {
-                ScavengePopulator populator = ScavengePopulator.Instance;
+                ScavengePopulator populator = GlobalRegistry.ScavengePopulator;
                 if (populator == null)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError(
-                        "[HectonScatterOutput] ScavengePopulator.Instance is null! " +
+                        "[HectonScatterOutput] ScavengePopulator registry slot is null! " +
                         "Ensure ScavengePopulator exists in the scene.");
+#endif
                     return;
                 }
 

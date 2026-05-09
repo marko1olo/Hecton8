@@ -70,6 +70,7 @@ namespace Hecton8.World
                 NativeAllocationLifetime lifetime = ResolveLifetime(allocator);
                 NativeMemorySentinel.RegisterNativeArray(Grid, nameof(TOOL_Procedural_Wreckage_Generator), nameof(Grid), lifetime);
                 NativeMemorySentinel.RegisterNativeQueue(PropagationQueue, safeCellCount, nameof(TOOL_Procedural_Wreckage_Generator), nameof(PropagationQueue), lifetime);
+                PrewarmQueue(ref PropagationQueue, safeCellCount);
                 NativeMemorySentinel.RegisterNativeArray(RngState, nameof(TOOL_Procedural_Wreckage_Generator), nameof(RngState), lifetime);
                 NativeMemorySentinel.RegisterNativeParallelHashMap(CollapseOrder, nameof(TOOL_Procedural_Wreckage_Generator), nameof(CollapseOrder), lifetime);
             }
@@ -106,6 +107,20 @@ namespace Hecton8.World
                 return allocator == Allocator.Persistent
                     ? NativeAllocationLifetime.Session
                     : NativeAllocationLifetime.TransientArena;
+            }
+
+            private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+                where T : unmanaged
+            {
+                if (!queue.IsCreated || capacity <= 0)
+                    return;
+
+                for (int i = 0; i < capacity; i++)
+                    queue.Enqueue(default);
+
+                while (queue.TryDequeue(out _))
+                {
+                }
             }
         }
 

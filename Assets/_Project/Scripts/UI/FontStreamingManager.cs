@@ -2,6 +2,7 @@ using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
@@ -58,11 +59,13 @@ namespace Hecton8.UI
             LocalizationEvents.RegisterLanguageListener(this);
             SceneManager.sceneLoaded += HandleSceneLoaded;
             EnsureRegistryNodes(SceneManager.GetActiveScene());
+            EnsureUiBuilt(allowCreate: true);
             RegisterToTickManager();
         }
 
         private void Start()
         {
+            EnsureUiBuilt(allowCreate: true);
             RegisterToTickManager();
         }
 
@@ -86,7 +89,8 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float dt)
         {
-            EnsureUiBuilt();
+            if (!EnsureUiBuilt(allowCreate: false))
+                return;
 
             if (_awaitingPrimaryFontReadiness)
                 EvaluatePendingFontReadiness();
@@ -105,7 +109,7 @@ namespace Hecton8.UI
             }
 
             if (_visibleAlpha > 0.001f)
-                ApplyVisibleAlpha(Mathf.MoveTowards(_visibleAlpha, 0f, dt * StatusFadeOutSpeed));
+                ApplyVisibleAlpha(MoveTowards(_visibleAlpha, 0f, dt * StatusFadeOutSpeed));
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -244,27 +248,30 @@ namespace Hecton8.UI
             UpdateStatusLabel();
         }
 
-        private void EnsureUiBuilt()
+        private bool EnsureUiBuilt(bool allowCreate)
         {
             if (_uiBuilt)
-                return;
+                return true;
+
+            if (!allowCreate)
+                return false;
 
             if (_targetCanvas == null)
                 _targetCanvas = ResolveTargetCanvas();
 
             if (_targetCanvas == null)
-                return;
+                return false;
 
             RectTransform canvasRoot = HectonUIScaler.ResolveContentRoot(_targetCanvas);
             if (canvasRoot == null)
-                return;
+                return false;
 
             _root = FindExistingChild(canvasRoot, RootName);
             if (_root == null)
             {
                 GameObject rootObject = new GameObject(RootName, typeof(RectTransform), typeof(CanvasGroup), typeof(Image));
                 rootObject.layer = canvasRoot.gameObject.layer;
-                _root = rootObject.GetComponent<RectTransform>();
+                rootObject.TryGetComponent(out _root);
                 _root.SetParent(canvasRoot, false);
             }
 
@@ -275,13 +282,17 @@ namespace Hecton8.UI
             _root.sizeDelta = new Vector2(348f, 34f);
             _root.SetAsLastSibling();
 
-            _group = _root.GetComponent<CanvasGroup>();
+            if (!_root.TryGetComponent(out _group))
+                _group = _root.gameObject.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] - repairs missing font streaming root component - owner: FontStreamingManager
+
             _group.alpha = 0f;
             _group.blocksRaycasts = false;
             _group.interactable = false;
             _visibleAlpha = 0f;
 
-            Image background = _root.GetComponent<Image>();
+            if (!_root.TryGetComponent(out Image background))
+                background = _root.gameObject.AddComponent<Image>(); // COLD ALLOC: Image[1] - repairs missing font streaming root component - owner: FontStreamingManager
+
             background.color = StatusBackgroundColor;
             background.raycastTarget = false;
 
@@ -292,7 +303,7 @@ namespace Hecton8.UI
             {
                 GameObject labelObject = new GameObject("StatusLabel", typeof(RectTransform));
                 labelObject.layer = _root.gameObject.layer;
-                RectTransform labelRect = labelObject.GetComponent<RectTransform>();
+                labelObject.TryGetComponent(out RectTransform labelRect);
                 labelRect.SetParent(_root, false);
                 labelRect.anchorMin = Vector2.zero;
                 labelRect.anchorMax = Vector2.one;
@@ -311,11 +322,13 @@ namespace Hecton8.UI
 
             ApplyStatusBuffer(0);
             _uiBuilt = true;
+            return true;
         }
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             EnsureRegistryNodes(scene);
+            EnsureUiBuilt(allowCreate: true);
         }
 
         private void UpdateStatusLabel()
@@ -344,7 +357,7 @@ namespace Hecton8.UI
             }
 
             int percent = _queueCount > 0
-                ? Mathf.Clamp(Mathf.RoundToInt((_queueIndex / (float)_queueCount) * 100f), 0, 100)
+                ? math.clamp((int)math.round((_queueIndex / (float)_queueCount) * 100f), 0, 100)
                 : 100;
             if (percent == _lastStatusPercent)
                 return;
@@ -370,7 +383,8 @@ namespace Hecton8.UI
 
         private void ApplyVisibleAlpha(float alpha)
         {
-            if (_group == null || Mathf.Approximately(_visibleAlpha, alpha))
+            alpha = math.saturate(alpha);
+            if (_group == null || math.abs(_visibleAlpha - alpha) <= 0.0001f)
                 return;
 
             _visibleAlpha = alpha;
@@ -385,8 +399,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()
@@ -453,7 +466,11 @@ namespace Hecton8.UI
             }
 
             s_overlayResolveBuffer.Clear();
-            return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
+            if (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance == null)
+                return null;
+
+            SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.TryGetComponent(out Canvas canvas);
+            return canvas;
         }
 
         private static RectTransform FindExistingChild(Transform parent, string childName)
@@ -480,7 +497,10 @@ namespace Hecton8.UI
             {
                 Transform child = parent.GetChild(i);
                 if (child.name == childName)
-                    return child.GetComponent<TextMeshProUGUI>();
+                {
+                    child.TryGetComponent(out TextMeshProUGUI text);
+                    return text;
+                }
             }
 
             return null;
@@ -488,41 +508,51 @@ namespace Hecton8.UI
 
         private void WriteStatusLiteral(ReadOnlySpan<char> source)
         {
-            EnsureStatusCapacity(source.Length);
-            source.CopyTo(_statusBuffer);
-            ApplyStatusBuffer(source.Length);
+            int length = CopyStatusSpan(source);
+            ApplyStatusBuffer(length);
         }
 
         private void WriteStatusWithPercent(int percent)
         {
             ReadOnlySpan<char> prefix = DefaultStatusText.AsSpan();
-            int requiredLength = prefix.Length + 5;
-            EnsureStatusCapacity(requiredLength);
-            prefix.CopyTo(_statusBuffer);
+            int writeIndex = CopyStatusSpan(prefix);
+            if (_statusBuffer == null || writeIndex >= _statusBuffer.Length)
+            {
+                ApplyStatusBuffer(writeIndex);
+                return;
+            }
 
-            int writeIndex = prefix.Length;
             _statusBuffer[writeIndex++] = ' ';
-            if (!percent.TryFormat(_statusBuffer.AsSpan(writeIndex), out int charsWritten))
+            if (writeIndex >= _statusBuffer.Length)
+            {
+                ApplyStatusBuffer(writeIndex);
+                return;
+            }
+
+            Span<char> writableSpan = _statusBuffer.AsSpan(writeIndex, _statusBuffer.Length - writeIndex);
+            if (!percent.TryFormat(writableSpan, out int charsWritten))
             {
                 ApplyStatusBuffer(0);
                 return;
             }
 
             writeIndex += charsWritten;
-            _statusBuffer[writeIndex++] = '%';
+            if (writeIndex < _statusBuffer.Length)
+                _statusBuffer[writeIndex++] = '%';
+
             ApplyStatusBuffer(writeIndex);
         }
 
-        private void EnsureStatusCapacity(int requiredLength)
+        private int CopyStatusSpan(ReadOnlySpan<char> source)
         {
-            if (_statusBuffer != null && _statusBuffer.Length >= requiredLength)
-                return;
+            if (_statusBuffer == null || _statusBuffer.Length == 0)
+                return 0;
 
-            int capacity = _statusBuffer == null ? 32 : _statusBuffer.Length;
-            while (capacity < requiredLength)
-                capacity <<= 1;
+            int length = math.min(source.Length, _statusBuffer.Length);
+            for (int i = 0; i < length; i++)
+                _statusBuffer[i] = source[i];
 
-            _statusBuffer = new char[capacity]; // COLD ALLOC: char[capacity] â€” expanded font streaming status buffer â€” owner: FontStreamingManager
+            return length;
         }
 
         private void ApplyStatusBuffer(int length)
@@ -530,8 +560,18 @@ namespace Hecton8.UI
             if (_statusLabel == null || _statusBuffer == null)
                 return;
 
-            int safeLength = Mathf.Clamp(length, 0, _statusBuffer.Length);
+            int safeLength = math.clamp(length, 0, _statusBuffer.Length);
             _statusLabel.SetCharArray(_statusBuffer, 0, safeLength);
+        }
+
+        private static float MoveTowards(float current, float target, float maxDelta)
+        {
+            float safeDelta = math.max(0f, maxDelta);
+            float delta = target - current;
+            if (math.abs(delta) <= safeDelta)
+                return target;
+
+            return current + math.sign(delta) * safeDelta;
         }
 
         private void ReleaseTrackedFontData()

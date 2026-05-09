@@ -106,10 +106,13 @@ Shader "NASAPunk/SuitVisor"
             #pragma vertex VisorVert
             #pragma fragment VisorFrag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
             #pragma multi_compile_fog
             #pragma multi_compile _ _HUD_PHOSPHOR_MODE
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
@@ -201,6 +204,8 @@ Shader "NASAPunk/SuitVisor"
             float4 _HectonVrComfortSignals;
             float4 _HectonVrComfortSway;
             float4 _HectonVrComfortMotion;
+            float4 _HectonXRFoveatedParams;
+            float4 _HectonXRFoveatedCenterRadius;
             TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
             float4 _SonarRevealOriginWS;
             float4 _SonarRevealWaveParams;
@@ -209,10 +214,7 @@ Shader "NASAPunk/SuitVisor"
             float4 _SonarGridHardColor;
             float4 _SonarGridOrganicColor;
             float4 _SonarGridAbyssalColor;
-            float4 _SonarRevealContacts[24];
-            float4 _SonarRevealContactMeta[24];
             float _SonarRevealExpireTime;
-            int _SonarRevealContactCount;
             float _HectonHudFocusBlur;
 
             struct Attributes
@@ -241,18 +243,65 @@ Shader "NASAPunk/SuitVisor"
                 float2 glareData   : TEXCOORD9;
             };
 
+            float ApproximateMagnitude2D(float2 value)
+            {
+                float2 delta = abs(value);
+                return max(delta.x, delta.y) + min(delta.x, delta.y) * 0.375;
+            }
+
+            float ApproximateMagnitude3D(float3 value)
+            {
+                float3 delta = abs(value);
+                float maxAxis = max(delta.x, max(delta.y, delta.z));
+                float minAxis = min(delta.x, min(delta.y, delta.z));
+                float midAxis = delta.x + delta.y + delta.z - maxAxis - minAxis;
+                return maxAxis + midAxis * 0.375 + minAxis * 0.125;
+            }
+
+            float2 NormalizeApprox2D(float2 value)
+            {
+                return value * rcp(max(0.0001, ApproximateMagnitude2D(value)));
+            }
+
+            float3 NormalizeApprox3D(float3 value)
+            {
+                return value * rcp(max(0.0001, ApproximateMagnitude3D(value)));
+            }
+
+            float FastPowerCurve01(float value, float exponent)
+            {
+                float v = saturate(value);
+                float v2 = v * v;
+                float v4 = v2 * v2;
+                float v8 = v4 * v4;
+                float low = lerp(v, v2, saturate(exponent - 1.0));
+                float high = lerp(v2, v8, saturate((exponent - 2.0) * 0.16666667));
+                return lerp(low, high, step(2.0, exponent));
+            }
+
+            float FastRootCurve01(float value)
+            {
+                float v = saturate(value);
+                return saturate(v * (1.85 - 0.85 * v));
+            }
+
+            float ApproximateNormalZ(float2 xy)
+            {
+                return saturate(1.0 - dot(xy, xy));
+            }
+
             float3 UnpackScaledNormal(float4 packedNormal, float scale)
             {
                 float3 n;
                 n.xy = (packedNormal.rg * 2.0 - 1.0) * scale;
-                n.z = sqrt(max(0.0, 1.0 - dot(n.xy, n.xy)));
+                n.z = ApproximateNormalZ(n.xy);
                 return n;
             }
 
             float EdgeMask(float2 uv, float falloff)
             {
                 float2 centered = uv * 2.0 - 1.0;
-                return pow(saturate(dot(centered, centered)), falloff * 0.5);
+                return FastPowerCurve01(dot(centered, centered), falloff * 0.5);
             }
 
             float Bayer4x4(float2 pixelCoord)
@@ -321,26 +370,41 @@ Shader "NASAPunk/SuitVisor"
                 return frac(p.x * p.y);
             }
 
+            float FastTrianglePulse01(float phase)
+            {
+                return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+            }
+
+            float FastTriangleSigned(float phase)
+            {
+                return FastTrianglePulse01(phase) * 2.0 - 1.0;
+            }
+
             float ResolveFrostBlueNoise(float2 uv, float timeValue)
             {
                 float2 pixel = floor(uv * _ScreenParams.xy);
                 float fallback = Hash21(pixel + floor(timeValue * 19.0));
                 float hasBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
-                float2 texelScale = lerp(float2(1.0 / 256.0, 1.0 / 256.0), _BlueNoiseTex_TexelSize.xy, hasBlueNoise);
+                [branch]
+                if (hasBlueNoise <= 0.5)
+                    return fallback;
+
                 float2 temporalR2 = frac(float2(0.754877666, 0.569840291) * floor(timeValue * 12.0));
-                float2 blueNoiseUV = frac(pixel * texelScale + temporalR2);
-                float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
-                return lerp(fallback, sampled, hasBlueNoise);
+                float2 blueNoiseUV = frac(pixel * _BlueNoiseTex_TexelSize.xy + temporalR2);
+                return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
             }
 
             float ResolveLensBlueNoise(float2 uv, float2 tileScale, float timeValue)
             {
                 float hasBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
+                float fallback = Hash21(floor(uv * tileScale * 256.0) + floor(timeValue * 13.0));
+                [branch]
+                if (hasBlueNoise <= 0.5)
+                    return fallback;
+
                 float2 temporalR2 = frac(float2(0.754877666, 0.569840291) * floor(timeValue * 8.0));
                 float2 noiseUV = frac(uv * tileScale + temporalR2);
-                float fallback = Hash21(floor(uv * tileScale * 256.0) + floor(timeValue * 13.0));
-                float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, noiseUV).r;
-                return lerp(fallback, sampled, hasBlueNoise);
+                return SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, noiseUV).r;
             }
 
             void ComputeBlueNoiseLensGrime(float2 uv, float timeValue, out float dustMask, out float moistureMask)
@@ -396,21 +460,21 @@ Shader "NASAPunk/SuitVisor"
                 float active = saturate(intensity);
                 float edgeBias = smoothstep(0.18, 0.96, EdgeMask(uv, 1.08));
                 float2 centered = uv - 0.5;
-                float pulse = 0.84 + sin(timeValue * 1.7) * 0.08;
+                float pulse = 0.84 + FastTriangleSigned(timeValue * 1.7) * 0.08;
 
-                float branchAPath = centered.y - centered.x * 0.24 - 0.08 * sin(centered.x * 13.0 + 0.7);
+                float branchAPath = centered.y - centered.x * 0.24 - 0.08 * FastTriangleSigned(centered.x * 13.0 + 0.7);
                 float branchA = (1.0 - smoothstep(0.004, 0.018, abs(branchAPath)))
                     * step(0.03, centered.x)
                     * step(-0.28, centered.y)
                     * step(centered.y, 0.34);
 
-                float branchBPath = centered.y + centered.x * 0.62 + 0.035 * sin(centered.y * 19.0 + 1.9);
+                float branchBPath = centered.y + centered.x * 0.62 + 0.035 * FastTriangleSigned(centered.y * 19.0 + 1.9);
                 float branchB = (1.0 - smoothstep(0.003, 0.016, abs(branchBPath)))
                     * step(centered.x, -0.05)
                     * step(-0.36, centered.y)
                     * step(centered.y, 0.28);
 
-                float branchCPath = centered.x - 0.18 * sin(centered.y * 11.0 + 2.3);
+                float branchCPath = centered.x - 0.18 * FastTriangleSigned(centered.y * 11.0 + 2.3);
                 float branchC = (1.0 - smoothstep(0.003, 0.014, abs(branchCPath)))
                     * step(0.12, centered.y)
                     * step(centered.y, 0.46);
@@ -439,8 +503,8 @@ Shader "NASAPunk/SuitVisor"
                     ComputePressureLensCrackMask(uv - float2(0.0, sampleStep), active, timeValue);
 
                 float2 crackGradient = float2(crackDx, crackDy);
-                float gradientMagnitude = saturate(length(crackGradient) * 12.0);
-                float2 crackNormal = normalize(crackGradient + float2(0.0001, 0.0001));
+                float gradientMagnitude = saturate(ApproximateMagnitude2D(crackGradient) * 12.0);
+                float2 crackNormal = NormalizeApprox2D(crackGradient + float2(0.0001, 0.0001));
                 float2 eyeParallax = (uv - 0.5) * (0.45 + gradientMagnitude);
                 float shardDepth = crackMask * active * _PressureCrackParallaxDepth;
                 parallaxOffset = (crackNormal * _PressureCrackNormalStrength * gradientMagnitude + eyeParallax) * shardDepth;
@@ -472,7 +536,8 @@ Shader "NASAPunk/SuitVisor"
             float ComputeProceduralFrostMask(float2 uv, float edgeDist, float timeValue)
             {
                 float edgeWarpNoise = ResolveFrostBlueNoise(uv + float2(timeValue * 0.003, timeValue * -0.005), timeValue + 5.0);
-                float frostEdge = pow(saturate(smoothstep(0.05, 0.96, edgeDist + (edgeWarpNoise - 0.5) * 0.18)), 1.42);
+                float frostEdgeBase = saturate(smoothstep(0.05, 0.96, edgeDist + (edgeWarpNoise - 0.5) * 0.18));
+                float frostEdge = frostEdgeBase * lerp(1.0, frostEdgeBase, 0.42);
                 float2 baseUv = uv * float2(11.5, 17.0) + float2(timeValue * 0.004, timeValue * -0.006);
                 float2 sampleUv = TRANSFORM_TEX(baseUv, _FingerprintTex);
                 float4 packedNoise = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, sampleUv);
@@ -519,7 +584,7 @@ Shader "NASAPunk/SuitVisor"
             float2 ComputeCurvedHudUV(float2 meshUV, float3 positionOS, out float edgeFade)
             {
                 float2 visorCoord = positionOS.xy * (2.0 * _HUD_Scale);
-                float visorRadius = length(visorCoord);
+                float visorRadius = ApproximateMagnitude2D(visorCoord);
                 float visorRadiusClamped = saturate(visorRadius);
                 float r2 = visorRadiusClamped * visorRadiusClamped;
                 float r4 = r2 * r2;
@@ -528,7 +593,7 @@ Shader "NASAPunk/SuitVisor"
                 float2 curvedUV = curvedCoord * 0.5 + 0.5 + _HUD_Offset.xy;
 
                 float2 fromCenter = curvedUV - 0.5;
-                float ellipseR = length(fromCenter * float2(1.0, 0.85));
+                float ellipseR = ApproximateMagnitude2D(fromCenter * float2(1.0, 0.85));
                 float fadeStart = max(0.01, 1.0 - _HUD_EdgeFade);
                 edgeFade = 1.0 - smoothstep(fadeStart * 0.7, fadeStart, ellipseR);
                 return curvedUV;
@@ -586,10 +651,10 @@ Shader "NASAPunk/SuitVisor"
 
                 float3 cameraForwardWS = _VisorCameraForwardWS.xyz;
                 float cameraForwardValid = step(0.0001, dot(cameraForwardWS, cameraForwardWS));
-                cameraForwardWS = normalize(lerp(-OUT.viewDirWS, cameraForwardWS, cameraForwardValid));
+                cameraForwardWS = NormalizeApprox3D(lerp(-OUT.viewDirWS, cameraForwardWS, cameraForwardValid));
                 float3 strongestLightDirectionWS = _VisorStrongestLightDirectionWS.xyz;
                 float strongestLightValid = step(0.0001, dot(strongestLightDirectionWS, strongestLightDirectionWS)) * step(0.0001, _VisorStrongestLightDirectionWS.w);
-                strongestLightDirectionWS = normalize(lerp(cameraForwardWS, strongestLightDirectionWS, strongestLightValid));
+                strongestLightDirectionWS = NormalizeApprox3D(lerp(cameraForwardWS, strongestLightDirectionWS, strongestLightValid));
                 float cameraLightDot = saturate(dot(cameraForwardWS, strongestLightDirectionWS));
                 float lightIntensity01 = saturate(_VisorStrongestLightDirectionWS.w);
                 float cameraLightDotSq = cameraLightDot * cameraLightDot;
@@ -605,7 +670,7 @@ Shader "NASAPunk/SuitVisor"
                 float2 scratchUV = TRANSFORM_TEX(IN.uv, _ScratchNormalMap);
                 float4 scratchPacked = SAMPLE_TEXTURE2D(_ScratchNormalMap, sampler_ScratchNormalMap, scratchUV);
                 float3 scratchNormalTS = UnpackScaledNormal(scratchPacked, _ScratchNormalStrength);
-                float scratchTextureMask = length(scratchNormalTS.xy);
+                float scratchTextureMask = ApproximateMagnitude2D(scratchNormalTS.xy);
                 float proceduralScratchMask = ComputeProceduralScratchMask(IN.uv);
                 float2 proceduralScratchXY = clamp(
                     float2(ddx(proceduralScratchMask), ddy(proceduralScratchMask)) * (_ScratchNormalStrength * 12.0),
@@ -616,38 +681,64 @@ Shader "NASAPunk/SuitVisor"
                     scratchNormalTS.xy + proceduralScratchXY * proceduralScratchBlend,
                     -0.48,
                     0.48);
-                scratchNormalTS.z = sqrt(max(0.0, 1.0 - dot(scratchNormalTS.xy, scratchNormalTS.xy)));
+                scratchNormalTS.z = ApproximateNormalZ(scratchNormalTS.xy);
                 float scratchMask = saturate(max(scratchTextureMask, proceduralScratchMask));
 
                 float3x3 TBN = float3x3(
-                    normalize(IN.tangentWS),
-                    normalize(IN.bitangentWS),
-                    normalize(IN.normalWS)
+                    NormalizeApprox3D(IN.tangentWS),
+                    NormalizeApprox3D(IN.bitangentWS),
+                    NormalizeApprox3D(IN.normalWS)
                 );
-                float3 normalWS = normalize(mul(scratchNormalTS, TBN));
+                float3 normalWS = NormalizeApprox3D(mul(scratchNormalTS, TBN));
 
+                float runoffStrength = saturate(max(_WaterRunoffStrength, _DropletAlpha));
+                float visorGlobalFog01 = saturate(_HectonHudFogFrost.x);
+                float visorGlobalFrost01 = saturate(_HectonHudFogFrost.y);
+                float condensationStrength = saturate(_CondensationStrength + visorGlobalFog01 + _HectonVRSomaticCondensation);
+                float frostStrength = saturate(_ScreenFrostStrength + visorGlobalFrost01);
+
+                float proceduralSmudgeMask = 0.0;
+                float fingerprint = 0.0;
+                float smudgeOpacity = 0.0;
                 float2 fpUV = TRANSFORM_TEX(IN.uv, _FingerprintTex);
-                float fingerprintSample = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, fpUV).r;
-                float proceduralSmudgeMask = ComputeProceduralSmudgeMask(IN.uv);
-                float fingerprint = max(fingerprintSample, proceduralSmudgeMask) * _FingerprintStrength;
-                float smudgeOpacity = fingerprint * 0.4;
+                float smudgeConsumer = max(max(saturate(_FingerprintStrength), runoffStrength), condensationStrength);
+                [branch]
+                if (smudgeConsumer > 0.001)
+                {
+                    float fingerprintSample = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, fpUV).r;
+                    proceduralSmudgeMask = ComputeProceduralSmudgeMask(IN.uv);
+                    fingerprint = max(fingerprintSample, proceduralSmudgeMask) * _FingerprintStrength;
+                    smudgeOpacity = fingerprint * 0.4;
+                }
 
-                float3 viewDir = normalize(IN.viewDirWS);
+                float3 viewDir = NormalizeApprox3D(IN.viewDirWS);
                 float NdotV = saturate(dot(normalWS, viewDir));
-                float fresnel = pow(1.0 - NdotV, _FresnelPower) * _FresnelIntensity;
-                float3 fresnelColor = _FresnelColor.rgb * fresnel;
+                float fresnel = 0.0;
+                float3 fresnelColor = 0.0;
+                [branch]
+                if (_FresnelIntensity > 0.0001)
+                {
+                    fresnel = FastPowerCurve01(1.0 - NdotV, _FresnelPower) * _FresnelIntensity;
+                    fresnelColor = _FresnelColor.rgb * fresnel;
+                }
 
                 float2 screenUV = IN.screenPos.xy / IN.screenPos.w;
 #if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
                 screenUV = UnityStereoTransformScreenSpaceTex(screenUV);
 #endif
                 float edgeDist = EdgeMask(IN.uv, _DistortionFalloff);
-                float blueNoiseDustMask;
-                float blueNoiseMoistureMask;
-                ComputeBlueNoiseLensGrime(IN.uv, _Time.y, blueNoiseDustMask, blueNoiseMoistureMask);
-                float blueNoiseGrimeMask = saturate((blueNoiseDustMask * 0.55 + blueNoiseMoistureMask * 0.75) * _LensGrimeIntensity);
-                fingerprint = saturate(fingerprint + blueNoiseGrimeMask * 0.42);
-                smudgeOpacity = saturate(fingerprint * 0.4 + blueNoiseDustMask * 0.08);
+                float blueNoiseDustMask = 0.0;
+                float blueNoiseMoistureMask = 0.0;
+                float blueNoiseGrimeMask = 0.0;
+                float lensGrimeConsumer = max(saturate(_LensGrimeIntensity), runoffStrength);
+                [branch]
+                if (lensGrimeConsumer > 0.001)
+                {
+                    ComputeBlueNoiseLensGrime(IN.uv, _Time.y, blueNoiseDustMask, blueNoiseMoistureMask);
+                    blueNoiseGrimeMask = saturate((blueNoiseDustMask * 0.55 + blueNoiseMoistureMask * 0.75) * _LensGrimeIntensity);
+                    fingerprint = saturate(fingerprint + blueNoiseGrimeMask * 0.42);
+                    smudgeOpacity = saturate(fingerprint * 0.4 + blueNoiseDustMask * 0.08);
+                }
                 float2 distortionOffset = scratchNormalTS.xy * _DistortionStrength;
                 distortionOffset += edgeDist * normalWS.xy * _DistortionStrength * 0.5;
                 float2 radialScreenOffset = screenUV - 0.5;
@@ -657,7 +748,6 @@ Shader "NASAPunk/SuitVisor"
                 distortionOffset += radialScreenOffset * (radialMagnitude * radialMagnitude) * _LensEdgeRefraction;
 
                 float runoffMask = 0.0;
-                float runoffStrength = saturate(max(_WaterRunoffStrength, _DropletAlpha));
                 if (runoffStrength > 0.001)
                 {
                     float runoffTime = _Time.y * _WaterRunoffSpeed;
@@ -681,9 +771,6 @@ Shader "NASAPunk/SuitVisor"
                     distortionOffset.y -= runoffMask * _WaterRunoffDistortion * (0.35 + abs(runoffNormalTS.y) * 0.25);
                 }
 
-                float visorGlobalFog01 = saturate(_HectonHudFogFrost.x);
-                float visorGlobalFrost01 = saturate(_HectonHudFogFrost.y);
-                float condensationStrength = saturate(_CondensationStrength + visorGlobalFog01 + _HectonVRSomaticCondensation);
                 float condensationMask = 0.0;
                 if (condensationStrength > 0.001)
                 {
@@ -693,7 +780,7 @@ Shader "NASAPunk/SuitVisor"
                     float condensationProceduralMask = ComputeProceduralSmudgeMask(
                         IN.uv + float2(condensationTime * 0.012, condensationTime * -0.018));
                     float condensationWarp = (ResolveFrostBlueNoise(IN.uv + float2(condensationTime * 0.014, condensationTime * -0.021), _Time.y + 9.0) - 0.5) * 0.16;
-                    float condensationEdge = pow(
+                    float condensationEdge = FastPowerCurve01(
                         saturate(smoothstep(0.04, 0.96, edgeDist + condensationWarp)),
                         max(0.5, _CondensationEdgeExponent));
                     condensationMask = saturate(
@@ -706,7 +793,6 @@ Shader "NASAPunk/SuitVisor"
                     distortionOffset.y -= condensationMask * _CondensationDistortion * 0.28;
                 }
 
-                float frostStrength = saturate(_ScreenFrostStrength + visorGlobalFrost01);
                 float frostMask = 0.0;
                 if (frostStrength > 0.001)
                 {
@@ -715,48 +801,78 @@ Shader "NASAPunk/SuitVisor"
                     distortionOffset += (scratchNormalTS.xy * 0.2 + radialScreenOffset * 0.06) * frostMask * 0.006;
                 }
 
-                float pressureCrackMask;
-                float2 pressureCrackParallaxOffset;
-                ComputePressureCrackParallax(IN.uv, _PressureLensCrackIntensity, _Time.y, pressureCrackMask, pressureCrackParallaxOffset);
-                distortionOffset += (scratchNormalTS.xy * 0.16 + radialScreenOffset * 0.10) * pressureCrackMask * 0.004;
-                distortionOffset += pressureCrackParallaxOffset;
+                float pressureCrackMask = 0.0;
+                float2 pressureCrackParallaxOffset = 0.0;
+                float pressureCrackIntensity = saturate(_PressureLensCrackIntensity);
+                [branch]
+                if (pressureCrackIntensity > 0.001)
+                {
+                    ComputePressureCrackParallax(IN.uv, pressureCrackIntensity, _Time.y, pressureCrackMask, pressureCrackParallaxOffset);
+                    distortionOffset += (scratchNormalTS.xy * 0.16 + radialScreenOffset * 0.10) * pressureCrackMask * 0.004;
+                    distortionOffset += pressureCrackParallaxOffset;
+                }
                 float vrComfortEnabled = saturate(_HectonVrComfortSignals.w);
                 float vrComfortBounce = saturate(_HectonVrComfortSignals.y) * vrComfortEnabled;
-                float vrComfortEdge = smoothstep(0.24, 1.0, radialMagnitude);
-                float vrComfortBounceNoise = Hash21(floor(screenUV * _ScreenParams.xy * 0.125) + floor(_Time.y * 90.0));
-                distortionOffset += float2(
-                    (vrComfortBounceNoise - 0.5) * 0.0035,
-                    sin(_Time.y * 91.0 + screenUV.y * 37.0) * 0.0015) * vrComfortBounce * vrComfortEdge;
+                float vrComfortEdge = 0.0;
+                [branch]
+                if (vrComfortEnabled > 0.0001)
+                {
+                    vrComfortEdge = smoothstep(0.24, 1.0, radialMagnitude);
+                    [branch]
+                    if (vrComfortBounce > 0.0001)
+                    {
+                        float vrComfortBounceNoise = Hash21(floor(screenUV * _ScreenParams.xy * 0.125) + floor(_Time.y * 90.0));
+                        float vrComfortBounceNoiseY = Hash21(floor(screenUV.yx * _ScreenParams.yx * 0.125) + floor(_Time.y * 91.0));
+                        distortionOffset += float2(
+                            (vrComfortBounceNoise - 0.5) * 0.0035,
+                            (vrComfortBounceNoiseY - 0.5) * 0.0015) * vrComfortBounce * vrComfortEdge;
+                    }
+                }
                 distortionOffset += _HectonVrComfortSway.xy * 0.010 * vrComfortEnabled * vrComfortEdge;
 
                 float criticalHealthGlitch = saturate(_HectonSuitHealthGlitch.x);
-                float criticalBand = floor(screenUV.y * lerp(84.0, 260.0, criticalHealthGlitch) + floor(_Time.y * (17.0 + criticalHealthGlitch * 31.0)));
-                float criticalSpikeNoise = Hash21(float2(criticalBand, floor(_Time.y * (11.0 + criticalHealthGlitch * 43.0))));
-                float criticalSpikeGate = step(0.74 - criticalHealthGlitch * 0.36, criticalSpikeNoise);
-                float criticalMicroGate = step(
-                    0.56 - criticalHealthGlitch * 0.18,
-                    Hash21(float2(criticalBand * 1.37, floor(_Time.y * 53.0))));
-                float criticalTear = (criticalSpikeNoise - 0.5) * _HectonSuitHealthGlitch.z * criticalSpikeGate;
-                distortionOffset.x += criticalTear;
-                distortionOffset.y += (criticalMicroGate - 0.5) * criticalHealthGlitch * 0.0035;
+                float criticalPayload = max(max(criticalHealthGlitch, abs(_HectonSuitHealthGlitch.z)), abs(_HectonSuitHealthGlitch.w));
+                float criticalSpikeGate = 0.0;
+                [branch]
+                if (criticalPayload > 0.0001)
+                {
+                    float criticalBand = floor(screenUV.y * lerp(84.0, 260.0, criticalHealthGlitch) + floor(_Time.y * (17.0 + criticalHealthGlitch * 31.0)));
+                    float criticalSpikeNoise = Hash21(float2(criticalBand, floor(_Time.y * (11.0 + criticalHealthGlitch * 43.0))));
+                    criticalSpikeGate = step(0.74 - criticalHealthGlitch * 0.36, criticalSpikeNoise);
+                    float criticalMicroGate = step(
+                        0.56 - criticalHealthGlitch * 0.18,
+                        Hash21(float2(criticalBand * 1.37, floor(_Time.y * 53.0))));
+                    float criticalTear = (criticalSpikeNoise - 0.5) * _HectonSuitHealthGlitch.z * criticalSpikeGate;
+                    distortionOffset.x += criticalTear;
+                    distortionOffset.y += (criticalMicroGate - 0.5) * criticalHealthGlitch * 0.0035;
+                }
 
-                float staticNoise = (Hash21(floor(screenUV * _ScaledScreenParams.xy * 0.35 + _Time.y * 32.0)) - 0.5) * 2.0;
+                float staticNoise = 0.0;
+                [branch]
+                if (abs(_StaticNoise) > 0.0001)
+                    staticNoise = (Hash21(floor(screenUV * _ScaledScreenParams.xy * 0.35 + _Time.y * 32.0)) - 0.5) * 2.0;
                 float hazardRadiation = saturate(_HazardRadiationLevel);
                 float hazardThermal = saturate(_HazardThermalLevel);
                 float hazardToxic = saturate(_HazardToxicLevel);
                 float hazardGlitch = saturate(_HazardGlitchLevel);
                 float biosRecoveryMode = saturate(_BiosRecoveryMode);
-                float radiationSceneBand = floor((screenUV.y + _Time.y * (8.0 + hazardRadiation * 17.0)) * lerp(96.0, 340.0, hazardRadiation));
-                float radiationSceneNoise = ResolveFrostBlueNoise(screenUV + float2(0.17, hazardRadiation * 0.13), _Time.y + 17.0);
-                float radiationSceneGate = step(0.62 - hazardRadiation * 0.28, radiationSceneNoise);
-                distortionOffset.x += (radiationSceneNoise - 0.5) * hazardRadiation * 0.018 * radiationSceneGate;
-                distortionOffset.y += (Hash21(float2(radiationSceneBand * 1.23, floor(_Time.y * 29.0))) - 0.5) * hazardRadiation * 0.004 * radiationSceneGate;
+                float biosRecoverySwitch = step(0.5, biosRecoveryMode);
+                [branch]
+                if (hazardRadiation > 0.0001)
+                {
+                    float radiationSceneBand = floor((screenUV.y + _Time.y * (8.0 + hazardRadiation * 17.0)) * lerp(96.0, 340.0, hazardRadiation));
+                    float radiationSceneNoise = ResolveFrostBlueNoise(screenUV + float2(0.17, hazardRadiation * 0.13), _Time.y + 17.0);
+                    float radiationSceneGate = step(0.62 - hazardRadiation * 0.28, radiationSceneNoise);
+                    distortionOffset.x += (radiationSceneNoise - 0.5) * hazardRadiation * 0.018 * radiationSceneGate;
+                    distortionOffset.y += (Hash21(float2(radiationSceneBand * 1.23, floor(_Time.y * 29.0))) - 0.5) * hazardRadiation * 0.004 * radiationSceneGate;
+                }
                 float2 refractedUV = screenUV + distortionOffset;
                 float2 hazardSceneSplit = float2(hazardRadiation * 0.006 + hazardGlitch * 0.003, 0.0);
                 float2 criticalSceneSplit = float2(_HectonSuitHealthGlitch.w * criticalSpikeGate * (0.5 + radialMagnitude), 0.0);
                 float stressHudChromaticRaw = saturate(max(_PlayerStress01, _HectonHudStressChromaticAberration));
-                float stressHudSine = sin(_Time.y * lerp(2.5, 11.0, stressHudChromaticRaw));
-                float stressHudPulse = stressHudChromaticRaw * (0.74 + 0.26 * (stressHudSine * stressHudSine));
+                float stressHudPhase = frac(_Time.y * lerp(0.39788736, 1.75070437, stressHudChromaticRaw));
+                float stressHudTriangle = 1.0 - abs(stressHudPhase * 2.0 - 1.0);
+                float stressHudPulse = stressHudChromaticRaw * (0.74 + 0.26 * (stressHudTriangle * stressHudTriangle));
                 float stressHudChromatic = saturate(stressHudPulse);
                 float chromaStrength = max(_ChromaticAberration, stressHudChromatic * (0.004 + radialMagnitude * 0.018));
                 float2 chromaOffset = radialScreenOffset * chromaStrength + hazardSceneSplit + criticalSceneSplit;
@@ -771,17 +887,20 @@ Shader "NASAPunk/SuitVisor"
                     sceneColor = lerp(sceneColor, splitScene, chromaMask * 0.16);
                     sceneColor += float3(chromaSign, -0.25, -chromaSign) * (chromaMask * 0.015);
                 }
-                float vrComfortBlur = saturate(_HectonVrComfortSignals.z) * vrComfortEnabled * smoothstep(0.38, 1.0, radialMagnitude);
+                float vrComfortBlur = 0.0;
+                float vrComfortBlurSignal = saturate(_HectonVrComfortSignals.z) * vrComfortEnabled;
+                [branch]
+                if (vrComfortBlurSignal > 0.0001)
+                    vrComfortBlur = vrComfortBlurSignal * smoothstep(0.38, 1.0, radialMagnitude);
                 if (vrComfortBlur > 0.0001)
                 {
+                    float motionEnergy = saturate(_HectonVrComfortMotion.z) * vrComfortEnabled;
                     float sceneLuma = dot(sceneColor, float3(0.2126, 0.7152, 0.0722));
-                    float3 comfortScene = lerp(sceneColor, sceneLuma.xxx, 0.34);
+                    float3 comfortScene = lerp(sceneColor, sceneLuma.xxx, 0.22 + motionEnergy * 0.18);
+                    comfortScene = lerp(comfortScene, comfortScene.gbr, motionEnergy * 0.055);
                     sceneColor = lerp(sceneColor, comfortScene * 0.94 + 0.025, vrComfortBlur * 0.72);
                 }
 
-                float sonarSceneDepth;
-                float sonarDepthValid;
-                float3 sonarSceneWorldPos = SampleSceneWorldPosition(screenUV, sonarSceneDepth, sonarDepthValid);
                 float sonarOverlayMask = 0.0;
                 float3 sonarOverlayColor = 0.0;
 
@@ -791,55 +910,43 @@ Shader "NASAPunk/SuitVisor"
                 float sonarContactLifetimeMask = step(
                     _Time.y,
                     _SonarRevealWaveParams.x + (_SonarRevealOriginWS.w / sonarWaveSpeed) + sonarFadeDuration);
-                if (sonarGridIntensity > 0.0001 && sonarDepthValid > 0.5 && sonarContactLifetimeMask > 0.5)
+                [branch]
+                if (sonarGridIntensity > 0.0001 && sonarContactLifetimeMask > 0.5)
                 {
-                    float3 sonarDelta = abs(sonarSceneWorldPos - _SonarRevealOriginWS.xyz);
-                    float sonarMaxAxis = max(max(sonarDelta.x, sonarDelta.y), sonarDelta.z);
-                    float sonarMinAxis = min(min(sonarDelta.x, sonarDelta.y), sonarDelta.z);
-                    float sonarMidAxis = sonarDelta.x + sonarDelta.y + sonarDelta.z - sonarMaxAxis - sonarMinAxis;
-                    float distanceToOrigin = sonarMaxAxis + sonarMidAxis * 0.375 + sonarMinAxis * 0.1875;
-                    float timeSinceArrival = _Time.y - (_SonarRevealWaveParams.x + distanceToOrigin / sonarWaveSpeed);
-                    float arrivalMask = step(0.0, timeSinceArrival);
-                    float terrainFade = arrivalMask * saturate(1.0 - (timeSinceArrival / sonarFadeDuration));
-                    float waveRadius = max(0.0, _SonarWaveFront);
-                    float waveBandWidth = lerp(6.0, 2.0, saturate(_SonarRevealWaveParams.w));
-                    float waveFront = 1.0 - smoothstep(waveBandWidth, waveBandWidth * 2.0, abs(distanceToOrigin - waveRadius));
-                    float contourMask = ComputeSonarContourMask(screenUV, sonarSceneDepth);
-                    float gridMask = ComputeSonarGridMask(sonarSceneWorldPos);
-                    float activeTerrainMask = step(_Time.y, _SonarRevealExpireTime);
-                    float terrainGrid = gridMask * max(contourMask, 0.14) * max(terrainFade, waveFront * 0.85) * activeTerrainMask;
-
-                    float hardAccum = terrainGrid * 0.55;
-                    float organicAccum = terrainGrid * 0.18;
-                    float abyssalAccum = 0.0;
-
-                    [unroll(24)]
-                    for (int contactIndex = 0; contactIndex < 24; contactIndex++)
+                    float sonarSceneDepth;
+                    float sonarDepthValid;
+                    float3 sonarSceneWorldPos = SampleSceneWorldPosition(screenUV, sonarSceneDepth, sonarDepthValid);
+                    if (sonarDepthValid > 0.5)
                     {
-                        float active = step((float)contactIndex + 0.5, (float)_SonarRevealContactCount);
-                        float contactArrivalTime = _SonarRevealWaveParams.x + _SonarRevealContacts[contactIndex].w;
-                        float contactTimeSinceArrival = _Time.y - contactArrivalTime;
-                        float contactFade = active * step(0.0, contactTimeSinceArrival) * saturate(1.0 - (contactTimeSinceArrival / sonarFadeDuration));
-                        float contactRadius = max(0.25, _SonarRevealContactMeta[contactIndex].z);
-                        float3 contactDelta = sonarSceneWorldPos - _SonarRevealContacts[contactIndex].xyz;
-                        float contactDistanceSq = dot(contactDelta, contactDelta);
-                        float contactInnerRadiusSq = contactRadius * contactRadius * 0.3025;
-                        float contactOuterRadiusSq = contactRadius * contactRadius;
-                        float contactMask = (1.0 - smoothstep(contactInnerRadiusSq, contactOuterRadiusSq, contactDistanceSq)) * contactFade;
-                        float abyssalMask = step(0.5, _SonarRevealContactMeta[contactIndex].w);
-                        hardAccum += contactMask * _SonarRevealContactMeta[contactIndex].x * (1.0 - abyssalMask);
-                        organicAccum += contactMask * _SonarRevealContactMeta[contactIndex].y * (1.0 - abyssalMask);
-                        abyssalAccum += contactMask * abyssalMask * 1.15;
-                    }
+                        float3 sonarDelta = abs(sonarSceneWorldPos - _SonarRevealOriginWS.xyz);
+                        float sonarMaxAxis = max(max(sonarDelta.x, sonarDelta.y), sonarDelta.z);
+                        float sonarMinAxis = min(min(sonarDelta.x, sonarDelta.y), sonarDelta.z);
+                        float sonarMidAxis = sonarDelta.x + sonarDelta.y + sonarDelta.z - sonarMaxAxis - sonarMinAxis;
+                        float distanceToOrigin = sonarMaxAxis + sonarMidAxis * 0.375 + sonarMinAxis * 0.1875;
+                        float timeSinceArrival = _Time.y - (_SonarRevealWaveParams.x + distanceToOrigin / sonarWaveSpeed);
+                        float arrivalMask = step(0.0, timeSinceArrival);
+                        float terrainFade = arrivalMask * saturate(1.0 - (timeSinceArrival / sonarFadeDuration));
+                        float waveRadius = max(0.0, _SonarWaveFront);
+                        float waveBandWidth = lerp(6.0, 2.0, saturate(_SonarRevealWaveParams.w));
+                        float waveFront = 1.0 - smoothstep(waveBandWidth, waveBandWidth * 2.0, abs(distanceToOrigin - waveRadius));
+                        float contourMask = ComputeSonarContourMask(screenUV, sonarSceneDepth);
+                        float gridMask = ComputeSonarGridMask(sonarSceneWorldPos);
+                        float activeTerrainMask = step(_Time.y, _SonarRevealExpireTime);
+                        float terrainGrid = gridMask * max(contourMask, 0.14) * max(terrainFade, waveFront * 0.85) * activeTerrainMask;
 
-                    float hardStrength = saturate(hardAccum);
-                    float organicStrength = saturate(organicAccum);
-                    float abyssalStrength = saturate(abyssalAccum);
-                    sonarOverlayColor =
-                        (_SonarGridHardColor.rgb * hardStrength) +
-                        (_SonarGridOrganicColor.rgb * organicStrength) +
-                        (_SonarGridAbyssalColor.rgb * abyssalStrength);
-                    sonarOverlayMask = sonarGridIntensity * saturate(max(max(hardStrength, organicStrength), abyssalStrength) + waveFront * contourMask * 0.4);
+                        float hardAccum = terrainGrid * 0.55;
+                        float organicAccum = terrainGrid * 0.18;
+                        float abyssalAccum = 0.0;
+
+                        float hardStrength = saturate(hardAccum);
+                        float organicStrength = saturate(organicAccum);
+                        float abyssalStrength = saturate(abyssalAccum);
+                        sonarOverlayColor =
+                            (_SonarGridHardColor.rgb * hardStrength) +
+                            (_SonarGridOrganicColor.rgb * organicStrength) +
+                            (_SonarGridAbyssalColor.rgb * abyssalStrength);
+                        sonarOverlayMask = sonarGridIntensity * saturate(max(max(hardStrength, organicStrength), abyssalStrength) + waveFront * contourMask * 0.4);
+                    }
                 }
 
                 float hudEdgeFade;
@@ -848,109 +955,164 @@ Shader "NASAPunk/SuitVisor"
                 float2 hudDistortedUV = hudUV + distortionOffset * 0.3;
                 hudDistortedUV -= _HectonVrComfortSway.xy * 0.018 * vrComfortEnabled;
                 float hullStressFlicker = saturate(_HullStressFlicker);
-                float2 pressureNoiseSeed = floor(hudDistortedUV * _ScreenParams.xy * (0.6 + hullStressFlicker * 2.1));
-                float pressureNoiseA = frac(sin(dot(pressureNoiseSeed + float2(floor(_Time.y * 36.0), floor(_Time.y * 17.0)), float2(12.9898, 78.233))) * 43758.5453);
-                float pressureNoiseB = frac(sin(dot(pressureNoiseSeed + float2(floor(_Time.y * -23.0), floor(_Time.y * 29.0)), float2(39.3468, 11.135))) * 19642.3491);
-                float pressureFlickerGate = step(0.44 - hullStressFlicker * 0.18, frac(_Time.y * (18.0 + hullStressFlicker * 42.0) + hudDistortedUV.y * 46.0));
-                float2 pressureFlickerOffset = float2(
-                    (pressureNoiseA - 0.5) * 0.0075,
-                    (pressureNoiseB - 0.5) * 0.0025) * hullStressFlicker * pressureFlickerGate;
-                hudDistortedUV += pressureFlickerOffset;
-                float tearBands = floor((hudDistortedUV.y + _Time.y * (7.0 + hazardThermal * 9.0)) * lerp(120.0, 260.0, hazardGlitch));
-                float tearNoise = Hash21(float2(tearBands, floor(_Time.y * 18.0)));
-                float tearGate = step(0.58 - hazardGlitch * 0.26, tearNoise);
-                hudDistortedUV.x += (tearNoise - 0.5) * hazardGlitch * 0.048 * tearGate;
-                hudDistortedUV.y += (Hash21(float2(tearBands * 1.31, floor(_Time.y * 11.0))) - 0.5) * hazardToxic * 0.012;
-                float radiationHudBands = floor((hudDistortedUV.y + _Time.y * (10.0 + hazardRadiation * 21.0)) * lerp(104.0, 380.0, hazardRadiation));
-                float radiationHudNoise = ResolveFrostBlueNoise(hudDistortedUV + float2(0.29, 0.0), _Time.y + 23.0);
-                float radiationHudGate = step(0.66 - hazardRadiation * 0.31, radiationHudNoise);
-                hudDistortedUV.x += (radiationHudNoise - 0.5) * hazardRadiation * 0.034 * radiationHudGate;
-                hudDistortedUV.y += (Hash21(float2(radiationHudBands * 1.37, floor(_Time.y * 37.0))) - 0.5) * hazardRadiation * 0.006 * radiationHudGate;
-                float criticalHudBands = floor((hudDistortedUV.y + _Time.y * (18.0 + criticalHealthGlitch * 24.0)) * lerp(180.0, 420.0, criticalHealthGlitch));
-                float criticalHudNoise = Hash21(float2(criticalHudBands, floor(_Time.y * (31.0 + criticalHealthGlitch * 53.0))));
-                float criticalHudGate = step(0.66 - criticalHealthGlitch * 0.33, criticalHudNoise);
-                hudDistortedUV.x += (criticalHudNoise - 0.5) * criticalHealthGlitch * 0.078 * criticalHudGate;
-                hudDistortedUV.y += (Hash21(float2(criticalHudBands * 1.19, floor(_Time.y * 71.0))) - 0.5) * criticalHealthGlitch * 0.009 * criticalHudGate;
+                float pressureFlickerGate = 0.0;
+                [branch]
+                if (hullStressFlicker > 0.0001)
+                {
+                    float2 pressureNoiseSeed = floor(hudDistortedUV * _ScreenParams.xy * (0.6 + hullStressFlicker * 2.1));
+                    float pressureNoiseA = Hash21(pressureNoiseSeed + float2(floor(_Time.y * 36.0), floor(_Time.y * 17.0)));
+                    float pressureNoiseB = Hash21(pressureNoiseSeed.yx + float2(floor(_Time.y * -23.0), floor(_Time.y * 29.0)));
+                    pressureFlickerGate = step(0.44 - hullStressFlicker * 0.18, frac(_Time.y * (18.0 + hullStressFlicker * 42.0) + hudDistortedUV.y * 46.0));
+                    float2 pressureFlickerOffset = float2(
+                        (pressureNoiseA - 0.5) * 0.0075,
+                        (pressureNoiseB - 0.5) * 0.0025) * hullStressFlicker * pressureFlickerGate;
+                    hudDistortedUV += pressureFlickerOffset;
+                }
+                float tearBands = 0.0;
+                float tearBandConsumer = max(max(hazardGlitch, hazardThermal), max(hazardToxic, biosRecoverySwitch));
+                [branch]
+                if (tearBandConsumer > 0.0001)
+                {
+                    tearBands = floor(hudDistortedUV.y * 120.0);
+                    [branch]
+                    if (max(max(hazardGlitch, hazardThermal), hazardToxic) > 0.0001)
+                    {
+                        tearBands = floor((hudDistortedUV.y + _Time.y * (7.0 + hazardThermal * 9.0)) * lerp(120.0, 260.0, hazardGlitch));
+                        float tearNoise = Hash21(float2(tearBands, floor(_Time.y * 18.0)));
+                        float tearGate = step(0.58 - hazardGlitch * 0.26, tearNoise);
+                        hudDistortedUV.x += (tearNoise - 0.5) * hazardGlitch * 0.048 * tearGate;
+                        hudDistortedUV.y += (Hash21(float2(tearBands * 1.31, floor(_Time.y * 11.0))) - 0.5) * hazardToxic * 0.012;
+                    }
+                }
+                [branch]
+                if (hazardRadiation > 0.0001)
+                {
+                    float radiationHudBands = floor((hudDistortedUV.y + _Time.y * (10.0 + hazardRadiation * 21.0)) * lerp(104.0, 380.0, hazardRadiation));
+                    float radiationHudNoise = ResolveFrostBlueNoise(hudDistortedUV + float2(0.29, 0.0), _Time.y + 23.0);
+                    float radiationHudGate = step(0.66 - hazardRadiation * 0.31, radiationHudNoise);
+                    hudDistortedUV.x += (radiationHudNoise - 0.5) * hazardRadiation * 0.034 * radiationHudGate;
+                    hudDistortedUV.y += (Hash21(float2(radiationHudBands * 1.37, floor(_Time.y * 37.0))) - 0.5) * hazardRadiation * 0.006 * radiationHudGate;
+                }
+                float criticalHudGate = 0.0;
+                [branch]
+                if (criticalPayload > 0.0001)
+                {
+                    float criticalHudBands = floor((hudDistortedUV.y + _Time.y * (18.0 + criticalHealthGlitch * 24.0)) * lerp(180.0, 420.0, criticalHealthGlitch));
+                    float criticalHudNoise = Hash21(float2(criticalHudBands, floor(_Time.y * (31.0 + criticalHealthGlitch * 53.0))));
+                    criticalHudGate = step(0.66 - criticalHealthGlitch * 0.33, criticalHudNoise);
+                    hudDistortedUV.x += (criticalHudNoise - 0.5) * criticalHealthGlitch * 0.078 * criticalHudGate;
+                    hudDistortedUV.y += (Hash21(float2(criticalHudBands * 1.19, floor(_Time.y * 71.0))) - 0.5) * criticalHealthGlitch * 0.009 * criticalHudGate;
+                }
 
                 float hypoxiaLevel = saturate(_HypoxiaLevel);
                 float criticalHypoxia = smoothstep(0.0, 0.35, hypoxiaLevel);
-                float criticalHypoxiaEdgeVignette = smoothstep(0.22, 0.88, EdgeMask(IN.uv, 1.12));
+                float criticalHypoxiaEdgeVignette = 0.0;
                 if (criticalHypoxia > 0.0001)
                 {
+                    criticalHypoxiaEdgeVignette = smoothstep(0.22, 0.88, EdgeMask(IN.uv, 1.12));
                     float hypoxiaSceneLuma = dot(sceneColor, float3(0.2126, 0.7152, 0.0722));
                     float3 hypoxiaScene = lerp(sceneColor, hypoxiaSceneLuma.xxx, criticalHypoxia * 0.58);
                     hypoxiaScene *= 1.0 - criticalHypoxia * criticalHypoxiaEdgeVignette * 0.22;
                     sceneColor = lerp(sceneColor, hypoxiaScene, criticalHypoxiaEdgeVignette);
                 }
-                float2 hudHypoxiaOffset = float2(hypoxiaLevel * 0.0045, 0.0);
+                float2 hudHypoxiaOffset = criticalHypoxia > 0.0001 ? float2(hypoxiaLevel * 0.0045, 0.0) : float2(0.0, 0.0);
+                float stressHudBandNoise = 0.5;
+                [branch]
+                if (stressHudChromatic > 0.0001)
+                    stressHudBandNoise = Hash21(float2(floor(screenUV.y * 128.0), floor(_Time.y * 17.0)));
                 float2 hudStressSplit = float2(
                     stressHudChromatic * (0.006 + radialMagnitude * 0.008),
-                    stressHudChromatic * 0.0015 * sin(_Time.y * 17.0 + screenUV.y * 31.0));
+                    stressHudChromatic * 0.0015 * ((stressHudBandNoise - 0.5) * 2.0));
                 float2 hudDecaySplit = float2(
                     hazardRadiation * 0.015 + hazardGlitch * 0.008 + _HectonSuitHealthGlitch.w * criticalHudGate * 1.8,
                     hazardThermal * 0.0025) + hudStressSplit;
                 float criticalHypoxiaAlphaDissolve = 0.0;
-                float biosRecoverySwitch = step(0.5, biosRecoveryMode);
                 float hudAlpha = 0.0;
                 float3 hudColor = 0.0;
 #if defined(_HUD_PHOSPHOR_MODE)
                 float2 insideRT = step(0.0, hudDistortedUV) * step(hudDistortedUV, 1.0);
                 float rtMask = insideRT.x * insideRT.y;
                 float phosphorScan = abs(frac(hudDistortedUV.y * _ScreenParams.y * 0.32 + _Time.y * 14.0) - 0.5);
-                float phosphorPulse = 0.82 + sin(_Time.y * 2.1) * 0.06;
+                float phosphorPulse = 0.82 + FastTriangleSigned(_Time.y * 2.1) * 0.06;
                 float phosphorCoverage = saturate((hudEdgeFade * rtMask * 0.72 + (1.0 - smoothstep(0.0, 0.5, phosphorScan)) * 0.18) * phosphorPulse);
                 float ditherAlpha = step(Bayer4x4(floor(IN.positionCS.xy) + float2(floor(_Time.y * 16.0), 0.0)), phosphorCoverage);
                 hudAlpha = ditherAlpha;
                 return half4(0.0h, 1.0h, 0.0h, (half)hudAlpha);
 #else
-                float4 hudBaseSample = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV);
+                float2 insideRT = step(0.0, hudDistortedUV) * step(hudDistortedUV, 1.0);
+                float rtMask = insideRT.x * insideRT.y;
+                float hudVisibleMask = rtMask * hudEdgeFade;
+                float4 hudBaseSample = 0.0;
+                [branch]
+                if (hudVisibleMask > 0.0001)
+                    hudBaseSample = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV);
                 float hudFocusBlur = saturate(_HectonHudFocusBlur);
-                if (hudFocusBlur > 0.0001)
+                if (hudFocusBlur > 0.0001 && hudVisibleMask > 0.0001)
                 {
                     float2 hudFocusBlurStep = float2(0.0018, 0.0012) * hudFocusBlur;
                     hudBaseSample += SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + hudFocusBlurStep);
                     hudBaseSample += SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV - hudFocusBlurStep);
-                    hudBaseSample += SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + hudFocusBlurStep.yx);
-                    hudBaseSample += SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV - hudFocusBlurStep.yx);
-                    hudBaseSample *= 0.2;
+                    hudBaseSample *= 0.33333334;
                 }
                 float4 hudSample = hudBaseSample;
-                float4 hudSampleR = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + hudHypoxiaOffset + hudDecaySplit);
-                float4 hudSampleB = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV - hudHypoxiaOffset - hudDecaySplit);
-                hudSample.rgb = float3(hudSampleR.r, hudSample.g, hudSampleB.b);
-                float2 insideRT = step(0.0, hudDistortedUV) * step(hudDistortedUV, 1.0);
-                float rtMask = insideRT.x * insideRT.y;
+                float2 hudSplitOffset = hudHypoxiaOffset + hudDecaySplit;
+                float hudSplitMagnitude = max(abs(hudSplitOffset.x), abs(hudSplitOffset.y));
+                if (hudSplitMagnitude > 0.0001 && hudVisibleMask > 0.0001)
+                {
+                    float4 hudSampleR = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + hudSplitOffset);
+                    float4 hudSampleB = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV - hudSplitOffset);
+                    hudSample.rgb = float3(hudSampleR.r, hudSample.g, hudSampleB.b);
+                }
                 hudAlpha = hudSample.a * hudEdgeFade * rtMask;
                 float hudTintStrength = saturate(_HUD_Color.a);
                 hudColor = lerp(hudSample.rgb, hudSample.rgb * _HUD_Color.rgb, hudTintStrength) * _HUD_Intensity;
-                float batteryActiveMask;
-                float batteryLedMask = ComputeToolBatteryLedMask(hudDistortedUV, _ToolBatteryNormalized, batteryActiveMask);
-                float batteryInactiveMask = saturate(batteryLedMask - batteryActiveMask);
-                float3 batteryActiveColor = _HUD_Color.rgb * (_HUD_Intensity * 1.35);
-                float3 batteryInactiveColor = _HUD_Color.rgb * (_HUD_Intensity * 0.18);
-                hudColor += (batteryActiveColor * batteryActiveMask) + (batteryInactiveColor * batteryInactiveMask);
-                hudAlpha = saturate(hudAlpha + (batteryLedMask * 0.9));
+                float batteryActiveMask = 0.0;
+                float batteryLedMask = 0.0;
+                [branch]
+                if (hudVisibleMask > 0.0001)
+                {
+                    batteryLedMask = ComputeToolBatteryLedMask(hudDistortedUV, _ToolBatteryNormalized, batteryActiveMask);
+                    float batteryInactiveMask = saturate(batteryLedMask - batteryActiveMask);
+                    float3 batteryActiveColor = _HUD_Color.rgb * (_HUD_Intensity * 1.35);
+                    float3 batteryInactiveColor = _HUD_Color.rgb * (_HUD_Intensity * 0.18);
+                    hudColor += (batteryActiveColor * batteryActiveMask) + (batteryInactiveColor * batteryInactiveMask);
+                    hudAlpha = saturate(hudAlpha + (batteryLedMask * 0.9));
+                }
                 float hudLuminance = dot(hudColor, float3(0.2126, 0.7152, 0.0722));
                 float hudFogBleed = saturate(_HectonHudFogPerturbation.x * hudAlpha * 0.08);
                 sceneColor += _HUD_Color.rgb * hudFogBleed;
                 hudColor = lerp(hudColor, hudLuminance.xxx, hypoxiaLevel * 0.78);
-                float decayNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy * (0.16 + hazardGlitch * 0.24)) + float2(floor(_Time.y * 26.0), tearBands));
-                float decayMask = step(0.46 - hazardGlitch * 0.22, decayNoise) * hazardGlitch;
+                float decayMask = 0.0;
+                [branch]
+                if (hazardGlitch > 0.0001)
+                {
+                    float decayNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy * (0.16 + hazardGlitch * 0.24)) + float2(floor(_Time.y * 26.0), tearBands));
+                    decayMask = step(0.46 - hazardGlitch * 0.22, decayNoise) * hazardGlitch;
+                }
                 hudColor = lerp(hudColor, hudColor.bgr, hazardRadiation * 0.34);
                 hudColor += decayMask.xxx * (hazardToxic * 0.22);
                 hudColor += pressureFlickerGate.xxx * hullStressFlicker * 0.045;
                 float hypoxiaStaticStrength = saturate((hypoxiaLevel - 0.33333334) * 1.5);
-                float hypoxiaStatic = (Hash21(floor(hudDistortedUV * _ScreenParams.xy * 0.85) + floor(_Time.y * 24.0)) - 0.5) * hypoxiaStaticStrength;
-                hudColor += hypoxiaStatic.xxx * 0.22;
-                float hypoxiaAlphaNoise = frac(sin(dot(hudDistortedUV * _ScreenParams.xy, float2(12.9898, 78.233)) + (_Time.y * 43.0)) * 43758.5453);
-                float hypoxiaAlphaDissolve = saturate((hypoxiaAlphaNoise - 0.45) * 1.9) * hypoxiaStaticStrength;
-                float criticalHypoxiaAlphaNoise = Hash21(
-                    floor((hudDistortedUV + float2(_Time.y * 0.31, _Time.y * -0.27)) * _ScreenParams.xy * 3.2)
-                    + float2(floor(_Time.y * 81.0), floor(_Time.y * 53.0)));
-                criticalHypoxiaAlphaDissolve = saturate((criticalHypoxiaAlphaNoise - 0.32) * 1.45) * criticalHypoxia;
+                float hypoxiaAlphaDissolve = 0.0;
+                [branch]
+                if (hypoxiaStaticStrength > 0.0001)
+                {
+                    float hypoxiaStatic = (Hash21(floor(hudDistortedUV * _ScreenParams.xy * 0.85) + floor(_Time.y * 24.0)) - 0.5) * hypoxiaStaticStrength;
+                    hudColor += hypoxiaStatic.xxx * 0.22;
+                    float hypoxiaAlphaNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy) + float2(floor(_Time.y * 43.0), floor(_Time.y * 29.0)));
+                    hypoxiaAlphaDissolve = saturate((hypoxiaAlphaNoise - 0.45) * 1.9) * hypoxiaStaticStrength;
+                }
+                [branch]
+                if (criticalHypoxia > 0.0001)
+                {
+                    float criticalHypoxiaAlphaNoise = Hash21(
+                        floor((hudDistortedUV + float2(_Time.y * 0.31, _Time.y * -0.27)) * _ScreenParams.xy * 3.2)
+                        + float2(floor(_Time.y * 81.0), floor(_Time.y * 53.0)));
+                    criticalHypoxiaAlphaDissolve = saturate((criticalHypoxiaAlphaNoise - 0.32) * 1.45) * criticalHypoxia;
+                }
                 hudAlpha *= 1.0 - (hypoxiaAlphaDissolve * 0.68);
                 hudAlpha *= 1.0 - (criticalHypoxiaAlphaDissolve * criticalHypoxiaEdgeVignette * 0.52);
-                if (biosRecoverySwitch > 0.5)
+                if (biosRecoverySwitch > 0.5 && hudVisibleMask > 0.0001)
                 {
                     float2 phosphorTrailOffset = float2(-(0.0015 + hazardRadiation * 0.004 + hazardGlitch * 0.002), 0.0);
                     float trailLuminanceA = dot(
@@ -967,7 +1129,7 @@ Shader "NASAPunk/SuitVisor"
                     float biosThreshold = 0.38 + biosNoise * 0.16 + biosScan * 0.12;
                     float biosPrimaryBit = step(biosThreshold, trailLuminance);
                     float biosTrailBit = step(biosThreshold + 0.08, max(trailLuminanceA * 0.82, trailLuminanceB * 0.64));
-                    float phosphorPulse = 0.82 + sin(_Time.y * 2.1) * 0.06;
+                    float phosphorPulse = 0.82 + FastTriangleSigned(_Time.y * 2.1) * 0.06;
                     float phosphorScanGlow = (1.0 - smoothstep(0.0, 0.5, biosScan)) * 0.16;
                     float phosphorCore = biosPrimaryBit * phosphorLineMask;
                     float phosphorTrail = biosTrailBit * (1.0 - phosphorLineMask) * 0.55;
@@ -986,15 +1148,19 @@ Shader "NASAPunk/SuitVisor"
                 float sceneDepthValid = step(sceneRawDepth, 0.9999);
 #endif
                 float linearSceneDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
-                float linearFragDepth = LinearEyeDepth(fragRawDepth, _ZBufferParams);
-                float hudOccluded = sceneDepthValid * step(linearSceneDepth + 0.002, linearFragDepth) * step(0.001, hudAlpha);
-                float closeDepthDelta = max(0.0, linearFragDepth - linearSceneDepth);
-                float closeOcclusionRange = max(0.001, _HudCloseOcclusionDistance);
-                float hudCloseOcclusion = hudOccluded * (1.0 - smoothstep(closeOcclusionRange * 0.45, closeOcclusionRange, closeDepthDelta));
-                float occlusionFrame = floor(_Time.y * 18.0);
-                float occlusionBayer = Bayer4x4(floor(IN.positionCS.xy) + float2(occlusionFrame, occlusionFrame));
-                float occlusionKeep = lerp(1.0, lerp(0.35, 1.0, step(occlusionBayer, saturate(hudAlpha * 0.72 + 0.18))), hudCloseOcclusion);
-                hudAlpha *= occlusionKeep;
+                [branch]
+                if (hudAlpha > 0.001)
+                {
+                    float linearFragDepth = LinearEyeDepth(fragRawDepth, _ZBufferParams);
+                    float hudOccluded = sceneDepthValid * step(linearSceneDepth + 0.002, linearFragDepth);
+                    float closeDepthDelta = max(0.0, linearFragDepth - linearSceneDepth);
+                    float closeOcclusionRange = max(0.001, _HudCloseOcclusionDistance);
+                    float hudCloseOcclusion = hudOccluded * (1.0 - smoothstep(closeOcclusionRange * 0.45, closeOcclusionRange, closeDepthDelta));
+                    float occlusionFrame = floor(_Time.y * 18.0);
+                    float occlusionBayer = Bayer4x4(floor(IN.positionCS.xy) + float2(occlusionFrame, occlusionFrame));
+                    float occlusionKeep = lerp(1.0, lerp(0.35, 1.0, step(occlusionBayer, saturate(hudAlpha * 0.72 + 0.18))), hudCloseOcclusion);
+                    hudAlpha *= occlusionKeep;
+                }
 
                 float wetImperfectionBoost = 1.0 + runoffMask * 0.9;
                 float boostedFingerprint = saturate(fingerprint * wetImperfectionBoost);
@@ -1002,21 +1168,39 @@ Shader "NASAPunk/SuitVisor"
                 float3 hudScratchGlow = hudColor * scratchBleed * 0.5;
                 float3 hudFingerprintGlow = hudColor * boostedFingerprint * hudAlpha * 0.3;
 
-                float3 reflectDir = reflect(-viewDir, normalWS);
-                float3 envRefl = GlossyEnvironmentReflection(reflectDir, _Smoothness, _EnvReflStrength);
+                float3 envRefl = 0.0;
+                [branch]
+                if (_EnvReflStrength > 0.0001)
+                {
+                    float edgeReflection = saturate((1.0 - NdotV) * (0.52 + scratchMask * 0.16 + runoffMask * 0.22));
+                    float sceneReflectionLuma = dot(sceneColor, float3(0.2126, 0.7152, 0.0722));
+                    float smoothReflection = lerp(0.65, 1.0, saturate(_Smoothness));
+                    envRefl = (fresnelColor * 0.62 + sceneColor * (0.08 + sceneReflectionLuma * 0.05) + _BaseColor.rgb * 0.04) *
+                        (edgeReflection * smoothReflection * _EnvReflStrength);
+                }
 
                 Light mainLight = GetMainLight();
-                float3 specular = mainLight.color * pow(
-                    saturate(dot(reflect(-mainLight.direction, normalWS), viewDir)),
-                    128.0 * _Smoothness) * 0.3;
+                float mainLightLuminance = saturate(dot(mainLight.color, float3(0.2126, 0.7152, 0.0722)));
+                float3 specular = 0.0;
+                float directLightGlint = 0.0;
+                [branch]
+                if (mainLightLuminance > 0.0001)
+                {
+                    float normalLightFacing = saturate(dot(normalWS, mainLight.direction));
+                    float grazingGlare = saturate((1.0 - NdotV) * 0.55 + IN.glareData.y * 0.45);
+                    float specularBase = saturate(normalLightFacing * (0.62 + grazingGlare * 0.38));
+                    float specular2 = specularBase * specularBase;
+                    float specular4 = specular2 * specular2;
+                    float specular8 = specular4 * specular4;
+                    float smoothness01 = saturate(_Smoothness);
+                    float cinematicTightGlint = specular8 * lerp(specular4, specular8, smoothness01);
+                    specular = mainLight.color * cinematicTightGlint * 0.3;
+                    directLightGlint = specular8 * lerp(0.35, 1.0, smoothness01) * mainLightLuminance;
+                }
                 float wetHazeMask = saturate(runoffMask * (0.45 + proceduralSmudgeMask * 0.55) + scratchMask * runoffMask * 0.35);
                 float condensationHazeMask = saturate(condensationMask * (0.52 + proceduralSmudgeMask * 0.3 + scratchMask * 0.18));
                 float3 runoffSheen = (fresnelColor * 0.55 + specular * 0.25 + mainLight.color * 0.04) * runoffMask;
                 float sceneLuminance = dot(sceneColor, float3(0.2126, 0.7152, 0.0722));
-                float mainLightLuminance = saturate(dot(mainLight.color, float3(0.2126, 0.7152, 0.0722)));
-                float directLightGlint = pow(
-                    saturate(dot(reflect(-mainLight.direction, normalWS), viewDir)),
-                    64.0 * _Smoothness) * mainLightLuminance;
                 float glareDepthOccluder = sceneDepthValid *
                     (1.0 - smoothstep(1.5, 12.0, linearSceneDepth)) *
                     smoothstep(0.72, 1.0, IN.glareData.y);
@@ -1064,10 +1248,15 @@ Shader "NASAPunk/SuitVisor"
                 finalColor += lensDirtGlareColor;
                 finalColor += pressureCrackColor * pressureCrackMask * (0.35 + hullStressFlicker * 0.28);
                 finalColor = lerp(finalColor, finalColor.brg, criticalHealthGlitch * criticalSpikeGate * 0.12);
-                float noirVignetteNoise = ResolveFrostBlueNoise(
-                    screenUV * 1.73 + float2(_Time.y * 0.009, _Time.y * -0.011),
-                    _Time.y + 31.0);
                 float noirVignetteMask = smoothstep(0.34, 1.04, radialMagnitude);
+                float noirVignetteNoise = 0.5;
+                [branch]
+                if (noirVignetteMask > 0.0001)
+                {
+                    noirVignetteNoise = ResolveFrostBlueNoise(
+                        screenUV * 1.73 + float2(_Time.y * 0.009, _Time.y * -0.011),
+                        _Time.y + 31.0);
+                }
                 float noirVignetteStrength = saturate(
                     noirVignetteMask *
                     (0.58 + noirVignetteNoise * 0.22 + stressHudChromatic * 0.22 + saturate(_HectonHudStressVignette) * 0.35 + criticalHealthGlitch * 0.18));
@@ -1076,15 +1265,20 @@ Shader "NASAPunk/SuitVisor"
                 float vrComfortVignette = saturate(_HectonVrComfortSignals.x) * vrComfortEnabled;
                 float vrComfortVelocitySq = saturate(_HectonVrComfortMotion.z) * vrComfortEnabled;
                 float vrComfortTunnel = saturate(max(vrComfortVignette, vrComfortVelocitySq));
-                float vrComfortIgn = frac(52.9829189 * frac(dot(floor(screenUV * _ScreenParams.xy) + floor(_Time.y * 37.0), float2(0.06711056, 0.00583715))));
-                float vrComfortInner = lerp(0.74, 0.30, vrComfortTunnel);
-                float vrComfortMask = smoothstep(vrComfortInner, 1.02, radialMagnitude);
-                float vrComfortDither = step(vrComfortIgn, saturate(vrComfortTunnel * 0.92 + vrComfortMask * 0.08));
-                float vrComfortStrength = vrComfortMask * vrComfortTunnel * lerp(0.58, 1.0, vrComfortDither);
-                finalColor *= 1.0 - vrComfortStrength * 0.68;
-                finalColor += _HUD_Color.rgb * vrComfortStrength * hudAlpha * 0.045;
+                [branch]
+                if (vrComfortTunnel > 0.0001)
+                {
+                    float vrComfortIgn = frac(52.9829189 * frac(dot(floor(screenUV * _ScreenParams.xy) + floor(_Time.y * 37.0), float2(0.06711056, 0.00583715))));
+                    float vrComfortInner = lerp(0.74, 0.30, vrComfortTunnel);
+                    float vrComfortMask = smoothstep(vrComfortInner, 1.02, radialMagnitude);
+                    float vrComfortDither = step(vrComfortIgn, saturate(vrComfortTunnel * 0.92 + vrComfortMask * 0.08));
+                    float vrComfortStrength = vrComfortMask * vrComfortTunnel * lerp(0.58, 1.0, vrComfortDither);
+                    finalColor *= 1.0 - vrComfortStrength * 0.68;
+                    finalColor += _HUD_Color.rgb * vrComfortStrength * hudAlpha * 0.045;
+                }
 
                 float visualStaticGlitch = saturate(_HectonVisualStaticGlitch);
+                [branch]
                 if (visualStaticGlitch > 0.0001)
                 {
                     float2 staticPixel = floor(screenUV * _ScreenParams.xy);
@@ -1096,13 +1290,28 @@ Shader "NASAPunk/SuitVisor"
                     finalColor = lerp(finalColor, staticValue.xxx, visualStaticGlitch * 0.92);
                 }
 
-                float foveatedEdge = smoothstep(0.32, 1.02, radialMagnitude);
-                float foveatedIgn = ResolveFrostBlueNoise(
-                    screenUV * 2.11 + frac(_Time.y * float2(0.7548777, 0.5698403)),
-                    _Time.y + 47.0);
-                float foveatedLevels = lerp(192.0, 48.0, foveatedEdge);
-                float3 foveatedQuantized = floor(max(finalColor, 0.0) * foveatedLevels + foveatedIgn) / foveatedLevels;
-                finalColor = lerp(finalColor, foveatedQuantized + (foveatedIgn - 0.5) * 0.006, foveatedEdge * 0.42);
+                float foveatedEdge = 0.0;
+                [branch]
+                if (_HectonXRFoveatedParams.x > 0.5)
+                {
+                    float2 foveatedDelta = radialScreenOffset - _HectonXRFoveatedCenterRadius.xy;
+                    float2 foveatedAbs = abs(foveatedDelta);
+                    float foveatedApprox = max(foveatedAbs.x, foveatedAbs.y) + min(foveatedAbs.x, foveatedAbs.y) * 0.375;
+                    float foveatedRadial = saturate(foveatedApprox * 1.75);
+                    float foveatedInner = max(_HectonXRFoveatedCenterRadius.z, 0.32);
+                    float foveatedOuter = max(_HectonXRFoveatedCenterRadius.w, foveatedInner + 0.001);
+                    foveatedEdge = smoothstep(foveatedInner, foveatedOuter, foveatedRadial) * saturate(_HectonXRFoveatedParams.y);
+                    [branch]
+                    if (foveatedEdge > 0.0001)
+                    {
+                        float foveatedIgn = ResolveFrostBlueNoise(
+                            screenUV * 2.11 + frac(_Time.y * float2(0.7548777, 0.5698403)),
+                            _Time.y + 47.0);
+                        float foveatedLevels = lerp(192.0, 48.0, foveatedEdge);
+                        float3 foveatedQuantized = floor(max(finalColor, 0.0) * foveatedLevels + foveatedIgn) / foveatedLevels;
+                        finalColor = lerp(finalColor, foveatedQuantized + (foveatedIgn - 0.5) * 0.006, foveatedEdge * 0.42);
+                    }
+                }
 
                 float finalAlpha = _GlassAlpha
                     + hudAlpha * 0.9
@@ -1121,15 +1330,15 @@ Shader "NASAPunk/SuitVisor"
                 finalAlpha = saturate(finalAlpha);
 
                 finalColor = MixFog(finalColor, IN.fogCoord);
-                if (biosRecoverySwitch > 0.5)
+                if (biosRecoverySwitch > 0.5 && hudVisibleMask > 0.0001)
                 {
                     float biosSceneDither = ResolveFrostBlueNoise(screenUV, _Time.y + 11.0);
                     float biosSceneScan = abs(frac(screenUV.y * _ScreenParams.y * 0.31 + _Time.y * 11.0) - 0.5);
-                    float biosSceneLuminance = sqrt(saturate(dot(finalColor, float3(0.2126, 0.7152, 0.0722))));
+                    float biosSceneLuminance = FastRootCurve01(dot(finalColor, float3(0.2126, 0.7152, 0.0722)));
                     float biosSceneThreshold = 0.42 + (biosSceneDither - 0.5) * 0.28 + biosSceneScan * 0.16;
                     float biosSceneBit = step(biosSceneThreshold, biosSceneLuminance);
                     float biosSceneLine = step(0.22, frac(screenUV.y * _ScreenParams.y * 0.42));
-                    finalColor = float3(0.0, biosSceneBit * biosSceneLine * (0.82 + sin(_Time.y * 2.1) * 0.04), 0.0);
+                    finalColor = float3(0.0, biosSceneBit * biosSceneLine * (0.82 + FastTriangleSigned(_Time.y * 2.1) * 0.04), 0.0);
                     finalAlpha = saturate(max(finalAlpha, 0.72));
                 }
                 return float4(finalColor, finalAlpha);
@@ -1138,5 +1347,5 @@ Shader "NASAPunk/SuitVisor"
         }
     }
 
-    FallBack "Universal Render Pipeline/Lit"
+    FallBack Off
 }

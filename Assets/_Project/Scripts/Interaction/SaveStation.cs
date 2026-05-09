@@ -69,7 +69,9 @@ namespace Hecton8.Interaction
             {
                 ResolveHudNotification();
                 _hudNotification?.ShowWarning(ResolveLocalized(LocalizationKeys.SAVE_STATION_OFFLINE, "SAVE SYSTEM OFFLINE"));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[SaveStation] SaveManager instance not found.", this);
+#endif
                 return;
             }
 
@@ -79,6 +81,16 @@ namespace Hecton8.Interaction
                 _hudNotification?.ShowWarning(ResolveLocalized(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED"));
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[SaveStation] Save slot is not configured.", this);
+#endif
+                return;
+            }
+
+            if (!SaveManager.IsSafeSlotName(_saveSlot))
+            {
+                ResolveHudNotification();
+                _hudNotification?.ShowWarning(ResolveLocalized(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED"));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[SaveStation] Save slot rejected by SaveManager slot-name guard.", this);
 #endif
                 return;
             }

@@ -19,6 +19,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -191,8 +192,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -280,9 +280,8 @@ namespace Hecton8.Gameplay
             if (!_playerInHazard || _playerTransform == null)
                 return;
 
-            // Calculate distance and intensity
-            float distance = Vector3.Distance(_cachedTransform.position, _playerTransform.position);
-            float newIntensity = CalculateIntensity(distance);
+            double distanceSq = ResolvePlayerDistanceSq();
+            float newIntensity = CalculateIntensityFromDistanceSq(distanceSq);
 
             // Fire intensity changed event
             if (Mathf.Abs(newIntensity - _currentIntensity) > 0.01f)
@@ -346,19 +345,41 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Calculates damage intensity based on distance.
+        /// Calculates damage intensity from squared distance.
         /// 1.0 at center, 0.0 at edge.
         /// </summary>
-        private float CalculateIntensity(float distance)
+        private float CalculateIntensityFromDistanceSq(double distanceSq)
         {
-            if (distance <= fullDamageRadius)
+            double fullDamageRadiusSq = (double)fullDamageRadius * fullDamageRadius;
+            if (distanceSq <= fullDamageRadiusSq)
                 return 1f;
 
-            if (distance >= hazardRadius)
+            double hazardRadiusSq = (double)hazardRadius * hazardRadius;
+            if (distanceSq >= hazardRadiusSq)
                 return 0f;
 
-            // Linear falloff
-            return 1f - ((distance - fullDamageRadius) / (hazardRadius - fullDamageRadius));
+            double rangeSq = hazardRadiusSq - fullDamageRadiusSq;
+            if (rangeSq <= double.Epsilon)
+                return 0f;
+
+            float normalizedSq = Mathf.Clamp01((float)((distanceSq - fullDamageRadiusSq) / rangeSq));
+            return 1f - normalizedSq;
+        }
+
+        private double ResolvePlayerDistanceSq()
+        {
+            Vector3 hazardPosition = _cachedTransform.position;
+            Vector3 playerPosition = _playerTransform.position;
+
+            if (hazardRadius <= 50f)
+            {
+                Vector3 offset = playerPosition - hazardPosition;
+                return offset.sqrMagnitude;
+            }
+
+            AbsoluteUniversePosition hazardAup = AbsoluteUniversePosition.FromRuntimePosition(hazardPosition);
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            return AbsoluteUniversePosition.DistanceSq(in hazardAup, in playerAup);
         }
 
         // ══════════════════════════════════════════════════════════

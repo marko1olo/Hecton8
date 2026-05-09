@@ -294,8 +294,10 @@ namespace Hecton8.Gameplay
         private bool _oxygenGraceActive;
         private PlayerRuntimeContext _runtimeContext;
         private Unity.Mathematics.Random _traumaRandom;
-        private readonly FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — telemetry construction — owner: HectonSurvivalSystem
+        private FixedCharBuffer _telemetryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] — telemetry construction — owner: HectonSurvivalSystem
         private const float HazardGraceDuration = 3f;
+        private const float SaveVelocityHardCapMetersPerSecond = 80f;
+        private const float SaveVelocityHardCapSq = SaveVelocityHardCapMetersPerSecond * SaveVelocityHardCapMetersPerSecond;
         private const float PressureIncidentLogDurationThreshold = 4f;
         private const float PressureIncidentLogExcessThreshold = 6f;
         private const float ThermalSeverityReferenceRange = 35f;
@@ -497,7 +499,9 @@ namespace Hecton8.Gameplay
         {
             if (stats == null)
             {
-                Debug.LogError($"[HectonSurvival] SurvivalStats not assigned on {name}. Disabling.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[HectonSurvival] SurvivalStats not assigned. Disabling.", this);
+#endif
                 enabled = false;
                 return;
             }
@@ -1466,7 +1470,61 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveHeartrateOxygenMultiplier(float stressMagnitude01)
         {
-            return math.exp(math.saturate(stressMagnitude01) * OxygenStressScaleCeilingBonus);
+            return ApproximateExpPositive(math.saturate(stressMagnitude01) * OxygenStressScaleCeilingBonus);
+        }
+
+        private static float ApproximateExpPositive(float x)
+        {
+            return 1f / math.max(ApproximateExpNegPositive(x), 0.0001f);
+        }
+
+        private static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(x, 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
+        }
+
+        private static float ResolveMagnitude(float sqrMagnitude)
+        {
+            return sqrMagnitude > 0.000001f
+                ? math.sqrt(sqrMagnitude)
+                : 0f;
+        }
+
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return math.lerp(from, to, math.saturate(t));
+        }
+
+        private static Vector3 ResolveSafeSavedVelocity(Vector3 velocity)
+        {
+            if (!IsFinite(velocity))
+                return Vector3.zero;
+
+            float speedSq = velocity.sqrMagnitude;
+            if (!float.IsFinite(speedSq) || speedSq <= 0.000001f)
+                return Vector3.zero;
+
+            return speedSq <= SaveVelocityHardCapSq
+                ? velocity
+                : velocity * (SaveVelocityHardCapMetersPerSecond * math.rsqrt(speedSq));
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) &&
+                   float.IsFinite(value.w);
         }
 
         private float ResolveMovementStressMagnitude01()
@@ -1502,7 +1560,7 @@ namespace Hecton8.Gameplay
         private float ResolveCurrentMovementSpeedMetersPerSecond()
         {
             return _playerRigidbody != null
-                ? _playerRigidbody.linearVelocity.magnitude
+                ? ResolveMagnitude(_playerRigidbody.linearVelocity.sqrMagnitude)
                 : 0f;
         }
 
@@ -2058,7 +2116,7 @@ namespace Hecton8.Gameplay
             dto.SetLastDeathPosition(_lastDeathRecord.Position);
             dto.SetPosition(transform.position);
             dto.SetRotation(transform.rotation);
-            dto.SetVelocity(_playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero);
+            dto.SetVelocity(_playerRigidbody != null ? ResolveSafeSavedVelocity(_playerRigidbody.linearVelocity) : Vector3.zero);
         }
 
         public void LoadFromSaveData(SaveData data)
@@ -2107,11 +2165,13 @@ namespace Hecton8.Gameplay
             ResetPressureExposureTracking();
 
             Vector3 pos = dto.GetPosition();
-            if (!float.IsNaN(pos.x)) transform.SetPositionAndRotation(pos, dto.GetRotation());
+            Quaternion rotation = dto.GetRotation();
+            if (IsFinite(pos) && IsFinite(rotation))
+                transform.SetPositionAndRotation(pos, rotation);
 
             if (_playerRigidbody != null)
             {
-                _playerRigidbody.linearVelocity = dto.GetVelocity();
+                _playerRigidbody.linearVelocity = ResolveSafeSavedVelocity(dto.GetVelocity());
                 _playerRigidbody.angularVelocity = Vector3.zero;
             }
 
@@ -2452,7 +2512,11 @@ namespace Hecton8.Gameplay
                 return;
 
             if (!TryInjectSurvivalDatabase(survivalDatabaseSource))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonSurvival] Failed to parse injected survival database source. Item parameter lookup disabled.");
+#endif
+            }
         }
 
         private static bool TryParseSurvivalDatabase(
@@ -2970,7 +3034,7 @@ namespace Hecton8.Gameplay
             float tauSeconds)
         {
             float safeTau = math.max(0.01f, tauSeconds);
-            float temperatureDecay = math.exp(-deltaTime / safeTau);
+            float temperatureDecay = ApproximateExpNegPositive(deltaTime / safeTau);
             return environmentTemperature + (currentInternalTemperature - environmentTemperature) * temperatureDecay;
         }
 
@@ -3090,21 +3154,21 @@ namespace Hecton8.Gameplay
 
         private bool ShouldApplyBleeding(float severity01)
         {
-            float bleedChance = Mathf.Lerp(0.22f, 0.82f, severity01);
+            float bleedChance = LerpClamped(0.22f, 0.82f, severity01);
             return _traumaRandom.NextFloat() <= bleedChance;
         }
 
         private bool ShouldApplyFracture(float severity01)
         {
-            float fractureChance = Mathf.Lerp(0.08f, 0.54f, severity01);
+            float fractureChance = LerpClamped(0.08f, 0.54f, severity01);
             return _traumaRandom.NextFloat() <= fractureChance;
         }
 
         private void ApplyBleeding(float severity01, float damageMagnitude)
         {
-            float severityScale = Mathf.Clamp01(Mathf.Max(severity01, damageMagnitude / SeverePhysicalDamageThreshold));
-            float duration = Mathf.Lerp(BleedingBaseDurationSeconds, BleedingMaxDurationSeconds, severityScale);
-            float damagePerSecond = Mathf.Lerp(BleedingBaseDamagePerSecond, BleedingMaxDamagePerSecond, severityScale);
+            float severityScale = math.saturate(math.max(severity01, damageMagnitude / SeverePhysicalDamageThreshold));
+            float duration = LerpClamped(BleedingBaseDurationSeconds, BleedingMaxDurationSeconds, severityScale);
+            float damagePerSecond = LerpClamped(BleedingBaseDamagePerSecond, BleedingMaxDamagePerSecond, severityScale);
             bool stateChanged = !IsBleeding;
 
             _injuryStatus |= PlayerInjuryStatus.Bleeding;
@@ -3118,9 +3182,9 @@ namespace Hecton8.Gameplay
 
         private void ApplyFracture(float severity01, float damageMagnitude)
         {
-            float severityScale = Mathf.Clamp01(Mathf.Max(severity01, damageMagnitude / SeverePhysicalDamageThreshold));
-            float duration = Mathf.Lerp(FractureBaseDurationSeconds, FractureMaxDurationSeconds, severityScale);
-            float penalty = Mathf.Lerp(FractureBasePenalty, FractureMaxPenalty, severityScale);
+            float severityScale = math.saturate(math.max(severity01, damageMagnitude / SeverePhysicalDamageThreshold));
+            float duration = LerpClamped(FractureBaseDurationSeconds, FractureMaxDurationSeconds, severityScale);
+            float penalty = LerpClamped(FractureBasePenalty, FractureMaxPenalty, severityScale);
             bool stateChanged = !HasFracture;
 
             _injuryStatus |= PlayerInjuryStatus.Fracture;

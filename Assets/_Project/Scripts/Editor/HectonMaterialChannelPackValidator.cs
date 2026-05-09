@@ -101,7 +101,7 @@ namespace Hecton8.EditorTools
 
                 result.TargetMaterialCount++;
                 issueBuffer.Clear();
-                if (applyImporterFixes)
+                if (applyImporterFixes && ShouldValidatePackedMask(material.shader.name))
                 {
                     anyImporterChanged |= TryFixMaskImporter(material, "_MaskMap", result);
                     anyImporterChanged |= TryFixMaskImporter(material, "_Mask_Map", result);
@@ -126,12 +126,6 @@ namespace Hecton8.EditorTools
             if (TargetShaders.Contains(material.shader.name))
                 return true;
 
-            for (int i = 0; i < PackedMaskPropertyNames.Length; i++)
-            {
-                if (material.HasProperty(PackedMaskPropertyNames[i]))
-                    return true;
-            }
-
             return HasTexture(material, "_MetallicGlossMap")
                 || HasTexture(material, "_OcclusionMap")
                 || HasTexture(material, "_SpecGlossMap")
@@ -145,21 +139,19 @@ namespace Hecton8.EditorTools
             AuditResult result)
         {
             string shaderName = material.shader != null ? material.shader.name : "<null>";
-            if (string.Equals(shaderName, "Hecton8/Environment/Hecton_DryZoneLit", StringComparison.Ordinal))
-            {
-                AddVramViolation(
-                    result,
-                    materialPath,
-                    "legacy Hecton_DryZoneLit shader still depends on split _MetallicGlossMap/_OcclusionMap/_EmissionMap instead of a single packed RGBA mask.",
-                    issueBuffer);
-            }
-
             string packedMaskPropertyName = GetPackedMaskPropertyName(material);
             bool hasMaskMap = !string.IsNullOrEmpty(packedMaskPropertyName);
             bool hasLooseMetallic = HasTexture(material, "_MetallicGlossMap");
             bool hasLooseOcclusion = HasTexture(material, "_OcclusionMap");
             bool hasLooseSpecGloss = HasTexture(material, "_SpecGlossMap");
             bool hasLooseEmission = HasTexture(material, "_EmissionMap");
+
+            if (string.Equals(shaderName, "Hecton8/Environment/Hecton_AbyssalVoxelRock", StringComparison.Ordinal) &&
+                HasTexture(material, "_MaskMap") &&
+                !HasTexture(material, "_Mask_Map"))
+            {
+                AddPackedMaskViolation(result, materialPath, "Hecton_AbyssalVoxelRock samples _Mask_Map; assign the packed RGBA mask there, not only _MaskMap.", issueBuffer);
+            }
 
             if (hasLooseMetallic || hasLooseOcclusion || hasLooseSpecGloss || hasLooseEmission)
             {
@@ -170,16 +162,16 @@ namespace Hecton8.EditorTools
                     issueBuffer);
             }
 
-            if (string.Equals(shaderName, "Hecton8/Environment/Hecton_AbyssalVoxelRock", StringComparison.Ordinal))
+            if (RequiresPackedMask(shaderName))
             {
                 if (!hasMaskMap)
                 {
-                    AddPackedMaskViolation(result, materialPath, "missing required packed _MaskMap texture.", issueBuffer);
+                    AddPackedMaskViolation(result, materialPath, "missing required packed _MaskMap/_Mask_Map texture.", issueBuffer);
                     return;
                 }
             }
 
-            if (hasMaskMap)
+            if (hasMaskMap && ShouldValidatePackedMask(shaderName))
                 ValidatePackedMask(materialPath, material, packedMaskPropertyName, issueBuffer, result);
         }
 
@@ -211,6 +203,14 @@ namespace Hecton8.EditorTools
 
             if (importer.textureType != TextureImporterType.Default)
                 AddPackedMaskViolation(result, materialPath, $"packed mask '{texture.name}' has TextureImporterType={importer.textureType}. Expected Default.", issueBuffer);
+
+            importer.GetSourceTextureWidthAndHeight(out int width, out int height);
+            if (!IsPowerOfTwo(width) || !IsPowerOfTwo(height))
+                AddPackedMaskViolation(result, materialPath, $"packed mask '{texture.name}' is {width}x{height}. Expected power-of-two dimensions.", issueBuffer);
+
+            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
+            if (!IsExpectedStandaloneFormat(standalone, TextureImporterFormat.BC7))
+                AddPackedMaskViolation(result, materialPath, $"packed mask '{texture.name}' Standalone format is {ResolveFormatLabel(importer, standalone)}. Expected Standalone:BC7.", issueBuffer);
 
             result.AnalysedMaskCount++;
             if (!TryAnalysePackedMaskTexture(texture, importer, out PackedMaskAnalysis analysis, out string failureReason))
@@ -255,6 +255,15 @@ namespace Hecton8.EditorTools
             if (importer.textureType != TextureImporterType.Default)
             {
                 importer.textureType = TextureImporterType.Default;
+                changed = true;
+            }
+
+            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
+            if (!IsExpectedStandaloneFormat(standalone, TextureImporterFormat.BC7))
+            {
+                standalone.overridden = true;
+                standalone.format = TextureImporterFormat.BC7;
+                importer.SetPlatformTextureSettings(standalone);
                 changed = true;
             }
 
@@ -381,6 +390,26 @@ namespace Hecton8.EditorTools
             result.QuarantineCandidatePaths.Add(assetPath);
         }
 
+        private static bool IsExpectedStandaloneFormat(TextureImporterPlatformSettings platformSettings, TextureImporterFormat expectedFormat)
+        {
+            return platformSettings != null &&
+                   platformSettings.overridden &&
+                   platformSettings.format == expectedFormat;
+        }
+
+        private static string ResolveFormatLabel(TextureImporter importer, TextureImporterPlatformSettings platformSettings)
+        {
+            if (platformSettings != null && platformSettings.overridden)
+                return $"Standalone:{platformSettings.format}";
+
+            return $"Default:{importer.textureCompression}";
+        }
+
+        private static bool IsPowerOfTwo(int value)
+        {
+            return value > 0 && (value & (value - 1)) == 0;
+        }
+
         private static string GetPackedMaskPropertyName(Material material)
         {
             for (int i = 0; i < PackedMaskPropertyNames.Length; i++)
@@ -391,6 +420,20 @@ namespace Hecton8.EditorTools
             }
 
             return string.Empty;
+        }
+
+        private static bool RequiresPackedMask(string shaderName)
+        {
+            return string.Equals(shaderName, "Hecton8/Environment/Hecton_AbyssalVoxelRock", StringComparison.Ordinal) ||
+                   string.Equals(shaderName, "Hecton8/Environment/Hecton_DryZoneLit", StringComparison.Ordinal) ||
+                   string.Equals(shaderName, "Hecton8/World/WreckIndirectLit", StringComparison.Ordinal) ||
+                   string.Equals(shaderName, "Hecton8/World/ScatterIndirectLit", StringComparison.Ordinal) ||
+                   string.Equals(shaderName, "Hecton8/Fauna/LeviathanOrganic", StringComparison.Ordinal);
+        }
+
+        private static bool ShouldValidatePackedMask(string shaderName)
+        {
+            return TargetShaders.Contains(shaderName);
         }
 
         private static void LogEntries(string label, List<string> entries)

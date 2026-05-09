@@ -73,7 +73,7 @@ namespace Hecton8.UI
             float t = Mathf.Clamp01(_timer / duration);
             float curveT = fadeCurve.Evaluate(t);
 
-            _canvasGroup.alpha = Mathf.Lerp(_startAlpha, _targetAlpha, curveT);
+            _canvasGroup.alpha = _startAlpha + ((_targetAlpha - _startAlpha) * curveT);
 
             if (t >= 1f)
                 _state = State.Idle;
@@ -157,8 +157,9 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered =
+                GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI) ||
+                GlobalRegistry.Updatables.Contains(this);
         }
 
         private void Unregister()

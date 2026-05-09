@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
@@ -21,9 +20,7 @@ namespace Hecton8.World
         private const string DefaultRelayFallback =
             "HOLD TO THE SERVICE TRACE. RELAYS AND CACHES GIVE LORE, SUPPLIES, AND THE NEXT FOOTHOLD.";
 
-        private static EmergencyServiceRelayDirector _instance;
-        public static EmergencyServiceRelayDirector Instance => ResolveInstance();
-        internal static EmergencyServiceRelayDirector ActiveRuntimeInstance => _instance;
+        public static EmergencyServiceRelayDirector ActiveRuntimeInstance => GlobalRegistry.EmergencyRelay;
 
         [Header("── Relay Chain ────────────────────────────")]
         [Tooltip("Chain ID used by the first-hour breadcrumb route.")]
@@ -42,40 +39,33 @@ namespace Hecton8.World
         [Tooltip("Fallback message used if the active target relay has no authored breadcrumb copy.")]
         [SerializeField, TextArea(2, 4)] private string relayFallbackMessage = DefaultRelayFallback;
 
-        private string _lastGuidanceRelayId;
+        private uint _lastGuidanceRelayHash;
+        private uint _introChainHash;
         private bool _hasAnyRelayDiscovery;
         private EmergencyServiceRelay _currentRouteTarget;
         private bool _serviceRegistered;
         // COLD ALLOC: EmergencyServiceRelay[8] — driven relay chain cache — owner: EmergencyServiceRelayDirector
         private readonly List<EmergencyServiceRelay> _drivenChainRelays = new List<EmergencyServiceRelay>(8);
-        // COLD ALLOC: Dictionary<string, EmergencyServiceRelay>[8] — relay-id lookup cache — owner: EmergencyServiceRelayDirector
-        private readonly Dictionary<string, EmergencyServiceRelay> _relayById =
-            new Dictionary<string, EmergencyServiceRelay>(8, StringComparer.Ordinal);
+        // COLD ALLOC: Dictionary<uint, EmergencyServiceRelay>[8] - relay-hash lookup cache - owner: EmergencyServiceRelayDirector
+        private readonly Dictionary<uint, EmergencyServiceRelay> _relayByHash =
+            new Dictionary<uint, EmergencyServiceRelay>(8);
         // COLD ALLOC: Dictionary<int, EmergencyServiceRelay>[8] — relay-order lookup cache — owner: EmergencyServiceRelayDirector
         private readonly Dictionary<int, EmergencyServiceRelay> _relayByOrder =
             new Dictionary<int, EmergencyServiceRelay>(8);
-        // COLD ALLOC: HashSet<string>[8] — duplicate relay-id guard — owner: EmergencyServiceRelayDirector
-        private readonly HashSet<string> _ambiguousRelayIds =
-            new HashSet<string>(StringComparer.Ordinal);
+        // COLD ALLOC: HashSet<uint>[8] - duplicate relay-hash guard - owner: EmergencyServiceRelayDirector
+        private readonly HashSet<uint> _ambiguousRelayHashes =
+            new HashSet<uint>(8);
         // COLD ALLOC: HashSet<int>[8] — duplicate relay-order guard — owner: EmergencyServiceRelayDirector
         private readonly HashSet<int> _ambiguousRelayOrders =
-            new HashSet<int>();
+            new HashSet<int>(8);
         private int _observedRelayRegistryVersion = -1;
-
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
-        }
 
         private void OnEnable()
         {
-            TryRegisterService();
+            RefreshCachedHashes();
+            if (!TryRegisterService())
+                return;
+
             EmergencyServiceRelayEvents.Register(this);
             InvalidateRelayCache();
             RefreshRelayDiscoveryState();
@@ -87,24 +77,26 @@ namespace Hecton8.World
             EmergencyServiceRelayEvents.Unregister(this);
             InvalidateRelayCache();
             _currentRouteTarget = null;
-            _lastGuidanceRelayId = null;
+            _lastGuidanceRelayHash = 0u;
         }
 
         private void OnDestroy()
         {
             TryUnregisterService();
-
-            if (_instance == this)
-                _instance = null;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
-                return;
+                return true;
 
             GlobalRegistry.RegisterEmergencyRelayRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EmergencyRelay, this);
+            if (_serviceRegistered)
+                return true;
+
+            Destroy(gameObject);
+            return false;
         }
 
         private void TryUnregisterService()
@@ -131,9 +123,20 @@ namespace Hecton8.World
             if (maximumAtlasRevealStageToDrive < 0)
                 maximumAtlasRevealStageToDrive = 0;
 
+            RefreshCachedHashes();
             InvalidateRelayCache();
         }
 #endif
+
+        private void RefreshCachedHashes()
+        {
+            _introChainHash = string.IsNullOrWhiteSpace(introChainId)
+                ? 0u
+                : unchecked((uint)LocHash.Compute(introChainId));
+
+            if (_introChainHash == 0u)
+                _introChainHash = unchecked((uint)LocHash.Compute(DefaultIntroChainId));
+        }
 
         /// <summary>Returns true when the first-hour relay chain already made real route contact with the player.</summary>
         public bool HasDiscoveredRelayInDrivenChain()
@@ -142,14 +145,14 @@ namespace Hecton8.World
             return _hasAnyRelayDiscovery;
         }
 
-        /// <summary>Returns true if the provided discovery ID belongs to an authored relay in the driven chain.</summary>
-        public bool IsRelayDiscoveryId(string discoveryId)
+        /// <summary>Returns true if the provided discovery hash belongs to an authored relay in the driven chain.</summary>
+        public bool IsRelayDiscoveryHash(uint discoveryHash)
         {
-            if (string.IsNullOrEmpty(discoveryId))
+            if (discoveryHash == 0u)
                 return false;
 
             EnsureChainCache();
-            return !_ambiguousRelayIds.Contains(discoveryId) && _relayById.ContainsKey(discoveryId);
+            return !_ambiguousRelayHashes.Contains(discoveryHash) && _relayByHash.ContainsKey(discoveryHash);
         }
 
         /// <summary>
@@ -167,7 +170,8 @@ namespace Hecton8.World
             if (nextRelay == null)
                 return false;
 
-            if (string.Equals(_lastGuidanceRelayId, nextRelay.RelayId, StringComparison.Ordinal))
+            uint nextRelayHash = nextRelay.RelayHash;
+            if (_lastGuidanceRelayHash != 0u && _lastGuidanceRelayHash == nextRelayHash)
                 return false;
 
             message = _hasAnyRelayDiscovery
@@ -177,7 +181,7 @@ namespace Hecton8.World
             if (string.IsNullOrWhiteSpace(message))
                 message = ResolveLocalized(LocalizationKeys.RELAY_DIRECTOR_FALLBACK, relayFallbackMessage);
 
-            _lastGuidanceRelayId = nextRelay.RelayId;
+            _lastGuidanceRelayHash = nextRelayHash;
             return !string.IsNullOrWhiteSpace(message);
         }
 
@@ -208,7 +212,7 @@ namespace Hecton8.World
                 return;
 
             _hasAnyRelayDiscovery = true;
-            _lastGuidanceRelayId = null;
+            _lastGuidanceRelayHash = 0u;
             EmergencyServiceRelay nextRelay = ResolveRouteTargetAfterActivation(relay);
             _currentRouteTarget = nextRelay;
 
@@ -223,7 +227,7 @@ namespace Hecton8.World
                 NotificationEvents.PushInfo(routeMessage);
 
             if (nextRelay != null)
-                _lastGuidanceRelayId = nextRelay.RelayId;
+                _lastGuidanceRelayHash = nextRelay.RelayHash;
         }
 
         void IEmergencyServiceRelayEventListener.OnEmergencyServiceRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
@@ -346,8 +350,11 @@ namespace Hecton8.World
 
         private bool IsRelayPartOfDrivenChain(EmergencyServiceRelay relay)
         {
-            return relay != null &&
-                string.Equals(relay.ChainId, introChainId, StringComparison.Ordinal);
+            if (relay == null)
+                return false;
+
+            uint chainHash = relay.ChainHash;
+            return chainHash != 0u && chainHash == _introChainHash;
         }
 
         private bool IsValidRelayForRouting(EmergencyServiceRelay relay)
@@ -359,9 +366,9 @@ namespace Hecton8.World
                 return false;
             }
 
-            string relayId = relay.RelayId;
-            return !string.IsNullOrWhiteSpace(relayId) &&
-                   !_ambiguousRelayIds.Contains(relayId) &&
+            uint relayHash = relay.RelayHash;
+            return relayHash != 0u &&
+                   !_ambiguousRelayHashes.Contains(relayHash) &&
                    !_ambiguousRelayOrders.Contains(relay.RelayOrder);
         }
 
@@ -378,6 +385,9 @@ namespace Hecton8.World
 
         private void EnsureChainCache()
         {
+            if (_introChainHash == 0u)
+                RefreshCachedHashes();
+
             int registryVersion = EmergencyServiceRelay.RegistryVersion;
             if (_observedRelayRegistryVersion == registryVersion)
                 return;
@@ -393,9 +403,9 @@ namespace Hecton8.World
         private void RebuildDrivenChainCache(int registryVersion)
         {
             _drivenChainRelays.Clear();
-            _relayById.Clear();
+            _relayByHash.Clear();
             _relayByOrder.Clear();
-            _ambiguousRelayIds.Clear();
+            _ambiguousRelayHashes.Clear();
             _ambiguousRelayOrders.Clear();
 
             for (int i = 0; i < EmergencyServiceRelay.ActiveCount; i++)
@@ -404,18 +414,18 @@ namespace Hecton8.World
                 if (relay == null || !relay.isActiveAndEnabled || !IsRelayPartOfDrivenChain(relay))
                     continue;
 
-                string relayId = relay.RelayId;
-                if (string.IsNullOrWhiteSpace(relayId))
+                uint relayHash = relay.RelayHash;
+                if (relayHash == 0u)
                     continue;
 
-                if (_relayById.ContainsKey(relayId))
+                if (_relayByHash.ContainsKey(relayHash))
                 {
-                    _relayById.Remove(relayId);
-                    _ambiguousRelayIds.Add(relayId);
+                    _relayByHash.Remove(relayHash);
+                    _ambiguousRelayHashes.Add(relayHash);
                 }
-                else if (!_ambiguousRelayIds.Contains(relayId))
+                else if (!_ambiguousRelayHashes.Contains(relayHash))
                 {
-                    _relayById.Add(relayId, relay);
+                    _relayByHash.Add(relayHash, relay);
                 }
 
                 int relayOrder = relay.RelayOrder;
@@ -438,10 +448,10 @@ namespace Hecton8.World
             if (!IsValidRelayForRouting(_currentRouteTarget) || (_currentRouteTarget != null && _currentRouteTarget.IsDiscovered))
                 _currentRouteTarget = null;
 
-            if (!string.IsNullOrEmpty(_lastGuidanceRelayId) &&
-                (_ambiguousRelayIds.Contains(_lastGuidanceRelayId) || !_relayById.ContainsKey(_lastGuidanceRelayId)))
+            if (_lastGuidanceRelayHash != 0u &&
+                (_ambiguousRelayHashes.Contains(_lastGuidanceRelayHash) || !_relayByHash.ContainsKey(_lastGuidanceRelayHash)))
             {
-                _lastGuidanceRelayId = null;
+                _lastGuidanceRelayHash = 0u;
             }
         }
 
@@ -460,35 +470,6 @@ namespace Hecton8.World
 
                 _drivenChainRelays[insertIndex + 1] = relay;
             }
-        }
-
-        private static EmergencyServiceRelayDirector ResolveInstance()
-        {
-            if (_instance != null)
-                return _instance;
-
-            if (!Application.isPlaying || EmergencyServiceRelay.ActiveCount <= 0)
-                return null;
-
-            GameObject owner = null;
-            WorldRuntimeReferenceUtility.TryResolveManagersRoot(ref owner);
-
-            if (owner == null)
-            {
-                // COLD ALLOC: GameObject[1] — runtime relay director owner fallback when scene roots are missing — owner: EmergencyServiceRelayDirector
-                owner = new GameObject("EmergencyServiceRelayDirector_Root");
-            }
-
-            if (!owner.TryGetComponent(out _instance))
-                _instance = owner.AddComponent<EmergencyServiceRelayDirector>();
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning(
-                "[EmergencyServiceRelayDirector] Spawned runtime relay director via Instance self-heal because no live owner existed. " +
-                "Owner='" + owner.name + "'. This is a fail-safe, not a substitute for authored setup.");
-#endif
-
-            return _instance;
         }
 
         private static string ResolveLocalized(string key, string fallback)

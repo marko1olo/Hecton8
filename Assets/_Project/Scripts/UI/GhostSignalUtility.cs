@@ -48,15 +48,48 @@ namespace Hecton8.UI
                 return false;
 
             float intensity = 0.52f + (((hash >> 8) & 0xFFu) / 255f) * 0.24f;
-            float angleRadians = (((hash >> 16) & 0xFFFFu) / 65535f) * Mathf.PI * 2f;
             float radius = 0.18f + (((hash >> 4) & 0x0Fu) / 15f) * 0.24f;
             float vertical = -0.18f + (((hash >> 12) & 0x0Fu) / 15f) * 0.36f;
+            ResolveDiamondOffset01((hash >> 16) & 0xFFFFu, radius, out float x, out float z);
             ping = new Vector4(
-                Mathf.Sin(angleRadians) * radius,
+                x,
                 vertical,
-                Mathf.Cos(angleRadians) * radius,
+                z,
                 intensity);
             return true;
+        }
+
+        private static void ResolveDiamondOffset01(uint phase16, float radius, out float x, out float z)
+        {
+            float phase4 = (phase16 * (1f / 65535f)) * 4f;
+            int quadrant = (int)phase4;
+            if (quadrant > 3)
+                quadrant = 3;
+
+            float t = phase4 - quadrant;
+            if (quadrant == 0)
+            {
+                x = t;
+                z = 1f - t;
+            }
+            else if (quadrant == 1)
+            {
+                x = 1f - t;
+                z = -t;
+            }
+            else if (quadrant == 2)
+            {
+                x = -t;
+                z = -(1f - t);
+            }
+            else
+            {
+                x = -(1f - t);
+                z = t;
+            }
+
+            x *= radius;
+            z *= radius;
         }
 
         internal static int ResolveCycleIndex(float unscaledTimeSeconds)

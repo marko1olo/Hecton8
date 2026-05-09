@@ -124,6 +124,8 @@ namespace Hecton8.Physics
         private const uint FlagRuptured = 1u << 8;
         private const uint FlagIceExpanded = 1u << 9;
         private const uint PersistentFlagsMask = FlagBreached | FlagPurging | FlagFrozen | FlagRuptured | FlagIceExpanded;
+        private const string NativeMemoryOwner = nameof(SubmarineFluidDynamics);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         // Inspector-authored DTO. Unity serialization populates these fields outside constructor flow.
 #pragma warning disable CS0649
@@ -1345,6 +1347,7 @@ namespace Hecton8.Physics
             _jobCompartmentFlags = new NativeArray<uint>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<float>[7] Ã¢â‚¬â€ per-bulkhead transfer delta scratch Ã¢â‚¬â€ owner: SubmarineFluidDynamics
             _bulkheadTransferDeltas = new NativeArray<float>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeStateBuffers();
             // COLD ALLOC: NativeQueue<SplashEvent>(Persistent) â€” deferred exterior splash payload queue for VFX consumers â€” owner: SubmarineFluidDynamics
             _splashEventQueue = new NativeQueue<SplashEvent>(Allocator.Persistent);
             _splashEventQueueSentinelLabel = string.Concat(
@@ -1353,10 +1356,11 @@ namespace Hecton8.Physics
                 EntityId.ToULong(GetEntityId()));
             NativeMemorySentinel.RegisterNativeQueue(
                 _splashEventQueue,
-                ExteriorBuoyancySampleCount,
-                nameof(SubmarineFluidDynamics),
+                MaxQueuedSplashEvents,
+                NativeMemoryOwner,
                 _splashEventQueueSentinelLabel,
-                NativeAllocationLifetime.Scene);
+                NativeMemoryLifetime);
+            PrewarmSplashEventQueue();
         }
 
         private void SeedNativeStateFromAuthoring()
@@ -1533,9 +1537,10 @@ namespace Hecton8.Physics
 
             if (_splashEventQueue.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(SubmarineFluidDynamics), _splashEventQueueSentinelLabel);
+                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, _splashEventQueueSentinelLabel);
                 _splashEventQueue.Dispose();
                 _splashEventQueue = default;
+                _splashEventQueueSentinelLabel = null;
             }
 
             _queuedSplashEventCount = 0;
@@ -2159,10 +2164,11 @@ namespace Hecton8.Physics
 
             int bestIndex = -1;
             float bestDistanceSq = float.MaxValue;
+            float3 localPosition3 = new float3(localPosition.x, localPosition.y, localPosition.z);
             for (int compartmentIndex = 0; compartmentIndex < _configuredCompartmentCount; compartmentIndex++)
             {
                 float3 centroid = _compartmentLocalCentroids[compartmentIndex];
-                float distanceSq = math.lengthsq(new float3(localPosition.x, localPosition.y, localPosition.z) - centroid);
+                float distanceSq = math.lengthsq(localPosition3 - centroid);
                 if (distanceSq >= bestDistanceSq)
                     continue;
 
@@ -2353,8 +2359,7 @@ namespace Hecton8.Physics
             if (playerMovement == null)
                 return;
 
-            float distanceToRoomCenter = math.distance(roomCenter, playerPosition);
-            if (distanceToRoomCenter > influenceRadius)
+            if (!IsWithinRadiusSq(playerPosition, roomCenter, influenceRadius))
                 return;
 
             Vector3 acceleration = ResolveDepressurizationAcceleration(playerPosition, breachPosition, baseAcceleration, maximumAcceleration);
@@ -2426,8 +2431,7 @@ namespace Hecton8.Physics
             if (body == null)
                 return;
 
-            float distanceToRoomCenter = math.distance(roomCenter, bodyPosition);
-            if (distanceToRoomCenter > influenceRadius)
+            if (!IsWithinRadiusSq(bodyPosition, roomCenter, influenceRadius))
                 return;
 
             Vector3 acceleration = ResolveDepressurizationAcceleration(bodyPosition, breachPosition, baseAcceleration, maximumAcceleration);
@@ -2444,14 +2448,21 @@ namespace Hecton8.Physics
             float maximumAcceleration)
         {
             Vector3 toBreach = breachPosition - bodyPosition;
-            float distanceMeters = toBreach.magnitude;
-            if (distanceMeters <= Epsilon)
+            if (!float.IsFinite(baseAcceleration) || !float.IsFinite(maximumAcceleration) || baseAcceleration <= 0f || maximumAcceleration <= 0f)
                 return Vector3.zero;
 
-            float safeDistance = math.max(depressurizationDistanceFloorMeters, distanceMeters);
-            float accelerationMagnitude = math.min(maximumAcceleration, baseAcceleration / safeDistance);
-            Vector3 direction = toBreach / distanceMeters;
-            return direction * accelerationMagnitude;
+            float distanceSq = toBreach.sqrMagnitude;
+            if (!float.IsFinite(distanceSq) || distanceSq <= Epsilon * Epsilon)
+                return Vector3.zero;
+
+            float inverseDistance = math.rsqrt(distanceSq);
+            float floorMeters = math.max(depressurizationDistanceFloorMeters, Epsilon);
+            float floorSq = floorMeters * floorMeters;
+            float inverseSafeDistance = distanceSq <= floorSq
+                ? math.rcp(floorMeters)
+                : inverseDistance;
+            float accelerationMagnitude = math.min(math.max(0f, maximumAcceleration), baseAcceleration * inverseSafeDistance);
+            return toBreach * (inverseDistance * accelerationMagnitude);
         }
 
         private bool TryResolveDepressurizationBounds(int compartmentIndex, out Vector3 roomCenter, out Vector3 breachPosition, out float influenceRadius)
@@ -2660,7 +2671,7 @@ namespace Hecton8.Physics
             Vector3 safeCenter = SanitizeCenterOfMass(
                 new Vector3(targetCenter.x, targetCenter.y, targetCenter.z),
                 _appliedCenterOfMassLocal);
-            Vector3 safeTensor = SanitizeTensor(Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio));
+            Vector3 safeTensor = SanitizeTensor(LerpVector3ClampedMath(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio));
             float safeLinearDamping = math.isfinite(_lastAppliedLinearDamping) ? math.max(0f, _lastAppliedLinearDamping) : 0f;
             float safeAngularDamping = math.isfinite(_lastAppliedAngularDamping) ? math.max(0f, _lastAppliedAngularDamping) : 0f;
 
@@ -2852,11 +2863,11 @@ namespace Hecton8.Physics
                 float3 jobTensor = _massPropertiesFront[0].InertiaTensor;
                 targetTensor = math.all(math.isfinite(jobTensor))
                     ? new Vector3(jobTensor.x, jobTensor.y, jobTensor.z)
-                    : Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio);
+                    : LerpVector3ClampedMath(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio);
             }
             else
             {
-                targetTensor = Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio);
+                targetTensor = LerpVector3ClampedMath(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, _floodFillRatio);
             }
 
             if (!IsFiniteVector(targetTensor))
@@ -2954,10 +2965,12 @@ namespace Hecton8.Physics
             Vector3 totalEquivalentForce = Vector3.zero;
             Vector3 totalEquivalentTorque = Vector3.zero;
             float submergedVolume = 0f;
+            Matrix4x4 localToWorldMatrix = _cachedTransform.localToWorldMatrix;
+            IHectonOceanKinematics oceanKinematics = ResolveOceanKinematicsProvider();
 
             for (int i = 0; i < ExteriorBuoyancySampleCount; i++)
             {
-                Vector3 worldPoint = _cachedTransform.TransformPoint(_exteriorBuoyancySampleLocalPoints[i]);
+                Vector3 worldPoint = localToWorldMatrix.MultiplyPoint3x4(_exteriorBuoyancySampleLocalPoints[i]);
                 float3 worldPointFloat = new float3(worldPoint.x, worldPoint.y, worldPoint.z);
                 if (math.any(math.isnan(worldPointFloat)) || !math.all(math.isfinite(worldPointFloat)))
                 {
@@ -2972,7 +2985,7 @@ namespace Hecton8.Physics
                 if (!IsFiniteVector(worldPoint))
                     continue;
 
-                float sampleSurfaceY = ResolveSurfaceHeightAtSample(worldPoint, fallbackSurfaceY);
+                float sampleSurfaceY = ResolveSurfaceHeightAtSample(worldPoint, fallbackSurfaceY, oceanKinematics);
                 float submersionFactor = ResolveSurfaceSubmersionFactor(worldPoint.y - sampleSurfaceY);
                 QueueExteriorSplashEventIfNeeded(i, worldPoint, submersionFactor, sampleHullMass);
                 if (submersionFactor <= Epsilon)
@@ -3270,8 +3283,7 @@ namespace Hecton8.Physics
                     continue;
 
                 Vector3 samplePoint = body.worldCenterOfMass;
-                float distance = Vector3.Distance(samplePoint, cellCenter);
-                float distanceT = 1f - math.saturate(distance / math.max(0.01f, influenceRadius));
+                float distanceT = ResolveDistanceSqFalloff01(samplePoint, cellCenter, influenceRadius);
                 if (distanceT <= 0f)
                     continue;
 
@@ -3282,8 +3294,7 @@ namespace Hecton8.Physics
             if (_cachedPlayerTransform == null || _cachedPlayerMovement == null)
                 return;
 
-            float playerDistance = Vector3.Distance(_cachedPlayerTransform.position, cellCenter);
-            float playerDistanceT = 1f - math.saturate(playerDistance / math.max(0.01f, influenceRadius));
+            float playerDistanceT = ResolveDistanceSqFalloff01(_cachedPlayerTransform.position, cellCenter, influenceRadius);
             if (playerDistanceT <= 0f)
                 return;
 
@@ -3467,10 +3478,12 @@ namespace Hecton8.Physics
             float maxTorqueMagnitude = math.max(0f, maxSloshTorque);
             if (maxTorqueMagnitude > Epsilon)
             {
-                float torqueMagnitude = math.length(totalSloshTorque);
-                if (torqueMagnitude > maxTorqueMagnitude && torqueMagnitude > Epsilon)
+                float torqueMagnitudeSq = math.lengthsq(totalSloshTorque);
+                float maxTorqueMagnitudeSq = maxTorqueMagnitude * maxTorqueMagnitude;
+                if (torqueMagnitudeSq > maxTorqueMagnitudeSq && torqueMagnitudeSq > Epsilon)
                 {
-                    if (!TryResolveSafeQuotient(maxTorqueMagnitude, torqueMagnitude, out float torqueClampScale))
+                    float torqueClampScale = maxTorqueMagnitude * math.rsqrt(torqueMagnitudeSq);
+                    if (!math.isfinite(torqueClampScale))
                     {
                         EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.Clamp");
                         _lastSloshTorqueLocal = Vector3.zero;
@@ -3625,6 +3638,18 @@ namespace Hecton8.Physics
             FluidFeedbackEvents.PublishSplashQueued(in splashEvent);
         }
 
+        private void PrewarmSplashEventQueue()
+        {
+            if (!_splashEventQueue.IsCreated)
+                return;
+
+            for (int i = 0; i < MaxQueuedSplashEvents; i++)
+                _splashEventQueue.Enqueue(default);
+
+            _splashEventQueue.Clear();
+            _queuedSplashEventCount = 0;
+        }
+
         private void RebuildExteriorBuoyancySampleLocalPoints()
         {
             if (_cachedTransform == null)
@@ -3678,25 +3703,36 @@ namespace Hecton8.Physics
                 }
             }
 
-            _exteriorBuoyancyMaxLeverArm = 0.1f;
+            float maxLeverArmSq = 0.01f;
             for (int i = 0; i < ExteriorBuoyancySampleCount; i++)
             {
-                float leverArm = Vector3.Distance(centerLocal, _exteriorBuoyancySampleLocalPoints[i]);
-                if (leverArm > _exteriorBuoyancyMaxLeverArm)
-                    _exteriorBuoyancyMaxLeverArm = leverArm;
+                float leverArmSq = (centerLocal - _exteriorBuoyancySampleLocalPoints[i]).sqrMagnitude;
+                if (leverArmSq > maxLeverArmSq)
+                    maxLeverArmSq = leverArmSq;
             }
+
+            _exteriorBuoyancyMaxLeverArm = math.sqrt(maxLeverArmSq);
         }
 
         private float ResolveSurfaceHeightAtSample(Vector3 worldPoint, float fallbackSurfaceY)
         {
-            IHectonOceanKinematics oceanKinematics = _oceanKinematics;
-            if (oceanKinematics == null || !oceanKinematics.IsAvailable)
-            {
-                IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
-                oceanKinematics = oceanKinematicsService != null ? oceanKinematicsService.ActiveProvider : null;
-                _oceanKinematics = oceanKinematics;
-            }
+            return ResolveSurfaceHeightAtSample(worldPoint, fallbackSurfaceY, ResolveOceanKinematicsProvider());
+        }
 
+        private IHectonOceanKinematics ResolveOceanKinematicsProvider()
+        {
+            IHectonOceanKinematics oceanKinematics = _oceanKinematics;
+            if (oceanKinematics != null && oceanKinematics.IsAvailable)
+                return oceanKinematics;
+
+            IHectonOceanKinematicsService oceanKinematicsService = GlobalRegistry.OceanKinematics;
+            oceanKinematics = oceanKinematicsService != null ? oceanKinematicsService.ActiveProvider : null;
+            _oceanKinematics = oceanKinematics;
+            return oceanKinematics;
+        }
+
+        private static float ResolveSurfaceHeightAtSample(Vector3 worldPoint, float fallbackSurfaceY, IHectonOceanKinematics oceanKinematics)
+        {
             if (oceanKinematics != null &&
                 oceanKinematics.IsAvailable &&
                 oceanKinematics.TrySampleWaveHeight(new float3(worldPoint.x, worldPoint.y, worldPoint.z), 1f, out float sampledHeight) &&
@@ -3833,10 +3869,10 @@ namespace Hecton8.Physics
             if (tauSeconds <= 0f || deltaTime <= 0f)
                 return 0f;
 
-            if (!TryResolveSafeQuotient(-deltaTime, tauSeconds, out float exponent))
+            if (!TryResolveSafeQuotient(deltaTime, tauSeconds, out float normalizedStep))
                 return 0f;
 
-            float candidate = 1f - math.exp(exponent);
+            float candidate = normalizedStep / (1f + normalizedStep);
             return math.isfinite(candidate) ? math.saturate(candidate) : 0f;
         }
 
@@ -3878,7 +3914,7 @@ namespace Hecton8.Physics
             if (!_massPropertiesFront.IsCreated || !_massPropertiesBack.IsCreated)
                 return;
 
-            Vector3 targetTensor = Vector3.Lerp(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, floodMassRatio);
+            Vector3 targetTensor = LerpVector3ClampedMath(_resolvedDryInertiaTensor, _resolvedFloodedInertiaTensor, floodMassRatio);
             float floodMassKilograms = math.max(0f, _totalFloodVolumeCubicMeters) * WaterDensityKgPerCubicMeter;
             FloodMassPropertiesResult result = new FloodMassPropertiesResult
             {
@@ -3993,10 +4029,11 @@ namespace Hecton8.Physics
         private static Vector3 ClampMagnitude(Vector3 value, float maxMagnitude)
         {
             float maxMagnitudeSq = maxMagnitude * maxMagnitude;
-            if (value.sqrMagnitude <= maxMagnitudeSq || value.sqrMagnitude <= Epsilon)
+            float magnitudeSq = value.sqrMagnitude;
+            if (magnitudeSq <= maxMagnitudeSq || magnitudeSq <= Epsilon)
                 return value;
 
-            return value.normalized * maxMagnitude;
+            return value * (maxMagnitude * math.rsqrt(magnitudeSq));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4004,9 +4041,47 @@ namespace Hecton8.Physics
         {
             float magnitudeSq = value.sqrMagnitude;
             if (magnitudeSq <= Epsilon)
-                return fallback.sqrMagnitude > Epsilon ? fallback.normalized : Vector3.up;
+            {
+                float fallbackMagnitudeSq = fallback.sqrMagnitude;
+                return fallbackMagnitudeSq > Epsilon ? fallback * math.rsqrt(fallbackMagnitudeSq) : Vector3.up;
+            }
 
             return value * math.rsqrt(magnitudeSq);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsWithinRadiusSq(Vector3 value, Vector3 center, float radius)
+        {
+            if (!float.IsFinite(radius) || radius <= 0f)
+                return false;
+
+            float radiusSq = radius * radius;
+            float distanceSq = (value - center).sqrMagnitude;
+            return float.IsFinite(distanceSq) && distanceSq <= radiusSq;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ResolveDistanceSqFalloff01(Vector3 value, Vector3 center, float radius)
+        {
+            if (!float.IsFinite(radius) || radius <= 0f)
+                return 0f;
+
+            float radiusSq = math.max(radius * radius, Epsilon);
+            float distanceSq = (value - center).sqrMagnitude;
+            if (!float.IsFinite(distanceSq) || distanceSq >= radiusSq)
+                return 0f;
+
+            return 1f - math.saturate(distanceSq / radiusSq);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static Vector3 LerpVector3ClampedMath(Vector3 from, Vector3 to, float t)
+        {
+            float3 from3 = new float3(from.x, from.y, from.z);
+            float3 to3 = new float3(to.x, to.y, to.z);
+            float safeT = math.isfinite(t) ? math.saturate(t) : 0f;
+            float3 value = math.lerp(from3, to3, safeT);
+            return new Vector3(value.x, value.y, value.z);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4045,11 +4120,40 @@ namespace Hecton8.Physics
         }
 #endif
 
+        private void RegisterNativeStateBuffers()
+        {
+            RegisterNativeArray(_compartmentFloodVolumes, nameof(_compartmentFloodVolumes));
+            RegisterNativeArray(_compartmentViscosity01, nameof(_compartmentViscosity01));
+            RegisterNativeArray(_compartmentBaseMaxVolumes, nameof(_compartmentBaseMaxVolumes));
+            RegisterNativeArray(_compartmentMaxVolumes, nameof(_compartmentMaxVolumes));
+            RegisterNativeArray(_compartmentBreachAreas, nameof(_compartmentBreachAreas));
+            RegisterNativeArray(_compartmentLocalCentroids, nameof(_compartmentLocalCentroids));
+            RegisterNativeArray(_compartmentFlags, nameof(_compartmentFlags));
+            RegisterNativeArray(_bulkheadPairs, nameof(_bulkheadPairs));
+            RegisterNativeArray(_bulkheadSealed, nameof(_bulkheadSealed));
+            RegisterNativeArray(_bulkheadDoorAreas, nameof(_bulkheadDoorAreas));
+            RegisterNativeArray(_comAccumulatorFront, nameof(_comAccumulatorFront));
+            RegisterNativeArray(_comAccumulatorBack, nameof(_comAccumulatorBack));
+            RegisterNativeArray(_massPropertiesFront, nameof(_massPropertiesFront));
+            RegisterNativeArray(_massPropertiesBack, nameof(_massPropertiesBack));
+            RegisterNativeArray(_angularVelocityHistoryLocal, nameof(_angularVelocityHistoryLocal));
+            RegisterNativeArray(_previousExteriorSampleSubmersionFactors, nameof(_previousExteriorSampleSubmersionFactors));
+            RegisterNativeArray(_jobFloodVolumes, nameof(_jobFloodVolumes));
+            RegisterNativeArray(_jobCompartmentFlags, nameof(_jobCompartmentFlags));
+            RegisterNativeArray(_bulkheadTransferDeltas, nameof(_bulkheadTransferDeltas));
+        }
+
+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
         private void DisposeDeferred<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             _disposeHandle = array.Dispose(_disposeHandle);
             array = default;
         }

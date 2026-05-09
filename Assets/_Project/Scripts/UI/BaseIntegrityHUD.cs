@@ -3,12 +3,15 @@
 // HUD component: nearest base-module integrity warning bridge.
 // ============================================================================
 
+using System;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using System.Runtime.InteropServices;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.UI
@@ -61,20 +64,44 @@ namespace Hecton8.UI
     /// </summary>
     public static class BaseIntegrityEvents
     {
+        private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 8;
+        private const uint BaseIntegrityListenerRejectedWarningHash = 0x4249524Au; // BIRJ
+        private const uint BaseIntegrityListenerExceptionWarningHash = 0x42494558u; // BIEX
+        private const uint BaseIntegrityListenerContextHash = 0x42494C53u; // BILS
 
         // COLD ALLOC: RegistryBucket<IBaseIntegrityEventListener>[8] - base integrity listeners drained by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
-        private static readonly RegistryBucket<IBaseIntegrityEventListener> _listeners = new RegistryBucket<IBaseIntegrityEventListener>(8);
+        private static readonly RegistryBucket<IBaseIntegrityEventListener> _listeners = new RegistryBucket<IBaseIntegrityEventListener>(ListenerCapacity);
+        // COLD ALLOC: IBaseIntegrityEventListener[8] - listener additions deferred while dispatching base integrity events - owner: BaseIntegrityEvents
+        private static readonly IBaseIntegrityEventListener[] _deferredRegisterListeners = new IBaseIntegrityEventListener[ListenerCapacity];
+        // COLD ALLOC: IBaseIntegrityEventListener[8] - listener removals deferred while dispatching base integrity events - owner: BaseIntegrityEvents
+        private static readonly IBaseIntegrityEventListener[] _deferredUnregisterListeners = new IBaseIntegrityEventListener[ListenerCapacity];
         private static NativeQueue<BaseIntegrityEventPayload> _pendingEvents;
         private static NativeQueue<BaseIntegrityEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         /// <summary>
         /// Number of pending payloads waiting for LateUpdate dispatch.
         /// </summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        /// <summary>
+        /// Number of listener register/unregister requests rejected because the fixed deferred buffer was full.
+        /// </summary>
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+
+        /// <summary>
+        /// Number of listener callbacks that threw while the base integrity bus isolated dispatch.
+        /// </summary>
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -94,8 +121,16 @@ namespace Hecton8.UI
             }
 
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -109,8 +144,13 @@ namespace Hecton8.UI
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -122,23 +162,30 @@ namespace Hecton8.UI
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            _listeners.TryUnregister(listener);
         }
 
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         /// <summary>
         /// Reports an editor/development error if a listener remains registered after teardown.
         /// </summary>
         /// <param name="listener">Listener instance.</param>
         /// <param name="ownerName">Human-readable owner name.</param>
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         public static void AssertUnregistered(IBaseIntegrityEventListener listener, string ownerName)
         {
-            if (listener == null || !_listeners.Contains(listener))
+            if (listener == null || !IsEffectivelyRegistered(listener))
                 return;
 
-            Debug.LogError($"[BaseIntegrityEvents] {ownerName} was destroyed while still registered as an IBaseIntegrityEventListener.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogError($"[BaseIntegrityEvents] {ownerName} was destroyed while still registered as an IBaseIntegrityEventListener.");
+#endif
         }
 
         /// <summary>
@@ -201,13 +248,16 @@ namespace Hecton8.UI
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IBaseIntegrityEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnBaseIntegrityEvent(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -254,6 +304,7 @@ namespace Hecton8.UI
                     nameof(BaseIntegrityEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -265,6 +316,21 @@ namespace Hecton8.UI
                     nameof(BaseIntegrityEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -326,6 +392,183 @@ namespace Hecton8.UI
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
+
+        private static void DispatchToListener(IBaseIntegrityEventListener listener, in BaseIntegrityEventPayload payload)
+        {
+            try
+            {
+                listener.OnBaseIntegrityEvent(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IBaseIntegrityEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IBaseIntegrityEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IBaseIntegrityEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IBaseIntegrityEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IBaseIntegrityEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IBaseIntegrityEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsEffectivelyRegistered(IBaseIntegrityEventListener listener)
+        {
+            return (_listeners.Contains(listener) || IsDeferredRegisterPending(listener)) &&
+                !IsDeferredUnregisterPending(listener);
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IBaseIntegrityEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IBaseIntegrityEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
+        private static void RegisterImmediate(IBaseIntegrityEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                BaseIntegrityListenerRejectedWarningHash,
+                BaseIntegrityListenerContextHash,
+                math.max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                BaseIntegrityListenerExceptionWarningHash,
+                BaseIntegrityListenerContextHash,
+                math.max(1, _listenerExceptionCount));
+        }
     }
 
     [DisallowMultipleComponent]
@@ -343,9 +586,8 @@ namespace Hecton8.UI
         [Tooltip("Search radius for the nearest base module in meters.")]
         [SerializeField] private float scanRadius = 50f;
 
-        [SerializeField] private LayerMask moduleLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
         private Transform _playerTransform;
+        private HectonPlayerMovement _playerMovement;
         private bool _registered;
         private float _lastWarningIntegrity = 1f;
         private float _nextWarningTime;
@@ -361,8 +603,6 @@ namespace Hecton8.UI
         private const float AirWarningCooldown = 18f;
         private const int PercentMessageCacheSize = 101;
 
-        // COLD ALLOC: Collider[8] - nearest-module overlap scan buffer - owner: BaseIntegrityHUD
-        private readonly Collider[] _scanBuffer = new Collider[8];
         // COLD ALLOC: uint[101] — cached danger notification hashes by rounded percent — owner: BaseIntegrityHUD
         private readonly uint[] _dangerNotificationHashes = new uint[PercentMessageCacheSize];
         // COLD ALLOC: uint[101] — cached critical notification hashes by rounded percent — owner: BaseIntegrityHUD
@@ -371,10 +611,28 @@ namespace Hecton8.UI
         private readonly uint[] _warningNotificationHashes = new uint[PercentMessageCacheSize];
         // COLD ALLOC: uint[101] — cached air-critical notification hashes by rounded percent — owner: BaseIntegrityHUD
         private readonly uint[] _airCriticalNotificationHashes = new uint[PercentMessageCacheSize];
+        // COLD ALLOC: char[512] - percent notification formatter scratch; avoids string.Format parser/boxing on warning cache misses - owner: BaseIntegrityHUD
+        private readonly char[] _percentMessageBuffer = new char[512];
         private uint _dangerFormatHash;
         private uint _criticalFormatHash;
         private uint _warningFormatHash;
         private uint _airCriticalFormatHash;
+
+        private readonly struct PercentMessageState
+        {
+            public readonly string Format;
+            public readonly string PercentText;
+            public readonly int PlaceholderIndex;
+            public readonly int SuffixStart;
+
+            public PercentMessageState(string format, string percentText, int placeholderIndex, int suffixStart)
+            {
+                Format = format;
+                PercentText = percentText;
+                PlaceholderIndex = placeholderIndex;
+                SuffixStart = suffixStart;
+            }
+        }
 
         private void OnEnable()
         {
@@ -397,29 +655,11 @@ namespace Hecton8.UI
             if (_playerTransform == null && !ResolvePlayerTransform())
                 return;
 
-            int count = UnityEngine.Physics.OverlapSphereNonAlloc(
-                _playerTransform.position,
-                scanRadius,
-                _scanBuffer,
-                moduleLayerMask,
-                QueryTriggerInteraction.Ignore);
-
-            BaseModule nearestModule = null;
-            float nearestDist = float.MaxValue;
-
-            for (int i = 0; i < count; i++)
-            {
-                Collider hit = _scanBuffer[i];
-                if (hit == null || !hit.TryGetComponent(out BaseModule module))
-                    continue;
-
-                float sqrDist = (_playerTransform.position - hit.transform.position).sqrMagnitude;
-                if (sqrDist >= nearestDist)
-                    continue;
-
-                nearestDist = sqrDist;
-                nearestModule = module;
-            }
+            Vector3 playerPosition = _playerTransform.position;
+            AbsoluteUniversePosition playerAup = ResolvePlayerAup(playerPosition);
+            float safeScanRadius = math.max(0f, scanRadius);
+            double scanRadiusSq = (double)safeScanRadius * safeScanRadius;
+            BaseModule nearestModule = FindNearestActiveModule(in playerAup, scanRadiusSq);
 
             if (nearestModule == null)
             {
@@ -437,6 +677,32 @@ namespace Hecton8.UI
             PublishAirQualityState(nearestModule);
         }
 
+        private static BaseModule FindNearestActiveModule(in AbsoluteUniversePosition playerAup, double scanRadiusSq)
+        {
+            if (scanRadiusSq <= 0d)
+                return null;
+
+            BaseModule nearestModule = null;
+            double nearestDistanceSq = scanRadiusSq;
+            int count = BaseModule.ActiveModuleCount;
+            for (int i = 0; i < count; i++)
+            {
+                BaseModule module = BaseModule.GetActiveModuleAt(i);
+                if (module == null || !module.isActiveAndEnabled)
+                    continue;
+
+                AbsoluteUniversePosition moduleAup = AbsoluteUniversePosition.FromRuntimePosition(module.transform.position);
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in moduleAup);
+                if (distanceSq > nearestDistanceSq)
+                    continue;
+
+                nearestDistanceSq = distanceSq;
+                nearestModule = module;
+            }
+
+            return nearestModule;
+        }
+
         private void CheckIntegrityWarnings(BaseModule module, float integrity)
         {
             PublishEmergencyState(module, integrity);
@@ -444,7 +710,7 @@ namespace Hecton8.UI
             if (Time.time < _nextWarningTime)
                 return;
 
-            if (Mathf.Abs(integrity - _lastWarningIntegrity) < 0.05f)
+            if (math.abs(integrity - _lastWarningIntegrity) < 0.05f)
                 return;
 
             _lastWarningIntegrity = integrity;
@@ -533,7 +799,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            if (Time.time < _nextAirWarningTime && Mathf.Abs(airQuality - _lastAirQuality) < 0.05f)
+            if (Time.time < _nextAirWarningTime && math.abs(airQuality - _lastAirQuality) < 0.05f)
                 return;
 
             _lastAirQuality = airQuality;
@@ -563,7 +829,33 @@ namespace Hecton8.UI
             }
 
             _playerTransform = playerTransform;
+            _playerMovement = ResolvePlayerMovement(playerTransform);
             return true;
+        }
+
+        private AbsoluteUniversePosition ResolvePlayerAup(Vector3 fallbackPosition)
+        {
+            HectonPlayerMovement playerMovement = _playerMovement;
+            if (playerMovement == null)
+            {
+                playerMovement = ResolvePlayerMovement(_playerTransform);
+                _playerMovement = playerMovement;
+            }
+
+            return playerMovement != null
+                ? playerMovement.CurrentAup
+                : AbsoluteUniversePosition.FromRuntimePosition(fallbackPosition);
+        }
+
+        private static HectonPlayerMovement ResolvePlayerMovement(Transform playerTransform)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerMovement != null)
+                return playerContext.PlayerMovement;
+
+            return playerTransform != null && playerTransform.TryGetComponent(out HectonPlayerMovement movement)
+                ? movement
+                : null;
         }
 
         private void TryRegister()
@@ -599,12 +891,12 @@ namespace Hecton8.UI
                 cachedFormatHash = currentFormatHash;
             }
 
-            int clampedPercent = Mathf.Clamp(percent, 0, PercentMessageCacheSize - 1);
+            int clampedPercent = math.clamp(percent, 0, PercentMessageCacheSize - 1);
             uint messageHash = cache[clampedPercent];
             if (messageHash != 0u)
                 return messageHash;
 
-            string message = string.Format(format, clampedPercent);
+            string message = ComposePercentMessage(format, clampedPercent);
             messageHash = NotificationEvents.RegisterMessage(message);
             cache[clampedPercent] = messageHash;
             return messageHash;
@@ -612,7 +904,41 @@ namespace Hecton8.UI
 
         private static int NormalizedPercent(float value)
         {
-            return Mathf.Clamp(Mathf.RoundToInt(value * 100f), 0, PercentMessageCacheSize - 1);
+            return math.clamp((int)math.round(value * 100f), 0, PercentMessageCacheSize - 1);
+        }
+
+        private string ComposePercentMessage(string format, int percent)
+        {
+            int placeholderIndex = format.IndexOf("{0}", StringComparison.Ordinal);
+            if (placeholderIndex < 0)
+                return format;
+
+            string percentText = HudNumericStringCache.IntStrings[percent];
+            int suffixStart = placeholderIndex + 3;
+            int suffixLength = format.Length - suffixStart;
+            int totalLength = placeholderIndex + percentText.Length + suffixLength;
+            if (totalLength <= 0)
+                return format;
+
+            PercentMessageState state = new PercentMessageState(format, percentText, placeholderIndex, suffixStart);
+            if (totalLength > _percentMessageBuffer.Length)
+                return string.Create(totalLength, state, WritePercentMessage);
+
+            WritePercentMessage(_percentMessageBuffer.AsSpan(0, totalLength), state);
+            return new string(_percentMessageBuffer, 0, totalLength);
+        }
+
+        private static void WritePercentMessage(Span<char> destination, PercentMessageState state)
+        {
+            int writeIndex = 0;
+            for (int i = 0; i < state.PlaceholderIndex; i++)
+                destination[writeIndex++] = state.Format[i];
+
+            for (int i = 0; i < state.PercentText.Length; i++)
+                destination[writeIndex++] = state.PercentText[i];
+
+            for (int i = state.SuffixStart; i < state.Format.Length; i++)
+                destination[writeIndex++] = state.Format[i];
         }
 
         private static string ResolveLocalized(string key, string fallback)

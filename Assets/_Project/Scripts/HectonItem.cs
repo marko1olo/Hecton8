@@ -97,8 +97,10 @@ namespace Hecton8.Items
             ConfigureWaterDynamicsFromData();
             RefreshCachedItemHash();
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (itemData == null)
                 Debug.LogError($"[HectonItem] ItemData не назначен на {gameObject.name}!", this);
+#endif
         }
 
         // ─────────────────────── Pool-Safe Settle (v3.1) ─────────
@@ -119,6 +121,7 @@ namespace Hecton8.Items
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             LocalizationEvents.UnregisterLanguageListener(this);
 
             // Гарантированная отписка при деактивации (пулинг).

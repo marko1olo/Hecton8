@@ -1,4 +1,4 @@
-// ============================================================================
+﻿// ============================================================================
 // HECTON-8 â€” AmbientWaterMotionManager.cs
 // Centralized visual bob/sway updater. One tick for many decorative props.
 //
@@ -15,6 +15,7 @@ using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Environment;
+using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -25,14 +26,8 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Ambient Water Motion Manager")]
     public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener
     {
-        private static AmbientWaterMotionManager _instance;
         private const float BiomeFlowBlendSeconds = 5f;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
+        private const int MotionCapacity = 128;
 
         [Header("Observer / LOD")]
         [SerializeField] private Transform lodObserver;
@@ -59,8 +54,10 @@ namespace Hecton8.Physics
 
         // â”€â”€ Registered objects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // List Ð´Ð»Ñ Ð¸Ñ‚ÐµÑ€Ð°Ñ†Ð¸Ð¸ (cache-friendly), HashSet Ð´Ð»Ñ O(1) Ð´ÐµÐ´ÑƒÐ¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ð¸ Ð² Register.
-        private readonly List<AmbientWaterMotion>     _objects    = new List<AmbientWaterMotion>(128);
-        private readonly HashSet<AmbientWaterMotion>  _objectsSet = new HashSet<AmbientWaterMotion>();
+        private readonly List<AmbientWaterMotion> _objects =
+            new List<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: List<AmbientWaterMotion>[128] — active ambient-water motion registry — owner: AmbientWaterMotionManager
+        private readonly HashSet<AmbientWaterMotion> _objectsSet =
+            new HashSet<AmbientWaterMotion>(MotionCapacity); // COLD ALLOC: HashSet<AmbientWaterMotion>[128] — duplicate guard for ambient-water motion registry — owner: AmbientWaterMotionManager
 
         private float _time;
         private int   _frameCounter;
@@ -81,7 +78,7 @@ namespace Hecton8.Physics
         private float _observerResolveTimer;
         private const float ObserverResolveCooldown = 2f;
 
-        public static AmbientWaterMotionManager Instance => _instance;
+        public static AmbientWaterMotionManager Instance => GlobalRegistry.AmbientWaterMotion;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
@@ -89,13 +86,13 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            AmbientWaterMotionManager registered = GlobalRegistry.AmbientWaterMotion;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
             RefreshDistanceThresholds();
             // ÐŸÑ€Ð¾Ð±ÑƒÐµÐ¼ ÑÑ€Ð°Ð·Ñƒ Ð¿Ñ€Ð¸ ÑÑ‚Ð°Ñ€Ñ‚Ðµ
             TryResolveObserver(force: true);
@@ -122,8 +119,6 @@ namespace Hecton8.Physics
             TryUnregister();
             TryUnregisterService();
 
-            if (_instance == this)
-                _instance = null;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -157,6 +152,8 @@ namespace Hecton8.Physics
 
         public void Tick(float deltaTime)
         {
+            if (HectonFloatingOrigin.IsShiftInProgress)
+                return;
             UpdateBiomeCurrentBlend(deltaTime);
 
             if (_objects.Count == 0) return;
@@ -179,9 +176,9 @@ namespace Hecton8.Physics
 
             // ÐšÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ Ð¿Ð¾Ð·Ð¸Ñ†Ð¸ÑŽ Ð½Ð°Ð±Ð»ÑŽÐ´Ð°Ñ‚ÐµÐ»Ñ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð·Ð° Ñ‚Ð¸Ðº
             // Ð˜Ð·Ð±ÐµÐ³Ð°ÐµÐ¼ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ñ‹Ñ… bridge calls Ð² ShouldUpdate Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð¾Ð±ÑŠÐµÐºÑ‚Ð°
-            Vector3 observerPos = lodObserver != null
-                ? lodObserver.position
-                : Vector3.zero;
+            AbsoluteUniversePosition observerAup = lodObserver != null
+                ? AbsoluteUniversePosition.FromRuntimePosition(lodObserver.position)
+                : default;
 
             // ÐšÐ²Ð°Ð´Ñ€Ð°Ñ‚Ñ‹ Ð´Ð¸ÑÑ‚Ð°Ð½Ñ†Ð¸Ð¹ â€” ÑÑ‡Ð¸Ñ‚Ð°ÐµÐ¼ Ð¾Ð´Ð¸Ð½ Ñ€Ð°Ð· Ð·Ð° Ñ‚Ð¸Ðº
             for (int i = _objects.Count - 1; i >= 0; i--)
@@ -201,9 +198,11 @@ namespace Hecton8.Physics
 
                 // Ð§Ð¸Ñ‚Ð°ÐµÐ¼ position ÐžÐ”Ð˜Ð Ð ÐÐ— â€” ÐºÑÑˆÐ¸Ñ€ÑƒÐµÐ¼ Ð´Ð»Ñ ShouldUpdate Ð¸ ApplyMotion
                 // Ð‘Ñ‹Ð»Ð¾: position Ñ‡Ð¸Ñ‚Ð°Ð»ÑÑ Ð´Ð²Ð°Ð¶Ð´Ñ‹ (Ð² ShouldUpdate Ð¸ Ð² ApplyMotion)
-                Vector3 worldPos = motion.CachedTransform.position;
+                AbsoluteUniversePosition motionAup = motion.RestAup;
+                float3 runtimeRestPosition = motionAup.ToRuntimeFloat3();
+                Vector3 worldPos = new Vector3(runtimeRestPosition.x, runtimeRestPosition.y, runtimeRestPosition.z);
 
-                if (!ShouldUpdate(motion, i, worldPos, observerPos,
+                if (!ShouldUpdateAup(motion, i, motionAup, observerAup,
                                   _nearDistanceSqr, _mediumDistanceSqr, _farDistanceSqr, _cullDistanceSqr))
                     continue;
 
@@ -217,12 +216,15 @@ namespace Hecton8.Physics
         //  SHOULD UPDATE â€” Ð¿Ñ€Ð¸Ð½Ð¸Ð¼Ð°ÐµÑ‚ Ð¿Ñ€ÐµÐ´Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½Ð½Ñ‹Ðµ Ð´Ð°Ð½Ð½Ñ‹Ðµ, Ð½ÐµÑ‚ bridge calls
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        private bool ShouldUpdate(
+        private bool ShouldUpdateAup(
             AmbientWaterMotion motion,
             int index,
-            Vector3 worldPos,      // Ð¿Ñ€ÐµÐ´Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½ Ð² Tick
-            Vector3 observerPos,   // Ð¿Ñ€ÐµÐ´Ð²Ñ‹Ñ‡Ð¸ÑÐ»ÐµÐ½ Ð² Tick
-            float nearSq, float mediumSq, float farSq, float cullSq)
+            in AbsoluteUniversePosition motionAup,
+            in AbsoluteUniversePosition observerAup,
+            float nearSq,
+            float mediumSq,
+            float farSq,
+            float cullSq)
         {
             if (!motion.AllowDistanceLod || lodObserver == null)
             {
@@ -230,88 +232,92 @@ namespace Hecton8.Physics
                 return true;
             }
 
-            float bias = Mathf.Max(0.1f, motion.LodBias);
-            float dx = worldPos.x - observerPos.x;
-            float dy = worldPos.y - observerPos.y;
-            float dz = worldPos.z - observerPos.z;
-            float distanceSq = dx * dx + dy * dy + dz * dz;
+            float bias = math.max(0.1f, motion.LodBias);
+            double biasSq = (double)bias * bias;
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in motionAup, in observerAup);
 
-            // ÐŸÑ€Ð¸Ð¼ÐµÐ½ÑÐµÐ¼ bias ÐºÐ°Ðº Ð¼Ð½Ð¾Ð¶Ð¸Ñ‚ÐµÐ»ÑŒ Ðº Ð¿Ð¾Ñ€Ð¾Ð³Ð°Ð¼ (Ð½Ðµ Ðº distanceSq â€”
-            // Ñ‚Ð°Ðº bias Ñ€Ð°Ð±Ð¾Ñ‚Ð°ÐµÑ‚ Ð¸Ð½Ñ‚ÑƒÐ¸Ñ‚Ð¸Ð²Ð½Ð¾: bias>1 = Ð¾Ð±ÑŠÐµÐºÑ‚ "Ð´Ð°Ð»ÑŒÑˆÐµ" Ñ‡ÐµÐ¼ ÐµÑÑ‚ÑŒ)
-            float biasSq = bias * bias;
-            if (distanceSq <= nearSq * biasSq)
+            if (distanceSq <= (double)nearSq * biasSq)
             {
                 _debugNearCount++;
                 return true;
             }
 
-            if (distanceSq <= mediumSq * biasSq)
+            if (distanceSq <= (double)mediumSq * biasSq)
             {
                 _debugMediumCount++;
-                return ((_frameCounter + index) % Mathf.Max(1, mediumDivisor)) == 0;
+                return ((_frameCounter + index) % math.max(1, mediumDivisor)) == 0;
             }
 
-            if (distanceSq <= farSq * biasSq)
+            if (distanceSq <= (double)farSq * biasSq)
             {
                 _debugFarCount++;
-                return ((_frameCounter + index) % Mathf.Max(1, farDivisor)) == 0;
+                return ((_frameCounter + index) % math.max(1, farDivisor)) == 0;
             }
 
             _debugCulledCount++;
-            return distanceSq <= cullSq * biasSq
-                && ((_frameCounter + index) % Mathf.Max(1, cullDivisor)) == 0;
+            return distanceSq <= (double)cullSq * biasSq
+                && ((_frameCounter + index) % math.max(1, cullDivisor)) == 0;
         }
-
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-        //  APPLY MOTION â€” worldPos Ð¿ÐµÑ€ÐµÐ´Ð°Ñ‘Ñ‚ÑÑ Ð¸Ð·Ð²Ð½Ðµ, Ð½Ðµ Ñ‡Ð¸Ñ‚Ð°ÐµÑ‚ÑÑ Ð¿Ð¾Ð²Ñ‚Ð¾Ñ€Ð½Ð¾
-        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
         private void ApplyMotion(AmbientWaterMotion motion, Vector3 worldPos)
         {
             Transform tr = motion.CachedTransform;
 
-            // CurrentVolume: managed, main thread only. ÐÐ¾Ñ€Ð¼Ð°Ð»ÑŒÐ½Ð¾.
-            Vector3 volumeCurrent = CurrentVolume.SampleAt(worldPos);
+            float coupling = math.max(0f, motion.CurrentCoupling);
+            Vector3 current = Vector3.zero;
+            if (coupling > 0.0001f)
+            {
+                Vector3 volumeCurrent = CurrentVolume.SampleAt(worldPos);
+                float3 phantomCurrent = CurrentManager.SampleHorizontal(
+                    new float3(worldPos.x, worldPos.y, worldPos.z),
+                    _time,
+                    0.018f,
+                    0.12f,
+                    1f);
 
-            // CurrentManager: static, pure math, no allocations.
-            float3 phantomCurrent = CurrentManager.SampleHorizontal(
-                new float3(worldPos.x, worldPos.y, worldPos.z),
-                _time,
-                0.018f,
-                0.12f,
-                motion.CurrentCoupling);
+                current = (volumeCurrent
+                    + new Vector3(phantomCurrent.x, phantomCurrent.y, phantomCurrent.z)
+                    + _biomeCurrentVector) * coupling;
+            }
 
-            Vector3 current = volumeCurrent
-                + new Vector3(phantomCurrent.x, phantomCurrent.y, phantomCurrent.z)
-                + _biomeCurrentVector;
-
-            float currentMagnitude = current.magnitude;
-            Vector3 currentDir = currentMagnitude > 0.0001f
-                ? current / currentMagnitude
+            float currentSqrMagnitude = current.x * current.x + current.y * current.y + current.z * current.z;
+            float currentMagnitude = ApproximateVectorMagnitude(current);
+            Vector3 currentDir = currentSqrMagnitude > 0.0001f
+                ? current * math.rsqrt(currentSqrMagnitude)
                 : Vector3.forward;
 
             float t = (_time + motion.Phase)
-                    * Mathf.Max(0f, motion.BaseFrequency * globalFrequency);
+                    * math.max(0f, motion.BaseFrequency * globalFrequency);
 
-            float bobY = Mathf.Sin(t * 1.13f) * motion.VerticalAmplitude;
-            float bobX = Mathf.Sin(t * 0.91f) * motion.PositionalAmplitude.x;
-            float bobZ = Mathf.Cos(t * 1.07f) * motion.PositionalAmplitude.z;
+            float bobY = math.sin(t * 1.13f) * motion.VerticalAmplitude;
+            float bobX = math.sin(t * 0.91f) * motion.PositionalAmplitude.x;
+            float bobZ = math.cos(t * 1.07f) * motion.PositionalAmplitude.z;
 
-            float coupling = motion.CurrentCoupling;
             Vector3 offset = new Vector3(
-                bobX + currentDir.x * currentMagnitude * 0.03f * coupling,
+                bobX + currentDir.x * currentMagnitude * 0.03f,
                 bobY,
-                bobZ + currentDir.z * currentMagnitude * 0.03f * coupling)
+                bobZ + currentDir.z * currentMagnitude * 0.03f)
                 * globalAmplitude;
 
-            float pitch = Mathf.Sin(t * 0.87f) * motion.AngularAmplitude.x
+            float pitch = math.sin(t * 0.87f) * motion.AngularAmplitude.x
                         + currentDir.z * currentMagnitude * 2f;
-            float yaw   = Mathf.Sin(t * 0.43f) * motion.AngularAmplitude.y;
-            float roll  = Mathf.Cos(t * 0.79f) * motion.AngularAmplitude.z
+            float yaw   = math.sin(t * 0.43f) * motion.AngularAmplitude.y;
+            float roll  = math.cos(t * 0.79f) * motion.AngularAmplitude.z
                         - currentDir.x * currentMagnitude * 3f;
 
             tr.localPosition = motion.RestLocalPosition + offset;
             tr.localRotation = motion.RestLocalRotation * Quaternion.Euler(pitch, yaw, roll);
+        }
+
+        private static float ApproximateVectorMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.375f) + (min * 0.125f);
         }
 
         private void UpdateBiomeCurrentBlend(float deltaTime)
@@ -319,10 +325,14 @@ namespace Hecton8.Physics
             if (!_hasBiomeCurrentTarget)
                 return;
 
-            _biomeCurrentBlendElapsed += Mathf.Max(0f, deltaTime);
-            float t = Mathf.Clamp01(_biomeCurrentBlendElapsed / BiomeFlowBlendSeconds);
+            _biomeCurrentBlendElapsed += math.max(0f, deltaTime);
+            float t = math.saturate(_biomeCurrentBlendElapsed / BiomeFlowBlendSeconds);
             float smooth = t * t * (3f - 2f * t);
-            _biomeCurrentVector = Vector3.LerpUnclamped(_biomeCurrentStartVector, _biomeCurrentTargetVector, smooth);
+            float3 biomeCurrent = math.lerp(
+                new float3(_biomeCurrentStartVector.x, _biomeCurrentStartVector.y, _biomeCurrentStartVector.z),
+                new float3(_biomeCurrentTargetVector.x, _biomeCurrentTargetVector.y, _biomeCurrentTargetVector.z),
+                smooth);
+            _biomeCurrentVector = new Vector3(biomeCurrent.x, biomeCurrent.y, biomeCurrent.z);
             if (t >= 1f)
             {
                 _biomeCurrentVector = _biomeCurrentTargetVector;
@@ -336,7 +346,7 @@ namespace Hecton8.Physics
         {
             Vector3 target = Vector3.zero;
             if (profile != null && profile.hasAmbientFlowOverride)
-                target = profile.ambientFlowOverride * Mathf.Clamp01(profile.ambientFlowOverrideWeight);
+                target = profile.ambientFlowOverride * math.saturate(profile.ambientFlowOverrideWeight);
 
             _debugBiomeCurrentBiomeId = profile != null ? profile.matrixIndex : -1;
             if ((target - _biomeCurrentTargetVector).sqrMagnitude <= 0.000001f)
@@ -410,8 +420,15 @@ namespace Hecton8.Physics
 
         private void TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+            if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            AmbientWaterMotionManager registered = GlobalRegistry.AmbientWaterMotion;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterAmbientWaterMotionRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AmbientWaterMotion, this);

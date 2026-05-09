@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -26,20 +28,26 @@ namespace Hecton8.Gameplay
         private static readonly List<GameObject> _sceneRootScratch = new List<GameObject>(512);
         // COLD ALLOC: GameObject[4] - original tool loadout snapshot reused by smoke-suite restore path - owner: ToolTrialRangeRuntimeSmokeTester
         private readonly GameObject[] _originalAssignments = new GameObject[4];
+        private FixedCharBuffer _summaryProbeBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - tool summary smoke assertion probe - owner: ToolTrialRangeRuntimeSmokeTester
+        private FixedCharBuffer _directiveProbeBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - tool directive smoke assertion probe - owner: ToolTrialRangeRuntimeSmokeTester
 
         private bool _isRunning;
 
         private void Awake()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             AutoResolve();
+#endif
         }
 
         private void Start()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!runOnStart || _isRunning)
                 return;
 
             _ = RunFullSuiteAsync(destroyCancellationToken);
+#endif
         }
 
 #if UNITY_EDITOR
@@ -57,10 +65,12 @@ namespace Hecton8.Gameplay
         [ContextMenu("Run Tool Trial Range Smoke Suite")]
         public void RunFromContextMenu()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_isRunning)
                 return;
 
             _ = RunFullSuiteAsync(destroyCancellationToken);
+#endif
         }
 
         private async Awaitable RunFullSuiteAsync(CancellationToken cancellationToken)
@@ -71,14 +81,14 @@ namespace Hecton8.Gameplay
             AutoResolve();
             if (toolManager == null || playerRoot == null)
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Missing references tools={(toolManager != null ? "Y" : "N")} player={(playerRoot != null ? "Y" : "N")}");
+                LogSmokeWarning("[TrialRangeSmoke] Missing required references.");
                 return;
             }
 
             Transform rangeRoot = FindSceneTransform("Tool_TrialRange");
             if (rangeRoot == null)
             {
-                Debug.LogWarning("[TrialRangeSmoke] Tool_TrialRange root not found.");
+                LogSmokeWarning("[TrialRangeSmoke] Tool_TrialRange root not found.");
                 return;
             }
 
@@ -94,37 +104,37 @@ namespace Hecton8.Gameplay
                 int originalSlot = toolManager.CurrentSlotIndex;
 
                 bool logisticsPass = await RunLogisticsPassAsync(rangeRoot, cancellationToken);
-                ReportPass("logistics", logisticsPass);
+                ReportPass(logisticsPass);
                 bool reconPass = await RunReconPassAsync(rangeRoot, cancellationToken);
-                ReportPass("recon", reconPass);
+                ReportPass(reconPass);
                 bool recoveryPass = await RunRecoveryPassAsync(rangeRoot, cancellationToken);
-                ReportPass("recovery", recoveryPass);
+                ReportPass(recoveryPass);
                 bool servicePass = await RunServicePassAsync(rangeRoot, cancellationToken);
-                ReportPass("service", servicePass);
+                ReportPass(servicePass);
                 bool powerPass = await RunPowerPassAsync(rangeRoot, cancellationToken);
-                ReportPass("power", powerPass);
+                ReportPass(powerPass);
                 bool combatPass = await RunCombatPassAsync(rangeRoot, cancellationToken);
-                ReportPass("combat", combatPass);
+                ReportPass(combatPass);
                 bool constructionPass = await RunConstructionPassAsync(rangeRoot, cancellationToken);
-                ReportPass("construction", constructionPass);
+                ReportPass(constructionPass);
                 bool endgamePass = await RunEndgameFlowPassAsync(rangeRoot, cancellationToken);
-                ReportPass("endgame", endgamePass);
+                ReportPass(endgamePass);
 
                 await RestoreLoadoutAsync(_originalAssignments, originalSlot, cancellationToken);
                 playerRoot.SetPositionAndRotation(originalPosition, originalRotation);
 
                 if (logisticsPass && reconPass && recoveryPass && servicePass && powerPass && combatPass && constructionPass && endgamePass)
-                    Debug.Log("[TrialRangeSmoke] PASS logistics=True recon=True recovery=True service=True power=True combat=True construction=True endgame=True");
+                    LogSmoke("[TrialRangeSmoke] PASS logistics=True recon=True recovery=True service=True power=True combat=True construction=True endgame=True");
                 else
-                    Debug.LogWarning($"[TrialRangeSmoke] FAIL logistics={logisticsPass} recon={reconPass} recovery={recoveryPass} service={servicePass} power={powerPass} combat={combatPass} construction={constructionPass} endgame={endgamePass}");
+                    LogSmokeWarning("[TrialRangeSmoke] FAIL one or more lanes failed.");
             }
             catch (OperationCanceledException)
             {
                 LogVerbose("Cancelled.");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Debug.LogError($"[TrialRangeSmoke] UNHANDLED EXCEPTION: {ex}");
+                LogSmokeError("[TrialRangeSmoke] UNHANDLED EXCEPTION.");
             }
             finally
             {
@@ -140,7 +150,7 @@ namespace Hecton8.Gameplay
             Transform routeRelay = FindRelative(rangeRoot, "Lane_BeaconRoute/Route_Relay");
             if (cargoWork == null || cargoHeavy == null || routeAnchor == null || routeRelay == null)
             {
-                Debug.LogWarning("[TrialRangeSmoke] Logistics lane is missing key authored targets.");
+                LogSmokeWarning("[TrialRangeSmoke] Logistics lane is missing key authored targets.");
                 return false;
             }
 
@@ -153,9 +163,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(cargoWork, 4.5f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAll(propulsion.GetOperationalSummary(), "WORK", "CARGO"))
+            if (!ToolSummaryContainsAll(propulsion, "WORK", "CARGO"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Propulsion summary did not resolve work cargo. Summary={propulsion.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Propulsion summary did not resolve work cargo.");
                 return false;
             }
 
@@ -168,9 +178,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(cargoHeavy, 6f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(harpoon.GetOperationalSummary(), "HEAVY", "CARGO"))
+            if (!ToolSummaryContainsAny(harpoon, "HEAVY", "CARGO"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Harpoon summary did not resolve heavy cargo. Summary={harpoon.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Harpoon summary did not resolve heavy cargo.");
                 return false;
             }
 
@@ -184,17 +194,17 @@ namespace Hecton8.Gameplay
             PositionPlayerForTarget(routeAnchor, 2.5f);
             beaconTool.UsePrimary(0f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (beaconNetwork == null || beaconNetwork.ActiveCount <= 0 || !ContainsAny(beaconTool.GetOperationalSummary(), "ANCHOR", "BEACON"))
+            if (beaconNetwork == null || beaconNetwork.ActiveCount <= 0 || !ToolSummaryContainsAny(beaconTool, "ANCHOR", "BEACON"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Beacon tool did not establish anchor semantics. Summary={beaconTool.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Beacon tool did not establish anchor semantics.");
                 return false;
             }
 
             PositionPlayerForTarget(routeRelay, 2.5f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(beaconTool.GetOperationalDirective(), "relay", "route", "readable"))
+            if (!ToolDirectiveContainsAny(beaconTool, "relay", "route", "readable"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Beacon directive did not resolve relay guidance. Directive={beaconTool.GetOperationalDirective()}");
+                LogSmokeWarning("[TrialRangeSmoke] Beacon directive did not resolve relay guidance.");
                 return false;
             }
 
@@ -210,7 +220,7 @@ namespace Hecton8.Gameplay
             Transform resourceProbe = FindRelative(rangeRoot, "Lane_ScanCorridor/Scan_Poi_ResourceCache");
             if (darkHazard == null || darkPickup == null || expeditionProbe == null || resourceProbe == null)
             {
-                Debug.LogWarning("[TrialRangeSmoke] Recon lane is missing key authored targets.");
+                LogSmokeWarning("[TrialRangeSmoke] Recon lane is missing key authored targets.");
                 return false;
             }
 
@@ -223,17 +233,17 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(darkHazard, 10f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(flashlight.GetOperationalDirective(), "FOCUS", "frontier", "route"))
+            if (!ToolDirectiveContainsAny(flashlight, "FOCUS", "frontier", "route"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Flashlight directive did not resolve hazard/frontier guidance. Directive={flashlight.GetOperationalDirective()}");
+                LogSmokeWarning("[TrialRangeSmoke] Flashlight directive did not resolve hazard/frontier guidance.");
                 return false;
             }
 
             PositionPlayerForTarget(darkPickup, 3.5f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(flashlight.GetOperationalDirective(), "FLOOD", "pickup", "salvage"))
+            if (!ToolDirectiveContainsAny(flashlight, "FLOOD", "pickup", "salvage"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Flashlight directive did not resolve close salvage guidance. Directive={flashlight.GetOperationalDirective()}");
+                LogSmokeWarning("[TrialRangeSmoke] Flashlight directive did not resolve close salvage guidance.");
                 return false;
             }
 
@@ -246,9 +256,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(resourceProbe, 4.5f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(analyzer.GetOperationalSummary(), "RESOURCE", "CACHE"))
+            if (!ToolSummaryContainsAny(analyzer, "RESOURCE", "CACHE"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Analyzer summary did not resolve resource semantics. Summary={analyzer.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Analyzer summary did not resolve resource semantics.");
                 return false;
             }
 
@@ -262,9 +272,9 @@ namespace Hecton8.Gameplay
             PositionPlayerForTarget(expeditionProbe, 5f);
             scanner.UsePrimary(0f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(scanner.GetOperationalDirective(), "checkpoint", "contact", "deeper", "cargo"))
+            if (!ToolDirectiveContainsAny(scanner, "checkpoint", "contact", "deeper", "cargo"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Scanner directive did not resolve authored sweep semantics. Directive={scanner.GetOperationalDirective()}");
+                LogSmokeWarning("[TrialRangeSmoke] Scanner directive did not resolve authored sweep semantics.");
                 return false;
             }
 
@@ -280,7 +290,7 @@ namespace Hecton8.Gameplay
             Transform down = FindRelative(rangeRoot, "Lane_CombatContacts/Combat_Down");
             if (dormant == null || aggressive == null || fractured == null || down == null)
             {
-                Debug.LogWarning("[TrialRangeSmoke] Combat lane is missing key authored targets.");
+                LogSmokeWarning("[TrialRangeSmoke] Combat lane is missing key authored targets.");
                 return false;
             }
 
@@ -290,9 +300,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(aggressive, 4.5f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(analyzer.GetOperationalSummary(), "AGGRESSIVE", "BIOFORM"))
+            if (!ToolSummaryContainsAny(analyzer, "AGGRESSIVE", "BIOFORM"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Analyzer combat summary mismatch. Summary={analyzer.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Analyzer combat summary mismatch.");
                 return false;
             }
 
@@ -302,9 +312,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(dormant, 5f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(stun.GetOperationalDirective(), "wake", "quiet", "shot"))
+            if (!ToolDirectiveContainsAny(stun, "wake", "quiet", "shot"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Stun directive mismatch on dormant target. Directive={stun.GetOperationalDirective()}");
+                LogSmokeWarning("[TrialRangeSmoke] Stun directive mismatch on dormant target.");
                 return false;
             }
 
@@ -314,9 +324,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(fractured, 2.8f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(knife.GetOperationalDirective(), "precision", "finish", "window"))
+            if (!ToolDirectiveContainsAny(knife, "precision", "finish", "window"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Knife directive mismatch on fractured target. Directive={knife.GetOperationalDirective()}");
+                LogSmokeWarning("[TrialRangeSmoke] Knife directive mismatch on fractured target.");
                 return false;
             }
 
@@ -326,9 +336,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(aggressive, 5.5f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(harpoon.GetOperationalDirective(), "control", "spacing", "disengage"))
+            if (!ToolDirectiveContainsAny(harpoon, "control", "spacing", "disengage"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Harpoon directive mismatch on aggressive target. Directive={harpoon.GetOperationalDirective()}");
+                LogSmokeWarning("[TrialRangeSmoke] Harpoon directive mismatch on aggressive target.");
                 return false;
             }
 
@@ -343,7 +353,7 @@ namespace Hecton8.Gameplay
             Transform depletedNode = FindRelative(rangeRoot, "Lane_Salvage/Trial_Node_Depleted");
             if (salvagePickup == null || activeNode == null || depletedNode == null)
             {
-                Debug.LogWarning("[TrialRangeSmoke] Recovery lane is missing key authored targets.");
+                LogSmokeWarning("[TrialRangeSmoke] Recovery lane is missing key authored targets.");
                 return false;
             }
 
@@ -353,17 +363,17 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(salvagePickup, 2.8f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(sampler.GetOperationalSummary(), "RECOVERY READY", "PACKAGE", "RECOVERY"))
+            if (!ToolSummaryContainsAny(sampler, "RECOVERY READY", "PACKAGE", "RECOVERY"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Sampler summary did not resolve salvage pickup. Summary={sampler.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Sampler summary did not resolve salvage pickup.");
                 return false;
             }
 
             PositionPlayerForTarget(depletedNode, 3.4f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(sampler.GetOperationalSummary(), "DEPLETED", "NODE"))
+            if (!ToolSummaryContainsAny(sampler, "DEPLETED", "NODE"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Sampler summary did not resolve depleted node. Summary={sampler.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Sampler summary did not resolve depleted node.");
                 return false;
             }
 
@@ -373,9 +383,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(activeNode, 3.6f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(cutter.GetOperationalSummary(), "RESOURCE", "CONTACT", "NODE"))
+            if (!ToolSummaryContainsAny(cutter, "RESOURCE", "CONTACT", "NODE"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Cutter summary did not resolve active node. Summary={cutter.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Cutter summary did not resolve active node.");
                 return false;
             }
 
@@ -385,9 +395,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(depletedNode, 2.8f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(knife.GetOperationalSummary(), "NODE", "DEPLETED"))
+            if (!ToolSummaryContainsAny(knife, "NODE", "DEPLETED"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Knife summary did not resolve depleted node. Summary={knife.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Knife summary did not resolve depleted node.");
                 return false;
             }
 
@@ -402,7 +412,7 @@ namespace Hecton8.Gameplay
             Transform control = FindRelative(rangeRoot, "Lane_ServiceModules/Trial_Module_Foundation_Control");
             if (damaged == null || flooded == null || control == null)
             {
-                Debug.LogWarning("[TrialRangeSmoke] Service lane is missing key authored targets.");
+                LogSmokeWarning("[TrialRangeSmoke] Service lane is missing key authored targets.");
                 return false;
             }
 
@@ -412,17 +422,17 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(damaged, 4.5f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(repair.GetOperationalSummary(), "SERVICE", "RESPONSE", "IMMEDIATE", "CRITICAL", "ACTIVE"))
+            if (!ToolSummaryContainsAny(repair, "SERVICE", "RESPONSE", "IMMEDIATE", "CRITICAL", "ACTIVE"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Repair summary did not resolve damaged module. Summary={repair.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Repair summary did not resolve damaged module.");
                 return false;
             }
 
             PositionPlayerForTarget(flooded, 4.8f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(repair.GetOperationalDirective(), "drain", "wait", "service", "power"))
+            if (!ToolDirectiveContainsAny(repair, "drain", "wait", "service", "power"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Repair directive did not resolve flooded module guidance. Directive={repair.GetOperationalDirective()}");
+                LogSmokeWarning("[TrialRangeSmoke] Repair directive did not resolve flooded module guidance.");
                 return false;
             }
 
@@ -432,9 +442,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(control, 4.8f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(cutter.GetOperationalSummary(), "MODULE", "LOCKED", "RECOVERY", "CONTACT"))
+            if (!ToolSummaryContainsAny(cutter, "MODULE", "LOCKED", "RECOVERY", "CONTACT"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Cutter summary did not resolve service module. Summary={cutter.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Cutter summary did not resolve service module.");
                 return false;
             }
 
@@ -444,9 +454,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(flooded, 4.8f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(analyzer.GetOperationalSummary(), "FLOODED", "SERVICE", "MODULE"))
+            if (!ToolSummaryContainsAny(analyzer, "FLOODED", "SERVICE", "MODULE"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Analyzer summary did not resolve flooded service semantics. Summary={analyzer.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Analyzer summary did not resolve flooded service semantics.");
                 return false;
             }
 
@@ -462,7 +472,7 @@ namespace Hecton8.Gameplay
             Transform route = FindRelative(rangeRoot, "Lane_PowerOps/Power_ServiceRoute");
             if (turbine == null || relay == null || pump == null || route == null)
             {
-                Debug.LogWarning("[TrialRangeSmoke] Power lane is missing key authored targets.");
+                LogSmokeWarning("[TrialRangeSmoke] Power lane is missing key authored targets.");
                 return false;
             }
 
@@ -485,9 +495,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(turbine, 4.8f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(analyzer.GetOperationalSummary(), "POWER", "GENERATION", "CURRENT"))
+            if (!ToolSummaryContainsAny(analyzer, "POWER", "GENERATION", "CURRENT"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Analyzer summary did not resolve power generation semantics. Summary={analyzer.GetOperationalSummary()}");
+                LogSmokeWarning("[TrialRangeSmoke] Analyzer summary did not resolve power generation semantics.");
                 return false;
             }
 
@@ -497,9 +507,9 @@ namespace Hecton8.Gameplay
 
             PositionPlayerForTarget(route, 8f);
             await DelayRealtimeAsync(settleDelay, cancellationToken);
-            if (!ContainsAny(flashlight.GetOperationalDirective(), "FOCUS", "service", "power", "generator"))
+            if (!ToolDirectiveContainsAny(flashlight, "FOCUS", "service", "power", "generator"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Flashlight directive did not resolve power/service guidance. Directive={flashlight.GetOperationalDirective()}");
+                LogSmokeWarning("[TrialRangeSmoke] Flashlight directive did not resolve power/service guidance.");
                 return false;
             }
 
@@ -514,7 +524,7 @@ namespace Hecton8.Gameplay
             Transform socketGuide = FindRelative(rangeRoot, "Lane_ConstructionOps/Construct_SocketGuide");
             if (clearLane == null || blockedLane == null || socketGuide == null)
             {
-                Debug.LogWarning("[TrialRangeSmoke] Construction lane is missing key authored targets.");
+                LogSmokeWarning("[TrialRangeSmoke] Construction lane is missing key authored targets.");
                 return false;
             }
 
@@ -537,17 +547,15 @@ namespace Hecton8.Gameplay
 
             await DelayRealtimeAsync(settleDelay, cancellationToken);
 
-            string summary = builder.GetOperationalSummary();
-            string directive = builder.GetOperationalDirective();
-            if (!ContainsAny(summary, "READY", "BLOCKED", "MISSING", "MODULE", "SNAPPED", "NO MODULE"))
+            if (!ToolSummaryContainsAny(builder, "READY", "BLOCKED", "MISSING", "MODULE", "SNAPPED", "NO MODULE"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Builder summary did not resolve an operational state. Summary={summary}");
+                LogSmokeWarning("[TrialRangeSmoke] Builder summary did not resolve an operational state.");
                 return false;
             }
 
-            if (!ContainsAny(directive, "build", "place", "module", "resources", "snap", "deployment"))
+            if (!ToolDirectiveContainsAny(builder, "build", "place", "module", "resources", "snap", "deployment"))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Builder directive did not resolve field guidance. Directive={directive}");
+                LogSmokeWarning("[TrialRangeSmoke] Builder directive did not resolve field guidance.");
                 return false;
             }
 
@@ -565,7 +573,7 @@ namespace Hecton8.Gameplay
             Transform frontier = FindRelative(rangeRoot, "Lane_EndgameOps/Ops_Frontier");
             if (cargo == null || salvage == null || service == null || hazard == null || combat == null || frontier == null)
             {
-                Debug.LogWarning("[TrialRangeSmoke] Endgame lane is missing key authored targets.");
+                LogSmokeWarning("[TrialRangeSmoke] Endgame lane is missing key authored targets.");
                 return false;
             }
 
@@ -606,27 +614,21 @@ namespace Hecton8.Gameplay
             GameObject prefab = toolManager.GetKnownToolPrefabForToolType<TTool>();
             if (prefab == null)
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Missing prefab registration for {typeof(TTool).Name}.");
+                LogSmokeWarning("[TrialRangeSmoke] Missing prefab registration for requested tool.");
                 return false;
             }
 
             if (!IsToolManagerHolstered())
             {
                 toolManager.Holster();
-                await WaitUntilAsync(
-                    () => IsToolManagerHolstered(),
-                    equipTimeout,
-                    $"Holster before {typeof(TTool).Name}",
-                    cancellationToken);
+                if (!await WaitUntilHolsteredAsync(cancellationToken))
+                    return false;
             }
 
             toolManager.SetAssignedToolPrefab(slotIndex, prefab, holsterIfCurrentInvalid: false);
             toolManager.SwitchToSlot(slotIndex);
-            await WaitUntilAsync(
-                () => !toolManager.IsSwapping && toolManager.CurrentTool is TTool,
-                equipTimeout,
-                $"Equip {typeof(TTool).Name}",
-                cancellationToken);
+            if (!await WaitUntilEquippedAsync<TTool>(cancellationToken))
+                return false;
 
             return toolManager != null && !toolManager.IsSwapping && toolManager.CurrentTool is TTool;
         }
@@ -640,11 +642,7 @@ namespace Hecton8.Gameplay
                 return;
 
             toolManager.Holster();
-            await WaitUntilAsync(
-                () => IsToolManagerHolstered(),
-                equipTimeout,
-                "Holster restore",
-                cancellationToken);
+            await WaitUntilHolsteredAsync(cancellationToken);
 
             if (originalAssignments != null)
             {
@@ -667,14 +665,27 @@ namespace Hecton8.Gameplay
 
         private void PositionPlayerForTarget(Transform target, float distance)
         {
-            Vector3 toTarget = target.position - playerRoot.position;
+            Vector3 targetPosition = target.position;
+            Vector3 playerPosition = playerRoot.position;
+            Vector3 toTarget = targetPosition - playerPosition;
             Vector3 flatForward = new Vector3(toTarget.x, 0f, toTarget.z);
-            if (flatForward.sqrMagnitude < 0.001f)
+            float flatForwardSq = flatForward.sqrMagnitude;
+            if (flatForwardSq < 0.001f)
+            {
                 flatForward = playerRoot.forward;
+                flatForward.y = 0f;
+                flatForwardSq = flatForward.sqrMagnitude;
+                if (flatForwardSq < 0.001f)
+                {
+                    flatForward = Vector3.forward;
+                    flatForwardSq = 1f;
+                }
+            }
 
-            Vector3 position = target.position - flatForward.normalized * distance;
-            position.y = playerRoot.position.y;
-            playerRoot.SetPositionAndRotation(position, Quaternion.LookRotation(flatForward.normalized, Vector3.up));
+            Vector3 normalizedForward = flatForward * math.rsqrt(flatForwardSq);
+            Vector3 position = targetPosition - normalizedForward * distance;
+            position.y = playerPosition.y;
+            playerRoot.SetPositionAndRotation(position, Quaternion.LookRotation(normalizedForward, Vector3.up));
         }
 
         private bool VerifyRecommendedPreset(Transform target, float distance, string expectedPreset)
@@ -683,52 +694,145 @@ namespace Hecton8.Gameplay
 
             if (!FieldLoadoutAdvisor.TryBuildForwardAdvice(playerRoot, 18f, Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask, out FieldLoadoutAdvisor.LoadoutAdvice advice))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Loadout advice did not resolve for {target.name}.");
+                LogSmokeWarning("[TrialRangeSmoke] Loadout advice did not resolve.");
                 return false;
             }
 
             if (!string.Equals(advice.PresetName, expectedPreset, System.StringComparison.OrdinalIgnoreCase))
             {
-                Debug.LogWarning($"[TrialRangeSmoke] Loadout advice mismatch on {target.name}. Expected={expectedPreset} Actual={advice.PresetName} Summary={advice.Summary}");
+                LogSmokeWarning("[TrialRangeSmoke] Loadout advice mismatch.");
                 return false;
             }
 
             return true;
         }
 
-        private static bool ContainsAny(string source, params string[] needles)
+        private bool ToolSummaryContainsAny(
+            PlayerTool tool,
+            string needle0,
+            string needle1 = null,
+            string needle2 = null,
+            string needle3 = null,
+            string needle4 = null,
+            string needle5 = null)
         {
-            if (string.IsNullOrWhiteSpace(source))
+            if (tool == null)
                 return false;
 
-            string lowered = source.ToLowerInvariant();
-            for (int i = 0; i < needles.Length; i++)
+            _summaryProbeBuffer.Clear();
+            tool.WriteOperationalSummary(ref _summaryProbeBuffer);
+            return ContainsAny(_summaryProbeBuffer.AsSpan(), needle0, needle1, needle2, needle3, needle4, needle5);
+        }
+
+        private bool ToolSummaryContainsAll(
+            PlayerTool tool,
+            string needle0,
+            string needle1 = null,
+            string needle2 = null,
+            string needle3 = null,
+            string needle4 = null,
+            string needle5 = null)
+        {
+            if (tool == null)
+                return false;
+
+            _summaryProbeBuffer.Clear();
+            tool.WriteOperationalSummary(ref _summaryProbeBuffer);
+            return ContainsAll(_summaryProbeBuffer.AsSpan(), needle0, needle1, needle2, needle3, needle4, needle5);
+        }
+
+        private bool ToolDirectiveContainsAny(
+            PlayerTool tool,
+            string needle0,
+            string needle1 = null,
+            string needle2 = null,
+            string needle3 = null,
+            string needle4 = null,
+            string needle5 = null)
+        {
+            if (tool == null)
+                return false;
+
+            _directiveProbeBuffer.Clear();
+            tool.WriteOperationalDirective(ref _directiveProbeBuffer);
+            return ContainsAny(_directiveProbeBuffer.AsSpan(), needle0, needle1, needle2, needle3, needle4, needle5);
+        }
+
+        private static bool ContainsAny(
+            ReadOnlySpan<char> source,
+            string needle0,
+            string needle1 = null,
+            string needle2 = null,
+            string needle3 = null,
+            string needle4 = null,
+            string needle5 = null)
+        {
+            if (source.IsEmpty)
+                return false;
+
+            return ContainsIgnoreCase(source, needle0) ||
+                   ContainsIgnoreCase(source, needle1) ||
+                   ContainsIgnoreCase(source, needle2) ||
+                   ContainsIgnoreCase(source, needle3) ||
+                   ContainsIgnoreCase(source, needle4) ||
+                   ContainsIgnoreCase(source, needle5);
+        }
+
+        private static bool ContainsAll(
+            ReadOnlySpan<char> source,
+            string needle0,
+            string needle1 = null,
+            string needle2 = null,
+            string needle3 = null,
+            string needle4 = null,
+            string needle5 = null)
+        {
+            if (source.IsEmpty)
+                return false;
+
+            return ContainsIgnoreCase(source, needle0) &&
+                   ContainsOptionalIgnoreCase(source, needle1) &&
+                   ContainsOptionalIgnoreCase(source, needle2) &&
+                   ContainsOptionalIgnoreCase(source, needle3) &&
+                   ContainsOptionalIgnoreCase(source, needle4) &&
+                   ContainsOptionalIgnoreCase(source, needle5);
+        }
+
+        private static bool ContainsOptionalIgnoreCase(ReadOnlySpan<char> source, string needle)
+        {
+            return string.IsNullOrEmpty(needle) || ContainsIgnoreCase(source, needle);
+        }
+
+        private static bool ContainsIgnoreCase(ReadOnlySpan<char> source, string needle)
+        {
+            if (source.IsEmpty || string.IsNullOrEmpty(needle) || needle.Length > source.Length)
+                return false;
+
+            ReadOnlySpan<char> needleSpan = needle.AsSpan();
+            int maxStartIndex = source.Length - needleSpan.Length;
+            for (int startIndex = 0; startIndex <= maxStartIndex; startIndex++)
             {
-                if (lowered.Contains(needles[i].ToLowerInvariant()))
+                bool matched = true;
+                for (int needleIndex = 0; needleIndex < needleSpan.Length; needleIndex++)
+                {
+                    if (char.ToUpperInvariant(source[startIndex + needleIndex]) ==
+                        char.ToUpperInvariant(needleSpan[needleIndex]))
+                        continue;
+
+                    matched = false;
+                    break;
+                }
+
+                if (matched)
                     return true;
             }
 
             return false;
         }
 
-        private static bool ContainsAll(string source, params string[] needles)
-        {
-            if (string.IsNullOrWhiteSpace(source))
-                return false;
-
-            string lowered = source.ToLowerInvariant();
-            for (int i = 0; i < needles.Length; i++)
-            {
-                if (!lowered.Contains(needles[i].ToLowerInvariant()))
-                    return false;
-            }
-
-            return true;
-        }
-
         private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
         {
-            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            float deadline = Time.realtimeSinceStartup + math.max(0f, seconds);
             while (Time.realtimeSinceStartup < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -736,34 +840,35 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private static async Awaitable<bool> WaitUntilAsync(
-            Func<bool> predicate,
-            float timeout,
-            string label,
-            CancellationToken cancellationToken)
+        private async Awaitable<bool> WaitUntilHolsteredAsync(CancellationToken cancellationToken)
         {
-            float deadline = Time.realtimeSinceStartup + Mathf.Max(0.05f, timeout);
+            float deadline = Time.realtimeSinceStartup + math.max(0.05f, equipTimeout);
             while (Time.realtimeSinceStartup < deadline)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                bool success = false;
-                try
-                {
-                    success = predicate();
-                }
-                catch (Exception ex)
-                {
-                    Debug.LogError($"[TrialRangeSmoke] EXCEPTION {label}: {ex}");
-                    return false;
-                }
-
-                if (success)
+                if (IsToolManagerHolstered())
                     return true;
 
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
             }
 
-            Debug.LogWarning($"[TrialRangeSmoke] TIMEOUT {label} after {timeout:0.00}s");
+            LogSmokeWarning("[TrialRangeSmoke] TIMEOUT waiting for holster.");
+            return false;
+        }
+
+        private async Awaitable<bool> WaitUntilEquippedAsync<TTool>(CancellationToken cancellationToken) where TTool : PlayerTool
+        {
+            float deadline = Time.realtimeSinceStartup + math.max(0.05f, equipTimeout);
+            while (Time.realtimeSinceStartup < deadline)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (toolManager != null && !toolManager.IsSwapping && toolManager.CurrentTool is TTool)
+                    return true;
+
+                await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
+            }
+
+            LogSmokeWarning("[TrialRangeSmoke] TIMEOUT waiting for requested tool equip.");
             return false;
         }
 
@@ -800,15 +905,36 @@ namespace Hecton8.Gameplay
         private void LogVerbose(string message)
         {
             if (verboseLogging)
-                Debug.Log($"[TrialRangeSmoke] {message}");
+                LogSmoke(message);
         }
 
-        private static void ReportPass(string label, bool result)
+        private static void ReportPass(bool result)
         {
             if (result)
-                Debug.Log($"[TrialRangeSmoke] PASS {label}=True");
+                LogSmoke("[TrialRangeSmoke] PASS lane=True");
             else
-                Debug.LogWarning($"[TrialRangeSmoke] FAIL {label}=False");
+                LogSmokeWarning("[TrialRangeSmoke] FAIL lane=False");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSmoke(string message)
+        {
+            Debug.Log(message);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSmokeWarning(string message)
+        {
+            Debug.LogWarning(message);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSmokeError(string message)
+        {
+            Debug.LogError(message);
         }
 
         private static T FindSceneObjectIncludingInactive<T>() where T : Component

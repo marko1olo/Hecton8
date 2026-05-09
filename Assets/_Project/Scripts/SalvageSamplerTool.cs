@@ -1,20 +1,24 @@
+using System;
 using UnityEngine;
 using Hecton8.Core;
 using Hecton8.Items;
 using Hecton.Localization;
+using Unity.Mathematics;
 
 namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     public sealed class SalvageSamplerTool : PlayerTool
     {
-        private const int RecoveredItemMessageCacheSize = 16;
         private const string SamplerCategory = "SALVAGE";
         private const string SamplerNoTargetHeadline = "NO TARGET";
         private const string SamplerRecoveryReadyHeadline = "RECOVERY READY";
         private const string SamplerNodeDepletedHeadline = "NODE DEPLETED";
         private const string SamplerProcessTargetHeadline = "PROCESS TARGET";
         private const string SamplerInvalidTargetHeadline = "INVALID TARGET";
+        private const byte TemplateStringArg0 = 1 << 0;
+        private const byte TemplateIntArg1 = 1 << 1;
+        private const byte TemplateFloatArg0 = 1 << 2;
 
         private struct SamplerDiagnosis
         {
@@ -23,9 +27,14 @@ namespace Hecton8.Gameplay
             public string severity;
         }
 
-        private static readonly string[] _recoveredItemNameCache = new string[RecoveredItemMessageCacheSize];
-        private static readonly string[] _recoveredItemMessageCache = new string[RecoveredItemMessageCacheSize];
-
+        private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - sampler HUD staging buffer - owner: SalvageSamplerTool
+        private static FixedCharBuffer s_logTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - sampler operation log title staging buffer - owner: SalvageSamplerTool
+        private static FixedCharBuffer s_logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - sampler operation log summary staging buffer - owner: SalvageSamplerTool
+        private static FixedCharBuffer s_archiveIdBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - sampler scan archive id staging buffer - owner: SalvageSamplerTool
+        private static FixedCharBuffer s_archiveTitleBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] - sampler scan archive title staging buffer - owner: SalvageSamplerTool
+        private static FixedCharBuffer s_archiveSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - sampler scan archive summary staging buffer - owner: SalvageSamplerTool
+        private static FixedCharBuffer s_diagnosisTextBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - sampler diagnosis dynamic text staging buffer - owner: SalvageSamplerTool
+        private static FixedCharBuffer s_legacySummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - sampler legacy summary/directive bridge staging buffer - owner: SalvageSamplerTool
         [Header("Sampling")]
         [SerializeField] private float samplingRange = 3.2f;
         [SerializeField] private float sampleDamage = 18f;
@@ -66,23 +75,23 @@ namespace Hecton8.Gameplay
 
                 if (!applied && Time.time >= _nextFeedbackAt)
                 {
-                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_VIABLE_TARGET, "SAMPLER - NO VIABLE TARGET"));
+                    PublishWarningMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_VIABLE_TARGET, "SAMPLER - NO VIABLE TARGET"));
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 else if (applied && Time.time >= _nextFeedbackAt)
                 {
-                    ToolHitUtility.ShowInfo(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_EXTRACTION_IN_PROGRESS, "SAMPLER - EXTRACTION IN PROGRESS"));
+                    PublishInfoMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_EXTRACTION_IN_PROGRESS, "SAMPLER - EXTRACTION IN PROGRESS"));
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
             else if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_TARGET_LOCK, "SAMPLER - NO TARGET LOCK"));
+                PublishWarningMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_TARGET_LOCK, "SAMPLER - NO TARGET LOCK"));
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
             InvalidateDiagnosisCache();
-            _cooldown = sampleCooldown / Mathf.Max(0.25f, GetSpeed());
+            _cooldown = sampleCooldown / math.max(0.25f, GetSpeed());
         }
 
         public override void UseSecondary(float deltaTime)
@@ -103,23 +112,35 @@ namespace Hecton8.Gameplay
                 if (collected)
                 {
                     ArchiveRecoveredItem(recoveredItem);
+                    s_logSummaryBuffer.Clear();
+                    if (recoveredItem != null)
+                    {
+                        TryAppendSingleStringTemplate(
+                            ref s_logSummaryBuffer,
+                            ResolveLocalized(
+                                LocalizationKeys.SAMPLER_LOG_PACKAGE_RECOVERED_MESSAGE,
+                                "Sampler retrieved {0} from a recoverable field target."),
+                            recoveredItem.itemName,
+                            false);
+                    }
+                    else
+                    {
+                        AppendText(
+                            ref s_logSummaryBuffer,
+                            ResolveLocalized(
+                                LocalizationKeys.SAMPLER_LOG_PACKAGE_RECOVERED_UNKNOWN_MESSAGE,
+                                "Sampler retrieved an unidentified salvage package."));
+                    }
+
                     FieldOperationLogSystem.RecordOperation(
                         ResolveLocalized(LocalizationKeys.SAMPLER_CATEGORY, SamplerCategory),
                         ResolveLocalized(LocalizationKeys.SAMPLER_LOG_PACKAGE_RECOVERED_TITLE, "SALVAGE PACKAGE RECOVERED"),
-                        recoveredItem != null
-                            ? string.Format(
-                                ResolveLocalized(
-                                    LocalizationKeys.SAMPLER_LOG_PACKAGE_RECOVERED_MESSAGE,
-                                    "Sampler retrieved {0} from a recoverable field target."),
-                                recoveredItem.itemName)
-                            : ResolveLocalized(
-                                LocalizationKeys.SAMPLER_LOG_PACKAGE_RECOVERED_UNKNOWN_MESSAGE,
-                                "Sampler retrieved an unidentified salvage package."),
+                        in s_logSummaryBuffer,
                         "INFO");
-                    ToolHitUtility.ShowInfo(
-                        recoveredItem != null
-                            ? GetRecoveredItemMessage(recoveredItem.itemName)
-                            : ResolveLocalized(LocalizationKeys.SAMPLER_HUD_SALVAGE_RECOVERED, "SAMPLER - SALVAGE RECOVERED"));
+                    if (recoveredItem != null)
+                        PublishRecoveredItemMessage(recoveredItem.itemName);
+                    else
+                        PublishInfoMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_SALVAGE_RECOVERED, "SAMPLER - SALVAGE RECOVERED"));
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 else
@@ -135,18 +156,18 @@ namespace Hecton8.Gameplay
             }
             else if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_SALVAGE_LOCK, "SAMPLER - NO SALVAGE LOCK"));
+                PublishWarningMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_NO_SALVAGE_LOCK, "SAMPLER - NO SALVAGE LOCK"));
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
 
             InvalidateDiagnosisCache();
-            _cooldown = sampleCooldown / Mathf.Max(0.25f, GetSpeed());
+            _cooldown = sampleCooldown / math.max(0.25f, GetSpeed());
         }
 
         public override void ToolTick(float deltaTime)
         {
             if (_cooldown > 0f)
-                _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
+                _cooldown = math.max(0f, _cooldown - deltaTime);
 
             IInputService inputService = GlobalRegistry.Input;
             PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
@@ -158,32 +179,61 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
+            s_legacySummaryBuffer.Clear();
+            WriteOperationalSummary(ref s_legacySummaryBuffer);
+            return CreateLegacyString(in s_legacySummaryBuffer);
+        }
+
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
             if (_cooldown > 0f)
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.SAMPLER_OPERATIONAL_CYCLING, "SAMPLER // CYCLING {0:0.0}S"),
-                    _cooldown);
+            {
+                AppendText(ref buffer, "SAMPLER // CYCLING ");
+                buffer.AppendFloat(_cooldown, 1);
+                AppendText(ref buffer, "S");
+                return;
+            }
 
             if (TryGetDiagnosisCached(out SamplerDiagnosis diagnosis))
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.SAMPLER_OPERATIONAL_DIAGNOSIS, "SAMPLER // {0}"),
-                    diagnosis.headline);
+            {
+                AppendText(ref buffer, "SAMPLER // ");
+                AppendText(ref buffer, diagnosis.headline);
+                return;
+            }
 
-            return ResolveLocalized(LocalizationKeys.SAMPLER_OPERATIONAL_READY, "SAMPLER // READY");
+            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.SAMPLER_OPERATIONAL_READY, "SAMPLER // READY"));
         }
 
         public override string GetOperationalDirective()
         {
+            s_legacySummaryBuffer.Clear();
+            WriteOperationalDirective(ref s_legacySummaryBuffer);
+            return CreateLegacyString(in s_legacySummaryBuffer);
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
             if (_cooldown > 0f)
-                return ResolveLocalized(
-                    LocalizationKeys.SAMPLER_OPERATIONAL_CYCLING_DIRECTIVE,
-                    "Hold position while the sampling head resets.");
+            {
+                AppendText(
+                    ref buffer,
+                    ResolveLocalized(
+                        LocalizationKeys.SAMPLER_OPERATIONAL_CYCLING_DIRECTIVE,
+                        "Hold position while the sampling head resets."));
+                return;
+            }
 
             if (TryGetDiagnosisCached(out SamplerDiagnosis diagnosis))
-                return diagnosis.summary;
+            {
+                AppendText(ref buffer, diagnosis.summary);
+                return;
+            }
 
-            return ResolveLocalized(
-                LocalizationKeys.SAMPLER_OPERATIONAL_READY_DIRECTIVE,
-                "Primary extracts. Secondary checks or recovers salvage packages.");
+            AppendText(
+                ref buffer,
+                ResolveLocalized(
+                    LocalizationKeys.SAMPLER_OPERATIONAL_READY_DIRECTIVE,
+                    "Primary extracts. Secondary checks or recovers salvage packages."));
         }
 
         private static void ArchiveRecoveredItem(ItemData item)
@@ -195,17 +245,31 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrWhiteSpace(itemId))
                 return;
 
-            string entryId = $"recovery.{itemId}".ToLowerInvariant();
-            string title = string.Format(
+            s_archiveIdBuffer.Clear();
+            AppendText(ref s_archiveIdBuffer, "recovery.");
+            AppendLowerInvariant(ref s_archiveIdBuffer, itemId);
+
+            s_archiveTitleBuffer.Clear();
+            TryAppendSingleStringTemplate(
+                ref s_archiveTitleBuffer,
                 ResolveLocalized(LocalizationKeys.SAMPLER_ARCHIVE_RECOVERY_TITLE, "{0} RECOVERY"),
-                item.itemName);
-            string category = item.category.ToString();
-            string summary = string.Format(
+                item.itemName,
+                false);
+
+            s_archiveSummaryBuffer.Clear();
+            TryAppendSingleStringTemplate(
+                ref s_archiveSummaryBuffer,
                 ResolveLocalized(
                     LocalizationKeys.SAMPLER_ARCHIVE_RECOVERY_SUMMARY,
                     "Recovered field salvage package containing {0}. Archive updated from sampler retrieval."),
-                item.itemName);
-            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(entryId, title, category, summary);
+                item.itemName,
+                false);
+
+            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
+                CreateLegacyString(in s_archiveIdBuffer),
+                CreateLegacyString(in s_archiveTitleBuffer),
+                GetCategoryLabel(item.category),
+                CreateLegacyString(in s_archiveSummaryBuffer));
         }
 
         private bool TryReadDiagnosis(out SamplerDiagnosis diagnosis)
@@ -261,17 +325,12 @@ namespace Hecton8.Gameplay
             if (ToolHitUtility.TryPeekCollectible(hitCollider, out ItemData recoverableItem, out int quantity))
             {
                 string itemLabel = recoverableItem != null
-                    ? CachedToUpperInvariant(recoverableItem.itemName)
+                    ? recoverableItem.itemName
                     : ResolveLocalized(LocalizationKeys.SAMPLER_UNKNOWN_PACKAGE, "UNKNOWN PACKAGE");
                 return new SamplerDiagnosis
                 {
                     headline = ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_RECOVERY_READY, SamplerRecoveryReadyHeadline),
-                    summary = string.Format(
-                        ResolveLocalized(
-                            LocalizationKeys.SAMPLER_SUMMARY_RECOVERY_READY,
-                            "{0} is ready for collection. Cached quantity: {1}."),
-                        itemLabel,
-                        Mathf.Max(1, quantity)),
+                    summary = CreateRecoveryReadySummary(itemLabel, math.max(1, quantity)),
                     severity = "INFO"
                 };
             }
@@ -286,9 +345,7 @@ namespace Hecton8.Gameplay
                 {
                     headline = node.IsDepleted
                         ? ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_NODE_DEPLETED, SamplerNodeDepletedHeadline)
-                        : string.Format(
-                            ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_RESOURCE_NODE, "RESOURCE NODE {0:0}%"),
-                            integrityPercent),
+                        : CreateResourceNodeHeadline(integrityPercent),
                     summary = node.IsDepleted
                         ? ResolveLocalized(
                             LocalizationKeys.SAMPLER_SUMMARY_NODE_DEPLETED,
@@ -332,10 +389,51 @@ namespace Hecton8.Gameplay
 
         private static void PublishDiagnosis(SamplerDiagnosis diagnosis)
         {
+            s_hudBuffer.Clear();
+            if (!TryWriteDiagnosisHudMessage(ref s_hudBuffer, diagnosis.headline))
+                return;
+
             if (diagnosis.severity == "WARN" || diagnosis.severity == "CRITICAL")
-                ToolHitUtility.ShowWarning(GetDiagnosisHudMessage(diagnosis.headline));
+                ToolHitUtility.ShowWarning(in s_hudBuffer);
             else
-                ToolHitUtility.ShowInfo(GetDiagnosisHudMessage(diagnosis.headline));
+                ToolHitUtility.ShowInfo(in s_hudBuffer);
+        }
+
+        private static void PublishRecoveredItemMessage(string itemName)
+        {
+            if (string.IsNullOrWhiteSpace(itemName))
+            {
+                PublishInfoMessage(ResolveLocalized(LocalizationKeys.SAMPLER_HUD_SALVAGE_RECOVERED, "SAMPLER - SALVAGE RECOVERED"));
+                return;
+            }
+
+            s_hudBuffer.Clear();
+            if (!TryAppendSingleStringTemplate(
+                    ref s_hudBuffer,
+                    ResolveLocalized(LocalizationKeys.SAMPLER_HUD_RECOVERED_ITEM, "SAMPLER - RECOVERED {0}"),
+                    itemName,
+                    true))
+            {
+                s_hudBuffer.Clear();
+                AppendText(ref s_hudBuffer, ResolveLocalized(LocalizationKeys.SAMPLER_HUD_SALVAGE_RECOVERED, "SAMPLER - SALVAGE RECOVERED"));
+            }
+
+            if (s_hudBuffer.Length > 0)
+                ToolHitUtility.ShowInfo(in s_hudBuffer);
+        }
+
+        private static void PublishInfoMessage(string message)
+        {
+            s_hudBuffer.Clear();
+            if (AppendText(ref s_hudBuffer, message))
+                ToolHitUtility.ShowInfo(in s_hudBuffer);
+        }
+
+        private static void PublishWarningMessage(string message)
+        {
+            s_hudBuffer.Clear();
+            if (AppendText(ref s_hudBuffer, message))
+                ToolHitUtility.ShowWarning(in s_hudBuffer);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -347,48 +445,27 @@ namespace Hecton8.Gameplay
             return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, samplingRange, samplingMask.value, QueryTriggerInteraction.Collide, out hit);
         }
 
-        private static readonly string[] _cachedUpperStrings = new string[16];
-
         /// <summary>
-        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
-        /// Хранит до 16 последних преобразований для повторного использования.
+        /// Writes sampler diagnosis text into a fixed HUD buffer.
+        /// Uses localized fixed-buffer append paths for dynamic fallback labels.
         /// </summary>
-        private static string GetRecoveredItemMessage(string itemName)
-        {
-            if (string.IsNullOrWhiteSpace(itemName))
-                return ResolveLocalized(LocalizationKeys.SAMPLER_HUD_SALVAGE_RECOVERED, "SAMPLER - SALVAGE RECOVERED");
-
-            int cacheIndex = (itemName.GetHashCode() & int.MaxValue) % RecoveredItemMessageCacheSize;
-            string cachedItemName = _recoveredItemNameCache[cacheIndex];
-            if (!string.IsNullOrEmpty(cachedItemName) && string.Equals(cachedItemName, itemName, System.StringComparison.Ordinal))
-                return _recoveredItemMessageCache[cacheIndex];
-
-            string message = string.Format(
-                ResolveLocalized(LocalizationKeys.SAMPLER_HUD_RECOVERED_ITEM, "SAMPLER - RECOVERED {0}"),
-                CachedToUpperInvariant(itemName));
-            _recoveredItemNameCache[cacheIndex] = itemName;
-            _recoveredItemMessageCache[cacheIndex] = message;
-            return message;
-        }
-
-        private static string GetDiagnosisHudMessage(string headline)
+        private static bool TryWriteDiagnosisHudMessage(ref FixedCharBuffer buffer, string headline)
         {
             switch (headline)
             {
                 case SamplerNoTargetHeadline:
-                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_NO_TARGET, "SAMPLER DIAG - NO TARGET");
+                    return AppendText(ref buffer, ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_NO_TARGET, "SAMPLER DIAG - NO TARGET"));
                 case SamplerRecoveryReadyHeadline:
-                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_RECOVERY_READY, "SAMPLER DIAG - RECOVERY READY");
+                    return AppendText(ref buffer, ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_RECOVERY_READY, "SAMPLER DIAG - RECOVERY READY"));
                 case SamplerNodeDepletedHeadline:
-                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_NODE_DEPLETED, "SAMPLER DIAG - NODE DEPLETED");
+                    return AppendText(ref buffer, ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_NODE_DEPLETED, "SAMPLER DIAG - NODE DEPLETED"));
                 case SamplerProcessTargetHeadline:
-                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_PROCESS_TARGET, "SAMPLER DIAG - PROCESS TARGET");
+                    return AppendText(ref buffer, ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_PROCESS_TARGET, "SAMPLER DIAG - PROCESS TARGET"));
                 case SamplerInvalidTargetHeadline:
-                    return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_INVALID_TARGET, "SAMPLER DIAG - INVALID TARGET");
+                    return AppendText(ref buffer, ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_INVALID_TARGET, "SAMPLER DIAG - INVALID TARGET"));
                 default:
-                    return string.Format(
-                        ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_GENERIC, "SAMPLER DIAG - {0}"),
-                        headline);
+                    return AppendText(ref buffer, "SAMPLER DIAG - ") &&
+                           AppendText(ref buffer, headline);
             }
         }
 
@@ -407,10 +484,53 @@ namespace Hecton8.Gameplay
                 case SamplerInvalidTargetHeadline:
                     return ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_INVALID_TARGET, "SAMPLER DIAG - INVALID TARGET");
                 default:
-                    return string.Format(
-                        ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_GENERIC, "SAMPLER DIAG - {0}"),
-                        headline);
+                    s_logTitleBuffer.Clear();
+                    if (!TryAppendSingleStringTemplate(
+                            ref s_logTitleBuffer,
+                            ResolveLocalized(LocalizationKeys.SAMPLER_DIAG_GENERIC, "SAMPLER DIAG - {0}"),
+                            headline,
+                            false))
+                    {
+                        return "SAMPLER DIAG";
+                    }
+
+                    return CreateLegacyString(in s_logTitleBuffer);
             }
+        }
+
+        private static string CreateRecoveryReadySummary(string itemLabel, int quantity)
+        {
+            s_diagnosisTextBuffer.Clear();
+            if (!TryAppendStringIntTemplate(
+                    ref s_diagnosisTextBuffer,
+                    ResolveLocalized(
+                        LocalizationKeys.SAMPLER_SUMMARY_RECOVERY_READY,
+                        "{0} is ready for collection. Cached quantity: {1}."),
+                    itemLabel,
+                    quantity,
+                    true))
+            {
+                s_diagnosisTextBuffer.Clear();
+                AppendText(ref s_diagnosisTextBuffer, "Recoverable package is ready for collection.");
+            }
+
+            return CreateLegacyString(in s_diagnosisTextBuffer);
+        }
+
+        private static string CreateResourceNodeHeadline(float integrityPercent)
+        {
+            s_diagnosisTextBuffer.Clear();
+            if (!TryAppendSingleFloatTemplate(
+                    ref s_diagnosisTextBuffer,
+                    ResolveLocalized(LocalizationKeys.SAMPLER_HEADLINE_RESOURCE_NODE, "RESOURCE NODE {0:0}%"),
+                    integrityPercent,
+                    0))
+            {
+                s_diagnosisTextBuffer.Clear();
+                AppendText(ref s_diagnosisTextBuffer, "RESOURCE NODE");
+            }
+
+            return CreateLegacyString(in s_diagnosisTextBuffer);
         }
 
         private static string ResolveLocalized(string key, string fallback)
@@ -420,22 +540,189 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
-        private static string CachedToUpperInvariant(string input)
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
         {
-            if (string.IsNullOrEmpty(input))
-                return input;
-
-            // Простой hash для кэширования (не криптографический)
-            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
-
-            string cached = _cachedUpperStrings[hash];
-            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
-                return cached;
-
-            // Создаем новую строку и кэшируем
-            string upper = input.ToUpperInvariant();
-            _cachedUpperStrings[hash] = upper;
-            return upper;
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
         }
+
+        private static bool TryAppendSingleStringTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            string argument,
+            bool upperInvariant)
+        {
+            return TryAppendSamplerTemplate(
+                ref buffer,
+                template,
+                argument,
+                0,
+                0f,
+                0,
+                TemplateStringArg0,
+                upperInvariant);
+        }
+
+        private static bool TryAppendStringIntTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            string stringArg0,
+            int intArg1,
+            bool uppercaseStringArg0)
+        {
+            return TryAppendSamplerTemplate(
+                ref buffer,
+                template,
+                stringArg0,
+                intArg1,
+                0f,
+                0,
+                TemplateStringArg0 | TemplateIntArg1,
+                uppercaseStringArg0);
+        }
+
+        private static bool TryAppendSingleFloatTemplate(ref FixedCharBuffer buffer, string template, float value, int decimals)
+        {
+            return TryAppendSamplerTemplate(
+                ref buffer,
+                template,
+                null,
+                0,
+                value,
+                decimals,
+                TemplateFloatArg0,
+                false);
+        }
+
+        private static bool TryAppendSamplerTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            string stringArg0,
+            int intArg1,
+            float floatArg0,
+            int floatDecimals,
+            byte argumentMask,
+            bool uppercaseStringArg0)
+        {
+            if (string.IsNullOrEmpty(template))
+                return true;
+
+            ReadOnlySpan<char> span = template.AsSpan();
+            bool wroteToken = false;
+            int segmentStart = 0;
+            for (int i = 0; i < span.Length; i++)
+            {
+                if (span[i] != '{' || i + 1 >= span.Length)
+                    continue;
+
+                char token = span[i + 1];
+                if (token != '0' && token != '1')
+                    continue;
+
+                int closeIndex = i + 2;
+                while (closeIndex < span.Length && span[closeIndex] != '}')
+                    closeIndex++;
+
+                if (closeIndex >= span.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(span.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                bool wrote = token switch
+                {
+                    '0' when (argumentMask & TemplateStringArg0) != 0 => AppendStringArgument(ref buffer, stringArg0, uppercaseStringArg0),
+                    '0' when (argumentMask & TemplateFloatArg0) != 0 => buffer.AppendFloat(floatArg0, floatDecimals),
+                    '1' when (argumentMask & TemplateIntArg1) != 0 => buffer.AppendInt(intArg1),
+                    _ => buffer.Append(span.Slice(i, closeIndex - i + 1))
+                };
+
+                if (!wrote)
+                    return false;
+
+                wroteToken = true;
+                i = closeIndex;
+                segmentStart = closeIndex + 1;
+            }
+
+            if (!wroteToken)
+                return buffer.Append(span);
+
+            return segmentStart >= span.Length || buffer.Append(span.Slice(segmentStart));
+        }
+
+        private static bool AppendStringArgument(ref FixedCharBuffer buffer, string value, bool uppercase)
+        {
+            return uppercase
+                ? AppendUpperInvariant(ref buffer, value)
+                : AppendText(ref buffer, value);
+        }
+
+        private static bool AppendUpperInvariant(ref FixedCharBuffer buffer, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            ReadOnlySpan<char> source = value.AsSpan();
+            Span<char> scratch = stackalloc char[64];
+            int cursor = 0;
+            while (cursor < source.Length)
+            {
+                int count = math.min(scratch.Length, source.Length - cursor);
+                for (int i = 0; i < count; i++)
+                    scratch[i] = char.ToUpperInvariant(source[cursor + i]);
+
+                if (!buffer.Append(scratch.Slice(0, count)))
+                    return false;
+
+                cursor += count;
+            }
+
+            return true;
+        }
+
+        private static string CreateLegacyString(in FixedCharBuffer buffer)
+        {
+            return buffer.Length > 0
+                ? new string(buffer.Buffer, 0, buffer.Length)
+                : string.Empty;
+        }
+
+        private static bool AppendLowerInvariant(ref FixedCharBuffer buffer, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            ReadOnlySpan<char> source = value.AsSpan();
+            Span<char> scratch = stackalloc char[64];
+            int cursor = 0;
+            while (cursor < source.Length)
+            {
+                int count = math.min(scratch.Length, source.Length - cursor);
+                for (int i = 0; i < count; i++)
+                    scratch[i] = char.ToLowerInvariant(source[cursor + i]);
+
+                if (!buffer.Append(scratch.Slice(0, count)))
+                    return false;
+
+                cursor += count;
+            }
+
+            return true;
+        }
+
+        private static string GetCategoryLabel(ItemCategory category)
+        {
+            return category switch
+            {
+                ItemCategory.Material => ResolveLocalized("ITEM_CATEGORY_MATERIAL", "Material"),
+                ItemCategory.Tool => ResolveLocalized("ITEM_CATEGORY_TOOL", "Tool"),
+                ItemCategory.Equipment => ResolveLocalized("ITEM_CATEGORY_EQUIPMENT", "Equipment"),
+                ItemCategory.Consumable => ResolveLocalized("ITEM_CATEGORY_CONSUMABLE", "Consumable"),
+                ItemCategory.Component => ResolveLocalized("ITEM_CATEGORY_COMPONENT", "Component"),
+                ItemCategory.Organic => ResolveLocalized("ITEM_CATEGORY_ORGANIC", "Organic"),
+                _ => ResolveLocalized("ITEM_CATEGORY_MISC", "Miscellaneous")
+            };
+        }
+
     }
 }

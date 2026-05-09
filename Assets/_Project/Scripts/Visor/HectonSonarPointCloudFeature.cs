@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
@@ -151,17 +152,19 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                int historyWidth = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
-                int historyHeight = QuantizeDimension(Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f))));
+                float renderScale = math.clamp(_settings.renderScale, 0.25f, 1f);
+                int historyWidth = QuantizeDimension(math.max(1, (int)math.round(sourceDesc.width * renderScale)));
+                int historyHeight = QuantizeDimension(math.max(1, (int)math.round(sourceDesc.height * renderScale)));
                 EnsureHistoryTextures(historyWidth, historyHeight);
-                EnsureWorldMemoryTextures(Mathf.Clamp(_settings.worldMemoryResolution, 256, 2048));
+                EnsureWorldMemoryTextures(math.clamp(_settings.worldMemoryResolution, 256, 2048));
 
                 TextureHandle historyReadTexture = renderGraph.ImportTexture(_historyRead);
                 TextureHandle historyWriteTexture = renderGraph.ImportTexture(_historyWrite);
                 TextureHandle worldHistoryReadTexture = renderGraph.ImportTexture(_worldHistoryRead);
                 TextureHandle worldHistoryWriteTexture = renderGraph.ImportTexture(_worldHistoryWrite);
 
-                Vector3 floatingOriginOffset = HectonFloatingOrigin.Instance != null ? HectonFloatingOrigin.Instance.TotalOffset : Vector3.zero;
+                HectonFloatingOrigin floatingOrigin = GlobalRegistry.FloatingOrigin;
+                Vector3 floatingOriginOffset = floatingOrigin != null ? floatingOrigin.TotalOffset : Vector3.zero;
                 Vector3 absoluteCameraPosition = cameraData.camera.transform.position + floatingOriginOffset;
                 RefreshWorldMemoryRect(new Vector2(absoluteCameraPosition.x, absoluteCameraPosition.z), false);
 
@@ -178,8 +181,8 @@ namespace Hecton8.Visor
                 bool worldHistoryAlive = _worldHistoryValid && currentTime <= _worldHistoryRetainUntilTime;
                 if (hasActiveSonarReveal)
                 {
-                    _screenHistoryRetainUntilTime = Mathf.Max(_screenHistoryRetainUntilTime, currentTime + Mathf.Max(0.05f, _settings.persistenceSeconds));
-                    _worldHistoryRetainUntilTime = Mathf.Max(_worldHistoryRetainUntilTime, currentTime + Mathf.Max(0.05f, _settings.worldPersistenceSeconds));
+                    _screenHistoryRetainUntilTime = math.max(_screenHistoryRetainUntilTime, currentTime + math.max(0.05f, _settings.persistenceSeconds));
+                    _worldHistoryRetainUntilTime = math.max(_worldHistoryRetainUntilTime, currentTime + math.max(0.05f, _settings.worldPersistenceSeconds));
                 }
 
                 UpdateMaterialParameters(_material, _settings, screenHistoryAlive, worldHistoryAlive, _worldMemoryRect, _worldScrollUvOffset, floatingOriginOffset);
@@ -306,7 +309,7 @@ namespace Hecton8.Visor
 
             private static int QuantizeDimension(int dimension)
             {
-                int safeDimension = Mathf.Max(1, dimension);
+                int safeDimension = math.max(1, dimension);
                 return ((safeDimension + RenderTextureBucketSize - 1) / RenderTextureBucketSize) * RenderTextureBucketSize;
             }
 
@@ -357,13 +360,14 @@ namespace Hecton8.Visor
                     return;
 
                 _worldScrollUvOffset = Vector2.zero;
-                float desiredWorldSize = Mathf.Max(64f, _settings.worldMemoryWorldSize);
+                float desiredWorldSize = math.max(64f, _settings.worldMemoryWorldSize);
                 float snapStride = ResolveWorldMemorySnapStride(desiredWorldSize);
                 Vector2 desiredCenterXZ = QuantizeWorldMemoryCenter(absoluteCenterXZ, snapStride);
 
-                bool mustClear = forceClear || _worldMemoryWorldSize <= 0f || Mathf.Abs(desiredWorldSize - _worldMemoryWorldSize) > 0.001f;
+                bool mustClear = forceClear || _worldMemoryWorldSize <= 0f || math.abs(desiredWorldSize - _worldMemoryWorldSize) > 0.001f;
                 Vector2 centerDelta = desiredCenterXZ - _worldCenterXZ;
-                if (!mustClear && centerDelta.sqrMagnitude <= 0.000001f)
+                float centerDeltaSq = centerDelta.x * centerDelta.x + centerDelta.y * centerDelta.y;
+                if (!mustClear && centerDeltaSq <= 0.000001f)
                     return;
 
                 _worldCenterXZ = desiredCenterXZ;
@@ -372,8 +376,8 @@ namespace Hecton8.Visor
                 _worldMemoryRect = new Vector4(
                     desiredCenterXZ.x - halfSize,
                     desiredCenterXZ.y - halfSize,
-                    1f / Mathf.Max(desiredWorldSize, 0.001f),
-                    1f / Mathf.Max(desiredWorldSize, 0.001f));
+                    1f / math.max(desiredWorldSize, 0.001f),
+                    1f / math.max(desiredWorldSize, 0.001f));
 
                 if (mustClear)
                 {
@@ -383,15 +387,15 @@ namespace Hecton8.Visor
                 }
 
                 _worldScrollUvOffset = new Vector2(
-                    centerDelta.x / Mathf.Max(desiredWorldSize, 0.001f),
-                    centerDelta.y / Mathf.Max(desiredWorldSize, 0.001f));
+                    centerDelta.x / math.max(desiredWorldSize, 0.001f),
+                    centerDelta.y / math.max(desiredWorldSize, 0.001f));
             }
 
             private float ResolveWorldMemorySnapStride(float worldSize)
             {
-                int resolution = _worldHistoryRead != null && _worldHistoryRead.rt != null ? _worldHistoryRead.rt.width : Mathf.Max(1, _settings.worldMemoryResolution);
-                float pixelWorldSize = worldSize / Mathf.Max(resolution, 1);
-                return pixelWorldSize * Mathf.Max(0.1f, _settings.worldCenterSnapPixelStride);
+                int resolution = _worldHistoryRead != null && _worldHistoryRead.rt != null ? _worldHistoryRead.rt.width : math.max(1, _settings.worldMemoryResolution);
+                float pixelWorldSize = worldSize / math.max(resolution, 1);
+                return pixelWorldSize * math.max(0.1f, _settings.worldCenterSnapPixelStride);
             }
 
             private static Vector2 QuantizeWorldMemoryCenter(Vector2 centerXZ, float stride)
@@ -400,8 +404,8 @@ namespace Hecton8.Visor
                     return centerXZ;
 
                 return new Vector2(
-                    Mathf.Round(centerXZ.x / stride) * stride,
-                    Mathf.Round(centerXZ.y / stride) * stride);
+                    math.round(centerXZ.x / stride) * stride,
+                    math.round(centerXZ.y / stride) * stride);
             }
 
             private void SwapHistoryTargets()
@@ -422,12 +426,12 @@ namespace Hecton8.Visor
 
             private static void UpdateMaterialParameters(Material material, FeatureSettings settings, bool historyValid, bool worldHistoryValid, Vector4 worldMemoryRect, Vector2 worldScrollUvOffset, Vector3 floatingOriginOffset)
             {
-                material.SetFloat(ShaderConstants.PersistenceSecondsId, Mathf.Max(0.05f, settings.persistenceSeconds));
-                material.SetFloat(ShaderConstants.PointDensityId, Mathf.Max(0.05f, settings.pointDensity));
-                material.SetFloat(ShaderConstants.PointBoostId, Mathf.Max(0f, settings.pointBoost));
+                material.SetFloat(ShaderConstants.PersistenceSecondsId, math.max(0.05f, settings.persistenceSeconds));
+                material.SetFloat(ShaderConstants.PointDensityId, math.max(0.05f, settings.pointDensity));
+                material.SetFloat(ShaderConstants.PointBoostId, math.max(0f, settings.pointBoost));
                 material.SetFloat(ShaderConstants.HasHistoryId, historyValid ? 1f : 0f);
-                material.SetFloat(ShaderConstants.WorldPersistenceSecondsId, Mathf.Max(0.05f, settings.worldPersistenceSeconds));
-                material.SetFloat(ShaderConstants.WorldPointRadiusId, Mathf.Max(0.05f, settings.worldPointRadius));
+                material.SetFloat(ShaderConstants.WorldPersistenceSecondsId, math.max(0.05f, settings.worldPersistenceSeconds));
+                material.SetFloat(ShaderConstants.WorldPointRadiusId, math.max(0.05f, settings.worldPointRadius));
                 material.SetFloat(ShaderConstants.HasWorldHistoryId, worldHistoryValid ? 1f : 0f);
                 material.SetVector(ShaderConstants.WorldMemoryRectId, worldMemoryRect);
                 material.SetVector(ShaderConstants.WorldScrollUvOffsetId, new Vector4(worldScrollUvOffset.x, worldScrollUvOffset.y, 0f, 0f));

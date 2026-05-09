@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Hecton8.Gameplay;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -8,6 +10,15 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4075)]
     public sealed class WorldInterestDirector : MonoBehaviour, ISlowTickable
     {
+        private const string NoneLabel = "None";
+        private const string KindResourceFieldLabel = "ResourceField";
+        private const string KindFabricationLabel = "Fabrication";
+        private const string KindToolRangeLabel = "ToolRange";
+        private const string KindConstructionLabel = "Construction";
+        private const string KindPowerLabel = "Power";
+        private const string KindServiceLabel = "Service";
+        private const string KindProgressionHubLabel = "ProgressionHub";
+
         [Header("References")]
         [SerializeField] private Transform playerTransform;
         [SerializeField] private ScatterBudgetController scatterBudgetController;
@@ -35,6 +46,7 @@ namespace Hecton8.World
 #pragma warning restore CS0414
 
         private readonly List<WorldInterestAnchor> _anchors = new List<WorldInterestAnchor>(24);
+        private HectonPlayerMovement _playerMovement;
         private bool _registeredToTickManager;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
 
@@ -66,8 +78,7 @@ namespace Hecton8.World
             if (_registeredToTickManager || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -75,7 +86,7 @@ namespace Hecton8.World
             if (!_registeredToTickManager)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registeredToTickManager = false;
         }
@@ -98,13 +109,18 @@ namespace Hecton8.World
             if (forceRefresh || _anchors.Count == 0)
                 RefreshAnchors();
 
-            if (playerTransform == null || scatterBudgetController == null)
+            if (scatterBudgetController == null)
             {
                 _debugApplied = false;
                 return;
             }
 
-            Vector3 playerPosition = playerTransform.position;
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                _debugApplied = false;
+                return;
+            }
+
             float bestInfluence = 0f;
             WorldInterestAnchor bestAnchor = null;
 
@@ -121,16 +137,16 @@ namespace Hecton8.World
                 if (anchor == null)
                     continue;
 
-                float influence = anchor.EvaluateInfluence(playerPosition);
+                float influence = anchor.EvaluateInfluence(in playerAup);
                 if (influence <= 0.001f)
                     continue;
 
-                scavengeScale = Mathf.Max(scavengeScale, Mathf.Lerp(1f, anchor.ScavengeRadiusScale, influence));
-                spawnScale = Mathf.Max(spawnScale, Mathf.Lerp(1f, anchor.SpawnScale, influence));
-                colliderRadiusScale = Mathf.Max(colliderRadiusScale, Mathf.Lerp(1f, anchor.ColliderRadiusScale, influence));
-                colliderOpsScale = Mathf.Max(colliderOpsScale, Mathf.Lerp(1f, anchor.ColliderOpsScale, influence));
-                sliceNearScale = Mathf.Max(sliceNearScale, Mathf.Lerp(1f, anchor.SliceNearScale, influence));
-                sliceMidScale = Mathf.Max(sliceMidScale, Mathf.Lerp(1f, anchor.SliceMidScale, influence));
+                scavengeScale = math.max(scavengeScale, math.lerp(1f, anchor.ScavengeRadiusScale, influence));
+                spawnScale = math.max(spawnScale, math.lerp(1f, anchor.SpawnScale, influence));
+                colliderRadiusScale = math.max(colliderRadiusScale, math.lerp(1f, anchor.ColliderRadiusScale, influence));
+                colliderOpsScale = math.max(colliderOpsScale, math.lerp(1f, anchor.ColliderOpsScale, influence));
+                sliceNearScale = math.max(sliceNearScale, math.lerp(1f, anchor.SliceNearScale, influence));
+                sliceMidScale = math.max(sliceMidScale, math.lerp(1f, anchor.SliceMidScale, influence));
 
                 if (influence > bestInfluence)
                 {
@@ -148,16 +164,41 @@ namespace Hecton8.World
             if (worldSliceDirector != null)
                 worldSliceDirector.SetInterestScales(sliceNearScale, sliceMidScale);
 
-            _debugDominantAnchor = bestAnchor != null ? bestAnchor.InterestLabel : "None";
-            _debugDominantKind = bestAnchor != null ? bestAnchor.Kind.ToString() : "None";
+            _debugDominantAnchor = bestAnchor != null ? bestAnchor.InterestLabel : NoneLabel;
+            _debugDominantKind = bestAnchor != null ? ResolveInterestKindLabel(bestAnchor.Kind) : NoneLabel;
             _debugDominantInfluence = bestInfluence;
             _debugAnchorCount = _anchors.Count;
             _debugApplied = true;
         }
 
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (_playerMovement == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _playerMovement = playerContext.PlayerMovement;
+            }
+
+            if (_playerMovement != null)
+            {
+                playerAup = _playerMovement.CurrentAup;
+                return true;
+            }
+
+            if (playerTransform != null)
+            {
+                playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+                return true;
+            }
+
+            playerAup = default;
+            return false;
+        }
+
         private void ResolveReferences()
         {
-            if (playerTransform != null &&
+            if ((playerTransform != null || _playerMovement != null) &&
                 scatterBudgetController != null &&
                 worldSliceDirector != null)
                 return;
@@ -168,9 +209,31 @@ namespace Hecton8.World
 
             _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
 
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+            {
+                _playerMovement = playerContext.PlayerMovement;
+                if (playerTransform == null)
+                    playerTransform = playerContext.PlayerTransform;
+            }
+
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
             WorldRuntimeReferenceUtility.TryResolveScatterBudgetController(ref scatterBudgetController);
             WorldRuntimeReferenceUtility.TryResolveWorldSliceDirector(ref worldSliceDirector);
+        }
+
+        private static string ResolveInterestKindLabel(WorldInterestAnchor.InterestKind kind)
+        {
+            return kind switch
+            {
+                WorldInterestAnchor.InterestKind.ResourceField => KindResourceFieldLabel,
+                WorldInterestAnchor.InterestKind.Fabrication => KindFabricationLabel,
+                WorldInterestAnchor.InterestKind.ToolRange => KindToolRangeLabel,
+                WorldInterestAnchor.InterestKind.Construction => KindConstructionLabel,
+                WorldInterestAnchor.InterestKind.Power => KindPowerLabel,
+                WorldInterestAnchor.InterestKind.Service => KindServiceLabel,
+                _ => KindProgressionHubLabel
+            };
         }
     }
 }

@@ -62,7 +62,7 @@ namespace Hecton8.World
 
         public void ApplySliceState(WorldSliceAnchor.SliceState state)
         {
-            _debugState = state.ToString();
+            _debugState = WorldSliceAnchor.ResolveStateName(state);
 
             bool renderVisible = Meets(state, visibleFromState);
             bool collidersEnabled = Meets(state, collidersFromState);

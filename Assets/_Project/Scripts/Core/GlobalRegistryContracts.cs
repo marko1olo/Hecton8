@@ -510,9 +510,9 @@ namespace Hecton8.Core
         int EntryCount { get; }
 
         /// <summary>
-        /// Appends one deduplicated PDA log event by source keys.
+        /// Appends one deduplicated PDA log event by precomputed localization/source hashes.
         /// </summary>
-        bool TryAppendEntry(string originKey, string titleKey, string messageKey);
+        bool TryAppendEntry(int originHash, int titleHash, int messageHash);
     }
 
     /// <summary>
@@ -733,8 +733,13 @@ namespace Hecton8.Core
     /// <summary>
     /// Immutable AUP-backed chest socket pose.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public readonly struct VRSomaticChestSocketPose
     {
+        public readonly AbsoluteUniversePosition SocketAup;
+        public readonly Vector3 RuntimePosition;
+        public readonly Quaternion RuntimeRotation;
+
         public VRSomaticChestSocketPose(
             AbsoluteUniversePosition socketAup,
             Vector3 runtimePosition,
@@ -744,17 +749,22 @@ namespace Hecton8.Core
             RuntimePosition = runtimePosition;
             RuntimeRotation = runtimeRotation;
         }
-
-        public AbsoluteUniversePosition SocketAup { get; }
-        public Vector3 RuntimePosition { get; }
-        public Quaternion RuntimeRotation { get; }
     }
 
     /// <summary>
     /// Immutable near-field head contact state emitted by the VR somatic provider.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public readonly struct VRSomaticCollisionState
     {
+        public readonly byte HasContactFlag;
+        public readonly AbsoluteUniversePosition ContactAup;
+        public readonly Vector3 RuntimePoint;
+        public readonly Vector3 RuntimeNormal;
+        public readonly float DistanceMeters;
+        public readonly float Intensity01;
+        public readonly float ImpactSpeedMetersPerSecond;
+
         public VRSomaticCollisionState(
             bool hasContact,
             AbsoluteUniversePosition contactAup,
@@ -764,7 +774,7 @@ namespace Hecton8.Core
             float intensity01,
             float impactSpeedMetersPerSecond)
         {
-            HasContact = hasContact;
+            HasContactFlag = hasContact ? (byte)1 : (byte)0;
             ContactAup = contactAup;
             RuntimePoint = runtimePoint;
             RuntimeNormal = runtimeNormal;
@@ -773,20 +783,26 @@ namespace Hecton8.Core
             ImpactSpeedMetersPerSecond = impactSpeedMetersPerSecond;
         }
 
-        public bool HasContact { get; }
-        public AbsoluteUniversePosition ContactAup { get; }
-        public Vector3 RuntimePoint { get; }
-        public Vector3 RuntimeNormal { get; }
-        public float DistanceMeters { get; }
-        public float Intensity01 { get; }
-        public float ImpactSpeedMetersPerSecond { get; }
+        public bool HasContact => HasContactFlag != 0;
     }
 
     /// <summary>
     /// Immutable frame snapshot for VR somatic suit systems.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public readonly struct VRSomaticSnapshot
     {
+        public readonly byte IsActiveFlag;
+        public readonly AbsoluteUniversePosition HeadAup;
+        public readonly Vector3 HeadRuntimePosition;
+        public readonly Quaternion HeadRuntimeRotation;
+        public readonly Quaternion VisorHudWorldRotation;
+        public readonly float PlayerStress01;
+        public readonly float Oxygen01;
+        public readonly float DepthMeters;
+        public readonly float NearFieldCollision01;
+        public readonly float Condensation01;
+
         public VRSomaticSnapshot(
             bool isActive,
             AbsoluteUniversePosition headAup,
@@ -799,7 +815,7 @@ namespace Hecton8.Core
             float nearFieldCollision01,
             float condensation01)
         {
-            IsActive = isActive;
+            IsActiveFlag = isActive ? (byte)1 : (byte)0;
             HeadAup = headAup;
             HeadRuntimePosition = headRuntimePosition;
             HeadRuntimeRotation = headRuntimeRotation;
@@ -811,7 +827,9 @@ namespace Hecton8.Core
             Condensation01 = condensation01;
         }
 
-        public static VRSomaticSnapshot Inactive => new VRSomaticSnapshot(
+        public bool IsActive => IsActiveFlag != 0;
+
+        public static readonly VRSomaticSnapshot Inactive = new VRSomaticSnapshot(
             false,
             default,
             Vector3.zero,
@@ -822,17 +840,6 @@ namespace Hecton8.Core
             0f,
             0f,
             0f);
-
-        public bool IsActive { get; }
-        public AbsoluteUniversePosition HeadAup { get; }
-        public Vector3 HeadRuntimePosition { get; }
-        public Quaternion HeadRuntimeRotation { get; }
-        public Quaternion VisorHudWorldRotation { get; }
-        public float PlayerStress01 { get; }
-        public float Oxygen01 { get; }
-        public float DepthMeters { get; }
-        public float NearFieldCollision01 { get; }
-        public float Condensation01 { get; }
     }
 
     /// <summary>
@@ -951,6 +958,16 @@ namespace Hecton8.Core
         Rigidbody PlayerRigidbody { get; }
 
         /// <summary>
+        /// Cached survival owner resolved from the current player root.
+        /// </summary>
+        HectonSurvivalSystem SurvivalSystem { get; }
+
+        /// <summary>
+        /// Cached trauma dispatcher resolved from the current player root.
+        /// </summary>
+        TraumaDispatcher TraumaDispatcher { get; }
+
+        /// <summary>
         /// Authoritative handheld-tool owner on the current player root.
         /// </summary>
         PlayerToolManager ToolManager { get; }
@@ -959,6 +976,11 @@ namespace Hecton8.Core
         /// Authoritative player inventory on the current player root.
         /// </summary>
         PlayerInventory Inventory { get; }
+
+        /// <summary>
+        /// Cached transport coordinator resolved from the current player root.
+        /// </summary>
+        PlayerTransportCoordinator PlayerTransportCoordinator { get; }
 
         /// <summary>
         /// Authoritative player camera resolved from player-owned movement state.
@@ -1518,44 +1540,15 @@ namespace Hecton8.Core
     }
 
     /// <summary>
-    /// Bootstrap-visible readiness state for registry-owned services.
+    /// Registry-owned shader-bent connection renderer. Static callers must route through this service instead of a local singleton.
     /// </summary>
-    public enum ServiceHeartbeatState : byte
+    internal interface IConnectionSplineBatchRendererService
     {
-        NotStarted = 0,
-        Booting = 1,
-        Ready = 2,
-        Degraded = 3,
-        Failed = 4,
-        Shutdown = 5
-    }
-
-    /// <summary>
-    /// Optional deterministic readiness contract polled by <see cref="Hecton8.Bootstrap.GameBootstrapper"/>.
-    /// Implementers must return cached state only; no hierarchy search or allocation is permitted.
-    /// </summary>
-    public interface IServiceHeartbeat
-    {
-        /// <summary>
-        /// Current service readiness state.
-        /// </summary>
-        ServiceHeartbeatState HeartbeatState { get; }
-
-        /// <summary>
-        /// True only when the service is safe for the next bootstrap layer to consume.
-        /// </summary>
-        bool IsServiceReady { get; }
-    }
-
-    /// <summary>
-    /// Explicit shutdown contract for registry-owned services with native or pooled memory.
-    /// </summary>
-    public interface IServiceShutdown
-    {
-        /// <summary>
-        /// Releases service-owned runtime state before registry slots are cleared.
-        /// </summary>
-        void OnServiceShutdown();
+        void SubmitPipeLink(long linkId, SplineDescriptor descriptor, Color color);
+        void RemovePipeLink(long linkId);
+        void SetPipeNodeRuptured(uint nodeId, bool ruptured);
+        void SubmitRelaySpline(long linkId, SplineDescriptor descriptor, bool hasPower, Color poweredColor, Color unpoweredColor);
+        void RemoveRelayLink(long linkId);
     }
 
     /// <summary>
@@ -1707,6 +1700,23 @@ namespace Hecton8.Core
         ToolHapticsRuntime = 118,
         ARWaypointRuntime = 119,
         VRSomaticProvider = 120,
+        ConnectionSplineBatchRendererRuntime = 121,
+        NativeInputManagerRuntime = 122,
+        RaycastBatchRuntime = 123,
+        FieldOperationLogRuntime = 124,
+        CorporateOrderRuntime = 125,
+        BiolumControllerRuntime = 126,
+        UIAudioFeedbackRuntime = 127,
+        UITooltipRuntime = 128,
+        ScavengePopulatorRuntime = 129,
+        RunModifierRuntime = 130,
+        MigrationDirectorRuntime = 131,
+        BasePollutionRuntime = 132,
+        EntityChangeManagerRuntime = 133,
+        PerformanceMonitorRuntime = 134,
+        MapMagicVegetationRuntime = 135,
+        ModWorldPersistenceRuntime = 136,
+        LoadingScreenRuntime = 137,
         Unknown = 255
     }
 

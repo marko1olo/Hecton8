@@ -150,8 +150,7 @@ namespace Hecton8.Systems.AI
         /// <summary>Queues a predator pressure state change.</summary>
         public static void RaisePredatorPressureChanged(bool pressureEnabled)
         {
-            EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
+            if (_listeners.Count <= 0)
                 return;
 
             Enqueue(new DirectorAIEventPayload
@@ -164,8 +163,7 @@ namespace Hecton8.Systems.AI
         /// <summary>Queues a predator threat spike.</summary>
         public static void RaiseThreatSpike(Vector3 position, float intensity)
         {
-            EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
+            if (_listeners.Count <= 0)
                 return;
 
             Enqueue(new DirectorAIEventPayload
@@ -234,6 +232,9 @@ namespace Hecton8.Systems.AI
 
         private static bool Enqueue(in DirectorAIEventPayload payload)
         {
+            if (_listeners.Count <= 0)
+                return false;
+
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
                 return false;
@@ -313,6 +314,7 @@ namespace Hecton8.Systems.AI
                     nameof(DirectorAIEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, ExpectedPendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -324,6 +326,21 @@ namespace Hecton8.Systems.AI
                     nameof(DirectorAIEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, ExpectedPendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
     }
@@ -401,8 +418,13 @@ namespace Hecton8.Systems.AI
 
             PredatorSightRaycastInput input = Inputs[index];
             float3 delta = input.Target - input.Origin;
-            float length = math.max(0.001f, math.length(delta));
-            float3 direction = delta / length;
+            float3 absDelta = math.abs(delta);
+            float maxAxis = math.cmax(absDelta);
+            float minAxis = math.cmin(absDelta);
+            float midAxis = absDelta.x + absDelta.y + absDelta.z - maxAxis - minAxis;
+            // Cinematic upper-bound segment length: no sqrt/rsqrt in the Burst sight build lane.
+            float length = math.max(0.001f, maxAxis + (midAxis * 0.5f) + (minAxis * 0.25f));
+            float3 direction = delta * math.rcp(length);
             Commands[index] = new RaycastCommand(
                 new Vector3(input.Origin.x, input.Origin.y, input.Origin.z),
                 new Vector3(direction.x, direction.y, direction.z),
@@ -458,8 +480,6 @@ namespace Hecton8.Systems.AI
         private readonly float[] _frameTimeHistory = new float[8];
         // COLD ALLOC: SpatialQueryHit[64] - AUP-filtered active-sonar leviathan aggro contacts - owner: HectonDirectorAI
         private readonly SpatialQueryHit[] _acousticPingPredatorContacts = new SpatialQueryHit[AcousticPingPredatorContactCapacity];
-        // COLD ALLOC: SpatialQueryHit[10] - capped director LOS predator query contacts - owner: HectonDirectorAI
-        private readonly SpatialQueryHit[] _predatorSightContacts = new SpatialQueryHit[PredatorSightMaxRaysPerFrame];
         // COLD ALLOC: SpatialQueryHit[64] - director predator spatial hash contact mirror - owner: HectonDirectorAI
         private readonly SpatialQueryHit[] _predatorSpatialContacts = new SpatialQueryHit[PredatorSpatialHashContactCapacity];
         // COLD ALLOC: FaunaBrain[10] - managed owner mirror for completed predator LOS rays - owner: HectonDirectorAI
@@ -508,6 +528,13 @@ namespace Hecton8.Systems.AI
             PredatorSightRearViewFakeMinDistanceMeters * PredatorSightRearViewFakeMinDistanceMeters;
         private const double DirectorSolveBudgetMilliseconds = 0.2d;
         private const float DirectorSolveWarningCooldownSeconds = 1f;
+        private const float DirectorFrustumPlaneRefreshIntervalSeconds = 0.1f;
+        private const int EventOffsetDirectionLutSize = 64;
+        private const int EventOffsetDirectionLutMask = EventOffsetDirectionLutSize - 1;
+        private const int EventOffsetDistanceBucketCount = 16;
+        private const int EventOffsetDistanceBucketMask = EventOffsetDistanceBucketCount - 1;
+        private const float EventOffsetMinRadiusScale = 0.4f;
+        private const float EventOffsetDistanceStepScale = (1f - EventOffsetMinRadiusScale) / (EventOffsetDistanceBucketCount - 1);
         private static readonly uint _DirectorSolveBudgetWarningHash =
             unchecked((uint)LocHash.Compute("DirectorAI.SolveBudgetExceeded"));
         private static readonly uint _DirectorTelemetryContextHash =
@@ -518,6 +545,7 @@ namespace Hecton8.Systems.AI
             HectonLayerMasks.VehicleLayerMask |
             HectonLayerMasks.VoxelCaveLayerMask |
             HectonLayerMasks.DebrisLayerMask;
+        private static readonly Vector2[] _eventOffsetDirectionLut = BuildEventOffsetDirectionLut(); // COLD ALLOC: Vector2[64] - deterministic director event offset directions - owner: HectonDirectorAI
 
         private HectonPlayerMovement _playerMovement;
         private bool _encounterDirectorServiceRegistered;
@@ -534,12 +562,13 @@ namespace Hecton8.Systems.AI
         private float _predatorSightCooldown;
         private float _activeSonarPingDebounceTimer;
         private float _nextDirectorSolveWarningTime;
+        private float _frustumPlaneRefreshTimer;
         private int _frameTimeHistoryCount;
         private int _frameTimeHistoryIndex;
         private int _predatorSightScheduledCount;
         private int _predatorSpatialContactCount;
-        private Vector3 _previousPlayerPosition;
-        private bool _hasPreviousPlayerPosition;
+        private Vector3 _lastResolvedPlayerForward = Vector3.forward;
+        private bool _frustumPlanesInitialized;
         private float _recentSonarStress;
         private float _externalPeakPressure01;
         private float _externalPeakHoldSeconds;
@@ -609,7 +638,8 @@ namespace Hecton8.Systems.AI
             }
 
             _encounterDirector.Reset();
-            _hasPreviousPlayerPosition = false;
+            _frustumPlaneRefreshTimer = 0f;
+            _frustumPlanesInitialized = false;
             _recentSonarStress = 0f;
             _externalPeakPressure01 = 0f;
             _externalPeakHoldSeconds = 0f;
@@ -658,6 +688,8 @@ namespace Hecton8.Systems.AI
             _hunterSquadCooldown = 0f;
             _predatorSightCooldown = 0f;
             _activeSonarPingDebounceTimer = 0f;
+            _frustumPlaneRefreshTimer = 0f;
+            _frustumPlanesInitialized = false;
             _predatorSpatialHashReady = false;
             _predatorSpatialContactCount = 0;
         }
@@ -710,11 +742,15 @@ namespace Hecton8.Systems.AI
             FrameTimingManager.CaptureFrameTimings();
             float averageFrameTimeMs = UpdateFrameTimeAverage(deltaTime);
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
-            float3 playerPosition3 = playerAup.ToRuntimeFloat3();
-            Vector3 playerPosition = new Vector3(playerPosition3.x, playerPosition3.y, playerPosition3.z);
-            Vector3 playerVelocity = ResolvePlayerVelocity(playerPosition, deltaTime);
-            Vector3 playerForward = ResolvePlayerForward();
+            if (!TryResolvePlayerRuntimeSnapshot(
+                    out Vector3 playerPosition,
+                    out Vector3 playerVelocity,
+                    out Vector3 playerForward,
+                    out AbsoluteUniversePosition playerAup))
+            {
+                return;
+            }
+
             float surfaceWorldY = ResolveSurfaceWorldY(playerPosition);
             float healthNormalized = survivalSystem != null ? math.saturate(survivalSystem.IntegrityNormalized) : 1f;
             float oxygenNormalized = survivalSystem != null ? math.saturate(survivalSystem.OxygenNormalized) : 1f;
@@ -725,16 +761,12 @@ namespace Hecton8.Systems.AI
             HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (vegetationBridge != null)
                 acousticThreatLevel = math.saturate(vegetationBridge.GetThreatLevel(playerPosition));
-            acousticThreatLevel = Mathf.Max(acousticThreatLevel, sonarStress);
+            acousticThreatLevel = math.max(acousticThreatLevel, sonarStress);
             ApplyExternalPeakPressure(deltaTime, ref internalStress, ref acousticThreatLevel);
             UpdateHunterSquadPressure(deltaTime);
 
-            if (playerCamera != null)
-                GeometryUtility.CalculateFrustumPlanes(playerCamera, _frustumPlaneScratch);
-            else
-                EncounterDirector.FillFallbackFrustumPlanes(playerPosition, playerForward, _frustumPlaneScratch);
-
-            _encounterDirector.CopyFrustumPlanes(_frustumPlaneScratch);
+            if (RefreshEncounterFrustumPlanes(deltaTime, playerPosition, playerForward))
+                _encounterDirector.CopyFrustumPlanes(_frustumPlaneScratch);
 
             EncounterFrameContext frameContext = new EncounterFrameContext
             {
@@ -869,7 +901,9 @@ namespace Hecton8.Systems.AI
                 {
                     Vector3 direction = _acousticPingPredatorContacts[i].Position - pingEvent.RuntimePosition;
                     if (direction.sqrMagnitude <= 0.0001f)
-                        direction = brain.transform.forward;
+                        direction = ResolveDeterministicOffsetDirection(unchecked((uint)brain.SpeciesId));
+                    else
+                        direction = ResolveDominantAxisDirection(direction);
 
                     boidSystem.RegisterLeviathanThreatPulse(
                         _acousticPingPredatorContacts[i].Position,
@@ -922,7 +956,7 @@ namespace Hecton8.Systems.AI
             if (_activeSonarPingDebounceTimer <= 0f)
                 return;
 
-            _activeSonarPingDebounceTimer = Mathf.Max(0f, _activeSonarPingDebounceTimer - deltaTime);
+            _activeSonarPingDebounceTimer = math.max(0f, _activeSonarPingDebounceTimer - deltaTime);
         }
 
         private void SchedulePredatorSightBatch(float deltaTime, Vector3 playerPosition, Vector3 playerVelocity, Vector3 playerForward)
@@ -933,7 +967,7 @@ namespace Hecton8.Systems.AI
 
             if (_predatorSightCooldown > 0f)
             {
-                _predatorSightCooldown = Mathf.Max(0f, _predatorSightCooldown - deltaTime);
+                _predatorSightCooldown = math.max(0f, _predatorSightCooldown - deltaTime);
                 return;
             }
 
@@ -1083,7 +1117,7 @@ namespace Hecton8.Systems.AI
                 PredatorSpatialHashActiveChunkRadiusMeters,
                 SpatialTargetKind.Bioform,
                 _predatorSpatialContacts);
-            _predatorSpatialContactCount = Mathf.Min(contactCount, PredatorSpatialHashContactCapacity);
+            _predatorSpatialContactCount = math.min(contactCount, PredatorSpatialHashContactCapacity);
             for (int i = 0; i < _predatorSpatialContactCount; i++)
             {
                 AbsoluteUniversePosition contactAup = AbsoluteUniversePosition.FromRuntimePosition(_predatorSpatialContacts[i].Position);
@@ -1139,9 +1173,13 @@ namespace Hecton8.Systems.AI
             if (distanceSqr <= 0.0001f)
                 return false;
 
-            float3 directionToPredator = runtimeDelta * math.rsqrt(distanceSqr);
             float3 safeForward = (float3)ResolveDominantAxisDirection(playerForward);
-            return math.dot(safeForward, directionToPredator) <= PredatorSightRearViewDotThreshold;
+            float forwardProjection = math.dot(safeForward, runtimeDelta);
+            if (forwardProjection >= 0f)
+                return false;
+
+            float rearThresholdSq = PredatorSightRearViewDotThreshold * PredatorSightRearViewDotThreshold;
+            return (forwardProjection * forwardProjection) >= rearThresholdSq * distanceSqr;
         }
 
         private static Vector3 ResolveDominantAxisDirection(Vector3 direction)
@@ -1149,9 +1187,9 @@ namespace Hecton8.Systems.AI
             if (direction.sqrMagnitude <= 0.0001f)
                 return Vector3.forward;
 
-            float absX = Mathf.Abs(direction.x);
-            float absY = Mathf.Abs(direction.y);
-            float absZ = Mathf.Abs(direction.z);
+            float absX = math.abs(direction.x);
+            float absY = math.abs(direction.y);
+            float absZ = math.abs(direction.z);
 
             if (absX >= absY && absX >= absZ)
                 return direction.x < 0f ? Vector3.left : Vector3.right;
@@ -1170,7 +1208,7 @@ namespace Hecton8.Systems.AI
             if (!DispatcherJobSwap.TryComplete(ref _predatorSightRaycastHandle, forceComplete))
                 return false;
 
-            int count = Mathf.Min(_predatorSightScheduledCount, PredatorSightMaxRaysPerFrame);
+            int count = math.min(_predatorSightScheduledCount, PredatorSightMaxRaysPerFrame);
             for (int i = 0; i < count; i++)
             {
                 FaunaBrain brain = _predatorSightBrains[i];
@@ -1194,7 +1232,7 @@ namespace Hecton8.Systems.AI
 
         private void ClearPredatorSightMirrors(int count)
         {
-            int clampedCount = Mathf.Min(count, PredatorSightMaxRaysPerFrame);
+            int clampedCount = math.min(count, PredatorSightMaxRaysPerFrame);
             for (int i = 0; i < clampedCount; i++)
             {
                 _predatorSightBrains[i] = null;
@@ -1385,8 +1423,8 @@ namespace Hecton8.Systems.AI
             if (clampedPressure <= 0f || holdSeconds <= 0f)
                 return;
 
-            _externalPeakPressure01 = Mathf.Max(_externalPeakPressure01, clampedPressure);
-            _externalPeakHoldSeconds = Mathf.Max(_externalPeakHoldSeconds, holdSeconds);
+            _externalPeakPressure01 = math.max(_externalPeakPressure01, clampedPressure);
+            _externalPeakHoldSeconds = math.max(_externalPeakHoldSeconds, holdSeconds);
         }
 
         /// <summary>
@@ -1416,11 +1454,11 @@ namespace Hecton8.Systems.AI
         {
             PublishPredatorPressure(newPhase != EncounterPhase.Relax);
 
-            if (playerTransform == null)
+            if (!TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
                 return;
 
-            uint seed = EncounterDirector.BuildDeterministicSeed(playerTransform.position, _encounterDirector.FrameIndex, (int)newPhase, _encounterDirector.ActiveEnemyCount);
-            Vector3 eventPosition = ResolveDeterministicOffsetPosition(playerTransform.position, seed, eventOffsetRadius);
+            uint seed = EncounterDirector.BuildDeterministicSeed(playerPosition, _encounterDirector.FrameIndex, (int)newPhase, _encounterDirector.ActiveEnemyCount);
+            Vector3 eventPosition = ResolveDeterministicOffsetPosition(playerPosition, seed, eventOffsetRadius);
 
             switch (newPhase)
             {
@@ -1473,7 +1511,13 @@ namespace Hecton8.Systems.AI
                 WorldRuntimeReferenceUtility.TryResolveFaunaDirector(ref faunaDirector);
 
             if (playerCamera == null && playerTransform != null)
-                playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null && playerContext.PlayerCamera != null)
+                    playerCamera = playerContext.PlayerCamera;
+                else
+                    playerTransform.TryGetComponent(out playerCamera);
+            }
         }
 
         private float UpdateFrameTimeAverage(float deltaTime)
@@ -1498,27 +1542,37 @@ namespace Hecton8.Systems.AI
             return _frameTimeHistoryCount > 0 ? sum / _frameTimeHistoryCount : sampleMs;
         }
 
-        private Vector3 ResolvePlayerVelocity(Vector3 playerPosition, float deltaTime)
+        private bool RefreshEncounterFrustumPlanes(float deltaTime, Vector3 playerPosition, Vector3 playerForward)
         {
-            Vector3 velocity = Vector3.zero;
-            if (_hasPreviousPlayerPosition && TryResolveSafeReciprocal(deltaTime, out float inverseDeltaTime))
-                velocity = SanitizeFiniteVector((playerPosition - _previousPlayerPosition) * inverseDeltaTime);
+            if (_frustumPlanesInitialized)
+            {
+                _frustumPlaneRefreshTimer = math.max(0f, _frustumPlaneRefreshTimer - math.max(0f, deltaTime));
+                if (_frustumPlaneRefreshTimer > 0f)
+                    return false;
+            }
 
-            _previousPlayerPosition = playerPosition;
-            _hasPreviousPlayerPosition = true;
-            return velocity;
+            if (playerCamera != null)
+                GeometryUtility.CalculateFrustumPlanes(playerCamera, _frustumPlaneScratch);
+            else
+                EncounterDirector.FillFallbackFrustumPlanes(playerPosition, playerForward, _frustumPlaneScratch);
+
+            _frustumPlanesInitialized = true;
+            _frustumPlaneRefreshTimer = DirectorFrustumPlaneRefreshIntervalSeconds;
+            return true;
         }
 
-        private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
+        private static bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
         {
-            if (!float.IsFinite(value) || Mathf.Abs(value) <= 0.0001f)
+            playerPosition = Vector3.zero;
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
             {
-                reciprocal = 0f;
                 return false;
             }
 
-            reciprocal = 1f / value;
-            return float.IsFinite(reciprocal);
+            playerPosition = ToVector3(runtimeContext.MovementState.PredictedAup.ToRuntimeFloat3());
+            return true;
         }
 
         private static Vector3 SanitizeFiniteVector(Vector3 value)
@@ -1528,15 +1582,56 @@ namespace Hecton8.Systems.AI
                 : Vector3.zero;
         }
 
-        private Vector3 ResolvePlayerForward()
+        private bool TryResolvePlayerRuntimeSnapshot(
+            out Vector3 playerPosition,
+            out Vector3 playerVelocity,
+            out Vector3 playerForward,
+            out AbsoluteUniversePosition playerAup)
         {
-            if (playerCamera != null)
-                return playerCamera.transform.forward;
+            playerPosition = default;
+            playerVelocity = default;
+            playerForward = _lastResolvedPlayerForward.sqrMagnitude > 0.0001f
+                ? _lastResolvedPlayerForward
+                : Vector3.forward;
+            playerAup = default;
 
-            if (playerTransform != null)
-                return playerTransform.forward;
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) == 0u)
+            {
+                return false;
+            }
 
-            return Vector3.forward;
+            PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+            PlayerLookState lookState = runtimeContext.LookState;
+            playerAup = movementState.PredictedAup;
+            playerPosition = ToVector3(playerAup.ToRuntimeFloat3());
+            playerVelocity = SanitizeFiniteVector(ToVector3(movementState.Velocity));
+
+            Vector3 lookForward = ToVector3(lookState.AimForward);
+            if (lookForward.sqrMagnitude > 0.0001f)
+            {
+                _lastResolvedPlayerForward = ResolveDominantAxisDirection(lookForward);
+                playerForward = _lastResolvedPlayerForward;
+                return true;
+            }
+
+            Vector3 cameraForward = ToVector3(movementState.CameraForward);
+            if (cameraForward.sqrMagnitude > 0.0001f)
+            {
+                _lastResolvedPlayerForward = ResolveDominantAxisDirection(cameraForward);
+                playerForward = _lastResolvedPlayerForward;
+                return true;
+            }
+
+            Vector3 movementForward = ToVector3(movementState.Forward);
+            if (movementForward.sqrMagnitude > 0.0001f)
+            {
+                _lastResolvedPlayerForward = ResolveDominantAxisDirection(movementForward);
+                playerForward = _lastResolvedPlayerForward;
+            }
+
+            return true;
         }
 
         private float ResolveSurfaceWorldY(Vector3 playerPosition)
@@ -1550,21 +1645,21 @@ namespace Hecton8.Systems.AI
         private float ResolvePlayerDepth(Vector3 playerPosition, float surfaceWorldY)
         {
             if (survivalSystem != null)
-                return Mathf.Max(0f, survivalSystem.Depth);
+                return math.max(0f, survivalSystem.Depth);
 
-            return Mathf.Max(0f, surfaceWorldY - playerPosition.y);
+            return math.max(0f, surfaceWorldY - playerPosition.y);
         }
 
         private float ResolveInternalStress(float healthNormalized, float oxygenNormalized, float sonarStress)
         {
             if (survivalSystem == null)
-                return math.saturate(Mathf.Max(Mathf.Max(1f - healthNormalized, 1f - oxygenNormalized), sonarStress));
+                return math.saturate(math.max(math.max(1f - healthNormalized, 1f - oxygenNormalized), sonarStress));
 
             float pressureStress = math.saturate(survivalSystem.PressureExposureSeverity01);
             float thermalStress = math.saturate(survivalSystem.ThermalStressSeverity01);
             float healthStress = 1f - healthNormalized;
             float oxygenStress = 1f - oxygenNormalized;
-            return math.saturate(Mathf.Max(Mathf.Max(pressureStress, thermalStress), Mathf.Max(Mathf.Max(healthStress, oxygenStress), sonarStress)));
+            return math.saturate(math.max(math.max(pressureStress, thermalStress), math.max(math.max(healthStress, oxygenStress), sonarStress)));
         }
 
         private float UpdateSonarStress(float deltaTime)
@@ -1572,7 +1667,9 @@ namespace Hecton8.Systems.AI
             if (_recentSonarStress <= 0f)
                 return 0f;
 
-            _recentSonarStress = Mathf.MoveTowards(_recentSonarStress, 0f, SonarStressDecayPerSecond * deltaTime);
+            _recentSonarStress = math.max(
+                0f,
+                _recentSonarStress - (math.max(0f, SonarStressDecayPerSecond) * math.max(0f, deltaTime)));
             return _recentSonarStress;
         }
 
@@ -1582,7 +1679,7 @@ namespace Hecton8.Systems.AI
             if (clampedIntensity <= 0f)
                 return;
 
-            _recentSonarStress = Mathf.Max(_recentSonarStress, clampedIntensity);
+            _recentSonarStress = math.max(_recentSonarStress, clampedIntensity);
         }
 
         void ISonarPingEventListener.OnSonarPingSent(float intensity)
@@ -1595,9 +1692,9 @@ namespace Hecton8.Systems.AI
             if (_externalPeakHoldSeconds <= 0f || _externalPeakPressure01 <= 0f)
                 return;
 
-            _externalPeakHoldSeconds = Mathf.Max(0f, _externalPeakHoldSeconds - deltaTime);
-            internalStress = Mathf.Max(internalStress, _externalPeakPressure01);
-            acousticThreatLevel = Mathf.Max(acousticThreatLevel, _externalPeakPressure01);
+            _externalPeakHoldSeconds = math.max(0f, _externalPeakHoldSeconds - deltaTime);
+            internalStress = math.max(internalStress, _externalPeakPressure01);
+            acousticThreatLevel = math.max(acousticThreatLevel, _externalPeakPressure01);
 
             if (_encounterDirector.CurrentPhase != EncounterPhase.Peak)
                 _encounterDirector.RequestPhaseOverride(EncounterPhase.Peak);
@@ -1611,7 +1708,7 @@ namespace Hecton8.Systems.AI
         private void UpdateHunterSquadPressure(float deltaTime)
         {
             if (_hunterSquadCooldown > 0f)
-                _hunterSquadCooldown = Mathf.Max(0f, _hunterSquadCooldown - deltaTime);
+                _hunterSquadCooldown = math.max(0f, _hunterSquadCooldown - deltaTime);
 
             IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
             if (ecosystemDirector == null || ecosystemDirector.BiomeHostility01 < HunterSquadHostilityThreshold)
@@ -1633,12 +1730,57 @@ namespace Hecton8.Systems.AI
             DirectorAIEvents.RaisePredatorPressureChanged(enabled);
         }
 
+        private static Vector2[] BuildEventOffsetDirectionLut()
+        {
+            Vector2[] directions = new Vector2[EventOffsetDirectionLutSize];
+            for (int i = 0; i < EventOffsetDirectionLutSize; i++)
+                directions[i] = ResolveOctantDirection(i);
+
+            return directions;
+        }
+
+        private static Vector3 ResolveDeterministicOffsetDirection(uint seed)
+        {
+            Vector2 direction = _eventOffsetDirectionLut[(int)((seed ^ 0xA511E9B3u) & EventOffsetDirectionLutMask)];
+            return new Vector3(direction.x, 0f, direction.y);
+        }
+
+        private static Vector2 ResolveOctantDirection(int slot)
+        {
+            switch (slot & 0x7)
+            {
+                case 0:
+                    return new Vector2(1f, 0f);
+                case 1:
+                    return new Vector2(0.70710678f, 0.70710678f);
+                case 2:
+                    return new Vector2(0f, 1f);
+                case 3:
+                    return new Vector2(-0.70710678f, 0.70710678f);
+                case 4:
+                    return new Vector2(-1f, 0f);
+                case 5:
+                    return new Vector2(-0.70710678f, -0.70710678f);
+                case 6:
+                    return new Vector2(0f, -1f);
+                default:
+                    return new Vector2(0.70710678f, -0.70710678f);
+            }
+        }
+
         private Vector3 ResolveDeterministicOffsetPosition(Vector3 origin, uint seed, float radius)
         {
-            float angle = EncounterDirector.HashToUnit01(seed ^ 0xA511E9B3u) * (Mathf.PI * 2f);
-            float distance = math.lerp(radius * 0.4f, radius, EncounterDirector.HashToUnit01(seed ^ 0x6C8E9CF5u));
-            Vector3 offset = new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
+            Vector2 direction = _eventOffsetDirectionLut[(int)((seed ^ 0xA511E9B3u) & EventOffsetDirectionLutMask)];
+            int distanceBucket = (int)(((seed ^ 0x6C8E9CF5u) >> 8) & EventOffsetDistanceBucketMask);
+            float distanceScale = EventOffsetMinRadiusScale + (EventOffsetDistanceStepScale * distanceBucket);
+            float distance = radius * distanceScale;
+            Vector3 offset = new Vector3(direction.x * distance, 0f, direction.y * distance);
             return origin + offset;
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
         }
     }
 }

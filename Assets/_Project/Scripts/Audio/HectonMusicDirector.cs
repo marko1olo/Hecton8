@@ -35,6 +35,8 @@ namespace Hecton8.Audio
         private const int InvalidVoiceIndex = -1;
         private const float MixerFloorDb = -80f;
         private const float MixerCeilingDb = 0f;
+        private const float EditorDebugStateIntervalSeconds = 0.25f;
+        private const int DependencyRetryFrameInterval = 30;
         private static readonly int _PredatorThreatLayerMask = HectonLayerMasks.CreatureLayerMask;
 
         private static readonly string[] MenuSceneTokens = { "main_menu" };
@@ -311,7 +313,12 @@ namespace Hecton8.Audio
         private bool _lastAcousticInteriorState;
         private bool _hasLastAcousticInteriorState;
         private Transform _playerTransform;
+        private Transform _dependencyPlayerTransform;
+        private HectonPlayerMovement _playerMovement;
         private HectonSurvivalSystem _survivalSystem;
+        private bool _playerMovementLookupAttempted;
+        private bool _survivalLookupAttempted;
+        private int _nextDependencyRetryFrame;
         private AudioMixer _layerMixer;
         private float _layerRhythm01;
         private float _layerBass01;
@@ -324,6 +331,8 @@ namespace Hecton8.Audio
         private float _lastBassDb = float.MinValue;
         private float _lastAtmosphereDb = float.MinValue;
         private float _lastDangerDb = float.MinValue;
+        private float _nextEditorDebugStateTime;
+        private uint _musicRandomState;
 
         /// <summary>
         /// Global access to the music director.
@@ -388,6 +397,9 @@ namespace Hecton8.Audio
             _recentLongClips = new AudioClip[4];
             // COLD ALLOC: AudioClip[3] â€” recent short-form clip history â€” owner: HectonMusicDirector
             _recentShortClips = new AudioClip[3];
+            _musicRandomState = unchecked(((uint)EntityId.ToULong(GetEntityId()) * 747796405u) ^ 0xD1B54A32u);
+            if (_musicRandomState == 0u)
+                _musicRandomState = 0xA341316Cu;
 
             BindAuthoredVoicePool();
             ResolveDependencies();
@@ -851,14 +863,65 @@ namespace Hecton8.Audio
             if (_directorAI == null)
                 _directorAI = HectonDirectorAI.ActiveRuntimeInstance;
 
-            if ((_playerTransform == null || _survivalSystem == null) &&
-                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                _playerTransform = playerTransform;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform resolvedPlayerTransform = playerContext != null && playerContext.PlayerTransform != null
+                ? playerContext.PlayerTransform
+                : _playerTransform;
 
-                if (_survivalSystem == null)
+            if (resolvedPlayerTransform == null &&
+                SceneBootstrap.TryGetCurrentPlayerTransform(out Transform bootstrapPlayerTransform))
+            {
+                resolvedPlayerTransform = bootstrapPlayerTransform;
+            }
+
+            if (!ReferenceEquals(_dependencyPlayerTransform, resolvedPlayerTransform))
+            {
+                _dependencyPlayerTransform = resolvedPlayerTransform;
+                _playerTransform = resolvedPlayerTransform;
+                _playerMovement = playerContext != null &&
+                                  ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform)
+                    ? playerContext.PlayerMovement
+                    : null;
+                _survivalSystem = null;
+                _playerMovementLookupAttempted = _playerMovement != null;
+                _survivalLookupAttempted = false;
+                _nextDependencyRetryFrame = 0;
+            }
+
+            if ((_playerMovement == null && _playerMovementLookupAttempted) ||
+                (_survivalSystem == null && _survivalLookupAttempted))
+            {
+                if (Time.frameCount >= _nextDependencyRetryFrame)
+                {
+                    _playerMovementLookupAttempted = _playerMovement != null;
+                    _survivalLookupAttempted = _survivalSystem != null;
+                }
+            }
+
+            if (_playerMovement == null &&
+                playerContext != null &&
+                ReferenceEquals(playerContext.PlayerTransform, resolvedPlayerTransform) &&
+                playerContext.PlayerMovement != null)
+            {
+                _playerMovement = playerContext.PlayerMovement;
+                _playerMovementLookupAttempted = true;
+            }
+
+            if (_playerMovement == null && !_playerMovementLookupAttempted && _playerTransform != null)
+            {
+                _playerMovementLookupAttempted = true;
+                _playerTransform.TryGetComponent(out _playerMovement);
+                if (_playerMovement == null)
+                    _nextDependencyRetryFrame = Time.frameCount + DependencyRetryFrameInterval;
+            }
+
+            if (_survivalSystem == null && !_survivalLookupAttempted)
+            {
+                _survivalLookupAttempted = true;
+                if (_playerTransform != null)
                     _playerTransform.TryGetComponent(out _survivalSystem);
+                if (_survivalSystem == null)
+                    _nextDependencyRetryFrame = Time.frameCount + DependencyRetryFrameInterval;
             }
 
             AudioMixerGroup musicGroup = ResolveMusicMixerGroup();
@@ -912,15 +975,30 @@ namespace Hecton8.Audio
                 return;
             }
 
+            if (_playerMovement == null)
+            {
+                _predatorProximity01 = 0f;
+                _debugPredatorProximity01 = 0f;
+                _debugStormPressure01 = _stormPressure01;
+                _debugOxygenDanger01 = _oxygenDanger01;
+                return;
+            }
+
+            AbsoluteUniversePosition playerAup = _playerMovement.CurrentAup;
+            float3 playerRuntime3 = playerAup.ToRuntimeFloat3();
+            Vector3 playerRuntimePosition = new Vector3(playerRuntime3.x, playerRuntime3.y, playerRuntime3.z);
+
             if (WorldSpatialHashGrid.TryGetNearestAggressiveBioform(
-                _playerTransform.position,
+                playerRuntimePosition,
+                in playerAup,
                 math.max(1f, _predatorSenseRadius),
                 _PredatorThreatLayerMask,
                 _playerTransform,
                 out SpatialQueryHit predatorHit))
             {
-                float distance = math.sqrt(predatorHit.DistanceSqr);
-                _predatorProximity01 = 1f - math.saturate(distance / math.max(1f, _predatorSenseRadius));
+                float senseRadius = math.max(1f, _predatorSenseRadius);
+                float senseRadiusSq = senseRadius * senseRadius;
+                _predatorProximity01 = 1f - math.saturate(math.max(0f, predatorHit.DistanceSqr) / senseRadiusSq);
             }
             else
             {
@@ -1409,7 +1487,7 @@ namespace Hecton8.Audio
                     }
                     else
                     {
-                        _voiceBaseVolumes[i] = math.sqrt(math.lerp(startVolume * startVolume, targetVolume * targetVolume, t));
+                        _voiceBaseVolumes[i] = math.lerp(startVolume, targetVolume, t);
                     }
                     if (t >= 1f)
                     {
@@ -1500,7 +1578,7 @@ namespace Hecton8.Audio
             if (maxPause <= minPause)
                 _waitTimerSeconds = minPause;
             else
-                _waitTimerSeconds = UnityEngine.Random.Range(minPause, maxPause);
+                _waitTimerSeconds = NextRandomRange(minPause, maxPause);
 
             _playbackState = PlaybackState.Waiting;
             TraceEvent("Wait", waitProfile, null);
@@ -1516,7 +1594,7 @@ namespace Hecton8.Audio
                 rootProfile.CrossTensionMixChance > 0f &&
                 PoolHasValidClips(GetPool(rootProfile, highTension, preferShort)) &&
                 PoolHasValidClips(GetPool(rootProfile, !highTension, preferShort)) &&
-                UnityEngine.Random.value <= rootProfile.CrossTensionMixChance &&
+                NextRandom01() <= rootProfile.CrossTensionMixChance &&
                 TrySelectCueFromMode(rootProfile, !highTension, preferShort, out selectedCue, out selectedProfile))
             {
                 _selectionUsedCrossTension = true;
@@ -1623,7 +1701,7 @@ namespace Hecton8.Audio
             if (totalWeight <= 0)
                 return false;
 
-            int roll = UnityEngine.Random.Range(0, totalWeight);
+            int roll = NextRandomRangeInt(0, totalWeight);
             if (PoolHasValidClips(GetPool(rootProfile, highTension, preferShort)))
             {
                 if (roll < localWeight)
@@ -1712,7 +1790,7 @@ namespace Hecton8.Audio
             if (validCount <= 0 || totalWeight <= 0)
                 return false;
 
-            int roll = UnityEngine.Random.Range(0, totalWeight);
+            int roll = NextRandomRangeInt(0, totalWeight);
 
             for (int i = 0; i < pool.Length; i++)
             {
@@ -1766,7 +1844,7 @@ namespace Hecton8.Audio
             if (profile == null || _shortTrackCooldownRemaining > 0f || profile.ShortTrackChance <= 0f)
                 return false;
 
-            return UnityEngine.Random.value <= profile.ShortTrackChance;
+            return NextRandom01() <= profile.ShortTrackChance;
         }
 
         private bool ShouldTriggerEndFade(int voiceIndex, float fadeOutSeconds)
@@ -1886,7 +1964,7 @@ namespace Hecton8.Audio
                 StartDuck(_stingerDuckFactor, _stingerDuckAttackSeconds);
             }
 
-            TraceEvent("Stinger:" + kind, sourceProfile, selectedCue.Clip);
+            TraceEvent(ResolveStingerTraceLabel(kind), sourceProfile, selectedCue.Clip);
 
             return true;
         }
@@ -1969,7 +2047,7 @@ namespace Hecton8.Audio
                 return false;
 
             bool excludeRepeat = validCount > 1 && _lastStingerClip != null && totalWithoutRepeat > 0;
-            int roll = UnityEngine.Random.Range(0, excludeRepeat ? totalWithoutRepeat : totalWeight);
+            int roll = NextRandomRangeInt(0, excludeRepeat ? totalWithoutRepeat : totalWeight);
 
             for (int i = 0; i < pool.Length; i++)
             {
@@ -2429,6 +2507,9 @@ namespace Hecton8.Audio
         private void TraceSelection(HectonMusicBiomeProfile rootProfile, HectonMusicBiomeProfile playbackProfile, HectonMusicClip selectedCue, bool highTension, bool preferShort)
         {
 #if UNITY_EDITOR
+            if (!_enableTelemetry)
+                return;
+
             string rootLabel = rootProfile != null && !string.IsNullOrEmpty(rootProfile.ProfileLabel) ? rootProfile.ProfileLabel : "None";
             string playbackLabel = playbackProfile != null && !string.IsNullOrEmpty(playbackProfile.ProfileLabel) ? playbackProfile.ProfileLabel : "None";
             string cueId = !string.IsNullOrEmpty(selectedCue.CueId) ? selectedCue.CueId : (selectedCue.Clip != null ? selectedCue.Clip.name : "None");
@@ -2436,7 +2517,10 @@ namespace Hecton8.Audio
             string formLabel = preferShort ? "short" : "long";
             string routeLabel = _selectionUsedDepthBlend ? "depth-blend" : (_selectionUsedCrossTension ? "cross-tension" : "local");
             _debugLastSelectionReason = rootLabel + " -> " + playbackLabel + " | " + tensionLabel + " | " + formLabel + " | " + routeLabel + " | " + cueId;
-            TraceEvent("Select:" + routeLabel + ":" + tensionLabel + ":" + formLabel, playbackProfile, selectedCue.Clip);
+            TraceEvent(
+                ResolveSelectionTraceLabel(_selectionUsedDepthBlend, _selectionUsedCrossTension, highTension, preferShort),
+                playbackProfile,
+                selectedCue.Clip);
 #endif
         }
 
@@ -2457,6 +2541,15 @@ namespace Hecton8.Audio
         private void WriteDebugState()
         {
 #if UNITY_EDITOR
+            if (!_enableTelemetry)
+                return;
+
+            float now = Time.unscaledTime;
+            if (now < _nextEditorDebugStateTime)
+                return;
+
+            _nextEditorDebugStateTime = now + EditorDebugStateIntervalSeconds;
+
             _debugResolvedProfile = _resolvedProfile != null
                 ? (!string.IsNullOrEmpty(_resolvedProfile.ProfileLabel) ? _resolvedProfile.ProfileLabel : _resolvedProfile.name)
                 : (_fallbackProfile != null ? _fallbackProfile.ProfileLabel : "None");
@@ -2476,6 +2569,45 @@ namespace Hecton8.Audio
             _debugTenseExplorationLatched = _tenseExplorationLatched;
             _debugWaitTimer = _waitTimerSeconds;
 #endif
+        }
+
+        private static string ResolveStingerTraceLabel(StingerKind kind)
+        {
+            switch (kind)
+            {
+                case StingerKind.Discovery:
+                    return "Stinger:Discovery";
+                case StingerKind.Danger:
+                    return "Stinger:Danger";
+                case StingerKind.Recovery:
+                    return "Stinger:Recovery";
+                default:
+                    return "Stinger:Unknown";
+            }
+        }
+
+        private static string ResolveSelectionTraceLabel(bool depthBlend, bool crossTension, bool highTension, bool preferShort)
+        {
+            if (depthBlend)
+            {
+                if (highTension)
+                    return preferShort ? "Select:depth-blend:tense:short" : "Select:depth-blend:tense:long";
+
+                return preferShort ? "Select:depth-blend:calm:short" : "Select:depth-blend:calm:long";
+            }
+
+            if (crossTension)
+            {
+                if (highTension)
+                    return preferShort ? "Select:cross-tension:tense:short" : "Select:cross-tension:tense:long";
+
+                return preferShort ? "Select:cross-tension:calm:short" : "Select:cross-tension:calm:long";
+            }
+
+            if (highTension)
+                return preferShort ? "Select:local:tense:short" : "Select:local:tense:long";
+
+            return preferShort ? "Select:local:calm:short" : "Select:local:calm:long";
         }
 
         private static float ResolvePressure01(int authoredValue)
@@ -2666,6 +2798,32 @@ namespace Hecton8.Audio
                 return target;
 
             return current + math.sign(delta) * maxDelta;
+        }
+
+        private float NextRandomRange(float minInclusive, float maxInclusive)
+        {
+            return math.lerp(minInclusive, maxInclusive, NextRandom01());
+        }
+
+        private int NextRandomRangeInt(int minInclusive, int maxExclusive)
+        {
+            int span = math.max(1, maxExclusive - minInclusive);
+            return minInclusive + (int)(NextRandomUInt() % (uint)span);
+        }
+
+        private float NextRandom01()
+        {
+            return (NextRandomUInt() & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private uint NextRandomUInt()
+        {
+            uint state = _musicRandomState != 0u ? _musicRandomState : 0xA341316Cu;
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            _musicRandomState = state;
+            return state;
         }
 
 #if UNITY_EDITOR

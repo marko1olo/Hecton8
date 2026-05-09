@@ -22,6 +22,7 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma shader_feature_local _QUALITY_MX350
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -97,6 +98,10 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             half4 Frag(Varyings input) : SV_Target
             {
                 float critical01 = saturate(_HectonRetinaCritical01);
+                [branch]
+                if (critical01 <= 0.0001)
+                    return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+
                 float2 centered = input.screenUV * 2.0 - 1.0;
                 float distSq = dot(centered, centered);
                 float edge01 = saturate(distSq * 1.35);
@@ -115,11 +120,15 @@ Shader "Hidden/Hecton8/RetinaDistortion"
                 float2 refractedUV = saturate(input.screenUV + radialDir * distortion);
                 float2 chromaOffset = radialDir * chroma;
 
-                half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV + chromaOffset)).r;
                 half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, refractedUV);
-                half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV - chromaOffset)).b;
-                color.r = red;
-                color.b = blue;
+                [branch]
+                if (abs(chroma) > 0.000001)
+                {
+                    half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV + chromaOffset)).r;
+                    half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV - chromaOffset)).b;
+                    color.r = red;
+                    color.b = blue;
+                }
 
                 half luminance = dot(color.rgb, half3(0.2126h, 0.7152h, 0.0722h));
                 half desaturate01 = (half)(critical01 * edge01 * 0.12);
@@ -133,4 +142,6 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

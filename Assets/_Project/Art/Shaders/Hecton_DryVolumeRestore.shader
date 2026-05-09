@@ -127,7 +127,12 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             float worldYNorm = saturate((absolutePositionWS.y - abyssFloorY) * inverseSpan);
             float densityLocal = _HectonNoirFogStratification.w * (1.0 + (1.0 - worldYNorm) * _HectonNoirFogStratification.z);
             half fogFactor = saturate(1.0h - exp2(-linearEyeDepth * densityLocal));
-            fogFactor = pow(fogFactor, (half)max(_HectonNoirResolveSettings.x, 1.0));
+            half fogPower = (half)max(_HectonNoirResolveSettings.x, 1.0);
+            half fogSq = fogFactor * fogFactor;
+            half fogQuad = fogSq * fogSq;
+            half fogLow = lerp(fogFactor, fogSq, saturate(fogPower - 1.0h));
+            half fogHigh = lerp(fogSq, fogQuad, saturate((fogPower - 2.0h) * 0.5h));
+            fogFactor = fogPower < 2.0h ? fogLow : fogHigh;
             half3 abyssFloor = _HectonNoirAbyssFloor.rgb;
             return lerp(sourceColor, max(abyssFloor, sourceColor * 0.18h), fogFactor);
         }
@@ -214,6 +219,7 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             }
 
             HLSLPROGRAM
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
             #pragma vertex Vert
             #pragma fragment FragRestore
             ENDHLSL
@@ -232,6 +238,7 @@ Shader "Hidden/Hecton8/DryVolumeRestore"
             }
 
             HLSLPROGRAM
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
             #pragma vertex Vert
             #pragma fragment FragResolve
             ENDHLSL

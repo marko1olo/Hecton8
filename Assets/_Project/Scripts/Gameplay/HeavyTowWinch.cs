@@ -382,8 +382,17 @@ namespace Hecton8.Gameplay
                 return 1f;
 
             float exponent = math.max(0.1f, towDragExponent);
-            float normalizedExp = (math.exp(load01 * exponent) - 1f) / math.max(math.exp(exponent) - 1f, 0.0001f);
-            return 1f + normalizedExp * maxTowEnvironmentalDrag;
+            float loadedRise = FastTowDragRise(load01 * exponent);
+            float fullRise = math.max(FastTowDragRise(exponent), 0.0001f);
+            return 1f + (loadedRise / fullRise) * maxTowEnvironmentalDrag;
+        }
+
+        private static float FastTowDragRise(float x)
+        {
+            float clamped = math.max(0f, x);
+            float x2 = clamped * clamped;
+            float fakeExp = 1f + clamped + (0.48f * x2) + (0.235f * x2 * clamped);
+            return math.max(0f, fakeExp - 1f);
         }
 
         internal float ResolveSnapTensionThreshold() => math.max(1f, maxCableForce);
@@ -474,16 +483,21 @@ namespace Hecton8.Gameplay
                 return;
 
             float clampedSeverity = math.saturate(math.max(snapSeverity, 0.01f));
-            Vector3 releasedVelocityChange = PlayerForward * math.lerp(
+            Vector3 playerForward = PlayerForward;
+            Vector3 playerRight = PlayerRight;
+            Vector3 playerUp = PlayerUp;
+            Rigidbody activeTowBody = ResolveActiveTowBody();
+            float activeTowMass = activeTowBody != null ? activeTowBody.mass : 1f;
+            Vector3 releasedVelocityChange = playerForward * math.lerp(
                 snapReleaseVelocityChangeMin,
                 snapReleaseVelocityChangeMax,
                 clampedSeverity);
             Vector3 snapTraumaImpulse = -playerSegmentDirection * (
                 snapRecoilImpulse *
                 math.lerp(0.65f, 1.2f, clampedSeverity) *
-                (ResolveActiveTowBody() != null ? ResolveActiveTowBody().mass : 1f));
-            float signedRoll = math.clamp(Vector3.Dot(playerSegmentDirection, PlayerRight), -1f, 1f);
-            ApplyPayloadSnapResponse(payloadBody, payloadCollider, payloadSegmentDirection, clampedSeverity);
+                activeTowMass);
+            float signedRoll = math.clamp(math.dot(ToFloat3(playerSegmentDirection), ToFloat3(playerRight)), -1f, 1f);
+            ApplyPayloadSnapResponse(payloadBody, payloadCollider, payloadSegmentDirection, playerUp, playerRight, clampedSeverity);
 
             if (IsTowBoundToPlayer() && playerMovement != null)
             {
@@ -495,7 +509,6 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                Rigidbody activeTowBody = ResolveActiveTowBody();
                 if (activeTowBody != null)
                     PhysicsForceRouter.QueueForce(activeTowBody, releasedVelocityChange, ForceMode.VelocityChange);
             }
@@ -505,6 +518,8 @@ namespace Hecton8.Gameplay
             Rigidbody payloadBody,
             Collider payloadCollider,
             Vector3 payloadSegmentDirection,
+            Vector3 playerUp,
+            Vector3 playerRight,
             float snapSeverity)
         {
             if (payloadBody == null)
@@ -516,11 +531,12 @@ namespace Hecton8.Gameplay
                 snapSeverity);
             PhysicsForceRouter.QueueForce(payloadBody, payloadVelocityChange, ForceMode.VelocityChange);
 
-            Vector3 torqueAxis = Vector3.Cross(payloadSegmentDirection, PlayerUp);
-            if (torqueAxis.sqrMagnitude <= 0.0001f)
-                torqueAxis = PlayerRight;
+            Vector3 torqueAxis = Vector3.Cross(payloadSegmentDirection, playerUp);
+            float torqueAxisSq = torqueAxis.sqrMagnitude;
+            if (torqueAxisSq <= 0.0001f || !math.all(math.isfinite(ToFloat3(torqueAxis))))
+                torqueAxis = playerRight;
             else
-                torqueAxis.Normalize();
+                torqueAxis *= math.rsqrt(torqueAxisSq);
 
             Vector3 payloadTorqueVelocityChange = torqueAxis * math.lerp(
                 snapPayloadTorqueVelocityChangeMin,
@@ -550,6 +566,11 @@ namespace Hecton8.Gameplay
                         payloadTorqueVelocityChange,
                         snapSeverity));
             }
+        }
+
+        private static float3 ToFloat3(Vector3 value)
+        {
+            return new float3(value.x, value.y, value.z);
         }
 
         private void CachePayloadIdentity(Rigidbody payloadBody)

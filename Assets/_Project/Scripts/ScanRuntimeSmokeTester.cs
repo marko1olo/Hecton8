@@ -133,18 +133,19 @@ namespace Hecton8.Gameplay
                 }
 
                 int entriesBefore = scanLogSystem.EntryCount;
+                uint probeHash = ScanEvents.ComputeEntryHash(probeId);
                 LogVerbose($"SCAN before={entriesBefore} probeId={probeId}");
                 scanner.UsePrimary(0f);
                 await DelayRealtimeAsync(settleDelay, cancellationToken);
                 bool archivedInTime = await WaitUntilAsync(
-                    () => scanLogSystem.ContainsEntry(probeId) && scanLogSystem.EntryCount >= entriesBefore + 1,
+                    () => scanLogSystem.ContainsEntry(probeHash) && scanLogSystem.EntryCount >= entriesBefore + 1,
                     actionTimeout,
                     "Archive scan probe",
                     cancellationToken);
                 if (!archivedInTime)
                     return;
 
-                bool archived = scanLogSystem.ContainsEntry(probeId);
+                bool archived = scanLogSystem.ContainsEntry(probeHash);
                 int entriesAfter = scanLogSystem.EntryCount;
                 Debug.Log($"[ScanSmoke] COMPLETE archived={archived} entries={entriesBefore}->{entriesAfter}");
             }

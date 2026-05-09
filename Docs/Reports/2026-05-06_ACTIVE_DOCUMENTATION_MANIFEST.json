@@ -1075,25 +1075,25 @@
                   {
                       "path":  "Docs/Reports/2026-05-05_GRAND_PURGE_VERIFICATION_LOG.md",
                       "date":  "2026-05-05",
-                      "status":  "GRAND PURGE VERIFIED",
+                      "status":  "PENDING VERIFICATION (HISTORICAL GRAND PURGE SMOKE LABEL)",
                       "title":  "2026-05-05 Grand Purge Verification Log"
                   },
                   {
                       "path":  "Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md",
                       "date":  "2026-05-05",
-                      "status":  "MACRO SHELF VERIFIED",
+                      "status":  "PENDING VERIFICATION (HISTORICAL MACRO SHELF SMOKE LABEL)",
                       "title":  "HECTON-8 Sandbox Biomes Macro Shelf Surgery Log"
                   },
                   {
                       "path":  "Docs/Reports/2026-05-05_NARRATIVE_PURGE_SURGERY_LOG.md",
                       "date":  "2026-05-05",
-                      "status":  "NARRATIVE PURGE VERIFIED",
+                      "status":  "PENDING VERIFICATION (HISTORICAL NARRATIVE PURGE SMOKE LABEL)",
                       "title":  "2026-05-05 Narrative Purge Surgery Log"
                   },
                   {
                       "path":  "Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md",
                       "date":  "2026-05-05",
-                      "status":  "OMEGA VERIFIED (SCOPED)",
+                      "status":  "PENDING VERIFICATION (SCOPED SMOKE PASS RECORDED)",
                       "title":  "2026-05-05 Omega Autonomy Forensic Hardening"
                   },
                   {
@@ -1105,25 +1105,25 @@
                   {
                       "path":  "Docs/Reports/2026-05-06_GRAND_PURGE_REPEAT_VERIFICATION_LOG.md",
                       "date":  "2026-05-06",
-                      "status":  "GRAND PURGE VERIFIED",
+                      "status":  "PENDING VERIFICATION (HISTORICAL GRAND PURGE SMOKE LABEL)",
                       "title":  "2026-05-06 Grand Purge Repeat Verification Log"
                   },
                   {
                       "path":  "Docs/Reports/2026-05-06_GRAND_PURGE_VERIFICATION_PASS_04_LOG.md",
                       "date":  "2026-05-06",
-                      "status":  "GRAND PURGE VERIFIED",
+                      "status":  "PENDING VERIFICATION (HISTORICAL GRAND PURGE SMOKE LABEL)",
                       "title":  "2026-05-06 Grand Purge Verification Pass 04 Log"
                   },
                   {
                       "path":  "Docs/Reports/2026-05-06_GRAND_PURGE_VERIFICATION_PASS_05_LOG.md",
                       "date":  "2026-05-06",
-                      "status":  "GRAND PURGE VERIFIED",
+                      "status":  "PENDING VERIFICATION (HISTORICAL GRAND PURGE SMOKE LABEL)",
                       "title":  "HECTON-8 Grand Purge Verification Pass 05"
                   },
                   {
                       "path":  "Docs/Reports/2026-05-06_GRAND_PURGE_VERIFICATION_PASS_06_LOG.md",
                       "date":  "2026-05-06",
-                      "status":  "GRAND PURGE VERIFIED",
+                      "status":  "PENDING VERIFICATION (HISTORICAL GRAND PURGE SMOKE LABEL)",
                       "title":  "HECTON-8 Grand Purge Verification Pass 06"
                   },
                   {
@@ -1261,13 +1261,13 @@
                   {
                       "path":  "Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_AUDIT.md",
                       "date":  "2026-05-05",
-                      "status":  "OMEGA VERIFIED",
+                      "status":  "PENDING VERIFICATION (HISTORICAL OMEGA SMOKE LABEL)",
                       "title":  "OMEGA AUTONOMY AUDIT"
                   },
                   {
                       "path":  "Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md",
                       "date":  "2026-05-05",
-                      "status":  "OMEGA VERIFIED",
+                      "status":  "PENDING VERIFICATION (HISTORICAL OMEGA SMOKE LABEL)",
                       "title":  "Omega Autonomy Codex Audit - Terrain/World Domain"
                   },
                   {

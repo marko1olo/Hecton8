@@ -118,12 +118,8 @@ namespace Hecton8.Gameplay
             float leftHandDistance = entity.EnableHandBracing != 0 && !leftHandUsesPredictiveLatch ? math.max(0.0f, entity.LeftArmReach * entity.HandProbeDistanceScale) : 0.0f;
             float rightHandDistance = entity.EnableHandBracing != 0 && !rightHandUsesPredictiveLatch ? math.max(0.0f, entity.RightArmReach * entity.HandProbeDistanceScale) : 0.0f;
 
-            float3 leftBraceDirection = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(entity.RootRotation, new float3(-0.7f, -0.7f, 0.0f)),
-                new float3(-0.70710677f, -0.70710677f, 0.0f));
-            float3 rightBraceDirection = ContextualPhysicalIkMath.SafeNormalize(
-                math.mul(entity.RootRotation, new float3(0.7f, -0.7f, 0.0f)),
-                new float3(0.70710677f, -0.70710677f, 0.0f));
+            float3 leftBraceDirection = math.mul(entity.RootRotation, new float3(-0.70710677f, -0.70710677f, 0.0f));
+            float3 rightBraceDirection = math.mul(entity.RootRotation, new float3(0.70710677f, -0.70710677f, 0.0f));
 
             Commands[baseCommandIndex + 0] = new RaycastCommand(
                 ContextualPhysicalIkMath.ToUnityVector3(entity.LeftFootProbeOrigin),
@@ -470,6 +466,7 @@ namespace Hecton8.Gameplay
         private Transform _cameraTransform;
         private bool _groundResponseScheduled;
         private bool _registered;
+        private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
         private int _freeSlotCount;
@@ -665,7 +662,7 @@ namespace Hecton8.Gameplay
             DisposeNativeArray(ref _scheduledHits, dependency);
             DisposeNativeArray(ref _frontTargetFrames, dependency);
             DisposeNativeArray(ref _backTargetFrames, dependency);
-            DispatcherJobSwap.TryComplete(ref _disposeHandle, forceComplete: true);
+            _disposeHandle = default;
             _groundResponseScheduled = false;
             _pendingGroundResponseHandle = default;
         }
@@ -688,11 +685,20 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this) ||
-                          SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
-            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
+            bool updateRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            bool lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!updateRegistered || !lateFrameRegistered)
+            {
+                if (updateRegistered)
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                if (lateFrameRegistered)
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                return;
+            }
+
+            _registeredUpdate = true;
+            _registeredLateFrame = true;
+            _registered = true;
         }
 
         private void TryUnregister()
@@ -700,13 +706,14 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            if (GlobalRegistry.Updatables.Contains(this))
+            if (_registeredUpdate)
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
 
-            if (_registeredLateFrame && SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this))
+            if (_registeredLateFrame)
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
 
             _registered = false;
+            _registeredUpdate = false;
             _registeredLateFrame = false;
         }
 

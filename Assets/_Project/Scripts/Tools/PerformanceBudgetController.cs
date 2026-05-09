@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using UnityEngine;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Unity.Mathematics;
 
 namespace Hecton8.Tools
 {
@@ -11,6 +12,7 @@ namespace Hecton8.Tools
     /// Maintains separate performance budgets for different visual systems.
     /// Provides guardrail enforcement to prevent any single system from consuming too much CPU/GPU.
     /// </summary>
+    [DisallowMultipleComponent]
     [DefaultExecutionOrder(500)] // After most systems but before rendering
     public sealed class PerformanceBudgetController : MonoBehaviour, ITickable, IUpdatable
     {
@@ -41,8 +43,13 @@ namespace Hecton8.Tools
         [SerializeField, Tooltip("Frames to average for budget calculation")]
         private int _budgetAverageFrames = 10;
 
-        // System budgets
-        private readonly Dictionary<string, SystemBudget> _systemBudgets = new Dictionary<string, SystemBudget>();
+        private const int MaxTrackedBudgetSystems = 32;
+
+        // COLD ALLOC: Dictionary<string,int>[32] - system-name to dense budget index map - owner: PerformanceBudgetController
+        private readonly Dictionary<string, int> _systemBudgetIndices = new Dictionary<string, int>(MaxTrackedBudgetSystems);
+        // COLD ALLOC: SystemBudget[32] - dense budget rows for cache-friendly Tick traversal - owner: PerformanceBudgetController
+        private readonly SystemBudget[] _systemBudgets = new SystemBudget[MaxTrackedBudgetSystems];
+        private int _systemBudgetCount;
 
         // Frame time tracking
         private float[] _recentFrameTimes;
@@ -60,21 +67,9 @@ namespace Hecton8.Tools
         private const float BudgetStatusLogIntervalSeconds = 5f;
         private const float OverBudgetLogIntervalSeconds = 5f;
 
-        // Singleton
-        public static PerformanceBudgetController Instance { get; private set; }
-
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-            GameBootstrapper.PersistRuntimeService(this);
-
-            EnsureFrameHistoryCapacity();
+            EnsureFrameHistoryCapacity(true);
             InitializeBudgets();
         }
 
@@ -98,13 +93,14 @@ namespace Hecton8.Tools
 
         private void OnDestroy()
         {
-            if (Instance == this)
-                Instance = null;
+            OnDisable();
+            _systemBudgetIndices.Clear();
+            _systemBudgetCount = 0;
         }
 
         public void Tick(float dt)
         {
-            UpdateFrameTimeAverage(Mathf.Max(0f, dt) * 1000f);
+            UpdateFrameTimeAverage(math.max(0f, dt) * 1000f);
 
             // Check budgets and apply throttling if needed
             if (_enableThrottling)
@@ -112,12 +108,14 @@ namespace Hecton8.Tools
                 CheckAndApplyThrottling();
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             // Log budget status periodically
             if (Time.unscaledTime >= _nextBudgetStatusLogTime)
             {
                 LogBudgetStatus();
                 _nextBudgetStatusLogTime = Time.unscaledTime + BudgetStatusLogIntervalSeconds;
             }
+#endif
         }
 
         /// <summary>
@@ -131,19 +129,30 @@ namespace Hecton8.Tools
                 return;
             }
 
-            if (_systemBudgets.ContainsKey(systemName))
+            if (_systemBudgetIndices.ContainsKey(systemName))
             {
                 LogDuplicateRegistration(systemName);
                 return;
             }
 
-            float budgetMs = GetBudgetForSystem(systemName);
-            _systemBudgets[systemName] = new SystemBudget
+            if (_systemBudgetCount >= MaxTrackedBudgetSystems)
             {
+                LogRegistrationCapacityExceeded(systemName);
+                return;
+            }
+
+            float budgetMs = GetBudgetForSystem(systemName);
+            SystemBudget budget = new SystemBudget
+            {
+                SystemName = systemName,
                 System = system,
                 BudgetMs = budgetMs,
                 IsThrottled = false
             };
+            int index = _systemBudgetCount;
+            _systemBudgets[index] = budget;
+            _systemBudgetIndices[systemName] = index;
+            _systemBudgetCount = index + 1;
 
             LogSystemRegistered(systemName, budgetMs);
         }
@@ -156,10 +165,11 @@ namespace Hecton8.Tools
             if (string.IsNullOrWhiteSpace(systemName))
                 return;
 
-            if (_systemBudgets.Remove(systemName))
-            {
-                LogSystemUnregistered(systemName);
-            }
+            if (!_systemBudgetIndices.TryGetValue(systemName, out int index))
+                return;
+
+            RemoveBudgetAtIndex(index);
+            LogSystemUnregistered(systemName);
         }
 
         /// <summary>
@@ -170,10 +180,11 @@ namespace Hecton8.Tools
             if (string.IsNullOrWhiteSpace(systemName))
                 return;
 
-            if (!_systemBudgets.TryGetValue(systemName, out var budget))
+            if (!_systemBudgetIndices.TryGetValue(systemName, out int index))
                 return;
 
-            timeUsedMs = Mathf.Max(0f, timeUsedMs);
+            SystemBudget budget = _systemBudgets[index];
+            timeUsedMs = math.max(0f, timeUsedMs);
             budget.LastFrameTimeMs = timeUsedMs;
             budget.TotalTimeMs += timeUsedMs;
             budget.FrameCount++;
@@ -188,6 +199,8 @@ namespace Hecton8.Tools
                     LogSystemOverBudget(systemName, timeUsedMs, budget.BudgetMs);
                 }
             }
+
+            _systemBudgets[index] = budget;
         }
 
         /// <summary>
@@ -195,26 +208,36 @@ namespace Hecton8.Tools
         /// </summary>
         public Dictionary<string, SystemBudgetInfo> GetBudgetStatus()
         {
-            var status = new Dictionary<string, SystemBudgetInfo>(_systemBudgets.Count);
-            Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
-            while (enumerator.MoveNext())
+            var status = new Dictionary<string, SystemBudgetInfo>(_systemBudgetCount);
+            int budgetCount = _systemBudgetCount;
+            for (int i = 0; i < budgetCount; i++)
             {
-                KeyValuePair<string, SystemBudget> kvp = enumerator.Current;
-                SystemBudget budget = kvp.Value;
-                float avgTime = budget.FrameCount > 0 ? budget.TotalTimeMs / budget.FrameCount : 0f;
-                float budgetUsage = budget.BudgetMs > 0 ? (avgTime / budget.BudgetMs) : 0f;
+                SystemBudget budget = _systemBudgets[i];
 
-                status[kvp.Key] = new SystemBudgetInfo
-                {
-                    BudgetMs = budget.BudgetMs,
-                    AverageTimeMs = avgTime,
-                    BudgetUsage = budgetUsage,
-                    IsThrottled = budget.IsThrottled,
-                    OverBudgetCount = budget.OverBudgetCount
-                };
+                status[budget.SystemName] = CreateBudgetInfo(in budget);
             }
 
             return status;
+        }
+
+        /// <summary>
+        /// Copies budget status into caller-owned buffers. Returns copied row count.
+        /// </summary>
+        public int CopyBudgetStatusNonAlloc(SystemBudgetInfo[] statusDestination, string[] nameDestination = null)
+        {
+            if (statusDestination == null || statusDestination.Length == 0)
+                return 0;
+
+            int copyCount = math.min(_systemBudgetCount, statusDestination.Length);
+            for (int i = 0; i < copyCount; i++)
+            {
+                SystemBudget budget = _systemBudgets[i];
+                statusDestination[i] = CreateBudgetInfo(in budget);
+                if (nameDestination != null && i < nameDestination.Length)
+                    nameDestination[i] = budget.SystemName;
+            }
+
+            return copyCount;
         }
 
         /// <summary>
@@ -222,50 +245,54 @@ namespace Hecton8.Tools
         /// </summary>
         public string DescribeStatus()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             int throttledCount = CountThrottledSystems();
             int overBudgetCount = CountOverBudgetSystems();
 
-            StringBuilder statusBuilder = new StringBuilder(256);
+            StringBuilder statusBuilder = _statusLogBuilder;
+            statusBuilder.Clear();
             statusBuilder.Append("[PerformanceBudgetController] avgFrame=");
-            statusBuilder.Append(_currentFrameTimeAverage.ToString("F2"));
+            AppendFixed2(statusBuilder, _currentFrameTimeAverage);
             statusBuilder.Append("ms target=");
-            statusBuilder.Append(_targetFrameTimeMs.ToString("F2"));
+            AppendFixed2(statusBuilder, _targetFrameTimeMs);
             statusBuilder.Append("ms max=");
-            statusBuilder.Append(_maxFrameTimeMs.ToString("F2"));
+            AppendFixed2(statusBuilder, _maxFrameTimeMs);
             statusBuilder.Append("ms systems=");
-            statusBuilder.Append(_systemBudgets.Count);
+            statusBuilder.Append(_systemBudgetCount);
             statusBuilder.Append(" throttled=");
             statusBuilder.Append(throttledCount);
             statusBuilder.Append(" overBudget=");
             statusBuilder.Append(overBudgetCount);
 
-            if (_systemBudgets.Count == 0)
+            if (_systemBudgetCount == 0)
             {
                 statusBuilder.Append(" budgets=none");
                 return statusBuilder.ToString();
             }
 
             statusBuilder.Append(" budgets:");
-            Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
-            while (enumerator.MoveNext())
+            int budgetCount = _systemBudgetCount;
+            for (int i = 0; i < budgetCount; i++)
             {
-                KeyValuePair<string, SystemBudget> kvp = enumerator.Current;
-                SystemBudget budget = kvp.Value;
+                SystemBudget budget = _systemBudgets[i];
                 float avgTime = budget.FrameCount > 0 ? budget.TotalTimeMs / budget.FrameCount : 0f;
                 float budgetUsage = budget.BudgetMs > 0f ? avgTime / budget.BudgetMs : 0f;
                 statusBuilder.Append(' ');
-                statusBuilder.Append(kvp.Key);
+                statusBuilder.Append(budget.SystemName);
                 statusBuilder.Append('=');
-                statusBuilder.Append(avgTime.ToString("F2"));
+                AppendFixed2(statusBuilder, avgTime);
                 statusBuilder.Append("ms/");
-                statusBuilder.Append(budget.BudgetMs.ToString("F2"));
+                AppendFixed2(statusBuilder, budget.BudgetMs);
                 statusBuilder.Append("ms(");
-                statusBuilder.AppendFormat("{0:P0}", budgetUsage);
+                AppendPercent0(statusBuilder, budgetUsage);
                 statusBuilder.Append(budget.IsThrottled ? ",throttled" : ",ok");
                 statusBuilder.Append(')');
             }
 
             return statusBuilder.ToString();
+#else
+            return "[PerformanceBudgetController] status disabled in release";
+#endif
         }
 
         private void InitializeBudgets()
@@ -287,7 +314,7 @@ namespace Hecton8.Tools
                 return totalBudget * _terrainBudget;
 
             float allocated = totalBudget * (_microfaunaBudget + _biolumBudget + _terrainBudget);
-            return Mathf.Max(0, totalBudget - allocated) * 0.5f;
+            return math.max(0f, totalBudget - allocated) * 0.5f;
         }
 
         private void CheckAndApplyThrottling()
@@ -295,32 +322,32 @@ namespace Hecton8.Tools
             if (_currentFrameTimeAverage > _maxFrameTimeMs)
             {
                 // Frame time is too high, throttle systems
-                Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
-                while (enumerator.MoveNext())
+                int budgetCount = _systemBudgetCount;
+                for (int i = 0; i < budgetCount; i++)
                 {
-                    KeyValuePair<string, SystemBudget> kvp = enumerator.Current;
-                    SystemBudget budget = kvp.Value;
+                    SystemBudget budget = _systemBudgets[i];
                     if (!budget.IsThrottled)
                     {
                         budget.System?.SetPerformanceLevel(_throttleMultiplier);
                         budget.IsThrottled = true;
-                        LogSystemThrottled(kvp.Key, _currentFrameTimeAverage, _maxFrameTimeMs);
+                        LogSystemThrottled(budget.SystemName, _currentFrameTimeAverage, _maxFrameTimeMs);
+                        _systemBudgets[i] = budget;
                     }
                 }
             }
             else if (_currentFrameTimeAverage < _targetFrameTimeMs)
             {
                 // Frame time is good, restore full performance
-                Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
-                while (enumerator.MoveNext())
+                int budgetCount = _systemBudgetCount;
+                for (int i = 0; i < budgetCount; i++)
                 {
-                    KeyValuePair<string, SystemBudget> kvp = enumerator.Current;
-                    SystemBudget budget = kvp.Value;
+                    SystemBudget budget = _systemBudgets[i];
                     if (budget.IsThrottled)
                     {
                         budget.System?.SetPerformanceLevel(1f);
                         budget.IsThrottled = false;
-                        LogSystemRestored(kvp.Key);
+                        LogSystemRestored(budget.SystemName);
+                        _systemBudgets[i] = budget;
                     }
                 }
             }
@@ -331,35 +358,107 @@ namespace Hecton8.Tools
             LogBudgetStatusInternal();
         }
 
+        private void RemoveBudgetAtIndex(int index)
+        {
+            if ((uint)index >= (uint)_systemBudgetCount)
+                return;
+
+            string removedName = _systemBudgets[index].SystemName;
+            int lastIndex = _systemBudgetCount - 1;
+            if (index != lastIndex)
+            {
+                SystemBudget moved = _systemBudgets[lastIndex];
+                _systemBudgets[index] = moved;
+                if (!string.IsNullOrEmpty(moved.SystemName))
+                    _systemBudgetIndices[moved.SystemName] = index;
+            }
+
+            _systemBudgets[lastIndex] = default;
+            _systemBudgetCount = lastIndex;
+            if (!string.IsNullOrEmpty(removedName))
+                _systemBudgetIndices.Remove(removedName);
+        }
+
         private int CountThrottledSystems()
         {
             int count = 0;
-            Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
-            while (enumerator.MoveNext())
+            int budgetCount = _systemBudgetCount;
+            for (int i = 0; i < budgetCount; i++)
             {
-                if (enumerator.Current.Value.IsThrottled)
+                if (_systemBudgets[i].IsThrottled)
                     count++;
             }
 
             return count;
+        }
+
+        private static void AppendFixed2(StringBuilder builder, float value)
+        {
+            if (!math.isfinite(value))
+            {
+                builder.Append("0.00");
+                return;
+            }
+
+            if (value < 0f)
+            {
+                builder.Append('-');
+                value = -value;
+            }
+
+            int scaled = (int)math.round(value * 100f);
+            int whole = scaled / 100;
+            int fraction = scaled - whole * 100;
+            builder.Append(whole);
+            builder.Append('.');
+            if (fraction < 10)
+                builder.Append('0');
+            builder.Append(fraction);
+        }
+
+        private static void AppendPercent0(StringBuilder builder, float normalizedValue)
+        {
+            float clamped = math.isfinite(normalizedValue) ? math.max(0f, normalizedValue) : 0f;
+            int percent = (int)math.round(clamped * 100f);
+            builder.Append(percent);
+            builder.Append('%');
         }
 
         private int CountOverBudgetSystems()
         {
             int count = 0;
-            Dictionary<string, SystemBudget>.Enumerator enumerator = _systemBudgets.GetEnumerator();
-            while (enumerator.MoveNext())
+            int budgetCount = _systemBudgetCount;
+            for (int i = 0; i < budgetCount; i++)
             {
-                if (enumerator.Current.Value.OverBudgetCount > 0)
+                if (_systemBudgets[i].OverBudgetCount > 0)
                     count++;
             }
 
             return count;
         }
 
+        private static SystemBudgetInfo CreateBudgetInfo(in SystemBudget budget)
+        {
+            float avgTime = budget.FrameCount > 0 ? budget.TotalTimeMs / budget.FrameCount : 0f;
+            float budgetUsage = budget.BudgetMs > 0f ? avgTime / budget.BudgetMs : 0f;
+            return new SystemBudgetInfo
+            {
+                BudgetMs = budget.BudgetMs,
+                AverageTimeMs = avgTime,
+                BudgetUsage = budgetUsage,
+                IsThrottled = budget.IsThrottled,
+                OverBudgetCount = budget.OverBudgetCount
+            };
+        }
+
         private void UpdateFrameTimeAverage(float frameTimeMs)
         {
-            EnsureFrameHistoryCapacity();
+            EnsureFrameHistoryCapacity(false);
+            if (_recentFrameTimes == null || _recentFrameTimes.Length == 0)
+            {
+                _currentFrameTimeAverage = frameTimeMs;
+                return;
+            }
 
             if (_recentFrameCount < _recentFrameTimes.Length)
             {
@@ -382,10 +481,13 @@ namespace Hecton8.Tools
                 : 0f;
         }
 
-        private void EnsureFrameHistoryCapacity()
+        private void EnsureFrameHistoryCapacity(bool allowAllocation)
         {
-            int requiredCapacity = Mathf.Max(1, _budgetAverageFrames);
+            int requiredCapacity = math.max(1, _budgetAverageFrames);
             if (_recentFrameTimes != null && _recentFrameTimes.Length == requiredCapacity)
+                return;
+
+            if (!allowAllocation)
                 return;
 
             _recentFrameTimes = new float[requiredCapacity]; // COLD ALLOC: bounded ring buffer for frame-time averaging
@@ -404,6 +506,11 @@ namespace Hecton8.Tools
         private void LogInvalidRegistration(string systemName)
         {
             Debug.LogWarning($"[PerformanceBudgetController] Ignoring invalid registration '{systemName}'");
+        }
+
+        private void LogRegistrationCapacityExceeded(string systemName)
+        {
+            Debug.LogWarning($"[PerformanceBudgetController] Ignoring registration '{systemName}' because budget capacity {MaxTrackedBudgetSystems} is full");
         }
 
         private void LogSystemRegistered(string systemName, float budgetMs)
@@ -438,6 +545,7 @@ namespace Hecton8.Tools
 #else
         private void LogDuplicateRegistration(string systemName) { }
         private void LogInvalidRegistration(string systemName) { }
+        private void LogRegistrationCapacityExceeded(string systemName) { }
         private void LogSystemRegistered(string systemName, float budgetMs) { }
         private void LogSystemUnregistered(string systemName) { }
         private void LogSystemOverBudget(string systemName, float timeUsedMs, float budgetMs) { }
@@ -467,8 +575,10 @@ namespace Hecton8.Tools
     /// <summary>
     /// Internal budget tracking for a system.
     /// </summary>
-    public class SystemBudget
+    [StructLayout(LayoutKind.Sequential)]
+    public struct SystemBudget
     {
+        public string SystemName;
         public IBudgetManagedSystem System;
         public float BudgetMs;
         public float LastFrameTimeMs;
@@ -483,6 +593,7 @@ namespace Hecton8.Tools
     /// Public budget status information.
     /// </summary>
     [Serializable]
+    [StructLayout(LayoutKind.Sequential)]
     public struct SystemBudgetInfo
     {
         public float BudgetMs;

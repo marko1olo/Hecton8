@@ -191,7 +191,8 @@ namespace Hecton8.Physics
         {
             float safeDeltaTime = math.max(0f, deltaTime);
             float safeSharpness = math.max(0f, sharpness);
-            return math.saturate(1f - math.exp(-(safeDeltaTime * safeSharpness)));
+            float x = safeDeltaTime * safeSharpness;
+            return math.saturate(x / (1f + x));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

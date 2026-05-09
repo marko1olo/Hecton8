@@ -93,7 +93,8 @@ namespace Hecton8.World
 
                 float2 delta = new float2(position.x - node.Position.x, position.z - node.Position.z);
                 float radius = math.max(node.Radius, 1f);
-                float gate = 1f - math.saturate(math.length(delta) / radius);
+                float radiusSq = radius * radius;
+                float gate = 1f - math.saturate(math.lengthsq(delta) / math.max(radiusSq, 1f));
                 if (gate <= 0f)
                     continue;
 
@@ -124,6 +125,11 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.PredatorFearNodesSnapshotNative);
                 // COLD ALLOC: NativeArray<PredatorFearNodeSnapshot>[safeCapacity] - path-job snapshot of predator fear memory - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.PredatorFearNodesSnapshotNative = new NativeArray<PredatorFearNodeSnapshot>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _nativeMemory.PredatorFearNodesSnapshotNative,
+                    NativeMemoryOwner,
+                    nameof(_nativeMemory.PredatorFearNodesSnapshotNative),
+                    NativeMemoryLifetime);
             }
         }
 

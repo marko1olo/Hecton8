@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -28,19 +30,56 @@ namespace Hecton8.UI
 
     public static class NotificationEvents
     {
+        private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 8;
+        private const uint NotificationListenerOverflowWarningHash = 0x4E45564Cu; // NEVL
+        private const uint NotificationListenerContextHash = 0x4E455652u; // NEVR
+        private const uint NotificationListenerExceptionWarningHash = 0x4E455645u; // NEVE
+        private const uint NotificationListenerExceptionContextHash = 0x4E455658u; // NEVX
+        private const uint NotificationQueueOverflowWarningHash = 0x4E455651u; // NEVQ
+        private const uint NotificationQueueContextHash = 0x4E455650u; // NEVP
+        private const uint NotificationRegisteredMessageMissWarningHash = 0x4E45564Du; // NEVM
+        private const uint NotificationRegisteredMessageContextHash = 0x4E455643u; // NEVC
 
         // COLD ALLOC: RegistryBucket<INotificationEventListener>[8] - HUD notification listeners drained on dispatcher LateUpdate - owner: NotificationEvents
-        private static readonly RegistryBucket<INotificationEventListener> _listeners = new RegistryBucket<INotificationEventListener>(8);
+        private static readonly RegistryBucket<INotificationEventListener> _listeners = new RegistryBucket<INotificationEventListener>(ListenerCapacity);
+        // COLD ALLOC: INotificationEventListener[8] - listener additions deferred while dispatching notification events - owner: NotificationEvents
+        private static readonly INotificationEventListener[] _deferredRegisterListeners = new INotificationEventListener[ListenerCapacity];
+        // COLD ALLOC: INotificationEventListener[8] - listener removals deferred while dispatching notification events - owner: NotificationEvents
+        private static readonly INotificationEventListener[] _deferredUnregisterListeners = new INotificationEventListener[ListenerCapacity];
         // COLD ALLOC: Dictionary<uint,string>[64] - notification message registry keyed by stable FNV-1a hash for cold-path UI resolution - owner: NotificationEvents
         private static readonly Dictionary<uint, string> _messagesByHash = new Dictionary<uint, string>(64);
         private static NativeQueue<NotificationEventPayload> _pendingEvents;
         private static NativeQueue<NotificationEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _registeredMessageMissCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastQueueOverflowTelemetryFrame = -1;
+        private static int _lastRegisteredMessageMissTelemetryFrame = -1;
+        private static int _lastListenerOverflowTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        /// <summary>
+        /// Number of notification payloads rejected because both native event lanes were full.
+        /// </summary>
+        public static int DroppedEventCount => _droppedEventCount;
+
+        /// <summary>
+        /// Number of registered notification pushes rejected because the message hash was not registered.
+        /// </summary>
+        public static int RegisteredMessageMissCount => _registeredMessageMissCount;
+
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -61,8 +100,20 @@ namespace Hecton8.UI
 
             _listeners.Clear();
             _messagesByHash.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _registeredMessageMissCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastQueueOverflowTelemetryFrame = -1;
+            _lastRegisteredMessageMissTelemetryFrame = -1;
+            _lastListenerOverflowTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -71,9 +122,13 @@ namespace Hecton8.UI
             if (listener == null)
                 return;
 
-            EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         public static void Unregister(INotificationEventListener listener)
@@ -81,8 +136,13 @@ namespace Hecton8.UI
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            _listeners.TryUnregister(listener);
         }
 
         public static void FlushPending()
@@ -114,13 +174,16 @@ namespace Hecton8.UI
                     for (int i = count - 1; i >= 0; i--)
                     {
                         INotificationEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnNotificationEvent(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -193,7 +256,10 @@ namespace Hecton8.UI
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportQueueOverflow(severity);
                 return;
+            }
 
             if (!_messagesByHash.ContainsKey(messageHash))
                 _messagesByHash.Add(messageHash, message);
@@ -218,12 +284,21 @@ namespace Hecton8.UI
 
         private static void PublishRegistered(uint messageHash, NotificationEventSeverity severity)
         {
-            if (messageHash == 0u || !_messagesByHash.ContainsKey(messageHash))
+            if (messageHash == 0u)
                 return;
+
+            if (!_messagesByHash.ContainsKey(messageHash))
+            {
+                ReportRegisteredMessageMiss(messageHash);
+                return;
+            }
 
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportQueueOverflow(severity);
                 return;
+            }
 
             NotificationEventPayload payload = new NotificationEventPayload
             {
@@ -254,6 +329,7 @@ namespace Hecton8.UI
                     nameof(NotificationEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -265,6 +341,21 @@ namespace Hecton8.UI
                     nameof(NotificationEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -327,6 +418,210 @@ namespace Hecton8.UI
             _nextFrameEvents = swap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
+        }
+
+        private static void DispatchToListener(
+            INotificationEventListener listener,
+            in NotificationEventPayload payload)
+        {
+            try
+            {
+                listener.OnNotificationEvent(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(INotificationEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= _deferredRegisterListeners.Length)
+            {
+                ReportListenerRegistrationOverflow();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(INotificationEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener))
+                return;
+
+            if (IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= _deferredUnregisterListeners.Length)
+            {
+                ReportListenerRegistrationOverflow();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(INotificationEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(INotificationEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(INotificationEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(INotificationEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                INotificationEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                INotificationEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
+        private static void RegisterImmediate(INotificationEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationOverflow();
+        }
+
+        private static void ReportQueueOverflow(NotificationEventSeverity severity)
+        {
+            _droppedEventCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastQueueOverflowTelemetryFrame == frame)
+                return;
+
+            _lastQueueOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                NotificationQueueOverflowWarningHash,
+                NotificationQueueContextHash ^ ((uint)severity << 24),
+                Unity.Mathematics.math.max(1, _droppedEventCount));
+        }
+
+        private static void ReportRegisteredMessageMiss(uint messageHash)
+        {
+            _registeredMessageMissCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastRegisteredMessageMissTelemetryFrame == frame)
+                return;
+
+            _lastRegisteredMessageMissTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                NotificationRegisteredMessageMissWarningHash,
+                NotificationRegisteredMessageContextHash ^ messageHash,
+                Unity.Mathematics.math.max(1, _registeredMessageMissCount));
+        }
+
+        private static void ReportListenerRegistrationOverflow()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerOverflowTelemetryFrame == frame)
+                return;
+
+            _lastListenerOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                NotificationListenerOverflowWarningHash,
+                NotificationListenerContextHash,
+                Unity.Mathematics.math.max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                NotificationListenerExceptionWarningHash,
+                NotificationListenerExceptionContextHash,
+                Unity.Mathematics.math.max(1, _listenerExceptionCount));
         }
     }
 }

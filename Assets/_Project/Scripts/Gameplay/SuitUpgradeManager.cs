@@ -53,10 +53,7 @@ namespace Hecton8.Gameplay
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static SuitUpgradeManager Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
+        public static SuitUpgradeManager Instance => GlobalRegistry.SuitUpgrades;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -107,16 +104,18 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            SuitUpgradeManager registered = GlobalRegistry.SuitUpgrades;
+            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
                 return;
             }
-            Instance = this;
 
             if (baseStats == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[SuitUpgrade] baseStats not assigned. Disabling.", this);
+#endif
                 enabled = false;
                 return;
             }
@@ -152,15 +151,19 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregisterService();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         private void TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+            if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            SuitUpgradeManager registered = Hecton8.Core.GlobalRegistry.SuitUpgrades;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             Hecton8.Core.GlobalRegistry.RegisterSuitUpgradeRuntime(this);
             _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.SuitUpgrades, this);

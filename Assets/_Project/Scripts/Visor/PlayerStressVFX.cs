@@ -72,6 +72,7 @@ namespace Hecton8.Visor
         [SerializeField] private float _debugTemperatureShock01;
 
         private const float PulseTwoPi = Mathf.PI * 2f;
+        private const float PulseInvTwoPi = 1f / PulseTwoPi;
         private const float DependencyResolveRetryIntervalSeconds = 0.5f;
         private static readonly int PlayerStress01Id = Shader.PropertyToID("_PlayerStress01");
         private static readonly int HectonHudStressChromaticAberrationId = Shader.PropertyToID("_HectonHudStressChromaticAberration");
@@ -91,8 +92,15 @@ namespace Hecton8.Visor
         private float _interactionPitchScale = 1f;
         private float _interactionFrequency01;
         private float _traumaPulse01;
-        private float _nextDependencyResolveTime;
+        private float _dependencyResolveRetryRemaining;
         private bool _hasInteractionSignal;
+        private bool _hasAppliedStressGlobals;
+        private float _appliedPlayerStress01;
+        private float _appliedHudStressChromaticAberration;
+        private float _appliedHudStressVignette;
+        private Vector4 _appliedHudFogFrost;
+
+        private const float ShaderUniformEpsilon = 0.0005f;
 
         private void Awake()
         {
@@ -118,6 +126,7 @@ namespace Hecton8.Visor
             _interactionPitchScale = 1f;
             _interactionFrequency01 = 0f;
             _traumaPulse01 = 0f;
+            _dependencyResolveRetryRemaining = 0f;
             _hasInteractionSignal = false;
         }
 
@@ -133,17 +142,16 @@ namespace Hecton8.Visor
         /// <param name="deltaTime">Tick delta supplied by <see cref="GameTickManager"/>.</param>
         public void Tick(float deltaTime)
         {
-            if (deltaTime <= 0f)
+            if (deltaTime <= 0f || !math.isfinite(deltaTime))
                 return;
 
-            TryResolveDependencies();
+            TryResolveDependencies(deltaTime);
 
             if (_traumaPulse01 > 0f)
-                _traumaPulse01 = Mathf.Max(0f, _traumaPulse01 - deltaTime * Mathf.Max(0.1f, traumaChromaticPulseDecayPerSecond));
+                _traumaPulse01 = math.max(0f, _traumaPulse01 - deltaTime * math.max(0.1f, traumaChromaticPulseDecayPerSecond));
 
-            float stress01 = Mathf.Max(ResolveStress01(), _traumaPulse01);
-            float audioStress01 = _hasInteractionSignal ? Mathf.Max(stress01, _interactionStress01) : stress01;
-            _debugStress01 = stress01;
+            float stress01 = math.max(ResolveStress01(), _traumaPulse01);
+            float audioStress01 = _hasInteractionSignal ? math.max(stress01, _interactionStress01) : stress01;
             float fog01 = ResolveFogging01();
             float frost01 = ResolveFrost01();
 
@@ -151,22 +159,21 @@ namespace Hecton8.Visor
             {
                 _pulsePhase = 0f;
                 _heartbeatTimer = heartbeatIntervalMaxSeconds;
+                ApplyDebugPulseState(stress01, 0f);
                 ApplyStressPulse(0f, 0f, fog01, frost01);
                 return;
             }
 
             float heartbeatBlend01 = _hasInteractionSignal
-                ? Mathf.Clamp01(_interactionFrequency01)
+                ? math.saturate(_interactionFrequency01)
                 : audioStress01;
             float heartbeatInterval = math.lerp(heartbeatIntervalMaxSeconds, heartbeatIntervalMinSeconds, heartbeatBlend01);
-            float pulseFrequency = 1f / Mathf.Max(0.05f, heartbeatInterval);
+            float pulseFrequency = 1f / math.max(0.05f, heartbeatInterval);
             _pulsePhase += deltaTime * pulseFrequency * PulseTwoPi;
             if (_pulsePhase > PulseTwoPi)
                 _pulsePhase -= PulseTwoPi;
 
-            float beat01 = Mathf.Sin(_pulsePhase) * 0.5f + 0.5f;
-            beat01 *= beat01;
-            beat01 *= beat01;
+            float beat01 = EvaluateCheapHeartbeatPulse01(_pulsePhase);
 
             _heartbeatTimer -= deltaTime;
             if (_heartbeatTimer <= 0f)
@@ -175,13 +182,30 @@ namespace Hecton8.Visor
                 _heartbeatTimer = heartbeatInterval;
             }
 
-            _debugPulse01 = beat01;
+            ApplyDebugPulseState(stress01, beat01);
             ApplyStressPulse(stress01, beat01, fog01, frost01);
+        }
+
+        private static float EvaluateCheapHeartbeatPulse01(float phaseRadians)
+        {
+            float phase01 = math.frac(phaseRadians * PulseInvTwoPi);
+            float triangle = 1f - math.abs(phase01 * 2f - 1f);
+            float pulse = triangle * triangle;
+            return pulse * pulse;
+        }
+
+        private static float FastInverseLerp01(float from, float to, float value)
+        {
+            float range = to - from;
+            if (math.abs(range) <= 0.00001f)
+                return 0f;
+
+            return math.saturate((value - from) / range);
         }
 
         void IPlayerSignalEventListener.OnTraumaHudSignal(in TraumaHudSignal signal)
         {
-            _traumaPulse01 = Mathf.Max(_traumaPulse01, Mathf.Clamp01(signal.GlitchIntensity));
+            _traumaPulse01 = math.max(_traumaPulse01, math.saturate(signal.GlitchIntensity));
         }
 
         void IPlayerSignalEventListener.OnInteractionSignal(in InteractionSignal signal)
@@ -195,25 +219,28 @@ namespace Hecton8.Visor
 
         private void HandleInteractionSignal(in InteractionSignal signal)
         {
-            _interactionStress01 = Mathf.Clamp01(signal.Stress01);
-            _interactionVolume01 = Mathf.Clamp01(signal.Volume01);
-            _interactionPitchScale = Mathf.Clamp(signal.PitchScale, 0.1f, 3f);
-            _interactionFrequency01 = Mathf.Clamp01(signal.Frequency01);
+            _interactionStress01 = math.saturate(signal.Stress01);
+            _interactionVolume01 = math.saturate(signal.Volume01);
+            _interactionPitchScale = math.clamp(signal.PitchScale, 0.1f, 3f);
+            _interactionFrequency01 = math.saturate(signal.Frequency01);
             _hasInteractionSignal = true;
         }
 
-        private void TryResolveDependencies(bool force = false)
+        private void TryResolveDependencies(float deltaTime = 0f, bool force = false)
         {
             if (!force && _survivalSystem != null && _playerMovement != null && _playerHealth != null)
                 return;
 
             if (!force)
             {
-                float now = Time.unscaledTime;
-                if (now < _nextDependencyResolveTime)
-                    return;
+                if (_dependencyResolveRetryRemaining > 0f)
+                {
+                    _dependencyResolveRetryRemaining = math.max(0f, _dependencyResolveRetryRemaining - deltaTime);
+                    if (_dependencyResolveRetryRemaining > 0f)
+                        return;
+                }
 
-                _nextDependencyResolveTime = now + DependencyResolveRetryIntervalSeconds;
+                _dependencyResolveRetryRemaining = DependencyResolveRetryIntervalSeconds;
             }
 
             if (_survivalSystem == null)
@@ -248,8 +275,7 @@ namespace Hecton8.Visor
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickHandler()
@@ -264,44 +290,88 @@ namespace Hecton8.Visor
 
         private float ResolveStress01()
         {
-            float oxygenNormalized = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.OxygenNormalized) : 1f;
-            float integrityNormalized = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.IntegrityNormalized) : 1f;
-            float fatalPressure01 = _playerMovement != null ? Mathf.Clamp01(_playerMovement.CurrentFatalPressureSequence01) : 0f;
-            float healthStress01 = _playerHealth != null ? Mathf.Clamp01(_playerHealth.Stress) : 0f;
-            float oxygenStress01 = Mathf.Clamp01(Mathf.InverseLerp(oxygenCriticalThreshold, 0.05f, oxygenNormalized));
-            float integrityStress01 = Mathf.Clamp01(Mathf.InverseLerp(integrityCriticalThreshold, 0.08f, integrityNormalized));
-            float stress01 = Mathf.Clamp01(Mathf.Max(healthStress01, Mathf.Max(oxygenStress01, Mathf.Max(integrityStress01, fatalPressure01))));
+            float oxygenNormalized = _survivalSystem != null ? math.saturate(_survivalSystem.OxygenNormalized) : 1f;
+            float integrityNormalized = _survivalSystem != null ? math.saturate(_survivalSystem.IntegrityNormalized) : 1f;
+            float fatalPressure01 = _playerMovement != null ? math.saturate(_playerMovement.CurrentFatalPressureSequence01) : 0f;
+            float healthStress01 = _playerHealth != null ? math.saturate(_playerHealth.Stress) : 0f;
+            float oxygenStress01 = FastInverseLerp01(oxygenCriticalThreshold, 0.05f, oxygenNormalized);
+            float integrityStress01 = FastInverseLerp01(integrityCriticalThreshold, 0.08f, integrityNormalized);
+            float stress01 = math.saturate(math.max(healthStress01, math.max(oxygenStress01, math.max(integrityStress01, fatalPressure01))));
 
-            _debugOxygenNormalized = oxygenNormalized;
-            _debugIntegrityNormalized = integrityNormalized;
-            _debugFatalPressure01 = fatalPressure01;
+            ApplyDebugVitalsState(oxygenNormalized, integrityNormalized, fatalPressure01);
             return stress01;
         }
 
         private void ApplyStressPulse(float stress01, float beat01, float fog01, float frost01)
         {
             float pulse = stress01 * (0.35f + beat01 * 0.65f);
-            float hudStressChroma = Mathf.Clamp01(stress01 + fog01 * 0.18f);
-            float shaderVignette = Mathf.Clamp01((pulse + frost01 * 0.58f + fog01 * 0.18f) * Mathf.Clamp01(shaderVignetteMaximum));
-            float shaderFog = Mathf.Clamp01(fog01 * Mathf.Clamp01(shaderFogCondensationMaximum));
-            float shaderFrost = Mathf.Clamp01(frost01 * Mathf.Clamp01(shaderFrostMaximum));
+            float playerStress01 = math.saturate(stress01);
+            float hudStressChroma = math.saturate(stress01 + fog01 * 0.18f);
+            float shaderVignette = math.saturate((pulse + frost01 * 0.58f + fog01 * 0.18f) * math.saturate(shaderVignetteMaximum));
+            float shaderFog = math.saturate(fog01 * math.saturate(shaderFogCondensationMaximum));
+            float shaderFrost = math.saturate(frost01 * math.saturate(shaderFrostMaximum));
+            Vector4 fogFrost;
+            fogFrost.x = shaderFog;
+            fogFrost.y = shaderFrost;
+            fogFrost.z = fog01;
+            fogFrost.w = frost01;
 
-            Shader.SetGlobalFloat(PlayerStress01Id, Mathf.Clamp01(stress01));
-            Shader.SetGlobalFloat(HectonHudStressChromaticAberrationId, hudStressChroma);
-            Shader.SetGlobalFloat(HectonHudStressVignetteId, shaderVignette);
-            Shader.SetGlobalVector(HectonHudFogFrostId, new Vector4(shaderFog, shaderFrost, fog01, frost01));
+            ApplyStressGlobals(playerStress01, hudStressChroma, shaderVignette, fogFrost, force: false);
         }
 
         private void ResetRuntimeEffects()
         {
-            _debugFog01 = 0f;
-            _debugFrost01 = 0f;
-            _debugTemperatureShock01 = 0f;
-            _debugPulse01 = 0f;
-            Shader.SetGlobalFloat(PlayerStress01Id, 0f);
-            Shader.SetGlobalFloat(HectonHudStressChromaticAberrationId, 0f);
-            Shader.SetGlobalFloat(HectonHudStressVignetteId, 0f);
-            Shader.SetGlobalVector(HectonHudFogFrostId, Vector4.zero);
+            ClearDebugState();
+            ApplyStressGlobals(0f, 0f, 0f, Vector4.zero, force: true);
+        }
+
+        private void ApplyStressGlobals(
+            float playerStress01,
+            float hudStressChroma,
+            float shaderVignette,
+            Vector4 fogFrost,
+            bool force)
+        {
+            bool hasCachedGlobals = _hasAppliedStressGlobals;
+            if (force || !hasCachedGlobals || ShouldApply(_appliedPlayerStress01, playerStress01))
+            {
+                Shader.SetGlobalFloat(PlayerStress01Id, playerStress01);
+                _appliedPlayerStress01 = playerStress01;
+            }
+
+            if (force || !hasCachedGlobals || ShouldApply(_appliedHudStressChromaticAberration, hudStressChroma))
+            {
+                Shader.SetGlobalFloat(HectonHudStressChromaticAberrationId, hudStressChroma);
+                _appliedHudStressChromaticAberration = hudStressChroma;
+            }
+
+            if (force || !hasCachedGlobals || ShouldApply(_appliedHudStressVignette, shaderVignette))
+            {
+                Shader.SetGlobalFloat(HectonHudStressVignetteId, shaderVignette);
+                _appliedHudStressVignette = shaderVignette;
+            }
+
+            if (force || !hasCachedGlobals || ShouldApply(_appliedHudFogFrost, fogFrost))
+            {
+                Shader.SetGlobalVector(HectonHudFogFrostId, fogFrost);
+                _appliedHudFogFrost = fogFrost;
+            }
+
+            _hasAppliedStressGlobals = true;
+        }
+
+        private static bool ShouldApply(float current, float next)
+        {
+            return math.abs(current - next) > ShaderUniformEpsilon;
+        }
+
+        private static bool ShouldApply(Vector4 current, Vector4 next)
+        {
+            Vector4 delta = current - next;
+            return math.abs(delta.x) > ShaderUniformEpsilon ||
+                math.abs(delta.y) > ShaderUniformEpsilon ||
+                math.abs(delta.z) > ShaderUniformEpsilon ||
+                math.abs(delta.w) > ShaderUniformEpsilon;
         }
 
         private void PlayHeartbeat(float stress01)
@@ -328,51 +398,102 @@ namespace Hecton8.Visor
             if (movement != null)
                 return (Vector3)movement.CurrentAup.ToRuntimeFloat3();
 
-            return transform.position;
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
+            {
+                PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
+                if ((movementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+                    return (Vector3)movementState.PredictedAup.ToRuntimeFloat3();
+            }
+
+            return Vector3.zero;
         }
 
         private float ResolveFogging01()
         {
             if (_survivalSystem == null)
             {
-                _debugFog01 = 0f;
-                _debugTemperatureShock01 = 0f;
+                ApplyDebugFogState(0f, 0f);
                 return 0f;
             }
 
-            float oxygenFog01 = Mathf.Clamp01(Mathf.InverseLerp(oxygenFogThreshold, 0.04f, _survivalSystem.OxygenNormalized));
-            float oxygenGraceFog01 = Mathf.Clamp01(_survivalSystem.OxygenGraceVisionBlur01);
-            float nitrogenFog01 = Mathf.Clamp01(_survivalSystem.NitrogenNarcosisVisionBlur01);
+            float oxygenFog01 = FastInverseLerp01(oxygenFogThreshold, 0.04f, _survivalSystem.OxygenNormalized);
+            float oxygenGraceFog01 = math.saturate(_survivalSystem.OxygenGraceVisionBlur01);
+            float nitrogenFog01 = math.saturate(_survivalSystem.NitrogenNarcosisVisionBlur01);
             float temperature = _survivalSystem.EnvironmentTemperature;
             float thermalShock01 = 0f;
 
             if (_hasEnvironmentTemperatureSample)
             {
-                float delta = Mathf.Abs(temperature - _lastEnvironmentTemperature);
-                thermalShock01 = Mathf.Clamp01(
+                float delta = math.abs(temperature - _lastEnvironmentTemperature);
+                thermalShock01 = math.saturate(
                     (delta - thermalShockDeltaThreshold) /
-                    Mathf.Max(0.01f, thermalShockDeltaThreshold));
+                    math.max(0.01f, thermalShockDeltaThreshold));
             }
 
             _lastEnvironmentTemperature = temperature;
             _hasEnvironmentTemperatureSample = true;
-            _debugTemperatureShock01 = thermalShock01;
-            _debugFog01 = Mathf.Clamp01(Mathf.Max(oxygenFog01, oxygenGraceFog01, nitrogenFog01, thermalShock01, _survivalSystem.RapidAscentRisk01 * 0.4f));
-            return _debugFog01;
+            float rapidAscentFog01 = _survivalSystem.RapidAscentRisk01 * 0.4f;
+            float fog01 = math.saturate(math.max(
+                math.max(oxygenFog01, oxygenGraceFog01),
+                math.max(nitrogenFog01, math.max(thermalShock01, rapidAscentFog01))));
+            ApplyDebugFogState(fog01, thermalShock01);
+            return fog01;
         }
 
         private float ResolveFrost01()
         {
             if (_survivalSystem == null)
             {
-                _debugFrost01 = 0f;
+                ApplyDebugFrostState(0f);
                 return 0f;
             }
 
-            float temperature01 = Mathf.Clamp01(
-                Mathf.InverseLerp(frostStartTemperatureCelsius, frostMaxTemperatureCelsius, _survivalSystem.EnvironmentTemperature));
-            _debugFrost01 = Mathf.Clamp01(Mathf.Max(temperature01, _survivalSystem.ColdStressSeverity01));
-            return _debugFrost01;
+            float temperature01 = FastInverseLerp01(frostStartTemperatureCelsius, frostMaxTemperatureCelsius, _survivalSystem.EnvironmentTemperature);
+            float frost01 = math.saturate(math.max(temperature01, _survivalSystem.ColdStressSeverity01));
+            ApplyDebugFrostState(frost01);
+            return frost01;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void ApplyDebugPulseState(float stress01, float beat01)
+        {
+            _debugStress01 = stress01;
+            _debugPulse01 = beat01;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void ApplyDebugVitalsState(float oxygenNormalized, float integrityNormalized, float fatalPressure01)
+        {
+            _debugOxygenNormalized = oxygenNormalized;
+            _debugIntegrityNormalized = integrityNormalized;
+            _debugFatalPressure01 = fatalPressure01;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void ApplyDebugFogState(float fog01, float thermalShock01)
+        {
+            _debugFog01 = fog01;
+            _debugTemperatureShock01 = thermalShock01;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void ApplyDebugFrostState(float frost01)
+        {
+            _debugFrost01 = frost01;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private void ClearDebugState()
+        {
+            _debugFog01 = 0f;
+            _debugFrost01 = 0f;
+            _debugTemperatureShock01 = 0f;
+            _debugPulse01 = 0f;
         }
     }
 }

@@ -129,8 +129,7 @@ namespace Hecton8.Optimization
             if (!ReferenceEquals(GlobalRegistry.VisorRT, this))
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()

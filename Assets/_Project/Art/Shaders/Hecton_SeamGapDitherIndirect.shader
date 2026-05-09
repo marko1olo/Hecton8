@@ -30,6 +30,9 @@ Shader "Hecton8/VFX/SeamGapDitherIndirect"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -55,15 +58,26 @@ Shader "Hecton8/VFX/SeamGapDitherIndirect"
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
                 float4 color : COLOR0;
+                UNITY_VERTEX_INPUT_INSTANCE_ID
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                float4x4 instanceMatrix = _HectonSeamDitherMatrices[input.instanceID];
-                float4 instanceColor = _HectonSeamDitherColors[input.instanceID];
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, output);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                uint instanceID = input.instanceID;
+            #if UNITY_ANY_INSTANCING_ENABLED
+                instanceID = unity_InstanceID;
+            #endif
+                float4x4 instanceMatrix = _HectonSeamDitherMatrices[instanceID];
+                float4 instanceColor = _HectonSeamDitherColors[instanceID];
                 float3 anchorWS = float3(instanceMatrix._m03, instanceMatrix._m13, instanceMatrix._m23);
-                float distanceFade = saturate(1.0 - distance(anchorWS, _SeamDitherCameraPositionWS) / max(_MaxCameraDistance, 0.001));
+                float maxCameraDistance = max(_MaxCameraDistance, 0.001);
+                float3 cameraDelta = anchorWS - _SeamDitherCameraPositionWS;
+                float distanceFade = saturate(1.0 - dot(cameraDelta, cameraDelta) / (maxCameraDistance * maxCameraDistance));
                 float4 positionWS = mul(instanceMatrix, input.positionOS);
 
                 output.positionCS = TransformWorldToHClip(positionWS.xyz);
@@ -73,14 +87,26 @@ Shader "Hecton8/VFX/SeamGapDitherIndirect"
                 return output;
             }
 
+            float FastRadialSoftness(float radial, float softness)
+            {
+                float radial2 = radial * radial;
+                float radial4 = radial2 * radial2;
+                return lerp(radial, radial4, saturate((softness - 1.0) * 0.3333));
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float2 centered = input.uv * 2.0 - 1.0;
                 float radial = saturate(1.0 - dot(centered, centered));
-                float alpha = pow(radial, _Softness) * input.color.a;
+                float alpha = FastRadialSoftness(radial, _Softness) * input.color.a;
+                clip(alpha - 0.0005);
                 return half4(input.color.rgb * alpha, alpha);
             }
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

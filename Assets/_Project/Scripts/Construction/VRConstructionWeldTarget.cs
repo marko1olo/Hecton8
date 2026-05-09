@@ -13,6 +13,15 @@ namespace Hecton8.Construction
     {
         private const int CornerCount = 4;
         private const float DefaultInteractionStepSeconds = 0.02f;
+        private const float MaxInteractionDeltaSeconds = 0.05f;
+        private const float MaxSecondsPerCorner = 30f;
+        private const float MaxWeldRadiusMeters = 2f;
+        private const float MaxDeliveredPower = 4f;
+        private const float MaxWeldHeatHoldAfterContactSeconds = 2f;
+        private const float MaxWeldCooldownSecondsPerSecond = 10f;
+        private const float MaxWeldGlowDurationSeconds = 2f;
+        private const float MaxWeldGlowRangeMeters = 8f;
+        private const float MaxWeldGlowProxyIntensity = 4f;
 
         [Header("AUP Corners")]
         [SerializeField] private Transform corner0;
@@ -46,8 +55,10 @@ namespace Hecton8.Construction
         private readonly AbsoluteUniversePosition[] _cornerAups = new AbsoluteUniversePosition[CornerCount]; // COLD ALLOC: AUP[4] - stable weld corner coordinates - owner: VRConstructionWeldTarget
         private Vector3 _weldGlowRuntimePosition;
         private int _weldGlowProxyKey;
+        private float _weldGlowClockSeconds;
         private float _weldGlowRemainingSeconds;
         private float _weldHeatHoldRemainingSeconds;
+        private byte _validCornerMask;
         private byte _completedMask;
         private bool _complete;
         private bool _registeredOriginShift;
@@ -96,7 +107,7 @@ namespace Hecton8.Construction
             if ((uint)index >= CornerCount)
                 return 0f;
 
-            return math.saturate(_cornerProgressSeconds[index] / math.max(0.001f, secondsPerCorner));
+            return math.saturate(_cornerProgressSeconds[index] / ResolveSafeSecondsPerCorner());
         }
 
         public bool TryGetCornerAup(int index, out AbsoluteUniversePosition aup)
@@ -108,12 +119,14 @@ namespace Hecton8.Construction
             }
 
             aup = _cornerAups[index];
-            return _corners[index] != null;
+            return _corners[index] != null && (_validCornerMask & (1 << index)) != 0;
         }
 
         public bool ApplyWeldAtPoint(Vector3 runtimeHitPoint, float deliveredPower, float deltaSeconds)
         {
-            if (_complete || deliveredPower < requiredPower || deltaSeconds <= 0f)
+            float safeDeltaSeconds = ResolveSafeDeltaSeconds(deltaSeconds);
+            float safeDeliveredPower = ResolveSafeDeliveredPower(deliveredPower);
+            if (_complete || safeDeliveredPower < ResolveSafeRequiredPower() || safeDeltaSeconds <= 0f || !IsFiniteVector(runtimeHitPoint))
             {
                 ArmWeldCooling();
                 return false;
@@ -126,12 +139,12 @@ namespace Hecton8.Construction
             }
 
             float previousProgress = _cornerProgressSeconds[cornerIndex];
-            float targetProgress = math.max(0.001f, secondsPerCorner);
+            float targetProgress = ResolveSafeSecondsPerCorner();
             if (previousProgress >= targetProgress)
                 return true;
 
-            _weldHeatHoldRemainingSeconds = math.max(_weldHeatHoldRemainingSeconds, weldHeatHoldAfterContactSeconds);
-            _cornerProgressSeconds[cornerIndex] = math.min(targetProgress, previousProgress + deltaSeconds * deliveredPower);
+            _weldHeatHoldRemainingSeconds = math.max(_weldHeatHoldRemainingSeconds, ResolveSafeWeldHeatHoldAfterContactSeconds());
+            _cornerProgressSeconds[cornerIndex] = math.min(targetProgress, previousProgress + safeDeltaSeconds * safeDeliveredPower);
             if (_cornerProgressSeconds[cornerIndex] >= targetProgress)
                 _completedMask |= (byte)(1 << cornerIndex);
 
@@ -175,7 +188,8 @@ namespace Hecton8.Construction
 
         public void Tick(float deltaTime)
         {
-            float dt = math.max(0f, deltaTime);
+            float dt = ResolveSafeDeltaSeconds(deltaTime);
+            _weldGlowClockSeconds = math.max(0f, _weldGlowClockSeconds + dt);
             UpdateWeldHeatCooling(dt);
 
             _weldGlowRemainingSeconds = math.max(0f, _weldGlowRemainingSeconds - dt);
@@ -193,12 +207,16 @@ namespace Hecton8.Construction
         private bool TryFindCorner(Vector3 runtimeHitPoint, out int cornerIndex)
         {
             cornerIndex = -1;
-            double bestDistanceSq = (double)weldRadiusMeters * weldRadiusMeters;
+            if (!IsFiniteVector(runtimeHitPoint))
+                return false;
+
+            float safeWeldRadiusMeters = ResolveSafeWeldRadiusMeters();
+            double bestDistanceSq = (double)safeWeldRadiusMeters * safeWeldRadiusMeters;
             AbsoluteUniversePosition hitAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeHitPoint);
             for (int i = 0; i < CornerCount; i++)
             {
                 Transform corner = _corners[i];
-                if (corner == null)
+                if (corner == null || (_validCornerMask & (1 << i)) == 0)
                     continue;
 
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in hitAup, in _cornerAups[i]);
@@ -245,7 +263,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            float decay = weldCooldownSecondsPerSecond * deltaTime;
+            float decay = ResolveSafeWeldCooldownSecondsPerSecond() * deltaTime;
             if (!(decay > 0f))
                 return;
 
@@ -300,18 +318,25 @@ namespace Hecton8.Construction
 
         private void CacheCornerAups()
         {
+            _validCornerMask = 0;
             for (int i = 0; i < CornerCount; i++)
             {
                 Transform corner = _corners[i];
-                if (corner != null)
-                    _cornerAups[i] = AbsoluteUniversePosition.FromRuntimePosition(corner.position);
+                if (corner == null || !IsFiniteVector(corner.position))
+                    continue;
+
+                _cornerAups[i] = AbsoluteUniversePosition.FromRuntimePosition(corner.position);
+                _validCornerMask |= (byte)(1 << i);
             }
         }
 
         private void TriggerWeldGlow(Vector3 runtimePosition)
         {
+            if (!IsFiniteVector(runtimePosition))
+                return;
+
             _weldGlowRuntimePosition = runtimePosition;
-            _weldGlowRemainingSeconds = math.max(_weldGlowRemainingSeconds, math.max(0.01f, weldGlowDurationSeconds));
+            _weldGlowRemainingSeconds = math.max(_weldGlowRemainingSeconds, ResolveSafeWeldGlowDurationSeconds());
             UpdateWeldGlowProxyRegistration();
             TryRegisterWeldGlowTick();
         }
@@ -326,24 +351,30 @@ namespace Hecton8.Construction
             float4 complete = new float4(completeGlowColor.r, completeGlowColor.g, completeGlowColor.b, completeGlowColor.a);
             float4 mixed = math.lerp(incomplete, complete, progress01);
             Color glowLinear = new Color(mixed.x, mixed.y, mixed.z, 1f).linear;
-            float lifetime01 = math.saturate(_weldGlowRemainingSeconds / math.max(0.01f, weldGlowDurationSeconds));
-            float intensity = math.saturate(weldGlowProxyIntensity * lifetime01);
+            float lifetime01 = math.saturate(_weldGlowRemainingSeconds / ResolveSafeWeldGlowDurationSeconds());
+            float intensity = math.saturate(ResolveSafeWeldGlowProxyIntensity() * lifetime01);
             Vector3 runtimePosition = weldGlowOrigin != null ? weldGlowOrigin.position : _weldGlowRuntimePosition;
+            if (!IsFiniteVector(runtimePosition))
+            {
+                UnregisterWeldGlowProxy();
+                return;
+            }
+
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             ProxyLightData lightData = ProxyLightData.CreateTransientPoint(
                 positionAup,
                 runtimePosition,
                 glowLinear,
-                weldGlowRangeMeters,
+                ResolveSafeWeldGlowRangeMeters(),
                 intensity,
-                Time.unscaledTime);
+                _weldGlowClockSeconds);
 
             _weldGlowProxyRegistered = ProxyLightRegistry.RegisterOrUpdate(_weldGlowProxyKey, in lightData) || _weldGlowProxyRegistered;
         }
 
         private float ResolveAggregateProgress01()
         {
-            float targetProgress = math.max(0.001f, secondsPerCorner);
+            float targetProgress = ResolveSafeSecondsPerCorner();
             float total = 0f;
             for (int i = 0; i < CornerCount; i++)
                 total += math.saturate(_cornerProgressSeconds[i] / targetProgress);
@@ -357,7 +388,7 @@ namespace Hecton8.Construction
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _registeredOriginShift = true;
+            _registeredOriginShift = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void TryUnregisterOriginShiftListener()
@@ -383,8 +414,7 @@ namespace Hecton8.Construction
             if (_weldGlowTickRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _weldGlowTickRegistered = GlobalRegistry.Updatables.Contains(this);
+            _weldGlowTickRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void TryUnregisterWeldGlowTick()
@@ -396,25 +426,102 @@ namespace Hecton8.Construction
             _weldGlowTickRegistered = false;
         }
 
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static float ResolveSafeDeltaSeconds(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0f, MaxInteractionDeltaSeconds) : 0f;
+        }
+
+        private static float ResolveSafeDeliveredPower(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0f, MaxDeliveredPower) : 0f;
+        }
+
+        private float ResolveSafeSecondsPerCorner()
+        {
+            return math.isfinite(secondsPerCorner)
+                ? math.clamp(secondsPerCorner, 0.001f, MaxSecondsPerCorner)
+                : 1.25f;
+        }
+
+        private float ResolveSafeWeldRadiusMeters()
+        {
+            return math.isfinite(weldRadiusMeters)
+                ? math.clamp(weldRadiusMeters, 0.01f, MaxWeldRadiusMeters)
+                : 0.18f;
+        }
+
+        private float ResolveSafeRequiredPower()
+        {
+            return math.isfinite(requiredPower) ? math.clamp(requiredPower, 0f, MaxDeliveredPower) : 0.1f;
+        }
+
+        private float ResolveSafeWeldHeatHoldAfterContactSeconds()
+        {
+            return math.isfinite(weldHeatHoldAfterContactSeconds)
+                ? math.clamp(weldHeatHoldAfterContactSeconds, 0f, MaxWeldHeatHoldAfterContactSeconds)
+                : 0.08f;
+        }
+
+        private float ResolveSafeWeldCooldownSecondsPerSecond()
+        {
+            return math.isfinite(weldCooldownSecondsPerSecond)
+                ? math.clamp(weldCooldownSecondsPerSecond, 0f, MaxWeldCooldownSecondsPerSecond)
+                : 0.35f;
+        }
+
+        private float ResolveSafeWeldGlowDurationSeconds()
+        {
+            return math.isfinite(weldGlowDurationSeconds)
+                ? math.clamp(weldGlowDurationSeconds, 0.01f, MaxWeldGlowDurationSeconds)
+                : 0.1f;
+        }
+
+        private float ResolveSafeWeldGlowRangeMeters()
+        {
+            return math.isfinite(weldGlowRangeMeters)
+                ? math.clamp(weldGlowRangeMeters, 0.01f, MaxWeldGlowRangeMeters)
+                : 1.25f;
+        }
+
+        private float ResolveSafeWeldGlowProxyIntensity()
+        {
+            return math.isfinite(weldGlowProxyIntensity)
+                ? math.clamp(weldGlowProxyIntensity, 0f, MaxWeldGlowProxyIntensity)
+                : 0.82f;
+        }
+
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            if (secondsPerCorner < 0.05f)
+            if (!math.isfinite(secondsPerCorner) || secondsPerCorner < 0.05f)
                 secondsPerCorner = 0.05f;
-            if (weldRadiusMeters < 0.01f)
+            secondsPerCorner = math.min(secondsPerCorner, MaxSecondsPerCorner);
+            if (!math.isfinite(weldRadiusMeters) || weldRadiusMeters < 0.01f)
                 weldRadiusMeters = 0.01f;
-            if (requiredPower < 0f)
+            weldRadiusMeters = math.min(weldRadiusMeters, MaxWeldRadiusMeters);
+            if (!math.isfinite(requiredPower) || requiredPower < 0f)
                 requiredPower = 0f;
-            if (weldHeatHoldAfterContactSeconds < 0f)
+            requiredPower = math.min(requiredPower, MaxDeliveredPower);
+            if (!math.isfinite(weldHeatHoldAfterContactSeconds) || weldHeatHoldAfterContactSeconds < 0f)
                 weldHeatHoldAfterContactSeconds = 0f;
-            if (weldCooldownSecondsPerSecond < 0f)
+            weldHeatHoldAfterContactSeconds = math.min(weldHeatHoldAfterContactSeconds, MaxWeldHeatHoldAfterContactSeconds);
+            if (!math.isfinite(weldCooldownSecondsPerSecond) || weldCooldownSecondsPerSecond < 0f)
                 weldCooldownSecondsPerSecond = 0f;
-            if (weldGlowDurationSeconds < 0.01f)
+            weldCooldownSecondsPerSecond = math.min(weldCooldownSecondsPerSecond, MaxWeldCooldownSecondsPerSecond);
+            if (!math.isfinite(weldGlowDurationSeconds) || weldGlowDurationSeconds < 0.01f)
                 weldGlowDurationSeconds = 0.01f;
-            if (weldGlowRangeMeters < 0.01f)
+            weldGlowDurationSeconds = math.min(weldGlowDurationSeconds, MaxWeldGlowDurationSeconds);
+            if (!math.isfinite(weldGlowRangeMeters) || weldGlowRangeMeters < 0.01f)
                 weldGlowRangeMeters = 0.01f;
-            if (weldGlowProxyIntensity < 0f)
+            weldGlowRangeMeters = math.min(weldGlowRangeMeters, MaxWeldGlowRangeMeters);
+            if (!math.isfinite(weldGlowProxyIntensity) || weldGlowProxyIntensity < 0f)
                 weldGlowProxyIntensity = 0f;
+            weldGlowProxyIntensity = math.min(weldGlowProxyIntensity, MaxWeldGlowProxyIntensity);
         }
 #endif
     }

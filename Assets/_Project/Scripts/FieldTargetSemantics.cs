@@ -59,10 +59,10 @@ namespace Hecton8.Gameplay
                    role == FieldTargetRole.PowerLoad;
         }
 
-        public static bool TryFindNearestRouteMarker(Vector3 position, float maxDistance, out FieldTargetDescriptor descriptor, out float distance)
+        public static bool TryFindNearestRouteMarkerSq(Vector3 position, float maxDistance, out FieldTargetDescriptor descriptor, out float distanceSq)
         {
             descriptor = null;
-            distance = 0f;
+            distanceSq = 0f;
 
             float maxSqr = maxDistance * maxDistance;
             float bestSqr = maxSqr;
@@ -84,7 +84,7 @@ namespace Hecton8.Gameplay
             if (descriptor == null)
                 return false;
 
-            distance = Mathf.Sqrt(bestSqr);
+            distanceSq = bestSqr;
             return true;
         }
 
@@ -209,7 +209,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.RouteRelay:
                 case FieldTargetRole.RouteFrontier:
                     assessment = new SemanticAssessment(
-                        $"{BuildRouteRoleLabel(descriptor.Role)} | RANGE {distance:0.0} M",
+                        BuildRouteRoleLabel(descriptor.Role),
                         note,
                         BuildRouteRecommendation(descriptor.Role),
                         descriptor.Role == FieldTargetRole.RouteFrontier ? "WARN" : "INFO",
@@ -241,7 +241,7 @@ namespace Hecton8.Gameplay
                     };
 
                     assessment = new SemanticAssessment(
-                        $"{cargoHeadline} | {(mass ?? 0f):0.0} KG | RANGE {distance:0.0} M",
+                        cargoHeadline,
                         note,
                         cargoRecommendation,
                         cargoSeverity,
@@ -272,7 +272,7 @@ namespace Hecton8.Gameplay
                     };
 
                     assessment = new SemanticAssessment(
-                        $"{serviceHeadline} | RANGE {distance:0.0} M",
+                        serviceHeadline,
                         note,
                         serviceRecommendation,
                         serviceSeverity,
@@ -309,7 +309,7 @@ namespace Hecton8.Gameplay
                     };
 
                     assessment = new SemanticAssessment(
-                        $"{bioHeadline} | RANGE {distance:0.0} M",
+                        bioHeadline,
                         note,
                         bioRecommendation,
                         bioSeverity,
@@ -340,7 +340,7 @@ namespace Hecton8.Gameplay
                     };
 
                     assessment = new SemanticAssessment(
-                        $"{buildHeadline} | RANGE {distance:0.0} M",
+                        buildHeadline,
                         note,
                         buildRecommendation,
                         buildSeverity,
@@ -371,7 +371,7 @@ namespace Hecton8.Gameplay
                     };
 
                     assessment = new SemanticAssessment(
-                        $"{powerHeadline} | RANGE {distance:0.0} M",
+                        powerHeadline,
                         note,
                         powerRecommendation,
                         powerSeverity,

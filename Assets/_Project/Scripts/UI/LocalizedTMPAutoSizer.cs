@@ -68,7 +68,6 @@ namespace Hecton8.UI
             LocalizationEvents.RegisterLanguageListener(this);
             InvalidateConfiguration();
             QueueConfigurationApply();
-            TryRegisterForTick();
         }
 
         private void OnDisable()
@@ -154,11 +153,16 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             if (!_configurationApplyPending)
+            {
+                TryUnregisterFromTick();
                 return;
+            }
 
             _configurationApplyPending = false;
             RepairCollapsedRectHierarchy();
             ApplyConfiguration();
+            if (!_configurationApplyPending)
+                TryUnregisterFromTick();
         }
 
         private void TryRegisterForTick()
@@ -210,7 +214,6 @@ namespace Hecton8.UI
                 targetText.textWrappingMode = wrappingMode;
                 if (enableRightToLeft)
                     ApplyRuntimeLocalizationLayout(targetText);
-                targetText.ForceMeshUpdate(false, false);
                 LocOverflowHandler.ApplyScale(targetText, _baselineLocalScale, LocOverflowHandler.ResolveUniformScale(targetText));
                 _lastAppliedLanguage = language;
                 _lastAppliedRectSize = rectSize;
@@ -247,6 +250,7 @@ namespace Hecton8.UI
         private void QueueConfigurationApply()
         {
             _configurationApplyPending = true;
+            TryRegisterForTick();
         }
 
         private void RepairCollapsedRectHierarchy()

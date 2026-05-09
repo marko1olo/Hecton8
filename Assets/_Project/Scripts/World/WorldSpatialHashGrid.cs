@@ -63,26 +63,63 @@ namespace Hecton8.World
             SpatialTargetKind kind,
             FieldTargetRole signalRole,
             int speciesId,
-            int layer)
+            int layer,
+            bool isPreyTag = false,
+            Rigidbody rigidbody = null)
         {
             Transform = transform;
             Owner = owner;
+            Rigidbody = rigidbody;
             Position = position;
             DistanceSqr = distanceSqr;
             Kind = kind;
             SignalRole = signalRole;
             SpeciesId = speciesId;
             Layer = layer;
+            AbsolutePosition = default;
+            HasAbsolutePosition = false;
+            IsPreyTag = isPreyTag;
+        }
+
+        public SpatialQueryHit(
+            Transform transform,
+            Component owner,
+            Vector3 position,
+            AbsoluteUniversePosition absolutePosition,
+            float distanceSqr,
+            SpatialTargetKind kind,
+            FieldTargetRole signalRole,
+            int speciesId,
+            int layer,
+            bool isPreyTag = false,
+            Rigidbody rigidbody = null)
+        {
+            Transform = transform;
+            Owner = owner;
+            Rigidbody = rigidbody;
+            Position = position;
+            DistanceSqr = distanceSqr;
+            Kind = kind;
+            SignalRole = signalRole;
+            SpeciesId = speciesId;
+            Layer = layer;
+            AbsolutePosition = absolutePosition;
+            HasAbsolutePosition = true;
+            IsPreyTag = isPreyTag;
         }
 
         public Transform Transform { get; }
         public Component Owner { get; }
+        public Rigidbody Rigidbody { get; }
         public Vector3 Position { get; }
+        public AbsoluteUniversePosition AbsolutePosition { get; }
+        public bool HasAbsolutePosition { get; }
         public float DistanceSqr { get; }
         public SpatialTargetKind Kind { get; }
         public FieldTargetRole SignalRole { get; }
         public int SpeciesId { get; }
         public int Layer { get; }
+        public bool IsPreyTag { get; }
     }
 
     /// <summary>
@@ -91,24 +128,30 @@ namespace Hecton8.World
     /// </summary>
     internal static class WorldSpatialHashGrid
     {
-        private sealed class Entry
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct Entry
         {
             public Transform Transform;
             public Component Owner;
+            public Rigidbody Rigidbody;
             public Vector3 RuntimePosition;
+            public AbsoluteUniversePosition AbsolutePosition;
             public SpatialTargetKind Kind;
             public FieldTargetRole SignalRole;
             public int SpeciesId;
             public int Layer;
+            public byte IsPreyTag;
             public float3 HalfExtents;
             public int PayloadId;
             public ulong EntityFlags;
-            public bool IsResidentInNativeHash;
+            public byte IsResidentInNativeHash;
         }
 
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
         private struct TransientSignalEntry
         {
             public Vector3 RuntimePosition;
+            public AbsoluteUniversePosition AbsolutePosition;
             public double ExpireTimestamp;
             public FieldTargetRole SignalRole;
             public int SourceSpeciesId;
@@ -167,7 +210,8 @@ namespace Hecton8.World
 
         private const double CellSizeMeters = 20d;
         private const int DefaultEntryCapacity = 256;
-        private const int DefaultQueryCapacity = 256;
+        private const int MaxSpatialMaintenanceEntryCapacity = 8192;
+        private const int MaxQueryHandleCapacity = 256;
         private const int ValidationCadenceFrames = 300;
         private const float FarUnloadPlayerTravelThresholdMeters = 2000f;
         private const double FarUnloadPlayerTravelThresholdSq = FarUnloadPlayerTravelThresholdMeters * FarUnloadPlayerTravelThresholdMeters;
@@ -191,9 +235,11 @@ namespace Hecton8.World
         private static readonly ProfilerMarker _acousticDensityProfilerMarker = new ProfilerMarker("H8.World.SpatialHashFacade.AcousticDensity");
 
         // COLD ALLOC: Dictionary<int,Entry>(256) — runtime metadata registry layered over the native AUP spatial hash — owner: WorldSpatialHashGrid
-        private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(DefaultEntryCapacity);
+        private static readonly Dictionary<int, Entry> _entries = new Dictionary<int, Entry>(MaxSpatialMaintenanceEntryCapacity);
+        // COLD ALLOC: Dictionary<ulong,int>(256) - full EntityId to latest spatial handle reverse lookup - owner: WorldSpatialHashGrid
+        private static readonly Dictionary<ulong, int> _handleByTransformId = new Dictionary<ulong, int>(MaxSpatialMaintenanceEntryCapacity);
         // COLD ALLOC: List<int>[128] â€” deferred far-unload handle scratch for dynamic native-hash eviction â€” owner: WorldSpatialHashGrid
-        private static readonly List<int> _farUnloadHandleScratch = new List<int>(128);
+        private static readonly List<int> _farUnloadHandleScratch = new List<int>(MaxSpatialMaintenanceEntryCapacity);
 
         private static readonly TransientSignalEntry[] _transientSignals = new TransientSignalEntry[MaxTransientSignalCount]; // COLD ALLOC: TransientSignalEntry[16] - transient PDA sonar signal ring - owner: WorldSpatialHashGrid
 
@@ -224,8 +270,12 @@ namespace Hecton8.World
         private static AbsoluteUniversePosition _lastFarUnloadPlayerAup;
         private static bool _hasLastFarUnloadPlayerAup;
         private static int _lastValidationFrame = -ValidationCadenceFrames;
+        private static bool _lastResultBufferSaturated;
 
         internal static int ActiveEntityCount => _nativeHash != null ? _nativeHash.EntryCount : _entries.Count;
+        internal static HectonSpatialHash.QueryStats LastNativeQueryStats => _nativeHash != null ? _nativeHash.LastQueryStats : default;
+        internal static bool LastNativeQuerySaturated => _nativeHash != null && _nativeHash.LastQueryStats.IsSaturated;
+        internal static bool LastResultBufferSaturated => _lastResultBufferSaturated;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -236,6 +286,7 @@ namespace Hecton8.World
         internal static void ClearRuntimeState()
         {
             _entries.Clear();
+            _handleByTransformId.Clear();
             JobHandle teardownDependency = JobHandle.CombineDependencies(
                 CancelValidationForTeardown(),
                 JobHandle.CombineDependencies(CancelOriginShiftForTeardown(), CancelFarUnloadForTeardown()));
@@ -268,6 +319,7 @@ namespace Hecton8.World
             _lastValidationFrame = -ValidationCadenceFrames;
             _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
             _transientSignalWriteIndex = 0;
+            _lastResultBufferSaturated = false;
             for (int i = 0; i < _transientSignals.Length; i++)
                 _transientSignals[i] = default;
         }
@@ -332,10 +384,11 @@ namespace Hecton8.World
 
         public static void UpdateSignalRole(int handle, FieldTargetRole signalRole)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || entry == null)
+            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry))
                 return;
 
             entry.SignalRole = signalRole;
+            _entries[handle] = entry;
         }
 
         public static void UpdateGridPosition(GameObject obj, Vector3 oldPosition, Vector3 newPosition)
@@ -350,7 +403,7 @@ namespace Hecton8.World
 
         public static void UpdateGridPosition(int handle, Vector3 oldPosition, Vector3 newPosition)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || entry == null)
+            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry))
                 return;
 
             if (entry.Transform == null)
@@ -364,7 +417,7 @@ namespace Hecton8.World
 
         public static void Refresh(int handle)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || entry == null)
+            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry))
                 return;
 
             if (entry.Transform == null)
@@ -383,7 +436,7 @@ namespace Hecton8.World
 
         public static void SetResourceHalfExtents(int handle, float3 halfExtents)
         {
-            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry) || entry == null)
+            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry entry))
                 return;
 
             entry.HalfExtents = math.max(halfExtents, 0f);
@@ -396,13 +449,13 @@ namespace Hecton8.World
             if (handle <= 0)
                 return;
 
-            if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
+            if (!_entries.TryGetValue(handle, out Entry entry))
                 return;
 
-            EnsureInitialized();
-            if (entry.IsResidentInNativeHash)
+            RemoveTransformHandle(handle, entry.Transform);
+            if (_nativeHash != null && entry.IsResidentInNativeHash != 0)
                 _nativeHash.Unregister(handle);
-            else
+            else if (_nativeHash != null)
                 _nativeHash.ReleaseHandle(handle);
 
             _entries.Remove(handle);
@@ -418,16 +471,33 @@ namespace Hecton8.World
             out SpatialQueryHit hit)
         {
             hit = default;
+            if (!IsFiniteRuntimePosition(origin) || !math.isfinite(radius) || radius <= 0f)
+            {
+                ResetQueryTelemetry();
+                return false;
+            }
+
             bool found = false;
-            float bestDistanceSqr = radius * radius;
+            double bestDistanceSqr = (double)radius * radius;
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
             int handleCount = CollectCandidateHandles(origin, radius, SpatialTargetKind.Bioform);
             for (int i = 0; i < handleCount; i++)
             {
-                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                int handle = _queryHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry))
+                {
+                    DropNativeOnlyHandle(handle);
                     continue;
+                }
+
+                if (!IsEntryQueryEligible(entry))
+                {
+                    Unregister(handle);
+                    continue;
+                }
 
                 Transform candidateTransform = entry.Transform;
-                if (candidateTransform == null || candidateTransform == ignoreTransform)
+                if (candidateTransform == ignoreTransform)
                     continue;
 
                 if (!MatchesLayer(entry.Layer, layerMask))
@@ -436,11 +506,12 @@ namespace Hecton8.World
                 if (excludedSpeciesId >= 0 && entry.SpeciesId == excludedSpeciesId)
                     continue;
 
-                if (requirePreyTag && !candidateTransform.CompareTag("Prey"))
+                if (requirePreyTag && entry.IsPreyTag == 0)
                     continue;
 
-                Vector3 position = candidateTransform.position;
-                float distanceSqr = (position - origin).sqrMagnitude;
+                Vector3 position = entry.RuntimePosition;
+                AbsoluteUniversePosition candidateAup = entry.AbsolutePosition;
+                double distanceSqr = AbsoluteUniversePosition.DistanceSq(in candidateAup, in originAup);
                 if (distanceSqr > bestDistanceSqr)
                     continue;
 
@@ -449,11 +520,14 @@ namespace Hecton8.World
                     candidateTransform,
                     entry.Owner,
                     position,
-                    distanceSqr,
+                    candidateAup,
+                    ClampDistanceSqrToFloat(distanceSqr),
                     entry.Kind,
                     entry.SignalRole,
                     entry.SpeciesId,
-                    entry.Layer);
+                    entry.Layer,
+                    entry.IsPreyTag != 0,
+                    entry.Rigidbody);
                 found = true;
             }
 
@@ -467,17 +541,58 @@ namespace Hecton8.World
             Transform ignoreTransform,
             out SpatialQueryHit hit)
         {
+            if (!IsFiniteRuntimePosition(origin))
+            {
+                hit = default;
+                ResetQueryTelemetry();
+                return false;
+            }
+
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            return TryGetNearestAggressiveBioform(
+                origin,
+                in originAup,
+                radius,
+                layerMask,
+                ignoreTransform,
+                out hit);
+        }
+
+        public static bool TryGetNearestAggressiveBioform(
+            Vector3 origin,
+            in AbsoluteUniversePosition originAup,
+            float radius,
+            int layerMask,
+            Transform ignoreTransform,
+            out SpatialQueryHit hit)
+        {
             hit = default;
+            if (!IsFiniteRuntimePosition(origin) || !IsFiniteAup(in originAup) || !math.isfinite(radius) || radius <= 0f)
+            {
+                ResetQueryTelemetry();
+                return false;
+            }
+
             bool found = false;
-            float bestDistanceSqr = radius * radius;
+            double bestDistanceSqr = (double)radius * radius;
             int handleCount = CollectCandidateHandles(origin, radius, SpatialTargetKind.Bioform);
             for (int i = 0; i < handleCount; i++)
             {
-                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                int handle = _queryHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry))
+                {
+                    DropNativeOnlyHandle(handle);
                     continue;
+                }
+
+                if (!IsEntryQueryEligible(entry))
+                {
+                    Unregister(handle);
+                    continue;
+                }
 
                 Transform candidateTransform = entry.Transform;
-                if (candidateTransform == null || candidateTransform == ignoreTransform)
+                if (candidateTransform == ignoreTransform)
                     continue;
 
                 if (!MatchesLayer(entry.Layer, layerMask))
@@ -486,8 +601,9 @@ namespace Hecton8.World
                 if (!(entry.Owner is FaunaBrain brain) || !brain.isAggressive)
                     continue;
 
-                Vector3 position = candidateTransform.position;
-                float distanceSqr = (position - origin).sqrMagnitude;
+                Vector3 position = entry.RuntimePosition;
+                AbsoluteUniversePosition candidateAup = entry.AbsolutePosition;
+                double distanceSqr = AbsoluteUniversePosition.DistanceSq(in candidateAup, in originAup);
                 if (distanceSqr > bestDistanceSqr)
                     continue;
 
@@ -496,11 +612,14 @@ namespace Hecton8.World
                     candidateTransform,
                     entry.Owner,
                     position,
-                    distanceSqr,
+                    candidateAup,
+                    ClampDistanceSqrToFloat(distanceSqr),
                     entry.Kind,
                     entry.SignalRole,
                     entry.SpeciesId,
-                    entry.Layer);
+                    entry.Layer,
+                    entry.IsPreyTag != 0,
+                    entry.Rigidbody);
                 found = true;
             }
 
@@ -509,6 +628,30 @@ namespace Hecton8.World
 
         public static void BuildSonarSnapshot(Vector3 origin, float radius, out SpatialSonarSnapshot snapshot)
         {
+            if (!IsFiniteRuntimePosition(origin) || !math.isfinite(radius) || radius <= 0f)
+            {
+                ResetQueryTelemetry();
+                snapshot = default;
+                return;
+            }
+
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            BuildSonarSnapshot(origin, in originAup, radius, out snapshot);
+        }
+
+        internal static void BuildSonarSnapshot(
+            Vector3 origin,
+            in AbsoluteUniversePosition originAup,
+            float radius,
+            out SpatialSonarSnapshot snapshot)
+        {
+            if (!IsFiniteRuntimePosition(origin) || !IsFiniteAup(in originAup) || !math.isfinite(radius) || radius <= 0f)
+            {
+                ResetQueryTelemetry();
+                snapshot = default;
+                return;
+            }
+
             int resourceCount = 0;
             int bioformCount = 0;
             int signalCount = 0;
@@ -516,24 +659,34 @@ namespace Hecton8.World
             bool hasNearestResource = false;
             bool hasNearestBioform = false;
             bool hasNearestSignal = false;
-            float nearestResourceDistanceSqr = float.MaxValue;
-            float nearestBioformDistanceSqr = float.MaxValue;
-            float nearestSignalDistanceSqr = float.MaxValue;
+            double nearestResourceDistanceSqr = double.PositiveInfinity;
+            double nearestBioformDistanceSqr = double.PositiveInfinity;
+            double nearestSignalDistanceSqr = double.PositiveInfinity;
+            float nearestResourceDistanceMeters = 0f;
+            float nearestBioformDistanceMeters = 0f;
+            float nearestSignalDistanceMeters = 0f;
             FieldTargetRole nearestSignalRole = FieldTargetRole.Generic;
-            float radiusSqr = radius * radius;
+            double radiusSqr = (double)radius * radius;
 
             int handleCount = CollectCandidateHandles(origin, radius, SpatialTargetKind.Resource | SpatialTargetKind.Bioform | SpatialTargetKind.Signal | SpatialTargetKind.Module);
             for (int i = 0; i < handleCount; i++)
             {
-                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                int handle = _queryHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry))
+                {
+                    DropNativeOnlyHandle(handle);
                     continue;
+                }
 
-                Transform candidateTransform = entry.Transform;
-                if (candidateTransform == null)
+                if (!IsEntryQueryEligible(entry))
+                {
+                    Unregister(handle);
                     continue;
+                }
 
-                Vector3 position = candidateTransform.position;
-                float distanceSqr = (position - origin).sqrMagnitude;
+                Vector3 position = entry.RuntimePosition;
+                AbsoluteUniversePosition candidateAup = entry.AbsolutePosition;
+                double distanceSqr = AbsoluteUniversePosition.DistanceSq(in candidateAup, in originAup);
                 if (distanceSqr > radiusSqr)
                     continue;
 
@@ -544,6 +697,7 @@ namespace Hecton8.World
                     if (distanceSqr < nearestResourceDistanceSqr)
                     {
                         nearestResourceDistanceSqr = distanceSqr;
+                        nearestResourceDistanceMeters = ApproximateAupDistanceMeters(in candidateAup, in originAup);
                         hasNearestResource = true;
                     }
 
@@ -556,6 +710,7 @@ namespace Hecton8.World
                     if (distanceSqr < nearestBioformDistanceSqr)
                     {
                         nearestBioformDistanceSqr = distanceSqr;
+                        nearestBioformDistanceMeters = ApproximateAupDistanceMeters(in candidateAup, in originAup);
                         hasNearestBioform = true;
                     }
 
@@ -573,6 +728,7 @@ namespace Hecton8.World
                 if (distanceSqr < nearestSignalDistanceSqr)
                 {
                     nearestSignalDistanceSqr = distanceSqr;
+                    nearestSignalDistanceMeters = ApproximateAupDistanceMeters(in candidateAup, in originAup);
                     nearestSignalRole = entry.SignalRole;
                     hasNearestSignal = true;
                 }
@@ -585,7 +741,8 @@ namespace Hecton8.World
                 if (signalEntry.ExpireTimestamp <= currentTimestamp)
                     continue;
 
-                float distanceSqr = (signalEntry.RuntimePosition - origin).sqrMagnitude;
+                AbsoluteUniversePosition signalAup = signalEntry.AbsolutePosition;
+                double distanceSqr = AbsoluteUniversePosition.DistanceSq(in signalAup, in originAup);
                 if (distanceSqr > radiusSqr)
                     continue;
 
@@ -593,6 +750,7 @@ namespace Hecton8.World
                 if (distanceSqr < nearestSignalDistanceSqr)
                 {
                     nearestSignalDistanceSqr = distanceSqr;
+                    nearestSignalDistanceMeters = ApproximateAupDistanceMeters(in signalAup, in originAup);
                     nearestSignalRole = signalEntry.SignalRole;
                     hasNearestSignal = true;
                 }
@@ -603,11 +761,11 @@ namespace Hecton8.World
                 bioformCount,
                 signalCount,
                 hasNearestResource,
-                hasNearestResource ? ClampDistanceToHud(nearestResourceDistanceSqr) : 0,
+                hasNearestResource ? ClampDistanceToHud(nearestResourceDistanceMeters) : 0,
                 hasNearestBioform,
-                hasNearestBioform ? ClampDistanceToHud(nearestBioformDistanceSqr) : 0,
+                hasNearestBioform ? ClampDistanceToHud(nearestBioformDistanceMeters) : 0,
                 hasNearestSignal,
-                hasNearestSignal ? ClampDistanceToHud(nearestSignalDistanceSqr) : 0,
+                hasNearestSignal ? ClampDistanceToHud(nearestSignalDistanceMeters) : 0,
                 nearestSignalRole);
         }
 
@@ -647,23 +805,59 @@ namespace Hecton8.World
             ulong interactionFilter,
             SpatialQueryHit[] results)
         {
-            if (results == null || results.Length == 0 || kindMask == SpatialTargetKind.None)
+            ResetQueryTelemetry();
+            if (!IsFiniteRuntimePosition(origin) || IsInvalidContactQuery(radius, kindMask, results))
                 return 0;
 
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+            return CollectContactsNonAllocChecked(origin, in originAup, radius, kindMask, interactionFilter, results);
+        }
+
+        internal static int CollectContactsNonAlloc(
+            Vector3 origin,
+            in AbsoluteUniversePosition originAup,
+            float radius,
+            SpatialTargetKind kindMask,
+            SpatialInteractionFlags interactionFilter,
+            SpatialQueryHit[] results)
+        {
+            ResetQueryTelemetry();
+            if (!IsFiniteRuntimePosition(origin) || !IsFiniteAup(in originAup) || IsInvalidContactQuery(radius, kindMask, results))
+                return 0;
+
+            return CollectContactsNonAllocChecked(origin, in originAup, radius, kindMask, (ulong)interactionFilter, results);
+        }
+
+        private static int CollectContactsNonAllocChecked(
+            Vector3 origin,
+            in AbsoluteUniversePosition originAup,
+            float radius,
+            SpatialTargetKind kindMask,
+            ulong interactionFilter,
+            SpatialQueryHit[] results)
+        {
             int count = 0;
-            float radiusSqr = radius * radius;
+            double radiusSqr = (double)radius * radius;
             int handleCount = CollectCandidateHandles(origin, radius, kindMask, interactionFilter);
             for (int i = 0; i < handleCount; i++)
             {
-                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                int handle = _queryHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry))
+                {
+                    DropNativeOnlyHandle(handle);
                     continue;
+                }
+
+                if (!IsEntryQueryEligible(entry))
+                {
+                    Unregister(handle);
+                    continue;
+                }
 
                 Transform candidateTransform = entry.Transform;
-                if (candidateTransform == null)
-                    continue;
-
-                Vector3 position = candidateTransform.position;
-                float distanceSqr = (position - origin).sqrMagnitude;
+                Vector3 position = entry.RuntimePosition;
+                AbsoluteUniversePosition candidateAup = entry.AbsolutePosition;
+                double distanceSqr = AbsoluteUniversePosition.DistanceSq(in candidateAup, in originAup);
                 if (distanceSqr > radiusSqr)
                     continue;
 
@@ -671,18 +865,33 @@ namespace Hecton8.World
                     candidateTransform,
                     entry.Owner,
                     position,
-                    distanceSqr,
+                    candidateAup,
+                    ClampDistanceSqrToFloat(distanceSqr),
                     entry.Kind,
                     entry.SignalRole,
                     entry.SpeciesId,
-                    entry.Layer);
+                    entry.Layer,
+                    entry.IsPreyTag != 0,
+                    entry.Rigidbody);
                 count++;
 
                 if (count >= results.Length)
+                {
+                    _lastResultBufferSaturated = i + 1 < handleCount;
                     break;
+                }
             }
 
             return count;
+        }
+
+        private static bool IsInvalidContactQuery(float radius, SpatialTargetKind kindMask, SpatialQueryHit[] results)
+        {
+            return results == null ||
+                   results.Length == 0 ||
+                   kindMask == SpatialTargetKind.None ||
+                   !math.isfinite(radius) ||
+                   radius <= 0f;
         }
 
         public static void RegisterTransientEvent(
@@ -696,12 +905,44 @@ namespace Hecton8.World
             int sourceSpeciesId = 0,
             float temperature = 0f)
         {
-            if (radiusMeters <= 0f || intensity <= 0f || lifetimeSeconds <= 0f || eventType == SpatialTransientEventType.None)
+            if (IsInvalidTransientEvent(worldPosition, radiusMeters, intensity, lifetimeSeconds, eventType, temperature))
+                return;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            RegisterTransientEvent(
+                worldPosition,
+                in positionAup,
+                radiusMeters,
+                intensity,
+                lifetimeSeconds,
+                eventType,
+                eventFlags,
+                signalRole,
+                sourceSpeciesId,
+                temperature);
+        }
+
+        internal static void RegisterTransientEvent(
+            Vector3 worldPosition,
+            in AbsoluteUniversePosition positionAup,
+            float radiusMeters,
+            float intensity,
+            float lifetimeSeconds,
+            SpatialTransientEventType eventType,
+            SpatialInteractionFlags eventFlags = SpatialInteractionFlags.None,
+            FieldTargetRole signalRole = FieldTargetRole.Generic,
+            int sourceSpeciesId = 0,
+            float temperature = 0f)
+        {
+            if (IsInvalidTransientEvent(worldPosition, radiusMeters, intensity, lifetimeSeconds, eventType, temperature) ||
+                !IsFiniteAup(in positionAup))
                 return;
 
             EnsureInitialized();
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
             double currentTimestamp = Time.unscaledTimeAsDouble;
+            if (!IsFiniteDouble(currentTimestamp))
+                return;
+
             double expirationTimestamp = currentTimestamp + lifetimeSeconds;
             uint sourceKey = ComposeTransientSignalSourceKey(signalRole, sourceSpeciesId);
             _nativeHash.RegisterTransientEvent(
@@ -716,7 +957,27 @@ namespace Hecton8.World
                 temperature);
 
             if (sourceKey != 0u)
-                TrackTransientSignal(worldPosition, expirationTimestamp, signalRole, sourceSpeciesId);
+                TrackTransientSignal(worldPosition, in positionAup, expirationTimestamp, signalRole, sourceSpeciesId);
+        }
+
+        private static bool IsInvalidTransientEvent(
+            Vector3 worldPosition,
+            float radiusMeters,
+            float intensity,
+            float lifetimeSeconds,
+            SpatialTransientEventType eventType,
+            float temperature)
+        {
+            float3 worldPositionFloat3 = worldPosition;
+            return !math.all(math.isfinite(worldPositionFloat3)) ||
+                   !math.isfinite(radiusMeters) ||
+                   !math.isfinite(intensity) ||
+                   !math.isfinite(lifetimeSeconds) ||
+                   !math.isfinite(temperature) ||
+                   radiusMeters <= 0f ||
+                   intensity <= 0f ||
+                   lifetimeSeconds <= 0f ||
+                   eventType == SpatialTransientEventType.None;
         }
 
         /// <summary>
@@ -725,14 +986,19 @@ namespace Hecton8.World
         public static void ClearTransientSignal(FieldTargetRole signalRole, int sourceSpeciesId)
         {
             uint sourceKey = ComposeTransientSignalSourceKey(signalRole, sourceSpeciesId);
+            double currentTimestamp = Time.unscaledTimeAsDouble;
+            if (!IsFiniteDouble(currentTimestamp))
+                return;
+
             if (sourceKey != 0u)
             {
-                EnsureInitialized();
-                _nativeHash.ClearTransientEvents((uint)SpatialTransientEventType.AcousticImpulse, sourceKey, Time.unscaledTimeAsDouble);
-                _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
+                if (_nativeHash != null)
+                {
+                    _nativeHash.ClearTransientEvents((uint)SpatialTransientEventType.AcousticImpulse, sourceKey, currentTimestamp);
+                    _lastAcousticDensityFrame = -AcousticDensityMapCadenceFrames;
+                }
             }
 
-            double currentTimestamp = Time.unscaledTimeAsDouble;
             for (int i = 0; i < _transientSignals.Length; i++)
             {
                 TransientSignalEntry entry = _transientSignals[i];
@@ -748,7 +1014,6 @@ namespace Hecton8.World
             out NativeArray<float> densityMap,
             out Vector3Int dimensions)
         {
-            EnsureAcousticDensityMap();
             densityMap = _acousticDensityMap;
             dimensions = new Vector3Int(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis);
             return _acousticDensityMap.IsCreated;
@@ -756,8 +1021,7 @@ namespace Hecton8.World
 
         public static bool IsHandleCurrent(int handle)
         {
-            EnsureInitialized();
-            return _nativeHash.IsCurrentHandle(handle);
+            return handle > 0 && _nativeHash != null && _nativeHash.IsCurrentHandle(handle);
         }
 
         public static bool QueryTemperatureGradient(
@@ -766,7 +1030,14 @@ namespace Hecton8.World
             out float temperatureDeltaCelsius,
             out Vector3 gradient)
         {
-            EnsureInitialized();
+            temperatureDeltaCelsius = 0f;
+            gradient = Vector3.zero;
+            if (!IsFiniteRuntimePosition(origin) || !math.isfinite(radiusMeters) || radiusMeters <= 0f)
+                return false;
+
+            if (_nativeHash == null)
+                return false;
+
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
             bool hasGradient = _nativeHash.QueryTemperatureGradient(
                 in originAup,
@@ -780,7 +1051,9 @@ namespace Hecton8.World
 
         internal static void SlowTickMaintenance(float deltaTime)
         {
-            EnsureInitialized();
+            if (_nativeHash == null)
+                return;
+
             _nativeHash.DecayTransientEvents(
                 Time.unscaledTimeAsDouble,
                 deltaTime,
@@ -791,7 +1064,9 @@ namespace Hecton8.World
 
         internal static void LateFrameMaintenance(int frameCount)
         {
-            EnsureInitialized();
+            if (_nativeHash == null)
+                return;
+
             using (_maintenanceProfilerMarker.Auto())
             {
                 if (_originShiftRefreshScheduled && _originShiftRefreshHandle.IsCompleted)
@@ -825,6 +1100,12 @@ namespace Hecton8.World
 
         internal static void HandleOriginShift(in OriginShiftEventData shiftData)
         {
+            if (_nativeHash == null)
+            {
+                ClearAcousticDensityMapForOriginShift();
+                return;
+            }
+
             EnsureInitialized();
             ClearAcousticDensityMapForOriginShift();
             if (_originShiftRefreshScheduled)
@@ -846,10 +1127,15 @@ namespace Hecton8.World
             {
                 KeyValuePair<int, Entry> pair = enumerator.Current;
                 Entry entry = pair.Value;
-                if (entry == null || entry.Transform == null || !entry.IsResidentInNativeHash)
+                if (entry.Transform == null || entry.IsResidentInNativeHash == 0)
                     continue;
+                if (writeIndex >= _originShiftHandles.Length)
+                    break;
 
                 Vector3 runtimePosition = entry.Transform.position;
+                if (!IsFiniteRuntimePosition(runtimePosition))
+                    continue;
+
                 entry.RuntimePosition = runtimePosition;
                 _originShiftHandles[writeIndex] = pair.Key;
                 _originShiftRuntimePositions[writeIndex] = runtimePosition;
@@ -858,6 +1144,16 @@ namespace Hecton8.World
 
             if (writeIndex <= 0)
                 return;
+
+            for (int i = 0; i < writeIndex; i++)
+            {
+                int handle = _originShiftHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry))
+                    continue;
+
+                entry.RuntimePosition = _originShiftRuntimePositions[i];
+                _entries[handle] = entry;
+            }
 
             _originShiftRefreshHandle = new RebuildAbsolutePositionsJob
             {
@@ -872,11 +1168,15 @@ namespace Hecton8.World
         private static void EnsureInitialized()
         {
             if (_nativeHash == null)
-                _nativeHash = new HectonSpatialHash(DefaultEntryCapacity, DefaultEntryCapacity * 4, CellSizeMeters, NativeMemoryLifetime);
+                _nativeHash = new HectonSpatialHash(
+                    MaxSpatialMaintenanceEntryCapacity,
+                    MaxSpatialMaintenanceEntryCapacity * 4,
+                    CellSizeMeters,
+                    NativeMemoryLifetime);
 
             if (!_queryHandles.IsCreated)
             {
-                _queryHandles = new NativeList<int>(DefaultQueryCapacity, Allocator.Persistent);
+                _queryHandles = new NativeList<int>(MaxQueryHandleCapacity, Allocator.Persistent);
                 NativeMemorySentinel.RegisterNativeList(
                     _queryHandles,
                     nameof(WorldSpatialHashGrid),
@@ -897,7 +1197,19 @@ namespace Hecton8.World
                 return 0;
 
             EnsureInitialized();
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
+            if (_entries.Count >= MaxSpatialMaintenanceEntryCapacity)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[WorldSpatialHashGrid] Entry capacity exceeded. Runtime buffer growth is forbidden.");
+#endif
+                return 0;
+            }
+
+            Vector3 runtimePosition = targetTransform.position;
+            if (!IsFiniteRuntimePosition(runtimePosition) || !IsFiniteFloat3(halfExtents))
+                return 0;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             float3 safeHalfExtents = math.max(halfExtents, 0f);
             ulong entityFlags = ResolveEntityFlags(kind);
             int handle = _nativeHash.Register(positionAup, safeHalfExtents, (int)kind, entityFlags, 0);
@@ -911,17 +1223,33 @@ namespace Hecton8.World
             {
                 Transform = targetTransform,
                 Owner = owner,
-                RuntimePosition = targetTransform.position,
+                Rigidbody = ResolveCachedRigidbody(owner, targetTransform),
+                RuntimePosition = runtimePosition,
+                AbsolutePosition = positionAup,
                 Kind = kind,
                 SignalRole = signalRole,
                 SpeciesId = speciesId,
                 Layer = targetTransform.gameObject.layer,
+                IsPreyTag = kind == SpatialTargetKind.Bioform && targetTransform.CompareTag("Prey") ? (byte)1 : (byte)0,
                 HalfExtents = safeHalfExtents,
                 PayloadId = 0,
                 EntityFlags = entityFlags,
-                IsResidentInNativeHash = true
+                IsResidentInNativeHash = 1
             };
+            _handleByTransformId[ResolveTransformEntityKey(targetTransform)] = handle;
             return handle;
+        }
+
+        private static Rigidbody ResolveCachedRigidbody(Component owner, Transform targetTransform)
+        {
+            Rigidbody body = null;
+            if (owner != null && owner.TryGetComponent(out body))
+                return body;
+
+            if (targetTransform != null && targetTransform.TryGetComponent(out body))
+                return body;
+
+            return null;
         }
 
         private static void UpdateNativeEntry(int handle, Entry entry)
@@ -934,12 +1262,26 @@ namespace Hecton8.World
             }
 
             entry.Layer = targetTransform.gameObject.layer;
-            entry.RuntimePosition = targetTransform.position;
-            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(entry.RuntimePosition);
+            entry.IsPreyTag = entry.Kind == SpatialTargetKind.Bioform && targetTransform.CompareTag("Prey") ? (byte)1 : (byte)0;
+            Vector3 runtimePosition = targetTransform.position;
+            if (!IsFiniteRuntimePosition(runtimePosition) || !IsFiniteFloat3(entry.HalfExtents))
+            {
+                Unregister(handle);
+                return;
+            }
+
+            entry.RuntimePosition = runtimePosition;
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            entry.AbsolutePosition = positionAup;
             if (entry.EntityFlags == 0UL)
                 entry.EntityFlags = ResolveEntityFlags(entry.Kind);
-            _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.EntityFlags, entry.PayloadId);
-            entry.IsResidentInNativeHash = true;
+            if (!_nativeHash.TryUpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.EntityFlags, entry.PayloadId))
+            {
+                Unregister(handle);
+                return;
+            }
+
+            entry.IsResidentInNativeHash = 1;
             _entries[handle] = entry;
         }
 
@@ -948,25 +1290,102 @@ namespace Hecton8.World
             if (targetTransform == null)
                 return 0;
 
-            Dictionary<int, Entry>.Enumerator enumerator = _entries.GetEnumerator();
-            while (enumerator.MoveNext())
+            ulong transformId = ResolveTransformEntityKey(targetTransform);
+            if (!_handleByTransformId.TryGetValue(transformId, out int handle))
+                return 0;
+
+            if (!_entries.TryGetValue(handle, out Entry entry) || !ReferenceEquals(entry.Transform, targetTransform))
             {
-                KeyValuePair<int, Entry> pair = enumerator.Current;
-                if (ReferenceEquals(pair.Value.Transform, targetTransform))
-                    return pair.Key;
+                _handleByTransformId.Remove(transformId);
+                return 0;
             }
 
-            return 0;
+            return handle;
+        }
+
+        private static void RemoveTransformHandle(int handle, Transform targetTransform)
+        {
+            if (targetTransform == null)
+                return;
+
+            ulong transformId = ResolveTransformEntityKey(targetTransform);
+            if (_handleByTransformId.TryGetValue(transformId, out int mappedHandle) && mappedHandle == handle)
+                _handleByTransformId.Remove(transformId);
+        }
+
+        private static ulong ResolveTransformEntityKey(Transform targetTransform)
+        {
+            return targetTransform != null
+                ? EntityId.ToULong(targetTransform.GetEntityId())
+                : 0UL;
+        }
+
+        private static void DropNativeOnlyHandle(int handle)
+        {
+            if (handle <= 0 || _nativeHash == null)
+                return;
+
+            _nativeHash.Unregister(handle);
         }
 
         private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask, ulong interactionFilter = 0UL)
         {
+            ResetQueryTelemetry();
+            if (!IsFiniteRuntimePosition(origin) || !math.isfinite(radius) || radius <= 0f || kindMask == SpatialTargetKind.None)
+                return 0;
+
+            if (_nativeHash == null || _entries.Count == 0)
+                return 0;
+
             EnsureInitialized();
             using (_queryProfilerMarker.Auto())
             {
                 AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
                 return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, interactionFilter, _queryHandles);
             }
+        }
+
+        private static void ResetQueryTelemetry()
+        {
+            _lastResultBufferSaturated = false;
+            if (_nativeHash != null)
+                _nativeHash.ClearLastQueryStats();
+        }
+
+        private static bool IsEntryQueryEligible(Entry entry)
+        {
+            if (entry.Transform == null || entry.Owner == null)
+                return false;
+
+            GameObject targetObject = entry.Transform.gameObject;
+            if (targetObject == null || !targetObject.activeInHierarchy)
+                return false;
+
+            if (entry.Owner is Behaviour behaviour && !behaviour.isActiveAndEnabled)
+                return false;
+
+            return !(entry.Owner is FaunaBrain faunaBrain) || !faunaBrain.IsDead;
+        }
+
+        private static bool IsFiniteRuntimePosition(Vector3 position)
+        {
+            float3 value = position;
+            return math.all(math.isfinite(value));
+        }
+
+        private static bool IsFiniteDouble(double value)
+        {
+            return !double.IsNaN(value) && !double.IsInfinity(value);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.all(math.isfinite(new float3(position.LocalX, position.LocalY, position.LocalZ)));
+        }
+
+        private static bool IsFiniteFloat3(float3 value)
+        {
+            return math.all(math.isfinite(value));
         }
 
         private static void ClearAcousticDensityMapForOriginShift()
@@ -1001,11 +1420,19 @@ namespace Hecton8.World
             while (enumerator.MoveNext())
             {
                 Entry entry = enumerator.Current.Value;
-                if (entry == null || entry.Transform == null)
+                if (entry.Transform == null)
                     continue;
+                if (writeIndex >= _validationAbsolutePositions.Length)
+                    break;
 
                 Vector3 runtimePosition = entry.Transform.position;
+                if (!IsFiniteRuntimePosition(runtimePosition))
+                    continue;
+
                 Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+                if (!IsFiniteRuntimePosition(absolutePosition))
+                    continue;
+
                 _validationRuntimePositions[writeIndex] = runtimePosition;
                 _validationAbsolutePositions[writeIndex] = absolutePosition;
                 writeIndex++;
@@ -1060,7 +1487,11 @@ namespace Hecton8.World
             if (playerTransform == null)
                 return;
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            Vector3 playerPosition = playerTransform.position;
+            if (!IsFiniteRuntimePosition(playerPosition))
+                return;
+
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
             if (_hasLastFarUnloadPlayerAup &&
                 AbsoluteUniversePosition.DistanceSq(in playerAup, in _lastFarUnloadPlayerAup) < FarUnloadPlayerTravelThresholdSq)
             {
@@ -1083,16 +1514,37 @@ namespace Hecton8.World
             {
                 KeyValuePair<int, Entry> pair = enumerator.Current;
                 Entry entry = pair.Value;
-                if (entry == null || entry.Transform == null)
+                if (entry.Transform == null)
                     continue;
+                if (writeIndex >= _farUnloadHandles.Length)
+                    break;
 
                 Vector3 runtimePosition = entry.Transform.position;
+                if (!IsFiniteRuntimePosition(runtimePosition))
+                    continue;
+
                 entry.RuntimePosition = runtimePosition;
                 AbsoluteUniversePosition entryAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+                entry.AbsolutePosition = entryAup;
                 _farUnloadHandles[writeIndex] = pair.Key;
                 _farUnloadAbsolutePositions[writeIndex] = entryAup.ToAbsoluteDouble3();
                 _farUnloadEligibilityMask[writeIndex] = IsFarUnloadEligible(entry) ? (byte)1 : (byte)0;
                 writeIndex++;
+            }
+
+            Vector3 currentTotalOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            for (int i = 0; i < writeIndex; i++)
+            {
+                int handle = _farUnloadHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry))
+                    continue;
+
+                entry.RuntimePosition = new Vector3(
+                    (float)(_farUnloadAbsolutePositions[i].x - currentTotalOffset.x),
+                    (float)(_farUnloadAbsolutePositions[i].y - currentTotalOffset.y),
+                    (float)(_farUnloadAbsolutePositions[i].z - currentTotalOffset.z));
+                entry.AbsolutePosition = AbsoluteUniversePosition.FromAbsolutePosition(_farUnloadAbsolutePositions[i]);
+                _entries[handle] = entry;
             }
 
             _lastFarUnloadPlayerAup = playerAup;
@@ -1134,14 +1586,22 @@ namespace Hecton8.World
             for (int i = 0; i < _farUnloadHandleScratch.Count; i++)
             {
                 int handle = _farUnloadHandleScratch[i];
-                if (!_entries.TryGetValue(handle, out Entry entry) || entry == null || !entry.IsResidentInNativeHash)
+                if (!_entries.TryGetValue(handle, out Entry entry) || entry.IsResidentInNativeHash == 0)
                     continue;
 
                 if (entry.Transform != null)
-                    entry.RuntimePosition = entry.Transform.position;
+                {
+                    Vector3 runtimePosition = entry.Transform.position;
+                    if (IsFiniteRuntimePosition(runtimePosition))
+                    {
+                        entry.RuntimePosition = runtimePosition;
+                        entry.AbsolutePosition = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+                    }
+                }
 
                 _nativeHash.Evict(handle);
-                entry.IsResidentInNativeHash = false;
+                entry.IsResidentInNativeHash = 0;
+                _entries[handle] = entry;
             }
 
             _farUnloadCount = 0;
@@ -1158,14 +1618,24 @@ namespace Hecton8.World
             for (int i = 0; i < _originShiftRefreshCount; i++)
             {
                 int handle = _originShiftHandles[i];
-                if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
+                if (!_entries.TryGetValue(handle, out Entry entry))
                     continue;
 
                 entry.RuntimePosition = _originShiftRuntimePositions[i];
                 AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromAbsolutePosition(_originShiftAbsolutePositions[i]);
+                entry.AbsolutePosition = positionAup;
                 if (entry.EntityFlags == 0UL)
                     entry.EntityFlags = ResolveEntityFlags(entry.Kind);
-                _nativeHash.UpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.EntityFlags, entry.PayloadId);
+                if (!_nativeHash.TryUpdateEntry(handle, positionAup, entry.HalfExtents, (int)entry.Kind, entry.EntityFlags, entry.PayloadId))
+                {
+                    _nativeHash.Unregister(handle);
+                    RemoveTransformHandle(handle, entry.Transform);
+                    _entries.Remove(handle);
+                    continue;
+                }
+
+                entry.IsResidentInNativeHash = 1;
+                _entries[handle] = entry;
             }
 
             _originShiftRefreshCount = 0;
@@ -1173,14 +1643,15 @@ namespace Hecton8.World
 
         private static void EnsureValidationCapacity(int requiredCapacity)
         {
-            int safeCapacity = math.max(1, requiredCapacity);
-            if (_validationAbsolutePositions.IsCreated && _validationAbsolutePositions.Length >= safeCapacity)
+            if (_validationAbsolutePositions.IsCreated &&
+                _validationRuntimePositions.IsCreated &&
+                _validationInvalidMask.IsCreated)
                 return;
 
             DisposeValidationBuffers();
-            _validationAbsolutePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _validationRuntimePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _validationInvalidMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _validationAbsolutePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _validationRuntimePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _validationInvalidMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _validationAbsolutePositions,
                 nameof(WorldSpatialHashGrid),
@@ -1200,14 +1671,15 @@ namespace Hecton8.World
 
         private static void EnsureOriginShiftCapacity(int requiredCapacity)
         {
-            int safeCapacity = math.max(1, requiredCapacity);
-            if (_originShiftHandles.IsCreated && _originShiftHandles.Length >= safeCapacity)
+            if (_originShiftHandles.IsCreated &&
+                _originShiftRuntimePositions.IsCreated &&
+                _originShiftAbsolutePositions.IsCreated)
                 return;
 
             DisposeOriginShiftBuffers();
-            _originShiftHandles = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _originShiftRuntimePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _originShiftAbsolutePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _originShiftHandles = new NativeArray<int>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _originShiftRuntimePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _originShiftAbsolutePositions = new NativeArray<float3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _originShiftHandles,
                 nameof(WorldSpatialHashGrid),
@@ -1373,15 +1845,17 @@ namespace Hecton8.World
 
         private static void EnsureFarUnloadCapacity(int requiredCapacity)
         {
-            int safeCapacity = math.max(1, requiredCapacity);
-            if (_farUnloadHandles.IsCreated && _farUnloadHandles.Length >= safeCapacity)
+            if (_farUnloadHandles.IsCreated &&
+                _farUnloadAbsolutePositions.IsCreated &&
+                _farUnloadEligibilityMask.IsCreated &&
+                _farUnloadResultMask.IsCreated)
                 return;
 
             DisposeFarUnloadBuffers();
-            _farUnloadHandles = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _farUnloadAbsolutePositions = new NativeArray<double3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _farUnloadEligibilityMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _farUnloadResultMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _farUnloadHandles = new NativeArray<int>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _farUnloadAbsolutePositions = new NativeArray<double3>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _farUnloadEligibilityMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _farUnloadResultMask = new NativeArray<byte>(MaxSpatialMaintenanceEntryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeArray(
                 _farUnloadHandles,
                 nameof(WorldSpatialHashGrid),
@@ -1519,18 +1993,30 @@ namespace Hecton8.World
         private static void BuildAcousticDensityMap(int currentFrame)
         {
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null)
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement == null)
+                return;
+
+            AbsoluteUniversePosition listenerAup = playerMovement.CurrentAup;
+            if (!IsFiniteAup(in listenerAup))
+                return;
+
+            float3 listenerRuntime = listenerAup.ToRuntimeFloat3();
+            Vector3 listenerPosition = new Vector3(listenerRuntime.x, listenerRuntime.y, listenerRuntime.z);
+            if (!IsFiniteRuntimePosition(listenerPosition))
                 return;
 
             EnsureAcousticDensityMap();
             using (_acousticDensityProfilerMarker.Auto())
             {
-                AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+                double currentTimestamp = Time.unscaledTimeAsDouble;
+                if (!IsFiniteDouble(currentTimestamp))
+                    return;
+
                 _nativeHash.BuildAcousticDensityMap(
                     in listenerAup,
                     AcousticDensityMapRadiusMeters,
-                    Time.unscaledTimeAsDouble,
+                    currentTimestamp,
                     _acousticDensityMap,
                     new int3(AcousticDensityMapAxis, AcousticDensityMapAxis, AcousticDensityMapAxis),
                     (uint)SpatialTransientEventType.AcousticImpulse);
@@ -1540,6 +2026,7 @@ namespace Hecton8.World
 
         private static void TrackTransientSignal(
             Vector3 runtimePosition,
+            in AbsoluteUniversePosition positionAup,
             double expirationTimestamp,
             FieldTargetRole signalRole,
             int sourceSpeciesId)
@@ -1547,6 +2034,7 @@ namespace Hecton8.World
             _transientSignals[_transientSignalWriteIndex] = new TransientSignalEntry
             {
                 RuntimePosition = runtimePosition,
+                AbsolutePosition = positionAup,
                 ExpireTimestamp = expirationTimestamp,
                 SignalRole = signalRole,
                 SourceSpeciesId = sourceSpeciesId
@@ -1587,7 +2075,7 @@ namespace Hecton8.World
 
         private static bool IsFarUnloadEligible(Entry entry)
         {
-            if (entry == null || !entry.IsResidentInNativeHash)
+            if (entry.IsResidentInNativeHash == 0)
                 return false;
 
             SpatialTargetKind dynamicKinds = SpatialTargetKind.Pickup | SpatialTargetKind.Bioform | SpatialTargetKind.Signal;
@@ -1625,13 +2113,28 @@ namespace Hecton8.World
             }
         }
 
-        private static int ClampDistanceToHud(float distanceSqr)
+        private static float ApproximateAupDistanceMeters(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
         {
-            int roundedDistance = Mathf.Clamp(
-                Mathf.RoundToInt(Mathf.Sqrt(distanceSqr)),
-                0,
-                Hecton8.UI.HudNumericStringCache.MaxIntegerValue);
-            return roundedDistance;
+            double3 delta = a.ToAbsoluteDouble3() - b.ToAbsoluteDouble3();
+            double ax = math.abs(delta.x);
+            double ay = math.abs(delta.y);
+            double az = math.abs(delta.z);
+            double maxAxis = math.max(ax, math.max(ay, az));
+            double minAxis = math.min(ax, math.min(ay, az));
+            double midAxis = ax + ay + az - maxAxis - minAxis;
+            double approximateDistance = maxAxis + midAxis * 0.375d + minAxis * 0.125d;
+            return approximateDistance >= float.MaxValue ? float.MaxValue : (float)approximateDistance;
+        }
+
+        private static int ClampDistanceToHud(float distanceMeters)
+        {
+            float clampedDistance = math.clamp(distanceMeters, 0f, Hecton8.UI.HudNumericStringCache.MaxIntegerValue);
+            return (int)(clampedDistance + 0.5f);
+        }
+
+        private static float ClampDistanceSqrToFloat(double distanceSqr)
+        {
+            return distanceSqr >= float.MaxValue ? float.MaxValue : (float)distanceSqr;
         }
     }
 }

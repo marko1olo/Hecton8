@@ -26,6 +26,7 @@ using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Interaction;
 using Hecton8.Narrative;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -148,8 +149,10 @@ namespace Hecton8.Gameplay
         private FragmentState _state = FragmentState.Scannable;
         private float _currentProgress;
         private bool _isScanning;
-        private Vector3 _originalPosition;
+        private bool _scanRenderRegistered;
+        private uint _scanRenderAddedFlags;
         private byte _appliedLoreStagesMask;
+        private float _scanPulsePhase;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for scan VFX.
@@ -208,7 +211,7 @@ namespace Hecton8.Gameplay
         {
             _transform = transform;
 
-            // COLD ALLOC: MaterialPropertyBlock — scan VFX
+            // COLD ALLOC: MaterialPropertyBlock[1] - scan progress VFX - owner: ScannableFragment
             _mpb = new MaterialPropertyBlock();
 
             // Auto-find renderer if not assigned
@@ -218,9 +221,6 @@ namespace Hecton8.Gameplay
             }
 
             RebuildLocalizedTextCache();
-
-            // Store original position for vibration
-            _originalPosition = _transform.position;
 
             ResetState();
         }
@@ -234,6 +234,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            UnregisterScanRenderProxy();
             LocalizationEvents.UnregisterLanguageListener(this);
         }
 
@@ -287,14 +288,15 @@ namespace Hecton8.Gameplay
             float previousProgressNormalized = ProgressNormalized;
 
             // Add progress
+            float safeProgressDelta = math.max(0f, progressDelta);
             float scanDuration = ResolveScanDuration();
-            _currentProgress = Mathf.Min(_currentProgress + progressDelta, scanDuration);
+            _currentProgress = math.min(_currentProgress + safeProgressDelta, scanDuration);
 
             float currentProgressNormalized = ProgressNormalized;
             TryUnlockLoreStages(previousProgressNormalized, currentProgressNormalized);
 
             // Update visuals
-            UpdateScanVisuals();
+            UpdateScanVisuals(AdvanceScanPulse(safeProgressDelta));
 
             // Fire progress event
             OnProgressChanged?.Invoke(currentProgressNormalized);
@@ -315,9 +317,8 @@ namespace Hecton8.Gameplay
 
             _isScanning = false;
             _state = FragmentState.Scannable;
-
-            // Reset vibration
-            _transform.position = _originalPosition;
+            _scanPulsePhase = 0f;
+            UnregisterScanRenderProxy();
 
             // Reset visuals
             ResetScanVisuals();
@@ -362,9 +363,7 @@ namespace Hecton8.Gameplay
         {
             _state = FragmentState.Scanning;
             _isScanning = true;
-
-            // Store original position for vibration
-            _originalPosition = _transform.position;
+            RegisterScanRenderProxy();
 
             // Play scanning sound
             if (scanningSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
@@ -380,9 +379,8 @@ namespace Hecton8.Gameplay
         {
             _state = FragmentState.Completed;
             _isScanning = false;
-
-            // Reset vibration
-            _transform.position = _originalPosition;
+            _scanPulsePhase = 0f;
+            UnregisterScanRenderProxy();
 
             // Play complete particles
             if (completeParticles != null)
@@ -412,7 +410,16 @@ namespace Hecton8.Gameplay
         //  VISUALS
         // ══════════════════════════════════════════════════════════
 
-        private void UpdateScanVisuals()
+        private float AdvanceScanPulse(float deltaTime)
+        {
+            if (vibrationAmplitude <= 0f)
+                return 0f;
+
+            _scanPulsePhase = math.frac(_scanPulsePhase + math.max(0.01f, vibrationFrequency) * deltaTime);
+            return 1f - math.abs((_scanPulsePhase * 2f) - 1f);
+        }
+
+        private void UpdateScanVisuals(float pulse = 0f)
         {
             // Update shader properties
             if (fragmentRenderer != null && _mpb != null)
@@ -420,23 +427,9 @@ namespace Hecton8.Gameplay
                 fragmentRenderer.GetPropertyBlock(_mpb);
                 _mpb.SetFloat(_ScanProgressID, ProgressNormalized);
                 _mpb.SetColor(_ScanGlowColorID, scanGlowColor);
-
-                // Pulse effect
-                float pulse = Mathf.Sin(Time.time * vibrationFrequency * 2f) * 0.5f + 0.5f;
                 _mpb.SetFloat(_ScanPulseID, pulse);
 
                 fragmentRenderer.SetPropertyBlock(_mpb);
-            }
-
-            // Apply vibration
-            if (vibrationAmplitude > 0f)
-            {
-                Vector3 vibration = new Vector3(
-                    Mathf.Sin(Time.time * vibrationFrequency) * vibrationAmplitude,
-                    Mathf.Cos(Time.time * vibrationFrequency * 1.3f) * vibrationAmplitude,
-                    Mathf.Sin(Time.time * vibrationFrequency * 0.7f) * vibrationAmplitude
-                );
-                _transform.position = _originalPosition + vibration;
             }
         }
 
@@ -456,25 +449,46 @@ namespace Hecton8.Gameplay
 
         private void ResetState()
         {
+            UnregisterScanRenderProxy();
             _state = canBeScanned ? FragmentState.Scannable : FragmentState.Locked;
             _currentProgress = 0f;
             _isScanning = false;
             _appliedLoreStagesMask = 0;
+            _scanPulsePhase = 0f;
 
             // Reset visuals
             ResetScanVisuals();
-
-            // Reset position
-            if (_transform != null)
-            {
-                _originalPosition = _transform.position;
-            }
 
             // Re-enable renderer
             if (fragmentRenderer != null)
             {
                 fragmentRenderer.enabled = true;
             }
+        }
+
+        private void RegisterScanRenderProxy()
+        {
+            if (_scanRenderRegistered || fragmentRenderer == null)
+                return;
+
+            const uint requestedFlags = HectonScanRenderFlags.IsScanned | HectonScanRenderFlags.Environment;
+            bool alreadyRegistered = HectonScanRenderRegistry.TryGetFlags(fragmentRenderer, out uint existingFlags);
+            _scanRenderAddedFlags = requestedFlags & ~existingFlags;
+            _scanRenderRegistered = alreadyRegistered
+                ? HectonScanRenderRegistry.SetFlags(fragmentRenderer, requestedFlags, true)
+                : HectonScanRenderRegistry.Register(fragmentRenderer, requestedFlags);
+        }
+
+        private void UnregisterScanRenderProxy()
+        {
+            if (!_scanRenderRegistered)
+                return;
+
+            if (fragmentRenderer != null && _scanRenderAddedFlags != HectonScanRenderFlags.None)
+                HectonScanRenderRegistry.SetFlags(fragmentRenderer, _scanRenderAddedFlags, false);
+
+            _scanRenderAddedFlags = HectonScanRenderFlags.None;
+            _scanRenderRegistered = false;
         }
 
         private void DisableFragment()

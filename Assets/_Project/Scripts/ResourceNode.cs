@@ -1,5 +1,4 @@
 using System.Threading;
-using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -7,10 +6,10 @@ using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.Tools;
-using Hecton8.Visor;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Scavenging
@@ -20,7 +19,7 @@ namespace Hecton8.Scavenging
     /// Legacy UniqueId support remains for scene-authored compatibility, but authoritative depletion lives in PersistentWorldRegistry.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable, IInteractionSignalConsumer, ISonarPingEventListener
+    public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable, IInteractionSignalConsumer
     {
         private static readonly int _MeltCenterId = Shader.PropertyToID("_MeltCenter");
         private static readonly int _MeltRadiusId = Shader.PropertyToID("_MeltRadius");
@@ -128,7 +127,6 @@ namespace Hecton8.Scavenging
         private bool _despawnRequested;
         private bool _lootSpawnBlockedLogged;
         private bool _registeredToWorldStateRegistry;
-        private bool _registeredSonarEchoResponse;
         private int _spatialHandle;
         private ulong _persistentTombstoneId;
         private HectonVoxelEngine _cachedVoxelEngine;
@@ -200,6 +198,11 @@ namespace Hecton8.Scavenging
 
             _propertyBlock = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-node melt shader overrides — owner: ResourceNode
             _depletionLock = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] — interlocked depletion gate for pooled resource tombstones — owner: ResourceNode
+            NativeMemorySentinel.RegisterNativeArray(
+                _depletionLock,
+                nameof(ResourceNode),
+                nameof(_depletionLock),
+                NativeAllocationLifetime.Scene);
             ResetState();
         }
 
@@ -215,7 +218,6 @@ namespace Hecton8.Scavenging
 
         private void OnDisable()
         {
-            UnregisterSonarEchoResponse();
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
         }
@@ -229,7 +231,6 @@ namespace Hecton8.Scavenging
 
         public void OnDespawn()
         {
-            UnregisterSonarEchoResponse();
             UnregisterSpatialHandle();
             UnregisterWorldStateRegistry();
             ResetState();
@@ -240,9 +241,11 @@ namespace Hecton8.Scavenging
 
         private void OnDestroy()
         {
-            UnregisterSonarEchoResponse();
             if (_depletionLock.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_depletionLock);
                 _depletionLock.Dispose();
+            }
         }
 
         /// <summary>
@@ -368,65 +371,16 @@ namespace Hecton8.Scavenging
                 return;
             }
 
-            RegisterSonarEchoResponse();
             RegisterSpatialHandle();
         }
 
-        private void RegisterSonarEchoResponse()
+        private static float ApproximateMagnitude(float3 value)
         {
-            if (_registeredSonarEchoResponse || !Application.isPlaying)
-                return;
-
-            SpectrumEvents.RegisterSonarPingListener(this);
-            _registeredSonarEchoResponse = true;
-        }
-
-        private void UnregisterSonarEchoResponse()
-        {
-            if (!_registeredSonarEchoResponse)
-                return;
-
-            SpectrumEvents.UnregisterSonarPingListener(this);
-            _registeredSonarEchoResponse = false;
-        }
-
-        private void HandleSonarPingSent(float intensity)
-        {
-            if (_isDepleted || _despawnRequested || resourceTemplate == null || intensity <= 0f)
-                return;
-
-            float pulseRadiusMeters = SpectrumEvents.LastSonarPulseRadiusMeters;
-            if (pulseRadiusMeters <= 0f || !SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
-                return;
-
-            Vector3 nodePosition = _cachedTransform != null ? _cachedTransform.position : transform.position;
-            Vector3 playerPosition = playerTransform.position;
-            AbsoluteUniversePosition nodeAup = AbsoluteUniversePosition.FromRuntimePosition(nodePosition);
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
-            double radiusSqr = (double)pulseRadiusMeters * pulseRadiusMeters;
-            double distanceSqr = AbsoluteUniversePosition.DistanceSq(in nodeAup, in playerAup);
-            if (distanceSqr > radiusSqr)
-                return;
-
-            float distanceMeters = distanceSqr >= float.MaxValue ? float.MaxValue : (float)System.Math.Sqrt(System.Math.Max(0d, distanceSqr));
-            float proximity = 1f - Mathf.Clamp01(distanceMeters / Mathf.Max(0.01f, pulseRadiusMeters));
-            float resonance = resourceTemplate.AcousticResonance;
-            float resonance01 = Mathf.InverseLerp(0.65f, 1.45f, resonance);
-            float returnStrength = Mathf.Clamp01(intensity * Mathf.Lerp(0.35f, 1f, proximity) * Mathf.Lerp(0.7f, 1f, resonance01));
-            if (returnStrength <= 0.01f)
-                return;
-
-            SpectrumEvents.RaiseAcousticEchoReturned(new AcousticEchoEvent(
-                nodePosition,
-                distanceMeters,
-                returnStrength,
-                resonance,
-                resourceTemplate.AudioMaterialID));
-        }
-
-        void ISonarPingEventListener.OnSonarPingSent(float intensity)
-        {
-            HandleSonarPingSent(intensity);
+            float3 absoluteValue = math.abs(value);
+            float maxAxis = math.max(absoluteValue.x, math.max(absoluteValue.y, absoluteValue.z));
+            float minAxis = math.min(absoluteValue.x, math.min(absoluteValue.y, absoluteValue.z));
+            float midAxis = absoluteValue.x + absoluteValue.y + absoluteValue.z - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375f + minAxis * 0.125f;
         }
 
         private void ResolvePersistentIdentity()
@@ -482,7 +436,9 @@ namespace Hecton8.Scavenging
             {
                 if (!_lootSpawnBlockedLogged)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError("[ResourceNode] ObjectPoolManager unavailable. Depletion aborted to prevent loot loss.", this);
+#endif
                     _lootSpawnBlockedLogged = true;
                 }
 
@@ -492,19 +448,19 @@ namespace Hecton8.Scavenging
             Vector3 origin = _cachedTransform.position;
             for (int i = 0; i < lootCount; i++)
             {
-                Vector3 offset = Random.insideUnitSphere * scatterRadius;
+                Vector3 offset = UnityEngine.Random.insideUnitSphere * scatterRadius;
                 Vector3 spawnPosition = origin + offset;
-                Quaternion spawnRotation = Random.rotation;
+                Quaternion spawnRotation = UnityEngine.Random.rotation;
                 GameObject loot = pool.Spawn(lootPrefab, spawnPosition, spawnRotation);
                 if (loot == null)
                     continue;
 
                 if (loot.TryGetComponent(out Rigidbody rigidbody))
                 {
-                    Vector3 force = Random.insideUnitSphere * scatterForce;
+                    Vector3 force = UnityEngine.Random.insideUnitSphere * scatterForce;
                     force.y = Mathf.Abs(force.y) + upwardBias;
                     PhysicsForceRouter.QueueForce(rigidbody, force, ForceMode.Impulse);
-                    PhysicsForceRouter.QueueTorque(rigidbody, Random.insideUnitSphere * (scatterForce * 0.5f), ForceMode.Impulse);
+                    PhysicsForceRouter.QueueTorque(rigidbody, UnityEngine.Random.insideUnitSphere * (scatterForce * 0.5f), ForceMode.Impulse);
                 }
 
                 if (lootLifetime > 0f)
@@ -598,13 +554,13 @@ namespace Hecton8.Scavenging
                     continue;
 
                 Vector3 direction = body.worldCenterOfMass - runtimeOrigin;
-                float distance = direction.magnitude;
+                float distance = ApproximateMagnitude(new float3(direction.x, direction.y, direction.z));
                 if (distance > 0.0001f)
                     direction /= distance;
                 else
                     direction = Vector3.up;
 
-                float falloff = Mathf.Clamp01(1f - (distance / radius));
+                float falloff = math.saturate(1f - distance / radius);
                 Vector3 impulse = direction * (impulseMagnitude * falloff);
                 if (impulse.sqrMagnitude <= 0.0001f)
                     continue;
@@ -841,7 +797,7 @@ namespace Hecton8.Scavenging
 
             for (int i = 0; i < debrisCount; i++)
             {
-                Quaternion rotation = Random.rotation;
+                Quaternion rotation = UnityEngine.Random.rotation;
                 Vector3 tangent = ResolveTangent(outwardNormal, state ^ (uint)i);
                 Vector3 spawnPosition = hitPoint + (outwardNormal * 0.08f) + (tangent * (0.04f + (0.03f * Next01(ref state))));
                 GameObject debris = pool.Spawn(s_runtimeDebrisPrefab, spawnPosition, rotation);
@@ -854,7 +810,7 @@ namespace Hecton8.Scavenging
                 if (debris.TryGetComponent(out MeshRenderer debrisRenderer) && debrisMaterial != null)
                     debrisRenderer.sharedMaterial = debrisMaterial;
 
-                debris.transform.localScale = Vector3.one * Mathf.Lerp(0.08f, 0.18f, Next01(ref state));
+                debris.transform.localScale = Vector3.one * (0.08f + 0.1f * Next01(ref state));
                 if (debris.TryGetComponent(out RuntimeDebrisShard shard))
                 {
                     float sinkDepth = Mathf.Max(0.08f, debris.transform.localScale.y * ImpactDebrisSinkDepthMultiplier);
@@ -875,10 +831,10 @@ namespace Hecton8.Scavenging
                     body.angularVelocity = Vector3.zero;
                     body.WakeUp();
 
-                    Vector3 velocityChange = ((outwardNormal * Mathf.Lerp(0.65f, 1.2f, Next01(ref state))) +
-                                              (tangent * Mathf.Lerp(0.12f, 0.4f, Next01(ref state)))) * impulseScale;
+                    Vector3 velocityChange = ((outwardNormal * (0.65f + 0.55f * Next01(ref state))) +
+                                              (tangent * (0.12f + 0.28f * Next01(ref state)))) * impulseScale;
                     PhysicsForceRouter.QueueForce(body, velocityChange, ForceMode.VelocityChange);
-                    PhysicsForceRouter.QueueTorque(body, tangent * Mathf.Lerp(0.12f, 0.28f, Next01(ref state)), ForceMode.VelocityChange);
+                    PhysicsForceRouter.QueueTorque(body, tangent * (0.12f + 0.16f * Next01(ref state)), ForceMode.VelocityChange);
                 }
             }
         }
@@ -1225,7 +1181,7 @@ namespace Hecton8.Scavenging
                 if (!_active)
                     return;
 
-                _ageSeconds += Mathf.Max(0f, deltaTime);
+                _ageSeconds += math.max(0f, deltaTime);
                 if (!_sinking && _ageSeconds >= _sinkStartTimeSeconds)
                     BeginSinkPhase();
 
@@ -1233,9 +1189,9 @@ namespace Hecton8.Scavenging
                 {
                     float sinkElapsedSeconds = _ageSeconds - _sinkStartTimeSeconds;
                     float sinkT = _sinkDurationSeconds > 0.0001f
-                        ? Mathf.Clamp01(sinkElapsedSeconds / _sinkDurationSeconds)
+                        ? math.saturate(sinkElapsedSeconds / _sinkDurationSeconds)
                         : 1f;
-                    _cachedTransform.position = Vector3.LerpUnclamped(_sinkStartPosition, _sinkEndPosition, sinkT);
+                    _cachedTransform.position = _sinkStartPosition + (_sinkEndPosition - _sinkStartPosition) * sinkT;
                 }
 
                 if (_ageSeconds >= _lifetimeSeconds)

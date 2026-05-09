@@ -23,6 +23,7 @@ namespace Hecton8.AI
     {
         private const string NativeMemoryOwner = nameof(ProceduralLeviathanSpineIK);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const float DegreesToRadians = 0.01745329252f;
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SolveSpineJob : IJobParallelForTransform
@@ -48,6 +49,7 @@ namespace Hecton8.AI
             public float3 HistoryMidB;
             public float3 HistoryHead;
             public float3 HeadForward;
+            public float3 HeadWorldPosition;
             public float3 WorldUp;
             public float3 HeadLookTargetPosition;
             public float3 StrikeTargetPosition;
@@ -69,21 +71,70 @@ namespace Hecton8.AI
             public float TelegraphJawOpenRadians;
             public int LastBoneIndex;
 
-            private static float3 ClampDirectionToCone(float3 baseDirection, float3 desiredDirection, float maxRadians, float3 fallbackAxis)
+            private static float3 ClampDirectionToCone(float3 baseDirection, float3 desiredDirection, float maxRadians)
             {
                 float3 safeBase = ContextualPhysicalIkMath.SafeNormalize(baseDirection, new float3(0f, 0f, 1f));
                 float3 safeDesired = ContextualPhysicalIkMath.SafeNormalize(desiredDirection, safeBase);
-                float clampedDot = math.clamp(math.dot(safeBase, safeDesired), -1f, 1f);
-                float angle = math.acos(clampedDot);
-                if (angle <= maxRadians || angle <= 0.0001f)
+                float clampedRadians = math.clamp(maxRadians, 0f, math.PI);
+                float minDot = CheapCosSigned(clampedRadians);
+                float desiredDot = math.dot(safeBase, safeDesired);
+                if (desiredDot >= minDot)
                     return safeDesired;
 
-                float3 axis = ContextualPhysicalIkMath.SafeNormalize(math.cross(safeBase, safeDesired), fallbackAxis);
-                if (math.lengthsq(axis) <= 0.0001f)
+                float3 lateral = safeDesired - (safeBase * desiredDot);
+                float lateralSq = math.lengthsq(lateral);
+                if (lateralSq <= 0.0001f)
                     return safeBase;
 
-                quaternion clampRotation = quaternion.AxisAngle(axis, maxRadians);
-                return ContextualPhysicalIkMath.SafeNormalize(math.rotate(clampRotation, safeBase), safeBase);
+                float3 lateralDirection = lateral * math.rsqrt(lateralSq);
+                float sinLimit = math.max(0f, CheapSinSigned(clampedRadians));
+                float3 limitedDirection = (safeBase * minDot) + (lateralDirection * sinLimit);
+                return ContextualPhysicalIkMath.SafeNormalize(limitedDirection, safeBase);
+            }
+
+            private static quaternion CheapNlerp(quaternion from, quaternion to, float weight)
+            {
+                float4 fromValue = from.value;
+                float4 toValue = to.value;
+                if (math.dot(fromValue, toValue) < 0f)
+                    toValue = -toValue;
+
+                float4 blended = math.lerp(fromValue, toValue, math.saturate(weight));
+                blended *= math.rsqrt(math.max(math.dot(blended, blended), 0.000001f));
+                return new quaternion(blended.x, blended.y, blended.z, blended.w);
+            }
+
+            private static float CheapSinSigned(float radians)
+            {
+                return -CheapTriangleWaveSigned(radians - 1.57079632679f);
+            }
+
+            private static float CheapCosSigned(float radians)
+            {
+                return -CheapTriangleWaveSigned(radians);
+            }
+
+            private static float CheapTriangleWaveSigned(float radians)
+            {
+                float cycle = radians * 0.15915494309f;
+                cycle -= math.floor(cycle);
+                return 1f - 4f * math.abs(cycle - 0.5f);
+            }
+
+            private static quaternion CheapAxisAngle(float3 normalizedAxis, float radians)
+            {
+                float halfRadians = radians * 0.5f;
+                float halfRadiansSq = halfRadians * halfRadians;
+                float halfRadiansQuad = halfRadiansSq * halfRadiansSq;
+                float sinHalf = halfRadians * (1f - (halfRadiansSq * 0.16666667f) + (halfRadiansQuad * 0.008333331f));
+                float cosHalf = 1f - (halfRadiansSq * 0.5f) + (halfRadiansQuad * 0.041666664f);
+                quaternion result = new quaternion(
+                    normalizedAxis.x * sinHalf,
+                    normalizedAxis.y * sinHalf,
+                    normalizedAxis.z * sinHalf,
+                    cosHalf);
+                result.value *= math.rsqrt(math.max(math.lengthsq(result.value), 0.000001f));
+                return result;
             }
 
             public void Execute(int index, TransformAccess transform)
@@ -109,8 +160,8 @@ namespace Hecton8.AI
                 float3 up = ContextualPhysicalIkMath.SafeNormalize(math.cross(safeTangent, side), WorldUp);
                 float amplitude = AmplitudeRadians * SpeedNormalized * math.saturate(normalizedT);
                 float phase = (PhaseTime * Frequency) + normalizedT * 8.5f;
-                quaternion yawOffset = quaternion.AxisAngle(up, math.sin(phase) * amplitude);
-                quaternion pitchOffset = quaternion.AxisAngle(side, math.cos(phase * 0.63f) * (amplitude * VerticalAmplitudeScale));
+                quaternion yawOffset = CheapAxisAngle(up, CheapSinSigned(phase) * amplitude);
+                quaternion pitchOffset = CheapAxisAngle(side, CheapCosSigned(phase * 0.63f) * (amplitude * VerticalAmplitudeScale));
                 float3 deformedForward = math.rotate(math.mul(yawOffset, pitchOffset), safeTangent);
                 quaternion targetRotation = quaternion.LookRotationSafe(
                     ContextualPhysicalIkMath.SafeNormalize(deformedForward, safeTangent),
@@ -123,41 +174,40 @@ namespace Hecton8.AI
                     if (headLookBlend > 0f)
                     {
                         float3 unclampedHeadLookDirection = ContextualPhysicalIkMath.SafeNormalize(
-                            HeadLookTargetPosition - (float3)transform.position,
+                            HeadLookTargetPosition - HeadWorldPosition,
                             safeTangent);
                         float3 clampedHeadLookDirection = ClampDirectionToCone(
                             safeTangent,
                             unclampedHeadLookDirection,
-                            math.max(0f, HeadLookClampRadians),
-                            up);
+                            math.max(0f, HeadLookClampRadians));
                         quaternion headLookRotation = quaternion.LookRotationSafe(clampedHeadLookDirection, up);
-                        targetRotation = math.slerp(targetRotation, headLookRotation, headLookBlend);
+                        targetRotation = CheapNlerp(targetRotation, headLookRotation, headLookBlend);
                     }
 
                     float3 strikeDirection = ContextualPhysicalIkMath.SafeNormalize(
-                        StrikeTargetPosition - (float3)transform.position,
+                        StrikeTargetPosition - HeadWorldPosition,
                         safeTangent);
                     float3 headAimDirection = ContextualPhysicalIkMath.SafeNormalize(
                         math.lerp(safeTangent, strikeDirection, math.saturate(StrikeLeadWeight) * strikeBlend),
                         safeTangent);
                     quaternion strikeRotation = quaternion.LookRotationSafe(headAimDirection, up);
-                    targetRotation = math.slerp(targetRotation, strikeRotation, strikeBlend);
+                    targetRotation = CheapNlerp(targetRotation, strikeRotation, strikeBlend);
 
                     float telegraphBlend = math.saturate(TelegraphBlend);
                     if (telegraphBlend > 0.001f)
                     {
                         float3 pullbackDirection = ContextualPhysicalIkMath.SafeNormalize(
-                            (float3)transform.position - StrikeTargetPosition,
+                            HeadWorldPosition - StrikeTargetPosition,
                             -safeTangent);
-                        quaternion pitchBack = quaternion.AxisAngle(side, -math.max(0f, TelegraphPitchRadians));
+                        quaternion pitchBack = CheapAxisAngle(side, -math.max(0f, TelegraphPitchRadians));
                         float3 telegraphForward = ContextualPhysicalIkMath.SafeNormalize(
                             math.rotate(pitchBack, ContextualPhysicalIkMath.SafeNormalize(math.lerp(safeTangent, pullbackDirection, 0.55f), safeTangent)),
                             safeTangent);
                         quaternion telegraphRotation = quaternion.LookRotationSafe(telegraphForward, up);
-                        targetRotation = math.slerp(targetRotation, telegraphRotation, telegraphBlend);
+                        targetRotation = CheapNlerp(targetRotation, telegraphRotation, telegraphBlend);
                     }
 
-                    float jawWave = math.saturate((math.sin((PhaseTime * math.max(0f, JawOscillationFrequency)) + (StrikeDistanceNormalized * math.PI)) * 0.5f) + 0.5f);
+                    float jawWave = math.saturate((CheapSinSigned((PhaseTime * math.max(0f, JawOscillationFrequency)) + (StrikeDistanceNormalized * math.PI)) * 0.5f) + 0.5f);
                     float strikeJawRadians = jawWave * JawOpenRadiansMax * StrikeDistanceNormalized * strikeBlend;
                     float telegraphJawRadians = math.max(0f, TelegraphJawOpenRadians) * math.saturate(TelegraphBlend);
                     JawOpenRadians[0] = math.max(strikeJawRadians, telegraphJawRadians);
@@ -165,7 +215,7 @@ namespace Hecton8.AI
                 }
 
                 quaternion bindRotation = BindWorldRotations[index];
-                SolvedWorldRotations[index] = math.slerp(bindRotation, targetRotation, math.saturate(BlendWeight));
+                SolvedWorldRotations[index] = CheapNlerp(bindRotation, targetRotation, BlendWeight);
             }
         }
 
@@ -319,7 +369,7 @@ namespace Hecton8.AI
             SuppressAnimatorPlayback(isActiveAndEnabled);
         }
 
-        internal void SetStrikeIntent(Transform target, float strikeRange, bool strikeActive)
+        internal void SetStrikeIntent(Transform target, Vector3 targetWorldPosition, float strikeRange, bool strikeActive)
         {
             _strikeRange = math.max(1f, strikeRange);
             if (!strikeActive || target == null)
@@ -335,6 +385,10 @@ namespace Hecton8.AI
                 _strikeTargetRigidbody = null;
                 target.TryGetComponent(out _strikeTargetRigidbody);
             }
+
+            _strikeTargetWorldPosition = _strikeTargetRigidbody != null
+                ? (float3)_strikeTargetRigidbody.position
+                : (float3)targetWorldPosition;
         }
 
         internal void SetAttackTelegraph(float blend01)
@@ -372,7 +426,7 @@ namespace Hecton8.AI
             _smoothedTravelDirection = ContextualPhysicalIkMath.SafeNormalize(
                 math.lerp(previousTravelDirection, velocityDirection, dampingAlpha),
                 velocityDirection);
-            float3 headLead = headPosition + _smoothedTravelDirection * (math.length(velocity) * safeLookAhead);
+            float3 headLead = headPosition + _smoothedTravelDirection * (ApproximateLength(velocity) * safeLookAhead);
             _lastResolvedHeadPosition = headPosition;
             _phaseTime += deltaTime;
             float amplitudeDamping = math.lerp(1f, math.saturate(reverseTurnAmplitudeScale), reversal01);
@@ -392,8 +446,9 @@ namespace Hecton8.AI
             if (strikeHasLiveTarget)
             {
                 float3 strikeTargetVelocity = _strikeTargetRigidbody != null ? (float3)_strikeTargetRigidbody.linearVelocity : float3.zero;
-                resolvedStrikeTargetPosition = (float3)_strikeTarget.position + (strikeTargetVelocity * math.max(0f, strikeLeadSeconds));
-                float strikeDistance = math.distance(headPosition, resolvedStrikeTargetPosition);
+                float3 strikeTargetPosition = _strikeTargetRigidbody != null ? (float3)_strikeTargetRigidbody.position : _strikeTargetWorldPosition;
+                resolvedStrikeTargetPosition = strikeTargetPosition + (strikeTargetVelocity * math.max(0f, strikeLeadSeconds));
+                float strikeDistance = ApproximateLength(resolvedStrikeTargetPosition - headPosition);
                 strikeDistanceNormalized = math.saturate(1f - (strikeDistance / math.max(1f, _strikeRange)));
                 _strikeRecoveryTimeRemaining = safeRecoverySeconds;
                 _strikeRecoveryDistanceNormalized = strikeDistanceNormalized;
@@ -431,7 +486,10 @@ namespace Hecton8.AI
                 headSpringTarget += pullbackDirection * (math.max(0f, telegraphPullbackMeters) * _strikeTelegraphBlend);
             }
 
-            float responseScale = math.sqrt(math.max(0.1f, splineResponseSharpness) / 10f);
+            float responseInput = math.max(0.01f, math.max(0.1f, splineResponseSharpness) * 0.1f);
+            float responseScale = responseInput <= 1f
+                ? math.lerp(0.316f, 1f, responseInput)
+                : 1f + ((responseInput - 1f) * 0.25f);
             float springOmega = math.max(0.1f, springFrequencyHz) * responseScale * (math.PI * 2f);
             float springStiffness = springOmega * springOmega;
             float springDamping = 2f * math.max(0.1f, springDampingRatio) * springOmega;
@@ -455,26 +513,27 @@ namespace Hecton8.AI
                 HistoryMidB = _midPointB,
                 HistoryHead = _headPoint,
                 HeadForward = headForward,
+                HeadWorldPosition = headPosition,
                 WorldUp = ContextualPhysicalIkMath.SafeNormalize((float3)worldUpAxis, new float3(0f, 1f, 0f)),
                 HeadLookTargetPosition = _headLookTargetWorldPosition,
                 StrikeTargetPosition = _strikeTargetWorldPosition,
                 PhaseTime = _phaseTime,
                 SpeedNormalized = speedNormalized,
                 BlendWeight = math.lerp(idleBlendWeight, 1f, speedNormalized),
-                AmplitudeRadians = math.radians(math.max(0f, undulationAmplitudeDegrees)) * amplitudeDamping,
+                AmplitudeRadians = math.max(0f, undulationAmplitudeDegrees) * DegreesToRadians * amplitudeDamping,
                 VerticalAmplitudeScale = math.saturate(verticalAmplitudeScale),
                 Frequency = math.max(0f, undulationFrequency),
                 HeadLookBlend = _headLookBlend,
-                HeadLookClampRadians = math.radians(math.clamp(headLookClampDegrees, 0f, 89f)),
+                HeadLookClampRadians = math.clamp(headLookClampDegrees, 0f, 89f) * DegreesToRadians,
                 StrikeBlend = effectiveStrikeBlend,
                 StrikeDistanceNormalized = strikeDistanceNormalized,
                 StrikeLeadWeight = math.saturate(strikeHeadBlend),
-                JawOpenRadiansMax = math.radians(math.max(0f, jawOpenDegrees)),
+                JawOpenRadiansMax = math.max(0f, jawOpenDegrees) * DegreesToRadians,
                 JawOscillationFrequency = math.max(0f, jawOscillationFrequency),
                 LastBoneIndex = _normalizedBoneT.Length - 1,
                 TelegraphBlend = _strikeTelegraphBlend,
-                TelegraphPitchRadians = math.radians(math.clamp(telegraphHeadPitchDegrees, 0f, 89f)),
-                TelegraphJawOpenRadians = math.radians(math.clamp(telegraphJawOpenDegrees, 0f, 89f))
+                TelegraphPitchRadians = math.clamp(telegraphHeadPitchDegrees, 0f, 89f) * DegreesToRadians,
+                TelegraphJawOpenRadians = math.clamp(telegraphJawOpenDegrees, 0f, 89f) * DegreesToRadians
             };
 
             _pendingSpineHandle = IJobParallelForTransformExtensions.ScheduleByRef(ref job, _vertebraAccessArray, default);
@@ -578,11 +637,18 @@ namespace Hecton8.AI
 
         private bool TryResolveHeadPose(out float3 headPosition, out float3 headForward, out float speedNormalized)
         {
-            Transform resolvedHead = headBone != null ? headBone : transform;
-            headPosition = resolvedHead.position;
-            headForward = resolvedHead.forward;
+            if (headBone != null)
+            {
+                headPosition = headBone.position;
+                headForward = headBone.forward;
+            }
+            else
+            {
+                headPosition = ResolveOwnerRuntimePosition();
+                headForward = ResolveOwnerForward();
+            }
 
-            float speed = _rigidbody != null ? _rigidbody.linearVelocity.magnitude : 0f;
+            float speed = _rigidbody != null ? ApproximateLength((float3)_rigidbody.linearVelocity) : 0f;
             float maxSpeed = 1f;
             if (_faunaBrain != null && _faunaBrain.SpeciesProfile != null)
                 maxSpeed = math.max(1f, _faunaBrain.SpeciesProfile.aggressiveSpeedMultiplier * 6f);
@@ -591,8 +657,38 @@ namespace Hecton8.AI
             return true;
         }
 
+        private static float ApproximateLength(float3 value)
+        {
+            float3 absolute = math.abs(value);
+            float max = math.cmax(absolute);
+            float min = math.cmin(absolute);
+            float mid = absolute.x + absolute.y + absolute.z - max - min;
+            return max + (mid * 0.375f) + (min * 0.125f);
+        }
+
+        private float3 ResolveOwnerRuntimePosition()
+        {
+            return _rigidbody != null ? (float3)_rigidbody.position : float3.zero;
+        }
+
+        private float3 ResolveOwnerForward()
+        {
+            return _rigidbody != null ? (float3)(_rigidbody.rotation * Vector3.forward) : new float3(0f, 0f, 1f);
+        }
+
+        private static bool NameContainsToken(Transform candidate, string token)
+        {
+            if (candidate == null || string.IsNullOrEmpty(token))
+                return false;
+
+            string candidateName = candidate.name;
+            return !string.IsNullOrEmpty(candidateName) &&
+                   candidateName.IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         private bool TryResolveVertebraChain()
         {
+            float3 ownerPosition = ResolveOwnerRuntimePosition();
             if (vertebrae != null && vertebrae.Length >= 2)
             {
                 if (headBone == null)
@@ -602,7 +698,7 @@ namespace Hecton8.AI
                 {
                     _transformScratch.Clear();
                     GetComponentsInChildren(true, _transformScratch);
-                    float3 jawAnchor = headBone != null ? (float3)headBone.position : (float3)transform.position;
+                    float3 jawAnchor = headBone != null ? (float3)headBone.position : ownerPosition;
                     float bestJawDistanceSq = float.MaxValue;
                     for (int i = 0; i < _transformScratch.Count; i++)
                     {
@@ -610,9 +706,12 @@ namespace Hecton8.AI
                         if (candidate == null || candidate == transform)
                             continue;
 
-                        string lowerName = candidate.name.ToLowerInvariant();
-                        if (!lowerName.Contains("jaw") && !lowerName.Contains("mandible") && !lowerName.Contains("mouth"))
+                        if (!NameContainsToken(candidate, "jaw") &&
+                            !NameContainsToken(candidate, "mandible") &&
+                            !NameContainsToken(candidate, "mouth"))
+                        {
                             continue;
+                        }
 
                         float distanceSq = math.lengthsq((float3)candidate.position - jawAnchor);
                         if (distanceSq >= bestJawDistanceSq)
@@ -657,11 +756,13 @@ namespace Hecton8.AI
                     if (candidate == null || candidate == transform)
                         continue;
 
-                    string lowerName = candidate.name.ToLowerInvariant();
-                    if (!lowerName.Contains("head") && !lowerName.Contains("neck"))
+                    if (!NameContainsToken(candidate, "head") &&
+                        !NameContainsToken(candidate, "neck"))
+                    {
                         continue;
+                    }
 
-                    float distanceSq = (candidate.position - transform.position).sqrMagnitude;
+                    float distanceSq = math.lengthsq((float3)candidate.position - ownerPosition);
                     if (distanceSq <= farthestDistanceSq)
                         continue;
 
@@ -673,7 +774,7 @@ namespace Hecton8.AI
             Transform resolvedJaw = jawBone;
             if (resolvedJaw == null)
             {
-                float3 jawAnchor = resolvedHead != null ? (float3)resolvedHead.position : (float3)transform.position;
+                float3 jawAnchor = resolvedHead != null ? (float3)resolvedHead.position : ownerPosition;
                 float bestJawDistanceSq = float.MaxValue;
                 for (int i = 0; i < _transformScratch.Count; i++)
                 {
@@ -681,9 +782,12 @@ namespace Hecton8.AI
                     if (candidate == null || candidate == transform)
                         continue;
 
-                    string lowerName = candidate.name.ToLowerInvariant();
-                    if (!lowerName.Contains("jaw") && !lowerName.Contains("mandible") && !lowerName.Contains("mouth"))
+                    if (!NameContainsToken(candidate, "jaw") &&
+                        !NameContainsToken(candidate, "mandible") &&
+                        !NameContainsToken(candidate, "mouth"))
+                    {
                         continue;
+                    }
 
                     float distanceSq = math.lengthsq((float3)candidate.position - jawAnchor);
                     if (distanceSq >= bestJawDistanceSq)
@@ -841,9 +945,8 @@ namespace Hecton8.AI
 
         private void ResetSplineState()
         {
-            Transform resolvedHead = headBone != null ? headBone : transform;
-            float3 headPosition = resolvedHead != null ? (float3)resolvedHead.position : float3.zero;
-            float3 headForward = resolvedHead != null ? (float3)resolvedHead.forward : new float3(0f, 0f, 1f);
+            float3 headPosition = headBone != null ? (float3)headBone.position : ResolveOwnerRuntimePosition();
+            float3 headForward = headBone != null ? (float3)headBone.forward : ResolveOwnerForward();
             float safeSpacing = math.max(0.1f, controlPointSpacing);
             _headPoint = headPosition;
             _midPointB = headPosition - headForward * safeSpacing;
@@ -930,8 +1033,24 @@ namespace Hecton8.AI
                 CaptureJawBindPose();
 
             float3 localAxis = ContextualPhysicalIkMath.SafeNormalize((float3)jawLocalOpenAxis, new float3(1f, 0f, 0f));
-            quaternion jawOffset = quaternion.AxisAngle(localAxis, jawOpenRadians);
+            quaternion jawOffset = CheapAxisAngle(localAxis, jawOpenRadians);
             jawBone.localRotation = math.mul(_jawBindLocalRotation, jawOffset);
+        }
+
+        private static quaternion CheapAxisAngle(float3 normalizedAxis, float radians)
+        {
+            float halfRadians = radians * 0.5f;
+            float halfRadiansSq = halfRadians * halfRadians;
+            float halfRadiansQuad = halfRadiansSq * halfRadiansSq;
+            float sinHalf = halfRadians * (1f - (halfRadiansSq * 0.16666667f) + (halfRadiansQuad * 0.008333331f));
+            float cosHalf = 1f - (halfRadiansSq * 0.5f) + (halfRadiansQuad * 0.041666664f);
+            quaternion result = new quaternion(
+                normalizedAxis.x * sinHalf,
+                normalizedAxis.y * sinHalf,
+                normalizedAxis.z * sinHalf,
+                cosHalf);
+            result.value *= math.rsqrt(math.max(math.lengthsq(result.value), 0.000001f));
+            return result;
         }
     }
 }

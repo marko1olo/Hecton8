@@ -526,6 +526,8 @@ namespace Hecton8.World
         private const int FaunaSleepStartMaxEncoded = (1 << 22) - 1;
         private const float FaunaSleepStartQuantumSeconds = 0.25f;
         private const float WhaleFallDurationSeconds = 259200f;
+        private const int MaxWhaleFallInfluenceScan = 64;
+        private const int MaxApexMigrationVisitedUids = 256;
         private const int EcosystemFaunaRecordBirthLimitPerSectorPass = 4;
         private const float EcosystemFaunaCloneJitterRadiusMeters = 180f;
         private const float HibernatedApexPredationBasePower = 0.65f;
@@ -644,10 +646,16 @@ namespace Hecton8.World
         private List<int> _worldPrefabReleaseScratch;
         private List<int> _recordIndexScratch;
         private List<EntityDataRecord> _entityStateScratch;
+        private List<EntityDataRecord> _entityStateSectorTargetScratch;
         private List<EntityDataRecord> _floraSpawnStateScratch;
         private List<SectorEntityStateWriteWork> _pendingEntityStateTempWrites;
         private List<long> _dueSectorOverrideCommitHashes;
         private long[] _quarantinedSectorResetScratch;
+        private uint[] _whaleFallPoiInstanceUids;
+        private int _whaleFallPoiInstanceUidCount;
+        private int _whaleFallPoiInstanceUidWriteCursor;
+        private uint[] _apexMigrationVisitedUids;
+        private int _apexMigrationVisitedUidCount;
         private Transform _playerTransform;
         private ItemCatalog _resolvedItemCatalog;
         private bool _tickRegistered;
@@ -864,6 +872,8 @@ namespace Hecton8.World
             _recordIndexScratch = new List<int>(128);
             // COLD ALLOC: List<EntityDataRecord>[128] â€” sector entity-state rewrite scratch buffer for MMF fauna hibernation pages â€” owner: PersistentWorldRegistry
             _entityStateScratch = new List<EntityDataRecord>(128);
+            // COLD ALLOC: List<EntityDataRecord>[128] — destination-sector entity-state rewrite scratch — owner: PersistentWorldRegistry
+            _entityStateSectorTargetScratch = new List<EntityDataRecord>(128);
             _floraSpawnStateScratch = new List<EntityDataRecord>(128); // COLD ALLOC: List<EntityDataRecord>[128] â€” standalone flora spawn-state snapshot scratch â€” owner: PersistentWorldRegistry
             // COLD ALLOC: List<SectorEntityStateWriteWork>[64] â€” async sector entity-state temp write handles â€” owner: PersistentWorldRegistry
             _pendingEntityStateTempWrites = new List<SectorEntityStateWriteWork>(MaxPendingEntityStateTempWrites);
@@ -871,12 +881,16 @@ namespace Hecton8.World
             _dueSectorOverrideCommitHashes = new List<long>(16);
             // COLD ALLOC: long[16] - indexed sector quarantine reset scratch - owner: PersistentWorldRegistry
             _quarantinedSectorResetScratch = new long[SaveBinaryStorage.IndexedSectorQuarantineHashCapacity];
+            // COLD ALLOC: uint[64] — active whale-fall POI uid index for bounded influence queries — owner: PersistentWorldRegistry
+            _whaleFallPoiInstanceUids = new uint[MaxWhaleFallInfluenceScan];
+            // COLD ALLOC: uint[256] — per-pass apex migration uid de-duplication scratch — owner: PersistentWorldRegistry
+            _apexMigrationVisitedUids = new uint[MaxApexMigrationVisitedUids];
             // COLD ALLOC: List<IndexedSectorEntryInfo>[256] Ã¢â‚¬â€ cached v8 sector directory entries for paged restore Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
             // COLD ALLOC: Dictionary<long,SectorOverrideState>[32] Ã¢â‚¬â€ paged sector temp-override residency map Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _sectorOverrideStates = new Dictionary<long, SectorOverrideState>(32);
             // COLD ALLOC: HashSet<int>[256] Ã¢â‚¬â€ resident addressable world-prefab hash residency set Ã¢â‚¬â€ owner: PersistentWorldRegistry
-            _residentWorldPrefabHashes = new HashSet<int>();
+            _residentWorldPrefabHashes = new HashSet<int>(256);
             RegisterNativeMemorySentinelAllocations();
             RegisterPersistentMemoryBudget();
 
@@ -3297,22 +3311,31 @@ namespace Hecton8.World
 
         internal float ResolveWhaleFallSpawnInfluence01(Vector3 worldPosition, float currentTimeSeconds, float radiusMeters)
         {
-            if (!_entityStateByInstanceUid.IsCreated || radiusMeters <= 0f)
+            if (!_entityStateByInstanceUid.IsCreated || radiusMeters <= 0f || _whaleFallPoiInstanceUidCount <= 0)
                 return 0f;
 
             double radiusSq = (double)radiusMeters * radiusMeters;
             AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
             float bestInfluence01 = 0f;
-            NativeHashMap<uint, EntityDataRecord>.Enumerator enumerator = _entityStateByInstanceUid.GetEnumerator();
-            while (enumerator.MoveNext())
+            int writeIndex = 0;
+            for (int readIndex = 0; readIndex < _whaleFallPoiInstanceUidCount; readIndex++)
             {
-                EntityDataRecord state = enumerator.Current.Value;
-                if (!IsWhaleFallPoiState(in state))
+                uint instanceUid = _whaleFallPoiInstanceUids[readIndex];
+                if (instanceUid == 0u ||
+                    !_entityStateByInstanceUid.TryGetValue(instanceUid, out EntityDataRecord state) ||
+                    !IsWhaleFallPoiState(in state))
+                {
                     continue;
+                }
 
                 float expireTimeSeconds = GetWhaleFallExpireTimeSeconds(in state);
                 if (expireTimeSeconds <= currentTimeSeconds)
+                {
+                    _entityStateByInstanceUid.Remove(instanceUid);
                     continue;
+                }
+
+                _whaleFallPoiInstanceUids[writeIndex++] = instanceUid;
 
                 AbsoluteUniversePosition whaleFallAup = AbsoluteUniversePosition.FromAlignedBlit(in state.Position);
                 double distanceSq = AbsoluteUniversePosition.DistanceSq(in whaleFallAup, in queryAup);
@@ -3324,16 +3347,40 @@ namespace Hecton8.World
                 bestInfluence01 = math.max(bestInfluence01, distance01 * math.max(0.25f, life01));
             }
 
-            enumerator.Dispose();
+            for (int i = writeIndex; i < _whaleFallPoiInstanceUidCount; i++)
+                _whaleFallPoiInstanceUids[i] = 0u;
+
+            _whaleFallPoiInstanceUidCount = writeIndex;
+            if (_whaleFallPoiInstanceUidWriteCursor >= _whaleFallPoiInstanceUids.Length)
+                _whaleFallPoiInstanceUidWriteCursor = 0;
+
             return bestInfluence01;
         }
 
         private bool TryCacheSpecialEntityState(in EntityDataRecord entityState)
         {
+            return TryCacheSpecialEntityState(in entityState, _entityStateScratch);
+        }
+
+        private bool TryCacheSpecialEntityState(in EntityDataRecord entityState, List<EntityDataRecord> scratch)
+        {
+            return TryCacheSpecialEntityState(in entityState, scratch, deferMemoryRegistrationUntilWrite: false);
+        }
+
+        private bool TryCacheSpecialEntityState(
+            in EntityDataRecord entityState,
+            List<EntityDataRecord> scratch,
+            bool deferMemoryRegistrationUntilWrite)
+        {
             if (!IsFaunaHibernationState(in entityState) && !IsWhaleFallPoiState(in entityState) && !IsFaunaEggState(in entityState))
                 return false;
 
-            RegisterSpecialEntityStateInMemory(in entityState);
+            if (scratch == null)
+                return false;
+
+            if (!deferMemoryRegistrationUntilWrite)
+                RegisterSpecialEntityStateInMemory(in entityState);
+
             if (!_indexedSectorPagingEnabled || string.IsNullOrEmpty(_indexedSectorOverrideDirectory))
                 return false;
 
@@ -3343,7 +3390,7 @@ namespace Hecton8.World
             if (string.IsNullOrEmpty(entityStateTempPath))
                 return false;
 
-            _entityStateScratch.Clear();
+            scratch.Clear();
             if (File.Exists(entityStateTempPath) &&
                 SaveBinaryStorage.TryReadIndexedSectorEntityStateOverride(entityStateTempPath, out long loadedSectorHash, out EntityDataRecord[] entityStates, out string readError))
             {
@@ -3356,13 +3403,16 @@ namespace Hecton8.World
                     if (existingState.InstanceUid == entityState.InstanceUid)
                         continue;
 
-                    _entityStateScratch.Add(existingState);
+                    scratch.Add(existingState);
                 }
             }
 
-            _entityStateScratch.Add(entityState);
-            if (!TryWriteEntityStateTempBlock(sectorHash, entityStateTempPath, _entityStateScratch, chunkSizeMeters))
+            scratch.Add(entityState);
+            if (!TryWriteEntityStateTempBlock(sectorHash, entityStateTempPath, scratch, chunkSizeMeters))
                 return false;
+
+            if (deferMemoryRegistrationUntilWrite)
+                RegisterSpecialEntityStateInMemory(in entityState);
 
             if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state))
             {
@@ -3664,10 +3714,12 @@ namespace Hecton8.World
             }
 
             AbsoluteUniversePosition attractorAup = AbsoluteUniversePosition.FromRuntimePosition(attractorPosition);
+            double3 attractorAbsolute = attractorAup.ToAbsoluteDouble3();
             int2 centerSector = QuantizeSector(in attractorAup);
             int sectorRadius = math.max(1, (int)math.ceil(searchRadiusMeters / PagedSectorEdgeLengthMeters));
             double searchRadiusSq = searchRadiusMeters * searchRadiusMeters;
             int migratedCount = 0;
+            ClearApexMigrationVisitedScratch();
 
             for (int dz = -sectorRadius; dz <= sectorRadius; dz++)
             {
@@ -3686,6 +3738,7 @@ namespace Hecton8.World
 
                     _entityStateScratch.Clear();
                     bool changedSector = false;
+                    int sectorMigratedCount = 0;
                     for (int i = 0; i < entityStates.Length; i++)
                     {
                         EntityDataRecord state = entityStates[i];
@@ -3704,44 +3757,89 @@ namespace Hecton8.World
                             continue;
                         }
 
-                        Vector3 currentPosition = currentAup.ToRuntimeFloat3();
-                        Vector3 toAttractor = attractorPosition - currentPosition;
-                        float distanceSq = toAttractor.sqrMagnitude;
-                        if (distanceSq <= 0.0001f)
+                        if (!TryReserveApexMigrationVisitedUid(state.InstanceUid))
                         {
                             _entityStateScratch.Add(state);
                             continue;
                         }
 
-                        float invDistance = math.rsqrt(distanceSq);
-                        float moveScalar = math.min(stepMeters * invDistance, 1f);
-                        Vector3 migratedPosition = currentPosition + toAttractor * moveScalar;
-                        AbsoluteUniversePosition migratedAup = AbsoluteUniversePosition.FromRuntimePosition(migratedPosition);
-                        state.Position = migratedAup.ToAlignedBlit();
-                        _entityStateScratch.Add(state);
-                        RegisterSpecialEntityStateInMemory(in state);
+                        double3 currentAbsolute = currentAup.ToAbsoluteDouble3();
+                        double3 toAttractor = attractorAbsolute - currentAbsolute;
+                        double distanceSq = math.lengthsq(toAttractor);
+                        if (distanceSq <= 0.0001d)
+                        {
+                            _entityStateScratch.Add(state);
+                            continue;
+                        }
+
+                        double invDistance = math.rsqrt(distanceSq);
+                        double moveScalar = math.min((double)stepMeters * invDistance, 1d);
+                        AbsoluteUniversePosition migratedAup = AbsoluteUniversePosition.FromAbsolutePosition(currentAbsolute + toAttractor * moveScalar);
+                        EntityDataRecord migratedState = state;
+                        migratedState.Position = migratedAup.ToAlignedBlit();
+                        long migratedSectorHash = ComputeSectorHash(in migratedAup);
+                        if (migratedSectorHash == sectorHash)
+                        {
+                            _entityStateScratch.Add(migratedState);
+                            RegisterSpecialEntityStateInMemory(in migratedState);
+                        }
+                        else if (!TryCacheSpecialEntityState(
+                                     in migratedState,
+                                     _entityStateSectorTargetScratch,
+                                     deferMemoryRegistrationUntilWrite: true))
+                        {
+                            _entityStateScratch.Add(state);
+                            continue;
+                        }
+
                         changedSector = true;
-                        migratedCount++;
+                        sectorMigratedCount++;
                     }
 
                     if (!changedSector)
                         continue;
 
-                    if (TryWriteEntityStateTempBlock(sectorHash, entityStateTempPath, _entityStateScratch, chunkSizeMeters))
-                    {
-                        if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState sectorState))
-                        {
-                            sectorState = new SectorOverrideState();
-                            _sectorOverrideStates.Add(sectorHash, sectorState);
-                        }
+                    if (!TryCommitEntityStateTempBlockOrDelete(sectorHash, entityStateTempPath, _entityStateScratch))
+                        continue;
 
-                        sectorState.EntityStateTempPath = entityStateTempPath;
-                        sectorState.LastUnloadedTime = Time.unscaledTime;
-                    }
+                    migratedCount += sectorMigratedCount;
                 }
             }
 
             return migratedCount;
+        }
+
+        private bool TryCommitEntityStateTempBlockOrDelete(long sectorHash, string entityStateTempPath, List<EntityDataRecord> entityStates)
+        {
+            if (entityStates == null)
+                return false;
+
+            if (entityStates.Count > 0)
+            {
+                if (!TryWriteEntityStateTempBlock(sectorHash, entityStateTempPath, entityStates, chunkSizeMeters))
+                    return false;
+
+                if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState sectorState))
+                {
+                    sectorState = new SectorOverrideState();
+                    _sectorOverrideStates.Add(sectorHash, sectorState);
+                }
+
+                sectorState.EntityStateTempPath = entityStateTempPath;
+                sectorState.LastUnloadedTime = Time.unscaledTime;
+                return true;
+            }
+
+            if (File.Exists(entityStateTempPath))
+                File.Delete(entityStateTempPath);
+
+            if (_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState emptySectorState))
+            {
+                emptySectorState.EntityStateTempPath = string.Empty;
+                emptySectorState.LastUnloadedTime = Time.unscaledTime;
+            }
+
+            return true;
         }
 
         private void RegisterSpecialEntityStateInMemory(in EntityDataRecord entityState)
@@ -3751,6 +3849,68 @@ namespace Hecton8.World
 
             _entityStateByInstanceUid.Remove(entityState.InstanceUid);
             _entityStateByInstanceUid.TryAdd(entityState.InstanceUid, entityState);
+            if (IsWhaleFallPoiState(in entityState))
+                RegisterWhaleFallPoiInfluenceUid(entityState.InstanceUid);
+        }
+
+        private void RegisterWhaleFallPoiInfluenceUid(uint instanceUid)
+        {
+            if (instanceUid == 0u || _whaleFallPoiInstanceUids == null || _whaleFallPoiInstanceUids.Length == 0)
+                return;
+
+            for (int i = 0; i < _whaleFallPoiInstanceUidCount; i++)
+            {
+                if (_whaleFallPoiInstanceUids[i] == instanceUid)
+                    return;
+            }
+
+            if (_whaleFallPoiInstanceUidCount < _whaleFallPoiInstanceUids.Length)
+            {
+                _whaleFallPoiInstanceUids[_whaleFallPoiInstanceUidCount++] = instanceUid;
+                return;
+            }
+
+            int slot = _whaleFallPoiInstanceUidWriteCursor;
+            _whaleFallPoiInstanceUids[slot] = instanceUid;
+            _whaleFallPoiInstanceUidWriteCursor = (slot + 1) % _whaleFallPoiInstanceUids.Length;
+        }
+
+        private void ClearWhaleFallPoiInfluenceUidIndex()
+        {
+            if (_whaleFallPoiInstanceUids != null)
+            {
+                for (int i = 0; i < _whaleFallPoiInstanceUidCount; i++)
+                    _whaleFallPoiInstanceUids[i] = 0u;
+            }
+
+            _whaleFallPoiInstanceUidCount = 0;
+            _whaleFallPoiInstanceUidWriteCursor = 0;
+        }
+
+        private void ClearApexMigrationVisitedScratch()
+        {
+            _apexMigrationVisitedUidCount = 0;
+        }
+
+        private bool TryReserveApexMigrationVisitedUid(uint instanceUid)
+        {
+            if (instanceUid == 0u)
+                return true;
+
+            if (_apexMigrationVisitedUids == null || _apexMigrationVisitedUids.Length == 0)
+                return false;
+
+            for (int i = 0; i < _apexMigrationVisitedUidCount; i++)
+            {
+                if (_apexMigrationVisitedUids[i] == instanceUid)
+                    return false;
+            }
+
+            if (_apexMigrationVisitedUidCount >= _apexMigrationVisitedUids.Length)
+                return false;
+
+            _apexMigrationVisitedUids[_apexMigrationVisitedUidCount++] = instanceUid;
+            return true;
         }
 
         private void TombstoneHibernatedFaunaVictim(in EntityDataRecord entityState)
@@ -3813,13 +3973,15 @@ namespace Hecton8.World
                     continue;
                 }
 
-                AbsoluteUniversePosition templateAup = AbsoluteUniversePosition.FromAlignedBlit(in template.Position);
-                Vector3 templatePosition = templateAup.ToRuntimeFloat3();
                 uint jitterHash = instanceUid ^ (uint)(i * 747796405);
                 float angle = (jitterHash & 0xFFFFu) * (Mathf.PI * 2f / 65535f);
                 float radius = (((jitterHash >> 16) & 0xFFFFu) / 65535f) * EcosystemFaunaCloneJitterRadiusMeters;
-                Vector3 seededPosition = templatePosition + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius);
-                AbsoluteUniversePosition seededAup = AbsoluteUniversePosition.FromRuntimePosition(seededPosition);
+                AbsoluteUniversePosition templateAup = AbsoluteUniversePosition.FromAlignedBlit(in template.Position);
+                double3 seededAbsolute = templateAup.ToAbsoluteDouble3() + new double3(
+                    math.cos(angle) * radius,
+                    0d,
+                    math.sin(angle) * radius);
+                AbsoluteUniversePosition seededAup = AbsoluteUniversePosition.FromAbsolutePosition(seededAbsolute);
                 EntityDataRecord seededState = CreateFaunaHibernationState(
                     instanceUid,
                     GetFaunaHibernationSpeciesId(in template),
@@ -4842,6 +5004,9 @@ namespace Hecton8.World
             if (_entityStateByInstanceUid.IsCreated)
                 _entityStateByInstanceUid.Clear();
 
+            ClearWhaleFallPoiInfluenceUidIndex();
+            ClearApexMigrationVisitedScratch();
+
             if (_floraSpawnStateByInstanceUid.IsCreated)
                 _floraSpawnStateByInstanceUid.Clear();
 
@@ -4941,7 +5106,22 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeHashMap(_spawnImpulseByInstanceUid, MemoryBudgetOwnerName, nameof(_spawnImpulseByInstanceUid), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeHashMap(_spawnVelocityChangeByInstanceUid, MemoryBudgetOwnerName, nameof(_spawnVelocityChangeByInstanceUid), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeQueue(_dehydrateQueue, maxTrackedItems, MemoryBudgetOwnerName, nameof(_dehydrateQueue), NativeAllocationLifetime.Session);
+            PrewarmDehydrateQueue();
             NativeMemorySentinel.RegisterNativeList(_pendingHydrationRecords, MemoryBudgetOwnerName, nameof(_pendingHydrationRecords), NativeAllocationLifetime.Session);
+        }
+
+        private void PrewarmDehydrateQueue()
+        {
+            if (!_dehydrateQueue.IsCreated)
+                return;
+
+            int safeCapacity = math.max(0, maxTrackedItems);
+            for (int i = 0; i < safeCapacity; i++)
+                _dehydrateQueue.Enqueue(default);
+
+            while (_dehydrateQueue.TryDequeue(out _))
+            {
+            }
         }
 
         private void UnregisterNativeMemorySentinelAllocations()

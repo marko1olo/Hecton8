@@ -4,13 +4,14 @@
 // and direct selection flow for the real PlayerBuilder backend.
 // ============================================================================
 
-using System.Text;
+using System;
 using Hecton8.Building;
 using Hecton8.Bootstrap;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.Quest;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -20,7 +21,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Construction Tab")]
-    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener
+    public sealed class PDAConstructionTab : MonoBehaviour, ITickable, IUpdatable, IPDAEventListener, IQuestEventListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -32,6 +33,7 @@ namespace Hecton8.UI
         private static readonly Color Ready = new Color(0.34f, 0.95f, 0.74f, 0.94f);
         private static readonly Color Warn = new Color(1f, 0.75f, 0.28f, 0.94f);
         private static readonly Color Blocked = new Color(1f, 0.45f, 0.4f, 0.94f);
+        private const float AutoResolveRetryInterval = 1f;
 
         [Header("References")]
         [SerializeField] private PlayerBuilder playerBuilder;
@@ -49,7 +51,8 @@ namespace Hecton8.UI
         [SerializeField, Range(0.05f, 0.5f)] private float refreshInterval = 0.15f;
 
         private bool _built;
-        private float _nextRefreshAt;
+        private float _refreshTimer;
+        private float _autoResolveRetryTimer;
         private TextMeshProUGUI _summaryText;
         private TextMeshProUGUI _statusText;
         private TextMeshProUGUI _hintText;
@@ -63,15 +66,30 @@ namespace Hecton8.UI
         private RectTransform _deployActionRoot;
         private Image _deployActionBg;
         private TextMeshProUGUI _deployActionLabel;
+        private CanvasGroup _builderActionCanvasGroup;
+        private CanvasGroup _fieldActionCanvasGroup;
         private RectTransform[] _cardRoots;
+        private CanvasGroup[] _cardCanvasGroups;
         private Image[] _cardBgs;
         private TextMeshProUGUI[] _cardTitles;
+        private char[][] _cardTitleBuffers;
         private TextMeshProUGUI[] _cardBodies;
         private Image[] _cardButtonBgs;
         private TextMeshProUGUI[] _cardButtonLabels;
         private PDAConstructionSelectButton[] _cardButtons;
         private bool[] _cardVisibility;
-        private readonly StringBuilder _sb = new StringBuilder(512);
+        // COLD ALLOC: char[768] - construction summary TMP staging buffer - owner: PDAConstructionTab
+        private readonly char[] _summaryBuffer = new char[768];
+        // COLD ALLOC: char[512] - construction readiness TMP staging buffer - owner: PDAConstructionTab
+        private readonly char[] _statusBuffer = new char[512];
+        // COLD ALLOC: char[768] - construction card body TMP staging buffer - owner: PDAConstructionTab
+        private readonly char[] _cardBodyBuffer = new char[768];
+        // COLD ALLOC: char[512] - construction directive TMP staging buffer - owner: PDAConstructionTab
+        private readonly char[] _directiveBuffer = new char[512];
+        // COLD ALLOC: char[512] - construction hint TMP staging buffer - owner: PDAConstructionTab
+        private readonly char[] _hintBuffer = new char[512];
+        // COLD ALLOC: char[96] - construction action label TMP staging buffer - owner: PDAConstructionTab
+        private readonly char[] _actionLabelBuffer = new char[96];
         private bool _tickRegistered;
         private bool _pdaEventsRegistered;
         private bool _summaryDirty;
@@ -84,6 +102,7 @@ namespace Hecton8.UI
         private ModuleCatalog _lastCatalog;
         private BuildableData _lastCatalogActiveBuildable;
         private int _lastVisibleCardCount = -1;
+        private int _lastCatalogRawCount = -1;
         private int _cachedCatalogCount;
         private int _cachedGeneratorCount;
         private int _cachedConsumerCount;
@@ -94,8 +113,12 @@ namespace Hecton8.UI
         private int _cachedLogisticsCount;
         private int _cachedFabricationCount;
         private int _cachedDefenseCount;
+        private int _cachedLockedBlueprintCount;
         private PDAConstructionBuilderActionButton _builderActionButton;
         private PDAConstructionFieldActionButton _fieldActionButton;
+        private bool _questEventsRegistered;
+        private readonly char[] _directiveAdviceScratchBuffer = new char[256];
+        private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - construction PDA HUD notification staging buffer - owner: PDAConstructionTab
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -108,29 +131,10 @@ namespace Hecton8.UI
         //  CACHED STRING OPERATIONS — ZERO GC
         // ══════════════════════════════════════════════════════════
 
-        private readonly string[] _cachedUpperStrings = new string[16];
-
-        private string CachedToUpperInvariant(string input)
-        {
-            if (string.IsNullOrEmpty(input)) return input;
-
-            // Простой hash для кэширования (не криптографический)
-            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
-
-            string cached = _cachedUpperStrings[hash];
-            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
-                return cached;
-
-            // Создаем новую строку и кэшируем
-            string upper = input.ToUpperInvariant();
-            _cachedUpperStrings[hash] = upper;
-            return upper;
-        }
-
         private void Awake()
         {
             AutoResolveTabIndex();
-            AutoResolve();
+            AutoResolve(force: true);
         }
 
         private void OnValidate()
@@ -147,7 +151,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            AutoResolve();
+            AutoResolve(force: true);
             EnsureBuilt();
             Subscribe();
             MarkAllDirty();
@@ -161,8 +165,30 @@ namespace Hecton8.UI
             UnregisterTick();
         }
 
-        private void AutoResolve()
+        private void AutoResolve(float deltaTime = 0f, bool force = false)
         {
+            if (!force)
+                _autoResolveRetryTimer = Mathf.Max(0f, _autoResolveRetryTimer - Mathf.Max(0f, deltaTime));
+
+            bool missingRuntimeReference =
+                playerBuilder == null ||
+                playerInventory == null ||
+                toolManager == null ||
+                playerPDA == null ||
+                constructionManager == null ||
+                hudNotification == null;
+
+            bool shouldResolveRuntime = missingRuntimeReference && (force || !Application.isPlaying || _autoResolveRetryTimer <= 0f);
+            if (!shouldResolveRuntime)
+            {
+                if (!missingRuntimeReference)
+                    _autoResolveRetryTimer = 0f;
+
+                ResolveFontsIfMissing();
+                RefreshSubscriptions();
+                return;
+            }
+
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (playerBuilder == null && playerContext != null)
                 playerBuilder = playerContext.PlayerBuilder;
@@ -197,10 +223,19 @@ namespace Hecton8.UI
                 playerPDA = GetComponentInParent<PlayerPDA>();
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
-            labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
-            numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
+
+            ResolveFontsIfMissing();
+            _autoResolveRetryTimer = Application.isPlaying ? AutoResolveRetryInterval : 0f;
 
             RefreshSubscriptions();
+        }
+
+        private void ResolveFontsIfMissing()
+        {
+            if (labelFont == null)
+                labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
+            if (numericFont == null)
+                numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -214,6 +249,7 @@ namespace Hecton8.UI
         {
             RefreshSubscriptions();
             TryRegisterPDAEvents();
+            TryRegisterQuestEvents();
         }
 
         private void Unsubscribe()
@@ -232,6 +268,7 @@ namespace Hecton8.UI
             }
 
             UnregisterPDAEvents();
+            UnregisterQuestEvents();
         }
 
         private void OnDestroy()
@@ -256,6 +293,24 @@ namespace Hecton8.UI
 
             PDAEvents.Unregister(this);
             _pdaEventsRegistered = false;
+        }
+
+        private void TryRegisterQuestEvents()
+        {
+            if (_questEventsRegistered)
+                return;
+
+            QuestEvents.Register(this);
+            _questEventsRegistered = true;
+        }
+
+        private void UnregisterQuestEvents()
+        {
+            if (!_questEventsRegistered)
+                return;
+
+            QuestEvents.Unregister(this);
+            _questEventsRegistered = false;
         }
 
         private void RefreshSubscriptions()
@@ -330,6 +385,21 @@ namespace Hecton8.UI
             }
         }
 
+        public void OnQuestEvent(in QuestEventPayload payload)
+        {
+            QuestEventType eventType = (QuestEventType)payload.EventType;
+            if (eventType != QuestEventType.Activated &&
+                eventType != QuestEventType.Completed &&
+                eventType != QuestEventType.RevertRequested)
+            {
+                return;
+            }
+
+            MarkAllDirty();
+            if (IsTabActive)
+                Refresh(true);
+        }
+
         private void HandlePdaOpened(int tab)
         {
             if (tab == constructionTabIndex)
@@ -365,7 +435,8 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            AutoResolve();
+            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+            AutoResolve(safeDeltaTime);
 
             if (!IsTabActive)
             {
@@ -375,8 +446,12 @@ namespace Hecton8.UI
 
             UpdateCatalogTracking();
 
-            if (Time.unscaledTime >= _nextRefreshAt)
+            _refreshTimer -= safeDeltaTime;
+            if (_refreshTimer <= 0f)
+            {
                 _summaryDirty = true;
+                _refreshTimer = Mathf.Max(0.05f, refreshInterval);
+            }
 
             if (_summaryDirty || _catalogDirty)
                 Refresh();
@@ -401,13 +476,13 @@ namespace Hecton8.UI
             Anchor(title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(18f, -18f), new Vector2(-18f, 24f));
             title.color = Primary;
-            title.SetText("CONSTRUCTION MATRIX");
+            SetLiteralText(title, "CONSTRUCTION MATRIX".AsSpan());
 
             TextMeshProUGUI sub = CreateText(self, "Subtitle", labelFont, 10.5f, FontStyles.Normal, TextAlignmentOptions.Right);
             Anchor(sub.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(18f, -18f), new Vector2(-18f, 24f));
             sub.color = DimLow;
-            sub.SetText("module catalog, build cost, placement readiness, and field deployment state");
+            SetLiteralText(sub, "module catalog, build cost, placement readiness, and field deployment state".AsSpan());
 
             CreateRule(self, -52f);
 
@@ -441,6 +516,7 @@ namespace Hecton8.UI
             _builderActionRoot.pivot = new Vector2(1f, 0f);
             _builderActionRoot.anchoredPosition = new Vector2(-14f, 14f);
             _builderActionRoot.sizeDelta = new Vector2(150f, 28f);
+            _builderActionCanvasGroup = EnsureCanvasGroup(_builderActionRoot.gameObject);
 
             _builderActionBg = EnsureImage(_builderActionRoot.gameObject);
             _builderActionBg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
@@ -449,7 +525,7 @@ namespace Hecton8.UI
             _builderActionLabel = CreateText(_builderActionRoot, "BuilderActionLabel", numericFont, 10f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(_builderActionLabel.rectTransform);
             _builderActionLabel.color = Dim;
-            _builderActionLabel.SetText("ARM BUILDER");
+            SetLiteralText(_builderActionLabel, "ARM BUILDER".AsSpan());
 
             PDAConstructionBuilderActionButton actionButton = _builderActionRoot.gameObject.AddComponent<PDAConstructionBuilderActionButton>();
             actionButton.Init(
@@ -465,6 +541,7 @@ namespace Hecton8.UI
             _fieldActionRoot.pivot = new Vector2(1f, 0f);
             _fieldActionRoot.anchoredPosition = new Vector2(-170f, 14f);
             _fieldActionRoot.sizeDelta = new Vector2(146f, 28f);
+            _fieldActionCanvasGroup = EnsureCanvasGroup(_fieldActionRoot.gameObject);
 
             _fieldActionBg = EnsureImage(_fieldActionRoot.gameObject);
             _fieldActionBg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
@@ -473,7 +550,7 @@ namespace Hecton8.UI
             _fieldActionLabel = CreateText(_fieldActionRoot, "FieldActionLabel", numericFont, 10f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(_fieldActionLabel.rectTransform);
             _fieldActionLabel.color = Dim;
-            _fieldActionLabel.SetText("FIELD PREVIEW");
+            SetLiteralText(_fieldActionLabel, "FIELD PREVIEW".AsSpan());
 
             PDAConstructionFieldActionButton fieldButton = _fieldActionRoot.gameObject.AddComponent<PDAConstructionFieldActionButton>();
             fieldButton.Init(
@@ -497,7 +574,7 @@ namespace Hecton8.UI
             _deployActionLabel = CreateText(_deployActionRoot, "DeployActionLabel", numericFont, 10f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(_deployActionLabel.rectTransform);
             _deployActionLabel.color = Dim;
-            _deployActionLabel.SetText("DEPLOY NOW");
+            SetLiteralText(_deployActionLabel, "DEPLOY NOW".AsSpan());
 
             PDAConstructionDeployActionButton deployButton = _deployActionRoot.gameObject.AddComponent<PDAConstructionDeployActionButton>();
             deployButton.Init(
@@ -511,8 +588,12 @@ namespace Hecton8.UI
             _ = rightHdr;
 
             _cardRoots = new RectTransform[maxVisibleCards];
+            // COLD ALLOC: CanvasGroup[maxVisibleCards] - catalog card visibility cache - owner: PDAConstructionTab
+            _cardCanvasGroups = new CanvasGroup[maxVisibleCards];
             _cardBgs = new Image[maxVisibleCards];
             _cardTitles = new TextMeshProUGUI[maxVisibleCards];
+            // COLD ALLOC: char[maxVisibleCards][] - catalog card title buffer table - owner: PDAConstructionTab
+            _cardTitleBuffers = new char[maxVisibleCards][];
             _cardBodies = new TextMeshProUGUI[maxVisibleCards];
             _cardButtonBgs = new Image[maxVisibleCards];
             _cardButtonLabels = new TextMeshProUGUI[maxVisibleCards];
@@ -530,6 +611,7 @@ namespace Hecton8.UI
                 card.pivot = new Vector2(0.5f, 1f);
                 card.anchoredPosition = new Vector2(0f, -(36f + i * (cardHeight + cardGap)));
                 card.sizeDelta = new Vector2(-2f, cardHeight);
+                CanvasGroup cardCanvasGroup = EnsureCanvasGroup(card.gameObject);
 
                 Image cardBg = EnsureImage(card.gameObject);
                 cardBg.color = BoxBg;
@@ -570,7 +652,7 @@ namespace Hecton8.UI
                 TextMeshProUGUI actionLabel = CreateText(action, "ActionLabel", numericFont, 10f, FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(actionLabel.rectTransform);
                 actionLabel.color = Dim;
-                actionLabel.SetText("SELECT");
+                SetLiteralText(actionLabel, "SELECT".AsSpan());
 
                 PDAConstructionSelectButton button = action.gameObject.AddComponent<PDAConstructionSelectButton>();
                 button.Init(this, i, actionBg, actionLabel,
@@ -578,8 +660,11 @@ namespace Hecton8.UI
                     new Color(0.12f, 0.24f, 0.28f, 0.82f));
 
                 _cardRoots[i] = card;
+                _cardCanvasGroups[i] = cardCanvasGroup;
                 _cardBgs[i] = cardBg;
                 _cardTitles[i] = cardTitle;
+                // COLD ALLOC: char[128] - catalog card title uppercase scratch - owner: PDAConstructionTab
+                _cardTitleBuffers[i] = new char[128];
                 _cardBodies[i] = cardBody;
                 _cardButtonBgs[i] = actionBg;
                 _cardButtonLabels[i] = actionLabel;
@@ -591,7 +676,7 @@ namespace Hecton8.UI
             Anchor(_hintText.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 0f),
                 new Vector2(24f, 4f), new Vector2(-24f, 14f));
             _hintText.color = DimLow;
-            _hintText.SetText("Select a module to arm the Builder Tool. TAB / Q-E still cycle modules in the field.");
+            SetLiteralText(_hintText, "Select a module to arm the Builder Tool. TAB / Q-E still cycle modules in the field.".AsSpan());
 
             _built = true;
         }
@@ -612,14 +697,17 @@ namespace Hecton8.UI
         {
             ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
             BuildableData active = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
-            int visibleCount = catalog != null ? Mathf.Min(catalog.Count, maxVisibleCards) : 0;
+            int rawCount = catalog != null ? catalog.Count : 0;
+            int visibleCount = Mathf.Min(rawCount, maxVisibleCards);
 
             if (!ReferenceEquals(_lastCatalog, catalog) ||
                 !ReferenceEquals(_lastCatalogActiveBuildable, active) ||
+                _lastCatalogRawCount != rawCount ||
                 _lastVisibleCardCount != visibleCount)
             {
                 _lastCatalog = catalog;
                 _lastCatalogActiveBuildable = active;
+                _lastCatalogRawCount = rawCount;
                 _lastVisibleCardCount = visibleCount;
                 _catalogDirty = true;
             }
@@ -634,18 +722,21 @@ namespace Hecton8.UI
 
             ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
             BuildableData active = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
-            int visibleCount = catalog != null ? Mathf.Min(catalog.Count, maxVisibleCards) : 0;
+            int visibleCount = _cachedCatalogCount > 0 ? Mathf.Min(_cachedCatalogCount, maxVisibleCards) : 0;
 
             if (_catalogDirty)
+            {
                 RefreshCatalogCache(catalog);
+                visibleCount = _cachedCatalogCount > 0 ? Mathf.Min(_cachedCatalogCount, maxVisibleCards) : 0;
+            }
 
-            _nextRefreshAt = Time.unscaledTime + refreshInterval;
+            _refreshTimer = Mathf.Max(0.05f, refreshInterval);
             if (_summaryDirty)
                 RefreshSummary();
             if (_catalogDirty)
                 RefreshCatalog(catalog, active, visibleCount);
             if ((immediate || _layoutDirty) && gameObject.activeSelf)
-                LayoutRebuilder.ForceRebuildLayoutImmediate(transform as RectTransform);
+                LayoutRebuilder.MarkLayoutForRebuild(transform as RectTransform);
 
             _summaryDirty = false;
             _catalogDirty = false;
@@ -698,59 +789,104 @@ namespace Hecton8.UI
 
             ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
             BuildableData active = playerBuilder != null ? playerBuilder.ActiveBuildable : null;
-            int activeIndex = playerBuilder != null ? playerBuilder.ActiveBuildableIndex : -1;
             int builtCount = constructionManager != null ? constructionManager.ModuleCount : 0;
             bool hasResources = playerBuilder != null && playerBuilder.HasResourcesForActiveBuildable;
             bool canPlace = playerBuilder != null && playerBuilder.CanPlaceActiveBuildable;
             bool snapped = playerBuilder != null && playerBuilder.IsSnapped;
             BuildableData next = playerBuilder != null ? playerBuilder.GetRelativeBuildable(1) : null;
+            int activeViewableIndex = catalog != null ? catalog.IndexOfViewable(active) : -1;
             int builderSlot = toolManager != null ? toolManager.FindAssignedSlotForToolType<Hecton8.Gameplay.BuilderTool>() : -1;
             bool builderActive = toolManager != null && toolManager.CurrentTool is Hecton8.Gameplay.BuilderTool;
             bool builderReady = builderSlot >= 0 && toolManager != null && toolManager.IsToolAvailableInSlot(builderSlot);
             bool hasPreview = playerBuilder != null && playerBuilder.HasPlacementPreview;
 
-            _sb.Clear();
-            _sb.AppendLine("CONSTRUCTION BACKBONE");
-            _sb.Append("CATALOG     ").Append(_cachedCatalogCount).AppendLine(" MODULES");
-            _sb.Append("FAMILIES    G").Append(_cachedGeneratorCount).Append(" / C").Append(_cachedConsumerCount).Append(" / P").Append(_cachedPassiveCount).AppendLine();
-            _sb.Append("DOMAINS     STR ").Append(_cachedStructureCount)
-                .Append(" | HAB ").Append(_cachedHabitatCount)
-                .Append(" | UTL ").Append(_cachedUtilityCount).AppendLine();
-            _sb.Append("EXTENDED    LOG ").Append(_cachedLogisticsCount)
-                .Append(" | FAB ").Append(_cachedFabricationCount)
-                .Append(" | DEF ").Append(_cachedDefenseCount).AppendLine();
-            _sb.Append("BUILT       ").Append(builtCount).AppendLine(" REGISTERED");
-            _sb.Append("BUILDER     ");
-            AppendBuilderState(_sb, builderSlot, builderReady, builderActive);
-            _sb.AppendLine();
-            _sb.Append("ACTIVE      ").Append(active != null ? CachedToUpperInvariant(active.moduleName) : "NONE").AppendLine();
-            _sb.Append("FAMILY      ").Append(active != null ? active.FamilyLabel : "N/A").AppendLine();
-            _sb.Append("ROLE        ").Append(active != null ? DescribePowerRole(active) : "N/A").AppendLine();
-            _sb.Append("INDEX       ");
-            if (activeIndex >= 0)
-                _sb.Append(activeIndex + 1).Append('/').Append(Mathf.Max(1, _cachedCatalogCount));
-            else
-                _sb.Append("N/A");
-            _sb.AppendLine();
-            _sb.Append("MODE        ").Append(snapped ? "SNAPPED" : "FREE PLACEMENT").AppendLine();
-            _summaryText.SetText(_sb);
+            Span<char> summary = _summaryBuffer.AsSpan();
+            int summaryCursor = 0;
+            bool summaryWritten =
+                TryAppendLine(summary, ref summaryCursor, "CONSTRUCTION BACKBONE".AsSpan()) &&
+                TryAppend(summary, ref summaryCursor, "CATALOG     ".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedCatalogCount) &&
+                TryAppendLine(summary, ref summaryCursor, " MODULES".AsSpan()) &&
+                TryAppend(summary, ref summaryCursor, "FAMILIES    G".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedGeneratorCount) &&
+                TryAppend(summary, ref summaryCursor, " / C".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedConsumerCount) &&
+                TryAppend(summary, ref summaryCursor, " / P".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedPassiveCount) &&
+                TryAppendNewLine(summary, ref summaryCursor) &&
+                TryAppend(summary, ref summaryCursor, "DOMAINS     STR ".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedStructureCount) &&
+                TryAppend(summary, ref summaryCursor, " | HAB ".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedHabitatCount) &&
+                TryAppend(summary, ref summaryCursor, " | UTL ".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedUtilityCount) &&
+                TryAppendNewLine(summary, ref summaryCursor) &&
+                TryAppend(summary, ref summaryCursor, "EXTENDED    LOG ".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedLogisticsCount) &&
+                TryAppend(summary, ref summaryCursor, " | FAB ".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedFabricationCount) &&
+                TryAppend(summary, ref summaryCursor, " | DEF ".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedDefenseCount) &&
+                TryAppendNewLine(summary, ref summaryCursor) &&
+                TryAppend(summary, ref summaryCursor, "LOCKED      ".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, _cachedLockedBlueprintCount) &&
+                TryAppendLine(summary, ref summaryCursor, " BLUEPRINTS".AsSpan()) &&
+                TryAppend(summary, ref summaryCursor, "BUILT       ".AsSpan()) &&
+                TryAppendInt(summary, ref summaryCursor, builtCount) &&
+                TryAppendLine(summary, ref summaryCursor, " REGISTERED".AsSpan()) &&
+                TryAppend(summary, ref summaryCursor, "BUILDER     ".AsSpan()) &&
+                TryAppendBuilderState(summary, ref summaryCursor, builderSlot, builderReady, builderActive) &&
+                TryAppendNewLine(summary, ref summaryCursor) &&
+                TryAppend(summary, ref summaryCursor, "ACTIVE      ".AsSpan()) &&
+                TryAppendUpperInvariant(summary, ref summaryCursor, active != null ? active.moduleName : null, "NONE".AsSpan()) &&
+                TryAppendNewLine(summary, ref summaryCursor) &&
+                TryAppend(summary, ref summaryCursor, "FAMILY      ".AsSpan()) &&
+                TryAppendString(summary, ref summaryCursor, active != null ? active.FamilyLabel : null, "N/A".AsSpan()) &&
+                TryAppendNewLine(summary, ref summaryCursor) &&
+                TryAppend(summary, ref summaryCursor, "ROLE        ".AsSpan()) &&
+                TryAppendString(summary, ref summaryCursor, active != null ? DescribePowerRole(active) : null, "N/A".AsSpan()) &&
+                TryAppendNewLine(summary, ref summaryCursor) &&
+                TryAppend(summary, ref summaryCursor, "INDEX       ".AsSpan());
 
-            _sb.Clear();
+            if (summaryWritten && activeViewableIndex >= 0)
+            {
+                summaryWritten =
+                    TryAppendInt(summary, ref summaryCursor, activeViewableIndex + 1) &&
+                    TryAppend(summary, ref summaryCursor, "/".AsSpan()) &&
+                    TryAppendInt(summary, ref summaryCursor, Mathf.Max(1, _cachedCatalogCount));
+            }
+            else if (summaryWritten)
+            {
+                summaryWritten = TryAppend(summary, ref summaryCursor, "N/A".AsSpan());
+            }
+
+            summaryWritten = summaryWritten &&
+                TryAppendNewLine(summary, ref summaryCursor) &&
+                TryAppend(summary, ref summaryCursor, "MODE        ".AsSpan()) &&
+                TryAppend(summary, ref summaryCursor, snapped ? "SNAPPED".AsSpan() : "FREE PLACEMENT".AsSpan()) &&
+                TryAppendNewLine(summary, ref summaryCursor);
+
+            ApplyBufferedText(_summaryText, _summaryBuffer, summaryWritten ? summaryCursor : 0);
+
+            Span<char> status = _statusBuffer.AsSpan();
+            int statusCursor = 0;
+            bool statusWritten;
             if (active == null)
             {
                 _statusText.color = Warn;
-                _sb.Append("NO ACTIVE BUILDABLE.\nSELECT A MODULE FROM THE CATALOG TO ARM THE BUILDER.");
+                statusWritten = TryAppend(status, ref statusCursor, "NO ACTIVE BUILDABLE.\nSELECT A MODULE FROM THE CATALOG TO ARM THE BUILDER.".AsSpan());
             }
             else
             {
                 _statusText.color = !hasResources ? Warn : (canPlace ? Ready : Blocked);
-                _sb.Append("READINESS // ");
-                _sb.Append(!hasResources ? "MISSING COST" : (canPlace ? (snapped ? "SNAPPED READY" : "READY") : "PLACEMENT BLOCKED"));
-                _sb.AppendLine();
-                AppendCostDigest(_sb, active);
+                statusWritten =
+                    TryAppend(status, ref statusCursor, "READINESS // ".AsSpan()) &&
+                    TryAppend(status, ref statusCursor, !hasResources ? "MISSING COST".AsSpan() : (canPlace ? (snapped ? "SNAPPED READY".AsSpan() : "READY".AsSpan()) : "PLACEMENT BLOCKED".AsSpan())) &&
+                    TryAppendNewLine(status, ref statusCursor) &&
+                    TryAppendCostDigest(status, ref statusCursor, active);
             }
 
-            _statusText.SetText(_sb);
+            ApplyBufferedText(_statusText, _statusBuffer, statusWritten ? statusCursor : 0);
             RefreshDirective(catalog, active, next, hasResources, canPlace, snapped, builtCount);
             RefreshBuilderAction(builderSlot, builderReady, builderActive);
             RefreshFieldAction(active, hasResources, canPlace, builderSlot, builderReady, builderActive, hasPreview);
@@ -758,7 +894,7 @@ namespace Hecton8.UI
 
         private void RefreshCatalogCache(ModuleCatalog catalog)
         {
-            _cachedCatalogCount = catalog != null ? catalog.Count : 0;
+            _cachedCatalogCount = catalog != null ? catalog.ViewableCount : 0;
             _cachedGeneratorCount = CountModulesByPowerRole(catalog, 1);
             _cachedConsumerCount = CountModulesByPowerRole(catalog, -1);
             _cachedPassiveCount = CountModulesByPowerRole(catalog, 0);
@@ -768,6 +904,7 @@ namespace Hecton8.UI
             _cachedLogisticsCount = CountModulesByFamily(catalog, BuildableFamily.Logistics);
             _cachedFabricationCount = CountModulesByFamily(catalog, BuildableFamily.Fabrication);
             _cachedDefenseCount = CountModulesByFamily(catalog, BuildableFamily.Defense);
+            _cachedLockedBlueprintCount = CountLockedBlueprintModules(catalog);
         }
 
         private void RefreshCatalog(ModuleCatalog catalog, BuildableData active, int count)
@@ -779,18 +916,18 @@ namespace Hecton8.UI
                 if (!visible)
                     continue;
 
-                BuildableData data = catalog.GetAt(i);
+                BuildableData data = catalog.GetViewableAt(i);
                 bool isActive = ReferenceEquals(active, data);
                 bool hasCost = data != null && playerInventory != null && HasCost(data);
                 bool canSelect = data != null;
                 bool isReadyCandidate = !isActive && hasCost;
 
                 _cardBgs[i].color = isActive ? BoxActive : BoxBg;
-                _cardTitles[i].SetText(data != null ? CachedToUpperInvariant(data.moduleName) : "UNKNOWN MODULE");
+                SetUpperInvariant(_cardTitles[i], _cardTitleBuffers[i], data != null ? data.moduleName : null, "UNKNOWN MODULE");
                 _cardTitles[i].color = isActive ? Primary : (hasCost ? Dim : Warn);
                 WriteCardBody(_cardBodies[i], data, isActive, hasCost);
 
-                _cardButtonLabels[i].SetText(isActive ? "ARMED" : (isReadyCandidate ? "ARM" : "QUEUE"));
+                SetLiteralText(_cardButtonLabels[i], isActive ? "ARMED".AsSpan() : (isReadyCandidate ? "ARM".AsSpan() : "QUEUE".AsSpan()));
                 _cardButtonLabels[i].color = isActive ? Primary : (hasCost ? Dim : Warn);
                 _cardButtonBgs[i].color = isActive
                     ? new Color(0.14f, 0.3f, 0.28f, 0.78f)
@@ -811,12 +948,20 @@ namespace Hecton8.UI
                 return;
 
             ModuleCatalog catalog = constructionManager.Catalog;
-            BuildableData data = catalog != null ? catalog.GetAt(index) : null;
+            BuildableData data = catalog != null ? catalog.GetViewableAt(index) : null;
             if (data == null)
                 return;
 
+            if (!data.IsBlueprintViewable())
+            {
+                hudNotification?.ShowWarning("CONSTRUCTION MATRIX - BLUEPRINT LOCKED");
+                MarkAllDirty();
+                Refresh(true);
+                return;
+            }
+
             playerBuilder.SetActiveBuildable(data);
-            hudNotification?.ShowInfo($"CONSTRUCTION MATRIX — {CachedToUpperInvariant(data.moduleName)} ARMED");
+            ShowConstructionInfoWithModule("CONSTRUCTION MATRIX - ", data.moduleName, " ARMED");
             MarkAllDirty();
             Refresh(true);
         }
@@ -845,12 +990,12 @@ namespace Hecton8.UI
             {
                 if (!toolManager.IsToolAvailableInSlot(builderSlot))
                 {
-                    hudNotification?.ShowWarning($"CONSTRUCTION MATRIX — BUILDER NOT IN CARGO [S{builderSlot + 1}]");
+                    ShowConstructionWarningWithSlot("CONSTRUCTION MATRIX - BUILDER NOT IN CARGO [S", builderSlot, "]");
                     return;
                 }
 
                 toolManager.SwitchToSlot(builderSlot);
-                hudNotification?.ShowInfo($"CONSTRUCTION MATRIX — BUILDER ACTIVATED [S{builderSlot + 1}]");
+                ShowConstructionInfoWithSlot("CONSTRUCTION MATRIX - BUILDER ACTIVATED [S", builderSlot, "]");
                 MarkSummaryDirty();
                 Refresh();
                 return;
@@ -865,7 +1010,7 @@ namespace Hecton8.UI
 
             int targetSlot = Mathf.Clamp(toolManager.SlotCount - 1, 0, Mathf.Max(0, toolManager.SlotCount - 1));
             toolManager.SetAssignedToolPrefab(targetSlot, builderPrefab, holsterIfCurrentInvalid: false);
-            hudNotification?.ShowInfo($"CONSTRUCTION MATRIX — BUILDER ARMED TO S{targetSlot + 1}");
+            ShowConstructionInfoWithSlot("CONSTRUCTION MATRIX - BUILDER ARMED TO S", targetSlot, string.Empty);
             MarkSummaryDirty();
             Refresh();
         }
@@ -899,7 +1044,7 @@ namespace Hecton8.UI
                 if (playerBuilder.CanPlaceActiveBuildable)
                 {
                     if (playerBuilder.TryDeployActiveBuildableFromPreview())
-                        hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - {CachedToUpperInvariant(playerBuilder.ActiveBuildable.moduleName)} DEPLOYED");
+                        ShowConstructionInfoWithModule("CONSTRUCTION MATRIX - ", playerBuilder.ActiveBuildable.moduleName, " DEPLOYED");
                     else
                         hudNotification?.ShowWarning("CONSTRUCTION MATRIX - DEPLOY FAILED");
 
@@ -926,12 +1071,12 @@ namespace Hecton8.UI
                 toolManager.SetAssignedToolPrefab(targetSlot, builderPrefab, holsterIfCurrentInvalid: false);
                 builderSlot = targetSlot;
                 builderReady = toolManager.IsToolAvailableInSlot(builderSlot);
-                hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - BUILDER ARMED TO S{builderSlot + 1}");
+                ShowConstructionInfoWithSlot("CONSTRUCTION MATRIX - BUILDER ARMED TO S", builderSlot, string.Empty);
             }
 
             if (!builderReady)
             {
-                hudNotification?.ShowWarning($"CONSTRUCTION MATRIX - BUILDER NOT IN CARGO [S{builderSlot + 1}]");
+                ShowConstructionWarningWithSlot("CONSTRUCTION MATRIX - BUILDER NOT IN CARGO [S", builderSlot, "]");
                 MarkSummaryDirty();
                 Refresh();
                 return;
@@ -939,13 +1084,56 @@ namespace Hecton8.UI
 
             toolManager.SwitchToSlot(builderSlot);
             QueueClosePDACommand();
-            hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - FIELD PREVIEW [S{builderSlot + 1}]");
+            ShowConstructionInfoWithSlot("CONSTRUCTION MATRIX - FIELD PREVIEW [S", builderSlot, "]");
         }
 
         private static void QueueClosePDACommand()
         {
             EntityCommand command = EntityCommand.CreateClosePDA();
             ThreadSafeCommandQueue.Enqueue(in command);
+        }
+
+        private void ShowConstructionInfoWithModule(ReadOnlySpan<char> prefix, string moduleName, ReadOnlySpan<char> suffix)
+        {
+            if (hudNotification == null)
+                return;
+
+            WriteModuleNotification(prefix, moduleName, suffix);
+            hudNotification.ShowInfo(in _notificationBuffer);
+        }
+
+        private void ShowConstructionInfoWithSlot(ReadOnlySpan<char> prefix, int zeroBasedSlot, ReadOnlySpan<char> suffix)
+        {
+            if (hudNotification == null)
+                return;
+
+            WriteSlotNotification(prefix, zeroBasedSlot, suffix);
+            hudNotification.ShowInfo(in _notificationBuffer);
+        }
+
+        private void ShowConstructionWarningWithSlot(ReadOnlySpan<char> prefix, int zeroBasedSlot, ReadOnlySpan<char> suffix)
+        {
+            if (hudNotification == null)
+                return;
+
+            WriteSlotNotification(prefix, zeroBasedSlot, suffix);
+            hudNotification.ShowWarning(in _notificationBuffer);
+        }
+
+        private void WriteModuleNotification(ReadOnlySpan<char> prefix, string moduleName, ReadOnlySpan<char> suffix)
+        {
+            _notificationBuffer.Clear();
+            _notificationBuffer.Append(prefix);
+            AppendUpperInvariant(ref _notificationBuffer, moduleName);
+            _notificationBuffer.Append(suffix);
+        }
+
+        private void WriteSlotNotification(ReadOnlySpan<char> prefix, int zeroBasedSlot, ReadOnlySpan<char> suffix)
+        {
+            _notificationBuffer.Clear();
+            _notificationBuffer.Append(prefix);
+            _notificationBuffer.AppendInt(zeroBasedSlot + 1);
+            _notificationBuffer.Append(suffix);
         }
 
         internal void InvokeDeployAction()
@@ -976,7 +1164,7 @@ namespace Hecton8.UI
 
             if (playerBuilder.TryDeployActiveBuildableFromPreview())
             {
-                hudNotification?.ShowInfo($"CONSTRUCTION MATRIX - {CachedToUpperInvariant(playerBuilder.ActiveBuildable.moduleName)} DEPLOYED");
+                ShowConstructionInfoWithModule("CONSTRUCTION MATRIX - ", playerBuilder.ActiveBuildable.moduleName, " DEPLOYED");
                 MarkAllDirty();
                 Refresh(true);
             }
@@ -1011,34 +1199,67 @@ namespace Hecton8.UI
 
             if (data == null)
             {
-                target.SetText("OFFLINE");
+                SetLiteralText(target, "OFFLINE".AsSpan());
                 return;
             }
 
-            _sb.Clear();
-            _sb.Append(isActive ? "STATUS   ARMED" : "STATUS   STANDBY").AppendLine();
-            _sb.Append("ROLE     ").Append(DescribePowerRole(data)).AppendLine();
-            _sb.Append("FAMILY   ").Append(data.FamilyLabel).AppendLine();
-            _sb.Append("PURPOSE  ").Append(DescribePurpose(data)).AppendLine();
-            _sb.Append("POWER    ");
+            Span<char> buffer = _cardBodyBuffer.AsSpan();
+            int cursor = 0;
             int roundedPower = Mathf.RoundToInt(data.powerRating);
-            if (roundedPower > 0) _sb.Append('+').Append(roundedPower).Append("W NET");
-            else if (roundedPower < 0) _sb.Append(roundedPower).Append("W LOAD");
-            else _sb.Append("PASSIVE");
-            _sb.AppendLine();
-            _sb.Append("FOOTPRINT ").Append(data.TotalResourceCount).Append(" UNITS").AppendLine();
-            _sb.Append("COST     ");
-            AppendShortCost(_sb, data);
-            _sb.AppendLine();
-            _sb.Append("STATE    ").Append(hasCost ? "READY" : "MISSING COST");
-            _sb.AppendLine();
-            _sb.Append("TACTIC   ").Append(isActive ? "FIELD ACTIVE" : (hasCost ? "ARM NEXT" : "GATHER MATS"));
-            if (!string.IsNullOrWhiteSpace(data.description))
+            bool written =
+                TryAppendLine(buffer, ref cursor, isActive ? "STATUS   ARMED".AsSpan() : "STATUS   STANDBY".AsSpan()) &&
+                TryAppend(buffer, ref cursor, "ROLE     ".AsSpan()) &&
+                TryAppendString(buffer, ref cursor, DescribePowerRole(data), "OFFLINE".AsSpan()) &&
+                TryAppendNewLine(buffer, ref cursor) &&
+                TryAppend(buffer, ref cursor, "FAMILY   ".AsSpan()) &&
+                TryAppendString(buffer, ref cursor, data.FamilyLabel, "N/A".AsSpan()) &&
+                TryAppendNewLine(buffer, ref cursor) &&
+                TryAppend(buffer, ref cursor, "PURPOSE  ".AsSpan()) &&
+                TryAppendString(buffer, ref cursor, DescribePurpose(data), "EXTEND FOOTPRINT".AsSpan()) &&
+                TryAppendNewLine(buffer, ref cursor) &&
+                TryAppend(buffer, ref cursor, "POWER    ".AsSpan());
+
+            if (written && roundedPower > 0)
             {
-                _sb.AppendLine();
-                _sb.Append("NOTES    ").Append(CachedToUpperInvariant(TrimForCard(data.description, 56)));
+                written =
+                    TryAppend(buffer, ref cursor, "+".AsSpan()) &&
+                    TryAppendInt(buffer, ref cursor, roundedPower) &&
+                    TryAppend(buffer, ref cursor, "W NET".AsSpan());
             }
-            target.SetText(_sb);
+            else if (written && roundedPower < 0)
+            {
+                written =
+                    TryAppendInt(buffer, ref cursor, roundedPower) &&
+                    TryAppend(buffer, ref cursor, "W LOAD".AsSpan());
+            }
+            else if (written)
+            {
+                written = TryAppend(buffer, ref cursor, "PASSIVE".AsSpan());
+            }
+
+            written = written &&
+                TryAppendNewLine(buffer, ref cursor) &&
+                TryAppend(buffer, ref cursor, "FOOTPRINT ".AsSpan()) &&
+                TryAppendInt(buffer, ref cursor, data.TotalResourceCount) &&
+                TryAppendLine(buffer, ref cursor, " UNITS".AsSpan()) &&
+                TryAppend(buffer, ref cursor, "COST     ".AsSpan()) &&
+                TryAppendShortCost(buffer, ref cursor, data) &&
+                TryAppendNewLine(buffer, ref cursor) &&
+                TryAppend(buffer, ref cursor, "STATE    ".AsSpan()) &&
+                TryAppend(buffer, ref cursor, hasCost ? "READY".AsSpan() : "MISSING COST".AsSpan()) &&
+                TryAppendNewLine(buffer, ref cursor) &&
+                TryAppend(buffer, ref cursor, "TACTIC   ".AsSpan()) &&
+                TryAppend(buffer, ref cursor, isActive ? "FIELD ACTIVE".AsSpan() : (hasCost ? "ARM NEXT".AsSpan() : "GATHER MATS".AsSpan()));
+
+            if (written && !string.IsNullOrWhiteSpace(data.description))
+            {
+                written =
+                    TryAppendNewLine(buffer, ref cursor) &&
+                    TryAppend(buffer, ref cursor, "NOTES    ".AsSpan()) &&
+                    TryAppendTrimmedUpperForCard(buffer, ref cursor, data.description, 56);
+            }
+
+            ApplyBufferedText(target, _cardBodyBuffer, written ? cursor : 0);
         }
 
         private void RefreshDirective(
@@ -1053,57 +1274,121 @@ namespace Hecton8.UI
             if (_directiveText == null)
                 return;
 
-            _sb.Clear();
+            Span<char> directive = _directiveBuffer.AsSpan();
+            int directiveCursor = 0;
+            bool directiveWritten;
             if (catalog == null || catalog.Count == 0)
             {
                 _directiveText.color = Blocked;
-                _sb.Append("DIRECTIVE // AUTHOR OR ASSIGN A MODULE CATALOG.");
+                directiveWritten = TryAppend(directive, ref directiveCursor, "DIRECTIVE // AUTHOR OR ASSIGN A MODULE CATALOG.".AsSpan());
+            }
+            else if (_cachedCatalogCount == 0)
+            {
+                _directiveText.color = Blocked;
+                directiveWritten = TryAppend(directive, ref directiveCursor, "DIRECTIVE // BLUEPRINTS LOCKED BY QUEST STATE.".AsSpan());
             }
             else if (active == null)
             {
                 _directiveText.color = Warn;
-                _sb.Append("DIRECTIVE // ARM A STARTER MODULE. FOUNDATION FIRST.");
+                directiveWritten = TryAppend(directive, ref directiveCursor, "DIRECTIVE // ARM A STARTER MODULE. FOUNDATION FIRST.".AsSpan());
             }
             else if (!hasResources)
             {
                 _directiveText.color = Warn;
-                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()) : "GATHER COST BEFORE DEPLOYMENT.");
+                directiveWritten =
+                    TryAppend(directive, ref directiveCursor, "DIRECTIVE // ".AsSpan()) &&
+                    TryAppendBuilderAdviceUpperOrFallback(directive, ref directiveCursor, "GATHER COST BEFORE DEPLOYMENT.".AsSpan());
                 if (next != null && !ReferenceEquals(next, active))
-                    _sb.Append(" NEXT VIABLE CANDIDATE: ").Append(CachedToUpperInvariant(next.moduleName))
-                        .Append(" (").Append(next.FamilyShortCode).Append(" / ").Append(DescribePowerRole(next)).Append(").");
+                {
+                    directiveWritten = directiveWritten &&
+                        TryAppend(directive, ref directiveCursor, " NEXT VIABLE CANDIDATE: ".AsSpan()) &&
+                        TryAppendUpperInvariant(directive, ref directiveCursor, next.moduleName, "UNKNOWN".AsSpan()) &&
+                        TryAppend(directive, ref directiveCursor, " (".AsSpan()) &&
+                        TryAppendString(directive, ref directiveCursor, next.FamilyShortCode, "N/A".AsSpan()) &&
+                        TryAppend(directive, ref directiveCursor, " / ".AsSpan()) &&
+                        TryAppendString(directive, ref directiveCursor, DescribePowerRole(next), "OFFLINE".AsSpan()) &&
+                        TryAppend(directive, ref directiveCursor, ").".AsSpan());
+                }
             }
             else if (!canPlace)
             {
                 _directiveText.color = Blocked;
-                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()) : "REPOSITION UNTIL BUILD VOLUME CLEARS.");
+                directiveWritten =
+                    TryAppend(directive, ref directiveCursor, "DIRECTIVE // ".AsSpan()) &&
+                    TryAppendBuilderAdviceUpperOrFallback(directive, ref directiveCursor, "REPOSITION UNTIL BUILD VOLUME CLEARS.".AsSpan());
                 if (builtCount <= 0)
-                    _sb.Append(" OPEN WITH FOUNDATION OR PYLON FOR FIRST ANCHOR.");
+                    directiveWritten = directiveWritten && TryAppend(directive, ref directiveCursor, " OPEN WITH FOUNDATION OR PYLON FOR FIRST ANCHOR.".AsSpan());
             }
             else if (snapped)
             {
                 _directiveText.color = Ready;
-                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()) : "SOCKET LOCK ACQUIRED. DEPLOY FOR CLEAN CHAIN EXTENSION.");
+                directiveWritten =
+                    TryAppend(directive, ref directiveCursor, "DIRECTIVE // ".AsSpan()) &&
+                    TryAppendBuilderAdviceUpperOrFallback(directive, ref directiveCursor, "SOCKET LOCK ACQUIRED. DEPLOY FOR CLEAN CHAIN EXTENSION.".AsSpan());
             }
             else
             {
                 _directiveText.color = Ready;
-                _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()) : "FIELD-READY. DEPLOY ACTIVE MODULE.");
+                directiveWritten =
+                    TryAppend(directive, ref directiveCursor, "DIRECTIVE // ".AsSpan()) &&
+                    TryAppendBuilderAdviceUpperOrFallback(directive, ref directiveCursor, "FIELD-READY. DEPLOY ACTIVE MODULE.".AsSpan());
             }
 
-            _directiveText.SetText(_sb);
+            ApplyBufferedText(_directiveText, _directiveBuffer, directiveWritten ? directiveCursor : 0);
 
             if (_hintText == null)
                 return;
 
-            _sb.Clear();
-            _sb.Append("Select to arm. ");
+            Span<char> hint = _hintBuffer.AsSpan();
+            int hintCursor = 0;
+            bool hintWritten = TryAppend(hint, ref hintCursor, "Select to arm. ".AsSpan());
             if (active != null)
-                _sb.Append("Active: ").Append(CachedToUpperInvariant(active.moduleName)).Append(" [")
-                    .Append(active.FamilyShortCode).Append(" / ").Append(DescribePowerRole(active)).Append("]. ");
-            _sb.Append("TAB / Q-E cycle in the field. INTERACT recovers a placed module. ");
+            {
+                hintWritten = hintWritten &&
+                    TryAppend(hint, ref hintCursor, "Active: ".AsSpan()) &&
+                    TryAppendUpperInvariant(hint, ref hintCursor, active.moduleName, "UNKNOWN".AsSpan()) &&
+                    TryAppend(hint, ref hintCursor, " [".AsSpan()) &&
+                    TryAppendString(hint, ref hintCursor, active.FamilyShortCode, "N/A".AsSpan()) &&
+                    TryAppend(hint, ref hintCursor, " / ".AsSpan()) &&
+                    TryAppendString(hint, ref hintCursor, DescribePowerRole(active), "OFFLINE".AsSpan()) &&
+                    TryAppend(hint, ref hintCursor, "]. ".AsSpan());
+            }
+            hintWritten = hintWritten &&
+                TryAppend(hint, ref hintCursor, "TAB / Q-E cycle in the field. INTERACT recovers a placed module. ".AsSpan());
             if (next != null && !ReferenceEquals(next, active))
-                _sb.Append("Next: ").Append(CachedToUpperInvariant(next.moduleName)).Append(" [").Append(next.FamilyShortCode).Append("].");
-            _hintText.SetText(_sb);
+            {
+                hintWritten = hintWritten &&
+                    TryAppend(hint, ref hintCursor, "Next: ".AsSpan()) &&
+                    TryAppendUpperInvariant(hint, ref hintCursor, next.moduleName, "UNKNOWN".AsSpan()) &&
+                    TryAppend(hint, ref hintCursor, " [".AsSpan()) &&
+                    TryAppendString(hint, ref hintCursor, next.FamilyShortCode, "N/A".AsSpan()) &&
+                    TryAppend(hint, ref hintCursor, "].".AsSpan());
+            }
+            ApplyBufferedText(_hintText, _hintBuffer, hintWritten ? hintCursor : 0);
+        }
+
+        private bool TryAppendBuilderAdviceUpperOrFallback(Span<char> buffer, ref int cursor, ReadOnlySpan<char> fallback)
+        {
+            if (playerBuilder == null)
+                return TryAppend(buffer, ref cursor, fallback);
+
+            FixedCharBuffer adviceBuffer = new FixedCharBuffer(_directiveAdviceScratchBuffer);
+            adviceBuffer.Clear();
+            playerBuilder.WriteActiveBuildAdvice(ref adviceBuffer);
+
+            ReadOnlySpan<char> advice = adviceBuffer.AsSpan();
+            if (advice.Length == 0)
+                return TryAppend(buffer, ref cursor, fallback);
+
+            for (int i = 0; i < advice.Length; i++)
+            {
+                if (cursor >= buffer.Length)
+                    return false;
+
+                buffer[cursor++] = ToAsciiUpperInvariant(advice[i]);
+            }
+
+            return true;
         }
 
         private static int CountModulesByFamily(ModuleCatalog catalog, BuildableFamily family)
@@ -1112,10 +1397,11 @@ namespace Hecton8.UI
                 return 0;
 
             int count = 0;
-            for (int i = 0; i < catalog.Count; i++)
+            int catalogCount = catalog.Count;
+            for (int i = 0; i < catalogCount; i++)
             {
                 BuildableData data = catalog.GetAt(i);
-                if (data != null && data.family == family)
+                if (data != null && data.IsBlueprintViewable() && data.family == family)
                     count++;
             }
 
@@ -1150,21 +1436,17 @@ namespace Hecton8.UI
             }
         }
 
-        private static void AppendBuilderState(StringBuilder builder, int builderSlot, bool builderReady, bool builderActive)
+        private static bool TryAppendBuilderState(Span<char> buffer, ref int cursor, int builderSlot, bool builderReady, bool builderActive)
         {
             if (builderActive)
-            {
-                builder.Append("ACTIVE");
-                return;
-            }
+                return TryAppend(buffer, ref cursor, "ACTIVE".AsSpan());
 
             if (builderSlot < 0)
-            {
-                builder.Append("UNASSIGNED");
-                return;
-            }
+                return TryAppend(buffer, ref cursor, "UNASSIGNED".AsSpan());
 
-            builder.Append("ASSIGNED S").Append(builderSlot + 1).Append(builderReady ? " / READY" : " / MISSING");
+            return TryAppend(buffer, ref cursor, "ASSIGNED S".AsSpan()) &&
+                TryAppendInt(buffer, ref cursor, builderSlot + 1) &&
+                TryAppend(buffer, ref cursor, builderReady ? " / READY".AsSpan() : " / MISSING".AsSpan());
         }
 
         private void RefreshBuilderAction(int builderSlot, bool builderReady, bool builderActive)
@@ -1174,15 +1456,15 @@ namespace Hecton8.UI
 
             if (toolManager == null)
             {
-                SetActionRootVisible(_builderActionRoot, ref _builderActionVisible, false);
+                SetActionRootVisible(_builderActionCanvasGroup, ref _builderActionVisible, false);
                 return;
             }
 
-            SetActionRootVisible(_builderActionRoot, ref _builderActionVisible, true);
+            SetActionRootVisible(_builderActionCanvasGroup, ref _builderActionVisible, true);
 
             if (builderActive)
             {
-                _builderActionLabel.SetText("HOLSTER BUILDER");
+                SetLiteralText(_builderActionLabel, "HOLSTER BUILDER".AsSpan());
                 _builderActionLabel.color = Primary;
                 _builderActionBg.color = new Color(0.14f, 0.3f, 0.28f, 0.78f);
             }
@@ -1200,7 +1482,7 @@ namespace Hecton8.UI
             }
             else
             {
-                _builderActionLabel.SetText("ARM BUILDER TO S4");
+                SetLiteralText(_builderActionLabel, "ARM BUILDER TO S4".AsSpan());
                 _builderActionLabel.color = Dim;
                 _builderActionBg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
             }
@@ -1224,21 +1506,21 @@ namespace Hecton8.UI
 
             if (active == null || playerBuilder == null)
             {
-                SetActionRootVisible(_fieldActionRoot, ref _fieldActionVisible, false);
+                SetActionRootVisible(_fieldActionCanvasGroup, ref _fieldActionVisible, false);
                 return;
             }
 
-            SetActionRootVisible(_fieldActionRoot, ref _fieldActionVisible, true);
+            SetActionRootVisible(_fieldActionCanvasGroup, ref _fieldActionVisible, true);
 
             if (builderActive && canPlace)
             {
-                _fieldActionLabel.SetText("DEPLOY ACTIVE");
+                SetLiteralText(_fieldActionLabel, "DEPLOY ACTIVE".AsSpan());
                 _fieldActionLabel.color = Primary;
                 _fieldActionBg.color = new Color(0.14f, 0.3f, 0.28f, 0.78f);
             }
             else if (builderActive)
             {
-                _fieldActionLabel.SetText(hasPreview ? "RETURN TO FIELD" : "PREVIEW OFFLINE");
+                SetLiteralText(_fieldActionLabel, hasPreview ? "RETURN TO FIELD".AsSpan() : "PREVIEW OFFLINE".AsSpan());
                 _fieldActionLabel.color = hasPreview ? Dim : Warn;
                 _fieldActionBg.color = hasPreview
                     ? new Color(0.08f, 0.16f, 0.18f, 0.58f)
@@ -1258,13 +1540,13 @@ namespace Hecton8.UI
             }
             else if (!hasResources)
             {
-                _fieldActionLabel.SetText("MISSING COST");
+                SetLiteralText(_fieldActionLabel, "MISSING COST".AsSpan());
                 _fieldActionLabel.color = Warn;
                 _fieldActionBg.color = new Color(0.28f, 0.2f, 0.06f, 0.72f);
             }
             else
             {
-                _fieldActionLabel.SetText("ARM + PREVIEW");
+                SetLiteralText(_fieldActionLabel, "ARM + PREVIEW".AsSpan());
                 _fieldActionLabel.color = Dim;
                 _fieldActionBg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
             }
@@ -1279,60 +1561,223 @@ namespace Hecton8.UI
             if (label == null)
                 return;
 
-            _sb.Clear();
-            _sb.Append(prefix)
-                .Append(" [S")
-                .Append(builderSlot + 1)
-                .Append(']');
-            label.SetText(_sb);
+            Span<char> buffer = _actionLabelBuffer.AsSpan();
+            int cursor = 0;
+            bool written =
+                TryAppendString(buffer, ref cursor, prefix, ReadOnlySpan<char>.Empty) &&
+                TryAppend(buffer, ref cursor, " [S".AsSpan()) &&
+                TryAppendInt(buffer, ref cursor, builderSlot + 1) &&
+                TryAppend(buffer, ref cursor, "]".AsSpan());
+
+            ApplyBufferedText(label, _actionLabelBuffer, written ? cursor : 0);
         }
 
         private void SetCardVisible(int index, bool visible)
         {
-            if (_cardRoots == null || _cardVisibility == null || index < 0 || index >= _cardRoots.Length || index >= _cardVisibility.Length)
+            if (_cardRoots == null || _cardVisibility == null || _cardCanvasGroups == null ||
+                index < 0 || index >= _cardRoots.Length || index >= _cardVisibility.Length || index >= _cardCanvasGroups.Length)
                 return;
 
             RectTransform root = _cardRoots[index];
-            if (root == null || _cardVisibility[index] == visible)
+            CanvasGroup canvasGroup = _cardCanvasGroups[index];
+            if (root == null || canvasGroup == null || _cardVisibility[index] == visible)
                 return;
 
-            SetCanvasGroupVisible(root, visible);
+            SetCanvasGroupVisible(canvasGroup, visible);
             _cardVisibility[index] = visible;
         }
 
-        private static void SetActionRootVisible(RectTransform root, ref bool currentVisible, bool visible)
+        private static void SetActionRootVisible(CanvasGroup canvasGroup, ref bool currentVisible, bool visible)
         {
-            if (root == null || currentVisible == visible)
+            if (canvasGroup == null || currentVisible == visible)
                 return;
 
-            SetCanvasGroupVisible(root, visible);
+            SetCanvasGroupVisible(canvasGroup, visible);
             currentVisible = visible;
         }
 
-        private static void SetCanvasGroupVisible(RectTransform root, bool visible)
+        private static void SetCanvasGroupVisible(CanvasGroup canvasGroup, bool visible)
         {
-            if (root == null)
-                return;
-
-            CanvasGroup canvasGroup = root.GetComponent<CanvasGroup>();
             if (canvasGroup == null)
-                canvasGroup = root.gameObject.AddComponent<CanvasGroup>();
+                return;
 
             canvasGroup.alpha = visible ? 1f : 0f;
             canvasGroup.interactable = visible;
             canvasGroup.blocksRaycasts = visible;
         }
 
-        private static string TrimForCard(string text, int maxChars)
+        private static void SetLiteralText(TextMeshProUGUI label, ReadOnlySpan<char> value)
         {
-            if (string.IsNullOrWhiteSpace(text))
-                return string.Empty;
+            if (label == null || !CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return;
 
-            string normalized = text.Replace('\n', ' ').Replace('\r', ' ').Trim();
-            if (normalized.Length <= maxChars)
-                return normalized;
+            try
+            {
+                Span<char> buffer = lease.Buffer.AsSpan();
+                int cursor = 0;
+                if (TryAppend(buffer, ref cursor, value))
+                    label.SetCharArray(lease.Buffer, 0, cursor);
+            }
+            finally
+            {
+                CharBufferPool.Release(lease);
+            }
+        }
 
-            return normalized.Substring(0, maxChars).TrimEnd() + "...";
+        private static void ApplyBufferedText(TextMeshProUGUI label, char[] buffer, int length)
+        {
+            if (label == null || buffer == null)
+                return;
+
+            int safeLength = Mathf.Clamp(length, 0, buffer.Length);
+            label.SetCharArray(buffer, 0, safeLength);
+        }
+
+        private static bool TryAppendLine(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
+        {
+            return TryAppend(buffer, ref cursor, value) && TryAppendNewLine(buffer, ref cursor);
+        }
+
+        private static bool TryAppendNewLine(Span<char> buffer, ref int cursor)
+        {
+            if (cursor < 0 || cursor >= buffer.Length)
+                return false;
+
+            buffer[cursor++] = '\n';
+            return true;
+        }
+
+        private static bool TryAppendInt(Span<char> buffer, ref int cursor, int value)
+        {
+            if ((uint)cursor > (uint)buffer.Length ||
+                !value.TryFormat(buffer.Slice(cursor), out int written))
+            {
+                return false;
+            }
+
+            cursor += written;
+            return true;
+        }
+
+        private static bool TryAppendString(Span<char> buffer, ref int cursor, string value, ReadOnlySpan<char> fallback)
+        {
+            return string.IsNullOrEmpty(value)
+                ? TryAppend(buffer, ref cursor, fallback)
+                : TryAppend(buffer, ref cursor, value.AsSpan());
+        }
+
+        private static bool TryAppendUpperInvariant(Span<char> buffer, ref int cursor, string value, ReadOnlySpan<char> fallback)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return TryAppend(buffer, ref cursor, fallback);
+
+            for (int i = 0; i < value.Length; i++)
+            {
+                if (cursor >= buffer.Length)
+                    return false;
+
+                buffer[cursor++] = ToAsciiUpperInvariant(value[i]);
+            }
+
+            return true;
+        }
+
+        private static bool TryAppend(Span<char> buffer, ref int cursor, ReadOnlySpan<char> value)
+        {
+            if (cursor < 0 || cursor + value.Length > buffer.Length)
+                return false;
+
+            value.CopyTo(buffer.Slice(cursor));
+            cursor += value.Length;
+            return true;
+        }
+
+        private static char ToAsciiUpperInvariant(char value)
+        {
+            return value >= 'a' && value <= 'z' ? (char)(value - 32) : char.ToUpperInvariant(value);
+        }
+
+        private static void AppendUpperInvariant(ref FixedCharBuffer buffer, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return;
+
+            Span<char> scratch = stackalloc char[1];
+            for (int i = 0; i < value.Length; i++)
+            {
+                scratch[0] = ToAsciiUpperInvariant(value[i]);
+                if (!buffer.Append(scratch))
+                    return;
+            }
+        }
+
+        private static bool TryAppendTrimmedUpperForCard(Span<char> buffer, ref int cursor, string text, int maxChars)
+        {
+            if (string.IsNullOrWhiteSpace(text) || maxChars <= 0)
+                return true;
+
+            int appended = 0;
+            int lastNonSpaceCursor = cursor;
+            bool started = false;
+            bool truncated = false;
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                bool isWhitespace = char.IsWhiteSpace(c);
+                if (!started)
+                {
+                    if (isWhitespace)
+                        continue;
+
+                    started = true;
+                }
+
+                char normalized = isWhitespace ? ' ' : ToAsciiUpperInvariant(c);
+                if (appended >= maxChars)
+                {
+                    if (!isWhitespace)
+                        truncated = true;
+                    continue;
+                }
+
+                if (cursor >= buffer.Length)
+                    return false;
+
+                buffer[cursor++] = normalized;
+                appended++;
+                if (normalized != ' ')
+                    lastNonSpaceCursor = cursor;
+            }
+
+            if (cursor > lastNonSpaceCursor)
+                cursor = lastNonSpaceCursor;
+
+            if (truncated)
+                return TryAppend(buffer, ref cursor, "...".AsSpan());
+
+            return true;
+        }
+
+        private static void SetUpperInvariant(TextMeshProUGUI target, char[] buffer, string value, string fallback)
+        {
+            if (target == null || buffer == null)
+                return;
+
+            int length = CopyUpperInvariant(buffer, string.IsNullOrEmpty(value) ? fallback : value);
+            target.SetCharArray(buffer, 0, length);
+        }
+
+        private static int CopyUpperInvariant(char[] buffer, string value)
+        {
+            if (buffer == null || string.IsNullOrEmpty(value))
+                return 0;
+
+            int length = Mathf.Min(buffer.Length, value.Length);
+            for (int i = 0; i < length; i++)
+                buffer[i] = ToAsciiUpperInvariant(value[i]);
+
+            return length;
         }
 
         private static int CountModulesByPowerRole(ModuleCatalog catalog, int mode)
@@ -1341,10 +1786,13 @@ namespace Hecton8.UI
                 return 0;
 
             int count = 0;
-            for (int i = 0; i < catalog.Count; i++)
+            int catalogCount = catalog.Count;
+            for (int i = 0; i < catalogCount; i++)
             {
                 BuildableData data = catalog.GetAt(i);
                 if (data == null)
+                    continue;
+                if (!data.IsBlueprintViewable())
                     continue;
 
                 bool matches = mode > 0 ? data.IsGenerator : mode < 0 ? data.IsConsumer : (!data.IsGenerator && !data.IsConsumer);
@@ -1355,33 +1803,55 @@ namespace Hecton8.UI
             return count;
         }
 
-        private void AppendShortCost(StringBuilder sb, BuildableData data)
+        private static int CountLockedBlueprintModules(ModuleCatalog catalog)
         {
-            if (data == null || data.buildCost == null || data.buildCost.Count == 0)
+            if (catalog == null || catalog.Count <= 0)
+                return 0;
+
+            int count = 0;
+            int catalogCount = catalog.Count;
+            for (int i = 0; i < catalogCount; i++)
             {
-                sb.Append("NONE");
-                return;
+                BuildableData data = catalog.GetAt(i);
+                if (data != null && data.RequiresBlueprintQuestFlag && !data.IsBlueprintViewable())
+                    count++;
             }
 
+            return count;
+        }
+
+        private bool TryAppendShortCost(Span<char> buffer, ref int cursor, BuildableData data)
+        {
+            if (data == null || data.buildCost == null || data.buildCost.Count == 0)
+                return TryAppend(buffer, ref cursor, "NONE".AsSpan());
+
+            int appendedCosts = 0;
             for (int i = 0; i < data.buildCost.Count; i++)
             {
                 InventoryCost cost = data.buildCost[i];
                 if (cost == null || cost.item == null)
                     continue;
-                if (i > 0)
-                    sb.Append(" | ");
-                sb.Append(CachedToUpperInvariant(cost.item.itemName)).Append(' ').Append(cost.amount);
+                if (appendedCosts > 0 && !TryAppend(buffer, ref cursor, " | ".AsSpan()))
+                    return false;
+                if (!TryAppendUpperInvariant(buffer, ref cursor, cost.item.itemName, "UNKNOWN".AsSpan()) ||
+                    !TryAppend(buffer, ref cursor, " ".AsSpan()) ||
+                    !TryAppendInt(buffer, ref cursor, cost.amount))
+                {
+                    return false;
+                }
+
+                appendedCosts++;
             }
+
+            return appendedCosts > 0 || TryAppend(buffer, ref cursor, "NONE".AsSpan());
         }
 
-        private void AppendCostDigest(StringBuilder sb, BuildableData data)
+        private bool TryAppendCostDigest(Span<char> buffer, ref int cursor, BuildableData data)
         {
             if (data == null || data.buildCost == null || data.buildCost.Count == 0)
-            {
-                sb.Append("NO BUILD COST DATA.");
-                return;
-            }
+                return TryAppend(buffer, ref cursor, "NO BUILD COST DATA.".AsSpan());
 
+            int appendedCosts = 0;
             for (int i = 0; i < data.buildCost.Count; i++)
             {
                 InventoryCost cost = data.buildCost[i];
@@ -1391,15 +1861,21 @@ namespace Hecton8.UI
                 int owned = playerInventory != null && cost.item != null
                     ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
                     : 0;
-                sb.Append(CachedToUpperInvariant(cost.item.itemName))
-                    .Append(' ')
-                    .Append(owned)
-                    .Append('/')
-                    .Append(cost.amount);
+                if (appendedCosts > 0 && !TryAppend(buffer, ref cursor, "  |  ".AsSpan()))
+                    return false;
+                if (!TryAppendUpperInvariant(buffer, ref cursor, cost.item.itemName, "UNKNOWN".AsSpan()) ||
+                    !TryAppend(buffer, ref cursor, " ".AsSpan()) ||
+                    !TryAppendInt(buffer, ref cursor, owned) ||
+                    !TryAppend(buffer, ref cursor, "/".AsSpan()) ||
+                    !TryAppendInt(buffer, ref cursor, cost.amount))
+                {
+                    return false;
+                }
 
-                if (i < data.buildCost.Count - 1)
-                    sb.Append("  |  ");
+                appendedCosts++;
             }
+
+            return appendedCosts > 0 || TryAppend(buffer, ref cursor, "NO BUILD COST DATA.".AsSpan());
         }
 
         private static RectTransform CreatePanel(RectTransform parent, string name, Vector2 min, Vector2 max, Vector2 offsetMin, Vector2 offsetMax)
@@ -1416,13 +1892,21 @@ namespace Hecton8.UI
             return rect;
         }
 
+        private static CanvasGroup EnsureCanvasGroup(GameObject go)
+        {
+            if (go == null)
+                return null;
+
+            return go.AddComponent<CanvasGroup>();
+        }
+
         private static void ClearChildren(RectTransform parent)
         {
             for (int i = parent.childCount - 1; i >= 0; i--)
             {
                 Transform child = parent.GetChild(i);
                 if (child != null)
-                    Object.Destroy(child.gameObject);
+                    UnityEngine.Object.Destroy(child.gameObject);
             }
         }
 
@@ -1463,7 +1947,7 @@ namespace Hecton8.UI
             Anchor(header.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                 new Vector2(14f, -12f), new Vector2(-14f, 18f));
             header.color = DimLow;
-            header.SetText(text);
+            SetLiteralText(header, text.AsSpan());
             return header;
         }
 

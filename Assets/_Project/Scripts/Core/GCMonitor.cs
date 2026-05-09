@@ -11,20 +11,19 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9485)]
-    public sealed class GCMonitor : MonoBehaviour, IPostFixedTickable
+    public sealed class GCMonitor : MonoBehaviour, IPostFixedTickable, IServiceHeartbeat, IServiceShutdown
     {
         private const int MemoryPressureSampleIntervalFrames = 60;
         private const int NativeLeakAuditIntervalFrames = 300;
         private const double CriticalMemoryPressureRatio = 0.85d;
-        private static readonly uint _Gen0CollectionWarningHash = unchecked((uint)LocHash.Compute("GCMonitor.Gen0CollectionDetected"));
-        private static readonly uint _GcMonitorContextHash = unchecked((uint)LocHash.Compute(nameof(GCMonitor)));
 
         private bool _registeredPostFixed;
-        private int _lastGen0CollectionCount;
-        private int _lastReportedFrame = -1;
         private int _nextMemoryPressureSampleFrame;
         private int _lastMemoryPressureDispatchFrame = -MemoryPressureSampleIntervalFrames;
         private int _nextNativeLeakAuditFrame;
+
+        public ServiceHeartbeatState HeartbeatState => _registeredPostFixed ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Booting;
+        public bool IsServiceReady => _registeredPostFixed;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -44,7 +43,6 @@ namespace Hecton8.Core
 
         public void InitializeService()
         {
-            _lastGen0CollectionCount = GC.CollectionCount(0);
             PrimeSamplingFrames();
             TryRegisterPostFixed();
         }
@@ -59,7 +57,6 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterGCMonitorRuntime(this);
-            _lastGen0CollectionCount = GC.CollectionCount(0);
             PrimeSamplingFrames();
         }
 
@@ -88,24 +85,18 @@ namespace Hecton8.Core
             GlobalRegistry.ClearGCMonitorRuntime(this);
         }
 
+        public void OnServiceShutdown()
+        {
+            OnDisable();
+            GlobalRegistry.ClearGCMonitorRuntime(this);
+            PrimeSamplingFrames();
+        }
+
         public void PostFixedTick(float fixedDeltaTime)
         {
             int frame = Time.frameCount;
             TryDispatchCriticalMemoryPressure(frame);
             TryAuditLongLivedNativeAllocations(frame);
-
-            int currentGen0CollectionCount = GC.CollectionCount(0);
-            if (currentGen0CollectionCount == _lastGen0CollectionCount)
-                return;
-
-            int delta = currentGen0CollectionCount - _lastGen0CollectionCount;
-            _lastGen0CollectionCount = currentGen0CollectionCount;
-            if (_lastReportedFrame == frame)
-                return;
-
-            _lastReportedFrame = frame;
-            GlobalTelemetryBus.PublishPerformanceWarning(_Gen0CollectionWarningHash, _GcMonitorContextHash, delta);
-            Debug.LogAssertion("[GCMonitor] Gen0 GC collection detected. Telemetry emitted.");
         }
 
         private void TryDispatchCriticalMemoryPressure(int frame)

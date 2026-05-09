@@ -54,6 +54,10 @@ namespace Hecton8.World
     public static class SoundscapeEvents
     {
         private const int PendingEventCapacity = 16;
+        private const int ListenerCapacity = 16;
+        private const uint ListenerRejectedWarningHash = 0x5353524Au;
+        private const uint ListenerExceptionWarningHash = 0x53534558u;
+        private const uint ListenerContextHash = 0x53534C53u;
 
         private struct SoundscapeEventPayload
         {
@@ -61,14 +65,24 @@ namespace Hecton8.World
             public SoundscapeTier NewTier;
         }
 
-        private static readonly RegistryBucket<ISoundscapeEventListener> _listeners = new RegistryBucket<ISoundscapeEventListener>(16);
+        private static readonly RegistryBucket<ISoundscapeEventListener> _listeners = new RegistryBucket<ISoundscapeEventListener>(ListenerCapacity);
+        private static readonly ISoundscapeEventListener[] _deferredRegisterListeners = new ISoundscapeEventListener[ListenerCapacity];
+        private static readonly ISoundscapeEventListener[] _deferredUnregisterListeners = new ISoundscapeEventListener[ListenerCapacity];
         private static NativeQueue<SoundscapeEventPayload> _pendingEvents;
         private static NativeQueue<SoundscapeEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -89,21 +103,49 @@ namespace Hecton8.World
 
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterListeners.Length);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterListeners.Length);
         }
 
         /// <summary>Звуковой тир изменился. (oldTier, newTier)</summary>
         public static void Register(ISoundscapeEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         public static void Unregister(ISoundscapeEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            if (!_listeners.TryUnregister(listener))
+                return;
+
+            if (_listeners.Count <= 0)
+                DropPendingAmbient();
         }
 
         public static void RaiseTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
@@ -136,6 +178,12 @@ namespace Hecton8.World
             if (!_pendingEvents.IsCreated)
                 return;
 
+            if (_listeners.Count <= 0)
+            {
+                DropPendingAmbient();
+                return;
+            }
+
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             _isDispatching = true;
             try
@@ -156,14 +204,15 @@ namespace Hecton8.World
                     for (int i = count - 1; i >= 0; i--)
                     {
                         ISoundscapeEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnSoundscapeTierChanged(payload.OldTier, payload.NewTier);
+                        if (listener != null && !IsDeferredUnregisterPending(listener))
+                            DispatchToListener(listener, payload.OldTier, payload.NewTier);
                     }
                 }
             }
             finally
             {
                 _isDispatching = false;
+                ApplyDeferredListenerMutations();
             }
 
             if (!_pendingEvents.IsEmpty())
@@ -194,6 +243,187 @@ namespace Hecton8.World
             _isDispatching = false;
         }
 
+        private static void DispatchToListener(ISoundscapeEventListener listener, SoundscapeTier oldTier, SoundscapeTier newTier)
+        {
+            try
+            {
+                listener.OnSoundscapeTierChanged(oldTier, newTier);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException(exception);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(ISoundscapeEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            CancelDeferredUnregister(listener);
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(ISoundscapeEventListener listener)
+        {
+            CancelDeferredRegister(listener);
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool IsDeferredRegisterPending(ISoundscapeEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(ISoundscapeEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredRegister(ISoundscapeEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                int tail = _deferredRegisterCount - i - 1;
+                if (tail > 0)
+                    Array.Copy(_deferredRegisterListeners, i + 1, _deferredRegisterListeners, i, tail);
+
+                _deferredRegisterListeners[--_deferredRegisterCount] = null;
+                return;
+            }
+        }
+
+        private static void CancelDeferredUnregister(ISoundscapeEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                int tail = _deferredUnregisterCount - i - 1;
+                if (tail > 0)
+                    Array.Copy(_deferredUnregisterListeners, i + 1, _deferredUnregisterListeners, i, tail);
+
+                _deferredUnregisterListeners[--_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                ISoundscapeEventListener listener = _deferredUnregisterListeners[i];
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+
+                _deferredUnregisterListeners[i] = null;
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                RegisterImmediate(_deferredRegisterListeners[i]);
+                _deferredRegisterListeners[i] = null;
+            }
+
+            _deferredRegisterCount = 0;
+
+            if (_listeners.Count <= 0)
+                DropPendingAmbient();
+        }
+
+        private static void RegisterImmediate(ISoundscapeEventListener listener)
+        {
+            if (listener == null || _listeners.Contains(listener))
+                return;
+
+            if (_listeners.Count >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerRejectedWarningHash,
+                ListenerContextHash,
+                UnityEngine.Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException(Exception exception)
+        {
+            _listenerExceptionCount = UnityEngine.Mathf.Min(_listenerExceptionCount + 1, int.MaxValue);
+            LogListenerDispatchException(exception);
+
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerExceptionWarningHash,
+                ListenerContextHash,
+                UnityEngine.Mathf.Max(1, _listenerExceptionCount));
+        }
+
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
@@ -205,6 +435,7 @@ namespace Hecton8.World
                     nameof(SoundscapeEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -216,6 +447,21 @@ namespace Hecton8.World
                     nameof(SoundscapeEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -257,10 +503,7 @@ namespace Hecton8.World
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static SoundscapeSystem Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
+        public static SoundscapeSystem Instance => GlobalRegistry.Soundscape;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -289,8 +532,12 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
+            SoundscapeSystem registered = GlobalRegistry.Soundscape;
+            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
         }
 
         private void OnEnable()
@@ -341,6 +588,13 @@ namespace Hecton8.World
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            SoundscapeSystem registered = GlobalRegistry.Soundscape;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterSoundscapeRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.Soundscape, this);

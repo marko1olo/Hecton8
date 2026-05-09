@@ -7,6 +7,7 @@ namespace Hecton8.Gameplay
 {
     using Hecton8.Core;
     using Hecton8.World;
+    using Unity.Mathematics;
     using UnityEngine;
 
     /// <summary>
@@ -74,13 +75,13 @@ namespace Hecton8.Gameplay
         /// <param name="speed">Absolute cutter speed.</param>
         public void RegisterCut(Vector3 positionWS, Vector3 velocityWS, float speed)
         {
-            float normalizedSpeed = Mathf.InverseLerp(cutSpeedThreshold, cutSpeedThreshold * 2.4f, speed);
+            float normalizedSpeed = ResolveNormalizedCutSpeed(speed, cutSpeedThreshold);
             if (normalizedSpeed <= 0f)
                 return;
 
             _cutPositionWS = positionWS;
-            _cutRadius = Mathf.Lerp(minCutRadius, maxCutRadius, normalizedSpeed);
-            _cutStrength = Mathf.Max(_cutStrength, Mathf.Lerp(0.5f, 1f, normalizedSpeed));
+            _cutRadius = math.lerp(minCutRadius, maxCutRadius, normalizedSpeed);
+            _cutStrength = math.max(_cutStrength, math.lerp(0.5f, 1f, normalizedSpeed));
             PublishCutMask(positionWS, velocityWS);
 
             if (_registered)
@@ -88,8 +89,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
 
             if (leafDebrisParticles != null && _particleCooldownRemaining <= 0f)
             {
@@ -97,10 +97,10 @@ namespace Hecton8.Gameplay
                 {
                     position = leafDebrisParticles.transform.InverseTransformPoint(positionWS),
                     velocity = velocityWS * 0.18f,
-                    startSize = Mathf.Lerp(0.05f, 0.14f, normalizedSpeed)
+                    startSize = math.lerp(0.05f, 0.14f, normalizedSpeed)
                 };
 
-                int emitCount = Mathf.RoundToInt(Mathf.Lerp(baseDebrisCount, baseDebrisCount * 2.2f, normalizedSpeed));
+                int emitCount = (int)(math.lerp(baseDebrisCount, baseDebrisCount * 2.2f, normalizedSpeed) + 0.5f);
                 leafDebrisParticles.Emit(emitParams, emitCount);
                 _particleCooldownRemaining = particleCooldown;
             }
@@ -132,14 +132,20 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.01f, cutRecoverySpeed) * deltaTime);
-            _cutStrength = Mathf.Lerp(_cutStrength, 0f, blendT);
+            float blendT = FastRecoveryBlend(cutRecoverySpeed, deltaTime);
+            _cutStrength = math.lerp(_cutStrength, 0f, blendT);
             ApplyCutState();
 
             _debugCutStrength = _cutStrength;
             _debugCutRadius = _cutRadius;
             _debugCutPosition = _cutPositionWS;
             _debugParticleCooldown = _particleCooldownRemaining;
+        }
+
+        private static float FastRecoveryBlend(float recoverySpeed, float deltaTime)
+        {
+            float x = math.max(0.01f, recoverySpeed) * math.max(0f, deltaTime);
+            return math.saturate((x * (6f + x)) / (6f + (4f * x) + (x * x)));
         }
 
         private void Awake()
@@ -170,7 +176,7 @@ namespace Hecton8.Gameplay
             if (cutManager == null)
                 return;
 
-            cutManager.RegisterExternalCut(positionWS, Mathf.Max(minCutRadius, _cutRadius), _cutStrength, velocityWS, 0.45f);
+            cutManager.RegisterExternalCut(positionWS, math.max(minCutRadius, _cutRadius), _cutStrength, velocityWS, 0.45f);
         }
 
         private void UnregisterIfNeeded()
@@ -180,6 +186,13 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private static float ResolveNormalizedCutSpeed(float speed, float threshold)
+        {
+            float safeThreshold = math.max(0.001f, threshold);
+            float normalized = (speed - safeThreshold) / (safeThreshold * 1.4f);
+            return math.isfinite(normalized) ? math.saturate(normalized) : 0f;
         }
     }
 }

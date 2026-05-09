@@ -28,9 +28,10 @@ namespace Hecton8.Optimization
         private const float LODAggressionMultiplier = 0.5f;
         private const long MinimumHardwareHeadroomBytes = 200L * 1024L * 1024L;
         private const int WorldPrefabEvictionIdleFrames = 180;
+        private const int SoftPressurePendingReleaseDrain = 4;
 
         [Header("VRAM Pressure Thresholds")]
-        [Tooltip("Preventive mip downgrade threshold: 1.6 GB against the 1.8 GB MX350 ceiling. Forced half-res begins at 1.4 GB, or 1.2 GB while XR is active.")]
+        [Tooltip("Preventive mip downgrade threshold: 1.6 GB against the 1.8 GB MX350 ceiling. Forced half-res begins at 1.4 GB, or 1.2 GB while XR is active; XR full-res recovery waits for 0.9 GB.")]
         [SerializeField, Range(0.5f, 1f)] private float warningVramFraction = DefaultWarningVramFraction;
 
         [Tooltip("Emergency eviction threshold against the 1.8 GB MX350 ceiling.")]
@@ -125,8 +126,7 @@ namespace Hecton8.Optimization
             if (!ReferenceEquals(GlobalRegistry.VRAMPressure, this))
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Core);
         }
 
         private bool TryRegisterService()
@@ -233,9 +233,6 @@ namespace Hecton8.Optimization
                 return;
 
             QualitySettings.globalTextureMipmapLimit = targetMipLimit;
-#pragma warning disable CS0618
-            QualitySettings.masterTextureLimit = targetMipLimit;
-#pragma warning restore CS0618
             _activeMipLimit = targetMipLimit;
         }
 
@@ -333,7 +330,7 @@ namespace Hecton8.Optimization
             {
                 if (governor != null)
                 {
-                    governor.ForceDrainPendingReleaseQueue();
+                    governor.DrainPendingReleaseQueueBudgeted(SoftPressurePendingReleaseDrain);
                     governor.EvictLowestPriorityUnusedAssets(1, AssetPriorityTier.Tier5DistantHlod);
                 }
 

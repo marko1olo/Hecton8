@@ -1,41 +1,23 @@
 // ============================================================================
-// HECTON-8 — BeaconRegistry.cs
-// Registry for active DeployableBeacon instances.
-//
-// ARCHITECTURE:
-//   • Static registry pattern (no singleton MonoBehaviour)
-//   • Zero GC enumeration via pre-allocated array
-//   • Thread-safe for main thread only
-//
-// USAGE:
-//   • DeployableBeacon registers/unregisters in OnEnable/OnDisable
-//   • HUD systems call GetAllBeacons() to enumerate for display
+// HECTON-8 - BeaconRegistry.cs
+// Fixed-capacity registry for active DeployableBeacon instances.
 // ============================================================================
 
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
     /// <summary>
     /// Static registry for active DeployableBeacon instances.
-    /// Allows HUD systems to enumerate all beacons for display.
-    /// Zero GC: uses pre-allocated array for enumeration.
+    /// Returns a stable caller-read array; consumers must respect Count.
     /// </summary>
     public static class BeaconRegistry
     {
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE STATE
-        // ══════════════════════════════════════════════════════════
+        private const int MaxBeacons = 128;
 
-        private static readonly List<DeployableBeacon> _beacons = new List<DeployableBeacon>(16);
-        private static DeployableBeacon[] _beaconArray = new DeployableBeacon[16];
+        // COLD ALLOC: DeployableBeacon[128] - active beacon registry storage - owner: BeaconRegistry
+        private static readonly DeployableBeacon[] _beacons = new DeployableBeacon[MaxBeacons];
         private static int _beaconCount;
-        private static bool _arrayDirty = true;
-
-        // ══════════════════════════════════════════════════════════
-        //  PUBLIC API
-        // ══════════════════════════════════════════════════════════
 
         /// <summary>Number of active beacons.</summary>
         public static int Count => _beaconCount;
@@ -43,63 +25,57 @@ namespace Hecton8.Gameplay
         /// <summary>Registers a beacon. Called by DeployableBeacon.OnEnable.</summary>
         public static void Register(DeployableBeacon beacon)
         {
-            if (beacon == null || _beacons.Contains(beacon))
+            if (beacon == null || IndexOfBeacon(beacon) >= 0)
                 return;
 
-            _beacons.Add(beacon);
-            _beaconCount = _beacons.Count;
-            _arrayDirty = true;
+            if (!EnsureDenseCapacity(_beaconCount + 1))
+                return;
+
+            _beacons[_beaconCount] = beacon;
+            _beaconCount++;
         }
 
         /// <summary>Unregisters a beacon. Called by DeployableBeacon.OnDisable.</summary>
         public static void Unregister(DeployableBeacon beacon)
         {
-            if (beacon == null)
+            int index = IndexOfBeacon(beacon);
+            if (index < 0)
                 return;
 
-            _beacons.Remove(beacon);
-            _beaconCount = _beacons.Count;
-            _arrayDirty = true;
+            int lastIndex = _beaconCount - 1;
+            _beacons[index] = _beacons[lastIndex];
+            _beacons[lastIndex] = null;
+            _beaconCount = lastIndex;
         }
 
         /// <summary>
-        /// Gets all active beacons as a read-only array.
-        /// Zero GC: returns cached array, only rebuilds when dirty.
+        /// Gets the stable backing array of active beacons. Only the first Count entries are valid.
         /// </summary>
-        /// <returns>Array of active beacons. Do NOT modify this array.</returns>
         public static DeployableBeacon[] GetAllBeacons()
         {
-            if (_arrayDirty)
-            {
-                RebuildArray();
-                _arrayDirty = false;
-            }
-
-            return _beaconArray;
+            return _beacons;
         }
 
-        /// <summary>
-        /// Gets beacon by ID. O(n) search.
-        /// </summary>
+        /// <summary>Gets beacon by ID. O(n) over bounded fixed storage.</summary>
         public static DeployableBeacon GetById(string beaconId)
         {
             if (string.IsNullOrEmpty(beaconId))
                 return null;
 
-            for (int i = 0; i < _beacons.Count; i++)
+            for (int i = 0; i < _beaconCount; i++)
             {
                 DeployableBeacon beacon = _beacons[i];
-                if (beacon != null && beacon.BeaconId == beaconId)
+                if (beacon != null &&
+                    string.Equals(beacon.BeaconId, beaconId, global::System.StringComparison.Ordinal))
+                {
                     return beacon;
+                }
             }
 
             return null;
         }
 
-        /// <summary>
-        /// Finds the nearest beacon to a position.
-        /// Returns null if no beacons registered.
-        /// </summary>
+        /// <summary>Finds the nearest beacon to a position. Returns null if no beacons are registered.</summary>
         public static DeployableBeacon GetNearest(Vector3 position)
         {
             if (_beaconCount == 0)
@@ -107,59 +83,49 @@ namespace Hecton8.Gameplay
 
             DeployableBeacon nearest = null;
             float nearestDistSq = float.MaxValue;
-
-            for (int i = 0; i < _beacons.Count; i++)
+            for (int i = 0; i < _beaconCount; i++)
             {
                 DeployableBeacon beacon = _beacons[i];
                 if (beacon == null)
                     continue;
 
                 float distSq = (beacon.Position - position).sqrMagnitude;
-                if (distSq < nearestDistSq)
-                {
-                    nearestDistSq = distSq;
-                    nearest = beacon;
-                }
+                if (distSq >= nearestDistSq)
+                    continue;
+
+                nearestDistSq = distSq;
+                nearest = beacon;
             }
 
             return nearest;
         }
 
-        /// <summary>
-        /// Clears all registered beacons. Call when loading a new scene.
-        /// </summary>
+        /// <summary>Clears all registered beacons. Call when loading a new scene.</summary>
         public static void Clear()
         {
-            _beacons.Clear();
+            for (int i = 0; i < _beaconCount; i++)
+                _beacons[i] = null;
+
             _beaconCount = 0;
-            _arrayDirty = true;
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  PRIVATE
-        // ══════════════════════════════════════════════════════════
-
-        private static void RebuildArray()
+        private static int IndexOfBeacon(DeployableBeacon beacon)
         {
-            int count = _beacons.Count;
+            if (beacon == null)
+                return -1;
 
-            // Resize array if needed
-            if (_beaconArray == null || _beaconArray.Length < count)
+            for (int i = 0; i < _beaconCount; i++)
             {
-                _beaconArray = new DeployableBeacon[Mathf.Max(count, 16)];
+                if (ReferenceEquals(_beacons[i], beacon))
+                    return i;
             }
 
-            // Copy to array
-            for (int i = 0; i < count; i++)
-            {
-                _beaconArray[i] = _beacons[i];
-            }
+            return -1;
+        }
 
-            // Null out remaining slots
-            for (int i = count; i < _beaconArray.Length; i++)
-            {
-                _beaconArray[i] = null;
-            }
+        private static bool EnsureDenseCapacity(int requiredCount)
+        {
+            return requiredCount <= MaxBeacons;
         }
     }
 }

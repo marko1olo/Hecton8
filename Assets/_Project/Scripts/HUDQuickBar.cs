@@ -14,6 +14,7 @@ using Hecton8.Tools;
 using Hecton.Localization;
 using System;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 using Unity.Collections;
@@ -58,6 +59,11 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private const int SlotCount = 4;
+        private const float FieldAdviceRefreshInterval = 0.35f;
+        private const float AutoResolveRetryInterval = 0.5f;
+        private const float FadeSharpness = 8f;
+        private const float FadeBlendDenominatorFloor = 0.0001f;
+        private const float PadeOneTwelfth = 0.0833333333f;
 
         // ══════════════════════════════════════════════════════════
         //  RUNTIME STATE
@@ -80,17 +86,21 @@ namespace Hecton8.UI
         private float[] _slotDurWidths;
         private int _lastSummaryHash;
         private int _lastSummaryLength = -1;
-        private string _lastDirectiveBase;
-        private string _lastDirectiveAdvicePreset;
-        private bool _lastDirectiveHasAdvice;
+        private int _lastDirectiveHash;
+        private int _lastDirectiveLength = -1;
+        private bool _cachedDirectiveHasAdvice;
+        private string _cachedDirectiveAdvicePreset;
+        private float _nextFieldAdviceRefreshAt;
         private bool _registeredToTickManager;
         private bool _slotVisualsDirty;
         private bool _statusDirty;
         private IPlayerInventoryService _inventoryService;
         private PlayerInventory _playerInventory;
         private ItemCatalog _itemCatalog;
-        private readonly int[] _slotItemHashCache = new int[SlotCount];
-        private readonly bool[] _slotItemHashResolved = new bool[SlotCount];
+        private PlayerToolManager _subscribedToolManager;
+        private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
+        private readonly int[] _slotItemHashCache = new int[SlotCount]; // COLD ALLOC: int[4] - quickbar resolved item hash cache - owner: HUDQuickBar
+        private readonly bool[] _slotItemHashResolved = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar item hash cache validity flags - owner: HUDQuickBar
         private int _lastInventoryVersion = -1;
         private ToolDurabilitySystem _subscribedDurabilitySystem;
         [SerializeField] private float fieldAdviceRange = 18f;
@@ -103,6 +113,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             AutoResolve();
+            _nextAutoResolveAttemptTime = Time.unscaledTime + AutoResolveRetryInterval;
             EnsureBuilt();
             Subscribe();
             MarkAllDirty();
@@ -118,7 +129,7 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            AutoResolve();
+            TryAutoResolveForTick();
             RefreshDurabilitySubscription();
 
             if (_playerInventory != null && _lastInventoryVersion != _playerInventory.InventoryVersion)
@@ -131,8 +142,7 @@ namespace Hecton8.UI
             if (_canvasGroup != null)
             {
                 float target = PlayerPDA.IsOpen ? 0.15f : 1f;
-                _canvasGroup.alpha = Mathf.Lerp(_canvasGroup.alpha, target,
-                    1f - Mathf.Exp(-8f * deltaTime));
+                _canvasGroup.alpha = math.lerp(_canvasGroup.alpha, target, ResolveFadeBlend01(deltaTime));
             }
 
             Refresh();
@@ -195,28 +205,41 @@ namespace Hecton8.UI
                 font = TMP_Settings.defaultFontAsset;
         }
 
+        private void TryAutoResolveForTick()
+        {
+            float now = Time.unscaledTime;
+            if (now < _nextAutoResolveAttemptTime)
+                return;
+
+            if (!NeedsAutoResolve())
+                return;
+
+            _nextAutoResolveAttemptTime = now + AutoResolveRetryInterval;
+            AutoResolve();
+            RefreshToolManagerSubscription();
+        }
+
+        private bool NeedsAutoResolve()
+        {
+            if (font == null || toolManager == null || _inventoryService == null || _playerInventory == null)
+                return true;
+
+            return !ReferenceEquals(_inventoryService, GlobalRegistry.PlayerInventory);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EVENTS
         // ══════════════════════════════════════════════════════════
 
         private void Subscribe()
         {
+            RefreshToolManagerSubscription();
             RefreshDurabilitySubscription();
-
-            if (toolManager != null)
-            {
-                toolManager.ActiveSlotChanged += OnSlotChanged;
-                toolManager.ToolAssignmentsChanged += OnAssignmentsChanged;
-            }
         }
 
         private void Unsubscribe()
         {
-            if (toolManager != null)
-            {
-                toolManager.ActiveSlotChanged -= OnSlotChanged;
-                toolManager.ToolAssignmentsChanged -= OnAssignmentsChanged;
-            }
+            UnsubscribeToolManager(_subscribedToolManager);
 
             if (_subscribedDurabilitySystem != null)
             {
@@ -249,11 +272,45 @@ namespace Hecton8.UI
             }
         }
 
+        private void RefreshToolManagerSubscription()
+        {
+            if (ReferenceEquals(_subscribedToolManager, toolManager))
+                return;
+
+            UnsubscribeToolManager(_subscribedToolManager);
+            SubscribeToolManager(toolManager);
+            _slotVisualsDirty = true;
+            _statusDirty = true;
+        }
+
+        private void SubscribeToolManager(PlayerToolManager manager)
+        {
+            if (manager == null || ReferenceEquals(_subscribedToolManager, manager))
+                return;
+
+            manager.ActiveSlotChanged += OnSlotChanged;
+            manager.ToolAssignmentsChanged += OnAssignmentsChanged;
+            _subscribedToolManager = manager;
+        }
+
+        private void UnsubscribeToolManager(PlayerToolManager manager)
+        {
+            if (manager == null)
+                return;
+
+            manager.ActiveSlotChanged -= OnSlotChanged;
+            manager.ToolAssignmentsChanged -= OnAssignmentsChanged;
+
+            if (ReferenceEquals(_subscribedToolManager, manager))
+                _subscribedToolManager = null;
+        }
+
         private void MarkAllDirty()
         {
             _slotVisualsDirty = true;
             _statusDirty = true;
             _nextStatusRefreshAt = 0f;
+            _nextFieldAdviceRefreshAt = 0f;
             InvalidateSlotBindingCache();
         }
 
@@ -313,15 +370,15 @@ namespace Hecton8.UI
                 _canvasGroup = gameObject.AddComponent<CanvasGroup>();
             _canvasGroup.interactable = false;
             _canvasGroup.blocksRaycasts = false;
-            _durBars = new Image[SlotCount];
-            _slotBgs = new Image[SlotCount];
-            _slotIcons = new Image[SlotCount];
-            _slotKeys = new TextMeshProUGUI[SlotCount];
-            _slotIconVisible = new bool[SlotCount];
-            _slotIconAvailable = new bool[SlotCount];
-            _slotIconSprites = new Sprite[SlotCount];
-            _slotDurVisible = new bool[SlotCount];
-            _slotDurWidths = new float[SlotCount];
+            _durBars = new Image[SlotCount]; // COLD ALLOC: Image[4] - quickbar durability bar refs - owner: HUDQuickBar
+            _slotBgs = new Image[SlotCount]; // COLD ALLOC: Image[4] - quickbar slot background refs - owner: HUDQuickBar
+            _slotIcons = new Image[SlotCount]; // COLD ALLOC: Image[4] - quickbar slot icon refs - owner: HUDQuickBar
+            _slotKeys = new TextMeshProUGUI[SlotCount]; // COLD ALLOC: TextMeshProUGUI[4] - quickbar key label refs - owner: HUDQuickBar
+            _slotIconVisible = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar icon visibility cache - owner: HUDQuickBar
+            _slotIconAvailable = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar icon availability cache - owner: HUDQuickBar
+            _slotIconSprites = new Sprite[SlotCount]; // COLD ALLOC: Sprite[4] - quickbar icon sprite cache - owner: HUDQuickBar
+            _slotDurVisible = new bool[SlotCount]; // COLD ALLOC: bool[4] - quickbar durability visibility cache - owner: HUDQuickBar
+            _slotDurWidths = new float[SlotCount]; // COLD ALLOC: float[4] - quickbar durability width cache - owner: HUDQuickBar
 
             for (int i = 0; i < SlotCount; i++)
             {
@@ -535,15 +592,15 @@ namespace Hecton8.UI
                     if (maxDurability > 0f)
                     {
                         float currentDurability = durabilitySystem.GetDurability(tool.Metadata.toolID, maxDurability);
-                        float normalizedDurability = Mathf.Clamp01(currentDurability / maxDurability);
+                        float normalizedDurability = math.saturate(currentDurability / maxDurability);
                         desiredWidth = (slotSize - 6f) * normalizedDurability;
-                        desiredColor = Color.Lerp(DurWarning, DurGood, normalizedDurability);
+                        desiredColor = FastLerpColor(DurWarning, DurGood, normalizedDurability);
                         showDurability = true;
                     }
                 }
             }
 
-            if (_slotDurVisible[slotIndex] != showDurability || !Mathf.Approximately(_slotDurWidths[slotIndex], desiredWidth))
+            if (_slotDurVisible[slotIndex] != showDurability || math.abs(_slotDurWidths[slotIndex] - desiredWidth) > 0.05f)
             {
                 _durBars[slotIndex].rectTransform.sizeDelta = new Vector2(desiredWidth, 2f);
                 _slotDurWidths[slotIndex] = desiredWidth;
@@ -623,7 +680,7 @@ namespace Hecton8.UI
             if (!anchorHashIds.IsCreated || !stackCounts.IsCreated)
                 return false;
 
-            int anchorCount = Mathf.Min(anchorHashIds.Length, stackCounts.Length);
+            int anchorCount = math.min(anchorHashIds.Length, stackCounts.Length);
             for (int anchorIndex = 0; anchorIndex < anchorCount; anchorIndex++)
             {
                 if (anchorHashIds[anchorIndex] == itemHashId && stackCounts[anchorIndex] > 0)
@@ -662,17 +719,36 @@ namespace Hecton8.UI
             if (_toolDirective == null)
                 return;
 
-            string directive = toolManager.GetCurrentToolOperationalDirective();
-            Transform origin = toolManager != null ? toolManager.transform : null;
-            bool hasAdvice = FieldLoadoutAdvisor.TryBuildForwardPresetName(origin, fieldAdviceRange, fieldAdviceMask, out string advicePreset);
-            if (_lastDirectiveBase != directive ||
-                _lastDirectiveHasAdvice != hasAdvice ||
-                _lastDirectiveAdvicePreset != advicePreset)
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease directiveLease))
+                return;
+
+            try
             {
-                SetDirectiveText(_toolDirective, directive, hasAdvice ? advicePreset : null);
-                _lastDirectiveBase = directive;
-                _lastDirectiveHasAdvice = hasAdvice;
-                _lastDirectiveAdvicePreset = advicePreset;
+                Span<char> destination = directiveLease.Buffer.AsSpan();
+                int length = 0;
+                if (toolManager == null ||
+                    !toolManager.TryWriteCurrentToolOperationalDirective(destination, out length))
+                {
+                    Append(directiveLease.Buffer, ref length, "Arm a tool from quick slots or PDA loadout.");
+                }
+
+                if (TryGetCachedAdvicePreset(out string advicePreset))
+                {
+                    Append(directiveLease.Buffer, ref length, "  KIT ");
+                    Append(directiveLease.Buffer, ref length, advicePreset);
+                }
+
+                int hash = ComputeCharHash(directiveLease.Buffer, length);
+                if (_lastDirectiveHash != hash || _lastDirectiveLength != length)
+                {
+                    _toolDirective.SetCharArray(directiveLease.Buffer, 0, length);
+                    _lastDirectiveHash = hash;
+                    _lastDirectiveLength = length;
+                }
+            }
+            finally
+            {
+                CharBufferPool.Release(directiveLease);
             }
         }
 
@@ -700,7 +776,7 @@ namespace Hecton8.UI
 
             try
             {
-                lease.Buffer[0] = (char)('1' + Mathf.Clamp(slotIndex, 0, SlotCount - 1));
+                lease.Buffer[0] = (char)('1' + math.clamp(slotIndex, 0, SlotCount - 1));
                 text.SetCharArray(lease.Buffer, 0, 1);
             }
             finally
@@ -725,7 +801,7 @@ namespace Hecton8.UI
 
             try
             {
-                int length = Mathf.Min(value.Length, lease.Buffer.Length);
+                int length = math.min(value.Length, lease.Buffer.Length);
                 value.CopyTo(0, lease.Buffer, 0, length);
                 text.SetCharArray(lease.Buffer, 0, length);
             }
@@ -740,7 +816,7 @@ namespace Hecton8.UI
             unchecked
             {
                 int hash = (int)2166136261u;
-                int safeLength = Mathf.Max(0, Mathf.Min(length, buffer != null ? buffer.Length : 0));
+                int safeLength = math.max(0, math.min(length, buffer != null ? buffer.Length : 0));
                 for (int i = 0; i < safeLength; i++)
                     hash = (hash ^ buffer[i]) * 16777619;
 
@@ -748,31 +824,44 @@ namespace Hecton8.UI
             }
         }
 
-        private static void SetDirectiveText(TMP_Text text, string directive, string advicePreset)
+        private static float ResolveFadeBlend01(float deltaTime)
         {
-            if (text == null)
-                return;
+            if (!math.isfinite(deltaTime) || deltaTime <= 0f)
+                return 0f;
 
-            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
-                return;
+            float scaled = deltaTime * FadeSharpness;
+            float denominator = math.max(FadeBlendDenominatorFloor, 1f + scaled + (scaled * scaled * PadeOneTwelfth));
+            return math.saturate(scaled / denominator);
+        }
 
-            try
+        private static Color FastLerpColor(Color from, Color to, float t)
+        {
+            t = math.saturate(t);
+            return new Color(
+                from.r + ((to.r - from.r) * t),
+                from.g + ((to.g - from.g) * t),
+                from.b + ((to.b - from.b) * t),
+                from.a + ((to.a - from.a) * t));
+        }
+
+        private bool TryGetCachedAdvicePreset(out string advicePreset)
+        {
+            float now = Time.unscaledTime;
+            if (now >= _nextFieldAdviceRefreshAt)
             {
-                char[] destination = lease.Buffer;
-                int index = 0;
-                Append(destination, ref index, directive);
-                if (!string.IsNullOrEmpty(advicePreset))
-                {
-                    Append(destination, ref index, "  KIT ");
-                    Append(destination, ref index, advicePreset);
-                }
+                _nextFieldAdviceRefreshAt = now + FieldAdviceRefreshInterval;
+                Transform origin = toolManager != null ? toolManager.transform : null;
+                _cachedDirectiveHasAdvice = FieldLoadoutAdvisor.TryBuildForwardPresetName(
+                    origin,
+                    fieldAdviceRange,
+                    fieldAdviceMask,
+                    out _cachedDirectiveAdvicePreset);
+                if (!_cachedDirectiveHasAdvice)
+                    _cachedDirectiveAdvicePreset = null;
+            }
 
-                text.SetCharArray(lease.Buffer, 0, index);
-            }
-            finally
-            {
-                CharBufferPool.Release(lease);
-            }
+            advicePreset = _cachedDirectiveAdvicePreset;
+            return _cachedDirectiveHasAdvice && !string.IsNullOrEmpty(advicePreset);
         }
 
         private static void Append(char[] destination, ref int index, string value)
@@ -780,7 +869,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(value) || index >= destination.Length)
                 return;
 
-            int copyLength = Mathf.Min(value.Length, destination.Length - index);
+            int copyLength = math.min(value.Length, destination.Length - index);
             value.CopyTo(0, destination, index, copyLength);
             index += copyLength;
         }

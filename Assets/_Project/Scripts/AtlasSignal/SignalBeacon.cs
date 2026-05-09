@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Hecton8.Audio;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Narrative;
@@ -12,16 +12,37 @@ using UnityEngine;
 
 namespace Hecton8.AtlasSignal
 {
+    /// <summary>
+    /// Snapshot published by active Atlas signal beacons for PDA and HUD consumers.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public struct SignalBeaconTelemetry
     {
+        /// <summary>Camera-relative runtime position of the triangulated beacon centroid.</summary>
         public Vector3 RuntimePosition;
+
+        /// <summary>Stable hash of the linked encrypted audio log.</summary>
         public uint LinkedAudioLogHash;
+
+        /// <summary>Stable hash of the authored encrypted fragment recovered by this beacon.</summary>
         public uint FragmentHash;
+
+        /// <summary>Recovered 4-bit mask for the linked encrypted audio log.</summary>
         public uint RecoveredBits;
+
+        /// <summary>Normalized signal strength from AUP distance-squared triangulation.</summary>
         public float Strength01;
+
+        /// <summary>Average squared distance from the player AUP to the three authored AUP points.</summary>
         public float AverageDistanceSqMeters;
+
+        /// <summary>Normalized noise scalar after cave interference.</summary>
         public float ErrorNoise01;
+
+        /// <summary>Normalized fake static scalar for HUD/shader presentation.</summary>
         public float Static01;
+
+        /// <summary>Authored fragment bit index, zero through three.</summary>
         public int FragmentIndex;
     }
 
@@ -30,6 +51,7 @@ namespace Hecton8.AtlasSignal
     public sealed class SignalBeacon : MonoBehaviour, IUpdatable
     {
         private const float DefaultBipPeriodSeconds = 0.1f;
+        private const double TriangulationCentroidWeight = 1d / 3d;
         [Header("AUP Triangulation Points")]
         [SerializeField] private Vector3 aupPoint0 = new Vector3(0f, -5000f, 0f);
         [SerializeField] private Vector3 aupPoint1 = new Vector3(80f, -5000f, 70f);
@@ -58,32 +80,48 @@ namespace Hecton8.AtlasSignal
         [Header("Runtime Cadence")]
         [SerializeField, Min(0.02f)] private float signalSolveIntervalSeconds = 0.1f;
 
-        private Transform _playerTransform;
+        private HectonPlayerMovement _playerMovement;
         private AbsoluteUniversePosition _pointAup0;
         private AbsoluteUniversePosition _pointAup1;
         private AbsoluteUniversePosition _pointAup2;
+        private AbsoluteUniversePosition _beaconAup;
+        private Vector3 _cachedBeaconRuntimePosition;
+        private int _cachedBeaconRuntimeFrame = -1;
         private Vector3 _cachedPoint0;
         private Vector3 _cachedPoint1;
         private Vector3 _cachedPoint2;
         private float _solveTimer;
         private float _bipTimer;
         private bool _aupCacheValid;
+        private bool _beaconAupCacheValid;
         private bool _registered;
         private bool _fragmentRecovered;
+        private int _registrySlot = -1;
         private SignalBeaconTelemetry _telemetry;
 
         private static readonly int _ShaderSignalStatic = Shader.PropertyToID("_AtlasSignalStatic");
+        private static float _lastPublishedShaderStatic01 = -1f;
 
+        /// <summary>Latest published beacon telemetry.</summary>
         public SignalBeaconTelemetry Telemetry => _telemetry;
+
+        /// <summary>Latest normalized signal strength.</summary>
         public float Strength01 => _telemetry.Strength01;
+
+        /// <summary>Latest normalized signal error noise.</summary>
         public float ErrorNoise01 => _telemetry.ErrorNoise01;
+
+        /// <summary>Stable hash of the linked encrypted audio log.</summary>
         public uint LinkedAudioLogHash => linkedAudioLogHash;
+
+        /// <summary>Stable hash of this beacon's encrypted fragment.</summary>
         public uint FragmentHash => fragmentHash;
 
         private void OnEnable()
         {
             RefreshAupCache(force: true);
-            SignalBeaconRegistry.Register(this);
+            RefreshBeaconAupCache(force: true);
+            _registrySlot = SignalBeaconRegistry.Register(this);
             TryRegisterTick();
             ResolvePlayer();
         }
@@ -91,13 +129,19 @@ namespace Hecton8.AtlasSignal
         private void OnDisable()
         {
             TryUnregisterTick();
-            SignalBeaconRegistry.Unregister(this);
+            UnregisterBeaconAndRefreshShaderStatic();
         }
 
         private void OnDestroy()
         {
             TryUnregisterTick();
-            SignalBeaconRegistry.Unregister(this);
+            UnregisterBeaconAndRefreshShaderStatic();
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticShaderState()
+        {
+            _lastPublishedShaderStatic01 = -1f;
         }
 
         public void Tick(float deltaTime)
@@ -109,30 +153,29 @@ namespace Hecton8.AtlasSignal
             float solvePeriod = math.max(0.02f, signalSolveIntervalSeconds);
             if (_solveTimer >= solvePeriod)
             {
-                _solveTimer = 0f;
+                _solveTimer = math.min(_solveTimer - solvePeriod, solvePeriod);
                 SolveTelemetry();
             }
 
             float safeBipPeriod = math.max(0.02f, bipPeriodSeconds);
             if (_bipTimer >= safeBipPeriod)
             {
-                _bipTimer = 0f;
+                _bipTimer = math.min(_bipTimer - safeBipPeriod, safeBipPeriod);
                 EmitBreadcrumb();
             }
         }
 
         private void SolveTelemetry()
         {
-            if (_playerTransform == null)
-            {
-                ResolvePlayer();
-                if (_playerTransform == null)
-                    return;
-            }
-
             RefreshAupCache(force: false);
 
-            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                ClearPublishedTelemetry();
+                return;
+            }
+
+            Vector3 beaconRuntimePosition = ResolveBeaconRuntimePosition();
             float caveMultiplier = ResolveCaveErrorMultiplier();
             SignalBeaconMath.SolveTriangulatedStrength(
                 in playerAup,
@@ -144,7 +187,7 @@ namespace Hecton8.AtlasSignal
                 caveMultiplier,
                 out SignalBeaconSolveResult result);
 
-            _telemetry.RuntimePosition = transform.position;
+            _telemetry.RuntimePosition = beaconRuntimePosition;
             _telemetry.LinkedAudioLogHash = linkedAudioLogHash;
             _telemetry.FragmentHash = fragmentHash;
             _telemetry.FragmentIndex = fragmentIndex;
@@ -161,8 +204,46 @@ namespace Hecton8.AtlasSignal
             if (!_fragmentRecovered && result.Strength01 >= fragmentRecoveryStrength01)
                 TryRecoverFragment();
 
-            if (publishStaticToShader)
-                Shader.SetGlobalFloat(_ShaderSignalStatic, result.Static01);
+            SignalBeaconRegistry.PublishTelemetry(_registrySlot, in _telemetry);
+            PublishDominantStaticToShader();
+        }
+
+        private void ClearPublishedTelemetry()
+        {
+            _telemetry.Strength01 = 0f;
+            _telemetry.Static01 = 0f;
+            _telemetry.ErrorNoise01 = 0f;
+            _telemetry.AverageDistanceSqMeters = 0f;
+            SignalBeaconRegistry.ClearTelemetry(_registrySlot);
+            PublishDominantStaticToShader();
+        }
+
+        private void PublishDominantStaticToShader()
+        {
+            if (!publishStaticToShader)
+                return;
+
+            PublishDominantStaticToShaderValue();
+        }
+
+        private static void PublishDominantStaticToShaderValue()
+        {
+            float shaderStatic = SignalBeaconRegistry.TryGetDominantTelemetry(out _, out float dominantStatic01)
+                ? dominantStatic01
+                : 0f;
+            if (math.abs(shaderStatic - _lastPublishedShaderStatic01) <= 0.0001f)
+                return;
+
+            Shader.SetGlobalFloat(_ShaderSignalStatic, shaderStatic);
+            _lastPublishedShaderStatic01 = shaderStatic;
+        }
+
+        private void UnregisterBeaconAndRefreshShaderStatic()
+        {
+            SignalBeaconRegistry.Unregister(this, _registrySlot);
+            _registrySlot = -1;
+            if (publishStaticToShader || _lastPublishedShaderStatic01 >= 0f)
+                PublishDominantStaticToShaderValue();
         }
 
         private void EmitBreadcrumb()
@@ -170,11 +251,13 @@ namespace Hecton8.AtlasSignal
             if (_telemetry.Strength01 < minimumBipStrength01)
                 return;
 
+            float safeBipRadiusMeters = math.max(0f, bipRadiusMeters);
+            float safeBipPeriodSeconds = math.max(0.02f, bipPeriodSeconds);
             AcousticPingEvent pingEvent = new AcousticPingEvent(
-                transform.position,
-                bipRadiusMeters,
+                ResolveBeaconRuntimePosition(),
+                safeBipRadiusMeters,
                 math.saturate(bipIntensity01 * math.max(0.1f, _telemetry.Strength01)),
-                bipPeriodSeconds,
+                safeBipPeriodSeconds,
                 acousticRole,
                 acousticSourceId,
                 10f);
@@ -214,6 +297,56 @@ namespace Hecton8.AtlasSignal
             _pointAup1 = AbsoluteUniversePosition.FromRuntimePosition(aupPoint1);
             _pointAup2 = AbsoluteUniversePosition.FromRuntimePosition(aupPoint2);
             _aupCacheValid = true;
+            _beaconAupCacheValid = false;
+            _cachedBeaconRuntimeFrame = -1;
+        }
+
+        private Vector3 ResolveBeaconRuntimePosition()
+        {
+            RefreshBeaconAupCache(force: false);
+            return _cachedBeaconRuntimePosition;
+        }
+
+        private void RefreshBeaconAupCache(bool force)
+        {
+            int currentFrame = Time.frameCount;
+            if (!force && _beaconAupCacheValid)
+            {
+                if (_cachedBeaconRuntimeFrame != currentFrame)
+                {
+                    _cachedBeaconRuntimePosition = _beaconAup.ToRuntimeFloat3();
+                    _cachedBeaconRuntimeFrame = currentFrame;
+                }
+
+                return;
+            }
+
+            if (!_aupCacheValid)
+                RefreshAupCache(force: true);
+
+            double3 centroid =
+                (_pointAup0.ToAbsoluteDouble3() + _pointAup1.ToAbsoluteDouble3() + _pointAup2.ToAbsoluteDouble3()) *
+                TriangulationCentroidWeight;
+            _beaconAup = AbsoluteUniversePosition.FromAbsolutePosition(centroid);
+            _cachedBeaconRuntimePosition = _beaconAup.ToRuntimeFloat3();
+            _cachedBeaconRuntimeFrame = currentFrame;
+            _beaconAupCacheValid = true;
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (_playerMovement == null)
+            {
+                ResolvePlayer();
+                if (_playerMovement == null)
+                {
+                    playerAup = default;
+                    return false;
+                }
+            }
+
+            playerAup = _playerMovement.CurrentAup;
+            return true;
         }
 
         private float ResolveCaveErrorMultiplier()
@@ -221,7 +354,8 @@ namespace Hecton8.AtlasSignal
             if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio &&
                 spatialAudio.IsListenerInsideCaveVolume)
             {
-                return math.lerp(1f, math.max(1f, caveErrorNoiseMultiplier), spatialAudio.ListenerCaveInterior01);
+                float caveInterior01 = math.saturate(spatialAudio.ListenerCaveInterior01);
+                return math.lerp(1f, math.max(1f, caveErrorNoiseMultiplier), caveInterior01);
             }
 
             return 1f;
@@ -229,14 +363,11 @@ namespace Hecton8.AtlasSignal
 
         private void ResolvePlayer()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null && playerContext.PlayerTransform != null)
-            {
-                _playerTransform = playerContext.PlayerTransform;
-                return;
-            }
+            _playerMovement = null;
 
-            SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                _playerMovement = playerContext.PlayerMovement;
         }
 
         private void TryRegisterTick()
@@ -272,9 +403,18 @@ namespace Hecton8.AtlasSignal
     public static class SignalBeaconRegistry
     {
         private const int Capacity = 32;
-        // COLD ALLOC: SignalBeacon[32] - active hash-only signal beacon registry - owner: SignalBeaconRegistry
+        // COLD ALLOC: SignalBeacon[32] — active hash-only signal beacon registry — owner: SignalBeaconRegistry
         private static readonly SignalBeacon[] _beacons = new SignalBeacon[Capacity];
+        // COLD ALLOC: SignalBeaconTelemetry[32] — cached beacon telemetry for O(1) PDA reads — owner: SignalBeaconRegistry
+        private static readonly SignalBeaconTelemetry[] _telemetrySlots = new SignalBeaconTelemetry[Capacity];
+        private static SignalBeaconTelemetry _dominantTelemetry;
+        private static uint _occupiedMask;
+        private static uint _telemetryMask;
         private static int _count;
+        private static int _dominantSlot = -1;
+        private static int _dominantStaticSlot = -1;
+        private static float _dominantStatic01;
+        private static bool _hasDominant;
 
         public static int Count => _count;
 
@@ -282,101 +422,182 @@ namespace Hecton8.AtlasSignal
         private static void ResetStaticState()
         {
             for (int i = 0; i < _beacons.Length; i++)
+            {
                 _beacons[i] = null;
+                _telemetrySlots[i] = default;
+            }
 
+            _occupiedMask = 0u;
+            _telemetryMask = 0u;
             _count = 0;
+            _dominantSlot = -1;
+            _dominantStaticSlot = -1;
+            _dominantStatic01 = 0f;
+            _dominantTelemetry = default;
+            _hasDominant = false;
         }
 
-        public static void Register(SignalBeacon beacon)
+        public static int Register(SignalBeacon beacon)
         {
             if (beacon == null)
-                return;
+                return -1;
 
             for (int i = 0; i < _beacons.Length; i++)
             {
                 if (ReferenceEquals(_beacons[i], beacon))
-                    return;
+                    return i;
             }
 
-            for (int i = 0; i < _beacons.Length; i++)
-            {
-                if (_beacons[i] != null)
-                    continue;
+            uint freeMask = ~_occupiedMask;
+            if (freeMask == 0u)
+                return -1;
 
-                _beacons[i] = beacon;
-                _count++;
-                return;
-            }
+            int slot = (int)math.tzcnt(freeMask);
+            _beacons[slot] = beacon;
+            _telemetrySlots[slot] = default;
+            _occupiedMask |= 1u << slot;
+            _telemetryMask &= ~(1u << slot);
+            _count++;
+            return slot;
         }
 
-        public static void Unregister(SignalBeacon beacon)
+        public static void Unregister(SignalBeacon beacon, int slot)
         {
             if (beacon == null)
                 return;
+
+            if (slot >= 0 && slot < Capacity && ReferenceEquals(_beacons[slot], beacon))
+            {
+                ClearSlot(slot);
+                return;
+            }
 
             for (int i = 0; i < _beacons.Length; i++)
             {
                 if (!ReferenceEquals(_beacons[i], beacon))
                     continue;
 
-                _beacons[i] = null;
-                if (_count > 0)
-                    _count--;
+                ClearSlot(i);
                 return;
             }
         }
 
-        public static bool TryGetDominant(out SignalBeaconTelemetry telemetry)
+        public static void PublishTelemetry(int slot, in SignalBeaconTelemetry telemetry)
         {
-            telemetry = default;
-            float strongest = 0f;
-            bool found = false;
+            if (slot < 0 || slot >= Capacity || (_occupiedMask & (1u << slot)) == 0u)
+                return;
 
-            for (int i = 0; i < _beacons.Length; i++)
+            uint slotBit = 1u << slot;
+            bool hadTelemetry = (_telemetryMask & slotBit) != 0u;
+            SignalBeaconTelemetry previousTelemetry = hadTelemetry ? _telemetrySlots[slot] : default;
+            _telemetrySlots[slot] = telemetry;
+            _telemetryMask |= slotBit;
+            bool rebuildDominants = false;
+            if (!_hasDominant || telemetry.Strength01 >= _dominantTelemetry.Strength01)
             {
-                SignalBeacon beacon = _beacons[i];
-                if (beacon == null || !beacon.isActiveAndEnabled)
-                    continue;
-
-                SignalBeaconTelemetry candidate = beacon.Telemetry;
-                if (found && candidate.Strength01 <= strongest)
-                    continue;
-
-                strongest = candidate.Strength01;
-                telemetry = candidate;
-                found = true;
+                _dominantTelemetry = telemetry;
+                _dominantSlot = slot;
+                _hasDominant = true;
+            }
+            else if (slot == _dominantSlot && telemetry.Strength01 < previousTelemetry.Strength01)
+            {
+                rebuildDominants = true;
             }
 
-            return found;
+            if (_dominantStaticSlot < 0 || telemetry.Static01 >= _dominantStatic01)
+            {
+                _dominantStatic01 = telemetry.Static01;
+                _dominantStaticSlot = slot;
+            }
+            else if (slot == _dominantStaticSlot && telemetry.Static01 < previousTelemetry.Static01)
+            {
+                rebuildDominants = true;
+            }
+
+            if (rebuildDominants)
+                RebuildDominantFromTelemetrySlots();
+        }
+
+        public static bool TryGetDominant(out SignalBeaconTelemetry telemetry)
+        {
+            telemetry = _dominantTelemetry;
+            return _hasDominant;
         }
 
         public static bool TryGetDominantTelemetry(out float strength01, out float static01)
         {
-            strength01 = 0f;
-            static01 = 0f;
-            float strongest = 0f;
-            bool found = false;
-
-            for (int i = 0; i < _beacons.Length; i++)
+            if (!_hasDominant)
             {
-                SignalBeacon beacon = _beacons[i];
-                if (beacon == null || !beacon.isActiveAndEnabled)
-                    continue;
-
-                SignalBeaconTelemetry candidate = beacon.Telemetry;
-                if (found && candidate.Strength01 <= strongest)
-                    continue;
-
-                strongest = candidate.Strength01;
-                strength01 = candidate.Strength01;
-                static01 = candidate.Static01;
-                found = true;
+                strength01 = 0f;
+                static01 = 0f;
+                return false;
             }
 
-            return found;
+            strength01 = _dominantTelemetry.Strength01;
+            static01 = _dominantStatic01;
+            return true;
+        }
+
+        public static void ClearTelemetry(int slot)
+        {
+            if (slot < 0 || slot >= Capacity)
+                return;
+
+            uint bit = 1u << slot;
+            if ((_telemetryMask & bit) == 0u)
+                return;
+
+            _telemetrySlots[slot] = default;
+            _telemetryMask &= ~bit;
+
+            if (slot == _dominantSlot || slot == _dominantStaticSlot)
+                RebuildDominantFromTelemetrySlots();
+        }
+
+        private static void ClearSlot(int slot)
+        {
+            _beacons[slot] = null;
+            _telemetrySlots[slot] = default;
+            _occupiedMask &= ~(1u << slot);
+            _telemetryMask &= ~(1u << slot);
+            if (_count > 0)
+                _count--;
+
+            if (slot == _dominantSlot || slot == _dominantStaticSlot)
+                RebuildDominantFromTelemetrySlots();
+        }
+
+        private static void RebuildDominantFromTelemetrySlots()
+        {
+            uint mask = _telemetryMask;
+            _dominantTelemetry = default;
+            _dominantSlot = -1;
+            _dominantStaticSlot = -1;
+            _dominantStatic01 = 0f;
+            _hasDominant = false;
+
+            while (mask != 0u)
+            {
+                int slot = (int)math.tzcnt(mask);
+                mask &= mask - 1u;
+                SignalBeaconTelemetry candidate = _telemetrySlots[slot];
+                if (!_hasDominant || candidate.Strength01 > _dominantTelemetry.Strength01)
+                {
+                    _dominantTelemetry = candidate;
+                    _dominantSlot = slot;
+                    _hasDominant = true;
+                }
+
+                if (_dominantStaticSlot < 0 || candidate.Static01 >= _dominantStatic01)
+                {
+                    _dominantStatic01 = candidate.Static01;
+                    _dominantStaticSlot = slot;
+                }
+            }
         }
     }
 
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public struct SignalBeaconSolveResult
     {
         public float Strength01;
@@ -390,7 +611,35 @@ namespace Hecton8.AtlasSignal
     {
         private const double OneThird = 1d / 3d;
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        public delegate void SolveTriangulatedStrengthDelegate(
+            AbsoluteUniversePosition playerAup,
+            AbsoluteUniversePosition point0,
+            AbsoluteUniversePosition point1,
+            AbsoluteUniversePosition point2,
+            float maxRangeMeters,
+            float baseErrorNoise01,
+            float errorNoiseMultiplier,
+            out SignalBeaconSolveResult result);
+
+        public delegate float EvaluateSineWaveMatchDelegate(
+            float targetFrequencyHz,
+            float targetPhase01,
+            float inputFrequencyHz,
+            float inputPhase01,
+            float frequencyToleranceHz,
+            float phaseTolerance01);
+
+        public delegate uint MergeRecoveredBitsDelegate(uint recoveredBits, uint fragmentBitMask);
+
+        private static readonly FunctionPointer<SolveTriangulatedStrengthDelegate> _solveTriangulatedStrength =
+            BurstCompiler.CompileFunctionPointer<SolveTriangulatedStrengthDelegate>(SolveTriangulatedStrengthBurst);
+
+        private static readonly FunctionPointer<EvaluateSineWaveMatchDelegate> _evaluateSineWaveMatch =
+            BurstCompiler.CompileFunctionPointer<EvaluateSineWaveMatchDelegate>(EvaluateSineWaveMatchBurst);
+
+        private static readonly FunctionPointer<MergeRecoveredBitsDelegate> _mergeRecoveredBits =
+            BurstCompiler.CompileFunctionPointer<MergeRecoveredBitsDelegate>(MergeRecoveredBitsBurst);
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void SolveTriangulatedStrength(
             in AbsoluteUniversePosition playerAup,
@@ -402,16 +651,67 @@ namespace Hecton8.AtlasSignal
             float errorNoiseMultiplier,
             out SignalBeaconSolveResult result)
         {
-            double safeRange = math.max(0.001f, maxRangeMeters);
+            _solveTriangulatedStrength.Invoke(
+                playerAup,
+                point0,
+                point1,
+                point2,
+                maxRangeMeters,
+                baseErrorNoise01,
+                errorNoiseMultiplier,
+                out result);
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private static void SolveTriangulatedStrengthBurst(
+            AbsoluteUniversePosition playerAup,
+            AbsoluteUniversePosition point0,
+            AbsoluteUniversePosition point1,
+            AbsoluteUniversePosition point2,
+            float maxRangeMeters,
+            float baseErrorNoise01,
+            float errorNoiseMultiplier,
+            out SignalBeaconSolveResult result)
+        {
+            SolveTriangulatedStrengthKernel(
+                in playerAup,
+                in point0,
+                in point1,
+                in point2,
+                maxRangeMeters,
+                baseErrorNoise01,
+                errorNoiseMultiplier,
+                out result);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void SolveTriangulatedStrengthKernel(
+            in AbsoluteUniversePosition playerAup,
+            in AbsoluteUniversePosition point0,
+            in AbsoluteUniversePosition point1,
+            in AbsoluteUniversePosition point2,
+            float maxRangeMeters,
+            float baseErrorNoise01,
+            float errorNoiseMultiplier,
+            out SignalBeaconSolveResult result)
+        {
+            double safeRange = math.isfinite(maxRangeMeters)
+                ? math.max(0.001f, maxRangeMeters)
+                : 0.001d;
             double safeRangeSq = safeRange * safeRange;
             double distanceSq0 = AbsoluteUniversePosition.DistanceSq(in playerAup, in point0);
             double distanceSq1 = AbsoluteUniversePosition.DistanceSq(in playerAup, in point1);
             double distanceSq2 = AbsoluteUniversePosition.DistanceSq(in playerAup, in point2);
             double averageDistanceSq = (distanceSq0 + distanceSq1 + distanceSq2) * OneThird;
+            if (!math.isfinite(averageDistanceSq) || averageDistanceSq < 0d)
+                averageDistanceSq = safeRangeSq;
+
             float strength = averageDistanceSq >= safeRangeSq
                 ? 0f
                 : math.saturate((float)(1d - (averageDistanceSq / safeRangeSq)));
-            float errorNoise = math.saturate(baseErrorNoise01 * math.max(1f, errorNoiseMultiplier));
+            float safeBaseErrorNoise = math.isfinite(baseErrorNoise01) ? baseErrorNoise01 : 1f;
+            float safeErrorNoiseMultiplier = math.isfinite(errorNoiseMultiplier) ? math.max(1f, errorNoiseMultiplier) : 1f;
+            float errorNoise = math.saturate(safeBaseErrorNoise * safeErrorNoiseMultiplier);
 
             result = new SignalBeaconSolveResult
             {
@@ -432,18 +732,89 @@ namespace Hecton8.AtlasSignal
             float frequencyToleranceHz,
             float phaseTolerance01)
         {
-            float safeFrequencyTolerance = math.max(0.001f, frequencyToleranceHz);
-            float safePhaseTolerance = math.max(0.001f, phaseTolerance01);
-            float frequencyError01 = math.saturate(math.abs(inputFrequencyHz - targetFrequencyHz) / safeFrequencyTolerance);
-            float phaseDelta = math.abs(math.frac(inputPhase01 - targetPhase01 + 0.5f) - 0.5f);
+            return _evaluateSineWaveMatch.Invoke(
+                targetFrequencyHz,
+                targetPhase01,
+                inputFrequencyHz,
+                inputPhase01,
+                frequencyToleranceHz,
+                phaseTolerance01);
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private static float EvaluateSineWaveMatchBurst(
+            float targetFrequencyHz,
+            float targetPhase01,
+            float inputFrequencyHz,
+            float inputPhase01,
+            float frequencyToleranceHz,
+            float phaseTolerance01)
+        {
+            return EvaluateSineWaveMatchKernel(
+                targetFrequencyHz,
+                targetPhase01,
+                inputFrequencyHz,
+                inputPhase01,
+                frequencyToleranceHz,
+                phaseTolerance01);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float EvaluateSineWaveMatchKernel(
+            float targetFrequencyHz,
+            float targetPhase01,
+            float inputFrequencyHz,
+            float inputPhase01,
+            float frequencyToleranceHz,
+            float phaseTolerance01)
+        {
+            if (!math.isfinite(targetFrequencyHz) ||
+                !math.isfinite(targetPhase01) ||
+                !math.isfinite(inputFrequencyHz) ||
+                !math.isfinite(inputPhase01))
+            {
+                return 0f;
+            }
+
+            float safeTargetFrequencyHz = math.max(0.001f, targetFrequencyHz);
+            float safeInputFrequencyHz = math.max(0.001f, inputFrequencyHz);
+            float safeTargetPhase01 = math.frac(targetPhase01);
+            float safeInputPhase01 = math.frac(inputPhase01);
+            float safeFrequencyTolerance = math.isfinite(frequencyToleranceHz)
+                ? math.max(0.001f, frequencyToleranceHz)
+                : 0.001f;
+            float safePhaseTolerance = math.isfinite(phaseTolerance01)
+                ? math.max(0.001f, phaseTolerance01)
+                : 0.001f;
+            float frequencyError01 = math.saturate(math.abs(safeInputFrequencyHz - safeTargetFrequencyHz) / safeFrequencyTolerance);
+            float phaseDelta = math.abs(math.frac(safeInputPhase01 - safeTargetPhase01 + 0.5f) - 0.5f);
             float phaseError01 = math.saturate(phaseDelta / safePhaseTolerance);
-            float waveSampleError = math.abs(math.sin(inputPhase01 * math.PI * 2f) - math.sin(targetPhase01 * math.PI * 2f)) * 0.5f;
+            float waveSampleError = math.abs(EvaluateSineProxy(safeInputPhase01) - EvaluateSineProxy(safeTargetPhase01)) * 0.5f;
             return math.saturate(1f - ((frequencyError01 * 0.55f) + (phaseError01 * 0.35f) + (waveSampleError * 0.10f)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float EvaluateSineProxy(float phase01)
+        {
+            float triangle = 1f - math.abs((math.frac(phase01 + 0.25f) * 4f) - 2f);
+            return triangle * (1.5f - (0.5f * math.abs(triangle)));
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static uint MergeRecoveredBits(uint recoveredBits, uint fragmentBitMask)
+        {
+            return _mergeRecoveredBits.Invoke(recoveredBits, fragmentBitMask);
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private static uint MergeRecoveredBitsBurst(uint recoveredBits, uint fragmentBitMask)
+        {
+            return MergeRecoveredBitsKernel(recoveredBits, fragmentBitMask);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint MergeRecoveredBitsKernel(uint recoveredBits, uint fragmentBitMask)
         {
             return (recoveredBits | fragmentBitMask) & 0xFu;
         }

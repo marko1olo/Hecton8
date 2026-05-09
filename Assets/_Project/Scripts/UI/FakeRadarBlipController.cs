@@ -38,15 +38,21 @@ namespace Hecton8.UI
         private const float ThermalNoiseFullDepthMeters = 6500f;
         private const float ThermalNoiseCycleSeconds = 0.83f;
         private const int ThermalNoiseMaxGhostBlips = 8;
+        private const float ThermalNoiseRadialByteScale = 0.0032156863f;
         private const float WreckSignalDistortionSeconds = 1.35f;
         private const float WreckSignalDistortionThicknessPixels = 3.0f;
+        private const float BlipFlickerFrequency = 18f;
+        private const float BlipFlickerIntensity = 0.18f;
+        private const float BlipFillAlpha = 0.36f;
+        private const int SurvivalSystemResolveIntervalFrames = 30;
+        private const int PlayerTransformResolveIntervalFrames = 30;
         private const uint ThermalNoiseHashSalt = 0x54484E31u;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const double RadarSolveBudgetWarningMilliseconds = 0.1d;
         private const int RadarPerformanceWarningCooldownFrames = 30;
 #endif
-        private const string RadarBlipShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
-        private const string RadarBlipShaderName = "HECTON/Scanner/MarkerInstanced";
+        private const string RadarBlipShaderPath = "Assets/_Project/Art/Shaders/Hecton_RadarBlipInstanced.shader";
+        private const string RadarBlipShaderName = "HECTON/HUD/RadarBlipInstanced";
         private const string NativeMemoryOwner = nameof(FakeRadarBlipController);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -58,11 +64,8 @@ namespace Hecton8.UI
         private static readonly int _FlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
         private static readonly int _FlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
         private static readonly int _FillAlphaId = Shader.PropertyToID("_FillAlpha");
-        private static readonly int _OccludedColorId = Shader.PropertyToID("_OccludedColor");
-        private static readonly int _OccludedBoostId = Shader.PropertyToID("_OccludedBoost");
-
-        // COLD ALLOC: Camera[8] - non-alloc fallback camera resolve buffer - owner: FakeRadarBlipController
-        private static readonly Camera[] s_cameraResolveBuffer = new Camera[8];
+        // COLD ALLOC: Vector2[16] — deterministic thermal ghost direction LUT — owner: FakeRadarBlipController
+        private static readonly Vector2[] s_thermalGhostDirections = CreateThermalGhostDirections();
 
         [StructLayout(LayoutKind.Sequential)]
         private struct RadarCullCandidate
@@ -78,6 +81,7 @@ namespace Hecton8.UI
         }
 
         [BurstCompile(FloatPrecision.Low, FloatMode.Fast)]
+        [StructLayout(LayoutKind.Sequential)]
         private struct RadarBlip2DCullJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<RadarCullCandidate> Candidates;
@@ -85,22 +89,18 @@ namespace Hecton8.UI
             public float2 RadarCenter;
             public float2 BoundsMin;
             public float2 BoundsMax;
-            public float RangeSqr;
-            public float InvRange;
-            public float RadarRadiusWorld;
-            public float RadarRadiusWorldSqr;
+            public float ScreenCircleSourceRadiusSqr;
+            public float RadarScale;
 
             public void Execute(int index)
             {
                 RadarCullCandidate candidate = Candidates[index];
                 RadarCullResult result = default;
                 float distanceSqr = math.lengthsq(candidate.FlatDelta);
-                if (distanceSqr > 0.0001f && distanceSqr <= RangeSqr)
+                if (distanceSqr > 0.0001f && distanceSqr <= ScreenCircleSourceRadiusSqr)
                 {
-                    float2 planeOffset = RadarCenter + candidate.FlatDelta * InvRange * RadarRadiusWorld;
-                    float2 radarOffset = planeOffset - RadarCenter;
-                    bool insideRadarScreen = math.lengthsq(radarOffset) <= RadarRadiusWorldSqr;
-                    bool insideBounds = insideRadarScreen &&
+                    float2 planeOffset = RadarCenter + candidate.FlatDelta * RadarScale;
+                    bool insideBounds =
                         planeOffset.x >= BoundsMin.x &&
                         planeOffset.x <= BoundsMax.x &&
                         planeOffset.y >= BoundsMin.y &&
@@ -124,21 +124,27 @@ namespace Hecton8.UI
         [SerializeField] private Shader radarBlipShader;
         [SerializeField] private Color blipColor = new Color(1f, 0.24f, 0.28f, 0.92f);
 
-        // COLD ALLOC: SpatialQueryHit[64] - fixed hostile radar query buffer - owner: FakeRadarBlipController
+        // COLD ALLOC: SpatialQueryHit[64] — fixed hostile radar query buffer — owner: FakeRadarBlipController
         private readonly SpatialQueryHit[] _queryHits = new SpatialQueryHit[MaxBlips];
-        // COLD ALLOC: Matrix4x4[64] - instanced hostile radar blip matrices - owner: FakeRadarBlipController
+        // COLD ALLOC: Matrix4x4[64] — instanced hostile radar blip matrices — owner: FakeRadarBlipController
         private readonly Matrix4x4[] _blipMatrices = new Matrix4x4[MaxBlips];
 
         private bool _registered;
         private bool _registeredLateFrame;
         private bool _registeredRenderable;
+        private bool _scanEventsRegistered;
         private bool _radarCullScheduled;
+        private bool _radarBlipMaterialPropertiesDirty = true;
         private int _scheduledCandidateCount;
         private Transform _playerTransform;
         private HectonSurvivalSystem _survivalSystem;
+        private int _nextPlayerTransformResolveFrame;
+        private int _nextSurvivalSystemResolveFrame;
         private Camera _projectionCamera;
+        private bool _projectionCameraRequiresHudLayer;
         private Mesh _radarBlipMesh;
         private Material _radarBlipMaterial;
+        private Color _appliedRadarBlipColor;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private int _nextRadarPerformanceWarningFrame;
 #endif
@@ -148,21 +154,35 @@ namespace Hecton8.UI
         private JobHandle _radarCullHandle;
         private float _wreckSignalDistortionTime;
         private float _wreckSignalDistortionPhase;
+        private float _thermalNoiseClock;
+        private uint _thermalNoiseCycleIndex;
         private Quaternion _scheduledPlaneRotation = Quaternion.identity;
         private Vector3 _scheduledPlaneScale = Vector3.one;
         private Vector3 _scheduledPlaneCenter;
         private Vector3 _scheduledCameraRight;
         private Vector3 _scheduledCameraUp;
         private Vector2 _scheduledRadarCenter;
+        private float3 _lastRadarForwardBucket = new float3(0f, 0f, 1f);
         private float _scheduledRadarRadius;
         private float _scheduledWorldPerPixel;
         private int _visibleBlipMatrixCount;
+        private int _discardedContactsWithoutAupCount;
+        private bool _blipMatricesDirty;
+        private bool _discardScheduledCullResult;
+
+        public int DiscardedContactsWithoutAupCount => _discardedContactsWithoutAupCount;
+
+        private static void IncrementCounterSaturated(ref int counter)
+        {
+            if (counter < int.MaxValue)
+                counter++;
+        }
 
         private void OnEnable()
         {
             ResolvePlayerTransform();
             EnsureRuntimeResources();
-            ScanEvents.Register(this);
+            TryRegisterScanEvents();
             TryRegister();
         }
 
@@ -171,21 +191,21 @@ namespace Hecton8.UI
             ResolvePlayerTransform();
             ResolveProjectionCamera();
             EnsureRuntimeResources();
-            ScanEvents.Register(this);
+            TryRegisterScanEvents();
             TryRegister();
         }
 
         private void OnDisable()
         {
-            CompleteOutstandingCullForShutdown();
-            ScanEvents.Unregister(this);
+            DrainScheduledCullForDisable();
+            ClearVisibleBlipHandoff();
+            TryUnregisterScanEvents();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
-            CompleteOutstandingCullForShutdown();
-            ScanEvents.Unregister(this);
+            TryUnregisterScanEvents();
             TryUnregister();
             DisposeRuntimeResources();
         }
@@ -198,11 +218,12 @@ namespace Hecton8.UI
 
             try
             {
+                float safeDeltaTime = math.isfinite(deltaTime) ? math.max(0f, deltaTime) : 0f;
+                AdvanceThermalNoiseClock(safeDeltaTime);
                 ResolvePlayerTransform();
                 ResolveProjectionCamera();
 
-                if (_playerTransform == null ||
-                    _projectionCamera == null ||
+                if (_projectionCamera == null ||
                     _radarBlipMesh == null ||
                     _radarBlipMaterial == null ||
                     !_radarCullCandidates.IsCreated ||
@@ -213,11 +234,11 @@ namespace Hecton8.UI
                     return;
                 }
 
+                if (_wreckSignalDistortionTime > 0f)
+                    _wreckSignalDistortionTime = math.max(0f, _wreckSignalDistortionTime - safeDeltaTime);
+
                 if (_radarCullScheduled)
                     return;
-
-                if (_wreckSignalDistortionTime > 0f)
-                    _wreckSignalDistortionTime = math.max(0f, _wreckSignalDistortionTime - deltaTime);
 
                 ScheduleBlipCull(_projectionCamera);
             }
@@ -226,6 +247,24 @@ namespace Hecton8.UI
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 PublishRadarSolveWarningIfNeeded(tickStart);
 #endif
+            }
+        }
+
+        private void AdvanceThermalNoiseClock(float deltaTime)
+        {
+            if (deltaTime <= 0f)
+                return;
+
+            float cycleSeconds = math.max(0.01f, ThermalNoiseCycleSeconds);
+            _thermalNoiseClock += math.min(deltaTime, cycleSeconds * 4f);
+            int cycles = (int)math.min(4f, math.floor(_thermalNoiseClock / cycleSeconds));
+            if (cycles <= 0)
+                return;
+
+            _thermalNoiseClock -= cycleSeconds * cycles;
+            unchecked
+            {
+                _thermalNoiseCycleIndex += (uint)cycles;
             }
         }
 
@@ -238,17 +277,32 @@ namespace Hecton8.UI
             try
             {
                 if (!_radarCullScheduled)
+                {
+                    RefreshLateFrameRegistration();
                     return;
+                }
 
                 int visibleCount = CompleteScheduledBlipCull();
                 if (visibleCount < 0)
                     return;
 
+                bool discardCompletedCull = _discardScheduledCullResult;
                 _radarCullScheduled = false;
                 _scheduledCandidateCount = 0;
                 _radarCullHandle = default;
+                _discardScheduledCullResult = false;
+
+                if (discardCompletedCull)
+                {
+                    ClearVisibleBlipHandoff();
+                    RefreshLateFrameRegistration();
+                    return;
+                }
 
                 _visibleBlipMatrixCount = visibleCount;
+                _blipMatricesDirty = visibleCount > 0;
+                RefreshRenderableRegistration();
+                RefreshLateFrameRegistration();
             }
             finally
             {
@@ -282,17 +336,31 @@ namespace Hecton8.UI
             if (visibleCount <= 0)
                 return;
 
-            for (int i = 0; i < visibleCount; i++)
-                _blipMatrices[i] = _visibleBlipMatrices[i];
+            if (_blipMatricesDirty)
+            {
+                for (int i = 0; i < visibleCount; i++)
+                    _blipMatrices[i] = _visibleBlipMatrices[i];
+                _blipMatricesDirty = false;
+            }
 
             DrawBlipMatrices(renderCamera, visibleCount);
         }
 
         private void ClearVisibleBlipHandoff()
         {
+            bool hasVisibleNativeBlips = _visibleBlipMatrices.IsCreated && _visibleBlipMatrices.Length > 0;
+            if (_visibleBlipMatrixCount == 0 && !_blipMatricesDirty && !hasVisibleNativeBlips)
+            {
+                if (_registeredRenderable)
+                    RefreshRenderableRegistration();
+                return;
+            }
+
             _visibleBlipMatrixCount = 0;
-            if (_visibleBlipMatrices.IsCreated)
+            _blipMatricesDirty = false;
+            if (hasVisibleNativeBlips)
                 _visibleBlipMatrices.Clear();
+            RefreshRenderableRegistration();
         }
 
         private void AppendVisibleBlipMatrix(Matrix4x4 matrix, ref int visibleCount)
@@ -303,7 +371,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            _visibleBlipMatrices.Add(matrix);
+            _visibleBlipMatrices.AddNoResize(matrix);
             visibleCount++;
         }
 
@@ -328,6 +396,7 @@ namespace Hecton8.UI
                 _scheduledCandidateCount = 0;
                 _radarCullScheduled = false;
                 _radarCullHandle = default;
+                RefreshLateFrameRegistration();
                 return;
             }
 
@@ -374,18 +443,7 @@ namespace Hecton8.UI
             _scheduledRadarCenter = radarCenter;
             _scheduledRadarRadius = radius;
             _scheduledWorldPerPixel = worldPerPixel;
-            float3 radarForwardFlatF3 = new float3(cameraForward.x, 0f, cameraForward.z);
-            float forwardFlatLengthSqr = math.lengthsq(radarForwardFlatF3);
-            if (forwardFlatLengthSqr <= 0.0001f)
-            {
-                Vector3 playerForward = _playerTransform.forward;
-                radarForwardFlatF3 = new float3(playerForward.x, 0f, playerForward.z);
-                forwardFlatLengthSqr = math.lengthsq(radarForwardFlatF3);
-            }
-
-            radarForwardFlatF3 = forwardFlatLengthSqr > 0.0001f
-                ? radarForwardFlatF3 * math.rsqrt(forwardFlatLengthSqr)
-                : new float3(0f, 0f, 1f);
+            float3 radarForwardFlatF3 = ResolveRadarForwardBucket(cameraForward);
             float3 radarRightFlatF3 = new float3(radarForwardFlatF3.z, 0f, -radarForwardFlatF3.x);
 
             int candidateCount = 0;
@@ -395,7 +453,13 @@ namespace Hecton8.UI
                 if (!(hit.Owner is FaunaBrain brain) || !brain.isAggressive)
                     continue;
 
-                AbsoluteUniversePosition hitAup = AbsoluteUniversePosition.FromRuntimePosition(hit.Position);
+                if (!hit.HasAbsolutePosition)
+                {
+                    IncrementCounterSaturated(ref _discardedContactsWithoutAupCount);
+                    continue;
+                }
+
+                AbsoluteUniversePosition hitAup = hit.AbsolutePosition;
                 float3 enemyDeltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in hitAup, in playerAup);
                 float2 flatDelta = new float2(
                     math.dot(enemyDeltaAup, radarRightFlatF3),
@@ -410,6 +474,7 @@ namespace Hecton8.UI
 
             _scheduledCandidateCount = candidateCount;
             _radarCullScheduled = true;
+            _discardScheduledCullResult = false;
             if (candidateCount > 0)
             {
                 _radarCullHandle = new RadarBlip2DCullJob
@@ -419,28 +484,20 @@ namespace Hecton8.UI
                     RadarCenter = new float2(radarCenter.x, radarCenter.y),
                     BoundsMin = boundsMin,
                     BoundsMax = boundsMax,
-                    RangeSqr = rangeSqr,
-                    InvRange = invRange,
-                    RadarRadiusWorld = radarRadiusWorld,
-                    RadarRadiusWorldSqr = radarRadiusWorld * radarRadiusWorld
+                    ScreenCircleSourceRadiusSqr = rangeSqr,
+                    RadarScale = invRange * radarRadiusWorld
                 }.Schedule(candidateCount, 32);
             }
             else
             {
                 _radarCullHandle = default;
             }
+
+            RefreshLateFrameRegistration();
         }
 
         private static bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-            if (playerMovement != null)
-            {
-                playerAup = playerMovement.CurrentAup;
-                return true;
-            }
-
             if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext))
             {
                 PlayerMovementRuntimeState movementState = runtimeContext.MovementState;
@@ -449,6 +506,14 @@ namespace Hecton8.UI
                     playerAup = movementState.PredictedAup;
                     return true;
                 }
+            }
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement != null)
+            {
+                playerAup = playerMovement.CurrentAup;
+                return true;
             }
 
             playerAup = default;
@@ -463,11 +528,12 @@ namespace Hecton8.UI
 
             if (_scheduledCandidateCount > 0)
             {
-                if (!DispatcherJobSwap.TryComplete(ref _radarCullHandle, forceComplete: false))
+                if (!DispatcherJobSwap.TryFinalizeCompleted(ref _radarCullHandle))
                     return -1;
             }
 
-            _visibleBlipMatrices.Clear();
+            if (_visibleBlipMatrices.Length > 0)
+                _visibleBlipMatrices.Clear();
             if (_scheduledCandidateCount > 0)
             {
                 for (int i = 0; i < _scheduledCandidateCount && visibleCount < MaxBlips; i++)
@@ -506,26 +572,21 @@ namespace Hecton8.UI
             float scanRaw = _wreckSignalDistortionPhase + (1f - pulse01) * 1.75f;
             float scan01 = scanRaw - math.floor(scanRaw);
             float radarRadiusWorld = math.max(1f, _scheduledRadarRadius) * _scheduledWorldPerPixel;
-            float lineY = math.lerp(-radarRadiusWorld, radarRadiusWorld, scan01);
+            float lineY = radarRadiusWorld * (scan01 * 2f - 1f);
             Vector3 worldPosition =
                 _scheduledPlaneCenter +
                 _scheduledCameraRight * _scheduledRadarCenter.x +
                 _scheduledCameraUp * (_scheduledRadarCenter.y + lineY);
             Vector3 lineScale = new Vector3(
                 radarRadiusWorld * 2f,
-                math.max(1f, WreckSignalDistortionThicknessPixels) * _scheduledWorldPerPixel * math.lerp(0.65f, 1.6f, pulse01),
+                math.max(1f, WreckSignalDistortionThicknessPixels) * _scheduledWorldPerPixel * (0.65f + 0.95f * pulse01),
                 1f);
             AppendVisibleBlipMatrix(Matrix4x4.TRS(worldPosition, _scheduledPlaneRotation, lineScale), ref visibleCount);
         }
 
         private void DrawBlipMatrices(Camera renderCamera, int visibleCount)
         {
-            _radarBlipMaterial.SetColor(_BaseColorId, blipColor);
-            _radarBlipMaterial.SetColor(_OccludedColorId, blipColor);
-            _radarBlipMaterial.SetFloat(_FlickerFrequencyId, 18f);
-            _radarBlipMaterial.SetFloat(_FlickerIntensityId, 0.18f);
-            _radarBlipMaterial.SetFloat(_FillAlphaId, 0.36f);
-            _radarBlipMaterial.SetFloat(_OccludedBoostId, 1f);
+            ApplyRadarBlipMaterialProperties();
 
             Graphics.DrawMeshInstanced(
                 _radarBlipMesh,
@@ -542,18 +603,57 @@ namespace Hecton8.UI
                 null);
         }
 
-        private void CompleteOutstandingCullForShutdown()
+        private void ApplyRadarBlipMaterialProperties()
+        {
+            if (!_radarBlipMaterialPropertiesDirty && ColorsMatch(_appliedRadarBlipColor, blipColor))
+                return;
+
+            _radarBlipMaterial.SetColor(_BaseColorId, blipColor);
+            _radarBlipMaterial.SetFloat(_FlickerFrequencyId, BlipFlickerFrequency);
+            _radarBlipMaterial.SetFloat(_FlickerIntensityId, BlipFlickerIntensity);
+            _radarBlipMaterial.SetFloat(_FillAlphaId, BlipFillAlpha);
+            _appliedRadarBlipColor = blipColor;
+            _radarBlipMaterialPropertiesDirty = false;
+        }
+
+        private static bool ColorsMatch(Color lhs, Color rhs)
+        {
+            return lhs.r == rhs.r &&
+                lhs.g == rhs.g &&
+                lhs.b == rhs.b &&
+                lhs.a == rhs.a;
+        }
+
+        private JobHandle BuildOutstandingCullDisposeDependency()
+        {
+            if (!_radarCullScheduled)
+                return default;
+
+            JobHandle dependency = _scheduledCandidateCount > 0 ? _radarCullHandle : default;
+            _radarCullScheduled = false;
+            _scheduledCandidateCount = 0;
+            _radarCullHandle = default;
+            _discardScheduledCullResult = false;
+            ClearVisibleBlipHandoff();
+            return dependency;
+        }
+
+        private void DrainScheduledCullForDisable()
         {
             if (!_radarCullScheduled)
                 return;
 
-            if (_scheduledCandidateCount > 0)
-                DispatcherJobSwap.TryComplete(ref _radarCullHandle, forceComplete: true);
+            if (_scheduledCandidateCount <= 0 ||
+                DispatcherJobSwap.TryFinalizeCompleted(ref _radarCullHandle))
+            {
+                _radarCullScheduled = false;
+                _scheduledCandidateCount = 0;
+                _radarCullHandle = default;
+                _discardScheduledCullResult = false;
+                return;
+            }
 
-            _radarCullScheduled = false;
-            _scheduledCandidateCount = 0;
-            _radarCullHandle = default;
-            ClearVisibleBlipHandoff();
+            _discardScheduledCullResult = true;
         }
 
         private void AppendThermalNoiseGhostBlips(
@@ -581,18 +681,18 @@ namespace Hecton8.UI
                 1 + (int)math.floor(thermalNoise01 * ThermalNoiseMaxGhostBlips),
                 1,
                 ThermalNoiseMaxGhostBlips);
-            int cycleIndex = (int)math.floor(Time.unscaledTime / ThermalNoiseCycleSeconds);
             uint depthBucket = unchecked((uint)(int)math.floor(depthMeters));
+            float acceptance = 0.35f + 0.57f * thermalNoise01;
+            uint acceptanceThreshold = (uint)math.clamp((int)(acceptance * 255f), 0, 255);
+            float radiusWorld = radius * worldPerPixel;
             for (int i = 0; i < ghostCount && visibleCount < MaxBlips; i++)
             {
-                uint hash = HashThermalNoiseGhost(unchecked((uint)cycleIndex), depthBucket, unchecked((uint)i));
-                float acceptance = math.lerp(0.35f, 0.92f, thermalNoise01);
-                if (((hash >> 24) & 0xFFu) / 255f > acceptance)
+                uint hash = HashThermalNoiseGhost(_thermalNoiseCycleIndex, depthBucket, unchecked((uint)i));
+                if (((hash >> 24) & 0xFFu) > acceptanceThreshold)
                     continue;
 
-                float radial01 = 0.16f + (((hash >> 16) & 0xFFu) / 255f) * 0.82f;
-                Vector2 anchoredPosition = ResolveThermalGhostDirection(hash) * (radius * radial01);
-                Vector2 planeOffset = radarCenter + anchoredPosition * worldPerPixel;
+                float radial01 = 0.16f + ((hash >> 16) & 0xFFu) * ThermalNoiseRadialByteScale;
+                Vector2 planeOffset = radarCenter + ResolveThermalGhostDirection(hash) * (radiusWorld * radial01);
                 Vector3 worldPosition = planeCenter + cameraRight * planeOffset.x + cameraUp * planeOffset.y;
                 AppendVisibleBlipMatrix(Matrix4x4.TRS(worldPosition, planeRotation, planeScale), ref visibleCount);
             }
@@ -609,26 +709,55 @@ namespace Hecton8.UI
 
         private static Vector2 ResolveThermalGhostDirection(uint hash)
         {
+            return s_thermalGhostDirections[(int)((hash >> 8) & 0x0Fu)];
+        }
+
+        private static Vector2[] CreateThermalGhostDirections()
+        {
             const float Diagonal = 0.70710678f;
-            switch ((hash >> 8) & 0x0Fu)
+            // COLD ALLOC: Vector2[16] — deterministic thermal ghost direction LUT backing store — owner: FakeRadarBlipController
+            return new Vector2[]
             {
-                case 0u: return new Vector2(0f, 1f);
-                case 1u: return new Vector2(Diagonal, Diagonal);
-                case 2u: return new Vector2(1f, 0f);
-                case 3u: return new Vector2(Diagonal, -Diagonal);
-                case 4u: return new Vector2(0f, -1f);
-                case 5u: return new Vector2(-Diagonal, -Diagonal);
-                case 6u: return new Vector2(-1f, 0f);
-                case 7u: return new Vector2(-Diagonal, Diagonal);
-                case 8u: return new Vector2(0.38268343f, 0.9238795f);
-                case 9u: return new Vector2(0.9238795f, 0.38268343f);
-                case 10u: return new Vector2(0.9238795f, -0.38268343f);
-                case 11u: return new Vector2(0.38268343f, -0.9238795f);
-                case 12u: return new Vector2(-0.38268343f, -0.9238795f);
-                case 13u: return new Vector2(-0.9238795f, -0.38268343f);
-                case 14u: return new Vector2(-0.9238795f, 0.38268343f);
-                default: return new Vector2(-0.38268343f, 0.9238795f);
-            }
+                new Vector2(0f, 1f),
+                new Vector2(Diagonal, Diagonal),
+                new Vector2(1f, 0f),
+                new Vector2(Diagonal, -Diagonal),
+                new Vector2(0f, -1f),
+                new Vector2(-Diagonal, -Diagonal),
+                new Vector2(-1f, 0f),
+                new Vector2(-Diagonal, Diagonal),
+                new Vector2(0.38268343f, 0.9238795f),
+                new Vector2(0.9238795f, 0.38268343f),
+                new Vector2(0.9238795f, -0.38268343f),
+                new Vector2(0.38268343f, -0.9238795f),
+                new Vector2(-0.38268343f, -0.9238795f),
+                new Vector2(-0.9238795f, -0.38268343f),
+                new Vector2(-0.9238795f, 0.38268343f),
+                new Vector2(-0.38268343f, 0.9238795f)
+            };
+        }
+
+        private float3 ResolveRadarForwardBucket(Vector3 cameraForward)
+        {
+            float3 flatForward = new float3(cameraForward.x, 0f, cameraForward.z);
+            if (math.lengthsq(flatForward) <= 0.0001f)
+                return _lastRadarForwardBucket;
+
+            const float Diagonal = 0.70710677f;
+            float absX = math.abs(flatForward.x);
+            float absZ = math.abs(flatForward.z);
+            float signX = flatForward.x < 0f ? -1f : 1f;
+            float signZ = flatForward.z < 0f ? -1f : 1f;
+            float3 bucket;
+            if (absX > absZ * 2f)
+                bucket = new float3(signX, 0f, 0f);
+            else if (absZ > absX * 2f)
+                bucket = new float3(0f, 0f, signZ);
+            else
+                bucket = new float3(signX * Diagonal, 0f, signZ * Diagonal);
+
+            _lastRadarForwardBucket = bucket;
+            return bucket;
         }
 
         private static uint MixHash(uint value)
@@ -645,57 +774,100 @@ namespace Hecton8.UI
         {
             if (_playerTransform != null)
             {
-                if (_survivalSystem == null)
-                    _playerTransform.TryGetComponent(out _survivalSystem);
+                ResolveSurvivalSystemForCachedPlayer();
                 return;
             }
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (playerContext != null && playerContext.PlayerTransform != null)
             {
-                _playerTransform = playerContext.PlayerTransform;
-                _playerTransform.TryGetComponent(out _survivalSystem);
+                AssignPlayerTransform(playerContext.PlayerTransform);
+                ResolveSurvivalSystemForCachedPlayer();
                 return;
             }
 
-            SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
-            if (_playerTransform != null)
-                _playerTransform.TryGetComponent(out _survivalSystem);
+            int frame = Time.frameCount;
+            if (frame < _nextPlayerTransformResolveFrame)
+                return;
+
+            _nextPlayerTransformResolveFrame = frame + PlayerTransformResolveIntervalFrames;
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform scenePlayerTransform))
+            {
+                AssignPlayerTransform(scenePlayerTransform);
+                ResolveSurvivalSystemForCachedPlayer();
+            }
+        }
+
+        private void AssignPlayerTransform(Transform playerTransform)
+        {
+            if (_playerTransform == playerTransform)
+                return;
+
+            _playerTransform = playerTransform;
+            _survivalSystem = null;
+            _nextPlayerTransformResolveFrame = 0;
+            _nextSurvivalSystemResolveFrame = 0;
+        }
+
+        private void ResolveSurvivalSystemForCachedPlayer()
+        {
+            if (_survivalSystem != null || _playerTransform == null)
+            {
+                return;
+            }
+
+            int frame = Time.frameCount;
+            if (frame < _nextSurvivalSystemResolveFrame)
+                return;
+
+            _nextSurvivalSystemResolveFrame = frame + SurvivalSystemResolveIntervalFrames;
+            _playerTransform.TryGetComponent(out _survivalSystem);
+            if (_survivalSystem != null)
+                _nextSurvivalSystemResolveFrame = 0;
         }
 
         private void ResolveProjectionCamera()
         {
-            if (_projectionCamera != null && _projectionCamera.isActiveAndEnabled)
+            if (IsProjectionCameraUsable(_projectionCamera, _projectionCameraRequiresHudLayer))
                 return;
+
+            _projectionCamera = null;
+            _projectionCameraRequiresHudLayer = false;
 
             SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
             if (overlay != null)
             {
-                if (overlay.ProjectionCamera != null && overlay.ProjectionCamera.isActiveAndEnabled)
-                {
-                    _projectionCamera = overlay.ProjectionCamera;
+                if (TryAssignProjectionCamera(overlay.ProjectionCamera, false))
                     return;
-                }
 
                 Canvas canvas = overlay.TargetCanvas;
-                if (canvas != null && canvas.worldCamera != null && canvas.worldCamera.isActiveAndEnabled)
-                {
-                    _projectionCamera = canvas.worldCamera;
+                if (canvas != null && TryAssignProjectionCamera(canvas.worldCamera, false))
                     return;
-                }
             }
 
-            int cameraCount = Camera.GetAllCameras(s_cameraResolveBuffer);
-            int hudMask = 1 << HudInternalLayerIndex;
-            for (int i = 0; i < cameraCount && i < s_cameraResolveBuffer.Length; i++)
-            {
-                Camera candidate = s_cameraResolveBuffer[i];
-                if (candidate != null && candidate.isActiveAndEnabled && (candidate.cullingMask & hudMask) != 0)
-                {
-                    _projectionCamera = candidate;
-                    return;
-                }
-            }
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && TryAssignProjectionCamera(playerContext.PlayerCamera, true))
+                return;
+
+            TryAssignProjectionCamera(GlobalRenderContext.CurrentCamera, true);
+        }
+
+        private bool TryAssignProjectionCamera(Camera candidate, bool requireHudLayer)
+        {
+            if (!IsProjectionCameraUsable(candidate, requireHudLayer))
+                return false;
+
+            _projectionCamera = candidate;
+            _projectionCameraRequiresHudLayer = requireHudLayer;
+            return true;
+        }
+
+        private static bool IsProjectionCameraUsable(Camera candidate, bool requireHudLayer)
+        {
+            return candidate != null &&
+                   candidate.isActiveAndEnabled &&
+                   (!requireHudLayer || (candidate.cullingMask & (1 << HudInternalLayerIndex)) != 0);
         }
 
         private void EnsureRuntimeResources()
@@ -720,7 +892,8 @@ namespace Hecton8.UI
                 _radarBlipMaterial = new Material(radarBlipShader)
                 {
                     enableInstancing = true
-                }; // COLD ALLOC: Material[1] - instanced hostile radar blip material - owner: FakeRadarBlipController
+                }; // COLD ALLOC: Material[1] — instanced hostile radar blip material — owner: FakeRadarBlipController
+                _radarBlipMaterialPropertiesDirty = true;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 _radarBlipMaterial.name = "HUD_FakeRadarBlips_Instanced_Runtime";
 #endif
@@ -728,62 +901,76 @@ namespace Hecton8.UI
 
             if (!_radarCullCandidates.IsCreated)
             {
-                _radarCullCandidates = new NativeArray<RadarCullCandidate>(MaxBlips, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RadarCullCandidate>[64] - Burst 2D HUD bounds cull input - owner: FakeRadarBlipController
+                _radarCullCandidates = new NativeArray<RadarCullCandidate>(MaxBlips, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RadarCullCandidate>[64] — Burst 2D HUD bounds cull input — owner: FakeRadarBlipController
                 NativeMemorySentinel.RegisterNativeArray(_radarCullCandidates, NativeMemoryOwner, nameof(_radarCullCandidates), NativeAllocationLifetime.Scene);
             }
 
             if (!_radarCullResults.IsCreated)
             {
-                _radarCullResults = new NativeArray<RadarCullResult>(MaxBlips, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RadarCullResult>[64] - Burst 2D HUD bounds cull output - owner: FakeRadarBlipController
+                _radarCullResults = new NativeArray<RadarCullResult>(MaxBlips, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<RadarCullResult>[64] — Burst 2D HUD bounds cull output — owner: FakeRadarBlipController
                 NativeMemorySentinel.RegisterNativeArray(_radarCullResults, NativeMemoryOwner, nameof(_radarCullResults), NativeAllocationLifetime.Scene);
             }
 
             if (!_visibleBlipMatrices.IsCreated)
             {
-                _visibleBlipMatrices = new NativeList<Matrix4x4>(MaxBlips, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[64] - LateFrame radar render handoff to GlobalRenderContext - owner: FakeRadarBlipController
+                _visibleBlipMatrices = new NativeList<Matrix4x4>(MaxBlips, Allocator.Persistent); // COLD ALLOC: NativeList<Matrix4x4>[64] — LateFrame radar render handoff to GlobalRenderContext — owner: FakeRadarBlipController
                 NativeMemorySentinel.RegisterNativeList(_visibleBlipMatrices, NativeMemoryOwner, nameof(_visibleBlipMatrices), NativeAllocationLifetime.Scene);
             }
         }
 
         private void DisposeRuntimeResources()
         {
-            CompleteOutstandingCullForShutdown();
+            JobHandle nativeDisposeDependency = BuildOutstandingCullDisposeDependency();
 
             if (_radarBlipMaterial != null)
             {
-                Destroy(_radarBlipMaterial);
+                DestroyUnityObject(_radarBlipMaterial);
                 _radarBlipMaterial = null;
+                _radarBlipMaterialPropertiesDirty = true;
             }
 
             if (_radarBlipMesh != null)
             {
-                Destroy(_radarBlipMesh);
+                DestroyUnityObject(_radarBlipMesh);
                 _radarBlipMesh = null;
             }
 
-            DisposeNativeArray(ref _radarCullCandidates);
-            DisposeNativeArray(ref _radarCullResults);
-            DisposeNativeList(ref _visibleBlipMatrices, nameof(_visibleBlipMatrices));
+            nativeDisposeDependency = DisposeNativeArray(ref _radarCullCandidates, nativeDisposeDependency);
+            nativeDisposeDependency = DisposeNativeArray(ref _radarCullResults, nativeDisposeDependency);
+            DisposeNativeList(ref _visibleBlipMatrices, nameof(_visibleBlipMatrices), nativeDisposeDependency);
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        private static void DestroyUnityObject(UnityEngine.Object instance)
+        {
+            if (instance == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(instance);
+            else
+                DestroyImmediate(instance);
+        }
+
+        private static JobHandle DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
         {
             if (!array.IsCreated)
-                return;
+                return dependency;
 
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
+            JobHandle disposeHandle = array.Dispose(dependency);
             array = default;
+            return disposeHandle;
         }
 
-        private static void DisposeNativeList<T>(ref NativeList<T> list, string label) where T : unmanaged
+        private static JobHandle DisposeNativeList<T>(ref NativeList<T> list, string label, JobHandle dependency) where T : unmanaged
         {
             if (!list.IsCreated)
-                return;
+                return dependency;
 
             NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
-            list.Dispose();
+            JobHandle disposeHandle = list.Dispose(dependency);
             list = default;
+            return disposeHandle;
         }
 
         private static Mesh BuildQuadMesh()
@@ -791,9 +978,9 @@ namespace Hecton8.UI
             Mesh mesh = new Mesh
             {
                 name = "HUD_FakeRadarBlip_Quad"
-            }; // COLD ALLOC: Mesh[1] - reusable instanced hostile radar blip quad - owner: FakeRadarBlipController
+            }; // COLD ALLOC: Mesh[1] — reusable instanced hostile radar blip quad — owner: FakeRadarBlipController
 
-            // COLD ALLOC: Vector3[4] - one-time quad geometry upload - owner: FakeRadarBlipController
+            // COLD ALLOC: Vector3[4] — one-time quad geometry upload — owner: FakeRadarBlipController
             Vector3[] vertices =
             {
                 new Vector3(-0.5f, -0.5f, 0f),
@@ -801,7 +988,7 @@ namespace Hecton8.UI
                 new Vector3(0.5f, 0.5f, 0f),
                 new Vector3(0.5f, -0.5f, 0f)
             };
-            // COLD ALLOC: Vector2[4] - one-time quad uv upload - owner: FakeRadarBlipController
+            // COLD ALLOC: Vector2[4] — one-time quad uv upload — owner: FakeRadarBlipController
             Vector2[] uvs =
             {
                 new Vector2(0f, 0f),
@@ -809,7 +996,7 @@ namespace Hecton8.UI
                 new Vector2(1f, 1f),
                 new Vector2(1f, 0f)
             };
-            // COLD ALLOC: int[6] - one-time quad index upload - owner: FakeRadarBlipController
+            // COLD ALLOC: int[6] — one-time quad index upload — owner: FakeRadarBlipController
             int[] triangles = { 0, 1, 2, 0, 2, 3 };
             mesh.SetVertices(vertices);
             mesh.uv = uvs;
@@ -848,7 +1035,8 @@ namespace Hecton8.UI
             }
             else
             {
-                halfHeight = math.tan(math.radians(camera.fieldOfView) * 0.5f) * math.max(0.001f, distance);
+                float projectionY = math.abs(camera.projectionMatrix.m11);
+                halfHeight = math.max(0.001f, distance) / math.max(0.001f, projectionY);
                 halfWidth = halfHeight * math.max(0.001f, camera.aspect);
             }
 
@@ -861,22 +1049,71 @@ namespace Hecton8.UI
                 return;
 
             if (!_registered)
+                _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+
+            RefreshLateFrameRegistration();
+            RefreshRenderableRegistration();
+        }
+
+        private void RefreshLateFrameRegistration()
+        {
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
             {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registered = GlobalRegistry.Updatables.Contains(this);
+                if (_registeredLateFrame)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                    _registeredLateFrame = false;
+                }
+
+                return;
             }
 
-            if (!_registeredLateFrame)
+            if (_radarCullScheduled)
             {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-                _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
+                if (!_registeredLateFrame)
+                    _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
             }
+            else if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
+        }
 
-            if (!_registeredRenderable)
+        private void RefreshRenderableRegistration()
+        {
+            bool shouldRender = Application.isPlaying &&
+                _visibleBlipMatrixCount > 0 &&
+                _visibleBlipMatrices.IsCreated;
+
+            if (shouldRender)
             {
-                GlobalRegistry.Renderables.Register(this);
-                _registeredRenderable = GlobalRegistry.Renderables.Contains(this);
+                if (!_registeredRenderable)
+                    _registeredRenderable = GlobalRegistry.Renderables.TryRegister(this);
             }
+            else if (_registeredRenderable)
+            {
+                GlobalRegistry.Renderables.Unregister(this);
+                _registeredRenderable = false;
+            }
+        }
+
+        private void TryRegisterScanEvents()
+        {
+            if (_scanEventsRegistered || !Application.isPlaying)
+                return;
+
+            ScanEvents.Register(this);
+            _scanEventsRegistered = true;
+        }
+
+        private void TryUnregisterScanEvents()
+        {
+            if (!_scanEventsRegistered)
+                return;
+
+            ScanEvents.Unregister(this);
+            _scanEventsRegistered = false;
         }
 
         private void TryUnregister()

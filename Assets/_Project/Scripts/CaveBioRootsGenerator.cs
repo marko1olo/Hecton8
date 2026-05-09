@@ -1,16 +1,20 @@
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Caves
 {
     /// <summary>
     /// Runtime owner for hanging bioluminescent cave roots attached to voxel cave ceilings.
-    /// Anchors are resolved with NonAlloc raycasts and refined later if the cave mesh was not ready yet.
+    /// Anchors use deterministic local-bounds sampling; root motion stays on the tick path.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CaveBioRootsGenerator : MonoBehaviour, ITickable, IUpdatable
     {
         private const string RootNamePrefix = "_BioRoot_";
+        private const int RootNameCacheCapacity = 32;
+        private const float CeilingAnchorInset = 0.12f;
+        private static readonly string[] _RootNames = CreateTwoDigitNameCache(RootNamePrefix, RootNameCacheCapacity); // COLD ALLOC: string[32] — bounded bio-root child names — owner: CaveBioRootsGenerator
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -20,19 +24,6 @@ namespace Hecton8.Caves
         [SerializeField]
         [Tooltip("Optional player override used when bootstrap has not published the runtime player yet.")]
         private Transform playerTransformOverride;
-
-        [Header("── Ceiling Sampling ──────────────────")]
-        [SerializeField]
-        [Tooltip("Layer mask sampled when probing cave ceilings with Physics.RaycastNonAlloc.")]
-        private LayerMask ceilingMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
-        [SerializeField, Range(0.05f, 4f)]
-        [Tooltip("Distance above the predicted ceiling plane where anchor-cast rays begin.")]
-        private float anchorCastPadding = 1.25f;
-
-        [SerializeField, Range(0.1f, 4f)]
-        [Tooltip("How often roots retry anchor refinement while waiting for a generated cave mesh/collider.")]
-        private float anchorRefineInterval = 0.75f;
 
         private Transform _volumeTransform;
         private Transform _playerTransform;
@@ -49,7 +40,7 @@ namespace Hecton8.Caves
         private float _topWidth;
         private float _tipWidth;
         private Color _glowColor;
-        private float _anchorRefineTimer;
+        private float _swayTime;
         private bool _registeredTick;
         private LineRenderer[] _rootRenderers;
         private Transform[] _rootTransforms;
@@ -57,8 +48,6 @@ namespace Hecton8.Caves
         private Vector3[] _rootAnchorsLocal;
         private float[] _rootLengths;
         private float[] _rootPhases;
-        private bool[] _rootNeedsRefine;
-        private readonly RaycastHit[] _ceilingHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] — bounded ceiling-anchor probe buffer — owner: CaveBioRootsGenerator
 
         /// <summary>
         /// Configures the generator from the cave dressing owner.
@@ -86,7 +75,10 @@ namespace Hecton8.Caves
             _topWidth = Mathf.Max(0.01f, config.topWidth);
             _tipWidth = Mathf.Clamp(config.tipWidth, 0.005f, _topWidth);
             _glowColor = config.glowColor;
-            _rootCount = Mathf.Clamp(Mathf.RoundToInt(config.maxCount * Mathf.Clamp01(globalIntensity)), 0, config.maxCount);
+            _rootCount = Mathf.Clamp(
+                Mathf.RoundToInt(config.maxCount * Mathf.Clamp01(globalIntensity)),
+                0,
+                Mathf.Min(config.maxCount, RootNameCacheCapacity));
 
             EnsureBuffers();
             EnsureRootRenderers();
@@ -94,14 +86,12 @@ namespace Hecton8.Caves
             for (int i = 0; i < _rootCount; i++)
             {
                 ConfigureRenderer(i);
-                TryResolveAnchor(i, allowFallback: true);
+                ResolveAnchor(i);
                 if (_rootTransforms[i] != null && !_rootTransforms[i].gameObject.activeSelf)
                     _rootTransforms[i].gameObject.SetActive(true);
             }
 
             DisableUnusedRoots();
-            _anchorRefineTimer = 0f;
-
             if (_rootCount > 0)
                 TryRegister();
             else
@@ -117,12 +107,13 @@ namespace Hecton8.Caves
                 return;
 
             ResolvePlayerContext();
-            TickAnchorRefinement(dt);
+            _swayTime += math.max(0f, dt);
 
             Vector3 playerPosition = _playerTransform != null ? _playerTransform.position : Vector3.zero;
             Vector3 playerVelocity = _playerRigidbody != null ? _playerRigidbody.linearVelocity : Vector3.zero;
-            float playerSpeed = playerVelocity.magnitude;
-            float time = Time.time;
+            float playerSpeedSq = playerVelocity.sqrMagnitude;
+            float playerSpeed = playerSpeedSq > 0.0625f ? EstimateLength3D(playerVelocity) : 0f;
+            float time = _swayTime;
 
             for (int i = 0; i < _rootCount; i++)
             {
@@ -184,7 +175,6 @@ namespace Hecton8.Caves
                 _rootAnchorsLocal = new Vector3[_rootCount]; // COLD ALLOC: Vector3[_rootCount] — cached local-space root anchors — owner: CaveBioRootsGenerator
                 _rootLengths = new float[_rootCount]; // COLD ALLOC: float[_rootCount] — cached root lengths — owner: CaveBioRootsGenerator
                 _rootPhases = new float[_rootCount]; // COLD ALLOC: float[_rootCount] — cached root sway phase offsets — owner: CaveBioRootsGenerator
-                _rootNeedsRefine = new bool[_rootCount]; // COLD ALLOC: bool[_rootCount] — deferred ceiling-anchor refinement flags — owner: CaveBioRootsGenerator
             }
 
             for (int i = 0; i < _rootCount; i++)
@@ -201,11 +191,12 @@ namespace Hecton8.Caves
                 if (_rootRenderers[i] != null)
                     continue;
 
-                Transform child = transform.Find($"{RootNamePrefix}{i:00}");
+                string rootName = GetCachedRootName(i);
+                Transform child = transform.Find(rootName);
                 if (child == null)
                 {
                     // COLD ALLOC: GameObject[1] — ceiling root visual child — owner: CaveBioRootsGenerator
-                    GameObject childObject = new GameObject($"{RootNamePrefix}{i:00}");
+                    GameObject childObject = new GameObject(rootName);
                     child = childObject.transform;
                     child.SetParent(transform, false);
                 }
@@ -262,86 +253,22 @@ namespace Hecton8.Caves
             }
         }
 
-        private void TickAnchorRefinement(float dt)
-        {
-            _anchorRefineTimer -= Mathf.Max(0f, dt);
-            if (_anchorRefineTimer > 0f)
-                return;
-
-            _anchorRefineTimer = anchorRefineInterval;
-            for (int i = 0; i < _rootCount; i++)
-            {
-                if (!_rootNeedsRefine[i])
-                    continue;
-
-                TryResolveAnchor(i, allowFallback: false);
-            }
-        }
-
-        private bool TryResolveAnchor(int rootIndex, bool allowFallback)
+        private bool ResolveAnchor(int rootIndex)
         {
             if (_volumeTransform == null || !CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, _preset, out Bounds bounds))
                 return false;
 
             float margin = 0.75f;
-            float sampleX = Mathf.Lerp(bounds.min.x + margin, bounds.max.x - margin, Hash01(rootIndex + 1, 17));
-            float sampleZ = Mathf.Lerp(bounds.min.z + margin, bounds.max.z - margin, Hash01(rootIndex + 1, 53));
-            float rayDistance = bounds.size.y + (anchorCastPadding * 2f);
-            Vector3 rayOriginLS = new Vector3(sampleX, bounds.max.y + anchorCastPadding, sampleZ);
-            Vector3 rayOriginWS = _volumeTransform.TransformPoint(rayOriginLS);
-            Ray ray = new Ray(rayOriginWS, Vector3.down);
-
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                ray,
-                _ceilingHits,
-                rayDistance,
-                ceilingMask,
-                QueryTriggerInteraction.Ignore);
-
-            float nearestDistance = float.PositiveInfinity;
-            bool foundAnchor = false;
-            Vector3 resolvedAnchorWS = rayOriginWS;
-            Vector3 resolvedNormalWS = Vector3.up;
-
-            for (int i = 0; i < hitCount; i++)
-            {
-                RaycastHit hit = _ceilingHits[i];
-                Collider hitCollider = hit.collider;
-                if (hitCollider == null || !hitCollider.transform.IsChildOf(_volumeTransform) && hitCollider.transform != _volumeTransform)
-                    continue;
-
-                if (hit.distance >= nearestDistance)
-                    continue;
-
-                nearestDistance = hit.distance;
-                resolvedAnchorWS = hit.point + (hit.normal.normalized * 0.03f);
-                resolvedNormalWS = hit.normal.sqrMagnitude > 0.0001f ? hit.normal.normalized : Vector3.up;
-                foundAnchor = true;
-            }
-
-            if (!foundAnchor)
-            {
-                if (!allowFallback)
-                    return false;
-
-                resolvedAnchorWS = _volumeTransform.TransformPoint(new Vector3(sampleX, bounds.max.y, sampleZ));
-                resolvedNormalWS = Vector3.up;
-                _rootNeedsRefine[rootIndex] = true;
-            }
-            else
-            {
-                _rootNeedsRefine[rootIndex] = false;
-            }
-
-            _rootAnchorsLocal[rootIndex] = _volumeTransform.InverseTransformPoint(resolvedAnchorWS);
-            _rootLengths[rootIndex] = Mathf.Lerp(_minLength, _maxLength, Hash01(rootIndex + 1, 101));
+            float sampleX = math.lerp(bounds.min.x + margin, bounds.max.x - margin, Hash01(rootIndex + 1, 17));
+            float sampleZ = math.lerp(bounds.min.z + margin, bounds.max.z - margin, Hash01(rootIndex + 1, 53));
+            _rootAnchorsLocal[rootIndex] = new Vector3(sampleX, bounds.max.y - CeilingAnchorInset, sampleZ);
+            _rootLengths[rootIndex] = math.lerp(_minLength, _maxLength, Hash01(rootIndex + 1, 101));
             _rootPhases[rootIndex] = Hash01(rootIndex + 1, 149) * Mathf.PI * 2f;
 
             if (_rootTransforms[rootIndex] != null)
             {
                 _rootTransforms[rootIndex].localPosition = Vector3.zero;
                 _rootTransforms[rootIndex].localRotation = Quaternion.identity;
-                _rootTransforms[rootIndex].up = resolvedNormalWS;
             }
 
             return true;
@@ -365,19 +292,41 @@ namespace Hecton8.Caves
                 return Vector3.zero;
 
             Vector3 horizontalDelta = new Vector3(toAnchor.x, 0f, toAnchor.z);
-            float horizontalDistance = horizontalDelta.magnitude;
-            if (horizontalDistance > _propWashRadius || horizontalDistance <= 0.001f)
+            float horizontalDistanceSq = (horizontalDelta.x * horizontalDelta.x) + (horizontalDelta.z * horizontalDelta.z);
+            float propWashRadiusSq = _propWashRadius * _propWashRadius;
+            if (horizontalDistanceSq > propWashRadiusSq || horizontalDistanceSq <= 0.000001f)
                 return Vector3.zero;
 
-            float distanceT = 1f - Mathf.Clamp01(horizontalDistance / _propWashRadius);
-            float speedT = Mathf.Clamp01(playerSpeed / 10f);
-            Vector3 wakeDirectionWS = playerVelocity.sqrMagnitude > 0.0001f ? playerVelocity.normalized : horizontalDelta.normalized;
+            float distanceT = 1f - math.saturate(horizontalDistanceSq / math.max(0.0001f, propWashRadiusSq));
+            float speedT = math.saturate(playerSpeed * 0.1f);
+            Vector3 wakeDirectionWS = playerVelocity.sqrMagnitude > 0.0001f ? playerVelocity : horizontalDelta;
             wakeDirectionWS.y = 0f;
-            if (wakeDirectionWS.sqrMagnitude <= 0.0001f)
+            float wakeDirectionSq = (wakeDirectionWS.x * wakeDirectionWS.x) + (wakeDirectionWS.z * wakeDirectionWS.z);
+            if (wakeDirectionSq <= 0.0001f)
                 return Vector3.zero;
 
-            Vector3 wakeDirectionLS = _volumeTransform.InverseTransformDirection(-wakeDirectionWS.normalized);
+            wakeDirectionWS *= ApproximateInvLength2D(wakeDirectionWS);
+            Vector3 wakeDirectionLS = _volumeTransform.InverseTransformDirection(-wakeDirectionWS);
             return wakeDirectionLS * (_propWashStrength * distanceT * speedT);
+        }
+
+        private static float EstimateLength3D(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.25f);
+        }
+
+        private static float ApproximateInvLength2D(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float az = math.abs(value.z);
+            float length = math.max(ax, az) + (math.min(ax, az) * 0.375f);
+            return length > 0.0001f ? 1f / length : 0f;
         }
 
         private void TryRegister()
@@ -405,6 +354,22 @@ namespace Hecton8.Caves
         {
             float hash = Mathf.Sin((index * 12.9898f) + (salt * 78.233f)) * 43758.5453f;
             return hash - Mathf.Floor(hash);
+        }
+
+        private static string GetCachedRootName(int index)
+        {
+            return (uint)index < (uint)_RootNames.Length
+                ? _RootNames[index]
+                : RootNamePrefix;
+        }
+
+        private static string[] CreateTwoDigitNameCache(string prefix, int count)
+        {
+            string[] names = new string[count];
+            for (int i = 0; i < count; i++)
+                names[i] = i < 10 ? prefix + "0" + i : prefix + i;
+
+            return names;
         }
     }
 }

@@ -72,6 +72,11 @@ namespace NASAPunk.Visor
         private Transform _cachedHudRtCompositorTransform;
         private bool _fallbackToOverlayActive;
         private SuitHUDV4CanvasOverlay _normalizedProjectionSourceOverlay;
+        private VisorHUDController _cachedVisorRendererOwner;
+        private Renderer _cachedVisorRenderer;
+        private bool _cachedVisorRendererResolved;
+        private Camera _cachedSelfCamera;
+        private bool _cachedSelfCameraResolved;
         private bool _editorPresentationStateCached;
         private bool _editorLastProjectedPresentationAvailable;
         private bool _editorLastProjectedOutputSurfaceAvailable;
@@ -239,7 +244,7 @@ namespace NASAPunk.Visor
         public void Tick(float deltaTime)
         {
             AutoResolveReferences();
-            ApplyPresentation(force: _pendingApply);
+            ApplyPresentation(force: _pendingApply, allowProjectionSourceCreation: false);
             _pendingApply = false;
             EvaluateTickRegistration();
         }
@@ -254,35 +259,36 @@ namespace NASAPunk.Visor
                 return;
 
             _nextAutoResolveAt = now + AutoResolveRetryInterval;
+            bool allowHierarchySearch = force || !Application.isPlaying;
 
             if (visorProjectionCamera == null)
-                visorProjectionCamera = GetComponent<Camera>();
+                visorProjectionCamera = ResolveSelfCamera();
 
-            if (overlayPresentationCamera == null)
+            if (overlayPresentationCamera == null && allowHierarchySearch)
             {
                 Transform parent = transform.parent;
                 if (parent != null)
                 {
                     Transform mainCameraTransform = parent.Find("Main Camera");
                     if (mainCameraTransform != null)
-                        overlayPresentationCamera = mainCameraTransform.GetComponent<Camera>();
+                        mainCameraTransform.TryGetComponent(out overlayPresentationCamera);
                 }
             }
 
             if (projectedModernHud == null)
-                projectedModernHud = GetComponent<HectonSuitHUD_v4>();
+                TryGetComponent(out projectedModernHud);
 
             if (overlayModernHud == null && overlayPresentationCamera != null)
-                overlayModernHud = overlayPresentationCamera.GetComponent<HectonSuitHUD_v4>();
+                overlayPresentationCamera.TryGetComponent(out overlayModernHud);
 
-            if (visorController == null)
+            if (visorController == null && allowHierarchySearch)
             {
                 Transform parent = transform.parent;
                 if (parent != null)
                 {
                     Transform visor = parent.Find("Suit_Visor");
                     if (visor != null)
-                        visorController = visor.GetComponent<VisorHUDController>();
+                        visor.TryGetComponent(out visorController);
                 }
             }
 
@@ -295,8 +301,16 @@ namespace NASAPunk.Visor
             {
                 SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
                 Transform root = transform.root;
-                canvasOverlay = FindOverlayByName(s_overlayResolveBuffer, "Suit_HUD_Canvas", canvasOverlay, root);
-                projectionSourceOverlay = FindOverlayByName(s_overlayResolveBuffer, ProjectionSourceCanvasName, projectionSourceOverlay, root);
+                if (allowHierarchySearch)
+                {
+                    canvasOverlay = FindOverlayByName(s_overlayResolveBuffer, "Suit_HUD_Canvas", canvasOverlay, root);
+                    projectionSourceOverlay = FindOverlayByName(s_overlayResolveBuffer, ProjectionSourceCanvasName, projectionSourceOverlay, root);
+                }
+                else
+                {
+                    canvasOverlay = FindOverlayByRoot(s_overlayResolveBuffer, canvasOverlay, root);
+                }
+
                 s_overlayResolveBuffer.Clear();
             }
 
@@ -307,7 +321,7 @@ namespace NASAPunk.Visor
                 s_compositorResolveBuffer.Clear();
             }
 
-            if (diegeticProjectionRenderer == null)
+            if (diegeticProjectionRenderer == null && allowHierarchySearch)
                 diegeticProjectionRenderer = FindDiegeticProjectionRenderer(transform.root);
 
             if (sharedProjectionTexture == null && visorController != null)
@@ -335,16 +349,16 @@ namespace NASAPunk.Visor
                 (presentationMode == PresentationMode.ModernProjectedSharedRT ||
                  presentationMode == PresentationMode.ModernProjectedRuntimeRT);
 
-            return projectedCanvasSourceNeeded && projectionSourceOverlay == null;
+            return projectedCanvasSourceNeeded && projectionSourceOverlay == null && !Application.isPlaying;
         }
 
-        private void ApplyPresentation(bool force)
+        private void ApplyPresentation(bool force, bool allowProjectionSourceCreation = true)
         {
             bool projectedModeRequested =
                 presentationMode == PresentationMode.ModernProjectedSharedRT ||
                 presentationMode == PresentationMode.ModernProjectedRuntimeRT;
 
-            EnsureProjectionSource(projectedModeRequested);
+            EnsureProjectionSource(projectedModeRequested, allowProjectionSourceCreation);
             bool projectedMode = projectedModeRequested && IsProjectedPresentationAvailable();
             ApplyDiegeticProjectionFrustumFit(projectedMode);
 
@@ -375,19 +389,18 @@ namespace NASAPunk.Visor
             if (preferCanvasProjectionSource && projectedMode && projectionSourceOverlay != null)
                 useProjectedModern = false;
 
-            if (overlayModernHud != null)
-                overlayModernHud.enabled = useOverlayModern;
+            SetBehaviourEnabledIfChanged(overlayModernHud, useOverlayModern);
+            SetBehaviourEnabledIfChanged(projectedModernHud, useProjectedModern);
 
-            if (projectedModernHud != null)
-                projectedModernHud.enabled = useProjectedModern;
+            SuppressOverlayPaths(projectedMode, allowProjectionSourceCreation);
 
-            SuppressOverlayPaths(projectedMode);
-
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             debugAppliedModeLabel = projectedModeRequested && !projectedMode
                 ? presentationMode + " -> FallbackOverlay"
                 : presentationMode == PresentationMode.LegacyOverlay
                     ? "ModernOverlay (legacy retired)"
                     : ResolvePresentationModeLabel(presentationMode);
+#endif
             debugModernEnabled =
                 (overlayModernHud != null && overlayModernHud.enabled) ||
                 (projectedModernHud != null && projectedModernHud.enabled);
@@ -429,7 +442,7 @@ namespace NASAPunk.Visor
             }
         }
 
-        private void SuppressOverlayPaths(bool projectedMode)
+        private void SuppressOverlayPaths(bool projectedMode, bool allowHierarchySearch)
         {
             bool suppress = projectedMode && suppressOverlaysInProjectedMode;
             bool showProjectionPreview = projectedMode && previewProjectedSourceOnScreen;
@@ -437,21 +450,20 @@ namespace NASAPunk.Visor
             if (canvasOverlay != null)
             {
                 if (suppress)
-                    SetOverlayCanvasVisible(canvasOverlay, false);
+                    SetOverlayCanvasVisible(canvasOverlay, false, allowHierarchySearch);
                 else
                 {
                     canvasOverlay.SetRenderPathProjectionSource(false);
-                    SetOverlayCanvasVisible(canvasOverlay, true);
+                    SetOverlayCanvasVisible(canvasOverlay, true, allowHierarchySearch);
                 }
 
                 _cachedHudCanvasTransform = canvasOverlay.transform;
             }
 
-            if (screenCompositor != null)
-                screenCompositor.enabled = showProjectionPreview;
+            SetBehaviourEnabledIfChanged(screenCompositor, showProjectionPreview);
 
-            Transform compositorTransform = ResolveHudRtCompositorTransform();
-            SetTransformCanvasVisible(compositorTransform, showProjectionPreview);
+            Transform compositorTransform = ResolveHudRtCompositorTransform(allowHierarchySearch);
+            SetTransformCanvasVisible(compositorTransform, showProjectionPreview, allowHierarchySearch);
 
             debugOverlaysSuppressed = suppress && !showProjectionPreview;
         }
@@ -484,7 +496,7 @@ namespace NASAPunk.Visor
             if (visorController == null || !visorController.isActiveAndEnabled)
                 return false;
 
-            Renderer visorRenderer = visorController.GetComponent<Renderer>();
+            Renderer visorRenderer = ResolveVisorRenderer();
             bool visorSurfaceAvailable = visorRenderer != null &&
                                           visorRenderer.enabled &&
                                           !visorRenderer.forceRenderingOff &&
@@ -526,12 +538,12 @@ namespace NASAPunk.Visor
                 surface.localScale = targetScale;
         }
 
-        private void EnsureProjectionSource(bool projectedMode)
+        private void EnsureProjectionSource(bool projectedMode, bool allowProjectionSourceCreation)
         {
             if (!projectedMode)
             {
                 if (projectionSourceOverlay != null)
-                    SetOverlayCanvasVisible(projectionSourceOverlay, false);
+                    SetOverlayCanvasVisible(projectionSourceOverlay, false, allowProjectionSourceCreation);
 
                 return;
             }
@@ -540,7 +552,7 @@ namespace NASAPunk.Visor
                 return;
 
             bool createdThisPass = false;
-            if (projectionSourceOverlay == null)
+            if (projectionSourceOverlay == null && allowProjectionSourceCreation)
             {
                 projectionSourceOverlay = CreateProjectionSourceOverlay();
                 createdThisPass = projectionSourceOverlay != null;
@@ -549,7 +561,7 @@ namespace NASAPunk.Visor
             if (projectionSourceOverlay == null)
                 return;
 
-            SetOverlayCanvasVisible(projectionSourceOverlay, true);
+            SetOverlayCanvasVisible(projectionSourceOverlay, true, allowProjectionSourceCreation);
 
             if (!ReferenceEquals(_normalizedProjectionSourceOverlay, projectionSourceOverlay))
             {
@@ -572,7 +584,7 @@ namespace NASAPunk.Visor
                 typeof(Canvas),
                 typeof(GraphicRaycaster),
                 typeof(SuitHUDV4CanvasOverlay),
-                typeof(HectonUIScaler));
+                typeof(HectonUIScaler)); // COLD ALLOC: GameObject[1] — projection-source canvas bootstrap; Tick calls disallow creation — owner: SuitHUDPresentationController
 
             if (parent != null)
             {
@@ -581,11 +593,11 @@ namespace NASAPunk.Visor
 
             go.layer = ProjectionSourceLayer;
 
-            GraphicRaycaster raycaster = go.GetComponent<GraphicRaycaster>();
-            if (raycaster != null)
-                raycaster.enabled = false;
+            go.TryGetComponent(out GraphicRaycaster raycaster);
+            SetBehaviourEnabledIfChanged(raycaster, false);
 
-            return go.GetComponent<SuitHUDV4CanvasOverlay>();
+            go.TryGetComponent(out SuitHUDV4CanvasOverlay overlay);
+            return overlay;
         }
 
         private Transform ResolveProjectionSourceParent()
@@ -608,31 +620,34 @@ namespace NASAPunk.Visor
             if (overlayObject.layer != ProjectionSourceLayer)
                 overlayObject.layer = ProjectionSourceLayer;
 
-            if (overlay.TryGetComponent(out CanvasScaler canvasScaler) && canvasScaler.enabled)
-                canvasScaler.enabled = false;
+            if (overlay.TryGetComponent(out CanvasScaler canvasScaler))
+                SetBehaviourEnabledIfChanged(canvasScaler, false);
 
-            if (overlay.TryGetComponent(out GraphicRaycaster raycaster) && raycaster.enabled)
-                raycaster.enabled = false;
+            if (overlay.TryGetComponent(out GraphicRaycaster raycaster))
+                SetBehaviourEnabledIfChanged(raycaster, false);
 
             if (!overlay.TryGetComponent(out HectonUIScaler _))
-                overlayObject.AddComponent<HectonUIScaler>();
+                overlayObject.AddComponent<HectonUIScaler>(); // COLD ALLOC: HectonUIScaler[1] — projection-source matrix scaler bootstrap — owner: SuitHUDPresentationController
         }
 
-        private static void SetTransformCanvasVisible(Transform target, bool visible)
+        private static void SetTransformCanvasVisible(Transform target, bool visible, bool allowCanvasGroupCreation)
         {
             if (!(target is RectTransform rect))
                 return;
 
-            CanvasGroup canvasGroup = rect.GetComponent<CanvasGroup>();
+            rect.TryGetComponent(out CanvasGroup canvasGroup);
             if (canvasGroup == null)
-                canvasGroup = rect.gameObject.AddComponent<CanvasGroup>();
+            {
+                if (!allowCanvasGroupCreation)
+                    return;
 
-            canvasGroup.alpha = visible ? 1f : 0f;
-            canvasGroup.interactable = false;
-            canvasGroup.blocksRaycasts = false;
+                canvasGroup = rect.gameObject.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] — compositor visibility latch for projection preview — owner: SuitHUDPresentationController
+            }
+
+            SetCanvasGroupVisibleIfChanged(canvasGroup, visible);
         }
 
-        private static void SetOverlayCanvasVisible(SuitHUDV4CanvasOverlay overlay, bool visible)
+        private static void SetOverlayCanvasVisible(SuitHUDV4CanvasOverlay overlay, bool visible, bool allowCanvasGroupCreation)
         {
             if (overlay == null)
                 return;
@@ -640,13 +655,34 @@ namespace NASAPunk.Visor
             if (!visible && overlay.isActiveAndEnabled)
                 overlay.SetRenderPathProjectionSource(false);
 
-            overlay.enabled = visible;
+            SetBehaviourEnabledIfChanged(overlay, visible);
 
             Canvas overlayCanvas = overlay.TargetCanvas;
             RectTransform rect = overlayCanvas != null
                 ? overlayCanvas.transform as RectTransform
                 : overlay.transform as RectTransform;
-            SetTransformCanvasVisible(rect, visible);
+            SetTransformCanvasVisible(rect, visible, allowCanvasGroupCreation);
+        }
+
+        private static void SetBehaviourEnabledIfChanged(Behaviour behaviour, bool enabled)
+        {
+            if (behaviour != null && behaviour.enabled != enabled)
+                behaviour.enabled = enabled;
+        }
+
+        private static void SetCanvasGroupVisibleIfChanged(CanvasGroup canvasGroup, bool visible)
+        {
+            float targetAlpha = visible ? 1f : 0f;
+            if (canvasGroup.alpha == targetAlpha &&
+                !canvasGroup.interactable &&
+                !canvasGroup.blocksRaycasts)
+            {
+                return;
+            }
+
+            canvasGroup.alpha = targetAlpha;
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
         }
 
         private static SuitHUDV4CanvasOverlay FindOverlayByName(
@@ -671,6 +707,25 @@ namespace NASAPunk.Visor
             {
                 SuitHUDV4CanvasOverlay candidate = overlays[i];
                 if (candidate != null && candidate.name == expectedName)
+                    return candidate;
+            }
+
+            return current;
+        }
+
+        private static SuitHUDV4CanvasOverlay FindOverlayByRoot(
+            List<SuitHUDV4CanvasOverlay> overlays,
+            SuitHUDV4CanvasOverlay current,
+            Transform preferredRoot)
+        {
+            if (current != null && current.transform.root == preferredRoot)
+                return current;
+
+            for (int i = 0; i < overlays.Count; i++)
+            {
+                SuitHUDV4CanvasOverlay candidate = overlays[i];
+                if (candidate != null &&
+                    candidate.transform.root == preferredRoot)
                     return candidate;
             }
 
@@ -702,10 +757,13 @@ namespace NASAPunk.Visor
             return null;
         }
 
-        private Transform ResolveHudRtCompositorTransform()
+        private Transform ResolveHudRtCompositorTransform(bool allowHierarchySearch)
         {
             if (_cachedHudRtCompositorTransform != null)
                 return _cachedHudRtCompositorTransform;
+
+            if (!allowHierarchySearch)
+                return null;
 
             Transform canvasTransform = ResolveHudCanvasTransform();
             if (canvasTransform == null)
@@ -750,7 +808,44 @@ namespace NASAPunk.Visor
             if (visorProjectionCamera != null)
                 return visorProjectionCamera;
 
-            return GetComponent<Camera>();
+            return ResolveSelfCamera();
+        }
+
+        private Renderer ResolveVisorRenderer()
+        {
+            if (visorController == null)
+            {
+                _cachedVisorRendererOwner = null;
+                _cachedVisorRenderer = null;
+                _cachedVisorRendererResolved = false;
+                return null;
+            }
+
+            if (_cachedVisorRendererOwner != visorController)
+            {
+                _cachedVisorRendererOwner = visorController;
+                _cachedVisorRenderer = null;
+                _cachedVisorRendererResolved = false;
+            }
+
+            if (!_cachedVisorRendererResolved)
+            {
+                visorController.TryGetComponent(out _cachedVisorRenderer);
+                _cachedVisorRendererResolved = true;
+            }
+
+            return _cachedVisorRenderer;
+        }
+
+        private Camera ResolveSelfCamera()
+        {
+            if (!_cachedSelfCameraResolved)
+            {
+                TryGetComponent(out _cachedSelfCamera);
+                _cachedSelfCameraResolved = true;
+            }
+
+            return _cachedSelfCamera;
         }
 
         public void SetPresentationMode(PresentationMode mode)
@@ -971,7 +1066,11 @@ namespace NASAPunk.Visor
                 return null;
 
             Transform surface = FindChildByName(root, DiegeticProjectionSurfaceName);
-            return surface != null ? surface.GetComponent<Renderer>() : null;
+            if (surface == null)
+                return null;
+
+            surface.TryGetComponent(out Renderer renderer);
+            return renderer;
         }
 
         private static Transform FindChildByName(Transform root, string targetName)

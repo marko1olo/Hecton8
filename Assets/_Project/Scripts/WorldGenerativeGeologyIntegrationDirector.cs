@@ -8,6 +8,8 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4031)]
     public sealed class WorldGenerativeGeologyIntegrationDirector : MonoBehaviour, ISlowTickable, IOriginShiftListener
     {
+        private const int PlanRuntimeKeyCapacity = 256;
+
         [Header("References")]
         [SerializeField] private Transform playerTransform;
         [SerializeField] private MapMagicBridge mapMagicBridge;
@@ -49,7 +51,7 @@ namespace Hecton8.World
         private readonly List<WorldGenerativeGeologySeamPlan> _selectionBuffer = new List<WorldGenerativeGeologySeamPlan>(256);
         private readonly List<WorldGenerativeGeologyBinding> _bindingScanBuffer = new List<WorldGenerativeGeologyBinding>(256);
         private readonly List<long> _dictionaryTrimBuffer = new List<long>(256);
-        private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>();
+        private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>(PlanRuntimeKeyCapacity);
         private bool _registeredToTickManager;
         private bool _hasPlanRefreshSample;
         private Vector3 _lastPlanRefreshPosition;
@@ -370,11 +372,13 @@ namespace Hecton8.World
                         continue;
 
                     Vector3 runtimeWorldPosition = binding.transform.position;
-                    float playerDistance = Vector3.Distance(playerTransform.position, runtimeWorldPosition);
                     float residencyRadius = searchRadius + Mathf.Max(4f, plan.seamBlendRadius);
-                    if (playerDistance > residencyRadius)
+                    float residencyRadiusSq = residencyRadius * residencyRadius;
+                    Vector3 playerDelta = playerTransform.position - runtimeWorldPosition;
+                    if (playerDelta.sqrMagnitude > residencyRadiusSq)
                         continue;
 
+                    float playerDistance = ApproximateDistanceNoSqrt(playerDelta);
                     plan.absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeWorldPosition);
                     plan.absoluteUniverseAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeWorldPosition);
                     plan.hasAbsoluteUniverseAup = true;
@@ -475,11 +479,13 @@ namespace Hecton8.World
             Transform targetTransform = binding.transform;
             Vector3 runtimeWorldPosition = targetTransform.position;
             Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeWorldPosition);
-            float playerDistance = Vector3.Distance(playerTransform.position, runtimeWorldPosition);
             float residencyRadius = searchRadius + Mathf.Max(4f, binding.SeamBlendRadius);
-            if (playerDistance > residencyRadius)
+            float residencyRadiusSq = residencyRadius * residencyRadius;
+            Vector3 playerDelta = playerTransform.position - runtimeWorldPosition;
+            if (playerDelta.sqrMagnitude > residencyRadiusSq)
                 return false;
 
+            float playerDistance = ApproximateDistanceNoSqrt(playerDelta);
             WorldProceduralProxyInstance metadata = binding.CachedProxyInstance;
             long runtimeKey = binding.RuntimeKey != 0L
                 ? binding.RuntimeKey
@@ -651,6 +657,17 @@ namespace Hecton8.World
                 binding.CanyonSignal * 0.16f +
                 binding.RidgeSignal * 0.12f +
                 binding.CaveProximity * 0.10f);
+        }
+
+        private static float ApproximateDistanceNoSqrt(Vector3 delta)
+        {
+            float ax = Mathf.Abs(delta.x);
+            float ay = Mathf.Abs(delta.y);
+            float az = Mathf.Abs(delta.z);
+            float max = Mathf.Max(ax, Mathf.Max(ay, az));
+            float min = Mathf.Min(ax, Mathf.Min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + mid * 0.375f + min * 0.125f;
         }
 
         private void ResolveReferences()

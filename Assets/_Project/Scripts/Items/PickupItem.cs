@@ -13,6 +13,7 @@ using Hecton8.Gameplay;
 namespace Hecton8.Interaction
 {
     using Hecton8.World;
+    using Unity.Mathematics;
     using UnityEngine;
 
     [RequireComponent(typeof(InteractionHighlighter))]
@@ -204,6 +205,7 @@ namespace Hecton8.Interaction
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterSlowTick();
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
@@ -219,6 +221,7 @@ namespace Hecton8.Interaction
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
             TryUnregisterSlowTick();
             TryUnregisterFixedTick();
             UnregisterSpatialHandle();
@@ -275,15 +278,23 @@ namespace Hecton8.Interaction
             if (sampledCurrent.sqrMagnitude <= 0.0001f)
                 return;
 
-            Vector3 velocityChange = Vector3.ClampMagnitude(sampledCurrent, 6f) * (LooseCurrentVelocityInfluence * fdt);
+            float currentLength = EstimateLength3D(sampledCurrent);
+            float currentScale = currentLength > 0.0001f
+                ? math.min(6f, currentLength) / currentLength
+                : 0f;
+            Vector3 velocityChange = sampledCurrent * (currentScale * LooseCurrentVelocityInfluence * fdt);
             PhysicsForceRouter.QueueForce(_rigidbody, velocityChange, ForceMode.VelocityChange);
 
             Vector3 spinAxis = Vector3.Cross(Vector3.up, sampledCurrent);
-            if (spinAxis.sqrMagnitude > 0.0001f)
+            float spinAxisLength = EstimateLength3D(spinAxis);
+            if (spinAxisLength > 0.0001f)
+            {
+                float velocityLength = EstimateLength3D(velocityChange);
                 PhysicsForceRouter.QueueTorque(
                     _rigidbody,
-                    spinAxis.normalized * (LooseCurrentSpinInfluence * velocityChange.magnitude),
+                    spinAxis * ((LooseCurrentSpinInfluence * velocityLength) / spinAxisLength),
                     ForceMode.VelocityChange);
+            }
 
             if (_spatialHandle != 0)
             {
@@ -513,7 +524,10 @@ namespace Hecton8.Interaction
             if (torqueAxis.sqrMagnitude <= 0.0001f)
                 torqueAxis = Vector3.right;
 
-            Vector3 torque = torqueAxis.normalized * OverflowScatterTorqueImpulse;
+            float torqueAxisLength = EstimateLength3D(torqueAxis);
+            Vector3 torque = torqueAxisLength > 0.0001f
+                ? torqueAxis * (OverflowScatterTorqueImpulse / torqueAxisLength)
+                : Vector3.zero;
             if (IsFiniteVector(torque))
                 PhysicsForceRouter.QueueTorque(_rigidbody, torque, ForceMode.Impulse);
         }
@@ -524,13 +538,15 @@ namespace Hecton8.Interaction
             {
                 Vector3 scatterDirection = transform.position - interactor.position;
                 scatterDirection.y = 0f;
-                if (scatterDirection.sqrMagnitude > 0.0001f)
-                    return scatterDirection.normalized;
+                float scatterLength = EstimateLength3D(scatterDirection);
+                if (scatterLength > 0.0001f)
+                    return scatterDirection * (1f / scatterLength);
 
                 Vector3 fallbackForward = -interactor.forward;
                 fallbackForward.y = 0f;
-                if (fallbackForward.sqrMagnitude > 0.0001f)
-                    return fallbackForward.normalized;
+                float fallbackLength = EstimateLength3D(fallbackForward);
+                if (fallbackLength > 0.0001f)
+                    return fallbackForward * (1f / fallbackLength);
             }
 
             return Vector3.forward;
@@ -648,6 +664,17 @@ namespace Hecton8.Interaction
 
             float depth = Mathf.Max(0f, _playerMovement.CurrentWaterSurfaceY - transform.position.y);
             return SurfaceStateUtility.ResolveUnderwaterFromDepth(depth, true);
+        }
+
+        private static float EstimateLength3D(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.25f);
         }
     }
 }

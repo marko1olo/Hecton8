@@ -1,8 +1,9 @@
-using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.AtlasSignal;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -16,23 +17,28 @@ namespace Hecton8.Quest
     /// Zero-allocation instanced world marker renderer for active quest objectives.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class MissionMarkerSystem : MonoBehaviour, IUpdatable, IRenderable
+    public sealed class MissionMarkerSystem : MonoBehaviour, IUpdatable, IRenderable, IQuestEventListener
     {
         private const string MarkerShaderPath = "Assets/_Project/Art/Shaders/Hecton_ScannerMarkerInstanced.shader";
         private const int MaxMarkers = 32;
         private const float MinimumDistanceMeters = 3f;
+        private const double MarkerRebuildMoveThresholdMetersSq = 64d;
+        private const uint ActiveMarkerOverflowWarningHash = 0x4D4D4151u; // MMAQ
+        private const uint MarkerCacheOverflowWarningHash = 0x4D4D4351u; // MMCQ
+        private const uint MarkerContextHash = 0x4D4D4354u; // MMCT
         private static readonly uint _atlasCoreMarkerTargetHash = QuestFlagHashKernel.ComputeStableHash("atlas6_core");
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int FlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
         private static readonly int FlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct QuestMarkerCache
         {
             public uint TargetHash;
-            public Vector3 FallbackPosition;
             public AbsoluteUniversePosition FallbackAup;
+            public Vector3 FallbackPosition;
             public float HeightOffset;
-            public bool HasFallbackPosition;
+            public byte HasFallbackPosition;
         }
 
         [Header("── Appearance ───────────────────────")]
@@ -54,35 +60,61 @@ namespace Hecton8.Quest
         [Tooltip("Per-frame flicker intensity fed into the instanced marker shader.")]
         [SerializeField, Range(0f, 0.4f)] private float flickerIntensity = 0.08f;
 
-        // COLD ALLOC: Dictionary<uint,QuestMarkerCache>[32] - quest hash to authored marker cache - owner: MissionMarkerSystem
-        private readonly Dictionary<uint, QuestMarkerCache> _markerCacheByQuestHash = new Dictionary<uint, QuestMarkerCache>(MaxMarkers);
+        // COLD ALLOC: uint[32] - quest hash marker cache keys - owner: MissionMarkerSystem
+        private readonly uint[] _markerCacheQuestHashes = new uint[MaxMarkers];
+        // COLD ALLOC: QuestMarkerCache[32] - quest hash marker cache values - owner: MissionMarkerSystem
+        private readonly QuestMarkerCache[] _markerCaches = new QuestMarkerCache[MaxMarkers];
         // COLD ALLOC: uint[32] - active quest hash scan buffer - owner: MissionMarkerSystem
         private readonly uint[] _activeQuestHashes = new uint[MaxMarkers];
-        // COLD ALLOC: Vector3[32] - resolved marker world positions - owner: MissionMarkerSystem
-        private readonly Vector3[] _markerWorldPositions = new Vector3[MaxMarkers];
         // COLD ALLOC: Matrix4x4[32] - instanced quest marker matrices - owner: MissionMarkerSystem
         private readonly Matrix4x4[] _markerMatrices = new Matrix4x4[MaxMarkers];
 
-        private Transform _playerTransform;
+        private HectonPlayerMovement _playerMovement;
         private Material _runtimeMarkerMaterial;
         private Mesh _runtimeMarkerMesh;
         private int _visibleMarkerCount;
+        private int _markerCacheCount;
+        private int _activeQuestCount;
+        private int _droppedActiveMarkerCount;
+        private int _droppedMarkerCacheCount;
+        private int _lastActiveMarkerOverflowTelemetryFrame = -1;
+        private int _lastMarkerCacheOverflowTelemetryFrame = -1;
+        private bool _activeQuestSetPrimed;
         private bool _registeredUpdatable;
         private bool _registeredRenderable;
+        private bool _markerCacheDirty = true;
+        private bool _hasMarkerRebuildPlayerAup;
+        private float _cachedMarkerScaleMeters = -1f;
+        private AbsoluteUniversePosition _lastMarkerRebuildPlayerAup;
+
+        /// <summary>
+        /// Number of active quest marker hashes rejected by the fixed marker budget.
+        /// </summary>
+        public int DroppedActiveMarkerCount => _droppedActiveMarkerCount;
+
+        /// <summary>
+        /// Number of quest marker presentation cache entries rejected by the fixed cache budget.
+        /// </summary>
+        public int DroppedMarkerCacheCount => _droppedMarkerCacheCount;
 
         private void Awake()
         {
             EnsureRuntimeResources();
-            ResolvePlayerTransform();
+            ResolvePlayerContextCold();
         }
 
         private void OnEnable()
         {
+            EnsureRuntimeResources();
+            ResolvePlayerContextCold();
+            PrimeActiveQuestSet();
+            QuestEvents.Register(this);
             RegisterRuntime();
         }
 
         private void OnDisable()
         {
+            QuestEvents.Unregister(this);
             UnregisterRuntime();
         }
 
@@ -109,9 +141,56 @@ namespace Hecton8.Quest
         /// <param name="deltaTime">Scaled frame delta supplied by the dispatcher.</param>
         public void Tick(float deltaTime)
         {
-            ResolvePlayerTransform();
-            EnsureRuntimeResources();
-            RebuildMarkerCache();
+            if (!_activeQuestSetPrimed)
+                PrimeActiveQuestSet();
+
+            if (_activeQuestCount <= 0)
+            {
+                _visibleMarkerCount = 0;
+                return;
+            }
+
+            ResolvePlayerContext();
+            if (_cachedMarkerScaleMeters != markerScaleMeters)
+                _markerCacheDirty = true;
+
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+            {
+                _visibleMarkerCount = 0;
+                _hasMarkerRebuildPlayerAup = false;
+                return;
+            }
+
+            if (!_markerCacheDirty && _hasMarkerRebuildPlayerAup)
+            {
+                double movedSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in _lastMarkerRebuildPlayerAup);
+                if (movedSq < MarkerRebuildMoveThresholdMetersSq)
+                    return;
+            }
+
+            RebuildMarkerCache(in playerAup);
+            _lastMarkerRebuildPlayerAup = playerAup;
+            _hasMarkerRebuildPlayerAup = true;
+            _markerCacheDirty = false;
+        }
+
+        public void OnQuestEvent(in QuestEventPayload payload)
+        {
+            uint questHash = payload.QuestHashID;
+            if (questHash == 0u)
+                return;
+
+            switch ((QuestEventType)payload.EventType)
+            {
+                case QuestEventType.Activated:
+                case QuestEventType.RevertRequested:
+                    AddActiveQuestHash(questHash);
+                    break;
+                case QuestEventType.Completed:
+                case QuestEventType.Failed:
+                    RemoveActiveQuestHash(questHash);
+                    break;
+            }
         }
 
         /// <summary>
@@ -130,12 +209,6 @@ namespace Hecton8.Quest
             {
                 return;
             }
-
-            Transform cameraTransform = camera.transform;
-            Quaternion rotation = cameraTransform.rotation;
-            Vector3 uniformScale = new Vector3(markerScaleMeters, markerScaleMeters, markerScaleMeters);
-            for (int i = 0; i < _visibleMarkerCount; i++)
-                _markerMatrices[i] = Matrix4x4.TRS(_markerWorldPositions[i], rotation, uniformScale);
 
             _runtimeMarkerMaterial.SetColor(BaseColorId, markerColor);
             _runtimeMarkerMaterial.SetFloat(FlickerFrequencyId, flickerFrequency);
@@ -186,10 +259,21 @@ namespace Hecton8.Quest
             }
         }
 
-        private void ResolvePlayerTransform()
+        private void ResolvePlayerContext()
         {
-            if (_playerTransform == null)
-                SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
+            if (_playerMovement != null)
+                return;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+            {
+                _playerMovement = playerContext.PlayerMovement;
+            }
+        }
+
+        private void ResolvePlayerContextCold()
+        {
+            ResolvePlayerContext();
         }
 
         private void EnsureRuntimeResources()
@@ -215,7 +299,7 @@ namespace Hecton8.Quest
             };
         }
 
-        private void RebuildMarkerCache()
+        private void RebuildMarkerCache(in AbsoluteUniversePosition playerAup)
         {
             _visibleMarkerCount = 0;
 
@@ -223,15 +307,13 @@ namespace Hecton8.Quest
             if (questManager == null)
                 return;
 
-            int activeQuestCount = questManager.CopyActiveQuestHashes(_activeQuestHashes);
-            bool hasPlayer = _playerTransform != null;
-            AbsoluteUniversePosition playerAup = hasPlayer
-                ? AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position)
-                : default;
             double maxDistanceSq = (double)maxVisibleDistanceMeters * maxVisibleDistanceMeters;
             double minDistanceSq = (double)MinimumDistanceMeters * MinimumDistanceMeters;
+            float safeScale = math.max(0.25f, markerScaleMeters);
+            Vector3 uniformScale = new Vector3(safeScale, safeScale, safeScale);
+            _cachedMarkerScaleMeters = markerScaleMeters;
 
-            for (int i = 0; i < activeQuestCount && _visibleMarkerCount < MaxMarkers; i++)
+            for (int i = 0; i < _activeQuestCount && _visibleMarkerCount < MaxMarkers; i++)
             {
                 uint questHash = _activeQuestHashes[i];
                 if (questHash == 0u)
@@ -246,15 +328,84 @@ namespace Hecton8.Quest
                     continue;
                 }
 
-                if (hasPlayer)
-                {
-                    double distanceSq = AbsoluteUniversePosition.DistanceSq(in markerAup, in playerAup);
-                    if (distanceSq < minDistanceSq || distanceSq > maxDistanceSq)
-                        continue;
-                }
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in markerAup, in playerAup);
+                if (distanceSq < minDistanceSq || distanceSq > maxDistanceSq)
+                    continue;
 
-                _markerWorldPositions[_visibleMarkerCount++] = markerWorldPosition;
+                int markerIndex = _visibleMarkerCount++;
+                _markerMatrices[markerIndex] = Matrix4x4.TRS(markerWorldPosition, Quaternion.identity, uniformScale);
             }
+        }
+
+        private void PrimeActiveQuestSet()
+        {
+            _activeQuestCount = 0;
+            QuestManager questManager = GlobalRegistry.Quest;
+            if (questManager == null)
+            {
+                _activeQuestSetPrimed = false;
+                return;
+            }
+
+            _activeQuestCount = questManager.CopyActiveQuestHashes(_activeQuestHashes);
+            _activeQuestSetPrimed = true;
+            _markerCacheDirty = true;
+        }
+
+        private void AddActiveQuestHash(uint questHash)
+        {
+            if (!_activeQuestSetPrimed)
+                PrimeActiveQuestSet();
+
+            for (int i = 0; i < _activeQuestCount; i++)
+            {
+                if (_activeQuestHashes[i] == questHash)
+                {
+                    _markerCacheDirty = true;
+                    return;
+                }
+            }
+
+            if (_activeQuestCount >= MaxMarkers)
+            {
+                ReportActiveMarkerOverflow(questHash);
+                return;
+            }
+
+            _activeQuestHashes[_activeQuestCount++] = questHash;
+            _markerCacheDirty = true;
+        }
+
+        private void RemoveActiveQuestHash(uint questHash)
+        {
+            for (int i = 0; i < _activeQuestCount; i++)
+            {
+                if (_activeQuestHashes[i] != questHash)
+                    continue;
+
+                int lastIndex = --_activeQuestCount;
+                _activeQuestHashes[i] = _activeQuestHashes[lastIndex];
+                _activeQuestHashes[lastIndex] = 0u;
+                _markerCacheDirty = true;
+                if (_activeQuestCount == 0)
+                    _visibleMarkerCount = 0;
+                return;
+            }
+        }
+
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
+        {
+            if (_playerMovement == null)
+                ResolvePlayerContext();
+
+            if (_playerMovement != null)
+            {
+                playerAup = _playerMovement.CurrentAup;
+                return true;
+            }
+
+            playerAup = default;
+            return false;
         }
 
         private bool TryResolveMarkerPosition(
@@ -275,10 +426,12 @@ namespace Hecton8.Quest
                 if (atlasSignalSystem == null)
                     return false;
 
-                resolvedPosition = atlasSignalSystem.AtlasCorePosition + (Vector3.up * cache.HeightOffset);
-                markerAup = AbsoluteUniversePosition.FromRuntimePosition(resolvedPosition);
+                AbsoluteUniversePosition atlasCoreAup = atlasSignalSystem.AtlasCoreAup;
+                markerAup = ResolveOffsetAup(in atlasCoreAup, cache.HeightOffset);
+                float3 runtimePosition = markerAup.ToRuntimeFloat3();
+                resolvedPosition = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             }
-            else if (cache.HasFallbackPosition)
+            else if (cache.HasFallbackPosition != 0)
             {
                 resolvedPosition = cache.FallbackPosition;
                 markerAup = cache.FallbackAup;
@@ -292,10 +445,33 @@ namespace Hecton8.Quest
             return true;
         }
 
+        private static AbsoluteUniversePosition ResolveOffsetAup(in AbsoluteUniversePosition sourceAup, float heightOffsetMeters)
+        {
+            if (heightOffsetMeters == 0f)
+                return sourceAup;
+
+            double3 absolute = sourceAup.ToAbsoluteDouble3();
+            absolute.y += heightOffsetMeters;
+            return AbsoluteUniversePosition.FromAbsolutePosition(absolute);
+        }
+
         private bool TryResolveMarkerCache(QuestManager questManager, uint questHash, out QuestMarkerCache cache)
         {
-            if (_markerCacheByQuestHash.TryGetValue(questHash, out cache))
-                return true;
+            for (int i = 0; i < _markerCacheCount; i++)
+            {
+                if (_markerCacheQuestHashes[i] == questHash)
+                {
+                    cache = _markerCaches[i];
+                    return true;
+                }
+            }
+
+            if (_markerCacheCount >= MaxMarkers)
+            {
+                ReportMarkerCacheOverflow(questHash);
+                cache = default;
+                return false;
+            }
 
             if (!questManager.TryGetQuestPresentation(
                     questHash,
@@ -305,10 +481,11 @@ namespace Hecton8.Quest
                     out Vector3 markerWorldPosition,
                     out float markerHeightOffset))
             {
+                cache = default;
                 return false;
             }
 
-            float heightOffset = Mathf.Max(0f, markerHeightOffset);
+            float heightOffset = math.max(0f, markerHeightOffset);
             Vector3 resolvedFallbackPosition = markerWorldPosition + (Vector3.up * heightOffset);
             bool hasFallbackPosition = markerWorldPosition.sqrMagnitude > 0.0001f;
             cache = new QuestMarkerCache
@@ -319,11 +496,41 @@ namespace Hecton8.Quest
                     ? AbsoluteUniversePosition.FromRuntimePosition(resolvedFallbackPosition)
                     : default,
                 HeightOffset = heightOffset,
-                HasFallbackPosition = hasFallbackPosition
+                HasFallbackPosition = hasFallbackPosition ? (byte)1 : (byte)0
             };
 
-            _markerCacheByQuestHash[questHash] = cache;
+            int cacheIndex = _markerCacheCount++;
+            _markerCacheQuestHashes[cacheIndex] = questHash;
+            _markerCaches[cacheIndex] = cache;
             return true;
+        }
+
+        private void ReportActiveMarkerOverflow(uint questHash)
+        {
+            _droppedActiveMarkerCount++;
+            int frame = Time.frameCount;
+            if (_lastActiveMarkerOverflowTelemetryFrame == frame)
+                return;
+
+            _lastActiveMarkerOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ActiveMarkerOverflowWarningHash,
+                MarkerContextHash ^ questHash,
+                math.max(1, _droppedActiveMarkerCount));
+        }
+
+        private void ReportMarkerCacheOverflow(uint questHash)
+        {
+            _droppedMarkerCacheCount++;
+            int frame = Time.frameCount;
+            if (_lastMarkerCacheOverflowTelemetryFrame == frame)
+                return;
+
+            _lastMarkerCacheOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                MarkerCacheOverflowWarningHash,
+                MarkerContextHash ^ questHash,
+                math.max(1, _droppedMarkerCacheCount));
         }
 
         private static Mesh CreateMarkerMesh()

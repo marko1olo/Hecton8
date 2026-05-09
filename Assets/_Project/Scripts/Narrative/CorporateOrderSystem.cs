@@ -29,8 +29,11 @@ namespace Hecton8.Narrative
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-75)]
-    public sealed class CorporateOrderSystem : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class CorporateOrderSystem : MonoBehaviour, ISaveable, ISlowTickable, IServiceHeartbeat, IServiceShutdown
     {
+        private const string IncomingOrderWarningMessage = "INCOMING CORPORATE ORDER - CHECK PDA LOG";
+        private const uint ConflictHashSalt = 0xC0A5_EE11u;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -46,28 +49,25 @@ namespace Hecton8.Narrative
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static CorporateOrderSystem Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
-
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
         // COLD ALLOC: max 16 orders
         private readonly HashSet<string> _receivedOrders  = new HashSet<string>(16);
-        private readonly HashSet<string> _activeConflicts = new HashSet<string>(8);
+        private readonly HashSet<uint> _activeConflicts = new HashSet<uint>(8);
 
         // Таймеры ожидания приказов (orderId → remaining seconds)
         private readonly Dictionary<string, float> _pendingTimers =
             new Dictionary<string, float>(16);
 
+        private bool _runtimeRegistered;
         private bool _registered;
+        private bool _saveRegistered;
         private bool _ordersScheduled;
 
         // COLD ALLOC: буфер для доставки приказов в SlowTick
-        private readonly List<string> _deliveryBuffer = new List<string>(4);
+        private readonly List<string> _deliveryBuffer = new List<string>(16);
 
         // COLD ALLOC: буфер ключей для итерации Dictionary без foreach-аллокации
         private readonly List<string> _pendingKeyBuffer = new List<string>(16);
@@ -78,6 +78,8 @@ namespace Hecton8.Narrative
 
         public int SavePriority => 12;
         public int LoadPriority => 12;
+        public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+        public bool IsServiceReady => _runtimeRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -85,32 +87,44 @@ namespace Hecton8.Narrative
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
+            CorporateOrderSystem registered = GlobalRegistry.CorporateOrders;
+            if (registered != null && registered != this) { Destroy(gameObject); return; }
         }
 
         private void OnEnable()
         {
-            TryRegister();
+            if (!TryRegisterRuntime())
+                return;
 
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
+            TryRegister();
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
             TryUnregister();
-
-            if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
-                Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
+            TryUnregisterSaveParticipant();
+            TryUnregisterRuntime();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterSaveParticipant();
+            TryUnregisterRuntime();
+        }
 
-            if (Instance == this)
-                Instance = null;
+        public void OnServiceShutdown()
+        {
+            TryUnregister();
+            TryUnregisterSaveParticipant();
+            TryUnregisterRuntime();
+            _receivedOrders.Clear();
+            _activeConflicts.Clear();
+            _pendingTimers.Clear();
+            _deliveryBuffer.Clear();
+            _pendingKeyBuffer.Clear();
+            _ordersScheduled = false;
         }
 
         private void Start()
@@ -136,9 +150,63 @@ namespace Hecton8.Narrative
             if (!_registered)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
 
             _registered = false;
+        }
+
+        private bool TryRegisterRuntime()
+        {
+            if (_runtimeRegistered)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
+            CorporateOrderSystem registered = GlobalRegistry.CorporateOrders;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
+            GlobalRegistry.RegisterCorporateOrderRuntime(this);
+            _runtimeRegistered = ReferenceEquals(GlobalRegistry.CorporateOrders, this);
+            return _runtimeRegistered;
+        }
+
+        private void TryUnregisterRuntime()
+        {
+            if (!_runtimeRegistered)
+                return;
+
+            GlobalRegistry.UnregisterCorporateOrderRuntime(this);
+            _runtimeRegistered = false;
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            if (_saveRegistered)
+                return;
+
+            ISaveService saveService = GlobalRegistry.SaveRuntime;
+            if (saveService == null)
+                return;
+
+            saveService.Register(this);
+            _saveRegistered = true;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (!_saveRegistered)
+                return;
+
+            ISaveService saveService = GlobalRegistry.SaveRuntime;
+            if (saveService != null)
+                saveService.Unregister(this);
+
+            _saveRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -183,7 +251,7 @@ namespace Hecton8.Narrative
         // ══════════════════════════════════════════════════════════
 
         public bool HasReceivedOrder(string orderId) => _receivedOrders.Contains(orderId);
-        public bool HasActiveConflict(string conflictId) => _activeConflicts.Contains(conflictId);
+        public bool HasActiveConflict(string conflictId) => _activeConflicts.Contains(ComputeStableHash(conflictId));
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE
@@ -212,25 +280,18 @@ namespace Hecton8.Narrative
 
             _receivedOrders.Add(orderId);
 
-            // Регистрируем как discovery для PDA
-            NarrativeEvents.RaiseDiscoveryMade($"corporate_order_{orderId}");
+            // Use authored order id hash directly; PDA cold data holds the full text.
+            NarrativeEvents.RaiseDiscoveryMade(ComputeStableHash(orderId));
 
-            // HUD уведомление — берём первые 60 символов без аллокации через Substring
-            string orderText = order.OrderTextOrFallback;
-            string preview = orderText.Length > 60
-                ? orderText.Substring(0, 60) + "..."
-                : orderText;
-            NotificationEvents.PushWarning(string.Format(
-                ResolveLocalized(LocalizationKeys.CORP_ORDER_INCOMING, "INCOMING ORDER - {0}: {1}"),
-                ResolveFactionLabel(order.sourceFactionId),
-                preview));
+            // Cinematic fake: static HUD warning avoids runtime preview string assembly.
+            NotificationEvents.PushWarning(IncomingOrderWarningMessage);
 
             // Проверяем конфликт
             if (!string.IsNullOrEmpty(order.conflictsWithOrderId) &&
                 _receivedOrders.Contains(order.conflictsWithOrderId))
             {
-                string conflictKey = $"{orderId}_vs_{order.conflictsWithOrderId}";
-                if (_activeConflicts.Add(conflictKey))
+                uint conflictHash = ComputeConflictHash(orderId, order.conflictsWithOrderId);
+                if (conflictHash != 0u && _activeConflicts.Add(conflictHash))
                 {
                     NotificationEvents.PushWarning(ResolveLocalized(
                         LocalizationKeys.CORP_ORDER_CONFLICT,
@@ -247,24 +308,48 @@ namespace Hecton8.Narrative
 #endif
         }
 
-        private string ResolveFactionLabel(string factionId)
-        {
-            if (corporationData != null && corporationData.factions != null)
-            {
-                for (int i = 0; i < corporationData.factions.Length; i++)
-                {
-                    if (string.Equals(corporationData.factions[i].factionId, factionId, System.StringComparison.Ordinal))
-                        return corporationData.factions[i].DisplayNameOrFallback;
-                }
-            }
-
-            return factionId;
-        }
-
         private static string ResolveLocalized(string key, string fallback)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
+        }
+
+        private static uint ComputeStableHash(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return 0u;
+
+            const uint fnvOffset = 2166136261u;
+            const uint fnvPrime = 16777619u;
+            unchecked
+            {
+                uint hash = fnvOffset;
+                for (int i = 0; i < value.Length; i++)
+                {
+                    hash ^= value[i];
+                    hash *= fnvPrime;
+                }
+
+                return hash != 0u ? hash : 1u;
+            }
+        }
+
+        private static uint ComputeConflictHash(string firstOrderId, string secondOrderId)
+        {
+            uint firstHash = ComputeStableHash(firstOrderId);
+            uint secondHash = ComputeStableHash(secondOrderId);
+            if (firstHash == 0u || secondHash == 0u)
+                return 0u;
+
+            uint low = firstHash < secondHash ? firstHash : secondHash;
+            uint high = firstHash < secondHash ? secondHash : firstHash;
+            unchecked
+            {
+                uint hash = ConflictHashSalt;
+                hash ^= low + 0x9E37_79B9u + (hash << 6) + (hash >> 2);
+                hash ^= high + 0x85EB_CA6Bu + (hash << 6) + (hash >> 2);
+                return hash != 0u ? hash : 1u;
+            }
         }
 
         // ══════════════════════════════════════════════════════════

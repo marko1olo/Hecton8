@@ -5,9 +5,11 @@ using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.Systems.AI;
 using Hecton8.World;
+using System;
 using System.Runtime.InteropServices;
 using TMPro;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -46,18 +48,37 @@ namespace Hecton8.UI
     /// </summary>
     public static class PDAIntrusionEvents
     {
+        private const int ListenerCapacity = 8;
         private const int PendingEventCapacity = 4;
+        private const uint PDAIntrusionListenerOverflowWarningHash = 0x5049564Cu; // PIVL
+        private const uint PDAIntrusionListenerContextHash = 0x50495652u; // PIVR
+        private const uint PDAIntrusionListenerExceptionWarningHash = 0x50495645u; // PIVE
+        private const uint PDAIntrusionListenerExceptionContextHash = 0x50495658u; // PIVX
         private static readonly uint _RebootCompletedEventHash = unchecked((uint)LocHash.Compute("PDAIntrusion.RebootCompleted"));
 
         // COLD ALLOC: RegistryBucket<IPDAIntrusionEventListener>[8] - PDA intrusion listeners drained by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
-        private static readonly RegistryBucket<IPDAIntrusionEventListener> _listeners = new RegistryBucket<IPDAIntrusionEventListener>(8);
+        private static readonly RegistryBucket<IPDAIntrusionEventListener> _listeners = new RegistryBucket<IPDAIntrusionEventListener>(ListenerCapacity);
+        // COLD ALLOC: IPDAIntrusionEventListener[8] - listener additions deferred while dispatching PDA intrusion events - owner: PDAIntrusionEvents
+        private static readonly IPDAIntrusionEventListener[] _deferredRegisterListeners = new IPDAIntrusionEventListener[ListenerCapacity];
+        // COLD ALLOC: IPDAIntrusionEventListener[8] - listener removals deferred while dispatching PDA intrusion events - owner: PDAIntrusionEvents
+        private static readonly IPDAIntrusionEventListener[] _deferredUnregisterListeners = new IPDAIntrusionEventListener[ListenerCapacity];
         private static NativeQueue<PDAIntrusionEventPayload> _pendingEvents;
         private static NativeQueue<PDAIntrusionEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerOverflowTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -77,8 +98,16 @@ namespace Hecton8.UI
             }
 
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerOverflowTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -88,8 +117,13 @@ namespace Hecton8.UI
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         public static void Unregister(IPDAIntrusionEventListener listener)
@@ -97,8 +131,13 @@ namespace Hecton8.UI
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            _listeners.TryUnregister(listener);
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -108,7 +147,9 @@ namespace Hecton8.UI
             if (listener == null || !_listeners.Contains(listener))
                 return;
 
-            Debug.LogError($"[PDAIntrusionEvents] {ownerName} was destroyed while still registered as an IPDAIntrusionEventListener.");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogError($"[PDAIntrusionEvents] {ownerName} was destroyed while still registered as an IPDAIntrusionEventListener.");
+#endif
         }
 
         internal static void RaiseRebootCompleted(uint sourceId)
@@ -165,13 +206,16 @@ namespace Hecton8.UI
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IPDAIntrusionEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnPDAIntrusionEvent(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -193,6 +237,7 @@ namespace Hecton8.UI
                     nameof(PDAIntrusionEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -204,6 +249,21 @@ namespace Hecton8.UI
                     nameof(PDAIntrusionEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -267,6 +327,182 @@ namespace Hecton8.UI
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
         }
+
+        private static void DispatchToListener(
+            IPDAIntrusionEventListener listener,
+            in PDAIntrusionEventPayload payload)
+        {
+            try
+            {
+                listener.OnPDAIntrusionEvent(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IPDAIntrusionEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= _deferredRegisterListeners.Length)
+            {
+                ReportListenerRegistrationOverflow();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IPDAIntrusionEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener))
+                return;
+
+            if (IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= _deferredUnregisterListeners.Length)
+            {
+                ReportListenerRegistrationOverflow();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IPDAIntrusionEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IPDAIntrusionEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IPDAIntrusionEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IPDAIntrusionEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IPDAIntrusionEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IPDAIntrusionEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
+        private static void RegisterImmediate(IPDAIntrusionEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationOverflow();
+        }
+
+        private static void ReportListenerRegistrationOverflow()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerOverflowTelemetryFrame == frame)
+                return;
+
+            _lastListenerOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                PDAIntrusionListenerOverflowWarningHash,
+                PDAIntrusionListenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                PDAIntrusionListenerExceptionWarningHash,
+                PDAIntrusionListenerExceptionContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
+        }
     }
 
     /// <summary>
@@ -295,6 +531,7 @@ namespace Hecton8.UI
         private const float TextDriftAmplitudeMax = 7.5f;
         private const float TextDriftFrequencyMin = 1.1f;
         private const float TextDriftFrequencyMax = 2.7f;
+        private const float TextDriftInvTwoPi = 1f / (math.PI * 2f);
         private const float HiddenProgressCutoff = 0.0001f;
         private const int MaxBioformContacts = 24;
         private const int MaxDriftTargets = 96;
@@ -361,7 +598,7 @@ namespace Hecton8.UI
         /// </summary>
         public float RebootProgressNormalized =>
             rebootHoldDuration > 0.001f
-                ? Mathf.Clamp01(_rebootHoldTimer / rebootHoldDuration)
+                ? math.saturate(_rebootHoldTimer / rebootHoldDuration)
                 : 0f;
 
         private void Awake()
@@ -502,18 +739,19 @@ namespace Hecton8.UI
             if (_leviathanScanTimer > 0f)
                 return;
 
-            _leviathanScanTimer = Mathf.Max(0.05f, leviathanScanInterval);
+            _leviathanScanTimer = math.max(0.05f, leviathanScanInterval);
 
-            if (ShouldTriggerAbyssalHack())
+            AbsoluteUniversePosition originAup = ResolveOwnerAup();
+            Vector3 origin = originAup.ToRuntimeFloat3();
+            if (ShouldTriggerAbyssalHack(origin))
             {
                 TriggerHack();
                 return;
             }
 
-            Vector3 origin = transform.position;
             int contactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
                 origin,
-                Mathf.Max(8f, leviathanHackRadius),
+                math.max(8f, leviathanHackRadius),
                 SpatialTargetKind.Bioform,
                 _bioformContacts);
 
@@ -533,22 +771,30 @@ namespace Hecton8.UI
             }
         }
 
-        private bool ShouldTriggerAbyssalHack()
+        private bool ShouldTriggerAbyssalHack(Vector3 origin)
         {
             if (_playerMovement != null && _playerMovement.CurrentHullStress01 > HullStressHackThreshold)
                 return true;
 
-            return IsInsideDeadZone();
+            return IsInsideDeadZone(origin);
         }
 
-        private bool IsInsideDeadZone()
+        private bool IsInsideDeadZone(Vector3 origin)
         {
             HectonMapMagicVegetationBridge bridge = _vegetationBridge;
             if (bridge == null)
                 return false;
 
-            HectonMapMagicVegetationBridge.VegetationDensitySample densitySample = bridge.GetVegetationDensity(transform.position);
+            HectonMapMagicVegetationBridge.VegetationDensitySample densitySample = bridge.GetVegetationDensity(origin);
             return densitySample.BiomeLayer == HectonMapMagicVegetationBridge.VegetationBiomeLayer.DeadZone;
+        }
+
+        private AbsoluteUniversePosition ResolveOwnerAup()
+        {
+            HectonPlayerMovement playerMovement = _playerMovement;
+            return playerMovement != null
+                ? playerMovement.CurrentAup
+                : AbsoluteUniversePosition.FromRuntimePosition(transform.position);
         }
 
         private void TickVisualCadence(float dt)
@@ -557,7 +803,7 @@ namespace Hecton8.UI
             if (_visualPhaseTimer > 0f)
                 return;
 
-            _visualPhaseTimer = Mathf.Max(0.1f, visualPhaseDuration);
+            _visualPhaseTimer = math.max(0.1f, visualPhaseDuration);
             _visualPhase = NextVisualPhase(_visualPhase);
             ApplyVisualPhase();
         }
@@ -618,12 +864,19 @@ namespace Hecton8.UI
                 float normalizedIndex = _driftTargetCount > 1
                     ? (float)i / (_driftTargetCount - 1)
                     : 0f;
-                float amplitude = Mathf.Lerp(TextDriftAmplitudeMin, TextDriftAmplitudeMax, normalizedIndex) * glyphScale;
-                float frequency = Mathf.Lerp(TextDriftFrequencyMin, TextDriftFrequencyMax, 1f - normalizedIndex);
-                float offsetX = Mathf.Sin((_textDriftWaveTime * frequency) + _driftPhaseOffsets[i]) * amplitude;
+                float amplitude = math.lerp(TextDriftAmplitudeMin, TextDriftAmplitudeMax, normalizedIndex) * glyphScale;
+                float frequency = math.lerp(TextDriftFrequencyMin, TextDriftFrequencyMax, 1f - normalizedIndex);
+                float offsetX = EvaluateCheapDriftWaveSigned((_textDriftWaveTime * frequency) + _driftPhaseOffsets[i]) * amplitude;
                 Vector2 basePosition = _driftBaseAnchoredPositions[i];
                 rect.anchoredPosition = new Vector2(basePosition.x + offsetX, basePosition.y);
             }
+        }
+
+        private static float EvaluateCheapDriftWaveSigned(float phaseRadians)
+        {
+            float phase01 = math.frac((phaseRadians * TextDriftInvTwoPi) + 0.25f);
+            float triangle = 1f - math.abs(phase01 * 2f - 1f);
+            return (triangle * 2f) - 1f;
         }
 
         private void RebuildTextDriftTargets(GameObject panelRoot)
@@ -631,7 +884,7 @@ namespace Hecton8.UI
             RestoreTextDriftPositions();
             _driftPanelRoot = panelRoot;
             _driftTargetCount = 0;
-            _textDriftRescanTimer = Mathf.Max(0.1f, TextDriftRescanInterval);
+            _textDriftRescanTimer = math.max(0.1f, TextDriftRescanInterval);
             _driftScanBuffer.Clear();
             panelRoot.GetComponentsInChildren(true, _driftScanBuffer);
 
@@ -683,7 +936,7 @@ namespace Hecton8.UI
             _isHacked = true;
             _rebootHoldTimer = 0f;
             _visualPhase = IntrusionVisualPhase.English;
-            _visualPhaseTimer = Mathf.Max(0.1f, visualPhaseDuration);
+            _visualPhaseTimer = math.max(0.1f, visualPhaseDuration);
             ApplyVisualPhase();
         }
 
@@ -819,8 +1072,7 @@ namespace Hecton8.UI
             if (_hotSwapListenerRegistered || !Application.isPlaying)
                 return;
 
-            GlobalRegistry.RegisterHotSwapListener(this);
-            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+            _hotSwapListenerRegistered = GlobalRegistry.TryRegisterHotSwapListener(this);
         }
 
         private void TryUnregisterHotSwapListener()
@@ -828,9 +1080,7 @@ namespace Hecton8.UI
             if (!_hotSwapListenerRegistered)
                 return;
 
-            if (GlobalRegistry.HotSwapListeners.Contains(this))
-                GlobalRegistry.UnregisterHotSwapListener(this);
-
+            GlobalRegistry.TryUnregisterHotSwapListener(this);
             _hotSwapListenerRegistered = false;
         }
 
@@ -842,8 +1092,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()

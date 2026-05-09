@@ -951,19 +951,22 @@ namespace Hecton8.Crafting
             if (result != null && !TrySynthesizeCraftOutput(recipe, result, outputQuantity) && _playerInventory != null)
             {
                 int resultHashId = ComputeItemHash(result);
-                for (int i = 0; i < outputQuantity; i++)
+                int addedQuantity = 0;
+                if (resultHashId != 0 && outputQuantity > 0)
                 {
-                    if (resultHashId == 0 || !_playerInventory.TryAddItem(resultHashId, 1))
-                    {
-                        int remainingQuantity = outputQuantity - i;
-                        TryEmitCraftOverflowStack(result, remainingQuantity);
-                        RaiseStorageCapacityExceededBark();
-                        TriggerCraftFailureFeedback();
+                    PlayerInventory.ScavengeAttemptResult addResult = _playerInventory.ScavengeAttempt(resultHashId, outputQuantity, null);
+                    addedQuantity = addResult.AddedQuantity;
+                }
+
+                if (addedQuantity < outputQuantity)
+                {
+                    int remainingQuantity = outputQuantity - addedQuantity;
+                    TryEmitCraftOverflowStack(result, remainingQuantity);
+                    RaiseStorageCapacityExceededBark();
+                    TriggerCraftFailureFeedback();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogWarning("[Fabricator] Craft output overflow; routed to diegetic bark/drop fallback.");
+                    Debug.LogWarning("[Fabricator] Craft output overflow; routed to diegetic bark/drop fallback.");
 #endif
-                        break;
-                    }
                 }
             }
 
@@ -1443,14 +1446,10 @@ namespace Hecton8.Crafting
         private void ResolveCraftOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange)
         {
             Transform origin = outputSocket != null ? outputSocket : transform;
-            Vector3 localDirection = outputDirectionLocal.sqrMagnitude > 0.0001f
-                ? outputDirectionLocal.normalized
-                : Vector3.forward;
+            Vector3 localDirection = NormalizeOrFallbackFast(outputDirectionLocal, Vector3.forward);
             Vector3 worldDirection = origin.TransformDirection(localDirection);
-            if (worldDirection.sqrMagnitude <= 0.0001f)
-                worldDirection = origin.forward;
+            worldDirection = NormalizeOrFallbackFast(worldDirection, origin.forward);
 
-            worldDirection.Normalize();
             spawnPosition = origin.position + worldDirection * outputForwardOffset + Vector3.up * outputLiftOffset;
             velocityChange = worldDirection * outputVelocityChange + Vector3.up * outputUpwardVelocityChange;
         }
@@ -1458,16 +1457,24 @@ namespace Hecton8.Crafting
         private void ResolveDeconstructionOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange)
         {
             Transform origin = deconstructOutputSocket != null ? deconstructOutputSocket : (outputSocket != null ? outputSocket : transform);
-            Vector3 localDirection = deconstructOutputDirectionLocal.sqrMagnitude > 0.0001f
-                ? deconstructOutputDirectionLocal.normalized
-                : Vector3.forward;
+            Vector3 localDirection = NormalizeOrFallbackFast(deconstructOutputDirectionLocal, Vector3.forward);
             Vector3 worldDirection = origin.TransformDirection(localDirection);
-            if (worldDirection.sqrMagnitude <= 0.0001f)
-                worldDirection = origin.forward;
+            worldDirection = NormalizeOrFallbackFast(worldDirection, origin.forward);
 
-            worldDirection.Normalize();
             spawnPosition = origin.position + worldDirection * deconstructOutputForwardOffset + Vector3.up * deconstructOutputLiftOffset;
             velocityChange = worldDirection * deconstructOutputVelocityChange + Vector3.up * deconstructOutputUpwardVelocityChange;
+        }
+
+        private static Vector3 NormalizeOrFallbackFast(Vector3 direction, Vector3 fallback)
+        {
+            float sqrMagnitude = direction.sqrMagnitude;
+            if (sqrMagnitude <= 0.0001f)
+                return fallback;
+
+            if (math.abs(sqrMagnitude - 1f) <= 0.02f)
+                return direction;
+
+            return direction * math.rsqrt(sqrMagnitude);
         }
 
         private static int CountAvailableItemInInventory(PlayerInventory inventory, ItemData item)
@@ -1564,7 +1571,10 @@ namespace Hecton8.Crafting
                     _complexRecipeGraphStatus,
                     safeMultiplier))
             {
-                return TryReserveIngredientCostBuffer(_complexRecipeRawCosts, _complexRecipeRawCostCount[0]);
+                if (TryReserveIngredientCostBuffer(_complexRecipeRawCosts, _complexRecipeRawCostCount[0]))
+                    return true;
+
+                RefundIngredients();
             }
 
             return false;
@@ -1590,19 +1600,18 @@ namespace Hecton8.Crafting
                     continue;
 
                 int remaining = cost.y;
-                int localAvailable = _playerInventory.CountAvailableTotal(cost.x);
-                int localTake = localAvailable < remaining ? localAvailable : remaining;
-                if (localTake > 0)
+                if (!_playerInventory.TryReserveAvailableQuantityForCraft(
+                        cost.x,
+                        remaining,
+                        _localCraftReservations,
+                        ref _localCraftReservationCount,
+                        out int localTake))
                 {
-                    if (!_playerInventory.TryReserveQuantityForCraft(
-                            cost.x,
-                            localTake,
-                            _localCraftReservations,
-                            ref _localCraftReservationCount))
-                        return false;
-
-                    remaining -= localTake;
+                    return false;
                 }
+
+                if (localTake > 0)
+                    remaining -= localTake;
 
                 if (remaining > 0 && !TryAccumulateNetworkCost(cost.x, remaining))
                     return false;

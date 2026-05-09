@@ -20,6 +20,7 @@
 //   • Никаких new/LINQ в SlowTick.
 // ============================================================================
 
+using System.Runtime.InteropServices;
 using System.Threading;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System.Collections.Generic;
@@ -43,6 +44,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Unmanaged Mega-Bus payload fired when a meteor shower enters the world event lane.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct MeteorShowerEvent
     {
         public float DurationSeconds;
@@ -57,6 +59,7 @@ namespace Hecton8.Gameplay
         public byte HasObserverAup;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
     public readonly struct SeismicShockwaveEvent
     {
         public readonly Vector3 EpicenterWS;
@@ -136,6 +139,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Deferred payload for random-event activation.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct RandomEventStartedPayload
     {
         /// <summary>Activated random-event type.</summary>
@@ -323,6 +327,9 @@ namespace Hecton8.Gameplay
 
         public static void RaiseStarted(RandomEventType type, float intensity)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingStartedCount + _nextFrameStartedCount >= PendingStartedCapacity)
                 return;
@@ -347,6 +354,9 @@ namespace Hecton8.Gameplay
 
         public static void RaiseEnded(RandomEventType type)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingEndedCount + _nextFrameEndedCount >= PendingEndedCapacity)
                 return;
@@ -373,6 +383,9 @@ namespace Hecton8.Gameplay
                 FieldTargetRole.HazardProbe,
                 0,
                 payload.ImpulseMagnitude * 1000f));
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingSeismicShockwaveCount + _nextFrameSeismicShockwaveCount >= PendingSeismicShockwaveCapacity)
                 return;
@@ -400,6 +413,7 @@ namespace Hecton8.Gameplay
                     nameof(RandomEventEvents),
                     nameof(_pendingStarted),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingStarted, PendingStartedCapacity);
             }
             if (!_nextFrameStarted.IsCreated)
             {
@@ -410,6 +424,7 @@ namespace Hecton8.Gameplay
                     nameof(RandomEventEvents),
                     nameof(_nextFrameStarted),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameStarted, PendingStartedCapacity);
             }
             if (!_pendingEnded.IsCreated)
             {
@@ -420,6 +435,7 @@ namespace Hecton8.Gameplay
                     nameof(RandomEventEvents),
                     nameof(_pendingEnded),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEnded, PendingEndedCapacity);
             }
             if (!_nextFrameEnded.IsCreated)
             {
@@ -430,6 +446,7 @@ namespace Hecton8.Gameplay
                     nameof(RandomEventEvents),
                     nameof(_nextFrameEnded),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEnded, PendingEndedCapacity);
             }
             if (!_pendingSeismicShockwaves.IsCreated)
             {
@@ -440,6 +457,7 @@ namespace Hecton8.Gameplay
                     nameof(RandomEventEvents),
                     nameof(_pendingSeismicShockwaves),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingSeismicShockwaves, PendingSeismicShockwaveCapacity);
             }
             if (!_nextFrameSeismicShockwaves.IsCreated)
             {
@@ -450,6 +468,21 @@ namespace Hecton8.Gameplay
                     nameof(RandomEventEvents),
                     nameof(_nextFrameSeismicShockwaves),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameSeismicShockwaves, PendingSeismicShockwaveCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -767,10 +800,8 @@ namespace Hecton8.Gameplay
         private const float MeteorWaterPlaneY = 0f;
         private const float MeteorThunderSoundSpeedMetersPerSecond = 343f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const string MeteorSplashQuadVfxTypeName = "MeteorSplashQuadVfx";
         private static readonly List<MonoBehaviour> _meteorSplashValidationScratch = new List<MonoBehaviour>(8);
-#endif
 #endif
         private bool _pendingMeteorWaterBoom;
         private Vector3 _pendingMeteorWaterBoomPosition;
@@ -1590,7 +1621,8 @@ namespace Hecton8.Gameplay
                 }
 
                 float distance01 = 1f - math.saturate(distance / safeRadius);
-                float resolvedImpulse = impulseMagnitude * math.pow(distance01, 0.65f);
+                float impulseFalloff = math.saturate(distance01 * math.rcp(0.55f + (0.45f * distance01)));
+                float resolvedImpulse = impulseMagnitude * impulseFalloff;
                 PhysicsForceRouter.QueueForce(body, direction * resolvedImpulse, ForceMode.Impulse);
             }
         }

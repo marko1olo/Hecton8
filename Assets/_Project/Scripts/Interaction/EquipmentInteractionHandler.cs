@@ -16,13 +16,15 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9935)]
-    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, IUpdatable, ILateFrameTickable
+    public sealed class EquipmentInteractionHandler : MonoBehaviour, IInteractionSignalService, ILateFrameTickable, IServiceHeartbeat, IServiceShutdown
     {
         private const int MaxQueuedSignals = 256;
         private const int MaxInteractionPacketsPerFrame = 256;
         private const int MaxQueuedRayRequests = 64;
         private const int MaxHitArbitrationHits = 8;
+        private const int MaxParentResolveDepth = 32;
         private const int MinCommandsPerJob = 1;
+        private const int MaxCompletedRaycastAgeFrames = 1;
         private const float MinDirectionSqr = 0.0001f;
         private const float MinHitDistance = 0.05f;
         private const float AttachedFloraArbitrationRadiusMeters = 0.5f;
@@ -42,6 +44,8 @@ namespace Hecton8.Interaction
         private readonly RaycastHit[] _completedHits = new RaycastHit[MaxQueuedRayRequests];
         // COLD ALLOC: bool[64] - validity bits for completed frame-latent tool raycast results - owner: EquipmentInteractionHandler
         private readonly bool[] _completedHasHit = new bool[MaxQueuedRayRequests];
+        // COLD ALLOC: int[64] - frame stamps for completed frame-latent raycast results - owner: EquipmentInteractionHandler
+        private readonly int[] _completedHitFrames = new int[MaxQueuedRayRequests];
         // COLD ALLOC: RaycastHit[8] - fixed flora/base overlap arbitration buffer - owner: EquipmentInteractionHandler
         private static readonly RaycastHit[] _hitArbitrationHits = new RaycastHit[MaxHitArbitrationHits];
         // COLD ALLOC: Transform[256] - platform-local hit point side-channel aligned with the native signal queue - owner: EquipmentInteractionHandler
@@ -71,6 +75,7 @@ namespace Hecton8.Interaction
         private bool _scheduledRaycastActive;
         private bool _isInitialized;
         private bool _dispatcherRegistered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
 
         internal static EquipmentInteractionHandler ActiveRuntimeInstance { get; private set; }
@@ -83,6 +88,12 @@ namespace Hecton8.Interaction
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => IsServiceReady ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _isInitialized && _serviceRegistered && ReferenceEquals(GlobalRegistry.InteractionSignals, this);
 
         /// <summary>
         /// Explicitly initializes the service and registers it into <see cref="GlobalRegistry"/>.
@@ -104,7 +115,7 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public bool Publish(in InteractionSignal signal, Collider targetCollider)
         {
-            if (!_signalQueue.IsCreated || targetCollider == null)
+            if (!_signalQueue.IsCreated || targetCollider == null || !IsValidSignal(in signal))
                 return false;
 
             int currentFrame = Time.frameCount;
@@ -132,7 +143,8 @@ namespace Hecton8.Interaction
         /// <inheritdoc />
         public bool TryRaycastPrimary(ulong requesterId, in InteractionPacket packet, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit)
         {
-            Vector3 origin = new Vector3(packet.Origin.x, packet.Origin.y, packet.Origin.z);
+            Vector3 absoluteOrigin = new Vector3(packet.Origin.x, packet.Origin.y, packet.Origin.z);
+            Vector3 origin = HectonFloatingOrigin.ToRuntimePosition(absoluteOrigin);
             Vector3 direction = new Vector3(packet.Direction.x, packet.Direction.y, packet.Direction.z);
             return TryRaycastPrimary(requesterId, origin, direction, packet.Range, layerMask, queryTriggerInteraction, out hit);
         }
@@ -141,18 +153,20 @@ namespace Hecton8.Interaction
         public bool TryRaycastPrimary(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction, out RaycastHit hit)
         {
             hit = default;
-            bool hasCompletedHit = TryGetCompletedRaycast(requesterId, out hit);
-            if (requesterId == 0UL || range <= 0f || direction.sqrMagnitude < MinDirectionSqr)
-                return hasCompletedHit;
+            if (requesterId == 0UL ||
+                !IsFinite(origin) ||
+                !IsFinite(direction) ||
+                !math.isfinite(range) ||
+                range <= 0f ||
+                direction.sqrMagnitude < MinDirectionSqr)
+            {
+                return false;
+            }
 
-            Vector3 normalizedDirection = (Vector3)math.normalizesafe((float3)direction, new float3(0f, 0f, 1f));
+            bool hasCompletedHit = TryGetCompletedRaycast(requesterId, Time.frameCount, out hit);
+            Vector3 normalizedDirection = NormalizeFinite(direction, Vector3.forward);
             QueuePrimaryRaycast(requesterId, origin, normalizedDirection, range, layerMask, queryTriggerInteraction);
             return hasCompletedHit;
-        }
-
-        /// <inheritdoc />
-        public void Tick(float deltaTime)
-        {
         }
 
         /// <inheritdoc />
@@ -195,6 +209,7 @@ namespace Hecton8.Interaction
                     nameof(EquipmentInteractionHandler),
                     nameof(_signalQueue),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _signalQueue, MaxQueuedSignals);
             }
 
             if (!_scheduledCommands.IsCreated)
@@ -266,6 +281,20 @@ namespace Hecton8.Interaction
             }
         }
 
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
         /// <inheritdoc />
         public void LateFrameTick()
         {
@@ -276,6 +305,16 @@ namespace Hecton8.Interaction
 
         private void OnDestroy()
         {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
+        {
             TryUnregisterFromDispatcher();
             TryUnregisterSignalService();
             _isInitialized = false;
@@ -285,9 +324,17 @@ namespace Hecton8.Interaction
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(EquipmentInteractionHandler), nameof(_signalQueue));
                 _signalQueue.Dispose();
+                _signalQueue = default;
             }
 
             DisposeRaycastBuffers();
+            _scheduledRaycastHandle = default;
+            _scheduledRaycastActive = false;
+            _scheduledRequestCount = 0;
+            _stagedRequestCount = 0;
+            _completedResultCount = 0;
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
         }
 
         private void FlushSignals()
@@ -334,10 +381,8 @@ namespace Hecton8.Interaction
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-            _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this) ||
-                                    SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this);
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Core);
+            _dispatcherRegistered = _lateFrameRegistered;
         }
 
         private void TryUnregisterFromDispatcher()
@@ -345,11 +390,11 @@ namespace Hecton8.Interaction
             if (!_dispatcherRegistered)
                 return;
 
-            if (GlobalRegistry.Updatables.Contains(this))
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-
-            if (SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this))
+            if (_lateFrameRegistered)
+            {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+                _lateFrameRegistered = false;
+            }
 
             _dispatcherRegistered = false;
         }
@@ -445,7 +490,8 @@ namespace Hecton8.Interaction
         {
             platformTransform = null;
             Transform current = targetCollider != null ? targetCollider.transform : null;
-            while (current != null)
+            int depth = 0;
+            while (current != null && depth < MaxParentResolveDepth)
             {
                 if (current.TryGetComponent(out ITransportPlatform platform) && platform.PlatformTransform != null)
                 {
@@ -454,6 +500,7 @@ namespace Hecton8.Interaction
                 }
 
                 current = current.parent;
+                depth++;
             }
 
             return false;
@@ -464,14 +511,47 @@ namespace Hecton8.Interaction
             return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static bool IsValidSignal(in InteractionSignal signal)
+        {
+            return IsFinite(signal.Source.Origin) &&
+                   IsFinite(signal.Source.Direction) &&
+                   IsFinite(signal.HitPoint) &&
+                   IsFinite(signal.HitNormal) &&
+                   math.isfinite(signal.Source.Power) &&
+                   math.isfinite(signal.Source.Range) &&
+                   math.isfinite(signal.PowerDelivered);
+        }
+
+        private static Vector3 NormalizeFinite(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.sqrMagnitude;
+            if (lengthSq <= MinDirectionSqr || !IsFinite(value))
+                return fallback;
+
+            return value * math.rcp(math.max(ApproximateMagnitudeNoSqrt(value), MinDirectionSqr));
+        }
+
+        private static float ApproximateMagnitudeNoSqrt(Vector3 value)
+        {
+            float3 absValue = math.abs(new float3(value.x, value.y, value.z));
+            float largest = math.cmax(absValue);
+            float smallest = math.cmin(absValue);
+            float middle = absValue.x + absValue.y + absValue.z - largest - smallest;
+            return largest + (middle * 0.375f) + (smallest * 0.125f);
+        }
+
         private static bool DispatchPlasmaCut(InteractionSignal signal, Collider targetCollider)
         {
             if (targetCollider == null)
                 return false;
 
-            HectonVoxelVolume volume = targetCollider.GetComponent<HectonVoxelVolume>();
-            if (volume == null)
-                volume = targetCollider.GetComponentInParent<HectonVoxelVolume>();
+            if (!targetCollider.TryGetComponent(out HectonVoxelVolume volume))
+                TryResolveParentComponent(targetCollider.transform, out volume);
 
             if (volume == null)
                 return false;
@@ -522,8 +602,7 @@ namespace Hecton8.Interaction
             if (targetCollider == null || targetCollider.gameObject.layer != _baseModuleLayer)
                 return false;
 
-            BaseModule module = targetCollider.GetComponentInParent<BaseModule>();
-            if (module == null)
+            if (!TryResolveParentComponent(targetCollider.transform, out BaseModule module))
                 return false;
 
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
@@ -543,7 +622,7 @@ namespace Hecton8.Interaction
             if (direction.sqrMagnitude < MinDirectionSqr)
                 direction = Vector3.forward;
             else
-                direction = (Vector3)math.normalizesafe((float3)direction, new float3(0f, 0f, 1f));
+                direction = NormalizeFinite(direction, Vector3.forward);
 
             int layerMask = BuildHitArbitrationLayerMask(targetCollider.gameObject.layer);
             Vector3 castOrigin = runtimeHitPoint - direction * AttachedFloraArbitrationRadiusMeters;
@@ -573,8 +652,8 @@ namespace Hecton8.Interaction
                     continue;
                 }
 
-                BaseModule hitModule = hitCollider.GetComponentInParent<BaseModule>();
-                if (hitModule == module)
+                if (TryResolveParentComponent(hitCollider.transform, out BaseModule hitModule) &&
+                    hitModule == module)
                 {
                     sawHostModule = true;
                     continue;
@@ -666,8 +745,7 @@ namespace Hecton8.Interaction
                 return true;
             }
 
-            signalConsumer = targetCollider.GetComponentInParent<IInteractionSignalConsumer>();
-            return signalConsumer != null;
+            return TryResolveParentComponent(targetCollider.transform, out signalConsumer);
         }
 
         private static bool TryResolveVulnerabilitySource(Collider targetCollider, out IInteractionVulnerabilitySource vulnerabilitySource)
@@ -682,8 +760,7 @@ namespace Hecton8.Interaction
                 return true;
             }
 
-            vulnerabilitySource = targetCollider.GetComponentInParent<IInteractionVulnerabilitySource>();
-            return vulnerabilitySource != null;
+            return TryResolveParentComponent(targetCollider.transform, out vulnerabilitySource);
         }
 
         private static bool TryResolveCuttable(Collider targetCollider, out ICuttable cuttable)
@@ -698,21 +775,47 @@ namespace Hecton8.Interaction
                 return true;
             }
 
-            cuttable = targetCollider.GetComponentInParent<ICuttable>();
-            return cuttable != null;
+            return TryResolveParentComponent(targetCollider.transform, out cuttable);
+        }
+
+        private static bool TryResolveParentComponent<T>(Transform start, out T component)
+        {
+            component = default;
+            Transform current = start;
+            int depth = 0;
+            while (current != null && depth < MaxParentResolveDepth)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+                depth++;
+            }
+
+            return false;
         }
 
         private static bool IsValidHit(Vector3 origin, Vector3 direction, float range, int layerMask, RaycastHit hit)
         {
-            if (hit.collider == null || hit.distance <= MinHitDistance || hit.distance > range)
+            if (hit.collider == null ||
+                !IsFinite(origin) ||
+                !IsFinite(direction) ||
+                !IsFinite(hit.point) ||
+                !IsFinite(hit.normal) ||
+                !math.isfinite(range) ||
+                !math.isfinite(hit.distance) ||
+                hit.distance <= MinHitDistance ||
+                hit.distance > range)
+            {
                 return false;
+            }
 
             int layer = hit.collider.gameObject.layer;
             if ((layerMask & (1 << layer)) == 0)
                 return false;
 
             Vector3 toHit = hit.point - origin;
-            if (Vector3.Dot(hit.normal, direction) >= 0f)
+            if (math.dot((float3)hit.normal, (float3)direction) >= 0f)
                 return false;
 
             return toHit.sqrMagnitude > 0.0001f;
@@ -720,6 +823,9 @@ namespace Hecton8.Interaction
 
         private void QueuePrimaryRaycast(ulong requesterId, Vector3 origin, Vector3 direction, float range, int layerMask, QueryTriggerInteraction queryTriggerInteraction)
         {
+            if (!_stagingCommands.IsCreated || !_stagingHits.IsCreated)
+                return;
+
             int requestIndex = FindStagedRequestIndex(requesterId);
             if (requestIndex < 0)
             {
@@ -734,7 +840,7 @@ namespace Hecton8.Interaction
             _stagingCommands[requestIndex] = CreateRaycastCommand(origin, direction, range, layerMask, queryTriggerInteraction);
         }
 
-        private bool TryGetCompletedRaycast(ulong requesterId, out RaycastHit hit)
+        private bool TryGetCompletedRaycast(ulong requesterId, int currentFrame, out RaycastHit hit)
         {
             hit = default;
             if (requesterId == 0UL)
@@ -744,6 +850,9 @@ namespace Hecton8.Interaction
             {
                 if (_completedRequesterIds[i] != requesterId)
                     continue;
+
+                if (currentFrame - _completedHitFrames[i] > MaxCompletedRaycastAgeFrames)
+                    return false;
 
                 if (!_completedHasHit[i])
                     return false;
@@ -784,6 +893,7 @@ namespace Hecton8.Interaction
                 _completedRequesterIds[i] = _scheduledRequesterIds[i];
                 _completedHasHit[i] = IsValidHit(command.from, command.direction, command.distance, layerMask, candidate);
                 _completedHits[i] = _completedHasHit[i] ? candidate : default;
+                _completedHitFrames[i] = Time.frameCount;
                 _scheduledRequesterIds[i] = 0UL;
             }
 
@@ -792,6 +902,7 @@ namespace Hecton8.Interaction
                 _completedRequesterIds[i] = 0UL;
                 _completedHasHit[i] = false;
                 _completedHits[i] = default;
+                _completedHitFrames[i] = -1;
             }
 
             _scheduledRequestCount = 0;
@@ -804,15 +915,12 @@ namespace Hecton8.Interaction
             if (_scheduledRaycastActive || _stagedRequestCount <= 0)
                 return;
 
-            for (int i = _stagedRequestCount; i < MaxQueuedRayRequests; i++)
-            {
-                _stagingCommands[i] = CreateInvalidRaycastCommand();
-                _stagingRequesterIds[i] = 0UL;
-            }
-
-            _scheduledRaycastHandle = RaycastCommand.ScheduleBatch(_stagingCommands, _stagingHits, MinCommandsPerJob, default);
+            int scheduledCount = _stagedRequestCount;
+            NativeArray<RaycastCommand> commandBatch = _stagingCommands.GetSubArray(0, scheduledCount);
+            NativeArray<RaycastHit> hitBatch = _stagingHits.GetSubArray(0, scheduledCount);
+            _scheduledRaycastHandle = RaycastCommand.ScheduleBatch(commandBatch, hitBatch, MinCommandsPerJob, default);
             _scheduledRaycastActive = true;
-            _scheduledRequestCount = _stagedRequestCount;
+            _scheduledRequestCount = scheduledCount;
 
             NativeArray<RaycastCommand> scheduledCommands = _scheduledCommands;
             _scheduledCommands = _stagingCommands;
@@ -822,8 +930,8 @@ namespace Hecton8.Interaction
             _scheduledHits = _stagingHits;
             _stagingHits = scheduledHits;
 
-            System.Array.Copy(_stagingRequesterIds, _scheduledRequesterIds, MaxQueuedRayRequests);
-            System.Array.Clear(_stagingRequesterIds, 0, _stagingRequesterIds.Length);
+            System.Array.Copy(_stagingRequesterIds, _scheduledRequesterIds, scheduledCount);
+            System.Array.Clear(_stagingRequesterIds, 0, scheduledCount);
 
             _stagedRequestCount = 0;
         }

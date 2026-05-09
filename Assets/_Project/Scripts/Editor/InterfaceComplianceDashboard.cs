@@ -16,7 +16,9 @@ namespace Hecton8.Editor
         private const string MenuPath = "Hecton8/Diagnostics/Interface Compliance Dashboard";
 
         private readonly List<InterfaceRow> _rows = new List<InterfaceRow>(128);
+        private readonly List<Type> _typeScratch = new List<Type>(1024);
         private Vector2 _scroll;
+        private int _ghostCount;
 
         [MenuItem(MenuPath)]
         private static void Open()
@@ -40,6 +42,7 @@ namespace Hecton8.Editor
 
                 GUILayout.FlexibleSpace();
                 EditorGUILayout.LabelField("Interfaces: " + _rows.Count, GUILayout.Width(110f));
+                EditorGUILayout.LabelField("Ghosts: " + _ghostCount, GUILayout.Width(90f));
             }
 
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
@@ -62,7 +65,8 @@ namespace Hecton8.Editor
         private void Rebuild()
         {
             _rows.Clear();
-            List<Type> allTypes = new List<Type>(1024);
+            _typeScratch.Clear();
+            _ghostCount = 0;
             Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (int i = 0; i < assemblies.Length; i++)
             {
@@ -87,17 +91,19 @@ namespace Hecton8.Editor
                 {
                     Type type = assemblyTypes[typeIndex];
                     if (type != null)
-                        allTypes.Add(type);
+                        _typeScratch.Add(type);
                 }
             }
 
-            for (int typeIndex = 0; typeIndex < allTypes.Count; typeIndex++)
+            for (int typeIndex = 0; typeIndex < _typeScratch.Count; typeIndex++)
             {
-                Type interfaceType = allTypes[typeIndex];
+                Type interfaceType = _typeScratch[typeIndex];
                 if (!IsPublicFirstPartyInterface(interfaceType))
                     continue;
 
-                int implementorCount = CountConcreteImplementors(interfaceType, allTypes);
+                int implementorCount = CountConcreteImplementors(interfaceType, _typeScratch);
+                if (implementorCount == 0)
+                    _ghostCount++;
                 _rows.Add(new InterfaceRow(interfaceType.FullName, implementorCount));
             }
 

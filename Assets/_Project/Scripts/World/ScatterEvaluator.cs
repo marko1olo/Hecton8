@@ -37,6 +37,8 @@ namespace Hecton8.World
         // ══════════════════════════════════════════════════════════
 
         private const int MaxCandidatesPerEvaluation = 4096; // COLD ALLOC budget
+        private const string NativeMemoryOwner = nameof(ScatterEvaluator);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 
         // ══════════════════════════════════════════════════════════
         //  NATIVE CONTAINERS (Persistent lifetime)
@@ -80,15 +82,18 @@ namespace Hecton8.World
             _candidates = new NativeArray<ScatterSimulationCandidate>(
                 MaxCandidatesPerEvaluation, Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(_candidates, NativeMemoryOwner, nameof(_candidates), NativeMemoryLifetime);
 
             // COLD ALLOC: Height sample buffer for pre-sampled terrain heights.
             _heightSamples = new NativeArray<float>(
                 MaxCandidatesPerEvaluation, Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(_heightSamples, NativeMemoryOwner, nameof(_heightSamples), NativeMemoryLifetime);
 
             // COLD ALLOC: Atomic counter for candidate output.
             _candidateCount = new NativeArray<int>(1, Allocator.Persistent,
                 NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_candidateCount, NativeMemoryOwner, nameof(_candidateCount), NativeMemoryLifetime);
 
             _disposed = false;
             _initialized = true;
@@ -217,6 +222,7 @@ namespace Hecton8.World
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             if (hasDependency)
                 array.Dispose(dependency);
             else

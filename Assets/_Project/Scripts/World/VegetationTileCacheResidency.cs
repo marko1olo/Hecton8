@@ -16,7 +16,8 @@ namespace Hecton8.World
         private bool TryValidateResidentTileCaches()
         {
             bool readbackChanged = FinalizePendingTileHeightReadbacks();
-            if (_tileStates.Count == 0 || playerTransform == null)
+            if (_tileStates.Count == 0 ||
+                !TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition))
             {
                 EnforceTileCacheLruBudget();
                 return readbackChanged;
@@ -34,7 +35,7 @@ namespace Hecton8.World
             long validatedTileA = long.MinValue;
             long validatedTileB = long.MinValue;
 
-            if (TryFindPlayerTileState(playerTransform.position, out TileRuntimeState playerTileState) &&
+            if (TryFindPlayerTileState(playerRuntimePosition, out TileRuntimeState playerTileState) &&
                 playerTileState != null)
             {
                 long playerTileKey = PackTileCoord(playerTileState.TileX, playerTileState.TileZ);
@@ -231,7 +232,7 @@ namespace Hecton8.World
             if (state == null)
                 return;
 
-            state.LastAccessFrame = unchecked((uint)Mathf.Max(0, Time.frameCount));
+            state.LastAccessFrame = unchecked((uint)math.max(0, Time.frameCount));
         }
 
         private static bool HasActiveTileCache(TileRuntimeState state)
@@ -267,8 +268,12 @@ namespace Hecton8.World
 
         private long ResolveProtectedTileKey()
         {
-            if (playerTransform == null || !TryFindPlayerTileState(playerTransform.position, out TileRuntimeState playerTileState) || playerTileState == null)
+            if (!TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition) ||
+                !TryFindPlayerTileState(playerRuntimePosition, out TileRuntimeState playerTileState) ||
+                playerTileState == null)
+            {
                 return long.MinValue;
+            }
 
             return PackTileCoord(playerTileState.TileX, playerTileState.TileZ);
         }

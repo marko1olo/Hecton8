@@ -157,6 +157,7 @@ namespace NASAPunk.Visor
         [SerializeField] private bool _enforceNearClipSafeOffset = false;
 
         private const float AutoResolveRetryInterval = 1f;
+        private const float VisorPropertyFloatWriteEpsilon = 0.0005f;
 
         private RenderTexture _hudRT;
         private MaterialPropertyBlock _mpb;
@@ -166,13 +167,51 @@ namespace NASAPunk.Visor
         private int _hudScissorWidth = -1;
         private int _hudScissorHeight = -1;
         private bool _ownsRuntimeTexture;
-        // COLD ALLOC: LabelSwapScheduler[1] — staged BIOS HUD font swap queue — owner: VisorHUDController
+        // COLD ALLOC: LabelSwapScheduler[1] â€” staged BIOS HUD font swap queue â€” owner: VisorHUDController
         private readonly LabelSwapScheduler _biosFontSwapScheduler = new LabelSwapScheduler();
         private int _cachedRTWidth = -1;
         private int _cachedRTHeight = -1;
         private float _cachedEffectiveRenderScale = -1f;
         private float _nextAutoResolveAt;
         private bool _materialPropertiesDirty = true;
+        private Renderer _appliedHudTextureRenderer;
+        private Texture _appliedHudTexture;
+        private Texture _appliedGlobalHudTexture;
+        private Renderer _appliedVisorPropertyRenderer;
+        private bool _hasAppliedVisorMaterialProperties;
+        private bool _hasResolvedDynamicVisorMaterialInputs;
+        private Texture _appliedBlueNoiseTexture;
+        private float _appliedHudIntensity;
+        private Color _appliedHudColor;
+        private float _appliedScratchBleed;
+        private float _appliedDistortion;
+        private float _appliedWaterRunoffStrength;
+        private float _appliedDropletAlpha;
+        private float _appliedWaterRunoffSpeed;
+        private float _appliedWaterRunoffDistortion;
+        private float _appliedWaterDropletDensity;
+        private float _appliedWaterDropletScale;
+        private float _appliedCondensationStrength;
+        private float _appliedCondensationDistortion;
+        private float _appliedCondensationEdgeExponent;
+        private float _appliedCondensationDriftSpeed;
+        private float _appliedScreenFrostStrength;
+        private float _appliedChromaticAberration;
+        private float _appliedStaticNoise;
+        private float _appliedHypoxiaLevel;
+        private float _appliedHullStressFlicker;
+        private float _appliedHazardRadiationLevel;
+        private float _appliedHazardThermalLevel;
+        private float _appliedHazardToxicLevel;
+        private float _appliedHazardGlitchLevel;
+        private float _appliedBiosRecoveryMode;
+        private float _appliedPressureLensCrackIntensity;
+        private float _appliedToolBatteryNormalized;
+        private Vector4 _appliedVisorCameraForward;
+        private Vector4 _appliedStrongestLightDirection;
+        private float _resolvedToolBatteryNormalized;
+        private Vector3 _resolvedVisorCameraForward;
+        private Vector4 _resolvedStrongestLightDirection;
         private UniversalAdditionalCameraData _cachedHudCameraData;
         private UniversalAdditionalCameraData _cachedBaseCameraData;
         private bool _poseApplied;
@@ -510,6 +549,7 @@ namespace NASAPunk.Visor
             UpdateHypoxiaState(deltaTime);
             UpdatePressureFlickerState(deltaTime);
             UpdatePressureLensCrackState(deltaTime);
+            RefreshDynamicVisorMaterialInputs();
             if (_materialPropertiesDirty)
                 ApplyMaterialProperties();
         }
@@ -523,6 +563,20 @@ namespace NASAPunk.Visor
             _glitchRngState ^= _glitchRngState >> 17;
             _glitchRngState ^= _glitchRngState << 5;
             return (_glitchRngState & 0x7FFFFF) / (float)0x800000;
+        }
+
+        private static float FastDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0.1f, speed) * math.max(0f, deltaTime);
+            if (x >= 3.5f)
+                return 1f;
+
+            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
+        }
+
+        private static bool NearlyEqual(float lhs, float rhs)
+        {
+            return math.abs(lhs - rhs) <= VisorPropertyFloatWriteEpsilon;
         }
 
         private void TryRegisterRuntimeTick()
@@ -594,22 +648,23 @@ namespace NASAPunk.Visor
                 return;
 
             _nextAutoResolveAt = now + AutoResolveRetryInterval;
+            bool allowHierarchySearch = force || !Application.isPlaying;
 
             if (_visorRenderer == null)
-                _visorRenderer = GetComponent<Renderer>();
+                TryGetComponent(out _visorRenderer);
 
-            if (_hudCamera == null)
+            if (_hudCamera == null && allowHierarchySearch)
             {
                 Transform parent = transform.parent;
                 if (parent != null)
                 {
                     Transform cameraTransform = parent.Find("HUD_Render_Camera");
                     if (cameraTransform != null)
-                        _hudCamera = cameraTransform.GetComponent<Camera>();
+                        cameraTransform.TryGetComponent(out _hudCamera);
                 }
             }
 
-            if (_baseStackCamera == null)
+            if (_baseStackCamera == null && allowHierarchySearch)
             {
                 Transform parent = transform.parent;
                 if (parent != null)
@@ -619,28 +674,28 @@ namespace NASAPunk.Visor
                     {
                         Transform spaceCameraTransform = mainCameraTransform.Find("SpaceCamera");
                         if (spaceCameraTransform != null)
-                            _baseStackCamera = spaceCameraTransform.GetComponent<Camera>();
+                            spaceCameraTransform.TryGetComponent(out _baseStackCamera);
                     }
                 }
             }
 
-            if (_referenceCamera == null)
+            if (_referenceCamera == null && allowHierarchySearch)
             {
                 Transform parent = transform.parent;
                 if (parent != null)
                 {
                     Transform mainCameraTransform = parent.Find("Main Camera");
                     if (mainCameraTransform != null)
-                        _referenceCamera = mainCameraTransform.GetComponent<Camera>();
+                        mainCameraTransform.TryGetComponent(out _referenceCamera);
                     else
-                        _referenceCamera = parent.GetComponent<Camera>();
+                        parent.TryGetComponent(out _referenceCamera);
                 }
 
                 if (_referenceCamera == null && _baseStackCamera != null)
                 {
                     Transform baseParent = _baseStackCamera.transform.parent;
                     if (baseParent != null)
-                        _referenceCamera = baseParent.GetComponent<Camera>();
+                        baseParent.TryGetComponent(out _referenceCamera);
                 }
             }
 
@@ -678,7 +733,7 @@ namespace NASAPunk.Visor
             if (_mpb != null)
                 return;
 
-            // COLD ALLOC: MaterialPropertyBlock[1] â€” visor surface state bridge â€” owner: VisorHUDController
+            // COLD ALLOC: MaterialPropertyBlock[1] — visor surface state bridge — owner: VisorHUDController
             _mpb = new MaterialPropertyBlock();
         }
 
@@ -695,6 +750,7 @@ namespace NASAPunk.Visor
                 return;
 
             EnsurePropertyBlock();
+            RefreshDynamicVisorMaterialInputs();
 
             float condensationStrength = Mathf.Clamp01(_condensationShockIntensity + _criticalPressureCondensation + _coldCondensation);
             float environmentalDistortion = _interferenceDistortionIntensity * _interferenceDistortionMax;
@@ -711,44 +767,160 @@ namespace NASAPunk.Visor
             float compositeStaticNoise = biosRecoverySwitch > 0.5f
                 ? hazardStaticNoise * 0.08f
                 : Mathf.Max(_structuralFatigueStaticNoise, hazardStaticNoise);
-            float activeToolBatteryNormalized = ResolveActiveToolBatteryNormalized();
+
+            if (_appliedVisorPropertyRenderer != _visorRenderer)
+                InvalidateVisorMaterialPropertyCache();
+
+            _visorRenderer.GetPropertyBlock(_mpb);
+            bool propertyBlockChanged = ApplyBlueNoiseTextureBindingIfNeeded();
+            propertyBlockChanged |= ApplyVisorFloat(ID_HUDIntensity, compositeHudIntensity, ref _appliedHudIntensity);
+            propertyBlockChanged |= ApplyVisorColor(ID_HUDColor, compositeHudTint, ref _appliedHudColor);
+            propertyBlockChanged |= ApplyVisorFloat(ID_ScratchBleed, _scratchBleed, ref _appliedScratchBleed);
+            propertyBlockChanged |= ApplyVisorFloat(ID_Distortion, _distortion + environmentalDistortion, ref _appliedDistortion);
+            propertyBlockChanged |= ApplyVisorFloat(ID_WaterRunoffStrength, _waterRunoffIntensity, ref _appliedWaterRunoffStrength);
+            propertyBlockChanged |= ApplyVisorFloat(ID_DropletAlpha, _dropletAlpha, ref _appliedDropletAlpha);
+            propertyBlockChanged |= ApplyVisorFloat(ID_WaterRunoffSpeed, _waterRunoffSpeed, ref _appliedWaterRunoffSpeed);
+            propertyBlockChanged |= ApplyVisorFloat(ID_WaterRunoffDistortion, _waterRunoffDistortion, ref _appliedWaterRunoffDistortion);
+            propertyBlockChanged |= ApplyVisorFloat(ID_WaterDropletDensity, _waterDropletDensity, ref _appliedWaterDropletDensity);
+            propertyBlockChanged |= ApplyVisorFloat(ID_WaterDropletScale, _waterDropletScale, ref _appliedWaterDropletScale);
+            propertyBlockChanged |= ApplyVisorFloat(ID_CondensationStrength, condensationStrength, ref _appliedCondensationStrength);
+            propertyBlockChanged |= ApplyVisorFloat(ID_CondensationDistortion, _condensationDistortion, ref _appliedCondensationDistortion);
+            propertyBlockChanged |= ApplyVisorFloat(ID_CondensationEdgeExponent, _condensationEdgeExponent, ref _appliedCondensationEdgeExponent);
+            propertyBlockChanged |= ApplyVisorFloat(ID_CondensationDriftSpeed, _condensationDriftSpeed, ref _appliedCondensationDriftSpeed);
+            propertyBlockChanged |= ApplyVisorFloat(ID_ScreenFrostStrength, _screenFrostStrength, ref _appliedScreenFrostStrength);
+            propertyBlockChanged |= ApplyVisorFloat(ID_ChromaticAberration, compositeChromaticAberration, ref _appliedChromaticAberration);
+            propertyBlockChanged |= ApplyVisorFloat(ID_StaticNoise, compositeStaticNoise, ref _appliedStaticNoise);
+            propertyBlockChanged |= ApplyVisorFloat(ID_HypoxiaLevel, _hudHypoxiaLevel, ref _appliedHypoxiaLevel);
+            propertyBlockChanged |= ApplyVisorFloat(ID_HullStressFlicker, _hudHullStressFlicker, ref _appliedHullStressFlicker);
+            propertyBlockChanged |= ApplyVisorFloat(ID_HazardRadiationLevel, _hazardRadiationLevel, ref _appliedHazardRadiationLevel);
+            propertyBlockChanged |= ApplyVisorFloat(ID_HazardThermalLevel, _hazardThermalLevel, ref _appliedHazardThermalLevel);
+            propertyBlockChanged |= ApplyVisorFloat(ID_HazardToxicLevel, _hazardToxicLevel, ref _appliedHazardToxicLevel);
+            propertyBlockChanged |= ApplyVisorFloat(ID_HazardGlitchLevel, _hazardGlitchLevel, ref _appliedHazardGlitchLevel);
+            propertyBlockChanged |= ApplyVisorFloat(ID_BiosRecoveryMode, biosRecoverySwitch, ref _appliedBiosRecoveryMode);
+            propertyBlockChanged |= ApplyVisorFloat(ID_PressureLensCrackIntensity, _pressureLensCrackIntensity, ref _appliedPressureLensCrackIntensity);
+            propertyBlockChanged |= ApplyVisorFloat(ID_ToolBatteryNormalized, _resolvedToolBatteryNormalized, ref _appliedToolBatteryNormalized);
+            propertyBlockChanged |= ApplyVisorVector(
+                ID_VisorCameraForwardWS,
+                new Vector4(_resolvedVisorCameraForward.x, _resolvedVisorCameraForward.y, _resolvedVisorCameraForward.z, 1f),
+                ref _appliedVisorCameraForward);
+            propertyBlockChanged |= ApplyVisorVector(ID_VisorStrongestLightDirectionWS, _resolvedStrongestLightDirection, ref _appliedStrongestLightDirection);
+
+            if (propertyBlockChanged)
+            {
+                _visorRenderer.SetPropertyBlock(_mpb);
+                _appliedVisorPropertyRenderer = _visorRenderer;
+                _hasAppliedVisorMaterialProperties = true;
+            }
+
+            _materialPropertiesDirty = false;
+        }
+
+        private bool ApplyBlueNoiseTextureBindingIfNeeded()
+        {
+            Texture texture = _blueNoiseTexture != null ? _blueNoiseTexture : Texture2D.blackTexture;
+            if (_hasAppliedVisorMaterialProperties && _appliedBlueNoiseTexture == texture)
+                return false;
+
+            _mpb.SetTexture(ID_BlueNoiseTex, texture);
+            _appliedBlueNoiseTexture = texture;
+            return true;
+        }
+
+        private bool ApplyVisorFloat(int propertyId, float value, ref float cachedValue)
+        {
+            if (_hasAppliedVisorMaterialProperties && math.abs(cachedValue - value) <= VisorPropertyFloatWriteEpsilon)
+                return false;
+
+            _mpb.SetFloat(propertyId, value);
+            cachedValue = value;
+            return true;
+        }
+
+        private bool ApplyVisorColor(int propertyId, Color value, ref Color cachedValue)
+        {
+            if (_hasAppliedVisorMaterialProperties && cachedValue == value)
+                return false;
+
+            _mpb.SetColor(propertyId, value);
+            cachedValue = value;
+            return true;
+        }
+
+        private bool ApplyVisorVector(int propertyId, Vector4 value, ref Vector4 cachedValue)
+        {
+            if (_hasAppliedVisorMaterialProperties &&
+                math.abs(cachedValue.x - value.x) <= VisorPropertyFloatWriteEpsilon &&
+                math.abs(cachedValue.y - value.y) <= VisorPropertyFloatWriteEpsilon &&
+                math.abs(cachedValue.z - value.z) <= VisorPropertyFloatWriteEpsilon &&
+                math.abs(cachedValue.w - value.w) <= VisorPropertyFloatWriteEpsilon)
+            {
+                return false;
+            }
+
+            _mpb.SetVector(propertyId, value);
+            cachedValue = value;
+            return true;
+        }
+
+        private void InvalidateVisorMaterialPropertyCache()
+        {
+            _appliedVisorPropertyRenderer = null;
+            _hasAppliedVisorMaterialProperties = false;
+            _appliedBlueNoiseTexture = null;
+        }
+
+        private void RefreshDynamicVisorMaterialInputs()
+        {
+            float toolBatteryNormalized = ResolveActiveToolBatteryNormalized();
             Vector3 visorCameraForward = ResolveVisorCameraForward();
             Vector4 strongestLightDirection = ResolveStrongestLightDirectionPayload();
 
-            _visorRenderer.GetPropertyBlock(_mpb);
-            if (_blueNoiseTexture != null)
-                _mpb.SetTexture(ID_BlueNoiseTex, _blueNoiseTexture);
+            if (!_hasResolvedDynamicVisorMaterialInputs)
+            {
+                _resolvedToolBatteryNormalized = toolBatteryNormalized;
+                _resolvedVisorCameraForward = visorCameraForward;
+                _resolvedStrongestLightDirection = strongestLightDirection;
+                _hasResolvedDynamicVisorMaterialInputs = true;
+                _materialPropertiesDirty = true;
+                return;
+            }
 
-            _mpb.SetFloat(ID_HUDIntensity, compositeHudIntensity);
-            _mpb.SetColor(ID_HUDColor, compositeHudTint);
-            _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
-            _mpb.SetFloat(ID_Distortion, _distortion + environmentalDistortion);
-            _mpb.SetFloat(ID_WaterRunoffStrength, _waterRunoffIntensity);
-            _mpb.SetFloat(ID_DropletAlpha, _dropletAlpha);
-            _mpb.SetFloat(ID_WaterRunoffSpeed, _waterRunoffSpeed);
-            _mpb.SetFloat(ID_WaterRunoffDistortion, _waterRunoffDistortion);
-            _mpb.SetFloat(ID_WaterDropletDensity, _waterDropletDensity);
-            _mpb.SetFloat(ID_WaterDropletScale, _waterDropletScale);
-            _mpb.SetFloat(ID_CondensationStrength, condensationStrength);
-            _mpb.SetFloat(ID_CondensationDistortion, _condensationDistortion);
-            _mpb.SetFloat(ID_CondensationEdgeExponent, _condensationEdgeExponent);
-            _mpb.SetFloat(ID_CondensationDriftSpeed, _condensationDriftSpeed);
-            _mpb.SetFloat(ID_ScreenFrostStrength, _screenFrostStrength);
-            _mpb.SetFloat(ID_ChromaticAberration, compositeChromaticAberration);
-            _mpb.SetFloat(ID_StaticNoise, compositeStaticNoise);
-            _mpb.SetFloat(ID_HypoxiaLevel, _hudHypoxiaLevel);
-            _mpb.SetFloat(ID_HullStressFlicker, _hudHullStressFlicker);
-            _mpb.SetFloat(ID_HazardRadiationLevel, _hazardRadiationLevel);
-            _mpb.SetFloat(ID_HazardThermalLevel, _hazardThermalLevel);
-            _mpb.SetFloat(ID_HazardToxicLevel, _hazardToxicLevel);
-            _mpb.SetFloat(ID_HazardGlitchLevel, _hazardGlitchLevel);
-            _mpb.SetFloat(ID_BiosRecoveryMode, biosRecoverySwitch);
-            _mpb.SetFloat(ID_PressureLensCrackIntensity, _pressureLensCrackIntensity);
-            _mpb.SetFloat(ID_ToolBatteryNormalized, activeToolBatteryNormalized);
-            _mpb.SetVector(ID_VisorCameraForwardWS, new Vector4(visorCameraForward.x, visorCameraForward.y, visorCameraForward.z, 1f));
-            _mpb.SetVector(ID_VisorStrongestLightDirectionWS, strongestLightDirection);
-            _visorRenderer.SetPropertyBlock(_mpb);
-            _materialPropertiesDirty = false;
+            bool dirty = false;
+            if (math.abs(_resolvedToolBatteryNormalized - toolBatteryNormalized) > VisorPropertyFloatWriteEpsilon)
+            {
+                _resolvedToolBatteryNormalized = toolBatteryNormalized;
+                dirty = true;
+            }
+
+            if (Vector3Changed(_resolvedVisorCameraForward, visorCameraForward))
+            {
+                _resolvedVisorCameraForward = visorCameraForward;
+                dirty = true;
+            }
+
+            if (Vector4Changed(_resolvedStrongestLightDirection, strongestLightDirection))
+            {
+                _resolvedStrongestLightDirection = strongestLightDirection;
+                dirty = true;
+            }
+
+            if (dirty)
+                _materialPropertiesDirty = true;
+        }
+
+        private static bool Vector3Changed(Vector3 current, Vector3 next)
+        {
+            return math.abs(current.x - next.x) > VisorPropertyFloatWriteEpsilon ||
+                math.abs(current.y - next.y) > VisorPropertyFloatWriteEpsilon ||
+                math.abs(current.z - next.z) > VisorPropertyFloatWriteEpsilon;
+        }
+
+        private static bool Vector4Changed(Vector4 current, Vector4 next)
+        {
+            return math.abs(current.x - next.x) > VisorPropertyFloatWriteEpsilon ||
+                math.abs(current.y - next.y) > VisorPropertyFloatWriteEpsilon ||
+                math.abs(current.z - next.z) > VisorPropertyFloatWriteEpsilon ||
+                math.abs(current.w - next.w) > VisorPropertyFloatWriteEpsilon;
         }
 
         private void ApplyVRBrownoutState(float biosRecoverySwitch)
@@ -761,7 +933,7 @@ namespace NASAPunk.Visor
             }
 
             float brownoutIntensity = Mathf.Max(Mathf.Clamp01(biosRecoverySwitch), powerBrownout);
-            if (Mathf.Approximately(_appliedVRBrownoutIntensity, brownoutIntensity))
+            if (NearlyEqual(_appliedVRBrownoutIntensity, brownoutIntensity))
                 return;
 
             _appliedVRBrownoutIntensity = brownoutIntensity;
@@ -828,7 +1000,7 @@ namespace NASAPunk.Visor
                 float lifetime = Mathf.Max(0.1f, _surfaceBreakRunoffMinimumLifetime);
                 _dropletFadeTimer = Mathf.Max(0f, _dropletFadeTimer - Mathf.Max(0f, deltaTime));
                 float nextDropletAlpha = Mathf.Clamp01(_dropletFadeTimer / lifetime);
-                if (!Mathf.Approximately(nextDropletAlpha, _dropletAlpha))
+                if (!NearlyEqual(nextDropletAlpha, _dropletAlpha))
                 {
                     _dropletAlpha = nextDropletAlpha;
                     _materialPropertiesDirty = true;
@@ -860,9 +1032,9 @@ namespace NASAPunk.Visor
                 return;
             }
 
-            float t = 1f - Mathf.Exp(-Mathf.Max(0.1f, _waterRunoffRecoverySpeed) * deltaTime);
+            float t = FastDecayBlend(_waterRunoffRecoverySpeed, deltaTime);
             float nextIntensity = math.lerp(_waterRunoffIntensity, 0f, t);
-            if (!Mathf.Approximately(nextIntensity, _waterRunoffIntensity))
+            if (!NearlyEqual(nextIntensity, _waterRunoffIntensity))
             {
                 _waterRunoffIntensity = nextIntensity;
                 _materialPropertiesDirty = true;
@@ -999,14 +1171,14 @@ namespace NASAPunk.Visor
             {
                 float safeDepth = Mathf.Max(0.01f, _subscribedSurvivalSystem.Stats.SafeDepth);
                 float pressureFactor = pressure / safeDepth;
-                float pressureT = Mathf.InverseLerp(
+                float pressureT = FastInverseLerp01(
                     _criticalPressureStartFactor,
                     Mathf.Max(_criticalPressureStartFactor + 0.01f, _criticalPressureFullFactor),
                     pressureFactor);
                 target = pressureT * _criticalPressureCondensationMax;
             }
 
-            if (!Mathf.Approximately(_criticalPressureCondensationTarget, target))
+            if (!NearlyEqual(_criticalPressureCondensationTarget, target))
             {
                 _criticalPressureCondensationTarget = target;
                 _materialPropertiesDirty = true;
@@ -1029,12 +1201,12 @@ namespace NASAPunk.Visor
 
         private void UpdateCondensationState(float deltaTime)
         {
-            float pressureBlendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _criticalPressureCondensationBlendSpeed) * deltaTime);
+            float pressureBlendT = FastDecayBlend(_criticalPressureCondensationBlendSpeed, deltaTime);
             float blendedPressureCondensation = math.lerp(
                 _criticalPressureCondensation,
                 _criticalPressureCondensationTarget,
                 pressureBlendT);
-            if (!Mathf.Approximately(blendedPressureCondensation, _criticalPressureCondensation))
+            if (!NearlyEqual(blendedPressureCondensation, _criticalPressureCondensation))
             {
                 _criticalPressureCondensation = blendedPressureCondensation;
                 _materialPropertiesDirty = true;
@@ -1047,14 +1219,14 @@ namespace NASAPunk.Visor
                 targetColdCondensation = coldCondensation01 * Mathf.Clamp01(_coldCondensationMaximum);
             }
 
-            if (!Mathf.Approximately(targetColdCondensation, _coldCondensationTarget))
+            if (!NearlyEqual(targetColdCondensation, _coldCondensationTarget))
                 _coldCondensationTarget = targetColdCondensation;
 
             float blendedColdCondensation = math.lerp(
                 _coldCondensation,
                 _coldCondensationTarget,
                 pressureBlendT);
-            if (!Mathf.Approximately(blendedColdCondensation, _coldCondensation))
+            if (!NearlyEqual(blendedColdCondensation, _coldCondensation))
             {
                 _coldCondensation = blendedColdCondensation;
                 _materialPropertiesDirty = true;
@@ -1080,9 +1252,9 @@ namespace NASAPunk.Visor
                 return;
             }
 
-            float t = 1f - Mathf.Exp(-Mathf.Max(0.1f, _condensationShockRecoverySpeed) * deltaTime);
+            float t = FastDecayBlend(_condensationShockRecoverySpeed, deltaTime);
             float nextIntensity = math.lerp(_condensationShockIntensity, 0f, t);
-            if (!Mathf.Approximately(nextIntensity, _condensationShockIntensity))
+            if (!NearlyEqual(nextIntensity, _condensationShockIntensity))
             {
                 _condensationShockIntensity = nextIntensity;
                 _materialPropertiesDirty = true;
@@ -1096,7 +1268,7 @@ namespace NASAPunk.Visor
             {
                 float temperature = _subscribedSurvivalSystem.EnvironmentTemperature;
                 float coldCondensation01 = ResolveColdCondensation01(temperature);
-                float temperatureT = Mathf.InverseLerp(_frostStartTemperature, _frostFullTemperature, temperature);
+                float temperatureT = FastInverseLerp01(_frostStartTemperature, _frostFullTemperature, temperature);
                 float coldSeverity = Mathf.Clamp01(_subscribedSurvivalSystem.ColdStressSeverity01);
                 target = Mathf.Max(temperatureT, coldSeverity * (0.62f + _abyssalColdFrostBoost));
                 target = Mathf.Max(target, coldCondensation01 * Mathf.Clamp01(_coldCondensationMaximum + 0.12f));
@@ -1107,12 +1279,12 @@ namespace NASAPunk.Visor
             if (hypothermiaFrost > 0f)
                 target = Mathf.Max(target, Mathf.Clamp01(hypothermiaFrost) * _screenFrostMaximum);
 
-            if (!Mathf.Approximately(target, _screenFrostTarget))
+            if (!NearlyEqual(target, _screenFrostTarget))
                 _screenFrostTarget = target;
 
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _screenFrostBlendSpeed) * deltaTime);
+            float blendT = FastDecayBlend(_screenFrostBlendSpeed, deltaTime);
             float blendedFrost = math.lerp(_screenFrostStrength, _screenFrostTarget, blendT);
-            if (!Mathf.Approximately(blendedFrost, _screenFrostStrength))
+            if (!NearlyEqual(blendedFrost, _screenFrostStrength))
             {
                 _screenFrostStrength = blendedFrost;
                 _materialPropertiesDirty = true;
@@ -1141,9 +1313,9 @@ namespace NASAPunk.Visor
                 return;
             }
 
-            float t = 1f - Mathf.Exp(-Mathf.Max(0.1f, _interferenceDistortionRecoverySpeed) * deltaTime);
+            float t = FastDecayBlend(_interferenceDistortionRecoverySpeed, deltaTime);
             float nextIntensity = math.lerp(_interferenceDistortionIntensity, 0f, t);
-            if (!Mathf.Approximately(nextIntensity, _interferenceDistortionIntensity))
+            if (!NearlyEqual(nextIntensity, _interferenceDistortionIntensity))
             {
                 _interferenceDistortionIntensity = nextIntensity;
                 _materialPropertiesDirty = true;
@@ -1155,17 +1327,17 @@ namespace NASAPunk.Visor
             float fatigue01 = ResolveStructuralFatigue01();
             float targetChromaticAberration = fatigue01 * Mathf.Max(0f, _structuralFatigueChromaticAberrationMax);
             float targetStaticNoise = fatigue01 * Mathf.Max(0f, _structuralFatigueStaticNoiseMax);
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _structuralFatigueBlendSharpness) * deltaTime);
+            float blendT = FastDecayBlend(_structuralFatigueBlendSharpness, deltaTime);
 
             float nextChromaticAberration = math.lerp(_structuralFatigueChromaticAberration, targetChromaticAberration, blendT);
-            if (!Mathf.Approximately(nextChromaticAberration, _structuralFatigueChromaticAberration))
+            if (!NearlyEqual(nextChromaticAberration, _structuralFatigueChromaticAberration))
             {
                 _structuralFatigueChromaticAberration = nextChromaticAberration;
                 _materialPropertiesDirty = true;
             }
 
             float nextStaticNoise = math.lerp(_structuralFatigueStaticNoise, targetStaticNoise, blendT);
-            if (!Mathf.Approximately(nextStaticNoise, _structuralFatigueStaticNoise))
+            if (!NearlyEqual(nextStaticNoise, _structuralFatigueStaticNoise))
             {
                 _structuralFatigueStaticNoise = nextStaticNoise;
                 _materialPropertiesDirty = true;
@@ -1210,7 +1382,7 @@ namespace NASAPunk.Visor
             float targetGlitch = Mathf.Clamp01(Mathf.Max(
                 targetRadiation,
                 Mathf.Max(targetThermal * 0.82f, targetToxic * 0.91f)));
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _structuralFatigueBlendSharpness) * deltaTime);
+            float blendT = FastDecayBlend(_structuralFatigueBlendSharpness, deltaTime);
 
             if (UpdateSmoothedVisualChannel(ref _hazardRadiationLevel, targetRadiation, blendT))
                 _materialPropertiesDirty = true;
@@ -1224,7 +1396,7 @@ namespace NASAPunk.Visor
             if (UpdateSmoothedVisualChannel(ref _hazardGlitchLevel, targetGlitch, blendT))
                 _materialPropertiesDirty = true;
 
-            if (!Mathf.Approximately(_biosRecoveryModeBlend, targetBiosRecovery))
+            if (!NearlyEqual(_biosRecoveryModeBlend, targetBiosRecovery))
             {
                 _biosRecoveryModeBlend = targetBiosRecovery;
                 _materialPropertiesDirty = true;
@@ -1242,9 +1414,9 @@ namespace NASAPunk.Visor
                 targetHypoxia = ResolveHypoxiaNarcosisTarget(oxygenNormalized, safeThreshold, nitrogenBlur01);
             }
 
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _hypoxiaBlendSharpness) * deltaTime);
+            float blendT = FastDecayBlend(_hypoxiaBlendSharpness, deltaTime);
             float nextHypoxia = math.lerp(_hudHypoxiaLevel, targetHypoxia, blendT);
-            if (!Mathf.Approximately(nextHypoxia, _hudHypoxiaLevel))
+            if (!NearlyEqual(nextHypoxia, _hudHypoxiaLevel))
             {
                 _hudHypoxiaLevel = nextHypoxia;
                 _materialPropertiesDirty = true;
@@ -1263,9 +1435,9 @@ namespace NASAPunk.Visor
         private void UpdatePressureFlickerState(float deltaTime)
         {
             float targetFlicker = ResolveHullStress01() * Mathf.Clamp01(_pressureFlickerMaximum);
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _pressureFlickerBlendSharpness) * deltaTime);
+            float blendT = FastDecayBlend(_pressureFlickerBlendSharpness, deltaTime);
             float nextFlicker = math.lerp(_hudHullStressFlicker, targetFlicker, blendT);
-            if (!Mathf.Approximately(nextFlicker, _hudHullStressFlicker))
+            if (!NearlyEqual(nextFlicker, _hudHullStressFlicker))
             {
                 _hudHullStressFlicker = nextFlicker;
                 _materialPropertiesDirty = true;
@@ -1279,7 +1451,7 @@ namespace NASAPunk.Visor
             float range = Mathf.Max(1f, _pressureLensCrackFullDepthRangeMeters);
             float targetCrack = Mathf.Clamp01((depth - startDepth) / range);
             targetCrack = targetCrack * targetCrack * (3f - 2f * targetCrack);
-            float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _pressureLensCrackBlendSharpness) * Mathf.Max(0f, deltaTime));
+            float blendT = FastDecayBlend(_pressureLensCrackBlendSharpness, deltaTime);
             if (UpdateSmoothedVisualChannel(ref _pressureLensCrackIntensity, targetCrack, blendT))
                 _materialPropertiesDirty = true;
         }
@@ -1312,17 +1484,26 @@ namespace NASAPunk.Visor
         private static bool UpdateSmoothedVisualChannel(ref float current, float target, float blendT)
         {
             float nextValue = math.lerp(current, target, blendT);
-            if (Mathf.Approximately(nextValue, current))
+            if (NearlyEqual(nextValue, current))
                 return false;
 
             current = nextValue;
             return true;
         }
 
+        private static float FastInverseLerp01(float from, float to, float value)
+        {
+            float range = to - from;
+            if (math.abs(range) <= 0.00001f)
+                return 0f;
+
+            return math.saturate((value - from) / range);
+        }
+
         private float ResolveColdCondensation01(float temperature)
         {
             float fullTemperature = Mathf.Min(_coldCondensationStartTemperature - 0.01f, _coldCondensationFullTemperature);
-            return Mathf.Clamp01(Mathf.InverseLerp(_coldCondensationStartTemperature, fullTemperature, temperature));
+            return FastInverseLerp01(_coldCondensationStartTemperature, fullTemperature, temperature);
         }
 
         private void PrewarmBiosTerminalFont()
@@ -1486,7 +1667,7 @@ namespace NASAPunk.Visor
             if (_hudRT != null &&
                 _cachedRTWidth == targetWidth &&
                 _cachedRTHeight == targetHeight &&
-                Mathf.Approximately(_cachedEffectiveRenderScale, effectiveRenderScale))
+                NearlyEqual(_cachedEffectiveRenderScale, effectiveRenderScale))
             {
                 return;
             }
@@ -1551,24 +1732,18 @@ namespace NASAPunk.Visor
 
         private void BindRT()
         {
-            EnsurePropertyBlock();
-
             if (_hudCamera != null)
             {
-                _hudCamera.targetTexture = _projectionMode == ProjectionMode.Disabled ? null : _hudRT;
+                SetHudCameraTargetTextureIfChanged(_projectionMode == ProjectionMode.Disabled ? null : _hudRT);
                 ConfigureHudScissorCommandBuffers();
             }
 
-            if (_visorRenderer == null)
-                return;
-
-            _visorRenderer.GetPropertyBlock(_mpb);
             Texture hudTexture = _hudRT != null ? (Texture)_hudRT : Texture2D.blackTexture;
-            _mpb.SetTexture(ID_HUDTex, hudTexture);
-            _visorRenderer.SetPropertyBlock(_mpb);
-            ActiveHudRenderTexture = hudTexture;
-            Shader.SetGlobalTexture(ID_HUDTex, hudTexture);
-            _materialPropertiesDirty = true;
+            bool hasVisorRenderer = _visorRenderer != null;
+            ApplyHudTextureBinding(hudTexture, bindRenderer: hasVisorRenderer);
+
+            if (hasVisorRenderer)
+                _materialPropertiesDirty = true;
         }
 
         private void ReleaseRT()
@@ -1577,22 +1752,78 @@ namespace NASAPunk.Visor
 
             if (_hudCamera != null)
             {
-                _hudCamera.targetTexture = null;
-                _hudCamera.enabled = true;
+                SetHudCameraTargetTextureIfChanged(null);
+                SetHudCameraEnabledIfChanged(true);
             }
 
             ReleaseOwnedRuntimeTexture();
 
             _hudRT = null;
             _ownsRuntimeTexture = false;
-            if (ActiveHudRenderTexture != null)
-            {
-                ActiveHudRenderTexture = Texture2D.blackTexture;
-                Shader.SetGlobalTexture(ID_HUDTex, Texture2D.blackTexture);
-            }
+            ApplyHudTextureBinding(Texture2D.blackTexture, bindRenderer: _visorRenderer != null);
             _cachedRTWidth = -1;
             _cachedRTHeight = -1;
             _cachedEffectiveRenderScale = -1f;
+        }
+
+        private void ApplyHudTextureBinding(Texture texture, bool bindRenderer)
+        {
+            Texture safeTexture = texture != null ? texture : Texture2D.blackTexture;
+
+            if (bindRenderer && _visorRenderer != null)
+            {
+                ApplyRendererHudTextureBinding(safeTexture);
+            }
+            else
+            {
+                _appliedHudTextureRenderer = null;
+                _appliedHudTexture = null;
+            }
+
+            if (_appliedGlobalHudTexture != safeTexture)
+            {
+                Shader.SetGlobalTexture(ID_HUDTex, safeTexture);
+                _appliedGlobalHudTexture = safeTexture;
+            }
+
+            ActiveHudRenderTexture = safeTexture;
+        }
+
+        private void SetHudCameraTargetTextureIfChanged(RenderTexture targetTexture)
+        {
+            if (_hudCamera != null && _hudCamera.targetTexture != targetTexture)
+                _hudCamera.targetTexture = targetTexture;
+        }
+
+        private void SetHudCameraEnabledIfChanged(bool enabled)
+        {
+            if (_hudCamera != null && _hudCamera.enabled != enabled)
+                _hudCamera.enabled = enabled;
+        }
+
+        private void SetHudCameraClearFlagsIfChanged(CameraClearFlags clearFlags)
+        {
+            if (_hudCamera != null && _hudCamera.clearFlags != clearFlags)
+                _hudCamera.clearFlags = clearFlags;
+        }
+
+        private void SetHudCameraBackgroundColorIfChanged(Color color)
+        {
+            if (_hudCamera != null && _hudCamera.backgroundColor != color)
+                _hudCamera.backgroundColor = color;
+        }
+
+        private void ApplyRendererHudTextureBinding(Texture texture)
+        {
+            if (_appliedHudTextureRenderer == _visorRenderer && _appliedHudTexture == texture)
+                return;
+
+            EnsurePropertyBlock();
+            _visorRenderer.GetPropertyBlock(_mpb);
+            _mpb.SetTexture(ID_HUDTex, texture);
+            _visorRenderer.SetPropertyBlock(_mpb);
+            _appliedHudTextureRenderer = _visorRenderer;
+            _appliedHudTexture = texture;
         }
 
         private void ConfigureHudScissorCommandBuffers()
@@ -1603,8 +1834,8 @@ namespace NASAPunk.Visor
                 return;
             }
 
-            int width = Mathf.Max(1, _hudRT.width);
-            int height = Mathf.Max(1, _hudRT.height);
+            int width = math.max(1, _hudRT.width);
+            int height = math.max(1, _hudRT.height);
             if (_hudScissorCamera == _hudCamera && _hudScissorWidth == width && _hudScissorHeight == height)
                 return;
 
@@ -1627,18 +1858,18 @@ namespace NASAPunk.Visor
         private void EnsureHudScissorCommandBuffers()
         {
             if (_hudScissorBeginCommandBuffer == null)
-                _hudScissorBeginCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor Begin" };
+                _hudScissorBeginCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor Begin" }; // COLD ALLOC: CommandBuffer[1] â€” HUD camera scissor begin guard â€” owner: VisorHUDController
 
             if (_hudScissorEndCommandBuffer == null)
-                _hudScissorEndCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor End" };
+                _hudScissorEndCommandBuffer = new CommandBuffer { name = "Hecton HUD Scissor End" }; // COLD ALLOC: CommandBuffer[1] â€” HUD camera scissor end guard â€” owner: VisorHUDController
         }
 
         private static Rect ResolveHudScissorRect(int width, int height)
         {
-            float insetX = Mathf.Floor(width * HelmetScissorNormalizedInsetX);
-            float insetY = Mathf.Floor(height * HelmetScissorNormalizedInsetY);
-            float scissorWidth = Mathf.Max(1f, width - insetX - insetX);
-            float scissorHeight = Mathf.Max(1f, height - insetY - insetY);
+            float insetX = math.floor(width * HelmetScissorNormalizedInsetX);
+            float insetY = math.floor(height * HelmetScissorNormalizedInsetY);
+            float scissorWidth = math.max(1f, width - insetX - insetX);
+            float scissorHeight = math.max(1f, height - insetY - insetY);
             return new Rect(insetX, insetY, scissorWidth, scissorHeight);
         }
 
@@ -1705,8 +1936,8 @@ namespace NASAPunk.Visor
 
             if (_hudCamera != null)
             {
-                _hudCamera.targetTexture = null;
-                _hudCamera.enabled = false;
+                SetHudCameraTargetTextureIfChanged(null);
+                SetHudCameraEnabledIfChanged(false);
             }
 
             ReleaseOwnedRuntimeTexture();
@@ -1716,16 +1947,7 @@ namespace NASAPunk.Visor
             _cachedRTHeight = -1;
             _cachedEffectiveRenderScale = -1f;
 
-            if (_visorRenderer != null)
-            {
-                EnsurePropertyBlock();
-                _visorRenderer.GetPropertyBlock(_mpb);
-                _mpb.SetTexture(ID_HUDTex, Texture2D.blackTexture);
-                _visorRenderer.SetPropertyBlock(_mpb);
-            }
-
-            ActiveHudRenderTexture = Texture2D.blackTexture;
-            Shader.SetGlobalTexture(ID_HUDTex, Texture2D.blackTexture);
+            ApplyHudTextureBinding(Texture2D.blackTexture, bindRenderer: _visorRenderer != null);
 
             _editorPreviewSuspended = true;
         }
@@ -1761,9 +1983,9 @@ namespace NASAPunk.Visor
                 hudCameraData.renderType = CameraRenderType.Base;
                 RemoveHudCameraFromKnownStacks(stackBaseCamera, baseCameraData);
 
-                _hudCamera.clearFlags = CameraClearFlags.SolidColor;
-                _hudCamera.backgroundColor = Color.clear;
-                _hudCamera.enabled = true;
+                SetHudCameraClearFlagsIfChanged(CameraClearFlags.SolidColor);
+                SetHudCameraBackgroundColorIfChanged(Color.clear);
+                SetHudCameraEnabledIfChanged(true);
                 return;
             }
 
@@ -1772,8 +1994,8 @@ namespace NASAPunk.Visor
             // path on renderers that report stacking inconsistently.
             RemoveHudCameraFromKnownStacks(stackBaseCamera, baseCameraData);
             hudCameraData.renderType = CameraRenderType.Base;
-            _hudCamera.clearFlags = CameraClearFlags.Depth;
-            _hudCamera.enabled = false;
+            SetHudCameraClearFlagsIfChanged(CameraClearFlags.Depth);
+            SetHudCameraEnabledIfChanged(false);
         }
 
         private bool ShouldUseHudBaseDepthFallback(
@@ -1803,11 +2025,11 @@ namespace NASAPunk.Visor
             RemoveHudCameraFromKnownStacks(stackBaseCamera, baseCameraData);
 
             float fallbackDepth = ResolveHudFallbackDepth();
-            if (!Mathf.Approximately(_hudCamera.depth, fallbackDepth))
+            if (!NearlyEqual(_hudCamera.depth, fallbackDepth))
                 _hudCamera.depth = fallbackDepth;
 
-            _hudCamera.clearFlags = CameraClearFlags.Depth;
-            _hudCamera.enabled = true;
+            SetHudCameraClearFlagsIfChanged(CameraClearFlags.Depth);
+            SetHudCameraEnabledIfChanged(true);
         }
 
         private void RemoveHudCameraFromKnownStacks(
@@ -1862,7 +2084,7 @@ namespace NASAPunk.Visor
             if (HasValidBaseStackCamera())
                 return true;
 
-            Camera resolvedCamera = TryResolveBaseStackCameraFromHierarchy();
+            Camera resolvedCamera = TryResolveBaseStackCameraFromHierarchy(!Application.isPlaying);
             if (resolvedCamera == null)
                 return false;
 
@@ -1880,8 +2102,11 @@ namespace NASAPunk.Visor
             return TryGetBaseCameraData(_baseStackCamera, out _);
         }
 
-        private Camera TryResolveBaseStackCameraFromHierarchy()
+        private Camera TryResolveBaseStackCameraFromHierarchy(bool allowHierarchySearch)
         {
+            if (!allowHierarchySearch)
+                return null;
+
             Camera resolvedCamera = TryResolveBaseStackCameraFromTransform(
                 _referenceCamera != null ? _referenceCamera.transform : null);
             if (resolvedCamera != null)
@@ -1901,7 +2126,11 @@ namespace NASAPunk.Visor
                 return null;
 
             Transform spaceCameraTransform = mainCameraTransform.Find("SpaceCamera");
-            return spaceCameraTransform != null ? spaceCameraTransform.GetComponent<Camera>() : null;
+            if (spaceCameraTransform == null)
+                return null;
+
+            spaceCameraTransform.TryGetComponent(out Camera camera);
+            return camera;
         }
 
         private static Camera TryResolveBaseStackCameraFromTransform(Transform sourceTransform)
@@ -1912,7 +2141,7 @@ namespace NASAPunk.Visor
             Transform spaceCameraTransform = sourceTransform.Find("SpaceCamera");
             if (spaceCameraTransform != null)
             {
-                Camera directCamera = spaceCameraTransform.GetComponent<Camera>();
+                spaceCameraTransform.TryGetComponent(out Camera directCamera);
                 if (directCamera != null)
                     return directCamera;
             }
@@ -1925,7 +2154,8 @@ namespace NASAPunk.Visor
             if (siblingSpaceCameraTransform == null)
                 return null;
 
-            return siblingSpaceCameraTransform.GetComponent<Camera>();
+            siblingSpaceCameraTransform.TryGetComponent(out Camera camera);
+            return camera;
         }
 
         private void SyncProjectionPose()
@@ -1985,7 +2215,7 @@ namespace NASAPunk.Visor
                 return null;
 
             if (_cachedHudCameraData == null || _cachedHudCameraData.gameObject != _hudCamera.gameObject)
-                _cachedHudCameraData = _hudCamera.GetComponent<UniversalAdditionalCameraData>();
+                _hudCamera.TryGetComponent(out _cachedHudCameraData);
 
             return _cachedHudCameraData;
         }
@@ -1996,14 +2226,18 @@ namespace NASAPunk.Visor
                 return null;
 
             if (_cachedBaseCameraData == null || _cachedBaseCameraData.gameObject != _baseStackCamera.gameObject)
-                _cachedBaseCameraData = _baseStackCamera.GetComponent<UniversalAdditionalCameraData>();
+                _baseStackCamera.TryGetComponent(out _cachedBaseCameraData);
 
             return _cachedBaseCameraData;
         }
 
         private static UniversalAdditionalCameraData GetCameraData(Camera camera)
         {
-            return camera != null ? camera.GetComponent<UniversalAdditionalCameraData>() : null;
+            if (camera == null)
+                return null;
+
+            camera.TryGetComponent(out UniversalAdditionalCameraData cameraData);
+            return cameraData;
         }
 
         private static bool TryGetBaseCameraData(Camera camera, out UniversalAdditionalCameraData cameraData)
@@ -2059,7 +2293,7 @@ namespace NASAPunk.Visor
         public void SetHUDIntensity(float intensity)
         {
             float clampedIntensity = Mathf.Clamp(intensity, 0f, 5f);
-            if (Mathf.Approximately(_hudIntensity, clampedIntensity))
+            if (NearlyEqual(_hudIntensity, clampedIntensity))
                 return;
 
             _hudIntensity = clampedIntensity;
@@ -2222,7 +2456,7 @@ namespace NASAPunk.Visor
             return !ReferenceEquals(_editorLastReferenceCamera, _referenceCamera)
                 || _editorLastReferencePosition != referencePosition
                 || _editorLastReferenceRotation != referenceRotation
-                || !Mathf.Approximately(_editorLastReferenceNearClip, nearClipPlane);
+                || !NearlyEqual(_editorLastReferenceNearClip, nearClipPlane);
         }
 
         private void CacheEditorReferencePose()

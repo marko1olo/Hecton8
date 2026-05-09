@@ -9,9 +9,11 @@ namespace Hecton8.World
     /// </summary>
     public static class DispatcherJobSwap
     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
         private const float IllegalCompletionWarningIntervalSeconds = 5f;
         private const string IllegalCompletionWarningMessage =
             "[DispatcherJobSwap] Non-forced job completion requested outside dispatcher swap window.";
+#endif
 
         private static int _activeSwapWindowDepth;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -66,6 +68,21 @@ namespace Hecton8.World
 #endif
 
             if (!forceComplete && !handle.IsCompleted)
+                return false;
+
+            handle.Complete();
+            handle = default;
+            return true;
+        }
+
+        /// <summary>
+        /// Clears a handle only after the caller has observed completion. This is a non-blocking finalization path.
+        /// </summary>
+        /// <param name="handle">Caller-owned job fence to finalize and clear.</param>
+        /// <returns>True when the handle was already complete and has been reset.</returns>
+        public static bool TryFinalizeCompleted(ref JobHandle handle)
+        {
+            if (!handle.IsCompleted)
                 return false;
 
             handle.Complete();

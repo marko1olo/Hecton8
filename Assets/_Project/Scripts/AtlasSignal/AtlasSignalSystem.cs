@@ -24,7 +24,6 @@
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using Hecton8.Audio;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -96,7 +95,7 @@ namespace Hecton8.AtlasSignal
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
-        private Transform _playerTransform;
+        private HectonPlayerMovement _playerMovement;
         private AbsoluteUniversePosition _atlasCoreAup;
         private Vector3 _atlasCoreAupSource;
         private float _pulseTimer;
@@ -117,6 +116,9 @@ namespace Hecton8.AtlasSignal
         private uint _stage2EncryptedLogHash;
         private uint _stage3EncryptedLogHash;
         private uint _stage4EncryptedLogHash;
+        private uint _stage2EncryptedLogDiscoveryHash;
+        private uint _stage3EncryptedLogDiscoveryHash;
+        private uint _stage4EncryptedLogDiscoveryHash;
 
         private const int FormalDetectionRevealStage = 2;
         private const int IdentityRevealStage = 3;
@@ -131,6 +133,9 @@ namespace Hecton8.AtlasSignal
         private const string SignalPulseLog = "[AtlasSignal] Pulse emitted.";
         private const string SignalDecodedLog = "[AtlasSignal] Signal decoded.";
         private const string RevealStageUnlockedLog = "[AtlasSignal] Reveal stage unlocked.";
+        private static readonly uint _signalIdentityDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(SignalIdentityDiscoveryId);
+        private static readonly uint _signalFullyDecodedDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(SignalFullyDecodedDiscoveryId);
+        private static readonly uint _signalFullyDecodedMessageHash = AtlasSignalEvents.ComputeMessageHash(SignalFullyDecodedDiscoveryId);
         private static readonly uint _AudioLogRuntimeMissingWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.AudioLogRuntimeMissing"));
         private static readonly uint _EncryptedLogFallbackWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.EncryptedLogFallback"));
         private static readonly uint _DuplicateRuntimeWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.DuplicateRuntime"));
@@ -155,6 +160,8 @@ namespace Hecton8.AtlasSignal
             _maxRevealStageUnlocked >= FormalDetectionRevealStage &&
             _currentStrength >= detectionThreshold;
         public Vector3 AtlasCorePosition => atlasCorePosWorld;
+
+        public AbsoluteUniversePosition AtlasCoreAup => ResolveAtlasCoreAup();
         public int CurrentRevealStage => _maxRevealStageUnlocked;
 
         /// <summary>
@@ -165,8 +172,9 @@ namespace Hecton8.AtlasSignal
         {
             get
             {
-                if (_playerTransform == null) return Vector3.down;
-                AbsoluteUniversePosition playerAup = ResolvePlayerAup();
+                if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
+                    return Vector3.down;
+
                 AbsoluteUniversePosition coreAup = ResolveAtlasCoreAup();
                 return SignalStrengthSystem.CalculateDirectionToCore(in playerAup, in coreAup);
             }
@@ -230,15 +238,14 @@ namespace Hecton8.AtlasSignal
 
         private void SlowTickCore()
         {
-            if (_playerTransform == null)
+            if (!TryResolvePlayerAup(out AbsoluteUniversePosition playerAup))
             {
-                ResolvePlayer();
-                if (_playerTransform == null) return;
+                ClearLiveSignalState();
+                return;
             }
 
             _pulseTimer += 0.5f; // SlowTick ~0.5s
 
-            AbsoluteUniversePosition playerAup = ResolvePlayerAup();
             AbsoluteUniversePosition coreAup = ResolveAtlasCoreAup();
             float rawStrength = CalculateRawStrength(in playerAup, in coreAup);
             int previousRevealStage = _maxRevealStageUnlocked;
@@ -292,6 +299,25 @@ namespace Hecton8.AtlasSignal
             LogSignalPulse();
         }
 
+        private void ClearLiveSignalState()
+        {
+            bool hadLiveStrength =
+                math.abs(_currentStrength) > StrengthEpsilon ||
+                math.abs(_lastPublishedStrength) > StrengthEpsilon ||
+                _currentStrengthBand != 0;
+
+            if (!hadLiveStrength)
+                return;
+
+            _currentStrength = 0f;
+            _lastPublishedStrength = 0f;
+            _currentStrengthBand = 0;
+            AtlasSignalEvents.RaiseStrengthChanged(0f);
+
+            if (publishToShader)
+                Shader.SetGlobalFloat(_ShaderSignalStrength, 0f);
+        }
+
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API
         // ══════════════════════════════════════════════════════════
@@ -301,8 +327,16 @@ namespace Hecton8.AtlasSignal
         /// </summary>
         public void DecodeSignal(string messageId)
         {
-            AtlasSignalEvents.RaiseDecoded(messageId);
-            if (messageId == SignalFullyDecodedDiscoveryId)
+            DecodeSignal(AtlasSignalEvents.ComputeMessageHash(messageId));
+        }
+
+        public void DecodeSignal(uint messageHash)
+        {
+            if (messageHash == 0u)
+                return;
+
+            AtlasSignalEvents.RaiseDecoded(messageHash);
+            if (messageHash == _signalFullyDecodedMessageHash)
             {
                 if (_maxRevealStageUnlocked < FullDecodeRevealStage)
                     _maxRevealStageUnlocked = FullDecodeRevealStage;
@@ -319,12 +353,27 @@ namespace Hecton8.AtlasSignal
 
         private void ResolvePlayer()
         {
-            SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
+            _playerMovement = null;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                _playerMovement = playerContext.PlayerMovement;
         }
 
-        private AbsoluteUniversePosition ResolvePlayerAup()
+        private bool TryResolvePlayerAup(out AbsoluteUniversePosition playerAup)
         {
-            return AbsoluteUniversePosition.FromRuntimePosition(_playerTransform.position);
+            if (_playerMovement == null)
+            {
+                ResolvePlayer();
+                if (_playerMovement == null)
+                {
+                    playerAup = default;
+                    return false;
+                }
+            }
+
+            playerAup = _playerMovement.CurrentAup;
+            return true;
         }
 
         private AbsoluteUniversePosition ResolveAtlasCoreAup()
@@ -523,8 +572,8 @@ namespace Hecton8.AtlasSignal
             if (narrativeDirector == null)
                 return;
 
-            if (!narrativeDirector.HasDiscovery(SignalIdentityDiscoveryId))
-                NarrativeEvents.RaiseDiscoveryMade(SignalIdentityDiscoveryId);
+            if (!narrativeDirector.HasDiscovery(_signalIdentityDiscoveryHash))
+                NarrativeEvents.RaiseDiscoveryMade(_signalIdentityDiscoveryHash);
 
             _identityDiscoverySynchronized = true;
         }
@@ -535,20 +584,20 @@ namespace Hecton8.AtlasSignal
                 return;
 
             HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
-            if (narrativeDirector != null && narrativeDirector.HasDiscovery(SignalFullyDecodedDiscoveryId))
+            if (narrativeDirector != null && narrativeDirector.HasDiscovery(_signalFullyDecodedDiscoveryHash))
             {
                 _fullDecodeDiscoverySynchronized = true;
                 return;
             }
 
-            NarrativeEvents.RaiseDiscoveryMade(SignalFullyDecodedDiscoveryId);
+            NarrativeEvents.RaiseDiscoveryMade(_signalFullyDecodedDiscoveryHash);
             _fullDecodeDiscoverySynchronized = true;
         }
 
         private void TryQueueEncryptedLog(int revealStage)
         {
             uint logHash;
-            string fallbackLogId;
+            uint fallbackLogHash;
             switch (revealStage)
             {
                 case 2:
@@ -556,7 +605,7 @@ namespace Hecton8.AtlasSignal
                         return;
                     _stage2LogQueued = true;
                     logHash = _stage2EncryptedLogHash;
-                    fallbackLogId = stage2EncryptedLogId;
+                    fallbackLogHash = _stage2EncryptedLogDiscoveryHash;
                     break;
 
                 case 3:
@@ -564,7 +613,7 @@ namespace Hecton8.AtlasSignal
                         return;
                     _stage3LogQueued = true;
                     logHash = _stage3EncryptedLogHash;
-                    fallbackLogId = stage3EncryptedLogId;
+                    fallbackLogHash = _stage3EncryptedLogDiscoveryHash;
                     break;
 
                 case 4:
@@ -572,7 +621,7 @@ namespace Hecton8.AtlasSignal
                         return;
                     _stage4LogQueued = true;
                     logHash = _stage4EncryptedLogHash;
-                    fallbackLogId = stage4EncryptedLogId;
+                    fallbackLogHash = _stage4EncryptedLogDiscoveryHash;
                     break;
 
                 default:
@@ -596,7 +645,7 @@ namespace Hecton8.AtlasSignal
                 audioLogs == null ? _AudioLogRuntimeMissingWarningHash : _EncryptedLogFallbackWarningHash,
                 _AtlasSignalContextHash,
                 revealStage);
-            NarrativeEvents.RaiseDiscoveryMade(fallbackLogId);
+            NarrativeEvents.RaiseDiscoveryMade(fallbackLogHash);
         }
 
         private void CacheEncryptedLogHashes()
@@ -604,6 +653,9 @@ namespace Hecton8.AtlasSignal
             _stage2EncryptedLogHash = QuestFlagHashKernel.ComputeStableHash(stage2EncryptedLogId);
             _stage3EncryptedLogHash = QuestFlagHashKernel.ComputeStableHash(stage3EncryptedLogId);
             _stage4EncryptedLogHash = QuestFlagHashKernel.ComputeStableHash(stage4EncryptedLogId);
+            _stage2EncryptedLogDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(stage2EncryptedLogId);
+            _stage3EncryptedLogDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(stage3EncryptedLogId);
+            _stage4EncryptedLogDiscoveryHash = NarrativeEvents.ComputeDiscoveryHash(stage4EncryptedLogId);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]

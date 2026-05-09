@@ -38,11 +38,11 @@ namespace Hecton8.UI
         private const int FabricatorUiPerformanceWarningCooldownFrames = 30;
         private const float HologramBaseDistanceMeters = 1f;
         private const float SelectedHologramScaleMultiplier = 2.8f;
+        private const string FabricatorStaticCanvasRootName = "Fabricator_StaticCanvasRoot";
+        private const string FabricatorDynamicCanvasRootName = "Fabricator_DynamicCanvasRoot";
         private const int FabricatorStaticCanvasSortingOrder = 10;
         private const int FabricatorDynamicCanvasSortingOrder = 30;
         private const float InverseTwoPi = 0.15915494f;
-        private const string NativeMemoryOwner = nameof(HectonFabricatorUI);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly uint _FabricatorUiSolveBudgetWarningHash =
             unchecked((uint)LocHash.Compute("HectonFabricatorUI.SolveBudgetExceeded"));
         private static readonly uint _FabricatorUiContextHash =
@@ -64,6 +64,12 @@ namespace Hecton8.UI
         private static readonly int CraftProgressId = Shader.PropertyToID("_CraftProgress");
         private static readonly int ScanProgressId = Shader.PropertyToID("_ScanProgress");
         private static readonly int GlitchAmountId = Shader.PropertyToID("_GlitchAmount");
+        private static readonly int HologramBobAmplitudeId = Shader.PropertyToID("_HologramBobAmplitude");
+        private static readonly int HologramBobFrequencyId = Shader.PropertyToID("_HologramBobFrequency");
+        private static readonly int HologramSwayAmplitudeId = Shader.PropertyToID("_HologramSwayAmplitude");
+        private static readonly int HologramSwayFrequencyId = Shader.PropertyToID("_HologramSwayFrequency");
+        private static readonly int HologramPulseAmplitudeId = Shader.PropertyToID("_HologramPulseAmplitude");
+        private static readonly int HologramPulseFrequencyId = Shader.PropertyToID("_HologramPulseFrequency");
 
         [Header("References")]
         [SerializeField] private Camera hudCamera;
@@ -130,9 +136,21 @@ namespace Hecton8.UI
         // COLD ALLOC: char[64] — CharBufferPool failure fallback for scarcity inflation labels — owner: HectonFabricatorUI
         private readonly char[] _fallbackBuffer = new char[FallbackBufferCapacity];
 
-        private NativeArray<Matrix4x4> _hologramMatrices;
         private Material _runtimeHologramMaterial;
         private Mesh _runtimeHologramMesh;
+        private bool _hologramHasBaseColor;
+        private bool _hologramHasColor;
+        private bool _hologramHasCraftProgress;
+        private bool _hologramHasScanProgress;
+        private bool _hologramHasGlitchAmount;
+        private bool _hologramHasBobAmplitude;
+        private bool _hologramHasBobFrequency;
+        private bool _hologramHasSwayAmplitude;
+        private bool _hologramHasSwayFrequency;
+        private bool _hologramHasPulseAmplitude;
+        private bool _hologramHasPulseFrequency;
+        private float _lastHologramMaterialProgress = -1f;
+        private float _lastHologramMaterialGlitch = -1f;
         private Fabricator _currentFabricator;
         private IReadOnlyList<RecipeData> _allRecipes;
         private IReadOnlyList<RecipeData> _recipes;
@@ -148,7 +166,6 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private bool _originShiftListenerRegistered;
         private InputManager _subscribedInputManager;
-        private float _hologramAnimationTime;
         private int _selectedHologramRecipeHash;
         private bool _selectedHologramMatrixInitialized;
         private float4x4 _selectedHologramBaseMatrix = float4x4.identity;
@@ -158,6 +175,19 @@ namespace Hecton8.UI
         private Transform _selectedHologramAupAnchor;
         private AbsoluteUniversePosition _selectedHologramAnchorAup;
         private bool _selectedHologramAnchorAupCached;
+        private int _hologramMatrixRecipeHash;
+        private int _hologramMatrixLayoutVersion = int.MinValue;
+        private Transform _hologramMatrixAnchor;
+        private int _hologramMatrixVisibleCount;
+        private bool _hologramMatrixCacheDirty = true;
+        private CanvasGroup _recipeListCanvasGroup;
+        private bool _recipeListVisible;
+        private bool _recipeListPoseValid;
+        private Vector3 _recipeListRuntimePosition;
+        private Vector3 _recipeListRight;
+        private Vector3 _recipeListUp;
+        private Vector3 _recipeListForward;
+        private Vector3 _recipeListInverseScale = Vector3.one;
         private float _failurePanelShakeRemainingSeconds;
         private float _failurePanelShakeElapsedSeconds;
         private int _nextPerformanceWarningFrame;
@@ -174,6 +204,7 @@ namespace Hecton8.UI
 
                 craftBatchMultiplier = nextMultiplier;
                 _lastRecipeVisualVersion = int.MinValue;
+                InvalidateHologramMatrixCache();
             }
         }
 
@@ -187,10 +218,9 @@ namespace Hecton8.UI
         {
             GlobalTelemetryBus.Initialize();
             CharBufferPool.Prewarm();
-            ResolveRuntimeReferences();
+            ResolveRuntimeReferences(allowFallbackLookup: true);
             EnsureCanvasSplit();
 
-            EnsureHologramBuffers();
             EnsureHologramResources();
             EnsureRecipeListPool();
         }
@@ -207,6 +237,7 @@ namespace Hecton8.UI
 
         private void Start()
         {
+            ResolveRuntimeReferences(allowFallbackLookup: true);
             TryRegisterHotSwapListener();
             SubscribeInputManagerIfAvailable();
         }
@@ -232,13 +263,6 @@ namespace Hecton8.UI
             UnsubscribeInputManager();
             TryUnregisterHotSwapListener();
             TryUnregisterOriginShiftListener();
-
-            if (_hologramMatrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_hologramMatrices);
-                _hologramMatrices.Dispose();
-                _hologramMatrices = default;
-            }
 
             if (_runtimeHologramMaterial != null)
             {
@@ -273,6 +297,8 @@ namespace Hecton8.UI
                 _recipeListRoot.hasChanged = true;
 
             _selectedHologramMatrixInitialized = false;
+            _selectedHologramAnchorAupCached = false;
+            InvalidateHologramMatrixCache();
         }
 
         private void TryRegisterOriginShiftListener()
@@ -296,7 +322,6 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             long solveStartTimestamp = Stopwatch.GetTimestamp();
-            _hologramAnimationTime += Mathf.Max(0f, deltaTime);
 
             if (_isOpen && _currentFabricator == null)
             {
@@ -305,7 +330,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            ResolveRuntimeReferences();
+            if (hudCamera == null || playerInventory == null)
+                ResolveRuntimeReferences(allowFallbackLookup: false);
+
             AdvanceFailurePanelShake(deltaTime);
             UpdateRecipeListPose();
             UpdateRecipePointerSelection();
@@ -397,6 +424,7 @@ namespace Hecton8.UI
 
             _isCrafting = true;
             _craftProgress = 0f;
+            InvalidateHologramMatrixCache();
 
             if (_recipes != null)
             {
@@ -420,12 +448,14 @@ namespace Hecton8.UI
         {
             _isCrafting = false;
             _craftProgress = 0f;
+            InvalidateHologramMatrixCache();
         }
 
         private void HandleCraftCancelled()
         {
             _isCrafting = false;
             _craftProgress = 0f;
+            InvalidateHologramMatrixCache();
         }
 
         private void HandleCraftFailed(in CraftingEventPayload payload)
@@ -508,7 +538,9 @@ namespace Hecton8.UI
             _hoveredRecipeIndex = -1;
             _failurePanelShakeRemainingSeconds = 0f;
             _failurePanelShakeElapsedSeconds = 0f;
+            _recipeListPoseValid = false;
             _lastRecipeVisualVersion = int.MinValue;
+            InvalidateHologramMatrixCache();
             SetRecipeListVisible(false);
 
             UnregisterTick();
@@ -592,6 +624,7 @@ namespace Hecton8.UI
 
             craftBatchMultiplier = nextMultiplier;
             _lastRecipeVisualVersion = int.MinValue;
+            InvalidateHologramMatrixCache();
         }
 
         /// <inheritdoc />
@@ -636,7 +669,12 @@ namespace Hecton8.UI
             if (_recipes == null || _recipes.Count == 0)
                 return;
 
-            _selectedIndex = Mathf.Clamp(nextIndex, 0, _recipes.Count - 1);
+            int clampedIndex = Mathf.Clamp(nextIndex, 0, _recipes.Count - 1);
+            if (clampedIndex == _selectedIndex)
+                return;
+
+            _selectedIndex = clampedIndex;
+            InvalidateHologramMatrixCache();
             UpdateDiagnostics();
         }
 
@@ -673,6 +711,7 @@ namespace Hecton8.UI
                 _selectedGroup = candidate;
                 _selectedIndex = 0;
                 RebuildVisibleRecipes();
+                InvalidateHologramMatrixCache();
                 return;
             }
         }
@@ -724,6 +763,8 @@ namespace Hecton8.UI
                 _selectedIndex = 0;
             else
                 _selectedIndex = Mathf.Clamp(_selectedIndex, 0, _recipes.Count - 1);
+
+            InvalidateHologramMatrixCache();
         }
 
         private RecipeData ResolveDisplayRecipe()
@@ -757,17 +798,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            EnsureHologramBuffers();
-            EnsureHologramResources();
-
-            if (!_hologramMatrices.IsCreated || _runtimeHologramMaterial == null || _runtimeHologramMesh == null)
+            if (_runtimeHologramMaterial == null || _runtimeHologramMesh == null)
             {
                 _debugVisibleInstanceCount = 0;
                 return;
             }
 
             int visibleCount = recipe.ingredients != null && recipe.ingredients.Count > 0
-                ? BuildHologramMatrices(recipe, deltaTime)
+                ? BuildHologramMatrices(recipe)
                 : 0;
             _debugVisibleInstanceCount = visibleCount;
             if (visibleCount <= 0)
@@ -888,19 +926,26 @@ namespace Hecton8.UI
                 return;
 
             float progress = ResolveHologramRevealProgress(recipe);
-            if (_runtimeHologramMaterial.HasProperty(CraftProgressId))
-                _runtimeHologramMaterial.SetFloat(CraftProgressId, progress);
-
-            if (_runtimeHologramMaterial.HasProperty(ScanProgressId))
-                _runtimeHologramMaterial.SetFloat(ScanProgressId, progress);
-
-            if (_runtimeHologramMaterial.HasProperty(GlitchAmountId))
+            if (math.abs(progress - _lastHologramMaterialProgress) > 0.0005f)
             {
-                float glitch = _currentFabricator != null && _currentFabricator.IsPausedNoPower
-                    ? 0.82f
-                    : math.lerp(0.05f, 0.28f, 1f - math.abs((progress * 2f) - 1f));
-                _runtimeHologramMaterial.SetFloat(GlitchAmountId, glitch);
+                if (_hologramHasCraftProgress)
+                    _runtimeHologramMaterial.SetFloat(CraftProgressId, progress);
+
+                if (_hologramHasScanProgress)
+                    _runtimeHologramMaterial.SetFloat(ScanProgressId, progress);
+
+                _lastHologramMaterialProgress = progress;
             }
+
+            float glitch = _currentFabricator != null && _currentFabricator.IsPausedNoPower
+                ? 0.82f
+                : math.lerp(0.05f, 0.28f, 1f - math.abs((progress * 2f) - 1f));
+            if (_hologramHasGlitchAmount && math.abs(glitch - _lastHologramMaterialGlitch) > 0.0005f)
+            {
+                _runtimeHologramMaterial.SetFloat(GlitchAmountId, glitch);
+                _lastHologramMaterialGlitch = glitch;
+            }
+
         }
 
         private float ResolveHologramRevealProgress(RecipeData recipe)
@@ -914,19 +959,28 @@ namespace Hecton8.UI
             return 1f;
         }
 
-        private int BuildHologramMatrices(RecipeData recipe, float deltaTime)
+        private int BuildHologramMatrices(RecipeData recipe)
         {
-            int instanceCount = 0;
             Transform anchor = _currentFabricator != null ? _currentFabricator.transform : null;
             if (anchor == null || recipe.ingredients == null)
                 return 0;
 
+            int recipeHash = ComputeItemHash(recipe.resultItem);
+            int layoutVersion = ResolveHologramMatrixLayoutVersion(recipeHash);
+            if (!_hologramMatrixCacheDirty &&
+                _hologramMatrixRecipeHash == recipeHash &&
+                _hologramMatrixLayoutVersion == layoutVersion &&
+                ReferenceEquals(_hologramMatrixAnchor, anchor))
+            {
+                return _hologramMatrixVisibleCount;
+            }
+
+            int instanceCount = 0;
             float3 anchorRuntimePosition = ResolveSelectedHologramAnchorRuntimePosition(anchor);
-            Vector3 anchorPosition = new Vector3(anchorRuntimePosition.x, anchorRuntimePosition.y, anchorRuntimePosition.z) + anchor.up * hologramHeight;
-            Quaternion anchorRotation = Quaternion.LookRotation(anchor.forward, Vector3.up);
-            Quaternion billboardRotation = ResolveBillboardRotation(anchor);
-            float animationTime = _hologramAnimationTime;
-            float bobOffset = FastSignedTriangleWave(animationTime * hologramBobFrequency) * hologramBobAmplitude;
+            float3 anchorUp = ToFloat3(anchor.up);
+            float3 anchorForward = ToFloat3(anchor.forward);
+            float3 anchorPosition = anchorRuntimePosition + (anchorUp * hologramHeight);
+            quaternion anchorRotation = quaternion.LookRotationSafe(anchorForward, math.up());
             int ingredientCount = recipe.ingredients.Count;
 
             for (int ingredientIndex = 0; ingredientIndex < ingredientCount && instanceCount < MaxVisibleHologramInstances; ingredientIndex++)
@@ -945,83 +999,45 @@ namespace Hecton8.UI
                     int gridRow = instanceCount / 4;
                     float lateral = (gridColumn - 1.5f) * hologramSpacing;
                     float vertical = gridRow * hologramSpacing * 0.72f;
-                    float perInstanceBob = FastSignedTriangleWave((animationTime + (instanceCount * 0.19f)) * hologramBobFrequency) * (hologramBobAmplitude * 0.5f);
-                    float orbit = FastSignedTriangleWave((animationTime + ingredientIndex + unitIndex) * hologramOrbitFrequency) * hologramOrbitAmplitude;
-                    Vector3 localOffset = new Vector3(lateral, vertical + bobOffset + perInstanceBob, 0.24f + gridRow * 0.02f + orbit);
-                    Vector3 worldPosition = anchorPosition +
-                                            anchorRotation * localOffset +
-                        anchor.right * FastSignedTriangleWave((animationTime + instanceCount) * 0.37f) * 0.01f;
-                    float roll = FastSignedTriangleWave((animationTime * 1.7f) + instanceCount) * 1.5f;
-                    Quaternion worldRotation = billboardRotation * Quaternion.AngleAxis((hologramYawBias * 0.02f) + roll, Vector3.forward);
-                    float pulseScale = 1f + (FastSignedTriangleWave((animationTime * hologramPulseFrequency) + (instanceCount * 0.41f)) * (hologramPulseAmplitude * 0.35f));
-                    float size = hologramCellSize * pulseScale;
-                    Vector3 scale = new Vector3(size, size, 1f);
-
-                    WriteMatrix(_hologramMatrixBuffer, instanceCount, worldPosition, worldRotation, scale);
-                    _hologramMatrices[instanceCount] = _hologramMatrixBuffer[instanceCount];
+                    float3 localOffset = new float3(lateral, vertical, 0.24f + gridRow * 0.02f);
+                    float3 worldPosition = anchorPosition + math.mul(anchorRotation, localOffset);
+                    float4x4 matrix = float4x4.TRS(
+                        worldPosition,
+                        anchorRotation,
+                        new float3(hologramCellSize, hologramCellSize, 1f));
+                    WriteMatrix(_hologramMatrixBuffer, instanceCount, in matrix);
                     instanceCount++;
                 }
             }
 
+            _hologramMatrixRecipeHash = recipeHash;
+            _hologramMatrixLayoutVersion = layoutVersion;
+            _hologramMatrixAnchor = anchor;
+            _hologramMatrixVisibleCount = instanceCount;
+            _hologramMatrixCacheDirty = false;
             return instanceCount;
         }
 
-        private Quaternion ResolveBillboardRotation(Transform fallbackAnchor)
+        private void InvalidateHologramMatrixCache()
         {
-            Camera camera = hudCamera;
-            if (camera == null)
-            {
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                camera = playerContext != null ? playerContext.PlayerCamera : null;
-            }
-
-            if (camera != null)
-                return Quaternion.LookRotation(-camera.transform.forward, camera.transform.up);
-
-            if (fallbackAnchor != null)
-                return Quaternion.LookRotation(-fallbackAnchor.forward, fallbackAnchor.up);
-
-            return Quaternion.identity;
+            _hologramMatrixCacheDirty = true;
+            _hologramMatrixRecipeHash = 0;
+            _hologramMatrixLayoutVersion = int.MinValue;
+            _hologramMatrixAnchor = null;
+            _hologramMatrixVisibleCount = 0;
         }
 
-        private static void WriteMatrix(Matrix4x4[] matrices, int index, Vector3 position, Quaternion rotation, Vector3 scale)
+        private int ResolveHologramMatrixLayoutVersion(int recipeHash)
         {
-            if (matrices == null || (uint)index >= (uint)matrices.Length)
-                return;
+            unchecked
+            {
+                int version = recipeHash;
+                version = (version * 397) ^ math.clamp(craftBatchMultiplier, 1, 99);
+                version = (version * 397) ^ _lastRecipeVisualVersion;
+                version = (version * 397) ^ (_currentFabricator != null && _currentFabricator.IsCrafting ? 1 : 0);
 
-            float x = rotation.x;
-            float y = rotation.y;
-            float z = rotation.z;
-            float w = rotation.w;
-            float x2 = x + x;
-            float y2 = y + y;
-            float z2 = z + z;
-            float xx = x * x2;
-            float xy = x * y2;
-            float xz = x * z2;
-            float yy = y * y2;
-            float yz = y * z2;
-            float zz = z * z2;
-            float wx = w * x2;
-            float wy = w * y2;
-            float wz = w * z2;
-
-            matrices[index].m00 = (1f - (yy + zz)) * scale.x;
-            matrices[index].m01 = (xy - wz) * scale.y;
-            matrices[index].m02 = (xz + wy) * scale.z;
-            matrices[index].m03 = position.x;
-            matrices[index].m10 = (xy + wz) * scale.x;
-            matrices[index].m11 = (1f - (xx + zz)) * scale.y;
-            matrices[index].m12 = (yz - wx) * scale.z;
-            matrices[index].m13 = position.y;
-            matrices[index].m20 = (xz - wy) * scale.x;
-            matrices[index].m21 = (yz + wx) * scale.y;
-            matrices[index].m22 = (1f - (xx + yy)) * scale.z;
-            matrices[index].m23 = position.z;
-            matrices[index].m30 = 0f;
-            matrices[index].m31 = 0f;
-            matrices[index].m32 = 0f;
-            matrices[index].m33 = 1f;
+                return version;
+            }
         }
 
         private static void WriteMatrix(Matrix4x4[] matrices, int index, in float4x4 matrix)
@@ -1047,19 +1063,6 @@ namespace Hecton8.UI
             matrices[index].m33 = matrix.c3.w;
         }
 
-        private void EnsureHologramBuffers()
-        {
-            if (_hologramMatrices.IsCreated)
-                return;
-
-            _hologramMatrices = new NativeArray<Matrix4x4>(MaxVisibleHologramInstances, Allocator.Persistent);
-            NativeMemorySentinel.RegisterNativeArray(
-                _hologramMatrices,
-                NativeMemoryOwner,
-                nameof(_hologramMatrices),
-                NativeMemoryLifetime);
-        }
-
         private void EnsureHologramResources()
         {
             if (_runtimeHologramMesh == null)
@@ -1078,16 +1081,59 @@ namespace Hecton8.UI
                         enableInstancing = true,
                         hideFlags = HideFlags.DontSave
                     };
+                    _lastHologramMaterialProgress = -1f;
+                    _lastHologramMaterialGlitch = -1f;
 
-                    if (_runtimeHologramMaterial.HasProperty(BaseColorId))
+                    CacheHologramMaterialProperties();
+
+                    if (_hologramHasBaseColor)
                         _runtimeHologramMaterial.SetColor(BaseColorId, hologramColor);
-                    else if (_runtimeHologramMaterial.HasProperty(ColorId))
+                    else if (_hologramHasColor)
                         _runtimeHologramMaterial.SetColor(ColorId, hologramColor);
+
+                    ApplyHologramMaterialStaticState();
                 }
             }
         }
 
-        private void ResolveRuntimeReferences()
+        private void CacheHologramMaterialProperties()
+        {
+            if (_runtimeHologramMaterial == null)
+                return;
+
+            _hologramHasBaseColor = _runtimeHologramMaterial.HasProperty(BaseColorId);
+            _hologramHasColor = _runtimeHologramMaterial.HasProperty(ColorId);
+            _hologramHasCraftProgress = _runtimeHologramMaterial.HasProperty(CraftProgressId);
+            _hologramHasScanProgress = _runtimeHologramMaterial.HasProperty(ScanProgressId);
+            _hologramHasGlitchAmount = _runtimeHologramMaterial.HasProperty(GlitchAmountId);
+            _hologramHasBobAmplitude = _runtimeHologramMaterial.HasProperty(HologramBobAmplitudeId);
+            _hologramHasBobFrequency = _runtimeHologramMaterial.HasProperty(HologramBobFrequencyId);
+            _hologramHasSwayAmplitude = _runtimeHologramMaterial.HasProperty(HologramSwayAmplitudeId);
+            _hologramHasSwayFrequency = _runtimeHologramMaterial.HasProperty(HologramSwayFrequencyId);
+            _hologramHasPulseAmplitude = _runtimeHologramMaterial.HasProperty(HologramPulseAmplitudeId);
+            _hologramHasPulseFrequency = _runtimeHologramMaterial.HasProperty(HologramPulseFrequencyId);
+        }
+
+        private void ApplyHologramMaterialStaticState()
+        {
+            if (_runtimeHologramMaterial == null)
+                return;
+
+            if (_hologramHasBobAmplitude)
+                _runtimeHologramMaterial.SetFloat(HologramBobAmplitudeId, math.max(0f, hologramBobAmplitude));
+            if (_hologramHasBobFrequency)
+                _runtimeHologramMaterial.SetFloat(HologramBobFrequencyId, math.max(0f, hologramBobFrequency));
+            if (_hologramHasSwayAmplitude)
+                _runtimeHologramMaterial.SetFloat(HologramSwayAmplitudeId, math.max(0f, hologramOrbitAmplitude));
+            if (_hologramHasSwayFrequency)
+                _runtimeHologramMaterial.SetFloat(HologramSwayFrequencyId, math.max(0f, hologramOrbitFrequency));
+            if (_hologramHasPulseAmplitude)
+                _runtimeHologramMaterial.SetFloat(HologramPulseAmplitudeId, math.max(0f, hologramPulseAmplitude));
+            if (_hologramHasPulseFrequency)
+                _runtimeHologramMaterial.SetFloat(HologramPulseFrequencyId, math.max(0f, hologramPulseFrequency));
+        }
+
+        private void ResolveRuntimeReferences(bool allowFallbackLookup)
         {
             IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
             if (inventoryService != null && inventoryService.Inventory != null)
@@ -1100,18 +1146,44 @@ namespace Hecton8.UI
                     hudCamera = playerContext.PlayerCamera;
             }
 
-            if (playerInventory == null &&
+            if (allowFallbackLookup &&
+                playerInventory == null &&
                 SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
                 playerTransform != null)
             {
-                playerInventory = playerTransform.GetComponent<PlayerInventory>();
+                playerTransform.TryGetComponent(out playerInventory);
             }
         }
 
         private void EnsureCanvasSplit()
         {
+            staticCanvasRoot = EnsureSplitRoot(staticCanvasRoot, FabricatorStaticCanvasRootName);
+            dynamicCanvasRoot = EnsureSplitRoot(dynamicCanvasRoot, FabricatorDynamicCanvasRootName);
             staticCanvas = EnsureSplitCanvas(staticCanvasRoot, staticCanvas, FabricatorStaticCanvasSortingOrder);
             dynamicCanvas = EnsureSplitCanvas(dynamicCanvasRoot, dynamicCanvas, FabricatorDynamicCanvasSortingOrder);
+        }
+
+        private Transform EnsureSplitRoot(Transform existingRoot, string rootName)
+        {
+            if (existingRoot != null)
+                return existingRoot;
+
+            Transform parent = transform;
+            for (int childIndex = 0; childIndex < parent.childCount; childIndex++)
+            {
+                Transform child = parent.GetChild(childIndex);
+                if (child != null && child.name == rootName)
+                    return child;
+            }
+
+            GameObject rootObject = new GameObject(rootName, typeof(RectTransform)); // COLD ALLOC: GameObject[1] - fabricator canvas split root - owner: HectonFabricatorUI
+            rootObject.layer = gameObject.layer;
+            Transform root = rootObject.transform;
+            root.SetParent(parent, false);
+            root.localPosition = Vector3.zero;
+            root.localRotation = Quaternion.identity;
+            root.localScale = Vector3.one;
+            return root;
         }
 
         private static Canvas EnsureSplitCanvas(Transform root, Canvas existingCanvas, int sortingOrder)
@@ -1146,7 +1218,14 @@ namespace Hecton8.UI
             GameObject root = new GameObject("FabricatorRecipeList"); // COLD ALLOC: GameObject[1] — diegetic recipe list root — owner: HectonFabricatorUI
             root.hideFlags = HideFlags.DontSave;
             _recipeListRoot = root.transform;
+            if (dynamicCanvasRoot != null)
+                _recipeListRoot.SetParent(dynamicCanvasRoot, false);
+
             _recipeListRoot.localScale = Vector3.one * recipeEntryScale;
+            _recipeListCanvasGroup = root.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] - fabricator dynamic recipe visibility gate - owner: HectonFabricatorUI
+            _recipeListCanvasGroup.alpha = 0f;
+            _recipeListCanvasGroup.interactable = false;
+            _recipeListCanvasGroup.blocksRaycasts = false;
 
             for (int i = 0; i < MaxVisibleRecipeEntries; i++)
             {
@@ -1203,7 +1282,6 @@ namespace Hecton8.UI
 
             text.maxVisibleCharacters = length;
             text.SetCharArray(stagingBuffer, 0, length);
-            text.ForceMeshUpdate(false, false);
             text.SetCharArray(Array.Empty<char>(), 0, 0);
         }
 
@@ -1212,7 +1290,20 @@ namespace Hecton8.UI
             if (_recipeListRoot == null)
                 return;
 
-            _recipeListRoot.gameObject.SetActive(visible);
+            _recipeListVisible = visible;
+            if (_recipeListCanvasGroup == null)
+                return;
+
+            _recipeListCanvasGroup.alpha = visible ? 1f : 0f;
+            _recipeListCanvasGroup.interactable = false;
+            _recipeListCanvasGroup.blocksRaycasts = false;
+
+            if (!visible)
+            {
+                _recipeListPoseValid = false;
+                for (int i = 0; i < MaxVisibleRecipeEntries; i++)
+                    SetRecipeEntryVisible(in _recipeEntries[i], false);
+            }
         }
 
         private void UpdateRecipeListPose()
@@ -1220,7 +1311,9 @@ namespace Hecton8.UI
             if (!_isOpen || _recipeListRoot == null || _currentFabricator == null)
                 return;
 
-            ResolveRuntimeReferences();
+            if (hudCamera == null || playerInventory == null)
+                ResolveRuntimeReferences(allowFallbackLookup: false);
+
             Transform anchor = _currentFabricator.transform;
             float3 anchorRuntimePosition = ResolveSelectedHologramAnchorRuntimePosition(anchor);
             Vector3 rootPosition = new Vector3(anchorRuntimePosition.x, anchorRuntimePosition.y, anchorRuntimePosition.z) +
@@ -1229,13 +1322,28 @@ namespace Hecton8.UI
             rootPosition += ResolveFailurePanelShakeOffset(anchor);
             _recipeListRoot.position = rootPosition;
             _recipeListRoot.localScale = Vector3.one * recipeEntryScale;
+            _recipeListRuntimePosition = rootPosition;
 
             if (hudCamera != null)
             {
                 Vector3 facing = rootPosition - hudCamera.transform.position;
-                if (facing.sqrMagnitude > 0.0001f)
-                    _recipeListRoot.rotation = Quaternion.LookRotation(facing.normalized, Vector3.up);
+                float facingSqrMagnitude = facing.sqrMagnitude;
+                if (facingSqrMagnitude > 0.0001f)
+                {
+                    facing *= math.rsqrt(facingSqrMagnitude);
+                    _recipeListRoot.rotation = Quaternion.LookRotation(facing, Vector3.up);
+                }
             }
+
+            _recipeListRight = _recipeListRoot.right;
+            _recipeListUp = _recipeListRoot.up;
+            _recipeListForward = _recipeListRoot.forward;
+            Vector3 rootScale = _recipeListRoot.lossyScale;
+            _recipeListInverseScale = new Vector3(
+                1f / math.max(0.000001f, math.abs(rootScale.x)),
+                1f / math.max(0.000001f, math.abs(rootScale.y)),
+                1f / math.max(0.000001f, math.abs(rootScale.z)));
+            _recipeListPoseValid = true;
         }
 
         private void RefreshRecipeListIfDirty()
@@ -1248,6 +1356,7 @@ namespace Hecton8.UI
                 return;
 
             _lastRecipeVisualVersion = visualVersion;
+            InvalidateHologramMatrixCache();
             RebuildRecipeListEntries();
         }
 
@@ -1290,7 +1399,7 @@ namespace Hecton8.UI
                     entry.Root.localPosition = new Vector3(0f, -i * recipeEntrySpacing, 0f);
                     entry.Root.localRotation = Quaternion.identity;
                     entry.Root.localScale = selected ? Vector3.one * 1.08f : Vector3.one;
-                    entry.Root.gameObject.SetActive(true);
+                    SetRecipeEntryVisible(in entry, _recipeListVisible);
                     entry.Label.color = !craftable
                         ? recipeUnavailableColor
                         : selected
@@ -1309,10 +1418,19 @@ namespace Hecton8.UI
                 else
                 {
                     entry.RecipeIndex = -1;
-                    entry.Root.gameObject.SetActive(false);
+                    SetRecipeEntryVisible(in entry, false);
                     _recipeEntries[i] = entry;
                 }
             }
+        }
+
+        private static void SetRecipeEntryVisible(in RecipeListEntry entry, bool visible)
+        {
+            if (entry.Label != null && entry.Label.enabled != visible)
+                entry.Label.enabled = visible;
+
+            if (entry.InflationLabel != null && entry.InflationLabel.enabled != visible)
+                entry.InflationLabel.enabled = visible;
         }
 
         private void ApplyInflationLabel(RecipeListEntry entry, bool inflated, float multiplier)
@@ -1339,7 +1457,7 @@ namespace Hecton8.UI
                     cursor += written;
 
                 entry.InflationLabel.color = inflationColor;
-                entry.InflationLabel.SetCharArray(buffer, 0, Mathf.Clamp(cursor, 0, buffer.Length));
+                entry.InflationLabel.SetCharArray(buffer, 0, math.clamp(cursor, 0, buffer.Length));
             }
             finally
             {
@@ -1389,39 +1507,46 @@ namespace Hecton8.UI
         private void UpdateRecipePointerSelection()
         {
             int nextHoveredRecipeIndex = -1;
-            if (_isOpen && _recipeListRoot != null && hudCamera != null && _recipes != null && _recipes.Count > 0)
+            bool selectionChanged = false;
+            if (_isOpen && _recipeListRoot != null && _recipeListPoseValid && hudCamera != null && _recipes != null && _recipes.Count > 0)
             {
                 Transform cameraTransform = hudCamera.transform;
                 Vector3 rayOrigin = cameraTransform.position;
                 Vector3 rayDirection = cameraTransform.forward;
-                Vector3 planeNormal = _recipeListRoot.forward;
+                Vector3 planeNormal = _recipeListForward;
                 float denom = Vector3.Dot(planeNormal, rayDirection);
-                if (Mathf.Abs(denom) > RecipePointerPlaneEpsilon)
+                if (math.abs(denom) > RecipePointerPlaneEpsilon)
                 {
-                    float distance = Vector3.Dot(_recipeListRoot.position - rayOrigin, planeNormal) / denom;
+                    float distance = Vector3.Dot(_recipeListRuntimePosition - rayOrigin, planeNormal) / denom;
                     if (distance >= 0f && distance <= RecipePointerDistanceMeters)
                     {
-                        Vector3 localPoint = _recipeListRoot.InverseTransformPoint(rayOrigin + rayDirection * distance);
-                        int visibleRecipeCount = Mathf.Min(_recipes.Count, MaxVisibleRecipeEntries);
-                        for (int i = 0; i < visibleRecipeCount; i++)
+                        Vector3 worldDelta = (rayOrigin + rayDirection * distance) - _recipeListRuntimePosition;
+                        Vector3 localPoint = new Vector3(
+                            Vector3.Dot(worldDelta, _recipeListRight) * _recipeListInverseScale.x,
+                            Vector3.Dot(worldDelta, _recipeListUp) * _recipeListInverseScale.y,
+                            Vector3.Dot(worldDelta, _recipeListForward) * _recipeListInverseScale.z);
+                        int visibleRecipeCount = math.min(_recipes.Count, MaxVisibleRecipeEntries);
+                        float safeSpacing = math.max(0.0001f, recipeEntrySpacing);
+                        int rowIndex = (int)math.round(-localPoint.y / safeSpacing);
+                        if ((uint)rowIndex < (uint)visibleRecipeCount)
                         {
-                            RecipeListEntry entry = _recipeEntries[i];
-                            if (entry.Root == null || entry.RecipeIndex < 0)
-                                continue;
-
-                            Vector3 entryPosition = entry.Root.localPosition;
-                            Vector3 entryScale = entry.Root.localScale;
-                            float halfWidth = RecipePointerHalfWidth * Mathf.Max(0.001f, Mathf.Abs(entryScale.x));
-                            float halfHeight = RecipePointerHalfHeight * Mathf.Max(0.001f, Mathf.Abs(entryScale.y));
-                            float deltaX = localPoint.x - entryPosition.x;
-                            float deltaY = localPoint.y - entryPosition.y;
-                            if (Mathf.Abs(deltaX) > halfWidth || Mathf.Abs(deltaY) > halfHeight)
-                                continue;
-
-                            nextHoveredRecipeIndex = entry.RecipeIndex;
-                            if (_selectedIndex != entry.RecipeIndex)
-                                _selectedIndex = entry.RecipeIndex;
-                            break;
+                            RecipeListEntry entry = _recipeEntries[rowIndex];
+                            if (entry.Root != null && entry.RecipeIndex >= 0)
+                            {
+                                float rowScale = entry.RecipeIndex == _selectedIndex ? 1.08f : 1f;
+                                float halfWidth = RecipePointerHalfWidth * rowScale;
+                                float halfHeight = RecipePointerHalfHeight * rowScale;
+                                float rowCenterY = -rowIndex * safeSpacing;
+                                if (math.abs(localPoint.x) <= halfWidth && math.abs(localPoint.y - rowCenterY) <= halfHeight)
+                                {
+                                    nextHoveredRecipeIndex = entry.RecipeIndex;
+                                    if (_selectedIndex != entry.RecipeIndex)
+                                    {
+                                        _selectedIndex = entry.RecipeIndex;
+                                        selectionChanged = true;
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -1429,6 +1554,12 @@ namespace Hecton8.UI
 
             if (_hoveredRecipeIndex != nextHoveredRecipeIndex)
                 _hoveredRecipeIndex = nextHoveredRecipeIndex;
+
+            if (selectionChanged)
+            {
+                InvalidateHologramMatrixCache();
+                UpdateDiagnostics();
+            }
         }
 
         private bool CanCraftRecipe(RecipeData recipe)

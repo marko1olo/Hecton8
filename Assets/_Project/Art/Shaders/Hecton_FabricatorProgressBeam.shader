@@ -31,7 +31,8 @@ Shader "Hecton8/Fabrication/ProgressBeam"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma multi_compile_instancing
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
@@ -50,7 +51,6 @@ Shader "Hecton8/Fabrication/ProgressBeam"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS : NORMAL;
-                HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
             };
 
             struct Varyings
@@ -59,15 +59,12 @@ Shader "Hecton8/Fabrication/ProgressBeam"
                 float3 positionWS : TEXCOORD0;
                 float3 normalWS : TEXCOORD1;
                 float height01 : TEXCOORD2;
-                HECTON_CORE_LIT_DECLARE_VERTEX_INPUT_INSTANCE_ID
                 HECTON_CORE_LIT_DECLARE_VERTEX_OUTPUT_STEREO
             };
 
             Varyings Vert(Attributes input)
             {
                 Varyings output;
-                HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
-                HECTON_CORE_LIT_TRANSFER_INSTANCE_ID(input, output);
                 HECTON_CORE_LIT_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 output.normalWS = TransformObjectToWorldNormal(input.normalOS);
@@ -78,9 +75,17 @@ Shader "Hecton8/Fabrication/ProgressBeam"
                 return output;
             }
 
+            float FastBeamFlicker01(float timeSeconds, float speed, float height01)
+            {
+                float safeSpeed = max(speed, 0.001);
+                float phase = timeSeconds * safeSpeed + height01 * 19.0;
+                float pulse = HectonCoreLitTrianglePulse01(phase);
+                float bandGate = step(0.84, frac(height01 * 23.0 + floor(timeSeconds * safeSpeed * 0.25) * 0.173));
+                return saturate(0.34 + pulse * 0.56 + bandGate * 0.1);
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
-                HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
                 HECTON_CORE_LIT_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 float progress = saturate(_Progress);
@@ -89,7 +94,7 @@ Shader "Hecton8/Fabrication/ProgressBeam"
                 clip(builtMask - 0.01);
 
                 float band = 1.0 - smoothstep(0.0, softness * 2.0, abs(input.height01 - progress));
-                float flicker = frac(sin(_Time.y * _FlickerSpeed) * 43758.5453123);
+                float flicker = FastBeamFlicker01(_Time.y, _FlickerSpeed, input.height01);
                 float3 normalWS = HectonCoreLitSafeNormalize(input.normalWS);
                 float3 viewDirWS = HectonCoreLitSafeNormalize(GetCameraPositionWS() - input.positionWS);
                 float rimBase = 1.0 - saturate(abs(dot(normalWS, viewDirWS)));
@@ -101,4 +106,6 @@ Shader "Hecton8/Fabrication/ProgressBeam"
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Input
@@ -8,7 +9,7 @@ namespace Hecton8.Input
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30995)]
-    public sealed class UserOptionsPersistence : MonoBehaviour
+    public sealed class UserOptionsPersistence : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
     {
         /// <summary>
         /// Saved language key used by localization.
@@ -16,63 +17,86 @@ namespace Hecton8.Input
         /// </summary>
         public const string LanguageKey = "Hecton_Language";
 
-        private static UserOptionsPersistence _instance;
-        private static bool _isShuttingDown;
+        private bool _serviceRegistered;
+        private bool _serviceShuttingDown;
+        private bool _serviceShutdownComplete;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-            _isShuttingDown = false;
-        }
+        public ServiceHeartbeatState HeartbeatState =>
+            _serviceShuttingDown
+                ? ServiceHeartbeatState.Shutdown
+                : _serviceRegistered
+                    ? ServiceHeartbeatState.Ready
+                    : ServiceHeartbeatState.NotStarted;
 
-        public static UserOptionsPersistence Instance
-        {
-            get
-            {
-                if (_isShuttingDown || !Application.isPlaying)
-                    return _instance;
-
-                if (_instance != null)
-                    return _instance;
-
-                GameObject go = new GameObject("[UserOptionsPersistence]");
-                _instance = go.AddComponent<UserOptionsPersistence>();
-                return _instance;
-            }
-        }
-
-        public static UserOptionsPersistence EnsureRuntimeInstance()
-        {
-            return Instance;
-        }
-
-        public static bool TryGetInstance(out UserOptionsPersistence instance)
-        {
-            instance = _instance;
-            return instance != null;
-        }
+        public bool IsServiceReady => _serviceRegistered && !_serviceShuttingDown;
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out UserOptionsPersistence registered);
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
-            _isShuttingDown = false;
+            RegisterService();
+        }
+
+        private void OnEnable()
+        {
+            RegisterService();
+        }
+
+        private void OnDisable()
+        {
+            if (_serviceRegistered && !_serviceShuttingDown)
+                UnregisterService();
         }
 
         private void OnDestroy()
         {
-            if (_instance == this)
+            OnServiceShutdown();
+        }
+
+        public void OnServiceShutdown()
+        {
+            if (_serviceShutdownComplete)
+                return;
+
+            _serviceShuttingDown = true;
+            UnregisterService();
+
+            Save();
+            _serviceShutdownComplete = true;
+        }
+
+        private void RegisterService()
+        {
+            if (_serviceShuttingDown || !Application.isPlaying)
+                return;
+
+            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out UserOptionsPersistence registered);
+            if (registered != null && registered != this)
             {
-                _instance = null;
+                Destroy(gameObject);
+                return;
             }
 
-            _isShuttingDown = true;
+            if (!ReferenceEquals(registered, this))
+                BootstrapRegistryBridge.Register(BootstrapRegistryBridgeSlot.UserOptionsRuntime, this);
+
+            _serviceRegistered =
+                BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.UserOptionsRuntime, out registered) &&
+                ReferenceEquals(registered, this);
+        }
+
+        private void UnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            BootstrapRegistryBridge.Unregister(BootstrapRegistryBridgeSlot.UserOptionsRuntime, this);
+            _serviceRegistered = false;
         }
 
         public bool HasKey(string key)

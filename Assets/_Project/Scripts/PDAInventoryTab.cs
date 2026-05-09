@@ -57,7 +57,12 @@ namespace Hecton8.UI
         private static readonly char[] FilterLabelConsumablesChars = "CONS".ToCharArray();
         private static readonly char[] FilterLabelMaterialsChars = "MATS".ToCharArray();
         private static readonly char[] FilterLabelComponentsChars = "PARTS".ToCharArray();
+        private static readonly char[] FilterEmptyLabelToolsChars = "TOOLS".ToCharArray();
+        private static readonly char[] FilterEmptyLabelConsumablesChars = "CONSUMABLES".ToCharArray();
+        private static readonly char[] FilterEmptyLabelMaterialsChars = "MATERIALS".ToCharArray();
+        private static readonly char[] FilterEmptyLabelComponentsChars = "COMPONENTS".ToCharArray();
         private static readonly char[] PageDigestPrefixChars = "PAGE ".ToCharArray();
+        private static readonly char[] EmptyTextChars = new char[1];
         // COLD ALLOC: string[4] — cached PDA tool-slot key labels — owner: PDAInventoryTab
         private static readonly string[] ToolSlotKeyLabels = { "1", "2", "3", "4" };
         // COLD ALLOC: string[5] — cached PDA tab bar labels — owner: PDAInventoryTab
@@ -235,6 +240,9 @@ namespace Hecton8.UI
         private char[] _cargoSummaryBuffer;
         private char[] _filterSummaryBuffer;
         private char[] _pageSummaryBuffer;
+        private char[] _detailTextBuffer;
+        private char[] _loadoutAssignTextBuffer;
+        private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - inventory HUD notification staging buffer - owner: PDAInventoryTab
         private int[] _filteredAnchorIndices;
         private bool _gridDirty;
         private bool _detailsDirty;
@@ -259,6 +267,8 @@ namespace Hecton8.UI
             _cargoSummaryBuffer = new char[160]; // COLD ALLOC: char[160] - cargo digest staging buffer - owner: PDAInventoryTab
             _filterSummaryBuffer = new char[80]; // COLD ALLOC: char[80] - filter digest staging buffer - owner: PDAInventoryTab
             _pageSummaryBuffer = new char[32]; // COLD ALLOC: char[32] - page digest staging buffer - owner: PDAInventoryTab
+            _detailTextBuffer = new char[384]; // COLD ALLOC: char[384] - selected item detail text staging buffer - owner: PDAInventoryTab
+            _loadoutAssignTextBuffer = new char[32]; // COLD ALLOC: char[32] - loadout assign label staging buffer - owner: PDAInventoryTab
             _filteredAnchorIndices = new int[MaxItems]; // COLD ALLOC: int[MaxItems] - filtered anchor page index buffer - owner: PDAInventoryTab
         }
 
@@ -588,7 +598,7 @@ namespace Hecton8.UI
                 TextMeshProUGUI tabLabel = CreateText("Label", tabRect, 11f,
                     FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(tabLabel.rectTransform);
-                tabLabel.text = labels[i];
+                SetBufferedText(tabLabel, labels[i]);
                 tabLabel.color = i == 0 ? TabActive : TabInactive;
 
                 PDATabButton btn = tabRect.gameObject.AddComponent<PDATabButton>();
@@ -654,7 +664,7 @@ namespace Hecton8.UI
             _gridSectionLabel.rectTransform.anchoredPosition = new Vector2(32f, -52f);
             _gridSectionLabel.rectTransform.sizeDelta = new Vector2(220f, 18f);
             _gridSectionLabel.color = A(Primary, 0.78f);
-            _gridSectionLabel.text = "CARGO GRID";
+            SetBufferedText(_gridSectionLabel, "CARGO GRID");
 
             _gridArea = CreateRect("GridArea", parent);
             _gridArea.pivot = new Vector2(0f, 1f);
@@ -794,7 +804,7 @@ namespace Hecton8.UI
             _detailsSectionLabel.rectTransform.anchoredPosition = new Vector2(-28f, -52f);
             _detailsSectionLabel.rectTransform.sizeDelta = new Vector2(220f, 18f);
             _detailsSectionLabel.color = A(Primary, 0.78f);
-            _detailsSectionLabel.text = "ITEM ANALYSIS";
+            SetBufferedText(_detailsSectionLabel, "ITEM ANALYSIS");
 
             _detailsRoot = CreateRect("DetailsPanel", parent);
             _detailsRoot.pivot = new Vector2(1f, 1f);
@@ -909,7 +919,7 @@ namespace Hecton8.UI
             Anchor(_detailHint.rectTransform, new Vector2(0f, 0f), new Vector2(1f, 1f),
                    Vector2.zero, Vector2.zero);
             _detailHint.color = A(DimLow, 0.4f);
-            _detailHint.text = "SELECT AN ITEM";
+            SetBufferedText(_detailHint, "SELECT AN ITEM");
             // Drop button
             _dropButtonRoot = CreateRect("DropButton", _detailsRoot);
             Anchor(_dropButtonRoot, new Vector2(0.5f, 0f), new Vector2(0.5f, 0f),
@@ -922,7 +932,7 @@ namespace Hecton8.UI
             TextMeshProUGUI dropLabel = CreateText("DropLabel", _dropButtonRoot, 12f,
                 FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(dropLabel.rectTransform);
-            dropLabel.text = "DROP";
+            SetBufferedText(dropLabel, "DROP");
             dropLabel.color = new Color(1f, 0.85f, 0.8f, 0.9f);
 
             DropItemButton dropBtn = _dropButtonRoot.gameObject.AddComponent<DropItemButton>();
@@ -945,7 +955,7 @@ namespace Hecton8.UI
             _useButtonLabel = CreateText("UseLabel", _useButtonRoot, 12f,
                 FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(_useButtonLabel.rectTransform);
-            _useButtonLabel.text = "USE";
+            SetBufferedText(_useButtonLabel, "USE");
             _useButtonLabel.color = new Color(0.7f, 1f, 0.95f, 0.9f);
 
             UseItemButton useBtn = _useButtonRoot.gameObject.AddComponent<UseItemButton>();
@@ -997,7 +1007,7 @@ namespace Hecton8.UI
                 TextMeshProUGUI label = CreateText("Label", btn, 10f,
                     FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(label.rectTransform);
-                label.text = $"SET SLOT {i + 1}";
+                SetLoadoutAssignLabel(label, i, isAssigned: false, isRecommended: false);
                 label.color = A(Dim, 0.78f);
                 _loadoutAssignLabels[i] = label;
 
@@ -1025,7 +1035,7 @@ namespace Hecton8.UI
             _toolStripSectionLabel.rectTransform.anchoredPosition = new Vector2(32f, 74f);
             _toolStripSectionLabel.rectTransform.sizeDelta = new Vector2(260f, 18f);
             _toolStripSectionLabel.color = A(Primary, 0.78f);
-            _toolStripSectionLabel.text = "QUICK ACCESS MATRIX";
+            SetBufferedText(_toolStripSectionLabel, "QUICK ACCESS MATRIX");
 
             _toolStripRoot = CreateRect("ToolStrip", parent);
             _toolStripRoot.pivot = new Vector2(0f, 0f);
@@ -1043,7 +1053,7 @@ namespace Hecton8.UI
                 FontStyles.Bold, TextAlignmentOptions.Left);
             Anchor(hdr.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f),
                    new Vector2(2f, 0f), new Vector2(0f, 14f));
-            hdr.text = "FIELD LOADOUT";
+            SetBufferedText(hdr, "FIELD LOADOUT");
             hdr.color = A(DimLow, 0.6f);
 
             _toolSlotRowRoot = CreateRect("ToolSlotRow", _toolStripRoot);
@@ -1080,7 +1090,7 @@ namespace Hecton8.UI
                     FontStyles.Bold, TextAlignmentOptions.TopLeft);
                 Anchor(keyLbl.rectTransform, new Vector2(0f, 1f), new Vector2(0f, 1f),
                        new Vector2(4f, -3f), new Vector2(16f, 14f));
-                keyLbl.text = ToolSlotKeyLabels[i];
+                SetBufferedText(keyLbl, ToolSlotKeyLabels[i]);
                 keyLbl.color = A(DimLow, 0.5f);
                 _toolSlotKeys[i] = keyLbl;
             }
@@ -1106,7 +1116,7 @@ namespace Hecton8.UI
             hdr.rectTransform.offsetMin = new Vector2(12f, -14f);
             hdr.rectTransform.offsetMax = new Vector2(-12f, 0f);
             hdr.color = A(DimLow, 0.62f);
-            hdr.text = "CARGO DIGEST";
+            SetBufferedText(hdr, "CARGO DIGEST");
 
             _cargoSummary = CreateText("CargoSummary", root, 10.5f,
                 FontStyles.Normal, TextAlignmentOptions.TopLeft);
@@ -1189,7 +1199,7 @@ namespace Hecton8.UI
             TextMeshProUGUI sortLbl = CreateText("SortLabel", _sortButtonRoot, 10f,
                 FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(sortLbl.rectTransform);
-            sortLbl.text = "SORT";
+            SetBufferedText(sortLbl, "SORT");
             sortLbl.color = A(DimLow, 0.7f);
 
             SortButton sortBtn = _sortButtonRoot.gameObject.AddComponent<SortButton>();
@@ -1237,7 +1247,7 @@ namespace Hecton8.UI
                 TextMeshProUGUI chipLabel = CreateText("Label", chip, 9f,
                     FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(chipLabel.rectTransform);
-                chipLabel.text = labels[i];
+                SetBufferedText(chipLabel, labels[i]);
                 chipLabel.color = filters[i] == _currentFilter ? TabActive : TabInactive;
 
                 PDAInventoryFilterButton button = chip.gameObject.AddComponent<PDAInventoryFilterButton>();
@@ -1255,7 +1265,7 @@ namespace Hecton8.UI
             TextMeshProUGUI previousPageLabel = CreateText("Label", previousPageRect, 10f,
                 FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(previousPageLabel.rectTransform);
-            previousPageLabel.text = "<";
+            SetBufferedText(previousPageLabel, "<");
             previousPageLabel.color = TabInactive;
             _previousPageButton = previousPageRect.gameObject.AddComponent<PDAInventoryPageButton>();
             _previousPageButton.Init(this, -1, previousPageBg, previousPageLabel,
@@ -1270,7 +1280,7 @@ namespace Hecton8.UI
             TextMeshProUGUI nextPageLabel = CreateText("Label", nextPageRect, 10f,
                 FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(nextPageLabel.rectTransform);
-            nextPageLabel.text = ">";
+            SetBufferedText(nextPageLabel, ">");
             nextPageLabel.color = TabInactive;
             _nextPageButton = nextPageRect.gameObject.AddComponent<PDAInventoryPageButton>();
             _nextPageButton.Init(this, 1, nextPageBg, nextPageLabel,
@@ -1455,19 +1465,17 @@ namespace Hecton8.UI
                     _detailDescMadnessFx.SetEffectActive(false);
 
                 if (_detailHint != null)
-                    _detailHint.text = _currentFilter == InventoryViewFilter.All
-                        ? "SELECT AN ITEM"
-                        : $"NO {CachedToUpperInvariant(GetFilterLabel(_currentFilter))} ITEM SELECTED";
+                    SetNoSelectionHintText(_detailHint);
                 SetCanvasGroupVisible(_useButtonCanvasGroup, false);
                 if (_useButtonLabel != null)
-                    _useButtonLabel.text = string.Empty;
+                    ClearText(_useButtonLabel);
                 SetCanvasGroupVisible(_loadoutAssignCanvasGroup, false);
                 if (_detailEffect != null)
-                    _detailEffect.text = string.Empty;
+                    ClearText(_detailEffect);
                 if (_detailStatus != null)
-                    _detailStatus.text = string.Empty;
+                    ClearText(_detailStatus);
                 if (_detailAction != null)
-                    _detailAction.text = string.Empty;
+                    ClearText(_detailAction);
                 return;
             }
 
@@ -1480,7 +1488,7 @@ namespace Hecton8.UI
             }
 
             if (_detailName != null)
-                _detailName.text = CachedToUpperInvariant(_selectedItem.itemName);
+                SetUpperText(_detailName, _selectedItem.itemName, ref _detailTextBuffer);
 
             if (_detailIconBoxBg != null)
                 _detailIconBoxBg.color = GetSelectedDetailAccentColor(0.74f);
@@ -1489,14 +1497,7 @@ namespace Hecton8.UI
                 _detailNameBg.color = GetSelectedDetailAccentColor(0.44f);
 
             if (_detailDesc != null)
-            {
-                string desc = string.IsNullOrEmpty(_selectedItem.description)
-                    ? ResolveLocalized(LocalizationKeys.ITEM_DESCRIPTION_FALLBACK, "No description available.")
-                    : _selectedItem.description;
-                desc = ResolveStressReactiveItemDescription(_selectedItem, desc);
-                string cat = ResolveItemCategoryLabel(_selectedItem.category);
-                _detailDesc.text = $"<color=#7FBFBA>[{cat}]</color>\n{desc}";
-            }
+                SetSelectedDescriptionText(_detailDesc);
 
             LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
             if (_detailDescMadnessFx != null)
@@ -1518,29 +1519,19 @@ namespace Hecton8.UI
             }
 
             if (_detailSize != null)
-            {
-                int stackCount = playerInventory != null
-                    ? playerInventory.GetStackCount(_selectedX, _selectedY)
-                    : 1;
-                string stackText = _selectedItem.stackable
-                    ? $"STACK {Mathf.Max(1, stackCount)}/{Mathf.Max(1, _selectedItem.maxStack)}"
-                    : "NON-STACK";
-                string useText = _selectedItem.isConsumable ? "USE READY" : "FIELD ITEM";
-                _detailSize.text =
-                    $"SIZE: {_selectedItem.width}x{_selectedItem.height}  |  {stackText}  |  {useText}";
-            }
+                SetSelectedSizeText(_detailSize);
 
             if (_detailEffect != null)
-                _detailEffect.text = GetSelectedItemEffectText();
+                SetSelectedItemEffectText(_detailEffect);
 
             if (_detailStatus != null)
-                _detailStatus.text = GetSelectedItemStatusText();
+                SetSelectedItemStatusText(_detailStatus);
 
             if (_detailStatusBg != null)
                 _detailStatusBg.color = GetSelectedDetailStatusColor();
 
             if (_detailAction != null)
-                _detailAction.text = GetSelectedItemActionText();
+                SetSelectedItemActionText(_detailAction);
 
             if (_detailActionBg != null)
                 _detailActionBg.color = GetSelectedDetailActionColor();
@@ -1559,16 +1550,20 @@ namespace Hecton8.UI
             {
                 SetCanvasGroupVisible(_useButtonCanvasGroup, false);
                 if (_useButtonLabel != null)
-                    _useButtonLabel.text = string.Empty;
+                    ClearText(_useButtonLabel);
                 return;
             }
 
-            string label = GetSelectedPrimaryActionLabel();
-            bool visible = !string.IsNullOrEmpty(label);
+            EnsureCharCapacity(ref _detailTextBuffer, 32);
+            int length;
+            while (!TryWriteSelectedPrimaryActionLabel(_detailTextBuffer.AsSpan(), out length))
+                EnsureCharCapacity(ref _detailTextBuffer, _detailTextBuffer.Length << 1);
+
+            bool visible = length > 0;
             SetCanvasGroupVisible(_useButtonCanvasGroup, visible);
 
             if (_useButtonLabel != null)
-                _useButtonLabel.text = label;
+                ApplyDynamicBuffer(_useButtonLabel, _detailTextBuffer, length);
 
             if (_useButtonBg != null)
                 _useButtonBg.color = GetSelectedPrimaryActionColor();
@@ -2069,8 +2064,7 @@ namespace Hecton8.UI
             GameObject prefab = toolManager.GetKnownToolPrefabForItem(_selectedItem);
             if (prefab == null)
             {
-                NotifyWarning(
-                    $"NO HELD PREFAB REGISTERED FOR {CachedToUpperInvariant(_selectedItem.itemName)}");
+                NotifyMissingHeldPrefab();
                 return;
             }
 
@@ -2089,14 +2083,12 @@ namespace Hecton8.UI
                 if (toolManager.CurrentSlotIndex == assignedSlot)
                 {
                     toolManager.Holster();
-                    NotifyInfo(
-                        $"LOADOUT HOLSTERED — {CachedToUpperInvariant(_selectedItem.itemName)}");
+                    NotifyLoadoutHolstered();
                 }
                 else if (toolManager.IsToolAvailableInSlot(assignedSlot))
                 {
                     toolManager.SwitchToSlot(assignedSlot);
-                    NotifyInfo(
-                        $"LOADOUT ACTIVATED — SLOT {assignedSlot + 1}");
+                    NotifyLoadoutActivated(assignedSlot);
                 }
                 else
                 {
@@ -2389,7 +2381,6 @@ namespace Hecton8.UI
             LocNumericBuffer.Write(new ReadOnlySpan<char>(template), value0, out char[] buffer, out int length);
             int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
             label.SetCharArray(buffer, 0, safeLength);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static void SetNumericText(TMP_Text label, char[] template, LocNumericArg value0, LocNumericArg value1, LocNumericArg value2)
@@ -2400,7 +2391,6 @@ namespace Hecton8.UI
             LocNumericBuffer.Write(new ReadOnlySpan<char>(template), value0, value1, value2, out char[] buffer, out int length);
             int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
             label.SetCharArray(buffer, 0, safeLength);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static void ApplyDynamicBuffer(TMP_Text label, char[] buffer, int length)
@@ -2410,7 +2400,48 @@ namespace Hecton8.UI
 
             int safeLength = Mathf.Clamp(length, 0, buffer.Length);
             label.SetCharArray(buffer, 0, safeLength);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private void SetBufferedText(TMP_Text label, string value)
+        {
+            if (label == null)
+                return;
+
+            if (string.IsNullOrEmpty(value))
+            {
+                ClearText(label);
+                return;
+            }
+
+            EnsureCharCapacity(ref _detailTextBuffer, value.Length);
+            value.AsSpan().CopyTo(_detailTextBuffer.AsSpan());
+            ApplyDynamicBuffer(label, _detailTextBuffer, value.Length);
+        }
+
+        private static void ClearText(TMP_Text label)
+        {
+            if (label == null)
+                return;
+
+            label.SetCharArray(EmptyTextChars, 0, 0);
+        }
+
+        private static void SetUpperText(TMP_Text label, string value, ref char[] buffer)
+        {
+            if (label == null)
+                return;
+
+            if (string.IsNullOrEmpty(value))
+            {
+                ClearText(label);
+                return;
+            }
+
+            EnsureCharCapacity(ref buffer, value.Length);
+            for (int i = 0; i < value.Length; i++)
+                buffer[i] = char.ToUpperInvariant(value[i]);
+
+            label.SetCharArray(buffer, 0, value.Length);
         }
 
         private static void EnsureCharCapacity(ref char[] buffer, int requiredLength)
@@ -2543,6 +2574,90 @@ namespace Hecton8.UI
             return true;
         }
 
+        private static bool TryWriteFloat(Span<char> destination, ref int index, float value, string format)
+        {
+            if ((uint)index > (uint)destination.Length)
+                return false;
+
+            if (!value.TryFormat(destination.Slice(index), out int written, format))
+                return false;
+
+            index += written;
+            return true;
+        }
+
+        private static bool TryWriteRestoreSegment(
+            Span<char> destination,
+            ref int index,
+            ref bool hasEffect,
+            ReadOnlySpan<char> label,
+            float amount)
+        {
+            if (hasEffect && !TryWriteLiteral(destination, ref index, "  |".AsSpan()))
+                return false;
+
+            if (!TryWriteLiteral(destination, ref index, label) ||
+                !TryWriteInt(destination, ref index, Mathf.RoundToInt(amount)))
+            {
+                return false;
+            }
+
+            hasEffect = true;
+            return true;
+        }
+
+        private static ReadOnlySpan<char> ResolveFilterEmptyLabelChars(InventoryViewFilter filter)
+        {
+            switch (filter)
+            {
+                case InventoryViewFilter.Tools:
+                    return FilterEmptyLabelToolsChars;
+                case InventoryViewFilter.Consumables:
+                    return FilterEmptyLabelConsumablesChars;
+                case InventoryViewFilter.Materials:
+                    return FilterEmptyLabelMaterialsChars;
+                case InventoryViewFilter.Components:
+                    return FilterEmptyLabelComponentsChars;
+                default:
+                    return FilterLabelAllChars;
+            }
+        }
+
+        private static ReadOnlySpan<char> ResolveItemCategoryLabelChars(ItemCategory category)
+        {
+            switch (category)
+            {
+                case ItemCategory.Material: return "MATERIAL".AsSpan();
+                case ItemCategory.Tool: return "TOOL".AsSpan();
+                case ItemCategory.Equipment: return "EQUIPMENT".AsSpan();
+                case ItemCategory.Consumable: return "CONSUMABLE".AsSpan();
+                case ItemCategory.Component: return "COMPONENT".AsSpan();
+                case ItemCategory.Organic: return "ORGANIC".AsSpan();
+                default: return "MISCELLANEOUS".AsSpan();
+            }
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value.AsSpan());
+        }
+
+        private static bool AppendUpperInvariant(ref FixedCharBuffer buffer, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return true;
+
+            Span<char> scratch = stackalloc char[1];
+            for (int i = 0; i < value.Length; i++)
+            {
+                scratch[0] = char.ToUpperInvariant(value[i]);
+                if (!buffer.Append(scratch))
+                    return false;
+            }
+
+            return true;
+        }
+
         private static Color A(Color c, float a) { c.a = a; return c; }
 
         internal void SetFilter(InventoryViewFilter filter)
@@ -2600,18 +2715,6 @@ namespace Hecton8.UI
             }
         }
 
-        private string GetFilterLabel(InventoryViewFilter filter)
-        {
-            switch (filter)
-            {
-                case InventoryViewFilter.Tools: return "Tools";
-                case InventoryViewFilter.Consumables: return "Consumables";
-                case InventoryViewFilter.Materials: return "Materials";
-                case InventoryViewFilter.Components: return "Components";
-                default: return "All";
-            }
-        }
-
         private int CountUsedCells()
         {
             if (playerInventory == null || playerInventory.Grid == null)
@@ -2651,11 +2754,7 @@ namespace Hecton8.UI
                 bool isAssigned = knownPrefab != null && ReferenceEquals(assigned, knownPrefab);
                 bool available = toolManager != null && toolManager.IsToolAvailableInSlot(i);
                 bool isRecommended = !isAssigned && recommendedSlot == i;
-                _loadoutAssignLabels[i].text = isAssigned
-                    ? $"SLOT {i + 1} READY"
-                    : isRecommended
-                        ? $"REC SLOT {i + 1}"
-                        : $"SET SLOT {i + 1}";
+                SetLoadoutAssignLabel(_loadoutAssignLabels[i], i, isAssigned, isRecommended);
                 _loadoutAssignLabels[i].color = isAssigned
                     ? (available ? A(Primary, 0.9f) : new Color(1f, 0.78f, 0.28f, 0.88f))
                     : isRecommended
@@ -2669,6 +2768,41 @@ namespace Hecton8.UI
             }
         }
 
+        private void SetLoadoutAssignLabel(TMP_Text label, int slotIndex, bool isAssigned, bool isRecommended)
+        {
+            EnsureCharCapacity(ref _loadoutAssignTextBuffer, 24);
+            int length;
+            while (!TryWriteLoadoutAssignLabel(_loadoutAssignTextBuffer.AsSpan(), slotIndex, isAssigned, isRecommended, out length))
+                EnsureCharCapacity(ref _loadoutAssignTextBuffer, _loadoutAssignTextBuffer.Length << 1);
+
+            ApplyDynamicBuffer(label, _loadoutAssignTextBuffer, length);
+        }
+
+        private static bool TryWriteLoadoutAssignLabel(
+            Span<char> destination,
+            int slotIndex,
+            bool isAssigned,
+            bool isRecommended,
+            out int length)
+        {
+            length = 0;
+            if (isAssigned)
+            {
+                return TryWriteLiteral(destination, ref length, "SLOT ".AsSpan()) &&
+                       TryWriteInt(destination, ref length, slotIndex + 1) &&
+                       TryWriteLiteral(destination, ref length, " READY".AsSpan());
+            }
+
+            if (isRecommended)
+            {
+                return TryWriteLiteral(destination, ref length, "REC SLOT ".AsSpan()) &&
+                       TryWriteInt(destination, ref length, slotIndex + 1);
+            }
+
+            return TryWriteLiteral(destination, ref length, "SET SLOT ".AsSpan()) &&
+                   TryWriteInt(destination, ref length, slotIndex + 1);
+        }
+
         internal void AssignSelectedItemToSlot(int slotIndex)
         {
             if (_selectedItem == null || toolManager == null)
@@ -2680,7 +2814,7 @@ namespace Hecton8.UI
             GameObject prefab = toolManager.GetKnownToolPrefabForItem(_selectedItem);
             if (prefab == null)
             {
-                NotifyWarning($"NO HELD PREFAB REGISTERED FOR {CachedToUpperInvariant(_selectedItem.itemName)}");
+                NotifyMissingHeldPrefab();
                 return;
             }
 
@@ -2689,7 +2823,7 @@ namespace Hecton8.UI
             RefreshLoadoutAssignButtons();
             RefreshDetails();
 
-            NotifyInfo($"LOADOUT UPDATED - SLOT {slotIndex + 1}: {CachedToUpperInvariant(_selectedItem.itemName)}");
+            NotifyLoadoutUpdated(slotIndex);
         }
 
         private void NotifyInfo(string message)
@@ -2698,6 +2832,14 @@ namespace Hecton8.UI
                 HUDNotification.TryGetActive(out hudNotification);
 
             hudNotification?.ShowInfo(message);
+        }
+
+        private void NotifyInfo(in FixedCharBuffer messageBuffer)
+        {
+            if (hudNotification == null)
+                HUDNotification.TryGetActive(out hudNotification);
+
+            hudNotification?.ShowInfo(in messageBuffer);
         }
 
         private Transform ResolveDropOrigin()
@@ -2717,37 +2859,194 @@ namespace Hecton8.UI
             hudNotification?.ShowWarning(message);
         }
 
-        private string GetSelectedItemEffectText()
+        private void NotifyWarning(in FixedCharBuffer messageBuffer)
+        {
+            if (hudNotification == null)
+                HUDNotification.TryGetActive(out hudNotification);
+
+            hudNotification?.ShowWarning(in messageBuffer);
+        }
+
+        private void NotifyMissingHeldPrefab()
+        {
+            _notificationBuffer.Clear();
+            AppendText(ref _notificationBuffer, "NO HELD PREFAB REGISTERED FOR ");
+            AppendUpperInvariant(ref _notificationBuffer, _selectedItem != null ? _selectedItem.itemName : null);
+            NotifyWarning(in _notificationBuffer);
+        }
+
+        private void NotifyLoadoutHolstered()
+        {
+            _notificationBuffer.Clear();
+            AppendText(ref _notificationBuffer, "LOADOUT HOLSTERED - ");
+            AppendUpperInvariant(ref _notificationBuffer, _selectedItem != null ? _selectedItem.itemName : null);
+            NotifyInfo(in _notificationBuffer);
+        }
+
+        private void NotifyLoadoutActivated(int slotIndex)
+        {
+            _notificationBuffer.Clear();
+            AppendText(ref _notificationBuffer, "LOADOUT ACTIVATED - SLOT ");
+            _notificationBuffer.AppendInt(slotIndex + 1);
+            NotifyInfo(in _notificationBuffer);
+        }
+
+        private void NotifyLoadoutUpdated(int slotIndex)
+        {
+            _notificationBuffer.Clear();
+            AppendText(ref _notificationBuffer, "LOADOUT UPDATED - SLOT ");
+            _notificationBuffer.AppendInt(slotIndex + 1);
+            AppendText(ref _notificationBuffer, ": ");
+            AppendUpperInvariant(ref _notificationBuffer, _selectedItem != null ? _selectedItem.itemName : null);
+            NotifyInfo(in _notificationBuffer);
+        }
+
+        private void SetNoSelectionHintText(TMP_Text label)
+        {
+            EnsureCharCapacity(ref _detailTextBuffer, 48);
+            int length;
+            while (!TryWriteNoSelectionHint(_detailTextBuffer.AsSpan(), out length))
+                EnsureCharCapacity(ref _detailTextBuffer, _detailTextBuffer.Length << 1);
+
+            ApplyDynamicBuffer(label, _detailTextBuffer, length);
+        }
+
+        private bool TryWriteNoSelectionHint(Span<char> destination, out int length)
+        {
+            length = 0;
+            if (_currentFilter == InventoryViewFilter.All)
+                return TryWriteLiteral(destination, ref length, "SELECT AN ITEM".AsSpan());
+
+            return TryWriteLiteral(destination, ref length, "NO ".AsSpan()) &&
+                   TryWriteLiteral(destination, ref length, ResolveFilterEmptyLabelChars(_currentFilter)) &&
+                   TryWriteLiteral(destination, ref length, " ITEM SELECTED".AsSpan());
+        }
+
+        private void SetSelectedDescriptionText(TMP_Text label)
         {
             if (_selectedItem == null)
-                return string.Empty;
+            {
+                ClearText(label);
+                return;
+            }
+
+            string desc = string.IsNullOrEmpty(_selectedItem.description)
+                ? ResolveLocalized(LocalizationKeys.ITEM_DESCRIPTION_FALLBACK, "No description available.")
+                : _selectedItem.description;
+            desc = ResolveStressReactiveItemDescription(_selectedItem, desc);
+            ReadOnlySpan<char> descSpan = ReadOnlySpan<char>.Empty;
+            if (!string.IsNullOrEmpty(desc))
+                descSpan = desc.AsSpan();
+
+            EnsureCharCapacity(ref _detailTextBuffer, descSpan.Length + 48);
+            int length;
+            while (!TryWriteSelectedDescriptionText(_detailTextBuffer.AsSpan(), descSpan, out length))
+                EnsureCharCapacity(ref _detailTextBuffer, _detailTextBuffer.Length << 1);
+
+            ApplyDynamicBuffer(label, _detailTextBuffer, length);
+        }
+
+        private bool TryWriteSelectedDescriptionText(Span<char> destination, ReadOnlySpan<char> description, out int length)
+        {
+            length = 0;
+            return TryWriteLiteral(destination, ref length, "<color=#7FBFBA>[".AsSpan()) &&
+                   TryWriteLiteral(destination, ref length, ResolveItemCategoryLabelChars(_selectedItem.category)) &&
+                   TryWriteLiteral(destination, ref length, "]</color>\n".AsSpan()) &&
+                   TryWriteLiteral(destination, ref length, description);
+        }
+
+        private void SetSelectedSizeText(TMP_Text label)
+        {
+            int stackCount = playerInventory != null
+                ? playerInventory.GetStackCount(_selectedX, _selectedY)
+                : 1;
+
+            EnsureCharCapacity(ref _detailTextBuffer, 96);
+            int length;
+            while (!TryWriteSelectedSizeText(_detailTextBuffer.AsSpan(), stackCount, out length))
+                EnsureCharCapacity(ref _detailTextBuffer, _detailTextBuffer.Length << 1);
+
+            ApplyDynamicBuffer(label, _detailTextBuffer, length);
+        }
+
+        private bool TryWriteSelectedSizeText(Span<char> destination, int stackCount, out int length)
+        {
+            length = 0;
+            if (_selectedItem == null)
+                return true;
+
+            if (!TryWriteLiteral(destination, ref length, "SIZE: ".AsSpan()) ||
+                !TryWriteInt(destination, ref length, _selectedItem.width) ||
+                !TryWriteLiteral(destination, ref length, "x".AsSpan()) ||
+                !TryWriteInt(destination, ref length, _selectedItem.height) ||
+                !TryWriteLiteral(destination, ref length, "  |  ".AsSpan()))
+            {
+                length = 0;
+                return false;
+            }
+
+            if (_selectedItem.stackable)
+            {
+                if (!TryWriteLiteral(destination, ref length, "STACK ".AsSpan()) ||
+                    !TryWriteInt(destination, ref length, Mathf.Max(1, stackCount)) ||
+                    !TryWriteLiteral(destination, ref length, "/".AsSpan()) ||
+                    !TryWriteInt(destination, ref length, Mathf.Max(1, _selectedItem.maxStack)))
+                {
+                    length = 0;
+                    return false;
+                }
+            }
+            else if (!TryWriteLiteral(destination, ref length, "NON-STACK".AsSpan()))
+            {
+                length = 0;
+                return false;
+            }
+
+            if (_selectedItem.isConsumable)
+                return TryWriteLiteral(destination, ref length, "  |  USE READY".AsSpan());
+
+            return TryWriteLiteral(destination, ref length, "  |  FIELD ITEM".AsSpan());
+        }
+
+        private void SetSelectedItemEffectText(TMP_Text label)
+        {
+            EnsureCharCapacity(ref _detailTextBuffer, 128);
+            int length;
+            while (!TryWriteSelectedItemEffectText(_detailTextBuffer.AsSpan(), out length))
+                EnsureCharCapacity(ref _detailTextBuffer, _detailTextBuffer.Length << 1);
+
+            ApplyDynamicBuffer(label, _detailTextBuffer, length);
+        }
+
+        private bool TryWriteSelectedItemEffectText(Span<char> destination, out int length)
+        {
+            length = 0;
+            if (_selectedItem == null)
+                return true;
 
             if (_selectedItem.isConsumable)
             {
-                string text = "EFFECT:";
+                if (!TryWriteLiteral(destination, ref length, "EFFECT:".AsSpan()))
+                    return false;
+
                 bool hasEffect = false;
+                if (_selectedItem.oxygenRestore > 0f &&
+                    !TryWriteRestoreSegment(destination, ref length, ref hasEffect, " O2 +".AsSpan(), _selectedItem.oxygenRestore))
+                    return false;
 
-                if (_selectedItem.oxygenRestore > 0f)
-                {
-                    text += $" O2 +{_selectedItem.oxygenRestore:0}";
-                    hasEffect = true;
-                }
+                if (_selectedItem.energyRestore > 0f &&
+                    !TryWriteRestoreSegment(destination, ref length, ref hasEffect, " PWR +".AsSpan(), _selectedItem.energyRestore))
+                    return false;
 
-                if (_selectedItem.energyRestore > 0f)
-                {
-                    text += hasEffect ? "  |" : string.Empty;
-                    text += $" PWR +{_selectedItem.energyRestore:0}";
-                    hasEffect = true;
-                }
+                if (_selectedItem.integrityRestore > 0f &&
+                    !TryWriteRestoreSegment(destination, ref length, ref hasEffect, " HLT +".AsSpan(), _selectedItem.integrityRestore))
+                    return false;
 
-                if (_selectedItem.integrityRestore > 0f)
-                {
-                    text += hasEffect ? "  |" : string.Empty;
-                    text += $" HLT +{_selectedItem.integrityRestore:0}";
-                    hasEffect = true;
-                }
+                if (hasEffect)
+                    return true;
 
-                return hasEffect ? text : "EFFECT: CONSUMABLE WITH NO RESTORE PROFILE";
+                length = 0;
+                return TryWriteLiteral(destination, ref length, "EFFECT: CONSUMABLE WITH NO RESTORE PROFILE".AsSpan());
             }
 
             if (IsSelectedItemAssignableTool())
@@ -2756,28 +3055,47 @@ namespace Hecton8.UI
                 PlayerTool tool = prefab != null ? prefab.GetComponent<PlayerTool>() : null;
                 if (tool != null && tool.Metadata != null)
                 {
-                    return $"TOOL PROFILE: DURABILITY {tool.Metadata.maxDurability:0}  |  ENERGY {Mathf.Max(0f, tool.Metadata.energyConsumptionRate):0.0}/s";
+                    return TryWriteLiteral(destination, ref length, "TOOL PROFILE: DURABILITY ".AsSpan()) &&
+                           TryWriteInt(destination, ref length, Mathf.RoundToInt(tool.Metadata.maxDurability)) &&
+                           TryWriteLiteral(destination, ref length, "  |  ENERGY ".AsSpan()) &&
+                           TryWriteFloat(destination, ref length, Mathf.Max(0f, tool.Metadata.energyConsumptionRate), "0.0") &&
+                           TryWriteLiteral(destination, ref length, "/s".AsSpan());
                 }
 
-                return "TOOL PROFILE: ASSIGNABLE FIELD EQUIPMENT";
+                return TryWriteLiteral(destination, ref length, "TOOL PROFILE: ASSIGNABLE FIELD EQUIPMENT".AsSpan());
             }
 
-            return _selectedItem.worldPrefab != null
-                ? "FIELD PROFILE: CAN BE DEPLOYED OR DROPPED INTO THE WORLD"
-                : "FIELD PROFILE: CARGO MATERIAL / COMPONENT";
+            if (_selectedItem.worldPrefab != null)
+                return TryWriteLiteral(destination, ref length, "FIELD PROFILE: CAN BE DEPLOYED OR DROPPED INTO THE WORLD".AsSpan());
+
+            return TryWriteLiteral(destination, ref length, "FIELD PROFILE: CARGO MATERIAL / COMPONENT".AsSpan());
         }
 
-        private string GetSelectedItemStatusText()
+        private void SetSelectedItemStatusText(TMP_Text label)
         {
+            EnsureCharCapacity(ref _detailTextBuffer, 128);
+            int length;
+            while (!TryWriteSelectedItemStatusText(_detailTextBuffer.AsSpan(), out length))
+                EnsureCharCapacity(ref _detailTextBuffer, _detailTextBuffer.Length << 1);
+
+            ApplyDynamicBuffer(label, _detailTextBuffer, length);
+        }
+
+        private bool TryWriteSelectedItemStatusText(Span<char> destination, out int length)
+        {
+            length = 0;
             if (_selectedItem == null)
-                return string.Empty;
+                return true;
 
             int stackCount = playerInventory != null
                 ? playerInventory.GetStackCount(_selectedX, _selectedY)
                 : 1;
 
             if (_selectedItem.isConsumable)
-                return $"STATUS: READY FOR USE  |  STOCK {Mathf.Max(1, stackCount)}";
+            {
+                return TryWriteLiteral(destination, ref length, "STATUS: READY FOR USE  |  STOCK ".AsSpan()) &&
+                       TryWriteInt(destination, ref length, Mathf.Max(1, stackCount));
+            }
 
             if (IsSelectedItemAssignableTool())
             {
@@ -2786,35 +3104,59 @@ namespace Hecton8.UI
                     : null;
 
                 if (knownPrefab == null)
-                    return "STATUS: TOOL ITEM  |  NO HELD-PREFAB REGISTRY";
+                    return TryWriteLiteral(destination, ref length, "STATUS: TOOL ITEM  |  NO HELD-PREFAB REGISTRY".AsSpan());
 
                 for (int i = 0; i < ToolSlotCount; i++)
                 {
                     GameObject assigned = toolManager != null ? toolManager.GetAssignedToolPrefab(i) : null;
-                    if (ReferenceEquals(assigned, knownPrefab))
+                    if (!ReferenceEquals(assigned, knownPrefab))
+                        continue;
+
+                    bool available = toolManager != null && toolManager.IsToolAvailableInSlot(i);
+                    if (!TryWriteLiteral(destination, ref length, "STATUS: LOADOUT SLOT ".AsSpan()) ||
+                        !TryWriteInt(destination, ref length, i + 1))
                     {
-                        bool available = toolManager != null && toolManager.IsToolAvailableInSlot(i);
-                        return available
-                            ? $"STATUS: LOADOUT SLOT {i + 1} READY"
-                            : $"STATUS: LOADOUT SLOT {i + 1} ASSIGNED, CARGO MISSING";
+                        length = 0;
+                        return false;
                     }
+
+                    if (available)
+                        return TryWriteLiteral(destination, ref length, " READY".AsSpan());
+
+                    return TryWriteLiteral(destination, ref length, " ASSIGNED, CARGO MISSING".AsSpan());
                 }
 
-                return "STATUS: FIELD TOOL  |  NOT ASSIGNED TO LOADOUT";
+                return TryWriteLiteral(destination, ref length, "STATUS: FIELD TOOL  |  NOT ASSIGNED TO LOADOUT".AsSpan());
             }
 
-            return _selectedItem.stackable
-                ? $"STATUS: CARGO STACK  |  {Mathf.Max(1, stackCount)} UNITS AVAILABLE"
-                : "STATUS: SINGLE CARGO UNIT";
+            if (_selectedItem.stackable)
+            {
+                return TryWriteLiteral(destination, ref length, "STATUS: CARGO STACK  |  ".AsSpan()) &&
+                       TryWriteInt(destination, ref length, Mathf.Max(1, stackCount)) &&
+                       TryWriteLiteral(destination, ref length, " UNITS AVAILABLE".AsSpan());
+            }
+
+            return TryWriteLiteral(destination, ref length, "STATUS: SINGLE CARGO UNIT".AsSpan());
         }
 
-        private string GetSelectedItemActionText()
+        private void SetSelectedItemActionText(TMP_Text label)
         {
+            EnsureCharCapacity(ref _detailTextBuffer, 128);
+            int length;
+            while (!TryWriteSelectedItemActionText(_detailTextBuffer.AsSpan(), out length))
+                EnsureCharCapacity(ref _detailTextBuffer, _detailTextBuffer.Length << 1);
+
+            ApplyDynamicBuffer(label, _detailTextBuffer, length);
+        }
+
+        private bool TryWriteSelectedItemActionText(Span<char> destination, out int length)
+        {
+            length = 0;
             if (_selectedItem == null)
-                return string.Empty;
+                return true;
 
             if (_selectedItem.isConsumable)
-                return "NEXT ACTION: USE NOW FOR IMMEDIATE SUIT RESTORATION, OR KEEP IN CARGO AS RESERVE.";
+                return TryWriteLiteral(destination, ref length, "NEXT ACTION: USE NOW FOR IMMEDIATE SUIT RESTORATION, OR KEEP IN CARGO AS RESERVE.".AsSpan());
 
             if (IsSelectedItemAssignableTool())
             {
@@ -2823,31 +3165,32 @@ namespace Hecton8.UI
                     : null;
 
                 if (knownPrefab == null)
-                    return "NEXT ACTION: AUTHOR A HELD PREFAB FOR THIS TOOL BEFORE ADDING IT TO QUICK SLOTS.";
+                    return TryWriteLiteral(destination, ref length, "NEXT ACTION: AUTHOR A HELD PREFAB FOR THIS TOOL BEFORE ADDING IT TO QUICK SLOTS.".AsSpan());
 
-                return "NEXT ACTION: ASSIGN TO A LOADOUT SLOT BELOW, THEN ARM IT FROM THE LOADOUT TAB.";
+                return TryWriteLiteral(destination, ref length, "NEXT ACTION: ASSIGN TO A LOADOUT SLOT BELOW, THEN ARM IT FROM THE LOADOUT TAB.".AsSpan());
             }
 
             if (_selectedItem.worldPrefab != null)
-                return "NEXT ACTION: KEEP AS FIELD RESOURCE OR DROP TO THE WORLD IF CARGO SPACE IS NEEDED.";
+                return TryWriteLiteral(destination, ref length, "NEXT ACTION: KEEP AS FIELD RESOURCE OR DROP TO THE WORLD IF CARGO SPACE IS NEEDED.".AsSpan());
 
-            return "NEXT ACTION: HOLD FOR FABRICATION, RECIPES, OR FUTURE COMPONENT CHAINS.";
+            return TryWriteLiteral(destination, ref length, "NEXT ACTION: HOLD FOR FABRICATION, RECIPES, OR FUTURE COMPONENT CHAINS.".AsSpan());
         }
 
-        private string GetSelectedPrimaryActionLabel()
+        private bool TryWriteSelectedPrimaryActionLabel(Span<char> destination, out int length)
         {
+            length = 0;
             if (_selectedItem == null)
-                return string.Empty;
+                return true;
 
             if (_selectedItem.isConsumable)
-                return "USE";
+                return TryWriteLiteral(destination, ref length, "USE".AsSpan());
 
             if (!IsSelectedItemAssignableTool() || toolManager == null)
-                return string.Empty;
+                return true;
 
             GameObject prefab = toolManager.GetKnownToolPrefabForItem(_selectedItem);
             if (prefab == null)
-                return "NO PREFAB";
+                return TryWriteLiteral(destination, ref length, "NO PREFAB".AsSpan());
 
             for (int i = 0; i < ToolSlotCount; i++)
             {
@@ -2855,17 +3198,28 @@ namespace Hecton8.UI
                     continue;
 
                 if (toolManager.CurrentSlotIndex == i)
-                    return "HOLSTER";
+                    return TryWriteLiteral(destination, ref length, "HOLSTER".AsSpan());
 
-                return toolManager.IsToolAvailableInSlot(i)
-                    ? $"ACTIVATE S{i + 1}"
-                    : $"RE-ARM S{i + 1}";
+                bool available = toolManager.IsToolAvailableInSlot(i);
+                if (available)
+                {
+                    if (!TryWriteLiteral(destination, ref length, "ACTIVATE S".AsSpan()))
+                        return false;
+                }
+                else if (!TryWriteLiteral(destination, ref length, "RE-ARM S".AsSpan()))
+                {
+                    return false;
+                }
+
+                return TryWriteInt(destination, ref length, i + 1);
             }
 
             int recommendedSlot = GetRecommendedLoadoutSlot();
-            return recommendedSlot >= 0
-                ? $"ARM S{recommendedSlot + 1}"
-                : "ARM";
+            if (recommendedSlot < 0)
+                return TryWriteLiteral(destination, ref length, "ARM".AsSpan());
+
+            return TryWriteLiteral(destination, ref length, "ARM S".AsSpan()) &&
+                   TryWriteInt(destination, ref length, recommendedSlot + 1);
         }
 
         private Color GetSelectedPrimaryActionColor()
@@ -2923,20 +3277,6 @@ namespace Hecton8.UI
             }
 
             return c;
-        }
-
-        private static string ResolveItemCategoryLabel(ItemCategory category)
-        {
-            switch (category)
-            {
-                case ItemCategory.Material: return "MATERIAL";
-                case ItemCategory.Tool: return "TOOL";
-                case ItemCategory.Equipment: return "EQUIPMENT";
-                case ItemCategory.Consumable: return "CONSUMABLE";
-                case ItemCategory.Component: return "COMPONENT";
-                case ItemCategory.Organic: return "ORGANIC";
-                default: return "MISCELLANEOUS";
-            }
         }
 
         private Color GetSelectedDetailStatusColor()
@@ -3047,12 +3387,6 @@ namespace Hecton8.UI
             }
         }
 
-        // ══════════════════════════════════════════════════════════
-        //  ZERO-GC STRING CACHING
-        // ══════════════════════════════════════════════════════════
-
-        private static readonly string[] _upperCache = new string[16];
-
         private static string ResolveLocalized(string key, string fallback)
         {
             return Hecton8.Core.GlobalRegistry.Localization != null
@@ -3078,18 +3412,6 @@ namespace Hecton8.UI
             return manager.ApplyPdaLoreCorruptionIfNeeded(token, text);
         }
 
-        private static string CachedToUpperInvariant(string input)
-        {
-            if (string.IsNullOrEmpty(input)) return input;
-
-            int hash = input.GetHashCode() & 0xF;
-            string cached = _upperCache[hash];
-            if (cached != null && cached == input)
-                return cached.ToUpperInvariant();
-
-            _upperCache[hash] = input;
-            return input.ToUpperInvariant();
-        }
     }
     // ══════════════════════════════════════════════════════════════
     //  HELPER: Drop Item Button

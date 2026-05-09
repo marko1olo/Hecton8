@@ -153,7 +153,7 @@ namespace Hecton8.World
                 Vector3 from = offsets[i - 1];
                 Vector3 to = offsets[i];
                 Vector3 mid = (from + to) * 0.5f;
-                float bridgeW = Vector3.Distance(from, to) + Mathf.Min(sizes[i - 1], sizes[i]) * 0.35f;
+                float bridgeW = (from - to).magnitude + Mathf.Min(sizes[i - 1], sizes[i]) * 0.35f;
                 float bridgeH = Mathf.Min(heights[i - 1], heights[i]) * 0.3f;
                 float bridgeD = Mathf.Min(sizes[i - 1], sizes[i]) * 0.5f;
                 Vector3 bridgeCenter = new Vector3(mid.x, bridgeH * 0.55f, mid.z);

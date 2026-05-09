@@ -3,7 +3,7 @@ Shader "Hecton8/World/WreckIndirectLit"
     Properties
     {
         _BaseMap("Base Map", 2D) = "white" {}
-        _MaskMap("Mask Map", 2D) = "white" {}
+        _MaskMap("Packed Mask (R Metallic G AO B Smoothness A Emission)", 2D) = "white" {}
         [NoScaleOffset] _HectonMicroNormalTex("Micro Normal 128", 2D) = "bump" {}
         _BaseColor("Base Color", Color) = (1, 1, 1, 1)
         [HDR] _EmissionColor("Emission Color", Color) = (0, 0, 0, 0)
@@ -41,6 +41,8 @@ Shader "Hecton8/World/WreckIndirectLit"
 
         HLSLINCLUDE
         #pragma target 4.5
+        #pragma multi_compile_instancing
+        #pragma instancing_options assumeuniformscaling
         #pragma multi_compile _ DOTS_INSTANCING_ON
         #pragma shader_feature_local_fragment _ALPHATEST_ON
 
@@ -95,6 +97,7 @@ Shader "Hecton8/World/WreckIndirectLit"
             float2 uv : TEXCOORD3;
             half fogFactor : TEXCOORD4;
             half age01 : TEXCOORD5;
+            UNITY_VERTEX_OUTPUT_STEREO
         };
 
         float4x4 ResolveWreckMatrix(uint instanceID)
@@ -121,17 +124,23 @@ Shader "Hecton8/World/WreckIndirectLit"
         Varyings Vert(Attributes input)
         {
             Varyings output;
-            float4x4 instanceMatrix = ResolveWreckMatrix(input.instanceID);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+            uint instanceID = input.instanceID;
+        #if UNITY_ANY_INSTANCING_ENABLED
+            instanceID = unity_InstanceID;
+        #endif
+            float4x4 instanceMatrix = ResolveWreckMatrix(instanceID);
             float4 positionWS = mul(instanceMatrix, float4(HectonCoreLitSanitizePositionOS(input.positionOS.xyz), 1.0));
             output.normalWS = TransformWreckNormal(instanceMatrix, input.normalOS);
             output.positionWS = HectonCoreLitApplySubmarineCrushDepth(positionWS.xyz, output.normalWS);
             output.positionWS = HectonCoreLitApplyStormRainDripVertexRipple(output.positionWS, output.normalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
             output.positionCS = TransformWorldToHClip(output.positionWS);
             output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(output.positionCS, _DepthBias, 1.0);
-            output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(output.positionWS));
+            output.viewDirWS = GetWorldSpaceViewDir(output.positionWS);
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
-            output.age01 = ResolveWreckAge(input.instanceID);
+            output.age01 = ResolveWreckAge(instanceID);
             return output;
         }
 
@@ -156,16 +165,26 @@ Shader "Hecton8/World/WreckIndirectLit"
         {
             half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
             half3 color = SampleSH(normalWS) * albedo * ambientOcclusion * caveAmbientFactor;
-            half specularStrength = lerp(0.04h, 0.22h, metallic);
-            half specularPower = lerp(16.0h, 96.0h, smoothness);
+            half specularStrength = 0.04h + 0.18h * metallic;
 
             float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
             Light mainLight = GetMainLight(shadowCoord);
             half3 lightDir = SafeNormalize3(mainLight.direction);
             half nDotL = saturate(dot(normalWS, lightDir));
-            half3 halfDir = SafeNormalize3(lightDir + viewDirWS);
-            half specular = pow(saturate(dot(normalWS, halfDir)), specularPower) * smoothness * specularStrength;
-            half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadow(positionWS, normalWS);
+            half specular = 0.0h;
+            half specularEnergy = smoothness * specularStrength;
+            if (nDotL > 0.0001h && specularEnergy > 0.0001h)
+            {
+                half3 halfDir = SafeNormalize3(lightDir + viewDirWS);
+                half ndh = saturate(dot(normalWS, halfDir));
+                half ndh2 = ndh * ndh;
+                half ndh4 = ndh2 * ndh2;
+                half ndh8 = ndh4 * ndh4;
+                half broadSpecular = ndh4;
+                half tightSpecular = ndh8 * ndh8;
+                specular = (broadSpecular + (tightSpecular - broadSpecular) * smoothness) * specularEnergy;
+            }
+            half contactShadow = (half)HectonCoreLitEvaluateMainLightContactShadowFromDirection(positionWS, normalWS, mainLight.direction);
             color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation * contactShadow);
 
             color += HectonCoreLitEvaluateProjectedCausticsScattering(positionWS, normalWS) * albedo;
@@ -174,6 +193,7 @@ Shader "Hecton8/World/WreckIndirectLit"
 
         half4 Frag(Varyings input) : SV_Target
         {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             half4 surface = SampleWreckSurface(input.uv);
         #if defined(_ALPHATEST_ON)
             clip(surface.a - _Cutoff);
@@ -219,9 +239,9 @@ Shader "Hecton8/World/WreckIndirectLit"
             return half4(finalColor, 1.0h);
         }
 
-        float4 GetShadowPositionHClip(Attributes input)
+        float4 GetShadowPositionHClip(Attributes input, uint instanceID)
         {
-            float4x4 instanceMatrix = ResolveWreckMatrix(input.instanceID);
+            float4x4 instanceMatrix = ResolveWreckMatrix(instanceID);
             float4 positionWS = mul(instanceMatrix, float4(HectonCoreLitSanitizePositionOS(input.positionOS.xyz), 1.0));
             float3 normalWS = TransformWreckNormal(instanceMatrix, input.normalOS);
             positionWS.xyz = HectonCoreLitApplyStormRainDripVertexRipple(positionWS.xyz, normalWS, (half)_StormRainDripAmplitude, (half)_StormRainDripTiling, (half)_StormRainDripSpeed);
@@ -264,20 +284,28 @@ Shader "Hecton8/World/WreckIndirectLit"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
+                UNITY_VERTEX_OUTPUT_STEREO
             };
 
             ShadowVaryings ShadowVert(Attributes input)
             {
                 ShadowVaryings output;
-                output.positionCS = GetShadowPositionHClip(input);
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
+                uint instanceID = input.instanceID;
+            #if UNITY_ANY_INSTANCING_ENABLED
+                instanceID = unity_InstanceID;
+            #endif
+                output.positionCS = GetShadowPositionHClip(input, instanceID);
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 return output;
             }
 
             half4 ShadowFrag(ShadowVaryings input) : SV_Target
             {
-                half alpha = SampleWreckSurface(input.uv).a;
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
             #if defined(_ALPHATEST_ON)
+                half alpha = SampleWreckSurface(input.uv).a;
                 clip(alpha - _Cutoff);
             #endif
                 return 0.0h;

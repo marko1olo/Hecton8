@@ -27,6 +27,8 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -129,28 +131,22 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 return lerp(lerp(a, b, u.x), lerp(c, d, u.x), u.y);
             }
 
-            float Fbm(float2 p)
+            float FastPowerCurve01(float value, float exponent)
             {
-                float sum = 0.0;
-                float amp = 0.5;
-                float freq = 1.0;
-
-                [unroll(3)]
-                for (int octave = 0; octave < 3; octave++)
-                {
-                    sum += ValueNoise(p * freq) * amp;
-                    freq *= 2.07;
-                    amp *= 0.5;
-                }
-
-                return sum;
+                float v = saturate(value);
+                float v2 = v * v;
+                float v4 = v2 * v2;
+                float v8 = v4 * v4;
+                float low = lerp(v, v2, saturate(exponent - 1.0));
+                float high = lerp(v2, v8, saturate((exponent - 2.0) * 0.16666667));
+                return lerp(low, high, step(2.0, exponent));
             }
 
             float ComputeVisorEdgeMask(float2 uv)
             {
                 float2 centered = uv * 2.0 - 1.0;
                 float radial = saturate(dot(centered, centered));
-                float rim = pow(radial, max(0.1, _HectonVisorFluidEdgeFadeExponent));
+                float rim = FastPowerCurve01(radial, max(0.1, _HectonVisorFluidEdgeFadeExponent));
                 return saturate(0.28 + rim * 0.72);
             }
 
@@ -175,30 +171,38 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 cellUV.x += lateralStreak * 0.22 + (seed - 0.5) * 0.25;
 
                 float radius = lerp(0.10, 0.24, seed);
-                float droplet = (1.0 - smoothstep(radius * 0.62, radius, length(cellUV * float2(1.0, 1.45)))) * activeCell;
+                float2 dropletDelta = cellUV * float2(1.0, 1.45);
+                float dropletRadiusSq = dot(dropletDelta, dropletDelta);
+                float radiusSq = radius * radius;
+                float droplet = (1.0 - smoothstep(radiusSq * 0.3844, radiusSq, dropletRadiusSq)) * activeCell;
                 float streakWidth = lerp(0.016, 0.052, seed);
                 float streak = (1.0 - smoothstep(streakWidth, streakWidth * 3.0, abs(cellUV.x)))
                     * smoothstep(0.48, -0.36, cellUV.y)
                     * activeCell;
 
-                float filmNoise = saturate(Fbm(uv * float2(7.0, 13.0) + flowDirection * (_Time.y * 0.35)) - 0.52);
-                float hullFilm = filmNoise * hullStress * (0.4 + abs(lateralStreak) * 0.4);
-                float condensationMask = saturate(
-                    Fbm(uv * float2(11.0, 19.0) - flowDirection * (_Time.y * 0.12) + hullStress * 2.0) -
-                    (0.72 - hullStress * 0.18));
+                float hullFilm = 0.0;
+                float condensationMask = 0.0;
+                [branch]
+                if (hullStress > 0.001)
+                {
+                    float filmNoise = saturate(ValueNoise(uv * float2(7.0, 13.0) + flowDirection * (_Time.y * 0.35)) - 0.52);
+                    hullFilm = filmNoise * hullStress * (0.4 + abs(lateralStreak) * 0.4);
+                    condensationMask = saturate(
+                        ValueNoise(uv * float2(11.0, 19.0) - flowDirection * (_Time.y * 0.12) + hullStress * 2.0) -
+                        (0.72 - hullStress * 0.18));
+                }
                 float topBias = smoothstep(0.08, 1.0, uv.y);
                 return saturate((droplet * 0.86 + streak * 0.74 + hullFilm + condensationMask * hullStress * 0.55) * topBias);
             }
 
-            float ComputeDustMask(float2 uv, float edgeMask)
+            float ComputeDustMask(float2 uv, float edgeMask, float ambientReveal)
             {
-                float ambientReveal = saturate(_HectonVisorFluidAmbientLight * _HectonVisorFluidDustStrength * _HectonVisorFluidAmbientDustResponse);
                 if (ambientReveal <= 0.0001)
                     return 0.0;
 
                 float blueNoise = ResolveBlueNoise(uv, float2(0.0, 0.0));
                 float specks = smoothstep(1.0 - ambientReveal * 0.62, 1.0 - ambientReveal * 0.18, blueNoise);
-                float scratchNoise = Fbm(uv * float2(47.0, 83.0) + float2(7.3, 19.1));
+                float scratchNoise = Hash21(floor(uv * _ScreenParams.xy * 0.18) + float2(7.0, 19.0));
                 float scratch = smoothstep(0.72, 0.97, scratchNoise) * ambientReveal;
                 float centerProtection = smoothstep(0.0, 0.22, abs(uv.x - 0.5) + abs(uv.y - 0.5));
                 return saturate((specks * (0.32 + edgeMask * 0.68) + scratch * 0.35) * centerProtection);
@@ -210,14 +214,16 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     _HectonVisorFluidLocalVelocity.x * _HectonVisorFluidLateralStreakStrength * 0.6,
                     -1.0 - abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength * 0.4);
                 float2 noiseUV = uv * float2(10.0, 16.0) + flowDirection * (_Time.y * _HectonVisorFluidRunoffSpeed * 0.5);
-                float noiseX = Fbm(noiseUV + float2(0.0, 13.1)) - 0.5;
-                float noiseY = Fbm(noiseUV + float2(17.3, 4.7)) - 0.5;
+                float noiseX = ValueNoise(noiseUV + float2(0.0, 13.1)) - 0.5;
+                float noiseY = ValueNoise(noiseUV + float2(17.3, 4.7)) - 0.5;
                 float downwardPull = saturate(abs(_HectonVisorFluidLocalVelocity.y) * 0.15 + wetness * 0.35 + hullStress * 0.2);
                 float2 centered = uv * 2.0 - 1.0;
-                float2 edgeDirection = normalize(centered + float2(0.0001, 0.0001));
+                float2 centeredAbs = abs(centered);
+                float centeredApprox = max(0.0001, max(centeredAbs.x, centeredAbs.y) + min(centeredAbs.x, centeredAbs.y) * 0.375);
+                float2 edgeDirection = centered / centeredApprox;
                 float edgePush = _HectonVisorFluidSpeed * _HectonVisorFluidEdgeStreakStrength * (0.25 + hullStress * 0.75);
                 float2 offset = float2(noiseX + flowDirection.x * 0.18, noiseY - downwardPull * 0.2);
-                offset += edgeDirection * edgePush * (0.25 + saturate(length(centered)) * 0.75);
+                offset += edgeDirection * edgePush * (0.25 + saturate(centeredApprox) * 0.75);
                 return offset * (_HectonVisorFluidDistortionStrength * mask);
             }
 
@@ -268,9 +274,12 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 streak *= smoothstep(0.98, 0.64, drop) * smoothstep(0.02, 0.18, drop);
                 streak *= step(1.0 - saturate(rainIntensity * densityScale * 0.85), seed);
 
-                float mistNoise = saturate(Fbm(uv * float2(18.0, 32.0) + float2(_Time.y * windDir.x, -_Time.y * 1.7)) - 0.54);
+                float mistNoise = saturate(ValueNoise(uv * float2(18.0, 32.0) + float2(_Time.y * windDir.x, -_Time.y * 1.7)) - 0.54);
                 result.mask = saturate((streak + mistNoise * rainIntensity * 0.28) * rainIntensity * exposure);
-                result.normalOffset = ComputeScrollingRainNormal(uv, windDir, windSpeed, rainIntensity) * exposure;
+                [branch]
+                if (result.mask > 0.0001)
+                    result.normalOffset = ComputeScrollingRainNormal(uv, windDir, windSpeed, rainIntensity) * exposure;
+
                 return result;
             }
 
@@ -283,21 +292,54 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float hullStress = saturate(_HectonVisorFluidHullStress);
                 float intensity = saturate(_HectonVisorFluidIntensity);
                 float glitchAmount = saturate((hullStress - 0.52) * 2.08);
-                float2 flowDirection = float2(
-                    _HectonVisorFluidLocalVelocity.x * _HectonVisorFluidLateralStreakStrength,
-                    -1.0 - abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength);
-                float dropletMask = ComputeDropletMask(screenUV, flowDirection, wetness, hullStress);
-                float edgeMask = ComputeVisorEdgeMask(screenUV);
-                float dustMask = ComputeDustMask(screenUV, edgeMask);
+                float edgeMask = 0.0;
+                float edgeMaskResolved = 0.0;
+                float dustMask = 0.0;
+                float dustReveal = saturate(_HectonVisorFluidAmbientLight * _HectonVisorFluidDustStrength * _HectonVisorFluidAmbientDustResponse);
                 float thermalMotionCull = saturate(_HectonThermalDistortionMotionCull);
-                float combinedMask = saturate(dropletMask * edgeMask * intensity * (1.0 - thermalMotionCull));
+                float combinedMask = 0.0;
+                float2 refractedUV = screenUV;
+                float fluidActivity = saturate(max(wetness, hullStress) * intensity * (1.0 - thermalMotionCull));
+                float rainIntensity = saturate(_RainIntensity);
+                float lightningFlash = saturate(_HectonLightningFlash);
 
-                float2 refractedUV = saturate(screenUV + ComputeRefractionOffset(screenUV, combinedMask, wetness, hullStress));
+                [branch]
+                if (fluidActivity <= 0.001 &&
+                    dustReveal <= 0.0001 &&
+                    glitchAmount <= 0.001 &&
+                    rainIntensity <= 0.001 &&
+                    lightningFlash <= 0.0001)
+                {
+                    return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, screenUV);
+                }
+
+                [branch]
+                if (fluidActivity > 0.001)
+                {
+                    edgeMask = ComputeVisorEdgeMask(screenUV);
+                    edgeMaskResolved = 1.0;
+                    float2 flowDirection = float2(
+                        _HectonVisorFluidLocalVelocity.x * _HectonVisorFluidLateralStreakStrength,
+                        -1.0 - abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength);
+                    float dropletMask = ComputeDropletMask(screenUV, flowDirection, wetness, hullStress);
+                    combinedMask = saturate(dropletMask * edgeMask * intensity * (1.0 - thermalMotionCull));
+                    refractedUV = saturate(screenUV + ComputeRefractionOffset(screenUV, combinedMask, wetness, hullStress));
+                }
+
+                [branch]
+                if (dustReveal > 0.0001)
+                {
+                    if (edgeMaskResolved < 0.5)
+                        edgeMask = ComputeVisorEdgeMask(screenUV);
+                    dustMask = ComputeDustMask(screenUV, edgeMask, dustReveal);
+                }
+
                 half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, refractedUV);
+                [branch]
                 if (glitchAmount > 0.001)
                 {
                     float2 chromaOffset = float2(
-                        (Fbm(screenUV * float2(91.0, 47.0) + _Time.y * 3.2) - 0.5) * 0.0035 * glitchAmount,
+                        (ValueNoise(screenUV * float2(91.0, 47.0) + _Time.y * 3.2) - 0.5) * 0.0035 * glitchAmount,
                         (ValueNoise(screenUV * float2(53.0, 29.0) - _Time.y * 2.4) - 0.5) * 0.0018 * glitchAmount);
                     half red = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV + chromaOffset)).r;
                     half blue = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(refractedUV - chromaOffset)).b;
@@ -307,33 +349,58 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     float staticNoise = saturate(ValueNoise(screenUV * _ScreenParams.xy * 0.08 + _Time.y * 18.0) - 0.68) * glitchAmount;
                     color.rgb += staticNoise * half3(0.055, 0.08, 0.1);
                 }
-                half sheen = (half)saturate(combinedMask * (0.08 + wetness * 0.06 + hullStress * 0.05));
-                color.rgb = max(color.rgb, color.rgb + sheen * half3(0.018, 0.025, 0.03));
-                half3 dustTint = lerp(half3(0.018, 0.022, 0.018), half3(0.11, 0.13, 0.10), saturate(_HectonVisorFluidAmbientLight));
-                color.rgb = lerp(color.rgb, max(color.rgb - dustTint * 0.55h, half3(0.0h, 0.0h, 0.0h)), (half)(dustMask * 0.55));
-                color.rgb += dustTint * (half)(dustMask * 0.18);
+                [branch]
+                if (combinedMask > 0.0001)
+                {
+                    half sheen = (half)saturate(combinedMask * (0.08 + wetness * 0.06 + hullStress * 0.05));
+                    color.rgb = max(color.rgb, color.rgb + sheen * half3(0.018, 0.025, 0.03));
+                }
+                [branch]
+                if (dustMask > 0.0001)
+                {
+                    half3 dustTint = lerp(half3(0.018, 0.022, 0.018), half3(0.11, 0.13, 0.10), saturate(_HectonVisorFluidAmbientLight));
+                    color.rgb = lerp(color.rgb, max(color.rgb - dustTint * 0.55h, half3(0.0h, 0.0h, 0.0h)), (half)(dustMask * 0.55));
+                    color.rgb += dustTint * (half)(dustMask * 0.18);
+                }
 
-                float rainIntensity = saturate(_RainIntensity);
-                RainOverlayResult rainOverlay = ComputeScreenSpaceRain(screenUV, rainIntensity);
-                float rainMask = rainOverlay.mask;
-                half3 rainRefracted = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(screenUV + rainOverlay.normalOffset)).rgb;
-                half3 rainTint = half3(0.48h, 0.58h, 0.68h);
-                color.rgb = lerp(color.rgb, rainRefracted, (half)(rainMask * 0.36));
-                color.rgb = lerp(color.rgb, color.rgb * (1.0h - (half)(rainIntensity * 0.08)), (half)rainIntensity);
-                color.rgb += rainTint * (half)(rainMask * 0.22);
-                float lightningFlash = saturate(_HectonLightningFlash);
-                float2 lightningCenter = screenUV * 2.0 - 1.0;
-                float whiteVignette = smoothstep(0.18, 1.15, dot(lightningCenter, lightningCenter));
-                color.rgb += (half)lightningFlash * half3(1.0h, 1.0h, 1.0h) * (half)(0.10 + whiteVignette * 0.72);
+                float rainMask = 0.0;
+                [branch]
+                if (rainIntensity > 0.001)
+                {
+                    RainOverlayResult rainOverlay = ComputeScreenSpaceRain(screenUV, rainIntensity);
+                    rainMask = rainOverlay.mask;
+                    color.rgb = lerp(color.rgb, color.rgb * (1.0h - (half)(rainIntensity * 0.08)), (half)rainIntensity);
+                    [branch]
+                    if (rainMask > 0.0001)
+                    {
+                        half3 rainRefracted = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(screenUV + rainOverlay.normalOffset)).rgb;
+                        half3 rainTint = half3(0.48h, 0.58h, 0.68h);
+                        color.rgb = lerp(color.rgb, rainRefracted, (half)(rainMask * 0.36));
+                        color.rgb += rainTint * (half)(rainMask * 0.22);
+                    }
+                }
+                [branch]
+                if (lightningFlash > 0.0001)
+                {
+                    float2 lightningCenter = screenUV * 2.0 - 1.0;
+                    float whiteVignette = smoothstep(0.18, 1.15, dot(lightningCenter, lightningCenter));
+                    color.rgb += (half)lightningFlash * half3(1.0h, 1.0h, 1.0h) * (half)(0.10 + whiteVignette * 0.72);
+                }
 
                 float stormVoltage = saturate(rainIntensity * 0.72 + lightningFlash);
-                float bandSeed = Hash21(floor(screenUV * float2(11.0, 19.0)));
-                float voltageBand = abs(frac(screenUV.y * 22.0 - _Time.y * 3.1 + bandSeed) - 0.5);
-                float voltagePulse = smoothstep(0.035, 0.0, voltageBand) * stormVoltage;
-                color.rgb += half3(0.025h, 0.045h, 0.065h) * (half)voltagePulse;
+                [branch]
+                if (stormVoltage > 0.0001)
+                {
+                    float bandSeed = Hash21(floor(screenUV * float2(11.0, 19.0)));
+                    float voltageBand = abs(frac(screenUV.y * 22.0 - _Time.y * 3.1 + bandSeed) - 0.5);
+                    float voltagePulse = smoothstep(0.035, 0.0, voltageBand) * stormVoltage;
+                    color.rgb += half3(0.025h, 0.045h, 0.065h) * (half)voltagePulse;
+                }
                 return color;
             }
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

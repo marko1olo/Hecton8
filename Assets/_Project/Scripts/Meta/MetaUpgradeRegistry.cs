@@ -1,4 +1,4 @@
-using System;
+using Hecton8.Quest;
 using UnityEngine;
 
 namespace Hecton8.Meta
@@ -15,6 +15,9 @@ namespace Hecton8.Meta
         {
             /// <summary>Stable upgrade identifier.</summary>
             public readonly string Id;
+
+            /// <summary>FNV-1a stable upgrade identifier hash.</summary>
+            public readonly uint IdHash;
 
             /// <summary>Player-facing title.</summary>
             public readonly string Title;
@@ -59,6 +62,7 @@ namespace Hecton8.Meta
                 float recycleYieldBonusPerLevel = 0f)
             {
                 Id = id ?? string.Empty;
+                IdHash = QuestFlagHashKernel.ComputeStableHash(id);
                 Title = title ?? string.Empty;
                 MaxLevel = Mathf.Max(1, maxLevel);
                 BaseCost = Mathf.Max(0, baseCost);
@@ -168,11 +172,20 @@ namespace Hecton8.Meta
         /// </summary>
         public static bool TryGetDefinition(string upgradeId, out MetaUpgradeDefinition definition)
         {
-            if (!string.IsNullOrWhiteSpace(upgradeId))
+            uint upgradeHash = QuestFlagHashKernel.ComputeStableHash(upgradeId);
+            return TryGetDefinition(upgradeHash, out definition);
+        }
+
+        /// <summary>
+        /// Tries to resolve a permanent upgrade definition by stable FNV-1a identifier hash.
+        /// </summary>
+        public static bool TryGetDefinition(uint upgradeHash, out MetaUpgradeDefinition definition)
+        {
+            if (upgradeHash != 0u)
             {
                 for (int i = 0; i < _definitions.Length; i++)
                 {
-                    if (string.Equals(_definitions[i].Id, upgradeId, StringComparison.Ordinal))
+                    if (_definitions[i].IdHash == upgradeHash)
                     {
                         definition = _definitions[i];
                         return true;

@@ -15,6 +15,7 @@ using TMPro;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -34,6 +35,7 @@ namespace Hecton8.UI
         private static readonly Color Ready = new Color(0.46f, 0.98f, 0.94f, 0.92f);
         private static readonly Color Missing = new Color(1f, 0.74f, 0.22f, 0.92f);
         private static readonly Color Broken = new Color(1f, 0.48f, 0.38f, 0.92f);
+        private const float InvTwoPi = 0.15915494309f;
 
         [Header("References")]
         [SerializeField] private PlayerInventory playerInventory;
@@ -55,20 +57,11 @@ namespace Hecton8.UI
         //  CACHED FIELDS FOR ZERO-GC OPTIMIZATION
         // ════════════════════════════════════════════════════════════
 
-        /// <summary>Кэшированный StringBuilder для сборки текста слотов (избегает аллокаций в RefreshSlots)</summary>
-        private readonly System.Text.StringBuilder _slotBodyBuilder = new System.Text.StringBuilder(256);
-
-        /// <summary>Кэшированный StringBuilder для сборки summary текста (избегает аллокаций в RefreshSummary)</summary>
-        private readonly System.Text.StringBuilder _summaryBuilder = new System.Text.StringBuilder(512);
-
-        /// <summary>Кэшированный StringBuilder для сборки preset текста (избегает аллокаций в RefreshPresets)</summary>
         // COLD ALLOC: char[1024] — PDA loadout summary composition buffer — owner: PDALoadoutTab
         private readonly char[] _summaryCharBuffer = new char[1024];
         private readonly System.Collections.Generic.Dictionary<ulong, PlayerTool> _prefabToolCache = new System.Collections.Generic.Dictionary<ulong, PlayerTool>(32); // COLD ALLOC: Dictionary<ulong, PlayerTool>(32) — caches prefab PlayerTool owners for repeated loadout refreshes — owner: PDALoadoutTab
 
         /// <summary>Кэшированные строки для ToUpperInvariant (избегает повторных аллокаций)</summary>
-        private static readonly string[] _cachedUpperStrings = new string[16];
-
         /// <summary>Кэшированные строки для ItemCategory enum (избегает Enum.ToString() в hot path)</summary>
         private static readonly string[] _cachedCategoryStrings = new string[]
         {
@@ -120,7 +113,9 @@ namespace Hecton8.UI
         private int _summaryMassCharStart = -1;
         private int _summaryMassCharLength;
         private float _massPulsePhase;
+        private bool _summaryMassVertexRefreshDeferred;
         private Color32 _appliedSummaryMassColor = new Color32(0, 0, 0, 0);
+        private FixedCharBuffer _notificationBuffer = new FixedCharBuffer(192); // COLD ALLOC: char[192] - loadout HUD notification staging buffer - owner: PDALoadoutTab
 
         private bool IsTabActive =>
             isActiveAndEnabled &&
@@ -176,28 +171,6 @@ namespace Hecton8.UI
         // ════════════════════════════════════════════════════════════
         //  ZERO-GC OPTIMIZATION HELPERS
         // ════════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.
-        /// Хранит до 16 последних преобразований для повторного использования.
-        /// </summary>
-        private static string CachedToUpperInvariant(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return input;
-
-            // Простой hash для кэширования (не криптографический)
-            int hash = input.GetHashCode() & 0xF; // Маска для индекса 0-15
-
-            string cached = _cachedUpperStrings[hash];
-            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
-                return cached;
-
-            // Создаем новую строку и кэшируем
-            string upper = input.ToUpperInvariant();
-            _cachedUpperStrings[hash] = upper;
-            return upper;
-        }
 
         private void AutoResolve()
         {
@@ -753,7 +726,6 @@ namespace Hecton8.UI
                     ? Mathf.Clamp01(currentDurability / Mathf.Max(1f, meta.maxDurability))
                     : 1f;
 
-                // Используем кэшированный StringBuilder для сборки текста слота (zero-GC)
                 SetSlotBodyText(
                     _slotBodies[i],
                     category,
@@ -821,7 +793,6 @@ namespace Hecton8.UI
                 recommendedPresetDirective = advice.Summary;
             }
 
-            // Используем кэшированный StringBuilder для сборки summary текста (zero-GC)
             Span<char> summaryDestination = _summaryCharBuffer.AsSpan();
             int summaryIndex = 0;
             _summaryMassCharStart = summaryIndex;
@@ -847,15 +818,15 @@ namespace Hecton8.UI
             Append(summaryDestination, ref summaryIndex, " | KIT MASS ".AsSpan());
             AppendFloat(summaryDestination, ref summaryIndex, totalWeight, "0.0".AsSpan());
             Append(summaryDestination, ref summaryIndex, " kg | PRESET ".AsSpan());
-            Append(summaryDestination, ref summaryIndex, GetMatchedPresetName());
+            AppendMatchedPresetName(summaryDestination, ref summaryIndex);
             Append(summaryDestination, ref summaryIndex, " | IDENTITY ".AsSpan());
-            Append(summaryDestination, ref summaryIndex, GetActiveExpressionName());
+            AppendActiveExpressionName(summaryDestination, ref summaryIndex);
 
             string liveSuitName = GetLiveExpressionSuitName();
             if (!string.IsNullOrWhiteSpace(liveSuitName))
             {
                 Append(summaryDestination, ref summaryIndex, " | SHELL ".AsSpan());
-                Append(summaryDestination, ref summaryIndex, CachedToUpperInvariant(liveSuitName));
+                AppendUpper(summaryDestination, ref summaryIndex, liveSuitName);
             }
 
             Append(summaryDestination, ref summaryIndex, " | SUGGESTED ".AsSpan());
@@ -867,10 +838,9 @@ namespace Hecton8.UI
                 summaryIndex += toolSummaryLength;
 
             _summaryText.SetCharArray(_summaryCharBuffer, 0, summaryIndex);
-            _summaryText.ForceMeshUpdate(false, false);
-            ApplySummaryMassVertexColor(_inventoryMassOverCapacity ? ResolvePulsedMassColor(0f) : (Color32)Dim);
+            _summaryMassVertexRefreshDeferred = true;
+            _appliedSummaryMassColor = default;
 
-            // Оптимизируем hint текст через StringBuilder
             SetHintText(assigned, ready, missing, broken, recommendedPresetDirective);
 
             RefreshRecommendedAction();
@@ -978,7 +948,6 @@ namespace Hecton8.UI
                 {
                     int ready = CountReadyToolsInPreset(preset);
 
-                    // Используем кэшированный StringBuilder для сборки preset текста (zero-GC)
                     SetPresetBodyText(_presetBodies[i], preset, ready, matched);
                 }
             }
@@ -997,32 +966,32 @@ namespace Hecton8.UI
             {
                 if (prefab == null)
                 {
-                    NotifyWarning($"LOADOUT SLOT {slotIndex + 1} IS ALREADY EMPTY");
+                    NotifySlotMessage(true, "LOADOUT SLOT ".AsSpan(), slotIndex, " IS ALREADY EMPTY".AsSpan());
                     return;
                 }
 
                 toolManager.SetAssignedToolPrefab(slotIndex, null, holsterIfCurrentInvalid: true);
                 RefreshAll();
-                NotifyInfo($"LOADOUT CLEARED — SLOT {slotIndex + 1}");
+                NotifySlotMessage(false, "LOADOUT CLEARED - SLOT ".AsSpan(), slotIndex, ReadOnlySpan<char>.Empty);
                 return;
             }
 
             if (prefab == null || tool == null)
             {
-                NotifyWarning($"NO TOOL ASSIGNED TO SLOT {slotIndex + 1}");
+                NotifySlotMessage(true, "NO TOOL ASSIGNED TO SLOT ".AsSpan(), slotIndex, ReadOnlySpan<char>.Empty);
                 return;
             }
 
             ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (tool.Metadata != null && durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID))
             {
-                NotifyWarning($"{(item != null ? CachedToUpperInvariant(item.itemName) : "TOOL")} IS BROKEN");
+                NotifyUpperSuffix(true, item != null ? item.itemName : "TOOL", " IS BROKEN".AsSpan());
                 return;
             }
 
             if (!toolManager.IsToolAvailableInSlot(slotIndex))
             {
-                NotifyWarning($"{(item != null ? CachedToUpperInvariant(item.itemName) : "TOOL")} IS NOT IN CARGO");
+                NotifyUpperSuffix(true, item != null ? item.itemName : "TOOL", " IS NOT IN CARGO".AsSpan());
                 return;
             }
 
@@ -1030,13 +999,13 @@ namespace Hecton8.UI
             {
                 toolManager.Holster();
                 RefreshAll();
-                NotifyInfo($"LOADOUT HOLSTERED — SLOT {slotIndex + 1}");
+                NotifySlotMessage(false, "LOADOUT HOLSTERED - SLOT ".AsSpan(), slotIndex, ReadOnlySpan<char>.Empty);
                 return;
             }
 
             toolManager.SwitchToSlot(slotIndex);
             RefreshAll();
-            NotifyInfo($"LOADOUT ACTIVE — SLOT {slotIndex + 1}: {(item != null ? CachedToUpperInvariant(item.itemName) : CachedToUpperInvariant(prefab.name))}");
+            NotifyActiveSlot(slotIndex, item != null ? item.itemName : prefab.name);
         }
 
         internal void InvokePresetAction(int presetIndex)
@@ -1053,12 +1022,12 @@ namespace Hecton8.UI
 
             if (!toolManager.ApplyLoadoutPreset(preset, holsterBeforeApplyingPreset))
             {
-                NotifyWarning($"FAILED TO APPLY {CachedToUpperInvariant(preset.presetName)}");
+                NotifyPrefixUpper(true, "FAILED TO APPLY ".AsSpan(), preset.presetName);
                 return;
             }
 
             RefreshAll();
-            NotifyInfo($"LOADOUT PRESET APPLIED - {CachedToUpperInvariant(preset.presetName)}");
+            NotifyPrefixUpper(false, "LOADOUT PRESET APPLIED - ".AsSpan(), preset.presetName);
         }
 
         internal void InvokeRecommendedPresetAction()
@@ -1081,7 +1050,7 @@ namespace Hecton8.UI
 
             if (MatchesPreset(preset))
             {
-                NotifyInfo($"SUGGESTED KIT ALREADY ACTIVE - {CachedToUpperInvariant(preset.presetName)}");
+                NotifyPrefixUpper(false, "SUGGESTED KIT ALREADY ACTIVE - ".AsSpan(), preset.presetName);
                 return;
             }
 
@@ -1117,6 +1086,15 @@ namespace Hecton8.UI
                 hudNotification.ShowInfo(message);
         }
 
+        private void NotifyInfo(in FixedCharBuffer messageBuffer)
+        {
+            if (hudNotification == null)
+                HUDNotification.TryGetActive(out hudNotification);
+
+            if (hudNotification != null)
+                hudNotification.ShowInfo(in messageBuffer);
+        }
+
         private void NotifyWarning(string message)
         {
             if (hudNotification == null)
@@ -1124,6 +1102,59 @@ namespace Hecton8.UI
 
             if (hudNotification != null)
                 hudNotification.ShowWarning(message);
+        }
+
+        private void NotifyWarning(in FixedCharBuffer messageBuffer)
+        {
+            if (hudNotification == null)
+                HUDNotification.TryGetActive(out hudNotification);
+
+            if (hudNotification != null)
+                hudNotification.ShowWarning(in messageBuffer);
+        }
+
+        private void NotifySlotMessage(bool warning, ReadOnlySpan<char> prefix, int slotIndex, ReadOnlySpan<char> suffix)
+        {
+            _notificationBuffer.Clear();
+            _notificationBuffer.Append(prefix);
+            _notificationBuffer.AppendInt(slotIndex + 1);
+            _notificationBuffer.Append(suffix);
+            if (warning)
+                NotifyWarning(in _notificationBuffer);
+            else
+                NotifyInfo(in _notificationBuffer);
+        }
+
+        private void NotifyUpperSuffix(bool warning, string value, ReadOnlySpan<char> suffix)
+        {
+            _notificationBuffer.Clear();
+            AppendUpperInvariant(ref _notificationBuffer, value);
+            _notificationBuffer.Append(suffix);
+            if (warning)
+                NotifyWarning(in _notificationBuffer);
+            else
+                NotifyInfo(in _notificationBuffer);
+        }
+
+        private void NotifyPrefixUpper(bool warning, ReadOnlySpan<char> prefix, string value)
+        {
+            _notificationBuffer.Clear();
+            _notificationBuffer.Append(prefix);
+            AppendUpperInvariant(ref _notificationBuffer, value);
+            if (warning)
+                NotifyWarning(in _notificationBuffer);
+            else
+                NotifyInfo(in _notificationBuffer);
+        }
+
+        private void NotifyActiveSlot(int slotIndex, string itemName)
+        {
+            _notificationBuffer.Clear();
+            _notificationBuffer.Append("LOADOUT ACTIVE - SLOT ".AsSpan());
+            _notificationBuffer.AppendInt(slotIndex + 1);
+            _notificationBuffer.Append(": ".AsSpan());
+            AppendUpperInvariant(ref _notificationBuffer, itemName);
+            NotifyInfo(in _notificationBuffer);
         }
 
         private void BuildPresetStrip(RectTransform self)
@@ -1225,19 +1256,25 @@ namespace Hecton8.UI
                 : new Color(0.08f, 0.18f, 0.2f, 0.82f);
         }
 
-        private string GetMatchedPresetName()
+        private void AppendMatchedPresetName(Span<char> destination, ref int index)
         {
             if (loadoutPresets == null)
-                return "--";
+            {
+                Append(destination, ref index, "--".AsSpan());
+                return;
+            }
 
             for (int i = 0; i < loadoutPresets.Length; i++)
             {
                 ToolLoadoutPreset preset = loadoutPresets[i];
                 if (preset != null && MatchesPreset(preset))
-                    return CachedToUpperInvariant(preset.presetName);
+                {
+                    AppendUpper(destination, ref index, preset.presetName);
+                    return;
+                }
             }
 
-            return "CUSTOM";
+            Append(destination, ref index, "CUSTOM".AsSpan());
         }
 
         private bool MatchesPreset(ToolLoadoutPreset preset)
@@ -1276,24 +1313,6 @@ namespace Hecton8.UI
             return count;
         }
 
-        private static string GetPresetBrief(ToolLoadoutPreset preset)
-        {
-            if (preset == null)
-                return "NO DATA";
-
-            string description = preset.description;
-            if (string.IsNullOrWhiteSpace(description))
-                return "Standard expedition slot map.";
-
-            int newline = description.IndexOf('\n');
-            if (newline >= 0)
-                description = description.Substring(0, newline);
-
-            return description.Length > 44
-                ? description.Substring(0, 44).TrimEnd() + "..."
-                : description;
-        }
-
         private PlayerTool ResolvePrefabTool(GameObject prefab)
         {
             if (prefab == null)
@@ -1313,14 +1332,18 @@ namespace Hecton8.UI
             return resolvedTool;
         }
 
-        private string GetActiveExpressionName()
+        private void AppendActiveExpressionName(Span<char> destination, ref int index)
         {
             if (playerExpressionManager == null)
                 playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
 
-            return playerExpressionManager != null
-                ? CachedToUpperInvariant(playerExpressionManager.GetActiveProfileName())
-                : "STANDARD";
+            if (playerExpressionManager != null)
+            {
+                AppendUpper(destination, ref index, playerExpressionManager.GetActiveProfileName());
+                return;
+            }
+
+            Append(destination, ref index, "STANDARD".AsSpan());
         }
 
         private string GetActiveExpressionSummary()
@@ -1439,9 +1462,15 @@ namespace Hecton8.UI
             if (_summaryText == null || _summaryMassCharStart < 0 || _summaryMassCharLength <= 0 || !IsTabActive)
                 return;
 
+            if (_summaryMassVertexRefreshDeferred)
+            {
+                _summaryMassVertexRefreshDeferred = false;
+                return;
+            }
+
             if (_inventoryMassOverCapacity)
             {
-                _massPulsePhase = Mathf.Repeat(Time.unscaledTime * 4.2f, Mathf.PI * 2f);
+                _massPulsePhase += deltaTime * 4.2f;
                 ApplySummaryMassVertexColor(ResolvePulsedMassColor(_massPulsePhase));
                 return;
             }
@@ -1452,8 +1481,10 @@ namespace Hecton8.UI
 
         private Color32 ResolvePulsedMassColor(float phase)
         {
-            float pulse = 0.5f + 0.5f * Mathf.Sin(phase);
-            Color blended = Color.Lerp(Broken, Missing, pulse * 0.35f);
+            float phase01 = math.frac((phase * InvTwoPi) + 0.25f);
+            float triangle = 1f - math.abs(phase01 * 2f - 1f);
+            float pulse = triangle * triangle;
+            Color blended = LerpColorClamped(Broken, Missing, pulse * 0.35f);
             blended.a = 0.98f;
             return blended;
         }
@@ -1470,7 +1501,7 @@ namespace Hecton8.UI
             if (textInfo == null || textInfo.characterCount <= 0 || _summaryMassCharStart >= textInfo.characterCount)
                 return;
 
-            int end = Mathf.Min(textInfo.characterCount, _summaryMassCharStart + _summaryMassCharLength);
+            int end = math.min(textInfo.characterCount, _summaryMassCharStart + _summaryMassCharLength);
             for (int i = _summaryMassCharStart; i < end; i++)
             {
                 TMP_CharacterInfo characterInfo = textInfo.characterInfo[i];
@@ -1488,6 +1519,16 @@ namespace Hecton8.UI
 
             _summaryText.UpdateVertexData(TMP_VertexDataUpdateFlags.Colors32);
             _appliedSummaryMassColor = color;
+        }
+
+        private static Color LerpColorClamped(Color from, Color to, float t)
+        {
+            float u = math.saturate(t);
+            return new Color(
+                from.r + (to.r - from.r) * u,
+                from.g + (to.g - from.g) * u,
+                from.b + (to.b - from.b) * u,
+                from.a + (to.a - from.a) * u);
         }
 
         private static RectTransform CreateRect(Transform parent, string name)
@@ -1610,7 +1651,7 @@ namespace Hecton8.UI
                 for (int i = 0; i < source.Length; i++)
                 {
                     char character = source[i];
-                    destination[i] = replaceUnderscores && character == '_' ? ' ' : char.ToUpperInvariant(character);
+                    destination[i] = replaceUnderscores && character == '_' ? ' ' : ToAsciiUpperInvariant(character);
                 }
 
                 text.SetCharArray(lease.Buffer, 0, source.Length);
@@ -1639,7 +1680,7 @@ namespace Hecton8.UI
                 Span<char> destination = lease.Buffer.AsSpan();
                 prefix.CopyTo(destination);
                 for (int i = 0; i < source.Length; i++)
-                    destination[prefix.Length + i] = char.ToUpperInvariant(source[i]);
+                    destination[prefix.Length + i] = ToAsciiUpperInvariant(source[i]);
 
                 text.SetCharArray(lease.Buffer, 0, totalLength);
             }
@@ -1660,7 +1701,9 @@ namespace Hecton8.UI
                 int index = 0;
                 Append(destination, ref index, GetLoadoutDirective(assigned, ready, missing, broken));
                 Append(destination, ref index, "  LIVE: ".AsSpan());
-                Append(destination, ref index, toolManager != null ? toolManager.GetCurrentToolOperationalDirective() : string.Empty);
+                if (toolManager != null &&
+                    toolManager.TryWriteCurrentToolOperationalDirective(destination.Slice(index), out int directiveLength))
+                    index += directiveLength;
                 Append(destination, ref index, "  IDENTITY: ".AsSpan());
                 Append(destination, ref index, GetActiveExpressionSummary());
 
@@ -1668,14 +1711,14 @@ namespace Hecton8.UI
                 if (!string.IsNullOrWhiteSpace(identityLoadout))
                 {
                     Append(destination, ref index, "  IDENTITY KIT: ".AsSpan());
-                    Append(destination, ref index, CachedToUpperInvariant(identityLoadout));
+                    AppendUpper(destination, ref index, identityLoadout);
                 }
 
                 string identitySuit = GetActiveExpressionSuitName();
                 if (!string.IsNullOrWhiteSpace(identitySuit))
                 {
                     Append(destination, ref index, "  IDENTITY SHELL: ".AsSpan());
-                    Append(destination, ref index, CachedToUpperInvariant(identitySuit));
+                    AppendUpper(destination, ref index, identitySuit);
 
                     if (!IsExpressionSuitApplied())
                         Append(destination, ref index, " (PENDING SYNC)".AsSpan());
@@ -1700,7 +1743,7 @@ namespace Hecton8.UI
             {
                 Span<char> destination = lease.Buffer.AsSpan();
                 int index = 0;
-                Append(destination, ref index, GetPresetBrief(preset));
+                AppendPresetBrief(destination, ref index, preset);
                 Append(destination, ref index, "\nREADY NOW ".AsSpan());
                 AppendInt(destination, ref index, readyCount);
                 Append(destination, ref index, "/4".AsSpan());
@@ -1713,6 +1756,38 @@ namespace Hecton8.UI
             {
                 CharBufferPool.Release(lease);
             }
+        }
+
+        private static void AppendPresetBrief(Span<char> destination, ref int index, ToolLoadoutPreset preset)
+        {
+            if (preset == null)
+            {
+                Append(destination, ref index, "NO DATA".AsSpan());
+                return;
+            }
+
+            string description = preset.description;
+            if (string.IsNullOrWhiteSpace(description))
+            {
+                Append(destination, ref index, "Standard expedition slot map.".AsSpan());
+                return;
+            }
+
+            int end = description.Length;
+            int newline = description.IndexOf('\n');
+            if (newline >= 0)
+                end = newline;
+
+            bool truncated = end > 44;
+            if (truncated)
+                end = 44;
+
+            while (end > 0 && char.IsWhiteSpace(description[end - 1]))
+                end--;
+
+            Append(destination, ref index, description.AsSpan(0, end));
+            if (truncated)
+                Append(destination, ref index, "...".AsSpan());
         }
 
         private static void SetSlotHeaderText(TMP_Text text, int slotNumber)
@@ -1796,9 +1871,28 @@ namespace Hecton8.UI
             int copyLength = Mathf.Min(source.Length, destination.Length - index);
             Span<char> target = destination.Slice(index, copyLength);
             for (int i = 0; i < copyLength; i++)
-                target[i] = char.ToUpperInvariant(source[i]);
+                target[i] = ToAsciiUpperInvariant(source[i]);
 
             index += copyLength;
+        }
+
+        private static void AppendUpperInvariant(ref FixedCharBuffer buffer, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return;
+
+            Span<char> scratch = stackalloc char[1];
+            for (int i = 0; i < value.Length; i++)
+            {
+                scratch[0] = ToAsciiUpperInvariant(value[i]);
+                if (!buffer.Append(scratch))
+                    return;
+            }
+        }
+
+        private static char ToAsciiUpperInvariant(char value)
+        {
+            return value >= 'a' && value <= 'z' ? (char)(value - 32) : char.ToUpperInvariant(value);
         }
 
         private static void AppendInt(Span<char> destination, ref int index, int value)

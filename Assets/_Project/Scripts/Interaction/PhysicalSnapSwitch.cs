@@ -16,8 +16,17 @@ namespace Hecton8.Interaction
     {
         private const uint PhysicalSwitchToolId = 0x53574954u;
         private const float MinimumDeltaTime = 0.0001f;
-        private const byte BothMotorMask = 0b0011;
+        private const float RadiansPerDegree = 0.0174532924f;
+        private const float HalfPi = 1.57079637f;
+        private const float Pi = 3.14159274f;
+        private const float TwoPi = 6.28318548f;
+        private const byte LeftMotorMask = 0b0001;
+        private const byte RightMotorMask = 0b0010;
         private const byte CriticalPriority = 3;
+        private const float MaximumSwitchDeltaTime = 0.05f;
+        private const float MinimumSnapCooldownSeconds = 0.02f;
+        private const float MaximumSnapCooldownSeconds = 0.5f;
+        private const float MinimumAngleSpanDegrees = 0.0001f;
 
         private enum SnapAxis : byte
         {
@@ -38,13 +47,21 @@ namespace Hecton8.Interaction
         [SerializeField, Range(0.02f, 0.5f)] private float snapCooldownSeconds = 0.08f;
         [SerializeField] private bool initialOn;
 
+        [Header("Haptics")]
+        [SerializeField, Tooltip("Optional layers treated as left-hand finger sources before falling back to the authored hand side.")]
+        private LayerMask leftHandSourceLayers;
+        [SerializeField, Tooltip("Optional layers treated as right-hand finger sources before falling back to the authored hand side.")]
+        private LayerMask rightHandSourceLayers;
+
         private Quaternion _baseLocalRotation;
+        private Quaternion _offLocalRotation;
+        private Quaternion _onLocalRotation;
+        private Transform _cachedTransform;
         private float _currentAngle;
         private float _targetAngle;
-        private float _nextSnapTime;
+        private float _snapCooldownRemaining;
         private bool _isOn;
         private bool _registered;
-        private int _lastHandInsideFrame = -1;
 
         public bool IsOn => _isOn;
         public Collider ActivationCollider => activationVolume;
@@ -56,20 +73,23 @@ namespace Hecton8.Interaction
             Collider handSourceCollider,
             PhysicalHandSide fallbackHandSide)
         {
-            if (activationVolume == null)
+            if (activationVolume == null || !IsFiniteVector(handPosition))
                 return false;
 
-            _lastHandInsideFrame = Time.frameCount;
             Vector3 localPoint = activationVolume.transform.InverseTransformPoint(handPosition) - activationVolume.center;
+            if (!IsFiniteVector(localPoint))
+                return false;
+
             bool desiredOn = ResolveDesiredState(localPoint);
-            if (desiredOn == _isOn || Time.unscaledTime < _nextSnapTime)
+            if (desiredOn == _isOn || _snapCooldownRemaining > 0f)
                 return true;
 
             _isOn = desiredOn;
-            _targetAngle = _isOn ? onAngleDegrees : offAngleDegrees;
-            _nextSnapTime = Time.unscaledTime + snapCooldownSeconds;
+            _targetAngle = _isOn ? ResolveSafeOnAngleDegrees() : ResolveSafeOffAngleDegrees();
+            _snapCooldownRemaining = ResolveSafeSnapCooldownSeconds();
+            TryRegister();
             PublishSwitchSignal(handPosition, handForward, interactionSignals);
-            EnqueueClickHaptic();
+            EnqueueClickHaptic(handSourceCollider, fallbackHandSide);
             return true;
         }
 
@@ -85,12 +105,14 @@ namespace Hecton8.Interaction
 
         private void Awake()
         {
+            _cachedTransform = transform;
             ResolveReferences();
             _isOn = initialOn;
-            _currentAngle = _isOn ? onAngleDegrees : offAngleDegrees;
+            _currentAngle = _isOn ? ResolveSafeOnAngleDegrees() : ResolveSafeOffAngleDegrees();
             _targetAngle = _currentAngle;
             if (leverTransform != null)
                 _baseLocalRotation = leverTransform.localRotation;
+            CacheSnapRotations();
             ApplyAngle(_currentAngle);
         }
 
@@ -98,14 +120,14 @@ namespace Hecton8.Interaction
         {
             ResolveReferences();
             RegisterCollider();
-            TryRegister();
+            RefreshTickRegistration();
         }
 
         private void OnDisable()
         {
             Unregister();
             UnregisterCollider();
-            _lastHandInsideFrame = -1;
+            _snapCooldownRemaining = 0f;
         }
 
         private void OnDestroy()
@@ -115,25 +137,45 @@ namespace Hecton8.Interaction
 
         public void Tick(float dt)
         {
-            bool handInside = _lastHandInsideFrame == Time.frameCount;
-            if (!handInside && math.abs(_targetAngle - _currentAngle) < 0.001f)
-                return;
+            float safeDeltaTime = SanitizeDeltaTime(dt);
+            if (_snapCooldownRemaining > 0f)
+                _snapCooldownRemaining = math.max(0f, _snapCooldownRemaining - safeDeltaTime);
 
-            float alpha = 1f - math.exp(-snapSpeed * math.max(dt, MinimumDeltaTime));
+            if (math.abs(_targetAngle - _currentAngle) < 0.001f)
+            {
+                _currentAngle = _targetAngle;
+                ApplyAngle(_currentAngle);
+                if (_snapCooldownRemaining <= 0f)
+                    Unregister();
+                return;
+            }
+
+            float alpha = FastDecayBlend(ResolveSafeSnapSpeed(), safeDeltaTime);
             _currentAngle = math.lerp(_currentAngle, _targetAngle, alpha);
             ApplyAngle(_currentAngle);
+        }
+
+        private static float FastDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.min(math.max(0f, speed) * math.max(deltaTime, MinimumDeltaTime), 3f);
+            float x2 = x * x;
+            return math.saturate(1f - math.rcp(1f + x + (0.5f * x2)));
         }
 
         private void ResolveReferences()
         {
             if (activationVolume == null)
                 TryGetComponent(out activationVolume);
+            if (_cachedTransform == null)
+                _cachedTransform = transform;
+
             if (leverTransform == null)
                 leverTransform = transform;
             if (activationVolume != null)
                 activationVolume.isTrigger = true;
             if (_baseLocalRotation == default && leverTransform != null)
                 _baseLocalRotation = leverTransform.localRotation;
+            CacheSnapRotations();
         }
 
         private void RegisterCollider()
@@ -153,8 +195,15 @@ namespace Hecton8.Interaction
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+        }
+
+        private void RefreshTickRegistration()
+        {
+            if (math.abs(_targetAngle - _currentAngle) >= 0.001f || _snapCooldownRemaining > 0f)
+                TryRegister();
+            else
+                Unregister();
         }
 
         private void Unregister()
@@ -184,7 +233,20 @@ namespace Hecton8.Interaction
             if (leverTransform == null)
                 return;
 
-            leverTransform.localRotation = _baseLocalRotation * Quaternion.AngleAxis(angleDegrees, ResolveAxisVector());
+            float offAngle = ResolveSafeOffAngleDegrees();
+            float onAngle = ResolveSafeOnAngleDegrees();
+            float span = onAngle - offAngle;
+            float blend = math.abs(span) > MinimumAngleSpanDegrees
+                ? math.saturate((angleDegrees - offAngle) / span)
+                : (_isOn ? 1f : 0f);
+            leverTransform.localRotation = ApproximateNlerpNoSqrt(_offLocalRotation, _onLocalRotation, blend);
+        }
+
+        private void CacheSnapRotations()
+        {
+            Vector3 axis = ResolveAxisVector();
+            _offLocalRotation = _baseLocalRotation * ApproximateAxisRotationNoTrig(axis, ResolveSafeOffAngleDegrees() * RadiansPerDegree);
+            _onLocalRotation = _baseLocalRotation * ApproximateAxisRotationNoTrig(axis, ResolveSafeOnAngleDegrees() * RadiansPerDegree);
         }
 
         private Vector3 ResolveAxisVector()
@@ -200,19 +262,138 @@ namespace Hecton8.Interaction
             }
         }
 
+        private static Quaternion ApproximateAxisRotationNoTrig(Vector3 axis, float radians)
+        {
+            Vector3 safeAxis = NormalizeVectorApproxNoSqrt(axis, Vector3.right);
+            ApproximateSinCosFullNoTrig(radians * 0.5f, out float sinHalf, out float cosHalf);
+            Quaternion rotation = new Quaternion(
+                safeAxis.x * sinHalf,
+                safeAxis.y * sinHalf,
+                safeAxis.z * sinHalf,
+                cosHalf);
+            return NormalizeQuaternionNoSqrt(rotation);
+        }
+
+        private static Quaternion ApproximateNlerpNoSqrt(Quaternion from, Quaternion to, float t)
+        {
+            float4 fromValue = new float4(from.x, from.y, from.z, from.w);
+            float4 toValue = new float4(to.x, to.y, to.z, to.w);
+            toValue = math.select(toValue, -toValue, math.dot(fromValue, toValue) < 0f);
+            float4 blended = math.lerp(fromValue, toValue, math.saturate(t));
+            float lenSq = math.max(math.dot(blended, blended), 0.000001f);
+            blended *= 1.5f - (0.5f * lenSq);
+            return new Quaternion(blended.x, blended.y, blended.z, blended.w);
+        }
+
+        private static Quaternion NormalizeQuaternionNoSqrt(Quaternion value)
+        {
+            float4 v = new float4(value.x, value.y, value.z, value.w);
+            v *= ApproximateInverseMagnitudeNoSqrt(v);
+            return new Quaternion(v.x, v.y, v.z, v.w);
+        }
+
+        private static Vector3 NormalizeVectorApproxNoSqrt(Vector3 value, Vector3 fallback)
+        {
+            float lenSq = value.sqrMagnitude;
+            if (lenSq <= 0.000001f || !math.all(math.isfinite(new float3(value.x, value.y, value.z))))
+                return fallback;
+
+            return value * ApproximateInverseMagnitudeNoSqrt(value);
+        }
+
+        private static float ApproximateInverseMagnitudeNoSqrt(Vector3 value)
+        {
+            float3 absValue = math.abs(new float3(value.x, value.y, value.z));
+            float largest = math.cmax(absValue);
+            float smallest = math.cmin(absValue);
+            float middle = absValue.x + absValue.y + absValue.z - largest - smallest;
+            float magnitude = largest + (middle * 0.375f) + (smallest * 0.125f);
+            return math.rcp(math.max(magnitude, 0.000001f));
+        }
+
+        private static float ApproximateInverseMagnitudeNoSqrt(float4 value)
+        {
+            float4 absValue = math.abs(value);
+            float largest = math.max(math.max(absValue.x, absValue.y), math.max(absValue.z, absValue.w));
+            float smallest = math.min(math.min(absValue.x, absValue.y), math.min(absValue.z, absValue.w));
+            float middleSum = absValue.x + absValue.y + absValue.z + absValue.w - largest - smallest;
+            float magnitude = largest + (middleSum * 0.25f) + (smallest * 0.125f);
+            return math.rcp(math.max(magnitude, 0.000001f));
+        }
+
+        private static bool IsFiniteVector(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static float SanitizeDeltaTime(float value)
+        {
+            return math.isfinite(value) ? math.clamp(value, 0f, MaximumSwitchDeltaTime) : 0f;
+        }
+
+        private float ResolveSafeOffAngleDegrees()
+        {
+            return math.isfinite(offAngleDegrees) ? math.clamp(offAngleDegrees, -90f, 90f) : -28f;
+        }
+
+        private float ResolveSafeOnAngleDegrees()
+        {
+            return math.isfinite(onAngleDegrees) ? math.clamp(onAngleDegrees, -90f, 90f) : 28f;
+        }
+
+        private float ResolveSafeSnapSpeed()
+        {
+            return math.isfinite(snapSpeed) ? math.clamp(snapSpeed, 4f, 80f) : 36f;
+        }
+
+        private float ResolveSafeSnapCooldownSeconds()
+        {
+            return math.isfinite(snapCooldownSeconds)
+                ? math.clamp(snapCooldownSeconds, MinimumSnapCooldownSeconds, MaximumSnapCooldownSeconds)
+                : 0.08f;
+        }
+
+        private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float cosSign = 1f;
+            if (x > HalfPi)
+            {
+                x = Pi - x;
+                cosSign = -1f;
+            }
+            else if (x < -HalfPi)
+            {
+                x = -Pi - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
         private void PublishSwitchSignal(Vector3 handPosition, Vector3 handForward, IInteractionSignalService interactionSignals)
         {
-            if (interactionSignals == null || !interactionSignals.IsInitialized)
+            if (interactionSignals == null || !interactionSignals.IsInitialized || !IsFiniteVector(handPosition))
                 return;
 
             Vector3 absoluteHitPoint = HectonFloatingOrigin.ToAbsoluteUniversePosition(handPosition);
-            Vector3 safeDirection = (Vector3)math.normalizesafe((float3)handForward, (float3)transform.forward);
+            Vector3 fallbackForward = _cachedTransform != null ? _cachedTransform.forward : Vector3.forward;
+            if (!IsFiniteVector(fallbackForward))
+                fallbackForward = Vector3.forward;
+
+            Vector3 safeDirection = NormalizeVectorApproxNoSqrt(handForward, fallbackForward);
+            if (!IsFiniteVector(absoluteHitPoint) || !IsFiniteVector(safeDirection))
+                return;
+
+            float signalRange = math.abs(ResolveSafeOnAngleDegrees() - ResolveSafeOffAngleDegrees());
             InteractionPacket packet = new InteractionPacket(
                 PhysicalSwitchToolId,
                 (float3)absoluteHitPoint,
                 (float3)safeDirection,
                 _isOn ? 1f : 0.5f,
-                math.abs(onAngleDegrees - offAngleDegrees),
+                signalRange,
                 (byte)ToolActionMode.Primary,
                 (byte)ToolStateBits.Active,
                 unchecked((uint)Time.frameCount));
@@ -228,7 +409,7 @@ namespace Hecton8.Interaction
             interactionSignals.Publish(in signal, activationVolume);
         }
 
-        private static void EnqueueClickHaptic()
+        private void EnqueueClickHaptic(Collider handSourceCollider, PhysicalHandSide fallbackHandSide)
         {
             ToolHapticsRuntime.EnqueueSinusoidalCommand(
                 0.16f,
@@ -236,7 +417,22 @@ namespace Hecton8.Interaction
                 0.045f,
                 92f,
                 CriticalPriority,
-                BothMotorMask);
+                ResolveHapticMotorMask(handSourceCollider, fallbackHandSide));
+        }
+
+        private byte ResolveHapticMotorMask(Collider handSourceCollider, PhysicalHandSide fallbackHandSide)
+        {
+            if (handSourceCollider != null)
+            {
+                int sourceLayerBit = 1 << handSourceCollider.gameObject.layer;
+                if ((leftHandSourceLayers.value & sourceLayerBit) != 0)
+                    return LeftMotorMask;
+
+                if ((rightHandSourceLayers.value & sourceLayerBit) != 0)
+                    return RightMotorMask;
+            }
+
+            return fallbackHandSide == PhysicalHandSide.Left ? LeftMotorMask : RightMotorMask;
         }
 
 #if UNITY_EDITOR
@@ -246,6 +442,19 @@ namespace Hecton8.Interaction
                 TryGetComponent(out activationVolume);
             if (activationVolume != null)
                 activationVolume.isTrigger = true;
+
+            if (!math.isfinite(offAngleDegrees))
+                offAngleDegrees = -28f;
+            if (!math.isfinite(onAngleDegrees))
+                onAngleDegrees = 28f;
+            offAngleDegrees = math.clamp(offAngleDegrees, -90f, 90f);
+            onAngleDegrees = math.clamp(onAngleDegrees, -90f, 90f);
+            if (!math.isfinite(snapSpeed))
+                snapSpeed = 36f;
+            if (!math.isfinite(snapCooldownSeconds))
+                snapCooldownSeconds = 0.08f;
+
+            CacheSnapRotations();
         }
 #endif
     }

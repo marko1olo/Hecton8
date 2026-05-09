@@ -66,7 +66,8 @@ namespace Hecton8.Construction
 
         private void Awake()
         {
-            _powerNode = GetComponent<PowerNode>();
+            if (!TryGetComponent(out _powerNode))
+                _powerNode = null;
         }
 
         private void OnEnable()
@@ -90,7 +91,7 @@ namespace Hecton8.Construction
         public void OnSpawn()
         {
             _hasPower = true;
-            _isCharging = false;
+            SetChargingState(false);
             _slottedTool = null;
             _slottedToolTransform = null;
             TryRegister();
@@ -101,7 +102,7 @@ namespace Hecton8.Construction
         {
             TryRestoreToolPose();
             _hasPower = true;
-            _isCharging = false;
+            SetChargingState(false);
             TryUnregister();
             RefreshDiagnostics();
         }
@@ -109,6 +110,9 @@ namespace Hecton8.Construction
         public void OnPowerStatusChanged(bool hasPower)
         {
             _hasPower = hasPower;
+            if (!hasPower)
+                SetChargingState(false);
+
             RefreshDiagnostics();
         }
 
@@ -116,7 +120,7 @@ namespace Hecton8.Construction
         {
             if (_slottedTool == null || !_hasPower || GlobalRegistry.ModularEquipment == null)
             {
-                _isCharging = false;
+                SetChargingState(false);
                 RefreshDiagnostics();
                 return;
             }
@@ -126,18 +130,15 @@ namespace Hecton8.Construction
             float currentBattery = equipment.GetBatteryNormalized(toolId, _slottedTool.ResolveModularBatteryNormalized());
             if (currentBattery >= 0.999f)
             {
-                _isCharging = false;
+                SetChargingState(false);
                 _debugBattery01 = 1f;
                 return;
             }
 
-            _isCharging = true;
+            SetChargingState(true);
             float nextBattery = math.saturate(currentBattery + chargeRateNormalizedPerSecond * SlowTickDeltaSeconds);
             equipment.SetBattery(toolId, nextBattery);
             _debugBattery01 = nextBattery;
-
-            if (_powerNode != null && _powerNode.Grid != null)
-                _powerNode.Grid.MarkDirty();
         }
 
         public void OnHoverStart() { }
@@ -195,8 +196,7 @@ namespace Hecton8.Construction
             _slottedToolTransform.localRotation = Quaternion.identity;
             _slottedToolTransform.localScale = Vector3.one;
 
-            if (_powerNode != null && _powerNode.Grid != null)
-                _powerNode.Grid.MarkDirty();
+            MarkGridDirty();
 
             RefreshDiagnostics();
             return true;
@@ -216,14 +216,13 @@ namespace Hecton8.Construction
             _slottedTool = null;
             _slottedToolTransform = null;
             _originalParent = null;
-            _isCharging = false;
+            SetChargingState(false);
             if (_owningToolManager != null)
                 _owningToolManager.EndExternalToolDock(restoredTool);
 
             _owningToolManager = null;
 
-            if (_powerNode != null && _powerNode.Grid != null)
-                _powerNode.Grid.MarkDirty();
+            MarkGridDirty();
         }
 
         private static PlayerToolManager ResolveToolManager(Transform interactor)
@@ -261,6 +260,21 @@ namespace Hecton8.Construction
         {
             _debugHasPower = _hasPower;
             _debugHasTool = _slottedTool != null;
+        }
+
+        private void SetChargingState(bool isCharging)
+        {
+            if (_isCharging == isCharging)
+                return;
+
+            _isCharging = isCharging;
+            MarkGridDirty();
+        }
+
+        private void MarkGridDirty()
+        {
+            if (_powerNode != null && _powerNode.Grid != null)
+                _powerNode.Grid.MarkDirty();
         }
     }
 }

@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.UI
@@ -27,6 +28,9 @@ namespace Hecton8.UI
         private const float BaseUnderlaySoftness = 0.28f;
         private const float BaseGlowOuter = 0.18f;
         private const float BaseGlowInner = 0.04f;
+        private const float InvTwoPi = 0.15915494309f;
+        private const float HalfPi = 1.57079632679f;
+        private const string RuntimeMaterialName = "MAT_TMP_MadnessFx";
 
         private TextMeshProUGUI _target;
         private Material _materialInstance;
@@ -93,8 +97,15 @@ namespace Hecton8.UI
             }
 
             _waveTime += deltaTime;
-            float phase = Mathf.Sin(_waveTime * OffsetFrequency);
+            float phase = EvaluateCheapWaveSigned(_waveTime * OffsetFrequency);
             ApplyActiveState(phase);
+        }
+
+        private static float EvaluateCheapWaveSigned(float phaseRadians)
+        {
+            float phase01 = math.frac((phaseRadians * InvTwoPi) + 0.25f);
+            float triangle = 1f - math.abs(phase01 * 2f - 1f);
+            return (triangle * 2f) - 1f;
         }
 
         private void EnsureMaterialInstance()
@@ -128,8 +139,11 @@ namespace Hecton8.UI
                 Destroy(_materialInstance);
             }
 
-            _materialInstance = new Material(baseMaterial); // COLD ALLOC: Material[1] — per-label TMP madness effect material — owner: LocalizedTextMadnessFx
-            _materialInstance.name = string.Concat(baseMaterial.name, " (MadnessFx)");
+            _materialInstance = new Material(baseMaterial) // COLD ALLOC: Material[1] — per-label TMP madness effect material — owner: LocalizedTextMadnessFx
+            {
+                name = RuntimeMaterialName,
+                hideFlags = HideFlags.DontSave
+            };
             _target.fontSharedMaterial = _materialInstance;
         }
 
@@ -158,9 +172,10 @@ namespace Hecton8.UI
                 return;
 
             float offsetX = phase * OffsetAmplitude;
-            float offsetY = Mathf.Cos(_waveTime * (OffsetFrequency * 0.61f)) * (OffsetAmplitude * 0.35f);
-            float glowOuter = BaseGlowOuter + Mathf.Abs(phase) * 0.06f;
-            float glowInner = BaseGlowInner + Mathf.Abs(phase) * 0.015f;
+            float offsetY = EvaluateCheapWaveSigned((_waveTime * (OffsetFrequency * 0.61f)) + HalfPi) * (OffsetAmplitude * 0.35f);
+            float phaseAbs = math.abs(phase);
+            float glowOuter = BaseGlowOuter + phaseAbs * 0.06f;
+            float glowInner = BaseGlowInner + phaseAbs * 0.015f;
 
             _materialInstance.SetColor(UnderlayColorId, MadnessUnderlayColor);
             _materialInstance.SetFloat(UnderlayOffsetXId, offsetX);
@@ -196,8 +211,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void UnregisterFromTickManager()

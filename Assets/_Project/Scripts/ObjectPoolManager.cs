@@ -12,7 +12,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class ObjectPoolManager : MonoBehaviour, IServiceHeartbeat
+    public sealed class ObjectPoolManager : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
     {
         private const string PrefabRegistryRuntimeName = "[PrefabRegistry]";
         private const string PoolContainerRuntimeName = "[Pool]";
@@ -37,6 +37,7 @@ namespace Hecton8.Core
         private bool _serviceRegistered;
         private bool _warmupPresetsStarted;
         private bool _warmupPresetsCompleted;
+        private bool _serviceShuttingDown;
 
         internal static ObjectPoolManager ActiveRuntimeInstance { get; private set; }
 
@@ -90,13 +91,14 @@ namespace Hecton8.Core
             EnsurePrefabRegistry();
 
             // COLD ALLOC: Dictionary<int, Pool>[32] — prefab id to pool lookup — owner: ObjectPoolManager
-            _pools = new Dictionary<int, Pool>(32);
+            EnsurePoolDictionary();
+            _serviceShuttingDown = false;
             _warmupPresetsCompleted = CountWarmupPresetInstances() <= 0;
         }
 
         private void Start()
         {
-            if (_warmupPresetsCompleted || _warmupPresetsStarted)
+            if (_serviceShuttingDown || _warmupPresetsCompleted || _warmupPresetsStarted)
                 return;
 
             _ = WarmupPresetsAsync(
@@ -106,13 +108,29 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            ShutdownServiceState(releasePoolLookup: true);
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState(releasePoolLookup: false);
+        }
+
+        private void ShutdownServiceState(bool releasePoolLookup)
+        {
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
+
+            _serviceShuttingDown = true;
+            _warmupPresetsStarted = false;
+            _warmupPresetsCompleted = true;
+            s_poolableCache.Clear();
 
             if (_pools != null)
             {
                 ClearAllPools();
-                _pools = null;
+                if (releasePoolLookup)
+                    _pools = null;
             }
 
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.ObjectPool, this))
@@ -129,6 +147,17 @@ namespace Hecton8.Core
             if (_serviceRegistered)
                 return;
 
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
+            EnsurePoolDictionary();
+            _serviceShuttingDown = false;
+            if (_pools.Count == 0)
+            {
+                _warmupPresetsStarted = false;
+                _warmupPresetsCompleted = CountWarmupPresetInstances() <= 0;
+            }
+
             GlobalRegistry.RegisterObjectPoolService(this);
             GlobalTelemetryBus.Initialize();
             _serviceRegistered = ReferenceEquals(GlobalRegistry.ObjectPool, this);
@@ -139,6 +168,9 @@ namespace Hecton8.Core
         /// </summary>
         public void Warmup(GameObject prefab, int count)
         {
+            if (_serviceShuttingDown)
+                return;
+
             if (prefab == null)
             {
                 LogWarmupNullPrefab();
@@ -148,6 +180,7 @@ namespace Hecton8.Core
             if (count <= 0 || !TryGetPrefabRegistry(out PrefabRegistry registry))
                 return;
 
+            EnsurePoolDictionary();
             Pool pool = PreparePool(prefab, registry);
 
             for (int i = 0; i < count; i++)
@@ -170,6 +203,9 @@ namespace Hecton8.Core
             double frameBudgetMilliseconds,
             CancellationToken cancellationToken)
         {
+            if (_serviceShuttingDown)
+                return false;
+
             if (_warmupPresetsCompleted)
                 return true;
 
@@ -177,6 +213,9 @@ namespace Hecton8.Core
             {
                 while (!_warmupPresetsCompleted)
                 {
+                    if (_serviceShuttingDown)
+                        return false;
+
                     cancellationToken.ThrowIfCancellationRequested();
                     await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
                 }
@@ -196,8 +235,12 @@ namespace Hecton8.Core
                     return true;
                 }
 
+                EnsurePoolDictionary();
                 for (int entryIndex = 0; entryIndex < warmupPresets.Length; entryIndex++)
                 {
+                    if (_serviceShuttingDown)
+                        return false;
+
                     cancellationToken.ThrowIfCancellationRequested();
 
                     WarmupEntry entry = warmupPresets[entryIndex];
@@ -207,6 +250,9 @@ namespace Hecton8.Core
                     Pool pool = PreparePool(entry.prefab, registry);
                     for (int instanceIndex = 0; instanceIndex < entry.count; instanceIndex++)
                     {
+                        if (_serviceShuttingDown)
+                            return false;
+
                         cancellationToken.ThrowIfCancellationRequested();
 
                         GameObject instance = InstantiatePooled(entry.prefab, pool.prefabId, pool);
@@ -218,6 +264,9 @@ namespace Hecton8.Core
 
                         UpdateDiagnostics();
                         await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
+                        if (_serviceShuttingDown)
+                            return false;
+
                         frameStartTimestamp = Stopwatch.GetTimestamp();
                     }
                 }
@@ -242,6 +291,9 @@ namespace Hecton8.Core
             double frameBudgetMilliseconds,
             CancellationToken cancellationToken)
         {
+            if (_serviceShuttingDown)
+                return false;
+
             if (prefab == null)
             {
                 LogWarmupNullPrefab();
@@ -254,6 +306,7 @@ namespace Hecton8.Core
             if (!TryGetPrefabRegistry(out PrefabRegistry registry))
                 return false;
 
+            EnsurePoolDictionary();
             double frameBudget = Math.Max(0.1d, frameBudgetMilliseconds);
             long frameStartTimestamp = Stopwatch.GetTimestamp();
             Pool pool = PreparePool(prefab, registry);
@@ -261,6 +314,9 @@ namespace Hecton8.Core
             int missingCount = count > existingCount ? count - existingCount : 0;
             for (int instanceIndex = 0; instanceIndex < missingCount; instanceIndex++)
             {
+                if (_serviceShuttingDown)
+                    return false;
+
                 cancellationToken.ThrowIfCancellationRequested();
 
                 GameObject instance = InstantiatePooled(prefab, pool.prefabId, pool);
@@ -272,6 +328,9 @@ namespace Hecton8.Core
 
                 UpdateDiagnostics();
                 await AwaitableDebtMonitor.NextFrameAsync(cancellationToken);
+                if (_serviceShuttingDown)
+                    return false;
+
                 frameStartTimestamp = Stopwatch.GetTimestamp();
             }
 
@@ -315,6 +374,9 @@ namespace Hecton8.Core
         /// </summary>
         public GameObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation, bool allowExpand)
         {
+            if (_serviceShuttingDown)
+                return null;
+
             if (prefab == null)
             {
                 LogSpawnNullPrefab();
@@ -324,6 +386,7 @@ namespace Hecton8.Core
             if (!TryGetPrefabRegistry(out PrefabRegistry registry))
                 return null;
 
+            EnsurePoolDictionary();
             int prefabId = registry.GetOrRegisterPrefab(prefab);
             if (!_pools.TryGetValue(prefabId, out Pool pool))
             {
@@ -398,6 +461,9 @@ namespace Hecton8.Core
         /// </summary>
         public void Despawn(GameObject instance)
         {
+            if (_serviceShuttingDown)
+                return;
+
             if (instance == null)
                 return;
 
@@ -502,9 +568,13 @@ namespace Hecton8.Core
         /// </summary>
         public int GetAvailableCount(GameObject prefab)
         {
+            if (_serviceShuttingDown)
+                return 0;
+
             if (prefab == null || !TryGetPrefabRegistry(out PrefabRegistry registry))
                 return 0;
 
+            EnsurePoolDictionary();
             int prefabId = registry.GetOrRegisterPrefab(prefab);
             return _pools.TryGetValue(prefabId, out Pool pool) ? pool.available.Count : 0;
         }
@@ -530,9 +600,13 @@ namespace Hecton8.Core
         /// </summary>
         public bool HasPool(GameObject prefab)
         {
+            if (_serviceShuttingDown)
+                return false;
+
             if (prefab == null || !TryGetPrefabRegistry(out PrefabRegistry registry))
                 return false;
 
+            EnsurePoolDictionary();
             int prefabId = registry.GetPrefabId(prefab);
             return prefabId != 0 && _pools.ContainsKey(prefabId);
         }
@@ -550,9 +624,13 @@ namespace Hecton8.Core
         /// </summary>
         public void ClearPool(GameObject prefab)
         {
+            if (_serviceShuttingDown)
+                return;
+
             if (prefab == null || !TryGetPrefabRegistry(out PrefabRegistry registry))
                 return;
 
+            EnsurePoolDictionary();
             int prefabId = registry.GetOrRegisterPrefab(prefab);
             if (!_pools.TryGetValue(prefabId, out Pool pool))
                 return;
@@ -624,6 +702,15 @@ namespace Hecton8.Core
             }
 
             UpdateDiagnostics();
+        }
+
+        private void EnsurePoolDictionary()
+        {
+            if (_pools != null)
+                return;
+
+            // COLD ALLOC: Dictionary<int, Pool>[32] - prefab id to pool lookup - owner: ObjectPoolManager
+            _pools = new Dictionary<int, Pool>(32);
         }
 
         private static bool TryGetPrefabRegistry(out PrefabRegistry registry)

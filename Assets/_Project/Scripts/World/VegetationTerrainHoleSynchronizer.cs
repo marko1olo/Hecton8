@@ -12,6 +12,7 @@ namespace Hecton8.World
 {
     public sealed partial class HectonMapMagicVegetationBridge
     {
+        private const int EmptyTerrainHoleNativeCapacity = 1;
 
         /// <summary>
         /// Registers a persistent world-space terrain hole that suppresses vegetation generation inside the provided radius.
@@ -241,7 +242,7 @@ namespace Hecton8.World
                     interiorBounds.Encapsulate(sectionBounds);
                 }
 
-                float horizontalHalfExtent = Mathf.Sqrt((section.WorldSize.x * section.WorldSize.x) + (section.WorldSize.z * section.WorldSize.z)) * 0.5f;
+                float horizontalHalfExtent = EstimateHorizontalHalfExtent(section.WorldSize.x, section.WorldSize.z);
                 float radius = Mathf.Max(megaWreckInteriorMinimumHoleRadius, horizontalHalfExtent + megaWreckInteriorHolePadding);
                 _terrainHoleRecords[writeIndex] = new TerrainHoleRecord
                 {
@@ -393,28 +394,43 @@ namespace Hecton8.World
             cache = expanded;
         }
 
+        private static float EstimateHorizontalHalfExtent(float sizeX, float sizeZ)
+        {
+            float ax = math.abs(sizeX);
+            float az = math.abs(sizeZ);
+            float maxAxis = math.max(ax, az);
+            float minAxis = math.min(ax, az);
+            return (maxAxis + (minAxis * 0.375f)) * 0.5f;
+        }
+
         private void SyncTerrainHoleNativeCache()
         {
             if (_terrainHoleCount <= 0)
             {
                 if (_nativeMemory.TerrainHoleRecordsNative.IsCreated)
                 {
-                    if (_nativeMemory.TerrainHoleRecordsNative.Length == 0)
-                        return;
-
-                    DisposeNativeArray(ref _nativeMemory.TerrainHoleRecordsNative);
+                    if (_nativeMemory.TerrainHoleRecordsNative.Length != EmptyTerrainHoleNativeCapacity)
+                        DisposeNativeArray(ref _nativeMemory.TerrainHoleRecordsNative);
                 }
 
-                // COLD ALLOC: NativeArray<TerrainHoleRecord>[0] - keeps terrain-hole job input valid when no holes are registered - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.TerrainHoleRecordsNative = new NativeArray<TerrainHoleRecord>(0, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                if (!_nativeMemory.TerrainHoleRecordsNative.IsCreated)
+                {
+                    _nativeMemory.TerrainHoleRecordsNative = new NativeArray<TerrainHoleRecord>(EmptyTerrainHoleNativeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TerrainHoleRecord>[1] - sentinel-visible empty terrain-hole job input placeholder - owner: HectonMapMagicVegetationBridge
+                    RegisterTrackedNativeArray(_nativeMemory.TerrainHoleRecordsNative, nameof(_nativeMemory.TerrainHoleRecordsNative));
+                }
+
                 if (_nativeMemory.TerrainHoleStreamingRecordsNative.IsCreated)
                 {
-                    if (_nativeMemory.TerrainHoleStreamingRecordsNative.Length != 0)
+                    if (_nativeMemory.TerrainHoleStreamingRecordsNative.Length != EmptyTerrainHoleNativeCapacity)
                         DisposeNativeArray(ref _nativeMemory.TerrainHoleStreamingRecordsNative);
                 }
 
-                // COLD ALLOC: NativeArray<TerrainHoleStreamingRecord>[0] - keeps terrain-hole streaming payload valid when no holes are registered - owner: HectonMapMagicVegetationBridge
-                _nativeMemory.TerrainHoleStreamingRecordsNative = new NativeArray<TerrainHoleStreamingRecord>(0, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                if (!_nativeMemory.TerrainHoleStreamingRecordsNative.IsCreated)
+                {
+                    _nativeMemory.TerrainHoleStreamingRecordsNative = new NativeArray<TerrainHoleStreamingRecord>(EmptyTerrainHoleNativeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<TerrainHoleStreamingRecord>[1] - sentinel-visible empty terrain-hole streaming placeholder - owner: HectonMapMagicVegetationBridge
+                    RegisterTrackedNativeArray(_nativeMemory.TerrainHoleStreamingRecordsNative, nameof(_nativeMemory.TerrainHoleStreamingRecordsNative));
+                }
+
                 MarkAllTileTerrainHolesDirty();
                 return;
             }

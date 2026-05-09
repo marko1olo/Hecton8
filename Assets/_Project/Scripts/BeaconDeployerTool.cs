@@ -1,7 +1,9 @@
+using System;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -9,23 +11,89 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class BeaconDeployerTool : PlayerTool
     {
+        private readonly struct BeaconTextSegment
+        {
+            public const byte HasStringArg0 = 1 << 0;
+            public const byte HasStringArg1 = 1 << 1;
+            public const byte HasFloatArg2 = 1 << 2;
+
+            public readonly string Template;
+            private readonly string _stringArg0;
+            private readonly string _stringArg1;
+            private readonly float _floatArg2;
+            private readonly byte _argumentMask;
+
+            public BeaconTextSegment(string template)
+            {
+                Template = template;
+                _stringArg0 = null;
+                _stringArg1 = null;
+                _floatArg2 = 0f;
+                _argumentMask = 0;
+            }
+
+            private BeaconTextSegment(string template, string stringArg0, string stringArg1, float floatArg2, byte argumentMask)
+            {
+                Template = template;
+                _stringArg0 = stringArg0;
+                _stringArg1 = stringArg1;
+                _floatArg2 = floatArg2;
+                _argumentMask = argumentMask;
+            }
+
+            public static BeaconTextSegment FormatString(string template, string arg0)
+            {
+                return new BeaconTextSegment(template, arg0, null, 0f, HasStringArg0);
+            }
+
+            public static BeaconTextSegment FormatStringString(string template, string arg0, string arg1)
+            {
+                return new BeaconTextSegment(template, arg0, arg1, 0f, HasStringArg0 | HasStringArg1);
+            }
+
+            public static BeaconTextSegment FormatStringStringFloat(string template, string arg0, string arg1, float arg2)
+            {
+                return new BeaconTextSegment(template, arg0, arg1, arg2, HasStringArg0 | HasStringArg1 | HasFloatArg2);
+            }
+
+            public bool TryWrite(ref FixedCharBuffer buffer)
+            {
+                return BeaconDeployerTool.AppendFormattedText(ref buffer, Template, _stringArg0, _stringArg1, _floatArg2, _argumentMask);
+            }
+        }
+
         private readonly struct BeaconAssessment
         {
             public readonly string Role;
-            public readonly string Summary;
+            public readonly BeaconTextSegment SummaryText;
             public readonly string Recommendation;
 
             public BeaconAssessment(string role, string summary, string recommendation)
+                : this(role, new BeaconTextSegment(summary), recommendation)
+            {
+            }
+
+            public BeaconAssessment(string role, BeaconTextSegment summary, string recommendation)
             {
                 Role = role;
-                Summary = summary;
+                SummaryText = summary;
                 Recommendation = recommendation;
             }
 
-            public string BuildHudMessage(string label)
+            public string Summary => SummaryText.Template;
+
+            public bool TryWriteHudMessage(ref FixedCharBuffer buffer, string label)
             {
-                return $"{label} - {Role} | {Summary} | {Recommendation}";
+                return AppendText(ref buffer, label) &&
+                       AppendText(ref buffer, " - ") &&
+                       AppendText(ref buffer, Role) &&
+                       AppendText(ref buffer, " | ") &&
+                       TryWriteSummary(ref buffer) &&
+                       AppendText(ref buffer, " | ") &&
+                       AppendText(ref buffer, Recommendation);
             }
+
+            public bool TryWriteSummary(ref FixedCharBuffer buffer) => SummaryText.TryWrite(ref buffer);
         }
 
         private const string DefaultBeaconPrefix = "BEACON";
@@ -58,10 +126,11 @@ namespace Hecton8.Gameplay
         private float _cachedNearestDistance;
         private BeaconAssessment _cachedNearestAssessment;
         private int _cachedOperationalTextFrame = -1;
-        private string _cachedOperationalSummary;
         private string _cachedOperationalDirective;
         private BiomeMatrixDirector _biomeMatrixDirector;
         private WorldZoneDirector _worldZoneDirector;
+        private FixedCharBuffer _beaconHudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - beacon HUD staging buffer - owner: BeaconDeployerTool
+        private FixedCharBuffer _beaconLogBuffer = new FixedCharBuffer(768); // COLD ALLOC: char[768] - beacon operation log staging buffer - owner: BeaconDeployerTool
 
         private void Awake()
         {
@@ -101,25 +170,11 @@ namespace Hecton8.Gameplay
                 out string label))
             {
                 BeaconAssessment assessment = BuildDeploymentAssessment(spawnPosition, label);
-                ToolHitUtility.ShowInfo(string.Format(
-                    ResolveLocalized(LocalizationKeys.BEACON_HUD_DEPLOYED, "BEACON DEPLOYED - {0} // GRID {1}"),
-                    assessment.BuildHudMessage(label),
-                    Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount));
-                FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
-                    ResolveLocalized(LocalizationKeys.BEACON_LOG_DEPLOYED_TITLE, "FIELD BEACON DEPLOYED"),
-                    string.Format(
-                        ResolveLocalized(
-                            LocalizationKeys.BEACON_LOG_DEPLOYED_MESSAGE,
-                            "{0} established at {1:0.0}, {2:0.0}, {3:0.0}. {4} Recommendation: {5}. Active marker count: {6}."),
-                        label,
-                        spawnPosition.x,
-                        spawnPosition.y,
-                        spawnPosition.z,
-                        assessment.Summary,
-                        assessment.Recommendation,
-                        Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount),
-                    "INFO");
+                int activeCount = ResolveActiveBeaconCount();
+                if (TryWriteBeaconDeployedHud(label, assessment, activeCount))
+                    ToolHitUtility.ShowInfo(in _beaconHudBuffer);
+
+                RecordDeploymentLog(label, spawnPosition, assessment, activeCount);
                 InvalidateNearestAssessmentCache();
                 _cooldown = deployCooldown;
             }
@@ -136,7 +191,8 @@ namespace Hecton8.Gameplay
             {
                 if (Time.time >= _nextFeedbackAt)
                 {
-                    ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.BEACON_HUD_NO_ACTIVE, DefaultNoActiveMarkers));
+                    if (TryWriteNoActiveBeaconHud())
+                        ToolHitUtility.ShowWarning(in _beaconHudBuffer);
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 return;
@@ -150,24 +206,10 @@ namespace Hecton8.Gameplay
                 if (Time.time >= _nextFeedbackAt)
                 {
                     BeaconAssessment assessment = BuildExistingBeaconAssessment(nearestSnapshot, nearestDistance);
-                    ToolHitUtility.ShowInfo(string.Format(
-                        ResolveLocalized(LocalizationKeys.BEACON_HUD_NEAREST, "NEAREST BEACON - {0} // {1:0.0}M // GRID {2}"),
-                        assessment.BuildHudMessage(nearestSnapshot.Label),
-                        nearestDistance,
-                        Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount));
-                    FieldOperationLogSystem.RecordOperation(
-                        ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
-                        ResolveLocalized(LocalizationKeys.BEACON_LOG_CHECK_TITLE, "BEACON GRID CHECK"),
-                        string.Format(
-                            ResolveLocalized(
-                                LocalizationKeys.BEACON_LOG_CHECK_MESSAGE,
-                                "{0} is the nearest active field marker at {1:0.0} m. {2} Recommendation: {3}. Close within {4:0.0} m to retract."),
-                            nearestSnapshot.Label,
-                            nearestDistance,
-                            assessment.Summary,
-                            assessment.Recommendation,
-                            retractRange),
-                        "INFO");
+                    if (TryWriteNearestBeaconHud(nearestSnapshot.Label, assessment, nearestDistance, ResolveActiveBeaconCount()))
+                        ToolHitUtility.ShowInfo(in _beaconHudBuffer);
+
+                    RecordBeaconCheckLog(nearestSnapshot.Label, nearestDistance, assessment);
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 return;
@@ -177,24 +219,11 @@ namespace Hecton8.Gameplay
             {
                 Vector3 position = nearest.transform.position;
                 string label = nearest.Label;
-                ToolHitUtility.ShowInfo(string.Format(
-                    ResolveLocalized(LocalizationKeys.BEACON_HUD_RETRACTED, "BEACON RETRACTED - {0} // GRID {1}"),
-                    label,
-                    Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount));
-                FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
-                    ResolveLocalized(LocalizationKeys.BEACON_LOG_RETRACTED_TITLE, "FIELD BEACON RETRACTED"),
-                    string.Format(
-                        ResolveLocalized(
-                            LocalizationKeys.BEACON_LOG_RETRACTED_MESSAGE,
-                            "{0} was retracted from {1:0.0}, {2:0.0}, {3:0.0} at {4:0.0} m. Active marker count: {5}."),
-                        label,
-                        position.x,
-                        position.y,
-                        position.z,
-                        distance,
-                        Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount),
-                    "INFO");
+                int activeCount = ResolveActiveBeaconCount();
+                if (TryWriteBeaconRetractedHud(label, activeCount))
+                    ToolHitUtility.ShowInfo(in _beaconHudBuffer);
+
+                RecordRetractionLog(label, position, distance, activeCount);
                 InvalidateNearestAssessmentCache();
                 _cooldown = deployCooldown;
             }
@@ -203,7 +232,7 @@ namespace Hecton8.Gameplay
         public override void ToolTick(float deltaTime)
         {
             if (_cooldown > 0f)
-                _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
+                _cooldown = math.max(0f, _cooldown - deltaTime);
 
             _debugActiveBeaconCount = Hecton8.Core.GlobalRegistry.BeaconNetwork != null
                 ? Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount
@@ -212,14 +241,60 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
-            RefreshOperationalTextCache();
-            return _cachedOperationalSummary;
+            _beaconHudBuffer.Clear();
+            WriteOperationalSummary(ref _beaconHudBuffer);
+            return CreateLegacyString(in _beaconHudBuffer);
+        }
+
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
+            int activeCount = ResolveActiveBeaconCount();
+            if (_cooldown > 0f)
+            {
+                AppendText(ref buffer, "BEACON TOOL // GRID ");
+                buffer.AppendInt(activeCount);
+                AppendText(ref buffer, " // CYCLING ");
+                buffer.AppendFloat(_cooldown, 1);
+                AppendText(ref buffer, "S");
+                return;
+            }
+
+            if (TryGetNearestAssessmentCached(out string nearestLabel, out float nearestDistance, out BeaconAssessment nearestAssessment))
+            {
+                AppendText(ref buffer, "BEACON TOOL // ");
+                AppendText(ref buffer, nearestAssessment.Role);
+                AppendText(ref buffer, " // ");
+                AppendText(ref buffer, nearestLabel);
+                AppendText(ref buffer, " ");
+                buffer.AppendFloat(nearestDistance, 1);
+                AppendText(ref buffer, "M");
+                return;
+            }
+
+            ResolveRuntimeContext();
+            if (TryBuildContextualReadyAssessment(out BeaconAssessment contextualAssessment))
+            {
+                AppendText(ref buffer, "BEACON TOOL // ");
+                AppendText(ref buffer, contextualAssessment.Role);
+                AppendText(ref buffer, " // READY");
+                return;
+            }
+
+            AppendText(ref buffer, "BEACON TOOL // GRID ");
+            buffer.AppendInt(activeCount);
+            AppendText(ref buffer, " // READY");
         }
 
         public override string GetOperationalDirective()
         {
-            RefreshOperationalTextCache();
+            RefreshOperationalDirectiveCache();
             return _cachedOperationalDirective;
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
+            RefreshOperationalDirectiveCache();
+            AppendText(ref buffer, _cachedOperationalDirective);
         }
 
         private BeaconAssessment BuildDeploymentAssessment(Vector3 spawnPosition, string label)
@@ -228,7 +303,7 @@ namespace Hecton8.Gameplay
             {
                 return new BeaconAssessment(
                     routeAssessment.Role,
-                    string.Format(
+                    BeaconTextSegment.FormatStringString(
                         ResolveLocalized(
                             LocalizationKeys.BEACON_SUMMARY_ROUTE_GUIDE,
                             "{0} sits on authored route guidance. {1}"),
@@ -241,7 +316,7 @@ namespace Hecton8.Gameplay
             {
                 return new BeaconAssessment(
                     ResolveLocalized(LocalizationKeys.BEACON_ROLE_ANCHOR, "ANCHOR"),
-                    string.Format(
+                    BeaconTextSegment.FormatString(
                         ResolveLocalized(
                             LocalizationKeys.BEACON_SUMMARY_FIRST_ANCHOR,
                             "{0} is acting as the first navigation anchor in the current sector."),
@@ -253,7 +328,7 @@ namespace Hecton8.Gameplay
             {
                 return new BeaconAssessment(
                     ResolveLocalized(LocalizationKeys.BEACON_ROLE_ANCHOR, "ANCHOR"),
-                    string.Format(
+                    BeaconTextSegment.FormatString(
                         ResolveLocalized(
                             LocalizationKeys.BEACON_SUMMARY_STANDALONE_ANCHOR,
                             "{0} could not resolve a neighbor and is acting as a standalone anchor."),
@@ -262,7 +337,7 @@ namespace Hecton8.Gameplay
             }
 
             string role = ClassifyRole(nearestDistance);
-            string summary = string.Format(
+            BeaconTextSegment summary = BeaconTextSegment.FormatStringStringFloat(
                 ResolveLocalized(
                     LocalizationKeys.BEACON_SUMMARY_EXTENDS_GRID,
                     "{0} extends the grid from {1} by {2:0.0} m."),
@@ -285,6 +360,48 @@ namespace Hecton8.Gameplay
             return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, deployRange, deploymentMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
+        private bool TryWriteBeaconDeployedHud(string label, BeaconAssessment assessment, int activeCount)
+        {
+            _beaconHudBuffer.Clear();
+            return AppendText(ref _beaconHudBuffer, "BEACON DEPLOYED - ") &&
+                   assessment.TryWriteHudMessage(ref _beaconHudBuffer, label) &&
+                   AppendText(ref _beaconHudBuffer, " // GRID ") &&
+                   _beaconHudBuffer.AppendInt(activeCount);
+        }
+
+        private bool TryWriteNearestBeaconHud(string label, BeaconAssessment assessment, float distance, int activeCount)
+        {
+            _beaconHudBuffer.Clear();
+            return AppendText(ref _beaconHudBuffer, "NEAREST BEACON - ") &&
+                   assessment.TryWriteHudMessage(ref _beaconHudBuffer, label) &&
+                   AppendText(ref _beaconHudBuffer, " // ") &&
+                   _beaconHudBuffer.AppendFloat(distance, 1) &&
+                   AppendText(ref _beaconHudBuffer, "M // GRID ") &&
+                   _beaconHudBuffer.AppendInt(activeCount);
+        }
+
+        private bool TryWriteBeaconRetractedHud(string label, int activeCount)
+        {
+            _beaconHudBuffer.Clear();
+            return AppendText(ref _beaconHudBuffer, "BEACON RETRACTED - ") &&
+                   AppendText(ref _beaconHudBuffer, label) &&
+                   AppendText(ref _beaconHudBuffer, " // GRID ") &&
+                   _beaconHudBuffer.AppendInt(activeCount);
+        }
+
+        private bool TryWriteNoActiveBeaconHud()
+        {
+            _beaconHudBuffer.Clear();
+            return AppendText(ref _beaconHudBuffer, ResolveLocalized(LocalizationKeys.BEACON_HUD_NO_ACTIVE, DefaultNoActiveMarkers));
+        }
+
+        private static int ResolveActiveBeaconCount()
+        {
+            return Hecton8.Core.GlobalRegistry.BeaconNetwork != null
+                ? Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount
+                : 0;
+        }
+
         private BeaconAssessment BuildExistingBeaconAssessment(BeaconNetworkSystem.BeaconSnapshot snapshot, float distance)
         {
             if (TryReadRouteMarkerAssessment(snapshot.Position, out BeaconAssessment routeAssessment))
@@ -295,7 +412,7 @@ namespace Hecton8.Gameplay
 
                 return new BeaconAssessment(
                     routeAssessment.Role,
-                    string.Format(
+                    BeaconTextSegment.FormatStringString(
                         ResolveLocalized(
                             LocalizationKeys.BEACON_SUMMARY_ROUTE_GUIDE,
                             "{0} sits on authored route guidance. {1}"),
@@ -305,21 +422,21 @@ namespace Hecton8.Gameplay
             }
 
             string role = ClassifyRole(distance);
-            string summary = role switch
+            BeaconTextSegment summary = role switch
             {
                 var localMark when localMark == ResolveLocalized(LocalizationKeys.BEACON_ROLE_LOCAL_MARK, "LOCAL MARK")
-                    => string.Format(
+                    => BeaconTextSegment.FormatString(
                         ResolveLocalized(
                             LocalizationKeys.BEACON_SUMMARY_LOCAL_MARK,
                             "{0} is a close-range marker for nearby loot, turns, or hazards."),
                         snapshot.Label),
                 var relay when relay == ResolveLocalized(LocalizationKeys.BEACON_ROLE_RELAY, "RELAY")
-                    => string.Format(
+                    => BeaconTextSegment.FormatString(
                         ResolveLocalized(
                             LocalizationKeys.BEACON_SUMMARY_RELAY,
                             "{0} is holding a mid-range travel lane through the sector."),
                         snapshot.Label),
-                _ => string.Format(
+                _ => BeaconTextSegment.FormatString(
                     ResolveLocalized(
                         LocalizationKeys.BEACON_SUMMARY_FRONTIER,
                         "{0} is acting as a frontier marker deeper into the field."),
@@ -335,18 +452,16 @@ namespace Hecton8.Gameplay
         {
             assessment = default;
 
-            if (!FieldTargetSemantics.TryFindNearestRouteMarker(position, 5f, out FieldTargetDescriptor nearest, out _))
+            if (!FieldTargetSemantics.TryFindNearestRouteMarkerSq(position, 5f, out FieldTargetDescriptor nearest, out _))
                 return false;
 
             assessment = new BeaconAssessment(
                 FieldTargetSemantics.BuildRouteRoleLabel(nearest.Role),
                 FieldTargetSemantics.BuildDescriptorSummary(
                     nearest,
-                    string.Format(
-                        ResolveLocalized(
-                            LocalizationKeys.BEACON_SUMMARY_ROUTE_ALIGNED,
-                            "{0} is the nearest authored route guide."),
-                        nearest.name)),
+                    ResolveLocalized(
+                        LocalizationKeys.BEACON_SUMMARY_ROUTE_ALIGNED,
+                        "Authored route guide is inside beacon alignment range.")),
                 FieldTargetSemantics.BuildRouteRecommendation(nearest.Role));
             return true;
         }
@@ -393,7 +508,7 @@ namespace Hecton8.Gameplay
             if (!found)
                 return false;
 
-            distance = Mathf.Sqrt(bestSqr);
+            distance = ApproximateDistance(bestSqr);
             return true;
         }
 
@@ -442,23 +557,17 @@ namespace Hecton8.Gameplay
             _cachedNearestDistance = 0f;
             _cachedNearestAssessment = default;
             _cachedOperationalTextFrame = -1;
-            _cachedOperationalSummary = null;
             _cachedOperationalDirective = null;
         }
 
-        private void RefreshOperationalTextCache()
+        private void RefreshOperationalDirectiveCache()
         {
             int currentFrame = Time.frameCount;
             if (_cachedOperationalTextFrame == currentFrame)
                 return;
 
-            int activeCount = Hecton8.Core.GlobalRegistry.BeaconNetwork != null ? Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount : 0;
             if (_cooldown > 0f)
             {
-                _cachedOperationalSummary = string.Format(
-                    ResolveLocalized(LocalizationKeys.BEACON_OPERATIONAL_COOLDOWN, "BEACON TOOL // GRID {0} // CYCLING {1:0.0}S"),
-                    activeCount,
-                    _cooldown);
                 _cachedOperationalDirective = ResolveLocalized(
                     LocalizationKeys.BEACON_OPERATIONAL_COOLDOWN_DIRECTIVE,
                     "Wait for deployment hardware to reset.");
@@ -466,13 +575,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (TryGetNearestAssessmentCached(out string label, out float distance, out BeaconAssessment assessment))
+            if (TryGetNearestAssessmentCached(out _, out _, out BeaconAssessment assessment))
             {
-                _cachedOperationalSummary = string.Format(
-                    ResolveLocalized(LocalizationKeys.BEACON_OPERATIONAL_NEAREST, "BEACON TOOL // {0} // {1} {2:0.0}M"),
-                    assessment.Role,
-                    label,
-                    distance);
                 _cachedOperationalDirective = assessment.Recommendation;
                 _cachedOperationalTextFrame = currentFrame;
                 return;
@@ -481,17 +585,11 @@ namespace Hecton8.Gameplay
             ResolveRuntimeContext();
             if (TryBuildContextualReadyAssessment(out BeaconAssessment contextualAssessment))
             {
-                _cachedOperationalSummary = string.Format(
-                    "BEACON TOOL // {0} // READY",
-                    contextualAssessment.Role);
                 _cachedOperationalDirective = contextualAssessment.Recommendation;
                 _cachedOperationalTextFrame = currentFrame;
                 return;
             }
 
-            _cachedOperationalSummary = string.Format(
-                ResolveLocalized(LocalizationKeys.BEACON_OPERATIONAL_READY, "BEACON TOOL // GRID {0} // READY"),
-                activeCount);
             _cachedOperationalDirective = ResolveLocalized(
                 LocalizationKeys.BEACON_OPERATIONAL_READY_DIRECTIVE,
                 "Primary deploys a route marker. Secondary checks or retracts the nearest beacon.");
@@ -568,6 +666,327 @@ namespace Hecton8.Gameplay
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
+        }
+
+        private static bool AppendFormattedText(
+            ref FixedCharBuffer buffer,
+            string template,
+            string stringArg0,
+            string stringArg1,
+            float floatArg2,
+            byte argumentMask)
+        {
+            if (string.IsNullOrEmpty(template))
+                return true;
+
+            ReadOnlySpan<char> span = template.AsSpan();
+            int segmentStart = 0;
+            for (int i = 0; i < span.Length; i++)
+            {
+                if (span[i] != '{' || i + 1 >= span.Length)
+                    continue;
+
+                char token = span[i + 1];
+                if (token != '0' && token != '1' && token != '2')
+                    continue;
+
+                int closeIndex = i + 2;
+                while (closeIndex < span.Length && span[closeIndex] != '}')
+                    closeIndex++;
+
+                if (closeIndex >= span.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(span.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                if (!AppendFormattedArgument(ref buffer, token, stringArg0, stringArg1, floatArg2, argumentMask))
+                    return false;
+
+                i = closeIndex;
+                segmentStart = closeIndex + 1;
+            }
+
+            return segmentStart >= span.Length || buffer.Append(span.Slice(segmentStart));
+        }
+
+        private static bool AppendFormattedArgument(
+            ref FixedCharBuffer buffer,
+            char token,
+            string stringArg0,
+            string stringArg1,
+            float floatArg2,
+            byte argumentMask)
+        {
+            switch (token)
+            {
+                case '0':
+                    return (argumentMask & BeaconTextSegment.HasStringArg0) == 0 ||
+                           AppendText(ref buffer, stringArg0);
+                case '1':
+                    return (argumentMask & BeaconTextSegment.HasStringArg1) == 0 ||
+                           AppendText(ref buffer, stringArg1);
+                case '2':
+                    return (argumentMask & BeaconTextSegment.HasFloatArg2) == 0 ||
+                           buffer.AppendFloat(floatArg2, 1);
+                default:
+                    return true;
+            }
+        }
+
+        private static float ApproximateDistance(float distanceSq)
+        {
+            return distanceSq > 0f && float.IsFinite(distanceSq)
+                ? distanceSq * math.rsqrt(distanceSq)
+                : 0f;
+        }
+
+        private static string CreateLegacyString(in FixedCharBuffer buffer)
+        {
+            return buffer.Length > 0
+                ? new string(buffer.Buffer, 0, buffer.Length)
+                : string.Empty;
+        }
+
+        private static bool TryWriteDeploymentLogSummary(
+            ref FixedCharBuffer buffer,
+            string label,
+            Vector3 spawnPosition,
+            BeaconAssessment assessment,
+            int activeCount)
+        {
+            string template = ResolveLocalized(
+                LocalizationKeys.BEACON_LOG_DEPLOYED_MESSAGE,
+                "{0} established at {1:0.0}, {2:0.0}, {3:0.0}. {4} Recommendation: {5}. Active marker count: {6}.");
+            return AppendDeploymentLogTemplate(ref buffer, template, label, spawnPosition, assessment, activeCount);
+        }
+
+        private bool TryWriteCheckLogSummary(
+            ref FixedCharBuffer buffer,
+            string label,
+            float distance,
+            BeaconAssessment assessment)
+        {
+            string template = ResolveLocalized(
+                LocalizationKeys.BEACON_LOG_CHECK_MESSAGE,
+                "{0} is the nearest active field marker at {1:0.0} m. {2} Recommendation: {3}. Close within {4:0.0} m to retract.");
+            return AppendCheckLogTemplate(ref buffer, template, label, distance, assessment, retractRange);
+        }
+
+        private bool TryWriteRetractionLogSummary(
+            ref FixedCharBuffer buffer,
+            string label,
+            Vector3 position,
+            float distance,
+            int activeCount)
+        {
+            string template = ResolveLocalized(
+                LocalizationKeys.BEACON_LOG_RETRACTED_MESSAGE,
+                "{0} was retracted from {1:0.0}, {2:0.0}, {3:0.0} at {4:0.0} m. Active marker count: {5}.");
+            return AppendRetractionLogTemplate(ref buffer, template, label, position, distance, activeCount);
+        }
+
+        private static bool AppendDeploymentLogTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            string label,
+            Vector3 spawnPosition,
+            BeaconAssessment assessment,
+            int activeCount)
+        {
+            if (string.IsNullOrEmpty(template))
+                return true;
+
+            ReadOnlySpan<char> span = template.AsSpan();
+            int segmentStart = 0;
+            for (int i = 0; i < span.Length; i++)
+            {
+                if (span[i] != '{' || i + 1 >= span.Length)
+                    continue;
+
+                char token = span[i + 1];
+                int closeIndex = i + 2;
+                while (closeIndex < span.Length && span[closeIndex] != '}')
+                    closeIndex++;
+
+                if (closeIndex >= span.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(span.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                bool wrote = token switch
+                {
+                    '0' => AppendText(ref buffer, label),
+                    '1' => buffer.AppendFloat(spawnPosition.x, 1),
+                    '2' => buffer.AppendFloat(spawnPosition.y, 1),
+                    '3' => buffer.AppendFloat(spawnPosition.z, 1),
+                    '4' => assessment.TryWriteSummary(ref buffer),
+                    '5' => AppendText(ref buffer, assessment.Recommendation),
+                    '6' => buffer.AppendInt(activeCount),
+                    _ => buffer.Append(span.Slice(i, closeIndex - i + 1))
+                };
+
+                if (!wrote)
+                    return false;
+
+                i = closeIndex;
+                segmentStart = closeIndex + 1;
+            }
+
+            return segmentStart >= span.Length || buffer.Append(span.Slice(segmentStart));
+        }
+
+        private static bool AppendCheckLogTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            string label,
+            float distance,
+            BeaconAssessment assessment,
+            float retractRange)
+        {
+            if (string.IsNullOrEmpty(template))
+                return true;
+
+            ReadOnlySpan<char> span = template.AsSpan();
+            int segmentStart = 0;
+            for (int i = 0; i < span.Length; i++)
+            {
+                if (span[i] != '{' || i + 1 >= span.Length)
+                    continue;
+
+                char token = span[i + 1];
+                int closeIndex = i + 2;
+                while (closeIndex < span.Length && span[closeIndex] != '}')
+                    closeIndex++;
+
+                if (closeIndex >= span.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(span.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                bool wrote = token switch
+                {
+                    '0' => AppendText(ref buffer, label),
+                    '1' => buffer.AppendFloat(distance, 1),
+                    '2' => assessment.TryWriteSummary(ref buffer),
+                    '3' => AppendText(ref buffer, assessment.Recommendation),
+                    '4' => buffer.AppendFloat(retractRange, 1),
+                    _ => buffer.Append(span.Slice(i, closeIndex - i + 1))
+                };
+
+                if (!wrote)
+                    return false;
+
+                i = closeIndex;
+                segmentStart = closeIndex + 1;
+            }
+
+            return segmentStart >= span.Length || buffer.Append(span.Slice(segmentStart));
+        }
+
+        private bool AppendRetractionLogTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            string label,
+            Vector3 position,
+            float distance,
+            int activeCount)
+        {
+            if (string.IsNullOrEmpty(template))
+                return true;
+
+            ReadOnlySpan<char> span = template.AsSpan();
+            int segmentStart = 0;
+            for (int i = 0; i < span.Length; i++)
+            {
+                if (span[i] != '{' || i + 1 >= span.Length)
+                    continue;
+
+                char token = span[i + 1];
+                int closeIndex = i + 2;
+                while (closeIndex < span.Length && span[closeIndex] != '}')
+                    closeIndex++;
+
+                if (closeIndex >= span.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(span.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                bool wrote = token switch
+                {
+                    '0' => AppendText(ref buffer, label),
+                    '1' => buffer.AppendFloat(position.x, 1),
+                    '2' => buffer.AppendFloat(position.y, 1),
+                    '3' => buffer.AppendFloat(position.z, 1),
+                    '4' => buffer.AppendFloat(distance, 1),
+                    '5' => buffer.AppendInt(activeCount),
+                    _ => buffer.Append(span.Slice(i, closeIndex - i + 1))
+                };
+
+                if (!wrote)
+                    return false;
+
+                i = closeIndex;
+                segmentStart = closeIndex + 1;
+            }
+
+            return segmentStart >= span.Length || buffer.Append(span.Slice(segmentStart));
+        }
+
+        private string CreateLegacyString(BeaconTextSegment segment)
+        {
+            _beaconLogBuffer.Clear();
+            if (!segment.TryWrite(ref _beaconLogBuffer))
+                return segment.Template;
+
+            return CreateLegacyString(in _beaconLogBuffer);
+        }
+
+        private void RecordDeploymentLog(string label, Vector3 spawnPosition, BeaconAssessment assessment, int activeCount)
+        {
+            _beaconLogBuffer.Clear();
+            if (!TryWriteDeploymentLogSummary(ref _beaconLogBuffer, label, spawnPosition, assessment, activeCount))
+                return;
+
+            FieldOperationLogSystem.RecordOperation(
+                ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
+                ResolveLocalized(LocalizationKeys.BEACON_LOG_DEPLOYED_TITLE, "FIELD BEACON DEPLOYED"),
+                in _beaconLogBuffer,
+                "INFO");
+        }
+
+        private void RecordBeaconCheckLog(string label, float distance, BeaconAssessment assessment)
+        {
+            _beaconLogBuffer.Clear();
+            if (!TryWriteCheckLogSummary(ref _beaconLogBuffer, label, distance, assessment))
+                return;
+
+            FieldOperationLogSystem.RecordOperation(
+                ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
+                ResolveLocalized(LocalizationKeys.BEACON_LOG_CHECK_TITLE, "BEACON GRID CHECK"),
+                in _beaconLogBuffer,
+                "INFO");
+        }
+
+        private void RecordRetractionLog(string label, Vector3 position, float distance, int activeCount)
+        {
+            _beaconLogBuffer.Clear();
+            if (!TryWriteRetractionLogSummary(ref _beaconLogBuffer, label, position, distance, activeCount))
+                return;
+
+            FieldOperationLogSystem.RecordOperation(
+                ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
+                ResolveLocalized(LocalizationKeys.BEACON_LOG_RETRACTED_TITLE, "FIELD BEACON RETRACTED"),
+                in _beaconLogBuffer,
+                "INFO");
         }
     }
 }

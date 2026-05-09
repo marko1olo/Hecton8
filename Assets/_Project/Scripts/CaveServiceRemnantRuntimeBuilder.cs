@@ -1,4 +1,5 @@
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -65,16 +66,17 @@ namespace Hecton8.Caves
             string name = GetCachedName(index);
             bool cylindrical = Hash01(runtimeSeed, index, 11) > 0.45f;
             PrimitiveType primitiveType = cylindrical ? PrimitiveType.Cylinder : PrimitiveType.Cube;
+            float intensityT = math.saturate(globalIntensity);
             float x = volumeBounds.center.x + HashSigned(runtimeSeed, index, 17) * volumeBounds.extents.x * 0.62f;
             float z = volumeBounds.center.z + HashSigned(runtimeSeed, index, 23) * volumeBounds.extents.z * 0.62f;
-            float y = Mathf.Lerp(volumeBounds.min.y, volumeBounds.center.y, Mathf.Lerp(0.05f, 0.28f, Hash01(runtimeSeed, index, 31)));
-            float width = Mathf.Lerp(config.minScale, config.maxScale, Hash01(runtimeSeed, index, 43)) * Mathf.Lerp(0.82f, 1.18f, globalIntensity);
+            float y = math.lerp(volumeBounds.min.y, volumeBounds.center.y, math.lerp(0.05f, 0.28f, Hash01(runtimeSeed, index, 31)));
+            float width = math.lerp(config.minScale, config.maxScale, Hash01(runtimeSeed, index, 43)) * math.lerp(0.82f, 1.18f, intensityT);
             float height = cylindrical
-                ? Mathf.Lerp(width * 0.8f, width * 2.4f, Hash01(runtimeSeed, index, 59))
-                : Mathf.Lerp(width * 0.35f, width * 1.2f, Hash01(runtimeSeed, index, 59));
+                ? math.lerp(width * 0.8f, width * 2.4f, Hash01(runtimeSeed, index, 59))
+                : math.lerp(width * 0.35f, width * 1.2f, Hash01(runtimeSeed, index, 59));
             float depth = cylindrical
                 ? width
-                : Mathf.Lerp(width * 0.4f, width * 1.8f, Hash01(runtimeSeed, index, 71));
+                : math.lerp(width * 0.4f, width * 1.8f, Hash01(runtimeSeed, index, 71));
             float yaw = HashSigned(runtimeSeed, index, 83) * 180f;
             float pitch = HashSigned(runtimeSeed, index, 97) * (cylindrical ? 80f : 24f);
             float roll = HashSigned(runtimeSeed, index, 109) * (cylindrical ? 80f : 28f);
@@ -111,7 +113,7 @@ namespace Hecton8.Caves
             if (renderer == null || config == null)
                 return;
 
-            float accent = Mathf.Lerp(0.18f, 0.82f, Hash01(runtimeSeed, index, 127));
+            float accent = math.lerp(0.18f, 0.82f, Hash01(runtimeSeed, index, 127));
             Color baseColor = Color.Lerp(config.baseColor, config.accentColor, accent * 0.25f);
             Color emission = config.accentColor * (config.accentEmission * accent);
             MaterialPropertyBlock propertyBlock = GetRemnantPropertyBlock();

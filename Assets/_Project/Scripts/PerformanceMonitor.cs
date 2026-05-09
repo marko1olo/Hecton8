@@ -183,6 +183,7 @@ namespace Hecton8.Core
                     nameof(PerformanceEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -194,6 +195,21 @@ namespace Hecton8.Core
                     nameof(PerformanceEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -264,6 +280,9 @@ namespace Hecton8.Core
 
         private static void Enqueue(in PerformanceEventPayload payload)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
@@ -399,25 +418,16 @@ namespace Hecton8.Core
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9000)]
-    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PerformanceMonitor : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         private const float MillisecondsPerSecond = 1000f;
         // ════════════════════════════════════════════════════════════
         //  SINGLETON
         // ════════════════════════════════════════════════════════════
 
-        private static PerformanceMonitor _instance;
-        public static PerformanceMonitor Instance => _instance;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            ClearStaticState();
-        }
-
-        private static void ClearStaticState()
-        {
-            _instance = null;
         }
 
         // ════════════════════════════════════════════════════════════
@@ -427,7 +437,14 @@ namespace Hecton8.Core
         /// <summary>
         /// True when at least one sample has been captured.
         /// </summary>
-        public static bool HasCurrentStats => _instance != null && _instance._sampleCountTotal > 0;
+        public static bool HasCurrentStats
+        {
+            get
+            {
+                PerformanceMonitor runtime = GlobalRegistry.PerformanceMonitor;
+                return runtime != null && runtime._sampleCountTotal > 0;
+            }
+        }
 
         // ════════════════════════════════════════════════════════════
         //  INSPECTOR CONFIG
@@ -485,9 +502,16 @@ namespace Hecton8.Core
         private long _lastGCTotalMemory;
         private int _lastGCCollectionCount;
         private bool _isRegisteredToTickManager;
+        private bool _serviceRegistered;
 
         private float _avgFrameTimeMs;
         private float _peakFrameTimeMs;
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered;
 
         // ════════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -495,16 +519,16 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            PerformanceMonitor registered = GlobalRegistry.PerformanceMonitor;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
-            Hecton8.Bootstrap.GameBootstrapper.PersistRuntimeService(this);
-
+            // COLD ALLOC: Stopwatch[1] - sampled performance timing state - owner: PerformanceMonitor
             _frameStopwatch = new System.Diagnostics.Stopwatch();
+            // COLD ALLOC: float[avgFrameWindow*60] - sampled frame-time rolling window - owner: PerformanceMonitor
             _frameTimeHistory = new float[Mathf.Max(1, (int)(avgFrameWindow * 60))];
             _sampleCounter = 0;
             _sampleCountTotal = 0;
@@ -516,6 +540,10 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            TryRegisterService();
+            if (Application.isPlaying && !_serviceRegistered)
+                return;
+
             if (_isRegisteredToTickManager || !Application.isPlaying)
                 return;
 
@@ -529,17 +557,51 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
-            if (!_isRegisteredToTickManager)
-                return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _isRegisteredToTickManager = false;
+            OnServiceShutdown();
         }
 
         private void OnDestroy()
         {
-            if (_instance == this)
-                ClearStaticState();
+            OnServiceShutdown();
+        }
+
+        /// <inheritdoc />
+        public void OnServiceShutdown()
+        {
+            if (!_isRegisteredToTickManager)
+            {
+                TryUnregisterService();
+                return;
+            }
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+            _isRegisteredToTickManager = false;
+            TryUnregisterService();
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            PerformanceMonitor registered = GlobalRegistry.PerformanceMonitor;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            GlobalRegistry.RegisterPerformanceMonitorRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PerformanceMonitor, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterPerformanceMonitorRuntime(this);
+            _serviceRegistered = false;
         }
 
         // ════════════════════════════════════════════════════════════
@@ -667,20 +729,21 @@ namespace Hecton8.Core
         {
             get
             {
-                if (_instance == null)
+                PerformanceMonitor runtime = GlobalRegistry.PerformanceMonitor;
+                if (runtime == null)
                     return default;
 
-                float deltaSeconds = Mathf.Max(_instance._currentSnapshot.deltaTime, Mathf.Epsilon);
+                float deltaSeconds = Mathf.Max(runtime._currentSnapshot.deltaTime, Mathf.Epsilon);
                 float uptimeSeconds = Mathf.Max(Time.realtimeSinceStartup, Mathf.Epsilon);
 
                 return new PerformanceStats
                 {
-                    frameTimeMs = _instance._currentSnapshot.frameTimeMs,
-                    avgFrameTimeMs = _instance._avgFrameTimeMs,
-                    peakFrameTimeMs = _instance._peakFrameTimeMs,
-                    gcAllocRateMBperSec = _instance._currentSnapshot.gcAllocatedThisFrame / (1024f * 1024f) / deltaSeconds,
-                    totalHeapBytes = _instance._currentSnapshot.gcTotalMemory,
-                    gcCollectionCountRate = (int)(_instance._currentSnapshot.gcCollectionCount / uptimeSeconds)
+                    frameTimeMs = runtime._currentSnapshot.frameTimeMs,
+                    avgFrameTimeMs = runtime._avgFrameTimeMs,
+                    peakFrameTimeMs = runtime._peakFrameTimeMs,
+                    gcAllocRateMBperSec = runtime._currentSnapshot.gcAllocatedThisFrame / (1024f * 1024f) / deltaSeconds,
+                    totalHeapBytes = runtime._currentSnapshot.gcTotalMemory,
+                    gcCollectionCountRate = (int)(runtime._currentSnapshot.gcCollectionCount / uptimeSeconds)
                 };
             }
         }
@@ -690,7 +753,8 @@ namespace Hecton8.Core
         /// </summary>
         public static string DescribeStatus()
         {
-            if (_instance == null)
+            PerformanceMonitor runtime = GlobalRegistry.PerformanceMonitor;
+            if (runtime == null)
                 return "PerformanceMonitor: Not initialized";
 
             if (!HasCurrentStats)
@@ -698,7 +762,7 @@ namespace Hecton8.Core
 
             PerformanceStats stats = CurrentStats;
             return
-                $"[PERF] samples={_instance._sampleCountTotal} " +
+                $"[PERF] samples={runtime._sampleCountTotal} " +
                 $"frame={stats.frameTimeMs:F2}ms avg={stats.avgFrameTimeMs:F2}ms peak={stats.peakFrameTimeMs:F2}ms " +
                 $"gc={stats.gcAllocRateMBperSec:F2}MB/s heap={stats.totalHeapBytes / (1024f * 1024f):F1}MB " +
                 $"collections={stats.gcCollectionCountRate}/s";

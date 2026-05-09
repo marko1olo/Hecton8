@@ -4,6 +4,7 @@ using Hecton8.Bootstrap;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -38,16 +39,15 @@ namespace Hecton8.Gameplay
         [Tooltip("Prefab for becons spawned from save data or as fallback. Should have BeaconRuntime component.")]
         [SerializeField] private GameObject beaconPrefab;
 
-        private readonly List<BeaconRuntime> _activeBeacons = new List<BeaconRuntime>(32);
+        private readonly List<BeaconRuntime> _activeBeacons = new List<BeaconRuntime>(32); // COLD ALLOC: List<BeaconRuntime>[32] — active beacon runtime registry — owner: BeaconNetworkSystem
         private int _nextSequence = 1;
         private bool _serviceRegistered;
 
-        public static BeaconNetworkSystem Instance { get; private set; }
+        public static BeaconNetworkSystem Instance => GlobalRegistry.BeaconNetwork;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            Instance = null;
         }
 
         public int SavePriority => 37;
@@ -58,13 +58,12 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            BeaconNetworkSystem registered = GlobalRegistry.BeaconNetwork;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
-
-            Instance = this;
         }
 
         private void OnEnable()
@@ -77,8 +76,6 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterService();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
-            if (Instance == this)
-                Instance = null;
         }
 
         private void TryRegisterService()
@@ -103,17 +100,22 @@ namespace Hecton8.Gameplay
 
         public static BeaconNetworkSystem GetOrCreate()
         {
-            if (Instance != null)
-                return Instance;
+            BeaconNetworkSystem registered = GlobalRegistry.BeaconNetwork;
+            if (registered != null)
+                return registered;
 
             if (TryResolvePlayerOwnedInstance(out BeaconNetworkSystem existing))
             {
-                Instance = existing;
+                if (Application.isPlaying && !ReferenceEquals(GlobalRegistry.BeaconNetwork, existing))
+                    GlobalRegistry.RegisterBeaconNetworkRuntime(existing);
+
                 return existing;
             }
 
-            GameObject root = new GameObject("BeaconNetworkSystem");
-            return root.AddComponent<BeaconNetworkSystem>();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("[BeaconNetwork] Missing bootstrap-owned BeaconNetworkSystem service.");
+#endif
+            return null;
         }
 
         public static bool TryDeployBeacon(
@@ -127,7 +129,15 @@ namespace Hecton8.Gameplay
             out BeaconRuntime beacon,
             out string label)
         {
-            return GetOrCreate().TryDeployInternal(
+            BeaconNetworkSystem runtime = GetOrCreate();
+            if (runtime == null)
+            {
+                beacon = null;
+                label = string.Empty;
+                return false;
+            }
+
+            return runtime.TryDeployInternal(
                 worldBeaconPrefab,
                 position,
                 rotation,
@@ -141,26 +151,28 @@ namespace Hecton8.Gameplay
 
         public static bool TryRetractNearest(Vector3 origin, out BeaconRuntime beacon, out float distance)
         {
-            if (Instance == null)
+            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            if (runtime == null)
             {
                 beacon = null;
                 distance = 0f;
                 return false;
             }
 
-            return Instance.TryRetractNearestInternal(origin, out beacon, out distance);
+            return runtime.TryRetractNearestInternal(origin, out beacon, out distance);
         }
 
         public static bool TryGetNearest(Vector3 origin, out BeaconSnapshot snapshot, out float distance)
         {
-            if (Instance == null)
+            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            if (runtime == null)
             {
                 snapshot = default;
                 distance = 0f;
                 return false;
             }
 
-            return Instance.TryGetNearestInternal(origin, out snapshot, out distance);
+            return runtime.TryGetNearestInternal(origin, out snapshot, out distance);
         }
 
         public int CopySnapshots(BeaconSnapshot[] buffer)
@@ -257,10 +269,11 @@ namespace Hecton8.Gameplay
 
         internal static void NotifyRuntimeDestroyed(BeaconRuntime beacon)
         {
-            if (beacon == null || Instance == null)
+            BeaconNetworkSystem runtime = GlobalRegistry.BeaconNetwork;
+            if (beacon == null || runtime == null)
                 return;
 
-            Instance.UnregisterRuntime(beacon);
+            runtime.UnregisterRuntime(beacon);
         }
 
         private bool TryDeployInternal(
@@ -284,7 +297,7 @@ namespace Hecton8.Gameplay
             }
 
             label = BuildNextLabel();
-            beacon.Configure(Guid.NewGuid().ToString("N"), label, worldBeaconPrefab, color, lightRange);
+            beacon.Configure(label, label, worldBeaconPrefab, color, lightRange);
             _activeBeacons.Add(beacon);
 
             int cap = Mathf.Clamp(maxActive > 0 ? maxActive : maxTrackedBeacons, 1, BeaconNetworkDTO.MaxEntries);
@@ -336,10 +349,7 @@ namespace Hecton8.Gameplay
             if (playerObject == null)
                 return false;
 
-            if (playerObject.TryGetComponent(out beaconNetworkSystem))
-                return true;
-
-            beaconNetworkSystem = playerObject.GetComponent<BeaconNetworkSystem>();
+            playerObject.TryGetComponent(out beaconNetworkSystem);
             return beaconNetworkSystem != null;
         }
 
@@ -367,7 +377,7 @@ namespace Hecton8.Gameplay
             if (beacon == null)
                 return false;
 
-            distance = Mathf.Sqrt(bestSqr);
+            distance = ApproximateDistance(bestSqr);
             _activeBeacons.Remove(beacon);
             beacon.DespawnSelf();
             NetworkChanged?.Invoke();
@@ -376,13 +386,13 @@ namespace Hecton8.Gameplay
 
         private bool TryGetNearestInternal(Vector3 origin, out BeaconSnapshot snapshot, out float distance)
         {
-            CleanupNullEntries();
             snapshot = default;
             distance = 0f;
             if (_activeBeacons.Count == 0)
                 return false;
 
             BeaconRuntime best = null;
+            Vector3 bestPosition = default;
             float bestSqr = float.MaxValue;
             for (int i = 0; i < _activeBeacons.Count; i++)
             {
@@ -390,20 +400,29 @@ namespace Hecton8.Gameplay
                 if (beacon == null)
                     continue;
 
-                float sqr = (beacon.transform.position - origin).sqrMagnitude;
+                Vector3 beaconPosition = beacon.transform.position;
+                float sqr = (beaconPosition - origin).sqrMagnitude;
                 if (sqr < bestSqr)
                 {
                     bestSqr = sqr;
                     best = beacon;
+                    bestPosition = beaconPosition;
                 }
             }
 
             if (best == null)
                 return false;
 
-            distance = Mathf.Sqrt(bestSqr);
-            snapshot = new BeaconSnapshot(best.BeaconId, best.Label, best.transform.position, best.BeaconColor, best.LightRange);
+            distance = ApproximateDistance(bestSqr);
+            snapshot = new BeaconSnapshot(best.BeaconId, best.Label, bestPosition, best.BeaconColor, best.LightRange);
             return true;
+        }
+
+        private static float ApproximateDistance(float distanceSq)
+        {
+            return distanceSq > 0f && float.IsFinite(distanceSq)
+                ? distanceSq * math.rsqrt(distanceSq)
+                : 0f;
         }
 
         private BeaconRuntime SpawnRuntimeBeacon(
@@ -420,7 +439,7 @@ namespace Hecton8.Gameplay
                 GameObject instance = pool.Spawn(worldBeaconPrefab, position, rotation);
                 if (instance != null)
                 {
-                    BeaconRuntime pooled = instance.GetComponent<BeaconRuntime>();
+                    instance.TryGetComponent(out BeaconRuntime pooled);
                     if (pooled == null)
                         pooled = instance.AddComponent<BeaconRuntime>();
                     return pooled;
@@ -446,11 +465,11 @@ namespace Hecton8.Gameplay
             body.transform.localScale = fallbackScale;
             body.transform.localPosition = new Vector3(0f, fallbackScale.y * 0.5f, 0f);
 
-            Collider bodyCollider = body.GetComponent<Collider>();
+            body.TryGetComponent(out Collider bodyCollider);
             if (bodyCollider != null)
                 Destroy(bodyCollider);
 
-            Renderer renderer = body.GetComponent<Renderer>();
+            body.TryGetComponent(out Renderer renderer);
             Material fallbackMaterial = null;
             if (renderer != null)
             {
@@ -522,7 +541,7 @@ namespace Hecton8.Gameplay
         //  ZERO-GC STRING CACHING
         // ══════════════════════════════════════════════════════════
 
-        private static readonly string[] _cachedUpperStrings = new string[16];
+        private static readonly string[] _cachedUpperStrings = new string[16]; // COLD ALLOC: string[16] — upper-case label cache slots — owner: BeaconNetworkSystem
 
         /// <summary>
         /// Кэшированный ToUpperInvariant для избежания повторных аллокаций строк.

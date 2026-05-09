@@ -21,11 +21,15 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
 
         #define HECTON_MAX_SCOOTER_HEADLIGHTS 2
         #define HECTON_RECENT_CUT_HEAT_MAX 16
+        #define HECTON_RECENT_CUT_HEAT_EVAL_MAX 8
+        #define HECTON_FLASHLIGHT_SHADOW_EVAL_MAX 5
         #define HECTON_VOLUMETRIC_LIGHT_CULL_DISTANCE 30.0
         #define HECTON_VOLUMETRIC_LIGHT_CULL_FADE_START 24.0
         #define HECTON_SHAFT_CHEAP_FALLOFF_THRESHOLD 0.08
         #define HECTON_SHAFT_CHEAP_DRIVE_THRESHOLD 0.18
         #define HECTON_SHAFT_FAKE_RAYMARCH_STEP_CUTOFF 3.0
+        #define HECTON_THERMAL_HAZE_CULL_SPEED_SQ 225.0
+        #define HECTON_CONTACT_SHADOW_CULL_SPEED_SQ 225.0
         #ifndef UNITY_PASS_STEREO_INSTANCE_ID
         #define UNITY_PASS_STEREO_INSTANCE_ID(input) UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input)
         #endif
@@ -181,6 +185,11 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return FastNegativeExp(x * 0.69314718);
         }
 
+        float FastTrianglePulse01(float phase)
+        {
+            return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+        }
+
         float FastNoirPowerCurve(float value, float noirPower)
         {
             float baseCurve = saturate(value);
@@ -195,6 +204,13 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         {
             float lenSq = dot(value, value);
             return lenSq > 0.00001 ? value * rsqrt(lenSq) : float3(0.0, 0.0, 1.0);
+        }
+
+        float2 ApproximateUnitDirectionDiamond(float2 value)
+        {
+            float2 absValue = abs(value);
+            float invRadius = rcp(max(absValue.x + absValue.y, 0.0001));
+            return value * invRadius;
         }
 
         float ResolveSpotConeAttenuation(float cosAngle, float innerCos, float outerCos)
@@ -397,7 +413,10 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             if (_HectonScooterHeadlightCount <= 0 || _HectonContactShadowStrength <= 0.0001)
                 return 1.0;
 
-            const int stepCount = 4;
+            if (dot(_HectonScooterVelocityWS.xyz, _HectonScooterVelocityWS.xyz) > HECTON_CONTACT_SHADOW_CULL_SPEED_SQ)
+                return 1.0;
+
+            const int stepCount = 3;
             float3 biasedSurfacePositionWS = surfacePositionWS + normalWS * _HectonContactShadowBias;
             float4 surfaceCS = TransformWorldToHClip(surfacePositionWS);
             float jitter = surfaceCS.w > 0.0001
@@ -406,9 +425,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float shadowOcclusion = 0.0;
 
             [unroll]
-            for (int stepIndex = 0; stepIndex < 4; stepIndex++)
+            for (int stepIndex = 0; stepIndex < 3; stepIndex++)
             {
-                float stepT = (stepIndex + 0.5 + jitter * 0.35) * 0.25;
+                float stepT = (stepIndex + 0.5 + jitter * 0.35) * 0.33333334;
 
                 [unroll(HECTON_MAX_SCOOTER_HEADLIGHTS)]
                 for (int lightIndex = 0; lightIndex < HECTON_MAX_SCOOTER_HEADLIGHTS; lightIndex++)
@@ -533,14 +552,14 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5 || rayLength <= 0.0001)
                 return 1.0;
 
-            int stepCount = clamp((int)round(_HectonFlashlightShadowSteps), 1, 7);
+            int stepCount = clamp((int)(_HectonFlashlightShadowSteps + 0.5), 1, HECTON_FLASHLIGHT_SHADOW_EVAL_MAX);
             float minStep = max(_HectonFlashlightShadowMinStep, 0.01);
             float shadowFloor = ResolveFlashlightShadowFloor();
             float result = 1.0;
             float travel = minStep;
 
             [loop]
-            for (int stepIndex = 0; stepIndex < 7; stepIndex++)
+            for (int stepIndex = 0; stepIndex < HECTON_FLASHLIGHT_SHADOW_EVAL_MAX; stepIndex++)
             {
                 if (stepIndex >= stepCount || travel >= rayLength)
                     break;
@@ -779,7 +798,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float2 radialFromCenter = screenUV - centerUV;
             float edgeFactor = saturate(dot(radialFromCenter, radialFromCenter) * 4.84);
             float edgeWeight = saturate(edgeFactor * max(_HectonLensEdgeWeight, 0.0));
-            float2 aberrationDirection = SafeNormalize3(float3(flareVector, 0.0)).xy;
+            float2 aberrationDirection = ApproximateUnitDirectionDiamond(flareVector);
             float2 aberrationOffset = aberrationDirection * (_HectonLensChromaticAberration * lerp(0.35, 1.0, edgeFactor));
             float baseRadius = max(_HectonLensGhostScale, 0.001);
             float ghostFade = saturate(1.0 - dot(sunUV - centerUV, sunUV - centerUV) * 1.6);
@@ -852,16 +871,17 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
                 return 0.0;
 
             float hazeWeight = 0.0;
+            float animationTime = HectonShaftAnimationTime();
             [unroll]
-            for (int heatIndex = 0; heatIndex < HECTON_RECENT_CUT_HEAT_MAX; heatIndex++)
+            for (int heatIndex = 0; heatIndex < HECTON_RECENT_CUT_HEAT_EVAL_MAX; heatIndex++)
             {
                 if (heatIndex >= _HectonRecentCutHeatCount)
-                    continue;
+                    break;
 
                 float4 positionRadius = _HectonRecentCutHeatPositionRadius[heatIndex];
                 float4 strengthTime = _HectonRecentCutHeatStrengthTime[heatIndex];
                 float radius = max(positionRadius.w, 0.001);
-                float age01 = saturate((HectonShaftAnimationTime() - strengthTime.y) * SafeRcp(max(strengthTime.z, 0.001)));
+                float age01 = saturate((animationTime - strengthTime.y) * SafeRcp(max(strengthTime.z, 0.001)));
                 float3 heatDelta = scenePositionWS - positionRadius.xyz;
                 float radiusSq = max(radius * radius, 0.000001);
                 float spatialMask = saturate(1.0 - dot(heatDelta, heatDelta) * SafeRcp(radiusSq));
@@ -874,6 +894,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         float2 EvaluateThermalHazeOffset(float2 screenUV, float depthValid, float3 scenePositionWS)
         {
             if (_HectonThermalHazeIntensity <= 0.000001 || depthValid <= 0.5)
+                return float2(0.0, 0.0);
+
+            if (dot(_HectonScooterVelocityWS.xyz, _HectonScooterVelocityWS.xyz) > HECTON_THERMAL_HAZE_CULL_SPEED_SQ)
                 return float2(0.0, 0.0);
 
             float heatWeight = ResolveRecentHeatHazeWeight(scenePositionWS);
@@ -935,20 +958,16 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return normalWS.y < 0.0 ? -normalWS : normalWS;
         }
 
-        half3 EvaluateBiolumFloorProjection(float2 screenUV)
+        half3 EvaluateBiolumFloorProjection(
+            float2 screenUV,
+            float depthValid,
+            float3 scenePositionWS,
+            float linearEyeDepth,
+            float3 normalWS)
         {
-            if (_HectonFloorBiolumStrength <= 0.0001)
+            if (_HectonFloorBiolumStrength <= 0.0001 || depthValid <= 0.5)
                 return half3(0.0, 0.0, 0.0);
 
-            float rawDepth;
-            float depthValid;
-            float3 scenePositionWS;
-            float linearEyeDepth;
-            ResolveDepthData(screenUV, rawDepth, depthValid, scenePositionWS, linearEyeDepth);
-            if (depthValid <= 0.5)
-                return half3(0.0, 0.0, 0.0);
-
-            float3 normalWS = ApproximateWorldNormal(screenUV, scenePositionWS);
             float floorMask = saturate((normalWS.y - 0.42) * 2.4);
             if (floorMask <= 0.0001)
                 return half3(0.0, 0.0, 0.0);
@@ -957,9 +976,9 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float2 patternCoord = scenePositionWS.xz * patternScale;
             float animationTime = HectonShaftAnimationTime();
             float pattern =
-                sin(patternCoord.x + animationTime * 0.72) * 0.5 +
-                cos(patternCoord.y * 1.13 - animationTime * 0.57) * 0.35 +
-                sin((patternCoord.x + patternCoord.y) * 0.74 + animationTime * 1.11) * 0.15;
+                (FastTrianglePulse01(patternCoord.x + animationTime * 0.72) * 2.0 - 1.0) * 0.5 +
+                (FastTrianglePulse01(patternCoord.y * 1.13 - animationTime * 0.57 + 1.5707963) * 2.0 - 1.0) * 0.35 +
+                (FastTrianglePulse01((patternCoord.x + patternCoord.y) * 0.74 + animationTime * 1.11) * 2.0 - 1.0) * 0.15;
             pattern = saturate(pattern * 0.5 + 0.5);
             pattern = smoothstep(0.28, 0.92, pattern);
             float distanceFade = FastNegativeExp2(linearEyeDepth * 0.004);
@@ -971,23 +990,21 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float2 centered = screenUV - 0.5;
             half edgeMask = saturate((half)dot(centered, centered) * 3.4h);
             float animationTime = HectonShaftAnimationTime();
-            half scan = smoothstep(0.82h, 1.0h, (half)(sin(screenUV.y * 720.0 + animationTime * 19.0) * 0.5 + 0.5));
+            half scan = smoothstep(0.82h, 1.0h, (half)FastTrianglePulse01(screenUV.y * 720.0 + animationTime * 19.0));
             half grain = (half)ValueNoise2D(screenUV * float2(94.0, 53.0) + float2(animationTime, animationTime) * 0.17);
             half pulse = edgeMask * scan * saturate(grain * 1.35h - 0.28h) * 0.035h;
             half3 shifted = half3(color.r * 0.96h, color.g * 1.015h, color.b * 1.04h);
             return max(lerp(color, shifted + _HectonNoirLiftColor.rgb * 0.08h, pulse), noirMinimum);
         }
 
-        float ResolveSceneDepthEdgeWeight(float2 screenUV, float centerLinearEyeDepth)
+        float ResolveSceneDepthEdgeWeight(float2 screenUV, float rawDepth, float centerLinearEyeDepth)
         {
             float2 texel = max(_BlitTexture_TexelSize.xy, 1.0 / max(_ScaledScreenParams.xy, float2(1.0, 1.0)));
-            float depthLeft = LinearEyeDepth(SampleSceneDepth(saturate(screenUV - float2(texel.x, 0.0))), _ZBufferParams);
-            float depthRight = LinearEyeDepth(SampleSceneDepth(saturate(screenUV + float2(texel.x, 0.0))), _ZBufferParams);
-            float depthDown = LinearEyeDepth(SampleSceneDepth(saturate(screenUV - float2(0.0, texel.y))), _ZBufferParams);
-            float depthUp = LinearEyeDepth(SampleSceneDepth(saturate(screenUV + float2(0.0, texel.y))), _ZBufferParams);
-            float depthGradient = max(abs(depthLeft - depthRight), abs(depthDown - depthUp));
-            float adaptiveThreshold = max(centerLinearEyeDepth * 0.018, 0.08);
-            return smoothstep(adaptiveThreshold * 0.35, adaptiveThreshold * 2.25, depthGradient);
+            float depthDx = SampleSceneDepth(saturate(screenUV + float2(texel.x, 0.0)));
+            float depthDy = SampleSceneDepth(saturate(screenUV + float2(0.0, texel.y)));
+            float depthGradient = abs(depthDx - rawDepth) + abs(depthDy - rawDepth);
+            float adaptiveThreshold = max(0.000025, 0.00045 * rcp(1.0 + centerLinearEyeDepth * 0.035));
+            return smoothstep(adaptiveThreshold, adaptiveThreshold * 4.0, depthGradient);
         }
 
         float ApproximatePulseDistance(float3 a, float3 b)
@@ -1024,12 +1041,12 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return band * lifeMask * active * intensityScale * cinematicFalloff;
         }
 
-        half3 EvaluateAcousticSonarOverlay(float2 screenUV, float depthValid, float3 scenePositionWS, float linearEyeDepth)
+        half3 EvaluateAcousticSonarOverlay(float2 screenUV, float depthValid, float3 scenePositionWS, float rawDepth, float linearEyeDepth)
         {
             if (_SonarActive <= 0.0001 || depthValid <= 0.5)
                 return half3(0.0h, 0.0h, 0.0h);
 
-            float edgeWeight = ResolveSceneDepthEdgeWeight(screenUV, linearEyeDepth);
+            float edgeWeight = ResolveSceneDepthEdgeWeight(screenUV, rawDepth, linearEyeDepth);
             float primary = EvaluateSonarPulseBand(_HectonSonarPrimaryPulse, _HectonSonarVisualParams, scenePositionWS, 0.0, 1.0);
             float4 automaticEchoParams = float4(
                 max(_HectonSonarVisualParams.x * 0.72, 0.01),
@@ -1089,20 +1106,32 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float3 scenePositionWS;
             float linearEyeDepth;
             ResolveDepthData(screenUV, rawDepth, depthValid, scenePositionWS, linearEyeDepth);
-            float2 sourceUV = saturate(screenUV + EvaluateThermalHazeOffset(screenUV, depthValid, scenePositionWS));
+            float2 sourceUV = screenUV;
+            [branch]
+            if (_HectonThermalHazeIntensity > 0.000001 && depthValid > 0.5)
+                sourceUV = saturate(screenUV + EvaluateThermalHazeOffset(screenUV, depthValid, scenePositionWS));
             half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, sourceUV);
             float exposureMultiplier = ResolveExposureMultiplier();
             half3 noirMinimum = ResolveNoirMinimumColor();
             sourceColor.rgb *= exposureMultiplier;
-            half3 shafts = BilateralUpsampleShafts(screenUV, linearEyeDepth);
-            shafts *= exposureMultiplier;
-            half3 biolumProjection = EvaluateBiolumFloorProjection(screenUV) * exposureMultiplier;
-            half3 lensGhosts = EvaluateProceduralLensArtifacts(screenUV) * exposureMultiplier;
-            half3 lensDirtCondensation = EvaluateLensDirtCondensation(screenUV, sourceColor.rgb) * exposureMultiplier;
-            half3 acousticSonarOverlay = EvaluateAcousticSonarOverlay(screenUV, depthValid, scenePositionWS, linearEyeDepth) * exposureMultiplier;
+            half3 shafts = half3(0.0h, 0.0h, 0.0h);
+            if (_HectonShaftIntensity > 0.0001)
+                shafts = BilateralUpsampleShafts(screenUV, linearEyeDepth) * exposureMultiplier;
+
+            half3 biolumProjection = half3(0.0h, 0.0h, 0.0h);
+            half3 lensGhosts = half3(0.0h, 0.0h, 0.0h);
+            if (_HectonLensGhostIntensity > 0.0001)
+                lensGhosts = EvaluateProceduralLensArtifacts(screenUV) * exposureMultiplier;
+
+            half3 lensDirtCondensation = half3(0.0h, 0.0h, 0.0h);
+            if ((_HectonLensDirtIntensity + _HectonCondensationIntensity) > 0.0001)
+                lensDirtCondensation = EvaluateLensDirtCondensation(screenUV, sourceColor.rgb) * exposureMultiplier;
+
+            half3 acousticSonarOverlay = EvaluateAcousticSonarOverlay(screenUV, depthValid, scenePositionWS, rawDepth, linearEyeDepth) * exposureMultiplier;
             if (depthValid > 0.5)
             {
                 float3 normalWS = ApproximateWorldNormal(screenUV, scenePositionWS);
+                biolumProjection = EvaluateBiolumFloorProjection(screenUV, depthValid, scenePositionWS, linearEyeDepth, normalWS) * exposureMultiplier;
                 float headlightMask = EvaluateSurfaceHeadlightMask(scenePositionWS, normalWS);
                 float contactShadow = EvaluateContactShadow(scenePositionWS, normalWS);
                 sourceColor.rgb *= lerp(1.0, contactShadow, headlightMask);
@@ -1146,6 +1175,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             #pragma vertex Vert
             #pragma fragment FragScreenSpaceShafts
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             ENDHLSL
         }
 
@@ -1156,6 +1187,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             #pragma vertex Vert
             #pragma fragment FragBlurH
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             ENDHLSL
         }
 
@@ -1166,6 +1199,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             #pragma vertex Vert
             #pragma fragment FragBlurV
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             ENDHLSL
         }
 
@@ -1176,6 +1211,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             #pragma vertex Vert
             #pragma fragment FragComposite
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             ENDHLSL
         }
 
@@ -1186,6 +1223,8 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             #pragma vertex Vert
             #pragma fragment FragDownsampleDepth
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHT_SHADOWS _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             ENDHLSL
         }
     }

@@ -6,6 +6,7 @@ using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -66,6 +67,7 @@ namespace Hecton8.Gameplay
         private NativeArray<RaycastCommand> _parasiteSporeLosCommands;
         private NativeArray<RaycastHit> _parasiteSporeLosHits;
         private JobHandle _parasiteSporeLosHandle;
+        private JobHandle _parasiteSporeDisposeHandle;
         private bool _lateFrameRegistered;
         private bool _parasiteSporeLosScheduled;
         private bool _pendingParasiteSporeLosQuery;
@@ -93,12 +95,12 @@ namespace Hecton8.Gameplay
 
         internal float HazardToxicSignal01 => _hazardToxicSignal01;
 
-        internal float ClarityRemaining01 => 1f - Mathf.Clamp01(_clarityChannel01);
+        internal float ClarityRemaining01 => 1f - math.saturate(_clarityChannel01);
 
         internal bool BiosRecoveryModeActive => ResolveBiosRecoveryMode(
-            _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.IntegrityNormalized) : 1f,
-            Mathf.Min(
-                _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.IntegrityNormalized) : 1f,
+            _survivalSystem != null ? math.saturate(_survivalSystem.IntegrityNormalized) : 1f,
+            math.min(
+                _survivalSystem != null ? math.saturate(_survivalSystem.IntegrityNormalized) : 1f,
                 _activeTransportIntegrityNormalized));
 
         /// <summary>Normalized flood ratio of the currently occupied habitat module.</summary>
@@ -193,7 +195,7 @@ namespace Hecton8.Gameplay
             _hazardRadiationSignal01 = DecayChannel(_hazardRadiationSignal01, HazardSignalDecayPerSecond, deltaTime);
             _hazardThermalSignal01 = DecayChannel(_hazardThermalSignal01, HazardSignalDecayPerSecond, deltaTime);
             _hazardToxicSignal01 = DecayChannel(_hazardToxicSignal01, HazardSignalDecayPerSecond, deltaTime);
-            _empSensorBlindTimer = Mathf.Max(0f, _empSensorBlindTimer - Mathf.Max(0f, deltaTime));
+            _empSensorBlindTimer = math.max(0f, _empSensorBlindTimer - math.max(0f, deltaTime));
             UpdateRadiationFatigue(deltaTime);
             UpdateActiveParasiteSporeHazard(deltaTime);
             UpdateActiveParasiteAudioState();
@@ -203,8 +205,8 @@ namespace Hecton8.Gameplay
 
             if (_activeTransportOwner != null)
             {
-                _activeTransportChargeNormalized = Mathf.Clamp01(_activeTransportOwner.TransportChargeNormalized);
-                _activeTransportIntegrityNormalized = Mathf.Clamp01(_activeTransportOwner.TransportIntegrityNormalized);
+                _activeTransportChargeNormalized = math.saturate(_activeTransportOwner.TransportChargeNormalized);
+                _activeTransportIntegrityNormalized = math.saturate(_activeTransportOwner.TransportIntegrityNormalized);
             }
 
             if ((object)_activeHabitatEmitterBehaviour != null && _activeHabitatEmitterBehaviour == null)
@@ -219,6 +221,9 @@ namespace Hecton8.Gameplay
         public void LateFrameTick()
         {
             CompleteParasiteSporeLosQuery(false);
+            if (!_parasiteSporeLosCommands.IsCreated || !_parasiteSporeLosHits.IsCreated)
+                InitializeParasiteSporeLosBuffers();
+
             if (!_pendingParasiteSporeLosQuery ||
                 _parasiteSporeLosScheduled ||
                 !_parasiteSporeLosCommands.IsCreated ||
@@ -259,17 +264,17 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void OnIntegrityChanged(float prev, float next, DamageSignal src)
         {
-            PromoteChannel(ref _integrityChannel01, Mathf.Max(Mathf.Abs(next - prev), src.integrityDelta / (float)byte.MaxValue));
+            PromoteChannel(ref _integrityChannel01, math.max(math.abs(next - prev), src.integrityDelta / (float)byte.MaxValue));
 
             if (src.sourceID == DamageSourceIds.MountableTransport ||
                 src.sourceID == DamageSourceIds.MantaScooter ||
                 src.sourceID == DamageSourceIds.SubmarineImpact)
             {
-                _activeTransportIntegrityNormalized = Mathf.Clamp01(next);
+                _activeTransportIntegrityNormalized = math.saturate(next);
                 if ((src.damageType & (uint)DamageTypeMask.Impact) != 0u)
                 {
-                    float transferredStress01 = Mathf.Clamp01(
-                        (Mathf.Max(0f, src.magnitude) * ImpactStressTransferFactor) /
+                    float transferredStress01 = math.saturate(
+                        (math.max(0f, src.magnitude) * ImpactStressTransferFactor) /
                         ImpactStressNormalizationSpeed);
                     if (transferredStress01 > 0.0001f && _playerMovement != null)
                         _playerMovement.RequestExternalHullStress(transferredStress01);
@@ -284,7 +289,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void OnPowerChanged(float prev, float next, DamageSignal src)
         {
-            PromoteChannel(ref _powerChannel01, Mathf.Max(Mathf.Abs(next - prev), next));
+            PromoteChannel(ref _powerChannel01, math.max(math.abs(next - prev), next));
         }
 
         /// <summary>
@@ -292,9 +297,9 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void OnClarityChanged(float prev, float next, DamageSignal src)
         {
-            PromoteChannel(ref _clarityChannel01, Mathf.Max(Mathf.Abs(next - prev), next));
+            PromoteChannel(ref _clarityChannel01, math.max(math.abs(next - prev), next));
 
-            float hazardSignal = Mathf.Clamp01(Mathf.Max(src.magnitude, next));
+            float hazardSignal = math.saturate(math.max(src.magnitude, next));
             if ((src.damageType & (uint)DamageTypeMask.Radioactive) != 0u)
                 PromoteChannel(ref _hazardRadiationSignal01, hazardSignal);
 
@@ -315,7 +320,7 @@ namespace Hecton8.Gameplay
                 return;
 
             PromoteChannel(ref _integrityChannel01, impulse);
-            PromoteChannel(ref _clarityChannel01, Mathf.Clamp01(impulse * 0.9f));
+            PromoteChannel(ref _clarityChannel01, math.saturate(impulse * 0.9f));
         }
 
         /// <summary>
@@ -324,7 +329,7 @@ namespace Hecton8.Gameplay
         public void OnHullBreach(Unity.Mathematics.float3 localPoint, float depth, float pressureDelta)
         {
             PromoteChannel(ref _integrityChannel01, 1f);
-            PromoteChannel(ref _clarityChannel01, Mathf.Clamp01(0.35f + pressureDelta * 0.35f));
+            PromoteChannel(ref _clarityChannel01, math.saturate(0.35f + pressureDelta * 0.35f));
         }
 
         /// <inheritdoc />
@@ -384,8 +389,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void TryRegisterLateFrame()
@@ -393,8 +397,7 @@ namespace Hecton8.Gameplay
             if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
+            _lateFrameRegistered = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
@@ -451,10 +454,10 @@ namespace Hecton8.Gameplay
             ClearTransportBinding();
             _activeTransportOwner = lifecycleOwner;
             _activeTransportChargeNormalized = lifecycleOwner != null
-                ? Mathf.Clamp01(lifecycleOwner.TransportChargeNormalized)
+                ? math.saturate(lifecycleOwner.TransportChargeNormalized)
                 : 1f;
             _activeTransportIntegrityNormalized = lifecycleOwner != null
-                ? Mathf.Clamp01(lifecycleOwner.TransportIntegrityNormalized)
+                ? math.saturate(lifecycleOwner.TransportIntegrityNormalized)
                 : 1f;
 
             if (!(lifecycleOwner is IDamageSignalEmitter emitter) || !(lifecycleOwner is MonoBehaviour behaviour))
@@ -503,33 +506,33 @@ namespace Hecton8.Gameplay
         private void PublishSignals(bool force)
         {
             float underwaterStress01 = _playerMovement != null
-                ? Mathf.Clamp01(_playerMovement.CurrentUnderwaterStressIntensity01)
+                ? math.saturate(_playerMovement.CurrentUnderwaterStressIntensity01)
                 : 0f;
             float hullStress01 = _playerMovement != null
-                ? Mathf.Clamp01(_playerMovement.CurrentHullStress01)
+                ? math.saturate(_playerMovement.CurrentHullStress01)
                 : 0f;
             float fatalPressure01 = _playerMovement != null
-                ? Mathf.Clamp01(_playerMovement.CurrentFatalPressureSequence01)
+                ? math.saturate(_playerMovement.CurrentFatalPressureSequence01)
                 : 0f;
             float playerIntegrity01 = _survivalSystem != null
-                ? Mathf.Clamp01(_survivalSystem.IntegrityNormalized)
+                ? math.saturate(_survivalSystem.IntegrityNormalized)
                 : 1f;
-            float hullIntegrity01 = Mathf.Min(playerIntegrity01, _activeTransportIntegrityNormalized);
-            float hazardGlitchIntensity = Mathf.Clamp01(Mathf.Max(
+            float hullIntegrity01 = math.min(playerIntegrity01, _activeTransportIntegrityNormalized);
+            float hazardGlitchIntensity = math.saturate(math.max(
                 _hazardRadiationSignal01,
-                Mathf.Max(
+                math.max(
                     _hazardThermalSignal01 * 0.82f,
                     _hazardToxicSignal01 * 0.91f)));
-            float glitchIntensity = Mathf.Clamp01(Mathf.Max(
-                Mathf.Max(
+            float glitchIntensity = math.saturate(math.max(
+                math.max(
                     _clarityChannel01,
-                    Mathf.Max(_integrityChannel01 * 0.82f, _powerChannel01 * 0.68f)),
-                Mathf.Max(
+                    math.max(_integrityChannel01 * 0.82f, _powerChannel01 * 0.68f)),
+                math.max(
                     hazardGlitchIntensity,
-                    Mathf.Max(hullStress01 * 0.92f, fatalPressure01))));
-            float recoilScalar = Mathf.Clamp01(Mathf.Max(
+                    math.max(hullStress01 * 0.92f, fatalPressure01))));
+            float recoilScalar = math.saturate(math.max(
                 hullStress01,
-                Mathf.Max(_integrityChannel01 * 0.86f, _powerChannel01 * 0.34f)));
+                math.max(_integrityChannel01 * 0.86f, _powerChannel01 * 0.34f)));
             bool biosRecoveryMode = ResolveBiosRecoveryMode(playerIntegrity01, hullIntegrity01);
 
             int traumaSignature = ComposeSignalSignature(
@@ -549,14 +552,14 @@ namespace Hecton8.Gameplay
                     biosRecoveryMode));
             }
 
-            float stress01 = Mathf.Clamp01(Mathf.Max(
-                Mathf.Max(underwaterStress01, hullStress01),
-                Mathf.Max(
+            float stress01 = math.saturate(math.max(
+                math.max(underwaterStress01, hullStress01),
+                math.max(
                     fatalPressure01,
-                    Mathf.Max(_clarityChannel01 * 0.7f, _integrityChannel01 * 0.45f))));
-            float volume01 = Mathf.Lerp(0.24f, 1f, stress01);
-            float pitchScale = Mathf.Lerp(0.92f, 1.18f, stress01);
-            float frequency01 = Mathf.Lerp(0.35f, 1f, stress01);
+                    math.max(_clarityChannel01 * 0.7f, _integrityChannel01 * 0.45f))));
+            float volume01 = math.lerp(0.24f, 1f, stress01);
+            float pitchScale = math.lerp(0.92f, 1.18f, stress01);
+            float frequency01 = math.lerp(0.35f, 1f, stress01);
             int interactionSignature = ComposeSignalSignature(stress01, volume01, pitchScale, frequency01, 0f);
             if (force || interactionSignature != _lastPublishedInteractionSignature)
             {
@@ -574,24 +577,35 @@ namespace Hecton8.Gameplay
             unchecked
             {
                 int hash = 17;
-                hash = (hash * 31) + Mathf.RoundToInt(value0 * 1000f);
-                hash = (hash * 31) + Mathf.RoundToInt(value1 * 1000f);
-                hash = (hash * 31) + Mathf.RoundToInt(value2 * 1000f);
-                hash = (hash * 31) + Mathf.RoundToInt(value3 * 1000f);
-                hash = (hash * 31) + Mathf.RoundToInt(value4 * 1000f);
+                hash = (hash * 31) + QuantizeSignal(value0);
+                hash = (hash * 31) + QuantizeSignal(value1);
+                hash = (hash * 31) + QuantizeSignal(value2);
+                hash = (hash * 31) + QuantizeSignal(value3);
+                hash = (hash * 31) + QuantizeSignal(value4);
                 return hash;
             }
         }
 
+        private static int QuantizeSignal(float value)
+        {
+            if (!math.isfinite(value))
+                return 0;
+
+            float scaled = math.clamp(value, -32f, 32f) * 1000f;
+            return scaled >= 0f
+                ? (int)(scaled + 0.5f)
+                : (int)(scaled - 0.5f);
+        }
+
         private static float DecayChannel(float current, float decayPerSecond, float deltaTime)
         {
-            return Mathf.Max(0f, current - decayPerSecond * Mathf.Max(0f, deltaTime));
+            return math.max(0f, current - decayPerSecond * math.max(0f, deltaTime));
         }
 
         private static void PromoteChannel(ref float channel, float candidate)
         {
             if (candidate > channel)
-                channel = Mathf.Clamp01(candidate);
+                channel = math.saturate(candidate);
         }
 
         private void UpdateRadiationFatigue(float deltaTime)
@@ -599,11 +613,11 @@ namespace Hecton8.Gameplay
             if (_playerHealth == null)
                 return;
 
-            float radiationSignal = Mathf.Clamp01(_hazardRadiationSignal01);
+            float radiationSignal = math.saturate(_hazardRadiationSignal01);
             if (radiationSignal <= RadiationFatigueSignalThreshold)
                 return;
 
-            _radiationExposureSeconds += Mathf.Max(0f, deltaTime) * radiationSignal;
+            _radiationExposureSeconds += math.max(0f, deltaTime) * radiationSignal;
             _playerHealth.ApplyRadiationExposure(_radiationExposureSeconds);
         }
 
@@ -635,7 +649,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float hazardIntensity = Mathf.Clamp01(intensity);
+            float hazardIntensity = math.saturate(intensity);
             PromoteChannel(ref _hazardToxicSignal01, hazardIntensity);
             PromoteChannel(ref _clarityChannel01, hazardIntensity * 0.35f);
             if (HasSealedHelmetProtection())
@@ -644,17 +658,21 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            _parasiteSporeDamageAccumulator += Mathf.Max(0f, deltaTime);
+            _parasiteSporeDamageAccumulator += math.max(0f, deltaTime);
             if (_parasiteSporeDamageAccumulator < ParasiteSporeDamageIntervalSeconds)
                 return;
 
-            int intervals = Mathf.FloorToInt(_parasiteSporeDamageAccumulator / ParasiteSporeDamageIntervalSeconds);
+            int intervals = (int)math.floor(_parasiteSporeDamageAccumulator / ParasiteSporeDamageIntervalSeconds);
             _parasiteSporeDamageAccumulator -= intervals * ParasiteSporeDamageIntervalSeconds;
             _survivalSystem.TakeDamage(ParasiteSporeDamagePerSecond * hazardIntensity * intervals);
         }
 
         private void InitializeParasiteSporeLosBuffers()
         {
+            DispatcherJobSwap.TryFinalizeCompleted(ref _parasiteSporeDisposeHandle);
+            if (!_parasiteSporeDisposeHandle.IsCompleted)
+                return;
+
             if (!_parasiteSporeLosCommands.IsCreated)
             {
                 _parasiteSporeLosCommands = new NativeArray<RaycastCommand>(ParasiteSporeLosQueryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] — parasite spore line-of-sight command buffer — owner: TraumaDispatcher
@@ -675,8 +693,9 @@ namespace Hecton8.Gameplay
         private void QueueParasiteSporeLosQuery(Vector3 hazardCenter, Vector3 playerPosition)
         {
             Vector3 delta = playerPosition - hazardCenter;
-            float distance = delta.magnitude;
-            if (distance <= ParasiteSporeLosMinimumDistance)
+            float distanceSq = delta.sqrMagnitude;
+            float minimumDistanceSq = ParasiteSporeLosMinimumDistance * ParasiteSporeLosMinimumDistance;
+            if (distanceSq <= minimumDistanceSq)
             {
                 _pendingParasiteSporeLosQuery = false;
                 _parasiteSporeLosResultValid = true;
@@ -684,8 +703,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            float inverseDistance = math.rsqrt(distanceSq);
+            float distance = distanceSq * inverseDistance;
             _pendingParasiteSporeLosOrigin = hazardCenter;
-            _pendingParasiteSporeLosDirection = delta / distance;
+            _pendingParasiteSporeLosDirection = delta * inverseDistance;
             _pendingParasiteSporeLosDistance = distance;
             _pendingParasiteSporeLosQuery = true;
         }
@@ -714,16 +735,16 @@ namespace Hecton8.Gameplay
 
         private void DisposeParasiteSporeLosBuffers()
         {
+            DispatcherJobSwap.TryFinalizeCompleted(ref _parasiteSporeDisposeHandle);
             bool disposeAfterScheduledQuery = _parasiteSporeLosScheduled;
             JobHandle disposeDependency = _parasiteSporeLosHandle;
+            bool scheduledDispose = false;
 
             if (_parasiteSporeLosCommands.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_parasiteSporeLosCommands);
-                if (disposeAfterScheduledQuery)
-                    _parasiteSporeLosCommands.Dispose(disposeDependency);
-                else
-                    _parasiteSporeLosCommands.Dispose();
+                disposeDependency = _parasiteSporeLosCommands.Dispose(disposeAfterScheduledQuery ? disposeDependency : default);
+                scheduledDispose = true;
 
                 _parasiteSporeLosCommands = default;
             }
@@ -731,12 +752,16 @@ namespace Hecton8.Gameplay
             if (_parasiteSporeLosHits.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_parasiteSporeLosHits);
-                if (disposeAfterScheduledQuery)
-                    _parasiteSporeLosHits.Dispose(disposeDependency);
-                else
-                    _parasiteSporeLosHits.Dispose();
+                disposeDependency = _parasiteSporeLosHits.Dispose(disposeDependency);
+                scheduledDispose = true;
 
                 _parasiteSporeLosHits = default;
+            }
+
+            if (scheduledDispose)
+            {
+                _parasiteSporeDisposeHandle = disposeDependency;
+                JobHandle.ScheduleBatchedJobs();
             }
 
             _parasiteSporeLosHandle = default;
@@ -790,7 +815,7 @@ namespace Hecton8.Gameplay
             if (_activeTransportChargeNormalized <= 0.0001f || hullIntegrity01 < 0.05f)
                 return true;
 
-            float clarityRemaining01 = 1f - Mathf.Clamp01(_clarityChannel01);
+            float clarityRemaining01 = 1f - math.saturate(_clarityChannel01);
             return clarityRemaining01 < BiosRecoveryClarityThreshold || playerIntegrity01 < 0.05f;
         }
 
@@ -802,13 +827,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float durationSeconds = Mathf.Max(0f, pulseEvent.DurationSeconds);
-            float claritySuppression01 = Mathf.Clamp01(pulseEvent.ClaritySuppression01);
-            _empSensorBlindTimer = Mathf.Max(_empSensorBlindTimer, durationSeconds);
+            float durationSeconds = math.max(0f, pulseEvent.DurationSeconds);
+            float claritySuppression01 = math.saturate(pulseEvent.ClaritySuppression01);
+            _empSensorBlindTimer = math.max(_empSensorBlindTimer, durationSeconds);
             PromoteChannel(ref _clarityChannel01, claritySuppression01);
 
             if (_playerMovement != null)
-                _playerMovement.RequestExternalHullStress(Mathf.Max(EmpStressTransfer01, claritySuppression01));
+                _playerMovement.RequestExternalHullStress(math.max(EmpStressTransfer01, claritySuppression01));
 
             if (_activeTransportOwner is MantaScooter mantaScooter)
                 mantaScooter.ApplyEmpDisruption(durationSeconds);
@@ -821,26 +846,36 @@ namespace Hecton8.Gameplay
         private bool IsPulseRelevantToPlayer(in ElectromagneticPulseEvent pulseEvent)
         {
             Vector3 pulsePosition = pulseEvent.RuntimePosition;
-            float pulseRadius = Mathf.Max(0f, pulseEvent.RadiusMeters);
-            float pulseRadiusSq = pulseRadius * pulseRadius;
+            float pulseRadius = math.max(0f, pulseEvent.RadiusMeters);
+            double pulseRadiusSq = (double)pulseRadius * pulseRadius;
+            AbsoluteUniversePosition pulseAup = AbsoluteUniversePosition.FromRuntimePosition(pulsePosition);
 
             Transform playerTransform = _playerMovement != null ? _playerMovement.transform : transform;
-            if (playerTransform != null && (playerTransform.position - pulsePosition).sqrMagnitude <= pulseRadiusSq)
+            if (IsTransformInsidePulseAup(playerTransform, in pulseAup, pulseRadiusSq))
                 return true;
 
             if (_activeTransportEmitterBehaviour != null &&
-                (_activeTransportEmitterBehaviour.transform.position - pulsePosition).sqrMagnitude <= pulseRadiusSq)
+                IsTransformInsidePulseAup(_activeTransportEmitterBehaviour.transform, in pulseAup, pulseRadiusSq))
             {
                 return true;
             }
 
             if (_activeHabitatEmitterBehaviour != null &&
-                (_activeHabitatEmitterBehaviour.transform.position - pulsePosition).sqrMagnitude <= pulseRadiusSq)
+                IsTransformInsidePulseAup(_activeHabitatEmitterBehaviour.transform, in pulseAup, pulseRadiusSq))
             {
                 return true;
             }
 
             return false;
+        }
+
+        private static bool IsTransformInsidePulseAup(Transform target, in AbsoluteUniversePosition pulseAup, double pulseRadiusSq)
+        {
+            if (target == null)
+                return false;
+
+            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromRuntimePosition(target.position);
+            return AbsoluteUniversePosition.DistanceSq(in targetAup, in pulseAup) <= pulseRadiusSq;
         }
     }
 }

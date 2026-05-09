@@ -20,10 +20,11 @@
 using System;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
-using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -33,7 +34,15 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/PDA Atlas Signal Tab")]
     public sealed class PDAAtlasSignalTab : MonoBehaviour, ITickable, IUpdatable, IAtlasSignalEventListener, IPDAEventListener
     {
-        private const float MainCameraResolveRetryInterval = 1f;
+        private const int DirectionDistanceNearStepMeters = 5;
+        private const int DirectionDistanceMidStepMeters = 25;
+        private const int DirectionDistanceFarStepMeters = 100;
+        private const int DirectionDistanceNearThresholdMeters = 100;
+        private const int DirectionDistanceMidThresholdMeters = 1000;
+        private const int DirectionDistanceMaxDisplayMeters = 99999;
+        private const float CompassOctantAxisRatio = 0.41421356f;
+        private const float BeaconTelemetryEpsilon = 0.01f;
+        private const float BeaconTelemetryPollInterval = 0.1f;
         private const string StrengthPercentTemplate = "{0}%";
         private const string PulseTimerTemplate = "{0:D2}:{1:D2}";
         private static readonly char[] StrengthPercentTemplateChars = StrengthPercentTemplate.ToCharArray();
@@ -84,6 +93,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI _directionLabel;
         private TextMeshProUGUI _countdownLabel;
         private TextMeshProUGUI _pulseTimerLabel;
+        private PDADecryptionSpectrogramPanel _spectrogramPanel;
 
         // Cached state
         private float _currentStrength;
@@ -95,17 +105,18 @@ namespace Hecton8.UI
         private float _beaconStrength01;
         private float _beaconStatic01;
         private bool _dirty;
+        private float _beaconTelemetryPollTimer;
         private int _lastCountdownSeconds = int.MinValue;
         private int _lastStrengthDisplayMode = int.MinValue;
         private int _lastStrengthPercent = int.MinValue;
-        private UnityEngine.Camera _mainCamera;
-        private float _mainCameraResolveRetryTimer;
         // COLD ALLOC: char[192] — atlas direction label formatting buffer — owner: PDAAtlasSignalTab
         private readonly char[] _directionBuffer = new char[192];
         // COLD ALLOC: char[16] — atlas strength percent formatting buffer — owner: PDAAtlasSignalTab
         private readonly char[] _strengthNumericBuffer = new char[16];
         // COLD ALLOC: char[16] — atlas pulse timer formatting buffer — owner: PDAAtlasSignalTab
         private readonly char[] _pulseTimerBuffer = new char[16];
+        // COLD ALLOC: char[1024] — atlas cached label copy buffer for runtime TMP SetCharArray paths — owner: PDAAtlasSignalTab
+        private readonly char[] _labelTextBuffer = new char[1024];
 
         // Pre-cached strings — zero GC
         private static readonly string[] PhaseNames =
@@ -124,6 +135,15 @@ namespace Hecton8.UI
             "ЭМОЦИИ",
             "СОДЕРЖАНИЕ",
             "ГОТОВО"
+        };
+
+        private static readonly string[] PhaseIndicatorNames =
+        {
+            "Phase_0",
+            "Phase_1",
+            "Phase_2",
+            "Phase_3",
+            "Phase_4"
         };
 
         private static readonly string[] MessageTexts =
@@ -179,6 +199,7 @@ namespace Hecton8.UI
             PDAEvents.Register(this);
 
             _dirty = true;
+            _beaconTelemetryPollTimer = 0f;
         }
 
         private void OnDisable()
@@ -203,8 +224,12 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            if (_mainCamera == null && _mainCameraResolveRetryTimer > 0f)
-                _mainCameraResolveRetryTimer -= deltaTime;
+            _beaconTelemetryPollTimer -= math.max(0f, deltaTime);
+            if (_beaconTelemetryPollTimer <= 0f)
+            {
+                _beaconTelemetryPollTimer = BeaconTelemetryPollInterval;
+                PollSignalBeaconDirtyState();
+            }
 
             if (_dirty)
             {
@@ -215,8 +240,7 @@ namespace Hecton8.UI
             // Update pulse countdown
             if (_signalDetected && _pulseCountdown > 0f)
             {
-                _pulseCountdown -= deltaTime;
-                if (_pulseCountdown < 0f) _pulseCountdown = 0f;
+                _pulseCountdown = math.max(0f, _pulseCountdown - math.max(0f, deltaTime));
                 UpdateCountdownDisplay();
             }
         }
@@ -281,8 +305,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
         }
 
         private void TryUnregister()
@@ -309,6 +332,7 @@ namespace Hecton8.UI
             BuildHeader();
             BuildStrengthSection();
             BuildPhaseSection();
+            BuildSpectrogramSection();
             BuildMessageSection();
             BuildDirectionSection();
             BuildCountdownSection();
@@ -324,7 +348,7 @@ namespace Hecton8.UI
             hBg.color = new Color(0.04f, 0.08f, 0.06f, 1f);
 
             _titleLabel = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            _titleLabel.SetText("ATLAS SIGNAL — МОНИТОРИНГ");
+            SetLabelText(_titleLabel, "ATLAS SIGNAL — МОНИТОРИНГ");
             _titleLabel.fontStyle = FontStyles.Bold;
             Anchor(_titleLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 1),
                 new Vector2(12, 0), new Vector2(-12, 0));
@@ -338,7 +362,7 @@ namespace Hecton8.UI
                 new Vector2(0, -48), new Vector2(0, -8));
 
             _strengthLabel = CreateText("Label", section, 10f, colorDim, TextAlignmentOptions.TopLeft);
-            _strengthLabel.SetText("СИЛА СИГНАЛА");
+            SetLabelText(_strengthLabel, "СИЛА СИГНАЛА");
             Anchor(_strengthLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(12, -8), new Vector2(0, 0));
 
@@ -366,11 +390,11 @@ namespace Hecton8.UI
         private void BuildPhaseSection()
         {
             RectTransform section = CreateRect("PhaseSection", _root);
-            Anchor(section, new Vector2(0, 0.55f), new Vector2(1, 0.75f),
+            Anchor(section, new Vector2(0, 0.62f), new Vector2(1, 0.75f),
                 new Vector2(0, 0), new Vector2(0, 0));
 
             _phaseLabel = CreateText("Label", section, 10f, colorDim, TextAlignmentOptions.TopLeft);
-            _phaseLabel.SetText("ФАЗА ДЕКОДИРОВАНИЯ");
+            SetLabelText(_phaseLabel, "ФАЗА ДЕКОДИРОВАНИЯ");
             Anchor(_phaseLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(12, -8), new Vector2(0, 0));
 
@@ -382,7 +406,7 @@ namespace Hecton8.UI
             float spacing = 1f / 6f;
             for (int i = 0; i < 5; i++)
             {
-                RectTransform ind = CreateRect($"Phase_{i}", indicators);
+                RectTransform ind = CreateRect(PhaseIndicatorNames[i], indicators);
                 float xMin = spacing + i * spacing * 1.1f;
                 float xMax = xMin + spacing * 0.8f;
                 Anchor(ind, new Vector2(xMin, 0.1f), new Vector2(xMax, 0.9f),
@@ -398,10 +422,19 @@ namespace Hecton8.UI
                 new Vector2(12, 0), new Vector2(-12, 0));
         }
 
+        private void BuildSpectrogramSection()
+        {
+            RectTransform section = CreateRect("SpectrogramSection", _root);
+            Anchor(section, new Vector2(0, 0.34f), new Vector2(1, 0.62f),
+                new Vector2(0, 0), new Vector2(0, 0));
+
+            _spectrogramPanel = section.gameObject.AddComponent<PDADecryptionSpectrogramPanel>();
+        }
+
         private void BuildMessageSection()
         {
             RectTransform section = CreateRect("MessageSection", _root);
-            Anchor(section, new Vector2(0, 0.30f), new Vector2(1, 0.55f),
+            Anchor(section, new Vector2(0, 0.18f), new Vector2(1, 0.34f),
                 new Vector2(0, 0), new Vector2(0, 0));
 
             Image sBg = section.gameObject.AddComponent<Image>();
@@ -416,7 +449,7 @@ namespace Hecton8.UI
         private void BuildDirectionSection()
         {
             RectTransform section = CreateRect("DirectionSection", _root);
-            Anchor(section, new Vector2(0, 0.15f), new Vector2(1, 0.30f),
+            Anchor(section, new Vector2(0, 0.08f), new Vector2(1, 0.18f),
                 new Vector2(0, 0), new Vector2(0, 0));
 
             _directionLabel = CreateText("Direction", section, 10f, colorDim, TextAlignmentOptions.MidlineLeft);
@@ -427,7 +460,7 @@ namespace Hecton8.UI
         private void BuildCountdownSection()
         {
             RectTransform section = CreateRect("CountdownSection", _root);
-            Anchor(section, new Vector2(0, 0), new Vector2(1, 0.15f),
+            Anchor(section, new Vector2(0, 0), new Vector2(1, 0.08f),
                 new Vector2(0, 0), new Vector2(0, 0));
 
             Image cBg = section.gameObject.AddComponent<Image>();
@@ -438,7 +471,7 @@ namespace Hecton8.UI
                 new Vector2(0, 0), new Vector2(-12, 0));
 
             TextMeshProUGUI label = CreateText("Label", section, 9f, colorDim, TextAlignmentOptions.MidlineLeft);
-            label.SetText("СЛЕДУЮЩИЙ ПУЛЬС:");
+            SetLabelText(label, "СЛЕДУЮЩИЙ ПУЛЬС:");
             Anchor(label.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1),
                 new Vector2(12, 0), new Vector2(0, 0));
         }
@@ -463,7 +496,7 @@ namespace Hecton8.UI
                 _signalDetected = true;
                 _currentPhase = decoder != null
                     ? decoder.CurrentPhase
-                    : Mathf.Clamp(SignalStrengthSystem.StrengthToBand(_currentStrength), 0, 3);
+                    : math.clamp(SignalStrengthSystem.StrengthToBand(_currentStrength), 0, 3);
             }
             else if (_atlasTelemetryVisible)
             {
@@ -486,13 +519,29 @@ namespace Hecton8.UI
             UpdateCountdownDisplay();
         }
 
+        private void PollSignalBeaconDirtyState()
+        {
+            bool hasBeaconContact = SignalBeaconRegistry.TryGetDominantTelemetry(out float strength01, out float static01) &&
+                                    strength01 > 0f;
+            float safeStrength01 = hasBeaconContact ? math.saturate(strength01) : 0f;
+            float safeStatic01 = hasBeaconContact ? math.saturate(static01) : 0f;
+            if (hasBeaconContact == _signalBeaconContact &&
+                math.abs(safeStrength01 - _beaconStrength01) <= BeaconTelemetryEpsilon &&
+                math.abs(safeStatic01 - _beaconStatic01) <= BeaconTelemetryEpsilon)
+            {
+                return;
+            }
+
+            _dirty = true;
+        }
+
         private void RefreshStrength()
         {
             // Update bar
             if (_strengthBar != null)
             {
                 RectTransform rt = _strengthBar.rectTransform;
-                float w = Mathf.Clamp01(_currentStrength);
+                float w = math.saturate(_currentStrength);
                 rt.anchorMax = new Vector2(w, 1f);
                 rt.offsetMax = new Vector2(0, 0);
 
@@ -526,7 +575,7 @@ namespace Hecton8.UI
                 }
                 else
                 {
-                    int roundedPercent = Mathf.Clamp(Mathf.RoundToInt(_currentStrength * 100f), 0, 100);
+                    int roundedPercent = math.clamp((int)math.round(_currentStrength * 100f), 0, 100);
                     if (_lastStrengthDisplayMode != displayMode || _lastStrengthPercent != roundedPercent)
                     {
                         _lastStrengthDisplayMode = displayMode;
@@ -540,19 +589,30 @@ namespace Hecton8.UI
         private void RefreshPhase()
         {
             // Update phase indicators
-            Color[] phaseColors = { colorPhase0, colorPhase1, colorPhase2, colorPhase3, colorPhase4 };
             for (int i = 0; i < _phaseIndicators.Length; i++)
             {
                 if (_phaseIndicators[i] == null) continue;
-                _phaseIndicators[i].color = i <= _currentPhase ? phaseColors[Mathf.Min(i, 4)] : colorPhase0;
+                _phaseIndicators[i].color = i <= _currentPhase ? ResolvePhaseColor(math.min(i, 4)) : colorPhase0;
             }
 
             // Update phase label
             if (_phaseValue != null)
             {
-                int phase = Mathf.Clamp(_currentPhase, 0, 4);
+                int phase = math.clamp(_currentPhase, 0, 4);
                 SetLabelText(_phaseValue, PhaseNames[phase]);
             }
+        }
+
+        private Color ResolvePhaseColor(int phase)
+        {
+            return phase switch
+            {
+                1 => colorPhase1,
+                2 => colorPhase2,
+                3 => colorPhase3,
+                4 => colorPhase4,
+                _ => colorPhase0
+            };
         }
 
         private void RefreshMessage()
@@ -573,7 +633,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            int messageIndex = Mathf.Clamp(_currentPhase, 0, MessageTexts.Length - 1);
+            int messageIndex = math.clamp(_currentPhase, 0, MessageTexts.Length - 1);
             SetLabelText(_messageLabel, MessageTexts[messageIndex]);
             SetLabelColor(_messageLabel, _currentPhase >= 4 ? colorPhase4 : _currentPhase >= 2 ? colorText : colorDim);
         }
@@ -613,15 +673,18 @@ namespace Hecton8.UI
             }
 
             Vector3 dir = sys.DirectionToCore;
-            TryResolveMainCamera();
-            float dist = Vector3.Distance(sys.AtlasCorePosition, 
-                _mainCamera != null ? _mainCamera.transform.position : Vector3.zero);
+            if (!TryResolveAtlasCoreDistanceMeters(sys, out int distanceMeters))
+            {
+                SetLabelText(_directionLabel, DirectionDataErrorLabel);
+                SetLabelColor(_directionLabel, colorDim);
+                return;
+            }
 
             // Convert direction to compass
             int directionIndex = GetCompassDirectionIndex(dir);
             int directionLength = 0;
             directionLength = Append(_directionBuffer, directionLength, DirectionDistancePrefixes[directionIndex]);
-            directionLength = AppendInt(_directionBuffer, directionLength, Mathf.RoundToInt(dist));
+            directionLength = AppendInt(_directionBuffer, directionLength, distanceMeters);
             directionLength = Append(_directionBuffer, directionLength, 'М');
             SetBufferText(_directionLabel, _directionBuffer, directionLength);
             SetLabelColor(_directionLabel, colorAccent);
@@ -638,11 +701,10 @@ namespace Hecton8.UI
 
                 _lastCountdownSeconds = -1;
                 _pulseTimerLabel.SetCharArray(PulseTimerEmptyChars, 0, PulseTimerEmptyChars.Length);
-                _pulseTimerLabel.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
                 return;
             }
 
-            int totalSecs = Mathf.CeilToInt(_pulseCountdown);
+            int totalSecs = (int)math.ceil(_pulseCountdown);
             if (totalSecs == _lastCountdownSeconds)
                 return;
 
@@ -671,56 +733,80 @@ namespace Hecton8.UI
                 sys.IsDetected;
         }
 
-        private void TryResolveMainCamera()
+        private static bool TryResolveAtlasCoreDistanceMeters(AtlasSignalSystem sys, out int distanceMeters)
         {
-            if (_mainCamera != null)
-                return;
+            distanceMeters = 0;
+            if (sys == null)
+                return false;
 
-            if (_mainCameraResolveRetryTimer > 0f)
-                return;
-
-            _mainCameraResolveRetryTimer = MainCameraResolveRetryInterval;
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext != null && playerContext.PlayerCamera != null)
-            {
-                _mainCamera = playerContext.PlayerCamera;
-                return;
-            }
+            HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            if (playerMovement == null)
+                return false;
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null)
-            {
-                playerTransform.TryGetComponent(out _mainCamera);
-            }
+            AbsoluteUniversePosition playerAup = playerMovement.CurrentAup;
+            AbsoluteUniversePosition coreAup = AbsoluteUniversePosition.FromRuntimePosition(sys.AtlasCorePosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
+            distanceMeters = EstimateCinematicDistanceMeters(in playerAup, in coreAup, distanceSq);
+            return true;
+        }
 
-            if (_mainCamera == null && TryGetComponent(out Camera localCamera))
-            {
-                _mainCamera = localCamera;
-                return;
-            }
+        private static int EstimateCinematicDistanceMeters(
+            in AbsoluteUniversePosition playerAup,
+            in AbsoluteUniversePosition coreAup,
+            double distanceSq)
+        {
+            if (distanceSq <= 0d || double.IsNaN(distanceSq))
+                return 0;
+            if (double.IsInfinity(distanceSq))
+                return DirectionDistanceMaxDisplayMeters;
 
-            if (_mainCamera == null)
-                _mainCamera = GetComponentInParent<Camera>();
+            Unity.Mathematics.double3 delta = coreAup.ToAbsoluteDouble3() - playerAup.ToAbsoluteDouble3();
+            double ax = Math.Abs(delta.x);
+            double ay = Math.Abs(delta.y);
+            double az = Math.Abs(delta.z);
+            double max = Math.Max(ax, Math.Max(ay, az));
+            double min = Math.Min(ax, Math.Min(ay, az));
+            double mid = ax + ay + az - max - min;
+            double estimatedMeters = max + (mid * 0.375d) + (min * 0.25d);
+            if (estimatedMeters >= DirectionDistanceMaxDisplayMeters)
+                return DirectionDistanceMaxDisplayMeters;
+
+            int roundedMeters = (int)(estimatedMeters + 0.5d);
+            int step = roundedMeters < DirectionDistanceNearThresholdMeters
+                ? DirectionDistanceNearStepMeters
+                : roundedMeters < DirectionDistanceMidThresholdMeters
+                    ? DirectionDistanceMidStepMeters
+                    : DirectionDistanceFarStepMeters;
+
+            int quantizedMeters = ((roundedMeters + (step >> 1)) / step) * step;
+            return quantizedMeters > DirectionDistanceMaxDisplayMeters
+                ? DirectionDistanceMaxDisplayMeters
+                : quantizedMeters;
         }
 
         private static int GetCompassDirectionIndex(Vector3 dir)
         {
-            // Project to horizontal plane
-            Vector2 horizontal = new Vector2(dir.x, dir.z);
-            if (horizontal.sqrMagnitude < 0.001f)
+            float x = dir.x;
+            float z = dir.z;
+            float horizontalSq = (x * x) + (z * z);
+            if (horizontalSq < 0.001f)
                 return dir.y > 0 ? 0 : 1;
 
-            float angle = Mathf.Atan2(horizontal.x, horizontal.y) * Mathf.Rad2Deg;
-            if (angle < 0) angle += 360f;
+            float absX = math.abs(x);
+            float absZ = math.abs(z);
+            bool east = x >= 0f;
+            bool north = z >= 0f;
 
-            if (angle < 22.5f || angle >= 337.5f) return 2;
-            if (angle < 67.5f) return 3;
-            if (angle < 112.5f) return 4;
-            if (angle < 157.5f) return 5;
-            if (angle < 202.5f) return 6;
-            if (angle < 247.5f) return 7;
-            if (angle < 292.5f) return 8;
-            return 9;
+            if (absX <= absZ * CompassOctantAxisRatio)
+                return north ? 2 : 6;
+
+            if (absZ <= absX * CompassOctantAxisRatio)
+                return east ? 4 : 8;
+
+            return north
+                ? east ? 3 : 9
+                : east ? 5 : 7;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -751,10 +837,13 @@ namespace Hecton8.UI
             return tmp;
         }
 
-        private static void SetLabelText(TextMeshProUGUI label, string value)
+        private void SetLabelText(TextMeshProUGUI label, string value)
         {
-            if (label != null)
-                label.SetText(value);
+            if (label == null)
+                return;
+
+            int length = CopyStringToBuffer(value, _labelTextBuffer);
+            SetBufferText(label, _labelTextBuffer, length);
         }
 
         private static void SetNumericText(TextMeshProUGUI label, char[] destination, char[] template, LocNumericArg value0)
@@ -784,22 +873,31 @@ namespace Hecton8.UI
             if (label == null || buffer == null)
                 return;
 
-            int safeLength = Mathf.Clamp(length, 0, buffer.Length);
+            int safeLength = math.clamp(length, 0, buffer.Length);
             label.SetCharArray(buffer, 0, safeLength);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
         private static int Append(char[] buffer, int index, string value)
         {
             if (buffer == null || string.IsNullOrEmpty(value) || index >= buffer.Length)
-                return Mathf.Clamp(index, 0, buffer != null ? buffer.Length : 0);
+                return math.clamp(index, 0, buffer != null ? buffer.Length : 0);
 
             if (index < 0)
                 index = 0;
 
-            int length = Mathf.Min(value.Length, buffer.Length - index);
+            int length = math.min(value.Length, buffer.Length - index);
             value.AsSpan(0, length).CopyTo(buffer.AsSpan(index));
             return index + length;
+        }
+
+        private static int CopyStringToBuffer(string value, char[] buffer)
+        {
+            if (buffer == null || string.IsNullOrEmpty(value))
+                return 0;
+
+            int length = math.min(value.Length, buffer.Length);
+            value.AsSpan(0, length).CopyTo(buffer.AsSpan());
+            return length;
         }
 
         private static int Append(char[] buffer, int index, char value)

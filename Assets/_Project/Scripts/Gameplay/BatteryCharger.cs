@@ -3,7 +3,7 @@
 // Wall-mounted device to recharge tool batteries.
 //
 // ARCHITECTURE:
-//   • ITickable for charging logic (no Update)
+//   • ISlowTickable for coarse charging logic (no frame polling)
 //   • IPowerComponent integration for power grid awareness
 //   • Slot system with per-slot charge tracking
 //   • Zero GC in hot paths: MaterialPropertyBlock, cached arrays
@@ -21,6 +21,7 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.Tools;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -53,14 +54,16 @@ namespace Hecton8.Gameplay
 
     /// <summary>
     /// Wall-mounted battery charger for tool batteries.
-    /// Implements ITickable for charging logic.
+    /// Implements ISlowTickable for coarse charging logic.
     /// Integrates with IPowerComponent for power grid awareness.
     /// Implements IInteractable for player interaction.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Gameplay/Battery Charger")]
-    public sealed class BatteryCharger : MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IInteractable, ILocalizationLanguageChangedListener
+    public sealed class BatteryCharger : MonoBehaviour, ISlowTickable, IPowerComponent, IInteractable, ILocalizationLanguageChangedListener
     {
+        private const float SlowTickDeltaSeconds = 0.5f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -325,6 +328,9 @@ namespace Hecton8.Gameplay
             if (playerInventory == null)
                 return false;
 
+            float previousCharge = slots != null && slotIndex >= 0 && slotIndex < slots.Length && slots[slotIndex] != null
+                ? slots[slotIndex].currentCharge
+                : 0f;
             ItemData battery = RemoveBattery(slotIndex);
             if (battery == null)
                 return false;
@@ -332,7 +338,7 @@ namespace Hecton8.Gameplay
             if (!playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(battery.PersistentId), 1))
             {
                 // Inventory full, re-insert battery
-                InsertBattery(slotIndex, battery, slots[slotIndex].currentCharge);
+                InsertBattery(slotIndex, battery, previousCharge);
                 return false;
             }
 
@@ -398,6 +404,7 @@ namespace Hecton8.Gameplay
         private bool _registered;
         private bool _isCharging;
         private int _emissionPropertyId;
+        private PowerNode _powerNode;
 
         // Cached for zero GC
         private Transform _cachedTransform;
@@ -432,6 +439,7 @@ namespace Hecton8.Gameplay
         public void OnPowerStatusChanged(bool hasPower)
         {
             _hasPower = hasPower;
+            RefreshChargingDemand();
             UpdateAllIndicators();
         }
 
@@ -444,6 +452,9 @@ namespace Hecton8.Gameplay
             _cachedTransform = transform;
             _emissionPropertyId = Shader.PropertyToID(string.IsNullOrEmpty(emissionProperty) ? "_EmissionColor" : emissionProperty);
             _mpb = new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — per-renderer props — owner: BatteryCharger
+            _powerNode = powerNodeReference as PowerNode;
+            if (_powerNode == null && !TryGetComponent(out _powerNode))
+                _powerNode = null;
 
             // Initialize slot charge flags
             int slotCount = slots?.Length ?? 0;
@@ -455,17 +466,22 @@ namespace Hecton8.Gameplay
             LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
             RebuildLocalizedTextCache();
+            RefreshChargingDemand();
             UpdateAllIndicators();
         }
 
         private void OnDisable()
         {
+            InteractableRegistry.InvalidateTree(this);
+            SetChargingState(false);
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
         }
 
         private void OnDestroy()
         {
+            InteractableRegistry.InvalidateTree(this);
+            SetChargingState(false);
             TryUnregister();
         }
 
@@ -477,8 +493,8 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -486,48 +502,50 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
 
         // ══════════════════════════════════════════════════════════
-        //  ITickable — CHARGING LOGIC
+        //  ISlowTickable — CHARGING LOGIC
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// ITickable implementation. Handles charging logic.
+        /// ISlowTickable implementation. Handles charging logic on the coarse grid cadence.
         /// Zero GC: no allocations, uses cached arrays.
         /// </summary>
-        public void Tick(float deltaTime)
+        public void SlowTick()
         {
             if (!_hasPower)
             {
-                _isCharging = false;
+                SetChargingState(false);
                 return;
             }
 
-            _isCharging = false;
-
             if (slots == null)
+            {
+                SetChargingState(false);
                 return;
+            }
 
             int slotCount = slots.Length;
+            bool anyCharging = false;
 
             for (int i = 0; i < slotCount; i++)
             {
                 ref BatterySlot slot = ref slots[i];
+                if (slot == null)
+                    continue;
 
                 // Skip empty or fully charged slots
                 if (slot.batteryItem == null || slot.IsFullyCharged)
                     continue;
 
-                // Mark as charging
-                _isCharging = true;
+                anyCharging = true;
 
                 // Charge the battery
-                float chargeDelta = chargeRate * deltaTime;
-                float newCharge = slot.currentCharge + (chargeDelta / slot.maxCharge);
-                slot.currentCharge = Mathf.Clamp01(newCharge);
+                float chargeDelta = chargeRate * SlowTickDeltaSeconds;
+                slot.currentCharge = math.saturate(slot.currentCharge + (chargeDelta / math.max(slot.maxCharge, 0.001f)));
 
                 // Fire progress event
                 OnChargeProgress?.Invoke(i, slot.currentCharge);
@@ -536,7 +554,7 @@ namespace Hecton8.Gameplay
                 UpdateSlotIndicator(i);
 
                 // Check if just became fully charged
-                if (slot.IsFullyCharged && !_slotChargedFlags[i])
+                if (slot.IsFullyCharged && _slotChargedFlags != null && i < _slotChargedFlags.Length && !_slotChargedFlags[i])
                 {
                     _slotChargedFlags[i] = true;
                     OnChargeComplete?.Invoke(i);
@@ -548,6 +566,8 @@ namespace Hecton8.Gameplay
                     }
                 }
             }
+
+            SetChargingState(anyCharging);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -571,7 +591,8 @@ namespace Hecton8.Gameplay
 
             slots[slotIndex].batteryItem = battery;
             slots[slotIndex].currentCharge = currentCharge;
-            _slotChargedFlags[slotIndex] = currentCharge >= 1f;
+            if (_slotChargedFlags != null && slotIndex < _slotChargedFlags.Length)
+                _slotChargedFlags[slotIndex] = currentCharge >= 1f;
 
             // Play insert sound
             if (insertSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
@@ -581,6 +602,7 @@ namespace Hecton8.Gameplay
 
             OnBatteryInserted?.Invoke(slotIndex);
             UpdateSlotIndicator(slotIndex);
+            RefreshChargingDemand();
 
             return true;
         }
@@ -598,12 +620,14 @@ namespace Hecton8.Gameplay
             ItemData battery = slots[slotIndex].batteryItem;
             slots[slotIndex].batteryItem = null;
             slots[slotIndex].currentCharge = 0f;
-            _slotChargedFlags[slotIndex] = false;
+            if (_slotChargedFlags != null && slotIndex < _slotChargedFlags.Length)
+                _slotChargedFlags[slotIndex] = false;
 
             if (battery != null)
             {
                 OnBatteryRemoved?.Invoke(slotIndex);
                 UpdateSlotIndicator(slotIndex);
+                RefreshChargingDemand();
             }
 
             return battery;
@@ -686,6 +710,42 @@ namespace Hecton8.Gameplay
             indicator.GetPropertyBlock(_mpb);
             _mpb.SetColor(_emissionPropertyId != 0 ? _emissionPropertyId : _EmissionColorID, indicatorColor);
             indicator.SetPropertyBlock(_mpb);
+        }
+
+        private void RefreshChargingDemand()
+        {
+            SetChargingState(_hasPower && HasChargeWork());
+        }
+
+        private bool HasChargeWork()
+        {
+            if (slots == null)
+                return false;
+
+            int slotCount = slots.Length;
+            for (int i = 0; i < slotCount; i++)
+            {
+                BatterySlot slot = slots[i];
+                if (slot != null && slot.batteryItem != null && !slot.IsFullyCharged)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void SetChargingState(bool isCharging)
+        {
+            if (_isCharging == isCharging)
+                return;
+
+            _isCharging = isCharging;
+            MarkPowerGridDirty();
+        }
+
+        private void MarkPowerGridDirty()
+        {
+            if (_powerNode != null && _powerNode.Grid != null)
+                _powerNode.Grid.MarkDirty();
         }
 
         // ══════════════════════════════════════════════════════════

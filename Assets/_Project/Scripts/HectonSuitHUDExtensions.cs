@@ -28,6 +28,8 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 
     private float _nextAutoResolveAt;
     private bool _tickRegistered;
+    private bool _referencesResolved;
+    private Transform _cachedRoot;
 
     private void OnEnable()
     {
@@ -52,11 +54,15 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
 
     private void AutoResolveReferences(bool force)
     {
+        if (!force && _referencesResolved && primaryHud != null && canvasOverlay != null && hudCamera != null)
+            return;
+
         float now = Application.isPlaying ? Time.realtimeSinceStartup : 0f;
         if (!force && now < _nextAutoResolveAt)
             return;
 
         _nextAutoResolveAt = now + AutoResolveRetryInterval;
+        Transform preferredRoot = ResolveCachedRoot();
 
         if (primaryHud == null)
         {
@@ -64,7 +70,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
             if (primaryHud == null)
             {
                 HectonSuitHUD_v4.CopyActiveHudsTo(s_hudResolveBuffer);
-                primaryHud = FindHudForRoot(s_hudResolveBuffer, transform.root);
+                primaryHud = FindHudForRoot(s_hudResolveBuffer, preferredRoot);
                 s_hudResolveBuffer.Clear();
             }
         }
@@ -75,7 +81,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
             if (canvasOverlay == null)
             {
                 SuitHUDV4CanvasOverlay.CopyActiveOverlaysTo(s_overlayResolveBuffer);
-                canvasOverlay = FindOverlayForRoot(s_overlayResolveBuffer, transform.root);
+                canvasOverlay = FindOverlayForRoot(s_overlayResolveBuffer, preferredRoot);
                 s_overlayResolveBuffer.Clear();
             }
         }
@@ -88,6 +94,16 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
             if (hudCamera == null && canvasOverlay != null)
                 hudCamera = canvasOverlay.ProjectionCamera;
         }
+
+        _referencesResolved = primaryHud != null && canvasOverlay != null && hudCamera != null;
+    }
+
+    private Transform ResolveCachedRoot()
+    {
+        if (_cachedRoot == null)
+            _cachedRoot = transform.root;
+
+        return _cachedRoot;
     }
 
     private void RegisterTick()

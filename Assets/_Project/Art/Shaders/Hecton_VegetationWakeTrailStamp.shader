@@ -59,8 +59,8 @@ Shader "Hidden/Hecton8/VegetationWakeTrailStamp"
                 half2 currentDirection = current.rg * 2.0h - 1.0h;
 
                 half2 stampDirection = _StampDirectionStrength.xy;
-                half stampDirectionLen = length(stampDirection);
-                stampDirection = stampDirectionLen > 0.0001h ? stampDirection / stampDirectionLen : half2(0.0h, 1.0h);
+                half stampDirectionLenSq = dot(stampDirection, stampDirection);
+                stampDirection = stampDirectionLenSq > 0.0001h ? stampDirection * rsqrt(stampDirectionLenSq) : half2(0.0h, 1.0h);
                 half2 stampBitangent = half2(-stampDirection.y, stampDirection.x);
 
                 half2 delta = input.uv - _StampUvEllipse.xy;
@@ -69,14 +69,18 @@ Shader "Hidden/Hecton8/VegetationWakeTrailStamp"
                 half verticalImpulse = saturate(_StampDirectionStrength.w);
                 half along = dot(delta, stampDirection) / halfLength;
                 half across = dot(delta, stampBitangent) / radius;
-                half shape = saturate(1.0h - sqrt(along * along + across * across));
+                half shape = saturate(1.0h - (along * along + across * across));
                 half stampIntensity = shape * shape * saturate(_StampDirectionStrength.z) * lerp(1.0h, 1.55h, verticalImpulse);
 
                 half blendWeight = currentIntensity + stampIntensity;
+                half2 blendedDirectionRaw = currentDirection * currentIntensity + stampDirection * stampIntensity;
+                half blendedDirectionLenSq = dot(blendedDirectionRaw, blendedDirectionRaw);
                 half2 blendedDirection = blendWeight > 0.0001h
-                    ? normalize(currentDirection * currentIntensity + stampDirection * stampIntensity)
+                    ? blendedDirectionRaw * rsqrt(max(blendedDirectionLenSq, 0.0001h))
                     : stampDirection;
-                blendedDirection = normalize(blendedDirection + stampBitangent * (across * verticalImpulse * 0.35h));
+                half2 finalDirectionRaw = blendedDirection + stampBitangent * (across * verticalImpulse * 0.35h);
+                half finalDirectionLenSq = dot(finalDirectionRaw, finalDirectionRaw);
+                blendedDirection = finalDirectionRaw * rsqrt(max(finalDirectionLenSq, 0.0001h));
                 half finalIntensity = max(currentIntensity, stampIntensity);
                 half previousWaveState = lerp(finalIntensity, finalIntensity * 0.08h, verticalImpulse);
                 half2 encodedDirection = blendedDirection * 0.5h + 0.5h;

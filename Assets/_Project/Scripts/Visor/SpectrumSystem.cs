@@ -241,8 +241,12 @@ namespace Hecton8.Visor
             if (listener == null)
                 return;
 
-            if (_modeListeners.Contains(listener))
-                _modeListeners.Unregister(listener);
+            if (!_modeListeners.Contains(listener))
+                return;
+
+            _modeListeners.Unregister(listener);
+            if (_modeListeners.Count <= 0)
+                DropModeChanged();
         }
 
         /// <summary>Registers a listener for sonar pulse radius broadcasts.</summary>
@@ -264,8 +268,12 @@ namespace Hecton8.Visor
             if (listener == null)
                 return;
 
-            if (_sonarPulseListeners.Contains(listener))
-                _sonarPulseListeners.Unregister(listener);
+            if (!_sonarPulseListeners.Contains(listener))
+                return;
+
+            _sonarPulseListeners.Unregister(listener);
+            if (_sonarPulseListeners.Count <= 0)
+                DropSonarPulses();
         }
 
         /// <summary>Registers a listener for active sonar ping events.</summary>
@@ -287,8 +295,12 @@ namespace Hecton8.Visor
             if (listener == null)
                 return;
 
-            if (_sonarPingListeners.Contains(listener))
-                _sonarPingListeners.Unregister(listener);
+            if (!_sonarPingListeners.Contains(listener))
+                return;
+
+            _sonarPingListeners.Unregister(listener);
+            if (_sonarPingListeners.Count <= 0)
+                DropSonarPings();
         }
 
         /// <summary>Registers a listener for sonar snapshots.</summary>
@@ -310,8 +322,12 @@ namespace Hecton8.Visor
             if (listener == null)
                 return;
 
-            if (_sonarSnapshotListeners.Contains(listener))
-                _sonarSnapshotListeners.Unregister(listener);
+            if (!_sonarSnapshotListeners.Contains(listener))
+                return;
+
+            _sonarSnapshotListeners.Unregister(listener);
+            if (_sonarSnapshotListeners.Count <= 0)
+                DropSonarSnapshots();
         }
 
         /// <summary>Registers a listener for acoustic echo returns.</summary>
@@ -333,8 +349,12 @@ namespace Hecton8.Visor
             if (listener == null)
                 return;
 
-            if (_acousticEchoListeners.Contains(listener))
-                _acousticEchoListeners.Unregister(listener);
+            if (!_acousticEchoListeners.Contains(listener))
+                return;
+
+            _acousticEchoListeners.Unregister(listener);
+            if (_acousticEchoListeners.Count <= 0)
+                DropAcousticEchoes();
         }
 
         /// <summary>Flushes queued spectrum payloads through registered listeners.</summary>
@@ -369,6 +389,9 @@ namespace Hecton8.Visor
         /// <param name="mode">New spectrum mode.</param>
         public static void RaiseModeChanged(SpectrumMode mode)
         {
+            if (_modeListeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingModeChangedCount + _nextFrameModeChangedCount >= PendingModeChangedCapacity)
                 return;
@@ -389,7 +412,10 @@ namespace Hecton8.Visor
         /// <param name="radius">Pulse radius in authored meters.</param>
         public static void RaiseSonarPulse(float radius)
         {
-            LastSonarPulseRadiusMeters = Mathf.Max(0f, radius);
+            LastSonarPulseRadiusMeters = math.max(0f, radius);
+            if (_sonarPulseListeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingSonarPulseCount + _nextFrameSonarPulseCount >= PendingSonarPulseCapacity)
                 return;
@@ -410,6 +436,9 @@ namespace Hecton8.Visor
         /// <param name="intensity">Normalized ping intensity.</param>
         public static void RaiseSonarPingSent(float intensity)
         {
+            if (_sonarPingListeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingSonarPingCount + _nextFrameSonarPingCount >= PendingSonarPingCapacity)
                 return;
@@ -430,6 +459,9 @@ namespace Hecton8.Visor
         /// <param name="snapshot">Snapshot payload.</param>
         public static void RaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot)
         {
+            if (_sonarSnapshotListeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingSonarSnapshotCount + _nextFrameSonarSnapshotCount >= PendingSonarSnapshotCapacity)
                 return;
@@ -450,6 +482,9 @@ namespace Hecton8.Visor
         /// <param name="echoEvent">Echo payload.</param>
         public static void RaiseAcousticEchoReturned(AcousticEchoEvent echoEvent)
         {
+            if (_acousticEchoListeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingAcousticEchoCount + _nextFrameAcousticEchoCount >= PendingAcousticEchoCapacity)
                 return;
@@ -477,6 +512,7 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_pendingModeChanged),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingModeChanged, PendingModeChangedCapacity);
             }
             if (!_nextFrameModeChanged.IsCreated)
             {
@@ -487,6 +523,7 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_nextFrameModeChanged),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameModeChanged, PendingModeChangedCapacity);
             }
             if (!_pendingSonarPulses.IsCreated)
             {
@@ -497,6 +534,7 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_pendingSonarPulses),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingSonarPulses, PendingSonarPulseCapacity);
             }
             if (!_nextFrameSonarPulses.IsCreated)
             {
@@ -507,6 +545,7 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_nextFrameSonarPulses),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameSonarPulses, PendingSonarPulseCapacity);
             }
             if (!_pendingSonarPings.IsCreated)
             {
@@ -517,6 +556,7 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_pendingSonarPings),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingSonarPings, PendingSonarPingCapacity);
             }
             if (!_nextFrameSonarPings.IsCreated)
             {
@@ -527,6 +567,7 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_nextFrameSonarPings),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameSonarPings, PendingSonarPingCapacity);
             }
             if (!_pendingSonarSnapshots.IsCreated)
             {
@@ -537,6 +578,7 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_pendingSonarSnapshots),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingSonarSnapshots, PendingSonarSnapshotCapacity);
             }
             if (!_nextFrameSonarSnapshots.IsCreated)
             {
@@ -547,6 +589,7 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_nextFrameSonarSnapshots),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameSonarSnapshots, PendingSonarSnapshotCapacity);
             }
             if (!_pendingAcousticEchoes.IsCreated)
             {
@@ -557,6 +600,7 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_pendingAcousticEchoes),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingAcousticEchoes, PendingAcousticEchoCapacity);
             }
             if (!_nextFrameAcousticEchoes.IsCreated)
             {
@@ -567,6 +611,21 @@ namespace Hecton8.Visor
                     nameof(SpectrumEvents),
                     nameof(_nextFrameAcousticEchoes),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameAcousticEchoes, PendingAcousticEchoCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -574,6 +633,12 @@ namespace Hecton8.Visor
         {
             if (!_pendingModeChanged.IsCreated)
                 return true;
+
+            if (_modeListeners.Count <= 0)
+            {
+                DropModeChanged();
+                return true;
+            }
 
             int scanBudget = _pendingModeChangedCount > 0 ? _pendingModeChangedCount : PendingModeChangedCapacity;
             while (scanBudget > 0 && !_pendingModeChanged.IsEmpty())
@@ -588,7 +653,7 @@ namespace Hecton8.Visor
                     _pendingModeChangedCount--;
                 scanBudget--;
                 ISpectrumModeEventListener[] rawArray = _modeListeners.RawArray;
-                int count = Mathf.Min(_modeListeners.Count, SpectrumListenerDispatchBudget);
+                int count = math.min(_modeListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISpectrumModeEventListener listener = rawArray[i];
@@ -611,6 +676,12 @@ namespace Hecton8.Visor
             if (!_pendingSonarPulses.IsCreated)
                 return true;
 
+            if (_sonarPulseListeners.Count <= 0)
+            {
+                DropSonarPulses();
+                return true;
+            }
+
             int scanBudget = _pendingSonarPulseCount > 0 ? _pendingSonarPulseCount : PendingSonarPulseCapacity;
             while (scanBudget > 0 && !_pendingSonarPulses.IsEmpty())
             {
@@ -624,7 +695,7 @@ namespace Hecton8.Visor
                     _pendingSonarPulseCount--;
                 scanBudget--;
                 ISonarPulseEventListener[] rawArray = _sonarPulseListeners.RawArray;
-                int count = Mathf.Min(_sonarPulseListeners.Count, SpectrumListenerDispatchBudget);
+                int count = math.min(_sonarPulseListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISonarPulseEventListener listener = rawArray[i];
@@ -647,6 +718,12 @@ namespace Hecton8.Visor
             if (!_pendingSonarPings.IsCreated)
                 return true;
 
+            if (_sonarPingListeners.Count <= 0)
+            {
+                DropSonarPings();
+                return true;
+            }
+
             int scanBudget = _pendingSonarPingCount > 0 ? _pendingSonarPingCount : PendingSonarPingCapacity;
             while (scanBudget > 0 && !_pendingSonarPings.IsEmpty())
             {
@@ -660,7 +737,7 @@ namespace Hecton8.Visor
                     _pendingSonarPingCount--;
                 scanBudget--;
                 ISonarPingEventListener[] rawArray = _sonarPingListeners.RawArray;
-                int count = Mathf.Min(_sonarPingListeners.Count, SpectrumListenerDispatchBudget);
+                int count = math.min(_sonarPingListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISonarPingEventListener listener = rawArray[i];
@@ -683,6 +760,12 @@ namespace Hecton8.Visor
             if (!_pendingSonarSnapshots.IsCreated)
                 return true;
 
+            if (_sonarSnapshotListeners.Count <= 0)
+            {
+                DropSonarSnapshots();
+                return true;
+            }
+
             int scanBudget = _pendingSonarSnapshotCount > 0 ? _pendingSonarSnapshotCount : PendingSonarSnapshotCapacity;
             while (scanBudget > 0 && !_pendingSonarSnapshots.IsEmpty())
             {
@@ -696,7 +779,7 @@ namespace Hecton8.Visor
                     _pendingSonarSnapshotCount--;
                 scanBudget--;
                 ISonarSnapshotEventListener[] rawArray = _sonarSnapshotListeners.RawArray;
-                int count = Mathf.Min(_sonarSnapshotListeners.Count, SpectrumListenerDispatchBudget);
+                int count = math.min(_sonarSnapshotListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISonarSnapshotEventListener listener = rawArray[i];
@@ -719,6 +802,12 @@ namespace Hecton8.Visor
             if (!_pendingAcousticEchoes.IsCreated)
                 return true;
 
+            if (_acousticEchoListeners.Count <= 0)
+            {
+                DropAcousticEchoes();
+                return true;
+            }
+
             int scanBudget = _pendingAcousticEchoCount > 0 ? _pendingAcousticEchoCount : PendingAcousticEchoCapacity;
             while (scanBudget > 0 && !_pendingAcousticEchoes.IsEmpty())
             {
@@ -732,7 +821,7 @@ namespace Hecton8.Visor
                     _pendingAcousticEchoCount--;
                 scanBudget--;
                 IAcousticEchoEventListener[] rawArray = _acousticEchoListeners.RawArray;
-                int count = Mathf.Min(_acousticEchoListeners.Count, SpectrumListenerDispatchBudget);
+                int count = math.min(_acousticEchoListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     IAcousticEchoEventListener listener = rawArray[i];
@@ -843,57 +932,191 @@ namespace Hecton8.Visor
                 || (_pendingAcousticEchoes.IsCreated && !_pendingAcousticEchoes.IsEmpty());
         }
 
-        private static void PromoteNextFrameEvents()
+        private static void DropModeChanged()
         {
+            if (_pendingModeChanged.IsCreated)
+            {
+                while (_pendingModeChanged.TryDequeue(out _))
+                {
+                }
+            }
+
             if (_nextFrameModeChanged.IsCreated)
             {
-                while (_nextFrameModeChangedCount > 0 && _nextFrameModeChanged.TryDequeue(out SpectrumMode mode))
+                while (_nextFrameModeChanged.TryDequeue(out _))
                 {
-                    _nextFrameModeChangedCount--;
-                    _pendingModeChanged.Enqueue(mode);
-                    _pendingModeChangedCount++;
+                }
+            }
+
+            _pendingModeChangedCount = 0;
+            _nextFrameModeChangedCount = 0;
+        }
+
+        private static void DropSonarPulses()
+        {
+            if (_pendingSonarPulses.IsCreated)
+            {
+                while (_pendingSonarPulses.TryDequeue(out _))
+                {
                 }
             }
 
             if (_nextFrameSonarPulses.IsCreated)
             {
-                while (_nextFrameSonarPulseCount > 0 && _nextFrameSonarPulses.TryDequeue(out float radius))
+                while (_nextFrameSonarPulses.TryDequeue(out _))
                 {
-                    _nextFrameSonarPulseCount--;
-                    _pendingSonarPulses.Enqueue(radius);
-                    _pendingSonarPulseCount++;
+                }
+            }
+
+            _pendingSonarPulseCount = 0;
+            _nextFrameSonarPulseCount = 0;
+        }
+
+        private static void DropSonarPings()
+        {
+            if (_pendingSonarPings.IsCreated)
+            {
+                while (_pendingSonarPings.TryDequeue(out _))
+                {
                 }
             }
 
             if (_nextFrameSonarPings.IsCreated)
             {
-                while (_nextFrameSonarPingCount > 0 && _nextFrameSonarPings.TryDequeue(out float intensity))
+                while (_nextFrameSonarPings.TryDequeue(out _))
                 {
-                    _nextFrameSonarPingCount--;
-                    _pendingSonarPings.Enqueue(intensity);
-                    _pendingSonarPingCount++;
+                }
+            }
+
+            _pendingSonarPingCount = 0;
+            _nextFrameSonarPingCount = 0;
+        }
+
+        private static void DropSonarSnapshots()
+        {
+            if (_pendingSonarSnapshots.IsCreated)
+            {
+                while (_pendingSonarSnapshots.TryDequeue(out _))
+                {
                 }
             }
 
             if (_nextFrameSonarSnapshots.IsCreated)
             {
-                while (_nextFrameSonarSnapshotCount > 0 && _nextFrameSonarSnapshots.TryDequeue(out SpatialSonarSnapshot snapshot))
+                while (_nextFrameSonarSnapshots.TryDequeue(out _))
                 {
-                    _nextFrameSonarSnapshotCount--;
-                    _pendingSonarSnapshots.Enqueue(snapshot);
-                    _pendingSonarSnapshotCount++;
+                }
+            }
+
+            _pendingSonarSnapshotCount = 0;
+            _nextFrameSonarSnapshotCount = 0;
+        }
+
+        private static void DropAcousticEchoes()
+        {
+            if (_pendingAcousticEchoes.IsCreated)
+            {
+                while (_pendingAcousticEchoes.TryDequeue(out _))
+                {
                 }
             }
 
             if (_nextFrameAcousticEchoes.IsCreated)
             {
-                while (_nextFrameAcousticEchoCount > 0 && _nextFrameAcousticEchoes.TryDequeue(out AcousticEchoEvent echoEvent))
+                while (_nextFrameAcousticEchoes.TryDequeue(out _))
                 {
-                    _nextFrameAcousticEchoCount--;
-                    _pendingAcousticEchoes.Enqueue(echoEvent);
-                    _pendingAcousticEchoCount++;
                 }
             }
+
+            _pendingAcousticEchoCount = 0;
+            _nextFrameAcousticEchoCount = 0;
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            PromoteQueue(
+                ref _nextFrameModeChanged,
+                ref _nextFrameModeChangedCount,
+                ref _pendingModeChanged,
+                ref _pendingModeChangedCount,
+                PendingModeChangedCapacity);
+            PromoteQueue(
+                ref _nextFrameSonarPulses,
+                ref _nextFrameSonarPulseCount,
+                ref _pendingSonarPulses,
+                ref _pendingSonarPulseCount,
+                PendingSonarPulseCapacity);
+            PromoteQueue(
+                ref _nextFrameSonarPings,
+                ref _nextFrameSonarPingCount,
+                ref _pendingSonarPings,
+                ref _pendingSonarPingCount,
+                PendingSonarPingCapacity);
+            PromoteQueue(
+                ref _nextFrameSonarSnapshots,
+                ref _nextFrameSonarSnapshotCount,
+                ref _pendingSonarSnapshots,
+                ref _pendingSonarSnapshotCount,
+                PendingSonarSnapshotCapacity);
+            PromoteQueue(
+                ref _nextFrameAcousticEchoes,
+                ref _nextFrameAcousticEchoCount,
+                ref _pendingAcousticEchoes,
+                ref _pendingAcousticEchoCount,
+                PendingAcousticEchoCapacity);
+        }
+
+        private static void PromoteQueue<T>(
+            ref NativeQueue<T> nextFrameQueue,
+            ref int nextFrameCount,
+            ref NativeQueue<T> pendingQueue,
+            ref int pendingCount,
+            int pendingCapacity)
+            where T : unmanaged
+        {
+            if (!nextFrameQueue.IsCreated)
+            {
+                nextFrameCount = 0;
+                return;
+            }
+
+            if (nextFrameCount <= 0)
+            {
+                while (nextFrameQueue.TryDequeue(out _))
+                {
+                }
+
+                nextFrameCount = 0;
+                return;
+            }
+
+            if (!pendingQueue.IsCreated || pendingCapacity <= 0)
+            {
+                while (nextFrameQueue.TryDequeue(out _))
+                {
+                }
+
+                nextFrameCount = 0;
+                return;
+            }
+
+            int room = math.max(0, pendingCapacity - pendingCount);
+            while (nextFrameCount > 0 && room > 0 && nextFrameQueue.TryDequeue(out T payload))
+            {
+                nextFrameCount--;
+                room--;
+                pendingQueue.Enqueue(payload);
+                pendingCount++;
+            }
+
+            while (nextFrameCount > 0 && nextFrameQueue.TryDequeue(out _))
+                nextFrameCount--;
+
+            if (nextFrameQueue.IsEmpty())
+                nextFrameCount = 0;
+
+            if (pendingQueue.IsEmpty())
+                pendingCount = 0;
         }
     }
 
@@ -901,8 +1124,6 @@ namespace Hecton8.Visor
     [DefaultExecutionOrder(-95)]
     public sealed class SpectrumSystem : MonoBehaviour, ITickable, IAcousticPingEventListener, IAcousticEchoEventListener, IPhysicsAcousticImpulseEventListener
     {
-        private const int SonarRevealMaxContacts = 24;
-        private const int AbyssalAnchorScanBudget = 64;
         private const int PassiveRadarAzimuthSectorCount = 8;
         private const int PassiveRadarElevationSectorCount = 4;
         private const int PassiveRadarSectorCount = PassiveRadarAzimuthSectorCount * PassiveRadarElevationSectorCount;
@@ -911,8 +1132,11 @@ namespace Hecton8.Visor
         private const int PassiveRadarSlowTickHz = 10;
         private const float PassiveRadarTickIntervalSeconds = 1f / PassiveRadarSlowTickHz;
         private const float PassiveRadarDecayFactor = 0.75f;
+        private const float PassiveRadarEnergyEpsilon = 0.00001f;
         private const float PassiveRadarMinimumDistanceMeters = 0.5f;
         private const float PassiveRadarMaxSourceDistanceMeters = 30f;
+        private const float ShaderScalarPublishEpsilon = 0.0001f;
+        private const float ShaderVectorPublishEpsilon = 0.00001f;
         private const uint AupDiscoveryDiscoveredBit = 1u;
 
         // ══════════════════════════════════════════════════════════
@@ -959,7 +1183,7 @@ namespace Hecton8.Visor
         [Tooltip("Minimum fraction of the authored sonar wave speed retained at full abyssal distortion.")]
         [SerializeField, Range(0.05f, 1f)] private float abyssalWaveSpeedScaleMin = 0.42f;
 
-        [Tooltip("Maximum world-space positional jitter injected into returned sonar contacts at full abyssal distortion.")]
+        [Tooltip("Legacy abyssal return scalar preserved as a cinematic bias for non-physical anchor response strength.")]
         [SerializeField, Range(0f, 12f)] private float abyssalContactJitterRadius = 2.8f;
 
         [Header("Screen-Space Acoustic Mapping")]
@@ -1068,11 +1292,26 @@ namespace Hecton8.Visor
         private int _passiveRadarAutoGainWriteIndex;
         private float _activeSonarVisualExpireTime;
         private float _activeSonarEchoExpireTime;
+        private Vector3 _lastResolvedPlayerForward = Vector3.forward;
+        private int _lastPublishedSonarActiveState = -1;
         private float _leviathanScreamRadarDistortion01;
         private NativeArray<uint> _aupDiscoveryGrid;
         private int _aupDiscoveryGridWidthRuntime;
         private int _aupDiscoveryGridHeightRuntime;
         private float _aupDiscoveryCellSizeRuntime;
+        private int _lastPublishedSpectrumMode = int.MinValue;
+        private float _lastPublishedLidarPersistence = -1f;
+        private bool _hasPublishedAcousticMappingStaticGlobals;
+        private Vector4 _lastPublishedSonarColor;
+        private float _lastPublishedNoirHideDistance = -1f;
+        private bool _hasPublishedRadarDistortion;
+        private Vector4 _lastPublishedRadarDistortion;
+        private bool _passiveRadarShaderRowsInitialized;
+        private bool _hasPublishedPassiveRadarPeak;
+        private Vector4 _lastPublishedPassiveRadarPeak;
+        private float _lastPublishedPassiveRadarAutoGain = -1f;
+        private float _lastPublishedSonarRadius = -1f;
+        private float _lastPublishedSonarWaveFront = -1f;
 
         // Cached shader IDs
         private static readonly int _ShaderSpectrumMode =
@@ -1093,12 +1332,6 @@ namespace Hecton8.Visor
             Shader.PropertyToID("_SonarRevealWaveParams");
         private static readonly int _ShaderSonarWaveFront =
             Shader.PropertyToID("_SonarWaveFront");
-        private static readonly int _ShaderSonarRevealContactCount =
-            Shader.PropertyToID("_SonarRevealContactCount");
-        private static readonly int _ShaderSonarRevealContacts =
-            Shader.PropertyToID("_SonarRevealContacts");
-        private static readonly int _ShaderSonarRevealContactMeta =
-            Shader.PropertyToID("_SonarRevealContactMeta");
         private static readonly int _ShaderAbyssalDistortion =
             Shader.PropertyToID("_AbyssalDistortion");
         private static readonly int _ShaderLidarPersistence =
@@ -1126,13 +1359,7 @@ namespace Hecton8.Visor
         private static readonly int _ShaderSonarActive =
             Shader.PropertyToID("_SonarActive");
         private static readonly System.Collections.Generic.List<VisorHUDController> s_glitchControllers =
-            new System.Collections.Generic.List<VisorHUDController>(4); // COLD ALLOC: shared glitch pulse controller buffer
-        // COLD ALLOC: SpatialQueryHit[24] — active-sonar reveal contact buffer — owner: SpectrumSystem
-        private static readonly SpatialQueryHit[] s_sonarRevealBuffer = new SpatialQueryHit[SonarRevealMaxContacts];
-        // COLD ALLOC: Vector4[24] — active-sonar reveal shader payload buffer — owner: SpectrumSystem
-        private static readonly Vector4[] s_sonarRevealContacts = new Vector4[SonarRevealMaxContacts];
-        // COLD ALLOC: Vector4[24] — active-sonar semantic shader payload buffer — owner: SpectrumSystem
-        private static readonly Vector4[] s_sonarRevealContactMeta = new Vector4[SonarRevealMaxContacts];
+            new System.Collections.Generic.List<VisorHUDController>(4); // COLD ALLOC: List<VisorHUDController>[4] - shared glitch pulse controller buffer - owner: SpectrumSystem
         // COLD ALLOC: float[32] â€” passive hydrophone radar energy grid â€” owner: SpectrumSystem
         private readonly float[] _passiveRadarGrid = new float[PassiveRadarSectorCount];
         // COLD ALLOC: float[30] â€” passive hydrophone auto-gain history â€” owner: SpectrumSystem
@@ -1141,8 +1368,10 @@ namespace Hecton8.Visor
         private static readonly Vector4[] s_passiveRadarRows = new Vector4[PassiveRadarAzimuthSectorCount];
         // COLD ALLOC: ActiveEmitterSample[32] â€” active world emitter buffer for passive hydrophone scan â€” owner: SpectrumSystem
         private static readonly SpatialAudioManager.ActiveEmitterSample[] s_passiveRadarEmitterBuffer = new SpatialAudioManager.ActiveEmitterSample[32];
-        // COLD ALLOC: ActiveEmitterSample[8] â€” nearest emitter shortlist for passive hydrophone scan â€” owner: SpectrumSystem
-        private static readonly SpatialAudioManager.ActiveEmitterSample[] s_passiveRadarNearestBuffer = new SpatialAudioManager.ActiveEmitterSample[PassiveRadarSourceBudget];
+        // COLD ALLOC: AbsoluteUniversePosition[8] - nearest emitter AUP shortlist, one conversion during selection instead of projection - owner: SpectrumSystem
+        private static readonly AbsoluteUniversePosition[] s_passiveRadarNearestAups = new AbsoluteUniversePosition[PassiveRadarSourceBudget];
+        // COLD ALLOC: float[8] - nearest emitter amplitude shortlist for passive hydrophone scan - owner: SpectrumSystem
+        private static readonly float[] s_passiveRadarNearestAmplitudes = new float[PassiveRadarSourceBudget];
         // COLD ALLOC: float[8] â€” nearest emitter distance cache for passive hydrophone scan â€” owner: SpectrumSystem
         private static readonly double[] s_passiveRadarNearestDistanceSqr = new double[PassiveRadarSourceBudget];
 
@@ -1224,6 +1453,7 @@ namespace Hecton8.Visor
 
             // Сбрасываем в Normal при отключении
             Shader.SetGlobalInt(_ShaderSpectrumMode, 0);
+            _lastPublishedSpectrumMode = 0;
             SonarGridOverlay.ClearGlobals();
             ClearSonarSnapshot();
             ClearAcousticMappingGlobals();
@@ -1285,9 +1515,10 @@ namespace Hecton8.Visor
                 return;
             }
 
-            UpdateActiveSonarWavefront(deltaTime);
+            float now = Time.time;
+            UpdateActiveSonarWavefront(deltaTime, now);
             UpdateLidarPersistence(deltaTime);
-            UpdateAcousticMappingGlobals(deltaTime);
+            UpdateAcousticMappingGlobals(deltaTime, now);
 
             if (_currentMode == SpectrumMode.Sonar)
                 UpdatePassiveRadar(deltaTime);
@@ -1355,7 +1586,7 @@ namespace Hecton8.Visor
             if (IsEmpSensorBlindActive())
                 return false;
 
-            float pulseRadius = Mathf.Max(1f, radius);
+            float pulseRadius = math.max(1f, radius);
             float revealDurationValue = revealDurationSeconds > 0f ? revealDurationSeconds : sonarRevealDuration;
             return EmitSonarPulse(pulseRadius, revealDurationValue, true, true);
         }
@@ -1366,8 +1597,14 @@ namespace Hecton8.Visor
 
         private void ApplyShaderMode()
         {
-            Shader.SetGlobalInt(_ShaderSpectrumMode, (int)_currentMode);
-            Shader.SetGlobalFloat(_ShaderSonarRadius, sonarRadius);
+            int mode = (int)_currentMode;
+            if (_lastPublishedSpectrumMode != mode)
+            {
+                Shader.SetGlobalInt(_ShaderSpectrumMode, mode);
+                _lastPublishedSpectrumMode = mode;
+            }
+
+            PublishSonarRadius(sonarRadius);
         }
 
         private bool EmitSonarPulse(float pulseRadius, float revealDurationSeconds, bool consumeEnergy, bool isActivePing)
@@ -1384,21 +1621,22 @@ namespace Hecton8.Visor
 
             Vector3 playerPosition = ToVector3(playerAup.ToRuntimeFloat3());
             float pulseTime = Time.time;
-            float pulseIntensity = math.saturate(pulseRadius / 200f);
-            float depth = ResolvePlayerMovement() != null ? Mathf.Max(0f, _playerMovement.CurrentDepth) : 0f;
+            float pulseIntensity = math.saturate(pulseRadius * 0.005f);
+            float depth = ResolvePlayerMovement() != null ? math.max(0f, _playerMovement.CurrentDepth) : 0f;
             float abyssalDistortion = ResolveAbyssalDistortion(depth);
-            float effectiveWaveSpeed = Mathf.Max(
+            float effectiveWaveSpeed = math.max(
                 0.01f,
-                sonarRevealWaveSpeed * math.lerp(1f, Mathf.Max(0.05f, abyssalWaveSpeedScaleMin), abyssalDistortion));
+                sonarRevealWaveSpeed * math.lerp(1f, math.max(0.05f, abyssalWaveSpeedScaleMin), abyssalDistortion));
             float waveBandWidth = math.lerp(6f, 2f, pulseIntensity);
-            float abyssalAnchorResponse01 = isActivePing ? ResolveAbyssalAnchorResponse01(playerPosition, pulseRadius) : 0f;
+            float abyssalReturnScalar = 1f + math.saturate(abyssalContactJitterRadius * 0.08333334f) * 0.35f;
+            float abyssalAnchorResponse01 = isActivePing ? math.saturate(pulseIntensity * abyssalDistortion * abyssalReturnScalar) : 0f;
             InitializeActiveSonarWavefront(pulseRadius, pulseTime, effectiveWaveSpeed, revealDurationSeconds, waveBandWidth);
             PublishScreenSpaceSonarPulse(playerPosition, pulseRadius, pulseTime, pulseIntensity, effectiveWaveSpeed, waveBandWidth, revealDurationSeconds);
             SpectrumEvents.RaiseSonarPulse(pulseRadius);
             if (isActivePing)
             {
-                _activeLidarPersistence = Mathf.Max(_activeLidarPersistence, pulseIntensity);
-                Shader.SetGlobalFloat(_ShaderLidarPersistence, _activeLidarPersistence);
+                _activeLidarPersistence = math.max(_activeLidarPersistence, pulseIntensity);
+                PublishLidarPersistence(_activeLidarPersistence);
                 SpectrumEvents.RaiseSonarPingSent(pulseIntensity);
                 PhysicsEventBus.NotifyAcousticPing(new AcousticPingEvent(
                     playerPosition,
@@ -1408,20 +1646,29 @@ namespace Hecton8.Visor
                     FieldTargetRole.Generic,
                     0,
                     pulseRadius * pulseRadius * math.max(0.1f, pulseIntensity)));
-                Vector3 playerForward = _playerTransform != null ? _playerTransform.forward : Vector3.forward;
+                Vector3 playerForward = ResolvePlayerForward();
                 PublishActiveSonarDangerImpulse(playerPosition, playerForward, pulseRadius, pulseIntensity);
                 TryPlayAbyssalAnchorReturn(abyssalAnchorResponse01);
             }
 
             Shader.SetGlobalFloat(_ShaderSonarPulseTime, pulseTime);
-            Shader.SetGlobalFloat(_ShaderSonarRadius, 0f);
-            PublishSonarReveal(playerPosition, pulseRadius, revealDurationSeconds, pulseTime, pulseIntensity, abyssalDistortion, effectiveWaveSpeed);
-            WorldSpatialHashGrid.BuildSonarSnapshot(playerPosition, pulseRadius, out _lastSonarSnapshot);
-            _hasSonarSnapshot = true;
-            NoiseSystem.ReportPlayerSignal(playerPosition, 0f, false, 0f, 0f, math.saturate(sonarNoiseSignature01));
-            if (isActivePing)
-                NoiseSystem.ReportActiveSonarPing(playerPosition, pulseIntensity);
-            SpectrumEvents.RaiseSonarSnapshotUpdated(_lastSonarSnapshot);
+            PublishSonarRadius(0f);
+            PublishSonarReveal(playerPosition, in playerAup, pulseRadius, revealDurationSeconds, pulseTime, pulseIntensity, abyssalDistortion, effectiveWaveSpeed);
+            if (!isActivePing)
+            {
+                WorldSpatialHashGrid.BuildSonarSnapshot(playerPosition, in playerAup, pulseRadius, out _lastSonarSnapshot);
+                _hasSonarSnapshot = true;
+                NoiseSystem.ReportPlayerSignal(
+                    playerPosition,
+                    in playerAup,
+                    0f,
+                    false,
+                    0f,
+                    0f,
+                    math.saturate(sonarNoiseSignature01));
+                SpectrumEvents.RaiseSonarSnapshotUpdated(_lastSonarSnapshot);
+            }
+
             return true;
         }
 
@@ -1430,6 +1677,7 @@ namespace Hecton8.Visor
             if (_acousticPingSubscribed || !Application.isPlaying)
                 return;
 
+            PhysicsEventBus.EnsureReady();
             PhysicsEventBus.Register((IAcousticPingEventListener)this);
             PhysicsEventBus.Register((IPhysicsAcousticImpulseEventListener)this);
             SpectrumEvents.RegisterAcousticEchoListener(this);
@@ -1487,13 +1735,14 @@ namespace Hecton8.Visor
                 return;
 
             float now = Time.time;
-            float speed = Mathf.Max(0.01f, sonarScreenSpacePulseSpeedMetersPerSecond * Mathf.Max(0.05f, sonarEchoVisualSpeedScale));
+            float speed = math.max(0.01f, sonarScreenSpacePulseSpeedMetersPerSecond * math.max(0.05f, sonarEchoVisualSpeedScale));
+            float inverseRevealWaveSpeed = math.rcp(math.max(0.01f, sonarRevealWaveSpeed));
             float delaySeconds = echoEvent.DistanceMeters > 0f
-                ? echoEvent.DistanceMeters / Mathf.Max(0.01f, sonarRevealWaveSpeed)
+                ? echoEvent.DistanceMeters * inverseRevealWaveSpeed
                 : 0f;
             float echoStartTime = now + delaySeconds;
-            float echoRadius = Mathf.Clamp(echoEvent.DistanceMeters * 0.42f, 10f, Mathf.Max(10f, sonarRadius * 0.65f));
-            float echoWidth = Mathf.Max(1.5f, _activeSonarWaveBandWidth * 1.65f);
+            float echoRadius = math.clamp(echoEvent.DistanceMeters * 0.42f, 10f, math.max(10f, sonarRadius * 0.65f));
+            float echoWidth = math.max(1.5f, _activeSonarWaveBandWidth * 1.65f);
             float echoIntensity = math.saturate(echoEvent.ReturnStrength * sonarEchoVisualIntensityScale);
 
             Shader.SetGlobalVector(
@@ -1502,11 +1751,11 @@ namespace Hecton8.Visor
             Shader.SetGlobalVector(
                 _ShaderHectonSonarEchoParams,
                 new Vector4(speed, echoRadius, echoWidth, echoIntensity));
-            Shader.SetGlobalFloat(_ShaderSonarActive, 1f);
+            PublishSonarActive(true);
 
-            _activeSonarEchoExpireTime = Mathf.Max(
+            _activeSonarEchoExpireTime = math.max(
                 _activeSonarEchoExpireTime,
-                echoStartTime + (echoRadius / speed) + sonarRevealFadeDuration);
+                echoStartTime + (echoRadius * math.rcp(speed)) + sonarRevealFadeDuration);
 
             MarkAupDiscoveryCell(echoEvent.WorldPosition, echoEvent.ReturnStrength);
         }
@@ -1517,7 +1766,7 @@ namespace Hecton8.Visor
                 return;
 
             float scream01 = math.saturate(impulseEvent.Volume01 + (impulseEvent.KineticEnergyJoules * 0.00008f));
-            _leviathanScreamRadarDistortion01 = Mathf.Max(_leviathanScreamRadarDistortion01, scream01);
+            _leviathanScreamRadarDistortion01 = math.max(_leviathanScreamRadarDistortion01, scream01);
         }
 
         private void PublishScreenSpaceSonarPulse(
@@ -1530,27 +1779,27 @@ namespace Hecton8.Visor
             float revealDurationSeconds)
         {
             ApplyAcousticMappingStaticGlobals();
-            float visualWaveSpeed = Mathf.Max(0.01f, sonarScreenSpacePulseSpeedMetersPerSecond);
+            float visualWaveSpeed = math.max(0.01f, sonarScreenSpacePulseSpeedMetersPerSecond);
             Shader.SetGlobalVector(_ShaderHectonSonarPrimaryPulse, new Vector4(origin.x, origin.y, origin.z, pulseTime));
             Shader.SetGlobalVector(
                 _ShaderHectonSonarVisualParams,
                 new Vector4(
                     visualWaveSpeed,
-                    Mathf.Max(1f, radius),
-                    Mathf.Max(0.25f, waveBandWidth),
+                    math.max(1f, radius),
+                    math.max(0.25f, waveBandWidth),
                     math.saturate(pulseIntensity)));
-            Shader.SetGlobalFloat(_ShaderSonarActive, 1f);
+            PublishSonarActive(true);
             _activeSonarVisualExpireTime = pulseTime
-                + Mathf.Max(0.05f, revealDurationSeconds)
-                + (Mathf.Max(1f, radius) / visualWaveSpeed);
+                + math.max(0.05f, revealDurationSeconds)
+                + (math.max(1f, radius) * math.rcp(visualWaveSpeed));
         }
 
         private void PublishActiveSonarDangerImpulse(Vector3 origin, Vector3 forward, float radius, float intensity)
         {
-            float safeRadius = Mathf.Max(1f, radius);
+            float safeRadius = math.max(1f, radius);
             float safeIntensity = math.max(0.1f, math.saturate(intensity));
-            float energyJoules = safeRadius * safeRadius * safeIntensity * Mathf.Max(0.1f, sonarAggroImpulseEnergyScale);
-            PhysicsEventBus.NotifyAcousticImpulse(new AcousticImpulseEvent(
+            float energyJoules = safeRadius * safeRadius * safeIntensity * math.max(0.1f, sonarAggroImpulseEnergyScale);
+            LargeAcousticImpulseEvent impulseEvent = new LargeAcousticImpulseEvent(
                 origin,
                 forward,
                 energyJoules,
@@ -1559,37 +1808,48 @@ namespace Hecton8.Visor
                 safeRadius,
                 0,
                 0,
-                AcousticImpulseFlags.Large));
+                AcousticImpulseFlags.None);
+            PhysicsEventBus.NotifyLargeAcousticImpulse(in impulseEvent);
         }
 
         private void ApplyAcousticMappingStaticGlobals()
         {
             Color sonarColor = sonarGridHardColor.linear;
-            Shader.SetGlobalVector(
-                _ShaderHectonSonarColor,
-                new Vector4(sonarColor.r, sonarColor.g, sonarColor.b, Mathf.Max(0f, sonarGridContourBoost)));
-            Shader.SetGlobalFloat(_ShaderHectonSonarNoirHideDistance, Mathf.Max(0f, sonarNoirHideDistanceMeters));
+            Vector4 sonarColorPayload = new Vector4(sonarColor.r, sonarColor.g, sonarColor.b, math.max(0f, sonarGridContourBoost));
+            float noirHideDistance = math.max(0f, sonarNoirHideDistanceMeters);
+            if (!_hasPublishedAcousticMappingStaticGlobals ||
+                !NearlyEqual(_lastPublishedSonarColor, sonarColorPayload, ShaderScalarPublishEpsilon))
+            {
+                Shader.SetGlobalVector(_ShaderHectonSonarColor, sonarColorPayload);
+                _lastPublishedSonarColor = sonarColorPayload;
+            }
+
+            if (!_hasPublishedAcousticMappingStaticGlobals ||
+                !NearlyEqual(_lastPublishedNoirHideDistance, noirHideDistance, ShaderScalarPublishEpsilon))
+            {
+                Shader.SetGlobalFloat(_ShaderHectonSonarNoirHideDistance, noirHideDistance);
+                _lastPublishedNoirHideDistance = noirHideDistance;
+            }
+
+            _hasPublishedAcousticMappingStaticGlobals = true;
         }
 
-        private void UpdateAcousticMappingGlobals(float deltaTime)
+        private void UpdateAcousticMappingGlobals(float deltaTime, float now)
         {
-            float now = Time.time;
             bool sonarActive = now <= _activeSonarVisualExpireTime || now <= _activeSonarEchoExpireTime;
-            Shader.SetGlobalFloat(_ShaderSonarActive, sonarActive ? 1f : 0f);
+            PublishSonarActive(sonarActive);
 
-            float speedStart = Mathf.Max(0f, radarDistortionStartSpeedMetersPerSecond);
-            float speedFull = Mathf.Max(speedStart + 0.01f, radarDistortionFullSpeedMetersPerSecond);
+            float speedStart = math.max(0f, radarDistortionStartSpeedMetersPerSecond);
+            float speedFull = math.max(speedStart + 0.01f, radarDistortionFullSpeedMetersPerSecond);
             float speedStartSqr = speedStart * speedStart;
             float speedFullSqr = speedFull * speedFull;
             float speed01 = math.saturate(
-                (ResolvePlayerSpeedMagnitudeSqr() - speedStartSqr) / math.max(0.0001f, speedFullSqr - speedStartSqr));
-            _leviathanScreamRadarDistortion01 = Mathf.Max(
+                (ResolvePlayerSpeedMagnitudeSqr() - speedStartSqr) * math.rcp(math.max(0.0001f, speedFullSqr - speedStartSqr)));
+            _leviathanScreamRadarDistortion01 = math.max(
                 0f,
-                _leviathanScreamRadarDistortion01 - (Mathf.Max(0f, deltaTime) * Mathf.Max(0.1f, leviathanScreamRadarDecayPerSecond)));
-            float radarDistortion01 = Mathf.Max(speed01, _leviathanScreamRadarDistortion01);
-            Shader.SetGlobalVector(
-                _ShaderHectonSonarRadarDistortion,
-                new Vector4(speed01, _leviathanScreamRadarDistortion01, radarDistortion01, sonarActive ? 1f : 0f));
+                _leviathanScreamRadarDistortion01 - (math.max(0f, deltaTime) * math.max(0.1f, leviathanScreamRadarDecayPerSecond)));
+            float radarDistortion01 = math.max(speed01, _leviathanScreamRadarDistortion01);
+            PublishRadarDistortion(new Vector4(speed01, _leviathanScreamRadarDistortion01, radarDistortion01, sonarActive ? 1f : 0f));
         }
 
         private float ResolvePlayerSpeedMagnitudeSqr()
@@ -1613,8 +1873,66 @@ namespace Hecton8.Visor
             Shader.SetGlobalVector(_ShaderHectonSonarEchoPulse, Vector4.zero);
             Shader.SetGlobalVector(_ShaderHectonSonarVisualParams, Vector4.zero);
             Shader.SetGlobalVector(_ShaderHectonSonarEchoParams, Vector4.zero);
-            Shader.SetGlobalVector(_ShaderHectonSonarRadarDistortion, Vector4.zero);
-            Shader.SetGlobalFloat(_ShaderSonarActive, 0f);
+            Shader.SetGlobalVector(_ShaderHectonSonarColor, Vector4.zero);
+            Shader.SetGlobalFloat(_ShaderHectonSonarNoirHideDistance, 0f);
+            _lastPublishedSonarColor = Vector4.zero;
+            _lastPublishedNoirHideDistance = 0f;
+            _hasPublishedAcousticMappingStaticGlobals = true;
+            PublishRadarDistortion(Vector4.zero);
+            PublishSonarActive(false);
+        }
+
+        private void PublishSonarActive(bool active)
+        {
+            int state = active ? 1 : 0;
+            if (_lastPublishedSonarActiveState == state)
+                return;
+
+            Shader.SetGlobalFloat(_ShaderSonarActive, state);
+            _lastPublishedSonarActiveState = state;
+        }
+
+        private void PublishSonarRadius(float radius)
+        {
+            float value = math.max(0f, radius);
+            if (NearlyEqual(_lastPublishedSonarRadius, value, ShaderScalarPublishEpsilon))
+                return;
+
+            Shader.SetGlobalFloat(_ShaderSonarRadius, value);
+            _lastPublishedSonarRadius = value;
+        }
+
+        private void PublishSonarWaveFront(float waveFront)
+        {
+            float value = math.max(0f, waveFront);
+            if (NearlyEqual(_lastPublishedSonarWaveFront, value, ShaderScalarPublishEpsilon))
+                return;
+
+            Shader.SetGlobalFloat(_ShaderSonarWaveFront, value);
+            _lastPublishedSonarWaveFront = value;
+        }
+
+        private void PublishLidarPersistence(float persistence)
+        {
+            float value = math.max(0f, persistence);
+            if (NearlyEqual(_lastPublishedLidarPersistence, value, ShaderScalarPublishEpsilon))
+                return;
+
+            Shader.SetGlobalFloat(_ShaderLidarPersistence, value);
+            _lastPublishedLidarPersistence = value;
+        }
+
+        private void PublishRadarDistortion(Vector4 distortion)
+        {
+            if (_hasPublishedRadarDistortion &&
+                NearlyEqual(_lastPublishedRadarDistortion, distortion, ShaderScalarPublishEpsilon))
+            {
+                return;
+            }
+
+            Shader.SetGlobalVector(_ShaderHectonSonarRadarDistortion, distortion);
+            _lastPublishedRadarDistortion = distortion;
+            _hasPublishedRadarDistortion = true;
         }
 
         private void EnsureAupDiscoveryGrid()
@@ -1625,9 +1943,9 @@ namespace Hecton8.Visor
             if (_aupDiscoveryGrid.IsCreated)
                 return;
 
-            _aupDiscoveryGridWidthRuntime = Mathf.Max(8, aupDiscoveryGridWidth);
-            _aupDiscoveryGridHeightRuntime = Mathf.Max(8, aupDiscoveryGridHeight);
-            _aupDiscoveryCellSizeRuntime = Mathf.Max(1f, aupDiscoveryCellSizeMeters);
+            _aupDiscoveryGridWidthRuntime = math.max(8, aupDiscoveryGridWidth);
+            _aupDiscoveryGridHeightRuntime = math.max(8, aupDiscoveryGridHeight);
+            _aupDiscoveryCellSizeRuntime = math.max(1f, aupDiscoveryCellSizeMeters);
             int cellCount = _aupDiscoveryGridWidthRuntime * _aupDiscoveryGridHeightRuntime;
             _aupDiscoveryGrid = new NativeArray<uint>(
                 cellCount,
@@ -1660,9 +1978,17 @@ namespace Hecton8.Visor
 
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
             double3 absolute = aup.ToAbsoluteDouble3();
-            double invCellSize = 1.0 / System.Math.Max(1.0, _aupDiscoveryCellSizeRuntime);
+            double invCellSize = 1.0 / math.max(1.0, (double)_aupDiscoveryCellSizeRuntime);
             long cellX = (long)math.floor(absolute.x * invCellSize);
             long cellZ = (long)math.floor(absolute.z * invCellSize);
+            MarkAupDiscoveryCellByCoord(cellX, cellZ, strength01);
+        }
+
+        private void MarkAupDiscoveryCellByCoord(long cellX, long cellZ, float strength01)
+        {
+            if (!_aupDiscoveryGrid.IsCreated || _aupDiscoveryGridWidthRuntime <= 0 || _aupDiscoveryGridHeightRuntime <= 0)
+                return;
+
             int x = PositiveModulo(cellX, _aupDiscoveryGridWidthRuntime);
             int z = PositiveModulo(cellZ, _aupDiscoveryGridHeightRuntime);
             int index = (z * _aupDiscoveryGridWidthRuntime) + x;
@@ -1671,20 +1997,35 @@ namespace Hecton8.Visor
             _aupDiscoveryGrid[index] = _aupDiscoveryGrid[index] | AupDiscoveryDiscoveredBit | strengthBit;
         }
 
-        private void MarkAupDiscoveryPulseShell(Vector3 origin, float radius, float strength01)
+        private void MarkAupDiscoveryPulseShell(in AbsoluteUniversePosition originAup, float radius, float strength01)
         {
-            MarkAupDiscoveryCell(origin, strength01);
+            if (!_aupDiscoveryGrid.IsCreated || _aupDiscoveryGridWidthRuntime <= 0 || _aupDiscoveryGridHeightRuntime <= 0)
+                return;
 
-            float shellDistance = Mathf.Max(_aupDiscoveryCellSizeRuntime, radius);
-            float diagonalDistance = shellDistance * 0.70710678f;
-            MarkAupDiscoveryCell(origin + new Vector3(shellDistance, 0f, 0f), strength01);
-            MarkAupDiscoveryCell(origin + new Vector3(-shellDistance, 0f, 0f), strength01);
-            MarkAupDiscoveryCell(origin + new Vector3(0f, 0f, shellDistance), strength01);
-            MarkAupDiscoveryCell(origin + new Vector3(0f, 0f, -shellDistance), strength01);
-            MarkAupDiscoveryCell(origin + new Vector3(diagonalDistance, 0f, diagonalDistance), strength01);
-            MarkAupDiscoveryCell(origin + new Vector3(-diagonalDistance, 0f, diagonalDistance), strength01);
-            MarkAupDiscoveryCell(origin + new Vector3(diagonalDistance, 0f, -diagonalDistance), strength01);
-            MarkAupDiscoveryCell(origin + new Vector3(-diagonalDistance, 0f, -diagonalDistance), strength01);
+            double3 absolute = originAup.ToAbsoluteDouble3();
+            double invCellSize = 1.0 / math.max(1.0, (double)_aupDiscoveryCellSizeRuntime);
+            long originCellX = (long)math.floor(absolute.x * invCellSize);
+            long originCellZ = (long)math.floor(absolute.z * invCellSize);
+
+            // Discovery is persistent sonar memory, not physics: stamp an octant shell directly in grid space.
+            float shellDistance = math.max(_aupDiscoveryCellSizeRuntime, radius);
+            long shellCellDelta = (long)math.ceil(shellDistance * invCellSize);
+            if (shellCellDelta < 1L)
+                shellCellDelta = 1L;
+
+            long diagonalCellDelta = (long)math.ceil((double)shellCellDelta * 0.7071067811865476d);
+            if (diagonalCellDelta < 1L)
+                diagonalCellDelta = 1L;
+
+            MarkAupDiscoveryCellByCoord(originCellX, originCellZ, strength01);
+            MarkAupDiscoveryCellByCoord(originCellX + shellCellDelta, originCellZ, strength01);
+            MarkAupDiscoveryCellByCoord(originCellX - shellCellDelta, originCellZ, strength01);
+            MarkAupDiscoveryCellByCoord(originCellX, originCellZ + shellCellDelta, strength01);
+            MarkAupDiscoveryCellByCoord(originCellX, originCellZ - shellCellDelta, strength01);
+            MarkAupDiscoveryCellByCoord(originCellX + diagonalCellDelta, originCellZ + diagonalCellDelta, strength01);
+            MarkAupDiscoveryCellByCoord(originCellX - diagonalCellDelta, originCellZ + diagonalCellDelta, strength01);
+            MarkAupDiscoveryCellByCoord(originCellX + diagonalCellDelta, originCellZ - diagonalCellDelta, strength01);
+            MarkAupDiscoveryCellByCoord(originCellX - diagonalCellDelta, originCellZ - diagonalCellDelta, strength01);
         }
 
         private static int PositiveModulo(long value, int modulus)
@@ -1694,6 +2035,19 @@ namespace Hecton8.Visor
 
             long result = value % modulus;
             return (int)(result < 0 ? result + modulus : result);
+        }
+
+        private static bool NearlyEqual(float a, float b, float epsilon)
+        {
+            return math.abs(a - b) <= epsilon;
+        }
+
+        private static bool NearlyEqual(Vector4 a, Vector4 b, float epsilon)
+        {
+            return math.abs(a.x - b.x) <= epsilon &&
+                   math.abs(a.y - b.y) <= epsilon &&
+                   math.abs(a.z - b.z) <= epsilon &&
+                   math.abs(a.w - b.w) <= epsilon;
         }
 
         private bool ResolveSurvivalSystem()
@@ -1749,6 +2103,52 @@ namespace Hecton8.Visor
             return new Vector3(value.x, value.y, value.z);
         }
 
+        private Vector3 ResolvePlayerForward()
+        {
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null)
+            {
+                Vector3 lookForward = ToVector3(runtimeContext.LookState.AimForward);
+                if (lookForward.sqrMagnitude > 0.0001f)
+                {
+                    _lastResolvedPlayerForward = ResolveDominantAxisDirection(lookForward);
+                    return _lastResolvedPlayerForward;
+                }
+
+                Vector3 cameraForward = ToVector3(runtimeContext.MovementState.CameraForward);
+                if (cameraForward.sqrMagnitude > 0.0001f)
+                {
+                    _lastResolvedPlayerForward = ResolveDominantAxisDirection(cameraForward);
+                    return _lastResolvedPlayerForward;
+                }
+
+                Vector3 movementForward = ToVector3(runtimeContext.MovementState.Forward);
+                if (movementForward.sqrMagnitude > 0.0001f)
+                {
+                    _lastResolvedPlayerForward = ResolveDominantAxisDirection(movementForward);
+                    return _lastResolvedPlayerForward;
+                }
+            }
+
+            return _lastResolvedPlayerForward.sqrMagnitude > 0.0001f
+                ? _lastResolvedPlayerForward
+                : Vector3.forward;
+        }
+
+        private static Vector3 ResolveDominantAxisDirection(Vector3 direction)
+        {
+            float absX = math.abs(direction.x);
+            float absY = math.abs(direction.y);
+            float absZ = math.abs(direction.z);
+            if (absX >= absY && absX >= absZ)
+                return direction.x < 0f ? Vector3.left : Vector3.right;
+
+            if (absY >= absZ)
+                return direction.y < 0f ? Vector3.down : Vector3.up;
+
+            return direction.z < 0f ? Vector3.back : Vector3.forward;
+        }
+
         private HectonPlayerMovement ResolvePlayerMovement()
         {
             if (_playerMovement != null)
@@ -1764,16 +2164,14 @@ namespace Hecton8.Visor
         {
             _hasSonarSnapshot = false;
             _lastSonarSnapshot = default;
-            Shader.SetGlobalInt(_ShaderSonarRevealContactCount, 0);
             Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, 0f);
             Shader.SetGlobalVector(_ShaderSonarRevealWaveParams, Vector4.zero);
-            Shader.SetGlobalFloat(_ShaderSonarWaveFront, 0f);
-            Shader.SetGlobalFloat(_ShaderSonarRadius, 0f);
+            PublishSonarWaveFront(0f);
+            PublishSonarRadius(0f);
             Shader.SetGlobalVector(_ShaderSonarPingCenter, Vector4.zero);
             Shader.SetGlobalVector(_ShaderSonarPingParams, Vector4.zero);
             Shader.SetGlobalFloat(_ShaderAbyssalDistortion, 0f);
-            Shader.SetGlobalFloat(_ShaderLidarPersistence, 0f);
-            Shader.SetGlobalVectorArray(_ShaderSonarRevealContactMeta, s_sonarRevealContactMeta);
+            PublishLidarPersistence(0f);
             _activeSonarWaveFront = 0f;
             _activeSonarWaveSpeed = 0f;
             _activeSonarRevealExpireTime = 0f;
@@ -1801,6 +2199,7 @@ namespace Hecton8.Visor
 
         private void PublishSonarReveal(
             Vector3 origin,
+            in AbsoluteUniversePosition originAup,
             float radius,
             float revealDurationSeconds,
             float pulseTime,
@@ -1808,35 +2207,7 @@ namespace Hecton8.Visor
             float abyssalDistortion,
             float effectiveWaveSpeed)
         {
-            int contactCount = 0;
-            MarkAupDiscoveryPulseShell(origin, radius, pulseIntensity);
-
-            contactCount = AppendAbyssalAnchorContacts(
-                origin,
-                radius,
-                pulseTime,
-                effectiveWaveSpeed,
-                abyssalDistortion,
-                contactCount);
-
-            int sceneContactCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
-                origin,
-                radius,
-                SpatialTargetKind.Signal | SpatialTargetKind.Module | SpatialTargetKind.Resource | SpatialTargetKind.Pickup | SpatialTargetKind.Scannable,
-                s_sonarRevealBuffer);
-
-            for (int i = 0; i < sceneContactCount && contactCount < SonarRevealMaxContacts; i++, contactCount++)
-            {
-                SpatialQueryHit hit = s_sonarRevealBuffer[i];
-                Vector3 contactPosition = hit.Position;
-                if (abyssalDistortion > 0.001f)
-                    contactPosition += ResolveAbyssalContactJitter(origin, hit.Position, pulseTime, contactCount, abyssalDistortion);
-
-                float arrivalOffset = ResolveApproximateEchoArrivalOffset(hit.DistanceSqr, radius, effectiveWaveSpeed);
-                s_sonarRevealContacts[contactCount] = new Vector4(contactPosition.x, contactPosition.y, contactPosition.z, arrivalOffset);
-                s_sonarRevealContactMeta[contactCount] = ResolveRevealContactMeta(hit);
-                MarkAupDiscoveryCell(contactPosition, pulseIntensity);
-            }
+            MarkAupDiscoveryPulseShell(in originAup, radius, pulseIntensity);
 
             Shader.SetGlobalVector(_ShaderSonarRevealOrigin, new Vector4(origin.x, origin.y, origin.z, radius));
             Shader.SetGlobalVector(_ShaderSonarPingCenter, new Vector4(origin.x, origin.y, origin.z, pulseIntensity));
@@ -1846,20 +2217,17 @@ namespace Hecton8.Visor
                     radius,
                     math.lerp(6f, 2f, pulseIntensity),
                     pulseTime,
-                    pulseTime + Mathf.Max(0.05f, revealDurationSeconds)));
-            Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, pulseTime + Mathf.Max(0.05f, revealDurationSeconds));
+                    pulseTime + math.max(0.05f, revealDurationSeconds)));
+            Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, pulseTime + math.max(0.05f, revealDurationSeconds));
             Shader.SetGlobalFloat(_ShaderAbyssalDistortion, abyssalDistortion);
             Shader.SetGlobalVector(
                 _ShaderSonarRevealWaveParams,
                 new Vector4(
                     pulseTime,
                     effectiveWaveSpeed,
-                    Mathf.Max(0.05f, sonarRevealFadeDuration),
+                    math.max(0.05f, sonarRevealFadeDuration),
                     pulseIntensity));
-            Shader.SetGlobalFloat(_ShaderSonarWaveFront, _activeSonarWaveFront);
-            Shader.SetGlobalInt(_ShaderSonarRevealContactCount, contactCount);
-            Shader.SetGlobalVectorArray(_ShaderSonarRevealContacts, s_sonarRevealContacts);
-            Shader.SetGlobalVectorArray(_ShaderSonarRevealContactMeta, s_sonarRevealContactMeta);
+            PublishSonarWaveFront(_activeSonarWaveFront);
         }
 
         private void InitializeActiveSonarWavefront(
@@ -1870,30 +2238,30 @@ namespace Hecton8.Visor
             float waveBandWidth)
         {
             _activeSonarWaveFront = 0f;
-            _activeSonarWaveSpeed = Mathf.Max(0.01f, effectiveWaveSpeed);
-            _activeSonarRevealExpireTime = pulseTime + Mathf.Max(0.05f, revealDurationSeconds);
-            _activeSonarWaveBandWidth = Mathf.Max(0.25f, waveBandWidth);
+            _activeSonarWaveSpeed = math.max(0.01f, effectiveWaveSpeed);
+            _activeSonarRevealExpireTime = pulseTime + math.max(0.05f, revealDurationSeconds);
+            _activeSonarWaveBandWidth = math.max(0.25f, waveBandWidth);
             _activeSonarWavefrontActive = pulseRadius > 0f;
-            Shader.SetGlobalFloat(_ShaderSonarWaveFront, 0f);
-            Shader.SetGlobalFloat(_ShaderSonarRadius, 0f);
+            PublishSonarWaveFront(0f);
+            PublishSonarRadius(0f);
         }
 
-        private void UpdateActiveSonarWavefront(float deltaTime)
+        private void UpdateActiveSonarWavefront(float deltaTime, float now)
         {
             if (!_activeSonarWavefrontActive)
                 return;
 
-            _activeSonarWaveFront += Mathf.Max(0f, deltaTime) * _activeSonarWaveSpeed;
-            Shader.SetGlobalFloat(_ShaderSonarWaveFront, _activeSonarWaveFront);
-            Shader.SetGlobalFloat(_ShaderSonarRadius, _activeSonarWaveFront);
+            _activeSonarWaveFront += math.max(0f, deltaTime) * _activeSonarWaveSpeed;
+            PublishSonarWaveFront(_activeSonarWaveFront);
+            PublishSonarRadius(_activeSonarWaveFront);
 
-            if (Time.time <= _activeSonarRevealExpireTime)
+            if (now <= _activeSonarRevealExpireTime)
                 return;
 
             _activeSonarWavefrontActive = false;
             _activeSonarWaveSpeed = 0f;
             _activeSonarWaveBandWidth = 0f;
-            Shader.SetGlobalFloat(_ShaderSonarRadius, 0f);
+            PublishSonarRadius(0f);
         }
 
         private void UpdateLidarPersistence(float deltaTime)
@@ -1903,18 +2271,18 @@ namespace Hecton8.Visor
                 if (_activeLidarPersistence != 0f)
                 {
                     _activeLidarPersistence = 0f;
-                    Shader.SetGlobalFloat(_ShaderLidarPersistence, 0f);
+                    PublishLidarPersistence(0f);
                 }
 
                 return;
             }
 
-            float decayScale = 1f / (1f + Mathf.Max(0.01f, lidarPersistenceDecaySharpness) * Mathf.Max(0f, deltaTime));
+            float decayScale = math.rcp(1f + math.max(0.01f, lidarPersistenceDecaySharpness) * math.max(0f, deltaTime));
             _activeLidarPersistence *= decayScale;
             if (_activeLidarPersistence < 0.0001f)
                 _activeLidarPersistence = 0f;
 
-            Shader.SetGlobalFloat(_ShaderLidarPersistence, _activeLidarPersistence);
+            PublishLidarPersistence(_activeLidarPersistence);
         }
 
         private void UpdatePassiveRadar(float deltaTime)
@@ -1933,7 +2301,10 @@ namespace Hecton8.Visor
         private void StepPassiveRadar()
         {
             for (int i = 0; i < _passiveRadarGrid.Length; i++)
-                _passiveRadarGrid[i] *= PassiveRadarDecayFactor;
+            {
+                float decayedEnergy = _passiveRadarGrid[i] * PassiveRadarDecayFactor;
+                _passiveRadarGrid[i] = decayedEnergy > PassiveRadarEnergyEpsilon ? decayedEnergy : 0f;
+            }
 
             if (!TryResolvePlayerAup(out AbsoluteUniversePosition listenerAup) ||
                 !(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager audioManager))
@@ -1947,18 +2318,13 @@ namespace Hecton8.Visor
             float minimumDistanceSqr = PassiveRadarMinimumDistanceMeters * PassiveRadarMinimumDistanceMeters;
             for (int i = 0; i < nearestCount; i++)
             {
-                SpatialAudioManager.ActiveEmitterSample sample = s_passiveRadarNearestBuffer[i];
-                AbsoluteUniversePosition sampleAup = AbsoluteUniversePosition.FromRuntimePosition(sample.Position);
+                AbsoluteUniversePosition sampleAup = s_passiveRadarNearestAups[i];
+                float amplitude = s_passiveRadarNearestAmplitudes[i];
                 float3 deltaAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in sampleAup, in listenerAup);
                 float distanceSqr = math.max(math.lengthsq(deltaAup), minimumDistanceSqr);
-                float inverseDistance = 1f / distanceSqr;
-                float inverseDistanceMeters = math.rsqrt(distanceSqr);
-                Vector3 direction = new Vector3(
-                    deltaAup.x * inverseDistanceMeters,
-                    deltaAup.y * inverseDistanceMeters,
-                    deltaAup.z * inverseDistanceMeters);
-                int sector = EncodePassiveRadarSector(direction);
-                _passiveRadarGrid[sector] += sample.Amplitude * inverseDistance;
+                float inverseDistance = math.rcp(distanceSqr);
+                int sector = EncodePassiveRadarSectorFast(deltaAup);
+                _passiveRadarGrid[sector] += amplitude * inverseDistance;
             }
 
             UpdatePassiveRadarPeakAndShaderState();
@@ -1969,16 +2335,17 @@ namespace Hecton8.Visor
             for (int i = 0; i < PassiveRadarSourceBudget; i++)
             {
                 s_passiveRadarNearestDistanceSqr[i] = double.MaxValue;
-                s_passiveRadarNearestBuffer[i] = default;
+                s_passiveRadarNearestAups[i] = default;
+                s_passiveRadarNearestAmplitudes[i] = 0f;
             }
 
-            int safeEmitterCount = Mathf.Min(emitterCount, s_passiveRadarEmitterBuffer.Length);
+            int safeEmitterCount = math.min(emitterCount, s_passiveRadarEmitterBuffer.Length);
             int selectedCount = 0;
             double maxDistanceSqr = (double)PassiveRadarMaxSourceDistanceMeters * PassiveRadarMaxSourceDistanceMeters;
             for (int emitterIndex = 0; emitterIndex < safeEmitterCount; emitterIndex++)
             {
                 SpatialAudioManager.ActiveEmitterSample sample = s_passiveRadarEmitterBuffer[emitterIndex];
-                AbsoluteUniversePosition sampleAup = AbsoluteUniversePosition.FromRuntimePosition(sample.Position);
+                AbsoluteUniversePosition sampleAup = sample.PositionAup;
                 double distanceSqr = AbsoluteUniversePosition.DistanceSq(in sampleAup, in listenerAup);
                 if (distanceSqr > maxDistanceSqr)
                     continue;
@@ -2008,25 +2375,47 @@ namespace Hecton8.Visor
                 }
 
                 s_passiveRadarNearestDistanceSqr[targetSlot] = distanceSqr;
-                s_passiveRadarNearestBuffer[targetSlot] = sample;
+                s_passiveRadarNearestAups[targetSlot] = sampleAup;
+                s_passiveRadarNearestAmplitudes[targetSlot] = sample.Amplitude;
             }
 
             return selectedCount;
         }
 
-        private static int EncodePassiveRadarSector(Vector3 direction)
+        private static int EncodePassiveRadarSectorFast(float3 delta)
         {
-            float azimuth = Mathf.Atan2(direction.x, direction.z);
-            float elevation = Mathf.Asin(Mathf.Clamp(direction.y, -1f, 1f));
-            int azimuthSector = Mathf.Clamp(
-                Mathf.FloorToInt(((azimuth + Mathf.PI) / (Mathf.PI * 2f)) * PassiveRadarAzimuthSectorCount),
-                0,
-                PassiveRadarAzimuthSectorCount - 1);
-            float elevation01 = Mathf.InverseLerp(-Mathf.PI * 0.5f, Mathf.PI * 0.5f, elevation);
-            int elevationSector = Mathf.Clamp(
-                Mathf.FloorToInt(elevation01 * PassiveRadarElevationSectorCount),
-                0,
-                PassiveRadarElevationSectorCount - 1);
+            float ax = math.abs(delta.x);
+            float ay = math.abs(delta.y);
+            float az = math.abs(delta.z);
+            int azimuthSector;
+            if (delta.z >= 0f)
+            {
+                if (az <= ax * 0.0001f)
+                {
+                    azimuthSector = delta.x >= 0f ? 6 : 2;
+                }
+                else if (delta.x >= 0f)
+                {
+                    azimuthSector = ax <= az ? 4 : 5;
+                }
+                else
+                {
+                    azimuthSector = ax <= az ? 4 : 3;
+                }
+            }
+            else if (delta.x >= 0f)
+            {
+                azimuthSector = ax <= az ? 7 : 6;
+            }
+            else
+            {
+                azimuthSector = ax <= az ? 0 : 1;
+            }
+
+            float horizontalAxis = math.max(ax, az);
+            int elevationSector = delta.y < 0f
+                ? (ay > horizontalAxis ? 0 : 1)
+                : (ay > horizontalAxis ? 3 : 2);
             return (azimuthSector * PassiveRadarElevationSectorCount) + elevationSector;
         }
 
@@ -2035,6 +2424,7 @@ namespace Hecton8.Visor
             float peakEnergy = 0f;
             int peakSector = -1;
             int activeSectorCount = 0;
+            bool rowsChanged = !_passiveRadarShaderRowsInitialized;
             for (int azimuthSector = 0; azimuthSector < PassiveRadarAzimuthSectorCount; azimuthSector++)
             {
                 int rowBaseIndex = azimuthSector * PassiveRadarElevationSectorCount;
@@ -2043,12 +2433,15 @@ namespace Hecton8.Visor
                     _passiveRadarGrid[rowBaseIndex + 1],
                     _passiveRadarGrid[rowBaseIndex + 2],
                     _passiveRadarGrid[rowBaseIndex + 3]);
+                if (!NearlyEqual(s_passiveRadarRows[azimuthSector], row, ShaderVectorPublishEpsilon))
+                    rowsChanged = true;
+
                 s_passiveRadarRows[azimuthSector] = row;
 
                 for (int elevationSector = 0; elevationSector < PassiveRadarElevationSectorCount; elevationSector++)
                 {
                     float energy = _passiveRadarGrid[rowBaseIndex + elevationSector];
-                    if (energy > 0.0001f)
+                    if (energy > PassiveRadarEnergyEpsilon)
                         activeSectorCount++;
 
                     if (energy <= peakEnergy)
@@ -2073,14 +2466,38 @@ namespace Hecton8.Visor
 
             _passiveRadarPeakEnergy = peakEnergy;
             _passiveRadarPeakSector = peakSector;
-            _passiveRadarAutoGain = autoGain > 0.0001f ? autoGain : 1f;
+            _passiveRadarAutoGain = autoGain > PassiveRadarEnergyEpsilon ? autoGain : 1f;
             int peakAzimuthSector = peakSector >= 0 ? peakSector / PassiveRadarElevationSectorCount : -1;
             int peakElevationSector = peakSector >= 0 ? peakSector & (PassiveRadarElevationSectorCount - 1) : -1;
-            Shader.SetGlobalVectorArray(_ShaderPassiveRadarRows, s_passiveRadarRows);
-            Shader.SetGlobalVector(
-                _ShaderPassiveRadarPeak,
-                new Vector4(peakAzimuthSector, peakElevationSector, peakEnergy, activeSectorCount));
-            Shader.SetGlobalFloat(_ShaderPassiveRadarAutoGain, _passiveRadarAutoGain);
+            PublishPassiveRadarShaderState(
+                new Vector4(peakAzimuthSector, peakElevationSector, peakEnergy, activeSectorCount),
+                _passiveRadarAutoGain,
+                rowsChanged);
+        }
+
+        private void PublishPassiveRadarShaderState(Vector4 peakPayload, float autoGain, bool rowsChanged)
+        {
+            if (rowsChanged || !_passiveRadarShaderRowsInitialized)
+            {
+                Shader.SetGlobalVectorArray(_ShaderPassiveRadarRows, s_passiveRadarRows);
+                _passiveRadarShaderRowsInitialized = true;
+            }
+
+            if (!_hasPublishedPassiveRadarPeak ||
+                !NearlyEqual(_lastPublishedPassiveRadarPeak, peakPayload, ShaderVectorPublishEpsilon))
+            {
+                Shader.SetGlobalVector(_ShaderPassiveRadarPeak, peakPayload);
+                _lastPublishedPassiveRadarPeak = peakPayload;
+            }
+
+            if (!_hasPublishedPassiveRadarPeak ||
+                !NearlyEqual(_lastPublishedPassiveRadarAutoGain, autoGain, ShaderVectorPublishEpsilon))
+            {
+                Shader.SetGlobalFloat(_ShaderPassiveRadarAutoGain, autoGain);
+                _lastPublishedPassiveRadarAutoGain = autoGain;
+            }
+
+            _hasPublishedPassiveRadarPeak = true;
         }
 
         private void ClearPassiveRadarState()
@@ -2099,9 +2516,7 @@ namespace Hecton8.Visor
             _passiveRadarAutoGain = 1f;
             _passiveRadarPeakSector = -1;
             _passiveRadarAutoGainWriteIndex = 0;
-            Shader.SetGlobalVectorArray(_ShaderPassiveRadarRows, s_passiveRadarRows);
-            Shader.SetGlobalVector(_ShaderPassiveRadarPeak, Vector4.zero);
-            Shader.SetGlobalFloat(_ShaderPassiveRadarAutoGain, 1f);
+            PublishPassiveRadarShaderState(Vector4.zero, 1f, true);
         }
 
         private float ResolveAbyssalDistortion(float depth)
@@ -2109,39 +2524,8 @@ namespace Hecton8.Visor
             if (depth <= abyssalDistortionStartDepth)
                 return 0f;
 
-            return Mathf.InverseLerp(
-                abyssalDistortionStartDepth,
-                Mathf.Max(abyssalDistortionStartDepth + 0.01f, abyssalDistortionFullDepth),
-                depth);
-        }
-
-        private Vector3 ResolveAbyssalContactJitter(Vector3 origin, Vector3 position, float pulseTime, int index, float distortion)
-        {
-            if (abyssalContactJitterRadius <= 0f || distortion <= 0f)
-                return Vector3.zero;
-
-            float seed = pulseTime * 1.6180339f + index * 12.9898f + origin.x * 0.173f + origin.y * 0.117f + origin.z * 0.061f;
-            float x = HashSigned(seed + position.x * 0.193f);
-            float y = HashSigned(seed + position.y * 0.271f + 7.13f);
-            float z = HashSigned(seed + position.z * 0.347f + 13.71f);
-            Vector3 direction = new Vector3(x, y, z);
-            if (direction.sqrMagnitude <= 0.0001f)
-                direction = Vector3.up;
-            else
-                direction.Normalize();
-
-            float amplitude = abyssalContactJitterRadius * distortion * (0.35f + 0.65f * Hash01(seed + 19.37f));
-            return direction * amplitude;
-        }
-
-        private static float Hash01(float seed)
-        {
-            return Mathf.Repeat(Mathf.Sin(seed) * 43758.5453f, 1f);
-        }
-
-        private static float HashSigned(float seed)
-        {
-            return Hash01(seed) * 2f - 1f;
+            float distortionRange = math.max(0.01f, abyssalDistortionFullDepth - abyssalDistortionStartDepth);
+            return math.saturate((depth - abyssalDistortionStartDepth) / distortionRange);
         }
 
         private void TryPlayAbyssalAnchorReturn(float response01)
@@ -2158,119 +2542,6 @@ namespace Hecton8.Visor
                 abyssalAnchorReturnVolumeMax,
                 math.saturate(response01));
             audioManager.PlayStatic2D(abyssalAnchorReturnClip, volume, audioManager.InterfaceGroup);
-        }
-
-        private float ResolveAbyssalAnchorResponse01(Vector3 origin, float radius)
-        {
-            double nearestAnchorDistanceSqr = double.PositiveInfinity;
-            if (TryResolveNearestAbyssalAnchorDistanceSqr(origin, radius, out double resolvedDistanceSqr))
-                nearestAnchorDistanceSqr = resolvedDistanceSqr;
-
-            if (double.IsPositiveInfinity(nearestAnchorDistanceSqr))
-                return 0f;
-
-            double radiusSqr = math.max(1.0, (double)radius * radius);
-            return 1f - math.saturate((float)(nearestAnchorDistanceSqr / radiusSqr));
-        }
-
-        private bool TryResolveNearestAbyssalAnchorDistanceSqr(Vector3 origin, float radius, out double nearestDistanceSqr)
-        {
-            nearestDistanceSqr = double.PositiveInfinity;
-            if (vegetationBridge == null)
-                return false;
-
-            double radiusSqr = (double)radius * radius;
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
-
-            NativeArray<Vector3> anchorsNative = vegetationBridge.ActiveAbyssalAnchorsNative;
-            int anchorCount = Mathf.Min(
-                AbyssalAnchorScanBudget,
-                Mathf.Min(
-                    vegetationBridge.ActiveAbyssalAnchorCount,
-                    anchorsNative.IsCreated ? anchorsNative.Length : 0));
-            for (int i = 0; i < anchorCount; i++)
-            {
-                AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorsNative[i]);
-                double distanceSqr = AbsoluteUniversePosition.DistanceSq(in anchorAup, in originAup);
-                if (distanceSqr > radiusSqr || distanceSqr >= nearestDistanceSqr)
-                    continue;
-
-                nearestDistanceSqr = distanceSqr;
-            }
-
-            return !double.IsPositiveInfinity(nearestDistanceSqr);
-        }
-
-        private int AppendAbyssalAnchorContacts(
-            Vector3 origin,
-            float radius,
-            float pulseTime,
-            float effectiveWaveSpeed,
-            float abyssalDistortion,
-            int startIndex)
-        {
-            int writeIndex = startIndex;
-            if (vegetationBridge == null)
-                return writeIndex;
-
-            double radiusSqr = (double)radius * radius;
-            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
-            NativeArray<Vector3> anchorsNative = vegetationBridge.ActiveAbyssalAnchorsNative;
-            int anchorCount = Mathf.Min(
-                AbyssalAnchorScanBudget,
-                Mathf.Min(
-                    vegetationBridge.ActiveAbyssalAnchorCount,
-                    anchorsNative.IsCreated ? anchorsNative.Length : 0));
-            for (int i = 0; i < anchorCount && writeIndex < SonarRevealMaxContacts; i++)
-            {
-                Vector3 anchorPosition = anchorsNative[i];
-                AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
-                if (AbsoluteUniversePosition.DistanceSq(in anchorAup, in originAup) > radiusSqr)
-                    continue;
-
-                WriteAbyssalAnchorContact(origin, in originAup, anchorPosition, in anchorAup, pulseTime, effectiveWaveSpeed, abyssalDistortion, writeIndex);
-                writeIndex++;
-            }
-
-            return writeIndex;
-        }
-
-        private void WriteAbyssalAnchorContact(
-            Vector3 origin,
-            in AbsoluteUniversePosition originAup,
-            Vector3 anchorPosition,
-            in AbsoluteUniversePosition anchorAup,
-            float pulseTime,
-            float effectiveWaveSpeed,
-            float abyssalDistortion,
-            int writeIndex)
-        {
-            Vector3 contactPosition = anchorPosition;
-            if (abyssalDistortion > 0.001f)
-                contactPosition += ResolveAbyssalContactJitter(origin, anchorPosition, pulseTime, writeIndex, abyssalDistortion * 0.45f);
-
-            float arrivalOffset = ResolveApproximateEchoDistanceMeters(in originAup, in anchorAup) / effectiveWaveSpeed;
-            s_sonarRevealContacts[writeIndex] = new Vector4(contactPosition.x, contactPosition.y, contactPosition.z, arrivalOffset);
-            s_sonarRevealContactMeta[writeIndex] = new Vector4(0f, 0f, 8.5f, 1f);
-        }
-
-        private static float ResolveApproximateEchoArrivalOffset(float distanceSqr, float radius, float effectiveWaveSpeed)
-        {
-            float safeRadius = math.max(1f, radius);
-            float normalizedDistanceSqr = math.saturate(distanceSqr / math.max(1f, safeRadius * safeRadius));
-            return normalizedDistanceSqr * (safeRadius / math.max(0.01f, effectiveWaveSpeed));
-        }
-
-        private static float ResolveApproximateEchoDistanceMeters(in AbsoluteUniversePosition originAup, in AbsoluteUniversePosition anchorAup)
-        {
-            double3 delta = anchorAup.ToAbsoluteDouble3() - originAup.ToAbsoluteDouble3();
-            double ax = math.abs(delta.x);
-            double ay = math.abs(delta.y);
-            double az = math.abs(delta.z);
-            double max = math.max(ax, math.max(ay, az));
-            double min = math.min(ax, math.min(ay, az));
-            double mid = ax + ay + az - max - min;
-            return (float)math.min(float.MaxValue, max + mid * 0.375d + min * 0.125d);
         }
 
         private static string ResolveLocalizedModeName(SpectrumMode mode)
@@ -2303,80 +2574,11 @@ namespace Hecton8.Visor
             }
         }
 
-        private Vector4 ResolveRevealContactMeta(SpatialQueryHit hit)
-        {
-            float hardResponse = 0.7f;
-            float organicResponse = 0.15f;
-            float contactRadius = 4.5f;
-
-            if ((hit.Kind & SpatialTargetKind.Module) != 0)
-            {
-                hardResponse = 1f;
-                organicResponse = 0f;
-                contactRadius = 7.5f;
-            }
-            else if ((hit.Kind & SpatialTargetKind.Signal) != 0)
-            {
-                if (hit.SignalRole == FieldTargetRole.DistressBeacon)
-                {
-                    hardResponse = 0.18f;
-                    organicResponse = 0.95f;
-                    contactRadius = 7.25f;
-                }
-                else
-                {
-                    hardResponse = 0.92f;
-                    organicResponse = 0.05f;
-                    contactRadius = 6.25f;
-                }
-            }
-            else if ((hit.Kind & SpatialTargetKind.Scannable) != 0)
-            {
-                hardResponse = 0.84f;
-                organicResponse = 0.08f;
-                contactRadius = 5.2f;
-            }
-            else if ((hit.Kind & SpatialTargetKind.Resource) != 0)
-            {
-                hardResponse = 0.38f;
-                organicResponse = 0.44f;
-                contactRadius = 4.8f;
-            }
-            else if ((hit.Kind & SpatialTargetKind.Pickup) != 0)
-            {
-                hardResponse = 0.55f;
-                organicResponse = 0.2f;
-                contactRadius = 4.2f;
-            }
-
-            if (vegetationBridge != null)
-            {
-                HectonMapMagicVegetationBridge.VegetationDensitySample vegetationSample =
-                    vegetationBridge.GetVegetationDensity(hit.Position);
-                if (vegetationSample.HasVegetation)
-                {
-                    float density = math.saturate(vegetationSample.Density);
-                    float densityOrganicBoost =
-                        vegetationSample.SemanticType == HectonMapMagicVegetationBridge.VegetationSemanticType.FloatingSargassum
-                            ? math.lerp(0.3f, 1f, density)
-                            : math.lerp(0.18f, 0.78f, density);
-                    organicResponse = Mathf.Max(organicResponse, densityOrganicBoost);
-                    hardResponse *= 1f - (organicResponse * 0.45f);
-                    contactRadius = Mathf.Max(contactRadius, math.lerp(4f, 8.5f, density));
-                }
-            }
-
-            return new Vector4(
-                math.saturate(hardResponse),
-                math.saturate(organicResponse),
-                Mathf.Max(0.5f, contactRadius),
-                0f);
-        }
-
         private static string ResolveLocalized(string key, string fallback)
         {
             LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
         }
+
     }
 }

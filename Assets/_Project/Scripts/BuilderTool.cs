@@ -82,6 +82,8 @@ namespace Hecton8.Gameplay
         /// Инициализируется при OnEquip из текущего поворота камеры.
         /// </summary>
         private quaternion _swayRotation;
+        private float _cachedSwayLimitAngle = -1f;
+        private float _cachedSwayLimitSinSq;
 
         /// <summary>
         /// Transform корня модели инструмента (this.transform).
@@ -118,9 +120,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         private BuildableData _lastDisplayedBuildable;
         private PlayerBuilder.BuildReadiness _lastReadinessState;
-        private int _cachedOperationalFrame = -1;
-        private string _cachedOperationalSummary;
-        private string _cachedOperationalDirective;
+        private FixedCharBuffer _legacyOperationalBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - builder tool legacy string bridge - owner: BuilderTool
 
         /// <summary>Флаг успешной привязки к сцене.</summary>
         private bool _bound;
@@ -156,9 +156,11 @@ namespace Hecton8.Gameplay
             // ── Auto-Binding: найти Player root ──
             if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
                     "[BuilderTool] OnSpawn: Player transform could not be resolved via SceneBootstrap. " +
                     "Builder tool will not function.");
+#endif
                 return;
             }
 
@@ -169,16 +171,20 @@ namespace Hecton8.Gameplay
 
             if (!playerRoot.TryGetComponent(out _playerBuilder))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
                     "[BuilderTool] OnSpawn: PlayerBuilder not found on Player root!");
+#endif
                 return;
             }
 
             if (!playerRoot.TryGetComponent(out _playerInventory))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning(
                     "[BuilderTool] OnSpawn: PlayerInventory not found on Player root. " +
                     "Resource display will be unavailable.");
+#endif
                 // Не критично — продолжаем без инвентаря
             }
 
@@ -190,13 +196,14 @@ namespace Hecton8.Gameplay
             }
             else
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning(
                     "[BuilderTool] OnSpawn: Player camera not found in player hierarchy. Sway effect disabled.");
+#endif
             }
 
             _lastDisplayedBuildable = null;
             _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
-            InvalidateOperationalCache();
             _bound = true;
         }
 
@@ -214,7 +221,6 @@ namespace Hecton8.Gameplay
 
             _lastDisplayedBuildable = null;
             _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
-            InvalidateOperationalCache();
 
             base.OnDespawn();
         }
@@ -248,7 +254,6 @@ namespace Hecton8.Gameplay
 
             // ── Обновить LCD экран с текущим модулем ──
             UpdateScreen();
-            InvalidateOperationalCache();
         }
 
         /// <summary>
@@ -264,7 +269,6 @@ namespace Hecton8.Gameplay
 
             _lastDisplayedBuildable = null;
             _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
-            InvalidateOperationalCache();
 
             base.OnUnequip();
         }
@@ -278,7 +282,6 @@ namespace Hecton8.Gameplay
             if (!_bound) return;
 
             _playerBuilder.UsePrimary(deltaTime);
-            InvalidateOperationalCache();
         }
 
         /// <summary>
@@ -290,7 +293,6 @@ namespace Hecton8.Gameplay
             if (!_bound) return;
 
             _playerBuilder.UseSecondary(deltaTime);
-            InvalidateOperationalCache();
         }
 
         /// <summary>
@@ -345,40 +347,51 @@ namespace Hecton8.Gameplay
         /// </summary>
         public override string GetOperationalSummary()
         {
-            if (!_bound || _playerBuilder == null)
-                return "BUILDER // OFFLINE";
+            _legacyOperationalBuffer.Clear();
+            WriteOperationalSummary(ref _legacyOperationalBuffer);
+            return CreateLegacyString(in _legacyOperationalBuffer);
+        }
 
-            RefreshOperationalCache();
-            return _cachedOperationalSummary;
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
+            if (!_bound || _playerBuilder == null)
+            {
+                AppendText(ref buffer, "BUILDER // OFFLINE");
+                return;
+            }
+
+            AppendText(ref buffer, "BUILDER // ");
+            _playerBuilder.WriteActiveBuildOperationalSummary(ref buffer);
+            AppendText(ref buffer, " // ");
+            _playerBuilder.WriteActiveBuildStatusLabel(ref buffer);
         }
 
         public override string GetOperationalDirective()
         {
+            _legacyOperationalBuffer.Clear();
+            WriteOperationalDirective(ref _legacyOperationalBuffer);
+            return CreateLegacyString(in _legacyOperationalBuffer);
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
             if (!_bound || _playerBuilder == null)
-                return "Restore builder link before field deployment.";
-
-            RefreshOperationalCache();
-            return _cachedOperationalDirective;
-        }
-
-        private void RefreshOperationalCache()
-        {
-            int currentFrame = Time.frameCount;
-            if (_cachedOperationalFrame == currentFrame)
+            {
+                AppendText(ref buffer, "Restore builder link before field deployment.");
                 return;
+            }
 
-            _cachedOperationalFrame = currentFrame;
-            _cachedOperationalSummary =
-                "BUILDER // " + _playerBuilder.GetActiveBuildOperationalSummary() +
-                " // " + _playerBuilder.GetActiveBuildStatusLabel();
-            _cachedOperationalDirective = _playerBuilder.GetActiveBuildAdvice();
+            _playerBuilder.WriteActiveBuildAdvice(ref buffer);
         }
 
-        private void InvalidateOperationalCache()
+        private static string CreateLegacyString(in FixedCharBuffer buffer)
         {
-            _cachedOperationalFrame = -1;
-            _cachedOperationalSummary = null;
-            _cachedOperationalDirective = null;
+            return buffer.Length > 0 ? new string(buffer.Buffer, 0, buffer.Length) : string.Empty;
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
         }
 
         private void ApplySway(float dt)
@@ -391,24 +404,20 @@ namespace Hecton8.Gameplay
             // ── Frame-rate independent exponential slerp ──
             // t = 1 - exp(-speed * dt) обеспечивает одинаковую
             // визуальную скорость при 30, 60 и 144 fps.
-            float t = 1f - math.exp(-swaySpeed * dt);
+            float t = ResolveDecayBlend(swaySpeed, dt);
 
             _swayRotation = math.slerp(_swayRotation, cameraRot, t);
 
-            // ── Ограничение максимального отклонения ──
-            // Вычисляем угол между текущим sway и целью.
-            // Если превышает лимит — подтягиваем sway ближе.
+            // Cheap visual clamp: squared quaternion-vector gate, no per-frame acos/degrees.
             quaternion delta = math.mul(math.inverse(cameraRot), _swayRotation);
+            float4 deltaValue = delta.value;
+            float vectorSinSq = math.lengthsq(deltaValue.xyz);
+            float limitSinSq = ResolveSwayLimitSinSq();
 
-            // Angle from quaternion: 2 * acos(|w|), в радианах
-            float halfAngle = math.acos(math.clamp(math.abs(delta.value.w), 0f, 1f));
-            float angleDeg  = math.degrees(halfAngle * 2f);
-
-            if (angleDeg > swayMaxAngle)
+            if (vectorSinSq > limitSinSq)
             {
-                // Пропорционально подтягиваем sway к камере
-                float clampT = 1f - (swayMaxAngle / angleDeg);
-                _swayRotation = math.slerp(_swayRotation, cameraRot, clampT);
+                float clampT = math.saturate((vectorSinSq - limitSinSq) / math.max(vectorSinSq, 0.0001f));
+                _swayRotation = math.nlerp(_swayRotation, cameraRot, clampT);
             }
 
             // ── Применяем к модели ──
@@ -484,7 +493,7 @@ namespace Hecton8.Gameplay
             if (TryGetToolBrownoutFlicker(out float brownoutFlicker))
             {
                 float alpha = screenColor.a;
-                screenColor *= Mathf.Clamp01(brownoutFlicker);
+                screenColor *= math.saturate(brownoutFlicker);
                 screenColor.a = alpha;
             }
 
@@ -500,6 +509,26 @@ namespace Hecton8.Gameplay
 
             // COLD ALLOC: MaterialPropertyBlock[1] — builder LCD state bridge — owner: BuilderTool
             _screenPropBlock = new MaterialPropertyBlock();
+        }
+
+        private float ResolveSwayLimitSinSq()
+        {
+            float limitAngle = math.max(0f, swayMaxAngle);
+            if (limitAngle != _cachedSwayLimitAngle)
+            {
+                float halfLimit = math.radians(limitAngle) * 0.5f;
+                float sinLimit = math.sin(halfLimit);
+                _cachedSwayLimitSinSq = sinLimit * sinLimit;
+                _cachedSwayLimitAngle = limitAngle;
+            }
+
+            return _cachedSwayLimitSinSq;
+        }
+
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
         }
 
         // ══════════════════════════════════════════════════════════

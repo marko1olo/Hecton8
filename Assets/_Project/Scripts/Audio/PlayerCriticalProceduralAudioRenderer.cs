@@ -28,6 +28,7 @@ namespace Hecton8.Audio
     /// </remarks>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioListener))]
+    [RequireComponent(typeof(AudioReverbFilter))]
     public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, ISonarPingEventListener, IAcousticEchoEventListener, ILaserCutterEventListener
     {
         private const float TwoPi = 6.28318530718f;
@@ -200,8 +201,7 @@ namespace Hecton8.Audio
         private const int BoilingWaterSamplePoolCapacity = 8;
         private const int ImpactEventQueueCapacity = 64;
         private const int ImpactEventQueueMask = ImpactEventQueueCapacity - 1;
-        private const int ImpactEventQueueSpinWatchdog = 50000;
-        private const string ImpactEventQueueSpinWatchdogMessage = "[PlayerCriticalProceduralAudioRenderer] TryEnqueueImpactAudioEvent exceeded watchdog iterations.";
+        private const int ImpactEventQueueEnqueueAttemptLimit = 8;
         private const int ColdBurstClearMinimumCount = 1024;
         private const float PhysicsImpactStressRadiusMeters = 18f;
         private const float PhysicsImpactStressDecayPerSecond = 1.65f;
@@ -465,8 +465,10 @@ namespace Hecton8.Audio
         private NativeArray<float> _sonarEchoFilterOutput1;
         // COLD ALLOC: NativeArray<float>[12] - sonar echo low-pass y2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<float> _sonarEchoFilterOutput2;
-        // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - one-frame active-sonar echo candidates before AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
-        private NativeArray<SonarEchoCompositeGroup> _sonarEchoCompositeCandidates;
+        // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidate buffer A before AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<SonarEchoCompositeGroup> _sonarEchoCompositeCandidatesA;
+        // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidate buffer B before AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
+        private NativeArray<SonarEchoCompositeGroup> _sonarEchoCompositeCandidatesB;
         // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[8] - Burst-coalesced active-sonar echo groups by 10m AUP hash - owner: PlayerCriticalProceduralAudioRenderer
         private NativeArray<SonarEchoCompositeGroup> _sonarEchoCompositeGroups;
         // COLD ALLOC: NativeArray<int>[1] - sonar echo coalesced group count returned by Burst hash job - owner: PlayerCriticalProceduralAudioRenderer
@@ -522,6 +524,7 @@ namespace Hecton8.Audio
         private bool _reverbMixerWetBindingValid;
         private bool _warnedMissingReverbMixerParameters;
         private bool _warnedMissingReverbWetMixerParameter;
+        private bool _warnedMissingListenerReverbFilter;
         private string _resolvedReverbDecayTimeParameter;
         private string _resolvedReverbReflectionsLevelParameter;
         private string _resolvedReverbRoomHighFrequencyParameter;
@@ -603,8 +606,13 @@ namespace Hecton8.Audio
         private int _pendingSonarSequence;
         private int _impactEventReadIndex;
         private int _impactEventWriteIndex;
+        private int _impactEventQueueDropCount;
         private int _sonarEchoCompositeFrame = -1;
-        private int _sonarEchoCompositeCandidateCount;
+        private int _sonarEchoCompositeCandidateCountA;
+        private int _sonarEchoCompositeCandidateCountB;
+        private int _sonarEchoCompositeWriteBufferIndex;
+        private int _sonarEchoCompositeScheduledBufferIndex = -1;
+        private int _sonarEchoCompositeScheduledCandidateCount;
         private JobHandle _sonarEchoCompositeHashHandle;
         private bool _sonarEchoCompositeHashJobScheduled;
         private int _workerConsumedSonarSequence;
@@ -747,6 +755,7 @@ namespace Hecton8.Audio
             public int WritableFrames;
             public int UnderrunCount;
             public int OverflowDropCount;
+            public int ImpactEventQueueDropCount;
             public int ProducerRunning;
             public long ProducedSampleCount;
         }
@@ -1421,7 +1430,7 @@ namespace Hecton8.Audio
 
         public void LateFrameTick()
         {
-            FlushSonarEchoCompositeGroups();
+            FlushSonarEchoCompositeGroups(allowJobCompletion: true);
             PublishPendingDspProducerOverBudgetWarning();
         }
 
@@ -1553,6 +1562,7 @@ namespace Hecton8.Audio
             sampleRingBuffer.GetState(out diagnostics.BufferedFrames, out diagnostics.WritableFrames);
             diagnostics.UnderrunCount = sampleRingBuffer.UnderrunCount;
             diagnostics.OverflowDropCount = sampleRingBuffer.OverflowDropCount;
+            diagnostics.ImpactEventQueueDropCount = Volatile.Read(ref _impactEventQueueDropCount);
             diagnostics.ProducerRunning = Volatile.Read(ref _audioProducerRunning);
             diagnostics.ProducedSampleCount = Interlocked.Read(ref _producedSampleCount);
             return true;
@@ -1892,8 +1902,14 @@ namespace Hecton8.Audio
 
             if (!TryGetComponent(out _listenerReverbFilter))
             {
-                _listenerReverbFilter = gameObject.AddComponent<AudioReverbFilter>(); // COLD ALLOC: AudioReverbFilter[1] - procedural cave/open-water reverb fallback - owner: PlayerCriticalProceduralAudioRenderer
-                _listenerReverbFilter.enabled = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (!_warnedMissingListenerReverbFilter)
+                {
+                    _warnedMissingListenerReverbFilter = true;
+                    Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Missing authored AudioReverbFilter. RequireComponent should install it before runtime; reverb fallback is disabled.", this);
+                }
+#endif
+                return;
             }
 
             if (_listenerReverbDefaultsCaptured || _listenerReverbFilter == null)
@@ -2060,36 +2076,61 @@ namespace Hecton8.Audio
             int frame = Time.frameCount;
             if (_sonarEchoCompositeFrame != frame)
             {
-                FlushSonarEchoCompositeGroups();
+                FlushSonarEchoCompositeGroups(allowJobCompletion: false);
                 _sonarEchoCompositeFrame = frame;
             }
 
             AbsoluteUniversePosition echoAup = AbsoluteUniversePosition.FromRuntimePosition(echoEvent.WorldPosition);
-            if (!_sonarEchoCompositeCandidates.IsCreated ||
-                _sonarEchoCompositeCandidateCount >= SonarEchoCompositeCandidateCapacity)
+            NativeArray<SonarEchoCompositeGroup> writeCandidates = GetSonarEchoCompositeCandidateBuffer(_sonarEchoCompositeWriteBufferIndex);
+            int writeCandidateCount = GetSonarEchoCompositeCandidateCount(_sonarEchoCompositeWriteBufferIndex);
+            if (!writeCandidates.IsCreated ||
+                writeCandidateCount >= SonarEchoCompositeCandidateCapacity)
                 return;
 
-            _sonarEchoCompositeCandidates[_sonarEchoCompositeCandidateCount++] = new SonarEchoCompositeGroup(
+            writeCandidates[writeCandidateCount] = new SonarEchoCompositeGroup(
                 echoAup,
                 echoEvent.DistanceMeters,
                 echoEvent.ReturnStrength,
                 echoEvent.Resonance,
                 1,
-                audioMaterialId);
+                echoEvent.AudioMaterialId);
+            SetSonarEchoCompositeCandidateCount(_sonarEchoCompositeWriteBufferIndex, writeCandidateCount + 1);
         }
 
-        private void FlushSonarEchoCompositeGroups()
+        private void FlushSonarEchoCompositeGroups(bool allowJobCompletion)
         {
-            int candidateCount = _sonarEchoCompositeCandidateCount;
-            if (candidateCount <= 0 && !_sonarEchoCompositeHashJobScheduled)
+            if (_sonarEchoCompositeHashJobScheduled)
+            {
+                if (!allowJobCompletion)
+                    return;
+
+                if (!CompleteSonarEchoCompositeHashJob(forceComplete: false))
+                    return;
+
+                PublishCompletedSonarEchoCompositeGroups();
+            }
+
+            int writeBufferIndex = _sonarEchoCompositeWriteBufferIndex;
+            int candidateCount = GetSonarEchoCompositeCandidateCount(writeBufferIndex);
+            if (candidateCount <= 0)
                 return;
 
-            if (!_sonarEchoCompositeHashJobScheduled)
-                ScheduleSonarEchoCompositeHashJob(candidateCount);
-
-            if (!CompleteSonarEchoCompositeHashJob(forceComplete: true))
+            NativeArray<SonarEchoCompositeGroup> candidates = GetSonarEchoCompositeCandidateBuffer(writeBufferIndex);
+            if (!ScheduleSonarEchoCompositeHashJob(candidates, candidateCount))
+            {
+                SetSonarEchoCompositeCandidateCount(writeBufferIndex, 0);
                 return;
+            }
 
+            _sonarEchoCompositeScheduledBufferIndex = writeBufferIndex;
+            _sonarEchoCompositeScheduledCandidateCount = math.clamp(candidateCount, 0, SonarEchoCompositeCandidateCapacity);
+            _sonarEchoCompositeWriteBufferIndex = writeBufferIndex ^ 1;
+            SetSonarEchoCompositeCandidateCount(_sonarEchoCompositeWriteBufferIndex, 0);
+            _sonarEchoCompositeFrame = Time.frameCount;
+        }
+
+        private void PublishCompletedSonarEchoCompositeGroups()
+        {
             int groupCount = _sonarEchoCompositeGroupCountNative.IsCreated
                 ? math.clamp(_sonarEchoCompositeGroupCountNative[0], 0, SonarEchoCompositeGroupCapacity)
                 : 0;
@@ -2107,25 +2148,29 @@ namespace Hecton8.Audio
                 _sonarEchoCompositeGroups[i] = default;
             }
 
+            int candidateCount = _sonarEchoCompositeScheduledCandidateCount;
+            NativeArray<SonarEchoCompositeGroup> candidates = GetSonarEchoCompositeCandidateBuffer(_sonarEchoCompositeScheduledBufferIndex);
             for (int i = 0; i < candidateCount && i < SonarEchoCompositeCandidateCapacity; i++)
-                _sonarEchoCompositeCandidates[i] = default;
+                candidates[i] = default;
 
             if (_sonarEchoCompositeGroupCountNative.IsCreated)
                 _sonarEchoCompositeGroupCountNative[0] = 0;
-            _sonarEchoCompositeCandidateCount = 0;
+            if (_sonarEchoCompositeScheduledBufferIndex >= 0)
+                SetSonarEchoCompositeCandidateCount(_sonarEchoCompositeScheduledBufferIndex, 0);
+            _sonarEchoCompositeScheduledBufferIndex = -1;
+            _sonarEchoCompositeScheduledCandidateCount = 0;
             _sonarEchoCompositeFrame = Time.frameCount;
         }
 
-        private void ScheduleSonarEchoCompositeHashJob(int candidateCount)
+        private bool ScheduleSonarEchoCompositeHashJob(NativeArray<SonarEchoCompositeGroup> candidates, int candidateCount)
         {
-            if (!_sonarEchoCompositeCandidates.IsCreated ||
+            if (!candidates.IsCreated ||
                 !_sonarEchoCompositeGroups.IsCreated ||
                 !_sonarEchoCompositeGroupCountNative.IsCreated ||
                 !_sonarEchoCompositeSpatialHash.IsCreated ||
                 !_sonarEchoCompositeGroupByHash.IsCreated)
             {
-                _sonarEchoCompositeCandidateCount = 0;
-                return;
+                return false;
             }
 
             _sonarEchoCompositeSpatialHash.Clear();
@@ -2134,7 +2179,7 @@ namespace Hecton8.Audio
 
             SonarEchoSpatialHashCoalesceJob coalesceJob = new SonarEchoSpatialHashCoalesceJob
             {
-                Candidates = _sonarEchoCompositeCandidates,
+                Candidates = candidates,
                 SpatialHash = _sonarEchoCompositeSpatialHash,
                 GroupByHash = _sonarEchoCompositeGroupByHash,
                 Groups = _sonarEchoCompositeGroups,
@@ -2143,6 +2188,7 @@ namespace Hecton8.Audio
             };
             _sonarEchoCompositeHashHandle = coalesceJob.Schedule();
             _sonarEchoCompositeHashJobScheduled = true;
+            return true;
         }
 
         private bool CompleteSonarEchoCompositeHashJob(bool forceComplete)
@@ -2155,6 +2201,28 @@ namespace Hecton8.Audio
 
             _sonarEchoCompositeHashJobScheduled = false;
             return true;
+        }
+
+        private NativeArray<SonarEchoCompositeGroup> GetSonarEchoCompositeCandidateBuffer(int bufferIndex)
+        {
+            return bufferIndex == 0
+                ? _sonarEchoCompositeCandidatesA
+                : _sonarEchoCompositeCandidatesB;
+        }
+
+        private int GetSonarEchoCompositeCandidateCount(int bufferIndex)
+        {
+            return bufferIndex == 0
+                ? _sonarEchoCompositeCandidateCountA
+                : _sonarEchoCompositeCandidateCountB;
+        }
+
+        private void SetSonarEchoCompositeCandidateCount(int bufferIndex, int count)
+        {
+            if (bufferIndex == 0)
+                _sonarEchoCompositeCandidateCountA = count;
+            else
+                _sonarEchoCompositeCandidateCountB = count;
         }
 
         private static float ResolveSonarCompositeHitScale(int hitCount)
@@ -3037,7 +3105,8 @@ namespace Hecton8.Audio
             _sonarEchoFilterInput2 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[12] - sonar echo low-pass x2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoFilterOutput1 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[12] - sonar echo low-pass y1 state per tap - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoFilterOutput2 = new NativeArray<float>(SonarEchoTapCapacity, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[12] - sonar echo low-pass y2 state per tap - owner: PlayerCriticalProceduralAudioRenderer
-            _sonarEchoCompositeCandidates = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - raw active-sonar echo candidates before Burst AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarEchoCompositeCandidatesA = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidates A before Burst AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
+            _sonarEchoCompositeCandidatesB = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[32] - active-sonar echo candidates B before Burst AUP hash coalescing - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeGroups = new NativeArray<SonarEchoCompositeGroup>(SonarEchoCompositeGroupCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarEchoCompositeGroup>[8] - coalesced active-sonar echo groups by 10m AUP hash - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeGroupCountNative = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - sonar echo coalesced group count from Burst hash job - owner: PlayerCriticalProceduralAudioRenderer
             _sonarEchoCompositeSpatialHash = new NativeParallelMultiHashMap<int, int>(SonarEchoCompositeCandidateCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[32] - sonar echo AUP cell occupancy before DSP tap publish - owner: PlayerCriticalProceduralAudioRenderer
@@ -3065,7 +3134,12 @@ namespace Hecton8.Audio
             _workerConsumedSonarSequence = 0;
             _workerConsumedSonarRevision = 0;
             _workerActiveSonarTapCount = 0;
-            _sonarEchoCompositeCandidateCount = 0;
+            _sonarEchoCompositeCandidateCountA = 0;
+            _sonarEchoCompositeCandidateCountB = 0;
+            Interlocked.Exchange(ref _impactEventQueueDropCount, 0);
+            _sonarEchoCompositeWriteBufferIndex = 0;
+            _sonarEchoCompositeScheduledBufferIndex = -1;
+            _sonarEchoCompositeScheduledCandidateCount = 0;
             _sonarEchoCompositeHashJobScheduled = false;
             _pendingSonarEchoTapCountA = 0;
             _pendingSonarEchoTapCountB = 0;
@@ -3103,7 +3177,8 @@ namespace Hecton8.Audio
             NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterInput2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterInput2), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterOutput1, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterOutput1), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterOutput2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterOutput2), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeCandidates, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeCandidates), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeCandidatesA, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeCandidatesA), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeCandidatesB, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeCandidatesB), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeGroups, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroups), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_sonarEchoCompositeGroupCountNative, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeGroupCountNative), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_sonarEchoCompositeSpatialHash, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoCompositeSpatialHash), NativeAllocationLifetime.Session);
@@ -3142,7 +3217,8 @@ namespace Hecton8.Audio
             NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterInput2);
             NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterOutput1);
             NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterOutput2);
-            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoCompositeCandidates);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoCompositeCandidatesA);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoCompositeCandidatesB);
             NativeMemorySentinel.UnregisterNativeArray(_sonarEchoCompositeGroups);
             NativeMemorySentinel.UnregisterNativeArray(_sonarEchoCompositeGroupCountNative);
             if (_sonarEchoCompositeSpatialHash.IsCreated)
@@ -3206,8 +3282,10 @@ namespace Hecton8.Audio
                 _sonarEchoFilterOutput1.Dispose();
             if (_sonarEchoFilterOutput2.IsCreated)
                 _sonarEchoFilterOutput2.Dispose();
-            if (_sonarEchoCompositeCandidates.IsCreated)
-                _sonarEchoCompositeCandidates.Dispose();
+            if (_sonarEchoCompositeCandidatesA.IsCreated)
+                _sonarEchoCompositeCandidatesA.Dispose();
+            if (_sonarEchoCompositeCandidatesB.IsCreated)
+                _sonarEchoCompositeCandidatesB.Dispose();
             if (_sonarEchoCompositeGroups.IsCreated)
                 _sonarEchoCompositeGroups.Dispose();
             if (_sonarEchoCompositeGroupCountNative.IsCreated)
@@ -3257,7 +3335,8 @@ namespace Hecton8.Audio
             _sonarEchoFilterInput2 = default;
             _sonarEchoFilterOutput1 = default;
             _sonarEchoFilterOutput2 = default;
-            _sonarEchoCompositeCandidates = default;
+            _sonarEchoCompositeCandidatesA = default;
+            _sonarEchoCompositeCandidatesB = default;
             _sonarEchoCompositeGroups = default;
             _sonarEchoCompositeGroupCountNative = default;
             _sonarEchoCompositeSpatialHash = default;
@@ -3279,7 +3358,11 @@ namespace Hecton8.Audio
             _frameCapacity = 0;
             _producedSampleCount = 0L;
             _binauralDelayWriteIndex = 0;
-            _sonarEchoCompositeCandidateCount = 0;
+            _sonarEchoCompositeCandidateCountA = 0;
+            _sonarEchoCompositeCandidateCountB = 0;
+            _sonarEchoCompositeWriteBufferIndex = 0;
+            _sonarEchoCompositeScheduledBufferIndex = -1;
+            _sonarEchoCompositeScheduledCandidateCount = 0;
             _sonarEchoCompositeHashJobScheduled = false;
             _sabineReverbSynthesisState = default;
         }
@@ -3359,8 +3442,9 @@ namespace Hecton8.Audio
             _workerConsumedSonarSequence = 0;
             _workerConsumedSonarRevision = 0;
             _workerActiveSonarTapCount = 0;
-            _impactEventReadIndex = 0;
-            _impactEventWriteIndex = 0;
+            Interlocked.Exchange(ref _impactEventReadIndex, 0);
+            Interlocked.Exchange(ref _impactEventWriteIndex, 0);
+            Interlocked.Exchange(ref _impactEventQueueDropCount, 0);
             _hullSynthesisState = default;
             _ambientCurrentSynthesisState = default;
             _impactEchoSynthesisState = default;
@@ -3440,7 +3524,7 @@ namespace Hecton8.Audio
                 return;
             }
 
-            _targetPressureScrubberHumDrive = math.tanh(1f + pressureDrive * 4.5f);
+            _targetPressureScrubberHumDrive = ApproximatePressureScrubberHumDrive01(pressureDrive);
             _targetPressureScrubberHumGain = PressureScrubberHumMaximumGain * pressureDrive;
         }
 
@@ -3929,6 +4013,16 @@ namespace Hecton8.Audio
             float x3 = x2 * clamped;
             float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
             float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private static float ApproximatePressureScrubberHumDrive01(float pressureDrive)
+        {
+            float x = math.saturate(pressureDrive);
+            float x2 = x * x;
+            float numerator = 0.7616f + (1.43f * x) + (0.42f * x2);
+            float denominator = 1f + (1.32f * x) + (0.29f * x2);
             return math.saturate(numerator / math.max(denominator, 0.0001f));
         }
 
@@ -4847,17 +4941,8 @@ namespace Hecton8.Audio
                 EchoPitchScale = math.clamp(echoPitchScale * pitchJitter, 0.65f, 1.45f)
             };
 
-            int watchdog = 0;
-            while (true)
+            for (int attempt = 0; attempt < ImpactEventQueueEnqueueAttemptLimit; attempt++)
             {
-                if (watchdog++ > ImpactEventQueueSpinWatchdog)
-                {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError(ImpactEventQueueSpinWatchdogMessage);
-#endif
-                    return false;
-                }
-
                 int writeIndex = Volatile.Read(ref _impactEventWriteIndex);
                 int nextWriteIndex = (writeIndex + 1) & ImpactEventQueueMask;
                 int readIndex = Volatile.Read(ref _impactEventReadIndex);
@@ -4868,6 +4953,8 @@ namespace Hecton8.Audio
                     // has not already advanced the read pointer since we observed it.
                     if (Interlocked.CompareExchange(ref _impactEventReadIndex, advancedReadIndex, readIndex) != readIndex)
                         continue;
+
+                    Interlocked.Increment(ref _impactEventQueueDropCount);
                 }
 
                 _impactEventQueue[writeIndex] = impactAudioEvent;
@@ -4875,6 +4962,9 @@ namespace Hecton8.Audio
                 SignalAudioProducerThread();
                 return true;
             }
+
+            Interlocked.Increment(ref _impactEventQueueDropCount);
+            return false;
         }
 
         private bool TryDequeueImpactAudioEvent(out ImpactAudioEvent impactAudioEvent)

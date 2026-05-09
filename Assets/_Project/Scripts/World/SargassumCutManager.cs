@@ -3,6 +3,7 @@ using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.Bootstrap;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -84,8 +85,6 @@ namespace Hecton8.World
         private static readonly int _DamageVolumeWorldMinParamId = Shader.PropertyToID("_HectonDamageVolumeWorldMinParam");
         private static readonly int _DamageVolumeInvSizeParamId = Shader.PropertyToID("_HectonDamageVolumeInvSizeParam");
         private static readonly int _DamageVolumeResolutionId = Shader.PropertyToID("_HectonDamageVolumeResolution");
-
-        private static SargassumCutManager _instance;
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -246,12 +245,13 @@ namespace Hecton8.World
         // COLD ALLOC: Vector4[16] - packed recent-cut thermal strength/start/lifetime payload published to shaders - owner: SargassumCutManager
         private readonly Vector4[] _recentCutHeatStrengthTime = new Vector4[RecentStampCapacity];
         private int _recentCutHeatCount;
+        private int _publishedRecentCutHeatCount = -1;
         private bool _recentCutHeatDirty;
 
         /// <summary>
-        /// Active singleton instance.
+        /// Active registry-owned instance.
         /// </summary>
-        public static SargassumCutManager Instance => _instance;
+        public static SargassumCutManager Instance => GlobalRegistry.SargassumCut;
 
         /// <summary>
         /// Current cut mask texture used by shaders and GPU fauna.
@@ -308,8 +308,7 @@ namespace Hecton8.World
                 if (distanceSq > combinedRadiusSq)
                     continue;
 
-                float distance = Mathf.Sqrt(distanceSq);
-                float radialFalloff = 1f - distance / Mathf.Max(combinedRadius, 0.001f);
+                float radialFalloff = 1f - distanceSq / Mathf.Max(combinedRadiusSq, 0.000001f);
                 float temporalFalloff = Mathf.Clamp01(stamp.RemainingLifetime / Mathf.Max(0.01f, recentCutLifetime));
                 float influence = stamp.Strength * radialFalloff * temporalFalloff;
                 if (influence <= cut01)
@@ -351,8 +350,7 @@ namespace Hecton8.World
                 if (distanceSq > combinedRadiusSq)
                     continue;
 
-                float distance = Mathf.Sqrt(distanceSq);
-                float radialFalloff = 1f - distance / Mathf.Max(combinedRadius, 0.001f);
+                float radialFalloff = 1f - distanceSq / Mathf.Max(combinedRadiusSq, 0.000001f);
                 float temporalFalloff = Mathf.Clamp01(stamp.RemainingLifetime / Mathf.Max(0.01f, recentCutLifetime));
                 float influence = stamp.Strength * radialFalloff * temporalFalloff;
                 if (influence <= 0f)
@@ -403,7 +401,7 @@ namespace Hecton8.World
             RegisterRecentCutStamp(positionWS, clampedRadius, clampedStrength);
             RegisterRecentCutHeatStamp(positionWS, clampedRadius, clampedStrength);
 
-            Vector3 burstDirection = directionWS.sqrMagnitude > 0.0001f ? directionWS.normalized : Vector3.up;
+            Vector3 burstDirection = NormalizeVector3Fast(directionWS, Vector3.up);
             EmitDebrisBurst(positionWS, burstDirection, clampedStrength, bubbleWeight);
             _debugLastStampPosition = positionWS;
             _debugLastStampCount++;
@@ -412,14 +410,17 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            SargassumCutManager registered = GlobalRegistry.SargassumCut;
+            if (registered != null && registered != this)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[SargassumCutManager] Duplicate instance detected. Destroying the newer component.", this);
+#endif
                 Destroy(this);
                 return;
             }
 
-            _instance = this;
+            TryRegisterService();
             maskResolution = Mathf.Clamp(maskResolution, 512, 2048);
             centerSnapPixelStride = Mathf.Max(0.1f, centerSnapPixelStride);
             damageVolumeResolution = Mathf.Clamp(damageVolumeResolution, 32, 128);
@@ -447,7 +448,7 @@ namespace Hecton8.World
             TryUnregister();
             Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
             Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);
-            Shader.SetGlobalInt(_RecentCutHeatCountId, 0);
+            PublishRecentCutHeatCount(0);
         }
 
         private void OnDestroy()
@@ -455,9 +456,6 @@ namespace Hecton8.World
             TryUnregisterService();
             TryUnregister();
             ReleaseResources();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <summary>
@@ -576,13 +574,19 @@ namespace Hecton8.World
                 _damageVolumeWrite = CreateDamageVolumeTexture("__SargassumDamageVolume_B");
 
             if (!_queuedStampCommands.IsCreated)
+            {
                 _queuedStampCommands = new NativeArray<StampCommand>(StampCommandCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<StampCommand>[16] - staged cut-mask stamp commands for one compute dispatch - owner: SargassumCutManager
+                NativeMemorySentinel.RegisterNativeArray(_queuedStampCommands, nameof(SargassumCutManager), nameof(_queuedStampCommands), NativeAllocationLifetime.Session);
+            }
 
             if (_stampCommandBuffer == null)
                 _stampCommandBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<StampCommand>(StampCommandCapacity); // COLD ALLOC: GraphicsBuffer[16] - staged cut-mask stamp command buffer for one compute dispatch - owner: SargassumCutManager
 
             if (!_queuedDamageVolumeStampCommands.IsCreated)
+            {
                 _queuedDamageVolumeStampCommands = new NativeArray<DamageVolumeStampCommand>(DamageVolumeStampCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DamageVolumeStampCommand>[16] - staged 3D terrain-damage volume stamps for one compute dispatch - owner: SargassumCutManager
+                NativeMemorySentinel.RegisterNativeArray(_queuedDamageVolumeStampCommands, nameof(SargassumCutManager), nameof(_queuedDamageVolumeStampCommands), NativeAllocationLifetime.Session);
+            }
 
             if (_damageVolumeStampCommandBuffer == null)
                 _damageVolumeStampCommandBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DamageVolumeStampCommand>(DamageVolumeStampCapacity); // COLD ALLOC: GraphicsBuffer[16] - staged 3D terrain-damage volume stamp command buffer - owner: SargassumCutManager
@@ -592,7 +596,9 @@ namespace Hecton8.World
                 _stampCompute = stampComputeOverride;
                 if (_stampCompute == null)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError("[SargassumCutManager] Missing cut-mask compute shader. Expected Hecton_SargassumCutMask.compute.", this);
+#endif
                     enabled = false;
                     return;
                 }
@@ -605,7 +611,9 @@ namespace Hecton8.World
                 _damageVolumeCompute = damageVolumeComputeOverride;
                 if (_damageVolumeCompute == null)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError("[SargassumCutManager] Missing terrain damage-volume compute shader. Expected Hecton_TerrainDamageVolume.compute.", this);
+#endif
                     enabled = false;
                     return;
                 }
@@ -669,10 +677,16 @@ namespace Hecton8.World
             }
 
             if (_queuedStampCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_queuedStampCommands);
                 _queuedStampCommands.Dispose();
+            }
 
             if (_queuedDamageVolumeStampCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_queuedDamageVolumeStampCommands);
                 _queuedDamageVolumeStampCommands.Dispose();
+            }
 
             ReleaseDamageVolumeTexture(ref _damageVolumeRead);
             ReleaseDamageVolumeTexture(ref _damageVolumeWrite);
@@ -684,7 +698,7 @@ namespace Hecton8.World
             _lastMaskDispatchFrame = -1;
             _lastDamageVolumeDispatchFrame = -1;
 
-            Shader.SetGlobalInt(_RecentCutHeatCountId, 0);
+            PublishRecentCutHeatCount(0);
         }
 
         private void RefreshMaskWorldRect(bool forceClear = false)
@@ -956,6 +970,12 @@ namespace Hecton8.World
                 Mathf.Round(centerXZ.y / stride) * stride);
         }
 
+        private static Vector3 NormalizeVector3Fast(Vector3 vector, Vector3 fallback)
+        {
+            float magnitudeSq = vector.sqrMagnitude;
+            return magnitudeSq > 0.0001f ? vector * math.rsqrt(magnitudeSq) : fallback;
+        }
+
         private void ClearMaskTextures()
         {
             if (_maskRead == null || _maskWrite == null)
@@ -1171,7 +1191,7 @@ namespace Hecton8.World
             if (_maskRead == null)
             {
                 Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
-                Shader.SetGlobalInt(_RecentCutHeatCountId, 0);
+                PublishRecentCutHeatCount(0);
                 Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);
                 return;
             }
@@ -1224,10 +1244,23 @@ namespace Hecton8.World
                 _recentCutHeatCount++;
             }
 
-            Shader.SetGlobalInt(_RecentCutHeatCountId, _recentCutHeatCount);
-            Shader.SetGlobalVectorArray(_RecentCutHeatPositionRadiusId, _recentCutHeatPositionRadius);
-            Shader.SetGlobalVectorArray(_RecentCutHeatStrengthTimeId, _recentCutHeatStrengthTime);
+            PublishRecentCutHeatCount(_recentCutHeatCount);
+            if (_recentCutHeatCount > 0)
+            {
+                Shader.SetGlobalVectorArray(_RecentCutHeatPositionRadiusId, _recentCutHeatPositionRadius);
+                Shader.SetGlobalVectorArray(_RecentCutHeatStrengthTimeId, _recentCutHeatStrengthTime);
+            }
+
             _recentCutHeatDirty = false;
+        }
+
+        private void PublishRecentCutHeatCount(int count)
+        {
+            if (_publishedRecentCutHeatCount == count)
+                return;
+
+            Shader.SetGlobalInt(_RecentCutHeatCountId, count);
+            _publishedRecentCutHeatCount = count;
         }
 
         private void TryRegister()
@@ -1251,6 +1284,10 @@ namespace Hecton8.World
         private void TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            SargassumCutManager registered = GlobalRegistry.SargassumCut;
+            if (registered != null && registered != this)
                 return;
 
             GlobalRegistry.RegisterSargassumCutRuntime(this);

@@ -8,11 +8,12 @@
 // - Static delegate pattern for callbacks
 // ═══════════════════════════════════════════════════════════════════════════════════════════════════
 
+using System;
+using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
-using System;
-using System.Collections.Generic;
 
 namespace Hecton8.Input
 {
@@ -27,11 +28,11 @@ namespace Hecton8.Input
 
     /// <summary>
     /// Enterprise-grade Input Manager with zero GC allocations.
-    /// Singleton pattern with thread-safe initialization.
+    /// Registry-owned input service initialized by the bootstrapper.
     /// Supports keyboard, mouse, and gamepad with full rebinding support.
     /// </summary>
-    [DefaultExecutionOrder(-31000)] // Must initialize before BootstrapController singleton access.
-    public class InputManager : MonoBehaviour
+    [DefaultExecutionOrder(-31000)] // Must initialize before bootstrap input consumers.
+    public class InputManager : MonoBehaviour, IServiceHeartbeat, IServiceShutdown
     {
         private enum InputRecoveryState : byte
         {
@@ -42,11 +43,12 @@ namespace Hecton8.Input
         }
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        // SINGLETON PATTERN
+        // REGISTRY OWNERSHIP
         // ═══════════════════════════════════════════════════════════════════════════════════════════
-        
-        private static InputManager _instance;
-        private static bool _isShuttingDown;
+
+        private bool _serviceRegistered;
+        private bool _serviceShuttingDown;
+        private bool _serviceShutdownComplete;
         // COLD ALLOC: string[36] — cached single-character binding labels — owner: InputManager
         private static readonly string[] SingleCharacterBindingLabels =
         {
@@ -80,13 +82,6 @@ namespace Hecton8.Input
         // COLD ALLOC: Dictionary<int, InputDisplayStyle>[8] — cached device-display-style lookup for input callbacks — owner: InputManager
         private readonly Dictionary<int, InputDisplayStyle> _displayStyleByDeviceId = new Dictionary<int, InputDisplayStyle>(8);
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics()
-        {
-            _instance = null;
-            _isShuttingDown = false;
-        }
-
         public static bool TryValidateRuntimeConfiguration(out string message)
         {
 #if !ENABLE_INPUT_SYSTEM
@@ -112,13 +107,14 @@ namespace Hecton8.Input
 #endif
         }
         
-        public static InputManager Instance
-        {
-            get
-            {
-                return _isShuttingDown ? null : _instance;
-            }
-        }
+        public ServiceHeartbeatState HeartbeatState =>
+            _serviceShuttingDown
+                ? ServiceHeartbeatState.Shutdown
+                : _serviceRegistered && _inputMapsInitialized
+                    ? ServiceHeartbeatState.Ready
+                    : ServiceHeartbeatState.Booting;
+
+        public bool IsServiceReady => _serviceRegistered && !_serviceShuttingDown && _inputMapsInitialized;
 
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         // INPUT ACTIONS (CACHED)
@@ -215,7 +211,7 @@ namespace Hecton8.Input
         
         public bool IsPlayerInputEnabled => TryGetActionMapEnabled(_playerActionMap);
         public bool IsUIInputEnabled => TryGetActionMapEnabled(_uiActionMap);
-        public bool CanSwitchActionMaps => !_isShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
+        public bool CanSwitchActionMaps => _serviceRegistered && !_serviceShuttingDown && _inputMapsInitialized && _runtimeInputActionAsset != null;
         public InputDisplayStyle CurrentDisplayStyle { get; private set; } = InputDisplayStyle.KeyboardMouse;
         
         public Vector2 MoveInput => _moveInput;
@@ -323,22 +319,25 @@ namespace Hecton8.Input
         
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out InputManager registered);
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
-            
-            _instance = this;
-            _isShuttingDown = false;
+
+            _serviceShuttingDown = false;
+            _serviceShutdownComplete = false;
+            RegisterService();
             InitializeInputActions();
         }
 
         private void OnEnable()
         {
-            if (_isShuttingDown || _instance != this)
+            if (_serviceShuttingDown)
                 return;
 
+            RegisterService();
             SubscribeToDeviceChanges();
             EnsureInputActionsInitialized();
 
@@ -354,12 +353,14 @@ namespace Hecton8.Input
 
         private void OnDisable()
         {
-            if (_instance != this)
+            if (!_serviceRegistered)
                 return;
 
             _restorePlayerInputOnEnable = IsActionMapEnabledForStateCapture(_playerActionMap);
             _restoreUiInputOnEnable = IsActionMapEnabledForStateCapture(_uiActionMap);
             UnsubscribeFromDeviceChanges();
+            if (!_serviceShuttingDown)
+                UnregisterService();
         }
 
         private void Start()
@@ -385,14 +386,18 @@ namespace Hecton8.Input
 
             if (templateAsset == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[InputManager] No InputActionAsset template available.");
+#endif
                 return;
             }
 
             _runtimeInputActionAsset = CreateRuntimeInputActionAsset(templateAsset);
             if (_runtimeInputActionAsset == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[InputManager] Failed to create runtime InputActionAsset clone.");
+#endif
                 return;
             }
 
@@ -405,13 +410,17 @@ namespace Hecton8.Input
             
             if (_playerActionMap == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[InputManager] Player action map not found in InputActionAsset!");
+#endif
                 return;
             }
 
             if (_uiActionMap == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[InputManager] UI action map not found in InputActionAsset!");
+#endif
                 return;
             }
             
@@ -523,7 +532,9 @@ namespace Hecton8.Input
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[InputManager] Runtime InputActionAsset clone failed: {ex.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[InputManager] Runtime InputActionAsset clone failed: " + ex.Message);
+#endif
                 return null;
             }
         }
@@ -1789,7 +1800,7 @@ namespace Hecton8.Input
                 case InputDeviceChange.Disconnected:
                 case InputDeviceChange.Disabled:
                     UntrackDevice(device);
-                    if (_inputMapsInitialized && !_isShuttingDown)
+                    if (_inputMapsInitialized && !_serviceShuttingDown)
                         _inputRecoveryState = InputRecoveryState.AwaitingDeviceReconnect;
 
                     RefreshCurrentDisplayStyleFromTrackedDevices();
@@ -1907,7 +1918,7 @@ namespace Hecton8.Input
         
         private void ReinitializeInputActions()
         {
-            if (_isShuttingDown)
+            if (_serviceShuttingDown)
                 return;
 
             RequestActionMapRecovery();
@@ -1915,22 +1926,57 @@ namespace Hecton8.Input
 
         private void OnDestroy()
         {
-            if (_instance == this)
-                _isShuttingDown = true;
-
-            UnsubscribeFromDeviceChanges();
-            ResetInputActionCaches(disposeRuntimeAsset: true);
-            _generatedInputActions?.Dispose();
-            _generatedInputActions = null;
-
-            if (_instance == this)
-                _instance = null;
+            OnServiceShutdown();
         }
 
         private void OnApplicationQuit()
         {
-            _isShuttingDown = true;
+            OnServiceShutdown();
             _inputRecoveryState = InputRecoveryState.Stable;
+        }
+
+        public void OnServiceShutdown()
+        {
+            if (_serviceShutdownComplete)
+                return;
+
+            _serviceShuttingDown = true;
+            UnsubscribeFromDeviceChanges();
+            ResetInputActionCaches(disposeRuntimeAsset: true);
+            _generatedInputActions?.Dispose();
+            _generatedInputActions = null;
+            UnregisterService();
+
+            _serviceShutdownComplete = true;
+        }
+
+        private void RegisterService()
+        {
+            if (_serviceShuttingDown || !Application.isPlaying)
+                return;
+
+            BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out InputManager registered);
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            if (!ReferenceEquals(registered, this))
+                BootstrapRegistryBridge.Register(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, this);
+
+            _serviceRegistered =
+                BootstrapRegistryBridge.TryResolve(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, out registered) &&
+                ReferenceEquals(registered, this);
+        }
+
+        private void UnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            BootstrapRegistryBridge.Unregister(BootstrapRegistryBridgeSlot.NativeInputManagerRuntime, this);
+            _serviceRegistered = false;
         }
 
         private void SafeEnableActionMap(InputActionMap actionMap)
@@ -2055,7 +2101,7 @@ namespace Hecton8.Input
 
         private void RequestActionMapRecovery()
         {
-            if (_isShuttingDown ||
+            if (_serviceShuttingDown ||
                 _inputRecoveryState == InputRecoveryState.Rebuilding ||
                 _inputRecoveryState == InputRecoveryState.RebuildPending ||
                 _inputRecoveryState == InputRecoveryState.AwaitingDeviceReconnect)
@@ -2067,7 +2113,7 @@ namespace Hecton8.Input
 
         private void ProcessInputRecoveryStateMachine()
         {
-            if (_isShuttingDown ||
+            if (_serviceShuttingDown ||
                 _processingInputRecovery ||
                 _inputRecoveryState != InputRecoveryState.RebuildPending)
                 return;
@@ -2078,7 +2124,7 @@ namespace Hecton8.Input
                 _inputRecoveryState = InputRecoveryState.Rebuilding;
                 ResetInputActionCaches(disposeRuntimeAsset: true);
 
-                if (_isShuttingDown)
+                if (_serviceShuttingDown)
                 {
                     _inputRecoveryState = InputRecoveryState.Stable;
                     return;
@@ -2148,7 +2194,7 @@ namespace Hecton8.Input
 
         private bool TryValidateActionMap(InputActionMap actionMap, bool scheduleRecoveryOnFailure)
         {
-            if (!_inputMapsInitialized || actionMap == null || _isShuttingDown || _runtimeInputActionAsset == null)
+            if (!_inputMapsInitialized || actionMap == null || _serviceShuttingDown || _runtimeInputActionAsset == null)
                 return false;
 
             try
@@ -2314,7 +2360,7 @@ namespace Hecton8.Input
 
         private bool EnsureInputActionsInitialized()
         {
-            if (_isShuttingDown)
+            if (_serviceShuttingDown)
                 return false;
 
             if (_inputMapsInitialized && TryValidateActionMap(_playerActionMap, scheduleRecoveryOnFailure: true))
@@ -2326,7 +2372,7 @@ namespace Hecton8.Input
 
         private bool TryGetActionMapEnabled(InputActionMap actionMap)
         {
-            if (actionMap == null || _isShuttingDown)
+            if (actionMap == null || _serviceShuttingDown)
                 return false;
 
             if (!TryValidateActionMap(actionMap, scheduleRecoveryOnFailure: true))

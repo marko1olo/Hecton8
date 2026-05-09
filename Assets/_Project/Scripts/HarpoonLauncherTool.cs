@@ -1,7 +1,10 @@
+using System;
 using Hecton8.AI;
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.Tools;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -18,29 +21,106 @@ namespace Hecton8.Gameplay
             Grapple = 3
         }
 
+        private readonly struct HarpoonTextSegment
+        {
+            public const byte HasStringArg0 = 1 << 0;
+            public const byte HasFloatArg1 = 1 << 1;
+            public const byte HasFloatArg2 = 1 << 2;
+
+            public readonly string Template;
+            private readonly string _arg0;
+            private readonly float _arg1;
+            private readonly float _arg2;
+            private readonly byte _argumentMask;
+
+            public HarpoonTextSegment(string template)
+            {
+                Template = template;
+                _arg0 = null;
+                _arg1 = 0f;
+                _arg2 = 0f;
+                _argumentMask = 0;
+            }
+
+            private HarpoonTextSegment(string template, string arg0, float arg1, float arg2, byte argumentMask)
+            {
+                Template = template;
+                _arg0 = arg0;
+                _arg1 = arg1;
+                _arg2 = arg2;
+                _argumentMask = argumentMask;
+            }
+
+            public static HarpoonTextSegment FormatString(string template, string arg0)
+            {
+                return new HarpoonTextSegment(template, arg0, 0f, 0f, HasStringArg0);
+            }
+
+            public static HarpoonTextSegment FormatStringFloat(string template, string arg0, float arg1)
+            {
+                return new HarpoonTextSegment(template, arg0, arg1, 0f, HasStringArg0 | HasFloatArg1);
+            }
+
+            public static HarpoonTextSegment FormatStringFloatFloat(string template, string arg0, float arg1, float arg2)
+            {
+                return new HarpoonTextSegment(template, arg0, arg1, arg2, HasStringArg0 | HasFloatArg1 | HasFloatArg2);
+            }
+
+            public bool TryWrite(ref FixedCharBuffer buffer)
+            {
+                return AppendFormattedText(ref buffer, Template, _arg0, _arg1, _arg2, _argumentMask);
+            }
+        }
+
         private readonly struct HarpoonAssessment
         {
-            public readonly string Headline;
-            public readonly string Summary;
-            public readonly string Recommendation;
+            public readonly HarpoonTextSegment HeadlineText;
+            public readonly HarpoonTextSegment SummaryText;
+            public readonly HarpoonTextSegment RecommendationText;
             public readonly string Severity;
 
             public HarpoonAssessment(string headline, string summary, string recommendation, string severity)
+                : this(
+                    new HarpoonTextSegment(headline),
+                    new HarpoonTextSegment(summary),
+                    new HarpoonTextSegment(recommendation),
+                    severity)
             {
-                Headline = headline;
-                Summary = summary;
-                Recommendation = recommendation;
+            }
+
+            public HarpoonAssessment(string headline, HarpoonTextSegment summary, HarpoonTextSegment recommendation, string severity)
+                : this(new HarpoonTextSegment(headline), summary, recommendation, severity)
+            {
+            }
+
+            public HarpoonAssessment(
+                HarpoonTextSegment headline,
+                HarpoonTextSegment summary,
+                HarpoonTextSegment recommendation,
+                string severity)
+            {
+                HeadlineText = headline;
+                SummaryText = summary;
+                RecommendationText = recommendation;
                 Severity = severity;
             }
 
-            public string BuildHudMessage()
+            public string Headline => HeadlineText.Template;
+            public string Summary => SummaryText.Template;
+            public string Recommendation => RecommendationText.Template;
+
+            public bool TryWriteHudMessage(ref FixedCharBuffer buffer)
             {
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.HARPOON_HUD_ASSESSMENT, "{0} | {1} | {2}"),
-                    Headline,
-                    Summary,
-                    Recommendation);
+                return TryWriteHeadline(ref buffer) &&
+                       AppendText(ref buffer, " | ") &&
+                       TryWriteSummary(ref buffer) &&
+                       AppendText(ref buffer, " | ") &&
+                       TryWriteRecommendation(ref buffer);
             }
+
+            public bool TryWriteHeadline(ref FixedCharBuffer buffer) => HeadlineText.TryWrite(ref buffer);
+            public bool TryWriteSummary(ref FixedCharBuffer buffer) => SummaryText.TryWrite(ref buffer);
+            public bool TryWriteRecommendation(ref FixedCharBuffer buffer) => RecommendationText.TryWrite(ref buffer);
         }
 
         private static Material s_tracerMaterial;
@@ -87,6 +167,9 @@ namespace Hecton8.Gameplay
         private bool _cachedAssessmentValid;
         private HarpoonAssessment _cachedAssessment;
         private float _tetherRemaining;
+        private FixedCharBuffer _hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon HUD staging buffer - owner: HarpoonLauncherTool
+        private FixedCharBuffer _logTitleBuffer = new FixedCharBuffer(256); // COLD ALLOC: char[256] - harpoon operation log title staging buffer - owner: HarpoonLauncherTool
+        private FixedCharBuffer _logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - harpoon operation log summary staging buffer - owner: HarpoonLauncherTool
 
         private void Awake()
         {
@@ -136,46 +219,41 @@ namespace Hecton8.Gameplay
                     HarpoonAssessment assessment = BuildAssessment(hit.collider, hit.distance, lightTetherReady || heavyTowReady || grappleReady);
                     HarpoonAssessment outboundAssessment = lightTetherReady
                         ? new HarpoonAssessment(
-                            string.Format(
+                            HarpoonTextSegment.FormatString(
                                 ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TETHER_LOCK, "HARPOON - TETHER LOCK [{0}]"),
                                 _tetheredNameUpper ?? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET")),
-                            assessment.Summary,
-                            assessment.Recommendation,
+                            assessment.SummaryText,
+                            assessment.RecommendationText,
                             assessment.Severity)
                         : heavyTowReady
                             ? new HarpoonAssessment(
-                                string.Format("HARPOON - HEAVY TOW LOCK [{0}]",
+                                HarpoonTextSegment.FormatString(
+                                    "HARPOON - HEAVY TOW LOCK [{0}]",
                                     _heavyTowWinch != null ? _heavyTowWinch.CurrentTargetNameUpper ?? "CARGO" : "CARGO"),
-                                assessment.Summary,
-                                "Throttle gently. Tow drag is now loading the suit and scooter.",
+                                assessment.SummaryText,
+                                new HarpoonTextSegment("Throttle gently. Tow drag is now loading the suit and scooter."),
                                 assessment.Severity)
                         : grappleReady
                             ? new HarpoonAssessment(
-                                string.Format("HARPOON - EXOSUIT GRAPPLE LOCK [{0}]",
+                                HarpoonTextSegment.FormatString(
+                                    "HARPOON - EXOSUIT GRAPPLE LOCK [{0}]",
                                     _grappleAnchorNameUpper ?? "ANCHOR"),
-                                assessment.Summary,
-                                "Secondary reels the exosuit toward the locked structure. Release input to bleed the line.",
+                                assessment.SummaryText,
+                                new HarpoonTextSegment("Secondary reels the exosuit toward the locked structure. Release input to bleed the line."),
                                 assessment.Severity)
                         : new HarpoonAssessment(
                             ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TARGET_PINNED, "HARPOON - TARGET PINNED"),
-                            assessment.Summary,
-                            assessment.Recommendation,
+                            assessment.SummaryText,
+                            assessment.RecommendationText,
                             assessment.Severity);
                     PublishAssessment(outboundAssessment);
-                    FieldOperationLogSystem.RecordOperation(
-                        ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
-                        outboundAssessment.Headline,
-                        string.Format(
-                            ResolveLocalized(LocalizationKeys.HARPOON_LOG_ASSESSMENT, "{0} | {1}"),
-                            assessment.Summary,
-                            assessment.Recommendation),
-                        assessment.Severity);
+                    RecordAssessmentLog(outboundAssessment, assessment);
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
             else if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.HARPOON_HUD_SHOT_CLEAR, "HARPOON - SHOT RETURNED CLEAR"));
+                PublishWarningMessage(ResolveLocalized(LocalizationKeys.HARPOON_HUD_SHOT_CLEAR, "HARPOON - SHOT RETURNED CLEAR"));
                 FieldOperationLogSystem.RecordOperation(
                     ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
                     ResolveLocalized(LocalizationKeys.HARPOON_LOG_SHOT_CLEAR_TITLE, "HARPOON SHOT RETURNED CLEAR"),
@@ -202,7 +280,7 @@ namespace Hecton8.Gameplay
             if (_heavyTowWinch != null && _heavyTowWinch.HasActiveTow)
             {
                 _heavyTowWinch.ReleaseTow(false);
-                ToolHitUtility.ShowInfo("HARPOON - HEAVY TOW RELEASED");
+                PublishInfoMessage("HARPOON - HEAVY TOW RELEASED");
                 _cooldown = shotCooldown * 0.35f;
                 return;
             }
@@ -240,24 +318,24 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Vector3 direction = (_cachedTransform.position - body.worldCenterOfMass).normalized;
+            Vector3 direction = ResolveSafeDirection(_cachedTransform.position - body.worldCenterOfMass, _cachedTransform.forward);
             PhysicsForceRouter.QueueForce(body, direction * reelImpulse, ForceMode.Impulse);
             ToolHitUtility.TryApplyRelativeCarrierImpulse(direction, reelImpulse);
 
             if (Time.time >= _nextFeedbackAt)
             {
-                PublishAssessment(new HarpoonAssessment(
-                    ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_REEL_IMPULSE, "HARPOON - REEL IMPULSE APPLIED"),
-                    string.Format(
+                HarpoonAssessment reelAssessment = new HarpoonAssessment(
+                    new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_REEL_IMPULSE, "HARPOON - REEL IMPULSE APPLIED")),
+                    HarpoonTextSegment.FormatStringFloat(
                         ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_REEL_IMPULSE, "{0} is inside safe reel mass at {1:0.0} kg."),
                         body.gameObject.name,
                         body.mass),
-                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_REEL_IMPULSE, "Pull it into reach or keep pressure until it drifts clear."),
-                    "INFO"));
-                FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
+                    new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_REEL_IMPULSE, "Pull it into reach or keep pressure until it drifts clear.")),
+                    "INFO");
+                PublishAssessment(reelAssessment);
+                RecordOperationLog(
                     ResolveLocalized(LocalizationKeys.HARPOON_LOG_REEL_IMPULSE_TITLE, "HARPOON REEL IMPULSE"),
-                    string.Format(
+                    HarpoonTextSegment.FormatStringFloat(
                         ResolveLocalized(LocalizationKeys.HARPOON_LOG_REEL_IMPULSE_MESSAGE, "{0} reeled with impulse on {1:0.0} kg target mass."),
                         body.gameObject.name,
                         body.mass),
@@ -295,30 +373,77 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
+            _hudBuffer.Clear();
+            WriteOperationalSummary(ref _hudBuffer);
+            return CreateLegacyString(in _hudBuffer);
+        }
+
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
             ResolveHeavyTowWinch();
 
             if (_cooldown > 0f)
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_RECHARGING, "HARPOON // RECHARGING {0:0.0}S"),
-                    _cooldown);
+            {
+                if (!TryAppendFloatTemplate(
+                        ref buffer,
+                        ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_RECHARGING, "HARPOON // RECHARGING {0:0.0}S"),
+                        _cooldown))
+                {
+                    buffer.Clear();
+                    AppendText(ref buffer, "HARPOON // RECHARGING ");
+                    buffer.AppendFloat(_cooldown, 1);
+                    AppendText(ref buffer, "S");
+                }
+
+                return;
+            }
 
             if (IsTetherValid())
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_TETHER_LOCK, "HARPOON // TETHER LOCK // {0}"),
-                    _tetheredNameUpper ?? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET"));
+            {
+                string targetName = _tetheredNameUpper ?? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET");
+                if (!TryAppendSingleArgumentTemplate(
+                        ref buffer,
+                        ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_TETHER_LOCK, "HARPOON // TETHER LOCK // {0}"),
+                        targetName))
+                {
+                    buffer.Clear();
+                    AppendText(ref buffer, "HARPOON // TETHER LOCK // ");
+                    AppendText(ref buffer, targetName);
+                }
+
+                return;
+            }
 
             if (IsGrappleValid())
-                return string.Format("HARPOON // EXOSUIT GRAPPLE // {0}", _grappleAnchorNameUpper ?? "ANCHOR");
+            {
+                AppendText(ref buffer, "HARPOON // EXOSUIT GRAPPLE // ");
+                AppendText(ref buffer, _grappleAnchorNameUpper ?? "ANCHOR");
+                return;
+            }
 
             if (_heavyTowWinch != null && _heavyTowWinch.HasActiveTow)
-                return string.Format("HARPOON // HEAVY TOW // {0}", _heavyTowWinch.CurrentTargetNameUpper ?? "CARGO");
+            {
+                AppendText(ref buffer, "HARPOON // HEAVY TOW // ");
+                AppendText(ref buffer, _heavyTowWinch.CurrentTargetNameUpper ?? "CARGO");
+                return;
+            }
 
             if (TryGetAssessmentCached(out HarpoonAssessment assessment))
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_ASSESSMENT, "HARPOON // {0}"),
-                    assessment.Headline);
+            {
+                if (!TryAppendSingleArgumentTemplate(
+                        ref buffer,
+                        ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_ASSESSMENT, "HARPOON // {0}"),
+                        assessment.Headline))
+                {
+                    buffer.Clear();
+                    AppendText(ref buffer, "HARPOON // ");
+                    AppendText(ref buffer, assessment.Headline);
+                }
 
-            return ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_READY, "HARPOON // READY");
+                return;
+            }
+
+            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.HARPOON_OPERATIONAL_READY, "HARPOON // READY"));
         }
 
         public override string GetOperationalDirective()
@@ -341,6 +466,43 @@ namespace Hecton8.Gameplay
                 return assessment.Recommendation;
 
             return ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_READY, "Primary fires and tags a lane. Secondary reels a light target or an active tether.");
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
+            ResolveHeavyTowWinch();
+
+            if (_cooldown > 0f)
+            {
+                AppendText(ref buffer, ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_RECHARGING, "Winch and launcher are resetting for the next shot."));
+                return;
+            }
+
+            if (IsTetherValid())
+            {
+                AppendText(ref buffer, ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_TETHERED, "Secondary reels the tethered target. Keep distance or break the line if needed."));
+                return;
+            }
+
+            if (IsGrappleValid())
+            {
+                AppendText(ref buffer, "Secondary reels the exosuit toward the locked anchor. Stop reeling to let the line relax.");
+                return;
+            }
+
+            if (_heavyTowWinch != null && _heavyTowWinch.HasActiveTow)
+            {
+                AppendText(ref buffer, "Secondary releases the heavy tow. Keep thrust smooth or the cable will snap.");
+                return;
+            }
+
+            if (TryGetAssessmentCached(out HarpoonAssessment assessment))
+            {
+                AppendText(ref buffer, assessment.Recommendation);
+                return;
+            }
+
+            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.HARPOON_DIRECTIVE_READY, "Primary fires and tags a lane. Secondary reels a light target or an active tether."));
         }
 
         private void SetTracer(bool active, Vector3 endPoint)
@@ -415,7 +577,7 @@ namespace Hecton8.Gameplay
             if (Time.time < _nextFeedbackAt)
                 return;
 
-            ToolHitUtility.ShowWarning(message);
+            PublishWarningMessage(message);
             FieldOperationLogSystem.RecordOperation(
                 ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
                 message,
@@ -514,26 +676,26 @@ namespace Hecton8.Gameplay
             if (!IsTetherValid())
                 return false;
 
-            Vector3 direction = (_cachedTransform.position - _tetheredBody.worldCenterOfMass).normalized;
+            Vector3 direction = ResolveSafeDirection(_cachedTransform.position - _tetheredBody.worldCenterOfMass, _cachedTransform.forward);
             float impulseAmount = reelImpulse * tetherPullBonus;
             PhysicsForceRouter.QueueForce(_tetheredBody, direction * impulseAmount, ForceMode.Impulse);
             ToolHitUtility.TryApplyRelativeCarrierImpulse(direction, impulseAmount);
 
             if (Time.time >= _nextFeedbackAt)
             {
-                PublishAssessment(new HarpoonAssessment(
-                    string.Format(
+                HarpoonAssessment tetherAssessment = new HarpoonAssessment(
+                    HarpoonTextSegment.FormatString(
                         ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TETHER_REEL, "HARPOON - TETHER REEL [{0}]"),
                         _tetheredNameUpper ?? ResolveLocalized(LocalizationKeys.HARPOON_TARGET, "TARGET")),
-                    string.Format(
+                    HarpoonTextSegment.FormatString(
                         ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_TETHER_REEL, "{0} remains inside tether control range."),
                         _tetheredName),
-                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_TETHER_REEL, "Keep reeling for control or release to reset the lane."),
-                    "INFO"));
-                FieldOperationLogSystem.RecordOperation(
-                    ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
+                    new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_TETHER_REEL, "Keep reeling for control or release to reset the lane.")),
+                    "INFO");
+                PublishAssessment(tetherAssessment);
+                RecordOperationLog(
                     ResolveLocalized(LocalizationKeys.HARPOON_LOG_TETHER_REEL_TITLE, "HARPOON TETHER REEL"),
-                    string.Format(
+                    HarpoonTextSegment.FormatString(
                         ResolveLocalized(LocalizationKeys.HARPOON_LOG_TETHER_REEL_MESSAGE, "{0} reeled through active tether lock."),
                         _tetheredName),
                     "INFO");
@@ -561,9 +723,9 @@ namespace Hecton8.Gameplay
             if (Time.time >= _nextFeedbackAt)
             {
                 PublishAssessment(new HarpoonAssessment(
-                    string.Format("HARPOON - EXOSUIT REEL [{0}]", _grappleAnchorNameUpper ?? "ANCHOR"),
-                    string.Format("{0} is holding the climb line at {1:0.0} m.", _grappleAnchorName, Vector3.Distance(_cachedTransform.position, anchorPointWS)),
-                    "Keep reeling to climb. Stop reeling to bleed force before the next ledge move.",
+                    HarpoonTextSegment.FormatString("HARPOON - EXOSUIT REEL [{0}]", _grappleAnchorNameUpper ?? "ANCHOR"),
+                    HarpoonTextSegment.FormatStringFloat("{0} is holding the climb line at {1:0.0} m.", _grappleAnchorName, ApproximateDistanceMeters(_cachedTransform.position, anchorPointWS)),
+                    new HarpoonTextSegment("Keep reeling to climb. Stop reeling to bleed force before the next ledge move."),
                     "INFO"));
                 _nextFeedbackAt = Time.time + feedbackInterval;
             }
@@ -624,7 +786,7 @@ namespace Hecton8.Gameplay
         private void ApplyLaunchRecoil(Vector3 direction, float runtimeDamage)
         {
             ResolvePlayerMovement();
-            Vector3 safeDirection = direction.sqrMagnitude > 0.0001f ? direction.normalized : _cachedTransform.forward;
+            Vector3 safeDirection = ResolveSafeDirection(direction, _cachedTransform.forward);
             float mass = _playerRigidbody != null ? Mathf.Max(_playerRigidbody.mass, 0.1f) : 1f;
             float runtimeRecoil = GetRuntimeRecoilImpulse(impulse);
             float impulseMagnitude = Mathf.Min(12f, (runtimeRecoil * Mathf.Max(0.1f, runtimeDamage / Mathf.Max(damage, 0.1f))) / mass);
@@ -633,6 +795,16 @@ namespace Hecton8.Gameplay
 
             TryQueuePlayerToolRecoil(safeDirection, impulseMagnitude);
             QueueToolHapticFeedback(runtimeDamage, Mathf.Max(damage, 0.1f));
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
+        {
+            float lengthSq = direction.sqrMagnitude;
+            if (lengthSq <= 0.0001f)
+                return fallback;
+
+            float invLength = math.rsqrt(lengthSq);
+            return direction * invLength;
         }
 
         private bool TryGetAssessmentCached(out HarpoonAssessment assessment)
@@ -675,54 +847,54 @@ namespace Hecton8.Gameplay
                 if (ai.IsDead || ai.CurrentHealth <= 0.01f)
                 {
                     return new HarpoonAssessment(
-                        ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TARGET_DOWN, "HARPOON - TARGET DOWN"),
-                        string.Format(
+                        new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_TARGET_DOWN, "HARPOON - TARGET DOWN")),
+                        HarpoonTextSegment.FormatString(
                             ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_TARGET_DOWN, "{0} is no longer an active threat."),
                             ai.gameObject.name),
-                        ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_TARGET_DOWN, "Use the line for recovery or switch to salvage."),
+                        new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_TARGET_DOWN, "Use the line for recovery or switch to salvage.")),
                         "INFO");
                 }
 
                 if (ai.CurrentState == FaunaBrain.AIState.Aggressive)
                 {
                     return new HarpoonAssessment(
-                        tetherReady
+                        new HarpoonTextSegment(tetherReady
                             ? ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_HOSTILE_TETHERED, "HARPOON - HOSTILE TETHERED")
-                            : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_HOSTILE_CONTACT, "HARPOON - HOSTILE CONTACT"),
-                        string.Format(
+                            : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_HOSTILE_CONTACT, "HARPOON - HOSTILE CONTACT")),
+                        HarpoonTextSegment.FormatStringFloat(
                             ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_HOSTILE_CONTACT, "{0} is aggressive at {1:0.0} m."),
                             ai.gameObject.name,
                             distance),
-                        tetherReady
+                        new HarpoonTextSegment(tetherReady
                             ? ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_HOSTILE_TETHERED, "Control its movement before it closes distance.")
-                            : ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_HOSTILE_CONTACT, "Confirm the line and prepare to reel or disengage."),
+                            : ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_HOSTILE_CONTACT, "Confirm the line and prepare to reel or disengage.")),
                         "CRITICAL");
                 }
 
                 if (ai.HealthNormalized <= 0.35f)
                 {
                     return new HarpoonAssessment(
-                        tetherReady
+                        new HarpoonTextSegment(tetherReady
                             ? ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_FRACTURED_TETHERED, "HARPOON - FRACTURED TARGET TETHERED")
-                            : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_FRACTURED_TARGET, "HARPOON - FRACTURED TARGET"),
-                        string.Format(
+                            : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_FRACTURED_TARGET, "HARPOON - FRACTURED TARGET")),
+                        HarpoonTextSegment.FormatString(
                             ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_FRACTURED_TARGET, "{0} is weakened and likely to lose control under pressure."),
                             ai.gameObject.name),
-                        ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_FRACTURED_TARGET, "Reel if you need control, or finish the target quickly."),
+                        new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_FRACTURED_TARGET, "Reel if you need control, or finish the target quickly.")),
                         "WARN");
                 }
 
                 return new HarpoonAssessment(
-                    tetherReady
+                    new HarpoonTextSegment(tetherReady
                         ? ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_BIOFORM_TETHERED, "HARPOON - BIOFORM TETHERED")
-                        : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_BIOFORM_CONTACT, "HARPOON - BIOFORM CONTACT"),
-                    string.Format(
+                        : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_BIOFORM_CONTACT, "HARPOON - BIOFORM CONTACT")),
+                    HarpoonTextSegment.FormatStringFloat(
                         ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_BIOFORM_CONTACT, "{0} is under line pressure at {1:0.0} m."),
                         ai.gameObject.name,
                         distance),
-                    tetherReady
+                    new HarpoonTextSegment(tetherReady
                         ? ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_BIOFORM_TETHERED, "Use the tether to manage spacing and movement.")
-                        : ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_BIOFORM_CONTACT, "Strike cleanly before reeling."),
+                        : ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_BIOFORM_CONTACT, "Strike cleanly before reeling.")),
                     "INFO");
             }
 
@@ -731,18 +903,18 @@ namespace Hecton8.Gameplay
                 if (tetherReady && IsGrappleValid())
                 {
                     return new HarpoonAssessment(
-                        "HARPOON - EXOSUIT GRAPPLE LOCK",
-                        string.Format("{0} accepted a static grapple lane at {1:0.0} m.", target.gameObject.name, distance),
-                        "Secondary reels the exosuit toward the anchor. Release input to stop climbing.",
+                        new HarpoonTextSegment("HARPOON - EXOSUIT GRAPPLE LOCK"),
+                        HarpoonTextSegment.FormatStringFloat("{0} accepted a static grapple lane at {1:0.0} m.", target.gameObject.name, distance),
+                        new HarpoonTextSegment("Secondary reels the exosuit toward the anchor. Release input to stop climbing."),
                         "INFO");
                 }
 
                 return new HarpoonAssessment(
-                    ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, "HARPOON - TARGET CANNOT BE REELED"),
-                    string.Format(
+                    new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CANNOT_REEL, "HARPOON - TARGET CANNOT BE REELED")),
+                    HarpoonTextSegment.FormatString(
                         ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_CANNOT_REEL, "{0} has no valid mass body for tether control."),
                         target.gameObject.name),
-                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_CANNOT_REEL, "Use cutter, builder, or move on."),
+                    new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_CANNOT_REEL, "Use cutter, builder, or move on.")),
                     "WARN");
             }
 
@@ -751,18 +923,18 @@ namespace Hecton8.Gameplay
                 if (tetherReady && IsGrappleValid())
                 {
                     return new HarpoonAssessment(
-                        "HARPOON - EXOSUIT GRAPPLE LOCK",
-                        string.Format("{0} is fixed hard enough to hold a climb line at {1:0.0} m.", target.gameObject.name, distance),
-                        "Secondary reels the exosuit toward the anchor. Release input to stop climbing.",
+                        new HarpoonTextSegment("HARPOON - EXOSUIT GRAPPLE LOCK"),
+                        HarpoonTextSegment.FormatStringFloat("{0} is fixed hard enough to hold a climb line at {1:0.0} m.", target.gameObject.name, distance),
+                        new HarpoonTextSegment("Secondary reels the exosuit toward the anchor. Release input to stop climbing."),
                         "INFO");
                 }
 
                 return new HarpoonAssessment(
-                    ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, "HARPOON - TARGET LOCKED TO STRUCTURE"),
-                    string.Format(
+                    new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_LOCKED_STRUCTURE, "HARPOON - TARGET LOCKED TO STRUCTURE")),
+                    HarpoonTextSegment.FormatString(
                         ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_LOCKED_STRUCTURE, "{0} is fixed in place and will not reel."),
                         target.gameObject.name),
-                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_LOCKED_STRUCTURE, "Do not waste reel force on anchored structures."),
+                    new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_LOCKED_STRUCTURE, "Do not waste reel force on anchored structures.")),
                     "WARN");
             }
 
@@ -771,13 +943,13 @@ namespace Hecton8.Gameplay
                 if (_heavyTowWinch != null && _heavyTowWinch.CanTowMass(body.mass))
                 {
                     return new HarpoonAssessment(
-                        tetherReady
+                        new HarpoonTextSegment(tetherReady
                             ? "HARPOON - HEAVY TOW LOCKED"
-                            : "HARPOON - HEAVY TOW CANDIDATE",
-                        string.Format("{0} weighs {1:0.0} kg at {2:0.0} m.", target.gameObject.name, body.mass, distance),
-                        tetherReady
+                            : "HARPOON - HEAVY TOW CANDIDATE"),
+                        HarpoonTextSegment.FormatStringFloatFloat("{0} weighs {1:0.0} kg at {2:0.0} m.", target.gameObject.name, body.mass, distance),
+                        new HarpoonTextSegment(tetherReady
                             ? "Maintain thrust discipline. Excess speed delta will snap the cable."
-                            : "Primary fire can lock a heavy tow line. Expect major drag and current drift.",
+                            : "Primary fire can lock a heavy tow line. Expect major drag and current drift."),
                         "WARN");
                 }
 
@@ -785,13 +957,13 @@ namespace Hecton8.Gameplay
                     return descriptorAssessment;
 
                 return new HarpoonAssessment(
-                    ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_MASS_EXCEEDS, "HARPOON - MASS EXCEEDS REEL LIMIT"),
-                    string.Format(
+                    new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_MASS_EXCEEDS, "HARPOON - MASS EXCEEDS REEL LIMIT")),
+                    HarpoonTextSegment.FormatStringFloatFloat(
                         ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_MASS_EXCEEDS, "{0} weighs {1:0.0} kg at {2:0.0} m."),
                         target.gameObject.name,
                         body.mass,
                         distance),
-                    ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_MASS_EXCEEDS, "Use propulsion or another route; reel force is not enough."),
+                    new HarpoonTextSegment(ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_MASS_EXCEEDS, "Use propulsion or another route; reel force is not enough.")),
                     "WARN");
             }
 
@@ -799,16 +971,16 @@ namespace Hecton8.Gameplay
                 return authoredAssessment;
 
             return new HarpoonAssessment(
-                tetherReady
+                new HarpoonTextSegment(tetherReady
                     ? ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CARGO_TETHERED, "HARPOON - CARGO TETHERED")
-                    : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CARGO_CONTACT, "HARPOON - CARGO CONTACT"),
-                string.Format(
+                    : ResolveLocalized(LocalizationKeys.HARPOON_HEADLINE_CARGO_CONTACT, "HARPOON - CARGO CONTACT")),
+                HarpoonTextSegment.FormatStringFloat(
                     ResolveLocalized(LocalizationKeys.HARPOON_SUMMARY_CARGO_CONTACT, "{0} is reel-safe at {1:0.0} kg."),
                     target.gameObject.name,
                     body.mass),
-                tetherReady
+                new HarpoonTextSegment(tetherReady
                     ? ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_CARGO_TETHERED, "Pull it into position or keep it off your path.")
-                    : ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_CARGO_CONTACT, "Fire again only if you need a tether lock."),
+                    : ResolveLocalized(LocalizationKeys.HARPOON_RECOMMEND_CARGO_CONTACT, "Fire again only if you need a tether lock.")),
                 "INFO");
         }
 
@@ -831,12 +1003,61 @@ namespace Hecton8.Gameplay
             return false;
         }
 
+        private void RecordAssessmentLog(HarpoonAssessment titleAssessment, HarpoonAssessment detailAssessment)
+        {
+            _logTitleBuffer.Clear();
+            _logSummaryBuffer.Clear();
+
+            if (!titleAssessment.TryWriteHeadline(ref _logTitleBuffer) ||
+                !TryWriteAssessmentLogSummary(ref _logSummaryBuffer, detailAssessment))
+            {
+                return;
+            }
+
+            FieldOperationLogSystem.RecordOperation(
+                ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
+                in _logTitleBuffer,
+                in _logSummaryBuffer,
+                detailAssessment.Severity);
+        }
+
+        private void RecordOperationLog(string title, HarpoonTextSegment summary, string severity)
+        {
+            _logSummaryBuffer.Clear();
+            if (!summary.TryWrite(ref _logSummaryBuffer))
+                return;
+
+            FieldOperationLogSystem.RecordOperation(
+                ResolveLocalized(LocalizationKeys.HARPOON_CATEGORY, HarpoonCategory),
+                title,
+                in _logSummaryBuffer,
+                severity);
+        }
+
         private void PublishAssessment(HarpoonAssessment assessment)
         {
+            _hudBuffer.Clear();
+            if (!assessment.TryWriteHudMessage(ref _hudBuffer))
+                return;
+
             if (assessment.Severity == "WARN" || assessment.Severity == "CRITICAL")
-                ToolHitUtility.ShowWarning(assessment.BuildHudMessage());
+                ToolHitUtility.ShowWarning(in _hudBuffer);
             else
-                ToolHitUtility.ShowInfo(assessment.BuildHudMessage());
+                ToolHitUtility.ShowInfo(in _hudBuffer);
+        }
+
+        private void PublishWarningMessage(string message)
+        {
+            _hudBuffer.Clear();
+            if (AppendText(ref _hudBuffer, message))
+                ToolHitUtility.ShowWarning(in _hudBuffer);
+        }
+
+        private void PublishInfoMessage(string message)
+        {
+            _hudBuffer.Clear();
+            if (AppendText(ref _hudBuffer, message))
+                ToolHitUtility.ShowInfo(in _hudBuffer);
         }
 
         private static string ResolveLocalized(string key, string fallback)
@@ -847,9 +1068,204 @@ namespace Hecton8.Gameplay
                 : fallback;
         }
 
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
+        }
+
+        private static string CreateLegacyString(in FixedCharBuffer buffer)
+        {
+            return buffer.Length > 0
+                ? new string(buffer.Buffer, 0, buffer.Length)
+                : string.Empty;
+        }
+
+        private static bool AppendFormattedText(
+            ref FixedCharBuffer buffer,
+            string template,
+            string arg0,
+            float arg1,
+            float arg2,
+            byte argumentMask)
+        {
+            if (string.IsNullOrEmpty(template))
+                return true;
+
+            ReadOnlySpan<char> templateSpan = template.AsSpan();
+            int segmentStart = 0;
+            for (int i = 0; i < templateSpan.Length; i++)
+            {
+                if (templateSpan[i] != '{' || i + 1 >= templateSpan.Length)
+                    continue;
+
+                char tokenIndex = templateSpan[i + 1];
+                int tokenEnd = i + 2;
+                while (tokenEnd < templateSpan.Length && templateSpan[tokenEnd] != '}')
+                    tokenEnd++;
+
+                if (tokenEnd >= templateSpan.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(templateSpan.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                bool wroteArgument = false;
+                if (tokenIndex == '0' && (argumentMask & HarpoonTextSegment.HasStringArg0) != 0)
+                {
+                    if (!AppendText(ref buffer, arg0))
+                        return false;
+
+                    wroteArgument = true;
+                }
+                else if (tokenIndex == '1' && (argumentMask & HarpoonTextSegment.HasFloatArg1) != 0)
+                {
+                    if (!buffer.AppendFloat(arg1, 1))
+                        return false;
+
+                    wroteArgument = true;
+                }
+                else if (tokenIndex == '2' && (argumentMask & HarpoonTextSegment.HasFloatArg2) != 0)
+                {
+                    if (!buffer.AppendFloat(arg2, 1))
+                        return false;
+
+                    wroteArgument = true;
+                }
+
+                if (!wroteArgument && !buffer.Append(templateSpan.Slice(i, tokenEnd - i + 1)))
+                    return false;
+
+                i = tokenEnd;
+                segmentStart = tokenEnd + 1;
+            }
+
+            return segmentStart >= templateSpan.Length || buffer.Append(templateSpan.Slice(segmentStart));
+        }
+
+        private static bool TryWriteAssessmentLogSummary(ref FixedCharBuffer buffer, HarpoonAssessment assessment)
+        {
+            string template = ResolveLocalized(LocalizationKeys.HARPOON_LOG_ASSESSMENT, "{0} | {1}");
+            if (string.IsNullOrEmpty(template))
+                return assessment.TryWriteSummary(ref buffer);
+
+            ReadOnlySpan<char> templateSpan = template.AsSpan();
+            int segmentStart = 0;
+            for (int i = 0; i < templateSpan.Length; i++)
+            {
+                if (templateSpan[i] != '{' || i + 2 >= templateSpan.Length)
+                    continue;
+
+                char tokenIndex = templateSpan[i + 1];
+                int tokenEnd = i + 2;
+                while (tokenEnd < templateSpan.Length && templateSpan[tokenEnd] != '}')
+                    tokenEnd++;
+
+                if (tokenEnd >= templateSpan.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(templateSpan.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                bool wroteToken = tokenIndex == '0'
+                    ? assessment.TryWriteSummary(ref buffer)
+                    : tokenIndex == '1' && assessment.TryWriteRecommendation(ref buffer);
+
+                if (!wroteToken && !buffer.Append(templateSpan.Slice(i, tokenEnd - i + 1)))
+                    return false;
+
+                i = tokenEnd;
+                segmentStart = tokenEnd + 1;
+            }
+
+            return segmentStart >= templateSpan.Length || buffer.Append(templateSpan.Slice(segmentStart));
+        }
+
+        private static bool TryAppendSingleArgumentTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            string value)
+        {
+            ReadOnlySpan<char> templateSpan = template.AsSpan();
+            if (templateSpan.Length <= 0)
+                return AppendText(ref buffer, value);
+
+            bool wroteTemplateToken = false;
+            int segmentStart = 0;
+            for (int i = 0; i < templateSpan.Length; i++)
+            {
+                if (templateSpan[i] != '{' || i + 2 >= templateSpan.Length || templateSpan[i + 1] != '0' || templateSpan[i + 2] != '}')
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(templateSpan.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                if (!AppendText(ref buffer, value))
+                    return false;
+
+                wroteTemplateToken = true;
+                i += 2;
+                segmentStart = i + 1;
+            }
+
+            if (!wroteTemplateToken)
+                return buffer.Append(templateSpan);
+
+            return segmentStart >= templateSpan.Length || buffer.Append(templateSpan.Slice(segmentStart));
+        }
+
+        private static bool TryAppendFloatTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            float value)
+        {
+            ReadOnlySpan<char> templateSpan = template.AsSpan();
+            if (templateSpan.Length <= 0)
+                return buffer.AppendFloat(value, 1);
+
+            bool wroteTemplateToken = false;
+            int segmentStart = 0;
+            for (int i = 0; i < templateSpan.Length; i++)
+            {
+                if (templateSpan[i] != '{' || i + 1 >= templateSpan.Length || templateSpan[i + 1] != '0')
+                    continue;
+
+                int tokenEnd = i + 2;
+                while (tokenEnd < templateSpan.Length && templateSpan[tokenEnd] != '}')
+                    tokenEnd++;
+
+                if (tokenEnd >= templateSpan.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(templateSpan.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                if (!buffer.AppendFloat(value, 1))
+                    return false;
+
+                wroteTemplateToken = true;
+                i = tokenEnd;
+                segmentStart = tokenEnd + 1;
+            }
+
+            if (!wroteTemplateToken)
+                return buffer.Append(templateSpan);
+
+            return segmentStart >= templateSpan.Length || buffer.Append(templateSpan.Slice(segmentStart));
+        }
+
         // ══════════════════════════════════════════════════════════
         //  ZERO-GC STRING CACHING
         // ══════════════════════════════════════════════════════════
+
+        private static float ApproximateDistanceMeters(Vector3 from, Vector3 to)
+        {
+            float3 delta = (float3)(from - to);
+            float3 absDelta = math.abs(delta);
+            float max = math.cmax(absDelta);
+            float min = math.cmin(absDelta);
+            float mid = absDelta.x + absDelta.y + absDelta.z - max - min;
+            return max + mid * 0.375f + min * 0.125f;
+        }
 
         private static readonly string[] _cachedUpperStrings = new string[16];
 

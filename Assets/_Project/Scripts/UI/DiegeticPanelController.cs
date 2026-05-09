@@ -125,9 +125,11 @@ namespace Hecton8.UI
         private const float FarPanelDistanceSq = 25f;
         private const float MediumPanelDistanceSq = 4f;
         private const float NearPanelDistanceSq = 0.64f;
+        private const float InvTwoPi = 1f / (math.PI * 2f);
         private const int MaxInputEventsPerTick = 4;
         private const int InputEventCapacity = 16;
         private const int InputEventMask = InputEventCapacity - 1;
+        private const int MaxFingerSlots = 32;
 
         /// <summary>
         /// Physical panel interaction policy.
@@ -170,6 +172,8 @@ namespace Hecton8.UI
         {
             public float4x4 LocalToWorld;
             public float4x4 WorldToLocal;
+            public float3 PanelNormal;
+            public float3 PanelUp;
             public float2 CanvasSize;
             public float2 HalfSize;
             public int ReferenceWidth;
@@ -353,6 +357,8 @@ namespace Hecton8.UI
         private float2 _lastFingerCanvasPosition;
         private float3 _smoothedCursorWorld;
         private float3 _lastFingerLocalHit;
+        private Transform[] _cachedFingertipTransforms;
+        private uint _fingertipBindingMask;
         private int _activeFingerIndex = -1;
 
         /// <summary>
@@ -396,12 +402,11 @@ namespace Hecton8.UI
             UnregisterTick();
             UnregisterRenderPipelineHook();
             UnregisterProxyLight();
-            _wasPressedLastFrame = false;
-            _fingerPressedLastFrame = false;
-            _activeFingerIndex = -1;
+            ClearHoverState();
             _cursorStateInitialized = false;
             _canvasSettingsApplied = false;
-            SetCursorVisible(false);
+            if (panelCamera != null && panelCamera.enabled)
+                panelCamera.enabled = false;
             if (!_retainRenderTextureOnDisable)
                 ReleaseRenderTexture();
         }
@@ -513,7 +518,7 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void SetOcclusionParams(float fadeRange, bool active)
         {
-            depthFadeRange = Mathf.Max(0.001f, fadeRange);
+            depthFadeRange = math.max(0.001f, fadeRange);
             enableDepthOcclusion = active;
             ApplyMaterialState(forceTextureRefresh: false, forceDepthRefresh: true);
         }
@@ -599,8 +604,8 @@ namespace Hecton8.UI
         {
             RefreshPanelData(forceRefresh: false);
 
-            float3 panelNormal = math.normalizesafe(_panelData.LocalToWorld.c2.xyz, new float3(0f, 0f, 1f));
-            float3 panelUp = math.normalizesafe(_panelData.LocalToWorld.c1.xyz, new float3(0f, 1f, 0f));
+            float3 panelNormal = _panelData.PanelNormal;
+            float3 panelUp = _panelData.PanelUp;
             if (math.lengthsq(panelNormal) <= 0.0001f || math.lengthsq(panelUp) <= 0.0001f)
             {
                 rotation = Quaternion.identity;
@@ -636,6 +641,16 @@ namespace Hecton8.UI
             math.max(1, _panelData.ReferenceWidth),
             math.max(1, _panelData.ReferenceHeight));
 
+        internal bool TryGetFocusGateData(out Vector3 panelOrigin, out Vector3 panelNormal)
+        {
+            RefreshPanelData(forceRefresh: false);
+
+            panelOrigin = (Vector3)_panelData.LocalToWorld.c3.xyz;
+            panelNormal = (Vector3)_panelData.PanelNormal;
+            return math.lengthsq(_panelData.PanelNormal) > 0.0001f &&
+                   math.all(math.isfinite(_panelData.LocalToWorld.c3.xyz));
+        }
+
         internal void OverrideFixedRenderTextureResolution(Vector2Int resolution, bool retainOnDisable)
         {
             int2 sanitizedResolution = new int2(math.max(1, resolution.x), math.max(1, resolution.y));
@@ -670,18 +685,21 @@ namespace Hecton8.UI
                 return;
 
             _presentationPausedByOwner = paused;
-            if (panelCamera != null)
-                panelCamera.enabled = !paused && enableRenderTexturePresentation;
+            if (paused && panelCamera != null && panelCamera.enabled)
+                panelCamera.enabled = false;
 
             if (paused)
             {
                 SetCursorVisible(false);
                 ClearHoverState();
+                RefreshLateFrameRegistration();
                 return;
             }
 
             if (isActiveAndEnabled)
                 EnsureRenderTexture(forceRefresh: true);
+            else
+                RefreshLateFrameRegistration();
         }
 
         internal Canvas TargetCanvas => targetCanvas;
@@ -702,7 +720,7 @@ namespace Hecton8.UI
         internal void OverridePhosphorDecay(bool enabled, float decay)
         {
             enablePhosphorDecay = enabled;
-            phosphorDecay = Mathf.Clamp(decay, 0.1f, 0.98f);
+            phosphorDecay = math.clamp(decay, 0.1f, 0.98f);
             if (enabled)
                 EnsurePhosphorResources();
             else
@@ -725,19 +743,20 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            maxInteractionDistance = Mathf.Max(0.1f, maxInteractionDistance);
-            referenceResolution.x = Mathf.Max(1, referenceResolution.x);
-            referenceResolution.y = Mathf.Max(1, referenceResolution.y);
-            cursorMargin.x = Mathf.Max(0f, cursorMargin.x);
-            cursorMargin.y = Mathf.Max(0f, cursorMargin.y);
-            cursorHoverOffset = Mathf.Max(0f, cursorHoverOffset);
-            cursorSmoothingSpeed = Mathf.Max(0.1f, cursorSmoothingSpeed);
-            distanceRefreshInterval = Mathf.Max(0.1f, distanceRefreshInterval);
-            fingerPressDistance = Mathf.Max(0.001f, fingerPressDistance);
-            fingerReleaseDistance = Mathf.Max(fingerPressDistance, fingerReleaseDistance);
-            fingerHoverDistance = Mathf.Max(fingerReleaseDistance, fingerHoverDistance);
-            depthFadeRange = Mathf.Max(0.001f, depthFadeRange);
+            maxInteractionDistance = math.max(0.1f, maxInteractionDistance);
+            referenceResolution.x = math.max(1, referenceResolution.x);
+            referenceResolution.y = math.max(1, referenceResolution.y);
+            cursorMargin.x = math.max(0f, cursorMargin.x);
+            cursorMargin.y = math.max(0f, cursorMargin.y);
+            cursorHoverOffset = math.max(0f, cursorHoverOffset);
+            cursorSmoothingSpeed = math.max(0.1f, cursorSmoothingSpeed);
+            distanceRefreshInterval = math.max(0.1f, distanceRefreshInterval);
+            fingerPressDistance = math.max(0.001f, fingerPressDistance);
+            fingerReleaseDistance = math.max(fingerPressDistance, fingerReleaseDistance);
+            fingerHoverDistance = math.max(fingerReleaseDistance, fingerHoverDistance);
+            depthFadeRange = math.max(0.001f, depthFadeRange);
 
+            RefreshFingertipBindingMask();
             ResolveSerializedReferences(resolveGraphicRaycaster: true);
             ResolveInterfaces();
             DetermineTargetHardwareTier();
@@ -762,6 +781,9 @@ namespace Hecton8.UI
 
             if (!ReferenceEquals(_cachedCursorTransform, cursorTransform))
                 ResolveCursorVisibilityTargets();
+
+            if (!ReferenceEquals(_cachedFingertipTransforms, fingertipTransforms))
+                RefreshFingertipBindingMask();
 
             if (resolveGraphicRaycaster &&
                 targetCanvas != null &&
@@ -900,6 +922,8 @@ namespace Hecton8.UI
 
             _panelData.LocalToWorld = ToFloat4x4(localToWorldMatrix);
             _panelData.WorldToLocal = ToFloat4x4(worldToLocalMatrix);
+            _panelData.PanelNormal = ResolveSafePanelAxis(_panelData.LocalToWorld.c2.xyz, new float3(0f, 0f, 1f));
+            _panelData.PanelUp = ResolveSafePanelAxis(_panelData.LocalToWorld.c1.xyz, new float3(0f, 1f, 0f));
             _panelData.CanvasSize = math.max(new float2(rect.width, rect.height), new float2(MinCanvasExtent, MinCanvasExtent));
             _panelData.HalfSize = _panelData.CanvasSize * 0.5f;
             _panelData.ReferenceWidth = math.max(1, referenceResolution.x);
@@ -942,6 +966,7 @@ namespace Hecton8.UI
             {
                 if (panelCamera != null && panelCamera.enabled)
                     panelCamera.enabled = false;
+                RefreshLateFrameRegistration();
                 return;
             }
 
@@ -982,6 +1007,7 @@ namespace Hecton8.UI
             EnsurePhosphorResources();
 
             ApplyMaterialState(forceTextureRefresh: true, forceDepthRefresh: true);
+            RefreshLateFrameRegistration();
         }
 
         private int2 DetermineRenderResolutionFromDistanceSq(float distanceToCameraSq)
@@ -1014,13 +1040,20 @@ namespace Hecton8.UI
             if (panelCamera != null && panelCamera.targetTexture == _panelRenderTexture)
                 panelCamera.targetTexture = null;
 
+            if (panelCamera != null && panelCamera.enabled)
+                panelCamera.enabled = false;
+
             if (_panelRenderTexture == null)
+            {
+                RefreshLateFrameRegistration();
                 return;
+            }
 
             _panelRenderTexture.Release();
             Destroy(_panelRenderTexture);
             _panelRenderTexture = null;
             _activeRenderResolution = int2.zero;
+            RefreshLateFrameRegistration();
         }
 
         private void EnsurePhosphorResources()
@@ -1136,7 +1169,7 @@ namespace Hecton8.UI
             else
                 _panelData.StateFlags &= ~PanelStateFlags.Powered;
 
-            if (Mathf.Approximately(_appliedPowerLevel, powerLevel))
+            if (math.abs(_appliedPowerLevel - powerLevel) <= 0.0001f)
                 return;
 
             _appliedPowerLevel = powerLevel;
@@ -1160,7 +1193,7 @@ namespace Hecton8.UI
             }
 
             float resolvedFadeRange = enableDepthOcclusion ? depthFadeRange : 0f;
-            bool shouldWriteDepthState = forceDepthRefresh || !Mathf.Approximately(_appliedDepthFadeRange, resolvedFadeRange);
+            bool shouldWriteDepthState = forceDepthRefresh || math.abs(_appliedDepthFadeRange - resolvedFadeRange) > 0.0001f;
             if (shouldWriteDepthState)
             {
                 _appliedDepthFadeRange = resolvedFadeRange;
@@ -1184,7 +1217,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            float3 panelNormal = math.normalizesafe(_panelData.LocalToWorld.c2.xyz, new float3(0f, 0f, 1f));
+            float3 panelNormal = _panelData.PanelNormal;
             float3 runtimePosition = _panelData.LocalToWorld.c3.xyz + (panelNormal * 0.025f);
             if (!math.all(math.isfinite(runtimePosition)) || !math.all(math.isfinite(panelNormal)))
             {
@@ -1193,7 +1226,7 @@ namespace Hecton8.UI
             }
 
             float now = Time.unscaledTime;
-            float flickerWave = 0.5f + (0.5f * math.sin((now * 23.0f) + (panelId * 0.37f)));
+            float flickerWave = EvaluateCheapFlicker01((now * 23.0f) + (panelId * 0.37f));
             float flicker01 = math.saturate(1f - proxyLightFlicker + (flickerWave * proxyLightFlicker));
             float intensity = math.saturate(proxyLightIntensity * _appliedPowerLevel * flicker01);
             if (intensity <= 0.0001f)
@@ -1217,6 +1250,13 @@ namespace Hecton8.UI
 
             if (ProxyLightRegistry.RegisterOrUpdate(_proxyLightKey, in lightData))
                 _proxyLightRegistered = true;
+        }
+
+        private static float EvaluateCheapFlicker01(float phaseRadians)
+        {
+            float phase01 = math.frac((phaseRadians * InvTwoPi) + 0.25f);
+            float triangle = 1f - math.abs(phase01 * 2f - 1f);
+            return triangle * triangle;
         }
 
         private void UnregisterProxyLight()
@@ -1283,9 +1323,6 @@ namespace Hecton8.UI
             if (directionLengthSq <= 0.0001f)
                 return false;
 
-            if (!rayDirectionIsNormalized)
-                rayDirection *= math.rsqrt(directionLengthSq);
-
             float3 panelNormal = _panelData.LocalToWorld.c2.xyz;
             if (math.lengthsq(panelNormal) <= 0.0001f)
                 panelNormal = new float3(0f, 0f, 1f);
@@ -1297,7 +1334,9 @@ namespace Hecton8.UI
 
             float planeDistance = math.dot(panelOrigin - rayOriginWs, panelNormal) / denom;
             float maxDistanceSafe = math.max(0.001f, maxDistance);
-            if (planeDistance < 0f || planeDistance * planeDistance > maxDistanceSafe * maxDistanceSafe)
+            float planeDistanceSq = planeDistance * planeDistance;
+            float travelDistanceSq = rayDirectionIsNormalized ? planeDistanceSq : planeDistanceSq * directionLengthSq;
+            if (planeDistance < 0f || travelDistanceSq > maxDistanceSafe * maxDistanceSafe)
                 return false;
 
             worldHit = rayOriginWs + rayDirection * planeDistance;
@@ -1339,7 +1378,7 @@ namespace Hecton8.UI
             if (interactionMode == PanelInteractionMode.RaycastOnly)
                 return false;
 
-            if (!HasAnyFingertipTransform())
+            if (_fingertipBindingMask == 0u)
             {
                 if (_fingerPressedLastFrame)
                     return ResolveFingerRelease(out canvasPos, out localHit, out eventType);
@@ -1353,9 +1392,15 @@ namespace Hecton8.UI
             int bestIndex = -1;
             float bestDistance = float.MaxValue;
             float3 bestLocalHit = float3.zero;
+            int fingertipCount = fingertipTransforms == null
+                ? 0
+                : math.min(fingertipTransforms.Length, MaxFingerSlots);
 
-            for (int i = 0; i < fingertipTransforms.Length; i++)
+            for (int i = 0; i < fingertipCount; i++)
             {
+                if ((_fingertipBindingMask & (1u << i)) == 0u)
+                    continue;
+
                 Transform fingertip = fingertipTransforms[i];
                 if (fingertip == null)
                     continue;
@@ -1448,8 +1493,8 @@ namespace Hecton8.UI
                 _smoothedCursorWorld = math.lerp(_smoothedCursorWorld, cursorTargetWorld, alpha);
             }
 
-            float3 panelNormal = math.normalizesafe(_panelData.LocalToWorld.c2.xyz, new float3(0f, 0f, 1f));
-            float3 panelUp = math.normalizesafe(_panelData.LocalToWorld.c1.xyz, new float3(0f, 1f, 0f));
+            float3 panelNormal = _panelData.PanelNormal;
+            float3 panelUp = _panelData.PanelUp;
             quaternion rotation = quaternion.LookRotationSafe(-panelNormal, panelUp);
 
             cursorTransform.SetPositionAndRotation(
@@ -1513,7 +1558,10 @@ namespace Hecton8.UI
         private void EnqueueInputEvent(DiegeticPanelInputEvent inputEvent)
         {
             if (_inputEventCount >= InputEventCapacity)
-                return;
+            {
+                _inputEventHead = (_inputEventHead + 1) & InputEventMask;
+                _inputEventCount--;
+            }
 
             _inputEvents[_inputEventTail] = inputEvent;
             _inputEventTail = (_inputEventTail + 1) & InputEventMask;
@@ -1561,27 +1609,28 @@ namespace Hecton8.UI
             if (interactionMode == PanelInteractionMode.PhysicalFingerOnly)
                 return false;
 
-            if (HasAnyFingertipTransform())
+            if (_fingertipBindingMask != 0u)
                 return false;
 
-            if (UnityEngine.XR.XRSettings.enabled)
+            if (HectonXRRuntimeState.IsXRActive)
                 return false;
 
             return allowDesktopRayFallbackWithoutFingers;
         }
 
-        private bool HasAnyFingertipTransform()
+        private void RefreshFingertipBindingMask()
         {
+            _cachedFingertipTransforms = fingertipTransforms;
+            _fingertipBindingMask = 0u;
             if (fingertipTransforms == null)
-                return false;
+                return;
 
-            for (int i = 0; i < fingertipTransforms.Length; i++)
+            int count = math.min(fingertipTransforms.Length, MaxFingerSlots);
+            for (int i = 0; i < count; i++)
             {
                 if (fingertipTransforms[i] != null)
-                    return true;
+                    _fingertipBindingMask |= 1u << i;
             }
-
-            return false;
         }
 
         private Camera ResolveInteractionCamera()
@@ -1602,15 +1651,17 @@ namespace Hecton8.UI
             _cameraRetryTimer = now + 1f;
 
             if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
-                playerTransform != null &&
-                playerTransform.TryGetComponent(out Camera playerCamera))
+                playerTransform != null)
             {
-                _resolvedInteractionCamera = playerCamera;
-                return _resolvedInteractionCamera;
-            }
+                if (playerTransform.TryGetComponent(out Camera playerCamera))
+                {
+                    _resolvedInteractionCamera = playerCamera;
+                    return _resolvedInteractionCamera;
+                }
 
-            if (SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransform) && playerTransform != null)
-                _resolvedInteractionCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                _resolvedInteractionCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            }
 
             return _resolvedInteractionCamera;
         }
@@ -1644,7 +1695,7 @@ namespace Hecton8.UI
         {
             if (_tickRegistered || !Application.isPlaying)
             {
-                TryRegisterLateFrameTick();
+                RefreshLateFrameRegistration();
                 return;
             }
 
@@ -1653,16 +1704,34 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = GlobalRegistry.Updatables.Contains(this);
-            TryRegisterLateFrameTick();
+            RefreshLateFrameRegistration();
         }
 
-        private void TryRegisterLateFrameTick()
+        private void RefreshLateFrameRegistration()
         {
-            if (_lateFrameRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
+            bool shouldRegisterLateFrame =
+                enablePhosphorDecay &&
+                _panelRenderTexture != null &&
+                !_presentationPausedByOwner &&
+                isActiveAndEnabled &&
+                Application.isPlaying &&
+                GlobalRegistry.Dispatcher != null;
 
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
+            if (shouldRegisterLateFrame)
+            {
+                if (_lateFrameRegistered)
+                    return;
+
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
+                return;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
         }
 
         private void UnregisterTick()
@@ -1715,6 +1784,15 @@ namespace Hecton8.UI
             int childCount = root.childCount;
             for (int i = 0; i < childCount; i++)
                 SetLayerRecursive(root.GetChild(i), layer);
+        }
+
+        private static float3 ResolveSafePanelAxis(float3 axis, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(axis);
+            if (lengthSq <= 0.0001f || !math.all(math.isfinite(axis)))
+                return fallback;
+
+            return axis * math.rsqrt(lengthSq);
         }
 
         private static float4x4 ToFloat4x4(Matrix4x4 matrix)

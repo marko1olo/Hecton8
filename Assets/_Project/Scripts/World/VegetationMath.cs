@@ -33,7 +33,7 @@ namespace Hecton8.World
             out float occupancy)
         {
             float2 world = new float2(worldX, worldZ);
-            float2 flowDirection = math.normalizesafe(floatingFlowDirection, new float2(1f, 0f));
+            float2 flowDirection = NormalizeSafe(floatingFlowDirection, new float2(1f, 0f));
             float2 crossFlow = new float2(-flowDirection.y, flowDirection.x);
             float2 flowSpace = new float2(
                 math.dot(world, flowDirection),
@@ -146,7 +146,7 @@ namespace Hecton8.World
                 localSargassumVisibilityBand);
             float sargassumCover = math.saturate(densityChannels.z * sargassumWeight * verticalConcealment);
             float combinedDensity = grassCover + kelpCover + sargassumCover;
-            return math.saturate(1f - math.exp(-combinedDensity));
+            return ApproximateOneMinusExpNegPositive(combinedDensity);
         }
 
         public static float EvaluateSargassumVerticalConcealment(
@@ -472,6 +472,29 @@ namespace Hecton8.World
             float2 sampleX0 = math.lerp(sample00, sample10, fracX);
             float2 sampleX1 = math.lerp(sample01, sample11, fracX);
             return math.lerp(sampleX0, sampleX1, fracZ);
+        }
+
+        private static float2 NormalizeSafe(float2 value, float2 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > 0.000001f
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float ApproximateOneMinusExpNegPositive(float x)
+        {
+            return math.saturate(1f - ApproximateExpNegPositive(x));
+        }
+
+        private static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(x, 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
         }
     }
 }

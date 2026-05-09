@@ -23,6 +23,7 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -118,6 +119,7 @@ namespace Hecton8.Gameplay
 
         // Pre-cached player tag
         private const string PlayerTag = "Player";
+        private const float FacingDotThresholdSq = 0.81f; // 0.9^2, avoids normalizing target vector.
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC ACCESSORS
@@ -229,9 +231,12 @@ namespace Hecton8.Gameplay
         {
             if (_playerTarget == null) return;
 
-            float distance = Vector3.Distance(_transform.position, _playerTarget.position);
+            Vector3 toTarget = _playerTarget.position - _transform.position;
+            float distanceSq = toTarget.sqrMagnitude;
+            float aggroRadiusSq = aggroRadius * aggroRadius;
+            float minDistanceSq = minDistance * minDistance;
 
-            if (distance <= aggroRadius && distance >= minDistance)
+            if (distanceSq <= aggroRadiusSq && distanceSq >= minDistanceSq)
             {
                 _state = FloraState.Tracking;
             }
@@ -245,10 +250,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float distance = Vector3.Distance(_transform.position, _playerTarget.position);
+            Vector3 toTarget = _playerTarget.position - _transform.position;
+            float distanceSq = toTarget.sqrMagnitude;
+            float aggroRadiusSq = aggroRadius * aggroRadius;
+            float minDistanceSq = minDistance * minDistance;
 
             // Check if target left range
-            if (distance > aggroRadius || distance < minDistance)
+            if (distanceSq > aggroRadiusSq || distanceSq < minDistanceSq)
             {
                 _state = FloraState.Idle;
                 return;
@@ -302,11 +310,14 @@ namespace Hecton8.Gameplay
         {
             if (_playerTarget == null || aimingBone == null) return false;
 
-            Vector3 toTarget = (_playerTarget.position - aimingBone.position).normalized;
+            Vector3 toTarget = _playerTarget.position - aimingBone.position;
+            float toTargetLengthSq = toTarget.sqrMagnitude;
+            if (toTargetLengthSq <= 0.0001f) return false;
+
             Vector3 forward = aimingBone.forward;
 
             float dot = Vector3.Dot(forward, toTarget);
-            return dot > 0.9f; // Within ~25 degrees
+            return dot > 0f && dot * dot >= FacingDotThresholdSq * toTargetLengthSq; // Within ~25 degrees
         }
 
         // ══════════════════════════════════════════════════════════
@@ -324,7 +335,7 @@ namespace Hecton8.Gameplay
             Quaternion spawnRot = muzzlePoint.rotation;
 
             // Add inaccuracy
-            float randomAngle = Random.Range(-inaccuracy, inaccuracy);
+            float randomAngle = UnityEngine.Random.Range(-inaccuracy, inaccuracy);
             spawnRot = Quaternion.AngleAxis(randomAngle, Vector3.up) * spawnRot;
 
             ObjectPoolManager pool = GlobalRegistry.ObjectPool;
@@ -349,16 +360,16 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            // Set projectile velocity
-            if (projectile.TryGetComponent(out Rigidbody rb))
-            {
-                rb.linearVelocity = spawnRot * Vector3.forward * projectileSpeed;
-            }
+            Vector3 projectileVelocity = ResolveSafeProjectileVelocity(spawnRot, projectileSpeed);
 
             // Initialize projectile
             if (projectile.TryGetComponent(out FloraProjectile floraProjectile))
             {
-                floraProjectile.Initialize(spawnRot * Vector3.forward * projectileSpeed);
+                floraProjectile.Initialize(projectileVelocity);
+            }
+            else if (projectile.TryGetComponent(out Rigidbody rb))
+            {
+                rb.linearVelocity = projectileVelocity;
             }
 
             // Play shoot sound
@@ -414,6 +425,21 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _isRegistered = false;
+        }
+
+        private static Vector3 ResolveSafeProjectileVelocity(Quaternion spawnRotation, float authoredSpeed)
+        {
+            Vector3 forward = spawnRotation * Vector3.forward;
+            if (!IsFinite(forward))
+                return Vector3.zero;
+
+            Vector3 velocity = forward * math.max(0f, authoredSpeed);
+            return IsFinite(velocity) ? velocity : Vector3.zero;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) && float.IsFinite(value.y) && float.IsFinite(value.z);
         }
 
         // ══════════════════════════════════════════════════════════

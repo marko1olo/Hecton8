@@ -19,6 +19,19 @@ float4 _HectonBiolumCascadeParams;
 float4 _HectonBiolumVolumeTexelSize;
 uint _HectonBiolumPointCount;
 
+float ApproxLength2(float2 value)
+{
+    float2 absValue = abs(value);
+    float major = max(absValue.x, absValue.y);
+    float minor = min(absValue.x, absValue.y);
+    return major + minor * 0.375;
+}
+
+float FastTriangle01(float phase)
+{
+    return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+}
+
 float3 ResolveVoxelWorldPosition(uint3 dispatchThreadId)
 {
     float3 uv = (float3(dispatchThreadId) + 0.5) * _HectonBiolumVolumeTexelSize.xyz;
@@ -77,8 +90,8 @@ void DiffuseBiolumVolume(uint3 dispatchThreadId : SV_DispatchThreadID)
     float neighborLuminance = dot(max(neighborAverage.rgb, 0.0), float3(0.2126, 0.7152, 0.0722));
     float spike01 = saturate((neighborLuminance - spikeThreshold) / max(1.0 - spikeThreshold, 0.001));
     float3 worldPosition = ResolveVoxelWorldPosition(dispatchThreadId);
-    float wavePhase = cascadeTime * cascadeSpeed - length(worldPosition.xz) * 0.17 - worldPosition.y * 0.035;
-    float waveGate = 0.5 + 0.5 * sin(wavePhase);
+    float wavePhase = cascadeTime * cascadeSpeed - ApproxLength2(worldPosition.xz) * 0.17 - worldPosition.y * 0.035;
+    float waveGate = FastTriangle01(wavePhase);
     float3 cascadeRadiance = neighborAverage.rgb * (spike01 * spike01 * cascadeGain * waveGate * deltaTime);
     float4 resolved = lerp(center, neighborAverage, blend) * attenuation;
     resolved.rgb += cascadeRadiance;
@@ -105,9 +118,9 @@ void InjectBiolumPoints(uint3 dispatchThreadId : SV_DispatchThreadID)
     {
         BiolumPoint point = _HectonBiolumPoints[pointIndex];
         float3 toVoxel = worldPosition - point.positionRange.xyz;
-        float distance = length(toVoxel);
         float radius = max(point.positionRange.w, 0.001);
-        float falloff = saturate(1.0 - distance / radius);
+        float radiusSq = max(radius * radius, 0.000001);
+        float falloff = saturate(1.0 - dot(toVoxel, toVoxel) / radiusSq);
         float weight = falloff * falloff;
         injectedRadiance += point.colorIntensity.rgb * (point.colorIntensity.w * weight * injectionStrength);
     }

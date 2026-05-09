@@ -2,6 +2,8 @@ using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Input;
 using Hecton.Localization;
+using System;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -10,6 +12,9 @@ namespace Hecton8.Gameplay
     public sealed class StunPistolTool : PlayerTool
     {
         public const string StunCategory = "STUN";
+        private const string GenericBioformLabel = "BIOFORM";
+        private const string GenericFieldTargetLabel = "FIELD TARGET";
+
         private readonly struct StunAssessment
         {
             public readonly string Headline;
@@ -25,13 +30,13 @@ namespace Hecton8.Gameplay
                 Severity = severity;
             }
 
-            public string BuildHudMessage()
+            public bool TryWriteHudMessage(ref FixedCharBuffer buffer)
             {
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.STUN_HUD_ASSESSMENT, "{0} | {1} | {2}"),
-                    Headline,
-                    Summary,
-                    Recommendation);
+                return AppendText(ref buffer, Headline) &&
+                       AppendText(ref buffer, " | ") &&
+                       AppendText(ref buffer, Summary) &&
+                       AppendText(ref buffer, " | ") &&
+                       AppendText(ref buffer, Recommendation);
             }
         }
 
@@ -51,6 +56,10 @@ namespace Hecton8.Gameplay
         private int _cachedAssessmentFrame = -1;
         private bool _cachedAssessmentValid;
         private StunAssessment _cachedAssessment;
+        private static FixedCharBuffer s_hudBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - stun pistol HUD staging buffer - owner: StunPistolTool
+        private static FixedCharBuffer s_logSummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - stun pistol field log staging buffer - owner: StunPistolTool
+        private static FixedCharBuffer s_legacySummaryBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - stun pistol legacy summary/directive bridge - owner: StunPistolTool
+        private static FixedCharBuffer s_assessmentTextBuffer = new FixedCharBuffer(512); // COLD ALLOC: char[512] - stun pistol assessment text staging buffer - owner: StunPistolTool
 
         private void Awake()
         {
@@ -73,13 +82,10 @@ namespace Hecton8.Gameplay
                     _cachedTransform.forward,
                     impulse);
 
-                FaunaBrain ai = hit.collider.GetComponent<FaunaBrain>();
-                if (ai == null)
-                    ai = hit.collider.GetComponentInParent<FaunaBrain>();
-
+                FaunaBrain ai = ResolveFaunaBrain(hit.collider);
                 if (ai != null)
                 {
-                    StunTargetRuntime stunState = ai.GetComponent<StunTargetRuntime>();
+                    StunTargetRuntime stunState = ResolveStunRuntime(ai);
                     if (stunState == null)
                         stunState = ai.gameObject.AddComponent<StunTargetRuntime>();
 
@@ -89,14 +95,7 @@ namespace Hecton8.Gameplay
                     if (Time.time >= _nextFeedbackAt)
                     {
                         PublishAssessment(assessment);
-                        FieldOperationLogSystem.RecordOperation(
-                            ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
-                            assessment.Headline,
-                            string.Format(
-                                ResolveLocalized(LocalizationKeys.STUN_LOG_ASSESSMENT, "{0} | {1}"),
-                                assessment.Summary,
-                                assessment.Recommendation),
-                            assessment.Severity);
+                        RecordAssessmentLog(assessment);
                         _nextFeedbackAt = Time.time + feedbackInterval;
                     }
                 }
@@ -105,32 +104,19 @@ namespace Hecton8.Gameplay
                     if (TryBuildDescriptorAssessment(hit.collider, hit.distance, out StunAssessment descriptorAssessment))
                     {
                         PublishAssessment(descriptorAssessment);
-                        FieldOperationLogSystem.RecordOperation(
-                            ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
-                            descriptorAssessment.Headline,
-                            string.Format(
-                                ResolveLocalized(LocalizationKeys.STUN_LOG_ASSESSMENT, "{0} | {1}"),
-                                descriptorAssessment.Summary,
-                                descriptorAssessment.Recommendation),
-                            descriptorAssessment.Severity);
+                        RecordAssessmentLog(descriptorAssessment);
                     }
                     else
                     {
-                        ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.STUN_HUD_NO_BIOFORM_CIRCUIT, "STUN PISTOL - NO BIOFORM CIRCUIT"));
-                        FieldOperationLogSystem.RecordOperation(
-                            ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
-                            ResolveLocalized(LocalizationKeys.STUN_LOG_NON_BIOFORM_TITLE, "STUN SHOT HIT NON-BIOFORM TARGET"),
-                            string.Format(
-                                ResolveLocalized(LocalizationKeys.STUN_LOG_NON_BIOFORM_MESSAGE, "{0} absorbed a stun shot without a compatible AI circuit."),
-                                hit.collider.gameObject.name),
-                            "WARN");
+                        PublishWarningMessage(ResolveLocalized(LocalizationKeys.STUN_HUD_NO_BIOFORM_CIRCUIT, "STUN PISTOL - NO BIOFORM CIRCUIT"));
+                        RecordNonBioformLog();
                     }
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
             }
             else if (Time.time >= _nextFeedbackAt)
             {
-                ToolHitUtility.ShowWarning(ResolveLocalized(LocalizationKeys.STUN_HUD_NO_TARGET_LOCK, "STUN PISTOL - NO TARGET LOCK"));
+                PublishWarningMessage(ResolveLocalized(LocalizationKeys.STUN_HUD_NO_TARGET_LOCK, "STUN PISTOL - NO TARGET LOCK"));
                 FieldOperationLogSystem.RecordOperation(
                     ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
                     ResolveLocalized(LocalizationKeys.STUN_LOG_CLEAR_TITLE, "STUN SHOT RETURNED CLEAR"),
@@ -146,7 +132,7 @@ namespace Hecton8.Gameplay
         public override void ToolTick(float deltaTime)
         {
             if (_cooldown > 0f)
-                _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
+                _cooldown = math.max(0f, _cooldown - deltaTime);
 
             IInputService inputService = GlobalRegistry.Input;
             PlayerInputState inputState = inputService != null && inputService.IsPlayerInputEnabled
@@ -158,28 +144,53 @@ namespace Hecton8.Gameplay
 
         public override string GetOperationalSummary()
         {
+            s_legacySummaryBuffer.Clear();
+            WriteOperationalSummary(ref s_legacySummaryBuffer);
+            return CreateLegacyString(in s_legacySummaryBuffer);
+        }
+
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
             if (_cooldown > 0f)
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.STUN_OPERATIONAL_RECHARGING, "STUN PISTOL // RECHARGING {0:0.0}S"),
-                    _cooldown);
+            {
+                AppendText(ref buffer, "STUN PISTOL // RECHARGING ");
+                buffer.AppendFloat(_cooldown, 1);
+                AppendText(ref buffer, "S");
+                return;
+            }
 
             if (TryGetAssessmentCached(out StunAssessment assessment))
-                return string.Format(
-                    ResolveLocalized(LocalizationKeys.STUN_OPERATIONAL_ASSESSMENT, "STUN PISTOL // {0}"),
-                    assessment.Headline);
+            {
+                AppendText(ref buffer, "STUN PISTOL // ");
+                AppendText(ref buffer, assessment.Headline);
+                return;
+            }
 
-            return ResolveLocalized(LocalizationKeys.STUN_OPERATIONAL_READY, "STUN PISTOL // READY");
+            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.STUN_OPERATIONAL_READY, "STUN PISTOL // READY"));
         }
 
         public override string GetOperationalDirective()
         {
+            s_legacySummaryBuffer.Clear();
+            WriteOperationalDirective(ref s_legacySummaryBuffer);
+            return CreateLegacyString(in s_legacySummaryBuffer);
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
             if (_cooldown > 0f)
-                return ResolveLocalized(LocalizationKeys.STUN_DIRECTIVE_RECHARGING, "Capacitors are recharging for the next disruption shot.");
+            {
+                AppendText(ref buffer, ResolveLocalized(LocalizationKeys.STUN_DIRECTIVE_RECHARGING, "Capacitors are recharging for the next disruption shot."));
+                return;
+            }
 
             if (TryGetAssessmentCached(out StunAssessment assessment))
-                return assessment.Recommendation;
+            {
+                AppendText(ref buffer, assessment.Recommendation);
+                return;
+            }
 
-            return ResolveLocalized(LocalizationKeys.STUN_DIRECTIVE_READY, "Primary disrupts. Secondary checks whether the target is worth stunning.");
+            AppendText(ref buffer, ResolveLocalized(LocalizationKeys.STUN_DIRECTIVE_READY, "Primary disrupts. Secondary checks whether the target is worth stunning."));
         }
 
         public override void UseSecondary(float deltaTime)
@@ -198,23 +209,13 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            FaunaBrain ai = hit.collider.GetComponent<FaunaBrain>();
-            if (ai == null)
-                ai = hit.collider.GetComponentInParent<FaunaBrain>();
-
+            FaunaBrain ai = ResolveFaunaBrain(hit.collider);
             if (ai == null)
             {
                 if (TryBuildDescriptorAssessment(hit.collider, hit.distance, out StunAssessment descriptorAssessment))
                 {
                     PublishAssessment(descriptorAssessment);
-                    FieldOperationLogSystem.RecordOperation(
-                        ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
-                        descriptorAssessment.Headline,
-                        string.Format(
-                            ResolveLocalized(LocalizationKeys.STUN_LOG_ASSESSMENT, "{0} | {1}"),
-                            descriptorAssessment.Summary,
-                            descriptorAssessment.Recommendation),
-                        descriptorAssessment.Severity);
+                    RecordAssessmentLog(descriptorAssessment);
                     _nextFeedbackAt = Time.time + feedbackInterval;
                 }
                 else
@@ -225,17 +226,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            StunTargetRuntime stunState = ai.GetComponent<StunTargetRuntime>();
+            StunTargetRuntime stunState = ResolveStunRuntime(ai);
             StunAssessment assessment = BuildAssessment(ai, stunState);
             PublishAssessment(assessment);
-            FieldOperationLogSystem.RecordOperation(
-                ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
-                assessment.Headline,
-                string.Format(
-                    ResolveLocalized(LocalizationKeys.STUN_LOG_ASSESSMENT, "{0} | {1}"),
-                    assessment.Summary,
-                    assessment.Recommendation),
-                assessment.Severity);
+            RecordAssessmentLog(assessment);
 
             _nextFeedbackAt = Time.time + feedbackInterval;
             InvalidateAssessmentCache();
@@ -246,7 +240,7 @@ namespace Hecton8.Gameplay
             if (Time.time < _nextFeedbackAt)
                 return;
 
-            ToolHitUtility.ShowWarning(message);
+            PublishWarningMessage(message);
             FieldOperationLogSystem.RecordOperation(
                 ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
                 message,
@@ -264,10 +258,7 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            FaunaBrain ai = hit.collider.GetComponent<FaunaBrain>();
-            if (ai == null)
-                ai = hit.collider.GetComponentInParent<FaunaBrain>();
-
+            FaunaBrain ai = ResolveFaunaBrain(hit.collider);
             if (ai == null)
             {
                 if (TryBuildDescriptorAssessment(hit.collider, hit.distance, out assessment))
@@ -281,7 +272,7 @@ namespace Hecton8.Gameplay
                 return true;
             }
 
-            StunTargetRuntime stunState = ai.GetComponent<StunTargetRuntime>();
+            StunTargetRuntime stunState = ResolveStunRuntime(ai);
             assessment = BuildAssessment(ai, stunState);
             return true;
         }
@@ -314,6 +305,26 @@ namespace Hecton8.Gameplay
             return TryResolveQueuedRaycast(_cachedTransform.position, _cachedTransform.forward, range, targetMask.value, QueryTriggerInteraction.Ignore, out hit);
         }
 
+        private static FaunaBrain ResolveFaunaBrain(Collider target)
+        {
+            if (target == null)
+                return null;
+
+            if (target.TryGetComponent(out FaunaBrain ai))
+                return ai;
+
+            return target.GetComponentInParent<FaunaBrain>();
+        }
+
+        private static StunTargetRuntime ResolveStunRuntime(FaunaBrain ai)
+        {
+            if (ai == null)
+                return null;
+
+            ai.TryGetComponent(out StunTargetRuntime stunState);
+            return stunState;
+        }
+
         private static StunAssessment BuildAssessment(FaunaBrain ai, StunTargetRuntime stunState)
         {
             if (ai == null)
@@ -328,12 +339,13 @@ namespace Hecton8.Gameplay
             if (stunState != null && stunState.IsArmed)
             {
                 return new StunAssessment(
-                    string.Format(
+                    CreateSingleFloatText(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_TARGET_DISRUPTED, "STUN PISTOL - TARGET DISRUPTED {0:0.0}S"),
-                        stunState.RemainingTime),
-                    string.Format(
+                        stunState.RemainingTime,
+                        1),
+                    CreateSingleStringText(
                         ResolveLocalized(LocalizationKeys.STUN_SUMMARY_TARGET_DISRUPTED, "{0} is already offline and unable to act."),
-                        ai.gameObject.name),
+                        GenericBioformLabel),
                     ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_TARGET_DISRUPTED, "Reposition, retreat, or finish another target."),
                     "INFO");
             }
@@ -342,9 +354,9 @@ namespace Hecton8.Gameplay
             {
                 return new StunAssessment(
                     ResolveLocalized(LocalizationKeys.STUN_HEADLINE_TARGET_DOWN, "STUN PISTOL - TARGET DOWN"),
-                    string.Format(
+                    CreateSingleStringText(
                         ResolveLocalized(LocalizationKeys.STUN_SUMMARY_TARGET_DOWN, "{0} no longer presents an active threat."),
-                        ai.gameObject.name),
+                        GenericBioformLabel),
                     ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_TARGET_DOWN, "Recover samples or move on."),
                     "INFO");
             }
@@ -353,9 +365,9 @@ namespace Hecton8.Gameplay
             {
                 return new StunAssessment(
                     ResolveLocalized(LocalizationKeys.STUN_HEADLINE_DORMANT_CONTACT, "STUN PISTOL - DORMANT CONTACT"),
-                    string.Format(
+                    CreateSingleStringText(
                         ResolveLocalized(LocalizationKeys.STUN_SUMMARY_DORMANT_CONTACT, "{0} is dormant and can be disrupted before wake-up."),
-                        ai.gameObject.name),
+                        GenericBioformLabel),
                     ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_DORMANT_CONTACT, "Take the shot now or bypass quietly."),
                     "INFO");
             }
@@ -364,9 +376,9 @@ namespace Hecton8.Gameplay
             {
                 return new StunAssessment(
                     ResolveLocalized(LocalizationKeys.STUN_HEADLINE_FRACTURED_TARGET, "STUN PISTOL - FRACTURED TARGET"),
-                    string.Format(
+                    CreateSingleStringText(
                         ResolveLocalized(LocalizationKeys.STUN_SUMMARY_FRACTURED_TARGET, "{0} is heavily weakened and close to collapse."),
-                        ai.gameObject.name),
+                        GenericBioformLabel),
                     ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_FRACTURED_TARGET, "Disrupt, then finish or disengage safely."),
                     "WARN");
             }
@@ -376,18 +388,18 @@ namespace Hecton8.Gameplay
                 case FaunaBrain.AIState.Aggressive:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_AGGRESSIVE_THREAT, "STUN PISTOL - AGGRESSIVE THREAT"),
-                        string.Format(
+                        CreateSingleStringText(
                             ResolveLocalized(LocalizationKeys.STUN_SUMMARY_AGGRESSIVE_THREAT, "{0} is actively attacking and should be disrupted immediately."),
-                            ai.gameObject.name),
+                            GenericBioformLabel),
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_AGGRESSIVE_THREAT, "Fire now, then create distance."),
                         "CRITICAL");
 
                 case FaunaBrain.AIState.Threaten:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_TERRITORIAL_WARNING, "STUN PISTOL - TERRITORIAL WARNING"),
-                        string.Format(
+                        CreateSingleStringText(
                             ResolveLocalized(LocalizationKeys.STUN_SUMMARY_TERRITORIAL_WARNING, "{0} is pressuring you and may escalate if you keep pushing forward."),
-                            ai.gameObject.name),
+                            GenericBioformLabel),
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_TERRITORIAL_WARNING, "A disruption shot can break the warning spiral before it becomes a direct attack."),
                         "WARN");
 
@@ -400,16 +412,16 @@ namespace Hecton8.Gameplay
                             ? ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PACK_HUNT, "STUN PISTOL - PACK HUNT TRACKING")
                             : ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PREDATOR_TRACKING, "STUN PISTOL - PREDATOR TRACKING"),
                         packHunt
-                            ? string.Format(
+                            ? CreateSingleStringText(
                                 ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PACK_HUNT, "{0} is tracking your movement as part of a hunting group."),
-                                ai.gameObject.name)
+                                GenericBioformLabel)
                             : (feintCapable
-                                ? string.Format(
+                                ? CreateSingleStringText(
                                     ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PREDATOR_FEINT, "{0} is tracking your movement and can fake a charge before the real commit."),
-                                    ai.gameObject.name)
-                                : string.Format(
+                                    GenericBioformLabel)
+                                : CreateSingleStringText(
                                     ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PREDATOR_TRACKING, "{0} is tracking your movement and building toward a commit."),
-                                    ai.gameObject.name)),
+                                    GenericBioformLabel)),
                         packHunt
                             ? ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_PACK_HUNT, "Disrupt now and break the group before the flank closes.")
                             : (feintCapable
@@ -429,16 +441,16 @@ namespace Hecton8.Gameplay
                                 ? ResolveLocalized(LocalizationKeys.STUN_HEADLINE_LEVIATHAN_SENTINEL, "STUN PISTOL - LEVIATHAN SENTINEL")
                                 : ResolveLocalized(LocalizationKeys.STUN_HEADLINE_LEVIATHAN_PRESSURE, "STUN PISTOL - LEVIATHAN PRESSURE")),
                         ambushLeviathan
-                            ? string.Format(
+                            ? CreateSingleStringText(
                                 ResolveLocalized(LocalizationKeys.STUN_SUMMARY_LEVIATHAN_AMBUSH, "{0} is coiling for a burst attack with very little warning."),
-                                ai.gameObject.name)
+                                GenericBioformLabel)
                             : (sentinelLeviathan
-                                ? string.Format(
+                                ? CreateSingleStringText(
                                     ResolveLocalized(LocalizationKeys.STUN_SUMMARY_LEVIATHAN_SENTINEL, "{0} is holding a guarded route and may force you off the line."),
-                                    ai.gameObject.name)
-                                : string.Format(
+                                    GenericBioformLabel)
+                                : CreateSingleStringText(
                                     ResolveLocalized(LocalizationKeys.STUN_SUMMARY_LEVIATHAN_PRESSURE, "{0} is holding a heavy pressure circle and may crash into direct contact if you close distance."),
-                                    ai.gameObject.name)),
+                                    GenericBioformLabel)),
                         ambushLeviathan
                             ? ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_LEVIATHAN_AMBUSH, "Disrupt only to break the burst window, then move immediately.")
                             : (sentinelLeviathan
@@ -450,36 +462,36 @@ namespace Hecton8.Gameplay
                 case FaunaBrain.AIState.Feint:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_FALSE_CHARGE, "STUN PISTOL - FALSE CHARGE"),
-                        string.Format(
+                        CreateSingleStringText(
                             ResolveLocalized(LocalizationKeys.STUN_SUMMARY_FALSE_CHARGE, "{0} is in a false-charge pass and may peel away or crash into a real hit if you hold the line."),
-                            ai.gameObject.name),
+                            GenericBioformLabel),
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_FALSE_CHARGE, "Hold the shot until the pass tightens or the return swing begins."),
                         "CRITICAL");
 
                 case FaunaBrain.AIState.Escape:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PANIC_RESPONSE, "STUN PISTOL - PANIC RESPONSE"),
-                        string.Format(
+                        CreateSingleStringText(
                             ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PANIC_RESPONSE, "{0} is fleeing and can be stopped for recovery or control."),
-                            ai.gameObject.name),
+                            GenericBioformLabel),
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_PANIC_RESPONSE, "Disrupt if pursuit matters, otherwise hold fire."),
                         "INFO");
 
                 case FaunaBrain.AIState.Wander:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_PATROL_CONTACT, "STUN PISTOL - PATROL CONTACT"),
-                        string.Format(
+                        CreateSingleStringText(
                             ResolveLocalized(LocalizationKeys.STUN_SUMMARY_PATROL_CONTACT, "{0} is mobile but not yet committed to attack."),
-                            ai.gameObject.name),
+                            GenericBioformLabel),
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_PATROL_CONTACT, "Open with disruption before it closes distance."),
                         "INFO");
 
                 default:
                     return new StunAssessment(
                         ResolveLocalized(LocalizationKeys.STUN_HEADLINE_TARGET_VULNERABLE, "STUN PISTOL - TARGET VULNERABLE"),
-                        string.Format(
+                        CreateSingleStringText(
                             ResolveLocalized(LocalizationKeys.STUN_SUMMARY_TARGET_VULNERABLE, "{0} is stable and susceptible to a disruption shot."),
-                            ai.gameObject.name),
+                            GenericBioformLabel),
                         ResolveLocalized(LocalizationKeys.STUN_RECOMMEND_TARGET_VULNERABLE, "Take a clean shot when ready."),
                         "INFO");
             }
@@ -504,10 +516,75 @@ namespace Hecton8.Gameplay
 
         private static void PublishAssessment(StunAssessment assessment)
         {
+            s_hudBuffer.Clear();
+            if (!assessment.TryWriteHudMessage(ref s_hudBuffer))
+                return;
+
             if (assessment.Severity == "CRITICAL" || assessment.Severity == "WARN")
-                ToolHitUtility.ShowWarning(assessment.BuildHudMessage());
+                ToolHitUtility.ShowWarning(in s_hudBuffer);
             else
-                ToolHitUtility.ShowInfo(assessment.BuildHudMessage());
+                ToolHitUtility.ShowInfo(in s_hudBuffer);
+        }
+
+        private static void PublishWarningMessage(string message)
+        {
+            s_hudBuffer.Clear();
+            if (AppendText(ref s_hudBuffer, message))
+                ToolHitUtility.ShowWarning(in s_hudBuffer);
+        }
+
+        private static void RecordAssessmentLog(StunAssessment assessment)
+        {
+            s_logSummaryBuffer.Clear();
+            if (!TryAppendTwoStringTemplate(
+                    ref s_logSummaryBuffer,
+                    ResolveLocalized(LocalizationKeys.STUN_LOG_ASSESSMENT, "{0} | {1}"),
+                    assessment.Summary,
+                    assessment.Recommendation))
+            {
+                s_logSummaryBuffer.Clear();
+                AppendText(ref s_logSummaryBuffer, assessment.Summary);
+                AppendText(ref s_logSummaryBuffer, " | ");
+                AppendText(ref s_logSummaryBuffer, assessment.Recommendation);
+            }
+
+            FieldOperationLogSystem.RecordOperation(
+                ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
+                assessment.Headline,
+                in s_logSummaryBuffer,
+                assessment.Severity);
+        }
+
+        private static void RecordNonBioformLog()
+        {
+            s_logSummaryBuffer.Clear();
+            TryAppendSingleStringTemplate(
+                ref s_logSummaryBuffer,
+                ResolveLocalized(
+                    LocalizationKeys.STUN_LOG_NON_BIOFORM_MESSAGE,
+                    "{0} absorbed a stun shot without a compatible AI circuit."),
+                GenericFieldTargetLabel);
+
+            FieldOperationLogSystem.RecordOperation(
+                ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
+                ResolveLocalized(LocalizationKeys.STUN_LOG_NON_BIOFORM_TITLE, "STUN CHECK REJECTED TARGET"),
+                in s_logSummaryBuffer,
+                "WARN");
+        }
+
+        internal static void RecordRecoveryLog()
+        {
+            s_logSummaryBuffer.Clear();
+            TryAppendSingleStringTemplate(
+                ref s_logSummaryBuffer,
+                ResolveLocalized(LocalizationKeys.STUN_LOG_RECOVERED_MESSAGE, "{0} recovered from disruption and resumed activity."),
+                GenericBioformLabel);
+
+            FieldOperationLogSystem.RecordOperation(
+                ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunCategory),
+                ResolveLocalized(LocalizationKeys.STUN_LOG_RECOVERED_TITLE, "BIOFORM RECOVERED"),
+                in s_logSummaryBuffer,
+                "INFO");
         }
 
         public static string ResolveLocalized(string key, string fallback)
@@ -515,6 +592,128 @@ namespace Hecton8.Gameplay
             return Hecton8.Core.GlobalRegistry.Localization != null
                 ? Hecton8.Core.GlobalRegistry.Localization.GetOrFallback(Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private static string CreateLegacyString(in FixedCharBuffer buffer)
+        {
+            return buffer.Length > 0
+                ? new string(buffer.Buffer, 0, buffer.Length)
+                : string.Empty;
+        }
+
+        private static string CreateSingleStringText(string template, string value)
+        {
+            s_assessmentTextBuffer.Clear();
+            if (!TryAppendSingleStringTemplate(ref s_assessmentTextBuffer, template, value))
+                return template;
+
+            return CreateLegacyString(in s_assessmentTextBuffer);
+        }
+
+        private static string CreateSingleFloatText(string template, float value, int decimals)
+        {
+            s_assessmentTextBuffer.Clear();
+            if (!TryAppendSingleFloatTemplate(ref s_assessmentTextBuffer, template, value, decimals))
+                return template;
+
+            return CreateLegacyString(in s_assessmentTextBuffer);
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value);
+        }
+
+        private static bool TryAppendSingleStringTemplate(ref FixedCharBuffer buffer, string template, string value)
+        {
+            return TryAppendStunTemplate(
+                ref buffer,
+                template,
+                value,
+                null,
+                0f,
+                0,
+                0x01);
+        }
+
+        private static bool TryAppendTwoStringTemplate(ref FixedCharBuffer buffer, string template, string value0, string value1)
+        {
+            return TryAppendStunTemplate(
+                ref buffer,
+                template,
+                value0,
+                value1,
+                0f,
+                0,
+                0x03);
+        }
+
+        private static bool TryAppendSingleFloatTemplate(ref FixedCharBuffer buffer, string template, float value, int decimals)
+        {
+            return TryAppendStunTemplate(
+                ref buffer,
+                template,
+                null,
+                null,
+                value,
+                decimals,
+                0x04);
+        }
+
+        private static bool TryAppendStunTemplate(
+            ref FixedCharBuffer buffer,
+            string template,
+            string stringArg0,
+            string stringArg1,
+            float floatArg0,
+            int floatDecimals,
+            byte argumentMask)
+        {
+            if (string.IsNullOrEmpty(template))
+                return true;
+
+            ReadOnlySpan<char> span = template.AsSpan();
+            bool wroteToken = false;
+            int segmentStart = 0;
+            for (int i = 0; i < span.Length; i++)
+            {
+                if (span[i] != '{' || i + 1 >= span.Length)
+                    continue;
+
+                char token = span[i + 1];
+                if (token != '0' && token != '1')
+                    continue;
+
+                int closeIndex = i + 2;
+                while (closeIndex < span.Length && span[closeIndex] != '}')
+                    closeIndex++;
+
+                if (closeIndex >= span.Length)
+                    continue;
+
+                if (i > segmentStart && !buffer.Append(span.Slice(segmentStart, i - segmentStart)))
+                    return false;
+
+                bool wrote = token switch
+                {
+                    '0' when (argumentMask & 0x01) != 0 => AppendText(ref buffer, stringArg0),
+                    '0' when (argumentMask & 0x04) != 0 => buffer.AppendFloat(floatArg0, floatDecimals),
+                    '1' when (argumentMask & 0x02) != 0 => AppendText(ref buffer, stringArg1),
+                    _ => buffer.Append(span.Slice(i, closeIndex - i + 1))
+                };
+
+                if (!wrote)
+                    return false;
+
+                wroteToken = true;
+                i = closeIndex;
+                segmentStart = closeIndex + 1;
+            }
+
+            if (!wroteToken)
+                return buffer.Append(span);
+
+            return segmentStart >= span.Length || buffer.Append(span.Slice(segmentStart));
         }
     }
 
@@ -531,7 +730,7 @@ namespace Hecton8.Gameplay
         public void Apply(FaunaBrain target, float duration)
         {
             _target = target;
-            _remaining = Mathf.Max(_remaining, duration);
+            _remaining = math.max(_remaining, duration);
 
             if (_target != null && _target.enabled)
             {
@@ -573,13 +772,7 @@ namespace Hecton8.Gameplay
 
         private void LogRecovery()
         {
-            FieldOperationLogSystem.RecordOperation(
-                StunPistolTool.ResolveLocalized(LocalizationKeys.STUN_CATEGORY, StunPistolTool.StunCategory),
-                StunPistolTool.ResolveLocalized(LocalizationKeys.STUN_LOG_RECOVERED_TITLE, "BIOFORM RECOVERED"),
-                string.Format(
-                    StunPistolTool.ResolveLocalized(LocalizationKeys.STUN_LOG_RECOVERED_MESSAGE, "{0} recovered from disruption and resumed activity."),
-                    _target.gameObject.name),
-                "INFO");
+            StunPistolTool.RecordRecoveryLog();
         }
 
         private void RegisterToTickManager()
@@ -589,8 +782,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromTickManager()

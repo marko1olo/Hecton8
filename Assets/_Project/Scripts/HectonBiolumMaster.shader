@@ -121,6 +121,8 @@ Shader "Hecton8/BiolumMaster"
             HLSLPROGRAM
             #pragma vertex LitPassVertex
             #pragma fragment LitPassFragment
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             // ── URP Keywords ──
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
@@ -198,6 +200,7 @@ Shader "Hecton8/BiolumMaster"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float4 tangentOS  : TANGENT;
@@ -207,6 +210,7 @@ Shader "Hecton8/BiolumMaster"
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS      : SV_POSITION;
                 float2 uv              : TEXCOORD0;
                 float3 positionWS      : TEXCOORD1;
@@ -244,9 +248,28 @@ Shader "Hecton8/BiolumMaster"
                 return frac((a * 61.7731h + b * 173.2389h) * 43.3747h);
             }
 
+            float3 FastApproxNormalize3(float3 value)
+            {
+                float lenSq = dot(value, value);
+                float3 absValue = abs(value);
+                float maxAxis = max(absValue.x, max(absValue.y, absValue.z));
+                float minAxis = min(absValue.x, min(absValue.y, absValue.z));
+                float midAxis = absValue.x + absValue.y + absValue.z - maxAxis - minAxis;
+                float approxLength = max(0.0001, maxAxis + midAxis * 0.375 + minAxis * 0.125);
+                float3 approxNormal = value * rcp(approxLength);
+                float nearUnit = 1.0 - step(0.0625, abs(lenSq - 1.0));
+                return lerp(approxNormal, value, nearUnit);
+            }
+
+            half FastTrianglePulse(half phase)
+            {
+                half wave = frac(phase * 0.15915494h + 0.25h);
+                return 1.0h - abs(wave * 2.0h - 1.0h);
+            }
+
             /// Computes proximity reaction factor.
             /// Extracted for clarity and LOD gating.
-            /// Cost: ~4 ALU (sub, dot, sqrt, smoothstep) + branch
+            /// Cost: sub, dot, squared smoothstep + branch. No sqrt.
             half ComputeProximityFactor(float3 worldPos)
             {
                 // Skip if player position not published from C#
@@ -260,13 +283,15 @@ Shader "Hecton8/BiolumMaster"
                     return 1.0h;
 
                 float3 delta = worldPos - _PlayerPos.xyz;
-                half dist = (half)sqrt(dot(delta, delta));
+                half distSq = (half)dot(delta, delta);
 
                 half innerEdge = _ReactionDistance * _ReactionFalloff;
                 half outerEdge = _ReactionDistance;
+                half innerEdgeSq = innerEdge * innerEdge;
+                half outerEdgeSq = outerEdge * outerEdge;
 
                 // closeness: 1.0 at innerEdge, 0.0 at outerEdge+
-                half closeness = 1.0h - smoothstep(innerEdge, outerEdge, dist);
+                half closeness = 1.0h - smoothstep(innerEdgeSq, outerEdgeSq, distSq);
 
                 // Fear (mode 0): dims when player is close
                 if (mode == 0)
@@ -293,15 +318,15 @@ Shader "Hecton8/BiolumMaster"
                     return _EmissionIntensity * _PulseOffset;
 
                 // ────────────────────────────────────────────
-                //  1. PULSATION: sin wave with world desync
-                //     Cost: ~4 ALU (mad, sin, mad, saturate)
+                //  1. PULSATION: triangle wave with world desync
+                //     Cost: frac/abs ALU. No transcendental.
                 //     Used by both High and Med
                 // ────────────────────────────────────────────
                 half phase = (half)time * _PulseSpeed
                            + (half)worldPos.x * _DesyncScale
                            + (half)worldPos.z * _DesyncScale;
 
-                half pulsation = saturate(sin(phase) * _PulseAmplitude + _PulseOffset);
+                half pulsation = saturate((FastTrianglePulse(phase) * 2.0h - 1.0h) * _PulseAmplitude + _PulseOffset);
 
                 // ────────────────────────────────────────────
                 //  2. NASA-PUNK DIGITAL FLICKER (High only)
@@ -347,6 +372,8 @@ Shader "Hecton8/BiolumMaster"
             Varyings LitPassVertex(Attributes input)
             {
                 Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
                 VertexNormalInputs normalInput   = GetVertexNormalInputs(input.normalOS, input.tangentOS);
@@ -382,6 +409,7 @@ Shader "Hecton8/BiolumMaster"
 
             half4 LitPassFragment(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 // ════════════════════════════════════════════
                 //  TEXTURE SAMPLING (3 samples total)
                 // ════════════════════════════════════════════
@@ -421,7 +449,7 @@ Shader "Hecton8/BiolumMaster"
                     bitangent,
                     input.normalWS.xyz);
 
-                half3 normalWS = normalize(mul(normalTS, tangentToWorld));
+                half3 normalWS = (half3)FastApproxNormalize3(mul(normalTS, tangentToWorld));
 
                 // ════════════════════════════════════════════
                 //  EMISSION — trivial in Fragment
@@ -450,7 +478,7 @@ Shader "Hecton8/BiolumMaster"
                 inputData.positionWS                = input.positionWS;
                 inputData.positionCS                = input.positionCS;
                 inputData.normalWS                  = normalWS;
-                inputData.viewDirectionWS           = normalize(input.viewDirWS);
+                inputData.viewDirectionWS           = FastApproxNormalize3(input.viewDirWS);
                 inputData.fogCoord                  = input.fogFactor;
                 inputData.normalizedScreenSpaceUV   = GetNormalizedScreenSpaceUV(input.positionCS);
 
@@ -490,6 +518,8 @@ Shader "Hecton8/BiolumMaster"
             HLSLPROGRAM
             #pragma vertex ShadowPassVertex
             #pragma fragment ShadowPassFragment
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #pragma shader_feature_local _ALPHATEST_ON
 
@@ -525,6 +555,7 @@ Shader "Hecton8/BiolumMaster"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 #if defined(_ALPHATEST_ON)
@@ -534,6 +565,7 @@ Shader "Hecton8/BiolumMaster"
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 #if defined(_ALPHATEST_ON)
                     float2 uv : TEXCOORD0;
@@ -545,6 +577,8 @@ Shader "Hecton8/BiolumMaster"
             Varyings ShadowPassVertex(Attributes input)
             {
                 Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 float3 positionWS = TransformObjectToWorld(input.positionOS.xyz);
                 float3 normalWS   = TransformObjectToWorldNormal(input.normalOS);
@@ -569,6 +603,7 @@ Shader "Hecton8/BiolumMaster"
 
             half4 ShadowPassFragment(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(_ALPHATEST_ON)
                     half alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a;
                     clip(alpha * _BaseColor.a - _Cutoff);
@@ -596,6 +631,8 @@ Shader "Hecton8/BiolumMaster"
             HLSLPROGRAM
             #pragma vertex DepthOnlyVertex
             #pragma fragment DepthOnlyFragment
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #pragma shader_feature_local _ALPHATEST_ON
 
@@ -630,6 +667,7 @@ Shader "Hecton8/BiolumMaster"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 float4 positionOS : POSITION;
                 #if defined(_ALPHATEST_ON)
                     float2 uv : TEXCOORD0;
@@ -638,6 +676,7 @@ Shader "Hecton8/BiolumMaster"
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 #if defined(_ALPHATEST_ON)
                     float2 uv : TEXCOORD0;
@@ -647,6 +686,8 @@ Shader "Hecton8/BiolumMaster"
             Varyings DepthOnlyVertex(Attributes input)
             {
                 Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
 
                 #if defined(_ALPHATEST_ON)
@@ -658,6 +699,7 @@ Shader "Hecton8/BiolumMaster"
 
             half DepthOnlyFragment(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(_ALPHATEST_ON)
                     half alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a;
                     clip(alpha * _BaseColor.a - _Cutoff);
@@ -684,6 +726,8 @@ Shader "Hecton8/BiolumMaster"
             HLSLPROGRAM
             #pragma vertex DepthNormalsVertex
             #pragma fragment DepthNormalsFragment
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma shader_feature_local _NORMALMAP
@@ -718,8 +762,22 @@ Shader "Hecton8/BiolumMaster"
             TEXTURE2D(_BaseMap); SAMPLER(sampler_BaseMap);
             TEXTURE2D(_BumpMap); SAMPLER(sampler_BumpMap);
 
+            float3 FastApproxNormalize3(float3 value)
+            {
+                float lenSq = dot(value, value);
+                float3 absValue = abs(value);
+                float maxAxis = max(absValue.x, max(absValue.y, absValue.z));
+                float minAxis = min(absValue.x, min(absValue.y, absValue.z));
+                float midAxis = absValue.x + absValue.y + absValue.z - maxAxis - minAxis;
+                float approxLength = max(0.0001, maxAxis + midAxis * 0.375 + minAxis * 0.125);
+                float3 approxNormal = value * rcp(approxLength);
+                float nearUnit = 1.0 - step(0.0625, abs(lenSq - 1.0));
+                return lerp(approxNormal, value, nearUnit);
+            }
+
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
                 float4 tangentOS  : TANGENT;
@@ -730,6 +788,7 @@ Shader "Hecton8/BiolumMaster"
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 float3 normalWS   : TEXCOORD1;
                 #if defined(_ALPHATEST_ON) || defined(_NORMALMAP)
@@ -743,6 +802,8 @@ Shader "Hecton8/BiolumMaster"
             Varyings DepthNormalsVertex(Attributes input)
             {
                 Varyings output = (Varyings)0;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
 
                 VertexPositionInputs vertexInput = GetVertexPositionInputs(input.positionOS.xyz);
                 VertexNormalInputs normalInput   = GetVertexNormalInputs(input.normalOS, input.tangentOS);
@@ -763,12 +824,13 @@ Shader "Hecton8/BiolumMaster"
 
             half4 DepthNormalsFragment(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(_ALPHATEST_ON)
                     half alpha = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv).a;
                     clip(alpha * _BaseColor.a - _Cutoff);
                 #endif
 
-                half3 normalWS = normalize(input.normalWS);
+                half3 normalWS = (half3)FastApproxNormalize3(input.normalWS);
 
                 #if defined(_NORMALMAP)
                 {
@@ -778,7 +840,7 @@ Shader "Hecton8/BiolumMaster"
                     half sgn = input.tangentWS.w;
                     half3 bitangent = sgn * cross(input.normalWS, input.tangentWS.xyz);
                     half3x3 tbn = half3x3(input.tangentWS.xyz, bitangent, input.normalWS);
-                    normalWS = normalize(mul(normalTS, tbn));
+                    normalWS = (half3)FastApproxNormalize3(mul(normalTS, tbn));
                 }
                 #endif
 

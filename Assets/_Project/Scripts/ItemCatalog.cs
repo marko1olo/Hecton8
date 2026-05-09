@@ -200,6 +200,7 @@ namespace Hecton8.SaveSystem
         private string _lookupAmbiguitySummary;
         private List<ItemData> _runtimeItems;
         private const int DefaultWorldPrefabLruIdleFrames = 180;
+        private const int DeferredWorldPrefabReleaseCapacity = 16;
 
         /// <summary>
         /// True when the catalog detected at least one authored or runtime alias collision.
@@ -447,8 +448,8 @@ namespace Hecton8.SaveSystem
             if (_worldPrefabRuntimeLookup == null || !_worldPrefabRuntimeLookup.ContainsKey(hashId))
                 return;
 
-            _pendingWorldPrefabReleaseQueue ??= new Queue<int>(16); // COLD ALLOC: Queue<int>[16] - deferred Addressables release queue for world prefabs - owner: ItemCatalog
-            _pendingWorldPrefabReleaseSet ??= new HashSet<int>(); // COLD ALLOC: HashSet<int>[16] - dedupe guard for deferred Addressables release queue - owner: ItemCatalog
+            _pendingWorldPrefabReleaseQueue ??= new Queue<int>(DeferredWorldPrefabReleaseCapacity); // COLD ALLOC: Queue<int>[16] - deferred Addressables release queue for world prefabs - owner: ItemCatalog
+            _pendingWorldPrefabReleaseSet ??= new HashSet<int>(DeferredWorldPrefabReleaseCapacity); // COLD ALLOC: HashSet<int>[16] - dedupe guard for deferred Addressables release queue - owner: ItemCatalog
             if (_pendingWorldPrefabReleaseSet.Add(hashId))
                 _pendingWorldPrefabReleaseQueue.Enqueue(hashId);
 #endif

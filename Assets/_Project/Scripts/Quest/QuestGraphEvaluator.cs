@@ -8,7 +8,9 @@ using Hecton8.Environment;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Narrative;
+using Hecton.Localization;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Quest
@@ -20,7 +22,13 @@ namespace Hecton8.Quest
         private const float DepthTierFourMeters = 1000f;
         private const int PendingSignalCapacity = 16;
         private static readonly uint _deepAbyssZoneHash = QuestFlagHashKernel.ComputeStableHash("zone_deep_abyss");
+        private static readonly uint _PendingSignalOverflowWarningHash = unchecked((uint)LocHash.Compute("QuestGraphEvaluator.PendingSignalOverflow"));
+        private static readonly uint _ActiveEvaluatorRejectedWarningHash = unchecked((uint)LocHash.Compute("QuestGraphEvaluator.ActiveEvaluatorRejected"));
+        private static readonly uint _PendingSignalContextHash = unchecked((uint)LocHash.Compute("QuestGraphEvaluator.PendingSignals"));
+        private static readonly uint _ActiveEvaluatorContextHash = unchecked((uint)LocHash.Compute("QuestGraphEvaluator.ActiveEvaluators"));
         private static readonly RegistryBucket<QuestGraphEvaluator> _activeEvaluators = new RegistryBucket<QuestGraphEvaluator>(4);
+        private static int _activeEvaluatorRejectCount;
+        private static int _lastActiveEvaluatorRejectedTelemetryFrame = -1;
 
         private readonly QuestStateManager _stateManager;
         private readonly Action _onResultsAvailable;
@@ -28,21 +36,49 @@ namespace Hecton8.Quest
 
         private NativeQueue<QuestSignalPayload> _pendingSignals;
         private int _pendingSignalCount;
+        private int _droppedSignalCount;
+        private int _lastPendingSignalOverflowTelemetryFrame = -1;
         private bool _isBound;
         private bool _isDrainingSignals;
+
+        internal int DroppedSignalCount => _droppedSignalCount;
+        internal static int ActiveEvaluatorRejectCount => _activeEvaluatorRejectCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _activeEvaluators.Clear();
+            _activeEvaluatorRejectCount = 0;
+            _lastActiveEvaluatorRejectedTelemetryFrame = -1;
+        }
 
         public QuestGraphEvaluator(QuestStateManager stateManager, Action onResultsAvailable)
         {
             _stateManager = stateManager;
             _onResultsAvailable = onResultsAvailable;
             _pendingSignalsSentinelLabel = nameof(_pendingSignals) + RuntimeHelpers.GetHashCode(this);
-            _pendingSignals = new NativeQueue<QuestSignalPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<QuestSignalPayload>[16] - quest signal ingress lane drained on event receipt - owner: QuestGraphEvaluator
+            _pendingSignals = new NativeQueue<QuestSignalPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<QuestSignalPayload>[16] — quest signal ingress lane drained on event receipt — owner: QuestGraphEvaluator
             NativeMemorySentinel.RegisterNativeQueue(
                 _pendingSignals,
-                16,
+                PendingSignalCapacity,
                 nameof(QuestGraphEvaluator),
                 _pendingSignalsSentinelLabel,
                 NativeAllocationLifetime.Session);
+            PrewarmQueue(ref _pendingSignals, PendingSignalCapacity);
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         public void Dispose()
@@ -56,6 +92,8 @@ namespace Hecton8.Quest
             }
 
             _pendingSignalCount = 0;
+            _droppedSignalCount = 0;
+            _lastPendingSignalOverflowTelemetryFrame = -1;
         }
 
         public void Bind()
@@ -63,13 +101,18 @@ namespace Hecton8.Quest
             if (_isBound)
                 return;
 
+            if (!_activeEvaluators.TryRegister(this))
+            {
+                ReportActiveEvaluatorRejected();
+                return;
+            }
+
             NarrativeEvents.Register(this);
             CraftingEvents.Register(this);
             InteractionEvents.Register(this);
             BiomeMatrixEvents.Register(this);
             CelestialEvents.Register(this);
             AtlasSignalEvents.Register(this);
-            _activeEvaluators.Register(this);
             _isBound = true;
         }
 
@@ -141,7 +184,7 @@ namespace Hecton8.Quest
                 EventType = (ushort)QuestSignalKind.ItemCollected,
                 ItemId = itemHash,
                 Timestamp = Time.timeAsDouble,
-                NumericValue = Mathf.Max(1, payload.Quantity)
+                NumericValue = math.max(1, payload.Quantity)
             });
         }
 
@@ -280,7 +323,10 @@ namespace Hecton8.Quest
                 return;
 
             if (_pendingSignalCount >= PendingSignalCapacity)
+            {
+                ReportPendingSignalOverflow(payload.EventType);
                 return;
+            }
 
             _pendingSignals.Enqueue(payload);
             _pendingSignalCount++;
@@ -330,6 +376,35 @@ namespace Hecton8.Quest
                 if (!rawArray[i].DrainPendingSignals())
                     return;
             }
+        }
+
+        private void ReportPendingSignalOverflow(ushort eventType)
+        {
+            _droppedSignalCount++;
+            int frame = Time.frameCount;
+            if (_lastPendingSignalOverflowTelemetryFrame == frame)
+                return;
+
+            _lastPendingSignalOverflowTelemetryFrame = frame;
+            uint contextHash = _PendingSignalContextHash ^ ((uint)eventType << 24);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _PendingSignalOverflowWarningHash,
+                contextHash,
+                _droppedSignalCount);
+        }
+
+        private static void ReportActiveEvaluatorRejected()
+        {
+            _activeEvaluatorRejectCount++;
+            int frame = Time.frameCount;
+            if (_lastActiveEvaluatorRejectedTelemetryFrame == frame)
+                return;
+
+            _lastActiveEvaluatorRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _ActiveEvaluatorRejectedWarningHash,
+                _ActiveEvaluatorContextHash,
+                _activeEvaluatorRejectCount);
         }
 
         private static float MapDepthTierToMeters(int tier)

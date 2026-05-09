@@ -1,6 +1,7 @@
 using Hecton8.Building;
 using Hecton8.Gameplay;
 using Hecton8.Items;
+using Hecton8.Quest;
 using UnityEngine;
 
 namespace Hecton8.Modding
@@ -406,10 +407,27 @@ namespace Hecton8.Modding
         /// <param name="achievementId">Stable internal achievement identifier.</param>
         /// <param name="title">Player-facing achievement title.</param>
         public AchievementUnlockedEvent(string achievementId, string title)
+            : this(QuestFlagHashKernel.ComputeStableHash(achievementId), achievementId, title)
         {
+        }
+
+        /// <summary>
+        /// Creates a new achievement-unlock payload from a pre-hashed runtime identifier.
+        /// </summary>
+        /// <param name="achievementHash">FNV-1a stable achievement identifier hash.</param>
+        /// <param name="achievementId">Stable internal achievement identifier for persistence boundaries.</param>
+        /// <param name="title">Player-facing achievement title.</param>
+        public AchievementUnlockedEvent(uint achievementHash, string achievementId, string title)
+        {
+            AchievementHash = achievementHash;
             AchievementId = achievementId ?? string.Empty;
             Title = title ?? string.Empty;
         }
+
+        /// <summary>
+        /// FNV-1a stable achievement identifier hash.
+        /// </summary>
+        public uint AchievementHash { get; }
 
         /// <summary>
         /// Stable internal achievement identifier.
@@ -433,10 +451,27 @@ namespace Hecton8.Modding
         /// <param name="advisoryId">Stable advisory identifier.</param>
         /// <param name="message">Player-facing advisory text.</param>
         public PlayerAdvisoryIssuedEvent(string advisoryId, string message)
+            : this(QuestFlagHashKernel.ComputeStableHash(advisoryId), advisoryId, message)
         {
+        }
+
+        /// <summary>
+        /// Creates a new advisory-issued payload from a pre-hashed runtime identifier.
+        /// </summary>
+        /// <param name="advisoryHash">FNV-1a stable advisory identifier hash.</param>
+        /// <param name="advisoryId">Stable advisory identifier for persistence boundaries.</param>
+        /// <param name="message">Player-facing advisory text.</param>
+        public PlayerAdvisoryIssuedEvent(uint advisoryHash, string advisoryId, string message)
+        {
+            AdvisoryHash = advisoryHash;
             AdvisoryId = advisoryId ?? string.Empty;
             Message = message ?? string.Empty;
         }
+
+        /// <summary>
+        /// FNV-1a stable advisory identifier hash.
+        /// </summary>
+        public uint AdvisoryHash { get; }
 
         /// <summary>
         /// Stable advisory identifier.

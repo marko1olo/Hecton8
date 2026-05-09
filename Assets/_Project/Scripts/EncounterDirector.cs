@@ -339,20 +339,63 @@ namespace Hecton8.Systems.AI
 
         internal static void FillFallbackFrustumPlanes(Vector3 origin, Vector3 forward, Plane[] destination)
         {
-            Vector3 safeForward = forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
+            Vector3 safeForward = NormalizeSafe(forward, Vector3.forward);
             Vector3 right = Vector3.Cross(Vector3.up, safeForward);
             if (right.sqrMagnitude <= 0.0001f)
                 right = Vector3.right;
-            right.Normalize();
-            Vector3 up = Vector3.Cross(safeForward, right).normalized;
+            else
+                right = NormalizeSafe(right, Vector3.right);
+            Vector3 up = NormalizeSafe(Vector3.Cross(safeForward, right), Vector3.up);
 
             Vector3 nearCenter = origin + safeForward * MinSpawnRadius;
             destination[0] = new Plane(safeForward, nearCenter);
             destination[1] = new Plane(-safeForward, origin + safeForward * MaxSpawnRadius);
-            destination[2] = new Plane((safeForward - right).normalized, origin);
-            destination[3] = new Plane((safeForward + right).normalized, origin);
-            destination[4] = new Plane((safeForward - up).normalized, origin);
-            destination[5] = new Plane((safeForward + up).normalized, origin);
+            destination[2] = new Plane(NormalizeSafe(safeForward - right, safeForward), origin);
+            destination[3] = new Plane(NormalizeSafe(safeForward + right, safeForward), origin);
+            destination[4] = new Plane(NormalizeSafe(safeForward - up, safeForward), origin);
+            destination[5] = new Plane(NormalizeSafe(safeForward + up, safeForward), origin);
+        }
+
+        private static Vector3 NormalizeSafe(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.sqrMagnitude;
+            return lengthSq > 0.000001f
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float3 NormalizeSafe(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > 0.000001f
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float EstimateLength(float3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.375f) + (min * 0.25f);
+        }
+
+        private static float ApproximateOneMinusExpNegPositive(float x)
+        {
+            return math.saturate(1f - ApproximateExpNegPositive(x));
+        }
+
+        private static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(x, 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
         }
 
         public void Dispose()
@@ -423,7 +466,7 @@ namespace Hecton8.Systems.AI
         {
             EncounterDirectorState currentState = _frontState[0];
             currentState.PlayerPosition = new float4(frameContext.PlayerPosition, frameContext.PlayerDepth);
-            currentState.PlayerVelocity = new float4(frameContext.PlayerVelocity, math.length(frameContext.PlayerVelocity));
+            currentState.PlayerVelocity = new float4(frameContext.PlayerVelocity, EstimateLength(frameContext.PlayerVelocity));
 
             EncounterDirectorJob job = new EncounterDirectorJob
             {
@@ -435,7 +478,7 @@ namespace Hecton8.Systems.AI
                 CandidateCount = _candidateCount,
                 PlayerPosition = currentState.PlayerPosition,
                 PlayerVelocity = currentState.PlayerVelocity,
-                PlayerForward = new float4(math.normalizesafe(frameContext.PlayerForward, new float3(0f, 0f, 1f)), 0f),
+                PlayerForward = new float4(NormalizeSafe(frameContext.PlayerForward, new float3(0f, 0f, 1f)), 0f),
                 PlayerHealthNormalized = math.clamp(frameContext.PlayerHealthNormalized, 0f, 1f),
                 PlayerOxygenNormalized = math.clamp(frameContext.PlayerOxygenNormalized, 0f, 1f),
                 PlayerInternalStress = math.clamp(frameContext.PlayerInternalStress, 0f, 1f),
@@ -671,7 +714,7 @@ namespace Hecton8.Systems.AI
                 float y = 1f - (2f * sample / HighCandidateCount);
                 float radius = math.sqrt(math.max(0f, 1f - y * y));
                 float theta = 2f * math.PI * sample / goldenRatio;
-                _candidateDirections[i] = math.normalizesafe(new float3(math.cos(theta) * radius, y, math.sin(theta) * radius), new float3(0f, 0f, 1f));
+                _candidateDirections[i] = NormalizeSafe(new float3(math.cos(theta) * radius, y, math.sin(theta) * radius), new float3(0f, 0f, 1f));
             }
         }
 
@@ -871,7 +914,7 @@ namespace Hecton8.Systems.AI
             EncounterJobOutput output = default;
 
             float3 playerPosition = PlayerPosition.xyz;
-            float3 playerForward = math.normalizesafe(PlayerForward.xyz, new float3(0f, 0f, 1f));
+            float3 playerForward = NormalizeSafe(PlayerForward.xyz, new float3(0f, 0f, 1f));
             int activeEnemyCount = 0;
             int4 threatClassCounts = int4.zero;
             float nearestThreatDistanceSq = float.MaxValue;
@@ -955,7 +998,7 @@ namespace Hecton8.Systems.AI
                         1f - math.saturate(PlayerVelocity.w / 1.25f),
                         1f - math.max(acousticStress, PlayerInternalStress)))));
             rawStress *= math.lerp(1f, 0.25f, safeIdleRecovery);
-            float alpha = 1f - math.exp(-1f / StressTau);
+            float alpha = ApproximateOneMinusExpNegPositive(1f / StressTau);
             state.StressLevel += alpha * (math.saturate(rawStress) - state.StressLevel);
             state.StressLevel = math.max(0f, state.StressLevel - safeIdleRecovery * SafeIdleStressDecayPerTick);
             state.StressLevel = math.clamp(state.StressLevel, 0f, 1f);
@@ -1127,6 +1170,29 @@ namespace Hecton8.Systems.AI
             Output[0] = output;
         }
 
+        private static float3 NormalizeSafe(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > 0.000001f
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float ApproximateOneMinusExpNegPositive(float x)
+        {
+            return math.saturate(1f - ApproximateExpNegPositive(x));
+        }
+
+        private static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(x, 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
+        }
+
         private bool TryResolveSpawnCandidate(
             float3 playerPosition,
             float3 playerForward,
@@ -1167,7 +1233,7 @@ namespace Hecton8.Systems.AI
                 if (reservedCount > 1 && math.lengthsq(candidate - reserved1) < SpawnClusterRadiusSq)
                     continue;
 
-                float3 toCandidate = math.normalizesafe(candidate - playerPosition, playerForward);
+                float3 toCandidate = NormalizeSafe(candidate - playerPosition, playerForward);
                 float score = math.lengthsq(candidate - playerPosition) +
                               500f * (1f - math.dot(playerForward, toCandidate));
                 if (score <= bestScore)

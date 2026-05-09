@@ -32,7 +32,7 @@ namespace Hecton8.Biolum
         // SINGLETON
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-        public static HectonBiolumManager Instance { get; private set; }
+        public static HectonBiolumManager Instance => GlobalRegistry.BiolumManager;
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // INSPECTOR SETTINGS
@@ -117,13 +117,13 @@ namespace Hecton8.Biolum
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            HectonBiolumManager registered = GlobalRegistry.BiolumManager;
+            if (Application.isPlaying && registered != null && !ReferenceEquals(registered, this))
             {
                 Destroy(gameObject);
                 return;
             }
 
-            Instance = this;
             ResetFloraShaderGlobals();
         }
 
@@ -157,9 +157,6 @@ namespace Hecton8.Biolum
             _sonarPulseBoost = 0f;
 
             ResetFloraShaderGlobals();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -191,9 +188,9 @@ namespace Hecton8.Biolum
                     _activeFloorZones.Add(zone);
             }
 
-            #if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_debugLogUpdates) Debug.Log($"[BiolumManager] Registered {zone.GetType().Name}: {_activeCaveZones.Count} caves, {_activeOceanZones.Count} ocean, {_activeFloorZones.Count} floor");
-            #endif
+#endif
         }
 
         /// <summary>
@@ -207,9 +204,9 @@ namespace Hecton8.Biolum
             _activeOceanZones.Remove(zone);
             _activeFloorZones.Remove(zone);
 
-            #if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_debugLogUpdates) Debug.Log($"[BiolumManager] Unregistered zone");
-            #endif
+#endif
         }
 
         /// <summary>
@@ -288,7 +285,7 @@ namespace Hecton8.Biolum
 #endif
             if (_sonarPulseBoost > 0f)
             {
-                _sonarPulseBoost = Mathf.MoveTowards(_sonarPulseBoost, 0f, _sonarDecayRate * deltaTime);
+                _sonarPulseBoost = Mathf.Max(0f, _sonarPulseBoost - (_sonarDecayRate * deltaTime));
             }
 
             _floraGlobalUpdateTimer += deltaTime;
@@ -322,9 +319,9 @@ namespace Hecton8.Biolum
             _initialized = true;
             UpdateFloraShaderGlobals();
 
-            #if UNITY_EDITOR
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_debugLogUpdates) Debug.Log($"[BiolumManager] Initialized (zones: {_activeCaveZones.Count} caves, {_activeOceanZones.Count} ocean, {_activeFloorZones.Count} floor)");
-            #endif
+#endif
         }
 
         /// <summary>
@@ -359,25 +356,35 @@ namespace Hecton8.Biolum
 
             _cachedOceanBiolumColor = hasOcean ? oceanColor : Color.black;
             _cachedFloorBiolumColor = hasFloor ? floorColor : Color.black;
-            float sonarStrengthScale = Mathf.Lerp(1f, _sonarStrengthMultiplier, _sonarPulseBoost);
+            float sonarStrengthScale = 1f + ((_sonarStrengthMultiplier - 1f) * _sonarPulseBoost);
             float sonarColorLift = _sonarColorLift * _sonarPulseBoost;
             _cachedOceanBiolumStrength = hasOcean ? Mathf.Clamp01(oceanStrength * 0.28f * sonarStrengthScale) : 0f;
             _cachedFloorBiolumStrength = hasFloor ? Mathf.Clamp01(floorStrength * 0.24f * sonarStrengthScale) : 0f;
 
             if (hasOcean && sonarColorLift > 0f)
             {
-                _cachedOceanBiolumColor = Color.Lerp(_cachedOceanBiolumColor, _SonarResponseColor, sonarColorLift);
+                _cachedOceanBiolumColor = FastLerpColor(_cachedOceanBiolumColor, _SonarResponseColor, sonarColorLift);
             }
 
             if (hasFloor && sonarColorLift > 0f)
             {
-                _cachedFloorBiolumColor = Color.Lerp(_cachedFloorBiolumColor, _SonarResponseColor, sonarColorLift);
+                _cachedFloorBiolumColor = FastLerpColor(_cachedFloorBiolumColor, _SonarResponseColor, sonarColorLift);
             }
 
             Shader.SetGlobalColor(_FloraOceanBiolumColorId, _cachedOceanBiolumColor);
             Shader.SetGlobalFloat(_FloraOceanBiolumStrengthId, _cachedOceanBiolumStrength);
             Shader.SetGlobalColor(_FloraFloorBiolumColorId, _cachedFloorBiolumColor);
             Shader.SetGlobalFloat(_FloraFloorBiolumStrengthId, _cachedFloorBiolumStrength);
+        }
+
+        private static Color FastLerpColor(Color from, Color to, float t)
+        {
+            t = Mathf.Clamp01(t);
+            return new Color(
+                from.r + ((to.r - from.r) * t),
+                from.g + ((to.g - from.g) * t),
+                from.b + ((to.b - from.b) * t),
+                from.a + ((to.a - from.a) * t));
         }
 
         private bool TryResolveCameraReference(bool force)
@@ -393,7 +400,11 @@ namespace Hecton8.Biolum
 
             if (BootstrapState.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
             {
-                Camera playerCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+                if (playerCamera == null)
+                    playerTransform.TryGetComponent(out playerCamera);
+
                 if (playerCamera != null)
                 {
                     _cachedCamera = playerCamera;
@@ -532,6 +543,13 @@ namespace Hecton8.Biolum
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            HectonBiolumManager registered = GlobalRegistry.BiolumManager;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterBiolumManagerRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.BiolumManager, this);

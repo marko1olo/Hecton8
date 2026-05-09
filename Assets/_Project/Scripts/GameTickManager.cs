@@ -34,6 +34,7 @@
 //   • Swap-remove вместо List.Remove (без сдвига массива).
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Hecton.Localization;
@@ -44,7 +45,7 @@ namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)] // Тикает РАНЬШЕ всех
-    public sealed class GameTickManager : MonoBehaviour, IUpdatable, IFixedTickable, IServiceHeartbeat
+    public sealed class GameTickManager : MonoBehaviour, IUpdatable, IFixedTickable, IServiceHeartbeat, IServiceShutdown
     {
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -193,20 +194,21 @@ namespace Hecton8.Core
                     this);
             }
 #endif
-            if (_registeredToDispatcher)
-            {
-                if (GlobalRegistry.Updatables.Contains(this))
-                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-
-                if (GlobalRegistry.FixedTickables.Contains(this))
-                    GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
-
-                _registeredToDispatcher = false;
-            }
+            UnregisterDispatcherLanes();
             ResetSlowTickState();
         }
 
         private void OnDestroy()
+        {
+            ShutdownServiceState(clearTickLists: true);
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState(clearTickLists: true);
+        }
+
+        private void ShutdownServiceState(bool clearTickLists)
         {
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -219,21 +221,30 @@ namespace Hecton8.Core
                     this);
             }
 #endif
-            if (_registeredToDispatcher)
-            {
-                if (GlobalRegistry.Updatables.Contains(this))
-                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-
-                if (GlobalRegistry.FixedTickables.Contains(this))
-                    GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
-
-                _registeredToDispatcher = false;
-            }
+            UnregisterDispatcherLanes();
 
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.TickManager, this))
                 GlobalRegistry.UnregisterTickManager(this);
 
             _serviceRegistered = false;
+            ResetSlowTickState();
+
+            if (clearTickLists)
+                ClearTickLists();
+        }
+
+        private void UnregisterDispatcherLanes()
+        {
+            if (!_registeredToDispatcher)
+                return;
+
+            if (GlobalRegistry.Updatables.Contains(this))
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+
+            if (GlobalRegistry.FixedTickables.Contains(this))
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+
+            _registeredToDispatcher = false;
         }
 
         public void InitializeService()
@@ -261,6 +272,24 @@ namespace Hecton8.Core
         private void OnApplicationQuit()
         {
             _isShuttingDown = true;
+        }
+
+        private void ClearTickLists()
+        {
+            _tickables?.Clear();
+            _fixedTickables?.Clear();
+            _slowTickables?.Clear();
+            Array.Clear(_slowTickTopOwners, 0, _slowTickTopOwners.Length);
+            Array.Clear(_slowTickTopDurationsMs, 0, _slowTickTopDurationsMs.Length);
+            _debugTickCount = 0;
+            _debugFixedCount = 0;
+            _debugSlowCount = 0;
+            _debugLastSlowTickDurationMs = 0f;
+            _debugTopSlowTickDurationMs = 0f;
+            _debugTopSlowTickOwner = "None";
+            _debugLastSlowTickReport = "None";
+            _loggedFirstUpdateExecution = false;
+            _loggedFirstSlowTickExecution = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -752,6 +781,14 @@ namespace Hecton8.Core
 
             /// <summary>Текущее кол-во элементов.</summary>
             public int Count => _items.Count;
+
+            public void Clear()
+            {
+                _isIterating = false;
+                _items.Clear();
+                _toAdd.Clear();
+                _toRemove.Clear();
+            }
 
             // ─────────────────────────────────────────────────────
             //  ADD / REMOVE — с буферизацией

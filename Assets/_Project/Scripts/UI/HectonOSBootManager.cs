@@ -5,6 +5,7 @@ using Hecton8.Modding;
 using Hecton8.World;
 using System.Text;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -39,6 +40,7 @@ namespace Hecton8.UI
         private const float HiddenAlphaCutoff = 0.01f;
         private const float OverlayWidth = 920f;
         private const float OverlayHeight = 312f;
+        private const int BootPayloadCharCapacity = 1024;
         private const string OverlayName = "HectonOSBootManagerOverlay";
         private const string DefaultBootHeader = "HECTON-OS // BIOS HANDOFF";
         private const string DefaultLoadVector = "LOAD HANDOFF";
@@ -73,7 +75,8 @@ namespace Hecton8.UI
         private HectonPlayerMovement _playerMovement;
         private HectonEventSubscription _gameLoadedSubscription;
         private HectonEventSubscription _playerSpawnedSubscription;
-        private readonly StringBuilder _sequenceBuilder = new StringBuilder(512); // COLD ALLOC: StringBuilder[512] — Hecton-OS boot sequence formatting buffer — owner: HectonOSBootManager
+        private readonly char[] _sequencePayloadBuffer = new char[BootPayloadCharCapacity]; // COLD ALLOC: char[1024] — Hecton-OS boot TMP payload buffer — owner: HectonOSBootManager
+        private readonly StringBuilder _sequenceBuilder = new StringBuilder(BootPayloadCharCapacity); // COLD ALLOC: StringBuilder[1024] — Hecton-OS boot sequence formatting buffer — owner: HectonOSBootManager
 
         private void OnEnable()
         {
@@ -121,7 +124,7 @@ namespace Hecton8.UI
             {
                 case SequenceState.Typing:
                     _visibleCharacterProgress += deltaTime * CharacterRevealRate;
-                    int visibleCharacters = Mathf.Min(_visibleCharacterTarget, Mathf.FloorToInt(_visibleCharacterProgress));
+                    int visibleCharacters = math.min(_visibleCharacterTarget, (int)math.floor(_visibleCharacterProgress));
                     if (_consoleLabel.maxVisibleCharacters != visibleCharacters)
                         _consoleLabel.maxVisibleCharacters = visibleCharacters;
 
@@ -139,7 +142,7 @@ namespace Hecton8.UI
                     break;
 
                 case SequenceState.Fade:
-                    _overlayGroup.alpha = Mathf.Lerp(_overlayGroup.alpha, 0f, 1f - Mathf.Exp(-FadeSharpness * deltaTime));
+                    _overlayGroup.alpha = math.lerp(_overlayGroup.alpha, 0f, FastDecayBlend(FadeSharpness, deltaTime));
                     if (_overlayGroup.alpha <= HiddenAlphaCutoff)
                     {
                         HideOverlay();
@@ -147,6 +150,15 @@ namespace Hecton8.UI
                     }
                     break;
             }
+        }
+
+        private static float FastDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0.1f, speed) * math.max(0f, deltaTime);
+            if (x >= 3.5f)
+                return 1f;
+
+            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
         }
 
         private void HandleGameLoaded(GameLoadedEvent gameLoadedEvent)
@@ -278,9 +290,10 @@ namespace Hecton8.UI
                 return;
 
             BuildSequenceText(_sequenceBuilder, reason, slotName);
-            _consoleLabel.SetText(_sequenceBuilder);
-            _consoleLabel.ForceMeshUpdate();
-            _visibleCharacterTarget = _consoleLabel.textInfo.characterCount;
+            int payloadLength = math.min(_sequenceBuilder.Length, _sequencePayloadBuffer.Length);
+            _sequenceBuilder.CopyTo(0, _sequencePayloadBuffer, 0, payloadLength);
+            _consoleLabel.SetCharArray(_sequencePayloadBuffer, 0, payloadLength);
+            _visibleCharacterTarget = payloadLength;
             _visibleCharacterProgress = 0f;
             _consoleLabel.maxVisibleCharacters = 0;
             _overlayGroup.alpha = 1f;

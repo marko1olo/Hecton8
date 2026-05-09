@@ -244,6 +244,7 @@ namespace Hecton8.Core
                 nameof(ThreadSafeCommandQueue),
                 nameof(_pendingCommands),
                 NativeAllocationLifetime.Session);
+            PrewarmQueue(ref _pendingCommands, MaxMainThreadCommandsPerDrain);
         }
 
         public static void Register(IStorageReservationCommitResolvedListener listener)
@@ -566,6 +567,21 @@ namespace Hecton8.Core
                 nameof(ThreadSafeCommandQueue),
                 nameof(_pendingStorageReservationCommitResolved),
                 NativeAllocationLifetime.Session);
+            PrewarmQueue(ref _pendingStorageReservationCommitResolved, StorageReservationCommitEventCapacity);
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
         }
 
         private static bool EnqueueStorageReservationCommitResolved(in StorageReservationCommitResolvedPayload payload)

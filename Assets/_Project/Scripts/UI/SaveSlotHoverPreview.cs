@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton.Localization;
 using Hecton8.SaveSystem;
 using System.Collections.Generic;
+using System;
 
 namespace Hecton8.UI
 {
@@ -42,6 +43,9 @@ namespace Hecton8.UI
 
         private enum State { Idle, WaitingForDelay, FadingIn, Visible, FadingOut }
 
+        private static readonly char[] UnknownTimestampChars = "UNKNOWN".ToCharArray();
+        private static readonly char[] ZeroPlaytimeChars = "00:00:00".ToCharArray();
+
         private State _state;
         private float _timer;
         private float _fadeStartAlpha;
@@ -53,6 +57,12 @@ namespace Hecton8.UI
         private RectTransform _previewPanelRect;
         private Canvas _rootCanvas;
         private Camera _uiCamera;
+        // COLD ALLOC: char[256] - save hover title staging for TMP SetCharArray - owner: SaveSlotHoverPreview
+        private readonly char[] _previewTitleBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
+        // COLD ALLOC: char[256] - save hover preview metadata staging for TMP SetCharArray - owner: SaveSlotHoverPreview
+        private readonly char[] _previewDetailsBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
+        // COLD ALLOC: char[256] - save hover preview integrity status staging for TMP SetCharArray - owner: SaveSlotHoverPreview
+        private readonly char[] _previewStatusBuffer = new char[CharBufferPool.RequiredVrTextCapacity];
         // COLD ALLOC: List<TMP_Text>(8) â€” preview text auto-wire buffer â€” owner: SaveSlotHoverPreview
         private readonly List<TMP_Text> _previewTextResolveBuffer = new List<TMP_Text>(8);
 
@@ -130,7 +140,7 @@ namespace Hecton8.UI
                     _timer += dt;
                     float fadeOutT = Mathf.Clamp01(_timer / fadeOutDuration);
                     if (previewPanel != null)
-                        previewPanel.alpha = Mathf.Lerp(_fadeStartAlpha, 0f, fadeOutT);
+                        previewPanel.alpha = _fadeStartAlpha * (1f - fadeOutT);
                     if (fadeOutT >= 1f)
                     {
                         HideImmediate();
@@ -244,43 +254,54 @@ namespace Hecton8.UI
             if (saveManager == null || !saveManager.TryGetSaveSlotInfo(_currentSlotId, out SaveSlotInfo slotInfo) || slotInfo == null)
             {
                 ApplyPreviewTexts(
-                    BuildSlotTitle(localization, _currentSlotId),
+                    string.Empty,
                     ResolveLocalized(localization, LocalizationKeys.SLOT_NO_DATA, "NO DATA"),
                     string.Empty,
                     Color.white);
+                ApplySlotTitle(localization, _currentSlotId);
                 return;
             }
 
             SaveMetadata metadata = slotInfo.Metadata;
-            string timestamp = metadata != null ? metadata.GetDateTime().ToLocalTime().ToString("g") : "UNKNOWN";
-            string playtime = metadata != null ? metadata.GetFormattedPlayTime() : "00:00:00";
             string scene = ResolveSceneLabel(localization, metadata != null ? metadata.SceneName : string.Empty);
-            string details = string.IsNullOrEmpty(scene)
-                ? string.Concat(timestamp, "\n", playtime)
-                : string.Concat(timestamp, "\n", playtime, "\n", scene);
+            int detailsLength = BuildPreviewDetails(metadata, scene, _previewDetailsBuffer);
             string status = ResolveStatusLabel(localization, slotInfo.IntegrityState, slotInfo.GetStatusLabel());
             Color statusColor = ResolveStatusColor(slotInfo.IntegrityState);
 
-            ApplyPreviewTexts(
-                BuildSlotTitle(localization, _currentSlotId),
-                details,
-                status,
-                statusColor);
+            ApplyPreviewTexts(string.Empty, string.Empty, status, statusColor);
+            ApplySlotTitle(localization, _currentSlotId);
+            if (previewDetailsText != null)
+                previewDetailsText.SetCharArray(_previewDetailsBuffer, 0, detailsLength);
         }
 
         private void ApplyPreviewTexts(string title, string details, string status, Color statusColor)
         {
-            if (previewTitleText != null)
-                previewTitleText.SetText(title ?? string.Empty);
-
-            if (previewDetailsText != null)
-                previewDetailsText.SetText(details ?? string.Empty);
+            ApplyPreviewText(previewTitleText, title, _previewTitleBuffer);
+            ApplyPreviewText(previewDetailsText, details, _previewDetailsBuffer);
 
             if (previewStatusText != null)
             {
-                previewStatusText.SetText(status ?? string.Empty);
+                ApplyPreviewText(previewStatusText, status, _previewStatusBuffer);
                 previewStatusText.color = statusColor;
             }
+        }
+
+        private static void ApplyPreviewText(TMP_Text text, string value, char[] buffer)
+        {
+            if (text == null || buffer == null)
+                return;
+
+            int length = AppendString(buffer, 0, value);
+            text.SetCharArray(buffer, 0, length);
+        }
+
+        private void ApplySlotTitle(LocalizationManager localization, string slotId)
+        {
+            if (previewTitleText == null)
+                return;
+
+            int titleLength = BuildSlotTitle(localization, slotId, _previewTitleBuffer);
+            previewTitleText.SetCharArray(_previewTitleBuffer, 0, titleLength);
         }
 
         private void ClearPreviewMetadata()
@@ -386,10 +407,15 @@ namespace Hecton8.UI
                 TextWrappingModes.Normal);
         }
 
-        private static string BuildSlotTitle(LocalizationManager localization, string slotId)
+        private static int BuildSlotTitle(LocalizationManager localization, string slotId, char[] buffer)
         {
+            if (buffer == null || buffer.Length == 0)
+                return 0;
+
             string prefix = ResolveLocalized(localization, LocalizationKeys.SLOT_PREFIX, "SLOT");
-            return string.Concat(prefix, " ", ExtractSlotNumber(slotId));
+            int cursor = AppendString(buffer, 0, prefix);
+            cursor = AppendChar(buffer, cursor, ' ');
+            return AppendSlotNumber(buffer, cursor, slotId);
         }
 
         private static string ResolveSceneLabel(LocalizationManager localization, string sceneName)
@@ -443,16 +469,124 @@ namespace Hecton8.UI
             }
         }
 
-        private static string ExtractSlotNumber(string slotId)
+        private static int BuildPreviewDetails(SaveMetadata metadata, string scene, char[] buffer)
+        {
+            if (buffer == null || buffer.Length == 0)
+                return 0;
+
+            int cursor = 0;
+            if (metadata != null)
+            {
+                DateTime localTime = metadata.GetDateTime().ToLocalTime();
+                cursor = AppendFourDigits(buffer, cursor, localTime.Year);
+                cursor = AppendChar(buffer, cursor, '-');
+                cursor = AppendTwoDigits(buffer, cursor, localTime.Month);
+                cursor = AppendChar(buffer, cursor, '-');
+                cursor = AppendTwoDigits(buffer, cursor, localTime.Day);
+                cursor = AppendChar(buffer, cursor, ' ');
+                cursor = AppendTwoDigits(buffer, cursor, localTime.Hour);
+                cursor = AppendChar(buffer, cursor, ':');
+                cursor = AppendTwoDigits(buffer, cursor, localTime.Minute);
+            }
+            else
+            {
+                cursor = AppendChars(buffer, cursor, UnknownTimestampChars, UnknownTimestampChars.Length);
+            }
+
+            cursor = AppendChar(buffer, cursor, '\n');
+            cursor = metadata != null
+                ? AppendPlaytime(buffer, cursor, metadata.PlayTimeSeconds)
+                : AppendChars(buffer, cursor, ZeroPlaytimeChars, ZeroPlaytimeChars.Length);
+
+            if (!string.IsNullOrEmpty(scene))
+            {
+                cursor = AppendChar(buffer, cursor, '\n');
+                cursor = AppendString(buffer, cursor, scene);
+            }
+
+            return cursor;
+        }
+
+        private static int AppendPlaytime(char[] buffer, int cursor, float playTimeSeconds)
+        {
+            int totalSeconds = playTimeSeconds > 0f ? (int)playTimeSeconds : 0;
+            int hours = Mathf.Min(totalSeconds / 3600, 99);
+            int minutes = (totalSeconds / 60) % 60;
+            int seconds = totalSeconds % 60;
+            cursor = AppendTwoDigits(buffer, cursor, hours);
+            cursor = AppendChar(buffer, cursor, ':');
+            cursor = AppendTwoDigits(buffer, cursor, minutes);
+            cursor = AppendChar(buffer, cursor, ':');
+            return AppendTwoDigits(buffer, cursor, seconds);
+        }
+
+        private static int AppendString(char[] buffer, int cursor, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return cursor;
+
+            int limit = Mathf.Min(value.Length, buffer.Length - cursor);
+            for (int i = 0; i < limit; i++)
+                buffer[cursor++] = value[i];
+
+            return cursor;
+        }
+
+        private static int AppendChars(char[] buffer, int cursor, char[] value, int length)
+        {
+            int limit = Mathf.Min(length, buffer.Length - cursor);
+            for (int i = 0; i < limit; i++)
+                buffer[cursor++] = value[i];
+
+            return cursor;
+        }
+
+        private static int AppendFourDigits(char[] buffer, int cursor, int value)
+        {
+            value = Mathf.Clamp(value, 0, 9999);
+            cursor = AppendDigit(buffer, cursor, value / 1000);
+            cursor = AppendDigit(buffer, cursor, (value / 100) % 10);
+            cursor = AppendDigit(buffer, cursor, (value / 10) % 10);
+            return AppendDigit(buffer, cursor, value % 10);
+        }
+
+        private static int AppendTwoDigits(char[] buffer, int cursor, int value)
+        {
+            value = Mathf.Clamp(value, 0, 99);
+            cursor = AppendDigit(buffer, cursor, value / 10);
+            return AppendDigit(buffer, cursor, value % 10);
+        }
+
+        private static int AppendDigit(char[] buffer, int cursor, int digit)
+        {
+            return AppendChar(buffer, cursor, (char)('0' + Mathf.Clamp(digit, 0, 9)));
+        }
+
+        private static int AppendChar(char[] buffer, int cursor, char value)
+        {
+            if (cursor >= buffer.Length)
+                return cursor;
+
+            buffer[cursor] = value;
+            return cursor + 1;
+        }
+
+        private static int AppendSlotNumber(char[] buffer, int cursor, string slotId)
         {
             if (string.IsNullOrEmpty(slotId))
-                return "?";
+                return AppendChar(buffer, cursor, '?');
 
             int underscoreIndex = slotId.LastIndexOf('_');
             if (underscoreIndex >= 0 && underscoreIndex < slotId.Length - 1)
-                return slotId.Substring(underscoreIndex + 1);
+            {
+                int limit = Mathf.Min(slotId.Length - underscoreIndex - 1, buffer.Length - cursor);
+                for (int i = 0; i < limit; i++)
+                    buffer[cursor++] = slotId[underscoreIndex + 1 + i];
 
-            return slotId;
+                return cursor;
+            }
+
+            return AppendString(buffer, cursor, slotId);
         }
 
         private static string ResolveLocalized(LocalizationManager localization, string key, string fallback)

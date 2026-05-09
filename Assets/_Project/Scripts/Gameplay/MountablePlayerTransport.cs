@@ -56,6 +56,11 @@ namespace Hecton8.Gameplay
         private const byte SubmarineImpactHapticBlendMode = 2;
         private const float CavitationShockwaveMinRadiusMeters = 15f;
         private const float HighSpeedKelpSnapThresholdMetersPerSecond = 10f;
+        private const float Pi = 3.14159265359f;
+        private const float TwoPi = 6.28318530718f;
+        private const float HalfPi = 1.57079632679f;
+        private const float DegreesToRadians = 0.01745329252f;
+        private const int MaxDamageReceivers = 4;
 
         [Header("-- Preset ---------------------------")]
         [Tooltip("Shared transport preset driving locomotion, prompts, and feel.")]
@@ -188,8 +193,11 @@ namespace Hecton8.Gameplay
         private VehicleUpgradeModule _vehicleUpgradeModule;
         private SubmarineStructuralGrid _submarineStructuralGrid;
         private CapsuleCollider _driveCapsule;
+        private bool _vehicleUpgradeModuleResolved;
         private bool _submarineStructuralGridResolved;
         private bool _registered;
+        private bool _registeredFixedTick;
+        private bool _registeredUpdate;
         private bool _registeredOriginShiftListener;
         private bool _interactionColliderWasEnabled;
         private Vector3 _riderAnchorLocalPosition;
@@ -237,8 +245,8 @@ namespace Hecton8.Gameplay
         private float _microFractureLoad;
         private float _pendingSafeDepthPenaltyMeters;
         private float _permanentSafeDepthPenaltyMeters;
-        // COLD ALLOC: List<IDamageSignalReceiver>[1] â€” mounted transport damage listeners (player trauma dispatcher) â€” owner: MountablePlayerTransport
-        private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
+        // COLD ALLOC: List<IDamageSignalReceiver>[4] - bounded mounted transport damage listeners - owner: MountablePlayerTransport
+        private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(MaxDamageReceivers);
         // COLD ALLOC: UInt32[4] - tracked kelp or sargassum instance uids holding the propeller lock - owner: MountablePlayerTransport
         private readonly uint[] _entanglementInstanceUids = new uint[MaxEntanglingFloraCount];
         // COLD ALLOC: Vector3[4] - tracked kelp or sargassum anchor positions paired with entanglement instance ids - owner: MountablePlayerTransport
@@ -291,6 +299,7 @@ namespace Hecton8.Gameplay
             TryGetComponent(out _vehicleMotor);
             TryGetComponent(out _transportFeelContract);
             TryGetComponent(out _vehicleUpgradeModule);
+            _vehicleUpgradeModuleResolved = true;
             ResolveAnchorCache();
             ResolveVehicleDriveReferences();
             ResolveSubmarineStructuralGrid();
@@ -439,7 +448,7 @@ namespace Hecton8.Gameplay
             float configuredDriveChargeDrain = ResolveConfiguredDriveChargeDrainPerSecond();
             if (throttleOutput > 0f && configuredDriveChargeDrain > 0f)
             {
-                _currentChargeNormalized = Mathf.Max(
+                _currentChargeNormalized = math.max(
                     0f,
                     _currentChargeNormalized - configuredDriveChargeDrain * throttleOutput * deltaTime);
 
@@ -483,10 +492,7 @@ namespace Hecton8.Gameplay
                 if (_dockControlLocked)
                 {
                     if (_vehicleMotor != null)
-                    {
                         _vehicleMotor.TryConsumeScheduledCapsuleSweep(out _, out _, out _);
-                        _vehicleMotor.ResetRuntimeState();
-                    }
 
                     UpdatePlatformMotionCache(fixedDeltaTime);
                     return;
@@ -523,11 +529,15 @@ namespace Hecton8.Gameplay
             if (!_mounted || platformTransform == null)
                 return Vector3.zero;
 
-            if (_transportBody != null && !_transportBody.isKinematic)
-                return _transportBody.GetPointVelocity(worldPoint);
+            Rigidbody body = _transportBody;
+            if (body != null && !body.isKinematic)
+            {
+                Vector3 dynamicRelativePoint = worldPoint - body.worldCenterOfMass;
+                return HectonPlayerMotor.SafeVelocity(body.linearVelocity + Vector3.Cross(body.angularVelocity, dynamicRelativePoint));
+            }
 
             Vector3 relativePoint = worldPoint - platformTransform.position;
-            return _platformLinearVelocity + Vector3.Cross(_platformAngularVelocity, relativePoint);
+            return HectonPlayerMotor.SafeVelocity(_platformLinearVelocity + Vector3.Cross(_platformAngularVelocity, relativePoint));
         }
 
         /// <inheritdoc />
@@ -554,7 +564,7 @@ namespace Hecton8.Gameplay
             if (!_mounted || preset == null)
                 return 1f;
 
-            return Mathf.Lerp(1f, preset.SpeedMultiplier, ResolveThrottleOutput(_currentThrottle));
+            return math.lerp(1f, preset.SpeedMultiplier, ResolveThrottleOutput(_currentThrottle));
         }
 
         /// <summary>Current normalized transport boost used by shared presentation/audio consumers.</summary>
@@ -563,9 +573,9 @@ namespace Hecton8.Gameplay
             if (!_mounted || preset == null)
                 return 0f;
 
-            float reference = Mathf.Max(0.01f, preset.PropulsionForceReference);
-            float throttleBoost = Mathf.Clamp01(GetTransportPropulsionForce() / reference);
-            return Mathf.Clamp01(Mathf.Max(_presentationTransportBoost01, throttleBoost));
+            float reference = math.max(0.01f, preset.PropulsionForceReference);
+            float throttleBoost = math.saturate(GetTransportPropulsionForce() / reference);
+            return math.saturate(math.max(_presentationTransportBoost01, throttleBoost));
         }
 
         /// <summary>
@@ -577,7 +587,7 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureLifecycleInitialized();
-            _currentChargeNormalized = Mathf.Clamp01(
+            _currentChargeNormalized = math.saturate(
                 _currentChargeNormalized + normalizedChargeDelta * ResolveStationChargeRateScale());
         }
 
@@ -590,32 +600,32 @@ namespace Hecton8.Gameplay
                 return;
 
             float previousIntegrityNormalized = ResolveIntegrityNormalized();
-            float startSpeed = Mathf.Max(0f, preset.CollisionDamageStartSpeed);
+            float startSpeed = math.max(0f, preset.CollisionDamageStartSpeed);
             if (impactSpeed <= startSpeed)
                 return;
 
-            float maxSpeed = Mathf.Max(startSpeed + 0.01f, preset.CollisionDamageMaxSpeed);
-            float maxDamage = Mathf.Max(0f, preset.CollisionDamageAtMaxSpeed);
+            float maxSpeed = math.max(startSpeed + 0.01f, preset.CollisionDamageMaxSpeed);
+            float maxDamage = math.max(0f, preset.CollisionDamageAtMaxSpeed);
             if (maxDamage <= 0f)
                 return;
 
-            float damageT = Mathf.InverseLerp(startSpeed, maxSpeed, impactSpeed);
-            float damage = Mathf.Lerp(0f, maxDamage, damageT);
+            float damageT = math.saturate((impactSpeed - startSpeed) / math.max(0.0001f, maxSpeed - startSpeed));
+            float damage = math.lerp(0f, maxDamage, damageT);
             if (damage <= 0f)
                 return;
 
             EnsureLifecycleInitialized();
-            _currentIntegrity = Mathf.Max(0f, _currentIntegrity - damage);
+            _currentIntegrity = math.max(0f, _currentIntegrity - damage);
             float nextIntegrityNormalized = ResolveIntegrityNormalized();
             DamageSignal damageSignal = BuildDamageSignal(impactSpeed, hitPoint, (uint)DamageTypeMask.Impact, previousIntegrityNormalized, nextIntegrityNormalized);
             DispatchIntegrityChanged(previousIntegrityNormalized, nextIntegrityNormalized, damageSignal);
 
             float previousPowerChannel = ResolvePowerChannel(previousIntegrityNormalized);
             float nextPowerChannel = ResolvePowerChannel(nextIntegrityNormalized);
-            if (Mathf.Abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
+            if (math.abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
                 DispatchPowerChanged(previousPowerChannel, nextPowerChannel, damageSignal);
 
-            DispatchClarityChanged(0f, Mathf.Clamp01(Mathf.Max(damageT, 1f - nextIntegrityNormalized)), damageSignal);
+            DispatchClarityChanged(0f, math.saturate(math.max(damageT, 1f - nextIntegrityNormalized)), damageSignal);
             DispatchTraumaThresholdCrossed(ResolveTraumaLevel(nextIntegrityNormalized, damageT));
             if (_currentIntegrity <= 0.0001f)
                 BreakTransport();
@@ -634,7 +644,7 @@ namespace Hecton8.Gameplay
 
             EnsureLifecycleInitialized();
             float previousIntegrityNormalized = ResolveIntegrityNormalized();
-            _currentIntegrity = Mathf.Max(0f, _currentIntegrity - damage);
+            _currentIntegrity = math.max(0f, _currentIntegrity - damage);
             float nextIntegrityNormalized = ResolveIntegrityNormalized();
             DamageSignal damageSignal = BuildDamageSignal(
                 signalMagnitude,
@@ -648,12 +658,12 @@ namespace Hecton8.Gameplay
             {
                 float previousPowerChannel = ResolvePowerChannel(previousIntegrityNormalized);
                 float nextPowerChannel = ResolvePowerChannel(nextIntegrityNormalized);
-                if (Mathf.Abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
+                if (math.abs(nextPowerChannel - previousPowerChannel) > 0.0001f)
                     DispatchPowerChanged(previousPowerChannel, nextPowerChannel, damageSignal);
             }
 
-            float clampedTrauma = Mathf.Clamp01(trauma01);
-            DispatchClarityChanged(0f, Mathf.Clamp01(Mathf.Max(clampedTrauma, 1f - nextIntegrityNormalized)), damageSignal);
+            float clampedTrauma = math.saturate(trauma01);
+            DispatchClarityChanged(0f, math.saturate(math.max(clampedTrauma, 1f - nextIntegrityNormalized)), damageSignal);
             DispatchTraumaThresholdCrossed(ResolveTraumaLevel(nextIntegrityNormalized, clampedTrauma));
             if (_currentIntegrity <= 0.0001f)
                 BreakTransport();
@@ -671,7 +681,16 @@ namespace Hecton8.Gameplay
             {
                 if (ReferenceEquals(_damageReceivers[i], receiver))
                     return;
+
+                if (_damageReceivers[i] == null)
+                {
+                    _damageReceivers[i] = receiver;
+                    return;
+                }
             }
+
+            if (_damageReceivers.Count >= MaxDamageReceivers)
+                return;
 
             _damageReceivers.Add(receiver);
         }
@@ -822,11 +841,11 @@ namespace Hecton8.Gameplay
         private void AlignTransportToRider(float fixedDeltaTime)
         {
             Quaternion desiredRiderRotation = ResolveDesiredRiderRotation();
-            Quaternion targetRotation = desiredRiderRotation * Quaternion.Inverse(_riderAnchorLocalRotation);
+            Quaternion targetRotation = desiredRiderRotation * ConjugateUnitQuaternion(_riderAnchorLocalRotation);
             if (fixedDeltaTime > 0f && preset != null)
             {
                 float followT = ResolveBlendFactor(preset.OrientationFollowSharpness, fixedDeltaTime);
-                targetRotation = Quaternion.Slerp(_cachedTransform.rotation, targetRotation, followT);
+                targetRotation = ApproximateNlerpNoSqrt(_cachedTransform.rotation, targetRotation, followT);
             }
 
             Vector3 riderPosition = _riderTransform.position;
@@ -950,11 +969,14 @@ namespace Hecton8.Gameplay
                 return false;
 
             Vector3 velocity = _vehicleMotor.LinearVelocity;
-            float speed = velocity.magnitude;
-            if (speed < entanglementMinimumSpeed)
+            float speedSqr = velocity.sqrMagnitude;
+            float minimumSpeed = math.max(0f, entanglementMinimumSpeed);
+            if (speedSqr < minimumSpeed * minimumSpeed)
                 return false;
 
-            Vector3 direction = velocity / math.max(speed, 0.0001f);
+            float inverseSpeed = math.rsqrt(speedSqr);
+            float speed = ApproximateVectorMagnitude(velocity);
+            Vector3 direction = velocity * inverseSpeed;
             float density = _vehicleMotor.SampleMacroFloraDensityAlongVelocity(
                 vegetationBridge,
                 entanglementProbeLengthMeters,
@@ -969,11 +991,8 @@ namespace Hecton8.Gameplay
                 return false;
 
             Vector3 sampleCenter = _transportBody.position + direction * math.max(1f, entanglementProbeLengthMeters * 0.5f);
-            if (speed > HighSpeedKelpSnapThresholdMetersPerSecond &&
-                destructibleOrganicManager.ApplyHighSpeedKelpForestSnap(sampleCenter, velocity, entanglementCaptureRadius) > 0)
-            {
+            if (speed > HighSpeedKelpSnapThresholdMetersPerSecond)
                 return false;
-            }
 
             int trackedCount = destructibleOrganicManager.CollectNearestConsumableFlora(
                 sampleCenter,
@@ -991,7 +1010,7 @@ namespace Hecton8.Gameplay
             anchorPosition /= trackedCount;
             AbsoluteUniversePosition bodyAup = AbsoluteUniversePosition.FromRuntimePosition(_transportBody.position);
             AbsoluteUniversePosition anchorAup = AbsoluteUniversePosition.FromRuntimePosition(anchorPosition);
-            float tetherLength = (float)math.sqrt(AbsoluteUniversePosition.DistanceSq(in bodyAup, in anchorAup));
+            float tetherLength = ApproximateAupDistance(in bodyAup, in anchorAup);
             _vehicleMotor.BeginEntanglement(anchorPosition, tetherLength);
             NotifyEntanglementCritical();
 
@@ -1070,9 +1089,11 @@ namespace Hecton8.Gameplay
                 FlushPendingEntanglementDamage(tetherTension);
             }
 
-            float speed = _vehicleMotor.LinearVelocity.magnitude;
+            Vector3 motorVelocity = _vehicleMotor.LinearVelocity;
+            float speedSqr = motorVelocity.sqrMagnitude;
+            float cavitationSpeedThreshold = math.max(cavitationLowSpeedThreshold, 0.0001f);
             bool cavitating = clampedThrottleOutput >= cavitationThrottleThreshold &&
-                              speed <= cavitationLowSpeedThreshold &&
+                              speedSqr <= cavitationSpeedThreshold * cavitationSpeedThreshold &&
                               thrustAcceleration > 0.0001f;
             if (!cavitating)
             {
@@ -1080,7 +1101,8 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float speedSuppression01 = 1f - math.saturate(speed / math.max(cavitationLowSpeedThreshold, 0.0001f));
+            float speed = ApproximateVectorMagnitude(motorVelocity);
+            float speedSuppression01 = 1f - math.saturate(speed / cavitationSpeedThreshold);
             float cavitationIntensity01 = math.saturate(clampedThrottleOutput * math.max(speedSuppression01, overYield ? 1f : 0.5f));
             _pendingCavitationEngineDamage += cavitationEngineDamagePerSecond * cavitationIntensity01 * safeDeltaTime;
             _cavitationEventTimer -= safeDeltaTime;
@@ -1205,10 +1227,19 @@ namespace Hecton8.Gameplay
 
         private Vector3 ResolveCavitationFallbackPosition()
         {
+            Vector3 bodyPosition = ResolveTransportRuntimePosition();
             if (_cachedTransform == null)
-                return _transportBody != null ? _transportBody.position : Vector3.zero;
+                return bodyPosition;
 
-            return _cachedTransform.position - (_cachedTransform.forward * 1.25f);
+            return bodyPosition - (_cachedTransform.forward * 1.25f);
+        }
+
+        private Vector3 ResolveTransportRuntimePosition()
+        {
+            if (_transportBody != null)
+                return _transportBody.position;
+
+            return _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
         }
 
         private static void NotifyEntanglementStressHaptic()
@@ -1244,10 +1275,7 @@ namespace Hecton8.Gameplay
                     ? _riderMovement.BodyYaw
                     : _riderMovement.CameraYaw;
 
-                float yawRadians = yaw * Mathf.Deg2Rad;
-                Vector3 planarForward = new Vector3(Mathf.Sin(yawRadians), 0f, Mathf.Cos(yawRadians));
-                if (planarForward.sqrMagnitude > 0.0001f)
-                    return Quaternion.LookRotation(planarForward, Vector3.up);
+                return ApproximateYawRotationDegreesNoTrig(yaw);
             }
 
             Vector3 riderForward = _riderTransform.forward;
@@ -1255,15 +1283,17 @@ namespace Hecton8.Gameplay
             if (riderForward.sqrMagnitude < 0.0001f)
                 riderForward = _cachedTransform.forward;
 
-            riderForward.Normalize();
-            return Quaternion.LookRotation(riderForward, Vector3.up);
+            float riderForwardSqr = riderForward.sqrMagnitude;
+            if (riderForwardSqr > 0.0001f)
+                riderForward *= math.rsqrt(riderForwardSqr);
+            return ResolveLookRotationNoTrig(riderForward, Vector3.up);
         }
 
         private float ResolveThrottle(Vector2 moveInput, float verticalInput)
         {
-            float planarMagnitude = Mathf.Clamp01(Mathf.Sqrt(moveInput.x * moveInput.x + moveInput.y * moveInput.y));
-            float verticalMagnitude = Mathf.Clamp01(Mathf.Abs(verticalInput));
-            float driveInputMagnitude = Mathf.Max(planarMagnitude, verticalMagnitude);
+            float planarMagnitude = math.saturate(ApproximatePlanarMagnitude(moveInput.x, moveInput.y));
+            float verticalMagnitude = math.saturate(math.abs(verticalInput));
+            float driveInputMagnitude = math.max(planarMagnitude, verticalMagnitude);
             if (driveInputMagnitude >= preset.ActivationInputThreshold)
                 return driveInputMagnitude;
 
@@ -1272,20 +1302,71 @@ namespace Hecton8.Gameplay
 
         private float AdvanceDriveThrottle(float currentThrottle, float targetThrottle, float deltaTime)
         {
-            float clampedCurrent = Mathf.Clamp01(currentThrottle);
-            float clampedTarget = Mathf.Clamp01(targetThrottle);
+            float clampedCurrent = math.saturate(currentThrottle);
+            float clampedTarget = math.saturate(targetThrottle);
             float sharpness = clampedTarget > clampedCurrent
-                ? Mathf.Max(0.5f, preset.ThrottleRiseSharpness)
-                : Mathf.Max(0.5f, preset.ThrottleFallSharpness);
+                ? math.max(0.5f, preset.ThrottleRiseSharpness)
+                : math.max(0.5f, preset.ThrottleFallSharpness);
             float blend = ResolveBlendFactor(sharpness, deltaTime);
-            return Mathf.Lerp(clampedCurrent, clampedTarget, blend);
+            return math.lerp(clampedCurrent, clampedTarget, blend);
         }
 
         private float ResolveThrottleOutput(float rawThrottle)
         {
-            float clampedThrottle = Mathf.Clamp01(rawThrottle);
-            float exponent = Mathf.Max(0.5f, preset != null ? preset.ThrottleOutputExponent : 1f);
-            return Mathf.Pow(clampedThrottle, exponent);
+            float clampedThrottle = math.saturate(rawThrottle);
+            float exponent = math.max(0.5f, preset != null ? preset.ThrottleOutputExponent : 1f);
+            return ShapeThrottleOutput(clampedThrottle, exponent);
+        }
+
+        private static float ShapeThrottleOutput(float clampedThrottle, float exponent)
+        {
+            if (clampedThrottle <= 0f)
+                return 0f;
+
+            float squared = clampedThrottle * clampedThrottle;
+            if (exponent <= 1f)
+            {
+                float easeOut = clampedThrottle * (2f - clampedThrottle);
+                return math.lerp(easeOut, clampedThrottle, math.saturate((exponent - 0.5f) * 2f));
+            }
+
+            if (exponent <= 2f)
+                return math.lerp(clampedThrottle, squared, math.saturate(exponent - 1f));
+
+            float cubed = squared * clampedThrottle;
+            return math.lerp(squared, cubed, math.saturate(exponent - 2f));
+        }
+
+        private static float ApproximateVectorMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (0.375f * mid) + (0.125f * min);
+        }
+
+        private static float ApproximatePlanarMagnitude(float x, float y)
+        {
+            float ax = math.abs(x);
+            float ay = math.abs(y);
+            float max = math.max(ax, ay);
+            float min = math.min(ax, ay);
+            return max + (0.375f * min);
+        }
+
+        private static float ApproximateAupDistance(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            double3 delta = a.ToAbsoluteDouble3() - b.ToAbsoluteDouble3();
+            double ax = math.abs(delta.x);
+            double ay = math.abs(delta.y);
+            double az = math.abs(delta.z);
+            double max = math.max(ax, math.max(ay, az));
+            double min = math.min(ax, math.min(ay, az));
+            double mid = ax + ay + az - max - min;
+            return (float)(max + (0.375d * mid) + (0.125d * min));
         }
 
         private void MoveRiderToDismountPoint()
@@ -1414,31 +1495,36 @@ namespace Hecton8.Gameplay
         {
             ResolveVehicleUpgradeModule();
             float integrityBonus = _vehicleUpgradeModule != null
-                ? Mathf.Max(0f, _vehicleUpgradeModule.MaxIntegrityBonus)
+                ? math.max(0f, _vehicleUpgradeModule.MaxIntegrityBonus)
                 : 0f;
 
             return preset != null
-                ? Mathf.Max(1f, preset.MaxIntegrity + integrityBonus)
+                ? math.max(1f, preset.MaxIntegrity + integrityBonus)
                 : 100f + integrityBonus;
         }
 
         private float ResolveIntegrityNormalized()
         {
             EnsureLifecycleInitialized();
-            return Mathf.Clamp01(_currentIntegrity / ResolveMaxIntegrity());
+            return math.saturate(_currentIntegrity / ResolveMaxIntegrity());
         }
 
         private float ResolveStationChargeRateScale()
         {
             return preset != null
-                ? Mathf.Max(0f, preset.StationChargeRateScale)
+                ? math.max(0f, preset.StationChargeRateScale)
                 : 1f;
         }
 
         private void ResolveVehicleUpgradeModule()
         {
+            if (_vehicleUpgradeModuleResolved)
+                return;
+
             if (_vehicleUpgradeModule == null)
                 TryGetComponent(out _vehicleUpgradeModule);
+
+            _vehicleUpgradeModuleResolved = true;
         }
 
         internal void BeginDockControlLock()
@@ -1468,7 +1554,7 @@ namespace Hecton8.Gameplay
                 return;
 
             float impactSpeed = _vehicleMotor.LastBlockingImpactSpeedMetersPerSecond;
-            float threshold = preset != null ? Mathf.Max(0f, preset.CollisionDamageStartSpeed) : 0f;
+            float threshold = preset != null ? math.max(0f, preset.CollisionDamageStartSpeed) : 0f;
             if (impactSpeed <= threshold || Time.time < _nextMountedImpactFeedbackTime)
                 return;
 
@@ -1486,11 +1572,11 @@ namespace Hecton8.Gameplay
                 return;
 
             float maximumImpactSpeed = preset != null
-                ? Mathf.Max(SubmarineImpactDentStartSpeedMetersPerSecond + 0.01f, preset.CollisionDamageMaxSpeed)
+                ? math.max(SubmarineImpactDentStartSpeedMetersPerSecond + 0.01f, preset.CollisionDamageMaxSpeed)
                 : SubmarineImpactDentStartSpeedMetersPerSecond + 16f;
-            float severity01 = Mathf.Clamp01(
+            float severity01 = math.saturate(
                 (impactSpeed - SubmarineImpactDentStartSpeedMetersPerSecond) /
-                Mathf.Max(0.01f, maximumImpactSpeed - SubmarineImpactDentStartSpeedMetersPerSecond));
+                math.max(0.01f, maximumImpactSpeed - SubmarineImpactDentStartSpeedMetersPerSecond));
 
             NotifySubmarineImpactHaptic(severity01);
             ResolveSubmarineStructuralGrid();
@@ -1544,9 +1630,9 @@ namespace Hecton8.Gameplay
         {
             ResolveVehicleUpgradeModule();
 
-            float baseDrain = preset != null ? Mathf.Max(0f, preset.EnergyDrainPerSecond) : 0f;
+            float baseDrain = preset != null ? math.max(0f, preset.EnergyDrainPerSecond) : 0f;
             float drainScale = _vehicleUpgradeModule != null
-                ? Mathf.Max(0.1f, _vehicleUpgradeModule.EnergyDrainScale)
+                ? math.max(0.1f, _vehicleUpgradeModule.EnergyDrainScale)
                 : 1f;
             float abyssalOverstrainMultiplier = _riderMovement != null
                 ? _riderMovement.CurrentAbyssalCounterDriveEnergyMultiplier
@@ -1558,9 +1644,9 @@ namespace Hecton8.Gameplay
         {
             ResolveVehicleUpgradeModule();
 
-            float baseDrain = preset != null ? Mathf.Max(0f, preset.DriveChargeDrainPerSecond) : 0f;
+            float baseDrain = preset != null ? math.max(0f, preset.DriveChargeDrainPerSecond) : 0f;
             float drainScale = _vehicleUpgradeModule != null
-                ? Mathf.Max(0.1f, _vehicleUpgradeModule.ChargeDrainScale)
+                ? math.max(0.1f, _vehicleUpgradeModule.ChargeDrainScale)
                 : 1f;
             return baseDrain * drainScale;
         }
@@ -1568,19 +1654,31 @@ namespace Hecton8.Gameplay
         private void DispatchIntegrityChanged(float prev, float next, DamageSignal signal)
         {
             for (int i = 0; i < _damageReceivers.Count; i++)
-                _damageReceivers[i].OnIntegrityChanged(prev, next, signal);
+            {
+                IDamageSignalReceiver receiver = _damageReceivers[i];
+                if (receiver != null)
+                    receiver.OnIntegrityChanged(prev, next, signal);
+            }
         }
 
         private void DispatchPowerChanged(float prev, float next, DamageSignal signal)
         {
             for (int i = 0; i < _damageReceivers.Count; i++)
-                _damageReceivers[i].OnPowerChanged(prev, next, signal);
+            {
+                IDamageSignalReceiver receiver = _damageReceivers[i];
+                if (receiver != null)
+                    receiver.OnPowerChanged(prev, next, signal);
+            }
         }
 
         private void DispatchClarityChanged(float prev, float next, DamageSignal signal)
         {
             for (int i = 0; i < _damageReceivers.Count; i++)
-                _damageReceivers[i].OnClarityChanged(prev, next, signal);
+            {
+                IDamageSignalReceiver receiver = _damageReceivers[i];
+                if (receiver != null)
+                    receiver.OnClarityChanged(prev, next, signal);
+            }
         }
 
         private void DispatchTraumaThresholdCrossed(TraumaLevel level)
@@ -1589,7 +1687,11 @@ namespace Hecton8.Gameplay
                 return;
 
             for (int i = 0; i < _damageReceivers.Count; i++)
-                _damageReceivers[i].OnTraumaThresholdCrossed(level);
+            {
+                IDamageSignalReceiver receiver = _damageReceivers[i];
+                if (receiver != null)
+                    receiver.OnTraumaThresholdCrossed(level);
+            }
         }
 
         private DamageSignal BuildDamageSignal(
@@ -1600,16 +1702,16 @@ namespace Hecton8.Gameplay
             float nextIntegrityNormalized)
         {
             DamageSignal signal = default;
-            signal.magnitude = Mathf.Max(0f, impactSpeed);
+            signal.magnitude = math.max(0f, impactSpeed);
             signal.localPoint = _cachedTransform != null
                 ? (float3)_cachedTransform.InverseTransformPoint(hitPoint)
                 : float3.zero;
             signal.damageType = damageType;
-            signal.integrityDelta = (byte)Mathf.Clamp(
-                Mathf.RoundToInt(Mathf.Abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
+            signal.integrityDelta = (byte)math.clamp(
+                (int)math.round(math.abs(nextIntegrityNormalized - previousIntegrityNormalized) * byte.MaxValue),
                 0,
                 byte.MaxValue);
-            signal.depth = _riderSurvival != null ? Mathf.Max(0f, _riderSurvival.Depth) : 0f;
+            signal.depth = _riderSurvival != null ? math.max(0f, _riderSurvival.Depth) : 0f;
             signal.sourceID = DamageSourceIds.MountableTransport;
             return signal;
         }
@@ -1618,7 +1720,7 @@ namespace Hecton8.Gameplay
         {
             return integrityNormalized >= 0.4f
                 ? 1f
-                : Mathf.Clamp01(integrityNormalized / 0.4f);
+                : math.saturate(integrityNormalized / 0.4f);
         }
 
         private static TraumaLevel ResolveTraumaLevel(float integrityNormalized, float damageT)
@@ -1733,10 +1835,10 @@ namespace Hecton8.Gameplay
 
             _transportBody.WakeUp();
             _transportBody.linearVelocity = HectonPlayerMotor.SafeVelocity(
-                inheritedVelocity * Mathf.Lerp(0.88f, 1.04f, Mathf.Clamp01(severity)),
+                inheritedVelocity * math.lerp(0.88f, 1.04f, math.saturate(severity)),
                 _transportBody.linearVelocity);
             _transportBody.angularVelocity = HectonPlayerMotor.SafeVelocity(
-                new Vector3(0f, Mathf.Lerp(0.6f, 2.2f, Mathf.Clamp01(severity)), 0f),
+                new Vector3(0f, math.lerp(0.6f, 2.2f, math.saturate(severity)), 0f),
                 _transportBody.angularVelocity);
             _bailoutDriftTimer = bailoutDriftDuration;
             ResetPlatformMotionCache();
@@ -1798,19 +1900,16 @@ namespace Hecton8.Gameplay
 
             Vector3 candidateLinearVelocity = (currentPosition - _previousPlatformPosition) * inverseFixedDeltaTime;
             _platformLinearVelocity = HectonPlayerMotor.SafeVelocity(candidateLinearVelocity, _platformLinearVelocity);
-            Quaternion deltaRotation = currentRotation * Quaternion.Inverse(_previousPlatformRotation);
-            deltaRotation.ToAngleAxis(out float angleDegrees, out Vector3 axis);
-            if (float.IsNaN(axis.x) || axis.sqrMagnitude <= 0.000001f || angleDegrees <= 0.0001f)
+            Vector3 candidateAngularVelocity = ResolveApproximateAngularVelocityNoTrig(
+                currentRotation,
+                _previousPlatformRotation,
+                inverseFixedDeltaTime);
+            if (candidateAngularVelocity.sqrMagnitude <= 0.0000001f)
             {
                 _platformAngularVelocity = Vector3.zero;
             }
             else
             {
-                if (angleDegrees > 180f)
-                    angleDegrees -= 360f;
-
-                float angularSpeed = angleDegrees * Mathf.Deg2Rad * inverseFixedDeltaTime;
-                Vector3 candidateAngularVelocity = axis.normalized * angularSpeed;
                 _platformAngularVelocity = HectonPlayerMotor.SafeVelocity(candidateAngularVelocity, _platformAngularVelocity);
             }
 
@@ -1895,10 +1994,9 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = GlobalRegistry.FixedTickables.Contains(this) ||
-                          GlobalRegistry.Updatables.Contains(this);
+            _registeredFixedTick = GlobalRegistry.TryRegisterFixedTickable(this, PriorityLayer.Player);
+            _registeredUpdate = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
+            _registered = _registeredFixedTick || _registeredUpdate;
         }
 
         private void TryUnregister()
@@ -1906,11 +2004,17 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            if (GlobalRegistry.FixedTickables.Contains(this))
+            if (_registeredFixedTick)
+            {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+                _registeredFixedTick = false;
+            }
 
-            if (GlobalRegistry.Updatables.Contains(this))
+            if (_registeredUpdate)
+            {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registeredUpdate = false;
+            }
 
             _registered = false;
         }
@@ -1984,7 +2088,7 @@ namespace Hecton8.Gameplay
                 return;
 
             if (Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
-                audio.PlayAtPoint(clip, _cachedTransform.position, transportAudioVolume);
+                audio.PlayAtPoint(clip, ResolveTransportRuntimePosition(), transportAudioVolume);
         }
 
         private void UpdatePresentationTransportBoost(float fixedDeltaTime)
@@ -1997,11 +2101,11 @@ namespace Hecton8.Gameplay
             }
 
             UpdatePresentationVelocityLag(_platformLinearVelocity, fixedDeltaTime);
-            Vector3 perceivedVelocity = Vector3.Lerp(_platformLinearVelocity, _presentationVelocityLag, PresentationVelocityLagBlend);
-            float speedReference = Mathf.Max(0.1f, preset.PropulsionForceReference * 0.01f);
-            float speedBoost = Mathf.Clamp01(perceivedVelocity.magnitude / speedReference);
-            float throttleBoost = Mathf.Clamp01(GetTransportPropulsionForce() / Mathf.Max(0.01f, preset.PropulsionForceReference));
-            _presentationTransportBoost01 = Mathf.Clamp01(Mathf.Max(throttleBoost, speedBoost));
+            Vector3 perceivedVelocity = _platformLinearVelocity + ((_presentationVelocityLag - _platformLinearVelocity) * PresentationVelocityLagBlend);
+            float speedReference = math.max(0.1f, preset.PropulsionForceReference * 0.01f);
+            float speedBoost = math.saturate(ApproximateVectorMagnitude(perceivedVelocity) / speedReference);
+            float throttleBoost = math.saturate(GetTransportPropulsionForce() / math.max(0.01f, preset.PropulsionForceReference));
+            _presentationTransportBoost01 = math.saturate(math.max(throttleBoost, speedBoost));
         }
 
         private void UpdatePresentationVelocityLag(Vector3 velocity, float fixedDeltaTime)
@@ -2014,8 +2118,10 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float blend = 1f - Mathf.Exp(-PresentationVelocityLagSharpness * Mathf.Max(0f, fixedDeltaTime));
-            _presentationVelocityLag = HectonPlayerMotor.SafeVelocity(Vector3.Lerp(_presentationVelocityLag, safeVelocity, Mathf.Clamp01(blend)), safeVelocity);
+            float blend = ResolveBlendFactor(PresentationVelocityLagSharpness, fixedDeltaTime);
+            _presentationVelocityLag = HectonPlayerMotor.SafeVelocity(
+                _presentationVelocityLag + ((safeVelocity - _presentationVelocityLag) * blend),
+                safeVelocity);
         }
 
         private void ResetPresentationVelocityLag()
@@ -2027,7 +2133,7 @@ namespace Hecton8.Gameplay
 
         private static float ResolveBlendFactor(float sharpness, float deltaTime)
         {
-            return Mathf.Clamp01(Mathf.Max(0f, sharpness) * Mathf.Max(0f, deltaTime));
+            return math.saturate(math.max(0f, sharpness) * math.max(0f, deltaTime));
         }
 
         private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
@@ -2047,6 +2153,128 @@ namespace Hecton8.Gameplay
             return float.IsFinite(value) ? math.max(value, 0.001f) : 0.001f;
         }
 
+        private static Quaternion ApproximateNlerpNoSqrt(Quaternion fromRotation, Quaternion toRotation, float blend01)
+        {
+            float4 from = new float4(fromRotation.x, fromRotation.y, fromRotation.z, fromRotation.w);
+            float4 to = new float4(toRotation.x, toRotation.y, toRotation.z, toRotation.w);
+            if (math.dot(from, to) < 0f)
+                to = -to;
+
+            float4 blended = math.lerp(from, to, math.saturate(blend01));
+            return ToQuaternion(NormalizeQuaternionNoSqrt(blended));
+        }
+
+        private static Quaternion ApproximateYawRotationDegreesNoTrig(float yawDegrees)
+        {
+            ApproximateSinCosFullNoTrig(yawDegrees * DegreesToRadians * 0.5f, out float sinHalf, out float cosHalf);
+            return NormalizeQuaternionNoSqrt(new Quaternion(0f, sinHalf, 0f, cosHalf));
+        }
+
+        private static Quaternion ResolveLookRotationNoTrig(Vector3 forward, Vector3 up)
+        {
+            float3 f = NormalizeVectorRsqrt((float3)forward, new float3(0f, 0f, 1f));
+            float3 u = NormalizeVectorRsqrt((float3)up, new float3(0f, 1f, 0f));
+            if (math.abs(math.dot(f, u)) > 0.94f)
+                u = math.abs(f.y) < 0.94f ? new float3(0f, 1f, 0f) : new float3(1f, 0f, 0f);
+
+            float3 r = NormalizeVectorRsqrt(math.cross(u, f), new float3(1f, 0f, 0f));
+            u = NormalizeVectorRsqrt(math.cross(f, r), new float3(0f, 1f, 0f));
+            float m00 = r.x;
+            float m01 = u.x;
+            float m02 = f.x;
+            float m10 = r.y;
+            float m11 = u.y;
+            float m12 = f.y;
+            float m20 = r.z;
+            float m21 = u.z;
+            float m22 = f.z;
+            float trace = m00 + m11 + m22;
+
+            float4 q;
+            if (trace > 0f)
+                q = new float4(m21 - m12, m02 - m20, m10 - m01, 1f + trace);
+            else if (m00 >= m11 && m00 >= m22)
+                q = new float4(1f + m00 - m11 - m22, m01 + m10, m02 + m20, m21 - m12);
+            else if (m11 > m22)
+                q = new float4(m01 + m10, 1f + m11 - m00 - m22, m12 + m21, m02 - m20);
+            else
+                q = new float4(m02 + m20, m12 + m21, 1f + m22 - m00 - m11, m10 - m01);
+
+            return ToQuaternion(NormalizeQuaternionNoSqrt(q));
+        }
+
+        private static Vector3 ResolveApproximateAngularVelocityNoTrig(
+            Quaternion currentRotation,
+            Quaternion previousRotation,
+            float inverseDeltaTime)
+        {
+            Quaternion delta = currentRotation * ConjugateUnitQuaternion(previousRotation);
+            float4 q = new float4(delta.x, delta.y, delta.z, delta.w);
+            if (q.w < 0f)
+                q = -q;
+
+            q = NormalizeQuaternionNoSqrt(q);
+            float3 angularDelta = new float3(q.x, q.y, q.z) * 2f;
+            if (!math.all(math.isfinite(angularDelta)) || math.lengthsq(angularDelta) <= 0.00000001f)
+                return Vector3.zero;
+
+            return new Vector3(
+                angularDelta.x * inverseDeltaTime,
+                angularDelta.y * inverseDeltaTime,
+                angularDelta.z * inverseDeltaTime);
+        }
+
+        private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float cosSign = 1f;
+            if (x > HalfPi)
+            {
+                x = Pi - x;
+                cosSign = -1f;
+            }
+            else if (x < -HalfPi)
+            {
+                x = -Pi - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
+        private static float3 NormalizeVectorRsqrt(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            if (lengthSq <= 0.000001f || !math.all(math.isfinite(value)))
+                return fallback;
+
+            return value * math.rsqrt(lengthSq);
+        }
+
+        private static Quaternion NormalizeQuaternionNoSqrt(Quaternion value)
+        {
+            float4 q = new float4(value.x, value.y, value.z, value.w);
+            return ToQuaternion(NormalizeQuaternionNoSqrt(q));
+        }
+
+        private static Quaternion ConjugateUnitQuaternion(Quaternion value)
+        {
+            return new Quaternion(-value.x, -value.y, -value.z, value.w);
+        }
+
+        private static float4 NormalizeQuaternionNoSqrt(float4 value)
+        {
+            float lengthSq = math.max(math.dot(value, value), 0.000001f);
+            return value * math.rsqrt(lengthSq);
+        }
+
+        private static Quaternion ToQuaternion(float4 value)
+        {
+            return new Quaternion(value.x, value.y, value.z, value.w);
+        }
+
         private static bool IsFiniteVector(Vector3 value)
         {
             return !(float.IsNaN(value.x) || float.IsNaN(value.y) || float.IsNaN(value.z) ||
@@ -2061,18 +2289,18 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            entanglementTetherYieldLimit = Mathf.Max(100f, entanglementTetherYieldLimit);
-            entanglementStressThrottleThreshold = Mathf.Clamp(entanglementStressThrottleThreshold, 0.1f, 1f);
-            entanglementShearDamagePerSecond = Mathf.Max(0f, entanglementShearDamagePerSecond);
-            entanglementMicroFracturePerSecond = Mathf.Max(0f, entanglementMicroFracturePerSecond);
-            entanglementMicroFractureLimit = Mathf.Max(1f, entanglementMicroFractureLimit);
-            entanglementDepthPenaltyPerMicroFractureMeters = Mathf.Max(0f, entanglementDepthPenaltyPerMicroFractureMeters);
-            entanglementStressSignalInterval = Mathf.Max(0.02f, entanglementStressSignalInterval);
-            cavitationLowSpeedThreshold = Mathf.Max(0.05f, cavitationLowSpeedThreshold);
-            cavitationEngineDamagePerSecond = Mathf.Max(0f, cavitationEngineDamagePerSecond);
-            cavitationEventInterval = Mathf.Max(0.02f, cavitationEventInterval);
-            cavitationShockwaveRadius = Mathf.Max(CavitationShockwaveMinRadiusMeters, cavitationShockwaveRadius);
-            cavitationShockwaveAcceleration = Mathf.Max(0f, cavitationShockwaveAcceleration);
+            entanglementTetherYieldLimit = math.max(100f, entanglementTetherYieldLimit);
+            entanglementStressThrottleThreshold = math.clamp(entanglementStressThrottleThreshold, 0.1f, 1f);
+            entanglementShearDamagePerSecond = math.max(0f, entanglementShearDamagePerSecond);
+            entanglementMicroFracturePerSecond = math.max(0f, entanglementMicroFracturePerSecond);
+            entanglementMicroFractureLimit = math.max(1f, entanglementMicroFractureLimit);
+            entanglementDepthPenaltyPerMicroFractureMeters = math.max(0f, entanglementDepthPenaltyPerMicroFractureMeters);
+            entanglementStressSignalInterval = math.max(0.02f, entanglementStressSignalInterval);
+            cavitationLowSpeedThreshold = math.max(0.05f, cavitationLowSpeedThreshold);
+            cavitationEngineDamagePerSecond = math.max(0f, cavitationEngineDamagePerSecond);
+            cavitationEventInterval = math.max(0.02f, cavitationEventInterval);
+            cavitationShockwaveRadius = math.max(CavitationShockwaveMinRadiusMeters, cavitationShockwaveRadius);
+            cavitationShockwaveAcceleration = math.max(0f, cavitationShockwaveAcceleration);
             ResolveAnchorCache();
             BindPresetToFeelContract();
             RebuildPromptCache();

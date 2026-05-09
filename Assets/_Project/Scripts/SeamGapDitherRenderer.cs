@@ -4,6 +4,7 @@ using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -26,6 +27,8 @@ namespace Hecton8.World
         private const int MaxMotesPerChunk = 256;
         private const float MinimumProbeDistance = 0.05f;
         private const float MinimumSeamGapMeters = 0.01f;
+        private const float CurrentFadeInvSpeedSq = 0.16f;
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         // COLD ALLOC: Vector3[4] - immutable seam dither quad vertex template - owner: SeamGapDitherRenderer
         private static readonly Vector3[] _quadVertices =
         {
@@ -117,6 +120,7 @@ namespace Hecton8.World
         private JobHandle _seamRaycastHandle;
         private int _scheduledSeamRaycastCount;
         private int _completedSeamRaycastCount;
+        private uint _seamRaycastShiftSequence;
         private bool _registeredToDispatcher;
         private bool _registeredLateFrame;
         private bool _seamRaycastScheduled;
@@ -374,8 +378,9 @@ namespace Hecton8.World
 
                 Vector3 segment = centerAbsolute - surfaceAbsolute;
                 segment.y = 0f;
-                float segmentLength = segment.magnitude;
-                Vector3 forward = segmentLength > 0.001f ? segment / segmentLength : Vector3.forward;
+                float segmentSqr = LengthSq(segment);
+                float segmentLength = ApproximateVectorMagnitude(segment);
+                Vector3 forward = segmentSqr > 0.000001f ? segment * math.rsqrt(segmentSqr) : Vector3.forward;
                 Vector3 right = new Vector3(-forward.z, 0f, forward.x);
                 Color seamColor = ResolveSeamColor(state.runtimeKey);
                 float densityScale = ResolveDensityScale(state.runtimeKey);
@@ -391,17 +396,21 @@ namespace Hecton8.World
                     float verticalSeed = Hash01(state.runtimeKey, pointIndex, 29);
                     float scaleSeed = Hash01(state.runtimeKey, pointIndex, 41);
 
-                    Vector3 absolutePoint = Vector3.Lerp(surfaceAbsolute, centerAbsolute, t);
-                    absolutePoint += right * Mathf.Lerp(-lateralJitter, lateralJitter, jitterSeed);
-                    absolutePoint.y += Mathf.Lerp(-verticalJitter, verticalJitter, verticalSeed);
+                    Vector3 absolutePoint = surfaceAbsolute + ((centerAbsolute - surfaceAbsolute) * t);
+                    absolutePoint += right * (-lateralJitter + (lateralJitter * 2f * jitterSeed));
+                    absolutePoint.y += -verticalJitter + (verticalJitter * 2f * verticalSeed);
 
                     Vector3 runtimePoint = HectonFloatingOrigin.ToRuntimePosition(absolutePoint);
                     if ((runtimePoint - cameraPosition).sqrMagnitude > maxDistanceSq)
                         continue;
 
-                    float scale = moteSize * Mathf.Lerp(0.75f, 1.35f, scaleSeed);
-                    float currentSpeed = CurrentVolume.SampleCombinedCurrent(runtimePoint).magnitude;
-                    float currentFade = Mathf.Lerp(1f, 0.35f, Mathf.Clamp01(currentSpeed / 2.5f));
+                    float scale = moteSize * (0.75f + (0.6f * scaleSeed));
+                    Vector3 sampledCurrent = CurrentVolume.SampleCombinedCurrent(runtimePoint);
+                    float currentSpeedSq = sampledCurrent.x * sampledCurrent.x
+                        + sampledCurrent.y * sampledCurrent.y
+                        + sampledCurrent.z * sampledCurrent.z;
+                    float currentFadeT = math.saturate(currentSpeedSq * CurrentFadeInvSpeedSq);
+                    float currentFade = 1f - (0.65f * currentFadeT);
                     Color resolvedColor = seamColor;
                     resolvedColor.a *= currentFade;
                     if (resolvedColor.a <= 0.01f)
@@ -511,10 +520,10 @@ namespace Hecton8.World
                 Vector3 root = new Vector3(matrix.m03, matrix.m13, matrix.m23);
                 Vector3 right = new Vector3(matrix.m00, matrix.m10, matrix.m20);
                 Vector3 forward = new Vector3(matrix.m02, matrix.m12, matrix.m22);
-                float rightMagnitude = right.magnitude;
-                float forwardMagnitude = forward.magnitude;
-                right = rightMagnitude > 0.0001f ? right / rightMagnitude : Vector3.right;
-                forward = forwardMagnitude > 0.0001f ? forward / forwardMagnitude : Vector3.forward;
+                float rightSqr = LengthSq(right);
+                float forwardSqr = LengthSq(forward);
+                right = rightSqr > 0.000001f ? right * math.rsqrt(rightSqr) : Vector3.right;
+                forward = forwardSqr > 0.000001f ? forward * math.rsqrt(forwardSqr) : Vector3.forward;
 
                 float baseRadius = footprintRadius * Mathf.Max(0.35f, Mathf.Abs(instanceData.WidthScale));
                 for (int moteIndex = 0; moteIndex < motesPerPlant && appendedCount < appendLimit && instanceCount < maxCount; moteIndex++)
@@ -528,7 +537,7 @@ namespace Hecton8.World
                     if ((runtimePoint - cameraPosition).sqrMagnitude > maxDistanceSq)
                         continue;
 
-                    float scale = moteSize * Mathf.Lerp(0.45f, 0.9f, Hash01(sourceIndex, moteIndex, 97));
+                    float scale = moteSize * (0.45f + (0.45f * Hash01(sourceIndex, moteIndex, 97)));
                     _matrixUpload[instanceCount] = Matrix4x4.TRS(runtimePoint, billboardRotation, Vector3.one * scale);
                     _colorUpload[instanceCount] = (Vector4)color;
                     IncludeInstanceBounds(runtimePoint, scale, ref boundsMin, ref boundsMax, ref hasBounds);
@@ -588,8 +597,14 @@ namespace Hecton8.World
 
         private void ScheduleSeamRaycastBatch()
         {
-            if (_seamRaycastScheduled || !_seamRaycastCommands.IsCreated || !_seamRaycastHits.IsCreated || _stateScratch.Count <= 0)
+            if (_seamRaycastScheduled ||
+                HectonFloatingOrigin.IsShiftInProgress ||
+                !_seamRaycastCommands.IsCreated ||
+                !_seamRaycastHits.IsCreated ||
+                _stateScratch.Count <= 0)
+            {
                 return;
+            }
 
             int layerMask = seamProbeMask.value != 0 ? seamProbeMask.value : HectonLayerMasks.SeamProbeLayerMask;
             QueryParameters queryParameters = new QueryParameters(layerMask, false, QueryTriggerInteraction.Ignore);
@@ -613,7 +628,7 @@ namespace Hecton8.World
 
                 Vector3 segment = centerAbsolute - surfaceAbsolute;
                 segment.y = 0f;
-                float segmentLength = segment.magnitude;
+                float segmentLength = ApproximateVectorMagnitude(segment);
                 int probeCount = Mathf.Clamp(
                     Mathf.CeilToInt(Mathf.Max(state.seamBlendRadius, segmentLength + segmentLengthBias) / Mathf.Max(0.1f, instanceSpacing)),
                     1,
@@ -622,7 +637,7 @@ namespace Hecton8.World
                 for (int pointIndex = 0; pointIndex < probeCount && commandCount < maxCommandCount; pointIndex += stride)
                 {
                     float t = probeCount <= 1 ? 0.5f : pointIndex / (float)(probeCount - 1);
-                    Vector3 absolutePoint = Vector3.Lerp(surfaceAbsolute, centerAbsolute, t);
+                    Vector3 absolutePoint = surfaceAbsolute + ((centerAbsolute - surfaceAbsolute) * t);
                     Vector3 runtimePoint = HectonFloatingOrigin.ToRuntimePosition(absolutePoint);
                     Vector3 origin = runtimePoint + Vector3.up * halfHeight;
                     _seamRaycastCommands[commandCount] = new RaycastCommand(
@@ -646,6 +661,7 @@ namespace Hecton8.World
                 return;
 
             _scheduledSeamRaycastCount = commandCount;
+            _seamRaycastShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
             _seamRaycastHandle = RaycastCommand.ScheduleBatch(_seamRaycastCommands, _seamRaycastHits, 16, default);
             _seamRaycastScheduled = true;
         }
@@ -658,6 +674,17 @@ namespace Hecton8.World
             if (!DispatcherJobSwap.TryComplete(ref _seamRaycastHandle, false))
                 return;
 
+            if (HectonFloatingOrigin.IsShiftInProgress ||
+                _seamRaycastShiftSequence != HectonFloatingOrigin.CurrentShiftSequence)
+            {
+                _completedSeamRaycastCount = 0;
+                _scheduledSeamRaycastCount = 0;
+                _seamRaycastScheduled = false;
+                _seamRaycastHandle = default;
+                _seamRaycastShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
+                return;
+            }
+
             _completedSeamRaycastCount = _scheduledSeamRaycastCount;
             _scheduledSeamRaycastCount = 0;
             _seamRaycastScheduled = false;
@@ -669,12 +696,22 @@ namespace Hecton8.World
             {
                 // COLD ALLOC: NativeArray<RaycastCommand>[256] - seam intersection ray batch commands - owner: SeamGapDitherRenderer
                 _seamRaycastCommands = new NativeArray<RaycastCommand>(MaxSeamRaycastCommands, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _seamRaycastCommands,
+                    nameof(SeamGapDitherRenderer),
+                    nameof(_seamRaycastCommands),
+                    NativeMemoryLifetime);
             }
 
             if (!_seamRaycastHits.IsCreated)
             {
                 // COLD ALLOC: NativeArray<RaycastHit>[256] - seam intersection ray batch results - owner: SeamGapDitherRenderer
                 _seamRaycastHits = new NativeArray<RaycastHit>(MaxSeamRaycastCommands, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _seamRaycastHits,
+                    nameof(SeamGapDitherRenderer),
+                    nameof(_seamRaycastHits),
+                    NativeMemoryLifetime);
             }
         }
 
@@ -683,12 +720,14 @@ namespace Hecton8.World
             JobHandle dependency = _seamRaycastScheduled ? _seamRaycastHandle : default;
             if (_seamRaycastCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_seamRaycastCommands);
                 dependency = _seamRaycastCommands.Dispose(dependency);
                 _seamRaycastCommands = default;
             }
 
             if (_seamRaycastHits.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_seamRaycastHits);
                 dependency = _seamRaycastHits.Dispose(dependency);
                 _seamRaycastHits = default;
             }
@@ -697,6 +736,7 @@ namespace Hecton8.World
             _seamRaycastScheduled = false;
             _scheduledSeamRaycastCount = 0;
             _completedSeamRaycastCount = 0;
+            _seamRaycastShiftSequence = HectonFloatingOrigin.CurrentShiftSequence;
         }
 
         private static RaycastCommand CreateInvalidRaycastCommand()
@@ -727,13 +767,35 @@ namespace Hecton8.World
             boundsMax = Vector3.Max(boundsMax, pointMax);
         }
 
+        private static float LengthSq(Vector3 value)
+        {
+            return value.x * value.x + value.y * value.y + value.z * value.z;
+        }
+
+        private static float ApproximateVectorMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.375f) + (min * 0.125f);
+        }
+
         private Color ResolveSeamColor(long runtimeKey)
         {
             CaveBiomeTemplate biomeTemplate = ResolveBiomeTemplate(runtimeKey);
             if (biomeTemplate == null)
                 return new Color(0.28f, 0.92f, 1f, 0.8f);
 
-            return Color.Lerp(biomeTemplate.SeamDitherDustColor, biomeTemplate.EmissiveRockColor, 0.18f);
+            Color dust = biomeTemplate.SeamDitherDustColor;
+            Color emissive = biomeTemplate.EmissiveRockColor;
+            return new Color(
+                dust.r + ((emissive.r - dust.r) * 0.18f),
+                dust.g + ((emissive.g - dust.g) * 0.18f),
+                dust.b + ((emissive.b - dust.b) * 0.18f),
+                dust.a + ((emissive.a - dust.a) * 0.18f));
         }
 
         private float ResolveDensityScale(long runtimeKey)

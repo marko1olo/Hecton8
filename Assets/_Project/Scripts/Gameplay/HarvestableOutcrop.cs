@@ -7,6 +7,7 @@ using Hecton8.Items;
 using Hecton8.Modding;
 using Hecton8.Physics;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using InteractionSignalPayload = Hecton8.Interaction.InteractionSignal;
 
@@ -234,13 +235,16 @@ namespace Hecton8.Gameplay
                 return;
 
             uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)(Time.frameCount + 1);
+            Vector3 debrisNormal = TryNormalize(hitNormal, out Vector3 normalizedHitNormal)
+                ? normalizedHitNormal
+                : ResolveFallbackNormal(hitPoint);
             debrisService.SpawnBurst(
                 debrisProfile,
                 _cachedTransform.position,
                 _cachedTransform.rotation,
                 hitPoint,
-                hitNormal.sqrMagnitude > 0.0001f ? hitNormal.normalized : ResolveFallbackNormal(hitPoint),
-                Mathf.Max(MinimumToolPower, toolPower),
+                debrisNormal,
+                math.max(MinimumToolPower, toolPower),
                 seed);
         }
 
@@ -253,9 +257,9 @@ namespace Hecton8.Gameplay
             if (item == null)
                 return;
 
-            int quantity = Mathf.CeilToInt(Mathf.Max(MinimumToolPower, toolPower) * Mathf.Max(rockDensity, 0.1f));
-            quantity = Mathf.Max(Mathf.Max(1, minLootCount), quantity);
-            quantity = Mathf.Min(Mathf.Max(quantity, 1), Mathf.Max(1, maxLootCount));
+            int quantity = (int)math.ceil(math.max(MinimumToolPower, toolPower) * math.max(rockDensity, 0.1f));
+            quantity = math.max(math.max(1, minLootCount), quantity);
+            quantity = math.min(math.max(quantity, 1), math.max(1, maxLootCount));
             if (quantity <= 0)
                 return;
 
@@ -297,7 +301,7 @@ namespace Hecton8.Gameplay
             if (_resolvedLootItems == null || _resolvedLootItems.Length == 0)
                 return null;
 
-            uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)Mathf.CeilToInt(toolPower * 100f);
+            uint seed = unchecked((uint)EntityId.ToULong(GetEntityId())) ^ (uint)(int)math.ceil(toolPower * 100f);
             int index = (int)(seed % (uint)_resolvedLootItems.Length);
             return _resolvedLootItems[index];
         }
@@ -356,7 +360,7 @@ namespace Hecton8.Gameplay
 
         private void ResetState()
         {
-            _currentHealth = Mathf.Max(1, hitsToBreak);
+            _currentHealth = math.max(1, hitsToBreak);
             _isBroken = false;
 
             if (_cachedRenderers != null)
@@ -384,7 +388,7 @@ namespace Hecton8.Gameplay
         {
             int authoredCount = lootItems != null ? lootItems.Length : 0;
             int legacyCount = lootPrefabs != null ? lootPrefabs.Length : 0;
-            int capacity = Mathf.Max(1, Mathf.Max(authoredCount, legacyCount));
+            int capacity = math.max(1, math.max(authoredCount, legacyCount));
 
             // COLD ALLOC: ItemData[n] - resolved yield item cache - owner: HarvestableOutcrop
             _resolvedLootItems = new ItemData[capacity];
@@ -485,7 +489,22 @@ namespace Hecton8.Gameplay
         private Vector3 ResolveFallbackNormal(Vector3 hitPoint)
         {
             Vector3 normal = hitPoint - _cachedTransform.position;
-            return normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            return TryNormalize(normal, out Vector3 normalized)
+                ? normalized
+                : Vector3.up;
+        }
+
+        private static bool TryNormalize(Vector3 value, out Vector3 normalized)
+        {
+            float lengthSq = value.sqrMagnitude;
+            if (lengthSq <= 0.0001f)
+            {
+                normalized = default;
+                return false;
+            }
+
+            normalized = value * math.rsqrt(lengthSq);
+            return true;
         }
 
 #if UNITY_EDITOR

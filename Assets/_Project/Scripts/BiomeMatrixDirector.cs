@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -20,6 +21,7 @@ namespace Hecton8.Environment
 
     public static class BiomeMatrixEvents
     {
+        [StructLayout(LayoutKind.Sequential)]
         private struct BiomeMatrixEventPayload
         {
             public byte EventType;
@@ -30,19 +32,45 @@ namespace Hecton8.Environment
 
         private const byte MatrixBiomeChangedEventType = 1;
         private const byte DepthTierChangedEventType = 2;
+        private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 32;
         private const int MatrixProfileCacheCapacity = 128;
+        private const uint ListenerRejectedWarningHash = 0x424D524Au; // BMRJ
+        private const uint ListenerExceptionWarningHash = 0x424D4558u; // BMEX
+        private const uint ListenerContextHash = 0x424D4C53u; // BMLS
+        private const uint QueueOverflowWarningHash = 0x424D4551u; // BMEQ
+        private const uint QueueContextHash = 0x424D4550u; // BMEP
+        private const uint ProfileSlotOverflowWarningHash = 0x424D5053u; // BMPS
+        private const uint ProfileSlotContextHash = 0x424D5043u; // BMPC
 
-        private static readonly RegistryBucket<IBiomeMatrixEventListener> _listeners = new RegistryBucket<IBiomeMatrixEventListener>(16);
+        private static readonly RegistryBucket<IBiomeMatrixEventListener> _listeners = new RegistryBucket<IBiomeMatrixEventListener>(ListenerCapacity);
+        // COLD ALLOC: IBiomeMatrixEventListener[16] - listener additions deferred while dispatching biome matrix events - owner: BiomeMatrixEvents
+        private static readonly IBiomeMatrixEventListener[] _deferredRegisterListeners = new IBiomeMatrixEventListener[ListenerCapacity];
+        // COLD ALLOC: IBiomeMatrixEventListener[16] - listener removals deferred while dispatching biome matrix events - owner: BiomeMatrixEvents
+        private static readonly IBiomeMatrixEventListener[] _deferredUnregisterListeners = new IBiomeMatrixEventListener[ListenerCapacity];
         private static readonly HectonBiomeMatrixProfile[] _profilesBySlot = new HectonBiomeMatrixProfile[MatrixProfileCacheCapacity]; // COLD ALLOC: HectonBiomeMatrixProfile[128] - stable profile lookup for deferred biome matrix payloads - owner: BiomeMatrixEvents
         private static NativeQueue<BiomeMatrixEventPayload> _pendingEvents;
         private static NativeQueue<BiomeMatrixEventPayload> _nextFrameEvents;
         private static int _profileSlotCount;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedEventCount;
+        private static int _droppedProfileSlotCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastQueueOverflowTelemetryFrame = -1;
+        private static int _lastProfileSlotOverflowTelemetryFrame = -1;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DroppedProfileSlotCount => _droppedProfileSlotCount;
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -62,32 +90,68 @@ namespace Hecton8.Environment
             }
 
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             Array.Clear(_profilesBySlot, 0, _profileSlotCount);
             _profileSlotCount = 0;
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedEventCount = 0;
+            _droppedProfileSlotCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastQueueOverflowTelemetryFrame = -1;
+            _lastProfileSlotOverflowTelemetryFrame = -1;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
         public static void Register(IBiomeMatrixEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         public static void Unregister(IBiomeMatrixEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            _listeners.TryUnregister(listener);
         }
 
         public static void RaiseMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
-            EnsureInitialized();
-            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            if (_listeners.Count <= 0)
                 return;
 
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportQueueOverflow(MatrixBiomeChangedEventType);
+                return;
+            }
+
             int profileSlot = ResolveProfileSlot(profile);
+            if (profile != null && profileSlot < 0)
+                ReportProfileSlotOverflow();
 
             Enqueue(new BiomeMatrixEventPayload
             {
@@ -98,9 +162,15 @@ namespace Hecton8.Environment
 
         public static void RaiseDepthTierChanged(int depthTier, float depthMeters)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReportQueueOverflow(DepthTierChangedEventType);
                 return;
+            }
 
             Enqueue(new BiomeMatrixEventPayload
             {
@@ -136,6 +206,7 @@ namespace Hecton8.Environment
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -172,8 +243,10 @@ namespace Hecton8.Environment
                 for (int i = listenerCount - 1; i >= 0; i--)
                 {
                     IBiomeMatrixEventListener listener = listenerBuffer[i];
-                    if (listener != null)
-                        listener.OnMatrixBiomeChanged(profile);
+                    if (listener == null || IsDeferredUnregisterPending(listener))
+                        continue;
+
+                    DispatchMatrixBiomeChanged(listener, profile);
                 }
 
                 return;
@@ -184,8 +257,10 @@ namespace Hecton8.Environment
                 for (int i = listenerCount - 1; i >= 0; i--)
                 {
                     IBiomeMatrixEventListener listener = listenerBuffer[i];
-                    if (listener != null)
-                        listener.OnDepthTierChanged(payload.DepthTier, payload.DepthMeters);
+                    if (listener == null || IsDeferredUnregisterPending(listener))
+                        continue;
+
+                    DispatchDepthTierChanged(listener, payload.DepthTier, payload.DepthMeters);
                 }
             }
         }
@@ -201,6 +276,7 @@ namespace Hecton8.Environment
                     nameof(BiomeMatrixEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -212,6 +288,21 @@ namespace Hecton8.Environment
                     nameof(BiomeMatrixEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -249,6 +340,218 @@ namespace Hecton8.Environment
             int slot = _profileSlotCount++;
             _profilesBySlot[slot] = profile;
             return slot;
+        }
+
+        private static void DispatchMatrixBiomeChanged(IBiomeMatrixEventListener listener, HectonBiomeMatrixProfile profile)
+        {
+            try
+            {
+                listener.OnMatrixBiomeChanged(profile);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        private static void DispatchDepthTierChanged(IBiomeMatrixEventListener listener, int depthTier, float depthMeters)
+        {
+            try
+            {
+                listener.OnDepthTierChanged(depthTier, depthMeters);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IBiomeMatrixEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IBiomeMatrixEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IBiomeMatrixEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IBiomeMatrixEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IBiomeMatrixEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IBiomeMatrixEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IBiomeMatrixEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IBiomeMatrixEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
+        private static void RegisterImmediate(IBiomeMatrixEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportQueueOverflow(byte eventType)
+        {
+            _droppedEventCount++;
+            int frame = Time.frameCount;
+            if (_lastQueueOverflowTelemetryFrame == frame)
+                return;
+
+            _lastQueueOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                QueueOverflowWarningHash,
+                QueueContextHash ^ ((uint)eventType << 24),
+                Mathf.Max(1, _droppedEventCount));
+        }
+
+        private static void ReportProfileSlotOverflow()
+        {
+            _droppedProfileSlotCount++;
+            int frame = Time.frameCount;
+            if (_lastProfileSlotOverflowTelemetryFrame == frame)
+                return;
+
+            _lastProfileSlotOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ProfileSlotOverflowWarningHash,
+                ProfileSlotContextHash,
+                Mathf.Max(1, _droppedProfileSlotCount));
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerRejectedWarningHash,
+                ListenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ListenerExceptionWarningHash,
+                ListenerContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
         }
     }
 
@@ -674,7 +977,7 @@ namespace Hecton8.Environment
                 return;
 
             if (_resolvedMapMagicBridge == null)
-                _resolvedMapMagicBridge = MapMagicBridge.Instance;
+                _resolvedMapMagicBridge = GlobalRegistry.MapMagic;
             if (_resolvedMapMagicBridge == null ||
                 !_resolvedMapMagicBridge.TryGetHeight(evaluationPosition.x, evaluationPosition.z, out float seafloorHeight))
             {
@@ -805,9 +1108,7 @@ namespace Hecton8.Environment
 
             if (_resolvedMapMagicBridge == null)
             {
-                _resolvedMapMagicBridge = Application.isPlaying
-                    ? MapMagicBridge.Instance
-                    : MapMagicBridge.Instance;
+                _resolvedMapMagicBridge = GlobalRegistry.MapMagic;
             }
 
             if (_resolvedMapMagicBridge != null)

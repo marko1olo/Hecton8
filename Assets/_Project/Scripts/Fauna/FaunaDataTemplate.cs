@@ -262,6 +262,15 @@ namespace Hecton8.AI
         [SerializeField, Tooltip("Stable scan entry ID emitted by ScannableTarget when this fauna is discovered.")]
         private string scanEntryId = "fauna.unknown";
 
+        [NonSerialized]
+        private string _cachedResolvedScanEntryId;
+
+        [NonSerialized]
+        private string _cachedResolvedScanEntrySource;
+
+        [NonSerialized]
+        private int _cachedResolvedScanEntrySpeciesId = -1;
+
         [SerializeField, Tooltip("PDA-facing scan entry title.")]
         private string scanEntryTitle = "UNIDENTIFIED BIOFORM";
 
@@ -446,9 +455,7 @@ namespace Hecton8.AI
         /// <summary>
         /// Stable scanner entry identifier used by fauna scan registration.
         /// </summary>
-        public string ScanEntryId => string.IsNullOrWhiteSpace(scanEntryId)
-            ? $"fauna.species.{speciesId}"
-            : scanEntryId.Trim();
+        public string ScanEntryId => ResolveScanEntryId();
 
         /// <summary>
         /// Optional authored scanner title override.
@@ -459,6 +466,25 @@ namespace Hecton8.AI
         /// Optional authored scanner category override.
         /// </summary>
         public string ScanEntryCategory => scanEntryCategory;
+
+        private string ResolveScanEntryId()
+        {
+            string source = scanEntryId;
+            bool hasAuthoredId = !string.IsNullOrWhiteSpace(source);
+            if (ReferenceEquals(_cachedResolvedScanEntrySource, source) &&
+                _cachedResolvedScanEntrySpeciesId == speciesId &&
+                !string.IsNullOrEmpty(_cachedResolvedScanEntryId))
+            {
+                return _cachedResolvedScanEntryId;
+            }
+
+            _cachedResolvedScanEntrySource = source;
+            _cachedResolvedScanEntrySpeciesId = speciesId;
+            _cachedResolvedScanEntryId = hasAuthoredId
+                ? source.Trim() // COLD ALLOC: scan metadata normalization only when template source changes.
+                : string.Concat("fauna.species.", speciesId); // COLD ALLOC: fallback scan ID cached per species id.
+            return _cachedResolvedScanEntryId;
+        }
 
         /// <summary>
         /// Optional authored scanner summary override.

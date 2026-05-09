@@ -11,6 +11,8 @@ namespace Hecton8.AI
     public struct FaunaPerceptionSnapshot
     {
         public bool HasPlayer;
+        public bool HasPlayerAup;
+        public AbsoluteUniversePosition PlayerAup;
         public Vector3 PlayerPosition;
         public Vector3 PlayerVelocity;
         public Vector3 PlayerForward;
@@ -39,6 +41,12 @@ namespace Hecton8.AI
         private const float PlayerFlashlightConeDotThreshold = 0.9f;
         private const float PlayerFlashlightBlindDistanceSq = 400f;
         private const float PlayerFlashlightBlindDurationSeconds = 0.35f;
+        private const float VisionConeLutMinDegrees = 10f;
+        private const float VisionConeLutMaxDegrees = 360f;
+        private const float VisionConeLutInvStepDegrees = 0.1f;
+        private const int VisionConeLutLastIndex = 35;
+        private const float ObstacleRayYawSin45 = 0.70710678f;
+        private const float ObstacleRayYawCos45 = 0.70710678f;
 
         [Header("── Avoidance ──────────────────────────────────")]
         public float avoidanceRange = 8f;
@@ -213,9 +221,30 @@ namespace Hecton8.AI
             float currentTimeSeconds,
             bool forceLongRangeCognition)
         {
-            _authoredTimeSeconds = currentTimeSeconds;
+            float safeCurrentTimeSeconds = math.isfinite(currentTimeSeconds) ? currentTimeSeconds : _authoredTimeSeconds;
+            _authoredTimeSeconds = safeCurrentTimeSeconds;
+            if (!IsFinite(selfPosition))
+            {
+                distSqrToPlayer = float.MaxValue;
+                lodDisabled = true;
+                isSleeping = true;
+                isAvoidingObstacle = false;
+                canSeePlayer = false;
+                hasVisualPlayerContact = false;
+                hasNoisePlayerContact = false;
+                isThreatened = false;
+                hasPlayerFlashlightConeHit = false;
+                playerFlashlightExposure01 = 0f;
+                playerFlashlightThreatPosition = default;
+                _avoidanceTimeAccumulator = 0f;
+                ClearPerceptionCache();
+                ClearDeferredObstacleHits();
+                ClearSpatialTargets();
+                return;
+            }
+
             _cachedSelfPosition = selfPosition;
-            _cachedSelfForward = selfForward.sqrMagnitude > 0.0001f ? selfForward.normalized : Vector3.forward;
+            _cachedSelfForward = ResolveDominantAxisDirection(selfForward, Vector3.forward);
             _cachedSelfAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedSelfPosition);
             CachePerceptionSnapshot(in perceptionSnapshot);
             hasPlayerFlashlightConeHit = false;
@@ -257,21 +286,44 @@ namespace Hecton8.AI
 
         private void CachePerceptionSnapshot(in FaunaPerceptionSnapshot perceptionSnapshot)
         {
-            _hasPlayerSnapshot = perceptionSnapshot.HasPlayer;
-            _hasPlayerVelocitySnapshot = perceptionSnapshot.HasPlayerVelocity;
-            _hasPlayerForwardSnapshot = perceptionSnapshot.HasPlayerForward;
-            _playerFlashlightOn = perceptionSnapshot.PlayerFlashlightOn;
-            _cachedPlayerPosition = perceptionSnapshot.PlayerPosition;
-            _cachedPlayerVelocity = perceptionSnapshot.PlayerVelocity;
-            _cachedPlayerForward = perceptionSnapshot.PlayerForward.sqrMagnitude > 0.0001f
-                ? perceptionSnapshot.PlayerForward.normalized
+            _hasPlayerSnapshot = perceptionSnapshot.HasPlayer && IsFinite(perceptionSnapshot.PlayerPosition);
+            _hasPlayerVelocitySnapshot = _hasPlayerSnapshot &&
+                                         perceptionSnapshot.HasPlayerVelocity &&
+                                         IsFinite(perceptionSnapshot.PlayerVelocity);
+            _hasPlayerForwardSnapshot = _hasPlayerSnapshot &&
+                                        perceptionSnapshot.HasPlayerForward &&
+                                        IsFinite(perceptionSnapshot.PlayerForward);
+            _playerFlashlightOn = _hasPlayerSnapshot && perceptionSnapshot.PlayerFlashlightOn;
+            _cachedPlayerPosition = _hasPlayerSnapshot ? perceptionSnapshot.PlayerPosition : default;
+            _cachedPlayerVelocity = _hasPlayerVelocitySnapshot ? perceptionSnapshot.PlayerVelocity : default;
+            _cachedPlayerForward = _hasPlayerForwardSnapshot && perceptionSnapshot.PlayerForward.sqrMagnitude > 0.0001f
+                ? ResolveDominantAxisDirection(perceptionSnapshot.PlayerForward, Vector3.forward)
                 : Vector3.forward;
-            _cachedPlayerAup = _hasPlayerSnapshot
+            _cachedPlayerAup = _hasPlayerSnapshot && perceptionSnapshot.HasPlayerAup && IsFiniteAup(in perceptionSnapshot.PlayerAup)
+                ? perceptionSnapshot.PlayerAup
+                : _hasPlayerSnapshot
                 ? AbsoluteUniversePosition.FromRuntimePosition(_cachedPlayerPosition)
                 : default;
-            _hasScavengeToolSnapshot = perceptionSnapshot.HasScavengeTool;
-            _cachedScavengeToolPosition = perceptionSnapshot.ScavengeToolPosition;
-            _cachedScavengeToolOwner = perceptionSnapshot.ScavengeToolOwner;
+            _hasScavengeToolSnapshot = perceptionSnapshot.HasScavengeTool &&
+                                       perceptionSnapshot.ScavengeToolOwner != null &&
+                                       IsFinite(perceptionSnapshot.ScavengeToolPosition);
+            _cachedScavengeToolPosition = _hasScavengeToolSnapshot ? perceptionSnapshot.ScavengeToolPosition : default;
+            _cachedScavengeToolOwner = _hasScavengeToolSnapshot ? perceptionSnapshot.ScavengeToolOwner : null;
+        }
+
+        private void ClearPerceptionCache()
+        {
+            _hasPlayerSnapshot = false;
+            _hasPlayerVelocitySnapshot = false;
+            _hasPlayerForwardSnapshot = false;
+            _playerFlashlightOn = false;
+            _cachedPlayerPosition = default;
+            _cachedPlayerVelocity = default;
+            _cachedPlayerForward = Vector3.forward;
+            _cachedPlayerAup = default;
+            _hasScavengeToolSnapshot = false;
+            _cachedScavengeToolPosition = default;
+            _cachedScavengeToolOwner = null;
         }
 
         private void ClearSpatialTargets()
@@ -290,6 +342,64 @@ namespace Hecton8.AI
             currentPreyOwner = null;
         }
 
+        private static float ResolveVisionConeDotThreshold(float fullConeAngleDegrees)
+        {
+            float clampedDegrees = math.clamp(fullConeAngleDegrees, VisionConeLutMinDegrees, VisionConeLutMaxDegrees);
+            float scaledIndex = (clampedDegrees - VisionConeLutMinDegrees) * VisionConeLutInvStepDegrees;
+            int lowerIndex = (int)scaledIndex;
+            if (lowerIndex >= VisionConeLutLastIndex)
+                return ResolveVisionConeDotThresholdSample(VisionConeLutLastIndex);
+
+            float blend = scaledIndex - lowerIndex;
+            return math.lerp(
+                ResolveVisionConeDotThresholdSample(lowerIndex),
+                ResolveVisionConeDotThresholdSample(lowerIndex + 1),
+                blend);
+        }
+
+        private static float ResolveVisionConeDotThresholdSample(int index)
+        {
+            switch (index)
+            {
+                case 0: return 0.9961947f;
+                case 1: return 0.98480775f;
+                case 2: return 0.96592583f;
+                case 3: return 0.93969262f;
+                case 4: return 0.90630779f;
+                case 5: return 0.8660254f;
+                case 6: return 0.81915204f;
+                case 7: return 0.76604444f;
+                case 8: return 0.70710678f;
+                case 9: return 0.64278761f;
+                case 10: return 0.57357644f;
+                case 11: return 0.5f;
+                case 12: return 0.42261826f;
+                case 13: return 0.34202014f;
+                case 14: return 0.25881905f;
+                case 15: return 0.17364818f;
+                case 16: return 0.08715574f;
+                case 17: return 0f;
+                case 18: return -0.08715574f;
+                case 19: return -0.17364818f;
+                case 20: return -0.25881905f;
+                case 21: return -0.34202014f;
+                case 22: return -0.42261826f;
+                case 23: return -0.5f;
+                case 24: return -0.57357644f;
+                case 25: return -0.64278761f;
+                case 26: return -0.70710678f;
+                case 27: return -0.76604444f;
+                case 28: return -0.81915204f;
+                case 29: return -0.8660254f;
+                case 30: return -0.90630779f;
+                case 31: return -0.93969262f;
+                case 32: return -0.96592583f;
+                case 33: return -0.98480775f;
+                case 34: return -0.9961947f;
+                default: return -1f;
+            }
+        }
+
         private void UpdateMajorSenses()
         {
             bool withinVisionCone = true;
@@ -300,7 +410,7 @@ namespace Hecton8.AI
                 if (toPlayerLengthSq > 0.0001f && visionConeAngle < 359f)
                 {
                     float3 playerDirection = toPlayer * math.rsqrt(toPlayerLengthSq);
-                    float coneDotThreshold = math.cos(math.radians(math.clamp(visionConeAngle, 10f, 360f) * 0.5f));
+                    float coneDotThreshold = ResolveVisionConeDotThreshold(visionConeAngle);
                     withinVisionCone = math.dot((float3)_cachedSelfForward, playerDirection) >= coneDotThreshold;
                 }
             }
@@ -345,7 +455,7 @@ namespace Hecton8.AI
                 return;
 
             float distanceSq = (float)math.min(aupDistanceSq, float.MaxValue);
-            float3 lightDirection = math.normalizesafe((float3)_cachedPlayerForward, new float3(0f, 0f, 1f));
+            float3 lightDirection = (float3)ResolveDominantAxisDirection(_cachedPlayerForward, Vector3.forward);
             float flashlightDotNumerator = math.dot(lightDirection, toCreature);
             if (flashlightDotNumerator <= 0f)
                 return;
@@ -375,9 +485,9 @@ namespace Hecton8.AI
             _lastReportedPlayerTimeSeconds = _authoredTimeSeconds;
             hasNoisePlayerContact = true;
             RememberPlayerPosition(playerNoise.Position);
-            AbsoluteUniversePosition noiseAup = AbsoluteUniversePosition.FromRuntimePosition(_lastKnownPlayerPosition);
+            AbsoluteUniversePosition playerNoiseAup = playerNoise.PositionAup;
             distSqrToPlayer = (float)math.min(
-                AbsoluteUniversePosition.DistanceSq(in noiseAup, in _cachedSelfAup),
+                AbsoluteUniversePosition.DistanceSq(in playerNoiseAup, in _cachedSelfAup),
                 float.MaxValue);
         }
 
@@ -467,7 +577,7 @@ namespace Hecton8.AI
 
         public void ApplyFlashBlind(float currentTimeSeconds, float durationSeconds)
         {
-            _flashBlindUntilTimeSeconds = Mathf.Max(_flashBlindUntilTimeSeconds, currentTimeSeconds + Mathf.Max(0f, durationSeconds));
+            _flashBlindUntilTimeSeconds = math.max(_flashBlindUntilTimeSeconds, currentTimeSeconds + math.max(0f, durationSeconds));
             canSeePlayer = false;
             hasVisualPlayerContact = false;
             hasNoisePlayerContact = false;
@@ -498,7 +608,7 @@ namespace Hecton8.AI
             if (territoryMask == 0 || _profile == null)
                 return;
 
-            if (FaunaSpatialHashRegistry.TryGetNearestBioform(
+            if (FaunaSpatialHashRegistry.TryGetNearestAdjacentBioform(
                     in _cachedSelfAup,
                     _profile.territoryThreatRadius,
                     _profile.predatorMask,
@@ -516,8 +626,12 @@ namespace Hecton8.AI
 
         private void UpdateObstacleAvoidance(float dt, Vector3 velocity)
         {
-            float length = Mathf.Clamp(avoidanceRange + velocity.magnitude * lookAheadFactor, avoidanceRange, maxRayLength);
-            Vector3 forwardDirection = velocity.sqrMagnitude > 0.0001f ? velocity.normalized : _cachedSelfForward;
+            Vector3 safeVelocity = IsFinite(velocity) ? velocity : Vector3.zero;
+            float safeDeltaTime = math.isfinite(dt) ? math.max(dt, 0f) : _foveatedTickIntervalSeconds;
+            float length = math.clamp(avoidanceRange + ApproximateMagnitude(safeVelocity) * lookAheadFactor, avoidanceRange, maxRayLength);
+            Vector3 forwardDirection = safeVelocity.sqrMagnitude > 0.0001f
+                ? ResolveDominantAxisDirection(safeVelocity, _cachedSelfForward)
+                : _cachedSelfForward;
             _rayDirs[0] = forwardDirection;
             _queuedForwardObstacleRayDirection = forwardDirection;
             _queuedLeftObstacleRayDirection = RotateObstacleDirection(forwardDirection, -SideObstacleRayYawDegrees);
@@ -526,7 +640,7 @@ namespace Hecton8.AI
             isAvoidingObstacle = TryResolveObstacleAvoidanceDirection(forwardDirection, length, out Vector3 resolvedDirection, out _);
             if (isAvoidingObstacle)
             {
-                _avoidanceTimeAccumulator += Mathf.Max(dt, _foveatedTickIntervalSeconds);
+                _avoidanceTimeAccumulator += math.max(safeDeltaTime, _foveatedTickIntervalSeconds);
                 bestFreeDirection = resolvedDirection;
             }
             else
@@ -604,7 +718,7 @@ namespace Hecton8.AI
             uint dietMaskBits = _ownerBrain.DietMaskBits;
             if (dietMaskBits != 0u)
             {
-                int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                int count = FaunaSpatialHashRegistry.CollectAdjacentContactsNonAlloc(
                     in _cachedSelfAup,
                     aggroDistance,
                     SpatialTargetKind.Bioform,
@@ -642,7 +756,7 @@ namespace Hecton8.AI
             if (searchMask == 0)
                 return;
 
-            if (FaunaSpatialHashRegistry.TryGetNearestBioform(
+            if (FaunaSpatialHashRegistry.TryGetNearestAdjacentBioform(
                     in _cachedSelfAup,
                     aggroDistance,
                     searchMask,
@@ -669,7 +783,7 @@ namespace Hecton8.AI
             if (layerMaskValue == 0)
                 return false;
 
-            int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+            int count = FaunaSpatialHashRegistry.CollectAdjacentContactsNonAlloc(
                 in _cachedSelfAup,
                 distractorDetectRadius,
                 SpatialTargetKind.Pickup | SpatialTargetKind.Signal,
@@ -698,7 +812,7 @@ namespace Hecton8.AI
         private bool TryResolveNearestBaitPickup(out SpatialQueryHit nearestHit)
         {
             nearestHit = default;
-            int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+            int count = FaunaSpatialHashRegistry.CollectAdjacentContactsNonAlloc(
                 in _cachedSelfAup,
                 distractorDetectRadius,
                 SpatialTargetKind.Pickup,
@@ -731,7 +845,7 @@ namespace Hecton8.AI
             if (_profile.baseAggro < 0.45f)
                 return false;
 
-            int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+            int count = FaunaSpatialHashRegistry.CollectAdjacentContactsNonAlloc(
                 in _cachedSelfAup,
                 distractorDetectRadius,
                 SpatialTargetKind.Signal,
@@ -745,7 +859,7 @@ namespace Hecton8.AI
                 if (survival == null || !survival.IsBleeding)
                     continue;
 
-                float bleedSeverity = Mathf.Max(0.1f, survival.BleedingSeverity01);
+                float bleedSeverity = math.max(0.1f, survival.BleedingSeverity01);
                 float weightedDistance = hit.DistanceSqr / bleedSeverity;
                 if (weightedDistance >= bestWeightedDistance)
                     continue;
@@ -803,12 +917,12 @@ namespace Hecton8.AI
             if (!_hasDeferredForwardObstacleHit || _deferredForwardObstacleHit.collider == null)
                 return false;
 
-            float rayLength = Mathf.Max(avoidanceRange, _queuedObstacleRayLength);
+            float rayLength = math.max(avoidanceRange, _queuedObstacleRayLength);
             if (_deferredForwardObstacleHit.distance <= 0f || _deferredForwardObstacleHit.distance > rayLength)
                 return false;
 
             surfaceNormal = _deferredForwardObstacleHit.normal;
-            obstaclePressure01 = 1f - Mathf.Clamp01(_deferredForwardObstacleHit.distance / Mathf.Max(rayLength, 0.001f));
+            obstaclePressure01 = 1f - math.saturate(_deferredForwardObstacleHit.distance / math.max(rayLength, 0.001f));
             return obstaclePressure01 > 0f && surfaceNormal.sqrMagnitude > 0.0001f;
         }
 
@@ -823,15 +937,15 @@ namespace Hecton8.AI
             out Vector3 avoidanceDirection,
             out float obstaclePressure01)
         {
-            float safeRayLength = Mathf.Max(avoidanceRange, rayLength);
+            float safeRayLength = math.max(avoidanceRange, rayLength);
             Vector3 resolvedForward = fallbackForward.sqrMagnitude > 0.0001f
-                ? fallbackForward.normalized
+                ? ResolveDominantAxisDirection(fallbackForward, _cachedSelfForward)
                 : _cachedSelfForward;
             Vector3 leftDirection = _queuedLeftObstacleRayDirection.sqrMagnitude > 0.0001f
-                ? _queuedLeftObstacleRayDirection.normalized
+                ? ResolveDominantAxisDirection(_queuedLeftObstacleRayDirection, resolvedForward)
                 : RotateObstacleDirection(resolvedForward, -SideObstacleRayYawDegrees);
             Vector3 rightDirection = _queuedRightObstacleRayDirection.sqrMagnitude > 0.0001f
-                ? _queuedRightObstacleRayDirection.normalized
+                ? ResolveDominantAxisDirection(_queuedRightObstacleRayDirection, resolvedForward)
                 : RotateObstacleDirection(resolvedForward, SideObstacleRayYawDegrees);
 
             bool forwardClosed = TrySampleNavGridObstacle(resolvedForward, safeRayLength, out float forwardPressure01);
@@ -872,20 +986,25 @@ namespace Hecton8.AI
                     avoidance += leftDirection * 0.5f;
             }
 
-            obstaclePressure01 = Mathf.Clamp01(totalPressure);
+            obstaclePressure01 = math.saturate(totalPressure);
             Vector3 combined = resolvedForward + avoidance;
             if (combined.sqrMagnitude <= 0.0001f)
                 combined = -resolvedForward;
 
-            avoidanceDirection = combined.normalized;
+            avoidanceDirection = ResolveDominantAxisDirection(combined, -resolvedForward);
             return avoidanceDirection.sqrMagnitude > 0.0001f;
         }
 
         private static Vector3 RotateObstacleDirection(Vector3 forwardDirection, float yawDegrees)
         {
-            float3 forward = math.normalizesafe((float3)forwardDirection, new float3(0f, 0f, 1f));
-            quaternion rotation = quaternion.AxisAngle(new float3(0f, 1f, 0f), math.radians(yawDegrees));
-            return (Vector3)math.normalizesafe(math.mul(rotation, forward), new float3(0f, 0f, 1f));
+            float3 forward = (float3)ResolveDominantAxisDirection(forwardDirection, Vector3.forward);
+            float yawSign = yawDegrees < 0f ? -1f : 1f;
+            float yawSin = ObstacleRayYawSin45 * yawSign;
+            float3 rotated = new float3(
+                (forward.x * ObstacleRayYawCos45) + (forward.z * yawSin),
+                forward.y,
+                (-forward.x * yawSin) + (forward.z * ObstacleRayYawCos45));
+            return ResolveDominantAxisDirection((Vector3)rotated, Vector3.forward);
         }
 
         private void ClearDeferredObstacleHits()
@@ -909,12 +1028,12 @@ namespace Hecton8.AI
             if (direction.sqrMagnitude <= 0.0001f)
                 return false;
 
-            float probeDistance = Mathf.Clamp(distanceMeters, Mathf.Max(0.25f, avoidanceRange * 0.5f), maxRayLength);
-            Vector3 probePosition = _cachedSelfPosition + direction.normalized * probeDistance;
+            float probeDistance = math.clamp(distanceMeters, math.max(0.25f, avoidanceRange * 0.5f), maxRayLength);
+            Vector3 probePosition = _cachedSelfPosition + ResolveDominantAxisDirection(direction, _cachedSelfForward) * probeDistance;
             if (!TrySampleClosedNavGridCell(probePosition))
                 return false;
 
-            pressure01 = Mathf.Clamp01(1f - (probeDistance / Mathf.Max(maxRayLength, 0.001f)));
+            pressure01 = math.saturate(1f - (probeDistance / math.max(maxRayLength, 0.001f)));
             if (pressure01 <= 0.001f)
                 pressure01 = 1f;
             return true;
@@ -922,6 +1041,9 @@ namespace Hecton8.AI
 
         private static bool TrySampleClosedNavGridCell(Vector3 runtimePosition)
         {
+            if (!IsFinite(runtimePosition))
+                return false;
+
             if (!VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(
                     new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
                     out VoxelDynamicNavGridRuntime.HybridNavigationSample sample))
@@ -931,6 +1053,49 @@ namespace Hecton8.AI
 
             return sample.Mode == VoxelDynamicNavGridRuntime.HybridNavigationMode.SolidVoxel ||
                    sample.Passability == VoxelDynamicNavGridRuntime.SolidCell;
+        }
+
+        private static Vector3 ResolveDominantAxisDirection(Vector3 direction, Vector3 fallback)
+        {
+            if (!IsFinite(direction) || direction.sqrMagnitude <= 0.0001f)
+                direction = fallback;
+
+            if (!IsFinite(direction) || direction.sqrMagnitude <= 0.0001f)
+                return Vector3.forward;
+
+            float absX = math.abs(direction.x);
+            float absY = math.abs(direction.y);
+            float absZ = math.abs(direction.z);
+            if (absX >= absY && absX >= absZ)
+                return direction.x < 0f ? Vector3.left : Vector3.right;
+
+            if (absY >= absZ)
+                return direction.y < 0f ? Vector3.down : Vector3.up;
+
+            return direction.z < 0f ? Vector3.back : Vector3.forward;
+        }
+
+        private static float ApproximateMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + mid * 0.375f + min * 0.125f;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+
+        private static bool IsFiniteAup(in AbsoluteUniversePosition position)
+        {
+            return math.all(math.isfinite(new float3(position.LocalX, position.LocalY, position.LocalZ)));
         }
     }
 }

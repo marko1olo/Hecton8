@@ -5,6 +5,7 @@ using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Narrative;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -316,11 +317,11 @@ namespace Hecton8.UI
             if (_timer > 0f)
             {
                 _timer -= deltaTime;
-                _currentAlpha = Mathf.Lerp(_currentAlpha, 1f, 1f - Mathf.Exp(-fadeSpeed * deltaTime));
+                _currentAlpha = math.lerp(_currentAlpha, 1f, FastDecayBlend(fadeSpeed, deltaTime));
             }
             else
             {
-                _currentAlpha = Mathf.Lerp(_currentAlpha, 0f, 1f - Mathf.Exp(-fadeSpeed * deltaTime));
+                _currentAlpha = math.lerp(_currentAlpha, 0f, FastDecayBlend(fadeSpeed, deltaTime));
                 if (_currentAlpha < 0.01f)
                 {
                     _currentAlpha = 0f;
@@ -999,6 +1000,15 @@ namespace Hecton8.UI
 
             start = safeStart;
             endExclusive = safeEnd;
+        }
+
+        private static float FastDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            if (x >= 3.5f)
+                return 1f;
+
+            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
         }
     }
 }

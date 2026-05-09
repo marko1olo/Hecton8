@@ -2,6 +2,7 @@ using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton.Localization;
 using Hecton8.Physics;
+using System.Runtime.InteropServices;
 using Unity.Collections;
 using Unity.Mathematics;
 using Unity.Profiling;
@@ -22,6 +23,7 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Submarine Core Director")]
     public sealed class SubmarineCoreDirector : MonoBehaviour, ISubmarineRuntimeContext, IFixedTickable
     {
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         public struct SubmarinePhysicsBindingState
         {
             public float3 LinearVelocity;
@@ -29,6 +31,7 @@ namespace Hecton8.Gameplay
             public float3 CenterOfMass;
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 1)]
         public struct SubmarineGridState
         {
             public byte HasStructuralGrid;
@@ -134,13 +137,13 @@ namespace Hecton8.Gameplay
         public SubmarineStructuralGrid StructuralGrid => structuralGrid;
 
         /// <summary>Published hull summary owned by the submarine root.</summary>
-        public NativeArray<float> HullIntegritySummaryNative => _hullIntegritySummaryNative;
+        public NativeArray<float>.ReadOnly HullIntegritySummaryNative => _hullIntegritySummaryNative.AsReadOnly();
 
         /// <summary>Published rigidbody motion snapshot owned by the submarine root.</summary>
-        public NativeArray<SubmarinePhysicsBindingState> PhysicsBindingsNative => _physicsBindingsNative;
+        public NativeArray<SubmarinePhysicsBindingState>.ReadOnly PhysicsBindingsNative => _physicsBindingsNative.AsReadOnly();
 
         /// <summary>Published subsystem readiness snapshot owned by the submarine root.</summary>
-        public NativeArray<SubmarineGridState> GridStatesNative => _gridStatesNative;
+        public NativeArray<SubmarineGridState>.ReadOnly GridStatesNative => _gridStatesNative.AsReadOnly();
 
         /// <summary>Baseline authored submarine stat asset.</summary>
         public SubmarineProfile Profile => submarineProfile;
@@ -371,13 +374,34 @@ namespace Hecton8.Gameplay
         private void EnsureNativeState()
         {
             if (!_hullIntegritySummaryNative.IsCreated)
+            {
                 _hullIntegritySummaryNative = new NativeArray<float>(HullSummarySlotCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _hullIntegritySummaryNative,
+                    nameof(SubmarineCoreDirector),
+                    nameof(_hullIntegritySummaryNative),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_physicsBindingsNative.IsCreated)
+            {
                 _physicsBindingsNative = new NativeArray<SubmarinePhysicsBindingState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _physicsBindingsNative,
+                    nameof(SubmarineCoreDirector),
+                    nameof(_physicsBindingsNative),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_gridStatesNative.IsCreated)
+            {
                 _gridStatesNative = new NativeArray<SubmarineGridState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _gridStatesNative,
+                    nameof(SubmarineCoreDirector),
+                    nameof(_gridStatesNative),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private void RefreshNativeState()
@@ -454,18 +478,21 @@ namespace Hecton8.Gameplay
         {
             if (_hullIntegritySummaryNative.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_hullIntegritySummaryNative);
                 _hullIntegritySummaryNative.Dispose();
                 _hullIntegritySummaryNative = default;
             }
 
             if (_physicsBindingsNative.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_physicsBindingsNative);
                 _physicsBindingsNative.Dispose();
                 _physicsBindingsNative = default;
             }
 
             if (_gridStatesNative.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_gridStatesNative);
                 _gridStatesNative.Dispose();
                 _gridStatesNative = default;
             }

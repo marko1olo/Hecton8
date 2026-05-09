@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -38,7 +39,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
-    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, IDamageSignalReceiver, ISubmarineHullBreachReadModel
+    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, ISlowTickable, IDamageSignalReceiver, ISubmarineHullBreachReadModel
     {
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
         private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
@@ -66,6 +67,7 @@ namespace Hecton8.Physics
         private const string NativeMemoryOwner = nameof(SubmarineStructuralGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullDamageDiffusionJob : IJob
         {
@@ -141,7 +143,7 @@ namespace Hecton8.Physics
                                 if (currentIntegrity <= 0)
                                     continue;
 
-                                float weight = math.exp(-distSq * invTwoSigmaSq);
+                                float weight = ApproximateExpNegPositive(distSq * invTwoSigmaSq);
                                 int damage = (int)math.round(impact.DamageBytes * weight);
                                 if (damage <= 0)
                                     continue;
@@ -166,8 +168,19 @@ namespace Hecton8.Physics
                         OutputCompartmentBreachAreas[compartmentIndex] += CellBreachAreaSquareMeters;
                 }
             }
+
+            private static float ApproximateExpNegPositive(float x)
+            {
+                float clamped = math.clamp(x, 0f, 8f);
+                float x2 = clamped * clamped;
+                float x3 = x2 * clamped;
+                float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+                float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+                return math.saturate(numerator / math.max(denominator, Epsilon));
+            }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullCompartmentMappingJob : IJobParallelFor
         {
@@ -216,6 +229,7 @@ namespace Hecton8.Physics
             }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 16)]
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullFatigueCompartmentJob : IJob
         {
@@ -265,6 +279,7 @@ namespace Hecton8.Physics
             }
         }
 
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct ImpactCommand
         {
             public float3 LocalPoint;
@@ -328,6 +343,8 @@ namespace Hecton8.Physics
         [SerializeField, Range(1, 64)] private int hullImpactSparkMaxBurstCount = 50;
         [Tooltip("Optional glowing scratch decal prefab. Falls back to the dent decal prefab when unset.")]
         [SerializeField] private DecalProjector hullImpactScratchDecalPrefab;
+        [Tooltip("Cold prewarm count for pooled hull-impact dent/scratch decals. Zero leaves warmup to bootstrap presets.")]
+        [SerializeField, Range(0, 32)] private int hullImpactDecalPoolWarmupCount = 8;
 
         [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional authored hull collider used for automatic local bounds fitting.")]
@@ -362,6 +379,7 @@ namespace Hecton8.Physics
         [SerializeField, Min(0.001f)] private float fakeCrushVoronoiScale = 0.18f;
 
         private bool _registered;
+        private bool _registeredSlowTick;
         private bool _damageReceiverRegistered;
         private bool _damageJobRunning;
         private bool _nativeStateReady;
@@ -385,6 +403,8 @@ namespace Hecton8.Physics
         private ParticleSystem _hullImpactSparkParticles;
         private ParticleSystemRenderer _hullImpactSparkRenderer;
         private ParticleSystem.EmitParams _hullImpactSparkEmitParams;
+        private bool _hullImpactDentDecalPoolWarmed;
+        private bool _hullImpactScratchDecalPoolWarmed;
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) â€” local component search scratch for interface-only wiring â€” owner: SubmarineStructuralGrid
 
         private NativeArray<byte> _cellIntegrityFront;
@@ -436,12 +456,15 @@ namespace Hecton8.Physics
             TryRegisterDamageReceiver();
             EnsureHullCollisionRelay();
             EnsureHullImpactSparkParticles();
+            if (!TryWarmupHullImpactDecalPools())
+                TryRegisterSlowTick();
         }
 
         private void OnDisable()
         {
             StopHullImpactSparkParticles();
             ClearHullCollisionRelay();
+            TryUnregisterSlowTick();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
@@ -454,6 +477,7 @@ namespace Hecton8.Physics
         {
             StopHullImpactSparkParticles();
             ClearHullCollisionRelay();
+            TryUnregisterSlowTick();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
@@ -492,6 +516,12 @@ namespace Hecton8.Physics
             ConsumeCompletedDamageJob();
         }
 
+        public void SlowTick()
+        {
+            if (TryWarmupHullImpactDecalPools())
+                TryUnregisterSlowTick();
+        }
+
         private void OnCollisionEnter(Collision collision)
         {
             ProcessHullCollision(collision);
@@ -519,16 +549,17 @@ namespace Hecton8.Physics
             if (submarine == null || !ReferenceEquals(submarine.HullRigidbody, hullBody))
                 return;
 
-            float impactSpeed = collision.relativeVelocity.magnitude;
-            if (impactSpeed <= Epsilon)
+            float impactSpeedSq = collision.relativeVelocity.sqrMagnitude;
+            if (impactSpeedSq <= Epsilon * Epsilon)
                 return;
 
             float effectiveMass = ResolveEffectiveCollisionMass(hullBody, collision.rigidbody);
-            float kineticEnergy = 0.5f * effectiveMass * impactSpeed * impactSpeed;
+            float kineticEnergy = 0.5f * effectiveMass * impactSpeedSq;
             float yieldEnergy = math.max(Epsilon, hullCollisionYieldEnergyJoules);
             if (kineticEnergy < yieldEnergy)
                 return;
 
+            float impactSpeed = impactSpeedSq * math.rsqrt(math.max(impactSpeedSq, Epsilon * Epsilon));
             float fullDentEnergy = math.max(yieldEnergy + Epsilon, hullCollisionFullDentEnergyJoules);
             float severity01 = math.saturate((kineticEnergy - yieldEnergy) / (fullDentEnergy - yieldEnergy));
             ContactPoint contact = collision.GetContact(0);
@@ -599,7 +630,7 @@ namespace Hecton8.Physics
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
             float severity = math.saturate(severity01);
-            Vector3 normal = outwardNormal.sqrMagnitude > Epsilon ? outwardNormal.normalized : cachedTransform.up;
+            Vector3 normal = ResolveSafeDirection(outwardNormal, cachedTransform.up);
             SpawnHullImpactScratchDecal(worldPoint, normal, impactSpeed, severity);
             TriggerHullImpactCameraShake(severity);
         }
@@ -622,23 +653,21 @@ namespace Hecton8.Physics
 
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
-            Vector3 normal = outwardNormal.sqrMagnitude > Epsilon ? outwardNormal.normalized : cachedTransform.up;
+            Vector3 normal = ResolveSafeDirection(outwardNormal, cachedTransform.up);
             Transform sparkTransform = _hullImpactSparkParticles.transform;
             sparkTransform.SetPositionAndRotation(
                 worldPoint + normal * math.max(0f, dentDecalSurfaceOffsetMeters),
                 Quaternion.LookRotation(normal, ResolveStableDecalUp(normal)));
 
             float safeSeverity = math.saturate(severity01);
-            int burstCount = Mathf.Clamp(
-                Mathf.CeilToInt(math.lerp(6f, math.max(1, hullImpactSparkMaxBurstCount), safeSeverity)),
-                1,
-                math.max(1, hullImpactSparkMaxBurstCount));
+            int maxBurstCount = math.max(1, hullImpactSparkMaxBurstCount);
+            int burstCount = math.clamp((int)math.ceil(math.lerp(6f, maxBurstCount, safeSeverity)), 1, maxBurstCount);
 
             _hullImpactSparkEmitParams.position = sparkTransform.position;
             _hullImpactSparkEmitParams.velocity = normal * math.lerp(1.5f, 4.5f, safeSeverity);
             _hullImpactSparkEmitParams.startLifetime = math.lerp(0.16f, 0.42f, safeSeverity);
             _hullImpactSparkEmitParams.startSize = math.lerp(0.025f, 0.08f, safeSeverity);
-            _hullImpactSparkEmitParams.startColor = Color.Lerp(new Color(1f, 0.45f, 0.08f, 0.85f), Color.white, safeSeverity);
+            _hullImpactSparkEmitParams.startColor = LerpColorClamped(new Color(1f, 0.45f, 0.08f, 0.85f), Color.white, safeSeverity);
             _hullImpactSparkParticles.Emit(_hullImpactSparkEmitParams, burstCount);
         }
 
@@ -656,7 +685,7 @@ namespace Hecton8.Physics
 
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
-            Vector3 normal = outwardNormal.sqrMagnitude > Epsilon ? outwardNormal.normalized : cachedTransform.up;
+            Vector3 normal = ResolveSafeDirection(outwardNormal, cachedTransform.up);
             Quaternion rotation = Quaternion.LookRotation(-normal, ResolveStableDecalUp(normal));
             Vector3 position = worldPoint + normal * math.max(0f, dentDecalSurfaceOffsetMeters);
             GameObject instance = pool.Spawn(scratchPrefab, position, rotation);
@@ -752,6 +781,43 @@ namespace Hecton8.Physics
             _hullImpactSparkParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
+        private bool TryWarmupHullImpactDecalPools()
+        {
+            int warmupCount = math.max(0, hullImpactDecalPoolWarmupCount);
+            if (warmupCount <= 0 || (_hullImpactDentDecalPoolWarmed && _hullImpactScratchDecalPoolWarmed))
+                return true;
+
+            if (hullImpactDentDecalPrefab == null && hullImpactScratchDecalPrefab == null)
+            {
+                _hullImpactDentDecalPoolWarmed = true;
+                _hullImpactScratchDecalPoolWarmed = true;
+                return true;
+            }
+
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool == null)
+                return false;
+
+            if (!_hullImpactDentDecalPoolWarmed)
+            {
+                if (hullImpactDentDecalPrefab != null)
+                    pool.Warmup(hullImpactDentDecalPrefab, warmupCount);
+
+                _hullImpactDentDecalPoolWarmed = true;
+            }
+
+            if (!_hullImpactScratchDecalPoolWarmed)
+            {
+                DecalProjector scratchPrefab = hullImpactScratchDecalPrefab;
+                if (scratchPrefab != null && !ReferenceEquals(scratchPrefab, hullImpactDentDecalPrefab))
+                    pool.Warmup(scratchPrefab, warmupCount);
+
+                _hullImpactScratchDecalPoolWarmed = true;
+            }
+
+            return _hullImpactDentDecalPoolWarmed && _hullImpactScratchDecalPoolWarmed;
+        }
+
         private Vector3 ResolveStableDecalUp(Vector3 normal)
         {
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
@@ -760,7 +826,7 @@ namespace Hecton8.Physics
             if (up.sqrMagnitude <= Epsilon)
                 up = Vector3.Cross(normal, cachedTransform.forward);
 
-            return up.sqrMagnitude > Epsilon ? up.normalized : Vector3.up;
+            return ResolveSafeDirection(up, Vector3.up);
         }
 
         /// <inheritdoc />
@@ -837,12 +903,38 @@ namespace Hecton8.Physics
             return (hullMass * otherMass) / math.max(1f, hullMass + otherMass);
         }
 
+        private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
+        {
+            float lengthSq = value.sqrMagnitude;
+            return lengthSq > Epsilon
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static float3 NormalizeSafe(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > Epsilon
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
+        }
+
+        private static Color LerpColorClamped(Color from, Color to, float t)
+        {
+            float clampedT = math.saturate(t);
+            return new Color(
+                math.lerp(from.r, to.r, clampedT),
+                math.lerp(from.g, to.g, clampedT),
+                math.lerp(from.b, to.b, clampedT),
+                math.lerp(from.a, to.a, clampedT));
+        }
+
         private float3 ResolveOutwardHullNormal(float3 localPoint, float3 candidateNormal)
         {
             float3 outward = localPoint - new float3(localGridCenter.x, localGridCenter.y, localGridCenter.z);
-            float3 resolvedNormal = math.normalizesafe(candidateNormal, float3.zero);
+            float3 resolvedNormal = NormalizeSafe(candidateNormal, float3.zero);
             if (math.lengthsq(resolvedNormal) <= Epsilon)
-                return math.normalizesafe(outward, new float3(0f, 1f, 0f));
+                return NormalizeSafe(outward, new float3(0f, 1f, 0f));
 
             if (math.dot(resolvedNormal, outward) < 0f)
                 resolvedNormal = -resolvedNormal;
@@ -912,7 +1004,9 @@ namespace Hecton8.Physics
 
         private void PublishFakeCrushDepthGlobals(float depthMeters)
         {
-            Vector3 center = transform.position;
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            Vector3 center = cachedTransform.position;
             Vector4 centerRadius = new Vector4(
                 center.x,
                 center.y,
@@ -1275,6 +1369,25 @@ namespace Hecton8.Physics
             GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterSlowTick()
+        {
+            if (_registeredSlowTick || !Application.isPlaying)
+                return;
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterSlowTick()
+        {
+            if (!_registeredSlowTick)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _registeredSlowTick = false;
         }
 
         private void TryRegisterDamageReceiver()

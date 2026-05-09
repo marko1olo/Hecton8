@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -138,19 +139,30 @@ namespace Hecton8.World
                 return;
             }
 
-            Vector3 playerPosition = playerTransform.position;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            float resolvedNearDistanceScale =
+                _profileNearDistanceScale *
+                nearDistanceScale *
+                interestNearDistanceScale *
+                zoneNearDistanceScale;
+            float resolvedMidDistanceScale =
+                _profileMidDistanceScale *
+                midDistanceScale *
+                interestMidDistanceScale *
+                zoneMidDistanceScale;
             for (int i = 0; i < _anchors.Count; i++)
             {
                 WorldSliceAnchor anchor = _anchors[i];
                 if (anchor == null)
                     continue;
 
-                Vector3 delta = anchor.transform.position - playerPosition;
-                delta.y = 0f;
-                anchor.ApplyForDistance(
-                    delta.magnitude,
-                    _profileNearDistanceScale * nearDistanceScale * interestNearDistanceScale * zoneNearDistanceScale,
-                    _profileMidDistanceScale * midDistanceScale * interestMidDistanceScale * zoneMidDistanceScale);
+                AbsoluteUniversePosition anchorAup = anchor.AnchorAup;
+                float3 delta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in anchorAup, in playerAup);
+                float planarDistanceSq = (delta.x * delta.x) + (delta.z * delta.z);
+                anchor.ApplyForDistanceSq(
+                    planarDistanceSq,
+                    resolvedNearDistanceScale,
+                    resolvedMidDistanceScale);
             }
 
             UpdateDiagnostics(true);

@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.World;
 using NASAPunk.Visor;
-using Unity.Collections;
+using System.Runtime.InteropServices;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -19,6 +20,7 @@ namespace Hecton8.Gameplay
         private const int MaxMarkers = 64;
         private const float FadeDurationSeconds = 1f;
         private const float ProjectionPaddingMeters = 0.05f;
+        private const long MarkerAupAxisClampCells = 1000000L;
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int FlickerFrequencyId = Shader.PropertyToID("_FlickerFrequency");
@@ -46,11 +48,12 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: int[6] - shared scanner marker quad indices - owner: HectonScanMarkerSystem
         private static readonly int[] s_markerQuadTriangles = { 0, 2, 1, 0, 3, 2 };
 
+        [StructLayout(LayoutKind.Sequential)]
         private struct ActiveMarker
         {
-            public float3 worldPos;
+            public AbsoluteUniversePosition aup;
             public float timer;
-            public bool active;
+            public byte active;
         }
 
         [Header("── HUD Camera ───────────────────────────────")]
@@ -70,11 +73,16 @@ namespace Hecton8.Gameplay
         private ActiveMarker[] _markers;
         private int _writeIndex;
         private Transform _playerTransform;
+        private IPlayerRuntimeContext _cachedPlayerContext;
+        private HectonPlayerMovement _cachedPlayerMovement;
         private Material _runtimeMarkerMaterial;
         private Mesh _runtimeMarkerMesh;
-        private NativeArray<Matrix4x4> _markerMatrices;
         // COLD ALLOC: Matrix4x4[64] — instanced marker draw mirror — owner: HectonScanMarkerSystem
         private readonly Matrix4x4[] _markerMatrixMirror = new Matrix4x4[MaxMarkers];
+        private Color _appliedMarkerColor;
+        private float _appliedFlickerFrequency;
+        private float _appliedFlickerIntensity;
+        private bool _markerMaterialDirty = true;
         private bool _registered;
 
         public void Initialize(Shader shaderOverride)
@@ -90,7 +98,6 @@ namespace Hecton8.Gameplay
             EnsureHudCamera();
             EnsurePlayerTransform();
             EnsureRuntimeResources();
-            EnsureMatrixBuffer();
         }
 
         private void OnEnable()
@@ -109,12 +116,6 @@ namespace Hecton8.Gameplay
         {
             UnregisterTick();
 
-            if (_markerMatrices.IsCreated)
-            {
-                _markerMatrices.Dispose();
-                _markerMatrices = default;
-            }
-
             if (_runtimeMarkerMaterial != null)
             {
                 Destroy(_runtimeMarkerMaterial);
@@ -126,6 +127,9 @@ namespace Hecton8.Gameplay
                 Destroy(_runtimeMarkerMesh);
                 _runtimeMarkerMesh = null;
             }
+
+            _cachedPlayerContext = null;
+            _cachedPlayerMovement = null;
         }
 
         public void Tick(float deltaTime)
@@ -133,7 +137,6 @@ namespace Hecton8.Gameplay
             EnsureHudCamera();
             EnsurePlayerTransform();
             EnsureRuntimeResources();
-            EnsureMatrixBuffer();
             UpdateMarkerTimers(deltaTime);
             RenderMarkers();
         }
@@ -148,9 +151,10 @@ namespace Hecton8.Gameplay
 
         private void HandleNodeFound(float3 worldPos)
         {
+            AbsoluteUniversePosition markerAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(worldPos.x, worldPos.y, worldPos.z));
             for (int i = 0; i < MaxMarkers; i++)
             {
-                if (_markers[i].active && math.distancesq(_markers[i].worldPos, worldPos) < 1f)
+                if (_markers[i].active != 0 && AbsoluteUniversePosition.DistanceSq(in _markers[i].aup, in markerAup) < 1d)
                 {
                     _markers[i].timer = markerLifetime;
                     return;
@@ -159,9 +163,9 @@ namespace Hecton8.Gameplay
 
             _markers[_writeIndex] = new ActiveMarker
             {
-                worldPos = worldPos,
+                aup = markerAup,
                 timer = markerLifetime,
-                active = true
+                active = 1
             };
 
             _writeIndex = (_writeIndex + 1) % MaxMarkers;
@@ -171,27 +175,25 @@ namespace Hecton8.Gameplay
         {
             for (int i = 0; i < MaxMarkers; i++)
             {
-                if (!_markers[i].active)
+                if (_markers[i].active == 0)
                     continue;
 
                 _markers[i].timer -= deltaTime;
                 if (_markers[i].timer <= 0f)
-                    _markers[i].active = false;
+                    _markers[i].active = 0;
             }
         }
 
         private void RenderMarkers()
         {
-            if (hudCamera == null || _playerTransform == null || _runtimeMarkerMaterial == null || _runtimeMarkerMesh == null || !_markerMatrices.IsCreated)
+            if (hudCamera == null || _playerTransform == null || _runtimeMarkerMaterial == null || _runtimeMarkerMesh == null)
                 return;
 
             int visibleCount = BuildMarkerMatrices();
             if (visibleCount <= 0)
                 return;
 
-            _runtimeMarkerMaterial.SetColor(BaseColorId, markerColor);
-            _runtimeMarkerMaterial.SetFloat(FlickerFrequencyId, flickerFrequency);
-            _runtimeMarkerMaterial.SetFloat(FlickerIntensityId, flickerIntensity);
+            ApplyMarkerMaterialIfNeeded();
 
             Graphics.DrawMeshInstanced(
                 _runtimeMarkerMesh,
@@ -211,57 +213,72 @@ namespace Hecton8.Gameplay
         private int BuildMarkerMatrices()
         {
             Transform cameraTransform = hudCamera.transform;
-            Vector3 playerPosition = _playerTransform.position;
+            Vector3 playerPositionVector = _playerTransform.position;
+            AbsoluteUniversePosition playerAup = ResolvePlayerAup(playerPositionVector);
             float projectionDistance = hudCamera.nearClipPlane + ProjectionPaddingMeters;
-            float frustumHeight = 2f * Mathf.Tan(hudCamera.fieldOfView * Mathf.Deg2Rad * 0.5f) * projectionDistance;
-            float worldPerPixel = frustumHeight / Mathf.Max(1f, hudCamera.pixelHeight);
-            float edgeMarginX = edgeMarginPixels / Mathf.Max(1f, hudCamera.pixelWidth);
-            float edgeMarginY = edgeMarginPixels / Mathf.Max(1f, hudCamera.pixelHeight);
-            float safeHalfWidth = Mathf.Max(0.001f, 0.5f - edgeMarginX);
-            float safeHalfHeight = Mathf.Max(0.001f, 0.5f - edgeMarginY);
+            float pixelHeight = math.max(1f, hudCamera.pixelHeight);
+            float pixelWidth = math.max(1f, hudCamera.pixelWidth);
+            float frustumHeight = 2f * math.tan(math.radians(hudCamera.fieldOfView) * 0.5f) * projectionDistance;
+            float worldPerPixel = frustumHeight / pixelHeight;
+            float edgeMarginX = edgeMarginPixels / pixelWidth;
+            float edgeMarginY = edgeMarginPixels / pixelHeight;
+            float safeHalfWidth = math.max(0.001f, 0.5f - edgeMarginX);
+            float safeHalfHeight = math.max(0.001f, 0.5f - edgeMarginY);
             int visibleCount = 0;
 
             for (int i = 0; i < MaxMarkers; i++)
             {
-                if (!_markers[i].active)
+                ActiveMarker marker = _markers[i];
+                if (marker.active == 0)
                     continue;
 
-                Vector3 viewport = hudCamera.WorldToViewportPoint((Vector3)_markers[i].worldPos);
+                float3 markerRuntime = marker.aup.ToRuntimeFloat3();
+                Vector3 markerRuntimePosition = new Vector3(markerRuntime.x, markerRuntime.y, markerRuntime.z);
+                Vector3 viewport = hudCamera.WorldToViewportPoint(markerRuntimePosition);
                 bool behindCamera = viewport.z <= 0.001f;
-                Vector2 centeredViewport = new Vector2(viewport.x - 0.5f, viewport.y - 0.5f);
+                float centeredX = viewport.x - 0.5f;
+                float centeredY = viewport.y - 0.5f;
                 if (behindCamera)
-                    centeredViewport = -centeredViewport;
+                {
+                    centeredX = -centeredX;
+                    centeredY = -centeredY;
+                }
 
-                if (centeredViewport.sqrMagnitude < 0.000001f)
-                    centeredViewport = Vector2.up * 0.0001f;
+                if ((centeredX * centeredX) + (centeredY * centeredY) < 0.000001f)
+                {
+                    centeredX = 0f;
+                    centeredY = 0.0001f;
+                }
 
                 bool clamped =
                     behindCamera ||
-                    centeredViewport.x < -safeHalfWidth ||
-                    centeredViewport.x > safeHalfWidth ||
-                    centeredViewport.y < -safeHalfHeight ||
-                    centeredViewport.y > safeHalfHeight;
+                    centeredX < -safeHalfWidth ||
+                    centeredX > safeHalfWidth ||
+                    centeredY < -safeHalfHeight ||
+                    centeredY > safeHalfHeight;
 
-                Vector2 finalViewport = centeredViewport;
+                float finalViewportX = centeredX;
+                float finalViewportY = centeredY;
                 if (clamped)
                 {
-                    float tx = safeHalfWidth / Mathf.Max(Mathf.Abs(centeredViewport.x), 0.0001f);
-                    float ty = safeHalfHeight / Mathf.Max(Mathf.Abs(centeredViewport.y), 0.0001f);
-                    finalViewport *= Mathf.Min(tx, ty);
+                    float tx = safeHalfWidth / math.max(math.abs(centeredX), 0.0001f);
+                    float ty = safeHalfHeight / math.max(math.abs(centeredY), 0.0001f);
+                    float clampScale = math.min(tx, ty);
+                    finalViewportX *= clampScale;
+                    finalViewportY *= clampScale;
                 }
 
-                float viewportX = finalViewport.x + 0.5f;
-                float viewportY = finalViewport.y + 0.5f;
+                float viewportX = finalViewportX + 0.5f;
+                float viewportY = finalViewportY + 0.5f;
                 Vector3 markerWorldPosition = hudCamera.ViewportToWorldPoint(new Vector3(viewportX, viewportY, projectionDistance));
-                float distance = math.distance(_markers[i].worldPos, (float3)playerPosition);
-                float sizePixels = markerBaseSizePixels / Mathf.Max(distance * 0.1f, 0.5f);
-                sizePixels = Mathf.Clamp(sizePixels, markerMinSizePixels, markerMaxSizePixels);
-                if (_markers[i].timer < FadeDurationSeconds)
-                    sizePixels *= Mathf.Clamp01(_markers[i].timer / FadeDurationSeconds);
+                float distance = EstimateAupDistance(in marker.aup, in playerAup);
+                float sizePixels = markerBaseSizePixels / math.max(distance * 0.1f, 0.5f);
+                sizePixels = math.clamp(sizePixels, markerMinSizePixels, markerMaxSizePixels);
+                if (marker.timer < FadeDurationSeconds)
+                    sizePixels *= math.saturate(marker.timer / FadeDurationSeconds);
 
-                float markerScale = Mathf.Max(0.0001f, sizePixels * worldPerPixel);
+                float markerScale = math.max(0.0001f, sizePixels * worldPerPixel);
                 Matrix4x4 matrix = Matrix4x4.TRS(markerWorldPosition, cameraTransform.rotation, new Vector3(markerScale, markerScale, markerScale));
-                _markerMatrices[visibleCount] = matrix;
                 _markerMatrixMirror[visibleCount] = matrix;
                 visibleCount++;
             }
@@ -294,14 +311,6 @@ namespace Hecton8.Gameplay
                 SceneBootstrap.TryGetCurrentPlayerTransform(out _playerTransform);
         }
 
-        private void EnsureMatrixBuffer()
-        {
-            if (_markerMatrices.IsCreated)
-                return;
-
-            _markerMatrices = new NativeArray<Matrix4x4>(MaxMarkers, Allocator.Persistent);
-        }
-
         private void EnsureRuntimeResources()
         {
             if (_runtimeMarkerMesh == null)
@@ -323,6 +332,7 @@ namespace Hecton8.Gameplay
                 enableInstancing = true,
                 hideFlags = HideFlags.DontSave
             };
+            _markerMaterialDirty = true;
         }
 
         private void RegisterTick()
@@ -360,6 +370,80 @@ namespace Hecton8.Gameplay
             mesh.RecalculateBounds();
             mesh.UploadMeshData(false);
             return mesh;
+        }
+
+        private void ApplyMarkerMaterialIfNeeded()
+        {
+            if (_runtimeMarkerMaterial == null)
+                return;
+
+            if (!_markerMaterialDirty &&
+                SameColor(_appliedMarkerColor, markerColor) &&
+                math.abs(_appliedFlickerFrequency - flickerFrequency) <= 0.0001f &&
+                math.abs(_appliedFlickerIntensity - flickerIntensity) <= 0.0001f)
+            {
+                return;
+            }
+
+            _runtimeMarkerMaterial.SetColor(BaseColorId, markerColor);
+            _runtimeMarkerMaterial.SetFloat(FlickerFrequencyId, flickerFrequency);
+            _runtimeMarkerMaterial.SetFloat(FlickerIntensityId, flickerIntensity);
+            _appliedMarkerColor = markerColor;
+            _appliedFlickerFrequency = flickerFrequency;
+            _appliedFlickerIntensity = flickerIntensity;
+            _markerMaterialDirty = false;
+        }
+
+        private AbsoluteUniversePosition ResolvePlayerAup(Vector3 fallbackRuntimePosition)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (!ReferenceEquals(playerContext, _cachedPlayerContext))
+            {
+                _cachedPlayerContext = playerContext;
+                _cachedPlayerMovement = playerContext != null ? playerContext.PlayerMovement : null;
+            }
+            else if (_cachedPlayerMovement == null && playerContext != null)
+            {
+                _cachedPlayerMovement = playerContext.PlayerMovement;
+            }
+
+            HectonPlayerMovement movement = _cachedPlayerMovement;
+            return movement != null
+                ? movement.PredictedAup
+                : AbsoluteUniversePosition.FromRuntimePosition(fallbackRuntimePosition);
+        }
+
+        private static bool SameColor(Color a, Color b)
+        {
+            return math.abs(a.r - b.r) <= 0.0001f &&
+                   math.abs(a.g - b.g) <= 0.0001f &&
+                   math.abs(a.b - b.b) <= 0.0001f &&
+                   math.abs(a.a - b.a) <= 0.0001f;
+        }
+
+        private static float EstimateAupDistance(in AbsoluteUniversePosition a, in AbsoluteUniversePosition b)
+        {
+            float dx = ResolveAupAxisDeltaMeters(a.GridX, b.GridX, a.LocalX, b.LocalX);
+            float dy = ResolveAupAxisDeltaMeters(a.GridY, b.GridY, a.LocalY, b.LocalY);
+            float dz = ResolveAupAxisDeltaMeters(a.GridZ, b.GridZ, a.LocalZ, b.LocalZ);
+            float ax = math.abs(dx);
+            float ay = math.abs(dy);
+            float az = math.abs(dz);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.375f) + (min * 0.25f);
+        }
+
+        private static float ResolveAupAxisDeltaMeters(long aGrid, long bGrid, float aLocal, float bLocal)
+        {
+            long gridDelta = aGrid - bGrid;
+            if (gridDelta > MarkerAupAxisClampCells)
+                return float.MaxValue * 0.25f;
+            if (gridDelta < -MarkerAupAxisClampCells)
+                return float.MinValue * 0.25f;
+
+            return (gridDelta * AbsoluteUniversePosition.CellSizeMeters) + (aLocal - bLocal);
         }
     }
 }

@@ -16,23 +16,23 @@ namespace Hecton8.Modding
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7900)]
-    public sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener, ISceneBootstrapEventListener
+    public sealed class ModWorldPersistenceManager : MonoBehaviour, ISaveable, ISaveEventListener, ISceneBootstrapEventListener, IServiceHeartbeat, IServiceShutdown
     {
-        private const string ManagerRuntimeName = "[ModWorldPersistenceManager]";
         private const string SaveKey = "hecton.internal.mod_world_spawns";
-
-        private static ModWorldPersistenceManager _instance;
 
         // COLD ALLOC: List<ModWorldSpawnRecord>[32] — persistent mod world spawn records — owner: ModWorldPersistenceManager
         private readonly List<ModWorldSpawnRecord> _records = new List<ModWorldSpawnRecord>(32);
-        // COLD ALLOC: Dictionary<string,int>[32] — spawnId to record index lookup — owner: ModWorldPersistenceManager
+        // COLD ALLOC: Dictionary<uint,int>[32] — spawn hash to record index lookup — owner: ModWorldPersistenceManager
         private readonly Dictionary<uint, int> _recordIndexByHash = new Dictionary<uint, int>(32);
-        // COLD ALLOC: Dictionary<string,ModSpawnedEntity>[32] — live scene instances indexed by spawnId — owner: ModWorldPersistenceManager
+        // COLD ALLOC: Dictionary<uint,ModSpawnedEntity>[32] — live scene instances indexed by spawn hash — owner: ModWorldPersistenceManager
         private readonly Dictionary<uint, ModSpawnedEntity> _liveEntitiesByHash = new Dictionary<uint, ModSpawnedEntity>(32);
 
         private int _nextSpawnSequence = 1;
         private bool _saveRegistered;
         private bool _restorePending;
+        private bool _serviceRegistered;
+        private bool _serviceShuttingDown;
+        private bool _serviceShutdownComplete;
 
         /// <summary>
         /// Save order for mod world payloads.
@@ -44,50 +44,36 @@ namespace Hecton8.Modding
         /// </summary>
         public int LoadPriority => 56;
 
-        /// <summary>
-        /// Active runtime singleton when the manager has been created.
-        /// </summary>
-        internal static ModWorldPersistenceManager Instance => _instance;
+        public ServiceHeartbeatState HeartbeatState =>
+            _serviceShuttingDown
+                ? ServiceHeartbeatState.Shutdown
+                : _serviceRegistered
+                    ? ServiceHeartbeatState.Ready
+                    : ServiceHeartbeatState.NotStarted;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
-        /// <summary>
-        /// Ensures that the runtime persistence owner exists.
-        /// </summary>
-        public static ModWorldPersistenceManager EnsureRuntimeInstance()
-        {
-            if (_instance != null)
-                return _instance;
-
-            GameObject gameObject = new GameObject(ManagerRuntimeName); // COLD ALLOC: GameObject[1] — persistent mod world owner — owner: ModWorldPersistenceManager
-            _instance = gameObject.AddComponent<ModWorldPersistenceManager>();
-            GameBootstrapper.PersistRuntimeService(_instance);
-            return _instance;
-        }
+        public bool IsServiceReady => _serviceRegistered && !_serviceShuttingDown;
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            ModWorldPersistenceManager registered = GlobalRegistry.ModWorldPersistence;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
-            GameBootstrapper.PersistRuntimeService(this);
-            TryRegisterWithSaveManager();
+            InitializeService();
         }
 
         private void OnEnable()
         {
+            if (_serviceShuttingDown)
+                return;
+
             SceneManager.sceneLoaded += HandleSceneLoaded;
             SceneBootstrap.Register(this);
             SaveEvents.Register(this);
-            TryRegisterWithSaveManager();
+            InitializeService();
         }
 
         private void OnDisable()
@@ -96,12 +82,55 @@ namespace Hecton8.Modding
             SceneBootstrap.Unregister(this);
             SaveEvents.Unregister(this);
             UnregisterFromSaveManager();
+            if (_serviceRegistered && !_serviceShuttingDown)
+            {
+                if (ReferenceEquals(GlobalRegistry.ModWorldPersistence, this))
+                    GlobalRegistry.UnregisterModWorldPersistenceRuntime(this);
+
+                _serviceRegistered = false;
+            }
         }
 
         private void OnDestroy()
         {
-            if (_instance == this)
-                _instance = null;
+            OnServiceShutdown();
+        }
+
+        public void InitializeService()
+        {
+            if (_serviceShuttingDown || !Application.isPlaying)
+                return;
+
+            if (!ReferenceEquals(GlobalRegistry.ModWorldPersistence, this))
+                GlobalRegistry.RegisterModWorldPersistenceRuntime(this);
+
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ModWorldPersistence, this);
+            TryRegisterWithSaveManager();
+        }
+
+        public void OnServiceShutdown()
+        {
+            if (_serviceShutdownComplete)
+                return;
+
+            _serviceShuttingDown = true;
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneBootstrap.Unregister(this);
+            SaveEvents.Unregister(this);
+            UnregisterFromSaveManager();
+            _records.Clear();
+            _recordIndexByHash.Clear();
+            _liveEntitiesByHash.Clear();
+            _restorePending = false;
+            if (_serviceRegistered)
+            {
+                if (ReferenceEquals(GlobalRegistry.ModWorldPersistence, this))
+                    GlobalRegistry.UnregisterModWorldPersistenceRuntime(this);
+
+                _serviceRegistered = false;
+            }
+
+            _serviceShutdownComplete = true;
         }
 
         /// <summary>
@@ -115,14 +144,18 @@ namespace Hecton8.Modding
             GameObject prefab = ModAssetManager.LoadPrefab(modId, assetName);
             if (prefab == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning($"[ModWorldPersistenceManager] Prefab '{assetName}' for mod '{modId}' could not be resolved.");
+#endif
                 return null;
             }
 
             ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[ModWorldPersistenceManager] GlobalRegistry.ObjectPool is unavailable. Persistent mod spawn was rejected.");
+#endif
                 return null;
             }
 
@@ -133,6 +166,7 @@ namespace Hecton8.Modding
             string sceneName = SceneManager.GetActiveScene().name;
             string spawnId = BuildSpawnId(modId);
             uint spawnHash = ModCommandDispatcher.ComputeModHash(spawnId);
+            uint sceneHash = ModCommandDispatcher.ComputeModHash(sceneName);
             AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(position);
 
             ModWorldSpawnRecord record = new ModWorldSpawnRecord
@@ -142,6 +176,7 @@ namespace Hecton8.Modding
                 ModId = modId,
                 AssetName = assetName,
                 SceneName = sceneName,
+                SceneHash = sceneHash,
                 Position = position,
                 GridX = aup.GridX,
                 GridY = aup.GridY,
@@ -220,7 +255,9 @@ namespace Hecton8.Modding
             }
             catch (Exception exception)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning($"[ModWorldPersistenceManager] Failed to parse mod world payload: {exception.Message}");
+#endif
                 _restorePending = false;
                 return;
             }
@@ -276,23 +313,30 @@ namespace Hecton8.Modding
         private void RestoreActiveSceneRecords()
         {
             string activeSceneName = SceneManager.GetActiveScene().name;
+            uint activeSceneHash = ModCommandDispatcher.ComputeModHash(activeSceneName);
             _restorePending = false;
 
             for (int i = 0; i < _records.Count; i++)
             {
                 ModWorldSpawnRecord record = _records[i];
+                EnsureSpatialFields(ref record);
+                _records[i] = record;
+                if (record.SceneHash != activeSceneHash)
+                    continue;
+
                 if (!string.Equals(record.SceneName, activeSceneName, StringComparison.Ordinal))
                     continue;
 
-                EnsureSpatialFields(ref record);
                 if (_liveEntitiesByHash.ContainsKey(record.SpawnHash))
                     continue;
 
                 GameObject prefab = ModAssetManager.LoadPrefab(record.ModId, record.AssetName);
                 if (prefab == null)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[ModWorldPersistenceManager] Restore skipped '{record.SpawnId}': prefab '{record.AssetName}' for mod '{record.ModId}' was not found.");
+#endif
                     continue;
                 }
 
@@ -396,6 +440,9 @@ namespace Hecton8.Modding
             if (record.SpawnHash == 0u && !string.IsNullOrWhiteSpace(record.SpawnId))
                 record.SpawnHash = ModCommandDispatcher.ComputeModHash(record.SpawnId);
 
+            if (record.SceneHash == 0u && !string.IsNullOrWhiteSpace(record.SceneName))
+                record.SceneHash = ModCommandDispatcher.ComputeModHash(record.SceneName);
+
             if (record.GridX != 0L ||
                 record.GridY != 0L ||
                 record.GridZ != 0L ||
@@ -457,6 +504,7 @@ namespace Hecton8.Modding
             public string ModId;
             public string AssetName;
             public string SceneName;
+            public uint SceneHash;
             public Vector3 Position;
             public long GridX;
             public long GridY;
@@ -475,7 +523,6 @@ namespace Hecton8.Modding
             public int NextSpawnSequence;
         }
     }
-}
 
     /// <summary>
     /// Marker stored on persistent mod-spawned instances so the manager can map live objects back to saved records.
@@ -517,3 +564,4 @@ namespace Hecton8.Modding
             SceneName = sceneName;
         }
     }
+}

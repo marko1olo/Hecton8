@@ -16,7 +16,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8920)]
-    public sealed class DebrisManager : MonoBehaviour, IUpdatable, ILateFrameTickable, IDebrisService, IOriginShiftListener, IServiceHeartbeat
+    public sealed class DebrisManager : MonoBehaviour, IUpdatable, ILateFrameTickable, IDebrisService, IOriginShiftListener, IServiceHeartbeat, IServiceShutdown
     {
         private const int MaxActiveChunks = 192;
         private const int MaxPendingBursts = 24;
@@ -125,6 +125,7 @@ namespace Hecton8.Gameplay
             if (_isInitialized)
                 return;
 
+            EnsureRuntimeResources();
             GlobalRegistry.RegisterDebrisService(this);
             _isInitialized = ReferenceEquals(GlobalRegistry.Debris, this);
         }
@@ -137,38 +138,12 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!_frontStates.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<DebrisChunkState>[192] - front debris simulation state buffer - owner: DebrisManager
-                _frontStates = new NativeArray<DebrisChunkState>(MaxActiveChunks, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _frontStates,
-                    nameof(DebrisManager),
-                    nameof(_frontStates),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_backStates.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<DebrisChunkState>[192] - back debris simulation state buffer - owner: DebrisManager
-                _backStates = new NativeArray<DebrisChunkState>(MaxActiveChunks, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _backStates,
-                    nameof(DebrisManager),
-                    nameof(_backStates),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (_matrixBuffer == null)
-            {
-                // COLD ALLOC: GraphicsBuffer[192] - runtime chunk transform upload buffer - owner: DebrisManager
-                _matrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxActiveChunks, MatrixStrideBytes);
-            }
-
+            EnsureRuntimeResources();
         }
 
         private void OnEnable()
         {
+            EnsureRuntimeResources();
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
@@ -193,23 +168,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            if (_dispatcherRegistered)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                _dispatcherRegistered = false;
-            }
-
-            if (_lateFrameRegistered)
-            {
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = false;
-            }
-
-            if (_originShiftRegistered)
-            {
-                HectonFloatingOrigin.UnregisterListener(this);
-                _originShiftRegistered = false;
-            }
+            UnregisterRuntimeHooks();
 
             _clearRequested = true;
             _pendingBurstCount = 0;
@@ -218,6 +177,16 @@ namespace Hecton8.Gameplay
         }
 
         private void OnDestroy()
+        {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
         {
             if (_isInitialized && ReferenceEquals(GlobalRegistry.Debris, this))
             {
@@ -229,12 +198,15 @@ namespace Hecton8.Gameplay
                 _isInitialized = false;
             }
 
-            if (_originShiftRegistered)
-            {
-                HectonFloatingOrigin.UnregisterListener(this);
-                _originShiftRegistered = false;
-            }
+            UnregisterRuntimeHooks();
+            _clearRequested = true;
+            _pendingBurstCount = 0;
+            ReleaseNativeState();
+            ReleaseBuffer(ref _matrixBuffer);
+        }
 
+        private void UnregisterRuntimeHooks()
+        {
             if (_dispatcherRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -247,8 +219,39 @@ namespace Hecton8.Gameplay
                 _lateFrameRegistered = false;
             }
 
-            ReleaseNativeState();
-            ReleaseBuffer(ref _matrixBuffer);
+            if (_originShiftRegistered)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _originShiftRegistered = false;
+            }
+        }
+
+        private void EnsureRuntimeResources()
+        {
+            if (!_frontStates.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<DebrisChunkState>[192] - front debris simulation state buffer - owner: DebrisManager
+                _frontStates = new NativeArray<DebrisChunkState>(MaxActiveChunks, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _frontStates,
+                    nameof(DebrisManager),
+                    nameof(_frontStates),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_backStates.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<DebrisChunkState>[192] - back debris simulation state buffer - owner: DebrisManager
+                _backStates = new NativeArray<DebrisChunkState>(MaxActiveChunks, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _backStates,
+                    nameof(DebrisManager),
+                    nameof(_backStates),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (_matrixBuffer == null)
+                _matrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxActiveChunks, MatrixStrideBytes); // COLD ALLOC: GraphicsBuffer[192] - runtime chunk transform upload buffer - owner: DebrisManager
         }
 
         /// <inheritdoc />
@@ -917,7 +920,36 @@ namespace Hecton8.Gameplay
             Vector3 xAxis = matrix.GetColumn(0);
             Vector3 yAxis = matrix.GetColumn(1);
             Vector3 zAxis = matrix.GetColumn(2);
-            return new Vector3(xAxis.magnitude, yAxis.magnitude, zAxis.magnitude);
+            return new Vector3(
+                EstimateMagnitudeNoSqrt(xAxis.sqrMagnitude),
+                EstimateMagnitudeNoSqrt(yAxis.sqrMagnitude),
+                EstimateMagnitudeNoSqrt(zAxis.sqrMagnitude));
+        }
+
+        internal static float EstimateMagnitudeNoSqrt(float valueSq)
+        {
+            if (!(valueSq > 0f))
+                return 0f;
+
+            float estimate =
+                valueSq > 4096f ? valueSq * 0.015625f :
+                valueSq > 256f ? valueSq * 0.0625f :
+                valueSq > 16f ? valueSq * 0.25f :
+                valueSq > 1f ? valueSq :
+                valueSq > 0.0625f ? 0.5f :
+                0.125f;
+
+            estimate = RefineMagnitudeEstimate(valueSq, estimate);
+            estimate = RefineMagnitudeEstimate(valueSq, estimate);
+            estimate = RefineMagnitudeEstimate(valueSq, estimate);
+            estimate = RefineMagnitudeEstimate(valueSq, estimate);
+            estimate = RefineMagnitudeEstimate(valueSq, estimate);
+            return estimate;
+        }
+
+        private static float RefineMagnitudeEstimate(float valueSq, float estimate)
+        {
+            return 0.5f * (estimate + (valueSq * math.rcp(math.max(estimate, 0.000001f))));
         }
 
         private static float3 ToFloat3(Vector3 value)
@@ -1310,7 +1342,7 @@ namespace Hecton8.Gameplay
 
                 cachedChunkMeshes[writeIndex] = meshFilter.sharedMesh;
                 cachedLocalMatrices[writeIndex] = rootWorldToLocal * meshFilter.transform.localToWorldMatrix;
-                cachedMassScales[writeIndex] = math.max(0.25f, meshFilter.sharedMesh.bounds.extents.magnitude);
+                cachedMassScales[writeIndex] = math.max(0.25f, DebrisManager.EstimateMagnitudeNoSqrt(meshFilter.sharedMesh.bounds.extents.sqrMagnitude));
                 writeIndex++;
             }
         }

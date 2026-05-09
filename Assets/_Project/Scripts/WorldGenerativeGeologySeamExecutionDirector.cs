@@ -87,6 +87,7 @@ namespace Hecton8.World
     {
         private const string SeamRootName = "__GEOLOGY_SEAM";
         private const string GapDitherName = "__SEAM_DITHER";
+        private const int RuntimeKeySelectionCapacity = 128;
         private static readonly string[] _TerrainSkirtNames = CreateIndexedNames("TerrainSkirt_", 12);
         private static readonly string[] _VoxelCollarNames = CreateIndexedNames("VoxelCollar_", 10);
         private static readonly string[] _DebrisNames = CreateIndexedNames("Debris_", 14);
@@ -125,7 +126,7 @@ namespace Hecton8.World
         private readonly List<Transform> _rendererTraversalBuffer = new List<Transform>(64);
         private readonly List<long> _runtimeCacheTrimBuffer = new List<long>(128);
         private readonly Dictionary<long, WorldGenerativeGeologySeamRuntime> _runtimeCacheByKey = new Dictionary<long, WorldGenerativeGeologySeamRuntime>(128);
-        private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>();
+        private readonly HashSet<long> _selectedRuntimeKeys = new HashSet<long>(RuntimeKeySelectionCapacity);
         private bool _registeredToTickManager;
         private float _nextAutoResolveAttemptTime = float.NegativeInfinity;
         private bool _loggedMissingGapDitherMaterial;

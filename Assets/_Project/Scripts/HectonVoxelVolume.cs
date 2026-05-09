@@ -80,7 +80,7 @@ namespace Hecton8.Caves
                 return;
             }
 
-            float3 direction = math.normalizesafe(Direction, new float3(0f, 0f, 1f));
+            float3 direction = NormalizeSafe(Direction, new float3(0f, 0f, 1f));
             float step = math.max(0.05f, StepMeters);
             float previousDensity = 0f;
             float3 previousPosition = Origin;
@@ -140,6 +140,14 @@ namespace Hecton8.Caves
             float c01 = math.lerp(c001, c101, tx);
             float c11 = math.lerp(c011, c111, tx);
             return math.lerp(math.lerp(c00, c10, ty), math.lerp(c01, c11, ty), tz);
+        }
+
+        private static float3 NormalizeSafe(float3 value, float3 fallback)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq > 0.000001f
+                ? value * math.rsqrt(lengthSq)
+                : fallback;
         }
 
         private float DecodeAt(int x, int y, int z)
@@ -868,6 +876,22 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Returns true only when the late-frame collider publication has both a target collider and staged baked mesh.
+        /// </summary>
+        internal bool IsDeferredColliderChunkUploadReady(int index)
+        {
+            if (index < 0 ||
+                index >= _colliderChunkColliders.Length ||
+                index >= _colliderChunkBakeMeshes.Length)
+            {
+                return false;
+            }
+
+            return _colliderChunkColliders[index] != null &&
+                   _colliderChunkBakeMeshes[index] != null;
+        }
+
+        /// <summary>
         /// Disables the temporary PhysX bake proxy for one collider chunk.
         /// </summary>
         internal void DisableColliderChunkBakeProxy(int index)
@@ -952,26 +976,30 @@ namespace Hecton8.Caves
             if (collider == null || stagedMesh == null)
                 return;
 
-            global::HectonVoxelEngine.EnqueueDeferredVoxelColliderUpload(this, index);
+            if (!global::HectonVoxelEngine.EnqueueDeferredVoxelColliderUpload(this, index))
+                DisableColliderChunkBakeProxy(index);
         }
 
         /// <summary>
         /// Performs the deferred staged collider mesh upload and swaps the previous live mesh into the bake slot.
         /// </summary>
-        internal void CommitDeferredColliderChunkUpload(int index)
+        internal bool CommitDeferredColliderChunkUpload(int index)
         {
             if (index < 0 ||
                 index >= _colliderChunkColliders.Length ||
                 index >= _colliderChunkMeshes.Length ||
                 index >= _colliderChunkBakeMeshes.Length)
             {
-                return;
+                return false;
             }
 
             MeshCollider collider = _colliderChunkColliders[index];
             Mesh stagedMesh = _colliderChunkBakeMeshes[index];
             if (collider == null || stagedMesh == null)
-                return;
+            {
+                DisableColliderChunkBakeProxy(index);
+                return false;
+            }
 
             Mesh previousLiveMesh = _colliderChunkMeshes[index];
             collider.gameObject.SetActive(true);
@@ -982,6 +1010,7 @@ namespace Hecton8.Caves
             collider.enabled = true;
             DisableColliderChunkBakeProxy(index);
             RefreshBakePresentation();
+            return true;
         }
 
         /// <summary>
@@ -1829,7 +1858,7 @@ namespace Hecton8.Caves
                 float nextTravel;
                 int axis = ResolveMarchAxis(tMax, out nextTravel);
                 float segmentLength = math.max(_voxelSize * 0.25f, nextTravel - travel);
-                remainingPower *= math.exp(-segmentLength * PlasmaCutAttenuationPerMeter);
+                remainingPower *= ApproximateExpNegPositive(segmentLength * PlasmaCutAttenuationPerMeter);
                 travel = nextTravel;
                 if (travel > maxTravel)
                     break;
@@ -1950,7 +1979,7 @@ namespace Hecton8.Caves
                 float nextTravel;
                 int axis = ResolveMarchAxis(tMax, out nextTravel);
                 float segmentLength = math.max(_voxelSize * 0.25f, nextTravel - travel);
-                remainingPower *= math.exp(-segmentLength * PlasmaCutAttenuationPerMeter);
+                remainingPower *= ApproximateExpNegPositive(segmentLength * PlasmaCutAttenuationPerMeter);
                 travel = nextTravel;
                 if (travel > maxTravel)
                     break;
@@ -2310,6 +2339,16 @@ namespace Hecton8.Caves
 #else
             Destroy(obj);
 #endif
+        }
+
+        private static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(x, 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
         }
 
         private static int ResolveStep(float axis)

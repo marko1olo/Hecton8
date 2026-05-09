@@ -8,7 +8,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Field Operation Log System")]
-    public sealed class FieldOperationLogSystem : MonoBehaviour, ISaveable
+    public sealed class FieldOperationLogSystem : MonoBehaviour, ISaveable, IServiceHeartbeat, IServiceShutdown
     {
         public readonly struct FieldOperationSnapshot
         {
@@ -38,37 +38,30 @@ namespace Hecton8.Gameplay
         [SerializeField] private bool verboseLogging;
 
         private readonly List<FieldOperationRecord> _recent = new List<FieldOperationRecord>(12);
+        private bool _runtimeRegistered;
         private bool _saveRegistered;
-
-        public static FieldOperationLogSystem Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            Instance = null;
-        }
 
         public int SavePriority => 36;
         public int LoadPriority => 36;
         public int RecentCount => _recent.Count;
+        public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+        public bool IsServiceReady => _runtimeRegistered;
 
         public event Action LogChanged;
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            FieldOperationLogSystem registered = GlobalRegistry.FieldOperations;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
-                return;
             }
-
-            Instance = this;
         }
 
         private void OnEnable()
         {
-            if (Instance == null)
-                Instance = this;
+            if (!TryRegisterRuntime())
+                return;
 
             TryRegisterSaveParticipant();
         }
@@ -81,27 +74,73 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregisterSaveParticipant();
+            TryUnregisterRuntime();
         }
 
         private void OnDestroy()
         {
-            if (Instance == this)
-                Instance = null;
+            TryUnregisterSaveParticipant();
+            TryUnregisterRuntime();
         }
 
         public static void RecordOperation(string source, string title, string summary, string severity = "INFO")
         {
-            Instance?.Push(source, title, summary, severity);
+            GlobalRegistry.FieldOperations?.Push(source, title, summary, severity);
         }
 
-        public static void RecordOperation(string source, string title, FixedCharBuffer summaryBuffer, string severity = "INFO")
+        public static void RecordOperation(string source, string title, in FixedCharBuffer summaryBuffer, string severity = "INFO")
         {
-            Instance?.Push(source, title, summaryBuffer.ToString(), severity);
+            FieldOperationLogSystem instance = GlobalRegistry.FieldOperations;
+            if (instance == null)
+                return;
+
+            instance.Push(source, title, summaryBuffer.ToString(), severity);
         }
 
-        public static void RecordOperation(string source, FixedCharBuffer titleBuffer, FixedCharBuffer summaryBuffer, string severity = "INFO")
+        public static void RecordOperation(string source, in FixedCharBuffer titleBuffer, in FixedCharBuffer summaryBuffer, string severity = "INFO")
         {
-            Instance?.Push(source, titleBuffer.ToString(), summaryBuffer.ToString(), severity);
+            FieldOperationLogSystem instance = GlobalRegistry.FieldOperations;
+            if (instance == null)
+                return;
+
+            instance.Push(source, titleBuffer.ToString(), summaryBuffer.ToString(), severity);
+        }
+
+        public void OnServiceShutdown()
+        {
+            TryUnregisterSaveParticipant();
+            TryUnregisterRuntime();
+            _recent.Clear();
+            LogChanged = null;
+        }
+
+        private bool TryRegisterRuntime()
+        {
+            if (_runtimeRegistered)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
+            FieldOperationLogSystem registered = GlobalRegistry.FieldOperations;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
+            GlobalRegistry.RegisterFieldOperationLogRuntime(this);
+            _runtimeRegistered = ReferenceEquals(GlobalRegistry.FieldOperations, this);
+            return _runtimeRegistered;
+        }
+
+        private void TryUnregisterRuntime()
+        {
+            if (!_runtimeRegistered)
+                return;
+
+            GlobalRegistry.UnregisterFieldOperationLogRuntime(this);
+            _runtimeRegistered = false;
         }
 
         private void TryRegisterSaveParticipant()
@@ -237,8 +276,10 @@ namespace Hecton8.Gameplay
             if (_recent.Count > capacity)
                 _recent.RemoveRange(capacity, _recent.Count - capacity);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (verboseLogging)
                 Debug.Log($"[FieldOps] {record.source} | {record.severity} | {record.title} | {record.summary}");
+#endif
 
             LogChanged?.Invoke();
         }

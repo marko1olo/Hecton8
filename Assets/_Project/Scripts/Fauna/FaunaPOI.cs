@@ -94,7 +94,7 @@ namespace Hecton8.AI
             if (!float.IsFinite(radius))
                 return MinPoiRadius;
 
-            return Mathf.Max(MinPoiRadius, radius);
+            return radius >= MinPoiRadius ? radius : MinPoiRadius;
         }
     }
 }

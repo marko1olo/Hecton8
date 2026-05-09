@@ -22,7 +22,7 @@ namespace Hecton8.World
         // COLD ALLOC: Dictionary<ulong, HashSet<EntityId>>[4] â€” suppressed hierarchy ids cached per loaded runtime scene â€” owner: WorldShippingContentFilter
         private static readonly Dictionary<ulong, HashSet<EntityId>> _suppressedHierarchyIdsByScene = new Dictionary<ulong, HashSet<EntityId>>(4);
         // COLD ALLOC: HashSet<ulong>[4] â€” scene handles whose suppression caches are fully primed â€” owner: WorldShippingContentFilter
-        private static readonly HashSet<ulong> _primedSceneHandles = new HashSet<ulong>();
+        private static readonly HashSet<ulong> _primedSceneHandles = new HashSet<ulong>(4);
         // COLD ALLOC: List<GameObject>[64] — scene root buffer for suppression cache priming — owner: WorldShippingContentFilter
         private static readonly List<GameObject> _cacheRootObjects = new List<GameObject>(64);
         // COLD ALLOC: List<Transform>[512] — traversal stack for suppression cache priming — owner: WorldShippingContentFilter

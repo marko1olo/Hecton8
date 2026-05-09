@@ -310,7 +310,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            target = MapMagicBridge.Instance;
+            target = GlobalRegistry.MapMagic;
             if (target != null)
                 _CachedMapMagicBridge = target;
             return target != null;
@@ -321,16 +321,22 @@ namespace Hecton8.World
             if (target != null)
                 return true;
 
-            if (_CachedVegetationBridge != null)
+            HectonMapMagicVegetationBridge registered = GlobalRegistry.MapMagicVegetation;
+            if (registered != null)
+            {
+                _CachedVegetationBridge = registered;
+                target = registered;
+                return true;
+            }
+
+            if (_CachedVegetationBridge != null && _CachedVegetationBridge.isActiveAndEnabled)
             {
                 target = _CachedVegetationBridge;
                 return true;
             }
 
-            target = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (target != null)
-                _CachedVegetationBridge = target;
-            return target != null;
+            _CachedVegetationBridge = null;
+            return false;
         }
 
         public static bool TryResolveScavengePopulator(ref ScavengePopulator target)
@@ -344,7 +350,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            target = ScavengePopulator.Instance;
+            target = GlobalRegistry.ScavengePopulator;
             if (target != null)
                 _CachedScavengePopulator = target;
             return target != null;

@@ -23,7 +23,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)]
-    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat
+    public sealed class HectonFloatingOrigin : MonoBehaviour, ITickable, IUpdatable, IServiceHeartbeat, IServiceShutdown
     {
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct OriginShiftTranslateJob : IJobParallelForTransform
@@ -134,9 +134,6 @@ namespace Hecton8.Core
 
         [Tooltip("Object to follow (normally Player). If null, resolves via SceneBootstrap.")]
         [SerializeField] private Transform _anchor;
-
-        /// <summary>Registry-backed floating-origin owner.</summary>
-        public static HectonFloatingOrigin Instance => GlobalRegistry.FloatingOrigin;
 
         /// <summary>Cumulative absolute-universe offset committed since startup.</summary>
         public Vector3 TotalOffset { get; private set; }
@@ -442,6 +439,16 @@ namespace Hecton8.Core
         }
 
         private void OnDestroy()
+        {
+            ShutdownServiceState();
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState();
+        }
+
+        private void ShutdownServiceState()
         {
             ReleaseSceneRebaseTickLock();
             TryUnregister();

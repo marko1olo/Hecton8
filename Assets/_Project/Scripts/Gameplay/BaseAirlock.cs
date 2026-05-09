@@ -53,17 +53,19 @@ namespace Hecton8.Gameplay
     {
         private const float DefaultWeldOverrideDurationSeconds = 5f;
         private const float MaxSignalWeldDeltaSeconds = 0.25f;
-        private const int OverrideRaycastHitCapacity = 4;
-        private const float MinOverrideRaycastDirectionSqr = 0.000001f;
+        private const float MinOverrideSignalDirectionSqr = 0.000001f;
+        private const float OverrideWeldRangeSlackMeters = 0.35f;
         private const float MinimumEnvironmentSnapshotTransitionSeconds = 1.5f;
         private const float DryOceanRoarLowPassHz = 650f;
         private const float WetOceanRoarLowPassHz = 22000f;
         private const float InteriorPressureKPa = 101.325f;
         private const float PressureWhistleStartDeltaKPa = 450f;
+        private const uint FastSqrtApproximationBias = 0x1FC00000u;
         private const float PressureWhistleFullDeltaKPa = 2200f;
         private const int PressureWhistleFrameMask = 15;
         private const float RepairHandHalfSpanMeters = 0.14f;
         private const float RepairHandVerticalBiasMeters = 0.04f;
+        private const int ParentComponentResolveDepth = 32;
         private const string MissingInteriorSpawnPointMessage = "[BaseAirlock] Interior spawn point not set.";
         private const string MissingExteriorSpawnPointMessage = "[BaseAirlock] Exterior spawn point not set.";
         private const string InvalidInteriorSpawnPointPoseMessage = "[BaseAirlock] Interior spawn point pose is invalid.";
@@ -181,7 +183,7 @@ namespace Hecton8.Gameplay
         private InputManager _cycleInputManager;
         private Transform _cachedInteractorTransform;
         private Rigidbody _cachedInteractorBody;
-        private BuoyancyObject _cachedInteractorBuoyancy;
+        private global::Hecton8.Physics.BuoyancyObject _cachedInteractorBuoyancy;
         private bool _cachedInteractorComponentCacheValid;
         private Vector3 _bulkheadOpenLocalPosition;
         private Vector3 _bulkheadClosedLocalPosition;
@@ -197,9 +199,6 @@ namespace Hecton8.Gameplay
         private static readonly int _EmissionColorID = Shader.PropertyToID("_EmissionColor");
         private static readonly uint _OverrideVulnerabilityMask = ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.Weld) |
                                                                   ToolCapabilityMasks.ResolveCapabilityMask(InteractionEffectType.PlasmaCut);
-        // COLD ALLOC: RaycastHit[4] — static quarantine override raycast buffer for zero-GC weld validation — owner: BaseAirlock
-        private static readonly RaycastHit[] s_overrideRaycastHits = new RaycastHit[OverrideRaycastHitCapacity];
-
         // Pre-cached interaction text
         private const string DefaultEnterText = "Enter Base";
         private const string DefaultExitText = "Exit Base";
@@ -231,7 +230,7 @@ namespace Hecton8.Gameplay
             get
             {
                 float requiredSeconds = ResolveWeldOverrideDurationSeconds();
-                return requiredSeconds > 0f ? Mathf.Clamp01(_weldOverrideProgressSeconds / requiredSeconds) : 0f;
+                return requiredSeconds > 0f ? math.saturate(_weldOverrideProgressSeconds / requiredSeconds) : 0f;
             }
         }
 
@@ -271,6 +270,7 @@ namespace Hecton8.Gameplay
 
         private void Start()
         {
+            CacheOwningModule();
             TryRegister();
         }
 
@@ -296,8 +296,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -398,7 +397,7 @@ namespace Hecton8.Gameplay
                 return true;
 
             float requiredSeconds = ResolveWeldOverrideDurationSeconds();
-            _weldOverrideProgressSeconds = Mathf.Min(requiredSeconds, _weldOverrideProgressSeconds + deltaTime);
+            _weldOverrideProgressSeconds = math.min(requiredSeconds, _weldOverrideProgressSeconds + deltaTime);
             if (_weldOverrideProgressSeconds >= requiredSeconds)
                 ForceEmergencyOverride();
 
@@ -418,28 +417,14 @@ namespace Hecton8.Gameplay
                 return false;
 
             Transform airlockTransform = _cachedTransform != null ? _cachedTransform : transform;
-            Vector3 right = airlockTransform.right;
-            Vector3 up = airlockTransform.up;
-            Vector3 forward = airlockTransform.forward;
-            if (!IsFinite(right) || right.sqrMagnitude <= 0.000001f)
-                right = Vector3.right;
-            else
-                right.Normalize();
-
-            if (!IsFinite(up) || up.sqrMagnitude <= 0.000001f)
-                up = Vector3.up;
-            else
-                up.Normalize();
-
-            if (!IsFinite(forward) || forward.sqrMagnitude <= 0.000001f)
-                forward = Vector3.forward;
-            else
-                forward.Normalize();
+            Vector3 right = NormalizeFiniteOrFallback(airlockTransform.right, Vector3.right);
+            Vector3 up = NormalizeFiniteOrFallback(airlockTransform.up, Vector3.up);
+            Vector3 forward = NormalizeFiniteOrFallback(airlockTransform.forward, Vector3.forward);
 
             Vector3 handCenter = runtimeHitPoint + up * RepairHandVerticalBiasMeters;
             leftHandAup = AbsoluteUniversePosition.FromRuntimePosition(handCenter - right * RepairHandHalfSpanMeters);
             rightHandAup = AbsoluteUniversePosition.FromRuntimePosition(handCenter + right * RepairHandHalfSpanMeters);
-            toolRotation = Quaternion.LookRotation(forward, up);
+            toolRotation = ResolveBasisRotationNoTrig(forward, up);
             return IsFinite(toolRotation);
         }
 
@@ -468,8 +453,8 @@ namespace Hecton8.Gameplay
             if (!IsFinite(runtimeAnchor))
                 runtimeAnchor = runtimeHitPoint;
 
-            Vector3 surfaceNormal = IsFinite(probe.HitNormal) && probe.HitNormal.sqrMagnitude > 0.000001f
-                ? probe.HitNormal.normalized
+            Vector3 surfaceNormal = TryNormalizeFinite(probe.HitNormal, out Vector3 normalizedHitNormal)
+                ? normalizedHitNormal
                 : toolRotation * Vector3.forward;
             snapPoint = new global::Hecton8.Interaction.KinematicRepairSnapPoint
             {
@@ -496,7 +481,7 @@ namespace Hecton8.Gameplay
             if (_lockdownOverrideBlockedByFloodedNeighbor)
                 return;
 
-            if (!IsOverrideWeldRaycastValid(in signal))
+            if (!IsOverrideWeldSignalValid(in signal, runtimeHitPoint))
                 return;
 
             TryApplyWeldOverride(ResolveSignalWeldDeltaSeconds(in signal), runtimeHitPoint);
@@ -605,7 +590,7 @@ namespace Hecton8.Gameplay
 
         private void TeleportPlayer(Transform player, Vector3 destinationPosition, Quaternion destinationRotation)
         {
-            ResolveInteractorComponents(player, out Rigidbody playerBody, out BuoyancyObject buoyancy);
+            ResolveInteractorComponents(player, out Rigidbody playerBody, out global::Hecton8.Physics.BuoyancyObject buoyancy);
 
             bool useSafeTeleportProtocol = Application.isPlaying;
             if (useSafeTeleportProtocol)
@@ -644,7 +629,7 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void ResolveInteractorComponents(Transform player, out Rigidbody body, out BuoyancyObject buoyancy)
+        private void ResolveInteractorComponents(Transform player, out Rigidbody body, out global::Hecton8.Physics.BuoyancyObject buoyancy)
         {
             body = null;
             buoyancy = null;
@@ -708,7 +693,7 @@ namespace Hecton8.Gameplay
         private void TransitionAirlockAudioSnapshot(bool insideDryVolume)
         {
             AudioMixerSnapshot targetSnapshot = insideDryVolume ? dryInteriorSnapshot : wetExteriorSnapshot;
-            float transitionSeconds = Mathf.Max(MinimumEnvironmentSnapshotTransitionSeconds, environmentSnapshotTransitionSeconds);
+            float transitionSeconds = math.max(MinimumEnvironmentSnapshotTransitionSeconds, environmentSnapshotTransitionSeconds);
             ApplyOceanRoarLowPass(insideDryVolume);
 
             if (targetSnapshot == null)
@@ -742,7 +727,7 @@ namespace Hecton8.Gameplay
         private void SetBulkheadSlideTarget(float target01)
         {
             CaptureBulkheadPose();
-            _bulkheadSlideTarget01 = Mathf.Clamp01(target01);
+            _bulkheadSlideTarget01 = math.saturate(target01);
             if (_bulkheadSlideTarget01 >= 1f && _bulkheadSlide01 < 0.999f)
                 _bulkheadClangPlayed = false;
         }
@@ -753,9 +738,9 @@ namespace Hecton8.Gameplay
             if (emergencyBulkheadDoorMesh == null)
                 return;
 
-            _bulkheadSlide01 = Mathf.Clamp01(target01);
-            float eased = Mathf.SmoothStep(0f, 1f, _bulkheadSlide01);
-            emergencyBulkheadDoorMesh.localPosition = Vector3.LerpUnclamped(
+            _bulkheadSlide01 = math.saturate(target01);
+            float eased = SmoothStep01(_bulkheadSlide01);
+            emergencyBulkheadDoorMesh.localPosition = LerpUnclampedVector(
                 _bulkheadOpenLocalPosition,
                 _bulkheadClosedLocalPosition,
                 eased);
@@ -769,14 +754,14 @@ namespace Hecton8.Gameplay
                 return;
 
             float previousSlide = _bulkheadSlide01;
-            float duration = Mathf.Max(0.01f, emergencyBulkheadSlideDurationSeconds);
-            float step = Mathf.Max(0f, deltaTime) / duration;
-            _bulkheadSlide01 = Mathf.MoveTowards(_bulkheadSlide01, _bulkheadSlideTarget01, step);
-            if (Mathf.Approximately(previousSlide, _bulkheadSlide01))
+            float duration = math.max(0.01f, emergencyBulkheadSlideDurationSeconds);
+            float step = math.max(0f, deltaTime) / duration;
+            _bulkheadSlide01 = MoveTowards(_bulkheadSlide01, _bulkheadSlideTarget01, step);
+            if (Approximately(previousSlide, _bulkheadSlide01))
                 return;
 
-            float eased = Mathf.SmoothStep(0f, 1f, _bulkheadSlide01);
-            emergencyBulkheadDoorMesh.localPosition = Vector3.LerpUnclamped(
+            float eased = SmoothStep01(_bulkheadSlide01);
+            emergencyBulkheadDoorMesh.localPosition = LerpUnclampedVector(
                 _bulkheadOpenLocalPosition,
                 _bulkheadClosedLocalPosition,
                 eased);
@@ -797,11 +782,11 @@ namespace Hecton8.Gameplay
             if (((Time.frameCount + _pressureWhistleFrameOffset) & PressureWhistleFrameMask) != 0)
                 return;
 
-            CacheOwningModule();
-            if (owningModule == null)
+            BaseModule module = owningModule;
+            if (module == null)
                 return;
 
-            float pressureDifferentialKPa = math.abs(owningModule.ResolveExternalPressureDeltaKPa());
+            float pressureDifferentialKPa = math.abs(module.ResolveExternalPressureDeltaKPa());
             if (pressureDifferentialKPa < PressureWhistleStartDeltaKPa)
                 return;
 
@@ -834,7 +819,7 @@ namespace Hecton8.Gameplay
         private void CacheOwningModule()
         {
             if (owningModule == null)
-                owningModule = GetComponentInParent<BaseModule>();
+                TryResolveParentComponent(_cachedTransform != null ? _cachedTransform : transform, out owningModule);
         }
 
         private float ResolveWeldOverrideDurationSeconds()
@@ -849,7 +834,7 @@ namespace Hecton8.Gameplay
                 ? owningModule.ResolveExternalPressureDeltaKPa()
                 : 0f;
             float equalizationSeconds = airlockVolumeM3 *
-                                        math.sqrt(math.max(0f, pressureDeltaKPa)) /
+                                        ApproximatePressureRootKPa(pressureDeltaKPa) /
                                         math.max(0.01f, equalizationFlowM3PerSqrtKPaSecond);
             if (!float.IsFinite(equalizationSeconds))
                 equalizationSeconds = cycleDuration;
@@ -890,60 +875,41 @@ namespace Hecton8.Gameplay
             return math.clamp(deltaSeconds, 0f, MaxSignalWeldDeltaSeconds);
         }
 
-        private bool IsOverrideWeldRaycastValid(in global::Hecton8.Interaction.InteractionSignal signal)
+        private bool IsOverrideWeldSignalValid(in global::Hecton8.Interaction.InteractionSignal signal, Vector3 runtimeHitPoint)
         {
             if (!_emergencyLockedDown || _lockdownOverrideBlockedByFloodedNeighbor || _state != AirlockState.Ready)
                 return false;
 
-            Vector3 origin = new Vector3(signal.Source.Origin.x, signal.Source.Origin.y, signal.Source.Origin.z);
-            Vector3 direction = new Vector3(signal.Source.Direction.x, signal.Source.Direction.y, signal.Source.Direction.z);
-            if (direction.sqrMagnitude <= MinOverrideRaycastDirectionSqr)
+            if (!IsFinite(runtimeHitPoint))
                 return false;
 
             float range = math.max(0f, signal.Source.Range);
             if (range <= 0f)
                 return false;
 
-            direction.Normalize();
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin,
-                direction,
-                s_overrideRaycastHits,
-                range,
-                HectonLayerMasks.InteractableLayerMask,
-                QueryTriggerInteraction.Collide);
-
-            bool nearestHitIsOwnAirlock = false;
-            float nearestDistance = float.MaxValue;
-            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
-            {
-                Collider hitCollider = s_overrideRaycastHits[hitIndex].collider;
-                if (hitCollider == null)
-                    continue;
-
-                float hitDistance = s_overrideRaycastHits[hitIndex].distance;
-                if (hitDistance >= nearestDistance)
-                    continue;
-
-                nearestDistance = hitDistance;
-                nearestHitIsOwnAirlock = IsOwnAirlockCollider(hitCollider);
-            }
-
-            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
-                s_overrideRaycastHits[hitIndex] = default;
-
-            return nearestHitIsOwnAirlock;
-        }
-
-        private bool IsOwnAirlockCollider(Collider hitCollider)
-        {
-            if (hitCollider == null || _cachedTransform == null)
+            float3 direction = signal.Source.Direction;
+            float directionLengthSq = math.lengthsq(direction);
+            if (directionLengthSq <= MinOverrideSignalDirectionSqr)
                 return false;
 
-            Transform hitTransform = hitCollider.transform;
-            return hitTransform == _cachedTransform ||
-                   hitTransform.IsChildOf(_cachedTransform) ||
-                   _cachedTransform.IsChildOf(hitTransform);
+            Vector3 absoluteOrigin = new Vector3(signal.Source.Origin.x, signal.Source.Origin.y, signal.Source.Origin.z);
+            if (!IsFinite(absoluteOrigin))
+                return false;
+
+            Vector3 runtimeOrigin = HectonFloatingOrigin.ToRuntimePosition(absoluteOrigin);
+            if (!IsFinite(runtimeOrigin))
+                return false;
+
+            float3 delta = new float3(
+                runtimeHitPoint.x - runtimeOrigin.x,
+                runtimeHitPoint.y - runtimeOrigin.y,
+                runtimeHitPoint.z - runtimeOrigin.z);
+            float rangeWithSlack = range + OverrideWeldRangeSlackMeters;
+            if (math.lengthsq(delta) > rangeWithSlack * rangeWithSlack)
+                return false;
+
+            float forwardMeters = math.dot(delta, direction) * math.rsqrt(directionLengthSq);
+            return forwardMeters >= -OverrideWeldRangeSlackMeters && forwardMeters <= rangeWithSlack;
         }
 
         private static bool IsFinite(Vector3 value)
@@ -951,6 +917,133 @@ namespace Hecton8.Gameplay
             return float.IsFinite(value.x) &&
                    float.IsFinite(value.y) &&
                    float.IsFinite(value.z);
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static float MoveTowards(float current, float target, float maxDelta)
+        {
+            float delta = target - current;
+            if (math.abs(delta) <= maxDelta)
+                return target;
+
+            return current + math.sign(delta) * maxDelta;
+        }
+
+        private static bool Approximately(float lhs, float rhs)
+        {
+            float largest = math.max(1f, math.max(math.abs(lhs), math.abs(rhs)));
+            return math.abs(lhs - rhs) <= 0.000001f * largest;
+        }
+
+        private static float ApproximatePressureRootKPa(float pressureDeltaKPa)
+        {
+            if (!float.IsFinite(pressureDeltaKPa) || pressureDeltaKPa <= 0f)
+                return 0f;
+
+            return math.asfloat((math.asuint(pressureDeltaKPa) >> 1) + FastSqrtApproximationBias);
+        }
+
+        private static bool TryNormalizeFinite(Vector3 value, out Vector3 normalized)
+        {
+            float lengthSq = value.sqrMagnitude;
+            if (!IsFinite(value) || lengthSq <= 0.000001f)
+            {
+                normalized = default;
+                return false;
+            }
+
+            normalized = value * math.rsqrt(lengthSq);
+            return true;
+        }
+
+        private static Vector3 NormalizeFiniteOrFallback(Vector3 value, Vector3 fallback)
+        {
+            return TryNormalizeFinite(value, out Vector3 normalized)
+                ? normalized
+                : fallback;
+        }
+
+        private static Vector3 LerpUnclampedVector(Vector3 start, Vector3 end, float t)
+        {
+            return new Vector3(
+                math.lerp(start.x, end.x, t),
+                math.lerp(start.y, end.y, t),
+                math.lerp(start.z, end.z, t));
+        }
+
+        private static Quaternion ResolveBasisRotationNoTrig(Vector3 forward, Vector3 up)
+        {
+            float3 f = NormalizeVectorRsqrt((float3)forward, new float3(0f, 0f, 1f));
+            float3 u = NormalizeVectorRsqrt((float3)up, new float3(0f, 1f, 0f));
+            float3 r = NormalizeVectorRsqrt(math.cross(u, f), new float3(1f, 0f, 0f));
+            u = NormalizeVectorRsqrt(math.cross(f, r), new float3(0f, 1f, 0f));
+
+            float m00 = r.x;
+            float m01 = u.x;
+            float m02 = f.x;
+            float m10 = r.y;
+            float m11 = u.y;
+            float m12 = f.y;
+            float m20 = r.z;
+            float m21 = u.z;
+            float m22 = f.z;
+            float trace = m00 + m11 + m22;
+
+            float4 q;
+            if (trace > 0f)
+            {
+                q = new float4(m21 - m12, m02 - m20, m10 - m01, 1f + trace);
+            }
+            else if (m00 >= m11 && m00 >= m22)
+            {
+                q = new float4(1f + m00 - m11 - m22, m01 + m10, m02 + m20, m21 - m12);
+            }
+            else if (m11 > m22)
+            {
+                q = new float4(m01 + m10, 1f + m11 - m00 - m22, m12 + m21, m02 - m20);
+            }
+            else
+            {
+                q = new float4(m02 + m20, m12 + m21, 1f + m22 - m00 - m11, m10 - m01);
+            }
+
+            q = NormalizeQuaternionNoSqrt(q);
+            return new Quaternion(q.x, q.y, q.z, q.w);
+        }
+
+        private static float3 NormalizeVectorRsqrt(float3 value, float3 fallback)
+        {
+            float lenSq = math.lengthsq(value);
+            if (lenSq <= 0.000001f || !math.isfinite(lenSq))
+                return fallback;
+
+            return value * math.rsqrt(lenSq);
+        }
+
+        private static float4 NormalizeQuaternionNoSqrt(float4 value)
+        {
+            float lenSq = math.max(math.dot(value, value), 0.000001f);
+            return value * math.rsqrt(lenSq);
+        }
+
+        private static bool TryResolveParentComponent<T>(Transform start, out T component) where T : Component
+        {
+            component = null;
+            Transform current = start;
+            for (int depth = 0; current != null && depth < ParentComponentResolveDepth; depth++)
+            {
+                if (current.TryGetComponent(out component))
+                    return true;
+
+                current = current.parent;
+            }
+
+            return false;
         }
 
         private static bool IsFinite(Quaternion value)

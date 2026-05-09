@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Modding;
 using Hecton8.Meta;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Ecosystem
@@ -17,14 +18,10 @@ namespace Hecton8.Ecosystem
     public sealed class FaunaGeneticsManager : MonoBehaviour, ISaveable
     {
         private const int FallbackWorldSeed = unchecked((int)0x51ED270B);
-
-        private static FaunaGeneticsManager _instance;
+        private const double TraitPositionBucketsPerMeter = 4d;
 
         [SerializeField] private int _worldSeed;
         private bool _serviceRegistered;
-
-        /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
-        public static FaunaGeneticsManager Instance => _instance;
 
         /// <summary>Persisted deterministic world seed used by ecosystem systems.</summary>
         public int WorldSeed => _worldSeed;
@@ -37,13 +34,13 @@ namespace Hecton8.Ecosystem
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            FaunaGeneticsManager registered = GlobalRegistry.FaunaGenetics;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
             if (_worldSeed == 0)
                 _worldSeed = GenerateInitialSeed();
         }
@@ -64,14 +61,19 @@ namespace Hecton8.Ecosystem
         {
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             TryUnregisterService();
-            if (_instance == this)
-                _instance = null;
         }
 
         private void TryRegisterService()
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            FaunaGeneticsManager registered = GlobalRegistry.FaunaGenetics;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterFaunaGeneticsRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.FaunaGenetics, this);
@@ -103,7 +105,7 @@ namespace Hecton8.Ecosystem
         public FaunaGeneticTraits GenerateTraits(CreatureArchetypeData archetype, int biomeIndex, Vector3 spawnPosition)
         {
             uint variationHash = BuildVariationHash(archetype, biomeIndex, spawnPosition);
-            float scale = Mathf.Lerp(0.85f, 1.15f, Hash01(variationHash ^ 0x68BC21EBu));
+            float scale = 0.85f + Hash01(variationHash ^ 0x68BC21EBu) * 0.30f;
             float sizeDelta = scale - 1f;
             float speed = Mathf.Clamp(1f - sizeDelta * 0.9f + HashSigned(variationHash ^ 0x02E5BE93u) * 0.04f, 0.82f, 1.22f);
             float health = Mathf.Clamp(1f + sizeDelta * 1.4f + HashSigned(variationHash ^ 0x7F4A7C15u) * 0.05f, 0.78f, 1.35f);
@@ -163,10 +165,9 @@ namespace Hecton8.Ecosystem
                     continue;
                 }
 
-                float overlayScale = Mathf.Lerp(
-                    definition.MinScaleMultiplier,
-                    definition.MaxScaleMultiplier,
-                    Hash01(variationHash ^ (uint)(i + 1) * 0x9E3779B9u));
+                float overlayT = Hash01(variationHash ^ (uint)(i + 1) * 0x9E3779B9u);
+                float overlayScale = definition.MinScaleMultiplier +
+                    (definition.MaxScaleMultiplier - definition.MinScaleMultiplier) * overlayT;
 
                 scale *= overlayScale;
                 speed *= definition.SpeedMultiplier;
@@ -178,19 +179,40 @@ namespace Hecton8.Ecosystem
         {
             unchecked
             {
+                Hecton8.World.AbsoluteUniversePosition spawnAup =
+                    Hecton8.World.AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
                 uint hash = Mix((uint)_worldSeed);
                 hash = Mix(hash ^ (uint)biomeIndex * 0x85EBCA6Bu);
-                hash = Mix(hash ^ (uint)Mathf.RoundToInt(spawnPosition.x * 4f));
-                hash = Mix(hash ^ (uint)Mathf.RoundToInt(spawnPosition.y * 4f));
-                hash = Mix(hash ^ (uint)Mathf.RoundToInt(spawnPosition.z * 4f));
+                hash = Mix(hash ^ FoldInt64(spawnAup.GridX));
+                hash = Mix(hash ^ FoldInt64(spawnAup.GridY));
+                hash = Mix(hash ^ FoldInt64(spawnAup.GridZ));
+                hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalX));
+                hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalY));
+                hash = Mix(hash ^ QuantizeAupLocal(spawnAup.LocalZ));
                 hash = Mix(hash ^ HashString(archetype != null ? archetype.creatureId : string.Empty));
                 return hash;
             }
         }
 
+        private static uint FoldInt64(long value)
+        {
+            unchecked
+            {
+                ulong bits = (ulong)value;
+                return (uint)(bits ^ (bits >> 32));
+            }
+        }
+
+        private static uint QuantizeAupLocal(double value)
+        {
+            double scaled = value * TraitPositionBucketsPerMeter;
+            int rounded = scaled >= 0d ? (int)(scaled + 0.5d) : (int)(scaled - 0.5d);
+            return unchecked((uint)rounded);
+        }
+
         private int GenerateInitialSeed()
         {
-            RunModifierController runModifierController = RunModifierController.Instance;
+            RunModifierController runModifierController = GlobalRegistry.RunModifiers;
             if (runModifierController != null)
             {
                 RunModifiersDTO modifiers = runModifierController.CurrentModifiers;

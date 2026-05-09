@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.IO;
 using System.Text;
 using Hecton8.Core;
@@ -20,6 +21,7 @@ namespace Hecton8.Editor
         private const int Resolution = 33;
         private const int PixelCount = Resolution * Resolution;
         private const int Center = Resolution / 2;
+        private const int PerfectBowlMaskedCells = (Resolution - 2) * (Resolution - 2);
         private const float SmokeHeightStepMeters = 10f;
         private const float SmokeFlatPlaneHeightMeters = 90f;
         private const double PerfectBowlBudgetMilliseconds = 1.0d;
@@ -120,6 +122,16 @@ namespace Hecton8.Editor
                     acceptedCells,
                     SmokeCase.FlatPlane);
 
+                SmokeCaseResult openEdgeBowl = RunCase(
+                    heightmap,
+                    basinMask,
+                    candidateMask,
+                    basinRecords,
+                    floodHeap,
+                    visitedStamp,
+                    acceptedCells,
+                    SmokeCase.OpenEdgeBowl);
+
                 SmokeCaseResult dualBowl = RunCase(
                     heightmap,
                     basinMask,
@@ -134,8 +146,12 @@ namespace Hecton8.Editor
                 Assert.AreEqual(Center, perfectBowl.FirstDeepestX, "Perfect bowl deepest X mismatch.");
                 Assert.AreEqual(Center, perfectBowl.FirstDeepestZ, "Perfect bowl deepest Z mismatch.");
                 Assert.AreEqual(160f, perfectBowl.FirstLipHeight, "Perfect bowl lip mismatch.");
+                Assert.AreEqual(PerfectBowlMaskedCells, perfectBowl.FirstMaskedCells, "Perfect bowl included lip/rim cells in basin mask.");
+                Assert.AreEqual(PerfectBowlMaskedCells, perfectBowl.TotalMaskedCells, "Perfect bowl total mask mismatch.");
                 Assert.IsTrue(perfectBowlMilliseconds <= PerfectBowlBudgetMilliseconds, "Perfect bowl basin detector exceeded the 1 ms editor smoke budget.");
                 Assert.AreEqual(0, flatPlane.ValidBasins, "Flat plane emitted a false basin.");
+                Assert.AreEqual(0, openEdgeBowl.ValidBasins, "Open edge bowl emitted a false closed basin.");
+                Assert.AreEqual(0, openEdgeBowl.TotalMaskedCells, "Open edge bowl leaked cells into basin mask.");
                 Assert.AreEqual(2, dualBowl.ValidBasins, "Dual bowl basin count mismatch.");
                 AssertPillarBaseInjectionDoesNotCreateAirGap();
 
@@ -143,10 +159,11 @@ namespace Hecton8.Editor
                 {
                     PerfectBowl = perfectBowl,
                     FlatPlane = flatPlane,
+                    OpenEdgeBowl = openEdgeBowl,
                     DualBowl = dualBowl,
                     PerfectBowlMilliseconds = perfectBowlMilliseconds,
-                    TotalCases = 3,
-                    PassedCases = 3
+                    TotalCases = 4,
+                    PassedCases = 4
                 };
             }
             finally
@@ -291,6 +308,12 @@ namespace Hecton8.Editor
             if (smokeCase == SmokeCase.FlatPlane)
                 return;
 
+            if (smokeCase == SmokeCase.OpenEdgeBowl)
+            {
+                FillChebyshevBowl(heightmap, 1, Center, 16);
+                return;
+            }
+
             if (smokeCase == SmokeCase.PerfectBowl)
             {
                 FillChebyshevBowl(heightmap, Center, Center, 16);
@@ -365,9 +388,10 @@ namespace Hecton8.Editor
             builder.AppendLine("  \"status\": \"PENDING_VERIFICATION\",");
             builder.AppendLine("  \"totalCases\": " + report.TotalCases + ",");
             builder.AppendLine("  \"passedCases\": " + report.PassedCases + ",");
-            builder.AppendLine("  \"perfectBowlMilliseconds\": " + report.PerfectBowlMilliseconds + ",");
+            builder.AppendLine("  \"perfectBowlMilliseconds\": " + report.PerfectBowlMilliseconds.ToString(CultureInfo.InvariantCulture) + ",");
             AppendCase(builder, "perfectBowl", report.PerfectBowl, false);
             AppendCase(builder, "flatPlane", report.FlatPlane, false);
+            AppendCase(builder, "openEdgeBowl", report.OpenEdgeBowl, false);
             AppendCase(builder, "dualBowl", report.DualBowl, true);
             builder.AppendLine("}");
             File.WriteAllText(path, builder.ToString());
@@ -383,7 +407,7 @@ namespace Hecton8.Editor
             builder.AppendLine("    \"validBasins\": " + result.ValidBasins + ",");
             builder.AppendLine("    \"firstDeepestX\": " + result.FirstDeepestX + ",");
             builder.AppendLine("    \"firstDeepestZ\": " + result.FirstDeepestZ + ",");
-            builder.AppendLine("    \"firstLipHeight\": " + result.FirstLipHeight + ",");
+            builder.AppendLine("    \"firstLipHeight\": " + result.FirstLipHeight.ToString(CultureInfo.InvariantCulture) + ",");
             builder.AppendLine("    \"firstMaskedCells\": " + result.FirstMaskedCells + ",");
             builder.AppendLine("    \"totalMaskedCells\": " + result.TotalMaskedCells);
             builder.Append("  }");
@@ -422,6 +446,7 @@ namespace Hecton8.Editor
         {
             PerfectBowl,
             FlatPlane,
+            OpenEdgeBowl,
             DualBowl
         }
 
@@ -435,6 +460,9 @@ namespace Hecton8.Editor
 
             /// <summary>Flat plane result.</summary>
             public SmokeCaseResult FlatPlane;
+
+            /// <summary>Open edge bowl rejection result.</summary>
+            public SmokeCaseResult OpenEdgeBowl;
 
             /// <summary>Dual bowl result.</summary>
             public SmokeCaseResult DualBowl;

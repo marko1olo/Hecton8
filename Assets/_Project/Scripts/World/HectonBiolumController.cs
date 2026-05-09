@@ -18,13 +18,14 @@ using Hecton8.AtlasSignal;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Visor;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-85)]
-    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IDepthZoneEventListener, ISonarPulseEventListener, IEclipseGameplayEventListener
+    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IDepthZoneEventListener, ISonarPulseEventListener, IEclipseGameplayEventListener, IServiceHeartbeat, IServiceShutdown
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -67,11 +68,6 @@ namespace Hecton8.World
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        public static HectonBiolumController Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
-
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
@@ -85,9 +81,13 @@ namespace Hecton8.World
         private float[] _localProxyLightBaseIntensities;
         private bool  _eclipseActive;
         private bool  _registered;
+        private bool _runtimeRegistered;
 
         private static readonly int _ShaderBiolumIntensity  = Shader.PropertyToID("_BiolumIntensity");
         private static readonly int _ShaderBiolumPulseTime  = Shader.PropertyToID("_BiolumPulseTime");
+
+        public ServiceHeartbeatState HeartbeatState => _runtimeRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+        public bool IsServiceReady => _runtimeRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -95,12 +95,15 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
+            HectonBiolumController registered = GlobalRegistry.BiolumController;
+            if (registered != null && registered != this) { Destroy(gameObject); return; }
         }
 
         private void OnEnable()
         {
+            if (!TryRegisterRuntime())
+                return;
+
             TryRegister();
 
             ResolveSurvivalSystem();
@@ -123,6 +126,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterRuntime();
 
             EclipseGameplayEvents.Unregister(this);
             AtlasSignalEvents.Unregister(this);
@@ -139,11 +143,27 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterRuntime();
             EclipseGameplayEvents.Unregister(this);
+            AtlasSignalEvents.Unregister(this);
+            DepthZoneEvents.Unregister(this);
             SpectrumEvents.UnregisterSonarPulseListener(this);
 
-            if (Instance == this)
-                Instance = null;
+        }
+
+        public void OnServiceShutdown()
+        {
+            TryUnregister();
+            TryUnregisterRuntime();
+            EclipseGameplayEvents.Unregister(this);
+            AtlasSignalEvents.Unregister(this);
+            DepthZoneEvents.Unregister(this);
+            SpectrumEvents.UnregisterSonarPulseListener(this);
+            _localProxyLightBaseIntensities = null;
+            _atlasPulseBurst = 0f;
+            _sonarPulseBurst = 0f;
+            _targetEclipseMultiplier = 1f;
+            _currentEclipseMultiplier = 1f;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -159,12 +179,14 @@ namespace Hecton8.World
 
             // Вычисляем целевую интенсивность
             float depth = survivalSystem != null ? survivalSystem.Depth : 0f;
-            float depthFactor = depth >= deepTransitionDepth ? 1f :
-                depth / Mathf.Max(1f, deepTransitionDepth);
+            float transitionDepth = deepTransitionDepth > 1f ? deepTransitionDepth : 1f;
+            float depthFactor = depth >= transitionDepth ? 1f : depth / transitionDepth;
+            if (depthFactor < 0f)
+                depthFactor = 0f;
 
-            float target = Mathf.Lerp(baseIntensity, deepIntensity, depthFactor);
+            float target = baseIntensity + (deepIntensity - baseIntensity) * depthFactor;
 
-            _currentEclipseMultiplier = Mathf.MoveTowards(
+            _currentEclipseMultiplier = MoveTowardsFast(
                 _currentEclipseMultiplier,
                 _targetEclipseMultiplier,
                 eclipseMultiplierSmoothRate * dt);
@@ -174,16 +196,16 @@ namespace Hecton8.World
             _targetIntensity = target;
 
             // Плавное изменение + pulse burst
-            _currentIntensity = Mathf.MoveTowards(_currentIntensity, _targetIntensity, 0.05f * dt / 0.5f);
+            _currentIntensity = MoveTowardsFast(_currentIntensity, _targetIntensity, 0.05f * dt / 0.5f);
 
             if (_atlasPulseBurst > 0f)
             {
-                _atlasPulseBurst = Mathf.Max(0f, _atlasPulseBurst - pulseDecayRate * dt);
+                _atlasPulseBurst = math.max(0f, _atlasPulseBurst - pulseDecayRate * dt);
             }
 
             if (_sonarPulseBurst > 0f)
             {
-                _sonarPulseBurst = Mathf.Max(0f, _sonarPulseBurst - pulseDecayRate * dt);
+                _sonarPulseBurst = math.max(0f, _sonarPulseBurst - pulseDecayRate * dt);
             }
 
             ApplyShader();
@@ -193,6 +215,16 @@ namespace Hecton8.World
         // ══════════════════════════════════════════════════════════
         //  PRIVATE
         // ══════════════════════════════════════════════════════════
+
+        private static float MoveTowardsFast(float current, float target, float maxDelta)
+        {
+            float delta = target - current;
+            float safeDelta = math.max(0f, maxDelta);
+            if (math.abs(delta) <= safeDelta)
+                return target;
+
+            return current + (math.sign(delta) * safeDelta);
+        }
 
         private void ApplyShader()
         {
@@ -350,14 +382,43 @@ namespace Hecton8.World
             _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
+        private bool TryRegisterRuntime()
+        {
+            if (_runtimeRegistered)
+                return true;
+
+            if (!Application.isPlaying)
+                return false;
+
+            HectonBiolumController registered = GlobalRegistry.BiolumController;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
+            GlobalRegistry.RegisterBiolumControllerRuntime(this);
+            _runtimeRegistered = ReferenceEquals(GlobalRegistry.BiolumController, this);
+            return _runtimeRegistered;
+        }
+
         private void TryUnregister()
         {
             if (!_registered)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registered = false;
+        }
+
+        private void TryUnregisterRuntime()
+        {
+            if (!_runtimeRegistered)
+                return;
+
+            GlobalRegistry.UnregisterBiolumControllerRuntime(this);
+            _runtimeRegistered = false;
         }
 
 #if UNITY_EDITOR

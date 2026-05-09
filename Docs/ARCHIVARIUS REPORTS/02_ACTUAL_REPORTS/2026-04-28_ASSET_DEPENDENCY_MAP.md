@@ -19,7 +19,7 @@ Preferred current references:
 - `2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md`
 - `2026-04-28_DEAD_ASSET_SWEEP.md` for deletion-proof boundaries
 
-**Ð’ÐµÑ€ÑÐ¸Ñ:** 2026-04-28 | **Ð˜ÑÑ‚Ð¾Ñ€Ð¸Ñ‡ÐµÑÐºÐ¸Ð¹ ÑÑ‚Ð°Ñ‚ÑƒÑ Ð½Ð° Ð¼Ð¾Ð¼ÐµÐ½Ñ‚ ÑÐºÐ°Ð½Ð°:** ETA VERIFIED
+**Ð’ÐµÑ€ÑÐ¸Ñ:** 2026-04-28 | **Historical scan label:** ETA VERIFIED (not current authority status)
 
 ---
 
@@ -202,7 +202,7 @@ Obsolete note:
 
 ---
 
-**Historical Scan Status:** ETA VERIFIED âœ…
+**Historical Scan Label:** ETA VERIFIED (historical only; current authority status remains `PENDING VERIFICATION`)
 
 **Critical Risk:** Scene object name dependencies
 **Recommendation:** Replace scene object search with GlobalRegistry injection

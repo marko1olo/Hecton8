@@ -15,6 +15,8 @@ namespace Hecton8.World
     {
         private const int ThreadGroupSize = 64;
         private const int FrustumPlaneCount = 6;
+        private const string NativeMemoryOwner = nameof(GPUScatterDirector);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly int _ScatterInstancesId = Shader.PropertyToID("_HectonScatterInstances");
         private static readonly int _VisibleIndicesId = Shader.PropertyToID("_HectonVisibleScatterIndices");
         private static readonly int _HeightTextureId = Shader.PropertyToID("_HectonScatterHeightTexture");
@@ -140,6 +142,10 @@ namespace Hecton8.World
         private readonly Plane[] _frustumPlaneCache = new Plane[FrustumPlaneCount]; // COLD ALLOC: Plane[6] — reusable frustum plane cache for GPU scatter dispatch — owner: GPUScatterDirector
         private readonly Vector4[] _frustumPlaneUpload = new Vector4[FrustumPlaneCount]; // COLD ALLOC: Vector4[6] — reusable GPU frustum plane upload payload for GPU scatter dispatch — owner: GPUScatterDirector
         private int _modInstanceCount;
+        private int _lastRequestedGrid = -1;
+        private int _lastClampedCapacity = -1;
+        private int _lastResolvedCapacity = -1;
+        private Mesh _argsUploadMesh;
 
         private void Awake()
         {
@@ -207,7 +213,9 @@ namespace Hecton8.World
 
             PopulateFrustumPlaneUpload(viewCamera);
 
-            Vector3 center = playerTransform.position;
+            Transform player = playerTransform;
+            Transform cameraTransform = viewCamera.transform;
+            Vector3 center = player.position;
             float diameter = scatterRadiusMeters * 2f;
             float minX = center.x - scatterRadiusMeters;
             float minZ = center.z - scatterRadiusMeters;
@@ -226,8 +234,8 @@ namespace Hecton8.World
             scatterCompute.SetInt(_ScatterSeedId, unchecked((int)scatterSeed));
             scatterCompute.SetVector(_ScaleRangeId, new Vector4(math.min(minScale, maxScale), math.max(minScale, maxScale), 0f, 0f));
             scatterCompute.SetFloat(_MinNormalYId, math.saturate(minimumNormalY));
-            scatterCompute.SetVector(_CameraPositionId, viewCamera.transform.position);
-            scatterCompute.SetVector(_CameraForwardId, viewCamera.transform.forward);
+            scatterCompute.SetVector(_CameraPositionId, cameraTransform.position);
+            scatterCompute.SetVector(_CameraForwardId, cameraTransform.forward);
             scatterCompute.SetFloat(_MaxDistanceId, math.max(1f, maxVisibleDistance));
             scatterCompute.SetFloat(_PeripheralDistanceId, math.max(0f, peripheralCullDistance));
             scatterCompute.SetFloat(_PeripheralDotId, math.clamp(peripheralCullDot, -1f, 1f));
@@ -300,8 +308,21 @@ namespace Hecton8.World
             int requestedGrid = math.max(8, Mathf.CeilToInt((scatterRadiusMeters * 2f) / math.max(0.25f, cellSizeMeters)));
             int requestedCapacity = requestedGrid * requestedGrid;
             int clampedCapacity = math.min(math.max(1, maxScatterInstances), requestedCapacity);
-            _gridResolution = math.max(1, Mathf.FloorToInt(math.sqrt(clampedCapacity)));
-            int resolvedCapacity = _gridResolution * _gridResolution;
+            bool capacityDirty =
+                _lastRequestedGrid != requestedGrid ||
+                _lastClampedCapacity != clampedCapacity ||
+                _lastResolvedCapacity <= 0;
+
+            int resolvedCapacity = _lastResolvedCapacity;
+            if (capacityDirty)
+            {
+                _gridResolution = ResolveGridResolution(requestedGrid, clampedCapacity);
+                resolvedCapacity = _gridResolution * _gridResolution;
+                _lastRequestedGrid = requestedGrid;
+                _lastClampedCapacity = clampedCapacity;
+                _lastResolvedCapacity = resolvedCapacity;
+            }
+
             EnsureInstanceBufferCapacity(resolvedCapacity);
             EnsureVisibleIndexBufferCapacity(resolvedCapacity);
             EnsureIndirectArgsBuffer();
@@ -310,7 +331,10 @@ namespace Hecton8.World
         private void EnsureModInstanceResources()
         {
             if (!_modInstanceMatrices.IsCreated)
+            {
                 _modInstanceMatrices = new NativeArray<float4x4>(MaxModInstancesPerFrame, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[1024] - mod instancing matrix upload staging - owner: GPUScatterDirector
+                NativeMemorySentinel.RegisterNativeArray(_modInstanceMatrices, NativeMemoryOwner, nameof(_modInstanceMatrices), NativeMemoryLifetime);
+            }
 
             if (_modInstanceMatrixBuffer == null)
                 _modInstanceMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxModInstancesPerFrame, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[1024] - reserved mod instancing matrix layer - owner: GPUScatterDirector
@@ -365,6 +389,10 @@ namespace Hecton8.World
             if (_argsBuffer == null)
                 _argsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] — indirect indexed draw args for GPU scatter — owner: GPUScatterDirector
 
+            if (ReferenceEquals(_argsUploadMesh, scatterMesh))
+                return;
+
+            _argsUploadMesh = scatterMesh;
             _argsUpload[0].indexCountPerInstance = scatterMesh != null ? scatterMesh.GetIndexCount(0) : 0u;
             _argsUpload[0].instanceCount = 0u;
             _argsUpload[0].startIndex = scatterMesh != null ? scatterMesh.GetIndexStart(0) : 0u;
@@ -409,11 +437,16 @@ namespace Hecton8.World
             ReleaseBuffer(ref _modInstanceMatrixBuffer);
             if (_modInstanceMatrices.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_modInstanceMatrices);
                 _modInstanceMatrices.Dispose();
                 _modInstanceMatrices = default;
             }
 
             _modInstanceCount = 0;
+            _lastRequestedGrid = -1;
+            _lastClampedCapacity = -1;
+            _lastResolvedCapacity = -1;
+            _argsUploadMesh = null;
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -423,6 +456,30 @@ namespace Hecton8.World
 
             buffer.Release();
             buffer = null;
+        }
+
+        private static int ResolveGridResolution(int requestedGrid, int clampedCapacity)
+        {
+            int high = math.max(1, requestedGrid);
+            int low = 1;
+            int best = 1;
+            int safeCapacity = math.max(1, clampedCapacity);
+            while (low <= high)
+            {
+                int mid = (low + high) >> 1;
+                long candidateCount = (long)mid * mid;
+                if (candidateCount <= safeCapacity)
+                {
+                    best = mid;
+                    low = mid + 1;
+                }
+                else
+                {
+                    high = mid - 1;
+                }
+            }
+
+            return best;
         }
     }
 }

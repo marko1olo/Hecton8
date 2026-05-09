@@ -5,12 +5,15 @@ using UnityEngine;
 namespace Hecton8.UI
 {
     /// <summary>
-    /// Dispatcher-driven 3D analog needle with spring-damper lag.
+    /// Dispatcher-driven 3D analog needle with a cheap elastic overshoot response.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Analog Gauge Needle 3D")]
     public sealed class AnalogGaugeNeedle3D : MonoBehaviour, ITickable, ILateFrameTickable
     {
+        private const float AngleWriteEpsilonDegrees = 0.001f;
+        private const float SettleEpsilonDegrees = 0.01f;
+
         private enum NeedleAxis : byte
         {
             X = 0,
@@ -34,10 +37,13 @@ namespace Hecton8.UI
         private bool _registeredLateFrame;
         private bool _initialized;
         private Quaternion _initialLocalRotation;
+        private float3 _rotationAxisVector;
         private float _currentAngle;
-        private float _angularVelocity;
+        private float _overshootAngle;
         private float _lastTargetAngle;
+        private float _lastAppliedAngle;
         private float _lastDeltaTime;
+        private bool _rotationApplied;
 
         private void OnEnable()
         {
@@ -59,14 +65,17 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float deltaTime)
         {
-            _lastDeltaTime = Mathf.Max(0f, deltaTime);
+            _lastDeltaTime = math.max(0f, deltaTime);
         }
 
         /// <inheritdoc />
         public void LateFrameTick()
         {
             if (needle == null)
+            {
+                TryUnregisterTickManager();
                 return;
+            }
 
             CaptureInitialState();
             float dt = _lastDeltaTime;
@@ -77,24 +86,38 @@ namespace Hecton8.UI
             float targetDelta = targetAngle - _lastTargetAngle;
             if (math.abs(targetDelta) > 0.001f && overshootKickStrength > 0f)
             {
-                float kick = targetDelta * math.max(0f, overshootKickStrength) / math.max(dt, 0.001f);
                 float maxKick = math.max(0f, maxOvershootKickDegreesPerSecond);
-                _angularVelocity += math.clamp(kick, -maxKick, maxKick);
+                _overshootAngle = math.clamp(targetDelta * math.max(0f, overshootKickStrength), -maxKick, maxKick);
                 _lastTargetAngle = targetAngle;
             }
 
-            float omega = math.max(0.1f, springFrequencyHz) * (Mathf.PI * 2f);
-            float displacement = _currentAngle - targetAngle;
-            float acceleration = (-omega * omega * displacement) - (2f * math.clamp(dampingRatio, 0.05f, 2f) * omega * _angularVelocity);
-            _angularVelocity += acceleration * dt;
-            _currentAngle += _angularVelocity * dt;
+            float blend = FastDecayBlend(math.max(0.1f, springFrequencyHz) * math.max(0.1f, dampingRatio), dt);
+            float elasticBlend = EvaluateElasticOut(blend);
+            float animatedTarget = targetAngle + _overshootAngle;
+            _currentAngle = math.lerp(_currentAngle, animatedTarget, elasticBlend);
+            _overshootAngle = math.lerp(
+                _overshootAngle,
+                0f,
+                FastDecayBlend(math.max(0.1f, springFrequencyHz) * 2.5f, dt));
 
-            needle.localRotation = _initialLocalRotation * Quaternion.AngleAxis(_currentAngle, ResolveAxisVector(rotationAxis));
+            ApplyNeedleRotationIfChanged();
+            if (IsNeedleSettled(targetAngle))
+            {
+                _currentAngle = targetAngle;
+                _overshootAngle = 0f;
+                ApplyNeedleRotationIfChanged();
+                TryUnregisterTickManager();
+            }
         }
 
         public void SetTarget01(float normalizedValue)
         {
-            target01 = math.saturate(normalizedValue);
+            float nextTarget01 = math.saturate(normalizedValue);
+            if (math.abs(target01 - nextTarget01) <= 0.0001f)
+                return;
+
+            target01 = nextTarget01;
+            TryRegisterTickManager();
         }
 
         public void SetTargetValue(float value)
@@ -102,11 +125,11 @@ namespace Hecton8.UI
             float denominator = maximumValue - minimumValue;
             if (math.abs(denominator) <= 0.0001f)
             {
-                target01 = 0f;
+                SetTarget01(0f);
                 return;
             }
 
-            target01 = math.saturate((value - minimumValue) / denominator);
+            SetTarget01((value - minimumValue) / denominator);
         }
 
         public void SnapToTarget()
@@ -114,9 +137,9 @@ namespace Hecton8.UI
             CaptureInitialState();
             _currentAngle = math.lerp(minimumAngleDegrees, maximumAngleDegrees, math.saturate(target01));
             _lastTargetAngle = _currentAngle;
-            _angularVelocity = 0f;
+            _overshootAngle = 0f;
             if (needle != null)
-                needle.localRotation = _initialLocalRotation * Quaternion.AngleAxis(_currentAngle, ResolveAxisVector(rotationAxis));
+                ApplyNeedleRotation(force: true);
         }
 
         private void CaptureInitialState()
@@ -125,10 +148,41 @@ namespace Hecton8.UI
                 return;
 
             _initialLocalRotation = needle.localRotation;
+            _rotationAxisVector = ResolveAxisFloat3(rotationAxis);
             _currentAngle = math.lerp(minimumAngleDegrees, maximumAngleDegrees, math.saturate(target01));
             _lastTargetAngle = _currentAngle;
-            _angularVelocity = 0f;
+            _overshootAngle = 0f;
+            _rotationApplied = false;
             _initialized = true;
+        }
+
+        private void ApplyNeedleRotationIfChanged()
+        {
+            if (_rotationApplied && math.abs(_lastAppliedAngle - _currentAngle) <= AngleWriteEpsilonDegrees)
+                return;
+
+            ApplyNeedleRotation(force: true);
+        }
+
+        private void ApplyNeedleRotation(bool force)
+        {
+            if (!force || needle == null)
+                return;
+
+            quaternion baseRotation = new quaternion(
+                _initialLocalRotation.x,
+                _initialLocalRotation.y,
+                _initialLocalRotation.z,
+                _initialLocalRotation.w);
+            quaternion deltaRotation = quaternion.AxisAngle(_rotationAxisVector, math.radians(_currentAngle));
+            quaternion resolvedRotation = math.mul(baseRotation, deltaRotation);
+            needle.localRotation = new Quaternion(
+                resolvedRotation.value.x,
+                resolvedRotation.value.y,
+                resolvedRotation.value.z,
+                resolvedRotation.value.w);
+            _lastAppliedAngle = _currentAngle;
+            _rotationApplied = true;
         }
 
         private void TryRegisterTickManager()
@@ -136,13 +190,22 @@ namespace Hecton8.UI
             if (_registeredToTick || !Application.isPlaying)
                 return;
 
+            if (needle == null)
+                return;
+
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
+            _registeredToTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
+            if (!_registeredToTick)
+                return;
+
+            _registeredLateFrame = GlobalRegistry.TryRegisterLateFrameTickable(this, PriorityLayer.UI);
+            if (!_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registeredToTick = false;
+            }
         }
 
         private void TryUnregisterTickManager()
@@ -160,17 +223,39 @@ namespace Hecton8.UI
             }
         }
 
-        private static Vector3 ResolveAxisVector(NeedleAxis axis)
+        private bool IsNeedleSettled(float targetAngle)
+        {
+            return math.abs(_currentAngle - targetAngle) <= SettleEpsilonDegrees &&
+                   math.abs(_overshootAngle) <= SettleEpsilonDegrees;
+        }
+
+        private static float3 ResolveAxisFloat3(NeedleAxis axis)
         {
             switch (axis)
             {
                 case NeedleAxis.X:
-                    return Vector3.right;
+                    return new float3(1f, 0f, 0f);
                 case NeedleAxis.Y:
-                    return Vector3.up;
+                    return new float3(0f, 1f, 0f);
                 default:
-                    return Vector3.forward;
+                    return new float3(0f, 0f, 1f);
             }
+        }
+
+        private static float FastDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            if (x >= 3.5f)
+                return 1f;
+
+            return math.saturate((12f * x) / (12f + (6f * x) + (x * x)));
+        }
+
+        private static float EvaluateElasticOut(float t)
+        {
+            t = math.saturate(t);
+            float inverse = t - 1f;
+            return math.saturate(1f + (2.70158f * inverse * inverse * inverse) + (1.70158f * inverse * inverse));
         }
 
 #if UNITY_EDITOR
@@ -181,6 +266,7 @@ namespace Hecton8.UI
             overshootKickStrength = math.clamp(overshootKickStrength, 0f, 0.5f);
             maxOvershootKickDegreesPerSecond = math.clamp(maxOvershootKickDegreesPerSecond, 0f, 180f);
             target01 = math.saturate(target01);
+            _rotationAxisVector = ResolveAxisFloat3(rotationAxis);
         }
 #endif
     }

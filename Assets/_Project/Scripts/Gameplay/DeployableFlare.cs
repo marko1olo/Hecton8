@@ -23,6 +23,7 @@ using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -253,10 +254,9 @@ namespace Hecton8.Gameplay
             _fadeTimer += deltaTime;
 
             // Calculate fade progress (0 to 1)
-            float fadeProgress = Mathf.Clamp01(_fadeTimer / fadeDuration);
+            float fadeProgress = fadeDuration > 0f ? math.saturate(_fadeTimer / fadeDuration) : 1f;
 
-            // Lerp light intensity
-            _currentIntensity = Mathf.Lerp(maxIntensity, 0f, fadeProgress);
+            _currentIntensity = maxIntensity * (1f - fadeProgress);
 
             if (pointLight != null)
             {
@@ -456,8 +456,7 @@ namespace Hecton8.Gameplay
             if (_isRegistered) return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = GlobalRegistry.Updatables.Contains(this);
+            _isRegistered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
         }
 
         private void UnregisterFromTick()

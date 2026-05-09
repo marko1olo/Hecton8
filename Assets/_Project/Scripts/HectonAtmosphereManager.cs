@@ -50,6 +50,7 @@ using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.World;
+using Hecton.Localization;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
@@ -98,18 +99,33 @@ namespace Hecton8.Atmosphere
     {
         private const int ExpectedPendingStateEventCapacity = 8;
         private const int ListenerCapacity = 8;
+        private static readonly uint _listenerRejectedWarningHash = unchecked((uint)LocHash.Compute("AtmosphereEvents.ListenerRejected"));
+        private static readonly uint _listenerExceptionWarningHash = unchecked((uint)LocHash.Compute("AtmosphereEvents.ListenerException"));
+        private static readonly uint _listenerContextHash = unchecked((uint)LocHash.Compute("AtmosphereEvents.Listeners"));
 
         private static readonly RegistryBucket<IAtmosphereStateEventListener> _listeners = new RegistryBucket<IAtmosphereStateEventListener>(ListenerCapacity);
+        // COLD ALLOC: IAtmosphereStateEventListener[8] - listener additions deferred while dispatching atmosphere state events - owner: AtmosphereEvents
+        private static readonly IAtmosphereStateEventListener[] _deferredRegisterListeners = new IAtmosphereStateEventListener[ListenerCapacity];
+        // COLD ALLOC: IAtmosphereStateEventListener[8] - listener removals deferred while dispatching atmosphere state events - owner: AtmosphereEvents
+        private static readonly IAtmosphereStateEventListener[] _deferredUnregisterListeners = new IAtmosphereStateEventListener[ListenerCapacity];
         private static NativeQueue<EnvironmentState> _pendingStates;
         private static NativeQueue<EnvironmentState> _nextFrameStates;
         private static int _pendingStateCount;
         private static int _nextFrameStateCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerRejectedTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         /// <summary>
         /// Number of queued atmosphere state changes awaiting dispatch.
         /// </summary>
         public static int PendingCount => _pendingStateCount + _nextFrameStateCount;
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -128,8 +144,16 @@ namespace Hecton8.Atmosphere
                 _nextFrameStates = default;
             }
 
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingStateCount = 0;
             _nextFrameStateCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerRejectedTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
             _listeners.Clear();
         }
@@ -139,8 +163,16 @@ namespace Hecton8.Atmosphere
         /// </summary>
         public static void Register(IAtmosphereStateEventListener listener)
         {
-            if (listener != null && !_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -148,8 +180,16 @@ namespace Hecton8.Atmosphere
         /// </summary>
         public static void Unregister(IAtmosphereStateEventListener listener)
         {
-            if (listener != null && _listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (listener == null)
+                return;
+
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            _listeners.TryUnregister(listener);
         }
 
         /// <summary>
@@ -157,6 +197,9 @@ namespace Hecton8.Atmosphere
         /// </summary>
         public static void RaiseStateChanged(EnvironmentState state)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingStateCount + _nextFrameStateCount >= ExpectedPendingStateEventCapacity)
                 return;
@@ -201,13 +244,16 @@ namespace Hecton8.Atmosphere
                     for (int i = listenerCount - 1; i >= 0; i--)
                     {
                         IAtmosphereStateEventListener listener = rawListeners[i];
-                        if (listener != null)
-                            listener.OnAtmosphereStateChanged(state);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, state);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -229,6 +275,7 @@ namespace Hecton8.Atmosphere
                     nameof(AtmosphereEvents),
                     nameof(_pendingStates),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingStates, ExpectedPendingStateEventCapacity);
             }
 
             if (!_nextFrameStates.IsCreated)
@@ -240,6 +287,21 @@ namespace Hecton8.Atmosphere
                     nameof(AtmosphereEvents),
                     nameof(_nextFrameStates),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameStates, ExpectedPendingStateEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -258,6 +320,177 @@ namespace Hecton8.Atmosphere
             _nextFrameStates = swap;
             _pendingStateCount = _nextFrameStateCount;
             _nextFrameStateCount = 0;
+        }
+
+        private static void DispatchToListener(IAtmosphereStateEventListener listener, EnvironmentState state)
+        {
+            try
+            {
+                listener.OnAtmosphereStateChanged(state);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IAtmosphereStateEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IAtmosphereStateEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener) || IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= ListenerCapacity)
+            {
+                ReportListenerRegistrationRejected();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IAtmosphereStateEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IAtmosphereStateEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IAtmosphereStateEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IAtmosphereStateEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IAtmosphereStateEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IAtmosphereStateEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
+        private static void RegisterImmediate(IAtmosphereStateEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationRejected();
+        }
+
+        private static void ReportListenerRegistrationRejected()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerRejectedTelemetryFrame == frame)
+                return;
+
+            _lastListenerRejectedTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _listenerRejectedWarningHash,
+                _listenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _listenerExceptionWarningHash,
+                _listenerContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
         }
     }
 
@@ -455,8 +688,13 @@ namespace Hecton8.Atmosphere
         private bool _registeredAtmosphereRuntime;
         private float _lastAtmosphereSlowTickTime;
         private float _atmosphereTimelineAccumulator;
+        private int _nextAtmosphereTimelineWarningFrame;
         private const float AtmosphereTimelineStepSeconds = 0.1f;
         private const int AtmosphereTimelineMaxStepsPerSlowTick = 5;
+        private static readonly uint _AtmosphereTimelineBudgetWarningHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.AtmosphereTimelineBudget"));
+        private static readonly uint _AtmosphereTimelineContextHash = unchecked((uint)LocHash.Compute("HectonAtmosphereManager.SlowTick"));
+        private const double AtmosphereTimelineBudgetMilliseconds = 0.2d;
+        private const int AtmosphereTimelineWarningCooldownFrames = 30;
 
         private AtmosphereProfile _activeBiomeProfile;
         private AtmosphereProfile _activeMatrixProfile;
@@ -718,7 +956,7 @@ namespace Hecton8.Atmosphere
                     float u = x * invResolution;
                     float ringA = Mathf.SmoothStep(0.0f, 1.0f, Mathf.Abs(Mathf.Sin((u * 11.0f + 0.13f) * Mathf.PI)));
                     float ringB = Mathf.SmoothStep(0.0f, 1.0f, Mathf.Abs(Mathf.Sin((u * 23.0f + 0.41f) * Mathf.PI)));
-                    float cookie = Mathf.Lerp(0.58f, 1.0f, Mathf.Max(ringA, ringB));
+                    float cookie = math.lerp(0.58f, 1.0f, math.saturate(math.max(ringA, ringB)));
                     _aegirRingShadowCookie.SetPixel(x, 0, new Color(cookie, cookie, cookie, 1f));
                 }
 
@@ -754,8 +992,7 @@ namespace Hecton8.Atmosphere
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTickManager = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Environment);
         }
 
         private void TryUnregister()
@@ -981,12 +1218,13 @@ namespace Hecton8.Atmosphere
 
         public void SlowTick()
         {
+            long timelineStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             float now = Time.time;
             float elapsed = _lastAtmosphereSlowTickTime > 0f
-                ? Mathf.Clamp(now - _lastAtmosphereSlowTickTime, AtmosphereTimelineStepSeconds, AtmosphereTimelineStepSeconds * AtmosphereTimelineMaxStepsPerSlowTick)
+                ? math.clamp(now - _lastAtmosphereSlowTickTime, AtmosphereTimelineStepSeconds, AtmosphereTimelineStepSeconds * AtmosphereTimelineMaxStepsPerSlowTick)
                 : AtmosphereTimelineStepSeconds;
             _lastAtmosphereSlowTickTime = now;
-            _atmosphereTimelineAccumulator = Mathf.Min(
+            _atmosphereTimelineAccumulator = math.min(
                 _atmosphereTimelineAccumulator + elapsed,
                 AtmosphereTimelineStepSeconds * AtmosphereTimelineMaxStepsPerSlowTick);
 
@@ -998,6 +1236,25 @@ namespace Hecton8.Atmosphere
                 _atmosphereTimelineAccumulator -= AtmosphereTimelineStepSeconds;
                 steps++;
             }
+
+            PublishAtmosphereTimelineBudgetWarningIfNeeded(timelineStartTicks);
+        }
+
+        private void PublishAtmosphereTimelineBudgetWarningIfNeeded(long timelineStartTicks)
+        {
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - timelineStartTicks;
+            double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds <= AtmosphereTimelineBudgetMilliseconds ||
+                Time.frameCount < _nextAtmosphereTimelineWarningFrame)
+            {
+                return;
+            }
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _AtmosphereTimelineBudgetWarningHash,
+                _AtmosphereTimelineContextHash,
+                (float)elapsedMilliseconds);
+            _nextAtmosphereTimelineWarningFrame = Time.frameCount + AtmosphereTimelineWarningCooldownFrames;
         }
 
         private void RunAtmosphereTimeline(float deltaTime)
@@ -1339,7 +1596,7 @@ namespace Hecton8.Atmosphere
                     _giantAbyssSigmaRgbPerMeter.y,
                     _giantAbyssSigmaRgbPerMeter.z),
                 float3.zero);
-            float3 waterTransmittance = math.exp(-depthMeters * sigmaRgbPerMeter);
+            float3 waterTransmittance = ApproximateExpNegPositive(depthMeters * sigmaRgbPerMeter);
 
             Color surfaceLinearColor = _giantAbyssSurfaceLightColor.linear;
             float3 giantSurfaceColor = new float3(surfaceLinearColor.r, surfaceLinearColor.g, surfaceLinearColor.b);
@@ -1375,6 +1632,17 @@ namespace Hecton8.Atmosphere
         private float ResolveAegirRingShadowMultiplier(HectonCelestialEngine celestial, float3 aegirDirection)
         {
             return 1f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 ApproximateExpNegPositive(float3 x)
+        {
+            float3 clamped = math.clamp(x, float3.zero, new float3(8f));
+            float3 x2 = clamped * clamped;
+            float3 x3 = x2 * clamped;
+            float3 numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float3 denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, new float3(0.0001f)));
         }
 
         #endregion

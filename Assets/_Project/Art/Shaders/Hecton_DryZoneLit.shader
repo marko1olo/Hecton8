@@ -3,11 +3,18 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
     Properties
     {
         [MainTexture] _BaseMap("Albedo", 2D) = "white" {}
+        _MaskMap("Packed Mask (R Metallic G AO B Smoothness A Emission)", 2D) = "white" {}
+        [NoScaleOffset] _HectonMicroNormalTex("Micro Normal 128", 2D) = "bump" {}
         [MainColor] _BaseColor("Color", Color) = (1, 1, 1, 1)
         _Cutoff("Alpha Cutoff", Range(0.0, 1.0)) = 0.5
         _Smoothness("Smoothness", Range(0.0, 1.0)) = 0.5
         _Metallic("Metallic", Range(0.0, 1.0)) = 0.0
         _OcclusionStrength("Occlusion Strength", Range(0.0, 1.0)) = 1.0
+        _EnvironmentalWear("Environmental Wear", Range(0.0, 1.0)) = 0.0
+        _RustSaltColor("Rust/Salt Wear Color", Color) = (0.62, 0.35, 0.16, 1)
+        _MicroNormalStrength("Micro Normal Strength", Range(0.0, 1.0)) = 0.18
+        _MicroNormalTiling("Micro Normal Tiling", Range(4.0, 128.0)) = 48.0
+        _StochasticTilingStrength("Stochastic Tiling Strength", Range(0.0, 1.0)) = 0.0
         _InteriorCondensationStrength("Interior Condensation Strength", Range(0.0, 1.0)) = 0.26
         _InteriorCondensationScale("Interior Condensation Scale", Range(0.05, 2.0)) = 0.42
         _InteriorCondensationRunoff("Interior Condensation Runoff", Range(0.0, 1.0)) = 0.34
@@ -21,7 +28,6 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
         _WaterlineDarken("Module Waterline Darken", Range(0.0, 1.0)) = 0.42
         _WaterlineRefractionStrength("Module Waterline Refraction Strength", Range(0.0, 0.08)) = 0.015
         [HDR] _EmissionColor("Emission", Color) = (0, 0, 0, 1)
-        _EmissionMap("Emission Map", 2D) = "white" {}
         _ParasiteOverlayMap("Parasite Overlay", 2D) = "white" {}
         _ParasiteNormalMap("Parasite Normal", 2D) = "bump" {}
         [HDR] _ParasiteOverlayColor("Parasite Tint", Color) = (0.48, 0.92, 0.42, 1)
@@ -47,9 +53,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
         [HideInInspector] _Color("Base Color", Color) = (1, 1, 1, 1)
         [HideInInspector] _BumpMap("Normal Map", 2D) = "bump" {}
         [HideInInspector] _BumpScale("Scale", Float) = 1.0
-        [HideInInspector] _MetallicGlossMap("Metallic", 2D) = "white" {}
         [HideInInspector] _SpecColor("Specular", Color) = (0.2, 0.2, 0.2, 1)
-        [HideInInspector] _SpecGlossMap("Specular", 2D) = "white" {}
         [HideInInspector] _ParallaxMap("Height Map", 2D) = "black" {}
         [HideInInspector] _Parallax("Scale", Range(0.005, 0.08)) = 0.005
         [HideInInspector] _DetailMask("Detail Mask", 2D) = "white" {}
@@ -103,6 +107,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile_fog
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
@@ -124,6 +129,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
                 float4 _EmissionColor;
+                float4 _RustSaltColor;
                 float4 _ParasiteOverlayColor;
                 float4 _ParasiteOverlayEmissionColor;
                 float4 _InteriorCondensationTint;
@@ -133,6 +139,10 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 float _Smoothness;
                 float _Metallic;
                 float _OcclusionStrength;
+                float _EnvironmentalWear;
+                float _MicroNormalStrength;
+                float _MicroNormalTiling;
+                float _StochasticTilingStrength;
                 float _InteriorCondensationStrength;
                 float _InteriorCondensationScale;
                 float _InteriorCondensationRunoff;
@@ -152,10 +162,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
-            TEXTURE2D(_OcclusionMap);
-            SAMPLER(sampler_OcclusionMap);
-            TEXTURE2D(_EmissionMap);
-            SAMPLER(sampler_EmissionMap);
+            TEXTURE2D(_MaskMap);
+            SAMPLER(sampler_MaskMap);
             TEXTURE2D(_DetailMask);
             SAMPLER(sampler_DetailMask);
             TEXTURE2D(_ParasiteOverlayMap);
@@ -182,12 +190,24 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 float2 uv : TEXCOORD3;
                 half fogFactor : TEXCOORD4;
                 half xrNearClipFade : TEXCOORD5;
+                float2 xrFoveatedVector : TEXCOORD6;
             };
 
             half3 SafeNormalize3(half3 value)
             {
                 half lenSq = dot(value, value);
                 return lenSq > 0.0001h ? value * rsqrt(lenSq) : half3(0.0h, 1.0h, 0.0h);
+            }
+
+            half HectonFastSpecularLobe(half specularBase, half smoothness)
+            {
+                half b2 = specularBase * specularBase;
+                half b4 = b2 * b2;
+                half b8 = b4 * b4;
+                half b16 = b8 * b8;
+                half b32 = b16 * b16;
+                half b64 = b32 * b32;
+                return lerp(b16, b64, saturate(smoothness));
             }
 
             half3 BuildParasiteNormalWS(float3 positionWS, half3 baseNormalWS)
@@ -243,7 +263,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 if (condensationStrength <= 0.0001h && frostStrength <= 0.0001h)
                     return;
 
-                half wallMask = pow(saturate(1.0h - abs(normalWS.y)), 1.35h);
+                half wallMaskBase = saturate(1.0h - abs(normalWS.y));
+                half wallMask = wallMaskBase * lerp(0.68h, 1.0h, wallMaskBase);
                 if (wallMask <= 0.0001h)
                     return;
 
@@ -350,7 +371,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 float2 noiseUv = float2(_Time.y * speed, _Time.y * (speed * 0.271 + 1.37));
                 half noise01 = (half)HectonCoreLitValueNoise2(noiseUv);
                 half dropout01 = (half)HectonCoreLitValueNoise2(noiseUv * 1.83 + float2(13.17, -4.91));
-                half sine01 = (half)(sin(_Time.y * 20.0) * 0.5 + 0.5);
+                half sine01 = (half)HectonCoreLitTrianglePulse01(_Time.y * 20.0);
                 half floor01 = saturate((half)_BaseVoltageMinimum);
                 half flicker01 = lerp(1.0h, lerp(floor01, 1.0h, noise01), brownout01);
                 flicker01 *= lerp(1.0h, lerp(0.14h, 0.42h, voltage01), brownout01 * step(0.68h, dropout01));
@@ -388,6 +409,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
                 output.fogFactor = ComputeFogFactor(positionInputs.positionCS.z);
                 output.xrNearClipFade = (half)HectonCoreLitEvaluateXRNearClipFade(output.positionWS);
+                output.xrFoveatedVector = HectonCoreLitBuildStereoFoveationVector(output.positionWS);
                 return output;
             }
 
@@ -396,14 +418,20 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half caveAmbientFactor = (half)HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
                 half3 color = SampleSH(normalWS) * albedo * occlusion * caveAmbientFactor;
                 half specularStrength = lerp(0.04h, 0.22h, metallic);
-                half specularPower = lerp(16.0h, 96.0h, smoothness);
 
                 float4 shadowCoord = TransformWorldToShadowCoord(positionWS);
                 Light mainLight = GetMainLight(shadowCoord);
                 half3 lightDir = SafeNormalize3(mainLight.direction);
                 half nDotL = saturate(dot(normalWS, lightDir));
-                half3 halfDir = SafeNormalize3(lightDir + viewDirWS);
-                half specular = pow(saturate(dot(normalWS, halfDir)), specularPower) * smoothness * specularStrength;
+                half specular = 0.0h;
+                half specularEnergy = smoothness * specularStrength;
+                if (nDotL > 0.0001h && specularEnergy > 0.0001h)
+                {
+                    half3 halfDir = SafeNormalize3(lightDir + viewDirWS);
+                    half specularBase = saturate(dot(normalWS, halfDir));
+                    if (specularBase > 0.0001h)
+                        specular = HectonFastSpecularLobe(specularBase, smoothness) * specularEnergy;
+                }
                 color += (albedo * nDotL + specular) * mainLight.color * (mainLight.distanceAttenuation * mainLight.shadowAttenuation);
 
                 #if defined(_ADDITIONAL_LIGHTS)
@@ -412,8 +440,14 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     Light light = GetAdditionalLight(lightIndex, positionWS);
                     half3 additionalDir = SafeNormalize3(light.direction);
                     half additionalNdotL = saturate(dot(normalWS, additionalDir));
-                    half3 additionalHalfDir = SafeNormalize3(additionalDir + viewDirWS);
-                    half additionalSpecular = pow(saturate(dot(normalWS, additionalHalfDir)), specularPower) * smoothness * specularStrength;
+                    half additionalSpecular = 0.0h;
+                    if (additionalNdotL > 0.0001h && specularEnergy > 0.0001h)
+                    {
+                        half3 additionalHalfDir = SafeNormalize3(additionalDir + viewDirWS);
+                        half additionalSpecularBase = saturate(dot(normalWS, additionalHalfDir));
+                        if (additionalSpecularBase > 0.0001h)
+                            additionalSpecular = HectonFastSpecularLobe(additionalSpecularBase, smoothness) * specularEnergy;
+                    }
                     float additionalShadowAttenuation = HectonCoreLitResolveFlashlightAdditionalShadow(lightIndex, positionWS, normalWS, light.shadowAttenuation);
                     color += (albedo * additionalNdotL + additionalSpecular) * light.color * (light.distanceAttenuation * additionalShadowAttenuation);
                 LIGHT_LOOP_END
@@ -429,7 +463,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 HECTON_CORE_LIT_SETUP_INSTANCE_ID(input);
                 HECTON_CORE_LIT_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 HectonCoreLitClipXRNearWallDither(input.xrNearClipFade, input.positionCS);
-                bool xrFullQuality = HectonCoreLitShouldRunXRFullQuality(input.positionCS);
+                bool xrFullQuality = HectonCoreLitShouldRunXRFullQuality(input.xrFoveatedVector);
                 half moduleFloodLevel01;
                 float moduleWaterY;
                 half moduleFlicker01;
@@ -438,37 +472,48 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half moduleSubmerged01 = ResolveModuleSubmerged01(input.positionWS, moduleFloodLevel01, moduleWaterY);
                 float2 baseUv = input.uv + ResolveModuleWaterlineWarp(input.positionWS, moduleSubmerged01);
                 baseUv = ResolveBrownoutGlitchWarp(baseUv, moduleFlicker01);
-                half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, baseUv) * _BaseColor;
+                half4 albedoSample = HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_BaseMap, sampler_BaseMap), baseUv, input.uv * 0.031, (half)_StochasticTilingStrength) * _BaseColor;
                 half coverage = 1.0h;
                 #if defined(_ALPHATEST_ON)
                 coverage = saturate((albedoSample.a - _Cutoff) * 14.0h + 0.5h);
                 #endif
 
-                half occlusion = lerp(1.0h, SAMPLE_TEXTURE2D(_OcclusionMap, sampler_OcclusionMap, input.uv).g, _OcclusionStrength);
-                half metallic = saturate(_Metallic);
-                half smoothness = saturate(_Smoothness);
+                half4 packedMask = HectonCoreLitSampleStochastic2D(TEXTURE2D_ARGS(_MaskMap, sampler_MaskMap), baseUv, input.uv * 0.031, (half)_StochasticTilingStrength);
+                HectonPackedMaskV1 decodedMask = HectonCoreLitDecodePackedMaskV1(packedMask, (half)_Metallic, (half)_OcclusionStrength, (half)_Smoothness);
+                half occlusion = decodedMask.occlusion;
+                half metallic = decodedMask.metallic;
+                half smoothness = decodedMask.smoothness;
+                half emissionMask = decodedMask.emissionMask;
                 half3 normalWS = SafeNormalize3(input.normalWS);
                 half3 albedo = albedoSample.rgb;
                 if (xrFullQuality)
                 {
+                    normalWS = HectonCoreLitApplyTripleDetailMicroNormals(input.positionWS, normalWS, (half)_MicroNormalStrength, (half)_MicroNormalTiling, 2.0h);
                     HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
                     ApplyInteriorCondensation(input.positionWS, input.uv, normalWS, moduleCondensationDepth01, albedo, smoothness);
                 }
                 ApplyModuleWaterline(moduleFloodLevel01, moduleSubmerged01, albedo, smoothness);
+                HectonCoreLitApplyEnvironmentalWear(input.positionWS, normalWS, (half)_EnvironmentalWear, (half3)_RustSaltColor.rgb, albedo, metallic, smoothness);
                 float parasitePulse = 1.0;
                 float thermalGrowthMask = 0.0;
                 float parasiteMask = HectonCoreLitEvaluateParasiteField(input.positionWS, parasitePulse, thermalGrowthMask);
+                half3 parasiteEmissionMask = half3(0.0h, 0.0h, 0.0h);
                 if (parasiteMask > 0.0001)
                 {
                     float2 parasiteUv = input.positionWS.xz * max(_ParasiteOverlayScale, 0.001);
                     half4 parasiteOverlay = SAMPLE_TEXTURE2D(_ParasiteOverlayMap, sampler_ParasiteOverlayMap, parasiteUv);
                     half parasiteBlend = saturate((half)(parasiteMask * _ParasiteOverlayStrength * parasiteOverlay.a));
-                    half3 parasiteColor = parasiteOverlay.rgb * _ParasiteOverlayColor.rgb;
-                    half3 parasiteNormalWS = BuildParasiteNormalWS(input.positionWS, normalWS);
-                    albedo = lerp(albedo, parasiteColor, parasiteBlend);
-                    normalWS = SafeNormalize3(lerp(normalWS, parasiteNormalWS, parasiteBlend));
-                    metallic = lerp(metallic, (half)_ParasiteOverlayMetallic, parasiteBlend);
-                    smoothness = lerp(smoothness, (half)_ParasiteOverlaySmoothness, parasiteBlend);
+                    parasiteEmissionMask = parasiteOverlay.rgb;
+                    [branch]
+                    if (parasiteBlend > 0.0001h)
+                    {
+                        half3 parasiteColor = parasiteOverlay.rgb * _ParasiteOverlayColor.rgb;
+                        half3 parasiteNormalWS = BuildParasiteNormalWS(input.positionWS, normalWS);
+                        albedo = lerp(albedo, parasiteColor, parasiteBlend);
+                        normalWS = SafeNormalize3(lerp(normalWS, parasiteNormalWS, parasiteBlend));
+                        metallic = lerp(metallic, (half)_ParasiteOverlayMetallic, parasiteBlend);
+                        smoothness = lerp(smoothness, (half)_ParasiteOverlaySmoothness, parasiteBlend);
+                    }
                 }
                 half3 litColor = EvaluateLighting(
                     input.positionWS,
@@ -478,7 +523,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     metallic,
                     smoothness,
                     saturate(occlusion));
-                half3 emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, input.uv).rgb * _EmissionColor.rgb;
+                half3 emission = _EmissionColor.rgb * emissionMask;
                 half baseVoltageFlicker01 = ResolveBaseVoltageFlicker01(moduleFlicker01);
                 half brownoutEmergency01 = saturate((0.8h - saturate((half)_BaseVoltage * moduleFlicker01)) * 1.25h);
                 half3 emergencyTint = half3(_BaseBrownoutEmergencyColor.r, _BaseBrownoutEmergencyColor.g, _BaseBrownoutEmergencyColor.b);
@@ -488,13 +533,11 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 emission = lerp(emission, emergencyTint * max(emission.r, max(emission.g, emission.b)), brownoutEmergency01 * 0.65h);
                 if (parasiteMask > 0.0001)
                 {
-                    float2 parasiteUv = input.positionWS.xz * max(_ParasiteOverlayScale, 0.001);
-                    half3 parasiteEmissionMask = SAMPLE_TEXTURE2D(_ParasiteOverlayMap, sampler_ParasiteOverlayMap, parasiteUv).rgb;
                     half parasiteEmission = (half)(parasiteMask * saturate(parasitePulse) * lerp(1.0, 1.35, thermalGrowthMask));
                     emission += parasiteEmissionMask * _ParasiteOverlayEmissionColor.rgb * parasiteEmission;
                 }
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
-                finalColor = HectonCoreLitApplyXRFoveatedResolve(finalColor, input.positionCS);
+                finalColor = HectonCoreLitApplyXRFoveatedResolve(finalColor, input.xrFoveatedVector);
                 return half4(finalColor, coverage);
             }
             ENDHLSL

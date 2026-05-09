@@ -64,8 +64,10 @@ Shader "Hecton8/Flora/SargassumMaster"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             #pragma multi_compile_fog
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile _ LOD_FADE_CROSSFADE
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -150,18 +152,83 @@ Shader "Hecton8/Flora/SargassumMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            half SargassumTrianglePulse01(float phase)
+            {
+                return (half)(1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0));
+            }
+
+            half SargassumTriangleSigned(float phase)
+            {
+                return SargassumTrianglePulse01(phase) * 2.0h - 1.0h;
+            }
+
+            float SargassumApproxMagnitude2(float2 value)
+            {
+                float2 axis = abs(value);
+                float major = max(axis.x, axis.y);
+                float minor = min(axis.x, axis.y);
+                return major + minor * 0.375;
+            }
+
+            float SargassumApproxMagnitude3(float3 value)
+            {
+                float3 axis = abs(value);
+                float major = max(max(axis.x, axis.y), axis.z);
+                float minor = min(min(axis.x, axis.y), axis.z);
+                float mid = axis.x + axis.y + axis.z - major - minor;
+                return major + mid * 0.375 + minor * 0.125;
+            }
+
+            float2 SargassumSafeNormalize2(float2 value)
+            {
+                float approxLen = SargassumApproxMagnitude2(value);
+                return approxLen > 0.0001 ? value * rcp(approxLen) : float2(1.0, 0.0);
+            }
+
+            float3 SargassumSafeNormalize3(float3 value)
+            {
+                float approxLen = SargassumApproxMagnitude3(value);
+                return approxLen > 0.0001 ? value * rcp(approxLen) : float3(0.0, 1.0, 0.0);
+            }
+
+            half SargassumFastPower01(half value, half exponent)
+            {
+                half v = saturate(value);
+                half v2 = v * v;
+                half v4 = v2 * v2;
+                half v8 = v4 * v4;
+                half v16 = v8 * v8;
+                half low = lerp(v, v4, saturate((exponent - 1.0h) * 0.33333333h));
+                half high = lerp(v4, v16, saturate((exponent - 4.0h) * 0.08333333h));
+                return lerp(low, high, step(4.0h, exponent));
+            }
+
+            half SargassumFastSpecularPower01(half value, half exponent)
+            {
+                half v = saturate(value);
+                half v2 = v * v;
+                half v4 = v2 * v2;
+                half v8 = v4 * v4;
+                half v16 = v8 * v8;
+                half v32 = v16 * v16;
+                half low = lerp(v8, v16, saturate((exponent - 8.0h) * 0.125h));
+                half high = lerp(v16, v32, saturate((exponent - 16.0h) * 0.0625h));
+                return lerp(low, high, step(16.0h, exponent));
+            }
+
             half EvaluateLeafMask(half2 uv, half phase)
             {
                 half edge = abs(uv.x * 2.0h - 1.0h);
-                half serration = sin((uv.y * 18.0h + phase * _PhaseScale) * 6.28318h) * 0.08h;
+                half serration = SargassumTriangleSigned((uv.y * 18.0h + phase * _PhaseScale) * 6.28318h) * 0.08h;
                 return saturate(1.0h - smoothstep(0.46h + serration, 0.94h, edge));
             }
 
             half EvaluateCutMask(float3 positionWS)
             {
-                float dist = distance(positionWS, _InteractionPosition);
-                half normalized = saturate(1.0h - dist / max(_InteractionRadius, 0.0001h));
-                return normalized * saturate(_InteractionCutStrength);
+                float3 delta = positionWS - _InteractionPosition;
+                float radius = max((float)_InteractionRadius, 0.0001);
+                half normalized = saturate(1.0h - (half)(dot(delta, delta) / (radius * radius)));
+                return normalized * normalized * saturate(_InteractionCutStrength);
             }
 
             half EvaluateGlobalCutMask(float3 positionWS)
@@ -196,7 +263,9 @@ Shader "Hecton8/Flora/SargassumMaster"
 
             float Hash21(float2 value)
             {
-                return frac(sin(dot(value, float2(12.9898, 78.233))) * 43758.5453);
+                float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
+                hash += dot(hash, hash.yzx + 33.33);
+                return frac((hash.x + hash.y) * hash.z);
             }
 
             float EvaluateOrganicDensity(float2 worldXZ)
@@ -204,7 +273,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float2 sample = worldXZ * 0.028 + _SargassumGlobalDriftOffset.xz * 0.015;
                 float coarse = Hash21(floor(sample));
                 float fine = Hash21(floor(sample * 1.93 + 17.0));
-                float wave = sin(sample.x * 1.2 + sample.y * 0.94 + _Time.y * 0.1) * 0.5 + 0.5;
+                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + _Time.y * 0.1);
                 return saturate(coarse * 0.46 + fine * 0.34 + wave * 0.20);
             }
 
@@ -220,22 +289,23 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half rigidity = saturate(input.color.a);
                 half heightMask = saturate(input.uv.y);
                 half swingScale = lerp(_BeardSwingMultiplier, 0.68h, rigidity);
-                half sway = sin(_Time.y * _SwaySpeed + phase * _PhaseScale + positionOS.y * _SwayFrequency) * _SwayAmplitude * swingScale;
+                half sway = SargassumTriangleSigned(_Time.y * _SwaySpeed + phase * _PhaseScale + positionOS.y * _SwayFrequency) * _SwayAmplitude * swingScale;
                 positionOS.xz += input.normalOS.xz * (sway * heightMask);
 
                 float3 positionWS_Interact = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
                 float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washDist = length(washDir);
-                float washStrength = saturate(1.0 - washDist / max(_HectonPropWashPosition.w, 0.001));
-                if (washDist > 0.0001)
-                    positionOS.xyz += normalize(washDir) * (washStrength * _HectonPropWashForce * 0.45h * heightMask);
+                float washRadius = max(_HectonPropWashPosition.w, 0.001);
+                float washDistSq = dot(washDir, washDir);
+                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                if (washDistSq > 0.0001)
+                    positionOS.xyz += SargassumSafeNormalize3(washDir) * (washStrength * _HectonPropWashForce * 0.45h * heightMask);
 
                 float3 positionWS_Pulse = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
                 float organicDensity = EvaluateOrganicDensity(positionWS_Pulse.xz);
                 float edgePulse = saturate(1.0 - abs(organicDensity * 2.0 - 1.0));
                 float pulsePhase = _Time.y * _PulsationSpeed + phase * (_PhaseScale * 0.41h) + organicDensity * (_PulsationFrequency * 6.28318h);
-                float pulse = sin(pulsePhase) * _PulsationAmplitude * edgePulse * heightMask;
-                float2 radialOS = normalize(positionOS.xz + float2(0.001, 0.001));
+                float pulse = SargassumTriangleSigned(pulsePhase) * _PulsationAmplitude * edgePulse * heightMask;
+                float2 radialOS = SargassumSafeNormalize2(positionOS.xz + float2(0.001, 0.001));
                 positionOS.xz += radialOS * pulse;
                 positionOS.y += pulse * 0.12;
 
@@ -250,7 +320,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 positionWS.y -= EvaluateBuoyancySinkOffset(positionWS.xz);
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.positionWS = positionWS;
-                output.normalWS = normalize(normalInputs.normalWS);
+                output.normalWS = (half3)SargassumSafeNormalize3(normalInputs.normalWS);
                 output.color = input.color;
                 output.uv = input.uv;
                 output.viewDirWS = SafeNormalize(GetWorldSpaceViewDir(positionWS));
@@ -261,14 +331,15 @@ Shader "Hecton8/Flora/SargassumMaster"
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(LOD_FADE_CROSSFADE)
                 LODFadeCrossFade(input.positionCS);
                 #endif
 
-                half3 normalWS = normalize(input.normalWS);
+                half3 normalWS = (half3)SargassumSafeNormalize3(input.normalWS);
                 half3 viewDirWS = SafeNormalize(input.viewDirWS);
                 Light mainLight = GetMainLight();
-                half3 lightDir = normalize(mainLight.direction);
+                half3 lightDir = mainLight.direction;
                 half NdotL = saturate(dot(normalWS, lightDir));
                 half backLight = saturate(dot(-normalWS, lightDir));
                 half ao = saturate(input.color.r);
@@ -289,12 +360,12 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half3 ambient = SampleSH(normalWS) * ambientOcclusion;
                 half3 diffuse = albedo * (ambient + mainLight.color * (0.25h + NdotL * 0.75h));
 
-                half rim = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower) * _RimStrength;
-                half sss = pow(saturate(dot(-lightDir, viewDirWS)), _SSSPower) * _SSSStrength * sssMask;
+                half rim = SargassumFastPower01(1.0h - saturate(dot(normalWS, viewDirWS)), _RimPower) * _RimStrength;
+                half sss = SargassumFastPower01(saturate(dot(-lightDir, viewDirWS)), _SSSPower) * _SSSStrength * sssMask;
                 half bubbleGlow = isBubble * (_BubbleGlow + backLight * 0.55h);
                 half biolumPhase = (_Time.y * _SargassumBiolumPhaseMultiplier) + input.positionWS.x * 0.085h + input.positionWS.z * 0.061h + input.uv.y * 4.2h + input.color.b * 3.7h;
-                half biolumPulse = 1.0h + sin(biolumPhase) * _BiolumPulseAmplitude;
-                half timeBand = 0.75h + 0.25h * sin(_HectonTimeOfDay01 * 6.28318h + input.color.b * 2.4h);
+                half biolumPulse = 1.0h + SargassumTriangleSigned(biolumPhase) * _BiolumPulseAmplitude;
+                half timeBand = 0.75h + 0.25h * SargassumTriangleSigned(_HectonTimeOfDay01 * 6.28318h + input.color.b * 2.4h);
                 half bubbleBiolumMask = saturate(isBubble * (0.68h + sssMask * 0.24h + bubbleGlow * 0.18h) * _BiolumMaskStrength);
                 half nightFactor = saturate(_HectonNightFactor * _BiolumNightResponse);
                 half oceanBiolumInfluence = saturate(_HectonOceanBiolumStrength);
@@ -305,7 +376,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half signalFlicker = smoothstep(0.18h, 0.92h, signalWave) * saturate(_NoirSignalFlickerStrength);
                 half signalMask = saturate((1.0h - ao) * input.uv.y * (1.0h - isBubble));
                 half3 noirSignal = biolumColor * (signalFlicker * signalMask);
-                half specular = pow(saturate(dot(normalize(lightDir + viewDirWS), normalWS)), lerp(8.0h, 36.0h, _Smoothness)) * _Smoothness * 0.22h;
+                half specular = SargassumFastSpecularPower01(saturate(dot((half3)SargassumSafeNormalize3(lightDir + viewDirWS), normalWS)), lerp(8.0h, 36.0h, _Smoothness)) * _Smoothness * 0.22h;
                 half cutEdge = smoothstep(0.02h, 0.24h, cutMask) * (1.0h - smoothstep(0.24h, 0.8h, cutMask)) * _InteractionEdgeBoost;
 
                 half3 color = diffuse;
@@ -336,6 +407,8 @@ Shader "Hecton8/Flora/SargassumMaster"
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
             #pragma multi_compile _ LOD_FADE_CROSSFADE
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -413,18 +486,52 @@ Shader "Hecton8/Flora/SargassumMaster"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
+            half SargassumTrianglePulse01(float phase)
+            {
+                return (half)(1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0));
+            }
+
+            half SargassumTriangleSigned(float phase)
+            {
+                return SargassumTrianglePulse01(phase) * 2.0h - 1.0h;
+            }
+
+            float SargassumApproxMagnitude2(float2 value)
+            {
+                float2 axis = abs(value);
+                float major = max(axis.x, axis.y);
+                float minor = min(axis.x, axis.y);
+                return major + minor * 0.375;
+            }
+
+            float SargassumApproxMagnitude3(float3 value)
+            {
+                float3 axis = abs(value);
+                float major = max(max(axis.x, axis.y), axis.z);
+                float minor = min(min(axis.x, axis.y), axis.z);
+                float mid = axis.x + axis.y + axis.z - major - minor;
+                return major + mid * 0.375 + minor * 0.125;
+            }
+
+            float2 SargassumSafeNormalize2(float2 value)
+            {
+                float approxLen = SargassumApproxMagnitude2(value);
+                return approxLen > 0.0001 ? value * rcp(approxLen) : float2(1.0, 0.0);
+            }
+
             half EvaluateLeafMask(half2 uv, half phase)
             {
                 half edge = abs(uv.x * 2.0h - 1.0h);
-                half serration = sin((uv.y * 18.0h + phase * _PhaseScale) * 6.28318h) * 0.08h;
+                half serration = SargassumTriangleSigned((uv.y * 18.0h + phase * _PhaseScale) * 6.28318h) * 0.08h;
                 return saturate(1.0h - smoothstep(0.46h + serration, 0.94h, edge));
             }
 
             half EvaluateCutMask(float3 positionWS)
             {
-                float dist = distance(positionWS, _InteractionPosition);
-                half normalized = saturate(1.0h - dist / max(_InteractionRadius, 0.0001h));
-                return normalized * saturate(_InteractionCutStrength);
+                float3 delta = positionWS - _InteractionPosition;
+                float radius = max((float)_InteractionRadius, 0.0001);
+                half normalized = saturate(1.0h - (half)(dot(delta, delta) / (radius * radius)));
+                return normalized * normalized * saturate(_InteractionCutStrength);
             }
 
             half EvaluateGlobalCutMask(float3 positionWS)
@@ -459,7 +566,9 @@ Shader "Hecton8/Flora/SargassumMaster"
 
             float Hash21(float2 value)
             {
-                return frac(sin(dot(value, float2(12.9898, 78.233))) * 43758.5453);
+                float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
+                hash += dot(hash, hash.yzx + 33.33);
+                return frac((hash.x + hash.y) * hash.z);
             }
 
             float EvaluateOrganicDensity(float2 worldXZ)
@@ -467,7 +576,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 float2 sample = worldXZ * 0.028 + _SargassumGlobalDriftOffset.xz * 0.015;
                 float coarse = Hash21(floor(sample));
                 float fine = Hash21(floor(sample * 1.93 + 17.0));
-                float wave = sin(sample.x * 1.2 + sample.y * 0.94 + _Time.y * 0.1) * 0.5 + 0.5;
+                float wave = SargassumTrianglePulse01(sample.x * 1.2 + sample.y * 0.94 + _Time.y * 0.1);
                 return saturate(coarse * 0.46 + fine * 0.34 + wave * 0.20);
             }
 
@@ -483,22 +592,23 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half rigidity = saturate(input.color.a);
                 half heightMask = saturate(input.uv.y);
                 half swingScale = lerp(_BeardSwingMultiplier, 0.68h, rigidity);
-                half sway = sin(_Time.y * _SwaySpeed + phase * _PhaseScale + positionOS.y * _SwayFrequency) * _SwayAmplitude * swingScale;
+                half sway = SargassumTriangleSigned(_Time.y * _SwaySpeed + phase * _PhaseScale + positionOS.y * _SwayFrequency) * _SwayAmplitude * swingScale;
                 positionOS.xz += input.normalOS.xz * (sway * heightMask);
 
                 float3 positionWS_Interact = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
                 float3 washDir = positionWS_Interact - _HectonPropWashPosition.xyz;
-                float washDist = length(washDir);
-                float washStrength = saturate(1.0 - washDist / max(_HectonPropWashPosition.w, 0.001));
-                if (washDist > 0.0001)
-                    positionOS.xyz += normalize(washDir) * (washStrength * _HectonPropWashForce * 0.45h * heightMask);
+                float washRadius = max(_HectonPropWashPosition.w, 0.001);
+                float washDistSq = dot(washDir, washDir);
+                float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
+                if (washDistSq > 0.0001)
+                    positionOS.xyz += washDir * rcp(SargassumApproxMagnitude3(washDir) + 0.0001) * (washStrength * _HectonPropWashForce * 0.45h * heightMask);
 
                 float3 positionWS_Pulse = TransformObjectToWorld(positionOS) + _SargassumGlobalDriftOffset.xyz;
                 float organicDensity = EvaluateOrganicDensity(positionWS_Pulse.xz);
                 float edgePulse = saturate(1.0 - abs(organicDensity * 2.0 - 1.0));
                 float pulsePhase = _Time.y * _PulsationSpeed + phase * (_PhaseScale * 0.41h) + organicDensity * (_PulsationFrequency * 6.28318h);
-                float pulse = sin(pulsePhase) * _PulsationAmplitude * edgePulse * heightMask;
-                float2 radialOS = normalize(positionOS.xz + float2(0.001, 0.001));
+                float pulse = SargassumTriangleSigned(pulsePhase) * _PulsationAmplitude * edgePulse * heightMask;
+                float2 radialOS = SargassumSafeNormalize2(positionOS.xz + float2(0.001, 0.001));
                 positionOS.xz += radialOS * pulse;
                 positionOS.y += pulse * 0.12;
 
@@ -528,6 +638,7 @@ Shader "Hecton8/Flora/SargassumMaster"
             half4 ShadowFrag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 #if defined(LOD_FADE_CROSSFADE)
                 LODFadeCrossFade(input.positionCS);
                 #endif

@@ -12,10 +12,8 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6450)]
     [AddComponentMenu("Hecton8/World/Base Pollution Manager")]
-    public sealed class BasePollutionManager : MonoBehaviour, ISlowTickable
+    public sealed class BasePollutionManager : MonoBehaviour, ISlowTickable, IServiceHeartbeat, IServiceShutdown
     {
-        private static BasePollutionManager _instance;
-
         [Header("── Power Noise ─────────────────────────")]
         [Tooltip("Local acoustic noise emitted per watt of active base consumption during one slow-tick window.")]
         [SerializeField, Range(0f, 0.01f)] private float powerNoisePerWattTick = 0.0012f;
@@ -71,49 +69,99 @@ namespace Hecton8.World
         [SerializeField] private int _debugActiveDrillCount;
         [SerializeField] private int _debugDrillCycleDelta;
 
-        private bool _registered;
+        private bool _registeredToTick;
+        private bool _serviceRegistered;
         private float _currentNoiseLevel;
         private float _currentMicroplasticLevel;
         private int _lastDroneLaunchTotal;
         private int _lastProcessedRecycleTotal;
         private int _lastCompletedDrillCycles;
 
-        /// <summary>Runtime singleton while the world scene is active.</summary>
-        public static BasePollutionManager Instance => _instance;
-
         /// <summary>Current local acoustic signature emitted by the base cluster.</summary>
-        public static float CurrentNoiseLevel => _instance != null ? _instance._currentNoiseLevel : 0f;
+        public static float CurrentNoiseLevel
+        {
+            get
+            {
+                BasePollutionManager runtime = GlobalRegistry.BasePollution;
+                return runtime != null ? runtime._currentNoiseLevel : 0f;
+            }
+        }
 
         /// <summary>Current local microplastic cloud emitted by the base cluster.</summary>
-        public static float CurrentMicroplasticLevel => _instance != null ? _instance._currentMicroplasticLevel : 0f;
+        public static float CurrentMicroplasticLevel
+        {
+            get
+            {
+                BasePollutionManager runtime = GlobalRegistry.BasePollution;
+                return runtime != null ? runtime._currentMicroplasticLevel : 0f;
+            }
+        }
+
+        /// <inheritdoc />
+        public ServiceHeartbeatState HeartbeatState => _serviceRegistered ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.NotStarted;
+
+        /// <inheritdoc />
+        public bool IsServiceReady => _serviceRegistered;
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            BasePollutionManager registered = GlobalRegistry.BasePollution;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
         }
 
         private void OnEnable()
         {
+            TryRegisterService();
+            if (Application.isPlaying && !_serviceRegistered)
+                return;
+
             TryRegister();
         }
 
         private void OnDisable()
         {
-            TryUnregister();
+            OnServiceShutdown();
         }
 
         private void OnDestroy()
         {
-            TryUnregister();
+            OnServiceShutdown();
+        }
 
-            if (_instance == this)
-                _instance = null;
+        /// <inheritdoc />
+        public void OnServiceShutdown()
+        {
+            TryUnregister();
+            TryUnregisterService();
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            BasePollutionManager registered = GlobalRegistry.BasePollution;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            GlobalRegistry.RegisterBasePollutionRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.BasePollution, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterBasePollutionRuntime(this);
+            _serviceRegistered = false;
         }
 
         public void SlowTick()
@@ -188,20 +236,20 @@ namespace Hecton8.World
 
         private void TryRegister()
         {
-            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (_registeredToTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = GlobalRegistry.SlowTickables.Contains(this);
+            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
         {
-            if (!_registered)
+            if (!_registeredToTick)
                 return;
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = false;
+            _registeredToTick = false;
         }
 
         private static void CollectPowerTelemetry(ref float totalConsumption, ref int deficitGridCount)

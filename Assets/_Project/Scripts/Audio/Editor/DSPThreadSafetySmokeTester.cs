@@ -151,9 +151,11 @@ namespace Hecton8.Audio.Editor
             if (bufferJobs.Length > 0)
             {
                 AssertContains(bufferJobs, "public static void Clear(NativeArray<float> buffer, int count)", "PlayerCriticalBufferJobs exposes cold Clear entry point", builder, ref failureCount);
-                AssertContains(bufferJobs, "[BurstCompile", "PlayerCriticalBufferJobs.Clear uses a Burst-compiled job", builder, ref failureCount);
-                AssertContains(bufferJobs, "IJobParallelFor", "PlayerCriticalBufferJobs.Clear uses parallel buffer clearing", builder, ref failureCount);
-                AssertContains(bufferJobs, "COLD SYNC JOB", "PlayerCriticalBufferJobs.Clear documents the cold Complete boundary", builder, ref failureCount);
+                AssertContains(bufferJobs, "UnsafeUtility.MemClear", "PlayerCriticalBufferJobs.Clear uses a single native memset", builder, ref failureCount);
+                AssertContains(bufferJobs, "GetUnsafeBufferPointerWithoutChecks", "PlayerCriticalBufferJobs.Clear writes the native buffer directly", builder, ref failureCount);
+                AssertContains(bufferJobs, "COLD NATIVE CLEAR", "PlayerCriticalBufferJobs.Clear documents the cold native clear boundary", builder, ref failureCount);
+                AssertNotContains(bufferJobs, ".Complete(", "PlayerCriticalBufferJobs.Clear has no JobHandle.Complete barrier", builder, ref failureCount);
+                AssertNotContains(bufferJobs, ".Run(", "PlayerCriticalBufferJobs.Clear has no synchronous job Run barrier", builder, ref failureCount);
             }
 
             if (spatialAudio.Length > 0)

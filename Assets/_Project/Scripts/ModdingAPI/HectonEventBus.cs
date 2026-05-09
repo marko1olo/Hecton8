@@ -500,10 +500,10 @@ namespace Hecton8.Modding
                         if (!entry.IsActive || entry.Handler == null)
                             continue;
 
+                        long callbackStartTimestamp = Stopwatch.GetTimestamp();
+                        long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
                         try
                         {
-                            long callbackStartTimestamp = Stopwatch.GetTimestamp();
-                            long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
                             if (ModCommandDispatcher.IsRegisteredMod(entry.SubscriberHash))
                             {
                                 using (ModExecutionScope.Enter(entry.SubscriberId, entry.SubscriberHash))
@@ -533,17 +533,17 @@ namespace Hecton8.Modding
 
                             _subscriptions[i] = entry;
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
+                            long allocationDelta = GC.GetAllocatedBytesForCurrentThread() - allocationBefore;
+                            ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberHash, allocationDelta);
                             entry.IsActive = false;
                             entry.Handler = null;
                             _subscriptions[i] = entry;
                             _needsCompaction = true;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Unmanaged event callback threw '{ex.Message}'.");
-                            Debug.LogError("[HectonEventBus] Unmanaged subscriber threw during payload dispatch.");
-#else
                             ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            Debug.LogError("[HectonEventBus] Unmanaged subscriber threw during payload dispatch.");
 #endif
                         }
                     }
@@ -663,10 +663,10 @@ namespace Hecton8.Modding
                         if (!entry.IsActive || entry.Handler == null)
                             continue;
 
+                        long callbackStartTimestamp = Stopwatch.GetTimestamp();
+                        long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
                         try
                         {
-                            long callbackStartTimestamp = Stopwatch.GetTimestamp();
-                            long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
                             if (ModCommandDispatcher.IsRegisteredMod(entry.SubscriberHash))
                             {
                                 using (ModExecutionScope.Enter(entry.SubscriberId, entry.SubscriberHash))
@@ -696,17 +696,17 @@ namespace Hecton8.Modding
 
                             _subscriptions[i] = entry;
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
+                            long allocationDelta = GC.GetAllocatedBytesForCurrentThread() - allocationBefore;
+                            ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberHash, allocationDelta);
                             entry.IsActive = false;
                             entry.Handler = null;
                             _subscriptions[i] = entry;
                             _needsCompaction = true;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Native event callback threw '{ex.Message}'.");
-                            Debug.LogError("[HectonEventBus] Native subscriber threw during payload dispatch.");
-#else
                             ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            Debug.LogError("[HectonEventBus] Native subscriber threw during payload dispatch.");
 #endif
                         }
                     }
@@ -835,9 +835,10 @@ namespace Hecton8.Modding
                         if (!entry.IsActive || entry.Handler == null)
                             continue;
 
+                        long callbackStartTimestamp = Stopwatch.GetTimestamp();
+                        long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
                         try
                         {
-                            long callbackStartTimestamp = Stopwatch.GetTimestamp();
                             if (ModCommandDispatcher.IsRegisteredMod(entry.SubscriberHash))
                             {
                                 using (ModExecutionScope.Enter(entry.SubscriberId, entry.SubscriberHash))
@@ -851,6 +852,8 @@ namespace Hecton8.Modding
                             }
 
                             long callbackElapsedTicks = Stopwatch.GetTimestamp() - callbackStartTimestamp;
+                            long allocationDelta = GC.GetAllocatedBytesForCurrentThread() - allocationBefore;
+                            ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberHash, allocationDelta);
                             if (HectonEventBus.HandleCallbackWatchdog(
                                     entry.SubscriberId,
                                     entry.SubscriberHash,
@@ -865,17 +868,17 @@ namespace Hecton8.Modding
 
                             _subscriptions[i] = entry;
                         }
-                        catch (Exception ex)
+                        catch (Exception)
                         {
+                            long allocationDelta = GC.GetAllocatedBytesForCurrentThread() - allocationBefore;
+                            ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberHash, allocationDelta);
                             entry.IsActive = false;
                             entry.Handler = null;
                             _subscriptions[i] = entry;
                             _needsCompaction = true;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                            ModLoader.DisableManagedMod(entry.SubscriberId, $"Event callback threw '{ex.Message}'.");
-                            Debug.LogError("[HectonEventBus] Subscriber threw during managed payload dispatch.");
-#else
                             ModLoader.DisableManagedMod(entry.SubscriberId, ModCallbackExceptionDisableReason);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                            Debug.LogError("[HectonEventBus] Subscriber threw during managed payload dispatch.");
 #endif
                         }
                     }

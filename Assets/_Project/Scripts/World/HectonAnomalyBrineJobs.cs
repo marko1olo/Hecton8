@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -8,6 +9,7 @@ namespace Hecton8.World
     /// <summary>
     /// Spawn-ready brine pool bounds resolved from a basin mask.
     /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
     public struct AnomalyBrinePoolBounds
     {
         /// <summary>One-based basin identifier.</summary>

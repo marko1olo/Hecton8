@@ -1,6 +1,7 @@
 using Hecton.Localization;
 using Hecton8.Core;
 using TMPro;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.UI
@@ -13,6 +14,8 @@ namespace Hecton8.UI
     [AddComponentMenu("Hecton8/UI/Loading Tips Display")]
     public sealed class LoadingTipsDisplay : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
+        private const int TipBufferCapacity = 256;
+
         [Header("=== UI REFERENCES ===")]
         [SerializeField] private TextMeshProUGUI tipText;
         [SerializeField] private CanvasGroup tipCanvasGroup;
@@ -35,6 +38,7 @@ namespace Hecton8.UI
         private bool _isFadingIn;
         private bool _isFadingOut;
         private string[] _tips;
+        private readonly char[] _tipBuffer = new char[TipBufferCapacity]; // COLD ALLOC: char[256] — loading tip TMP staging buffer — owner: LoadingTipsDisplay
 
         private static readonly string[] TipKeys = // COLD ALLOC: localization keys for loading tips — owner: LoadingTipsDisplay
         {
@@ -83,8 +87,6 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            TryRegister();
-
             LocalizationEvents.RegisterLanguageListener(this);
             StartTipCycle();
         }
@@ -114,13 +116,14 @@ namespace Hecton8.UI
                 return;
 
             _isActive = true;
-            _currentTipIndex = randomOrder ? Random.Range(0, _tips.Length) : 0;
+            _currentTipIndex = randomOrder ? UnityEngine.Random.Range(0, _tips.Length) : 0;
             _tipTimer = 0f;
             _fadeTimer = 0f;
             _isFadingIn = true;
             _isFadingOut = false;
 
             ShowTip(_currentTipIndex);
+            RefreshTickRegistration();
         }
 
         public void StopTipCycle()
@@ -128,9 +131,16 @@ namespace Hecton8.UI
             _isActive = false;
             _isFadingIn = false;
             _isFadingOut = false;
+            _tipTimer = 0f;
+            _fadeTimer = 0f;
 
             if (tipCanvasGroup != null)
                 tipCanvasGroup.alpha = 0f;
+
+            if (tipText != null)
+                tipText.SetCharArray(_tipBuffer, 0, 0);
+
+            RefreshTickRegistration();
         }
 
         public void Tick(float dt)
@@ -141,7 +151,7 @@ namespace Hecton8.UI
             if (_isFadingIn)
             {
                 _fadeTimer += dt;
-                float t = Mathf.Clamp01(_fadeTimer / fadeDuration);
+                float t = ResolveFadeT();
                 tipCanvasGroup.alpha = t;
 
                 if (t >= 1f)
@@ -157,7 +167,7 @@ namespace Hecton8.UI
             if (_isFadingOut)
             {
                 _fadeTimer += dt;
-                float t = Mathf.Clamp01(_fadeTimer / fadeDuration);
+                float t = ResolveFadeT();
                 tipCanvasGroup.alpha = 1f - t;
 
                 if (t >= 1f)
@@ -201,7 +211,29 @@ namespace Hecton8.UI
             if (tipText == null || _tips == null || index < 0 || index >= _tips.Length)
                 return;
 
-            tipText.SetText(_tips[index]);
+            int length = CopyTipToBuffer(_tips[index], _tipBuffer);
+            tipText.SetCharArray(_tipBuffer, 0, length);
+        }
+
+        private static int CopyTipToBuffer(string tip, char[] buffer)
+        {
+            if (string.IsNullOrEmpty(tip) || buffer == null || buffer.Length == 0)
+                return 0;
+
+            int length = math.min(tip.Length, buffer.Length);
+            bool truncated = tip.Length > buffer.Length && length >= 3;
+            int copyLength = truncated ? length - 3 : length;
+            for (int i = 0; i < copyLength; i++)
+                buffer[i] = tip[i];
+
+            if (truncated)
+            {
+                buffer[length - 3] = '.';
+                buffer[length - 2] = '.';
+                buffer[length - 1] = '.';
+            }
+
+            return length;
         }
 
         private void NextTip()
@@ -211,12 +243,12 @@ namespace Hecton8.UI
 
             if (randomOrder)
             {
-                int newIndex = Random.Range(0, _tips.Length);
+                int newIndex = UnityEngine.Random.Range(0, _tips.Length);
                 if (_tips.Length > 1)
                 {
                     int rerollWatchdog = _tips.Length << 1;
                     while (newIndex == _currentTipIndex && rerollWatchdog-- > 0)
-                        newIndex = Random.Range(0, _tips.Length);
+                        newIndex = UnityEngine.Random.Range(0, _tips.Length);
 
                     if (newIndex == _currentTipIndex)
                         newIndex = (_currentTipIndex + 1) % _tips.Length;
@@ -261,6 +293,23 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registered = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void RefreshTickRegistration()
+        {
+            if (_isActive)
+            {
+                TryRegister();
+                return;
+            }
+
+            TryUnregister();
+        }
+
+        private float ResolveFadeT()
+        {
+            float safeDuration = math.max(0.0001f, fadeDuration);
+            return math.saturate(_fadeTimer / safeDuration);
         }
 
         private void TryUnregister()

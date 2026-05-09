@@ -11,7 +11,7 @@ namespace Hecton8.Gameplay
 
         public static float SmoothAlpha(float sharpness, float deltaTime)
         {
-            return 1.0f - math.exp(-math.max(0.0f, sharpness) * math.max(0.0f, deltaTime));
+            return 1.0f - ApproximateExpNegPositive(math.max(0.0f, sharpness) * math.max(0.0f, deltaTime));
         }
 
         public static float SmoothScalar(float current, float target, float sharpness, float deltaTime)
@@ -42,19 +42,6 @@ namespace Hecton8.Gameplay
             }
 
             return value * math.rsqrt(lengthSq);
-        }
-
-        public static float3 ProjectOnPlane(float3 vector, float3 planeNormal)
-        {
-            if (math.any(math.isnan(vector)) ||
-                math.any(math.isnan(planeNormal)) ||
-                !math.all(math.isfinite(vector)) ||
-                !math.all(math.isfinite(planeNormal)))
-            {
-                return float3.zero;
-            }
-
-            return vector - (planeNormal * math.dot(vector, planeNormal));
         }
 
         public static float3 CatmullRom(float3 p0, float3 p1, float3 p2, float3 p3, float t)
@@ -92,7 +79,7 @@ namespace Hecton8.Gameplay
             float normalizedT)
         {
             float3 rootToChest = chestTarget - rootPosition;
-            float rootToChestLength = math.max(0.1f, math.length(rootToChest));
+            float rootToChestLength = math.max(0.1f, ApproximateLengthNoSqrt(rootToChest));
             float3 rootForward = SafeNormalize(rootToChest, new float3(0.0f, 0.0f, 1.0f));
             float3 safeHeadForward = SafeNormalize(headForward, rootForward);
             float3 beforeRoot = rootPosition - (rootForward * (rootToChestLength * 0.25f));
@@ -114,7 +101,7 @@ namespace Hecton8.Gameplay
             float3 fallback)
         {
             float3 rootToChest = chestTarget - rootPosition;
-            float rootToChestLength = math.max(0.1f, math.length(rootToChest));
+            float rootToChestLength = math.max(0.1f, ApproximateLengthNoSqrt(rootToChest));
             float3 rootForward = SafeNormalize(rootToChest, fallback);
             float3 safeHeadForward = SafeNormalize(headForward, rootForward);
             float3 beforeRoot = rootPosition - (rootForward * (rootToChestLength * 0.25f));
@@ -179,8 +166,9 @@ namespace Hecton8.Gameplay
         public static float EvaluateMuscleTension(float3 restPosition, float3 targetPosition, float maxReach)
         {
             float safeMaxReach = math.max(0.0001f, maxReach);
-            float delta = math.length(targetPosition - restPosition);
-            return math.saturate(delta / safeMaxReach);
+            float reachSq = safeMaxReach * safeMaxReach;
+            float deltaSq = math.lengthsq(targetPosition - restPosition);
+            return math.saturate(deltaSq / reachSq);
         }
 
         public static quaternion FromToRotation(float3 from, float3 to)
@@ -199,24 +187,20 @@ namespace Hecton8.Gameplay
                     axis = math.cross(fromDir, new float3(0.0f, 1.0f, 0.0f));
 
                 axis = SafeNormalize(axis, new float3(0.0f, 0.0f, 1.0f));
-                return quaternion.AxisAngle(axis, math.PI);
+                return new quaternion(axis.x, axis.y, axis.z, 0.0f);
             }
 
             float3 cross = math.cross(fromDir, toDir);
             quaternion rotation = new quaternion(cross.x, cross.y, cross.z, 1.0f + dot);
-            return math.normalize(rotation);
+            return NormalizeQuaternionNoSqrt(rotation);
         }
 
         public static quaternion AlignEndEffectorToNormal(quaternion currentWorldRotation, float3 targetNormal)
         {
             float3 safeNormal = SafeNormalize(targetNormal, new float3(0.0f, 1.0f, 0.0f));
-            float3 currentForward = math.mul(currentWorldRotation, new float3(0.0f, 0.0f, 1.0f));
-            float3 projectedForward = ProjectOnPlane(currentForward, safeNormal);
-            if (math.lengthsq(projectedForward) <= MinimumLengthSq)
-                projectedForward = ProjectOnPlane(math.mul(currentWorldRotation, new float3(1.0f, 0.0f, 0.0f)), safeNormal);
-
-            projectedForward = SafeNormalize(projectedForward, new float3(0.0f, 0.0f, 1.0f));
-            return quaternion.LookRotationSafe(projectedForward, safeNormal);
+            float3 currentUp = math.mul(currentWorldRotation, new float3(0.0f, 1.0f, 0.0f));
+            quaternion normalDelta = FromToRotation(currentUp, safeNormal);
+            return NormalizeQuaternionNoSqrt(math.mul(normalDelta, currentWorldRotation));
         }
 
         public static void SolveTwoBone(
@@ -244,45 +228,32 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float targetDistance = math.sqrt(targetDistanceSq);
+            float inverseTargetDistance = math.rsqrt(targetDistanceSq);
+            float targetDistance = targetDistanceSq * inverseTargetDistance;
             float minReach = math.abs(upperLength - lowerLength) + 0.001f;
             float safeReachMargin = math.max(0.02f, reachSafetyMargin);
             float maxReach = math.max(minReach + 0.001f, upperLength + lowerLength - safeReachMargin);
             float clampedDistance = math.clamp(targetDistance, minReach, maxReach);
 
-            float3 targetDirection = toTarget / targetDistance;
+            float3 targetDirection = toTarget * inverseTargetDistance;
             float3 fallbackBend = SafeNormalize(math.mul(currentUpperWorldRotation, new float3(1.0f, 0.0f, 0.0f)), new float3(1.0f, 0.0f, 0.0f));
             float3 poleVector = polePosition - rootPosition;
-            float3 projectedPole = ProjectOnPlane(poleVector, targetDirection);
+            float3 projectedPole = poleVector - (targetDirection * math.dot(poleVector, targetDirection));
             float3 bendDirection = SafeNormalize(projectedPole, fallbackBend);
 
             float upperDenominator = math.max(2.0f * upperLength * clampedDistance, MinimumDistance);
-            float lowerDenominator = math.max(2.0f * upperLength * lowerLength, MinimumDistance);
-
             float upperCos = ((upperLength * upperLength) + (clampedDistance * clampedDistance) - (lowerLength * lowerLength)) / upperDenominator;
             upperCos = math.clamp(upperCos, -1.0f, 1.0f);
             upperCos = math.select(upperCos, 1.0f, !math.isfinite(upperCos));
 
-            float lowerCos = ((upperLength * upperLength) + (lowerLength * lowerLength) - (clampedDistance * clampedDistance)) / lowerDenominator;
-            lowerCos = math.clamp(lowerCos, -1.0f, 1.0f);
-            lowerCos = math.select(lowerCos, 1.0f, !math.isfinite(lowerCos));
-
-            float upperAngleRadians = math.acos(upperCos);
-            upperAngleRadians = math.select(upperAngleRadians, 0.0f, !math.isfinite(upperAngleRadians));
-
-            float lowerAngleRadians = math.PI - math.acos(lowerCos);
-            lowerAngleRadians = math.select(lowerAngleRadians, 0.0f, !math.isfinite(lowerAngleRadians));
-
-            float bendCos = math.cos(upperAngleRadians);
-            bendCos = math.select(bendCos, 1.0f, !math.isfinite(bendCos));
-            float bendSin = math.sin(upperAngleRadians);
-            bendSin = math.select(bendSin, 0.0f, !math.isfinite(bendSin));
+            float bendCos = upperCos;
+            float bendSinSq = math.saturate(1.0f - (bendCos * bendCos));
+            float bendSin = bendSinSq * math.rsqrt(math.max(bendSinSq, MinimumLengthSq));
+            bendSin = math.select(bendSin, 0.0f, bendSinSq <= MinimumLengthSq || !math.isfinite(bendSin));
 
             float3 desiredUpperDirection = SafeNormalize((targetDirection * bendCos) + (bendDirection * bendSin), targetDirection);
             float3 solvedMiddlePosition = rootPosition + (desiredUpperDirection * upperLength);
 
-            float lowerReach = lowerLength * math.sin(lowerAngleRadians);
-            lowerReach = math.select(lowerReach, lowerLength, !math.isfinite(lowerReach));
             float3 desiredTargetPosition = rootPosition + (targetDirection * clampedDistance);
             float3 desiredLowerDirection = SafeNormalize(desiredTargetPosition - solvedMiddlePosition, targetDirection);
             float3 currentUpperDirection = SafeNormalize(middlePosition - rootPosition, targetDirection);
@@ -291,9 +262,17 @@ namespace Hecton8.Gameplay
             quaternion upperDelta = FromToRotation(currentUpperDirection, desiredUpperDirection);
             quaternion lowerDelta = FromToRotation(currentLowerDirection, desiredLowerDirection);
 
-            upperWorldRotation = math.normalize(math.mul(upperDelta, currentUpperWorldRotation));
-            lowerWorldRotation = math.normalize(math.mul(lowerDelta, currentLowerWorldRotation));
-            solvedEndPosition = solvedMiddlePosition + (desiredLowerDirection * math.max(lowerReach, lowerLength));
+            upperWorldRotation = NormalizeQuaternionNoSqrt(math.mul(upperDelta, currentUpperWorldRotation));
+            lowerWorldRotation = NormalizeQuaternionNoSqrt(math.mul(lowerDelta, currentLowerWorldRotation));
+            solvedEndPosition = solvedMiddlePosition + (desiredLowerDirection * lowerLength);
+        }
+
+        private static quaternion NormalizeQuaternionNoSqrt(quaternion value)
+        {
+            float4 v = value.value;
+            float lenSq = math.max(math.dot(v, v), MinimumLengthSq);
+            v *= math.rsqrt(lenSq);
+            return new quaternion(v);
         }
 
         public static void SolveFabrik(
@@ -317,8 +296,8 @@ namespace Hecton8.Gameplay
                 totalLength += segmentLengths[lengthStartIndex + i];
 
             float3 rootToTarget = targetPosition - rootPosition;
-            float distanceToTarget = math.length(rootToTarget);
-            if (distanceToTarget >= totalLength - 0.0001f)
+            float reachLimit = totalLength - 0.0001f;
+            if (math.lengthsq(rootToTarget) >= reachLimit * reachLimit)
             {
                 float3 reachDirection = SafeNormalize(rootToTarget, new float3(0.0f, 0.0f, 1.0f));
                 scratchPositions[scratchStartIndex] = rootPosition;
@@ -366,7 +345,8 @@ namespace Hecton8.Gameplay
                 return;
 
             float3 axis = SafeNormalize(scratchPositions[lastPointIndex] - rootPosition, new float3(0.0f, 1.0f, 0.0f));
-            float3 poleVector = ProjectOnPlane(polePosition - rootPosition, axis);
+            float3 poleOffset = polePosition - rootPosition;
+            float3 poleVector = poleOffset - (axis * math.dot(poleOffset, axis));
             if (math.lengthsq(poleVector) <= MinimumLengthSq)
                 return;
 
@@ -375,7 +355,7 @@ namespace Hecton8.Gameplay
             {
                 int currentIndex = scratchStartIndex + i;
                 float3 jointOffset = scratchPositions[currentIndex] - rootPosition;
-                float3 projectedJoint = ProjectOnPlane(jointOffset, axis);
+                float3 projectedJoint = jointOffset - (axis * math.dot(jointOffset, axis));
                 if (math.lengthsq(projectedJoint) <= MinimumLengthSq)
                     continue;
 
@@ -412,6 +392,20 @@ namespace Hecton8.Gameplay
         public static float3 ToFloat3(Vector3 value)
         {
             return new float3(value.x, value.y, value.z);
+        }
+
+        private static float ApproximateExpNegPositive(float value)
+        {
+            float x = math.min(value, 24.0f);
+            float x2 = x * x;
+            float x3 = x2 * x;
+            return 1.0f / (1.0f + x + (0.48f * x2) + (0.235f * x3));
+        }
+
+        private static float ApproximateLengthNoSqrt(float3 value)
+        {
+            float lengthSq = math.lengthsq(value);
+            return lengthSq * math.rsqrt(math.max(lengthSq, MinimumLengthSq));
         }
     }
 }

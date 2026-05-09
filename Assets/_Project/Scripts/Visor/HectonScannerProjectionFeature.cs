@@ -48,6 +48,16 @@ namespace Hecton8.Visor
             private FeatureSettings _settings;
             private Material _material;
             private HectonScannerProjectionState.RuntimeState _state;
+            private Vector4 _appliedOriginRadius;
+            private Vector4 _appliedRightDepth;
+            private Vector4 _appliedUpAge;
+            private Vector4 _appliedForwardIntensity;
+            private Color _appliedColor;
+            private float _appliedGridScale = -1f;
+            private float _appliedDitherCutoff = -1f;
+            private float _appliedFlickerSpeed = -1f;
+            private float _now;
+            private bool _materialDirty = true;
 
             public ProjectionPass()
             {
@@ -55,11 +65,15 @@ namespace Hecton8.Visor
                 requiresIntermediateTexture = true;
             }
 
-            public void Setup(FeatureSettings settings, Material material, in HectonScannerProjectionState.RuntimeState state)
+            public void Setup(FeatureSettings settings, Material material, in HectonScannerProjectionState.RuntimeState state, float now)
             {
+                if (!ReferenceEquals(_material, material))
+                    _materialDirty = true;
+
                 _settings = settings;
                 _material = material;
                 _state = state;
+                _now = now;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingPostProcessing;
                 ConfigureInput(ScriptableRenderPassInput.Color | ScriptableRenderPassInput.Depth);
                 requiresIntermediateTexture = true;
@@ -93,7 +107,7 @@ namespace Hecton8.Visor
                 destinationDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
                 TextureHandle destinationTexture = renderGraph.CreateTexture(destinationDesc);
 
-                UpdateMaterial(_material, _settings, _state);
+                UpdateMaterialIfNeeded(_material, _settings, _state, _now);
 
                 using (var builder = renderGraph.AddUnsafePass<PassData>("Hecton Scanner Projection", out PassData passData, _profilingSampler))
                 {
@@ -124,18 +138,84 @@ namespace Hecton8.Visor
                 resourceData.cameraColor = destinationTexture;
             }
 
-            private static void UpdateMaterial(Material material, FeatureSettings settings, in HectonScannerProjectionState.RuntimeState state)
+            private void UpdateMaterialIfNeeded(Material material, FeatureSettings settings, in HectonScannerProjectionState.RuntimeState state, float now)
             {
-                float now = Time.time;
                 float age01 = math.saturate((now - state.StartTime) / math.max(0.001f, state.Duration));
-                material.SetVector(ShaderConstants.OriginRadiusId, new Vector4(state.Origin.x, state.Origin.y, state.Origin.z, state.Radius));
-                material.SetVector(ShaderConstants.RightDepthId, new Vector4(state.Right.x, state.Right.y, state.Right.z, math.max(0.001f, settings.projectionDepthMeters)));
-                material.SetVector(ShaderConstants.UpAgeId, new Vector4(state.Up.x, state.Up.y, state.Up.z, age01));
-                material.SetVector(ShaderConstants.ForwardIntensityId, new Vector4(state.Forward.x, state.Forward.y, state.Forward.z, state.Intensity));
-                material.SetColor(ShaderConstants.ColorId, settings.projectionColor);
-                material.SetFloat(ShaderConstants.GridScaleId, math.max(4f, settings.gridScale));
-                material.SetFloat(ShaderConstants.DitherCutoffId, math.saturate(settings.ditherCutoff));
-                material.SetFloat(ShaderConstants.FlickerSpeedId, math.max(0.1f, settings.flickerSpeed));
+                Vector4 originRadius = new Vector4(state.Origin.x, state.Origin.y, state.Origin.z, state.Radius);
+                Vector4 rightDepth = new Vector4(state.Right.x, state.Right.y, state.Right.z, math.max(0.001f, settings.projectionDepthMeters));
+                Vector4 upAge = new Vector4(state.Up.x, state.Up.y, state.Up.z, age01);
+                Vector4 forwardIntensity = new Vector4(state.Forward.x, state.Forward.y, state.Forward.z, state.Intensity);
+                float gridScale = math.max(4f, settings.gridScale);
+                float ditherCutoff = math.saturate(settings.ditherCutoff);
+                float flickerSpeed = math.max(0.1f, settings.flickerSpeed);
+
+                if (_materialDirty || Vector4DistanceSq(_appliedOriginRadius, originRadius) > 0.000001f)
+                {
+                    material.SetVector(ShaderConstants.OriginRadiusId, originRadius);
+                    _appliedOriginRadius = originRadius;
+                }
+
+                if (_materialDirty || Vector4DistanceSq(_appliedRightDepth, rightDepth) > 0.000001f)
+                {
+                    material.SetVector(ShaderConstants.RightDepthId, rightDepth);
+                    _appliedRightDepth = rightDepth;
+                }
+
+                if (_materialDirty || Vector4DistanceSq(_appliedUpAge, upAge) > 0.000001f)
+                {
+                    material.SetVector(ShaderConstants.UpAgeId, upAge);
+                    _appliedUpAge = upAge;
+                }
+
+                if (_materialDirty || Vector4DistanceSq(_appliedForwardIntensity, forwardIntensity) > 0.000001f)
+                {
+                    material.SetVector(ShaderConstants.ForwardIntensityId, forwardIntensity);
+                    _appliedForwardIntensity = forwardIntensity;
+                }
+
+                if (_materialDirty || ColorDistanceSq(_appliedColor, settings.projectionColor) > 0.000001f)
+                {
+                    material.SetColor(ShaderConstants.ColorId, settings.projectionColor);
+                    _appliedColor = settings.projectionColor;
+                }
+
+                if (_materialDirty || math.abs(_appliedGridScale - gridScale) > 0.0005f)
+                {
+                    material.SetFloat(ShaderConstants.GridScaleId, gridScale);
+                    _appliedGridScale = gridScale;
+                }
+
+                if (_materialDirty || math.abs(_appliedDitherCutoff - ditherCutoff) > 0.0005f)
+                {
+                    material.SetFloat(ShaderConstants.DitherCutoffId, ditherCutoff);
+                    _appliedDitherCutoff = ditherCutoff;
+                }
+
+                if (_materialDirty || math.abs(_appliedFlickerSpeed - flickerSpeed) > 0.0005f)
+                {
+                    material.SetFloat(ShaderConstants.FlickerSpeedId, flickerSpeed);
+                    _appliedFlickerSpeed = flickerSpeed;
+                }
+
+                _materialDirty = false;
+            }
+
+            private static float Vector4DistanceSq(Vector4 a, Vector4 b)
+            {
+                float x = a.x - b.x;
+                float y = a.y - b.y;
+                float z = a.z - b.z;
+                float w = a.w - b.w;
+                return x * x + y * y + z * z + w * w;
+            }
+
+            private static float ColorDistanceSq(Color a, Color b)
+            {
+                float r = a.r - b.r;
+                float g = a.g - b.g;
+                float bl = a.b - b.b;
+                float alpha = a.a - b.a;
+                return r * r + g * g + bl * bl + alpha * alpha;
             }
         }
 
@@ -173,10 +253,18 @@ namespace Hecton8.Visor
             if (settings == null || _pass == null || _material == null)
                 return;
 
-            if (!HectonScannerProjectionState.TryGetState(Time.time, out HectonScannerProjectionState.RuntimeState state))
+            if (settings.projectionColor.a <= 0.001f)
                 return;
 
-            _pass.Setup(settings, _material, in state);
+            CameraType cameraType = renderingData.cameraData.cameraType;
+            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection || cameraType == CameraType.SceneView)
+                return;
+
+            float now = Time.time;
+            if (!HectonScannerProjectionState.TryGetState(now, out HectonScannerProjectionState.RuntimeState state))
+                return;
+
+            _pass.Setup(settings, _material, in state, now);
             renderer.EnqueuePass(_pass);
         }
 

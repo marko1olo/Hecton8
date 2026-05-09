@@ -6,6 +6,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Modding;
+using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using UnityEngine;
 
@@ -30,12 +31,12 @@ namespace Hecton8.Meta
 
         private readonly struct AchievementRewardDefinition
         {
-            public readonly string Id;
+            public readonly uint IdHash;
             public readonly int ExplorerPoints;
 
             public AchievementRewardDefinition(string id, int explorerPoints)
             {
-                Id = id;
+                IdHash = QuestFlagHashKernel.ComputeStableHash(id);
                 ExplorerPoints = explorerPoints;
             }
         }
@@ -43,6 +44,7 @@ namespace Hecton8.Meta
         private readonly struct MarathonGoalDefinition
         {
             public readonly string Id;
+            public readonly uint IdHash;
             public readonly string Title;
             public readonly MarathonMetric Metric;
             public readonly int Target;
@@ -51,6 +53,7 @@ namespace Hecton8.Meta
             public MarathonGoalDefinition(string id, string title, MarathonMetric metric, int target, int rewardExplorerPoints)
             {
                 Id = id;
+                IdHash = QuestFlagHashKernel.ComputeStableHash(id);
                 Title = title;
                 Metric = metric;
                 Target = target;
@@ -105,8 +108,8 @@ namespace Hecton8.Meta
                 175),
         };
 
-        // COLD ALLOC: HashSet<string>[32] - global unlocked achievement lookup - owner: GlobalProfileManager
-        private readonly HashSet<string> _globalUnlockedAchievements = new HashSet<string>(StringComparer.Ordinal);
+        // COLD ALLOC: HashSet<uint>[64] - global unlocked achievement hash lookup - owner: GlobalProfileManager
+        private readonly HashSet<uint> _globalUnlockedAchievementHashes = new HashSet<uint>(GlobalProfileData.MaxUnlockedAchievements);
         private HectonSurvivalSystem _survivalSystem;
         private HectonDiscoveryManager _discoveryManager;
         private GlobalProfileData _profile = new GlobalProfileData();
@@ -154,7 +157,8 @@ namespace Hecton8.Meta
         /// <param name="achievementId">Stable achievement identifier.</param>
         public bool HasUnlockedAchievement(string achievementId)
         {
-            return !string.IsNullOrWhiteSpace(achievementId) && _globalUnlockedAchievements.Contains(achievementId);
+            uint achievementHash = QuestFlagHashKernel.ComputeStableHash(achievementId);
+            return achievementHash != 0u && _globalUnlockedAchievementHashes.Contains(achievementHash);
         }
 
         /// <summary>
@@ -181,7 +185,7 @@ namespace Hecton8.Meta
                 return false;
             }
 
-            int currentLevel = ResolveUpgradeLevel(definition.Id);
+            int currentLevel = ResolveUpgradeLevel(definition.IdHash);
             if (currentLevel >= definition.MaxLevel)
             {
                 error = "Upgrade is already at max level.";
@@ -196,7 +200,7 @@ namespace Hecton8.Meta
             }
 
             _profile.explorerPoints -= cost;
-            SetUpgradeLevel(definition.Id, currentLevel + 1);
+            SetUpgradeLevel(definition.IdHash, definition.Id, currentLevel + 1);
             MarkDirty();
             return true;
         }
@@ -276,7 +280,7 @@ namespace Hecton8.Meta
         /// <inheritdoc />
         public void SlowTick()
         {
-            if (!ResolveOwners())
+            if (!ResolveOwnersHot())
                 return;
 
             TrackCurrentRunRecords();
@@ -288,15 +292,15 @@ namespace Hecton8.Meta
 
         private void HandleAchievementUnlocked(AchievementUnlockedEvent achievementUnlockedEvent)
         {
-            if (achievementUnlockedEvent == null || string.IsNullOrWhiteSpace(achievementUnlockedEvent.AchievementId))
+            if (achievementUnlockedEvent == null || achievementUnlockedEvent.AchievementHash == 0u)
                 return;
 
             float unlockTimeSeconds = ResolveCurrentRunElapsedSeconds();
-            UpdateFastestAchievementRecord(achievementUnlockedEvent.AchievementId, achievementUnlockedEvent.Title, unlockTimeSeconds);
+            UpdateFastestAchievementRecord(achievementUnlockedEvent.AchievementHash, achievementUnlockedEvent.AchievementId, achievementUnlockedEvent.Title, unlockTimeSeconds);
 
-            if (_globalUnlockedAchievements.Add(achievementUnlockedEvent.AchievementId))
+            if (_globalUnlockedAchievementHashes.Add(achievementUnlockedEvent.AchievementHash))
             {
-                _profile.explorerPoints += ResolveExplorerPointReward(achievementUnlockedEvent.AchievementId);
+                _profile.explorerPoints += ResolveExplorerPointReward(achievementUnlockedEvent.AchievementHash);
                 StoreUnlockedAchievementId(achievementUnlockedEvent.AchievementId);
                 MarkDirty();
             }
@@ -413,7 +417,7 @@ namespace Hecton8.Meta
         private void RebindOwnerSubscriptions()
         {
             UnbindOwnerSubscriptions();
-            ResolveOwners();
+            ResolveOwnersCold();
 
             if (_survivalSystem != null)
                 _nextLongestLifeRecordThreshold = Mathf.Max(_profile.longestLifeWithoutDeathSeconds + LongestLifeRecordStepSeconds, LongestLifeRecordStepSeconds);
@@ -427,25 +431,31 @@ namespace Hecton8.Meta
             _discoveryManager = null;
         }
 
-        private bool ResolveOwners()
+        private bool ResolveOwnersHot()
+        {
+            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
+            if (discoveryManager != null && !ReferenceEquals(_discoveryManager, discoveryManager))
+            {
+                if (_discoveryManager != null)
+                    _discoveryManager.OnBiomeDiscovered -= HandleBiomeDiscovered;
+
+                _discoveryManager = discoveryManager;
+                _discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
+            }
+
+            if (_discoveryManager != null)
+                _currentRunBiomeDiscoveries = _discoveryManager.TotalDiscovered;
+
+            return _survivalSystem != null || _discoveryManager != null;
+        }
+
+        private bool ResolveOwnersCold()
         {
             GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
             if (_survivalSystem == null && playerObject != null)
                 playerObject.TryGetComponent(out _survivalSystem);
 
-            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
-            if (discoveryManager != null)
-            {
-                if (!ReferenceEquals(_discoveryManager, discoveryManager))
-                {
-                    _discoveryManager = discoveryManager;
-                    _discoveryManager.OnBiomeDiscovered += HandleBiomeDiscovered;
-                }
-
-                _currentRunBiomeDiscoveries = discoveryManager.TotalDiscovered;
-            }
-
-            return _survivalSystem != null || discoveryManager != null;
+            return ResolveOwnersHot();
         }
 
         private void TrackCurrentRunRecords()
@@ -512,9 +522,11 @@ namespace Hecton8.Meta
             _profile.fastestAchievementRecordCount = Mathf.Clamp(_profile.fastestAchievementRecordCount, 0, GlobalProfileData.MaxFastestAchievementRecords);
             _profile.purchasedUpgradeCount = Mathf.Clamp(_profile.purchasedUpgradeCount, 0, GlobalProfileData.MaxPurchasedUpgrades);
             _profile.marathonGoalCount = Mathf.Clamp(_profile.marathonGoalCount, 0, GlobalProfileData.MaxMarathonGoals);
+            NormalizeUpgradeRecordHashes();
             SynchronizeUpgradeRecords();
             SynchronizeMarathonGoalRecords();
             RebuildUnlockedAchievementLookup();
+            NormalizeFastestAchievementHashes();
             _nextLongestLifeRecordThreshold = Mathf.Max(_profile.longestLifeWithoutDeathSeconds + LongestLifeRecordStepSeconds, LongestLifeRecordStepSeconds);
         }
 
@@ -524,7 +536,7 @@ namespace Hecton8.Meta
             for (int i = 0; i < MetaUpgradeRegistry.DefinitionCount; i++)
             {
                 MetaUpgradeRegistry.MetaUpgradeDefinition definition = MetaUpgradeRegistry.GetDefinition(i);
-                EnsureUpgradeRecordIndex(definition.Id);
+                EnsureUpgradeRecordIndex(definition.IdHash, definition.Id);
             }
         }
 
@@ -539,13 +551,14 @@ namespace Hecton8.Meta
 
         private void RebuildUnlockedAchievementLookup()
         {
-            _globalUnlockedAchievements.Clear();
+            _globalUnlockedAchievementHashes.Clear();
             int count = Mathf.Clamp(_profile.unlockedAchievementCount, 0, _profile.unlockedAchievementIds != null ? _profile.unlockedAchievementIds.Length : 0);
             for (int i = 0; i < count; i++)
             {
                 string achievementId = _profile.unlockedAchievementIds[i];
-                if (!string.IsNullOrWhiteSpace(achievementId))
-                    _globalUnlockedAchievements.Add(achievementId);
+                uint achievementHash = QuestFlagHashKernel.ComputeStableHash(achievementId);
+                if (achievementHash != 0u)
+                    _globalUnlockedAchievementHashes.Add(achievementHash);
             }
         }
 
@@ -560,15 +573,36 @@ namespace Hecton8.Meta
             _profile.unlockedAchievementCount = count + 1;
         }
 
-        private void UpdateFastestAchievementRecord(string achievementId, string title, float unlockTimeSeconds)
+        private void NormalizeFastestAchievementHashes()
         {
+            int count = Mathf.Clamp(_profile.fastestAchievementRecordCount, 0, GlobalProfileData.MaxFastestAchievementRecords);
+            for (int i = 0; i < count; i++)
+            {
+                FastestAchievementRecord record = _profile.fastestAchievementRecords[i];
+                if (record.achievementHash != 0u)
+                    continue;
+
+                record.achievementHash = QuestFlagHashKernel.ComputeStableHash(record.achievementId);
+                _profile.fastestAchievementRecords[i] = record;
+            }
+        }
+
+        private void UpdateFastestAchievementRecord(uint achievementHash, string achievementId, string title, float unlockTimeSeconds)
+        {
+            if (achievementHash == 0u)
+                return;
+
             _profile.EnsureCapacity();
             int count = Mathf.Clamp(_profile.fastestAchievementRecordCount, 0, GlobalProfileData.MaxFastestAchievementRecords);
             for (int i = 0; i < count; i++)
             {
                 FastestAchievementRecord record = _profile.fastestAchievementRecords[i];
-                if (!string.Equals(record.achievementId, achievementId, StringComparison.Ordinal))
+                uint recordHash = record.achievementHash != 0u ? record.achievementHash : QuestFlagHashKernel.ComputeStableHash(record.achievementId);
+                if (recordHash != achievementHash)
                     continue;
+
+                if (record.achievementHash == 0u)
+                    record.achievementHash = recordHash;
 
                 if (unlockTimeSeconds < record.bestTimeSeconds || record.bestTimeSeconds <= 0f)
                 {
@@ -587,6 +621,7 @@ namespace Hecton8.Meta
             _profile.fastestAchievementRecords[count] = new FastestAchievementRecord
             {
                 achievementId = achievementId,
+                achievementHash = achievementHash,
                 title = title ?? string.Empty,
                 bestTimeSeconds = unlockTimeSeconds
             };
@@ -632,47 +667,82 @@ namespace Hecton8.Meta
 
         private int ResolveUpgradeLevel(string upgradeId)
         {
-            int index = FindUpgradeRecordIndex(upgradeId);
+            uint upgradeHash = QuestFlagHashKernel.ComputeStableHash(upgradeId);
+            return ResolveUpgradeLevel(upgradeHash);
+        }
+
+        private int ResolveUpgradeLevel(uint upgradeHash)
+        {
+            int index = FindUpgradeRecordIndex(upgradeHash);
             if (index < 0)
                 return 0;
 
             return Mathf.Max(0, _profile.purchasedUpgradeLevels[index].level);
         }
 
-        private void SetUpgradeLevel(string upgradeId, int level)
+        private void SetUpgradeLevel(uint upgradeHash, string upgradeId, int level)
         {
-            int index = EnsureUpgradeRecordIndex(upgradeId);
+            int index = EnsureUpgradeRecordIndex(upgradeHash, upgradeId);
             if (index < 0)
                 return;
 
             MetaUpgradeLevelRecord record = _profile.purchasedUpgradeLevels[index];
+            record.upgradeHash = upgradeHash;
+            record.upgradeId = upgradeId;
             record.level = Mathf.Max(0, level);
             _profile.purchasedUpgradeLevels[index] = record;
         }
 
-        private int FindUpgradeRecordIndex(string upgradeId)
+        private void NormalizeUpgradeRecordHashes()
         {
-            if (string.IsNullOrWhiteSpace(upgradeId) || _profile == null || _profile.purchasedUpgradeLevels == null)
+            if (_profile == null || _profile.purchasedUpgradeLevels == null)
+                return;
+
+            int count = Mathf.Clamp(_profile.purchasedUpgradeCount, 0, _profile.purchasedUpgradeLevels.Length);
+            for (int i = 0; i < count; i++)
+            {
+                MetaUpgradeLevelRecord record = _profile.purchasedUpgradeLevels[i];
+                if (record.upgradeHash != 0u)
+                    continue;
+
+                record.upgradeHash = QuestFlagHashKernel.ComputeStableHash(record.upgradeId);
+                _profile.purchasedUpgradeLevels[i] = record;
+            }
+        }
+
+        private int FindUpgradeRecordIndex(uint upgradeHash)
+        {
+            if (upgradeHash == 0u || _profile == null || _profile.purchasedUpgradeLevels == null)
                 return -1;
 
             int count = Mathf.Clamp(_profile.purchasedUpgradeCount, 0, _profile.purchasedUpgradeLevels.Length);
             for (int i = 0; i < count; i++)
             {
-                if (string.Equals(_profile.purchasedUpgradeLevels[i].upgradeId, upgradeId, StringComparison.Ordinal))
+                MetaUpgradeLevelRecord record = _profile.purchasedUpgradeLevels[i];
+                uint recordHash = record.upgradeHash != 0u ? record.upgradeHash : QuestFlagHashKernel.ComputeStableHash(record.upgradeId);
+                if (recordHash == upgradeHash)
+                {
+                    if (record.upgradeHash == 0u)
+                    {
+                        record.upgradeHash = recordHash;
+                        _profile.purchasedUpgradeLevels[i] = record;
+                    }
+
                     return i;
+                }
             }
 
             return -1;
         }
 
-        private int EnsureUpgradeRecordIndex(string upgradeId)
+        private int EnsureUpgradeRecordIndex(uint upgradeHash, string upgradeId)
         {
-            if (string.IsNullOrWhiteSpace(upgradeId))
+            if (upgradeHash == 0u || string.IsNullOrWhiteSpace(upgradeId))
                 return -1;
 
             _profile.EnsureCapacity();
 
-            int existingIndex = FindUpgradeRecordIndex(upgradeId);
+            int existingIndex = FindUpgradeRecordIndex(upgradeHash);
             if (existingIndex >= 0)
                 return existingIndex;
 
@@ -683,6 +753,7 @@ namespace Hecton8.Meta
             _profile.purchasedUpgradeLevels[count] = new MetaUpgradeLevelRecord
             {
                 upgradeId = upgradeId,
+                upgradeHash = upgradeHash,
                 level = 0
             };
             _profile.purchasedUpgradeCount = count + 1;
@@ -697,11 +768,18 @@ namespace Hecton8.Meta
             for (int i = 0; i < count; i++)
             {
                 MarathonGoalProgressRecord existing = _profile.marathonGoals[i];
-                if (!string.Equals(existing.goalId, definition.Id, StringComparison.Ordinal))
+                uint existingHash = existing.goalHash != 0u ? existing.goalHash : QuestFlagHashKernel.ComputeStableHash(existing.goalId);
+                if (existingHash != definition.IdHash)
                     continue;
 
                 bool changed = false;
-                if (!string.Equals(existing.title, definition.Title, StringComparison.Ordinal))
+                if (existing.goalHash == 0u)
+                {
+                    existing.goalHash = existingHash;
+                    changed = true;
+                }
+
+                if (!ReferenceEquals(existing.title, definition.Title))
                 {
                     existing.title = definition.Title;
                     changed = true;
@@ -733,6 +811,7 @@ namespace Hecton8.Meta
             _profile.marathonGoals[count] = new MarathonGoalProgressRecord
             {
                 goalId = definition.Id,
+                goalHash = definition.IdHash,
                 title = definition.Title,
                 progress = 0,
                 target = definition.Target,
@@ -752,11 +831,14 @@ namespace Hecton8.Meta
             return Mathf.Max(0f, Time.realtimeSinceStartup);
         }
 
-        private static int ResolveExplorerPointReward(string achievementId)
+        private static int ResolveExplorerPointReward(uint achievementHash)
         {
+            if (achievementHash == 0u)
+                return 10;
+
             for (int i = 0; i < _achievementRewards.Length; i++)
             {
-                if (string.Equals(_achievementRewards[i].Id, achievementId, StringComparison.Ordinal))
+                if (_achievementRewards[i].IdHash == achievementHash)
                     return _achievementRewards[i].ExplorerPoints;
             }
 

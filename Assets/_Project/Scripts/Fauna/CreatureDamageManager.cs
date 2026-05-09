@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -33,23 +34,35 @@ namespace Hecton8.AI
 
         private static CreatureDamageManager s_activeOwner;
 
+        private Transform _cachedTransform;
         private FaunaBrain _faunaBrain;
         private Bounds _localBounds = new Bounds(Vector3.zero, Vector3.one * 4f);
         private bool _registeredTick;
         private int _woundCount;
         private int _nextWoundIndex;
+        private bool _woundsDirty;
 
         private void Awake()
         {
+            _cachedTransform = base.transform;
             TryGetComponent(out _faunaBrain);
             RefreshBounds();
         }
 
         private void OnEnable()
         {
+            if (_cachedTransform == null)
+                _cachedTransform = base.transform;
+
             TryGetComponent(out _faunaBrain);
             RefreshBounds();
-            TryRegisterTick();
+            if (Application.isPlaying && _woundCount > 0 && IsLeviathanPresentationOwner())
+            {
+                s_activeOwner = this;
+                _woundsDirty = true;
+                PublishShaderGlobals();
+                TryRegisterTick();
+            }
         }
 
         private void OnDisable()
@@ -87,13 +100,14 @@ namespace Hecton8.AI
             if (!IsLeviathanPresentationOwner())
                 return;
 
-            int safeCapacity = Mathf.Clamp(maxWounds, 1, MaxWounds);
+            int safeCapacity = math.clamp(maxWounds, 1, MaxWounds);
             float normalizedDamage = _faunaBrain != null && _faunaBrain.MaxHealth > 0.001f
-                ? Mathf.Clamp01(Mathf.Max(0f, damageAmount) / _faunaBrain.MaxHealth)
-                : Mathf.Clamp01(Mathf.Max(0f, damageAmount) * 0.1f);
+                ? math.saturate(math.max(0f, damageAmount) / _faunaBrain.MaxHealth)
+                : math.saturate(math.max(0f, damageAmount) * 0.1f);
 
-            Vector3 localHitPoint = transform.InverseTransformPoint(hitPointWS);
-            float woundRadius = Mathf.Lerp(minWoundRadius, maxWoundRadius, normalizedDamage);
+            Transform ownerTransform = ResolveCachedTransform();
+            Vector3 localHitPoint = ownerTransform.InverseTransformPoint(hitPointWS);
+            float woundRadius = minWoundRadius + ((maxWoundRadius - minWoundRadius) * normalizedDamage);
 
             if (_woundCount < safeCapacity)
                 _woundCount++;
@@ -103,14 +117,19 @@ namespace Hecton8.AI
             if (_nextWoundIndex >= safeCapacity)
                 _nextWoundIndex = 0;
 
+            _woundsDirty = true;
             s_activeOwner = this;
             PublishShaderGlobals();
+            TryRegisterTick();
         }
 
         public void Tick(float deltaTime)
         {
             if (!ReferenceEquals(s_activeOwner, this) || _woundCount <= 0 || !IsLeviathanPresentationOwner())
+            {
+                TryUnregisterTick();
                 return;
+            }
 
             PublishShaderGlobals();
         }
@@ -124,11 +143,19 @@ namespace Hecton8.AI
 
         private void TryRegisterTick()
         {
-            if (_registeredTick)
+            if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+            _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Environment);
+        }
+
+        private void TryUnregisterTick()
+        {
+            if (!_registeredTick)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _registeredTick = false;
         }
 
         private void RefreshBounds()
@@ -170,14 +197,43 @@ namespace Hecton8.AI
             }
 
             Shader.SetGlobalFloat(WoundCountId, _woundCount);
-            Shader.SetGlobalVectorArray(WoundsId, _woundUpload);
-            Shader.SetGlobalMatrix(WoundOwnerWorldToLocalId, transform.worldToLocalMatrix);
+            if (_woundsDirty)
+            {
+                Shader.SetGlobalVectorArray(WoundsId, _woundUpload);
+                _woundsDirty = false;
+            }
 
-            Vector3 lossyScale = transform.lossyScale;
-            Vector3 scaledExtents = Vector3.Scale(_localBounds.extents, new Vector3(Mathf.Abs(lossyScale.x), Mathf.Abs(lossyScale.y), Mathf.Abs(lossyScale.z)));
-            float ownerRadius = scaledExtents.magnitude + Mathf.Max(0.1f, ownerSpherePadding);
-            Vector3 ownerCenterWS = transform.TransformPoint(_localBounds.center);
+            Transform ownerTransform = ResolveCachedTransform();
+            Shader.SetGlobalMatrix(WoundOwnerWorldToLocalId, ownerTransform.worldToLocalMatrix);
+
+            Vector3 lossyScale = ownerTransform.lossyScale;
+            Vector3 localExtents = _localBounds.extents;
+            Vector3 scaledExtents = new Vector3(
+                localExtents.x * math.abs(lossyScale.x),
+                localExtents.y * math.abs(lossyScale.y),
+                localExtents.z * math.abs(lossyScale.z));
+            float ownerRadius = ApproximateMagnitude(scaledExtents) + math.max(0.1f, ownerSpherePadding);
+            Vector3 ownerCenterWS = ownerTransform.TransformPoint(_localBounds.center);
             Shader.SetGlobalVector(WoundOwnerSphereId, new Vector4(ownerCenterWS.x, ownerCenterWS.y, ownerCenterWS.z, ownerRadius));
+        }
+
+        private Transform ResolveCachedTransform()
+        {
+            if (_cachedTransform == null)
+                _cachedTransform = base.transform;
+
+            return _cachedTransform;
+        }
+
+        private static float ApproximateMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.375f) + (min * 0.125f);
         }
 
         private static void ClearShaderGlobals()

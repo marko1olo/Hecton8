@@ -3,9 +3,10 @@
 Date: 2026-05-07
 Status: PENDING VERIFICATION
 Scope: sandbox abyssal shelf terrain smoke path, Omega dev smoke barrier cleanup, SpaceEngine research artifact reporting.
-Requested status: OMEGA VERIFIED
-Executable smoke status: OMEGA VERIFIED via standalone terrain-domain smoke.
-Unity Editor batch status: OMEGA VERIFIED via `Library/OmegaAutonomySmokeTester.json`.
+Requested status label: OMEGA VERIFIED.
+Executable smoke artifact: standalone terrain-domain smoke emitted an `OMEGA_VERIFIED` label.
+Unity Editor batch artifact: `Library/OmegaAutonomySmokeTester.json` emitted `PASS`.
+Project authority status: PENDING VERIFICATION until fresh Unity Console, Play Mode, profiler, GCMonitor, and player-build proof exists.
 
 ## Surgery Log
 
@@ -64,6 +65,7 @@ Existing SpaceEngine doc-domain smoke artifact:
 
 ## Status
 
-Static hardening pass: OMEGA VERIFIED.
-Standalone executable terrain smoke: OMEGA VERIFIED.
-Unity Editor Omega smoke: OMEGA VERIFIED.
+Static hardening pass: scoped smoke evidence only.
+Standalone executable terrain smoke: artifact label `OMEGA_VERIFIED`; not project verification.
+Unity Editor Omega smoke: artifact result `PASS`; not Play Mode/profiler/GCMonitor proof.
+Project authority status: PENDING VERIFICATION.

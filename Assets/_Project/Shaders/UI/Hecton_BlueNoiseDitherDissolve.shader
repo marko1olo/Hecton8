@@ -32,6 +32,7 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
             "Queue" = "Overlay"
             "IgnoreProjector" = "True"
             "RenderType" = "Transparent"
+            "RenderPipeline" = "UniversalPipeline"
             "CanUseSpriteAtlas" = "True"
         }
 
@@ -88,6 +89,18 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
             float _SignalNotchRate;
             float _HectonBrownoutPulse;
 
+            float FastTrianglePulse01(float phase)
+            {
+                return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+            }
+
+            float Hash21(float2 value)
+            {
+                float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
+                hash += dot(hash, hash.yzx + 33.33);
+                return frac((hash.x + hash.y) * hash.z);
+            }
+
             v2f vert(appdata_t v)
             {
                 v2f o;
@@ -108,7 +121,7 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
                 float ditherAlpha = progress <= 0.0001 ? 0.0 : step(threshold, progress);
                 fixed4 tex = tex2D(_MainTex, i.texcoord);
                 fixed4 color = tex * i.color * _Color;
-                float pulse = (sin((_Time.y * _SignalPulseRate) + (screenUv.y * 38.0)) * 0.5 + 0.5) * _SignalPulseStrength;
+                float pulse = FastTrianglePulse01((_Time.y * _SignalPulseRate) + (screenUv.y * 38.0)) * _SignalPulseStrength;
                 float scanline = smoothstep(0.82, 1.0, frac((screenUv.y * 96.0) - (_Time.y * 0.65)));
                 float signalShift = pulse * scanline * progress;
                 color.rgb *= 1.0 + signalShift;
@@ -120,10 +133,10 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
                 color.a = saturate(color.a + (tearShift * 0.05));
                 float2 centeredUv = (screenUv * 2.0) - 1.0;
                 float edgeMask = smoothstep(0.52, 1.08, dot(centeredUv, centeredUv));
-                float edgeFlicker = (sin((_Time.y * _SignalEdgeFlickerRate) + (screenUv.x * 41.0) + (screenUv.y * 29.0)) * 0.5 + 0.5);
+                float edgeFlicker = FastTrianglePulse01((_Time.y * _SignalEdgeFlickerRate) + (screenUv.x * 41.0) + (screenUv.y * 29.0));
                 float edgeShift = edgeMask * edgeFlicker * _SignalEdgeFlickerStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb * fixed3(0.78, 1.06, 1.22), edgeShift);
-                float aliasHash = frac(sin(dot(screenUv * _ScreenParams.xy, float2(12.9898, 78.233)) + (_Time.y * _SignalChromaAliasRate)) * 43758.5453);
+                float aliasHash = Hash21((screenUv * _ScreenParams.xy) + floor(_Time.y * _SignalChromaAliasRate));
                 float aliasShift = step(0.88, aliasHash) * _SignalChromaAliasStrength * progress;
                 color.rgb = lerp(color.rgb, color.gbr, aliasShift);
                 float phosphorBand = smoothstep(0.91, 1.0, frac((screenUv.x * 7.0) + (screenUv.y * 3.0) + (_Time.y * _SignalPhosphorStutterRate)));
@@ -132,7 +145,7 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
                 float warningSweep = smoothstep(0.86, 1.0, frac((_Time.y * _SignalWarningPulseRate) + (screenUv.y * 5.0)));
                 float warningMask = warningSweep * edgeMask * _SignalWarningPulseStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb + (_SignalWarningColor.rgb * color.a), warningMask);
-                float pressureWave = (sin(((screenUv.x * 31.0) + (screenUv.y * 19.0)) + (_Time.y * _SignalPressureRippleRate)) * 0.5) + 0.5;
+                float pressureWave = FastTrianglePulse01(((screenUv.x * 31.0) + (screenUv.y * 19.0)) + (_Time.y * _SignalPressureRippleRate));
                 float pressureMask = pressureWave * edgeMask * _SignalPressureRippleStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb + (_SignalWarningColor.rgb * 0.12), pressureMask);
                 float notchPhase = frac((screenUv.x * 3.0) + (screenUv.y * 11.0) - (_Time.y * _SignalNotchRate));

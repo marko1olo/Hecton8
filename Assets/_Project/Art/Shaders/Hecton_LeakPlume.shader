@@ -37,6 +37,7 @@ Shader "HECTON/VFX/LeakPlume"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -83,14 +84,24 @@ Shader "HECTON/VFX/LeakPlume"
                 return output;
             }
 
+            half FastMaskPower(half value, half power)
+            {
+                half v2 = value * value;
+                half v4 = v2 * v2;
+                half low = lerp(value, v2, saturate(power - 1.0h));
+                half high = lerp(v2, v4, saturate((power - 2.0h) * 0.5h));
+                return power < 2.0h ? low : high;
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
 
                 half4 plumeSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
                 half luminance = dot(plumeSample.rgb, half3(0.2126h, 0.7152h, 0.0722h));
                 half derivedMask = saturate((luminance - _LuminanceBias) / max(_EdgeSoftness, 0.001h));
-                derivedMask = pow(derivedMask, max(_LuminancePower, 0.001h));
+                derivedMask = FastMaskPower(derivedMask, max(_LuminancePower, 0.001h));
 
                 half3 color = plumeSample.rgb * _TintColor.rgb * input.color.rgb;
                 half alpha = saturate(derivedMask * _TintColor.a * input.color.a * _Opacity);

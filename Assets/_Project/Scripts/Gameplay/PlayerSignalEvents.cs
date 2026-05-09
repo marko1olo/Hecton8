@@ -247,6 +247,9 @@ namespace Hecton8.Gameplay
         /// <param name="signal">Signal payload.</param>
         public static void RaiseTraumaHudSignal(in TraumaHudSignal signal)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingTraumaHudSignalCount + _nextFrameTraumaHudSignalCount >= PendingTraumaHudCapacity)
                 return;
@@ -269,6 +272,9 @@ namespace Hecton8.Gameplay
         /// <param name="signal">Signal payload.</param>
         public static void RaiseInteractionSignal(in InteractionSignal signal)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingInteractionSignalCount + _nextFrameInteractionSignalCount >= PendingInteractionSignalCapacity)
                 return;
@@ -291,6 +297,9 @@ namespace Hecton8.Gameplay
         /// <param name="signal">Signal payload.</param>
         public static void RaiseToolDepletedSignal(in ToolDepletedSignal signal)
         {
+            if (_listeners.Count <= 0)
+                return;
+
             EnsureInitialized();
             if (_pendingToolDepletedSignalCount + _nextFrameToolDepletedSignalCount >= PendingToolDepletedCapacity)
                 return;
@@ -318,6 +327,7 @@ namespace Hecton8.Gameplay
                     nameof(PlayerSignalEvents),
                     nameof(_pendingTraumaHudSignals),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingTraumaHudSignals, PendingTraumaHudCapacity);
             }
             if (!_nextFrameTraumaHudSignals.IsCreated)
             {
@@ -328,6 +338,7 @@ namespace Hecton8.Gameplay
                     nameof(PlayerSignalEvents),
                     nameof(_nextFrameTraumaHudSignals),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameTraumaHudSignals, PendingTraumaHudCapacity);
             }
             if (!_pendingInteractionSignals.IsCreated)
             {
@@ -338,6 +349,7 @@ namespace Hecton8.Gameplay
                     nameof(PlayerSignalEvents),
                     nameof(_pendingInteractionSignals),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingInteractionSignals, PendingInteractionSignalCapacity);
             }
             if (!_nextFrameInteractionSignals.IsCreated)
             {
@@ -348,6 +360,7 @@ namespace Hecton8.Gameplay
                     nameof(PlayerSignalEvents),
                     nameof(_nextFrameInteractionSignals),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameInteractionSignals, PendingInteractionSignalCapacity);
             }
             if (!_pendingToolDepletedSignals.IsCreated)
             {
@@ -358,6 +371,7 @@ namespace Hecton8.Gameplay
                     nameof(PlayerSignalEvents),
                     nameof(_pendingToolDepletedSignals),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingToolDepletedSignals, PendingToolDepletedCapacity);
             }
             if (!_nextFrameToolDepletedSignals.IsCreated)
             {
@@ -368,6 +382,21 @@ namespace Hecton8.Gameplay
                     nameof(PlayerSignalEvents),
                     nameof(_nextFrameToolDepletedSignals),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameToolDepletedSignals, PendingToolDepletedCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 

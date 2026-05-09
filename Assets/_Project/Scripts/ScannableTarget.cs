@@ -14,13 +14,46 @@ namespace Hecton8.Gameplay
         [SerializeField] private string entrySummary =
             "Passive scan profile has been captured. Manual classification pending.";
         private int _spatialHandle;
+        private string _resolvedEntryId;
+        private string _resolvedEntryTitle;
+        private string _resolvedEntryCategory;
+        private string _resolvedEntrySummary;
 
-        public string EntryId => string.IsNullOrWhiteSpace(entryId) ? gameObject.name : entryId;
-        public string EntryTitle => string.IsNullOrWhiteSpace(entryTitle) ? CachedToUpperInvariant(gameObject.name) : entryTitle;
-        public string EntryCategory => string.IsNullOrWhiteSpace(entryCategory) ? "Unknown" : entryCategory;
-        public string EntrySummary => string.IsNullOrWhiteSpace(entrySummary)
-            ? "Passive scan profile has been captured."
-            : entrySummary;
+        public string EntryId
+        {
+            get
+            {
+                EnsureResolvedStrings();
+                return _resolvedEntryId;
+            }
+        }
+
+        public string EntryTitle
+        {
+            get
+            {
+                EnsureResolvedStrings();
+                return _resolvedEntryTitle;
+            }
+        }
+
+        public string EntryCategory
+        {
+            get
+            {
+                EnsureResolvedStrings();
+                return _resolvedEntryCategory;
+            }
+        }
+
+        public string EntrySummary
+        {
+            get
+            {
+                EnsureResolvedStrings();
+                return _resolvedEntrySummary;
+            }
+        }
 
         public void Configure(string id, string title, string category, string summary)
         {
@@ -30,10 +63,17 @@ namespace Hecton8.Gameplay
             entrySummary = string.IsNullOrWhiteSpace(summary)
                 ? "Passive scan profile has been captured."
                 : summary.Trim();
+            RefreshResolvedStrings();
+        }
+
+        private void Awake()
+        {
+            RefreshResolvedStrings();
         }
 
         private void OnEnable()
         {
+            EnsureResolvedStrings();
             if (_spatialHandle == 0)
                 _spatialHandle = WorldSpatialHashGrid.RegisterScannable(this);
         }
@@ -72,6 +112,8 @@ namespace Hecton8.Gameplay
 
             if (string.IsNullOrWhiteSpace(entryCategory))
                 entryCategory = "Unknown";
+
+            RefreshResolvedStrings();
         }
 #endif
 
@@ -79,18 +121,39 @@ namespace Hecton8.Gameplay
         //  ZERO-GC STRING CACHING
         // ══════════════════════════════════════════════════════════
 
-        private static readonly string[] _upperCache = new string[16];
+        private static readonly string[] _upperCacheKeys = new string[16]; // COLD ALLOC: string[16] - uppercase fallback key cache - owner: ScannableTarget
+        private static readonly string[] _upperCacheValues = new string[16]; // COLD ALLOC: string[16] - uppercase fallback value cache - owner: ScannableTarget
+
+        private void EnsureResolvedStrings()
+        {
+            if (_resolvedEntryId == null)
+                RefreshResolvedStrings();
+        }
+
+        private void RefreshResolvedStrings()
+        {
+            string objectName = gameObject.name;
+            _resolvedEntryId = string.IsNullOrWhiteSpace(entryId) ? objectName : entryId.Trim();
+            _resolvedEntryTitle = string.IsNullOrWhiteSpace(entryTitle) ? CachedToUpperInvariant(objectName) : entryTitle.Trim();
+            _resolvedEntryCategory = string.IsNullOrWhiteSpace(entryCategory) ? "Unknown" : entryCategory.Trim();
+            _resolvedEntrySummary = string.IsNullOrWhiteSpace(entrySummary)
+                ? "Passive scan profile has been captured."
+                : entrySummary.Trim();
+        }
+
         private static string CachedToUpperInvariant(string input)
         {
             if (string.IsNullOrEmpty(input)) return input;
 
             int hash = input.GetHashCode() & 0xF;
-            string cached = _upperCache[hash];
-            if (cached != null && cached == input)
-                return cached.ToUpperInvariant();
+            string cachedKey = _upperCacheKeys[hash];
+            if (cachedKey != null && string.Equals(cachedKey, input, System.StringComparison.Ordinal))
+                return _upperCacheValues[hash];
 
-            _upperCache[hash] = input;
-            return input.ToUpperInvariant();
+            string upper = input.ToUpperInvariant();
+            _upperCacheKeys[hash] = input;
+            _upperCacheValues[hash] = upper;
+            return upper;
         }
     }
 }

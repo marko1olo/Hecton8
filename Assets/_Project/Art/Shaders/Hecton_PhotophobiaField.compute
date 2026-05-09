@@ -38,16 +38,17 @@ void UpdatePhotophobiaField(uint3 dispatchId : SV_DispatchThreadID)
         _HectonPhotophobiaFieldOriginScale.z + localMeters.y);
 
     float3 toSample = samplePositionWS - _HectonPhotophobiaCone0.xyz;
-    float distanceMeters = length(toSample);
-    float3 sampleDirection = distanceMeters > 0.0001
-        ? toSample * rcp(distanceMeters)
+    float distanceSq = dot(toSample, toSample);
+    float3 sampleDirection = distanceSq > 0.000001
+        ? toSample * rsqrt(distanceSq)
         : SafeNormalize3(_HectonPhotophobiaCone1.xyz);
 
     float innerCos = _HectonPhotophobiaCone2.x;
     float outerCos = _HectonPhotophobiaCone1.w;
     float coneDenominator = max(innerCos - outerCos, 0.0001);
     float coneMask = saturate((dot(SafeNormalize3(_HectonPhotophobiaCone1.xyz), sampleDirection) - outerCos) / coneDenominator);
-    float rangeMask = saturate(1.0 - distanceMeters * max(_HectonPhotophobiaCone2.y, 0.000001));
+    float inverseRange = max(_HectonPhotophobiaCone2.y, 0.000001);
+    float rangeMask = saturate(1.0 - distanceSq * inverseRange * inverseRange);
     rangeMask *= rangeMask;
 
     float hit = coneMask * rangeMask * saturate(_HectonPhotophobiaCone2.z) * saturate(_HectonPhotophobiaParams.w);

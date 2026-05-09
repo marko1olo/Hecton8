@@ -1,3 +1,5 @@
+using System;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Unity.Collections;
@@ -45,19 +47,37 @@ namespace Hecton8.Bootstrap
     {
         private const int ListenerCapacity = 16;
         private const int PendingEventCapacity = 4;
+        private const uint BootstrapListenerOverflowWarningHash = 0x4254564Cu; // BTVL
+        private const uint BootstrapListenerContextHash = 0x42545652u; // BTVR
+        private const uint BootstrapListenerExceptionWarningHash = 0x42545645u; // BTVE
+        private const uint BootstrapListenerExceptionContextHash = 0x42545658u; // BTVX
 
         // COLD ALLOC: RegistryBucket<IBootstrapEventListener>[16] - bootstrap completion listeners drained by SystemDispatcher - owner: BootstrapEvents
         private static readonly RegistryBucket<IBootstrapEventListener> _listeners = new RegistryBucket<IBootstrapEventListener>(ListenerCapacity);
+        // COLD ALLOC: IBootstrapEventListener[16] - listener additions deferred while dispatching bootstrap events - owner: BootstrapEvents
+        private static readonly IBootstrapEventListener[] _deferredRegisterListeners = new IBootstrapEventListener[ListenerCapacity];
+        // COLD ALLOC: IBootstrapEventListener[16] - listener removals deferred while dispatching bootstrap events - owner: BootstrapEvents
+        private static readonly IBootstrapEventListener[] _deferredUnregisterListeners = new IBootstrapEventListener[ListenerCapacity];
         private static NativeQueue<BootstrapEventPayload> _pendingEvents;
         private static NativeQueue<BootstrapEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredRegisterCount;
+        private static int _deferredUnregisterCount;
+        private static int _droppedListenerRegistrationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerOverflowTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static bool _isDispatching;
 
         /// <summary>
         /// Pending payload count in the bootstrap event lane.
         /// </summary>
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        public static int DroppedListenerRegistrationCount => _droppedListenerRegistrationCount;
+
+        public static int ListenerExceptionCount => _listenerExceptionCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         internal static void ResetStaticState()
@@ -77,8 +97,16 @@ namespace Hecton8.Bootstrap
             }
 
             _listeners.Clear();
+            Array.Clear(_deferredRegisterListeners, 0, _deferredRegisterCount);
+            Array.Clear(_deferredUnregisterListeners, 0, _deferredUnregisterCount);
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _deferredRegisterCount = 0;
+            _deferredUnregisterCount = 0;
+            _droppedListenerRegistrationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerOverflowTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _isDispatching = false;
         }
 
@@ -92,8 +120,13 @@ namespace Hecton8.Bootstrap
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredRegister(listener);
+                return;
+            }
+
+            RegisterImmediate(listener);
         }
 
         /// <summary>
@@ -105,8 +138,13 @@ namespace Hecton8.Bootstrap
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredUnregister(listener);
+                return;
+            }
+
+            _listeners.TryUnregister(listener);
         }
 
         /// <summary>
@@ -171,13 +209,16 @@ namespace Hecton8.Bootstrap
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IBootstrapEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnBootstrapEvent(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -199,6 +240,7 @@ namespace Hecton8.Bootstrap
                     nameof(BootstrapEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -210,6 +252,21 @@ namespace Hecton8.Bootstrap
                     nameof(BootstrapEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
+            }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -269,6 +326,180 @@ namespace Hecton8.Bootstrap
             _nextFrameEvents = swap;
             _pendingEventCount = _nextFrameEventCount;
             _nextFrameEventCount = 0;
+        }
+
+        private static void DispatchToListener(IBootstrapEventListener listener, in BootstrapEventPayload payload)
+        {
+            try
+            {
+                listener.OnBootstrapEvent(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void QueueDeferredRegister(IBootstrapEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+            {
+                CancelDeferredUnregister(listener);
+                return;
+            }
+
+            if (IsDeferredRegisterPending(listener))
+                return;
+
+            if (_deferredRegisterCount >= _deferredRegisterListeners.Length)
+            {
+                ReportListenerRegistrationOverflow();
+                return;
+            }
+
+            _deferredRegisterListeners[_deferredRegisterCount++] = listener;
+        }
+
+        private static void QueueDeferredUnregister(IBootstrapEventListener listener)
+        {
+            if (CancelDeferredRegister(listener))
+                return;
+
+            if (!_listeners.Contains(listener))
+                return;
+
+            if (IsDeferredUnregisterPending(listener))
+                return;
+
+            if (_deferredUnregisterCount >= _deferredUnregisterListeners.Length)
+            {
+                ReportListenerRegistrationOverflow();
+                return;
+            }
+
+            _deferredUnregisterListeners[_deferredUnregisterCount++] = listener;
+        }
+
+        private static bool CancelDeferredRegister(IBootstrapEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    continue;
+
+                _deferredRegisterCount--;
+                _deferredRegisterListeners[i] = _deferredRegisterListeners[_deferredRegisterCount];
+                _deferredRegisterListeners[_deferredRegisterCount] = null;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void CancelDeferredUnregister(IBootstrapEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (!ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    continue;
+
+                _deferredUnregisterCount--;
+                _deferredUnregisterListeners[i] = _deferredUnregisterListeners[_deferredUnregisterCount];
+                _deferredUnregisterListeners[_deferredUnregisterCount] = null;
+                return;
+            }
+        }
+
+        private static bool IsDeferredRegisterPending(IBootstrapEventListener listener)
+        {
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredRegisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsDeferredUnregisterPending(IBootstrapEventListener listener)
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                if (ReferenceEquals(_deferredUnregisterListeners[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredUnregisterCount; i++)
+            {
+                IBootstrapEventListener listener = _deferredUnregisterListeners[i];
+                _deferredUnregisterListeners[i] = null;
+                if (listener != null)
+                    _listeners.TryUnregister(listener);
+            }
+
+            _deferredUnregisterCount = 0;
+
+            for (int i = 0; i < _deferredRegisterCount; i++)
+            {
+                IBootstrapEventListener listener = _deferredRegisterListeners[i];
+                _deferredRegisterListeners[i] = null;
+                if (listener != null)
+                    RegisterImmediate(listener);
+            }
+
+            _deferredRegisterCount = 0;
+        }
+
+        private static void RegisterImmediate(IBootstrapEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerRegistrationOverflow();
+        }
+
+        private static void ReportListenerRegistrationOverflow()
+        {
+            _droppedListenerRegistrationCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerOverflowTelemetryFrame == frame)
+                return;
+
+            _lastListenerOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                BootstrapListenerOverflowWarningHash,
+                BootstrapListenerContextHash,
+                Mathf.Max(1, _droppedListenerRegistrationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            _listenerExceptionCount++;
+            int frame = Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                BootstrapListenerExceptionWarningHash,
+                BootstrapListenerExceptionContextHash,
+                Mathf.Max(1, _listenerExceptionCount));
         }
     }
 }

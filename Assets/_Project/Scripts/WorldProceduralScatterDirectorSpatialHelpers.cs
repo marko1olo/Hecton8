@@ -37,12 +37,48 @@ namespace Hecton8.World
 
         private bool TryGetObserverAbsolutePosition(out Vector3 absolutePosition)
         {
+            int frame = Application.isPlaying ? Time.frameCount : -1;
+            if (frame >= 0 && _observerAbsolutePositionCacheFrame == frame)
+            {
+                absolutePosition = _observerAbsolutePositionCache;
+                return _observerAbsolutePositionCacheValid;
+            }
+
+            bool resolved = TryResolveObserverAbsolutePosition(out absolutePosition);
+            if (resolved && frame >= 0)
+            {
+                _observerAbsolutePositionCacheFrame = frame;
+                _observerAbsolutePositionCacheValid = true;
+                _observerAbsolutePositionCache = absolutePosition;
+            }
+
+            return resolved;
+        }
+
+        private bool TryResolveObserverAbsolutePosition(out Vector3 absolutePosition)
+        {
             absolutePosition = default;
+            var player = GlobalRegistry.Player;
+            var movement = player != null ? player.PlayerMovement : null;
+            if (movement != null)
+            {
+                var aup = movement.CurrentAup.ToAbsoluteDouble3();
+                absolutePosition = new Vector3((float)aup.x, (float)aup.y, (float)aup.z);
+                return true;
+            }
+
             if (playerTransform == null)
                 return false;
 
             absolutePosition = ToAbsoluteScatterPosition(playerTransform.position);
             return true;
+        }
+
+        private void InvalidateObserverAbsolutePositionCache()
+        {
+            _observerAbsolutePositionCacheFrame = -1;
+            _observerAbsolutePositionCacheValid = false;
+            _observerAbsolutePositionCache = default;
         }
 
         private static int GetFamilyHash(WorldPrefabFamilyProfile family)

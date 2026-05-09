@@ -30,6 +30,8 @@ namespace Hecton8.Physics
         private const int MinVisualSegmentCount = 8;
         private const int MaxVisualSegmentCount = 24;
         private const float VisualSagScale = 0.05f;
+        private const string NativeMemoryOwner = nameof(TetherInstance);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         // COLD ALLOC: Vector3[4] — virtual bend point corner cache for this tether instance — owner: TetherInstance
         private readonly Vector3[] _bendPoints = new Vector3[MaxSupportedBendPoints];
@@ -559,14 +561,24 @@ namespace Hecton8.Physics
                 VisualSegmentBuffer = null;
             }
 
-            if (_visualSegmentPositions.IsCreated)
-                _visualSegmentPositions.Dispose();
+            DisposeNativeArray(ref _visualSegmentPositions);
+            DisposeNativeArray(ref _visualAnchorPositions);
+            DisposeNativeArray(ref _visualSegmentLengths);
+        }
 
-            if (_visualAnchorPositions.IsCreated)
-                _visualAnchorPositions.Dispose();
+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
 
-            if (_visualSegmentLengths.IsCreated)
-                _visualSegmentLengths.Dispose();
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private void OnDestroy()
@@ -582,26 +594,28 @@ namespace Hecton8.Physics
 
             if (_visualSegmentPositions.IsCreated && _visualSegmentPositions.Length != pointCount)
             {
-                _visualSegmentPositions.Dispose();
-                _visualSegmentPositions = default;
+                DisposeNativeArray(ref _visualSegmentPositions);
             }
 
             if (!_visualSegmentPositions.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float3>[pointCount] — persistent visual staging path for tether line rendering — owner: TetherInstance
                 _visualSegmentPositions = new NativeArray<float3>(pointCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterNativeArray(_visualSegmentPositions, nameof(_visualSegmentPositions));
             }
 
             if (!_visualAnchorPositions.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float3>[6] — burst visual-anchor staging path for tether catenary generation — owner: TetherInstance
                 _visualAnchorPositions = new NativeArray<float3>(MaxAnchors, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterNativeArray(_visualAnchorPositions, nameof(_visualAnchorPositions));
             }
 
             if (!_visualSegmentLengths.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float>[5] — burst visual segment-length staging path for tether catenary generation — owner: TetherInstance
                 _visualSegmentLengths = new NativeArray<float>(MaxSegments, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterNativeArray(_visualSegmentLengths, nameof(_visualSegmentLengths));
             }
 
             if (VisualSegmentBuffer != null && VisualSegmentBuffer.count != pointCount)
@@ -689,19 +703,22 @@ namespace Hecton8.Physics
             environmentCurrent.y *= _payloadCurrentVerticalFactor;
 
             Vector3 currentDelta = environmentCurrent - _payloadBody.linearVelocity;
+            float currentDeltaSq = currentDelta.sqrMagnitude;
             Vector3 playerRight = _owner != null ? _owner.PlayerRight : Vector3.right;
             float sideExposure = 0f;
-            if (currentDelta.sqrMagnitude > MinVectorMagnitudeSq)
-                sideExposure = math.abs(Vector3.Dot(currentDelta.normalized, playerRight));
+            if (currentDeltaSq > MinVectorMagnitudeSq)
+                sideExposure = math.abs(Vector3.Dot(ResolveSafeDirection(currentDelta, Vector3.zero), playerRight));
 
             float currentScale = math.lerp(0.55f, 1f, _payloadMass01);
             currentScale *= math.lerp(1f, _payloadSideCurrentBoost, sideExposure);
             Vector3 currentForce = currentDelta * (_payloadCurrentDamping * currentScale);
-            float magnitude = currentForce.magnitude;
-            if (magnitude > _maxPayloadCurrentForce)
-                currentForce *= _maxPayloadCurrentForce / math.max(magnitude, MinDistance);
+            float maxPayloadCurrentForce = math.max(0f, _maxPayloadCurrentForce);
+            float maxPayloadCurrentForceSq = maxPayloadCurrentForce * maxPayloadCurrentForce;
+            float currentForceSq = currentForce.sqrMagnitude;
+            if (currentForceSq > maxPayloadCurrentForceSq)
+                currentForce *= maxPayloadCurrentForce * math.rsqrt(currentForceSq);
 
-            _payloadDrift01 = math.saturate(currentDelta.magnitude / math.max(1f, _maxCableAcceleration));
+            _payloadDrift01 = math.saturate(ResolveMagnitude(currentDeltaSq) / math.max(1f, _maxCableAcceleration));
             return currentForce;
         }
 
@@ -718,9 +735,11 @@ namespace Hecton8.Physics
                 Vector3 angularVelocity = _payloadBody.angularVelocity;
                 float angularBlend = 1f / (1f + _payloadAngularDamping * fixedDeltaTime);
                 angularVelocity *= angularBlend;
-                float angularSpeed = angularVelocity.magnitude;
-                if (angularSpeed > _maxPayloadAngularSpeed)
-                    angularVelocity *= _maxPayloadAngularSpeed / math.max(angularSpeed, MinDistance);
+                float maxPayloadAngularSpeed = math.max(0f, _maxPayloadAngularSpeed);
+                float maxPayloadAngularSpeedSq = maxPayloadAngularSpeed * maxPayloadAngularSpeed;
+                float angularSpeedSq = angularVelocity.sqrMagnitude;
+                if (angularSpeedSq > maxPayloadAngularSpeedSq)
+                    angularVelocity *= maxPayloadAngularSpeed * math.rsqrt(angularSpeedSq);
 
                 _payloadBody.angularVelocity = angularVelocity;
             }
@@ -739,7 +758,7 @@ namespace Hecton8.Physics
             Vector3 toAnchor = _bioCableCurrentAnchorWS - _payloadBody.worldCenterOfMass;
             if (toAnchor.sqrMagnitude > MinVectorMagnitudeSq)
             {
-                Vector3 snareForce = toAnchor.normalized * (_bioCablePayloadPullForce * effectiveTension);
+                Vector3 snareForce = ResolveSafeDirection(toAnchor, Vector3.zero) * (_bioCablePayloadPullForce * effectiveTension);
                 ApplyClampedAcceleration(_payloadBody, snareForce, _bioCablePayloadPullForce);
             }
 
@@ -826,7 +845,7 @@ namespace Hecton8.Physics
                 _bendVolumes[_bendPointCount] = bendVolume;
                 _bendVolumeRuntimeStamps[_bendPointCount] = bendRuntimeStamp;
                 _bendPointCount++;
-                origin = bendPoint + (target - origin).normalized * _bendPointClearanceRadius;
+                origin = bendPoint + ResolveSafeDirection(target - origin, Vector3.zero) * _bendPointClearanceRadius;
             }
 
             if (previousCount != _bendPointCount)
@@ -851,7 +870,7 @@ namespace Hecton8.Physics
             if (hit.collider == null)
                 return false;
 
-            bendNormal = hit.normal.sqrMagnitude > MinVectorMagnitudeSq ? hit.normal.normalized : Vector3.up;
+            bendNormal = ResolveSafeDirection(hit.normal, Vector3.up);
             HectonVoxelVolume voxelVolume = null;
             if (!hit.collider.TryGetComponent(out voxelVolume))
                 voxelVolume = hit.collider.GetComponentInParent<HectonVoxelVolume>();
@@ -867,14 +886,14 @@ namespace Hecton8.Physics
             Vector3 tangent = Vector3.ProjectOnPlane(lineDirection, bendNormal);
             if (tangent.sqrMagnitude > MinVectorMagnitudeSq)
             {
-                tangent.Normalize();
+                tangent = ResolveSafeDirection(tangent, Vector3.zero);
             }
             else
             {
                 tangent = Vector3.Cross(bendNormal, Vector3.up);
                 if (tangent.sqrMagnitude <= MinVectorMagnitudeSq)
                     tangent = Vector3.Cross(bendNormal, Vector3.right);
-                tangent.Normalize();
+                tangent = ResolveSafeDirection(tangent, Vector3.right);
             }
 
             bendPoint = hit.point + bendNormal * math.max(0.01f, _bendSurfaceOffset) + tangent * math.max(0.01f, _bendPointClearanceRadius);
@@ -885,11 +904,13 @@ namespace Hecton8.Physics
         {
             bestHit = default;
             Vector3 delta = end - start;
-            float distance = delta.magnitude;
-            if (distance <= MinDistance)
+            float distanceSq = delta.sqrMagnitude;
+            float minDistanceSq = MinDistance * MinDistance;
+            if (distanceSq <= minDistanceSq)
                 return false;
 
-            Vector3 direction = delta / distance;
+            float distance = math.sqrt(distanceSq);
+            Vector3 direction = delta * math.rsqrt(distanceSq);
             float endpointInset = math.clamp(_bendEndpointInset, 0.005f, distance * 0.45f);
             float castDistance = distance - endpointInset * 2f;
             if (castDistance <= MinDistance)
@@ -956,7 +977,7 @@ namespace Hecton8.Physics
             int segmentCount = anchorCount - 1;
             for (int i = 0; i < segmentCount; i++)
             {
-                float segmentLength = Vector3.Distance(_solverAnchorPositions[i], _solverAnchorPositions[i + 1]);
+                float segmentLength = ResolveMagnitude((_solverAnchorPositions[i] - _solverAnchorPositions[i + 1]).sqrMagnitude);
                 _segmentLengths[i] = segmentLength;
                 totalLength += segmentLength;
             }
@@ -1000,12 +1021,12 @@ namespace Hecton8.Physics
             if (_bendPointCount > 0)
             {
                 Vector3 toFirstBend = _bendPoints[0] - _owner.ResolveTowAnchorPosition();
-                lineDirection = toFirstBend.sqrMagnitude > MinVectorMagnitudeSq ? toFirstBend.normalized : Vector3.zero;
+                lineDirection = ResolveSafeDirection(toFirstBend, Vector3.zero);
             }
             else if (_payloadBody != null)
             {
                 Vector3 direct = _payloadBody.worldCenterOfMass - _owner.ResolveTowAnchorPosition();
-                lineDirection = direct.sqrMagnitude > MinVectorMagnitudeSq ? direct.normalized : Vector3.zero;
+                lineDirection = ResolveSafeDirection(direct, Vector3.zero);
             }
             else
             {
@@ -1050,12 +1071,13 @@ namespace Hecton8.Physics
             if (_stressTimer < snapDuration)
                 return false;
 
+            Vector3 ownerAnchor = _owner.ResolveTowAnchorPosition();
             Vector3 playerSegmentDirection = _bendPointCount > 0
-                ? (_bendPoints[0] - _owner.ResolveTowAnchorPosition()).normalized
-                : (_payloadBody.worldCenterOfMass - _owner.ResolveTowAnchorPosition()).normalized;
+                ? ResolveSafeDirection(_bendPoints[0] - ownerAnchor, Vector3.zero)
+                : ResolveSafeDirection(_payloadBody.worldCenterOfMass - ownerAnchor, Vector3.zero);
             Vector3 payloadSegmentDirection = _bendPointCount > 0
-                ? (_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass).normalized
-                : (_owner.ResolveTowAnchorPosition() - _payloadBody.worldCenterOfMass).normalized;
+                ? ResolveSafeDirection(_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass, Vector3.zero)
+                : ResolveSafeDirection(ownerAnchor - _payloadBody.worldCenterOfMass, Vector3.zero);
             float snapSeverity = math.saturate(peakTension / snapThreshold);
             InvokeSnapProtocol(playerSegmentDirection, payloadSegmentDirection, snapSeverity, false);
             return true;
@@ -1076,16 +1098,18 @@ namespace Hecton8.Physics
                 Vector3 start = _anchorPositions[i];
                 Vector3 end = _anchorPositions[i + 1];
                 Vector3 delta = end - start;
-                float distance = delta.magnitude;
-                if (distance <= MinDistance)
+                float distanceSq = delta.sqrMagnitude;
+                float minDistanceSq = MinDistance * MinDistance;
+                if (distanceSq <= minDistanceSq)
                     continue;
 
+                float distance = math.sqrt(distanceSq);
                 float segmentInset = math.min(math.max(0.01f, _bendEndpointInset), distance * 0.25f);
                 float castDistance = distance - segmentInset * 2f;
                 if (castDistance <= MinDistance)
                     continue;
 
-                Vector3 direction = delta / distance;
+                Vector3 direction = delta * math.rsqrt(distanceSq);
                 int hits = UnityEngine.Physics.RaycastNonAlloc(
                     start + direction * segmentInset,
                     direction,
@@ -1135,12 +1159,13 @@ namespace Hecton8.Physics
                 if (_slicingConsecutiveFrames < 3)
                     return false;
 
+                Vector3 ownerAnchor = _owner.ResolveTowAnchorPosition();
                 Vector3 playerSegmentDirection = _bendPointCount > 0
-                    ? (_bendPoints[0] - _owner.ResolveTowAnchorPosition()).normalized
-                    : (_payloadBody.worldCenterOfMass - _owner.ResolveTowAnchorPosition()).normalized;
+                    ? ResolveSafeDirection(_bendPoints[0] - ownerAnchor, Vector3.zero)
+                    : ResolveSafeDirection(_payloadBody.worldCenterOfMass - ownerAnchor, Vector3.zero);
                 Vector3 payloadSegmentDirection = _bendPointCount > 0
-                    ? (_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass).normalized
-                    : (_owner.ResolveTowAnchorPosition() - _payloadBody.worldCenterOfMass).normalized;
+                    ? ResolveSafeDirection(_bendPoints[_bendPointCount - 1] - _payloadBody.worldCenterOfMass, Vector3.zero)
+                    : ResolveSafeDirection(ownerAnchor - _payloadBody.worldCenterOfMass, Vector3.zero);
                 InvokeSnapProtocol(playerSegmentDirection, payloadSegmentDirection, 0f, true);
                 return true;
             }
@@ -1342,15 +1367,24 @@ namespace Hecton8.Physics
                 ? _bendPoints[_bendPointCount - 1]
                 : anchorPositionWS;
             Vector3 separation = payloadPositionWS - constraintAnchorPosition;
-            float distance = separation.magnitude;
-            if (distance <= MinDistance)
+            float distanceSq = separation.sqrMagnitude;
+            float minDistanceSq = MinDistance * MinDistance;
+            if (distanceSq <= minDistanceSq)
             {
                 _primaryConstraintForceMagnitude = 0f;
                 return;
             }
 
-            Vector3 directionAwayFromAnchor = separation / distance;
             float targetDistance = ResolvePrimaryConstraintTargetDistance();
+            float targetDistanceSq = targetDistance * targetDistance;
+            if (distanceSq <= targetDistanceSq)
+            {
+                _primaryConstraintForceMagnitude = 0f;
+                return;
+            }
+
+            float distance = math.sqrt(distanceSq);
+            Vector3 directionAwayFromAnchor = separation * math.rsqrt(distanceSq);
             float extension = distance - targetDistance;
             if (extension <= 0f)
             {
@@ -1382,7 +1416,7 @@ namespace Hecton8.Physics
                 requestedForce3.x,
                 requestedForce3.y,
                 requestedForce3.z);
-            float requestedForceMagnitude = requestedForceVector.magnitude;
+            float requestedForceMagnitude = ResolveMagnitude(requestedForceVector.sqrMagnitude);
             if (requestedForceMagnitude <= 0f)
             {
                 _primaryConstraintForceMagnitude = 0f;
@@ -1520,7 +1554,22 @@ namespace Hecton8.Physics
             if (sqrMagnitude <= maxMagnitudeSq)
                 return value;
 
-            return value.normalized * maxMagnitude;
+            return value * (maxMagnitude * math.rsqrt(sqrMagnitude));
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 value, Vector3 fallback)
+        {
+            float sqrMagnitude = value.sqrMagnitude;
+            return sqrMagnitude > MinVectorMagnitudeSq
+                ? value * math.rsqrt(sqrMagnitude)
+                : fallback;
+        }
+
+        private static float ResolveMagnitude(float sqrMagnitude)
+        {
+            return sqrMagnitude > MinVectorMagnitudeSq
+                ? math.sqrt(sqrMagnitude)
+                : 0f;
         }
 
         private static Vector3 ClampPdDerivativeVelocity(

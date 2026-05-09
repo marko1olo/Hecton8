@@ -39,6 +39,7 @@ namespace Hecton8.World
         private const string NativeMemoryOwner = nameof(WorldProceduralFieldSampler);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const NativeAllocationLifetime NativeMemoryTempJobLifetime = NativeAllocationLifetime.TempJob;
+        private const int EmptyNativeArrayCapacity = 1;
         private const float NoiseLookupValueScale = 1f / ushort.MaxValue;
         private static readonly uint _biomeInfluenceGridCapacityWarningHash =
             unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler.BiomeInfluenceGridCapacity"));
@@ -679,7 +680,7 @@ namespace Hecton8.World
             float probe = math.max(0.0001f, slopeProbeMeters);
             float dx = (input.EastHeight - input.WestHeight) / (probe * 2f);
             float dz = (input.NorthHeight - input.SouthHeight) / (probe * 2f);
-            float gradient = math.sqrt(dx * dx + dz * dz);
+            float gradient = FastLength2D(dx, dz);
             float slopeDegrees = math.degrees(math.atan(gradient));
             float curvature = (input.WestHeight + input.EastHeight + input.NorthHeight + input.SouthHeight - (input.CenterHeight * 4f)) / math.max(0.0001f, probe * probe);
             curvature = math.clamp(curvature / 0.85f, -1f, 1f);
@@ -1132,8 +1133,7 @@ namespace Hecton8.World
                 if (verticalDelta < 2f)
                     continue;
 
-                float distance = math.sqrt(distanceSqr);
-                float radialWeight = 1f - math.saturate(distance / influenceRadius);
+                float radialWeight = 1f - math.saturate(distanceSqr / (influenceRadius * influenceRadius));
                 float verticalWeight = math.saturate(verticalDelta / math.max(4f, hint.EntranceRadius + hint.InfluenceRadius));
                 float combinedWeight = radialWeight * verticalWeight;
                 if (combinedWeight <= bestHintWeight)
@@ -1214,6 +1214,20 @@ namespace Hecton8.World
             return math.clamp((value * 0.5f) + 0.5f, 0f, 1f);
         }
 
+        private static float FastLength2D(float x, float z)
+        {
+            float ax = math.abs(x);
+            float az = math.abs(z);
+            float maxAxis = math.max(ax, az);
+            float minAxis = math.min(ax, az);
+            return maxAxis + (minAxis * 0.375f);
+        }
+
+        private static float FastLength2D(float2 value)
+        {
+            return FastLength2D(value.x, value.y);
+        }
+
         private static int ResolveZoneDataIndex(float2 positionXZ, NativeArray<ZoneData> zones, int zoneCount, int currentZoneDataIndex, out float zoneWeight)
         {
             int bestIndex = -1;
@@ -1224,7 +1238,7 @@ namespace Hecton8.World
                 ZoneData zone = zones[i];
                 float2 delta = zone.PositionXZ - positionXZ;
                 float distanceSqr = math.lengthsq(delta);
-                float distance = math.sqrt(distanceSqr);
+                float distance = FastLength2D(delta);
                 float noiseRadiusMultiplier = EvaluateZoneNoiseRadiusMultiplier(positionXZ, zone);
                 float blend = math.max(4f, zone.EdgeBlendDistance);
                 float activationWeight = EvaluateRadiusWeightFromDistance(distance, zone.ActivationRadius * noiseRadiusMultiplier, blend);
@@ -1242,7 +1256,7 @@ namespace Hecton8.World
             if (bestIndex < 0 && currentZoneDataIndex >= 0 && currentZoneDataIndex < zoneCount)
             {
                 ZoneData currentZone = zones[currentZoneDataIndex];
-                float fallbackDistance = math.distance(positionXZ, currentZone.PositionXZ);
+                float fallbackDistance = FastLength2D(positionXZ - currentZone.PositionXZ);
                 float fallbackBlend = math.max(4f, currentZone.EdgeBlendDistance);
                 float fallbackMultiplier = EvaluateZoneNoiseRadiusMultiplier(positionXZ, currentZone);
                 bestWeight = EvaluateRadiusWeightFromDistance(fallbackDistance, currentZone.ActivationRadius * fallbackMultiplier, fallbackBlend);
@@ -2103,7 +2117,7 @@ namespace Hecton8.World
 
             float waterSurface = mapMagicBridge != null
                 ? mapMagicBridge.WaterSurfaceLevel
-                : Mathf.Max(position.y + 120f, terrainContext.CenterHeight + 50f);
+                : math.max(position.y + 120f, terrainContext.CenterHeight + 50f);
 
             input = new CellInputData
             {
@@ -2223,7 +2237,7 @@ namespace Hecton8.World
             }
 
             ReleaseBiomeInfluenceGraphicsBuffer();
-            _biomeInfluenceGraphicsBufferCapacity = Mathf.NextPowerOfTwo(requiredCapacity);
+            _biomeInfluenceGraphicsBufferCapacity = ResolvePowerOfTwoCapacity(requiredCapacity);
             if (Application.isPlaying && _biomeInfluenceGraphicsBufferCapacity > MaxBiomeInfluenceGridCellsMx350)
             {
                 GlobalTelemetryBus.PublishPerformanceWarning(
@@ -2343,11 +2357,11 @@ namespace Hecton8.World
             bool secondaryDomain = domainIndex == 1;
             float domainHeight = secondaryDomain ? output.SecondaryHeight : output.SeafloorHeight;
             float domainDepth = secondaryDomain ? output.SecondaryDepthMeters : output.DepthMeters;
-            float domainCaveProximity = secondaryDomain ? Mathf.Max(output.CaveProximity, output.SecondaryCaveProximity) : output.CaveProximity;
+            float domainCaveProximity = secondaryDomain ? math.max(output.CaveProximity, output.SecondaryCaveProximity) : output.CaveProximity;
             float domainCompositionPotential = secondaryDomain
-                ? Mathf.Clamp01(
-                    Mathf.Clamp01((output.SlopeDegrees - 6f) / 42f) * 0.16f +
-                    Mathf.Abs(output.Curvature) * 0.18f +
+                ? math.saturate(
+                    math.saturate((output.SlopeDegrees - 6f) / 42f) * 0.16f +
+                    math.abs(output.Curvature) * 0.18f +
                     output.RidgeSignal * 0.20f +
                     output.CanyonSignal * 0.18f +
                     domainCaveProximity * 0.18f +
@@ -2438,7 +2452,7 @@ namespace Hecton8.World
                 output,
                 family != null ? family.placementMode : WorldPrefabFamilyProfile.PlacementMode.Scatter,
                 rule != null && !string.IsNullOrWhiteSpace(rule.gameplayIntent)
-                    ? 0.95f + Mathf.Clamp01(rule.densityScale * 0.12f)
+                    ? 0.95f + math.saturate(rule.densityScale * 0.12f)
                     : 1f);
         }
 
@@ -2476,7 +2490,7 @@ namespace Hecton8.World
                 _ => 1f
             };
 
-            return Mathf.Clamp01(value * densityScaleFactor);
+            return math.saturate(value * densityScaleFactor);
         }
 
         public static int ResolveHeatmapChannelIndex(string heatmapChannel)
@@ -2793,8 +2807,8 @@ namespace Hecton8.World
 
             float waterSurface = mapMagicBridge != null
                 ? mapMagicBridge.WaterSurfaceLevel
-                : Mathf.Max(position.y + 120f, seafloorHeight + 50f);
-            float depthMeters = Mathf.Max(0f, waterSurface - seafloorHeight);
+                : math.max(position.y + 120f, seafloorHeight + 50f);
+            float depthMeters = math.max(0f, waterSurface - seafloorHeight);
             float slopeDegrees = terrainContext.SlopeDegrees;
             float curvature = terrainContext.Curvature;
             WorldZoneAnchor zone = ResolveZone(new Vector3(position.x, seafloorHeight, position.z), out float zoneWeight);
@@ -2852,7 +2866,7 @@ namespace Hecton8.World
 
             bool volumetricOverrideApplied = false;
             HectonBiomeMatrixProfile previousBiomeProfile = biomeProfile;
-            float sampleDepthMeters = Mathf.Max(depthMeters, Mathf.Max(0f, waterSurface - position.y), Mathf.Max(0f, -position.y));
+            float sampleDepthMeters = math.max(depthMeters, math.max(math.max(0f, waterSurface - position.y), math.max(0f, -position.y)));
             HectonBiomeMatrixProfile volumetricProfile = ResolveVolumetricBiomeProfile(
                 position.y,
                 sampleDepthMeters,
@@ -3048,7 +3062,7 @@ namespace Hecton8.World
                 secondaryBiomeId = ResolveManagedBiomeId(currentProfile);
                 if (secondaryBiomeId != 0 && secondaryBiomeId != primaryBiomeId)
                 {
-                    blend255 = (byte)Mathf.RoundToInt(Mathf.Clamp01(1f - zoneWeight) * 255f);
+                    blend255 = (byte)(int)math.round(math.saturate(1f - zoneWeight) * 255f);
                     flags |= (byte)BiomeInfluenceFlags.TransitionEdge;
                 }
                 else
@@ -3132,13 +3146,13 @@ namespace Hecton8.World
                 ? family != null && !string.IsNullOrWhiteSpace(family.heatmapChannel) ? family.heatmapChannel : "generic"
                 : heatmapChannel;
 
-            float depth01 = Mathf.Clamp01(sample.depthMeters / 800f);
-            float shallow01 = 1f - Mathf.Clamp01(sample.depthMeters / 220f);
-            float midDepth01 = 1f - Mathf.Clamp01(Mathf.Abs(sample.depthMeters - 260f) / 320f);
-            float deep01 = Mathf.Clamp01((sample.depthMeters - 180f) / 900f);
-            float abyss01 = Mathf.Clamp01((sample.depthMeters - 900f) / 1800f);
-            float flat01 = 1f - Mathf.Clamp01(sample.slopeDegrees / 28f);
-            float steep01 = Mathf.Clamp01((sample.slopeDegrees - 8f) / 40f);
+            float depth01 = math.saturate(sample.depthMeters / 800f);
+            float shallow01 = 1f - math.saturate(sample.depthMeters / 220f);
+            float midDepth01 = 1f - math.saturate(math.abs(sample.depthMeters - 260f) / 320f);
+            float deep01 = math.saturate((sample.depthMeters - 180f) / 900f);
+            float abyss01 = math.saturate((sample.depthMeters - 900f) / 1800f);
+            float flat01 = 1f - math.saturate(sample.slopeDegrees / 28f);
+            float steep01 = math.saturate((sample.slopeDegrees - 8f) / 40f);
             float terrainNoise = cellContext.TerrainNoise;
             float detailNoise = cellContext.DetailNoise;
             float ruggedBias = EvaluateRuggedBiomeBias(sample.zoneDataIndex, sample.zone);
@@ -3168,7 +3182,7 @@ namespace Hecton8.World
                 "service_density" => serviceBias * 0.44f + terrainNoise * 0.2f + ruggedBias * 0.1f + flat01 * 0.1f + landmarkBias * 0.16f,
                 _ => terrainNoise * 0.55f + detailNoise * 0.45f
             };
-            value = Mathf.Clamp01(value + biomeMatrixBonus);
+            value = math.saturate(value + biomeMatrixBonus);
 
             float patternShapedValue = EvaluatePatternShapedHeat(
                 channel,
@@ -3187,7 +3201,7 @@ namespace Hecton8.World
                 resourceBias,
                 shelterBias,
                 landmarkBias);
-            patternShapedValue = Mathf.Clamp01(patternShapedValue + biomeMatrixBonus * 0.92f);
+            patternShapedValue = math.saturate(patternShapedValue + biomeMatrixBonus * 0.92f);
             value = math.lerp(value, patternShapedValue, math.saturate(ResolvePatternFieldBlend(sample.seafloorSource, sample.zone)));
             value = ApplyManagedTectonicSpineSteepSlopeHeatBias(value, channel, sample);
 
@@ -3204,9 +3218,9 @@ namespace Hecton8.World
             }
 
             if (rule != null && !string.IsNullOrWhiteSpace(rule.gameplayIntent))
-                value *= 0.95f + Mathf.Clamp01(rule.densityScale * 0.12f);
+                value *= 0.95f + math.saturate(rule.densityScale * 0.12f);
 
-            value = Mathf.Clamp01(value);
+            value = math.saturate(value);
             if (ShouldUpdateDiagnostics())
                 UpdateDiagnostics(sample, channel, value);
             return value;
@@ -3223,13 +3237,13 @@ namespace Hecton8.World
                 return value;
             }
 
-            float slope01 = Mathf.Clamp01((sample.slopeDegrees - 45f) / 30f);
+            float slope01 = math.saturate((sample.slopeDegrees - 45f) / 30f);
             return channel switch
             {
-                "rock_density" => Mathf.Max(value, 0.74f + slope01 * 0.20f),
-                "debris_density" => Mathf.Max(value, 0.80f + slope01 * 0.18f),
-                "landmark_strength" => Mathf.Max(value, 0.62f + slope01 * 0.18f),
-                "hazard_density" => Mathf.Max(value, 0.68f + slope01 * 0.18f),
+                "rock_density" => math.max(value, 0.74f + slope01 * 0.20f),
+                "debris_density" => math.max(value, 0.80f + slope01 * 0.18f),
+                "landmark_strength" => math.max(value, 0.62f + slope01 * 0.18f),
+                "hazard_density" => math.max(value, 0.68f + slope01 * 0.18f),
                 _ => value
             };
         }
@@ -3271,20 +3285,20 @@ namespace Hecton8.World
             float landmarkNoise = cellContext.LandmarkFieldNoise;
             float basinNoise = cellContext.BasinFieldNoise;
 
-            float sedimentField = Mathf.Clamp01(
+            float sedimentField = math.saturate(
                 resourceBias * 0.32f +
                 shelterBias * 0.18f +
                 flat01 * 0.16f +
                 terrainNoise * 0.14f +
                 sedimentNoise * 0.20f);
-            float fertileField = Mathf.Clamp01(
+            float fertileField = math.saturate(
                 fertileBias * 0.34f +
                 shallow01 * 0.16f +
                 detailNoise * 0.12f +
                 fertileNoise * 0.22f +
                 shelterBias * 0.08f +
                 (1f - hazardBias) * 0.08f);
-            float reefField = Mathf.Clamp01(
+            float reefField = math.saturate(
                 fertileBias * 0.24f +
                 landmarkBias * 0.14f +
                 shallow01 * 0.10f +
@@ -3292,33 +3306,33 @@ namespace Hecton8.World
                 flat01 * 0.08f +
                 detailNoise * 0.12f +
                 midDepth01 * 0.08f);
-            float industrialField = Mathf.Clamp01(
+            float industrialField = math.saturate(
                 serviceBias * 0.34f +
                 industrialNoise * 0.28f +
                 terrainNoise * 0.10f +
                 ruggedBias * 0.08f +
                 deep01 * 0.08f +
                 landmarkBias * 0.12f);
-            float hazardField = Mathf.Clamp01(
+            float hazardField = math.saturate(
                 hazardBias * 0.38f +
                 steep01 * 0.12f +
                 deep01 * 0.12f +
                 hazardNoise * 0.24f +
                 ruggedBias * 0.14f);
-            float landmarkField = Mathf.Clamp01(
+            float landmarkField = math.saturate(
                 landmarkBias * 0.34f +
                 steep01 * 0.16f +
                 landmarkNoise * 0.26f +
                 ruggedBias * 0.10f +
                 deep01 * 0.08f +
                 reefField * 0.06f);
-            float shelterField = Mathf.Clamp01(
+            float shelterField = math.saturate(
                 shelterBias * 0.34f +
                 flat01 * 0.18f +
                 fertileField * 0.14f +
                 basinNoise * 0.18f +
                 detailNoise * 0.16f);
-            float abyssField = Mathf.Clamp01(
+            float abyssField = math.saturate(
                 abyss01 * 0.44f +
                 hazardField * 0.16f +
                 ruggedBias * 0.12f +
@@ -3493,7 +3507,7 @@ namespace Hecton8.World
                 _ => terrainNoise * 0.55f + detailNoise * 0.45f
             };
 
-            return Mathf.Clamp01(shapedValue);
+            return math.saturate(shapedValue);
         }
 
         private static float ResolvePatternFieldBlend(SeafloorSource source, WorldZoneAnchor zone)
@@ -3622,7 +3636,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            float fallbackSurface = mapMagicBridge != null ? mapMagicBridge.WaterSurfaceLevel : Mathf.Max(position.y + 120f, 120f);
+            float fallbackSurface = mapMagicBridge != null ? mapMagicBridge.WaterSurfaceLevel : math.max(position.y + 120f, 120f);
             seafloorHeight = fallbackSurface - EstimateFallbackDepth(position.x, position.z);
             seafloorSource = SeafloorSource.FallbackSynthetic;
             return true;
@@ -3634,12 +3648,12 @@ namespace Hecton8.World
             if (!TryGetCellHeightContext(position, out CellHeightContext cellHeightContext))
                 return false;
 
-            float probe = Mathf.Max(1f, slopeProbeMeters);
+            float probe = math.max(1f, slopeProbeMeters);
             float dx = (cellHeightContext.EastHeight - cellHeightContext.WestHeight) / (probe * 2f);
             float dz = (cellHeightContext.NorthHeight - cellHeightContext.SouthHeight) / (probe * 2f);
-            float gradient = Mathf.Sqrt(dx * dx + dz * dz);
-            float slopeDegrees = Mathf.Atan(gradient) * Mathf.Rad2Deg;
-            float curvature = (cellHeightContext.WestHeight + cellHeightContext.EastHeight + cellHeightContext.NorthHeight + cellHeightContext.SouthHeight - (cellHeightContext.CenterHeight * 4f)) / Mathf.Max(0.0001f, probe * probe);
+            float gradient = FastLength2D(dx, dz);
+            float slopeDegrees = math.degrees(math.atan(gradient));
+            float curvature = (cellHeightContext.WestHeight + cellHeightContext.EastHeight + cellHeightContext.NorthHeight + cellHeightContext.SouthHeight - (cellHeightContext.CenterHeight * 4f)) / math.max(0.0001f, probe * probe);
 
             terrainContext = new LocalTerrainContext
             {
@@ -3649,7 +3663,7 @@ namespace Hecton8.World
                 EastHeight = cellHeightContext.EastHeight,
                 WestHeight = cellHeightContext.WestHeight,
                 SlopeDegrees = slopeDegrees,
-                Curvature = Mathf.Clamp(curvature / 0.85f, -1f, 1f),
+                Curvature = math.clamp(curvature / 0.85f, -1f, 1f),
                 CenterSource = cellHeightContext.CenterSource
             };
             return true;
@@ -3661,7 +3675,7 @@ namespace Hecton8.World
             if (!TryResolveSeafloorHeight(position, out float centerHeight, out SeafloorSource centerSource))
                 return false;
 
-            float probe = Mathf.Max(1f, slopeProbeMeters);
+            float probe = math.max(1f, slopeProbeMeters);
             if (!TryResolveSeafloorHeight(new Vector3(position.x, centerHeight, position.z + probe), out float northHeight, out _) ||
                 !TryResolveSeafloorHeight(new Vector3(position.x, centerHeight, position.z - probe), out float southHeight, out _) ||
                 !TryResolveSeafloorHeight(new Vector3(position.x + probe, centerHeight, position.z), out float eastHeight, out _) ||
@@ -3700,10 +3714,10 @@ namespace Hecton8.World
 
         private static float CalculateSlopeDegrees(float centerHeight, float northHeight, float southHeight, float eastHeight, float westHeight, float probeMeters)
         {
-            float probe = Mathf.Max(0.0001f, probeMeters);
+            float probe = math.max(0.0001f, probeMeters);
             float dx = (eastHeight - westHeight) / (probe * 2f);
             float dz = (northHeight - southHeight) / (probe * 2f);
-            return Mathf.Atan(Mathf.Sqrt((dx * dx) + (dz * dz))) * Mathf.Rad2Deg;
+            return math.degrees(math.atan(FastLength2D(dx, dz)));
         }
 
         private static float ResolveSteepGradientContactCheat(
@@ -3716,13 +3730,13 @@ namespace Hecton8.World
             float thresholdDegrees,
             float maxDropMeters)
         {
-            float lowerNeighbor = Mathf.Min(Mathf.Min(northHeight, southHeight), Mathf.Min(eastHeight, westHeight));
-            float availableDrop = Mathf.Max(0f, centerHeight - lowerNeighbor);
+            float lowerNeighbor = math.min(math.min(northHeight, southHeight), math.min(eastHeight, westHeight));
+            float availableDrop = math.max(0f, centerHeight - lowerNeighbor);
             if (availableDrop <= 0f)
                 return centerHeight;
 
             float slope01 = math.saturate((slopeDegrees - thresholdDegrees) / math.max(0.0001f, 78f - thresholdDegrees));
-            float drop = Mathf.Min(Mathf.Max(0f, maxDropMeters), availableDrop * math.lerp(0.35f, 0.75f, math.saturate(slope01)));
+            float drop = math.min(math.max(0f, maxDropMeters), availableDrop * math.lerp(0.35f, 0.75f, math.saturate(slope01)));
             return centerHeight - drop;
         }
 
@@ -3731,21 +3745,21 @@ namespace Hecton8.World
             float broad = EvaluateNoise01(x + 311.1f, z - 177.4f, fieldNoiseScale * 0.55f);
             float detail = EvaluateNoise01(x - 91.6f, z + 441.2f, detailNoiseScale * 0.7f);
             float depth = math.lerp(70f, 240f, math.saturate((broad * 0.7f) + (detail * 0.3f)));
-            return Mathf.Clamp(depth, 40f, 320f);
+            return math.clamp(depth, 40f, 320f);
         }
 
         private float EvaluateRidgeSignal(float curvature, float slopeDegrees, int zoneDataIndex, WorldZoneAnchor zone)
         {
-            float slope01 = Mathf.Clamp01((slopeDegrees - 8f) / 36f);
+            float slope01 = math.saturate((slopeDegrees - 8f) / 36f);
             float rugged = EvaluateRuggedBiomeBias(zoneDataIndex, zone);
-            return Mathf.Clamp01(Mathf.Max(0f, curvature) * 0.62f + slope01 * 0.26f + rugged * 0.12f);
+            return math.saturate(math.max(0f, curvature) * 0.62f + slope01 * 0.26f + rugged * 0.12f);
         }
 
         private float EvaluateCanyonSignal(float curvature, float slopeDegrees, int zoneDataIndex, WorldZoneAnchor zone)
         {
-            float slope01 = Mathf.Clamp01((slopeDegrees - 10f) / 34f);
+            float slope01 = math.saturate((slopeDegrees - 10f) / 34f);
             float hazard = EvaluateHazardBias(zoneDataIndex, zone, zone != null ? zone.Kind : WorldZoneAnchor.ZoneKind.Generic);
-            return Mathf.Clamp01(Mathf.Max(0f, -curvature) * 0.58f + slope01 * 0.22f + hazard * 0.20f);
+            return math.saturate(math.max(0f, -curvature) * 0.58f + slope01 * 0.22f + hazard * 0.20f);
         }
 
         private float EvaluateCaveProximity(
@@ -3756,12 +3770,12 @@ namespace Hecton8.World
             WorldZoneAnchor.ZoneKind resolvedZoneKind,
             float caveNoise)
         {
-            float slope01 = Mathf.Clamp01((slopeDegrees - 8f) / 40f);
-            float deep01 = Mathf.Clamp01((depthMeters - 120f) / 780f);
+            float slope01 = math.saturate((slopeDegrees - 8f) / 40f);
+            float deep01 = math.saturate((depthMeters - 120f) / 780f);
             float rugged = EvaluateRuggedBiomeBias(zoneDataIndex, zone);
             float hazard = EvaluateHazardBias(zoneDataIndex, zone, resolvedZoneKind);
             float landmark = EvaluateLandmarkBias(zoneDataIndex, zone, resolvedZoneKind);
-            return Mathf.Clamp01(
+            return math.saturate(
                 slope01 * 0.22f +
                 deep01 * 0.10f +
                 rugged * 0.24f +
@@ -3778,10 +3792,10 @@ namespace Hecton8.World
             float caveProximity,
             float variation)
         {
-            float slope01 = Mathf.Clamp01((slopeDegrees - 6f) / 42f);
-            return Mathf.Clamp01(
+            float slope01 = math.saturate((slopeDegrees - 6f) / 42f);
+            return math.saturate(
                 slope01 * 0.16f +
-                Mathf.Abs(curvature) * 0.18f +
+                math.abs(curvature) * 0.18f +
                 ridgeSignal * 0.20f +
                 canyonSignal * 0.18f +
                 caveProximity * 0.18f +
@@ -3813,7 +3827,7 @@ namespace Hecton8.World
 
                 if (best == null ||
                     weight > bestWeight ||
-                    (Mathf.Approximately(weight, bestWeight) && distanceSqr < bestDistanceSqr))
+                    (math.abs(weight - bestWeight) <= 0.000001f && distanceSqr < bestDistanceSqr))
                 {
                     best = anchor;
                     bestWeight = weight;
@@ -3824,7 +3838,7 @@ namespace Hecton8.World
             if (best == null)
                 best = worldZoneDirector != null ? worldZoneDirector.CurrentZone : null;
 
-            zoneWeight = best != null ? Mathf.Max(bestWeight, best.EvaluateActivationWeight(position)) : 0f;
+            zoneWeight = best != null ? math.max(bestWeight, best.EvaluateActivationWeight(position)) : 0f;
             return best;
         }
 
@@ -3858,9 +3872,9 @@ namespace Hecton8.World
             float serviceMacroNoise = cellContext.ServiceMacroNoise;
             float riftMacroNoise = cellContext.RiftMacroNoise;
 
-            float depth01 = Mathf.Clamp01(depthMeters / 1200f);
-            float steep01 = Mathf.Clamp01((slopeDegrees - 8f) / 40f);
-            float shallow01 = 1f - Mathf.Clamp01(depthMeters / 220f);
+            float depth01 = math.saturate(depthMeters / 1200f);
+            float steep01 = math.saturate((slopeDegrees - 8f) / 40f);
+            float shallow01 = 1f - math.saturate(depthMeters / 220f);
             float resourceZoneBias = zoneKindHint == WorldZoneAnchor.ZoneKind.Resources || zoneKindHint == WorldZoneAnchor.ZoneKind.Fabrication
                 ? 1f
                 : zoneKindHint == WorldZoneAnchor.ZoneKind.Navigation
@@ -3874,40 +3888,40 @@ namespace Hecton8.World
                 : 0f;
             float navigationZoneBias = zoneKindHint == WorldZoneAnchor.ZoneKind.Navigation ? 1f : 0f;
 
-            float fertileScore = Mathf.Clamp01(
+            float fertileScore = math.saturate(
                 ((fertileNoise * 0.65f) + (reefNoise * 0.35f))
                 - (resourceZoneBias * 0.08f)
                 - (serviceZoneBias * 0.16f)
                 - (hazardZoneBias * 0.18f)
                 + (navigationZoneBias * 0.08f));
-            float ruggedScore = Mathf.Clamp01((ruggedNoise * 0.55f) + (steep01 * 0.45f));
-            float thermalScore = Mathf.Clamp01((thermalNoise * 0.75f) + (depth01 * 0.25f));
-            float metallicScore = Mathf.Clamp01((metallicNoise * 0.7f) + (depth01 * 0.3f));
-            float voidScore = Mathf.Clamp01((voidNoise * 0.7f) + (depth01 * 0.3f));
-            float sedimentScore = Mathf.Clamp01(
+            float ruggedScore = math.saturate((ruggedNoise * 0.55f) + (steep01 * 0.45f));
+            float thermalScore = math.saturate((thermalNoise * 0.75f) + (depth01 * 0.25f));
+            float metallicScore = math.saturate((metallicNoise * 0.7f) + (depth01 * 0.3f));
+            float voidScore = math.saturate((voidNoise * 0.7f) + (depth01 * 0.3f));
+            float sedimentScore = math.saturate(
                 ((1f - ruggedScore) * 0.24f)
                 + ((1f - thermalScore) * 0.14f)
                 + (resourceZoneBias * 0.22f)
                 + (shallow01 * 0.08f)
                 + (fertileNoise * 0.12f)
                 + (reefNoise * 0.04f));
-            float serviceScore = Mathf.Clamp01(
+            float serviceScore = math.saturate(
                 (thermalScore * 0.34f)
                 + (metallicScore * 0.34f)
                 + (serviceZoneBias * 0.24f)
                 + (depth01 * 0.08f));
-            float hazardScore = Mathf.Clamp01(
+            float hazardScore = math.saturate(
                 (ruggedScore * 0.28f)
                 + (thermalScore * 0.16f)
                 + (voidScore * 0.18f)
                 + (hazardZoneBias * 0.26f)
                 + (depth01 * 0.12f));
-            float reefScore = Mathf.Clamp01(
+            float reefScore = math.saturate(
                 (fertileScore * 0.46f)
                 + (reefNoise * 0.28f)
                 + (shallow01 * 0.14f)
                 + (navigationZoneBias * 0.12f));
-            float sedimentContinuity = Mathf.Clamp01(
+            float sedimentContinuity = math.saturate(
                 (resourceZoneBias * 0.28f)
                 + (basinMacroNoise * 0.24f)
                 + ((1f - ruggedScore) * 0.12f)
@@ -3916,7 +3930,7 @@ namespace Hecton8.World
                 + (depth01 * 0.06f)
                 - (serviceZoneBias * 0.08f)
                 - (hazardZoneBias * 0.1f));
-            float reefContinuity = Mathf.Clamp01(
+            float reefContinuity = math.saturate(
                 (reefScore * 0.42f)
                 + (reefMacroNoise * 0.24f)
                 + (fertileScore * 0.14f)
@@ -3924,12 +3938,12 @@ namespace Hecton8.World
                 - (resourceZoneBias * 0.16f)
                 - (serviceZoneBias * 0.08f)
                 - (hazardZoneBias * 0.1f));
-            float serviceContinuity = Mathf.Clamp01(
+            float serviceContinuity = math.saturate(
                 (serviceScore * 0.46f)
                 + (serviceMacroNoise * 0.22f)
                 + (metallicScore * 0.12f)
                 + (thermalScore * 0.08f));
-            float hazardContinuity = Mathf.Clamp01(
+            float hazardContinuity = math.saturate(
                 (hazardScore * 0.48f)
                 + (riftMacroNoise * 0.24f)
                 + (voidScore * 0.12f));
@@ -4005,17 +4019,17 @@ namespace Hecton8.World
 
         private WorldZoneAnchor.ZoneKind ResolveFallbackZoneKind(Vector3 position, float depthMeters, float slopeDegrees, in CellSamplingContext cellContext)
         {
-            float shallow01 = 1f - Mathf.Clamp01(depthMeters / 220f);
-            float deep01 = Mathf.Clamp01((depthMeters - 180f) / 900f);
-            float steep01 = Mathf.Clamp01((slopeDegrees - 10f) / 38f);
+            float shallow01 = 1f - math.saturate(depthMeters / 220f);
+            float deep01 = math.saturate((depthMeters - 180f) / 900f);
+            float steep01 = math.saturate((slopeDegrees - 10f) / 38f);
             float fertileNoise = cellContext.FertileBiomeNoise;
             float thermalNoise = cellContext.ThermalBiomeNoise;
             float metallicNoise = cellContext.MetallicBiomeNoise;
             float voidNoise = cellContext.VoidBiomeNoise;
 
-            float resourceScore = Mathf.Clamp01((shallow01 * 0.4f) + (fertileNoise * 0.6f));
-            float serviceScore = Mathf.Clamp01((metallicNoise * 0.55f) + (thermalNoise * 0.45f));
-            float hazardScore = Mathf.Clamp01((deep01 * 0.4f) + (steep01 * 0.25f) + (voidNoise * 0.35f));
+            float resourceScore = math.saturate((shallow01 * 0.4f) + (fertileNoise * 0.6f));
+            float serviceScore = math.saturate((metallicNoise * 0.55f) + (thermalNoise * 0.45f));
+            float hazardScore = math.saturate((deep01 * 0.4f) + (steep01 * 0.25f) + (voidNoise * 0.35f));
 
             if (serviceScore > 0.74f)
                 return thermalNoise > 0.58f ? WorldZoneAnchor.ZoneKind.Power : WorldZoneAnchor.ZoneKind.Service;
@@ -4043,9 +4057,9 @@ namespace Hecton8.World
             WorldZoneAnchor.ZoneKind resolvedZoneKind,
             in CellSamplingContext cellContext)
         {
-            float shallow01 = 1f - Mathf.Clamp01(depthMeters / 220f);
-            float deep01 = Mathf.Clamp01((depthMeters - 180f) / 900f);
-            float steep01 = Mathf.Clamp01((slopeDegrees - 10f) / 36f);
+            float shallow01 = 1f - math.saturate(depthMeters / 220f);
+            float deep01 = math.saturate((depthMeters - 180f) / 900f);
+            float steep01 = math.saturate((slopeDegrees - 10f) / 36f);
             float fertileBias = EvaluateFertileBiomeBias(zoneDataIndex, zone, resolvedZoneKind, biomeFamilyDataIndex, biomeFamily);
             float hazardBias = EvaluateHazardBias(zoneDataIndex, zone, resolvedZoneKind);
             float serviceBias = EvaluateServiceBias(zoneDataIndex, zone, resolvedZoneKind);
@@ -4213,8 +4227,8 @@ namespace Hecton8.World
                 if (!TryGetBiomeMatrixData(zoneData.DominantMatrixDataIndex, out BiomeMatrixData biomeData))
                     return math.lerp(0.25f, 1f, math.saturate(familyBias));
 
-                float rugged = Mathf.Clamp01((biomeData.LandmarkStrength + biomeData.RoutePressure) / 10f);
-                return Mathf.Clamp01((rugged * 0.65f) + (familyBias * 0.35f));
+                float rugged = math.saturate((biomeData.LandmarkStrength + biomeData.RoutePressure) / 10f);
+                return math.saturate((rugged * 0.65f) + (familyBias * 0.35f));
             }
 
             if (zone == null)
@@ -4225,15 +4239,15 @@ namespace Hecton8.World
             if (biome == null)
                 return math.lerp(0.25f, 1f, math.saturate(fallbackFamilyBias));
 
-            float fallbackRugged = Mathf.Clamp01((biome.landmarkStrength + biome.routePressure) / 10f);
-            return Mathf.Clamp01((fallbackRugged * 0.65f) + (fallbackFamilyBias * 0.35f));
+            float fallbackRugged = math.saturate((biome.landmarkStrength + biome.routePressure) / 10f);
+            return math.saturate((fallbackRugged * 0.65f) + (fallbackFamilyBias * 0.35f));
         }
 
         private float EvaluateFertileBiomeBias(int zoneDataIndex, WorldZoneAnchor zone, WorldZoneAnchor.ZoneKind? zoneKindHint, int familyDataIndex, HectonBiomeFamilyProfile family)
         {
             float familyBias = ContainsFamilyFlags(familyDataIndex, family, BiomeFamilyFlags.Littoral | BiomeFamilyFlags.Reef | BiomeFamilyFlags.Fossil | BiomeFamilyFlags.Crystal | BiomeFamilyFlags.Coral | BiomeFamilyFlags.Kelp | BiomeFamilyFlags.Growth);
             float zoneBias = EvaluateZoneBias(zoneDataIndex, zone, zoneKindHint, WorldZoneAnchor.ZoneKind.Fabrication, WorldZoneAnchor.ZoneKind.Navigation);
-            return Mathf.Clamp01((familyBias * 0.72f) + (zoneBias * 0.28f));
+            return math.saturate((familyBias * 0.72f) + (zoneBias * 0.28f));
         }
 
         private float EvaluateHazardBias(int zoneDataIndex, WorldZoneAnchor zone, WorldZoneAnchor.ZoneKind? zoneKindHint)
@@ -4248,12 +4262,12 @@ namespace Hecton8.World
                 if (fallbackBiome == null)
                     return zoneBias;
 
-                float fallbackBiomeBias = Mathf.Clamp01(Mathf.Max(fallbackBiome.survivalPressure, fallbackBiome.routePressure) / 5f);
-                return Mathf.Clamp01((zoneBias * 0.55f) + (fallbackBiomeBias * 0.45f));
+                float fallbackBiomeBias = math.saturate(math.max(fallbackBiome.survivalPressure, fallbackBiome.routePressure) / 5f);
+                return math.saturate((zoneBias * 0.55f) + (fallbackBiomeBias * 0.45f));
             }
 
-            float biomeBias = Mathf.Clamp01(Mathf.Max(biomeData.SurvivalPressure, biomeData.RoutePressure) / 5f);
-            return Mathf.Clamp01((zoneBias * 0.55f) + (biomeBias * 0.45f));
+            float biomeBias = math.saturate(math.max(biomeData.SurvivalPressure, biomeData.RoutePressure) / 5f);
+            return math.saturate((zoneBias * 0.55f) + (biomeBias * 0.45f));
         }
 
         private float EvaluateServiceBias(int zoneDataIndex, WorldZoneAnchor zone, WorldZoneAnchor.ZoneKind? zoneKindHint)
@@ -4280,12 +4294,12 @@ namespace Hecton8.World
                 if (fallbackBiome == null)
                     return zoneBias;
 
-                float fallbackBiomeBias = Mathf.Clamp01(Mathf.Max(fallbackBiome.commonResourceBias, fallbackBiome.uncommonResourceBias) / 5f);
-                return Mathf.Clamp01((zoneBias * 0.6f) + (fallbackBiomeBias * 0.4f));
+                float fallbackBiomeBias = math.saturate(math.max(fallbackBiome.commonResourceBias, fallbackBiome.uncommonResourceBias) / 5f);
+                return math.saturate((zoneBias * 0.6f) + (fallbackBiomeBias * 0.4f));
             }
 
-            float biomeBias = Mathf.Clamp01(Mathf.Max(biomeData.CommonResourceBias, biomeData.UncommonResourceBias) / 5f);
-            return Mathf.Clamp01((zoneBias * 0.6f) + (biomeBias * 0.4f));
+            float biomeBias = math.saturate(math.max(biomeData.CommonResourceBias, biomeData.UncommonResourceBias) / 5f);
+            return math.saturate((zoneBias * 0.6f) + (biomeBias * 0.4f));
         }
 
         private float EvaluateShelterBias(int zoneDataIndex, WorldZoneAnchor zone, WorldZoneAnchor.ZoneKind? zoneKindHint)
@@ -4312,12 +4326,12 @@ namespace Hecton8.World
                 if (fallbackBiome == null)
                     return zoneBias;
 
-                float fallbackBiomeBias = Mathf.Clamp01(Mathf.Max(fallbackBiome.landmarkStrength, fallbackBiome.rewardPull) / 5f);
-                return Mathf.Clamp01((zoneBias * 0.45f) + (fallbackBiomeBias * 0.55f));
+                float fallbackBiomeBias = math.saturate(math.max(fallbackBiome.landmarkStrength, fallbackBiome.rewardPull) / 5f);
+                return math.saturate((zoneBias * 0.45f) + (fallbackBiomeBias * 0.55f));
             }
 
-            float biomeBias = Mathf.Clamp01(Mathf.Max(biomeData.LandmarkStrength, biomeData.RewardPull) / 5f);
-            return Mathf.Clamp01((zoneBias * 0.45f) + (biomeBias * 0.55f));
+            float biomeBias = math.saturate(math.max(biomeData.LandmarkStrength, biomeData.RewardPull) / 5f);
+            return math.saturate((zoneBias * 0.45f) + (biomeBias * 0.55f));
         }
 
         private WorldProceduralPattern ResolvePreviewPatternOverride(
@@ -4457,7 +4471,7 @@ namespace Hecton8.World
             out bool overrideApplied)
         {
             overrideApplied = false;
-            float layerDepthMeters = Mathf.Max(depthMeters, Mathf.Max(0f, -sampleY));
+            float layerDepthMeters = math.max(depthMeters, math.max(0f, -sampleY));
             VolumetricBiomeRole requiredRole = (VolumetricBiomeRole)ResolveRequiredVolumetricRole(layerDepthMeters);
             if (requiredRole == VolumetricBiomeRole.None &&
                 currentProfile != null &&
@@ -4558,8 +4572,8 @@ namespace Hecton8.World
 
         private static bool IsManagedDepthWithinBand(float depthMeters, float minDepthMeters, float maxDepthMeters)
         {
-            float minDepth = Mathf.Min(minDepthMeters, maxDepthMeters);
-            float maxDepth = Mathf.Max(minDepthMeters, maxDepthMeters);
+            float minDepth = math.min(minDepthMeters, maxDepthMeters);
+            float maxDepth = math.max(minDepthMeters, maxDepthMeters);
             if (maxDepth <= 0f && minDepth <= 0f)
                 return true;
 
@@ -4680,12 +4694,12 @@ namespace Hecton8.World
             float landmark = NormalizeMatrixBias(landmarkStrength);
             float reward = NormalizeMatrixBias(rewardPull);
             float survival = NormalizeMatrixBias(survivalPressure);
-            float resource = Mathf.Clamp01((common * 0.45f) + (uncommon * 0.35f) + (rare * 0.2f));
-            float salvageRead = Mathf.Clamp01((salvage * 0.62f) + (node * 0.38f));
-            float landmarkRead = Mathf.Clamp01((landmark * 0.64f) + (route * 0.36f));
-            float hazardRead = Mathf.Clamp01((survival * 0.58f) + (route * 0.26f) + (rare * 0.16f));
-            float shelterRead = Mathf.Clamp01((survival * 0.68f) + (loosePickup * 0.16f) + ((1f - hazardRead) * 0.16f));
-            float faunaRead = Mathf.Clamp01((common * 0.34f) + (reward * 0.18f) + ((1f - survival) * 0.48f));
+            float resource = math.saturate((common * 0.45f) + (uncommon * 0.35f) + (rare * 0.2f));
+            float salvageRead = math.saturate((salvage * 0.62f) + (node * 0.38f));
+            float landmarkRead = math.saturate((landmark * 0.64f) + (route * 0.36f));
+            float hazardRead = math.saturate((survival * 0.58f) + (route * 0.26f) + (rare * 0.16f));
+            float shelterRead = math.saturate((survival * 0.68f) + (loosePickup * 0.16f) + ((1f - hazardRead) * 0.16f));
+            float faunaRead = math.saturate((common * 0.34f) + (reward * 0.18f) + ((1f - survival) * 0.48f));
 
             return channel switch
             {
@@ -4709,7 +4723,7 @@ namespace Hecton8.World
 
         private static float NormalizeMatrixBias(int value)
         {
-            return Mathf.Clamp01(value / 5f);
+            return math.saturate(value / 5f);
         }
 
         private void RegisterMatrixForBake(HectonBiomeMatrixProfile profile)
@@ -4737,9 +4751,15 @@ namespace Hecton8.World
         {
             if (requiredCapacity <= 0)
             {
+                if (array.IsCreated && array.Length >= EmptyNativeArrayCapacity)
+                    return;
+
+                if (array.IsCreated)
+                    DisposeTrackedNativeArray(ref array);
+
                 if (!array.IsCreated)
                 {
-                    array = new NativeArray<T>(0, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                    array = new NativeArray<T>(EmptyNativeArrayCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                     RegisterTrackedNativeArray(array, label);
                 }
 
@@ -4752,8 +4772,17 @@ namespace Hecton8.World
             if (array.IsCreated)
                 DisposeTrackedNativeArray(ref array);
 
-            array = new NativeArray<T>(Mathf.NextPowerOfTwo(requiredCapacity), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            array = new NativeArray<T>(ResolvePowerOfTwoCapacity(requiredCapacity), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             RegisterTrackedNativeArray(array, label);
+        }
+
+        private static int ResolvePowerOfTwoCapacity(int requiredCapacity)
+        {
+            int capacity = 1;
+            while (capacity < requiredCapacity && capacity < 1073741824)
+                capacity <<= 1;
+
+            return capacity < requiredCapacity ? requiredCapacity : capacity;
         }
 
         private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
@@ -4938,8 +4967,8 @@ namespace Hecton8.World
         private static Vector2Int GetHeightCacheKey(float x, float z)
         {
             return new Vector2Int(
-                Mathf.RoundToInt(x * 100f),
-                Mathf.RoundToInt(z * 100f));
+                (int)math.round(x * 100f),
+                (int)math.round(z * 100f));
         }
 
         private void TrimSeafloorHeightCacheIfNeeded()
@@ -4964,7 +4993,7 @@ namespace Hecton8.World
             if (!force && now < _nextAutoResolveAttemptTime)
                 return;
 
-            _nextAutoResolveAttemptTime = now + Mathf.Max(0f, autoResolveRetryInterval);
+            _nextAutoResolveAttemptTime = now + math.max(0f, autoResolveRetryInterval);
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);

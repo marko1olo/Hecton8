@@ -1,4 +1,5 @@
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -7,6 +8,7 @@ namespace Hecton8.Caves
     internal static class CaveSedimentShelfRuntimeBuilder
     {
         private const string ShelfRootName = "_SedimentShelves";
+        private static readonly string[] _ShelfNames = CreateNameCache("Shelf_", 20); // COLD ALLOC: bounded shelf child names.
         private static readonly int _BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _ColorId = Shader.PropertyToID("_Color");
         private static MaterialPropertyBlock _ShelfPropertyBlock;
@@ -49,10 +51,10 @@ namespace Hecton8.Caves
             {
                 float angle = Hash01(runtimeSeed, i, 11) * 360f;
                 float angleRadians = angle * Mathf.Deg2Rad;
-                float radial = Mathf.Lerp(0.18f, 0.92f, Hash01(runtimeSeed, i, 17));
-                float width = Mathf.Lerp(minScale, maxScale, Hash01(runtimeSeed, i, 23));
-                float depth = Mathf.Lerp(minScale * 0.42f, maxScale * 0.78f, Hash01(runtimeSeed, i, 31));
-                float thickness = Mathf.Lerp(0.18f, 0.52f, Hash01(runtimeSeed, i, 43));
+                float radial = math.lerp(0.18f, 0.92f, Hash01(runtimeSeed, i, 17));
+                float width = math.lerp(minScale, maxScale, Hash01(runtimeSeed, i, 23));
+                float depth = math.lerp(minScale * 0.42f, maxScale * 0.78f, Hash01(runtimeSeed, i, 31));
+                float thickness = math.lerp(0.18f, 0.52f, Hash01(runtimeSeed, i, 43));
                 float yaw = angle + HashSigned(runtimeSeed, i, 59) * 36f;
                 float roll = HashSigned(runtimeSeed, i, 71) * 10f;
                 float pitch = HashSigned(runtimeSeed, i, 83) * 6f;
@@ -83,7 +85,7 @@ namespace Hecton8.Caves
             Vector3 localScale,
             Material material)
         {
-            string name = $"Shelf_{shelfIndex}";
+            string name = GetCachedName(shelfIndex);
             if (shelfIndex < root.childCount)
             {
                 Transform existing = root.GetChild(shelfIndex);
@@ -153,7 +155,7 @@ namespace Hecton8.Caves
             float intensity = Mathf.Clamp(globalIntensity, 0.1f, 1.25f);
             float density = Mathf.Max(complexity, footprintFactor);
             return Mathf.Clamp(
-                Mathf.RoundToInt(maxCount * Mathf.Lerp(0.35f, 1f, density) * intensity),
+                Mathf.RoundToInt(maxCount * math.lerp(0.35f, 1f, density) * intensity),
                 1,
                 maxCount);
         }
@@ -198,6 +200,23 @@ namespace Hecton8.Caves
         {
             if (target != null && !target.gameObject.activeSelf)
                 target.gameObject.SetActive(true);
+        }
+
+        private static string GetCachedName(int index)
+        {
+            if ((uint)index < (uint)_ShelfNames.Length)
+                return _ShelfNames[index];
+
+            return ShelfRootName;
+        }
+
+        private static string[] CreateNameCache(string prefix, int count)
+        {
+            string[] names = new string[count];
+            for (int i = 0; i < count; i++)
+                names[i] = prefix + i;
+
+            return names;
         }
 
         private static long ComputeFallbackSeed(Vector3 position, CavePreset preset)

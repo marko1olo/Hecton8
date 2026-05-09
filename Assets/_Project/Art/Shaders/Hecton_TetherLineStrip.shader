@@ -29,6 +29,10 @@ Shader "Hecton8/Physics/TetherLineStrip"
             #pragma target 4.5
             #pragma vertex vert
             #pragma fragment frag
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHT_SHADOWS
+            #pragma skip_variants POINT POINT_COOKIE _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH LIGHTMAP_SHADOW_MIXING SHADOWS_SHADOWMASK
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -41,11 +45,13 @@ Shader "Hecton8/Physics/TetherLineStrip"
 
             struct Attributes
             {
+                UNITY_VERTEX_INPUT_INSTANCE_ID
                 uint vertexID : SV_VertexID;
             };
 
             struct Varyings
             {
+                UNITY_VERTEX_OUTPUT_STEREO
                 float4 positionCS : SV_POSITION;
                 half4 color : COLOR0;
             };
@@ -53,6 +59,8 @@ Shader "Hecton8/Physics/TetherLineStrip"
             Varyings vert(Attributes input)
             {
                 Varyings output;
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
                 int clampedIndex = clamp((int)input.vertexID, 0, max(_TetherPointCount - 1, 0));
                 float3 positionWS = _TetherPositions[clampedIndex];
                 output.positionCS = TransformWorldToHClip(positionWS);
@@ -62,9 +70,12 @@ Shader "Hecton8/Physics/TetherLineStrip"
 
             half4 frag(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 return input.color;
             }
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

@@ -1,8 +1,10 @@
 namespace Hecton8.Gameplay
 {
+    using System;
     using Hecton8.Construction;
     using Hecton8.Core;
     using Hecton8.Tools;
+    using Unity.Mathematics;
     using UnityEngine;
 
     /// <summary>
@@ -41,6 +43,7 @@ namespace Hecton8.Gameplay
         private BaseModule _selectedSource;
         private int _selectedSourceModuleHashId;
         private float _lastLinkPulse;
+        private FixedCharBuffer _hudBuffer = new FixedCharBuffer(128); // COLD ALLOC: char[128] — logic spanner HUD staging buffer — owner: LogicSpannerTool
 
         private enum SpannerState : byte
         {
@@ -76,11 +79,11 @@ namespace Hecton8.Gameplay
 
         protected override void ConfigureModularRuntimeProfile(ref ToolRuntimeProfile profile)
         {
-            profile.MaxRange = Mathf.Max(0.1f, wiringRange);
+            profile.MaxRange = math.max(0.1f, wiringRange);
             profile.PowerScalar = 1f;
-            profile.HeatGenerationRate = Mathf.Max(0f, authoredHeatGenerationRate);
-            profile.CooldownRate = Mathf.Max(0f, authoredCooldownRate);
-            profile.RecoilImpulse = Mathf.Max(0f, authoredRecoilImpulse);
+            profile.HeatGenerationRate = math.max(0f, authoredHeatGenerationRate);
+            profile.CooldownRate = math.max(0f, authoredCooldownRate);
+            profile.RecoilImpulse = math.max(0f, authoredRecoilImpulse);
         }
 
         public override void UsePrimary(float deltaTime)
@@ -90,7 +93,7 @@ namespace Hecton8.Gameplay
 
             if (!TryResolveTargetModule(out BaseModule targetModule))
             {
-                ToolHitUtility.ShowWarning(InvalidTargetMessage);
+                PublishWarning(InvalidTargetMessage);
                 _state = _selectedSource != null ? SpannerState.SourceArmed : SpannerState.Idle;
                 return;
             }
@@ -98,7 +101,7 @@ namespace Hecton8.Gameplay
             int targetModuleHashId = ResolveModuleHashId(targetModule);
             if (targetModuleHashId == 0)
             {
-                ToolHitUtility.ShowWarning(InvalidTargetMessage);
+                PublishWarning(InvalidTargetMessage);
                 _state = _selectedSource != null ? SpannerState.SourceArmed : SpannerState.Idle;
                 return;
             }
@@ -108,27 +111,27 @@ namespace Hecton8.Gameplay
                 _selectedSource = targetModule;
                 _selectedSourceModuleHashId = targetModuleHashId;
                 _state = SpannerState.SourceArmed;
-                ToolHitUtility.ShowInfo(SourceArmedMessage);
+                PublishInfo(SourceArmedMessage);
                 return;
             }
 
             if (ReferenceEquals(_selectedSource, targetModule))
             {
-                ToolHitUtility.ShowWarning(InvalidTargetMessage);
+                PublishWarning(InvalidTargetMessage);
                 return;
             }
 
             ConstructionManager constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             if (constructionManager == null)
             {
-                ToolHitUtility.ShowWarning(InvalidTargetMessage);
+                PublishWarning(InvalidTargetMessage);
                 ClearSelectionInternal();
                 return;
             }
 
             if (_selectedSourceModuleHashId == 0)
             {
-                ToolHitUtility.ShowWarning(InvalidTargetMessage);
+                PublishWarning(InvalidTargetMessage);
                 ClearSelectionInternal();
                 return;
             }
@@ -139,7 +142,7 @@ namespace Hecton8.Gameplay
                     _selectedSourceModuleHashId,
                     targetModuleHashId))
             {
-                ToolHitUtility.ShowWarning(DuplicateLinkMessage);
+                PublishWarning(DuplicateLinkMessage);
                 return;
             }
 
@@ -147,8 +150,35 @@ namespace Hecton8.Gameplay
             _lastLinkPulse = Time.time;
             _selectedSource = null;
             _selectedSourceModuleHashId = 0;
-            QueueToolHapticFeedback(Mathf.Max(0.1f, GetRuntimePowerScalar(1f)), 1f);
-            ToolHitUtility.ShowInfo(LinkCreatedMessage);
+            QueueToolHapticFeedback(math.max(0.1f, GetRuntimePowerScalar(1f)), 1f);
+            PublishInfo(LinkCreatedMessage);
+        }
+
+        public override void WriteOperationalSummary(ref FixedCharBuffer buffer)
+        {
+            AppendText(ref buffer, "LOGIC SPANNER // ");
+            if (IsBroken)
+            {
+                AppendText(ref buffer, "BROKEN");
+                return;
+            }
+
+            switch (_state)
+            {
+                case SpannerState.SourceArmed:
+                    AppendText(ref buffer, "SOURCE ARMED");
+                    break;
+                case SpannerState.LinkCommitted:
+                    AppendText(ref buffer, Time.time - _lastLinkPulse <= 0.75f ? "BYPASS LINKED" : "STANDBY");
+                    break;
+                default:
+                    AppendText(ref buffer, _selectedSource != null ? "SOURCE ARMED" : "STANDBY");
+                    break;
+            }
+
+            AppendText(ref buffer, " // RNG ");
+            buffer.AppendFloat(GetRuntimeMaxRange(wiringRange), 1);
+            AppendText(ref buffer, "M");
         }
 
         public override void UseSecondary(float deltaTime)
@@ -157,7 +187,7 @@ namespace Hecton8.Gameplay
                 return;
 
             ClearSelectionInternal();
-            ToolHitUtility.ShowInfo(SelectionClearedMessage);
+            PublishInfo(SelectionClearedMessage);
         }
 
         public override string GetOperationalDirective()
@@ -175,6 +205,30 @@ namespace Hecton8.Gameplay
 
                 default:
                     return _selectedSource != null ? ArmedDirective : IdleDirective;
+            }
+        }
+
+        public override void WriteOperationalDirective(ref FixedCharBuffer buffer)
+        {
+            if (IsBroken)
+            {
+                base.WriteOperationalDirective(ref buffer);
+                return;
+            }
+
+            switch (_state)
+            {
+                case SpannerState.SourceArmed:
+                    AppendText(ref buffer, ArmedDirective);
+                    return;
+
+                case SpannerState.LinkCommitted:
+                    AppendText(ref buffer, Time.time - _lastLinkPulse <= 0.75f ? LinkedDirective : IdleDirective);
+                    return;
+
+                default:
+                    AppendText(ref buffer, _selectedSource != null ? ArmedDirective : IdleDirective);
+                    return;
             }
         }
 
@@ -230,6 +284,25 @@ namespace Hecton8.Gameplay
             _selectedSource = null;
             _selectedSourceModuleHashId = 0;
             _state = SpannerState.Idle;
+        }
+
+        private void PublishInfo(string message)
+        {
+            _hudBuffer.Clear();
+            if (AppendText(ref _hudBuffer, message))
+                ToolHitUtility.ShowInfo(in _hudBuffer);
+        }
+
+        private void PublishWarning(string message)
+        {
+            _hudBuffer.Clear();
+            if (AppendText(ref _hudBuffer, message))
+                ToolHitUtility.ShowWarning(in _hudBuffer);
+        }
+
+        private static bool AppendText(ref FixedCharBuffer buffer, string value)
+        {
+            return string.IsNullOrEmpty(value) || buffer.Append(value.AsSpan());
         }
     }
 }

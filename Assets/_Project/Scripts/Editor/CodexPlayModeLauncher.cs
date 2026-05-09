@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using Hecton8.Bootstrap;
 using UnityEditor;
 using UnityEditor.Compilation;
@@ -50,6 +51,7 @@ namespace Hecton8.Editor
         private const string SteadyStateEndAllocatedMemoryKey = "H8.CodexPlayModeLauncher.SteadyStateEndAllocatedMemory";
         private const string SteadyStateStartGc0Key = "H8.CodexPlayModeLauncher.SteadyStateStartGc0";
         private const string SteadyStateEndGc0Key = "H8.CodexPlayModeLauncher.SteadyStateEndGc0";
+        private const string SteadyStateCriticalGcSpikeKey = "H8.CodexPlayModeLauncher.SteadyStateCriticalGcSpike";
         private const string SteadyStateStartFrameKey = "H8.CodexPlayModeLauncher.SteadyStateStartFrame";
         private const string SteadyStateEndFrameKey = "H8.CodexPlayModeLauncher.SteadyStateEndFrame";
         private const string StartGc0Key = "H8.CodexPlayModeLauncher.StartGc0";
@@ -80,8 +82,6 @@ namespace Hecton8.Editor
         private const int MaxOnePercentWorstSamples = MaxFrameDeltaSamples / 100;
         private static readonly Encoding JsonEncoding = new UTF8Encoding(false);
         private static readonly byte[] AutoRunFlagPayload = { (byte)'1' };
-        // COLD ALLOC: float[4096] - editor-only play mode frame delta samples - owner: CodexPlayModeLauncher
-        private static readonly float[] _frameDeltaSamples = new float[MaxFrameDeltaSamples];
         // COLD ALLOC: float[40] - editor-only streaming top-K frame hitch cache; replaces full-buffer sort - owner: CodexPlayModeLauncher
         private static readonly float[] _worstFrameDeltaSamples = new float[MaxOnePercentWorstSamples];
         private static int _frameDeltaSampleCount;
@@ -89,6 +89,7 @@ namespace Hecton8.Editor
         private static int _lastSampledFrame = -1;
         private static double _frameDeltaTotalSeconds;
         private static bool _runInvokedFromAutoRunFlag;
+        private static bool _metricsWriteInFlight;
 
         static CodexPlayModeLauncher()
         {
@@ -103,7 +104,7 @@ namespace Hecton8.Editor
         }
 
         [MenuItem("Hecton8/Codex/Run Play Mode Sentinel")]
-        public static void Run()
+        public static async void Run()
         {
             bool resumedFromAutoRunFlag = _runInvokedFromAutoRunFlag;
             _runInvokedFromAutoRunFlag = false;
@@ -112,7 +113,7 @@ namespace Hecton8.Editor
             SessionState.SetString(MetricsPathKey, ResolveMetricsPath());
             SessionState.SetInt(BeeKilledKey, KillBeeBackends());
             if (!resumedFromAutoRunFlag)
-                TryWriteAutoRunFlag();
+                await TryWriteAutoRunFlagAsync();
             SetPhase(Phase.Compile);
             AttachCallbacks();
 
@@ -233,8 +234,9 @@ namespace Hecton8.Editor
                 return;
 
             CaptureEndMetrics();
-            SessionState.SetString(StatusKey, "completed");
-            SessionState.SetInt(ExitCodeKey, 0);
+            bool criticalGcSpike = SessionState.GetBool(SteadyStateCriticalGcSpikeKey, false);
+            SessionState.SetString(StatusKey, criticalGcSpike ? "critical_gc_spike" : "completed");
+            SessionState.SetInt(ExitCodeKey, criticalGcSpike ? 4 : 0);
             SetPhase(Phase.ExitPlay);
             EditorApplication.isPlaying = false;
         }
@@ -244,8 +246,7 @@ namespace Hecton8.Editor
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 return;
 
-            WriteMetrics();
-            CleanupAndExitIfBatch();
+            RequestMetricsWriteAndCleanup();
         }
 
         private static void CaptureEndMetrics()
@@ -295,6 +296,8 @@ namespace Hecton8.Editor
             SessionState.SetString(SteadyStateEndAllocatedMemoryKey, allocatedMemory.ToString(CultureInfo.InvariantCulture));
             SessionState.SetInt(SteadyStateEndGc0Key, gc0);
             SessionState.SetInt(SteadyStateEndFrameKey, frame);
+            int steadyStateStartGc0 = SessionState.GetInt(SteadyStateStartGc0Key, gc0);
+            SessionState.SetBool(SteadyStateCriticalGcSpikeKey, gc0 - steadyStateStartGc0 > 0);
         }
 
         private static void UpdatePeakAllocatedMemory()
@@ -327,12 +330,12 @@ namespace Hecton8.Editor
             if (delta <= 0f || float.IsNaN(delta) || float.IsInfinity(delta))
                 return;
 
+            if (_frameDeltaSampleCount >= MaxFrameDeltaSamples)
+                return;
+
             _frameDeltaTotalSeconds += delta;
-            if (_frameDeltaSampleCount < _frameDeltaSamples.Length)
-            {
-                _frameDeltaSamples[_frameDeltaSampleCount++] = delta;
-                RecordWorstFrameDeltaSample(delta);
-            }
+            _frameDeltaSampleCount++;
+            RecordWorstFrameDeltaSample(delta);
         }
 
         private static void RecordWorstFrameDeltaSample(float delta)
@@ -340,30 +343,39 @@ namespace Hecton8.Editor
             int count = _worstFrameDeltaSampleCount;
             if (count < _worstFrameDeltaSamples.Length)
             {
-                _worstFrameDeltaSamples[count] = delta;
+                InsertWorstFrameDeltaGrowing(count, delta);
                 _worstFrameDeltaSampleCount = count + 1;
-                BubbleWorstFrameDeltaUp(count);
                 return;
             }
 
             if (count <= 0 || delta <= _worstFrameDeltaSamples[0])
                 return;
 
-            _worstFrameDeltaSamples[0] = delta;
-            BubbleWorstFrameDeltaUp(0);
+            InsertWorstFrameDeltaFull(count, delta);
         }
 
-        private static void BubbleWorstFrameDeltaUp(int index)
+        private static void InsertWorstFrameDeltaGrowing(int count, float delta)
         {
-            float value = _worstFrameDeltaSamples[index];
-            int next = index + 1;
-            while (next < _worstFrameDeltaSampleCount && value > _worstFrameDeltaSamples[next])
+            int cursor = count;
+            while (cursor > 0 && delta < _worstFrameDeltaSamples[cursor - 1])
             {
-                _worstFrameDeltaSamples[next - 1] = _worstFrameDeltaSamples[next];
-                next++;
+                _worstFrameDeltaSamples[cursor] = _worstFrameDeltaSamples[cursor - 1];
+                cursor--;
             }
 
-            _worstFrameDeltaSamples[next - 1] = value;
+            _worstFrameDeltaSamples[cursor] = delta;
+        }
+
+        private static void InsertWorstFrameDeltaFull(int count, float delta)
+        {
+            int cursor = 0;
+            while (cursor + 1 < count && delta > _worstFrameDeltaSamples[cursor + 1])
+            {
+                _worstFrameDeltaSamples[cursor] = _worstFrameDeltaSamples[cursor + 1];
+                cursor++;
+            }
+
+            _worstFrameDeltaSamples[cursor] = delta;
         }
 
         private static void StoreFrameMetrics()
@@ -478,8 +490,7 @@ namespace Hecton8.Editor
 
             SessionState.SetString(StatusKey, status);
             SessionState.SetInt(ExitCodeKey, exitCode);
-            WriteMetrics();
-            CleanupAndExitIfBatch();
+            RequestMetricsWriteAndCleanup();
         }
 
         private static void CleanupAndExitIfBatch()
@@ -668,7 +679,7 @@ namespace Hecton8.Editor
             }
         }
 
-        private static void TryWriteAutoRunFlag()
+        private static async Task TryWriteAutoRunFlagAsync()
         {
             try
             {
@@ -683,10 +694,10 @@ namespace Hecton8.Editor
                            FileAccess.Write,
                            FileShare.Read,
                            AutoRunFlagPayload.Length,
-                           FileOptions.WriteThrough))
+                           FileOptions.Asynchronous | FileOptions.WriteThrough))
                 {
-                    stream.Write(AutoRunFlagPayload, 0, AutoRunFlagPayload.Length);
-                    stream.Flush();
+                    await stream.WriteAsync(AutoRunFlagPayload, 0, AutoRunFlagPayload.Length);
+                    await stream.FlushAsync();
                 }
             }
             catch (Exception exception)
@@ -720,7 +731,35 @@ namespace Hecton8.Editor
             return Path.Combine(rootPath, "CodexArtifacts", AutoRunFlagFileName);
         }
 
-        private static void WriteMetrics()
+        private static void RequestMetricsWriteAndCleanup()
+        {
+            if (_metricsWriteInFlight)
+                return;
+
+            _metricsWriteInFlight = true;
+            _ = WriteMetricsAndCleanupAsync();
+        }
+
+        private static async Task WriteMetricsAndCleanupAsync()
+        {
+            try
+            {
+                await WriteMetricsAsync();
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[CodexPlayModeLauncher] Metrics pipeline failed before cleanup: " + exception.Message);
+#endif
+            }
+            finally
+            {
+                _metricsWriteInFlight = false;
+                CleanupAndExitIfBatch();
+            }
+        }
+
+        private static async Task WriteMetricsAsync()
         {
             string metricsPath = SessionState.GetString(MetricsPathKey, ResolveMetricsPath());
             string status = SessionState.GetString(StatusKey, "unknown");
@@ -736,6 +775,7 @@ namespace Hecton8.Editor
             int steadyStateEndGc0 = SessionState.GetInt(SteadyStateEndGc0Key, steadyStateStartGc0);
             int steadyStateStartFrame = SessionState.GetInt(SteadyStateStartFrameKey, 0);
             int steadyStateEndFrame = SessionState.GetInt(SteadyStateEndFrameKey, steadyStateStartFrame);
+            int steadyStateGcGen0CollectionsDelta = Math.Max(0, steadyStateEndGc0 - steadyStateStartGc0);
 
             StringBuilder builder = new StringBuilder(1792);
             builder.AppendLine("{");
@@ -774,15 +814,57 @@ namespace Hecton8.Editor
             AppendJsonProperty(builder, "steadyStateStarted", SessionState.GetBool(SteadyStateStartedKey, false), comma: true);
             AppendJsonProperty(builder, "steadyStateStartTotalAllocatedMemoryBytes", GetSessionLong(SteadyStateStartAllocatedMemoryKey, 0L), comma: true);
             AppendJsonProperty(builder, "steadyStateEndTotalAllocatedMemoryBytes", GetSessionLong(SteadyStateEndAllocatedMemoryKey, 0L), comma: true);
-            AppendJsonProperty(builder, "steadyStateGcGen0CollectionsDelta", Math.Max(0, steadyStateEndGc0 - steadyStateStartGc0), comma: true);
+            AppendJsonProperty(builder, "steadyStateGcGen0CollectionsDelta", steadyStateGcGen0CollectionsDelta, comma: true);
+            AppendJsonProperty(builder, "criticalGcSpike", SessionState.GetBool(SteadyStateCriticalGcSpikeKey, false), comma: true);
             AppendJsonProperty(builder, "steadyStateFramesObserved", Math.Max(0, steadyStateEndFrame - steadyStateStartFrame), comma: true);
             AppendJsonProperty(builder, "framesObserved", Math.Max(0, endFrame - startFrame), comma: false);
             builder.AppendLine("}");
 
-            File.WriteAllText(metricsPath, builder.ToString(), JsonEncoding);
+            try
+            {
+                await WriteTextFileAsync(metricsPath, builder.ToString(), JsonEncoding);
+            }
+            catch (Exception exception)
+            {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[CodexPlayModeLauncher] Failed to write Play Mode metrics: " + exception.Message);
+#endif
+                return;
+            }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (steadyStateGcGen0CollectionsDelta > 0)
+            {
+                Debug.LogError(
+                    "[CodexPlayModeLauncher] CRITICAL_GC_SPIKE steadyStateGcGen0CollectionsDelta=" +
+                    steadyStateGcGen0CollectionsDelta);
+            }
+
             Debug.Log("[CodexPlayModeLauncher] Wrote Play Mode metrics: " + metricsPath);
 #endif
+        }
+
+        private static async Task WriteTextFileAsync(string path, string text, Encoding encoding)
+        {
+            if (string.IsNullOrEmpty(path))
+                return;
+
+            string directory = Path.GetDirectoryName(path);
+            if (!string.IsNullOrEmpty(directory))
+                Directory.CreateDirectory(directory);
+
+            byte[] bytes = encoding.GetBytes(text ?? string.Empty);
+            using (FileStream stream = new FileStream(
+                       path,
+                       FileMode.Create,
+                       FileAccess.Write,
+                       FileShare.Read,
+                       bytes.Length > 0 ? bytes.Length : 1,
+                       FileOptions.Asynchronous | FileOptions.WriteThrough))
+            {
+                await stream.WriteAsync(bytes, 0, bytes.Length);
+                await stream.FlushAsync();
+            }
         }
 
         private static void AppendJsonProperty(StringBuilder builder, string name, string value, bool comma)
@@ -882,6 +964,7 @@ namespace Hecton8.Editor
 
         private static void ResetSessionState()
         {
+            _metricsWriteInFlight = false;
             SessionState.SetBool(ActiveKey, false);
             SessionState.SetInt(PhaseKey, (int)Phase.Idle);
             SessionState.SetString(StatusKey, "starting");
@@ -902,6 +985,7 @@ namespace Hecton8.Editor
             SessionState.SetString(SteadyStateEndAllocatedMemoryKey, "0");
             SessionState.SetInt(SteadyStateStartGc0Key, 0);
             SessionState.SetInt(SteadyStateEndGc0Key, 0);
+            SessionState.SetBool(SteadyStateCriticalGcSpikeKey, false);
             SessionState.SetInt(SteadyStateStartFrameKey, 0);
             SessionState.SetInt(SteadyStateEndFrameKey, 0);
             SessionState.SetInt(StartGc0Key, 0);

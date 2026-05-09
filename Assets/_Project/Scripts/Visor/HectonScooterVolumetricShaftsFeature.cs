@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Collections;
@@ -28,6 +29,7 @@ namespace Hecton8.Visor
         private const float ExposureStateDefaultMultiplier = 1f;
         private const float ThermalHazeMotionCullSpeedMetersPerSecondSq = 225f;
         private static readonly Color DefaultNoirLiftFloor = new Color(0.01f, 0.012f, 0.016f, 1f);
+        private static readonly Color ShaftClearColor = new Color(0.0012f, 0.0018f, 0.0024f, 0f);
 
         private static bool IsUnsupportedCameraType(CameraType cameraType)
         {
@@ -179,8 +181,8 @@ namespace Hecton8.Visor
             {
                 internal ComputeShader computeShader;
                 internal int kernelIndex;
-                internal uint threadGroupSizeX;
-                internal uint threadGroupSizeY;
+                internal int dispatchX;
+                internal int dispatchY;
                 internal TextureHandle source;
                 internal BufferHandle histogram;
                 internal Vector4 inputSize;
@@ -303,8 +305,11 @@ namespace Hecton8.Visor
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
-                int shaftWidth = Mathf.Max(1, Mathf.RoundToInt(sourceDesc.width * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
-                int shaftHeight = Mathf.Max(1, Mathf.RoundToInt(sourceDesc.height * Mathf.Clamp(_settings.renderScale, 0.25f, 1f)));
+                float resolvedRenderScale = math.clamp(_settings.renderScale, 0.25f, 1f);
+                int sourceWidth = math.max(1, sourceDesc.width);
+                int sourceHeight = math.max(1, sourceDesc.height);
+                int shaftWidth = math.max(1, (int)math.round(sourceWidth * resolvedRenderScale));
+                int shaftHeight = math.max(1, (int)math.round(sourceHeight * resolvedRenderScale));
 
                 TextureDesc shaftDesc = new TextureDesc(sourceDesc);
                 shaftDesc.name = "_HectonScooterVolumetricShafts";
@@ -314,7 +319,7 @@ namespace Hecton8.Visor
                 shaftDesc.msaaSamples = MSAASamples.None;
                 shaftDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
                 shaftDesc.clearBuffer = true;
-                shaftDesc.clearColor = new Color(0.0012f, 0.0018f, 0.0024f, 0f);
+                shaftDesc.clearColor = ShaftClearColor;
                 shaftDesc.filterMode = FilterMode.Bilinear;
                 shaftDesc.useMipMap = false;
                 shaftDesc.autoGenerateMips = false;
@@ -348,6 +353,12 @@ namespace Hecton8.Visor
                     _resolveExposureKernel >= 0 &&
                     _histogramBuffer != null &&
                     _exposureStateBuffer != null;
+                float resolvedMinEv = math.min(_settings.minEv, _settings.maxEv - 0.01f);
+                float resolvedMaxEv = math.max(_settings.maxEv, resolvedMinEv + 0.01f);
+                int exposureThreadGroupSizeX = math.max(1, (int)_buildThreadGroupSizeX);
+                int exposureThreadGroupSizeY = math.max(1, (int)_buildThreadGroupSizeY);
+                int exposureDispatchX = (sourceWidth + exposureThreadGroupSizeX - 1) / exposureThreadGroupSizeX;
+                int exposureDispatchY = (sourceHeight + exposureThreadGroupSizeY - 1) / exposureThreadGroupSizeY;
 
                 if (exposureAvailable)
                 {
@@ -372,30 +383,24 @@ namespace Hecton8.Visor
                     {
                         passData.computeShader = _autoExposureComputeShader;
                         passData.kernelIndex = _buildHistogramKernel;
-                        passData.threadGroupSizeX = _buildThreadGroupSizeX;
-                        passData.threadGroupSizeY = _buildThreadGroupSizeY;
+                        passData.dispatchX = exposureDispatchX;
+                        passData.dispatchY = exposureDispatchY;
                         passData.source = sourceTexture;
                         passData.histogram = histogramHandle;
-                        passData.inputSize = new Vector4(
-                            sourceDesc.width,
-                            sourceDesc.height,
-                            1f / Mathf.Max(1, sourceDesc.width),
-                            1f / Mathf.Max(1, sourceDesc.height));
-                        passData.minEv = Mathf.Min(_settings.minEv, _settings.maxEv - 0.01f);
-                        passData.maxEv = Mathf.Max(_settings.maxEv, passData.minEv + 0.01f);
+                        passData.inputSize = ResolveInputSize(sourceWidth, sourceHeight);
+                        passData.minEv = resolvedMinEv;
+                        passData.maxEv = resolvedMaxEv;
 
                         builder.UseTexture(sourceTexture, AccessFlags.Read);
                         builder.UseBuffer(histogramHandle, AccessFlags.Read | AccessFlags.Write);
                         builder.SetRenderFunc(static (ExposureBuildPassData data, ComputeGraphContext context) =>
                         {
-                            int dispatchX = Mathf.CeilToInt(data.inputSize.x / Mathf.Max(1u, data.threadGroupSizeX));
-                            int dispatchY = Mathf.CeilToInt(data.inputSize.y / Mathf.Max(1u, data.threadGroupSizeY));
                             context.cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.SourceColorId, data.source);
                             context.cmd.SetComputeBufferParam(data.computeShader, data.kernelIndex, ShaderConstants.HistogramBufferId, data.histogram);
                             context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.InputSizeId, data.inputSize);
                             context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.MinEvId, data.minEv);
                             context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.MaxEvId, data.maxEv);
-                            context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
+                            context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, data.dispatchX, data.dispatchY, 1);
                         });
                     }
 
@@ -405,11 +410,11 @@ namespace Hecton8.Visor
                         passData.kernelIndex = _resolveExposureKernel;
                         passData.histogram = histogramHandle;
                         passData.exposureState = exposureStateHandle;
-                        passData.minEv = Mathf.Min(_settings.minEv, _settings.maxEv - 0.01f);
-                        passData.maxEv = Mathf.Max(_settings.maxEv, passData.minEv + 0.01f);
-                        passData.adaptationRate = Mathf.Max(0.01f, _settings.exposureAdaptationRate);
+                        passData.minEv = resolvedMinEv;
+                        passData.maxEv = resolvedMaxEv;
+                        passData.adaptationRate = math.max(0.01f, _settings.exposureAdaptationRate);
                         passData.deltaTime = ExposureFixedDeltaSeconds;
-                        passData.maxDeltaPerFrame = Mathf.Clamp(_settings.evMaxDeltaPerFrame, 0.05f, 0.5f);
+                        passData.maxDeltaPerFrame = math.clamp(_settings.evMaxDeltaPerFrame, 0.05f, 0.5f);
 
                         builder.UseBuffer(histogramHandle, AccessFlags.Read);
                         builder.UseBuffer(exposureStateHandle, AccessFlags.Read | AccessFlags.Write);
@@ -427,10 +432,13 @@ namespace Hecton8.Visor
                     }
                 }
 
-                UpdateMaterialParameters(_raymarchMaterial, _settings, 0f, exposureAvailable);
-                UpdateMaterialParameters(_blurHorizontalMaterial, _settings, 1f, exposureAvailable);
-                UpdateMaterialParameters(_blurVerticalMaterial, _settings, 2f, exposureAvailable);
-                UpdateMaterialParameters(_compositeMaterial, _settings, 3f, exposureAvailable);
+                MaterialParameterState materialParameters = MaterialParameterState.Resolve(_settings, exposureAvailable);
+                Texture2D blueNoiseTexture = _settings.blueNoiseTexture;
+                ApplyContactShadowGlobals(in materialParameters);
+                UpdateMaterialParameters(_raymarchMaterial, in materialParameters, blueNoiseTexture, 0f);
+                UpdateMaterialParameters(_blurHorizontalMaterial, in materialParameters, blueNoiseTexture, 1f);
+                UpdateMaterialParameters(_blurVerticalMaterial, in materialParameters, blueNoiseTexture, 2f);
+                UpdateMaterialParameters(_compositeMaterial, in materialParameters, blueNoiseTexture, 3f);
 
                 using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Underwater Noir Half-Res Contact Depth", out var passData, _profilingSampler))
                 {
@@ -578,7 +586,12 @@ namespace Hecton8.Visor
                     // COLD ALLOC: GraphicsBuffer[1] - persistent GPU exposure state for temporal EV clamp - owner: ShaftsPass
                     _exposureStateBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<Vector4>(1);
                     NativeArray<Vector4> mapped = _exposureStateBuffer.LockBufferForWrite<Vector4>(0, 1);
-                    mapped[0] = new Vector4(0f, 0f, ExposureStateDefaultMultiplier, 0f);
+                    Vector4 exposureState;
+                    exposureState.x = 0f;
+                    exposureState.y = 0f;
+                    exposureState.z = ExposureStateDefaultMultiplier;
+                    exposureState.w = 0f;
+                    mapped[0] = exposureState;
                     _exposureStateBuffer.UnlockBufferAfterWrite<Vector4>(1);
                 }
 
@@ -640,77 +653,193 @@ namespace Hecton8.Visor
                 _exposureStateBuffer = null;
             }
 
-        private static void UpdateMaterialParameters(Material material, FeatureSettings settings, float passMode, bool exposureAvailable)
-        {
-            material.SetFloat(ShaderConstants.PassModeId, passMode);
-            material.SetFloat(ShaderConstants.FrameCountId, Time.frameCount);
-            material.SetFloat(ShaderConstants.RenderScaleId, Mathf.Clamp(settings.renderScale, 0.25f, 1f));
-            material.SetFloat(ShaderConstants.RaymarchStepsId, 0f);
-            material.SetFloat(ShaderConstants.MaxRayDistanceId, Mathf.Max(1f, settings.maxRayDistance));
-                material.SetFloat(ShaderConstants.ScatteringAnisotropyId, Mathf.Clamp(settings.scatteringAnisotropy, 0f, 0.95f));
-                material.SetFloat(ShaderConstants.DensityId, Mathf.Max(0f, settings.density));
-                material.SetFloat(ShaderConstants.BlueNoiseJitterId, math.saturate(settings.blueNoiseJitter));
-                material.SetFloat(ShaderConstants.BilateralDepthSigmaId, Mathf.Max(0.01f, settings.bilateralDepthSigma));
-                material.SetFloat(ShaderConstants.ShaftIntensityId, Mathf.Max(0f, settings.shaftIntensity));
-                material.SetFloat(ShaderConstants.BiolumPatternScaleId, Mathf.Max(0.001f, settings.biolumPatternScale));
-                material.SetFloat(ShaderConstants.BiolumProjectionStrengthId, Mathf.Max(0f, settings.biolumProjectionStrength));
-                material.SetFloat(ShaderConstants.SiltStrengthId, Mathf.Max(0f, settings.siltStrength));
-                material.SetFloat(ShaderConstants.SiltNoiseScaleId, Mathf.Max(0.001f, settings.siltNoiseScale));
-                material.SetFloat(ShaderConstants.SiltFloorBoostId, Mathf.Max(0f, settings.siltFloorBoost));
-                material.SetFloat(ShaderConstants.SiltDriftSpeedId, Mathf.Max(0f, settings.siltDriftSpeed));
-                material.SetFloat(ShaderConstants.ContactShadowStrengthId, math.saturate(settings.contactShadowStrength));
-                material.SetFloat(ShaderConstants.ContactShadowStepsId, Mathf.Clamp(settings.contactShadowSteps, 4, 8));
-                material.SetFloat(ShaderConstants.ContactShadowBiasId, Mathf.Max(0.001f, settings.contactShadowBias));
-                material.SetFloat(ShaderConstants.ContactShadowMaxDistanceId, Mathf.Max(0.1f, settings.contactShadowMaxDistance));
-                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStrengthId, math.saturate(settings.contactShadowStrength));
-                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStepsId, Mathf.Clamp(settings.contactShadowSteps, 4, 8));
-                Shader.SetGlobalFloat(ShaderConstants.ContactShadowBiasId, Mathf.Max(0.001f, settings.contactShadowBias));
-                Shader.SetGlobalFloat(ShaderConstants.ContactShadowMaxDistanceId, Mathf.Max(0.1f, settings.contactShadowMaxDistance));
-                material.SetFloat(
-                    ShaderConstants.FlashlightShadowStepsId,
-                    SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048 ? 16f : 24f);
-                material.SetFloat(ShaderConstants.FlashlightShadowSoftnessId, Mathf.Max(0.1f, settings.flashlightShadowSoftness));
-                material.SetFloat(ShaderConstants.FlashlightShadowMinStepId, Mathf.Max(0.005f, settings.flashlightShadowMinStep));
-                material.SetFloat(ShaderConstants.FlashlightShadowBiasId, Mathf.Max(0.001f, settings.flashlightShadowBias));
-                material.SetFloat(ShaderConstants.FlashlightShadowFloorId, Mathf.Clamp(settings.flashlightShadowFloor, 0.02f, 0.25f));
-                material.SetFloat(ShaderConstants.NoirPowerId, Mathf.Max(0.5f, settings.noirPower));
-                material.SetFloat(ShaderConstants.NoirFogDensityId, Mathf.Max(0.0001f, settings.noirFogDensity));
-                material.SetColor(ShaderConstants.NoirLiftColorId, ResolveNoirLiftColor(settings.noirLiftColor));
-                material.SetFloat(ShaderConstants.LensGhostIntensityId, Mathf.Max(0f, settings.lensGhostIntensity));
-                material.SetFloat(ShaderConstants.LensGhostScaleId, Mathf.Max(0.001f, settings.lensGhostScale));
-                material.SetFloat(ShaderConstants.LensChromaticAberrationId, Mathf.Max(0f, settings.lensChromaticAberration));
-                material.SetFloat(ShaderConstants.LensEdgeWeightId, Mathf.Max(0f, settings.lensEdgeWeight));
-                material.SetFloat(ShaderConstants.LensDirtIntensityId, math.saturate(settings.lensDirtIntensity));
-                material.SetFloat(ShaderConstants.CondensationIntensityId, math.saturate(settings.condensationIntensity));
-                material.SetFloat(ShaderConstants.ThermalHazeIntensityId, ResolveThermalHazeIntensity(settings));
-                material.SetFloat(ShaderConstants.ThermalHazeScaleId, Mathf.Max(0.001f, settings.thermalHazeScale));
-                material.SetFloat(ShaderConstants.HasExposureStateId, exposureAvailable ? 1f : 0f);
-                material.SetFloat(ShaderConstants.HasBlueNoiseTextureId, settings.blueNoiseTexture != null ? 1f : 0f);
-                material.SetTexture(ShaderConstants.BlueNoiseTextureId, settings.blueNoiseTexture);
+            private static Vector4 ResolveInputSize(int width, int height)
+            {
+                Vector4 inputSize;
+                inputSize.x = width;
+                inputSize.y = height;
+                inputSize.z = 1f / width;
+                inputSize.w = 1f / height;
+                return inputSize;
             }
 
-            private static float ResolveThermalHazeIntensity(FeatureSettings settings)
+            private static void UpdateMaterialParameters(
+                Material material,
+                in MaterialParameterState parameters,
+                Texture2D blueNoiseTexture,
+                float passMode)
             {
-                float intensity = Mathf.Max(0f, settings.thermalHazeIntensity);
+                material.SetFloat(ShaderConstants.PassModeId, passMode);
+                material.SetFloat(ShaderConstants.FrameCountId, Time.frameCount);
+                material.SetFloat(ShaderConstants.RenderScaleId, parameters.RenderScale);
+                material.SetFloat(ShaderConstants.RaymarchStepsId, 0f);
+                material.SetFloat(ShaderConstants.MaxRayDistanceId, parameters.MaxRayDistance);
+                material.SetFloat(ShaderConstants.ScatteringAnisotropyId, parameters.ScatteringAnisotropy);
+                material.SetFloat(ShaderConstants.DensityId, parameters.Density);
+                material.SetFloat(ShaderConstants.BlueNoiseJitterId, parameters.BlueNoiseJitter);
+                material.SetFloat(ShaderConstants.BilateralDepthSigmaId, parameters.BilateralDepthSigma);
+                material.SetFloat(ShaderConstants.ShaftIntensityId, parameters.ShaftIntensity);
+                material.SetFloat(ShaderConstants.BiolumPatternScaleId, parameters.BiolumPatternScale);
+                material.SetFloat(ShaderConstants.BiolumProjectionStrengthId, parameters.BiolumProjectionStrength);
+                material.SetFloat(ShaderConstants.SiltStrengthId, parameters.SiltStrength);
+                material.SetFloat(ShaderConstants.SiltNoiseScaleId, parameters.SiltNoiseScale);
+                material.SetFloat(ShaderConstants.SiltFloorBoostId, parameters.SiltFloorBoost);
+                material.SetFloat(ShaderConstants.SiltDriftSpeedId, parameters.SiltDriftSpeed);
+                material.SetFloat(ShaderConstants.ContactShadowStrengthId, parameters.ContactShadowStrength);
+                material.SetFloat(ShaderConstants.ContactShadowStepsId, parameters.ContactShadowSteps);
+                material.SetFloat(ShaderConstants.ContactShadowBiasId, parameters.ContactShadowBias);
+                material.SetFloat(ShaderConstants.ContactShadowMaxDistanceId, parameters.ContactShadowMaxDistance);
+                material.SetFloat(ShaderConstants.FlashlightShadowStepsId, parameters.FlashlightShadowSteps);
+                material.SetFloat(ShaderConstants.FlashlightShadowSoftnessId, parameters.FlashlightShadowSoftness);
+                material.SetFloat(ShaderConstants.FlashlightShadowMinStepId, parameters.FlashlightShadowMinStep);
+                material.SetFloat(ShaderConstants.FlashlightShadowBiasId, parameters.FlashlightShadowBias);
+                material.SetFloat(ShaderConstants.FlashlightShadowFloorId, parameters.FlashlightShadowFloor);
+                material.SetFloat(ShaderConstants.NoirPowerId, parameters.NoirPower);
+                material.SetFloat(ShaderConstants.NoirFogDensityId, parameters.NoirFogDensity);
+                material.SetColor(ShaderConstants.NoirLiftColorId, parameters.NoirLiftColor);
+                material.SetFloat(ShaderConstants.LensGhostIntensityId, parameters.LensGhostIntensity);
+                material.SetFloat(ShaderConstants.LensGhostScaleId, parameters.LensGhostScale);
+                material.SetFloat(ShaderConstants.LensChromaticAberrationId, parameters.LensChromaticAberration);
+                material.SetFloat(ShaderConstants.LensEdgeWeightId, parameters.LensEdgeWeight);
+                material.SetFloat(ShaderConstants.LensDirtIntensityId, parameters.LensDirtIntensity);
+                material.SetFloat(ShaderConstants.CondensationIntensityId, parameters.CondensationIntensity);
+                material.SetFloat(ShaderConstants.ThermalHazeIntensityId, parameters.ThermalHazeIntensity);
+                material.SetFloat(ShaderConstants.ThermalHazeScaleId, parameters.ThermalHazeScale);
+                material.SetFloat(ShaderConstants.HasExposureStateId, parameters.HasExposureState);
+                material.SetFloat(ShaderConstants.HasBlueNoiseTextureId, parameters.HasBlueNoiseTexture);
+                material.SetTexture(ShaderConstants.BlueNoiseTextureId, blueNoiseTexture);
+            }
+
+            private static void ApplyContactShadowGlobals(in MaterialParameterState parameters)
+            {
+                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStrengthId, parameters.ContactShadowStrength);
+                Shader.SetGlobalFloat(ShaderConstants.ContactShadowStepsId, parameters.ContactShadowSteps);
+                Shader.SetGlobalFloat(ShaderConstants.ContactShadowBiasId, parameters.ContactShadowBias);
+                Shader.SetGlobalFloat(ShaderConstants.ContactShadowMaxDistanceId, parameters.ContactShadowMaxDistance);
+            }
+
+            private static float ResolveThermalHazeIntensity(float configuredIntensity)
+            {
+                float intensity = math.max(0f, configuredIntensity);
                 if (intensity <= 0f)
                     return 0f;
 
-                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-                HectonPlayerMovement playerMovement = playerContext != null ? playerContext.PlayerMovement : null;
-                Vector3 velocity = playerMovement != null
-                    ? playerMovement.InterpolatedLinearVelocity
-                    : (playerContext != null && playerContext.PlayerRigidbody != null ? playerContext.PlayerRigidbody.linearVelocity : Vector3.zero);
+                float3 velocity = ResolvePlayerVelocity();
+                return math.lengthsq(velocity) > ThermalHazeMotionCullSpeedMetersPerSecondSq ? 0f : intensity;
+            }
 
-                return velocity.sqrMagnitude > ThermalHazeMotionCullSpeedMetersPerSecondSq ? 0f : intensity;
+            private static float3 ResolvePlayerVelocity()
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext == null)
+                    return default;
+
+                HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
+                if (playerMovement != null)
+                    return ToFloat3(playerMovement.InterpolatedLinearVelocity);
+
+                return playerContext.PlayerRigidbody != null
+                    ? ToFloat3(playerContext.PlayerRigidbody.linearVelocity)
+                    : default;
+            }
+
+            private static float3 ToFloat3(Vector3 value)
+            {
+                float3 result;
+                result.x = value.x;
+                result.y = value.y;
+                result.z = value.z;
+                return result;
             }
 
             private static Color ResolveNoirLiftColor(Color configured)
             {
-                return new Color(
-                    Mathf.Max(configured.r, DefaultNoirLiftFloor.r),
-                    Mathf.Max(configured.g, DefaultNoirLiftFloor.g),
-                    Mathf.Max(configured.b, DefaultNoirLiftFloor.b),
-                    1f);
+                configured.r = math.max(configured.r, DefaultNoirLiftFloor.r);
+                configured.g = math.max(configured.g, DefaultNoirLiftFloor.g);
+                configured.b = math.max(configured.b, DefaultNoirLiftFloor.b);
+                configured.a = 1f;
+                return configured;
+            }
+
+            [StructLayout(LayoutKind.Sequential)]
+            private struct MaterialParameterState
+            {
+                internal float RenderScale;
+                internal float MaxRayDistance;
+                internal float ScatteringAnisotropy;
+                internal float Density;
+                internal float BlueNoiseJitter;
+                internal float BilateralDepthSigma;
+                internal float ShaftIntensity;
+                internal float BiolumPatternScale;
+                internal float BiolumProjectionStrength;
+                internal float SiltStrength;
+                internal float SiltNoiseScale;
+                internal float SiltFloorBoost;
+                internal float SiltDriftSpeed;
+                internal float ContactShadowStrength;
+                internal float ContactShadowSteps;
+                internal float ContactShadowBias;
+                internal float ContactShadowMaxDistance;
+                internal float FlashlightShadowSteps;
+                internal float FlashlightShadowSoftness;
+                internal float FlashlightShadowMinStep;
+                internal float FlashlightShadowBias;
+                internal float FlashlightShadowFloor;
+                internal float NoirPower;
+                internal float NoirFogDensity;
+                internal Color NoirLiftColor;
+                internal float LensGhostIntensity;
+                internal float LensGhostScale;
+                internal float LensChromaticAberration;
+                internal float LensEdgeWeight;
+                internal float LensDirtIntensity;
+                internal float CondensationIntensity;
+                internal float ThermalHazeIntensity;
+                internal float ThermalHazeScale;
+                internal float HasExposureState;
+                internal float HasBlueNoiseTexture;
+
+                internal static MaterialParameterState Resolve(FeatureSettings settings, bool exposureAvailable)
+                {
+                    MaterialParameterState state;
+                    state.RenderScale = math.clamp(settings.renderScale, 0.25f, 1f);
+                    state.MaxRayDistance = math.max(1f, settings.maxRayDistance);
+                    state.ScatteringAnisotropy = math.clamp(settings.scatteringAnisotropy, 0f, 0.95f);
+                    state.Density = math.max(0f, settings.density);
+                    state.BlueNoiseJitter = math.saturate(settings.blueNoiseJitter);
+                    state.BilateralDepthSigma = math.max(0.01f, settings.bilateralDepthSigma);
+                    state.ShaftIntensity = math.max(0f, settings.shaftIntensity);
+                    state.BiolumPatternScale = math.max(0.001f, settings.biolumPatternScale);
+                    state.BiolumProjectionStrength = math.max(0f, settings.biolumProjectionStrength);
+                    state.SiltStrength = math.max(0f, settings.siltStrength);
+                    state.SiltNoiseScale = math.max(0.001f, settings.siltNoiseScale);
+                    state.SiltFloorBoost = math.max(0f, settings.siltFloorBoost);
+                    state.SiltDriftSpeed = math.max(0f, settings.siltDriftSpeed);
+                    state.ContactShadowStrength = math.saturate(settings.contactShadowStrength);
+                    state.ContactShadowSteps = math.clamp(settings.contactShadowSteps, 4, 8);
+                    state.ContactShadowBias = math.max(0.001f, settings.contactShadowBias);
+                    state.ContactShadowMaxDistance = math.max(0.1f, settings.contactShadowMaxDistance);
+                    state.FlashlightShadowSteps = SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048 ? 16f : 24f;
+                    state.FlashlightShadowSoftness = math.max(0.1f, settings.flashlightShadowSoftness);
+                    state.FlashlightShadowMinStep = math.max(0.005f, settings.flashlightShadowMinStep);
+                    state.FlashlightShadowBias = math.max(0.001f, settings.flashlightShadowBias);
+                    state.FlashlightShadowFloor = math.clamp(settings.flashlightShadowFloor, 0.02f, 0.25f);
+                    state.NoirPower = math.max(0.5f, settings.noirPower);
+                    state.NoirFogDensity = math.max(0.0001f, settings.noirFogDensity);
+                    state.NoirLiftColor = ResolveNoirLiftColor(settings.noirLiftColor);
+                    state.LensGhostIntensity = math.max(0f, settings.lensGhostIntensity);
+                    state.LensGhostScale = math.max(0.001f, settings.lensGhostScale);
+                    state.LensChromaticAberration = math.max(0f, settings.lensChromaticAberration);
+                    state.LensEdgeWeight = math.max(0f, settings.lensEdgeWeight);
+                    state.LensDirtIntensity = math.saturate(settings.lensDirtIntensity);
+                    state.CondensationIntensity = math.saturate(settings.condensationIntensity);
+                    state.ThermalHazeIntensity = ResolveThermalHazeIntensity(settings.thermalHazeIntensity);
+                    state.ThermalHazeScale = math.max(0.001f, settings.thermalHazeScale);
+                    state.HasExposureState = exposureAvailable ? 1f : 0f;
+                    state.HasBlueNoiseTexture = settings.blueNoiseTexture != null ? 1f : 0f;
+                    return state;
+                }
             }
         }
 

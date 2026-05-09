@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 #if UNITY_EDITOR
@@ -30,8 +31,6 @@ namespace Hecton8.Quest
 
         internal static QuestManager ActiveRuntimeInstance { get; private set; }
 
-        // COLD ALLOC: Dictionary<string,QuestData>[64] - authored quest lookup by stable questId - owner: QuestManager
-        private readonly Dictionary<string, QuestData> _questLookup = new Dictionary<string, QuestData>(64);
         // COLD ALLOC: Dictionary<uint,QuestData>[64] - authored quest lookup by stable FNV quest hash - owner: QuestManager
         private readonly Dictionary<uint, QuestData> _questHashLookup = new Dictionary<uint, QuestData>(64);
 
@@ -42,6 +41,9 @@ namespace Hecton8.Quest
         private bool _serviceRegistered;
         private ISaveService _registeredSaveService;
         private string _lookupAmbiguitySummary = string.Empty;
+        private uint[] _questCompletedNotificationHashes = Array.Empty<uint>();
+        private uint[] _questRestoredNotificationHashes = Array.Empty<uint>();
+        private uint[] _questNewNotificationHashes = Array.Empty<uint>();
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -148,7 +150,12 @@ namespace Hecton8.Quest
             if (!TryResolveQuestHash(questId, logUnknownQuest: true, out uint questHash, out _))
                 return;
 
-            if (_stateManager == null || !_stateManager.TryActivateQuest(questHash, out int questIndex))
+            ActivateQuest(questHash);
+        }
+
+        public void ActivateQuest(uint questHash)
+        {
+            if (questHash == 0u || _stateManager == null || !_stateManager.TryActivateQuest(questHash, out int questIndex))
                 return;
 
             _stateManager.RecordManualTransition(questIndex, completed: false);
@@ -160,7 +167,12 @@ namespace Hecton8.Quest
             if (!TryResolveQuestHash(questId, logUnknownQuest: true, out uint questHash, out _))
                 return;
 
-            if (_stateManager == null || !_stateManager.TryCompleteQuest(questHash, out int questIndex))
+            CompleteQuest(questHash);
+        }
+
+        public void CompleteQuest(uint questHash)
+        {
+            if (questHash == 0u || _stateManager == null || !_stateManager.TryCompleteQuest(questHash, out int questIndex))
                 return;
 
             _stateManager.RecordManualTransition(questIndex, completed: true);
@@ -261,24 +273,27 @@ namespace Hecton8.Quest
             markerWorldPosition = default;
             markerHeightOffset = 0f;
 
-            if (TryGetQuestDataByHash(questHash, out QuestData questData) && questData != null)
+            if (_stateManager != null &&
+                _stateManager.TryGetQuestPresentation(
+                    questHash,
+                    out title,
+                    out description,
+                    out markerTargetHash,
+                    out markerWorldPosition,
+                    out markerHeightOffset))
             {
-                title = questData.DisplayTitleOrFallback;
-                description = questData.DescriptionOrFallback;
-                markerTargetHash = QuestFlagHashKernel.ComputeStableHash(questData.markerTargetId);
-                markerWorldPosition = questData.markerWorldPosition;
-                markerHeightOffset = Mathf.Max(0f, questData.markerHeightOffset);
                 return true;
             }
 
-            return _stateManager != null &&
-                   _stateManager.TryGetQuestPresentation(
-                       questHash,
-                       out title,
-                       out description,
-                       out markerTargetHash,
-                       out markerWorldPosition,
-                       out markerHeightOffset);
+            if (!TryGetQuestDataByHash(questHash, out QuestData questData) || questData == null)
+                return false;
+
+            title = questData.DisplayTitleOrFallback;
+            description = questData.DescriptionOrFallback;
+            markerTargetHash = questData.MarkerTargetHash;
+            markerWorldPosition = questData.markerWorldPosition;
+            markerHeightOffset = math.max(0f, questData.markerHeightOffset);
+            return true;
         }
 
         internal bool UpsertProceduralDirective(
@@ -360,24 +375,32 @@ namespace Hecton8.Quest
             if (data == null)
                 return;
 
+            QuestData[] quests = allQuests ?? Array.Empty<QuestData>();
+            int questCapacity = quests.Length;
             if (data.questActiveIds == null)
-                data.questActiveIds = new List<string>();
+                data.questActiveIds = new List<string>(questCapacity); // COLD ALLOC: List<string>[questCapacity] - legacy save active quest id staging - owner: QuestManager
+            else if (data.questActiveIds.Capacity < questCapacity)
+                data.questActiveIds.Capacity = questCapacity;
+
             if (data.questCompletedIds == null)
-                data.questCompletedIds = new List<string>();
+                data.questCompletedIds = new List<string>(questCapacity); // COLD ALLOC: List<string>[questCapacity] - legacy save completed quest id staging - owner: QuestManager
+            else if (data.questCompletedIds.Capacity < questCapacity)
+                data.questCompletedIds.Capacity = questCapacity;
 
             data.questActiveIds.Clear();
             data.questCompletedIds.Clear();
 
-            for (int i = 0; i < allQuests.Length; i++)
+            for (int i = 0; i < quests.Length; i++)
             {
-                QuestData questData = allQuests[i];
+                QuestData questData = quests[i];
                 if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
                     continue;
 
-                if (IsActive(questData.questId))
+                uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
+                if (IsActive(questHash))
                     data.questActiveIds.Add(questData.questId);
 
-                if (IsCompleted(questData.questId))
+                if (IsCompleted(questHash))
                     data.questCompletedIds.Add(questData.questId);
             }
         }
@@ -412,15 +435,19 @@ namespace Hecton8.Quest
             bool initialized = _stateManager.Initialize(allQuests);
             if (_hasLookupAmbiguity)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError($"[QuestManager] Quest registry ambiguity detected: {_lookupAmbiguitySummary}");
+#endif
                 enabled = false;
                 return;
             }
 
             if (!initialized || _stateManager.HasCompileErrors)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 string compileSummary = _stateManager != null ? _stateManager.CompileErrorSummary : "Unknown quest compile error.";
                 Debug.LogError($"[QuestManager] Quest state graph compilation failed.{System.Environment.NewLine}{compileSummary}");
+#endif
                 enabled = false;
                 return;
             }
@@ -444,38 +471,30 @@ namespace Hecton8.Quest
         private void EmitQuestTransition(int questIndex, bool completed, QuestTransitionType transitionType)
         {
             if (_stateManager == null ||
-                !_stateManager.TryGetQuestHash(questIndex, out uint questHash) ||
-                !TryGetQuestPresentation(
-                    questHash,
-                    out string title,
-                    out _,
-                    out _,
-                    out _,
-                    out _))
+                !_stateManager.TryGetQuestHash(questIndex, out uint questHash))
             {
                 return;
             }
 
-            if (string.IsNullOrWhiteSpace(title))
-                title = "UNKNOWN OBJECTIVE";
+            uint notificationHash = ResolveQuestNotificationHash(questIndex, completed, transitionType);
 
             switch (transitionType)
             {
                 case QuestTransitionType.Complete:
                     QuestEvents.RaiseCompleted(questHash);
-                    NotificationEvents.PushInfo($"OBJECTIVE COMPLETED: {title}");
-                    return;
+                    break;
 
                 case QuestTransitionType.Revert:
                     QuestEvents.RaiseActivated(questHash);
-                    NotificationEvents.PushInfo($"OBJECTIVE RESTORED: {title}");
-                    return;
+                    break;
 
                 default:
                     QuestEvents.RaiseActivated(questHash);
-                    NotificationEvents.PushInfo(completed ? $"OBJECTIVE COMPLETED: {title}" : $"NEW OBJECTIVE: {title}");
-                    return;
+                    break;
             }
+
+            if (notificationHash != 0u)
+                NotificationEvents.PushRegisteredInfo(notificationHash);
         }
 
         private QuestData GetQuestDataByIndex(int questIndex)
@@ -493,24 +512,26 @@ namespace Hecton8.Quest
             if (string.IsNullOrWhiteSpace(questId) || _hasLookupAmbiguity)
                 return false;
 
-            if (!TryResolveQuestData(questId, out questData))
+            questHash = QuestFlagHashKernel.ComputeStableHash(questId);
+            if (questHash == 0u || !TryResolveQuestData(questHash, out questData))
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (logUnknownQuest)
                     Debug.LogWarning($"[QuestManager] Unknown questId '{questId}'.");
+#endif
 
                 return false;
             }
 
-            questHash = QuestFlagHashKernel.ComputeStableHash(questId);
-            return questHash != 0u;
+            return true;
         }
 
         private void BuildLookup()
         {
-            _questLookup.Clear();
             _questHashLookup.Clear();
             _hasLookupAmbiguity = false;
             _lookupAmbiguitySummary = string.Empty;
+            EnsureQuestNotificationCacheCapacity(allQuests.Length);
 
             for (int i = 0; i < allQuests.Length; i++)
             {
@@ -518,37 +539,93 @@ namespace Hecton8.Quest
                 if (questData == null || string.IsNullOrWhiteSpace(questData.questId))
                     continue;
 
-                if (_questLookup.TryGetValue(questData.questId, out QuestData existingQuestData) &&
+                uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
+                if (questHash == 0u)
+                    continue;
+
+                if (_questHashLookup.TryGetValue(questHash, out QuestData existingQuestData) &&
                     !ReferenceEquals(existingQuestData, questData))
                 {
                     RegisterLookupAmbiguity(questData.questId, existingQuestData, questData);
                     continue;
                 }
 
-                _questLookup[questData.questId] = questData;
-                uint questHash = QuestFlagHashKernel.ComputeStableHash(questData.questId);
-                if (questHash != 0u && !_questHashLookup.ContainsKey(questHash))
-                    _questHashLookup[questHash] = questData;
+                _questHashLookup[questHash] = questData;
+
+                CacheQuestNotificationHashes(i, questData);
             }
         }
 
-        private bool TryResolveQuestData(string questId, out QuestData questData)
+        private void EnsureQuestNotificationCacheCapacity(int questCount)
         {
-            if (_questLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
+            if (_questCompletedNotificationHashes.Length == questCount &&
+                _questRestoredNotificationHashes.Length == questCount &&
+                _questNewNotificationHashes.Length == questCount)
+            {
+                return;
+            }
+
+            // COLD ALLOC: uint[questCount] - pre-registered objective complete notification hashes - owner: QuestManager
+            _questCompletedNotificationHashes = new uint[questCount];
+            // COLD ALLOC: uint[questCount] - pre-registered objective restored notification hashes - owner: QuestManager
+            _questRestoredNotificationHashes = new uint[questCount];
+            // COLD ALLOC: uint[questCount] - pre-registered new objective notification hashes - owner: QuestManager
+            _questNewNotificationHashes = new uint[questCount];
+        }
+
+        private void CacheQuestNotificationHashes(int questIndex, QuestData questData)
+        {
+            if (questIndex < 0 || questIndex >= _questCompletedNotificationHashes.Length || questData == null)
+                return;
+
+            string title = questData.DisplayTitleOrFallback;
+            if (string.IsNullOrWhiteSpace(title))
+                title = "UNKNOWN OBJECTIVE";
+
+            _questCompletedNotificationHashes[questIndex] = NotificationEvents.RegisterMessage("OBJECTIVE COMPLETED: " + title);
+            _questRestoredNotificationHashes[questIndex] = NotificationEvents.RegisterMessage("OBJECTIVE RESTORED: " + title);
+            _questNewNotificationHashes[questIndex] = NotificationEvents.RegisterMessage("NEW OBJECTIVE: " + title);
+        }
+
+        private uint ResolveQuestNotificationHash(int questIndex, bool completed, QuestTransitionType transitionType)
+        {
+            if (questIndex < 0 || questIndex >= _questCompletedNotificationHashes.Length)
+                return 0u;
+
+            switch (transitionType)
+            {
+                case QuestTransitionType.Complete:
+                    return _questCompletedNotificationHashes[questIndex];
+                case QuestTransitionType.Revert:
+                    return _questRestoredNotificationHashes[questIndex];
+                default:
+                    return completed
+                        ? _questCompletedNotificationHashes[questIndex]
+                        : _questNewNotificationHashes[questIndex];
+            }
+        }
+
+        private bool TryResolveQuestData(uint questHash, out QuestData questData)
+        {
+            questData = null;
+
+            if (_questHashLookup.Count == 0 && allQuests != null && allQuests.Length > 0)
                 BuildLookup();
 
-            return _questLookup.TryGetValue(questId, out questData);
+            return questHash != 0u && _questHashLookup.TryGetValue(questHash, out questData);
         }
 
         private void RegisterLookupAmbiguity(string questId, QuestData existingQuestData, QuestData incomingQuestData)
         {
             _hasLookupAmbiguity = true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!string.IsNullOrEmpty(_lookupAmbiguitySummary))
                 return;
 
             string existingName = existingQuestData != null ? existingQuestData.name : "null";
             string incomingName = incomingQuestData != null ? incomingQuestData.name : "null";
             _lookupAmbiguitySummary = $"questId '{questId}' resolves to both '{existingName}' and '{incomingName}'.";
+#endif
         }
 
         private static float MapDepthTierToMeters(int tier)

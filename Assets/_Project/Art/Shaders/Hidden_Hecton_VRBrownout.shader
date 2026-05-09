@@ -22,6 +22,8 @@ Shader "Hidden/Hecton8/VRBrownout"
             #pragma vertex Vert
             #pragma fragment Frag
             #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
+            #pragma skip_variants DIRLIGHTMAP_COMBINED LIGHTMAP_ON DYNAMICLIGHTMAP_ON _ADDITIONAL_LIGHTS _ADDITIONAL_LIGHT_SHADOWS
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -83,16 +85,28 @@ Shader "Hidden/Hecton8/VRBrownout"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 float brownout = saturate(_HectonVRBrownoutIntensity);
                 float worldBlur = saturate(_HectonWorldFocusBlur);
+                float nearCollision = saturate(_HectonVRNearCollisionIntensity);
                 float2 uv = UnityStereoTransformScreenSpaceTex(input.screenUV);
-                float eyeStableSeed = ResolveEyeStableNoiseSeed();
+                float2 eyeStableUv = input.screenUV;
+                [branch]
+                if (brownout <= 0.0001 && worldBlur <= 0.0001 && nearCollision <= 0.0001)
+                    return SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
 
-                float row = floor(uv.y * _ScreenParams.y * 0.5);
-                float rowNoise = Hash21(float2(row, eyeStableSeed));
-                float rowGate = step(0.62, rowNoise);
-                uv.x += (rowNoise - 0.5) * brownout * rowGate * 0.0075;
-                uv = saturate(uv);
+                float eyeStableSeed = 0.0;
+                float row = 0.0;
+                [branch]
+                if (brownout > 0.0001)
+                {
+                    eyeStableSeed = ResolveEyeStableNoiseSeed();
+                    row = floor(eyeStableUv.y * _ScreenParams.y * 0.5);
+                    float rowNoise = Hash21(float2(row, eyeStableSeed));
+                    float rowGate = step(0.62, rowNoise);
+                    uv.x += (rowNoise - 0.5) * brownout * rowGate * 0.0075;
+                    uv = saturate(uv);
+                }
 
                 half4 color = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uv);
+                [branch]
                 if (worldBlur > 0.0001)
                 {
                     float2 blurStep = _BlitTexture_TexelSize.xy * max(0.0, _HectonWorldBlurTexelRadius) * worldBlur;
@@ -104,24 +118,28 @@ Shader "Hidden/Hecton8/VRBrownout"
                     color = lerp(color, blurColor * 0.2h, (half)worldBlur);
                 }
 
+                [branch]
                 if (brownout > 0.0001)
                 {
-                    float2 pixel = floor(uv * _ScreenParams.xy);
-                    float scanPhase = frac((pixel.y * 0.5) + (eyeStableSeed * 0.33333334));
+                    float2 pixel = floor(eyeStableUv * _ScreenParams.xy);
+                    float scanPhase = frac((row * 0.5) + (eyeStableSeed * 0.33333334));
                     float scanline = lerp(1.0, 0.52 + 0.48 * step(0.42, scanPhase), saturate(_HectonVRBrownoutScanlineStrength));
                     float dither = Hash21(pixel + float2(eyeStableSeed * 37.0, row));
                     half luminance = dot(color.rgb, half3(0.2126h, 0.7152h, 0.0722h));
                     float threshold = lerp(0.18, dither, saturate(_HectonVRBrownoutDitherStrength));
                     float bit = step(threshold, saturate(luminance * (1.35 + brownout * 0.85) * scanline));
                     half3 biosGreen = (half3(0.015h, 0.92h, 0.19h) * (half)bit) + half3(0.0h, 0.018h, 0.004h);
-                    half phosphorTail = (half)(Hash21(pixel * 0.25 + row + eyeStableSeed) * 0.028 * brownout);
+                    half phosphorTail = (half)(Hash21(float2(row * 0.25, eyeStableSeed + 13.0)) * 0.028 * brownout);
                     biosGreen += half3(0.0h, phosphorTail, phosphorTail * 0.18h);
                     color.rgb = lerp(color.rgb, biosGreen, (half)brownout);
                 }
 
-                float nearCollision = saturate(_HectonVRNearCollisionIntensity);
+                [branch]
                 if (nearCollision > 0.0001)
                 {
+                    if (brownout <= 0.0001)
+                        eyeStableSeed = ResolveEyeStableNoiseSeed();
+
                     float2 pixel = floor(input.screenUV * _ScreenParams.xy);
                     float ign = frac(52.9829189 * frac(dot(pixel + eyeStableSeed * 17.0, float2(0.06711056, 0.00583715))));
                     float crawl = Hash21(pixel * 0.25 + float2(_Time.y * 31.0, eyeStableSeed * 19.0));
@@ -140,4 +158,6 @@ Shader "Hidden/Hecton8/VRBrownout"
             ENDHLSL
         }
     }
+
+    FallBack Off
 }

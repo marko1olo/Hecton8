@@ -14,7 +14,7 @@
 //      (HighlightNearbyResource).
 //
 // АРХИТЕКТУРА (v2 — Direct API):
-//   • Синглтон — доступ из кастомной MapMagic ноды через Instance.
+//   • Registry service — custom MapMagic node resolves via GlobalRegistry.ScavengePopulator.
 //   • ISlowTickable — для time-sliced спавна (не блокирует основной поток).
 //   • HectonScatterOutput → RegisterSpawnPoint() — прямые вызовы, zero GC.
 //   • ObjectPoolManager — спавн/деспавн всех ResourceNode.
@@ -69,36 +69,14 @@ namespace Hecton8.Core
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
-    public sealed class ScavengePopulator : MonoBehaviour, ISlowTickable
+    public sealed class ScavengePopulator : MonoBehaviour, ISlowTickable, IServiceHeartbeat, IServiceShutdown
     {
         // ══════════════════════════════════════════════════════════
-        //  SINGLETON
+        //  REGISTRY SERVICE
         // ══════════════════════════════════════════════════════════
 
-        private static ScavengePopulator _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
-        /// <summary>
         /// Глобальный доступ. Используется из HectonScatterOutput
         /// для регистрации спавн-точек без промежуточных аллокаций.
-        /// </summary>
-        public static ScavengePopulator Instance
-        {
-            get
-            {
-#if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
-                    return null;
-#endif
-                return _instance;
-            }
-        }
-
         // ══════════════════════════════════════════════════════════
         //  DATA STRUCTURES — all structs for zero GC
         // ══════════════════════════════════════════════════════════
@@ -257,6 +235,23 @@ namespace Hecton8.Core
         private bool _initialized;
         private bool _isDuplicateInstance;
         private bool _registeredToSlowTickManager;
+        private bool _serviceRegistered;
+
+        public ServiceHeartbeatState HeartbeatState
+        {
+            get
+            {
+                if (_isDuplicateInstance)
+                    return ServiceHeartbeatState.Failed;
+                if (!_initialized)
+                    return ServiceHeartbeatState.NotStarted;
+                if (!_serviceRegistered)
+                    return ServiceHeartbeatState.NotStarted;
+                return enabled ? ServiceHeartbeatState.Ready : ServiceHeartbeatState.Shutdown;
+            }
+        }
+
+        public bool IsServiceReady => _initialized && !_isDuplicateInstance && _serviceRegistered && enabled;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -264,18 +259,7 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            // ── Singleton ──
-            if (_instance != null && _instance != this)
-            {
-                _isDuplicateInstance = true;
-                enabled = false;
-                Debug.LogWarning(
-                    "[ScavengePopulator] Duplicate instance detected. Destroying this one.");
-                Destroy(this);
-                return;
-            }
-            _instance = this;
-
+            // ── Local allocation only ──
             // ── Pre-allocate collections ──
             _chunks         = new Dictionary<Vector2Int, ChunkData>(32);
             _spawnQueue     = new Queue<SpawnRequest>(512);
@@ -291,10 +275,24 @@ namespace Hecton8.Core
             if (_isDuplicateInstance || !_initialized)
                 return;
 
+            ScavengePopulator activeRuntime = GlobalRegistry.ScavengePopulator;
+            if (activeRuntime != null && !ReferenceEquals(activeRuntime, this))
+            {
+                _isDuplicateInstance = true;
+                enabled = false;
+                return;
+            }
+
             if (!_registeredToSlowTickManager && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
+            }
+
+            if (!_serviceRegistered && Application.isPlaying)
+            {
+                GlobalRegistry.RegisterScavengePopulatorRuntime(this);
+                _serviceRegistered = ReferenceEquals(GlobalRegistry.ScavengePopulator, this);
             }
 
             if (_playerTransform == null)
@@ -312,13 +310,39 @@ namespace Hecton8.Core
                 _registeredToSlowTickManager = false;
             }
 
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterScavengePopulatorRuntime(this);
+                _serviceRegistered = false;
+            }
+
             DespawnAllChunks();
+        }
+
+        public void OnServiceShutdown()
+        {
+            if (_registeredToSlowTickManager)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _registeredToSlowTickManager = false;
+            }
+
+            if (_serviceRegistered)
+            {
+                GlobalRegistry.UnregisterScavengePopulatorRuntime(this);
+                _serviceRegistered = false;
+            }
+
+            DespawnAllChunks();
+            _chunks?.Clear();
+            _spawnQueue?.Clear();
+            _chunksToUnload?.Clear();
+            _idBuilder?.Clear();
         }
 
         private void OnDestroy()
         {
-            if (_instance == this)
-                _instance = null;
+            OnServiceShutdown();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -536,8 +560,10 @@ namespace Hecton8.Core
             _chunksToUnload.Clear();
 
             // ── Collect chunks to unload ──
-            foreach (var kvp in _chunks)
+            Dictionary<Vector2Int, ChunkData>.Enumerator enumerator = _chunks.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<Vector2Int, ChunkData> kvp = enumerator.Current;
                 ChunkData chunk = kvp.Value;
                 if (!chunk.isLoaded) continue;
                 if (chunk.activeNodes.Count == 0) continue;
@@ -644,8 +670,10 @@ namespace Hecton8.Core
             _spawnQueue.Clear();
             _chunksToUnload.Clear();
 
-            foreach (var kvp in _chunks)
+            Dictionary<Vector2Int, ChunkData>.Enumerator enumerator = _chunks.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<Vector2Int, ChunkData> kvp = enumerator.Current;
                 _chunksToUnload.Add(kvp.Key);
             }
 
@@ -815,8 +843,10 @@ namespace Hecton8.Core
             get
             {
                 int count = 0;
-                foreach (var kvp in _chunks)
+                Dictionary<Vector2Int, ChunkData>.Enumerator enumerator = _chunks.GetEnumerator();
+                while (enumerator.MoveNext())
                 {
+                    KeyValuePair<Vector2Int, ChunkData> kvp = enumerator.Current;
                     if (kvp.Value.isLoaded && kvp.Value.activeNodes.Count > 0)
                         count++;
                 }
@@ -830,8 +860,10 @@ namespace Hecton8.Core
             get
             {
                 int total = 0;
-                foreach (var kvp in _chunks)
+                Dictionary<Vector2Int, ChunkData>.Enumerator enumerator = _chunks.GetEnumerator();
+                while (enumerator.MoveNext())
                 {
+                    KeyValuePair<Vector2Int, ChunkData> kvp = enumerator.Current;
                     total += kvp.Value.activeNodes.Count;
                 }
                 return total;
@@ -994,8 +1026,10 @@ namespace Hecton8.Core
         {
             if (!Application.isPlaying || _chunks == null) return;
 
-            foreach (var kvp in _chunks)
+            Dictionary<Vector2Int, ChunkData>.Enumerator enumerator = _chunks.GetEnumerator();
+            while (enumerator.MoveNext())
             {
+                KeyValuePair<Vector2Int, ChunkData> kvp = enumerator.Current;
                 ChunkData chunk = kvp.Value;
                 Vector2 center  = ChunkCoordToWorldCenter(kvp.Key);
 

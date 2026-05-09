@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.SaveSystem;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -24,7 +25,7 @@ namespace Hecton8.Modding
             public void OnSaveEvent(in SaveEventPayload payload)
             {
                 if (payload.Type == SaveEventType.LoadCompleted)
-                    HandleLoadCompleted(payload.SlotName.ToString());
+                    HandleLoadCompleted(SaveEvents.ResolveSlotName(in payload.SlotName));
             }
         }
 
@@ -640,7 +641,7 @@ namespace Hecton8.Modding
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            ModWorldPersistenceManager.EnsureRuntimeInstance();
+            GlobalRegistry.ModWorldPersistence?.InitializeService();
             ModLocalizationBridge.FlushPendingInjections();
         }
 
@@ -654,7 +655,7 @@ namespace Hecton8.Modding
             ModItemRegistry.FlushPendingRegistrations();
             ModBuildableRegistry.FlushPendingRegistrations();
             ModLocalizationBridge.FlushPendingInjections();
-            ModWorldPersistenceManager.EnsureRuntimeInstance();
+            GlobalRegistry.ModWorldPersistence?.InitializeService();
 
             if (!_modsInitialized)
             {

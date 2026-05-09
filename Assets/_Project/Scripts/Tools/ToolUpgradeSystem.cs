@@ -105,7 +105,7 @@ namespace Hecton8.Tools
             if (modules == null || module == null || slotCount <= 0)
                 return false;
 
-            int safeSlotCount = Mathf.Clamp(slotCount, 0, Mathf.Min(MaxModuleSlots, modules.Length));
+            int safeSlotCount = math.clamp(slotCount, 0, math.min(MaxModuleSlots, modules.Length));
             for (int i = 0; i < safeSlotCount; i++)
             {
                 ToolModuleData existing = modules[i];
@@ -130,7 +130,7 @@ namespace Hecton8.Tools
             if (modules == null || string.IsNullOrWhiteSpace(moduleId) || slotCount <= 0)
                 return false;
 
-            int safeSlotCount = Mathf.Clamp(slotCount, 0, Mathf.Min(MaxModuleSlots, modules.Length));
+            int safeSlotCount = math.clamp(slotCount, 0, math.min(MaxModuleSlots, modules.Length));
             for (int i = 0; i < safeSlotCount; i++)
             {
                 ToolModuleData existing = modules[i];
@@ -149,7 +149,7 @@ namespace Hecton8.Tools
             if (modules == null || slotCount <= 0)
                 return 0u;
 
-            int safeSlotCount = Mathf.Clamp(slotCount, 0, Mathf.Min(MaxModuleSlots, modules.Length));
+            int safeSlotCount = math.clamp(slotCount, 0, math.min(MaxModuleSlots, modules.Length));
             uint mask = 0u;
             for (int i = 0; i < safeSlotCount; i++)
             {
@@ -167,16 +167,16 @@ namespace Hecton8.Tools
         {
             ToolRuntimeStats stats = new ToolRuntimeStats
             {
-                MaxRange = Mathf.Max(0.1f, profile.MaxRange),
-                PowerScalar = Mathf.Max(0.1f, profile.PowerScalar),
-                EfficiencyScalar = Mathf.Max(0.1f, profile.EfficiencyScalar),
-                SpeedScalar = Mathf.Max(0.1f, profile.SpeedScalar),
-                HeatGenerationRate = Mathf.Max(0f, profile.HeatGenerationRate),
-                CooldownRate = Mathf.Max(0f, profile.CooldownRate),
-                BatteryCapacity = Mathf.Max(0.1f, profile.BatteryCapacity),
-                BatteryDrainPerSecond = Mathf.Max(0f, profile.BatteryDrainPerSecond),
-                DurabilityDrainMultiplier = Mathf.Max(0.1f, profile.DurabilityDrainMultiplier),
-                RecoilImpulse = Mathf.Max(0f, profile.RecoilImpulse)
+                MaxRange = math.max(0.1f, profile.MaxRange),
+                PowerScalar = math.max(0.1f, profile.PowerScalar),
+                EfficiencyScalar = math.max(0.1f, profile.EfficiencyScalar),
+                SpeedScalar = math.max(0.1f, profile.SpeedScalar),
+                HeatGenerationRate = math.max(0f, profile.HeatGenerationRate),
+                CooldownRate = math.max(0f, profile.CooldownRate),
+                BatteryCapacity = math.max(0.1f, profile.BatteryCapacity),
+                BatteryDrainPerSecond = math.max(0f, profile.BatteryDrainPerSecond),
+                DurabilityDrainMultiplier = math.max(0.1f, profile.DurabilityDrainMultiplier),
+                RecoilImpulse = math.max(0f, profile.RecoilImpulse)
             };
 
             if (modules == null || slotCount <= 0)
@@ -185,7 +185,7 @@ namespace Hecton8.Tools
                 return stats;
             }
 
-            int safeSlotCount = Mathf.Clamp(slotCount, 0, Mathf.Min(MaxModuleSlots, modules.Length));
+            int safeSlotCount = math.clamp(slotCount, 0, math.min(MaxModuleSlots, modules.Length));
             uint mask = 0u;
             float coolingSinkBonus = 0f;
             for (int i = 0; i < safeSlotCount; i++)
@@ -196,23 +196,23 @@ namespace Hecton8.Tools
 
                 ToolUpgradeBits moduleBits = module.UpgradeBits;
                 mask |= (uint)moduleBits;
-                stats.MaxRange *= Mathf.Max(0.1f, module.RangeMultiplier);
-                stats.PowerScalar *= Mathf.Max(0.1f, module.PowerMultiplier);
-                stats.EfficiencyScalar *= Mathf.Max(0.1f, module.EfficiencyMultiplier);
-                stats.SpeedScalar *= Mathf.Max(0.1f, module.SpeedMultiplier);
-                stats.HeatGenerationRate *= Mathf.Max(0.1f, module.HeatGenerationMultiplier);
-                stats.BatteryCapacity *= Mathf.Max(0.1f, module.BatteryCapacityMultiplier);
-                stats.BatteryDrainPerSecond *= Mathf.Max(0.1f, module.BatteryDrainMultiplier);
-                stats.DurabilityDrainMultiplier *= Mathf.Max(0.1f, module.DurabilityDrainMultiplier);
-                stats.RecoilImpulse *= Mathf.Max(0.1f, module.RecoilMultiplier);
+                stats.MaxRange *= math.max(0.1f, module.RangeMultiplier);
+                stats.PowerScalar *= math.max(0.1f, module.PowerMultiplier);
+                stats.EfficiencyScalar *= math.max(0.1f, module.EfficiencyMultiplier);
+                stats.SpeedScalar *= math.max(0.1f, module.SpeedMultiplier);
+                stats.HeatGenerationRate *= math.max(0.1f, module.HeatGenerationMultiplier);
+                stats.BatteryCapacity *= math.max(0.1f, module.BatteryCapacityMultiplier);
+                stats.BatteryDrainPerSecond *= math.max(0.1f, module.BatteryDrainMultiplier);
+                stats.DurabilityDrainMultiplier *= math.max(0.1f, module.DurabilityDrainMultiplier);
+                stats.RecoilImpulse *= math.max(0.1f, module.RecoilMultiplier);
 
                 if ((moduleBits & ToolUpgradeBits.CoolingSink) != 0)
                 {
-                    coolingSinkBonus = Mathf.Max(coolingSinkBonus, Mathf.Max(0f, module.CooldownMultiplier - 1f));
+                    coolingSinkBonus = math.max(coolingSinkBonus, math.max(0f, module.CooldownMultiplier - 1f));
                 }
                 else
                 {
-                    stats.CooldownRate *= Mathf.Max(0.1f, module.CooldownMultiplier);
+                    stats.CooldownRate *= math.max(0.1f, module.CooldownMultiplier);
                 }
             }
 

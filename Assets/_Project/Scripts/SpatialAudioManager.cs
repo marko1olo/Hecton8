@@ -72,7 +72,7 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through Hecton8.Core.GlobalRegistry.Audio.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IServiceHeartbeat
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable, IPhysicsImpactEventListener, IPhysicsAcousticImpulseEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener, IServiceHeartbeat, IServiceShutdown
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
@@ -104,12 +104,16 @@ namespace Hecton8.Audio
         private const float AcousticRadarDecayFactorPerSlowTick = 0.75f;
         private const float AcousticRadarDecayIntervalSeconds = 0.1f;
         private const float AcousticRadarDistanceRangeMeters = 180f;
+        private const float AcousticRadarEnergyEpsilon = 0.000001f;
         private const int AcousticRadarGridAzimuthBins = 8;
         private const int AcousticRadarGridElevationBins = 4;
         private const int AcousticRadarGridCellCount = AcousticRadarGridAzimuthBins * AcousticRadarGridElevationBins;
         private const int AcousticRadarNearestEmitterLimit = 12;
-        private const float AcousticRadarElevationMinDegrees = -90f;
-        private const float AcousticRadarElevationMaxDegrees = 90f;
+        private const byte WorldSourceBusFlagThreat = 1 << 0;
+        private const byte WorldSourceBusFlagBed = 1 << 1;
+        private const int AudioClipRouteCacheCapacity = 128;
+        private const byte AudioClipRouteFlagThreat = 1 << 0;
+        private const byte AudioClipRouteFlagBed = 1 << 1;
         private const int MaxListenerContainingCaveVolumes = 8;
         private const float CaveExternalLowPassBoundaryCutoffHertz = 2600f;
         private const float CaveExternalLowPassDeepInteriorCutoffHertz = 1100f;
@@ -154,6 +158,8 @@ namespace Hecton8.Audio
         private const float FatalPressureImplosionTraumaRangeMeters = 220f;
         private const float FatalPressureImplosionTraumaImpulse = 18f;
         private const float FatalPressureImplosionTraumaWeight = 0.82f;
+        private const float PoolFullEditorLogIntervalSeconds = 5f;
+        private const float NullClipEditorLogIntervalSeconds = 5f;
 
         private enum AudioLodTier : byte
         {
@@ -171,7 +177,15 @@ namespace Hecton8.Audio
         [StructLayout(LayoutKind.Sequential)]
         internal struct ActiveEmitterSample
         {
+            public AbsoluteUniversePosition PositionAup;
             public Vector3 Position;
+            public float Amplitude;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct ActiveImpactEmitterSample
+        {
+            public AbsoluteUniversePosition PositionAup;
             public float Amplitude;
         }
 
@@ -194,7 +208,7 @@ namespace Hecton8.Audio
         private struct DelayedAudioEvent
         {
             public DelayedAudioEventKind Kind;
-            public Vector3 Position;
+            public AbsoluteUniversePosition Aup;
             public float EventTimeSeconds;
             public float DelaySeconds;
             public float Volume;
@@ -212,6 +226,7 @@ namespace Hecton8.Audio
         {
             public Vector3 Position;
             public float Amplitude;
+            public AbsoluteUniversePosition PositionAup;
             public float SpawnAt;
             public float ExpireAt;
         }
@@ -364,8 +379,16 @@ namespace Hecton8.Audio
         private int _weatherAudioEventsThisFrame;
         private AudioLodTier[] _audioLodTiers;
         private AudioLowPassFilter[] _lowPassFilters;
+        private Transform[] _worldSourceRoots;
+        private byte[] _worldSourceBusFlags;
+        private int[] _clipRouteCacheIds;
+        private byte[] _clipRouteCacheFlags;
         private Vector3[] _previousAbsolutePositions;
         private Vector3[] _currentAbsoluteVelocities;
+        private Vector3[] _activeWorldRuntimePositions;
+        private int[] _activeWorldRuntimePositionFrames;
+        private AbsoluteUniversePosition[] _activeWorldAups;
+        private int[] _activeWorldAupFrames;
         private int[] _activeWorldIndices;
         private int[] _activeWorldSlots;
         private int _activeWorldCount;
@@ -378,10 +401,13 @@ namespace Hecton8.Audio
         private NativeArray<float> _acousticRadarGrid;
         private WorldCaveDirector _worldCaveDirector;
         private ComputeBuffer _acousticRadarGridBuffer;
+        private bool _acousticRadarGridDirty;
         // COLD ALLOC: float[32] - CPU mirror for acoustic radar grid ComputeBuffer uploads - owner: SpatialAudioManager
         private float[] _acousticRadarGridUploadScratch;
         // COLD ALLOC: Vector3[12] - nearest-emitter radar accumulation positions - owner: SpatialAudioManager
         private Vector3[] _radarNearestEmitterPositions;
+        // COLD ALLOC: AbsoluteUniversePosition[12] - nearest-emitter radar AUP cache avoiding repeated runtime conversions - owner: SpatialAudioManager
+        private AbsoluteUniversePosition[] _radarNearestEmitterAups;
         // COLD ALLOC: float[12] - nearest-emitter radar accumulation amplitudes - owner: SpatialAudioManager
         private float[] _radarNearestEmitterAmplitudes;
         // COLD ALLOC: float[12] - nearest-emitter radar accumulation distance cache - owner: SpatialAudioManager
@@ -389,10 +415,10 @@ namespace Hecton8.Audio
         // COLD ALLOC: Transform[12] - nearest-emitter radar accumulation source roots for cached occlusion lookups - owner: SpatialAudioManager
         private Transform[] _radarNearestEmitterRoots;
         private int _resolvedAcousticOcclusionLayerMask;
-        // COLD ALLOC: List<HectonVoxelVolume>[32] - active cave-volume cache reused for cave-aware audio filtering - owner: SpatialAudioManager
-        private readonly List<HectonVoxelVolume> _caveVolumeBuffer = new List<HectonVoxelVolume>(32);
-        // COLD ALLOC: HectonVoxelVolume[8] - listener-containing cave volumes for external ambient filtering - owner: SpatialAudioManager
-        private readonly HectonVoxelVolume[] _listenerContainingCaveVolumes = new HectonVoxelVolume[MaxListenerContainingCaveVolumes];
+        private readonly List<HectonVoxelVolume> _caveVolumeBuffer = new List<HectonVoxelVolume>(32); // COLD ALLOC: List<HectonVoxelVolume>[32] - cave AABB query scratch buffer - owner: SpatialAudioManager
+        private readonly HectonVoxelVolume[] _listenerContainingCaveVolumes = new HectonVoxelVolume[MaxListenerContainingCaveVolumes]; // COLD ALLOC: HectonVoxelVolume[8] - listener cave containment cache - owner: SpatialAudioManager
+        private readonly Bounds[] _listenerContainingCaveLocalBounds = new Bounds[MaxListenerContainingCaveVolumes]; // COLD ALLOC: Bounds[8] - listener cave local bounds cache - owner: SpatialAudioManager
+        private readonly Matrix4x4[] _listenerContainingCaveWorldToLocal = new Matrix4x4[MaxListenerContainingCaveVolumes]; // COLD ALLOC: Matrix4x4[8] - listener cave transform cache - owner: SpatialAudioManager
         private int _listenerContainingCaveCount;
         private float _listenerCaveInterior01;
         private float _threatBusDuck01;
@@ -405,6 +431,15 @@ namespace Hecton8.Audio
         private float _worldDroneCrossfadeTargetDb = -5f;
         private float _worldDroneCrossfadeDuration = 2.5f;
         private bool _worldDroneCrossfadeActive;
+        private bool _hasBedDuckDbParameter;
+        private bool _hasWorldDroneVolumeDbParameter;
+        private bool _hasParasiteRoomLowPassCutoffParameter;
+        private bool _hasParasiteOrganicLayerGainParameter;
+        private float _nextWorldPoolFullEditorLogTime;
+        private float _nextHelmetPoolFullEditorLogTime;
+        private float _nextPlayAtPointNullClipLogTime;
+        private float _nextPlayAtPointLowPassNullClipLogTime;
+        private float _nextPlayStatic2DNullClipLogTime;
         private float _globalWindHowlVolume01;
         private float _globalWindHowlOcclusion01;
         private float _lastGlobalWindHowlCutoffHz = -1f;
@@ -421,8 +456,7 @@ namespace Hecton8.Audio
         private bool _isInitialized;
         private bool _runtimeResourcesInitialized;
         private bool _eventsSubscribed;
-        // COLD ALLOC: ImpactEmitterSample[16] - deferred physics-impact telemetry for passive radar/UI only; audible impact stress is owned by PlayerCriticalProceduralAudioRenderer's SPSC queue - owner: SpatialAudioManager
-        private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters];
+        private readonly ImpactEmitterSample[] _impactEmitters = new ImpactEmitterSample[MaxImpactRadarEmitters]; // COLD ALLOC: ImpactEmitterSample[16] - passive radar impact impulse cache - owner: SpatialAudioManager
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  LIFECYCLE
@@ -435,6 +469,7 @@ namespace Hecton8.Audio
 
             // Self-state only. Runtime resources are allocated by explicit bootstrap registration.
             _resolvedAcousticOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask();
+            RefreshMixerParameterAvailability();
         }
 
         private void OnEnable()
@@ -446,6 +481,21 @@ namespace Hecton8.Audio
         }
 
         private void OnDisable()
+        {
+            ShutdownServiceState(releaseRuntimeResources: false);
+        }
+
+        private void OnDestroy()
+        {
+            ShutdownServiceState(releaseRuntimeResources: true);
+        }
+
+        public void OnServiceShutdown()
+        {
+            ShutdownServiceState(releaseRuntimeResources: true);
+        }
+
+        private void ShutdownServiceState(bool releaseRuntimeResources)
         {
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -478,14 +528,12 @@ namespace Hecton8.Audio
             ApplyThreatBusDucking(0f, 0f);
             ApplyParasiteRoomAcousticState(0f);
             _radarDecayAccumulator = 0f;
-        }
 
-        private void OnDestroy()
-        {
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
-
-            ReleaseTelemetryCaches();
+            if (releaseRuntimeResources)
+            {
+                ReleaseTelemetryCaches();
+                _runtimeResourcesInitialized = false;
+            }
         }
 
         /// <summary>
@@ -578,6 +626,7 @@ namespace Hecton8.Audio
             if (_runtimeResourcesInitialized)
                 return;
 
+            RefreshMixerParameterAvailability();
             InitializePool();
             InitializePool2D();
             InitializeTelemetryCaches();
@@ -621,21 +670,35 @@ namespace Hecton8.Audio
             float safeDeltaTime = math.max(0f, deltaTime);
             float blendT = FastDecayBlend(HaasBlendSharpness, safeDeltaTime);
             float now = Time.unscaledTime;
-            Transform listener = ResolveListenerTransform();
-            Vector3 listenerAbsolutePosition = listener != null
-                ? HectonFloatingOrigin.ToAbsoluteUniversePosition(listener.position)
-                : default;
-            Vector3 listenerVelocity = ResolveListenerAbsoluteVelocity(listenerAbsolutePosition, safeDeltaTime);
+            int currentFrame = Time.frameCount;
+            bool hasListener = TryResolveListenerFrame(
+                out Transform listener,
+                out Vector3 listenerRuntimePosition,
+                out Vector3 listenerAbsolutePosition,
+                out AbsoluteUniversePosition listenerAup);
+            Vector3 listenerVelocity = Vector3.zero;
+            if (hasListener)
+            {
+                listenerVelocity = ResolveListenerAbsoluteVelocity(listenerAbsolutePosition, safeDeltaTime);
+            }
+            else
+            {
+                _hasPreviousListenerAbsolutePosition = false;
+                _previousListenerAbsolutePosition = default;
+            }
+            ResolveListenerBasis(listener, out float3 listenerRight, out float3 listenerUp, out float3 listenerForward);
+            float3 listenerAcousticForward = listenerForward;
+
             UpdateListenerWaterDensityMul(safeDeltaTime);
             UpdateStormRoarShedder(safeDeltaTime);
             UpdateGlobalWindHowl(safeDeltaTime);
             float threatActivity = 0f;
             DecayImpactEmitters(now);
             AdvanceAcousticRadarDecayCadence(safeDeltaTime);
-            RefreshListenerCaveState(listener);
+            RefreshListenerCaveState(listener, listenerRuntimePosition);
             ResetNearestRadarEmitterScratch();
             DrainDelayedAudioIngress();
-            ProcessDelayedAudioEvents(listenerAbsolutePosition);
+            ProcessDelayedAudioEvents(hasListener, in listenerAup);
             int activeSlot = 0;
             while (activeSlot < _activeWorldCount)
             {
@@ -647,11 +710,32 @@ namespace Hecton8.Audio
                     continue;
                 }
 
-                Transform sourceTransform = source.transform;
-                Vector3 sourcePosition = sourceTransform.position;
-                UpdateWorldSourceAudioLod(sourceIndex, source, sourcePosition, now, false);
+                if (!TryGetCachedActiveWorldRuntimePosition(sourceIndex, out Vector3 sourcePosition))
+                {
+                    ResetWorldSourceState(sourceIndex, false);
+                    continue;
+                }
+
+                AbsoluteUniversePosition sourceAup = ResolveActiveWorldAup(sourceIndex, sourcePosition, currentFrame);
+                Vector3 sourceAbsolutePosition = ToAbsoluteVector3(in sourceAup);
+                CacheActiveWorldRuntimePosition(sourceIndex, sourcePosition, currentFrame);
+                CacheActiveWorldAup(sourceIndex, in sourceAup, currentFrame);
+                UpdateWorldSourceAudioLod(
+                    sourceIndex,
+                    source,
+                    sourcePosition,
+                    sourceAbsolutePosition,
+                    in sourceAup,
+                    listener,
+                    in listenerAup,
+                    listenerRuntimePosition,
+                    listenerRight,
+                    listenerAcousticForward,
+                    listenerAbsolutePosition,
+                    now,
+                    false);
                 if (listener != null)
-                    UpdateManualDopplerPitch(sourceIndex, source, listenerAbsolutePosition, listenerVelocity, safeDeltaTime);
+                    UpdateManualDopplerPitch(sourceIndex, source, sourceAbsolutePosition, in sourceAup, in listenerAup, listenerVelocity, safeDeltaTime);
                 if (!source.isPlaying)
                 {
                     ResetWorldSourceState(sourceIndex, false);
@@ -663,23 +747,31 @@ namespace Hecton8.Audio
                 if (_haasReleaseTimes[sourceIndex] <= now && source.spatialBlend >= targetBlend - 0.001f)
                     _haasReleaseTimes[sourceIndex] = 0f;
 
-                if (IsThreatWorldSource(source))
+                if (IsThreatWorldSource(sourceIndex))
                     threatActivity = math.max(threatActivity, math.saturate(source.volume));
                 float sourceAmplitude = math.max(0f, source.volume);
-                DepositAcousticRadarSample(listener, sourcePosition, sourceAmplitude);
-                if (listener != null)
-                    QueueNearestRadarEmitter(listenerAbsolutePosition, listener.position, sourcePosition, sourceAmplitude, sourceTransform.root);
+                DepositAcousticRadarSample(
+                    listener,
+                    in listenerAup,
+                    listenerRight,
+                    listenerUp,
+                    listenerForward,
+                    sourcePosition,
+                    in sourceAup,
+                    sourceAmplitude);
+                if (hasListener)
+                    QueueNearestRadarEmitter(in listenerAup, listenerRuntimePosition, sourcePosition, in sourceAup, sourceAmplitude, ResolveWorldSourceRoot(sourceIndex));
                 activeSlot++;
             }
 
-            DepositImpactRadarSamples(listener, now);
-            if (listener != null)
+            DepositImpactRadarSamples(listener, in listenerAup, listenerRight, listenerUp, listenerForward, now);
+            if (hasListener)
             {
-                QueueImpactRadarEmitters(listenerAbsolutePosition, listener.position, now);
-                AccumulateNearestRadarGrid(listener);
+                QueueImpactRadarEmitters(in listenerAup, listenerRuntimePosition, now);
+                AccumulateNearestRadarGrid(listener, listenerRuntimePosition, in listenerAup, listenerRight, listenerUp, listenerForward);
             }
             UploadAcousticRadarGridBuffer();
-            UpdateDominantBinauralEmitterTelemetry(now, listener);
+            UpdateDominantBinauralEmitterTelemetry(now, listener, in listenerAup, currentFrame);
             ApplyThreatBusDucking(threatActivity, safeDeltaTime);
             ApplyParasiteRoomAcousticState(safeDeltaTime);
         }
@@ -727,24 +819,35 @@ namespace Hecton8.Audio
             }
 
             _poolSize = effectivePoolSize;
-            _pool = new AudioSource[_poolSize];
-            _startTimes = new float[_poolSize];
-            _baseVolumes = new float[_poolSize];
-            _basePitches = new float[_poolSize];
+            _pool = new AudioSource[_poolSize]; // COLD ALLOC: AudioSource[_poolSize] - authored world-source pool references - owner: SpatialAudioManager
+            _startTimes = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - world-source playback start times - owner: SpatialAudioManager
+            _baseVolumes = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - world-source authored volume cache - owner: SpatialAudioManager
+            _basePitches = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - world-source authored pitch cache - owner: SpatialAudioManager
             _sourceVoxelLowPassCutoffs = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - per-source voxel occlusion LPF cache - owner: SpatialAudioManager
             _sourceVoxelTransmissions = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - per-source voxel transmission cache - owner: SpatialAudioManager
             _sourceVoxelNextUpdateTimes = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - throttled voxel occlusion refresh cadence - owner: SpatialAudioManager
-            _smoothedDopplerRatios = new float[_poolSize];
-            _previousRelativeVelocities = new float[_poolSize];
-            _arrivalTimes = new float[_poolSize];
-            _haasReleaseTimes = new float[_poolSize];
-            _nextTierUpdateTimes = new float[_poolSize];
-            _audioLodTiers = new AudioLodTier[_poolSize];
-            _lowPassFilters = new AudioLowPassFilter[_poolSize];
-            _previousAbsolutePositions = new Vector3[_poolSize];
-            _currentAbsoluteVelocities = new Vector3[_poolSize];
+            _smoothedDopplerRatios = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - per-source Doppler smoothing state - owner: SpatialAudioManager
+            _previousRelativeVelocities = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - per-source Doppler velocity cache - owner: SpatialAudioManager
+            _arrivalTimes = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - Haas arrival prediction cache - owner: SpatialAudioManager
+            _haasReleaseTimes = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - Haas masking release timestamps - owner: SpatialAudioManager
+            _nextTierUpdateTimes = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - audio LOD refresh cadence - owner: SpatialAudioManager
+            _audioLodTiers = new AudioLodTier[_poolSize]; // COLD ALLOC: AudioLodTier[_poolSize] - world-source audio LOD cache - owner: SpatialAudioManager
+            _lowPassFilters = new AudioLowPassFilter[_poolSize]; // COLD ALLOC: AudioLowPassFilter[_poolSize] - authored world-source LPF references - owner: SpatialAudioManager
+            _worldSourceRoots = new Transform[_poolSize]; // COLD ALLOC: Transform[_poolSize] - authored world-source root cache for occlusion owner filtering - owner: SpatialAudioManager
+            _worldSourceBusFlags = new byte[_poolSize]; // COLD ALLOC: byte[_poolSize] - per-source mixer role flags for hot-loop threat/bed decisions - owner: SpatialAudioManager
+            _clipRouteCacheIds = new int[AudioClipRouteCacheCapacity]; // COLD ALLOC: int[128] - AudioClip instance-id route cache keys - owner: SpatialAudioManager
+            _clipRouteCacheFlags = new byte[AudioClipRouteCacheCapacity]; // COLD ALLOC: byte[128] - AudioClip route flags avoiding repeated clip.name scans - owner: SpatialAudioManager
+            _previousAbsolutePositions = new Vector3[_poolSize]; // COLD ALLOC: Vector3[_poolSize] - per-source absolute position history - owner: SpatialAudioManager
+            _currentAbsoluteVelocities = new Vector3[_poolSize]; // COLD ALLOC: Vector3[_poolSize] - per-source absolute velocity cache - owner: SpatialAudioManager
+            _activeWorldRuntimePositions = new Vector3[_poolSize]; // COLD ALLOC: Vector3[_poolSize] - per-frame active world-source runtime position cache - owner: SpatialAudioManager
+            _activeWorldRuntimePositionFrames = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - validity frame for active world-source runtime position cache - owner: SpatialAudioManager
+            _activeWorldAups = new AbsoluteUniversePosition[_poolSize]; // COLD ALLOC: AbsoluteUniversePosition[_poolSize] - per-source AUP cache shared by radar and binaural telemetry - owner: SpatialAudioManager
+            _activeWorldAupFrames = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - validity frame for active world-source AUP cache - owner: SpatialAudioManager
             _activeWorldIndices = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - sparse active world-source set - owner: SpatialAudioManager
             _activeWorldSlots = new int[_poolSize]; // COLD ALLOC: int[_poolSize] - sparse world-source slot lookup - owner: SpatialAudioManager
+            for (int i = 0; i < AudioClipRouteCacheCapacity; i++)
+                _clipRouteCacheIds[i] = int.MinValue;
+
             _activeWorldCount = 0;
             for (int i = 0; i < _poolSize; i++)
             {
@@ -756,6 +859,8 @@ namespace Hecton8.Audio
                 _sourceVoxelNextUpdateTimes[i] = 0f;
                 _smoothedDopplerRatios[i] = 1f;
                 _previousRelativeVelocities[i] = 0f;
+                _activeWorldRuntimePositionFrames[i] = -1;
+                _activeWorldAupFrames[i] = -1;
             }
 
             if (_poolSize > 0)
@@ -764,43 +869,6 @@ namespace Hecton8.Audio
                 BindAuthoredWorldPoolRecursive(ResolveWorldPoolRoot(), ref boundCount);
             }
 
-            return;
-#if false
-
-            _pool = new AudioSource[_poolSize];
-            _startTimes = new float[_poolSize];
-            _baseVolumes = new float[_poolSize];
-            _arrivalTimes = new float[_poolSize];
-            _haasReleaseTimes = new float[_poolSize];
-            _nextTierUpdateTimes = new float[_poolSize];
-            _audioLodTiers = new AudioLodTier[_poolSize];
-            _lowPassFilters = new AudioLowPassFilter[_poolSize];
-
-            for (int i = 0; i < _poolSize; i++)
-            {
-                // Ð”Ð¾Ñ‡ÐµÑ€Ð½Ð¸Ð¹ GameObject Ð´Ð»Ñ ÐºÐ°Ð¶Ð´Ð¾Ð³Ð¾ Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ°
-                GameObject child = null;
-                child.transform.SetParent(transform, false);
-
-                AudioSource source = null;
-                AudioLowPassFilter lowPassFilter = null;
-                ConfigureAs3D(source);
-                lowPassFilter.enabled = false;
-                lowPassFilter.cutoffFrequency = 22000f;
-
-                source.playOnAwake = false;
-                source.loop = false;
-
-                _pool[i] = source;
-                _lowPassFilters[i] = lowPassFilter;
-                _startTimes[i] = -1f; // Not playing
-                _baseVolumes[i] = 0f;
-                _arrivalTimes[i] = -1f;
-                _haasReleaseTimes[i] = 0f;
-                _nextTierUpdateTimes[i] = 0f;
-                _audioLodTiers[i] = AudioLodTier.Tier0Full;
-            }
-#endif
         }
 
         /// <summary>Ð¡Ð¾Ð·Ð´Ð°Ñ‘Ñ‚ Ð¿ÑƒÐ» 2D Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð² (Ð°Ð½Ð°Ð»Ð¾Ð³Ð¸Ñ‡Ð½Ð¾ 3D, Ð±ÐµÐ· PlayOneShot).</summary>
@@ -819,8 +887,8 @@ namespace Hecton8.Audio
             }
 
             _pool2DSize = effectivePool2DSize;
-            _pool2D = new AudioSource[_pool2DSize];
-            _startTimes2D = new float[_pool2DSize];
+            _pool2D = new AudioSource[_pool2DSize]; // COLD ALLOC: AudioSource[_pool2DSize] - authored helmet/UI source pool references - owner: SpatialAudioManager
+            _startTimes2D = new float[_pool2DSize]; // COLD ALLOC: float[_pool2DSize] - helmet/UI source playback start times - owner: SpatialAudioManager
 
             if (_pool2DSize > 0)
             {
@@ -828,27 +896,6 @@ namespace Hecton8.Audio
                 BindAuthoredHelmetPoolRecursive(ResolveHelmetPoolRoot(), ref boundCount);
             }
 
-            return;
-#if false
-
-            _pool2D = new AudioSource[_pool2DSize];
-            _startTimes2D = new float[_pool2DSize];
-
-            for (int i = 0; i < _pool2DSize; i++)
-            {
-                GameObject child = null;
-                child.transform.SetParent(transform, false);
-
-                AudioSource source = null;
-                ConfigureAs2D(source);
-
-                source.playOnAwake = false;
-                source.loop = false;
-
-                _pool2D[i] = source;
-                _startTimes2D[i] = -1f;
-            }
-#endif
         }
 
         private void ConfigureAs2D(AudioSource source)
@@ -1023,7 +1070,8 @@ namespace Hecton8.Audio
             if (clip == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SpatialAudioManager] PlayAtPoint called with null clip.");
+                if (ShouldEmitEditorThrottledLog(ref _nextPlayAtPointNullClipLogTime, NullClipEditorLogIntervalSeconds))
+                    Debug.LogWarning("[SpatialAudioManager] PlayAtPoint called with null clip.");
 #endif
                 return;
             }
@@ -1031,7 +1079,17 @@ namespace Hecton8.Audio
             if (_pool == null || _poolSize <= 0)
                 return;
 
-            AudioLodTier lodTier = ResolveAudioLodTier(position);
+            bool hasListener = TryResolveListenerFrame(
+                out Transform listener,
+                out Vector3 listenerRuntimePosition,
+                out Vector3 listenerAbsolutePosition,
+                out AbsoluteUniversePosition listenerAup);
+            ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
+            float3 listenerAcousticForward = listenerForward;
+            ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            AudioLodTier lodTier = hasListener
+                ? ResolveAudioLodTier(in sourceAup, in listenerAup)
+                : AudioLodTier.Tier0Full;
             if (lodTier == AudioLodTier.Tier2Culled)
                 return;
 
@@ -1048,20 +1106,39 @@ namespace Hecton8.Audio
 
             // â”€â”€ ÐÐ°ÑÑ‚Ñ€Ð¾Ð¹ÐºÐ° â”€â”€
             source.clip = clip;
-            source.volume = volume;
+            float clampedVolume = math.saturate(volume);
+            source.volume = clampedVolume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
-            _baseVolumes[index] = volume;
+            _baseVolumes[index] = clampedVolume;
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
-            source.pitch = ResolveSourcePitch(index, source, 1f);
+            CacheWorldSourceBusFlags(index, source.outputAudioMixerGroup);
+            source.pitch = ResolveSourcePitch(index, 1f);
             _audioLodTiers[index] = lodTier;
-            UpdateWorldSourceAudioLod(index, source, position, Time.unscaledTime, true);
-            ApplyHaasMask(index, position);
-            source.spatialBlend = ResolveTargetSpatialBlend(index, Time.unscaledTime);
+            float now = Time.unscaledTime;
+            int currentFrame = Time.frameCount;
+            UpdateWorldSourceAudioLod(
+                index,
+                source,
+                position,
+                sourceAbsolutePosition,
+                in sourceAup,
+                listener,
+                in listenerAup,
+                listenerRuntimePosition,
+                listenerRight,
+                listenerAcousticForward,
+                listenerAbsolutePosition,
+                now,
+                true);
+            ApplyHaasMask(index, in sourceAup, hasListener, in listenerAup, now);
+            source.spatialBlend = ResolveTargetSpatialBlend(index, now);
 
             // â”€â”€ Ð—Ð°Ð¿ÑƒÑÐº â”€â”€
             source.Play();
-            _startTimes[index] = Time.unscaledTime;
+            _startTimes[index] = now;
+            CacheActiveWorldRuntimePosition(index, position, currentFrame);
+            CacheActiveWorldAup(index, in sourceAup, currentFrame);
             MarkWorldSourceActive(index);
         }
 
@@ -1079,7 +1156,8 @@ namespace Hecton8.Audio
             if (clip == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SpatialAudioManager] PlayAtPointWithLowPass called with null clip.");
+                if (ShouldEmitEditorThrottledLog(ref _nextPlayAtPointLowPassNullClipLogTime, NullClipEditorLogIntervalSeconds))
+                    Debug.LogWarning("[SpatialAudioManager] PlayAtPointWithLowPass called with null clip.");
 #endif
                 return;
             }
@@ -1087,7 +1165,17 @@ namespace Hecton8.Audio
             if (_pool == null || _poolSize <= 0)
                 return;
 
-            AudioLodTier lodTier = ResolveAudioLodTier(position);
+            bool hasListener = TryResolveListenerFrame(
+                out Transform listener,
+                out Vector3 listenerRuntimePosition,
+                out Vector3 listenerAbsolutePosition,
+                out AbsoluteUniversePosition listenerAup);
+            ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
+            float3 listenerAcousticForward = listenerForward;
+            ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            AudioLodTier lodTier = hasListener
+                ? ResolveAudioLodTier(in sourceAup, in listenerAup)
+                : AudioLodTier.Tier0Full;
             if (lodTier == AudioLodTier.Tier2Culled)
                 return;
 
@@ -1100,15 +1188,31 @@ namespace Hecton8.Audio
             source.enabled = true;
             source.transform.position = position;
             source.clip = clip;
-            source.volume = volume;
+            float clampedVolume = math.saturate(volume);
+            source.volume = clampedVolume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
-            _baseVolumes[index] = volume;
+            _baseVolumes[index] = clampedVolume;
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
-            source.pitch = ResolveSourcePitch(index, source, 1f);
+            CacheWorldSourceBusFlags(index, source.outputAudioMixerGroup);
+            source.pitch = ResolveSourcePitch(index, 1f);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
-            UpdateWorldSourceAudioLod(index, source, position, now, true);
+            int currentFrame = Time.frameCount;
+            UpdateWorldSourceAudioLod(
+                index,
+                source,
+                position,
+                sourceAbsolutePosition,
+                in sourceAup,
+                listener,
+                in listenerAup,
+                listenerRuntimePosition,
+                listenerRight,
+                listenerAcousticForward,
+                listenerAbsolutePosition,
+                now,
+                true);
             float cutoff = math.clamp(
                 lowPassCutoffHz,
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
@@ -1118,10 +1222,12 @@ namespace Hecton8.Audio
             if (cutoff < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f)
                 ApplyLowPassFilter(index, true, cutoff);
 
-            ApplyHaasMask(index, position);
+            ApplyHaasMask(index, in sourceAup, hasListener, in listenerAup, now);
             source.spatialBlend = ResolveTargetSpatialBlend(index, now);
             source.Play();
             _startTimes[index] = now;
+            CacheActiveWorldRuntimePosition(index, position, currentFrame);
+            CacheActiveWorldAup(index, in sourceAup, currentFrame);
             MarkWorldSourceActive(index);
         }
 
@@ -1174,7 +1280,8 @@ namespace Hecton8.Audio
             if (clip == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SpatialAudioManager] PlayStatic2D called with null clip.");
+                if (ShouldEmitEditorThrottledLog(ref _nextPlayStatic2DNullClipLogTime, NullClipEditorLogIntervalSeconds))
+                    Debug.LogWarning("[SpatialAudioManager] PlayStatic2D called with null clip.");
 #endif
                 return;
             }
@@ -1189,7 +1296,7 @@ namespace Hecton8.Audio
             AudioSource source = _pool2D[index];
 
             source.clip = clip;
-            source.volume = volume;
+            source.volume = math.saturate(volume);
             source.pitch = 1f;
             source.spatialBlend = 0f;
             source.outputAudioMixerGroup = ResolveUiMixerGroup(clip, mixerGroup);
@@ -1200,7 +1307,14 @@ namespace Hecton8.Audio
 
         public void PlayStatic2DBitCrushed(AudioClip clip, float volume)
         {
-            PlayStatic2D(clip, volume, _encryptedVoiceGroup != null ? _encryptedVoiceGroup : _interfaceGroup);
+            TryPlayStatic2DBitCrushed(clip, volume);
+        }
+
+        public bool TryPlayStatic2DBitCrushed(AudioClip clip, float volume)
+        {
+            bool hasEncryptedVoiceRoute = _encryptedVoiceGroup != null;
+            PlayStatic2D(clip, volume, hasEncryptedVoiceRoute ? _encryptedVoiceGroup : _interfaceGroup);
+            return clip != null && hasEncryptedVoiceRoute;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -1212,6 +1326,8 @@ namespace Hecton8.Audio
 
         /// <summary>Mixer group Ð´Ð»Ñ Ð¸Ð½Ñ‚ÐµÑ€Ñ„ÐµÐ¹ÑÐ° Ð¸ Ð·Ð²ÑƒÐºÐ¾Ð² ÑˆÐ»ÐµÐ¼Ð°.</summary>
         public AudioMixerGroup InterfaceGroup => _interfaceGroup;
+
+        public bool HasEncryptedVoiceBitCrushRoute => _encryptedVoiceGroup != null;
 
         public AudioMixerGroup EncryptedVoiceGroup => _encryptedVoiceGroup != null ? _encryptedVoiceGroup : _interfaceGroup;
 
@@ -1225,13 +1341,15 @@ namespace Hecton8.Audio
         public AudioMixerGroup BedGroup => ResolvedBedBusGroup;
 
         /// <summary>Current 360-bin acoustic radar intensity ring for HUD consumers. Treat as read-only and reacquire each tick.</summary>
-        public NativeArray<float> AcousticRadarIntensityBins => _acousticRadarIntensityBins;
+        public NativeArray<float>.ReadOnly AcousticRadarIntensityBins =>
+            _acousticRadarIntensityBins.IsCreated ? _acousticRadarIntensityBins.AsReadOnly() : default;
 
         /// <summary>Current acoustic radar angular resolution in bins.</summary>
         public int AcousticRadarResolution => AcousticRadarBinCount;
 
         /// <summary>Persistent 8x4 acoustic radar energy grid for HUD sonar distortion overlays.</summary>
-        public NativeArray<float> AcousticRadarEnergyGrid => _acousticRadarGrid;
+        public NativeArray<float>.ReadOnly AcousticRadarEnergyGrid =>
+            _acousticRadarGrid.IsCreated ? _acousticRadarGrid.AsReadOnly() : default;
 
         /// <summary>GPU upload buffer for the 8x4 acoustic radar energy grid.</summary>
         public ComputeBuffer AcousticRadarEnergyGridBuffer => _acousticRadarGridBuffer;
@@ -1272,6 +1390,7 @@ namespace Hecton8.Audio
             int count = 0;
             int limit = destination.Length;
             float now = Time.unscaledTime;
+            int currentFrame = Time.frameCount;
             for (int activeSlot = 0; activeSlot < _activeWorldCount && count < limit; activeSlot++)
             {
                 int sourceIndex = _activeWorldIndices[activeSlot];
@@ -1279,9 +1398,13 @@ namespace Hecton8.Audio
                 if (source == null || !source.isPlaying || source.clip == null)
                     continue;
 
+                if (!TryGetCachedActiveWorldRuntimePosition(sourceIndex, out Vector3 sourcePosition))
+                    continue;
+
                 destination[count] = new ActiveEmitterSample
                 {
-                    Position = source.transform.position,
+                    PositionAup = ResolveActiveWorldAup(sourceIndex, sourcePosition, currentFrame),
+                    Position = sourcePosition,
                     Amplitude = math.max(0f, source.volume)
                 };
                 count++;
@@ -1296,6 +1419,7 @@ namespace Hecton8.Audio
 
                 destination[count] = new ActiveEmitterSample
                 {
+                    PositionAup = emitter.PositionAup,
                     Position = emitter.Position,
                     Amplitude = amplitude
                 };
@@ -1305,7 +1429,7 @@ namespace Hecton8.Audio
             return count;
         }
 
-        internal int CopyActiveImpactEmitterSamples(ActiveEmitterSample[] destination)
+        internal int CopyActiveImpactEmitterSamples(ActiveImpactEmitterSample[] destination)
         {
             if (destination == null || destination.Length == 0)
                 return 0;
@@ -1320,9 +1444,9 @@ namespace Hecton8.Audio
                 if (!(amplitude > ImpactEmitterMinimumAmplitude))
                     continue;
 
-                destination[count] = new ActiveEmitterSample
+                destination[count] = new ActiveImpactEmitterSample
                 {
-                    Position = emitter.Position,
+                    PositionAup = emitter.PositionAup,
                     Amplitude = amplitude
                 };
                 count++;
@@ -1331,12 +1455,18 @@ namespace Hecton8.Audio
             return count;
         }
 
-        private void UpdateDominantBinauralEmitterTelemetry(float now, Transform listener)
+        private void UpdateDominantBinauralEmitterTelemetry(
+            float now,
+            Transform listener,
+            in AbsoluteUniversePosition listenerAup,
+            int currentFrame)
         {
             _dominantBinauralEmitter = default;
             if (listener == null)
                 return;
 
+            ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForwardBasis);
+            float3 listenerForward = listenerForwardBasis;
             float bestScore = 0f;
             for (int activeSlot = 0; activeSlot < _activeWorldCount; activeSlot++)
             {
@@ -1345,7 +1475,18 @@ namespace Hecton8.Audio
                 if (source == null || !source.isActiveAndEnabled || !source.isPlaying || source.clip == null)
                     continue;
 
-                TryPromoteBinauralEmitter(listener, source.transform.position, math.max(0f, source.volume), ref bestScore);
+                if (!TryGetCachedActiveWorldRuntimePosition(sourceIndex, out Vector3 sourcePosition))
+                    continue;
+
+                AbsoluteUniversePosition sourceAup = ResolveActiveWorldAup(sourceIndex, sourcePosition, currentFrame);
+                TryPromoteBinauralEmitter(
+                    in listenerAup,
+                    listenerRight,
+                    listenerForward,
+                    sourcePosition,
+                    in sourceAup,
+                    math.max(0f, source.volume),
+                    ref bestScore);
             }
 
             for (int i = 0; i < _impactEmitters.Length; i++)
@@ -1355,20 +1496,28 @@ namespace Hecton8.Audio
                 if (!(amplitude > ImpactEmitterMinimumAmplitude))
                     continue;
 
-                TryPromoteBinauralEmitter(listener, emitter.Position, amplitude, ref bestScore);
+                TryPromoteBinauralEmitter(in listenerAup, listenerRight, listenerForward, emitter.Position, in emitter.PositionAup, amplitude, ref bestScore);
             }
         }
 
-        private void TryPromoteBinauralEmitter(Transform listener, Vector3 sourcePosition, float amplitude, ref float bestScore)
+        private void TryPromoteBinauralEmitter(
+            in AbsoluteUniversePosition listenerAup,
+            float3 listenerRight,
+            float3 listenerForward,
+            Vector3 sourcePosition,
+            in AbsoluteUniversePosition sourceAup,
+            float amplitude,
+            ref float bestScore)
         {
             if (!(amplitude > 0f))
                 return;
 
-            float3 runtimeDelta = ResolveAupDelta(listener, sourcePosition);
-            if (math.lengthsq(runtimeDelta) <= 0.0001f)
+            float3 runtimeDelta = AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup);
+            float runtimeDistanceSq = math.lengthsq(runtimeDelta);
+            if (runtimeDistanceSq <= 0.0001f)
                 return;
 
-            float distanceSqr = ResolveAbsoluteDistanceSqr(listener, sourcePosition);
+            float distanceSqr = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
             if (distanceSqr <= 0.0001f)
                 return;
 
@@ -1379,15 +1528,15 @@ namespace Hecton8.Audio
             if (!(energy > bestScore))
                 return;
 
-            float3 sourceDirection = math.normalizesafe(runtimeDelta, new float3(0f, 0f, 1f));
-            float earAxisDot = math.clamp(math.dot((float3)listener.right, sourceDirection), -1f, 1f);
+            float3 sourceDirection = NormalizeApprox(runtimeDelta);
+            float earAxisDot = math.clamp(math.dot(listenerRight, sourceDirection), -1f, 1f);
             float absSin = math.abs(earAxisDot);
             float waterDensityMul = math.saturate(_listenerWaterDensityMul);
             float airShadowCutoff = math.lerp(8000f, 1200f, absSin);
             float waterShadowCutoff = math.lerp(8000f, 3000f, absSin);
             float shadowCutoff = math.lerp(airShadowCutoff, waterShadowCutoff, waterDensityMul);
             float shadowAmount = math.lerp(absSin, absSin * 0.5f, waterDensityMul);
-            if (TryResolveRearHemisphereLowPassCutoff(sourcePosition, out float rearHemisphereCutoff))
+            if (TryResolveRearHemisphereLowPassCutoff(in sourceAup, listenerForward, in listenerAup, out float rearHemisphereCutoff))
             {
                 shadowCutoff = math.min(shadowCutoff, rearHemisphereCutoff);
                 float rearShadowAmount = math.saturate(
@@ -1464,7 +1613,7 @@ namespace Hecton8.Audio
         /// Cost: ~0.001ms Ð´Ð»Ñ Ð¿ÑƒÐ»Ð° Ð¸Ð· 16 ÑÐ»ÐµÐ¼ÐµÐ½Ñ‚Ð¾Ð².
         /// </summary>
         /// <returns>Ð˜Ð½Ð´ÐµÐºÑ Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ° Ð´Ð»Ñ Ð¸ÑÐ¿Ð¾Ð»ÑŒÐ·Ð¾Ð²Ð°Ð½Ð¸Ñ.</returns>
-private int AcquireSourceIndex()
+        private int AcquireSourceIndex()
         {
             if (_pool == null || _poolSize <= 0)
                 return -1;
@@ -1504,11 +1653,14 @@ private int AcquireSourceIndex()
             ResetWorldSourceState(quietestIndex, true);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogFormat(
-                this,
-                "[SpatialAudioManager] Pool full ({0}/{0}). Evicting quietest source at index {1}.",
-                _poolSize,
-                quietestIndex);
+            if (ShouldEmitEditorThrottledLog(ref _nextWorldPoolFullEditorLogTime, PoolFullEditorLogIntervalSeconds))
+            {
+                Debug.LogFormat(
+                    this,
+                    "[SpatialAudioManager] Pool full ({0}). Evicting quietest source at index {1}.",
+                    _poolSize,
+                    quietestIndex);
+            }
 #endif
 
             return quietestIndex;
@@ -1582,7 +1734,17 @@ private int AcquireSourceIndex()
             if (clip == null || _pool == null || _poolSize <= 0)
                 return false;
 
-            AudioLodTier lodTier = ResolveAudioLodTier(position);
+            bool hasListener = TryResolveListenerFrame(
+                out Transform listener,
+                out Vector3 listenerRuntimePosition,
+                out Vector3 listenerAbsolutePosition,
+                out AbsoluteUniversePosition listenerAup);
+            ResolveListenerBasis(listener, out float3 listenerRight, out _, out float3 listenerForward);
+            float3 listenerAcousticForward = listenerForward;
+            ResolveSourceAupFrame(position, out AbsoluteUniversePosition sourceAup, out Vector3 sourceAbsolutePosition);
+            AudioLodTier lodTier = hasListener
+                ? ResolveAudioLodTier(in sourceAup, in listenerAup)
+                : AudioLodTier.Tier0Full;
             if (lodTier == AudioLodTier.Tier2Culled)
                 return false;
 
@@ -1595,19 +1757,37 @@ private int AcquireSourceIndex()
             source.enabled = true;
             source.transform.position = position;
             source.clip = clip;
-            source.volume = volume;
+            float clampedVolume = math.saturate(volume);
+            source.volume = clampedVolume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
-            _baseVolumes[index] = volume;
+            _baseVolumes[index] = clampedVolume;
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
-            source.pitch = ResolveSourcePitch(index, source, 1f);
+            CacheWorldSourceBusFlags(index, source.outputAudioMixerGroup);
+            source.pitch = ResolveSourcePitch(index, 1f);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
-            UpdateWorldSourceAudioLod(index, source, position, now, true);
-            ApplyHaasMask(index, position);
+            int currentFrame = Time.frameCount;
+            UpdateWorldSourceAudioLod(
+                index,
+                source,
+                position,
+                sourceAbsolutePosition,
+                in sourceAup,
+                listener,
+                in listenerAup,
+                listenerRuntimePosition,
+                listenerRight,
+                listenerAcousticForward,
+                listenerAbsolutePosition,
+                now,
+                true);
+            ApplyHaasMask(index, in sourceAup, hasListener, in listenerAup, now);
             source.spatialBlend = ResolveTargetSpatialBlend(index, now);
             source.Play();
             _startTimes[index] = now;
+            CacheActiveWorldRuntimePosition(index, position, currentFrame);
+            CacheActiveWorldAup(index, in sourceAup, currentFrame);
             MarkWorldSourceActive(index);
             return true;
         }
@@ -1688,6 +1868,7 @@ private int AcquireSourceIndex()
             {
                 Position = position,
                 Amplitude = amplitude,
+                PositionAup = AbsoluteUniversePosition.FromRuntimePosition(position),
                 SpawnAt = now,
                 ExpireAt = now + lifetime
             };
@@ -1696,20 +1877,29 @@ private int AcquireSourceIndex()
 
         private void HandleFatalPressureImplosion(in FatalPressureImplosionEvent implosionEvent)
         {
-            Vector3 listenerAbsolutePosition = _listenerTransform != null
-                ? HectonFloatingOrigin.ToAbsoluteUniversePosition(_listenerTransform.position)
-                : implosionEvent.RuntimePosition;
-            float distanceSq = ResolveAbsoluteDistanceSqrFromAbsolutePositions(listenerAbsolutePosition, implosionEvent.RuntimePosition);
+            Vector3 implosionRuntimePosition = implosionEvent.RuntimePosition;
+            AbsoluteUniversePosition implosionAup = AbsoluteUniversePosition.FromRuntimePosition(implosionRuntimePosition);
+            bool hasListener = TryResolveListenerFrame(
+                out _,
+                out Vector3 listenerRuntimePosition,
+                out _,
+                out AbsoluteUniversePosition resolvedListenerAup);
+            AbsoluteUniversePosition listenerAup = hasListener ? resolvedListenerAup : implosionAup;
+            if (!hasListener)
+                listenerRuntimePosition = implosionRuntimePosition;
+            float distanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in implosionAup));
             ResolveDelayedAcousticPath(
-                implosionEvent.RuntimePosition,
-                listenerAbsolutePosition,
+                implosionRuntimePosition,
+                in implosionAup,
+                listenerRuntimePosition,
+                in listenerAup,
                 out float acousticTransmission01,
                 out float lowPassCutoffHz);
             DelayedAudioEvent delayedEvent = new DelayedAudioEvent
             {
                 Kind = DelayedAudioEventKind.FatalPressureImplosion,
-                Position = implosionEvent.RuntimePosition,
-                EventTimeSeconds = Time.time,
+                Aup = implosionAup,
+                EventTimeSeconds = Time.unscaledTime,
                 DelaySeconds = ResolveFixedUnderwaterArrivalDelaySecondsFromSq(distanceSq),
                 Volume = FatalPressureImplosionEventVolume,
                 Pitch = FatalPressureImplosionEventPitch,
@@ -1736,21 +1926,28 @@ private int AcquireSourceIndex()
         /// </summary>
         public void QueueInventoryRunawayExplosion(Vector3 runtimePosition, float volume01)
         {
-            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
-            Vector3 listenerAbsolutePosition = _listenerTransform != null
-                ? HectonFloatingOrigin.ToAbsoluteUniversePosition(_listenerTransform.position)
-                : absolutePosition;
-            float distanceSq = ResolveAbsoluteDistanceSqrFromAbsolutePositions(listenerAbsolutePosition, absolutePosition);
+            AbsoluteUniversePosition eventAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            bool hasListener = TryResolveListenerFrame(
+                out _,
+                out Vector3 listenerRuntimePosition,
+                out _,
+                out AbsoluteUniversePosition resolvedListenerAup);
+            AbsoluteUniversePosition listenerAup = hasListener ? resolvedListenerAup : eventAup;
+            if (!hasListener)
+                listenerRuntimePosition = runtimePosition;
+            float distanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in eventAup));
             ResolveDelayedAcousticPath(
-                absolutePosition,
-                listenerAbsolutePosition,
+                runtimePosition,
+                in eventAup,
+                listenerRuntimePosition,
+                in listenerAup,
                 out float acousticTransmission01,
                 out float lowPassCutoffHz);
             DelayedAudioEvent delayedEvent = new DelayedAudioEvent
             {
                 Kind = DelayedAudioEventKind.InventoryRunawayExplosion,
-                Position = absolutePosition,
-                EventTimeSeconds = Time.time,
+                Aup = eventAup,
+                EventTimeSeconds = Time.unscaledTime,
                 DelaySeconds = ResolveFixedUnderwaterArrivalDelaySecondsFromSq(distanceSq),
                 Volume = math.saturate(volume01),
                 Pitch = 0.72f,
@@ -1783,17 +1980,17 @@ private int AcquireSourceIndex()
 
             while (_delayedAudioIngressCount > 0 && _delayedAudioIngress.TryDequeue(out DelayedAudioEvent delayedEvent))
             {
-                _pendingDelayedAudioEvents.Add(delayedEvent);
+                _pendingDelayedAudioEvents.AddNoResize(delayedEvent);
                 _delayedAudioIngressCount--;
             }
         }
 
-        private void ProcessDelayedAudioEvents(Vector3 listenerAbsolutePosition)
+        private void ProcessDelayedAudioEvents(bool hasListener, in AbsoluteUniversePosition listenerAup)
         {
             if (!_pendingDelayedAudioEvents.IsCreated || _pendingDelayedAudioEvents.Length == 0)
                 return;
 
-            float now = Time.time;
+            float now = Time.unscaledTime;
             int writeIndex = 0;
             for (int i = 0; i < _pendingDelayedAudioEvents.Length; i++)
             {
@@ -1806,14 +2003,17 @@ private int AcquireSourceIndex()
                     continue;
                 }
 
-                DispatchDelayedAudioEvent(in delayedEvent, listenerAbsolutePosition);
+                DispatchDelayedAudioEvent(in delayedEvent, hasListener, in listenerAup);
             }
 
             if (writeIndex != _pendingDelayedAudioEvents.Length)
                 _pendingDelayedAudioEvents.ResizeUninitialized(writeIndex);
         }
 
-        private void DispatchDelayedAudioEvent(in DelayedAudioEvent delayedEvent, Vector3 listenerAbsolutePosition)
+        private void DispatchDelayedAudioEvent(
+            in DelayedAudioEvent delayedEvent,
+            bool hasListener,
+            in AbsoluteUniversePosition listenerAup)
         {
             switch (delayedEvent.Kind)
             {
@@ -1822,14 +2022,15 @@ private int AcquireSourceIndex()
                     {
                         PlayAtPointWithLowPass(
                             _fatalPressureImplosionClip,
-                            delayedEvent.Position,
+                            ToRuntimeVector3(in delayedEvent.Aup),
                             ResolveDelayedEventVolume(in delayedEvent),
                             ResolveDelayedEventPitch(in delayedEvent),
                             ResolvedThreatBusGroup,
                             ResolveDelayedEventLowPass(in delayedEvent));
                     }
 
-                    ApplyDelayedTrauma(in delayedEvent, listenerAbsolutePosition);
+                    if (hasListener)
+                        ApplyDelayedTrauma(in delayedEvent, in listenerAup);
                     break;
 
                 case DelayedAudioEventKind.InventoryRunawayExplosion:
@@ -1837,7 +2038,7 @@ private int AcquireSourceIndex()
                     {
                         PlayAtPointWithLowPass(
                             _inventoryRunawayExplosionClip,
-                            delayedEvent.Position,
+                            ToRuntimeVector3(in delayedEvent.Aup),
                             ResolveDelayedEventVolume(in delayedEvent),
                             ResolveDelayedEventPitch(in delayedEvent),
                             ResolvedThreatBusGroup,
@@ -1873,9 +2074,10 @@ private int AcquireSourceIndex()
             if (shimmer01 <= 0.0001f)
                 return math.clamp(delayedEvent.Pitch, 0.1f, 3f);
 
-            float phase = (Time.time * 47.3f) +
-                          (delayedEvent.Position.x * 0.013f) +
-                          (delayedEvent.Position.z * 0.017f);
+            double3 absolutePosition = delayedEvent.Aup.ToAbsoluteDouble3();
+            float phase = (Time.unscaledTime * 47.3f) +
+                          ((float)absolutePosition.x * 0.013f) +
+                          ((float)absolutePosition.z * 0.017f);
             float shimmer = math.sin(phase) * ThermalShimmerMaximumPitchRatio * shimmer01;
             return math.clamp(delayedEvent.Pitch * (1f + shimmer), 0.1f, 3f);
         }
@@ -1888,14 +2090,16 @@ private int AcquireSourceIndex()
         }
 
         private static void ResolveDelayedAcousticPath(
-            Vector3 sourceAbsolutePosition,
-            Vector3 listenerAbsolutePosition,
+            Vector3 sourceRuntimePosition,
+            in AbsoluteUniversePosition sourceAup,
+            Vector3 listenerRuntimePosition,
+            in AbsoluteUniversePosition listenerAup,
             out float acousticTransmission01,
             out float lowPassCutoffHz)
         {
             acousticTransmission01 = 1f;
             lowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
-            float sourceListenerDistanceSq = ResolveAbsoluteDistanceSqrFromAbsolutePositions(listenerAbsolutePosition, sourceAbsolutePosition);
+            float sourceListenerDistanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
             if (sourceListenerDistanceSq > VoxelSourceOcclusionTraceMaximumDistanceSq)
             {
                 ResolveCinematicFarVoxelOcclusion(sourceListenerDistanceSq, out acousticTransmission01, out lowPassCutoffHz);
@@ -1903,8 +2107,8 @@ private int AcquireSourceIndex()
             }
 
             if (!AcousticOcclusionUtility.TryTraceVoxelDensityOcclusion(
-                    sourceAbsolutePosition,
-                    listenerAbsolutePosition,
+                    sourceRuntimePosition,
+                    listenerRuntimePosition,
                     out AcousticVoxelOcclusionResult voxelOcclusion))
             {
                 return;
@@ -1938,20 +2142,27 @@ private int AcquireSourceIndex()
             HandleRepairDroneTorchAcoustic(in acousticEvent);
         }
 
-        private void ApplyDelayedTrauma(in DelayedAudioEvent delayedEvent, Vector3 listenerAbsolutePosition)
+        private void ApplyDelayedTrauma(in DelayedAudioEvent delayedEvent, in AbsoluteUniversePosition listenerAup)
         {
             if (_listenerPlayerMovement == null)
                 return;
 
-            Vector3 listenerOffset = listenerAbsolutePosition - delayedEvent.Position;
-            float distanceMeters = listenerOffset.magnitude;
-            if (distanceMeters > delayedEvent.TraumaRangeMeters)
+            float3 listenerOffsetAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in listenerAup, in delayedEvent.Aup);
+            Vector3 listenerOffset = new Vector3(listenerOffsetAup.x, listenerOffsetAup.y, listenerOffsetAup.z);
+            float distanceSq = math.lengthsq(listenerOffsetAup);
+            float traumaRange = math.max(delayedEvent.TraumaRangeMeters, 0.0001f);
+            float traumaRangeSq = traumaRange * traumaRange;
+            if (distanceSq > traumaRangeSq)
                 return;
 
-            Vector3 traumaDirection = distanceMeters > 0.0001f
-                ? listenerOffset / distanceMeters
+            float invDistance = math.rcp(math.max(
+                ApproximateMagnitude3D(listenerOffsetAup),
+                0.000001f));
+            Vector3 traumaDirection = distanceSq > 0.000001f
+                ? listenerOffset * invDistance
                 : Vector3.up;
-            float trauma01 = 1f - math.saturate(distanceMeters / math.max(delayedEvent.TraumaRangeMeters, 0.0001f));
+            float distance01 = math.saturate(distanceSq / traumaRangeSq);
+            float trauma01 = 1f - distance01 * distance01;
             _listenerPlayerMovement.ApplyPhysicalTrauma(
                 traumaDirection * (delayedEvent.TraumaImpulse * trauma01),
                 delayedEvent.TraumaWeight * trauma01);
@@ -1971,9 +2182,14 @@ private int AcquireSourceIndex()
                 _pendingDelayedAudioEvents.Clear();
         }
 
-        private void ApplyHaasMask(int sourceIndex, Vector3 sourcePosition)
+        private void ApplyHaasMask(
+            int sourceIndex,
+            in AbsoluteUniversePosition sourceAup,
+            bool hasListener,
+            in AbsoluteUniversePosition listenerAup,
+            float now)
         {
-            float predictedArrivalTime = ResolvePredictedArrivalTime(sourcePosition);
+            float predictedArrivalTime = ResolvePredictedArrivalTime(in sourceAup, hasListener, in listenerAup, now);
             float closestDelta = float.MaxValue;
             int earliestCompetingIndex = -1;
             float earliestCompetingArrival = float.MaxValue;
@@ -1995,7 +2211,7 @@ private int AcquireSourceIndex()
             _arrivalTimes[sourceIndex] = predictedArrivalTime;
             if (closestDelta < HaasArrivalWindowSeconds && earliestCompetingIndex >= 0)
             {
-                float releaseTime = Time.unscaledTime + HaasReleaseThresholdSeconds;
+                float releaseTime = now + HaasReleaseThresholdSeconds;
                 if (predictedArrivalTime < earliestCompetingArrival)
                 {
                     _haasReleaseTimes[earliestCompetingIndex] = releaseTime;
@@ -2012,14 +2228,17 @@ private int AcquireSourceIndex()
             _haasReleaseTimes[sourceIndex] = 0f;
         }
 
-        private float ResolvePredictedArrivalTime(Vector3 sourcePosition)
+        private static float ResolvePredictedArrivalTime(
+            in AbsoluteUniversePosition sourceAup,
+            bool hasListener,
+            in AbsoluteUniversePosition listenerAup,
+            float now)
         {
-            Transform listener = ResolveListenerTransform();
-            if (listener == null)
-                return Time.unscaledTime;
+            if (!hasListener)
+                return now;
 
-            float distanceSq = ResolveAbsoluteDistanceSqr(listener, sourcePosition);
-            return Time.unscaledTime + ResolveFixedUnderwaterArrivalDelaySecondsFromSq(distanceSq);
+            float distanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
+            return now + ResolveFixedUnderwaterArrivalDelaySecondsFromSq(distanceSq);
         }
 
         private Transform ResolveListenerTransform()
@@ -2058,6 +2277,263 @@ private int AcquireSourceIndex()
 
             _listenerTransform = null;
             return _listenerTransform;
+        }
+
+        private bool TryResolveListenerFrame(
+            out Transform listener,
+            out Vector3 listenerRuntimePosition,
+            out Vector3 listenerAbsolutePosition,
+            out AbsoluteUniversePosition listenerAup)
+        {
+            listener = ResolveListenerTransform();
+            if (listener == null)
+            {
+                listenerRuntimePosition = default;
+                listenerAbsolutePosition = default;
+                listenerAup = default;
+                return false;
+            }
+
+            listenerRuntimePosition = listener.position;
+            if (!IsFinite(listenerRuntimePosition))
+            {
+                listenerAbsolutePosition = default;
+                listenerAup = default;
+                return false;
+            }
+
+            if (TryResolvePlayerListenerAup(listener, listenerRuntimePosition, out listenerAup))
+            {
+                double3 absolute = listenerAup.ToAbsoluteDouble3();
+                listenerAbsolutePosition = new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
+                return true;
+            }
+
+            listenerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(listenerRuntimePosition);
+            listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listenerRuntimePosition);
+            return true;
+        }
+
+        private static void ResolveSourceAupFrame(
+            Vector3 runtimePosition,
+            out AbsoluteUniversePosition sourceAup,
+            out Vector3 absolutePosition)
+        {
+            sourceAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            absolutePosition = ToAbsoluteVector3(in sourceAup);
+        }
+
+        private static Vector3 ToAbsoluteVector3(in AbsoluteUniversePosition aup)
+        {
+            double3 absolute = aup.ToAbsoluteDouble3();
+            return new Vector3((float)absolute.x, (float)absolute.y, (float)absolute.z);
+        }
+
+        private static Vector3 ToRuntimeVector3(in AbsoluteUniversePosition aup)
+        {
+            float3 runtime = aup.ToRuntimeFloat3();
+            return new Vector3(runtime.x, runtime.y, runtime.z);
+        }
+
+        private static bool TryResolvePlayerListenerAup(
+            Transform listener,
+            Vector3 listenerRuntimePosition,
+            out AbsoluteUniversePosition listenerAup)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null &&
+                IsPlayerOwnedListener(listener, playerContext.PlayerTransform, playerContext.PlayerObject, playerContext.PlayerCamera))
+            {
+                if (HectonXRRuntimeState.TryResolveCachedHeadAup(listenerRuntimePosition, out listenerAup))
+                    return true;
+
+                HectonPlayerMovement movement = playerContext.PlayerMovement;
+                if (movement != null)
+                {
+                    AbsoluteUniversePosition currentAup = movement.CurrentAup;
+                    Vector3 rootRuntimePosition = currentAup.ToRuntimeFloat3();
+                    if (IsFinite(rootRuntimePosition))
+                    {
+                        listenerAup = OffsetAupLocal(in currentAup, listenerRuntimePosition - rootRuntimePosition);
+                        return true;
+                    }
+                }
+            }
+
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                IsPlayerOwnedListener(listener, runtimeContext.PlayerTransform, runtimeContext.PlayerObject, runtimeContext.PlayerCamera) &&
+                (runtimeContext.MovementState.Flags & (uint)PlayerRuntimeSnapshotFlags.HasPlayerRoot) != 0u)
+            {
+                if (HectonXRRuntimeState.TryResolveCachedHeadAup(listenerRuntimePosition, out listenerAup))
+                return true;
+
+                AbsoluteUniversePosition predictedAup = runtimeContext.MovementState.PredictedAup;
+                Vector3 rootRuntimePosition = predictedAup.ToRuntimeFloat3();
+                if (IsFinite(rootRuntimePosition))
+                {
+                    listenerAup = OffsetAupLocal(in predictedAup, listenerRuntimePosition - rootRuntimePosition);
+                    return true;
+                }
+            }
+
+            listenerAup = default;
+            return false;
+        }
+
+        private static AbsoluteUniversePosition OffsetAupLocal(in AbsoluteUniversePosition anchorAup, Vector3 runtimeOffset)
+        {
+            AbsoluteUniversePosition result = anchorAup;
+            result.LocalX += runtimeOffset.x;
+            result.LocalY += runtimeOffset.y;
+            result.LocalZ += runtimeOffset.z;
+            NormalizeAupLocalAxis(ref result.GridX, ref result.LocalX);
+            NormalizeAupLocalAxis(ref result.GridY, ref result.LocalY);
+            NormalizeAupLocalAxis(ref result.GridZ, ref result.LocalZ);
+            return result;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+
+        private static void NormalizeAupLocalAxis(ref long grid, ref float local)
+        {
+            const float cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            if (local >= 0f && local < cellSize)
+                return;
+
+            long gridDelta = (long)math.floor(local / cellSize);
+            grid += gridDelta;
+            local -= gridDelta * cellSize;
+            if (local < 0f)
+            {
+                local += cellSize;
+                grid--;
+                return;
+            }
+
+            if (local >= cellSize)
+            {
+                local -= cellSize;
+                grid++;
+            }
+        }
+
+        private static bool IsPlayerOwnedListener(
+            Transform listener,
+            Transform playerTransform,
+            GameObject playerObject,
+            Camera playerCamera)
+        {
+            if (listener == null)
+                return false;
+
+            if (playerCamera != null && ReferenceEquals(listener, playerCamera.transform))
+                return true;
+
+            Transform listenerRoot = listener.root;
+            Transform playerObjectTransform = playerObject != null ? playerObject.transform : null;
+            return IsSameTransformOwner(listener, listenerRoot, playerTransform) ||
+                   IsSameTransformOwner(listener, listenerRoot, playerObjectTransform);
+        }
+
+        private static bool IsSameTransformOwner(Transform listener, Transform listenerRoot, Transform owner)
+        {
+            if (owner == null)
+                return false;
+
+            return ReferenceEquals(listener, owner) ||
+                   ReferenceEquals(listenerRoot, owner) ||
+                   ReferenceEquals(listenerRoot, owner.root);
+        }
+
+        private static void ResolveListenerBasis(
+            Transform listener,
+            out float3 listenerRight,
+            out float3 listenerUp,
+            out float3 listenerForward)
+        {
+            listenerRight = new float3(1f, 0f, 0f);
+            listenerUp = new float3(0f, 1f, 0f);
+            listenerForward = new float3(0f, 0f, 1f);
+            if (listener == null)
+                return;
+
+            if (PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) &&
+                runtimeContext != null &&
+                IsPlayerOwnedListener(listener, runtimeContext.PlayerTransform, runtimeContext.PlayerObject, runtimeContext.PlayerCamera) &&
+                TryResolveRuntimeContextForward(runtimeContext, out listenerForward))
+            {
+                ResolveDominantBasis(listenerForward, out listenerRight, out listenerUp);
+                return;
+            }
+
+            listenerRight = (float3)listener.right;
+            listenerUp = (float3)listener.up;
+            listenerForward = (float3)listener.forward;
+        }
+
+        private static bool TryResolveRuntimeContextForward(PlayerRuntimeContext runtimeContext, out float3 listenerForward)
+        {
+            listenerForward = default;
+            float3 lookForward = runtimeContext.LookState.AimForward;
+            if (math.lengthsq(lookForward) > 0.0001f)
+            {
+                listenerForward = ResolveDominantAxisDirection(lookForward);
+                return true;
+            }
+
+            float3 cameraForward = runtimeContext.MovementState.CameraForward;
+            if (math.lengthsq(cameraForward) > 0.0001f)
+            {
+                listenerForward = ResolveDominantAxisDirection(cameraForward);
+                return true;
+            }
+
+            float3 movementForward = runtimeContext.MovementState.Forward;
+            if (math.lengthsq(movementForward) > 0.0001f)
+            {
+                listenerForward = ResolveDominantAxisDirection(movementForward);
+                return true;
+            }
+
+            return false;
+        }
+
+        private static float3 ResolveDominantAxisDirection(float3 direction)
+        {
+            float3 absDirection = math.abs(direction);
+            if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
+                return direction.x < 0f ? new float3(-1f, 0f, 0f) : new float3(1f, 0f, 0f);
+
+            if (absDirection.y >= absDirection.z)
+                return direction.y < 0f ? new float3(0f, -1f, 0f) : new float3(0f, 1f, 0f);
+
+            return direction.z < 0f ? new float3(0f, 0f, -1f) : new float3(0f, 0f, 1f);
+        }
+
+        private static void ResolveDominantBasis(float3 listenerForward, out float3 listenerRight, out float3 listenerUp)
+        {
+            listenerForward = ResolveDominantAxisDirection(listenerForward);
+            if (math.abs(listenerForward.y) > 0.5f)
+            {
+                listenerRight = new float3(1f, 0f, 0f);
+                listenerUp = listenerForward.y > 0f ? new float3(0f, 0f, -1f) : new float3(0f, 0f, 1f);
+                return;
+            }
+
+            listenerUp = new float3(0f, 1f, 0f);
+            if (math.abs(listenerForward.x) > 0.5f)
+            {
+                listenerRight = listenerForward.x > 0f ? new float3(0f, 0f, -1f) : new float3(0f, 0f, 1f);
+                return;
+            }
+
+            listenerRight = listenerForward.z > 0f ? new float3(1f, 0f, 0f) : new float3(-1f, 0f, 0f);
         }
 
         private void ResetAllHaasState()
@@ -2164,6 +2640,21 @@ private int AcquireSourceIndex()
             if (_currentAbsoluteVelocities != null && sourceIndex < _currentAbsoluteVelocities.Length)
                 _currentAbsoluteVelocities[sourceIndex] = default;
 
+            if (_worldSourceBusFlags != null && sourceIndex < _worldSourceBusFlags.Length)
+                _worldSourceBusFlags[sourceIndex] = 0;
+
+            if (_activeWorldRuntimePositions != null && sourceIndex < _activeWorldRuntimePositions.Length)
+                _activeWorldRuntimePositions[sourceIndex] = default;
+
+            if (_activeWorldRuntimePositionFrames != null && sourceIndex < _activeWorldRuntimePositionFrames.Length)
+                _activeWorldRuntimePositionFrames[sourceIndex] = -1;
+
+            if (_activeWorldAups != null && sourceIndex < _activeWorldAups.Length)
+                _activeWorldAups[sourceIndex] = default;
+
+            if (_activeWorldAupFrames != null && sourceIndex < _activeWorldAupFrames.Length)
+                _activeWorldAupFrames[sourceIndex] = -1;
+
             if (_nextTierUpdateTimes != null && sourceIndex < _nextTierUpdateTimes.Length)
                 _nextTierUpdateTimes[sourceIndex] = 0f;
 
@@ -2176,9 +2667,29 @@ private int AcquireSourceIndex()
             ResetHaasState(sourceIndex);
         }
 
+        private void CacheWorldSourceBusFlags(int sourceIndex, AudioMixerGroup mixerGroup)
+        {
+            if (_worldSourceBusFlags == null || sourceIndex < 0 || sourceIndex >= _worldSourceBusFlags.Length)
+                return;
+
+            byte flags = 0;
+            if (mixerGroup != null)
+            {
+                if (mixerGroup == ResolvedThreatBusGroup)
+                    flags |= WorldSourceBusFlagThreat;
+                if (mixerGroup == ResolvedBedBusGroup)
+                    flags |= WorldSourceBusFlagBed;
+            }
+
+            _worldSourceBusFlags[sourceIndex] = flags;
+        }
+
         private bool TryRefreshSourceVoxelOcclusion(
             int sourceIndex,
-            Vector3 sourcePosition,
+            Vector3 sourceRuntimePosition,
+            in AbsoluteUniversePosition sourceAup,
+            Vector3 listenerRuntimePosition,
+            in AbsoluteUniversePosition listenerAup,
             float now,
             bool forceImmediate,
             out float transmission01,
@@ -2211,13 +2722,7 @@ private int AcquireSourceIndex()
             transmission01 = 1f;
             lowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
 
-            Transform listener = ResolveListenerTransform();
-            if (listener == null)
-                return false;
-
-            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
-            Vector3 listenerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(listener.position);
-            float sourceListenerDistanceSq = ResolveAbsoluteDistanceSqrFromAbsolutePositions(listenerAbsolutePosition, sourceAbsolutePosition);
+            float sourceListenerDistanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
             if (sourceListenerDistanceSq > VoxelSourceOcclusionTraceMaximumDistanceSq)
             {
                 ResolveCinematicFarVoxelOcclusion(sourceListenerDistanceSq, out transmission01, out lowPassCutoffHz);
@@ -2227,8 +2732,8 @@ private int AcquireSourceIndex()
             }
 
             if (!AcousticOcclusionUtility.TryTraceVoxelDensityOcclusion(
-                    sourceAbsolutePosition,
-                    listenerAbsolutePosition,
+                    sourceRuntimePosition,
+                    listenerRuntimePosition,
                     out AcousticVoxelOcclusionResult voxelOcclusion))
             {
                 return false;
@@ -2262,12 +2767,27 @@ private int AcquireSourceIndex()
                 far01);
         }
 
-        private void UpdateWorldSourceAudioLod(int sourceIndex, AudioSource source, Vector3 sourcePosition, float now, bool forceImmediate)
+        private void UpdateWorldSourceAudioLod(
+            int sourceIndex,
+            AudioSource source,
+            Vector3 sourcePosition,
+            Vector3 sourceAbsolutePosition,
+            in AbsoluteUniversePosition sourceAup,
+            Transform listener,
+            in AbsoluteUniversePosition listenerAup,
+            Vector3 listenerRuntimePosition,
+            float3 listenerRight,
+            float3 listenerForward,
+            Vector3 listenerAbsolutePosition,
+            float now,
+            bool forceImmediate)
         {
             if (source == null)
                 return;
 
-            AudioLodTier resolvedTier = ResolveAudioLodTier(sourcePosition);
+            AudioLodTier resolvedTier = listener != null
+                ? ResolveAudioLodTier(in sourceAup, in listenerAup)
+                : AudioLodTier.Tier0Full;
             if (resolvedTier == AudioLodTier.Tier2Culled)
             {
                 if (_audioLodTiers != null && sourceIndex >= 0 && sourceIndex < _audioLodTiers.Length)
@@ -2278,15 +2798,35 @@ private int AcquireSourceIndex()
                 return;
             }
 
-            bool rearHemisphereFilterEnabled = TryResolveRearHemisphereLowPassCutoff(sourcePosition, out float rearHemisphereCutoff);
+            float rearHemisphereCutoff = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            bool rearHemisphereFilterEnabled = listener != null &&
+                TryResolveRearHemisphereLowPassCutoff(in sourceAup, listenerForward, in listenerAup, out rearHemisphereCutoff);
             bool caveLowPassEnabled = TryResolveCaveExternalLowPassCutoff(source, sourcePosition, out float caveLowPassCutoff);
-            bool voxelLowPassEnabled = TryRefreshSourceVoxelOcclusion(
-                sourceIndex,
-                sourcePosition,
-                now,
-                forceImmediate,
-                out float voxelTransmission01,
-                out float voxelLowPassCutoff);
+            bool voxelLowPassEnabled = false;
+            float voxelTransmission01 = 1f;
+            float voxelLowPassCutoff = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            if (listener != null)
+            {
+                voxelLowPassEnabled = TryRefreshSourceVoxelOcclusion(
+                    sourceIndex,
+                    sourcePosition,
+                    in sourceAup,
+                    listenerRuntimePosition,
+                    in listenerAup,
+                    now,
+                    forceImmediate,
+                    out voxelTransmission01,
+                    out voxelLowPassCutoff);
+            }
+            else if (_sourceVoxelTransmissions != null &&
+                     _sourceVoxelLowPassCutoffs != null &&
+                     sourceIndex >= 0 &&
+                     sourceIndex < _sourceVoxelTransmissions.Length &&
+                     sourceIndex < _sourceVoxelLowPassCutoffs.Length)
+            {
+                _sourceVoxelTransmissions[sourceIndex] = 1f;
+                _sourceVoxelLowPassCutoffs[sourceIndex] = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            }
             if (_baseVolumes != null && sourceIndex >= 0 && sourceIndex < _baseVolumes.Length)
                 source.volume = _baseVolumes[sourceIndex] * voxelTransmission01;
             if (!forceImmediate &&
@@ -2319,7 +2859,9 @@ private int AcquireSourceIndex()
 
                 case AudioLodTier.Tier1Reduced:
                     source.enabled = true;
-                    source.panStereo = ResolveStereoPan(sourcePosition);
+                    source.panStereo = listener != null
+                        ? ResolveStereoPan(in sourceAup, in listenerAup, listenerRight)
+                        : 0f;
                     float tierOneCutoff = Tier1LowPassCutoffHertz;
                     if (rearHemisphereFilterEnabled)
                         tierOneCutoff = math.min(tierOneCutoff, rearHemisphereCutoff);
@@ -2373,13 +2915,9 @@ private int AcquireSourceIndex()
             }
         }
 
-        private AudioLodTier ResolveAudioLodTier(Vector3 sourcePosition)
+        private AudioLodTier ResolveAudioLodTier(in AbsoluteUniversePosition sourceAup, in AbsoluteUniversePosition listenerAup)
         {
-            Transform listener = ResolveListenerTransform();
-            if (listener == null)
-                return AudioLodTier.Tier0Full;
-
-            float distanceSq = ResolveAbsoluteDistanceSqr(listener, sourcePosition);
+            float distanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
             if (distanceSq > (Tier1ReducedDspDistanceMeters * Tier1ReducedDspDistanceMeters))
                 return AudioLodTier.Tier2Culled;
 
@@ -2388,30 +2926,28 @@ private int AcquireSourceIndex()
                 : AudioLodTier.Tier0Full;
         }
 
-        private float ResolveStereoPan(Vector3 sourcePosition)
+        private static float ResolveStereoPan(in AbsoluteUniversePosition sourceAup, in AbsoluteUniversePosition listenerAup, float3 listenerRight)
         {
-            Transform listener = ResolveListenerTransform();
-            if (listener == null)
-                return 0f;
-
-            float3 listenerLocalPosition = ResolveAupLocalDelta(listener, sourcePosition);
-            float lateralPan = listenerLocalPosition.x / math.max(0.01f, StereoPanDistanceNormalizationMeters);
+            float3 listenerWorldDelta = ResolveAupDelta(in listenerAup, in sourceAup);
+            float lateralPan = math.dot(listenerWorldDelta, listenerRight) / math.max(0.01f, StereoPanDistanceNormalizationMeters);
             return math.clamp(lateralPan, -1f, 1f);
         }
 
-        private bool TryResolveRearHemisphereLowPassCutoff(Vector3 sourcePosition, out float cutoffFrequency)
+        private static bool TryResolveRearHemisphereLowPassCutoff(
+            in AbsoluteUniversePosition sourceAup,
+            float3 listenerForward,
+            in AbsoluteUniversePosition listenerAup,
+            out float cutoffFrequency)
         {
             cutoffFrequency = 22000f;
 
-            Transform listener = ResolveListenerTransform();
-            if (listener == null)
+            float3 toSource = ResolveAupDelta(in listenerAup, in sourceAup);
+            float distanceSq = math.lengthsq(toSource);
+            if (distanceSq <= 0.0001f)
                 return false;
 
-            float3 toSource = ResolveAupDelta(listener, sourcePosition);
-            if (math.lengthsq(toSource) <= 0.0001f)
-                return false;
-
-            float forwardDot = math.dot((float3)listener.forward, math.normalize(toSource));
+            float3 sourceDirection = NormalizeApprox(toSource);
+            float forwardDot = math.dot(listenerForward, sourceDirection);
             if (forwardDot >= RearHemisphereLowPassStartDot)
                 return false;
 
@@ -2459,6 +2995,9 @@ private int AcquireSourceIndex()
             if (_radarNearestEmitterPositions == null || _radarNearestEmitterPositions.Length != AcousticRadarNearestEmitterLimit)
                 _radarNearestEmitterPositions = new Vector3[AcousticRadarNearestEmitterLimit]; // COLD ALLOC: Vector3[12] - nearest-emitter radar accumulation positions - owner: SpatialAudioManager
 
+            if (_radarNearestEmitterAups == null || _radarNearestEmitterAups.Length != AcousticRadarNearestEmitterLimit)
+                _radarNearestEmitterAups = new AbsoluteUniversePosition[AcousticRadarNearestEmitterLimit]; // COLD ALLOC: AbsoluteUniversePosition[12] - nearest-emitter radar AUP cache avoiding repeated runtime conversions - owner: SpatialAudioManager
+
             if (_radarNearestEmitterAmplitudes == null || _radarNearestEmitterAmplitudes.Length != AcousticRadarNearestEmitterLimit)
                 _radarNearestEmitterAmplitudes = new float[AcousticRadarNearestEmitterLimit]; // COLD ALLOC: float[12] - nearest-emitter radar accumulation amplitudes - owner: SpatialAudioManager
 
@@ -2480,6 +3019,7 @@ private int AcquireSourceIndex()
                     nameof(SpatialAudioManager),
                     nameof(_delayedAudioIngress),
                     NativeAllocationLifetime.Session);
+                PrewarmDelayedAudioIngressQueue();
             }
 
             if (!_pendingDelayedAudioEvents.IsCreated)
@@ -2489,8 +3029,23 @@ private int AcquireSourceIndex()
                     _pendingDelayedAudioEvents,
                     nameof(SpatialAudioManager),
                     nameof(_pendingDelayedAudioEvents),
-                    NativeAllocationLifetime.Session);
+                NativeAllocationLifetime.Session);
             }
+        }
+
+        private void PrewarmDelayedAudioIngressQueue()
+        {
+            if (!_delayedAudioIngress.IsCreated)
+                return;
+
+            for (int i = 0; i < MaxDelayedAudioEvents; i++)
+                _delayedAudioIngress.Enqueue(default);
+
+            while (_delayedAudioIngress.TryDequeue(out _))
+            {
+            }
+
+            _delayedAudioIngressCount = 0;
         }
 
         private void ReleaseTelemetryCaches()
@@ -2564,10 +3119,15 @@ private int AcquireSourceIndex()
 
         private AudioMixerGroup ResolveUiMixerGroup(AudioClip clip, AudioMixerGroup requestedGroup)
         {
-            if (requestedGroup == _ambientGroup || requestedGroup == _bedGroup || IsBedClip(clip))
+            byte routeFlags = ResolveClipRouteFlags(clip);
+
+            if (requestedGroup == _ambientGroup ||
+                requestedGroup == _bedGroup ||
+                (routeFlags & AudioClipRouteFlagBed) != 0)
                 return ResolvedBedBusGroup;
 
-            if (requestedGroup == _threatGroup || IsThreatClip(clip))
+            if (requestedGroup == _threatGroup ||
+                (routeFlags & AudioClipRouteFlagThreat) != 0)
                 return ResolvedThreatBusGroup;
 
             return requestedGroup != null ? requestedGroup : _interfaceGroup;
@@ -2575,41 +3135,49 @@ private int AcquireSourceIndex()
 
         private AudioMixerGroup ResolveWorldMixerGroup(AudioClip clip, AudioMixerGroup requestedGroup)
         {
+            byte routeFlags = ResolveClipRouteFlags(clip);
+
             if (requestedGroup == _ambientGroup || requestedGroup == _bedGroup)
                 return ResolvedBedBusGroup;
 
-            if (requestedGroup == _threatGroup || IsThreatClip(clip))
+            if (requestedGroup == _threatGroup ||
+                (routeFlags & AudioClipRouteFlagThreat) != 0)
                 return ResolvedThreatBusGroup;
 
-            if ((requestedGroup == null || requestedGroup == _sfxGroup) && IsBedClip(clip))
+            if ((requestedGroup == null || requestedGroup == _sfxGroup) &&
+                (routeFlags & AudioClipRouteFlagBed) != 0)
                 return ResolvedBedBusGroup;
 
             return requestedGroup != null ? requestedGroup : ResolvedDefaultWorldMixerGroup;
         }
 
-        private bool IsThreatWorldSource(AudioSource source)
+        private bool IsThreatWorldSource(int sourceIndex)
         {
-            AudioMixerGroup threatGroup = ResolvedThreatBusGroup;
-            return source != null && threatGroup != null && source.outputAudioMixerGroup == threatGroup;
+            return _worldSourceBusFlags != null &&
+                   sourceIndex >= 0 &&
+                   sourceIndex < _worldSourceBusFlags.Length &&
+                   (_worldSourceBusFlags[sourceIndex] & WorldSourceBusFlagThreat) != 0;
         }
 
-        private float ResolveSourcePitch(int sourceIndex, AudioSource source, float dopplerRatio)
+        private float ResolveSourcePitch(int sourceIndex, float dopplerRatio)
         {
             if (_basePitches == null || sourceIndex < 0 || sourceIndex >= _basePitches.Length)
                 return 1f;
 
-            float eclipseRatio = ResolveEclipseAcousticPitchRatio(source);
+            float eclipseRatio = ResolveEclipseAcousticPitchRatio(sourceIndex);
             return math.clamp(_basePitches[sourceIndex] * dopplerRatio * eclipseRatio, 0.1f, 3f);
         }
 
-        private float ResolveEclipseAcousticPitchRatio(AudioSource source)
+        private float ResolveEclipseAcousticPitchRatio(int sourceIndex)
         {
-            if (source == null || math.abs(_eclipseAcousticPitchRatio - 1f) <= 0.0001f)
+            if (math.abs(_eclipseAcousticPitchRatio - 1f) <= 0.0001f ||
+                _worldSourceBusFlags == null ||
+                sourceIndex < 0 ||
+                sourceIndex >= _worldSourceBusFlags.Length ||
+                (_worldSourceBusFlags[sourceIndex] & WorldSourceBusFlagBed) == 0)
+            {
                 return 1f;
-
-            AudioMixerGroup bedGroup = ResolvedBedBusGroup;
-            if (bedGroup == null || source.outputAudioMixerGroup != bedGroup)
-                return 1f;
+            }
 
             return _eclipseAcousticPitchRatio;
         }
@@ -2629,7 +3197,7 @@ private int AcquireSourceIndex()
                 if (source == null || !source.isActiveAndEnabled || source.clip == null || !source.isPlaying)
                     continue;
 
-                source.pitch = ResolveSourcePitch(sourceIndex, source, _smoothedDopplerRatios[sourceIndex]);
+                source.pitch = ResolveSourcePitch(sourceIndex, _smoothedDopplerRatios[sourceIndex]);
             }
         }
 
@@ -2652,7 +3220,7 @@ private int AcquireSourceIndex()
         private void ApplyWorldDroneGainDb(float gainDb)
         {
             AudioMixer mixer = ResolveThreatDuckingMixer();
-            if (mixer != null && !string.IsNullOrWhiteSpace(_worldDroneVolumeDbParameter))
+            if (mixer != null && _hasWorldDroneVolumeDbParameter)
                 mixer.SetFloat(_worldDroneVolumeDbParameter, gainDb);
 
             if (_worldDroneSource != null)
@@ -2838,7 +3406,7 @@ private int AcquireSourceIndex()
         private void ApplyThreatBusDucking(float threatActivity, float deltaTime)
         {
             AudioMixer mixer = ResolveThreatDuckingMixer();
-            if (mixer == null || string.IsNullOrWhiteSpace(_bedDuckDbParameter))
+            if (mixer == null || !_hasBedDuckDbParameter)
             {
                 _threatBusDuck01 = 0f;
                 return;
@@ -2890,14 +3458,14 @@ private int AcquireSourceIndex()
                 _parasiteOrganicLayerMaxDb,
                 _parasiteRoomSmoothed01);
 
-            if (!string.IsNullOrWhiteSpace(_parasiteRoomLowPassCutoffParameter) &&
+            if (_hasParasiteRoomLowPassCutoffParameter &&
                 math.abs(cutoffHz - _lastParasiteRoomLowPassCutoffHz) > 1f)
             {
                 mixer.SetFloat(_parasiteRoomLowPassCutoffParameter, cutoffHz);
                 _lastParasiteRoomLowPassCutoffHz = cutoffHz;
             }
 
-            if (!string.IsNullOrWhiteSpace(_parasiteOrganicLayerGainParameter) &&
+            if (_hasParasiteOrganicLayerGainParameter &&
                 math.abs(organicGainDb - _lastParasiteOrganicLayerGainDb) > 0.05f)
             {
                 mixer.SetFloat(_parasiteOrganicLayerGainParameter, organicGainDb);
@@ -2917,31 +3485,95 @@ private int AcquireSourceIndex()
             return _ambientGroup != null ? _ambientGroup.audioMixer : null;
         }
 
-        private static bool IsThreatClip(AudioClip clip)
+        private void RefreshMixerParameterAvailability()
         {
-            if (clip == null)
-                return false;
-
-            string clipName = clip.name;
-            return ContainsTokenInsensitive(clipName, "leviathan") ||
-                   ContainsTokenInsensitive(clipName, "roar") ||
-                   ContainsTokenInsensitive(clipName, "threat") ||
-                   ContainsTokenInsensitive(clipName, "predator") ||
-                   ContainsTokenInsensitive(clipName, "shriek");
+            _hasBedDuckDbParameter = !string.IsNullOrWhiteSpace(_bedDuckDbParameter);
+            _hasWorldDroneVolumeDbParameter = !string.IsNullOrWhiteSpace(_worldDroneVolumeDbParameter);
+            _hasParasiteRoomLowPassCutoffParameter = !string.IsNullOrWhiteSpace(_parasiteRoomLowPassCutoffParameter);
+            _hasParasiteOrganicLayerGainParameter = !string.IsNullOrWhiteSpace(_parasiteOrganicLayerGainParameter);
         }
 
-        private static bool IsBedClip(AudioClip clip)
+        private byte ResolveClipRouteFlags(AudioClip clip)
         {
             if (clip == null)
+                return 0;
+
+            int clipId = unchecked((int)EntityId.ToULong(clip.GetEntityId()));
+            if (TryGetCachedClipRouteFlags(clipId, out byte routeFlags))
+                return routeFlags;
+
+            routeFlags = ClassifyClipRouteFlags(clip);
+            CacheClipRouteFlags(clipId, routeFlags);
+            return routeFlags;
+        }
+
+        private bool TryGetCachedClipRouteFlags(int clipId, out byte routeFlags)
+        {
+            if (_clipRouteCacheIds == null || _clipRouteCacheFlags == null)
+            {
+                routeFlags = 0;
                 return false;
+            }
+
+            int cacheCount = math.min(_clipRouteCacheIds.Length, _clipRouteCacheFlags.Length);
+            if (cacheCount <= 0)
+            {
+                routeFlags = 0;
+                return false;
+            }
+
+            int slot = clipId & (cacheCount - 1);
+            if (_clipRouteCacheIds[slot] == clipId)
+            {
+                routeFlags = _clipRouteCacheFlags[slot];
+                return true;
+            }
+
+            routeFlags = 0;
+            return false;
+        }
+
+        private void CacheClipRouteFlags(int clipId, byte routeFlags)
+        {
+            if (_clipRouteCacheIds == null || _clipRouteCacheFlags == null)
+                return;
+
+            int cacheCount = math.min(_clipRouteCacheIds.Length, _clipRouteCacheFlags.Length);
+            if (cacheCount <= 0)
+                return;
+
+            int slot = clipId & (cacheCount - 1);
+            _clipRouteCacheIds[slot] = clipId;
+            _clipRouteCacheFlags[slot] = routeFlags;
+        }
+
+        private static byte ClassifyClipRouteFlags(AudioClip clip)
+        {
+            if (clip == null)
+                return 0;
 
             string clipName = clip.name;
-            return ContainsTokenInsensitive(clipName, "ambient") ||
-                   ContainsTokenInsensitive(clipName, "ocean") ||
-                   ContainsTokenInsensitive(clipName, "water") ||
-                   ContainsTokenInsensitive(clipName, "current") ||
-                   ContainsTokenInsensitive(clipName, "bed") ||
-                   ContainsTokenInsensitive(clipName, "drone");
+            byte routeFlags = 0;
+            if (ContainsTokenInsensitive(clipName, "leviathan") ||
+                ContainsTokenInsensitive(clipName, "roar") ||
+                ContainsTokenInsensitive(clipName, "threat") ||
+                ContainsTokenInsensitive(clipName, "predator") ||
+                ContainsTokenInsensitive(clipName, "shriek"))
+            {
+                routeFlags |= AudioClipRouteFlagThreat;
+            }
+
+            if (ContainsTokenInsensitive(clipName, "ambient") ||
+                ContainsTokenInsensitive(clipName, "ocean") ||
+                ContainsTokenInsensitive(clipName, "water") ||
+                ContainsTokenInsensitive(clipName, "current") ||
+                ContainsTokenInsensitive(clipName, "bed") ||
+                ContainsTokenInsensitive(clipName, "drone"))
+            {
+                routeFlags |= AudioClipRouteFlagBed;
+            }
+
+            return routeFlags;
         }
 
         private static bool ContainsTokenInsensitive(string value, string token)
@@ -2986,6 +3618,88 @@ private int AcquireSourceIndex()
             _activeWorldCount = lastSlot;
         }
 
+        private void CacheActiveWorldRuntimePosition(int sourceIndex, Vector3 sourcePosition, int currentFrame)
+        {
+            if (_activeWorldRuntimePositions == null ||
+                _activeWorldRuntimePositionFrames == null ||
+                sourceIndex < 0 ||
+                sourceIndex >= _activeWorldRuntimePositions.Length ||
+                sourceIndex >= _activeWorldRuntimePositionFrames.Length)
+            {
+                return;
+            }
+
+            _activeWorldRuntimePositions[sourceIndex] = sourcePosition;
+            _activeWorldRuntimePositionFrames[sourceIndex] = currentFrame;
+        }
+
+        private void CacheActiveWorldAup(int sourceIndex, in AbsoluteUniversePosition sourceAup, int currentFrame)
+        {
+            if (_activeWorldAups == null ||
+                _activeWorldAupFrames == null ||
+                sourceIndex < 0 ||
+                sourceIndex >= _activeWorldAups.Length ||
+                sourceIndex >= _activeWorldAupFrames.Length)
+            {
+                return;
+            }
+
+            _activeWorldAups[sourceIndex] = sourceAup;
+            _activeWorldAupFrames[sourceIndex] = currentFrame;
+        }
+
+        private bool TryGetCachedActiveWorldRuntimePosition(int sourceIndex, out Vector3 sourcePosition)
+        {
+            sourcePosition = default;
+            if (_activeWorldRuntimePositions == null ||
+                _activeWorldRuntimePositionFrames == null ||
+                sourceIndex < 0 ||
+                sourceIndex >= _activeWorldRuntimePositions.Length ||
+                sourceIndex >= _activeWorldRuntimePositionFrames.Length ||
+                _activeWorldRuntimePositionFrames[sourceIndex] < 0)
+            {
+                return false;
+            }
+
+            sourcePosition = _activeWorldRuntimePositions[sourceIndex];
+            return true;
+        }
+
+        private bool TryGetCachedActiveWorldAup(int sourceIndex, out AbsoluteUniversePosition sourceAup)
+        {
+            sourceAup = default;
+            if (_activeWorldAups == null ||
+                _activeWorldAupFrames == null ||
+                sourceIndex < 0 ||
+                sourceIndex >= _activeWorldAups.Length ||
+                sourceIndex >= _activeWorldAupFrames.Length ||
+                _activeWorldAupFrames[sourceIndex] < 0)
+            {
+                return false;
+            }
+
+            sourceAup = _activeWorldAups[sourceIndex];
+            return true;
+        }
+
+        private AbsoluteUniversePosition ResolveActiveWorldAup(int sourceIndex, Vector3 sourcePosition, int currentFrame)
+        {
+            if (TryGetCachedActiveWorldAup(sourceIndex, out AbsoluteUniversePosition sourceAup))
+                return sourceAup;
+
+            sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
+            CacheActiveWorldAup(sourceIndex, in sourceAup, currentFrame);
+            return sourceAup;
+        }
+
+        private Transform ResolveWorldSourceRoot(int sourceIndex)
+        {
+            if (_worldSourceRoots == null || sourceIndex < 0 || sourceIndex >= _worldSourceRoots.Length)
+                return null;
+
+            return _worldSourceRoots[sourceIndex];
+        }
+
         private void AdvanceAcousticRadarDecayCadence(float deltaTime)
         {
             if (deltaTime <= 0f)
@@ -3006,7 +3720,14 @@ private int AcquireSourceIndex()
                 return;
 
             for (int i = 0; i < _acousticRadarIntensityBins.Length; i++)
-                _acousticRadarIntensityBins[i] *= AcousticRadarDecayFactorPerSlowTick;
+            {
+                float energy = _acousticRadarIntensityBins[i];
+                if (energy <= 0f)
+                    continue;
+
+                float decayed = energy * AcousticRadarDecayFactorPerSlowTick;
+                _acousticRadarIntensityBins[i] = decayed > AcousticRadarEnergyEpsilon ? decayed : 0f;
+            }
         }
 
         private void DecayAcousticRadarGrid()
@@ -3014,8 +3735,20 @@ private int AcquireSourceIndex()
             if (!_acousticRadarGrid.IsCreated)
                 return;
 
+            bool dirty = false;
             for (int i = 0; i < _acousticRadarGrid.Length; i++)
-                _acousticRadarGrid[i] *= AcousticRadarDecayFactorPerSlowTick;
+            {
+                float energy = _acousticRadarGrid[i];
+                if (energy <= 0f)
+                    continue;
+
+                float decayed = energy * AcousticRadarDecayFactorPerSlowTick;
+                _acousticRadarGrid[i] = decayed > AcousticRadarEnergyEpsilon ? decayed : 0f;
+                dirty = true;
+            }
+
+            if (dirty)
+                _acousticRadarGridDirty = true;
         }
 
         private void ResetAcousticRadarBins()
@@ -3034,23 +3767,45 @@ private int AcquireSourceIndex()
 
             for (int i = 0; i < _acousticRadarGrid.Length; i++)
                 _acousticRadarGrid[i] = 0f;
+
+            _acousticRadarGridDirty = true;
         }
 
         private void ResetNearestRadarEmitterScratch()
         {
-            if (_radarNearestEmitterDistanceSq == null || _radarNearestEmitterAmplitudes == null || _radarNearestEmitterRoots == null)
+            if (_radarNearestEmitterDistanceSq == null ||
+                _radarNearestEmitterPositions == null ||
+                _radarNearestEmitterAups == null ||
+                _radarNearestEmitterAmplitudes == null ||
+                _radarNearestEmitterRoots == null)
+            {
                 return;
+            }
 
-            int limit = _radarNearestEmitterDistanceSq.Length;
+            int limit = math.min(
+                _radarNearestEmitterDistanceSq.Length,
+                math.min(
+                    _radarNearestEmitterPositions.Length,
+                    math.min(
+                        _radarNearestEmitterAups.Length,
+                        math.min(_radarNearestEmitterAmplitudes.Length, _radarNearestEmitterRoots.Length))));
             for (int i = 0; i < limit; i++)
             {
                 _radarNearestEmitterDistanceSq[i] = float.MaxValue;
+                _radarNearestEmitterPositions[i] = default;
+                _radarNearestEmitterAups[i] = default;
                 _radarNearestEmitterAmplitudes[i] = 0f;
                 _radarNearestEmitterRoots[i] = null;
             }
         }
 
-        private void DepositImpactRadarSamples(Transform listener, float now)
+        private void DepositImpactRadarSamples(
+            Transform listener,
+            in AbsoluteUniversePosition listenerAup,
+            float3 listenerRight,
+            float3 listenerUp,
+            float3 listenerForward,
+            float now)
         {
             if (listener == null)
                 return;
@@ -3062,11 +3817,19 @@ private int AcquireSourceIndex()
                 if (!(amplitude > ImpactEmitterMinimumAmplitude))
                     continue;
 
-                DepositAcousticRadarSample(listener, emitter.Position, amplitude);
+                DepositAcousticRadarSample(
+                    listener,
+                    in listenerAup,
+                    listenerRight,
+                    listenerUp,
+                    listenerForward,
+                    emitter.Position,
+                    in emitter.PositionAup,
+                    amplitude);
             }
         }
 
-        private void QueueImpactRadarEmitters(Vector3 listenerAbsolutePosition, Vector3 listenerWorldPosition, float now)
+        private void QueueImpactRadarEmitters(in AbsoluteUniversePosition listenerAup, Vector3 listenerWorldPosition, float now)
         {
             for (int i = 0; i < _impactEmitters.Length; i++)
             {
@@ -3075,22 +3838,31 @@ private int AcquireSourceIndex()
                 if (!(amplitude > ImpactEmitterMinimumAmplitude))
                     continue;
 
-                QueueNearestRadarEmitter(listenerAbsolutePosition, listenerWorldPosition, emitter.Position, amplitude, null);
+                QueueNearestRadarEmitter(in listenerAup, listenerWorldPosition, emitter.Position, in emitter.PositionAup, amplitude, null);
             }
         }
 
-        private void DepositAcousticRadarSample(Transform listener, Vector3 sourcePosition, float amplitude)
+        private void DepositAcousticRadarSample(
+            Transform listener,
+            in AbsoluteUniversePosition listenerAup,
+            float3 listenerRight,
+            float3 listenerUp,
+            float3 listenerForward,
+            Vector3 sourcePosition,
+            in AbsoluteUniversePosition sourceAup,
+            float amplitude)
         {
             if (listener == null || !_acousticRadarIntensityBins.IsCreated || !(amplitude > 0f))
                 return;
 
-            float3 listenerLocalPosition = ResolveAupLocalDelta(listener, sourcePosition);
-            float azimuthDegrees = math.degrees(math.atan2(listenerLocalPosition.x, listenerLocalPosition.z));
-            if (azimuthDegrees < 0f)
-                azimuthDegrees += AcousticRadarBinCount;
-
-            int radialIndex = math.clamp((int)math.floor(azimuthDegrees), 0, AcousticRadarBinCount - 1);
-            float distanceSq = ResolveAbsoluteDistanceSqr(listener, sourcePosition);
+            float3 listenerLocalPosition = ResolveAupLocalDelta(
+                in listenerAup,
+                in sourceAup,
+                listenerRight,
+                listenerUp,
+                listenerForward);
+            int radialIndex = EncodeAcousticRadarDegreeBinFast(listenerLocalPosition);
+            float distanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
             float rangeSq = math.max(1f, AcousticRadarDistanceRangeMeters * AcousticRadarDistanceRangeMeters);
             float falloff = 1f - math.saturate(distanceSq / rangeSq);
             float intensity = math.saturate(amplitude * falloff);
@@ -3098,21 +3870,35 @@ private int AcquireSourceIndex()
         }
 
         private void QueueNearestRadarEmitter(
-            Vector3 listenerAbsolutePosition,
+            in AbsoluteUniversePosition listenerAup,
             Vector3 listenerWorldPosition,
             Vector3 sourcePosition,
+            in AbsoluteUniversePosition sourceAup,
             float amplitude,
             Transform sourceRoot)
         {
-            if (_radarNearestEmitterDistanceSq == null || _radarNearestEmitterPositions == null || _radarNearestEmitterRoots == null || !(amplitude > 0f))
+            if (_radarNearestEmitterDistanceSq == null ||
+                _radarNearestEmitterPositions == null ||
+                _radarNearestEmitterAups == null ||
+                _radarNearestEmitterAmplitudes == null ||
+                _radarNearestEmitterRoots == null ||
+                !(amplitude > 0f))
+            {
                 return;
+            }
 
-            float distanceSq = ResolveAbsoluteDistanceSqr(listenerAbsolutePosition, sourcePosition);
+            float distanceSq = ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
             int replaceIndex = -1;
             float farthestDistanceSq = -1f;
             int limit = math.min(
                 AcousticRadarNearestEmitterLimit,
-                math.min(_radarNearestEmitterDistanceSq.Length, math.min(_radarNearestEmitterPositions.Length, _radarNearestEmitterAmplitudes.Length)));
+                math.min(
+                    _radarNearestEmitterDistanceSq.Length,
+                    math.min(
+                        _radarNearestEmitterPositions.Length,
+                        math.min(
+                            _radarNearestEmitterAups.Length,
+                            math.min(_radarNearestEmitterAmplitudes.Length, _radarNearestEmitterRoots.Length)))));
             for (int i = 0; i < limit; i++)
             {
                 if (_radarNearestEmitterDistanceSq[i] == float.MaxValue)
@@ -3135,6 +3921,7 @@ private int AcquireSourceIndex()
                 return;
 
             _radarNearestEmitterPositions[replaceIndex] = sourcePosition;
+            _radarNearestEmitterAups[replaceIndex] = sourceAup;
             _radarNearestEmitterAmplitudes[replaceIndex] = amplitude;
             _radarNearestEmitterDistanceSq[replaceIndex] = distanceSq;
             _radarNearestEmitterRoots[replaceIndex] = sourceRoot;
@@ -3150,15 +3937,35 @@ private int AcquireSourceIndex()
             }
         }
 
-        private void AccumulateNearestRadarGrid(Transform listener)
+        private void AccumulateNearestRadarGrid(
+            Transform listener,
+            Vector3 listenerWorldPosition,
+            in AbsoluteUniversePosition listenerAup,
+            float3 listenerRight,
+            float3 listenerUp,
+            float3 listenerForward)
         {
-            if (listener == null || !_acousticRadarGrid.IsCreated || _radarNearestEmitterDistanceSq == null)
+            if (listener == null ||
+                !_acousticRadarGrid.IsCreated ||
+                _radarNearestEmitterDistanceSq == null ||
+                _radarNearestEmitterPositions == null ||
+                _radarNearestEmitterAups == null ||
+                _radarNearestEmitterAmplitudes == null ||
+                _radarNearestEmitterRoots == null)
+            {
                 return;
+            }
 
-            Vector3 listenerWorldPosition = listener.position;
             int limit = math.min(
                 AcousticRadarNearestEmitterLimit,
-                math.min(_radarNearestEmitterDistanceSq.Length, math.min(_radarNearestEmitterPositions.Length, _radarNearestEmitterAmplitudes.Length)));
+                math.min(
+                    _radarNearestEmitterDistanceSq.Length,
+                    math.min(
+                        _radarNearestEmitterPositions.Length,
+                        math.min(
+                            _radarNearestEmitterAups.Length,
+                            math.min(_radarNearestEmitterAmplitudes.Length, _radarNearestEmitterRoots.Length)))));
+            bool dirty = false;
             for (int i = 0; i < limit; i++)
             {
                 float distanceSq = _radarNearestEmitterDistanceSq[i];
@@ -3166,34 +3973,35 @@ private int AcquireSourceIndex()
                     continue;
 
                 Vector3 sourcePosition = _radarNearestEmitterPositions[i];
+                AbsoluteUniversePosition sourceAup = _radarNearestEmitterAups[i];
                 float amplitude = _radarNearestEmitterAmplitudes[i];
                 if (!(amplitude > 0f))
                     continue;
 
-                float3 listenerLocalPosition = ResolveAupLocalDelta(listener, sourcePosition);
-                float azimuthDegrees = math.degrees(math.atan2(listenerLocalPosition.x, listenerLocalPosition.z));
-                if (azimuthDegrees < 0f)
-                    azimuthDegrees += 360f;
-
-                float3 listenerLocalDirection = listenerLocalPosition;
-                float inverseDirectionLength = math.rsqrt(math.max(math.lengthsq(listenerLocalDirection), 0.000001f));
-                float3 direction = listenerLocalDirection * inverseDirectionLength;
-                float elevationDegrees = math.degrees(math.asin(math.clamp(direction.y, -1f, 1f)));
-                int azimuthIndex = math.clamp(
-                    (int)math.floor((azimuthDegrees / 360f) * AcousticRadarGridAzimuthBins),
-                    0,
-                    AcousticRadarGridAzimuthBins - 1);
-                float elevation01 = math.saturate((elevationDegrees - AcousticRadarElevationMinDegrees) /
-                                                  math.max(AcousticRadarElevationMaxDegrees - AcousticRadarElevationMinDegrees, 0.0001f));
+                float3 listenerLocalPosition = ResolveAupLocalDelta(
+                    in listenerAup,
+                    in sourceAup,
+                    listenerRight,
+                    listenerUp,
+                    listenerForward);
+                int azimuthIndex = EncodeAcousticRadarGridAzimuthFast(listenerLocalPosition);
+                float elevation01 = ResolveElevation01Fast(listenerLocalPosition);
                 int elevationIndex = math.clamp(
                     (int)math.floor(elevation01 * AcousticRadarGridElevationBins),
                     0,
                     AcousticRadarGridElevationBins - 1);
                 float transmission = ResolveRadarTransmission(sourcePosition, listenerWorldPosition, _radarNearestEmitterRoots[i]);
                 float energy = amplitude * transmission * math.rcp(math.max(distanceSq, 1f));
+                if (!(energy > AcousticRadarEnergyEpsilon))
+                    continue;
+
                 int cellIndex = elevationIndex * AcousticRadarGridAzimuthBins + azimuthIndex;
                 _acousticRadarGrid[cellIndex] += energy;
+                dirty = true;
             }
+
+            if (dirty)
+                _acousticRadarGridDirty = true;
         }
 
         private float ResolveRadarTransmission(Vector3 sourcePosition, Vector3 listenerWorldPosition, Transform sourceRoot)
@@ -3220,14 +4028,18 @@ private int AcquireSourceIndex()
             if (!_acousticRadarGrid.IsCreated || _acousticRadarGridBuffer == null || _acousticRadarGridUploadScratch == null)
                 return;
 
+            if (!_acousticRadarGridDirty)
+                return;
+
             int count = math.min(_acousticRadarGrid.Length, _acousticRadarGridUploadScratch.Length);
             for (int i = 0; i < count; i++)
                 _acousticRadarGridUploadScratch[i] = _acousticRadarGrid[i];
 
             _acousticRadarGridBuffer.SetData(_acousticRadarGridUploadScratch, 0, 0, count);
+            _acousticRadarGridDirty = false;
         }
 
-        private void RefreshListenerCaveState(Transform listener)
+        private void RefreshListenerCaveState(Transform listener, Vector3 listenerPosition)
         {
             ResetListenerCaveState();
             if (listener == null)
@@ -3247,11 +4059,16 @@ private int AcquireSourceIndex()
                 if (volume == null || !volume.isActiveAndEnabled)
                     continue;
 
-                if (!TryResolveCaveInteriorFactor(volume, listener.position, out float caveInterior01))
+                if (!TryResolveCaveInteriorFactor(volume, listenerPosition, out Bounds localBounds, out Matrix4x4 worldToLocal, out float caveInterior01))
                     continue;
 
                 if (_listenerContainingCaveCount < _listenerContainingCaveVolumes.Length)
-                    _listenerContainingCaveVolumes[_listenerContainingCaveCount++] = volume;
+                {
+                    int caveIndex = _listenerContainingCaveCount++;
+                    _listenerContainingCaveVolumes[caveIndex] = volume;
+                    _listenerContainingCaveLocalBounds[caveIndex] = localBounds;
+                    _listenerContainingCaveWorldToLocal[caveIndex] = worldToLocal;
+                }
                 _listenerCaveInterior01 = math.max(_listenerCaveInterior01, caveInterior01);
             }
         }
@@ -3260,7 +4077,11 @@ private int AcquireSourceIndex()
         {
             _listenerCaveInterior01 = 0f;
             for (int i = 0; i < _listenerContainingCaveCount; i++)
+            {
                 _listenerContainingCaveVolumes[i] = null;
+                _listenerContainingCaveLocalBounds[i] = default;
+                _listenerContainingCaveWorldToLocal[i] = default;
+            }
             _listenerContainingCaveCount = 0;
         }
 
@@ -3296,7 +4117,9 @@ private int AcquireSourceIndex()
         private void UpdateManualDopplerPitch(
             int sourceIndex,
             AudioSource source,
-            Vector3 listenerAbsolutePosition,
+            Vector3 sourceAbsolutePosition,
+            in AbsoluteUniversePosition sourceAup,
+            in AbsoluteUniversePosition listenerAup,
             Vector3 listenerVelocity,
             float deltaTime)
         {
@@ -3310,8 +4133,6 @@ private int AcquireSourceIndex()
                 return;
             }
 
-            Vector3 sourceRuntimePosition = source.transform.position;
-            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourceRuntimePosition);
             Vector3 sourceVelocity = Vector3.zero;
             if (deltaTime > 0.0001f)
                 sourceVelocity = (sourceAbsolutePosition - _previousAbsolutePositions[sourceIndex]) / deltaTime;
@@ -3319,17 +4140,12 @@ private int AcquireSourceIndex()
             _currentAbsoluteVelocities[sourceIndex] = sourceVelocity;
             _previousAbsolutePositions[sourceIndex] = sourceAbsolutePosition;
 
-            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                listenerAbsolutePosition.x,
-                listenerAbsolutePosition.y,
-                listenerAbsolutePosition.z));
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourceRuntimePosition);
             float3 listenerToSourceAup = AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup);
             float targetRatio = 1f;
             float distanceSq = math.lengthsq(listenerToSourceAup);
             if (distanceSq > 0.0001f)
             {
-                float3 direction = listenerToSourceAup * math.rsqrt(distanceSq);
+                float3 direction = NormalizeApprox(listenerToSourceAup);
                 float relativeVelocity = math.dot((float3)(listenerVelocity - sourceVelocity), direction);
                 float clampedRelativeVelocity = math.clamp(
                     relativeVelocity,
@@ -3359,14 +4175,14 @@ private int AcquireSourceIndex()
                     : FastDecayBlend(ManualDopplerFollowSharpness, deltaTime);
                 float smoothedRatio = math.lerp(_smoothedDopplerRatios[sourceIndex], targetRatio, followT);
                 _smoothedDopplerRatios[sourceIndex] = smoothedRatio;
-                source.pitch = ResolveSourcePitch(sourceIndex, source, smoothedRatio);
+                source.pitch = ResolveSourcePitch(sourceIndex, smoothedRatio);
                 return;
             }
 
             _smoothedDopplerRatios[sourceIndex] = 1f;
             if (_previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length)
                 _previousRelativeVelocities[sourceIndex] = 0f;
-            source.pitch = ResolveSourcePitch(sourceIndex, source, 1f);
+            source.pitch = ResolveSourcePitch(sourceIndex, 1f);
         }
 
         private bool TryResolveCaveExternalLowPassCutoff(AudioSource source, Vector3 sourcePosition, out float cutoffFrequency)
@@ -3394,10 +4210,8 @@ private int AcquireSourceIndex()
                 if (volume == null || !volume.isActiveAndEnabled)
                     continue;
 
-                if (!CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, volume.preset, out Bounds localBounds))
-                    continue;
-
-                Vector3 localPosition = volume.transform.InverseTransformPoint(worldPosition);
+                Bounds localBounds = _listenerContainingCaveLocalBounds[i];
+                Vector3 localPosition = _listenerContainingCaveWorldToLocal[i].MultiplyPoint3x4(worldPosition);
                 if (localBounds.Contains(localPosition))
                     return true;
             }
@@ -3405,13 +4219,21 @@ private int AcquireSourceIndex()
             return false;
         }
 
-        private static bool TryResolveCaveInteriorFactor(HectonVoxelVolume volume, Vector3 viewerPositionWS, out float caveInterior01)
+        private static bool TryResolveCaveInteriorFactor(
+            HectonVoxelVolume volume,
+            Vector3 viewerPositionWS,
+            out Bounds localBounds,
+            out Matrix4x4 worldToLocal,
+            out float caveInterior01)
         {
+            localBounds = default;
+            worldToLocal = default;
             caveInterior01 = 0f;
-            if (volume == null || !CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, volume.preset, out Bounds localBounds))
+            if (volume == null || !CaveRuntimeBoundsUtility.TryResolveLocalVolumeBounds(volume, volume.preset, out localBounds))
                 return false;
 
-            Vector3 localViewerPosition = volume.transform.InverseTransformPoint(viewerPositionWS);
+            worldToLocal = volume.transform.worldToLocalMatrix;
+            Vector3 localViewerPosition = worldToLocal.MultiplyPoint3x4(viewerPositionWS);
             if (!localBounds.Contains(localViewerPosition))
                 return false;
 
@@ -3436,55 +4258,78 @@ private int AcquireSourceIndex()
             return emitter.Amplitude * fade;
         }
 
-        private static float ResolveAbsoluteDistanceSqr(Transform listener, Vector3 sourcePosition)
+        private static float3 ResolveAupDelta(in AbsoluteUniversePosition listenerAup, in AbsoluteUniversePosition sourceAup)
         {
-            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listener.position);
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
-            return ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
-        }
-
-        private static float ResolveAbsoluteDistanceSqr(Vector3 listenerAbsolutePosition, Vector3 sourcePosition)
-        {
-            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                listenerAbsolutePosition.x,
-                listenerAbsolutePosition.y,
-                listenerAbsolutePosition.z));
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
-            return ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
-        }
-
-        private static float ResolveAbsoluteDistanceSqrFromAbsolutePositions(Vector3 listenerAbsolutePosition, Vector3 sourceAbsolutePosition)
-        {
-            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                listenerAbsolutePosition.x,
-                listenerAbsolutePosition.y,
-                listenerAbsolutePosition.z));
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
-                sourceAbsolutePosition.x,
-                sourceAbsolutePosition.y,
-                sourceAbsolutePosition.z));
-            return ClampAupDistanceSqToFloat(AbsoluteUniversePosition.DistanceSq(in listenerAup, in sourceAup));
-        }
-
-        private static float3 ResolveAupDelta(Transform listener, Vector3 sourcePosition)
-        {
-            AbsoluteUniversePosition listenerAup = AbsoluteUniversePosition.FromRuntimePosition(listener.position);
-            AbsoluteUniversePosition sourceAup = AbsoluteUniversePosition.FromRuntimePosition(sourcePosition);
             return AbsoluteUniversePosition.ToCameraRelativeFloat3(in sourceAup, in listenerAup);
         }
 
-        private static float3 ResolveAupLocalDelta(Transform listener, Vector3 sourcePosition)
+        private static float3 ResolveAupLocalDelta(
+            in AbsoluteUniversePosition listenerAup,
+            in AbsoluteUniversePosition sourceAup,
+            float3 listenerRight,
+            float3 listenerUp,
+            float3 listenerForward)
         {
-            float3 worldDelta = ResolveAupDelta(listener, sourcePosition);
+            float3 worldDelta = ResolveAupDelta(in listenerAup, in sourceAup);
             return new float3(
-                math.dot(worldDelta, (float3)listener.right),
-                math.dot(worldDelta, (float3)listener.up),
-                math.dot(worldDelta, (float3)listener.forward));
+                math.dot(worldDelta, listenerRight),
+                math.dot(worldDelta, listenerUp),
+                math.dot(worldDelta, listenerForward));
+        }
+
+        private static float ApproximateMagnitude3D(float3 value)
+        {
+            float3 absoluteValue = math.abs(value);
+            float maxAxis = math.max(absoluteValue.x, math.max(absoluteValue.y, absoluteValue.z));
+            float minAxis = math.min(absoluteValue.x, math.min(absoluteValue.y, absoluteValue.z));
+            float midAxis = absoluteValue.x + absoluteValue.y + absoluteValue.z - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375f + minAxis * 0.125f;
+        }
+
+        private static float3 NormalizeApprox(float3 value)
+        {
+            float magnitude = ApproximateMagnitude3D(value);
+            return magnitude > 0.0001f
+                ? value * math.rcp(magnitude)
+                : new float3(0f, 0f, 0f);
+        }
+
+        private static int EncodeAcousticRadarDegreeBinFast(float3 listenerLocalPosition)
+        {
+            float x = listenerLocalPosition.x;
+            float z = listenerLocalPosition.z;
+            float absX = math.abs(x);
+            float absZ = math.abs(z);
+            float blend = absX * math.rcp(math.max(0.0001f, absX + absZ));
+            float quarterDegrees = blend * 90f;
+            float degrees;
+            if (z >= 0f)
+                degrees = x >= 0f ? quarterDegrees : 360f - quarterDegrees;
+            else
+                degrees = x >= 0f ? 180f - quarterDegrees : 180f + quarterDegrees;
+
+            return math.clamp((int)degrees, 0, AcousticRadarBinCount - 1);
+        }
+
+        private static int EncodeAcousticRadarGridAzimuthFast(float3 listenerLocalPosition)
+        {
+            int degreeBin = EncodeAcousticRadarDegreeBinFast(listenerLocalPosition);
+            int azimuthIndex = (degreeBin * AcousticRadarGridAzimuthBins) / AcousticRadarBinCount;
+            return math.clamp(azimuthIndex, 0, AcousticRadarGridAzimuthBins - 1);
+        }
+
+        private static float ResolveElevation01Fast(float3 listenerLocalPosition)
+        {
+            float distance = ApproximateMagnitude3D(listenerLocalPosition);
+            if (distance <= 0.0001f)
+                return 0.5f;
+
+            return math.saturate((listenerLocalPosition.y * math.rcp(distance) + 1f) * 0.5f);
         }
 
         private static float ClampAupDistanceSqToFloat(double distanceSqr)
         {
-            return distanceSqr >= float.MaxValue ? float.MaxValue : (float)Math.Max(0d, distanceSqr);
+            return distanceSqr >= float.MaxValue ? float.MaxValue : (float)math.max(0d, distanceSqr);
         }
 
         private static float FastDecayBlend(float sharpness, float deltaTime)
@@ -3509,35 +4354,66 @@ private int AcquireSourceIndex()
             if (_pool2D == null || _pool2DSize <= 0)
                 return -1;
 
-            int oldestIndex = 0;
+            int quietestIndex = -1;
+            float quietestVolume = float.MaxValue;
             float oldestTime = float.MaxValue;
 
             for (int i = 0; i < _pool2DSize; i++)
             {
-                if (!_pool2D[i].isPlaying)
+                AudioSource source = _pool2D[i];
+                if (source == null)
+                    continue;
+
+                if (!source.isActiveAndEnabled || source.clip == null || !source.isPlaying)
                 {
                     return i;
                 }
 
-                if (_startTimes2D[i] < oldestTime)
+                float candidateVolume = math.max(0f, source.volume);
+                float candidateStartTime = _startTimes2D[i];
+                if (candidateVolume < quietestVolume ||
+                    (candidateVolume <= quietestVolume && candidateStartTime < oldestTime))
                 {
-                    oldestTime = _startTimes2D[i];
-                    oldestIndex = i;
+                    quietestVolume = candidateVolume;
+                    oldestTime = candidateStartTime;
+                    quietestIndex = i;
                 }
             }
 
-            _pool2D[oldestIndex].Stop();
+            if (quietestIndex < 0)
+                return -1;
+
+            _pool2D[quietestIndex].Stop();
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogFormat(this, "[SpatialAudioManager] 2D pool full ({0}). Evicting index {1}.", _pool2DSize, oldestIndex);
+            if (ShouldEmitEditorThrottledLog(ref _nextHelmetPoolFullEditorLogTime, PoolFullEditorLogIntervalSeconds))
+            {
+                Debug.LogFormat(
+                    this,
+                    "[SpatialAudioManager] 2D pool full ({0}). Evicting quietest source at index {1}.",
+                    _pool2DSize,
+                    quietestIndex);
+            }
 #endif
 
-            return oldestIndex;
+            return quietestIndex;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  EDITOR VALIDATION
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static bool ShouldEmitEditorThrottledLog(ref float nextLogTime, float intervalSeconds)
+        {
+            float now = Time.unscaledTime;
+            if (now < nextLogTime)
+                return false;
+
+            nextLogTime = now + math.max(0.1f, intervalSeconds);
+            return true;
+        }
+#endif
 
         private Transform ResolveWorldPoolRoot()
         {
@@ -3625,6 +4501,7 @@ private int AcquireSourceIndex()
 
                 _pool[index] = source;
                 _lowPassFilters[index] = lowPassFilter;
+                _worldSourceRoots[index] = current.root;
                 _startTimes[index] = -1f;
                 _baseVolumes[index] = 0f;
                 _arrivalTimes[index] = -1f;
@@ -3682,6 +4559,8 @@ private int AcquireSourceIndex()
 
             if (_helmetPoolRoot == null)
                 _helmetPoolRoot = transform;
+
+            RefreshMixerParameterAvailability();
         }
 
         /// <summary>
@@ -3826,6 +4705,10 @@ private int AcquireSourceIndex()
             if (listener == null)
                 return;
 
+            if (!Application.isPlaying)
+                return;
+
+            EnsureInitialized();
             if (!_listeners.Contains(listener))
                 _listeners.Register(listener);
         }
@@ -3836,8 +4719,12 @@ private int AcquireSourceIndex()
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (!_listeners.Contains(listener))
+                return;
+
+            _listeners.Unregister(listener);
+            if (_listeners.Count <= 0)
+                DropQueuedCaptionPayloads();
         }
 
         /// <summary>Flushes queued audio captions to registered UI listeners.</summary>
@@ -3845,6 +4732,12 @@ private int AcquireSourceIndex()
         {
             if (!_pendingEvents.IsCreated)
                 return;
+
+            if (_listeners.Count <= 0)
+            {
+                DropQueuedCaptionPayloads();
+                return;
+            }
 
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             _isDispatching = true;
@@ -3882,6 +4775,9 @@ private int AcquireSourceIndex()
         /// </summary>
         public static void Raise(AudioCaptionRequest request)
         {
+            if (!Application.isPlaying || _listeners.Count <= 0)
+                return;
+
             if (string.IsNullOrWhiteSpace(request.CaptionText))
                 return;
 
@@ -3915,6 +4811,7 @@ private int AcquireSourceIndex()
                     nameof(AudioCaptionEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmCaptionQueue(ref _pendingEvents);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -3926,6 +4823,20 @@ private int AcquireSourceIndex()
                     nameof(AudioCaptionEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmCaptionQueue(ref _nextFrameEvents);
+            }
+        }
+
+        private static void PrewarmCaptionQueue(ref NativeQueue<AudioCaptionPayload> queue)
+        {
+            if (!queue.IsCreated)
+                return;
+
+            for (int i = 0; i < PendingEventCapacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
             }
         }
 
@@ -3964,6 +4875,29 @@ private int AcquireSourceIndex()
                 _pendingEvents.Enqueue(payload);
                 _pendingEventCount++;
             }
+        }
+
+        private static void DropQueuedCaptionPayloads()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                while (_pendingEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                while (_nextFrameEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            ClearReferenceSlots();
+            _referenceWriteIndex = 0;
+            _referencePendingCount = 0;
         }
 
         private static void Dispatch(in AudioCaptionPayload payload)

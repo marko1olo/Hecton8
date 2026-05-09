@@ -46,7 +46,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 60; // v60: Resource scarcity persists item hashes without runtime ID string dependency.
+        public const int CurrentVersion = 61; // v61: Encrypted audio-log partial recovery persists hash/bitmask pairs.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -102,6 +102,15 @@ namespace Hecton8.SaveSystem
 
         /// <summary>Список ID обнаруженных аудиодневников. v4.0 LORE</summary>
         public List<string> audioLogDiscoveredIds = new List<string>();
+
+        /// <summary>Number of partial encrypted audio-log recovery records persisted in the fixed hash arrays. v61 LORE.</summary>
+        public int audioLogEncryptedFragmentCount;
+
+        /// <summary>Stable audio-log hashes for partial encrypted recovery. v61 LORE.</summary>
+        public uint[] audioLogEncryptedFragmentHashes;
+
+        /// <summary>Recovered 4-bit masks for partial encrypted audio logs. v61 LORE.</summary>
+        public uint[] audioLogEncryptedFragmentBits;
 
         /// <summary>Packed industrial-lore discovery words for the fixed 50-record archive bank.</summary>
         public long[] industrialLoreUnlockWords;
@@ -231,6 +240,9 @@ namespace Hecton8.SaveSystem
                 narrativeDiscoveryIds = new string[MaxNarrativeDiscoveries],
                 narrativeDepthTier = 0,
                 audioLogDiscoveredIds = new List<string>(),
+                audioLogEncryptedFragmentCount = 0,
+                audioLogEncryptedFragmentHashes = new uint[MaxEncryptedAudioLogFragments],
+                audioLogEncryptedFragmentBits = new uint[MaxEncryptedAudioLogFragments],
                 // COLD ALLOC: long[IndustrialLoreBitMask.WordCount] — packed industrial lore discovery persistence — owner: SaveData
                 industrialLoreUnlockWords = new long[IndustrialLoreBitMask.WordCount],
                 questActiveIds = new List<string>(),
@@ -263,6 +275,9 @@ namespace Hecton8.SaveSystem
         }
 
         public const int MaxNarrativeDiscoveries = 128;
+
+        /// <summary>Maximum persisted partial encrypted audio-log recovery records. v61 LORE.</summary>
+        public const int MaxEncryptedAudioLogFragments = 32;
     }
 
     // ══════════════════════════════════════════════════════════════════

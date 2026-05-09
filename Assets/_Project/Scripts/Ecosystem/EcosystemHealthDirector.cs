@@ -19,8 +19,6 @@ namespace Hecton8.Ecosystem
         private const float InfectionActivationDebt = 20f;
         private const float InfectionFullDebt = 140f;
 
-        private static EcosystemHealthDirector _instance;
-
         // COLD ALLOC: HashSet<long>[64] - infected chunk registry persisted in local save - owner: EcosystemHealthDirector
         private readonly HashSet<long> _infectedChunkKeys = new HashSet<long>(EcosystemStateDTO.MaxInfectedZones);
         // COLD ALLOC: Dictionary<long,float>[64] - infected chunk severity lookup - owner: EcosystemHealthDirector
@@ -31,7 +29,7 @@ namespace Hecton8.Ecosystem
         private bool _serviceRegistered;
 
         /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
-        public static EcosystemHealthDirector Instance => _instance;
+        public static EcosystemHealthDirector Instance => GlobalRegistry.EcosystemHealth;
 
         /// <inheritdoc />
         public int SavePriority => 42;
@@ -41,13 +39,11 @@ namespace Hecton8.Ecosystem
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            EcosystemHealthDirector registered = GlobalRegistry.EcosystemHealth;
+            if (registered != null && registered != this)
             {
                 Destroy(gameObject);
-                return;
             }
-
-            _instance = this;
         }
 
         private void OnEnable()
@@ -74,8 +70,6 @@ namespace Hecton8.Ecosystem
             UnregisterFromTickManager();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             TryUnregisterService();
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <inheritdoc />
@@ -268,6 +262,13 @@ namespace Hecton8.Ecosystem
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            EcosystemHealthDirector registered = GlobalRegistry.EcosystemHealth;
+            if (registered != null && registered != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterEcosystemHealthRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.EcosystemHealth, this);

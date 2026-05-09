@@ -1,6 +1,8 @@
 #pragma kernel ResetAbyssalFlowAggregate
 #pragma kernel UpdateAbyssalFlowField
 #pragma kernel DetectBiolumeSurge
+#pragma kernel ClearFloraSnapFlags
+#pragma kernel FlagSnappedFlora
 
 #define HECTON_THREADS_PER_GROUP 64
 
@@ -16,6 +18,27 @@ StructuredBuffer<GpuHeatSourceData> _AbyssalHeatSources;
 RWStructuredBuffer<float4> _AbyssalFlowFieldResult;
 RWByteAddressBuffer _AbyssalAggregateMask;
 
+struct HectonVegetationInstanceGpuData
+{
+    float Type;
+    float HeightScale;
+    float WidthScale;
+    float Variation;
+    float TemplateIndex;
+    float RuntimeState;
+    float RuntimeFlags;
+    float PulseFrequency;
+    float4 BioluminescenceColor;
+    float SwaySpeed;
+    float BendAmplitude;
+    float HealthNormalized;
+    float Reserved0;
+};
+
+StructuredBuffer<float4x4> _HectonSourceInstanceMatrices;
+StructuredBuffer<HectonVegetationInstanceGpuData> _HectonSourceVegetationInstanceData;
+RWStructuredBuffer<uint> _HectonFloraSnapFlags;
+
 int4 _AbyssalGridResolution;
 float4 _AbyssalFlowCenter;
 float4 _AbyssalFlowSpacing;
@@ -26,6 +49,10 @@ float _AbyssalFlowSurfaceY;
 float _AbyssalFlowThermoclineY;
 int _AbyssalFlowHeatSourceCount;
 int _AbyssalFlowWeatherStateMask;
+uint _HectonSourceInstanceCount;
+float4 _GlobalFloatingOffset;
+float4 _HectonSubmarineWashSphere;
+float4 _HectonSubmarineWashVelocity;
 
 static const uint WeatherStateStorm = 1u << 1;
 static const uint WeatherStateThermoclineActive = 1u << 3;
@@ -49,6 +76,25 @@ float3 SafeNormalize(float3 value, float3 fallbackValue)
 {
     float lengthSq = dot(value, value);
     return lengthSq > Epsilon ? value * rsqrt(lengthSq) : fallbackValue;
+}
+
+float WrapPhasePi(float phase)
+{
+    const float twoPi = 6.28318530718;
+    const float invTwoPi = 0.15915494309;
+    return phase - floor((phase + 3.14159265359) * invTwoPi) * twoPi;
+}
+
+float FastSinApprox(float phase)
+{
+    float x = WrapPhasePi(phase);
+    float x2 = x * x;
+    return x * (1.0 - x2 * (0.1666666716 - x2 * (0.0083333310 - x2 * 0.0001984127)));
+}
+
+float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
+{
+    return mul(matrixValue, float4(localPosition, 1.0)).xyz;
 }
 
 int3 ResolveGridCoord(uint nodeIndex)
@@ -113,7 +159,7 @@ void UpdateAbyssalFlowField(uint3 dispatchThreadId : SV_DispatchThreadID)
         float stormTurbulence = 1.0 + (stormBlend * depthBoost);
         float phase = dot(nodeWorldPos.xz - _AbyssalFlowCenter.xz, windDirection.xz) * PressureWaveSpatialFrequency;
         phase += timeSeconds * (PressureWaveTemporalBaseSpeed + (waveHeight * 0.12));
-        float pressureWave = sin(phase) * ((waveHeight * PressureWaveWaveHeightAmplitude) + (windIntensity * PressureWaveWindAmplitude));
+        float pressureWave = FastSinApprox(phase) * ((waveHeight * PressureWaveWaveHeightAmplitude) + (windIntensity * PressureWaveWindAmplitude));
         flow += windDirection * (pressureWave * stormTurbulence);
         flow.xz += windDirection.xz * (windIntensity * StormWindBiasScale * stormBlend);
         turbulenceScalar = stormTurbulence * (1.0 + abs(pressureWave));
@@ -129,11 +175,11 @@ void UpdateAbyssalFlowField(uint3 dispatchThreadId : SV_DispatchThreadID)
         if (distSq > radius * radius * 4.0)
             continue;
 
-        float dist = sqrt(distSq + Epsilon);
-        float verticalVelocity = min((heat.Intensity * max(1.0, thermalIntensity)) / max(dist * dist, Epsilon), 8.0);
+        float radiusSq = radius * radius;
+        float verticalVelocity = min((heat.Intensity * max(1.0, thermalIntensity)) / max(distSq + Epsilon, Epsilon), 8.0);
         flow.y += verticalVelocity;
 
-        float radialFalloff = saturate(1.0 - (dist / radius));
+        float radialFalloff = 1.0 - smoothstep(0.0, radiusSq, distSq);
         float3 toSource = SafeNormalize(toSourceVector, float3(0.0, 1.0, 0.0));
         float3 tangent = SafeNormalize(cross(float3(0.0, 1.0, 0.0), toSource), float3(0.0, 0.0, 1.0));
         float vortexStrength = heat.Intensity * radialFalloff * 0.4;
@@ -147,7 +193,8 @@ void UpdateAbyssalFlowField(uint3 dispatchThreadId : SV_DispatchThreadID)
             flow.y = lerp(flow.y, flow.y * ThermoclineVerticalAttenuation, thermoclineBand);
     }
 
-    _AbyssalFlowFieldResult[nodeIndex] = float4(flow, length(flow) * turbulenceScalar);
+    float flowEnergy = dot(flow, flow);
+    _AbyssalFlowFieldResult[nodeIndex] = float4(flow, flowEnergy * turbulenceScalar);
 }
 
 [numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
@@ -193,4 +240,57 @@ void DetectBiolumeSurge(uint3 dispatchThreadId : SV_DispatchThreadID)
             }
         }
     }
+}
+
+[numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
+void ClearFloraSnapFlags(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint instanceIndex = dispatchThreadId.x;
+    if (instanceIndex >= _HectonSourceInstanceCount)
+        return;
+
+    _HectonFloraSnapFlags[instanceIndex] = 0u;
+}
+
+[numthreads(HECTON_THREADS_PER_GROUP, 1, 1)]
+void FlagSnappedFlora(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint instanceIndex = dispatchThreadId.x;
+    if (instanceIndex >= _HectonSourceInstanceCount || _HectonFloraSnapFlags[instanceIndex] != 0u)
+        return;
+
+    float speed = _HectonSubmarineWashVelocity.w;
+    float radius = max(_HectonSubmarineWashSphere.w, 0.05);
+    if (speed <= 10.0 || radius <= 0.05)
+        return;
+
+    HectonVegetationInstanceGpuData instanceData = _HectonSourceVegetationInstanceData[instanceIndex];
+    float instanceType = clamp(round(instanceData.Type), 0.0, 2.0);
+    if (instanceType < 0.5 || instanceType > 1.5)
+        return;
+
+    float3 originWS = TransformPoint(_HectonSourceInstanceMatrices[instanceIndex], float3(0.0, 0.0, 0.0)) + _GlobalFloatingOffset.xyz;
+    float3 delta = originWS - _HectonSubmarineWashSphere.xyz;
+    delta.y *= 0.25;
+    float radiusSq = radius * radius;
+    float distSq = dot(delta, delta);
+    if (distSq >= radiusSq)
+        return;
+
+    float innerRadius = radius * 0.35;
+    float proximity = 1.0 - smoothstep(innerRadius * innerRadius, radiusSq, distSq);
+    if (proximity <= 0.001)
+        return;
+
+    float2 velocityXZ = _HectonSubmarineWashVelocity.xz;
+    float velocityLenSq = dot(velocityXZ, velocityXZ);
+    float2 radialXZ = delta.xz;
+    float radialLenSq = dot(radialXZ, radialXZ);
+    float directionalGate = 0.85;
+    if (velocityLenSq > Epsilon && radialLenSq > Epsilon)
+        directionalGate = saturate(dot(velocityXZ * rsqrt(velocityLenSq), radialXZ * rsqrt(radialLenSq)) * 0.5 + 0.5);
+
+    float snappedWeight = smoothstep(10.0, 12.5, speed) * proximity * lerp(0.7, 1.0, directionalGate);
+    if (snappedWeight > 0.12)
+        _HectonFloraSnapFlags[instanceIndex] = 1u;
 }

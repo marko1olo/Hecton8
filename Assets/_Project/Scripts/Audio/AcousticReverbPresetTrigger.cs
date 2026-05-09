@@ -1,5 +1,6 @@
 using Hecton8.Core;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -54,7 +55,7 @@ namespace Hecton8.Audio
             if (!IsPlayerCollider(other))
                 return;
 
-            _insideCount = Mathf.Max(0, _insideCount - 1);
+            _insideCount = math.max(0, _insideCount - 1);
             if (_insideCount == 0)
                 AcousticOcclusionUtility.ClearTriggerReverbPreset();
         }
@@ -84,8 +85,7 @@ namespace Hecton8.Audio
 
         private void ForceTriggerCollider()
         {
-            BoxCollider boxCollider = GetComponent<BoxCollider>();
-            if (boxCollider != null)
+            if (TryGetComponent(out BoxCollider boxCollider))
                 boxCollider.isTrigger = true;
         }
     }

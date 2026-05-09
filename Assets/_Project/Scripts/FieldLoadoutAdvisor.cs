@@ -3,6 +3,7 @@ using Hecton8.Building;
 using Hecton8.Interaction;
 using Hecton8.Items;
 using Hecton8.Scavenging;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -13,7 +14,9 @@ namespace Hecton8.Gameplay
         private const string PresetFieldRecovery = "FIELD RECOVERY";
         private const string PresetDefense = "DEFENSE";
         private const string PresetExploration = "EXPLORATION";
-        private static readonly RaycastHit[] _forwardHits = new RaycastHit[1]; // COLD ALLOC: advisor resolves one forward contact at a time on main thread.
+        private const float ForwardConeTangent = 0.18f;
+        private const float ForwardConeMinimumRadiusMeters = 0.75f;
+        private static readonly SpatialQueryHit[] _forwardCandidates = new SpatialQueryHit[8]; // COLD ALLOC: SpatialQueryHit[8] - broadphase-backed loadout advice candidate buffer - owner: FieldLoadoutAdvisor
 
         public readonly struct LoadoutAdvice
         {
@@ -33,10 +36,10 @@ namespace Hecton8.Gameplay
             if (origin == null)
                 return false;
 
-            if (!TryGetForwardHit(origin, range, mask, out RaycastHit hit))
+            if (!TryGetForwardTarget(origin, range, mask, out Component source, out float distance))
                 return false;
 
-            return TryBuildAdvice(hit.collider, hit.distance, out advice);
+            return TryBuildAdvice(source, distance, out advice);
         }
 
         public static bool TryBuildForwardPresetName(Transform origin, float range, LayerMask mask, out string presetName)
@@ -45,10 +48,10 @@ namespace Hecton8.Gameplay
             if (origin == null)
                 return false;
 
-            if (!TryGetForwardHit(origin, range, mask, out RaycastHit hit))
+            if (!TryGetForwardTarget(origin, range, mask, out Component source, out _))
                 return false;
 
-            return TryBuildPresetName(hit.collider, out presetName);
+            return TryBuildPresetName(source, out presetName);
         }
 
         public static bool TryBuildPresetName(Component source, out string presetName)
@@ -179,7 +182,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.ResourceNodeDepleted:
                     advice = new LoadoutAdvice(
                         PresetFieldRecovery,
-                        $"Recovery lane ahead at {distance:0.0} m. Recovery tools are a strong fit if you want salvage or cargo control.");
+                        "Recovery lane ahead. Recovery tools are a strong fit if you want salvage or cargo control.");
                     return true;
 
                 case FieldTargetRole.RouteAnchor:
@@ -190,7 +193,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.StructureRelay:
                     advice = new LoadoutAdvice(
                         PresetExploration,
-                        $"Route or intel objective ahead at {distance:0.0} m. Exploration kit fits this situation well.");
+                        "Route or intel objective ahead. Exploration kit fits this situation well.");
                     return true;
 
                 case FieldTargetRole.ServiceDamaged:
@@ -204,7 +207,7 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.PowerLoad:
                     advice = new LoadoutAdvice(
                         PresetConstruction,
-                        $"Service, power, or build target ahead at {distance:0.0} m. Construction kit is a strong fit if you want builder, repair, and support coverage.");
+                        "Service, power, or build target ahead. Construction kit is a strong fit if you want builder, repair, and support coverage.");
                     return true;
 
                 case FieldTargetRole.BioformDormant:
@@ -213,31 +216,76 @@ namespace Hecton8.Gameplay
                 case FieldTargetRole.BioformDown:
                     advice = new LoadoutAdvice(
                         PresetDefense,
-                        $"Combat contact ahead at {distance:0.0} m. Defense kit is the safer option before closing distance.");
+                        "Combat contact ahead. Defense kit is the safer option before closing distance.");
                     return true;
             }
 
             return false;
         }
 
-        private static bool TryGetForwardHit(Transform origin, float range, LayerMask mask, out RaycastHit hit)
+        private static bool TryGetForwardTarget(Transform origin, float range, LayerMask mask, out Component source, out float distance)
         {
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin.position,
-                origin.forward,
-                _forwardHits,
-                range,
-                mask,
-                QueryTriggerInteraction.Collide);
+            source = null;
+            distance = 0f;
 
-            if (hitCount > 0)
+            if (origin == null || range <= 0f)
+                return false;
+
+            Vector3 originPosition = origin.position;
+            Vector3 forward = origin.forward;
+            int count = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                originPosition,
+                range,
+                SpatialTargetKind.Resource |
+                SpatialTargetKind.Bioform |
+                SpatialTargetKind.Signal |
+                SpatialTargetKind.Pickup |
+                SpatialTargetKind.Scannable |
+                SpatialTargetKind.Module,
+                _forwardCandidates);
+
+            bool found = false;
+            float rangeSqr = range * range;
+            float bestProjection = range;
+            for (int i = 0; i < count; i++)
             {
-                hit = _forwardHits[0];
-                return true;
+                SpatialQueryHit candidate = _forwardCandidates[i];
+                if (!MatchesLayer(candidate.Layer, mask))
+                    continue;
+
+                Vector3 offset = candidate.Position - originPosition;
+                float distanceSqr = offset.sqrMagnitude;
+                if (distanceSqr > rangeSqr)
+                    continue;
+
+                float projection = Vector3.Dot(offset, forward);
+                if (projection <= 0f || projection > range)
+                    continue;
+
+                float lateralSqr = distanceSqr - (projection * projection);
+                float coneRadius = ForwardConeMinimumRadiusMeters + (projection * ForwardConeTangent);
+                if (lateralSqr > coneRadius * coneRadius)
+                    continue;
+
+                if (found && projection >= bestProjection)
+                    continue;
+
+                Component candidateSource = candidate.Owner != null ? candidate.Owner : candidate.Transform;
+                if (candidateSource == null)
+                    continue;
+
+                found = true;
+                bestProjection = projection;
+                source = candidateSource;
+                distance = projection;
             }
 
-            hit = default;
-            return false;
+            return found;
+        }
+
+        private static bool MatchesLayer(int layer, LayerMask mask)
+        {
+            return layer >= 0 && ((mask.value & (1 << layer)) != 0);
         }
 
         private static bool TryBuildDescriptorPresetName(FieldTargetDescriptor descriptor, out string presetName)

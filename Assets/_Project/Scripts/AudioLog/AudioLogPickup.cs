@@ -6,6 +6,7 @@
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Interaction;
+using Hecton8.Quest;
 using UnityEngine;
 
 namespace Hecton8.Narrative
@@ -21,6 +22,12 @@ namespace Hecton8.Narrative
         private const string DefaultTextVerbEn = "Open Log";
         private const string DefaultArchiveVerbRu = "Открыть архив";
         private const string DefaultArchiveVerbEn = "Open Archive";
+        private static readonly uint _defaultPlaybackVerbRuHash = QuestFlagHashKernel.ComputeStableHash(DefaultPlaybackVerbRu);
+        private static readonly uint _defaultPlaybackVerbEnHash = QuestFlagHashKernel.ComputeStableHash(DefaultPlaybackVerbEn);
+        private static readonly uint _defaultTextVerbRuHash = QuestFlagHashKernel.ComputeStableHash(DefaultTextVerbRu);
+        private static readonly uint _defaultTextVerbEnHash = QuestFlagHashKernel.ComputeStableHash(DefaultTextVerbEn);
+        private static readonly uint _defaultArchiveVerbRuHash = QuestFlagHashKernel.ComputeStableHash(DefaultArchiveVerbRu);
+        private static readonly uint _defaultArchiveVerbEnHash = QuestFlagHashKernel.ComputeStableHash(DefaultArchiveVerbEn);
 
         // COLD ALLOC: RegistryBucket<AudioLogPickup>[64] - active pickup templates for procedural lore lookup - owner: AudioLogPickup
         private static readonly RegistryBucket<AudioLogPickup> _registeredPickupTemplates = new RegistryBucket<AudioLogPickup>(MaxRegisteredPickupTemplates);
@@ -192,12 +199,13 @@ namespace Hecton8.Narrative
 
         private static bool IsLegacyDefaultVerb(string value)
         {
-            return string.Equals(value, DefaultPlaybackVerbRu, System.StringComparison.Ordinal) ||
-                   string.Equals(value, DefaultPlaybackVerbEn, System.StringComparison.Ordinal) ||
-                   string.Equals(value, DefaultTextVerbRu, System.StringComparison.Ordinal) ||
-                   string.Equals(value, DefaultTextVerbEn, System.StringComparison.Ordinal) ||
-                   string.Equals(value, DefaultArchiveVerbRu, System.StringComparison.Ordinal) ||
-                   string.Equals(value, DefaultArchiveVerbEn, System.StringComparison.Ordinal);
+            uint verbHash = QuestFlagHashKernel.ComputeStableHash(value);
+            return verbHash == _defaultPlaybackVerbRuHash ||
+                   verbHash == _defaultPlaybackVerbEnHash ||
+                   verbHash == _defaultTextVerbRuHash ||
+                   verbHash == _defaultTextVerbEnHash ||
+                   verbHash == _defaultArchiveVerbRuHash ||
+                   verbHash == _defaultArchiveVerbEnHash;
         }
 
         private static string ResolveLocalized(string key, string fallback)

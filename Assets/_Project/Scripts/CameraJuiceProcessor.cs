@@ -712,14 +712,14 @@ namespace Hecton8.Gameplay
             float verticalSpeed = math.abs(input.verticalVelocity);
             float currentSpeed = math.max(
                 math.max(planarSpeed, input.swimSpeed),
-                math.sqrt(planarSpeed * planarSpeed + verticalSpeed * verticalSpeed));
+                ApproximateTwoAxisMagnitude(planarSpeed, verticalSpeed));
             float speed01 = math.saturate(
                 (currentSpeed - SPEED_FOV_START_METERS_PER_SECOND) /
                 math.max(0.01f, SPEED_FOV_FULL_METERS_PER_SECOND - SPEED_FOV_START_METERS_PER_SECOND));
             speed01 = speed01 * speed01 * (3f - 2f * speed01);
 
             float targetOffset = speed01 * SPEED_FOV_MAX_DEGREES;
-            float blend = math.saturate(1f - math.exp(-SPEED_FOV_LERP_SHARPNESS * math.max(0f, dt)));
+            float blend = FastDampingBlendT(SPEED_FOV_LERP_SHARPNESS, dt);
             _speedFovOffset = math.lerp(_speedFovOffset, targetOffset, blend);
             _output.fovOffset += _speedFovOffset;
         }
@@ -751,7 +751,7 @@ namespace Hecton8.Gameplay
             if (suit == null || !suit.enableSwimBob) return;
 
             float targetIntensity = math.max(input.hasMovementInput ? 1f : 0f, input.transportBoost01 * 0.85f);
-            float blendT = 1f - math.exp(-suit.swimBobTransitionSpeed * dt);
+            float blendT = FastDampingBlendT(suit.swimBobTransitionSpeed, dt);
             _swimBobIntensity = math.lerp(_swimBobIntensity, targetIntensity, blendT);
 
             if (_swimBobIntensity < DEAD_ZONE) { _swimBobIntensity = 0f; return; }
@@ -931,7 +931,7 @@ namespace Hecton8.Gameplay
         private void ProcessHeadBob(in CameraJuiceInput input, SuitData suit, float dt, float amplitudeScale, float cadenceScale)
         {
             float targetIntensity = (input.isGrounded && input.hasMovementInput) ? 1f : 0f;
-            float blendT = 1f - math.exp(-suit.bobTransitionSpeed * dt);
+            float blendT = FastDampingBlendT(suit.bobTransitionSpeed, dt);
             _bobIntensity = math.lerp(_bobIntensity, targetIntensity, blendT);
 
             if (_bobIntensity < DEAD_ZONE) { _bobIntensity = 0f; _wasInLowPhase = false; return; }
@@ -1017,7 +1017,7 @@ namespace Hecton8.Gameplay
             if (!suit.enableIdleSway) return;
 
             float targetSwayIntensity = input.hasMovementInput ? 0f : 1f;
-            float swayBlendT = 1f - math.exp(-suit.idleSwayTransitionSpeed * dt);
+            float swayBlendT = FastDampingBlendT(suit.idleSwayTransitionSpeed, dt);
             _swayIntensity = math.lerp(_swayIntensity, targetSwayIntensity, swayBlendT);
 
             if (_swayIntensity < DEAD_ZONE) { _swayIntensity = 0f; return; }
@@ -1109,7 +1109,7 @@ namespace Hecton8.Gameplay
 
             if (_swayIntensity > DEAD_ZONE)
             {
-                float swayT = 1f - math.exp(-suit.idleSwayTransitionSpeed * dt);
+                float swayT = FastDampingBlendT(suit.idleSwayTransitionSpeed, dt);
                 _swayIntensity = math.lerp(_swayIntensity, 0f, swayT);
             }
             else { _swayIntensity = 0f; }
@@ -1130,7 +1130,7 @@ namespace Hecton8.Gameplay
 
             if (_swimBobIntensity > DEAD_ZONE)
             {
-                float swimBobT = 1f - math.exp(-(suit != null ? suit.swimBobTransitionSpeed : 4f) * dt);
+                float swimBobT = FastDampingBlendT(suit != null ? suit.swimBobTransitionSpeed : 4f, dt);
                 _swimBobIntensity = math.lerp(_swimBobIntensity, 0f, swimBobT);
             }
             else { _swimBobIntensity = 0f; }
@@ -1142,7 +1142,7 @@ namespace Hecton8.Gameplay
         {
             if (_bobIntensity > DEAD_ZONE)
             {
-                float bobT = 1f - math.exp(-suit.bobTransitionSpeed * dt);
+                float bobT = FastDampingBlendT(suit.bobTransitionSpeed, dt);
                 _bobIntensity = math.lerp(_bobIntensity, 0f, bobT);
                 if (_bobIntensity > DEAD_ZONE)
                 {
@@ -1179,11 +1179,28 @@ namespace Hecton8.Gameplay
             float dt,
             float epsilon)
         {
-            float blend = 1f - math.exp(-math.max(0.01f, sharpness) * math.max(0f, dt));
-            current = math.lerp(current, 0f, math.saturate(blend));
+            float blend = FastDampingBlendT(math.max(0.01f, sharpness), dt);
+            current = math.lerp(current, 0f, blend);
             velocity = 0f;
             if (math.abs(current) <= epsilon)
                 current = 0f;
+        }
+
+        private static float FastDampingBlendT(float sharpness, float dt)
+        {
+            float x = math.max(0f, sharpness) * math.max(0f, dt);
+            float x2 = x * x;
+            float invExp = 1f / math.max(1f + x + (0.48f * x2) + (0.235f * x2 * x), 0.0001f);
+            return math.saturate(1f - invExp);
+        }
+
+        private static float ApproximateTwoAxisMagnitude(float x, float y)
+        {
+            float ax = math.abs(x);
+            float ay = math.abs(y);
+            float max = math.max(ax, ay);
+            float min = math.min(ax, ay);
+            return max + (0.375f * min);
         }
 
         private static float SpringDamp(float current, float target, ref float velocity, float omega, float dt)

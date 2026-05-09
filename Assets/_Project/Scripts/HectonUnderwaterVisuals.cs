@@ -1831,13 +1831,13 @@ namespace Hecton8.Environment
                 float readableBandFade = 1f - math.saturate(
                     (depth - DaylightReadableDepth) /
                     math.max(1f, beerLambertBlackoutDepth - DaylightReadableDepth));
-                extinction *= Mathf.Lerp(
+                extinction *= LerpClamped(
                     1f,
                     DaylightReadableExtinctionReduction,
                     daylightVisibility * readableBandFade);
             }
 
-            float transmittance = math.exp(-extinction * effectiveDepth);
+            float transmittance = ApproximateExpNegPositive(extinction * effectiveDepth);
             if (daylightVisibility > 0.001f)
             {
                 float readabilityDepthT = math.saturate(
@@ -1846,7 +1846,7 @@ namespace Hecton8.Environment
                 float readabilityBlackoutFade = 1f - math.saturate(
                     (depth - DaylightReadableDepth) /
                     math.max(1f, beerLambertBlackoutDepth - DaylightReadableDepth));
-                float readabilityFloor = Mathf.Lerp(
+                float readabilityFloor = LerpClamped(
                     DaylightReadableLightFloor,
                     DaylightReadableLightFloor * 0.72f,
                     readabilityDepthT);
@@ -1903,8 +1903,8 @@ namespace Hecton8.Environment
             if (_smoothedSunLightFactor < 0f)
                 _smoothedSunLightFactor = targetLightFactor;
 
-            float brightenT = 1f - math.exp(-sunStateBrightenSpeed * deltaTime);
-            float darkenT = 1f - math.exp(-sunStateDarkenSpeed * deltaTime);
+            float brightenT = ResolveDecayBlend(sunStateBrightenSpeed, deltaTime);
+            float darkenT = ResolveDecayBlend(sunStateDarkenSpeed, deltaTime);
 
             float intensityT = targetIntensity >= _smoothedSunIntensity ? brightenT : darkenT;
             float lightFactorT = targetLightFactor >= _smoothedSunLightFactor ? brightenT : darkenT;
@@ -2047,8 +2047,8 @@ namespace Hecton8.Environment
 
             float scatterT = math.saturate(1f - lightFactor);
 
-            float sunSize = Mathf.Lerp(baseSunSize, underwaterSunSizeMax, scatterT);
-            float sunSoftness = Mathf.Lerp(baseSunEdgeSoftness, underwaterSunSoftnessMax, scatterT);
+            float sunSize = LerpClamped(baseSunSize, underwaterSunSizeMax, scatterT);
+            float sunSoftness = LerpClamped(baseSunEdgeSoftness, underwaterSunSoftnessMax, scatterT);
 
             activeSkyMaterial.SetFloat(_ID_SunSize, sunSize);
             activeSkyMaterial.SetFloat(_ID_SunEdgeSoftness, sunSoftness);
@@ -2208,13 +2208,13 @@ namespace Hecton8.Environment
             _cachedUnderwaterFogColor = fogColor;
             RenderSettings.fogColor = fogColor;
 
-            float baseDensity = Mathf.Lerp(maxFogDensity, minFogDensity, lightFactor);
+            float baseDensity = LerpClamped(maxFogDensity, minFogDensity, lightFactor);
             float targetDensity = baseDensity * _currentTurbidity;
             targetDensity *= _currentBiomeFogDensityScale;
             targetDensity *= _soundscapeFogDensityScale;
             targetDensity *= 1f + (submergeFogBoost * submergeImpulse);
             targetDensity *= 1f + (canopyOcclusion01 * sargassumCanopyFogBoost);
-            float shallowDensityFloor = Mathf.Lerp(
+            float shallowDensityFloor = LerpClamped(
                 UnderwaterFogDensityFloorNearSurface,
                 UnderwaterFogDensityFloorAtDepth,
                 math.saturate(currentDepth / UnderwaterFogDensityFloorDepth));
@@ -2226,7 +2226,7 @@ namespace Hecton8.Environment
             targetDensity += UnderwaterFarHazeDensityBoost * _currentTurbidity * farHazeBlend;
             float depthColumnHazeBlend = math.saturate(currentDepth / UnderwaterDepthColumnHazeFullDepth);
             targetDensity += UnderwaterDepthColumnHazeDensityBoost *
-                Mathf.Lerp(0.75f, 1f, ResolveSurfaceDaylightVisibility()) *
+                LerpClamped(0.75f, 1f, ResolveSurfaceDaylightVisibility()) *
                 _currentTurbidity *
                 depthColumnHazeBlend;
 
@@ -2235,7 +2235,7 @@ namespace Hecton8.Environment
             if (_surfaceWeatherOverrideActive)
                 surfDensity = ResolveSurfaceFogDensity();
 
-            _cachedFogDensity = Mathf.Lerp(surfDensity, targetDensity, smoothSubmerge);
+            _cachedFogDensity = LerpClamped(surfDensity, targetDensity, smoothSubmerge);
             RenderSettings.fogDensity = _cachedFogDensity;
 
 #if UNITY_EDITOR
@@ -2297,7 +2297,7 @@ namespace Hecton8.Environment
                 surfaceDensity = ResolveSurfaceFogDensity();
 
             float sceneViewDensityScale = math.min(sceneViewUnderwaterFogDensityScale, MaxSceneViewUnderwaterFogDensityScale);
-            return Mathf.Lerp(surfaceDensity, _cachedFogDensity, sceneViewDensityScale);
+            return LerpClamped(surfaceDensity, _cachedFogDensity, sceneViewDensityScale);
         }
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -2327,13 +2327,13 @@ namespace Hecton8.Environment
 
                 float depthBlend = math.saturate(_cachedVisualDepth / UnderwaterDaylightSeaTintDepth);
                 Color skyAmbient = MaxColorRgb(
-                    Color.Lerp(surfaceState.AmbientSkyColor, ambient, Mathf.Lerp(0.18f, 0.34f, depthBlend)),
+                    Color.Lerp(surfaceState.AmbientSkyColor, ambient, LerpClamped(0.18f, 0.34f, depthBlend)),
                     ScaleColorRgb(ambient, 0.78f));
                 Color equatorAmbient = MaxColorRgb(
-                    Color.Lerp(surfaceState.AmbientEquatorColor, ambient, Mathf.Lerp(0.26f, 0.5f, depthBlend)),
+                    Color.Lerp(surfaceState.AmbientEquatorColor, ambient, LerpClamped(0.26f, 0.5f, depthBlend)),
                     ambient);
                 Color groundAmbient = MaxColorRgb(
-                    Color.Lerp(surfaceState.AmbientGroundColor, ambient, Mathf.Lerp(0.34f, 0.62f, depthBlend)),
+                    Color.Lerp(surfaceState.AmbientGroundColor, ambient, LerpClamped(0.34f, 0.62f, depthBlend)),
                     ScaleColorRgb(ambient, 0.88f));
 
                 skyAmbient.a = 1f;
@@ -2476,7 +2476,7 @@ namespace Hecton8.Environment
                     shallowColumnBlend * UnderwaterShallowColumnColorStrength);
             }
 
-            float fogBlackoutStartDepth = Mathf.Lerp(
+            float fogBlackoutStartDepth = LerpClamped(
                 FogBlackoutStartDepthNight,
                 FogBlackoutStartDepthDay,
                 daylightVisibility);
@@ -2493,7 +2493,7 @@ namespace Hecton8.Environment
                 math.saturate(
                     (currentDepth - beerLambertSurfaceClarityDepth) /
                     math.max(1f, beerLambertBlackoutDepth - beerLambertSurfaceClarityDepth));
-            extinctionBlend *= Mathf.Lerp(1f, 0.45f, daylightVisibility);
+            extinctionBlend *= LerpClamped(1f, 0.45f, daylightVisibility);
 
             float deepBlackBlend = math.max(depthBlackBlend, extinctionBlend);
             if (deepBlackBlend <= 0.0001f)
@@ -2530,7 +2530,7 @@ namespace Hecton8.Environment
             waterMediumColor.a = 1f;
             Color fogColor = Color.Lerp(_currentFogColor, waterMediumColor, UnderwaterMediumFogColorBlend);
 
-            float biomeInfluence = Mathf.Lerp(
+            float biomeInfluence = LerpClamped(
                 UnderwaterBiomeFogInfluenceShallow,
                 UnderwaterBiomeFogInfluenceDeep,
                 math.saturate(currentDepth / UnderwaterBiomeFogInfluenceDepth));
@@ -2777,7 +2777,7 @@ namespace Hecton8.Environment
             }
 
             float targetScale = Mathf.Max(0f, targetLuminance / currentLuminance);
-            Color lifted = ScaleColorRgb(color, Mathf.Lerp(1f, targetScale, clampedBlend));
+            Color lifted = ScaleColorRgb(color, LerpClamped(1f, targetScale, clampedBlend));
             lifted.a = 1f;
             return lifted;
         }
@@ -2949,11 +2949,11 @@ namespace Hecton8.Environment
                 _currentDepthFogDensity, _targetDepthFogDensity, lerpT);
             _currentFogColor = Color.Lerp(
                 _currentFogColor, _targetFogColor, lerpT);
-            _currentTurbidity = Mathf.Lerp(
+            _currentTurbidity = LerpClamped(
                 _currentTurbidity, _targetTurbidity, lerpT);
-            _currentBiomeFogDensityScale = Mathf.Lerp(
+            _currentBiomeFogDensityScale = LerpClamped(
                 _currentBiomeFogDensityScale, _targetBiomeFogDensityScale, lerpT);
-            biomeAbsorption = Mathf.Lerp(
+            biomeAbsorption = LerpClamped(
                 biomeAbsorption, _targetBiomeAbsorption, lerpT);
             _currentAmbientColor = Color.Lerp(
                 _currentAmbientColor, _targetAmbientColor, lerpT);
@@ -3000,10 +3000,7 @@ namespace Hecton8.Environment
             Vector3 center = cameraTransform != null ? cameraTransform.position : Vector3.zero;
             Vector3 forward = cameraTransform != null ? cameraTransform.forward : Vector3.forward;
             forward.y = 0f;
-            if (forward.sqrMagnitude <= 0.0001f)
-                forward = Vector3.forward;
-            else
-                forward.Normalize();
+            forward = ResolveSafeDirection(forward, Vector3.forward);
 
             float halfLength = Mathf.Max(4f, biomeFogTransitionLengthMeters) * 0.5f;
             _biomeFogTransitionFromAup = BuildAupFromRuntimePosition(center - forward * halfLength);
@@ -3261,7 +3258,7 @@ namespace Hecton8.Environment
             {
                 scatterLuminanceFloor = SurfaceScatterLuminanceFloor;
             }
-            float scatterIntensity = Mathf.Lerp(scatterLuminanceFloor, 1f, materialLightFactor);
+            float scatterIntensity = LerpClamped(scatterLuminanceFloor, 1f, materialLightFactor);
             Color horizonVeilColor = ResolveSurfaceHorizonVeilColor();
             Color oceanHorizonMergeColor = ResolveSurfaceOceanHorizonMergeColor();
             Color zenithSkyColor = ResolveSurfaceSkyZenithColor();
@@ -3297,7 +3294,7 @@ namespace Hecton8.Environment
             }
 
             scatterBase = ScaleColorRgb(scatterBase, scatterIntensity);
-            scatterShallow = ScaleColorRgb(scatterShallow, Mathf.Lerp(scatterLuminanceFloor * 1.15f, 1f, materialLightFactor));
+            scatterShallow = ScaleColorRgb(scatterShallow, LerpClamped(scatterLuminanceFloor * 1.15f, 1f, materialLightFactor));
 
             if (!underwaterMaterial)
             {
@@ -3386,13 +3383,13 @@ namespace Hecton8.Environment
                     (surfaceOceanSunScatterBlend * 0.35f));
                 subSurfaceBaseIntensity = Mathf.Max(
                     subSurfaceBaseIntensity,
-                    Mathf.Lerp(0.38f, 0.72f, horizonSubsurfaceBias));
+                    LerpClamped(0.38f, 0.72f, horizonSubsurfaceBias));
                 subSurfaceSunIntensity = Mathf.Max(
                     subSurfaceSunIntensity,
-                    Mathf.Lerp(1.25f, 1.95f, horizonSubsurfaceBias));
+                    LerpClamped(1.25f, 1.95f, horizonSubsurfaceBias));
                 subSurfaceSunFalloff = Mathf.Min(
                     subSurfaceSunFalloff,
-                    Mathf.Lerp(6.2f, 4.8f, horizonSubsurfaceBias));
+                    LerpClamped(6.2f, 4.8f, horizonSubsurfaceBias));
             }
 
             Vector3 authoredDepthFogDensity = ResolveAuthoredDepthFogDensity(
@@ -4450,13 +4447,14 @@ namespace Hecton8.Environment
 
             float temperatureDelta = Mathf.Abs(previousAmbience.waterTemperature - currentAmbience.waterTemperature);
             float fogDelta = Mathf.Abs(previousAmbience.fogDensity - currentAmbience.fogDensity);
-            Vector3 previousColor = new Vector3(previousAmbience.waterColor.r, previousAmbience.waterColor.g, previousAmbience.waterColor.b);
-            Vector3 currentColor = new Vector3(currentAmbience.waterColor.r, currentAmbience.waterColor.g, currentAmbience.waterColor.b);
-            float colorDelta = Vector3.Distance(previousColor, currentColor);
+            float colorDeltaR = currentAmbience.waterColor.r - previousAmbience.waterColor.r;
+            float colorDeltaG = currentAmbience.waterColor.g - previousAmbience.waterColor.g;
+            float colorDeltaB = currentAmbience.waterColor.b - previousAmbience.waterColor.b;
+            float colorDeltaSq = (colorDeltaR * colorDeltaR) + (colorDeltaG * colorDeltaG) + (colorDeltaB * colorDeltaB);
 
             float normalizedTemperature = temperatureDelta / Mathf.Max(0.01f, thermoclineTemperatureDeltaForFullEffect);
             float normalizedFog = fogDelta / Mathf.Max(0.01f, thermoclineFogDeltaForFullEffect);
-            float normalizedColor = colorDelta / Mathf.Max(0.01f, thermoclineColorDeltaForFullEffect);
+            float normalizedColor = colorDeltaSq / math.max(0.0001f, thermoclineColorDeltaForFullEffect * thermoclineColorDeltaForFullEffect);
             float structuralBonus = previousZone.isThermal != currentZone.isThermal ? 0.24f : 0f;
             structuralBonus += Mathf.Abs(previousZone.dangerLevel - currentZone.dangerLevel) * 0.12f;
 
@@ -4736,9 +4734,9 @@ namespace Hecton8.Environment
                     bottomSiltEmissionBoost +
                     suspendedMotesSubmergeBoost);
                 float densityScale = math.saturate(targetEmission / densityCeiling);
-                float playerSpeed = ResolvePlayerSpeedMetersPerSecond();
+                float playerSpeedSq = ResolvePlayerSpeedSquaredMetersPerSecond();
                 float bubbleTrail01 = shouldPlay
-                    ? math.saturate((playerSpeed - GpuBubbleTrailMinSpeed) / math.max(0.01f, GpuBubbleTrailFullSpeed - GpuBubbleTrailMinSpeed))
+                    ? ResolveSquaredSpeedFactor(playerSpeedSq, GpuBubbleTrailMinSpeed, GpuBubbleTrailFullSpeed)
                     : 0f;
                 float bubbleDeltaTime = Application.isPlaying ? math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime) : 0.0166667f;
                 if (_gpuBubbleExhaleImpulse01 > 0f)
@@ -5133,7 +5131,7 @@ namespace Hecton8.Environment
             float hudFogTargetLuminance01 = math.max(_hudFogTargetLuminance01, _hudFogDownsampledLuminance01);
             float hudDeltaTime = Application.isPlaying ? math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime) : 0.0166667f;
             UpdateFlashlightPhotophobiaField(hudDeltaTime);
-            float hudAlpha = 1f - math.exp(-HudFogPerturbationResponse * hudDeltaTime);
+            float hudAlpha = ResolveDecayBlend(HudFogPerturbationResponse, hudDeltaTime);
             _hudFogSmoothedLuminance01 = math.lerp(
                 _hudFogSmoothedLuminance01,
                 hudFogTargetLuminance01,
@@ -5415,18 +5413,25 @@ namespace Hecton8.Environment
             return math.max(0, burstCount);
         }
 
-        private float ResolvePlayerSpeedMetersPerSecond()
+        private float ResolvePlayerSpeedSquaredMetersPerSecond()
         {
             if (_playerMovement != null)
             {
                 Vector3 velocity = _playerMovement.CurrentWorldVelocity;
-                return math.length(new float3(velocity.x, velocity.y, velocity.z));
+                return math.lengthsq(new float3(velocity.x, velocity.y, velocity.z));
             }
 
             if (_playerRigidbody != null)
-                return _playerRigidbody.linearVelocity.magnitude;
+                return _playerRigidbody.linearVelocity.sqrMagnitude;
 
             return 0f;
+        }
+
+        private static float ResolveSquaredSpeedFactor(float speedSq, float minSpeed, float fullSpeed)
+        {
+            float minSpeedSq = math.max(0f, minSpeed * minSpeed);
+            float fullSpeedSq = math.max(minSpeedSq + 0.0001f, fullSpeed * fullSpeed);
+            return math.saturate((speedSq - minSpeedSq) / math.max(0.0001f, fullSpeedSq - minSpeedSq));
         }
 
         private float ResolveBottomSiltEmissionBoost(bool isUnderwater)
@@ -5468,13 +5473,11 @@ namespace Hecton8.Environment
                 }
             }
 
-            float playerSpeed = _playerRigidbody != null ? _playerRigidbody.linearVelocity.magnitude : 0f;
+            float playerSpeedSq = _playerRigidbody != null ? _playerRigidbody.linearVelocity.sqrMagnitude : 0f;
             float distanceFactor = 1f - math.saturate(
                 (_cachedBottomDistance - bottomSiltFullDistance) /
                 math.max(0.01f, bottomSiltActivationDistance - bottomSiltFullDistance));
-            float speedFactor = math.saturate(
-                (playerSpeed - bottomSiltMinSpeed) /
-                math.max(0.01f, bottomSiltFullSpeed - bottomSiltMinSpeed));
+            float speedFactor = ResolveSquaredSpeedFactor(playerSpeedSq, bottomSiltMinSpeed, bottomSiltFullSpeed);
 
             float boost = bottomSiltEmissionBoost * distanceFactor * speedFactor * _adaptiveMotesScale + _externalBottomSiltBurstBoost;
             _cachedBottomSiltBoost = boost;
@@ -5558,7 +5561,7 @@ namespace Hecton8.Environment
                 float beamFactor = fadeIn * fadeOut * lightFade * ResolveHorizonFade();
                 if (enableSargassumCanopyLighting)
                 {
-                    float canopyWindowFactor = Mathf.Lerp(
+                    float canopyWindowFactor = LerpClamped(
                         1f - sargassumCanopyBeamOcclusionStrength,
                         1f,
                         canopyWindow01 * sargassumCanopyBeamWindowBoost);
@@ -5580,7 +5583,7 @@ namespace Hecton8.Environment
                     Vector3 beamDirection = sunLight.transform.forward;
                     if (beamDirection.sqrMagnitude > 0.0001f)
                     {
-                        beamDirection = beamDirection.normalized;
+                        beamDirection = ResolveSafeDirection(beamDirection, Vector3.forward);
                         Vector3 beamUp = math.abs(Vector3.Dot(beamDirection, Vector3.up)) > 0.98f
                             ? (mainCamera != null ? mainCamera.transform.right : Vector3.right)
                             : Vector3.up;
@@ -6385,6 +6388,35 @@ namespace Hecton8.Environment
             return math.abs(a.r - b.r) +
                    math.abs(a.g - b.g) +
                    math.abs(a.b - b.b);
+        }
+
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
+        }
+
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return from + ((to - from) * math.saturate(t));
+        }
+
+        private static float ApproximateExpNegPositive(float x)
+        {
+            float clamped = math.clamp(x, 0f, 8f);
+            float x2 = clamped * clamped;
+            float x3 = x2 * clamped;
+            float numerator = 120f - (60f * clamped) + (12f * x2) - x3;
+            float denominator = 120f + (60f * clamped) + (12f * x2) + x3;
+            return math.saturate(numerator / math.max(denominator, 0.0001f));
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
+        {
+            float lengthSq = direction.sqrMagnitude;
+            return lengthSq > 0.0001f
+                ? direction * math.rsqrt(lengthSq)
+                : fallback;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

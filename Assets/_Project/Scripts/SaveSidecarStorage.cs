@@ -10,6 +10,8 @@ namespace Hecton8.SaveSystem
     internal static unsafe class SaveSidecarStorage
     {
         private const int NullCollectionCount = -1;
+        private const string NativeMemoryOwner = nameof(SaveSidecarStorage);
+        private const NativeAllocationLifetime NativeTempMemoryLifetime = NativeAllocationLifetime.Temp;
 
         internal static bool Exists(string relativePath)
         {
@@ -44,7 +46,8 @@ namespace Hecton8.SaveSystem
                 + (sizeof(int) * 2)
                 + GetStringByteCount(metadata.Checksum);
 
-            NativeArray<byte> buffer = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> buffer = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[byteCount] — metadata sidecar write staging buffer — owner: SaveSidecarStorage
+            RegisterTempBuffer(buffer, "metadataWriteBuffer");
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -73,7 +76,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                buffer.Dispose();
+                DisposeTempBuffer(ref buffer);
             }
         }
 
@@ -97,7 +100,8 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            NativeArray<byte> buffer = new NativeArray<byte>((int)fileLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> buffer = new NativeArray<byte>((int)fileLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fileLength] — metadata sidecar read staging buffer — owner: SaveSidecarStorage
+            RegisterTempBuffer(buffer, "metadataReadBuffer");
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -119,7 +123,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                buffer.Dispose();
+                DisposeTempBuffer(ref buffer);
             }
         }
 
@@ -144,7 +148,8 @@ namespace Hecton8.SaveSystem
                 GetStringByteCount(record.LastAuditMessage) +
                 GetStringByteCount(record.LastRepairMessage);
 
-            NativeArray<byte> buffer = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> buffer = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[byteCount] — maintenance sidecar write staging buffer — owner: SaveSidecarStorage
+            RegisterTempBuffer(buffer, "maintenanceWriteBuffer");
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -185,7 +190,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                buffer.Dispose();
+                DisposeTempBuffer(ref buffer);
             }
         }
 
@@ -216,7 +221,8 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            NativeArray<byte> buffer = new NativeArray<byte>((int)fileLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+            NativeArray<byte> buffer = new NativeArray<byte>((int)fileLength, Allocator.Temp, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[fileLength] — maintenance sidecar read staging buffer — owner: SaveSidecarStorage
+            RegisterTempBuffer(buffer, "maintenanceReadBuffer");
             try
             {
                 byte* bufferPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(buffer);
@@ -252,8 +258,26 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
-                buffer.Dispose();
+                DisposeTempBuffer(ref buffer);
             }
+        }
+
+        private static void RegisterTempBuffer(NativeArray<byte> buffer, string label)
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeTempMemoryLifetime);
+        }
+
+        private static void DisposeTempBuffer(ref NativeArray<byte> buffer)
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(buffer);
+            buffer.Dispose();
+            buffer = default;
         }
 
         private static bool FinalizeMetadata(ref SaveMetadata metadata, float posX, float posY, float posZ, SidecarReader reader, out string error)

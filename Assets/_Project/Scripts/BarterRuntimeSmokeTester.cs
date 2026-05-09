@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Dev
@@ -105,8 +106,9 @@ namespace Hecton8.Dev
                     return;
                 }
 
-                if (_snapshotBuffer == null || _snapshotBuffer.Length < Mathf.Max(1, exchangeSystem.OfferCount))
-                    _snapshotBuffer = new PDAExchangeSystem.OfferSnapshot[Mathf.Max(1, exchangeSystem.OfferCount)];
+                int snapshotCapacity = math.max(1, exchangeSystem.OfferCount);
+                if (_snapshotBuffer == null || _snapshotBuffer.Length < snapshotCapacity)
+                    _snapshotBuffer = new PDAExchangeSystem.OfferSnapshot[snapshotCapacity];
 
                 BarterOfferData offer = exchangeSystem.GetOfferAt(offerIndex);
                 if (offer == null)
@@ -116,7 +118,8 @@ namespace Hecton8.Dev
                 }
 
                 _debugLastPhase = "Unlock";
-                if (!string.IsNullOrWhiteSpace(offer.requiredScanEntryId) && !scanLogSystem.ContainsEntry(offer.requiredScanEntryId))
+                uint requiredScanEntryHash = exchangeSystem.GetRequiredScanEntryHash(offer);
+                if (requiredScanEntryHash != 0u && !scanLogSystem.ContainsEntry(requiredScanEntryHash))
                 {
                     LogVerbose($"Archiving unlock entry {offer.requiredScanEntryId}");
                     scanLogSystem.ArchiveEntry(
@@ -131,7 +134,8 @@ namespace Hecton8.Dev
                 EnsureBundleAvailable(offer.costs);
 
                 _debugLastPhase = "SnapshotBefore";
-                int beforeExecutions = GetExecutionCountForOffer(offer.offerId);
+                int offerHash = exchangeSystem.GetOfferHash(offer);
+                int beforeExecutions = GetExecutionCountForOffer(offerHash);
                 int costSnapshotLength = CaptureBundleCounts(offer.costs, _costCountSnapshot, "cost");
                 if (costSnapshotLength < 0)
                     return;
@@ -140,9 +144,9 @@ namespace Hecton8.Dev
                 if (rewardSnapshotLength < 0)
                     return;
 
-                if (!exchangeSystem.CanExecute(offer, out string beforeStatus))
+                if (!exchangeSystem.CanExecute(offer, out PDAExchangeSystem.ExchangeStatus beforeStatus))
                 {
-                    Fail($"Offer not executable before smoke: {beforeStatus}");
+                    Fail($"Offer not executable before smoke: {PDAExchangeSystem.ResolveStatusLabel(beforeStatus)}");
                     return;
                 }
 
@@ -160,7 +164,7 @@ namespace Hecton8.Dev
                     return;
 
                 _debugLastPhase = "Validate";
-                int afterExecutions = GetExecutionCountForOffer(offer.offerId);
+                int afterExecutions = GetExecutionCountForOffer(offerHash);
                 if (afterExecutions != beforeExecutions + 1)
                 {
                     Fail($"Execution count mismatch {beforeExecutions} -> {afterExecutions}.");
@@ -176,7 +180,9 @@ namespace Hecton8.Dev
                 _debugLastPhase = "Complete";
                 _debugLastPass = true;
                 _debugLastIssue = string.Empty;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"[BarterSmoke] COMPLETE pass=True offer={offer.offerId}");
+#endif
             }
             catch (OperationCanceledException)
             {
@@ -184,7 +190,9 @@ namespace Hecton8.Dev
             catch (Exception exception)
             {
                 Fail(exception.Message);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogException(exception);
+#endif
             }
             finally
             {
@@ -194,18 +202,21 @@ namespace Hecton8.Dev
 
         private static async Awaitable DelayRealtimeAsync(float seconds, CancellationToken cancellationToken)
         {
-            float deadline = Time.realtimeSinceStartup + Mathf.Max(0f, seconds);
+            float deadline = Time.realtimeSinceStartup + math.max(0f, seconds);
             while (Time.realtimeSinceStartup < deadline)
                 await Hecton8.Core.AwaitableDebtMonitor.NextFrameAsync(cancellationToken: cancellationToken);
         }
 
-        private int GetExecutionCountForOffer(string offerId)
+        private int GetExecutionCountForOffer(int offerHash)
         {
+            if (offerHash == 0)
+                return 0;
+
             int count = exchangeSystem != null ? exchangeSystem.CopySnapshots(_snapshotBuffer) : 0;
             for (int i = 0; i < count; i++)
             {
                 PDAExchangeSystem.OfferSnapshot snapshot = _snapshotBuffer[i];
-                if (snapshot.Offer != null && string.Equals(snapshot.Offer.offerId, offerId, System.StringComparison.Ordinal))
+                if (snapshot.Offer != null && snapshot.OfferHash == offerHash)
                     return snapshot.Executions;
             }
 
@@ -225,7 +236,7 @@ namespace Hecton8.Dev
 
             for (int i = 0; i < bundle.Length; i++)
             {
-                counts[i] = bundle[i].item != null ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId)) : 0;
+                counts[i] = bundle[i].item != null ? playerInventory.CountTotal(bundle[i].item.PersistentHashId) : 0;
             }
 
             return bundle.Length;
@@ -242,11 +253,12 @@ namespace Hecton8.Dev
                 if (entry.item == null)
                     continue;
 
-                int required = Mathf.Max(1, entry.amount);
-                int current = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(entry.item.PersistentId));
+                int required = math.max(1, entry.amount);
+                int itemHash = entry.item.PersistentHashId;
+                int current = playerInventory.CountTotal(itemHash);
                 int missing = required - current;
                 if (missing > 0)
-                    playerInventory.TryAddItem(Hecton.Localization.LocHash.Compute(entry.item.PersistentId), missing);
+                    playerInventory.TryAddItem(itemHash, missing);
             }
         }
 
@@ -261,9 +273,9 @@ namespace Hecton8.Dev
                 if (entry.item == null)
                     continue;
 
-                int expectedDelta = Mathf.Max(1, entry.amount);
+                int expectedDelta = math.max(1, entry.amount);
                 int before = beforeCounts[i];
-                int after = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(entry.item.PersistentId));
+                int after = playerInventory.CountTotal(entry.item.PersistentHashId);
                 int actualDelta = after - before;
 
                 if (!shouldIncrease)
@@ -294,13 +306,18 @@ namespace Hecton8.Dev
             _debugLastPass = false;
             _debugLastIssue = issue;
             _debugLastPhase = "Failed";
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning($"[BarterSmoke] FAIL {issue}");
+#endif
         }
 
         private void LogVerbose(string message)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (verboseLogging)
                 Debug.Log($"[BarterSmoke] {message}");
+#endif
         }
+
     }
 }

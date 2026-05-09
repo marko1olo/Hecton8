@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -82,21 +84,52 @@ namespace Hecton8.Gameplay
     public static class ScanEvents
     {
         private const int PendingEventCapacity = 16;
+        private const int DeferredListenerMutationCapacity = 16;
+        private const int EntryMetadataCapacity = 128;
         private const double WreckSignalDebounceSeconds = 5.0d;
+        private const byte ListenerMutationRegister = 1;
+        private const byte ListenerMutationUnregister = 2;
+        private const uint ScanListenerOverflowWarningHash = 0x534E564Cu; // SNVL
+        private const uint ScanListenerMutationContextHash = 0x534E4D54u; // SNMT
+        private const uint ScanListenerExceptionWarningHash = 0x534E5645u; // SNVE
+        private const uint ScanListenerExceptionContextHash = 0x534E5658u; // SNVX
         public const byte WreckSignalReservedMarker = 1;
 
         // COLD ALLOC: RegistryBucket<IScanEventListener>[16] - scan event listener registry drained on dispatcher LateUpdate - owner: ScanEvents
         private static readonly RegistryBucket<IScanEventListener> _listeners = new RegistryBucket<IScanEventListener>(16);
-        // COLD ALLOC: Dictionary<uint,ScanEntryMetadata>[128] - hashed scan entry metadata cache for queue listeners that still own authored strings - owner: ScanEvents
-        private static readonly Dictionary<uint, ScanEntryMetadata> _entryMetadataByHash = new Dictionary<uint, ScanEntryMetadata>(128);
+        // COLD ALLOC: Dictionary<uint,ScanEntryMetadata>[128] - bounded hashed scan entry metadata cache for queue listeners that still own authored strings - owner: ScanEvents
+        private static readonly Dictionary<uint, ScanEntryMetadata> _entryMetadataByHash = new Dictionary<uint, ScanEntryMetadata>(EntryMetadataCapacity);
+        // COLD ALLOC: uint[128] - FIFO eviction ring for ScanEvents entry metadata cache - owner: ScanEvents
+        private static readonly uint[] _entryMetadataEvictionRing = new uint[EntryMetadataCapacity];
+        // COLD ALLOC: IScanEventListener[16] - deferred listener mutations during scan dispatch - owner: ScanEvents
+        private static readonly IScanEventListener[] _deferredListenerMutations = new IScanEventListener[DeferredListenerMutationCapacity];
+        // COLD ALLOC: byte[16] - deferred listener mutation op codes during scan dispatch - owner: ScanEvents
+        private static readonly byte[] _deferredListenerMutationOps = new byte[DeferredListenerMutationCapacity];
         private static NativeQueue<ScanEventPayload> _pendingEvents;
         private static NativeQueue<ScanEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
         private static int _nextFrameEventCount;
+        private static int _deferredListenerMutationCount;
+        private static int _entryMetadataEvictionWriteIndex;
+        private static int _entryMetadataEvictionCount;
+        private static int _droppedEventCount;
+        private static int _droppedDeferredListenerMutationCount;
+        private static int _listenerExceptionCount;
+        private static int _lastListenerOverflowTelemetryFrame = -1;
+        private static int _lastListenerExceptionTelemetryFrame = -1;
         private static double _nextWreckSignalTime;
         private static bool _isDispatching;
 
         public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+        public static int DroppedEventCount => _droppedEventCount;
+        public static int DroppedDeferredListenerMutationCount => _droppedDeferredListenerMutationCount;
+        public static int ListenerExceptionCount => _listenerExceptionCount;
+
+        private static void IncrementCounterSaturated(ref int counter)
+        {
+            if (counter < int.MaxValue)
+                counter++;
+        }
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -117,8 +150,15 @@ namespace Hecton8.Gameplay
 
             _listeners.Clear();
             _entryMetadataByHash.Clear();
+            ClearEntryMetadataEvictionRing();
+            ClearDeferredListenerMutations();
             _pendingEventCount = 0;
             _nextFrameEventCount = 0;
+            _droppedEventCount = 0;
+            _droppedDeferredListenerMutationCount = 0;
+            _listenerExceptionCount = 0;
+            _lastListenerOverflowTelemetryFrame = -1;
+            _lastListenerExceptionTelemetryFrame = -1;
             _nextWreckSignalTime = 0.0d;
             _isDispatching = false;
         }
@@ -129,8 +169,13 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            if (!_listeners.Contains(listener))
-                _listeners.Register(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredListenerMutation(listener, ListenerMutationRegister);
+                return;
+            }
+
+            RegisterListenerImmediate(listener);
         }
 
         public static void Unregister(IScanEventListener listener)
@@ -138,8 +183,13 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            if (_listeners.Contains(listener))
-                _listeners.Unregister(listener);
+            if (_isDispatching)
+            {
+                QueueDeferredListenerMutation(listener, ListenerMutationUnregister);
+                return;
+            }
+
+            UnregisterListenerImmediate(listener);
         }
 
         public static void FlushPending()
@@ -171,13 +221,16 @@ namespace Hecton8.Gameplay
                     for (int i = count - 1; i >= 0; i--)
                     {
                         IScanEventListener listener = rawArray[i];
-                        if (listener != null)
-                            listener.OnScanEvent(in payload);
+                        if (listener == null || IsDeferredUnregisterPending(listener))
+                            continue;
+
+                        DispatchToListener(listener, in payload);
                     }
                 }
                 finally
                 {
                     _isDispatching = false;
+                    ApplyDeferredListenerMutations();
                 }
             }
 
@@ -198,6 +251,141 @@ namespace Hecton8.Gameplay
         public static bool TryResolveEntryMetadata(uint entryHash, out ScanEntryMetadata metadata)
         {
             return _entryMetadataByHash.TryGetValue(entryHash, out metadata);
+        }
+
+        private static void RegisterListenerImmediate(IScanEventListener listener)
+        {
+            if (_listeners.Contains(listener))
+                return;
+
+            if (!_listeners.TryRegister(listener))
+                ReportListenerMutationOverflow();
+        }
+
+        private static void UnregisterListenerImmediate(IScanEventListener listener)
+        {
+            _listeners.TryUnregister(listener);
+        }
+
+        private static void QueueDeferredListenerMutation(IScanEventListener listener, byte op)
+        {
+            for (int i = 0; i < _deferredListenerMutationCount; i++)
+            {
+                if (!ReferenceEquals(_deferredListenerMutations[i], listener))
+                    continue;
+
+                _deferredListenerMutationOps[i] = op;
+                return;
+            }
+
+            if (_deferredListenerMutationCount >= DeferredListenerMutationCapacity)
+            {
+                ReportListenerMutationOverflow();
+                return;
+            }
+
+            int writeIndex = _deferredListenerMutationCount++;
+            _deferredListenerMutations[writeIndex] = listener;
+            _deferredListenerMutationOps[writeIndex] = op;
+        }
+
+        private static void ApplyDeferredListenerMutations()
+        {
+            int mutationCount = _deferredListenerMutationCount;
+            if (mutationCount <= 0)
+                return;
+
+            _deferredListenerMutationCount = 0;
+            for (int i = 0; i < mutationCount; i++)
+            {
+                IScanEventListener listener = _deferredListenerMutations[i];
+                byte op = _deferredListenerMutationOps[i];
+                _deferredListenerMutations[i] = null;
+                _deferredListenerMutationOps[i] = 0;
+
+                if (listener == null)
+                    continue;
+
+                if (op == ListenerMutationRegister)
+                    RegisterListenerImmediate(listener);
+                else if (op == ListenerMutationUnregister)
+                    UnregisterListenerImmediate(listener);
+            }
+        }
+
+        private static void ClearDeferredListenerMutations()
+        {
+            for (int i = 0; i < _deferredListenerMutationCount; i++)
+            {
+                _deferredListenerMutations[i] = null;
+                _deferredListenerMutationOps[i] = 0;
+            }
+
+            _deferredListenerMutationCount = 0;
+        }
+
+        private static bool IsDeferredUnregisterPending(IScanEventListener listener)
+        {
+            for (int i = 0; i < _deferredListenerMutationCount; i++)
+            {
+                if (_deferredListenerMutationOps[i] != ListenerMutationUnregister)
+                    continue;
+
+                if (ReferenceEquals(_deferredListenerMutations[i], listener))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static void DispatchToListener(IScanEventListener listener, in ScanEventPayload payload)
+        {
+            try
+            {
+                listener.OnScanEvent(in payload);
+            }
+            catch (Exception exception)
+            {
+                ReportListenerDispatchException();
+                LogListenerDispatchException(exception);
+            }
+        }
+
+        [Conditional("UNITY_EDITOR")]
+        [Conditional("DEVELOPMENT_BUILD")]
+        private static void LogListenerDispatchException(Exception exception)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogException(exception);
+#endif
+        }
+
+        private static void ReportListenerMutationOverflow()
+        {
+            IncrementCounterSaturated(ref _droppedDeferredListenerMutationCount);
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerOverflowTelemetryFrame == frame)
+                return;
+
+            _lastListenerOverflowTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ScanListenerOverflowWarningHash,
+                ScanListenerMutationContextHash,
+                math.max(1, _droppedDeferredListenerMutationCount));
+        }
+
+        private static void ReportListenerDispatchException()
+        {
+            IncrementCounterSaturated(ref _listenerExceptionCount);
+            int frame = UnityEngine.Time.frameCount;
+            if (_lastListenerExceptionTelemetryFrame == frame)
+                return;
+
+            _lastListenerExceptionTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ScanListenerExceptionWarningHash,
+                ScanListenerExceptionContextHash,
+                math.max(1, _listenerExceptionCount));
         }
 
         public static void RaiseScanTriggered(float3 center, float radius)
@@ -222,8 +410,7 @@ namespace Hecton8.Gameplay
             if (now < _nextWreckSignalTime)
                 return false;
 
-            _nextWreckSignalTime = now + WreckSignalDebounceSeconds;
-            return Enqueue(new ScanEventPayload
+            bool queued = Enqueue(new ScanEventPayload
             {
                 Position = center,
                 Radius = radius,
@@ -235,6 +422,10 @@ namespace Hecton8.Gameplay
                 EntryKind = (byte)ScanEntryKind.Scannable,
                 Reserved = WreckSignalReservedMarker
             });
+            if (queued)
+                _nextWreckSignalTime = now + WreckSignalDebounceSeconds;
+
+            return queued;
         }
 
         public static void RaiseNodeFound(float3 worldPos)
@@ -268,7 +459,32 @@ namespace Hecton8.Gameplay
             uint categoryHash = string.IsNullOrWhiteSpace(category) ? 0u : unchecked((uint)LocHash.Compute(category));
             uint summaryHash = string.IsNullOrWhiteSpace(summary) ? 0u : unchecked((uint)LocHash.Compute(summary));
 
-            if (!Enqueue(new ScanEventPayload
+            if (!RaiseEntryDiscovered(entryHash, titleHash, categoryHash, summaryHash, kind))
+                return;
+
+            StoreEntryMetadata(new ScanEntryMetadata(
+                entryId,
+                title,
+                category,
+                summary,
+                kind,
+                entryHash,
+                titleHash,
+                categoryHash,
+                summaryHash));
+        }
+
+        public static bool RaiseEntryDiscovered(
+            uint entryHash,
+            uint titleHash,
+            uint categoryHash,
+            uint summaryHash,
+            ScanEntryKind kind = ScanEntryKind.Unknown)
+        {
+            if (entryHash == 0u)
+                return false;
+
+            return Enqueue(new ScanEventPayload
             {
                 Position = default,
                 Radius = 0f,
@@ -279,21 +495,7 @@ namespace Hecton8.Gameplay
                 EventType = (ushort)ScanEventType.EntryDiscovered,
                 EntryKind = (byte)kind,
                 Reserved = 0
-            }))
-            {
-                return;
-            }
-
-            _entryMetadataByHash[entryHash] = new ScanEntryMetadata(
-                entryId,
-                title,
-                category,
-                summary,
-                kind,
-                entryHash,
-                titleHash,
-                categoryHash,
-                summaryHash);
+            });
         }
 
         public static void RaiseFaunaFeedingObserved(uint entryHash, float3 worldPos)
@@ -338,7 +540,10 @@ namespace Hecton8.Gameplay
         {
             EnsureInitialized();
             if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                IncrementCounterSaturated(ref _droppedEventCount);
                 return false;
+            }
 
             if (_isDispatching)
             {
@@ -363,6 +568,7 @@ namespace Hecton8.Gameplay
                     nameof(ScanEvents),
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _pendingEvents, PendingEventCapacity);
             }
 
             if (!_nextFrameEvents.IsCreated)
@@ -374,7 +580,61 @@ namespace Hecton8.Gameplay
                     nameof(ScanEvents),
                     nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
+                PrewarmQueue(ref _nextFrameEvents, PendingEventCapacity);
             }
+        }
+
+        private static void PrewarmQueue<T>(ref NativeQueue<T> queue, int capacity)
+            where T : unmanaged
+        {
+            if (!queue.IsCreated || capacity <= 0)
+                return;
+
+            for (int i = 0; i < capacity; i++)
+                queue.Enqueue(default);
+
+            while (queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        private static void StoreEntryMetadata(in ScanEntryMetadata metadata)
+        {
+            uint entryHash = metadata.EntryHash;
+            if (entryHash == 0u)
+                return;
+
+            if (_entryMetadataByHash.ContainsKey(entryHash))
+            {
+                _entryMetadataByHash[entryHash] = metadata;
+                return;
+            }
+
+            if (_entryMetadataEvictionCount >= EntryMetadataCapacity)
+            {
+                uint evictedHash = _entryMetadataEvictionRing[_entryMetadataEvictionWriteIndex];
+                if (evictedHash != 0u && evictedHash != entryHash)
+                    _entryMetadataByHash.Remove(evictedHash);
+            }
+            else
+            {
+                _entryMetadataEvictionCount++;
+            }
+
+            _entryMetadataEvictionRing[_entryMetadataEvictionWriteIndex] = entryHash;
+            _entryMetadataEvictionWriteIndex++;
+            if (_entryMetadataEvictionWriteIndex >= EntryMetadataCapacity)
+                _entryMetadataEvictionWriteIndex = 0;
+            _entryMetadataByHash[entryHash] = metadata;
+        }
+
+        private static void ClearEntryMetadataEvictionRing()
+        {
+            for (int i = 0; i < EntryMetadataCapacity; i++)
+                _entryMetadataEvictionRing[i] = 0u;
+
+            _entryMetadataEvictionWriteIndex = 0;
+            _entryMetadataEvictionCount = 0;
         }
 
         private static void DrainWithoutDispatch()
@@ -431,11 +691,20 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            NativeQueue<ScanEventPayload> swap = _pendingEvents;
-            _pendingEvents = _nextFrameEvents;
-            _nextFrameEvents = swap;
-            _pendingEventCount = _nextFrameEventCount;
-            _nextFrameEventCount = 0;
+            int promoteBudget = _nextFrameEventCount;
+            while (promoteBudget-- > 0 && !_nextFrameEvents.IsEmpty())
+            {
+                if (!_nextFrameEvents.TryDequeue(out ScanEventPayload payload))
+                    break;
+
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+                if (_nextFrameEventCount > 0)
+                    _nextFrameEventCount--;
+            }
+
+            if (_nextFrameEvents.IsEmpty())
+                _nextFrameEventCount = 0;
         }
     }
 }

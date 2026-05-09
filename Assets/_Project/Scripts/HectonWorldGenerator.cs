@@ -191,6 +191,7 @@ public class HectonChunkData
     public Mesh mesh;
     public MeshRenderer renderer;
     public MeshCollider collider;
+    public BoxCollider colliderBakeProxy;
 }
 
 public struct HectonChunkRequest
@@ -474,7 +475,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             hash = MixRuntimeSeed(hash, biomes != null && biomes.aggressiveSurfaceNoise != null ? biomes.aggressiveSurfaceNoise.seed : 0);
             hash = MixRuntimeSeed(hash, displacement != null && displacement.noise != null ? displacement.noise.seed : 0);
             hash = MixRuntimeSeed(hash, caves != null && caves.noise != null ? caves.noise.seed : 0);
-            hash = MixRuntimeSeed(hash, Mathf.RoundToInt(chunkSize));
+            hash = MixRuntimeSeed(hash, (int)math.round(chunkSize));
             return hash == 0u ? 1 : (int)hash;
         }
     }
@@ -507,23 +508,27 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         }
     }
 
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     struct PendingPhysicsBake
     {
         public Mesh Mesh;
         public GameObject Owner;
         public MeshRenderer Renderer;
         public MeshCollider Collider;
+        public BoxCollider ProxyCollider;
         public Material DefaultMaterial;
         public JobHandle Handle;
         public byte State;
     }
 
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     private struct DeferredPhysicsBakeTeardown
     {
         public Mesh Mesh;
         public GameObject Owner;
         public MeshRenderer Renderer;
         public MeshCollider Collider;
+        public BoxCollider ProxyCollider;
         public Material DefaultMaterial;
         public JobHandle Handle;
     }
@@ -545,13 +550,15 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
     struct HectonPhysicsBakeJob : IJob
     {
         public EntityId MeshEntityId;
 
         public void Execute()
         {
-            Physics.BakeMesh(MeshEntityId, false);
+            if (EntityId.ToULong(MeshEntityId) != 0ul)
+                Physics.BakeMesh(MeshEntityId, false);
         }
     }
 
@@ -561,9 +568,15 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     const byte PhysicsBakeStateCanceled = 3;
     const string RuntimeChunkObjectName = "HectonChunk";
     private const float PhysicsBakeFrameBudgetMilliseconds = 2f;
+    private const float PhysicsBakeProxyMinSizeMeters = 1f;
+    private const float PhysicsBakeProxyMinHeightMeters = 4f;
+    private const float PhysicsBakeProxyMaxHeightMeters = 32f;
     private const int DeferredPhysicsBakeTeardownDrainBudget = 8;
     private const int DeferredPhysicsBakeTeardownCapacity = 2048;
     private static readonly double _physicsBakeTickToMilliseconds = 1000d / Stopwatch.Frequency;
+    private static readonly uint _TerrainPhysicsBakeForceReleaseWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Terrain.PhysicsBake.ForceRelease"));
+    private static readonly uint _TerrainPhysicsBakeQueueDropWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Terrain.PhysicsBake.QueueDrop"));
+    private static readonly uint _TerrainPhysicsBakeContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonWorldGenerator.PhysicsBake"));
     // COLD ALLOC: List<DeferredPhysicsBakeTeardown>[2048] - dispatcher-drained streamed chunk PhysX bake teardown queue - owner: HectonWorldGenerator
     private static readonly List<DeferredPhysicsBakeTeardown> _deferredPhysicsBakeTeardowns = new List<DeferredPhysicsBakeTeardown>(DeferredPhysicsBakeTeardownCapacity);
     // COLD ALLOC: DeferredPhysicsBakeTeardownDriver[1] - non-Mono late-frame drain adapter, avoids per-teardown allocation - owner: HectonWorldGenerator
@@ -713,7 +726,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     // COLD ALLOC: List<PendingChunk>[64] - pending streamed chunk job records - owner: HectonWorldGenerator
     private readonly List<PendingChunk> _pendingChunks = new List<PendingChunk>(PendingChunkMaxCapacity);
 
-    // COLD ALLOC: List<PendingPhysicsBake>[64] — background PhysX bake queue for streamed chunk colliders — owner: HectonWorldGenerator
+    // COLD ALLOC: List<PendingPhysicsBake>[2048] - background PhysX bake queue for streamed chunk colliders - owner: HectonWorldGenerator
     readonly List<PendingPhysicsBake> _pendingPhysicsBakes = new List<PendingPhysicsBake>(PendingPhysicsBakeMaxCapacity);
     // COLD ALLOC: List<HectonChunkData>[64] - deferred chunk destruction while PhysX bake jobs finish - owner: HectonWorldGenerator
     readonly List<HectonChunkData> _deferredChunkRetirements = new List<HectonChunkData>(DeferredChunkRetirementMaxCapacity);
@@ -724,6 +737,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     int _physicsBakeScheduleHead;
     int _physicsBakeFinalizeHead;
     const int MAX_BAKES_PER_FRAME = 2;
+    const int PendingPhysicsBakeCapacityDrainBudget = 16;
 
     const int PoiListPoolCapacity = 1024;
     const int PoiListInitialCapacity = 256;
@@ -894,10 +908,17 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     void StartStreaming()
     {
-        if (viewer == null) { UnityEngine.Debug.LogWarning("[Hecton] No viewer assigned."); return; }
-        maxChunksPerFrame = Mathf.Clamp(maxChunksPerFrame, 1, PendingChunkMaxCapacity);
-        maxPendingChunks = Mathf.Clamp(maxPendingChunks, 1, PendingChunkMaxCapacity);
-        maxFinalizationsPerFrame = Mathf.Clamp(maxFinalizationsPerFrame, 1, PendingChunkMaxCapacity);
+        if (viewer == null)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            UnityEngine.Debug.LogWarning("[Hecton] No viewer assigned.");
+#endif
+            return;
+        }
+
+        maxChunksPerFrame = math.clamp(maxChunksPerFrame, 1, PendingChunkMaxCapacity);
+        maxPendingChunks = math.clamp(maxPendingChunks, 1, PendingChunkMaxCapacity);
+        maxFinalizationsPerFrame = math.clamp(maxFinalizationsPerFrame, 1, PendingChunkMaxCapacity);
         EnsureLUTs();
         EnsurePoiVectorListPool();
         EnsureTriangleScratchCapacity(ComputeConfiguredTriangleScratchRequirement());
@@ -937,7 +958,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 continue;
             }
 
-            DispatcherJobSwap.TryComplete(ref pc.combinedHandle, forceComplete: false);
+            DispatcherJobSwap.TryFinalizeCompleted(ref pc.combinedHandle);
             pc.DisposeArrays();
             _pendingChunks.RemoveAt(i);
         }
@@ -1027,8 +1048,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     int ComputeConfiguredTriangleScratchRequirement()
     {
-        int res = Mathf.CeilToInt(chunkSize / Mathf.Max(0.001f, lod0Spacing)) + 1;
-        return Mathf.Max(0, (res - 1) * (res - 1) * 6);
+        int res = (int)math.ceil(chunkSize / math.max(0.001f, lod0Spacing)) + 1;
+        return math.max(0, (res - 1) * (res - 1) * 6);
     }
 
     void EnsureTriangleScratchCapacity(int requiredTriangleIndices)
@@ -1177,7 +1198,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         double activeRadiusSq = activeRadius * (double)activeRadius;
         double distantRadiusSq = distantRadius * (double)distantRadius;
         _desiredChunks.Clear();
-        int rMax = Mathf.CeilToInt(distantRadius / chunkSize) + 1;
+        int rMax = (int)math.ceil(distantRadius / chunkSize) + 1;
 
         for (int dz = -rMax; dz <= rMax; dz++)
         for (int dx = -rMax; dx <= rMax; dx++)
@@ -1309,7 +1330,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             if (!pc.combinedHandle.IsCompleted)
                 continue;
 
-            DispatcherJobSwap.TryComplete(ref pc.combinedHandle, forceComplete: false);
+            DispatcherJobSwap.TryFinalizeCompleted(ref pc.combinedHandle);
 
             var cd = pc.cancelRequested ? null : FinalizeChunk(pc);
             if (cd != null)
@@ -1341,7 +1362,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             return;
 
         float sp  = lod == 0 ? lod0Spacing : lod1Spacing;
-        int   res = Mathf.CeilToInt(chunkSize / sp) + 1;
+        int   res = (int)math.ceil(chunkSize / sp) + 1;
         int   vc  = res * res;
         float2 org = ChunkOrigin(coord);
 
@@ -1480,14 +1501,19 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             mr.receiveShadows    = true;
 
             MeshCollider meshCollider = null;
+            BoxCollider meshColliderBakeProxy = null;
             if (pc.lod == 0 && generateColliders)
             {
                 meshCollider = go.AddComponent<MeshCollider>();
                 meshCollider.sharedMesh = null;
                 meshCollider.enabled = false;
+                meshColliderBakeProxy = CreatePendingPhysicsBakeProxy(go, mesh.bounds);
 
                 if (pendingCollisionBakeMaterial != null)
                     mr.sharedMaterial = pendingCollisionBakeMaterial;
+
+                if (_pendingPhysicsBakes.Count >= PendingPhysicsBakeMaxCapacity)
+                    DrainCompletedPendingPhysicsBakesForCapacity();
 
                 if (_pendingPhysicsBakes.Count < PendingPhysicsBakeMaxCapacity)
                 {
@@ -1497,6 +1523,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                         Owner = go,
                         Renderer = mr,
                         Collider = meshCollider,
+                        ProxyCollider = meshColliderBakeProxy,
                         DefaultMaterial = terrainMaterial,
                         Handle = default,
                         State = PhysicsBakeStatePending
@@ -1504,6 +1531,13 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 }
                 else
                 {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _TerrainPhysicsBakeQueueDropWarningHash,
+                        _TerrainPhysicsBakeContextHash,
+                        _pendingPhysicsBakes.Count);
+
+                    DisablePendingPhysicsBakeProxy(meshColliderBakeProxy);
+                    meshColliderBakeProxy = null;
                     mr.sharedMaterial = terrainMaterial;
                 }
             }
@@ -1521,7 +1555,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 go    = go,
                 mesh  = mesh,
                 renderer = mr,
-                collider = meshCollider
+                collider = meshCollider,
+                colliderBakeProxy = meshColliderBakeProxy
             };
         }
         finally
@@ -1626,8 +1661,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
             Vector3 p = verts[i];
             int2 cell = new int2(
-                Mathf.FloorToInt((p.x - chunkOrg.x) / clusterSize),
-                Mathf.FloorToInt((p.z - chunkOrg.y) / clusterSize)
+                (int)math.floor((p.x - chunkOrg.x) / clusterSize),
+                (int)math.floor((p.z - chunkOrg.y) / clusterSize)
             );
 
             if (!_voxelClusterIndexByCell.TryGetValue(cell, out int clusterIndex))
@@ -1694,7 +1729,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                     NativeArray<Vector3> norms,
                     NativeArray<byte>    caveB)
     {
-        int step = Mathf.Max(1, verts.Length / 256);
+        int step = math.max(1, verts.Length / 256);
 
         List<Vector3> bases = null;
         List<Vector3> res   = null;
@@ -1754,6 +1789,33 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         }.Schedule();
     }
 
+    private static BoxCollider CreatePendingPhysicsBakeProxy(GameObject owner, Bounds meshBounds)
+    {
+        if (owner == null)
+            return null;
+
+        BoxCollider proxy = owner.AddComponent<BoxCollider>();
+        Vector3 boundsSize = meshBounds.size;
+        float sizeX = math.max(boundsSize.x, PhysicsBakeProxyMinSizeMeters);
+        float sizeZ = math.max(boundsSize.z, PhysicsBakeProxyMinSizeMeters);
+        float height = math.clamp(
+            boundsSize.y * 0.125f,
+            PhysicsBakeProxyMinHeightMeters,
+            PhysicsBakeProxyMaxHeightMeters);
+
+        proxy.center = new Vector3(meshBounds.center.x, meshBounds.min.y + height * 0.5f, meshBounds.center.z);
+        proxy.size = new Vector3(sizeX, height, sizeZ);
+        proxy.isTrigger = false;
+        proxy.enabled = true;
+        return proxy;
+    }
+
+    private static void DisablePendingPhysicsBakeProxy(BoxCollider proxy)
+    {
+        if (proxy != null)
+            proxy.enabled = false;
+    }
+
     void BakePhysicsBatch()
     {
         using (_physicsBakeBatchProfilerMarker.Auto())
@@ -1767,6 +1829,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 PendingPhysicsBake pending = _pendingPhysicsBakes[_physicsBakeScheduleHead];
                 if (pending.Mesh == null || pending.Owner == null)
                 {
+                    RestorePendingPhysicsBakePresentation(ref pending);
                     pending.State = PhysicsBakeStateCompleted;
                 }
                 else if (pending.State == PhysicsBakeStatePending)
@@ -1790,26 +1853,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                     continue;
                 }
 
-                if ((pending.State != PhysicsBakeStateScheduled && pending.State != PhysicsBakeStateCanceled) ||
-                    !pending.Handle.IsCompleted)
+                if (!TryFinalizeScheduledPendingPhysicsBake(ref pending))
                     break;
-
-                DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: false);
-
-                if (pending.State == PhysicsBakeStateScheduled && pending.Mesh != null && pending.Owner != null)
-                {
-                    MeshCollider collider = pending.Collider;
-                    if (collider != null)
-                    {
-                        collider.sharedMesh = pending.Mesh;
-                        collider.enabled = true;
-                    }
-
-                    if (pending.Renderer != null && pending.DefaultMaterial != null)
-                        pending.Renderer.sharedMaterial = pending.DefaultMaterial;
-                }
-
-                pending.State = PhysicsBakeStateCompleted;
                 _pendingPhysicsBakes[_physicsBakeFinalizeHead] = pending;
                 _physicsBakeFinalizeHead++;
             }
@@ -1818,10 +1863,81 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 _physicsBakeScheduleHead >= _pendingPhysicsBakes.Count)
             {
                 _pendingPhysicsBakes.Clear();
-                _physicsBakeScheduleHead = 0;
-                _physicsBakeFinalizeHead = 0;
+                ResetPendingPhysicsBakeHeads();
             }
         }
+    }
+
+    private void DrainCompletedPendingPhysicsBakesForCapacity()
+    {
+        int drained = 0;
+        for (int i = _pendingPhysicsBakes.Count - 1;
+             i >= 0 && drained < PendingPhysicsBakeCapacityDrainBudget;
+             i--)
+        {
+            PendingPhysicsBake pending = _pendingPhysicsBakes[i];
+            if (pending.State == PhysicsBakeStatePending)
+            {
+                if (pending.Mesh != null && pending.Owner != null)
+                    continue;
+
+                RestorePendingPhysicsBakePresentation(ref pending);
+                pending.State = PhysicsBakeStateCompleted;
+                _pendingPhysicsBakes[i] = pending;
+                RemovePendingPhysicsBakeAt(i);
+                drained++;
+                continue;
+            }
+
+            if (!TryFinalizeScheduledPendingPhysicsBake(ref pending))
+                continue;
+
+            _pendingPhysicsBakes[i] = pending;
+            RemovePendingPhysicsBakeAt(i);
+            drained++;
+        }
+
+        if (_pendingPhysicsBakes.Count == 0)
+        {
+            ResetPendingPhysicsBakeHeads();
+        }
+        else
+        {
+            ClampPendingPhysicsBakeHeads();
+        }
+    }
+
+    private static bool TryFinalizeScheduledPendingPhysicsBake(ref PendingPhysicsBake pending)
+    {
+        if (pending.State == PhysicsBakeStateCompleted)
+            return true;
+
+        if (pending.State != PhysicsBakeStateScheduled && pending.State != PhysicsBakeStateCanceled)
+            return false;
+
+        if (!DispatcherJobSwap.TryFinalizeCompleted(ref pending.Handle))
+            return false;
+
+        if (pending.State == PhysicsBakeStateScheduled && pending.Mesh != null && pending.Owner != null)
+            CommitPendingPhysicsBakeCollider(ref pending);
+
+        pending.State = PhysicsBakeStateCompleted;
+        return true;
+    }
+
+    private static void CommitPendingPhysicsBakeCollider(ref PendingPhysicsBake pending)
+    {
+        MeshCollider collider = pending.Collider;
+        if (collider != null)
+        {
+            collider.sharedMesh = pending.Mesh;
+            collider.enabled = true;
+        }
+
+        DisablePendingPhysicsBakeProxy(pending.ProxyCollider);
+
+        if (pending.Renderer != null && pending.DefaultMaterial != null)
+            pending.Renderer.sharedMaterial = pending.DefaultMaterial;
     }
 
     void HandOffRemainingPhysicsBakesForTeardown()
@@ -1834,12 +1950,15 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 pending.State = PhysicsBakeStateCanceled;
                 RestorePendingPhysicsBakePresentation(ref pending);
                 EnqueueDeferredPhysicsBakeTeardown(in pending, pending.Mesh, pending.Owner);
+                continue;
             }
+
+            RestorePendingPhysicsBakePresentation(ref pending);
+            ForceReleaseDeferredPhysicsBakeTeardown(in pending, pending.Mesh, pending.Owner);
         }
 
         _pendingPhysicsBakes.Clear();
-        _physicsBakeScheduleHead = 0;
-        _physicsBakeFinalizeHead = 0;
+        ResetPendingPhysicsBakeHeads();
     }
 
     bool TryCancelPendingPhysicsBake(Mesh mesh, GameObject owner)
@@ -1891,14 +2010,26 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             _physicsBakeScheduleHead--;
         if (index < _physicsBakeFinalizeHead)
             _physicsBakeFinalizeHead--;
-        if (_physicsBakeScheduleHead < 0)
-            _physicsBakeScheduleHead = 0;
-        if (_physicsBakeFinalizeHead < 0)
-            _physicsBakeFinalizeHead = 0;
+        ClampPendingPhysicsBakeHeads();
+    }
+
+    private void ResetPendingPhysicsBakeHeads()
+    {
+        _physicsBakeScheduleHead = 0;
+        _physicsBakeFinalizeHead = 0;
+    }
+
+    private void ClampPendingPhysicsBakeHeads()
+    {
+        int pendingCount = _pendingPhysicsBakes.Count;
+        _physicsBakeScheduleHead = math.clamp(_physicsBakeScheduleHead, 0, pendingCount);
+        _physicsBakeFinalizeHead = math.clamp(_physicsBakeFinalizeHead, 0, _physicsBakeScheduleHead);
     }
 
     private static void RestorePendingPhysicsBakePresentation(ref PendingPhysicsBake pending)
     {
+        DisablePendingPhysicsBakeProxy(pending.ProxyCollider);
+
         if (pending.Collider != null)
         {
             pending.Collider.enabled = false;
@@ -1914,6 +2045,16 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         Mesh mesh,
         GameObject owner)
     {
+        if (_deferredPhysicsBakeTeardowns.Count >= DeferredPhysicsBakeTeardownCapacity)
+        {
+            DrainCompletedDeferredPhysicsBakeTeardownsForCapacity();
+            if (_deferredPhysicsBakeTeardowns.Count >= DeferredPhysicsBakeTeardownCapacity)
+            {
+                ForceReleaseDeferredPhysicsBakeTeardown(in pending, mesh, owner);
+                return;
+            }
+        }
+
         if (owner != null)
         {
             if (pending.Renderer != null)
@@ -1924,6 +2065,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
                 pending.Collider.enabled = false;
                 pending.Collider.sharedMesh = null;
             }
+
+            DisablePendingPhysicsBakeProxy(pending.ProxyCollider);
 
             SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
             if (dispatcher != null)
@@ -1936,11 +2079,46 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             Owner = owner,
             Renderer = pending.Renderer,
             Collider = pending.Collider,
+            ProxyCollider = pending.ProxyCollider,
             DefaultMaterial = pending.DefaultMaterial,
             Handle = pending.Handle
         });
 
         EnsureDeferredPhysicsBakeTeardownRegistered();
+    }
+
+    private static void ForceReleaseDeferredPhysicsBakeTeardown(
+        in PendingPhysicsBake pending,
+        Mesh mesh,
+        GameObject owner)
+    {
+        GlobalTelemetryBus.PublishPerformanceWarning(
+            _TerrainPhysicsBakeForceReleaseWarningHash,
+            _TerrainPhysicsBakeContextHash,
+            _deferredPhysicsBakeTeardowns.Count);
+
+        JobHandle handle = pending.Handle;
+        DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+
+        if (pending.Collider != null)
+        {
+            pending.Collider.enabled = false;
+            pending.Collider.sharedMesh = null;
+        }
+
+        DisablePendingPhysicsBakeProxy(pending.ProxyCollider);
+
+        if (pending.Renderer != null && pending.DefaultMaterial != null)
+            pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+
+        if (mesh != null)
+        {
+            mesh.Clear();
+            DestroyDeferredObject(mesh);
+        }
+
+        if (owner != null)
+            DestroyDeferredObject(owner);
     }
 
     private static void EnsureDeferredPhysicsBakeTeardownRegistered()
@@ -1964,33 +2142,59 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
              i--)
         {
             DeferredPhysicsBakeTeardown pending = _deferredPhysicsBakeTeardowns[i];
-            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: false))
+            if (!DispatcherJobSwap.TryFinalizeCompleted(ref pending.Handle))
                 continue;
 
-            if (pending.Collider != null)
-            {
-                pending.Collider.enabled = false;
-                pending.Collider.sharedMesh = null;
-            }
-
-            if (pending.Renderer != null && pending.DefaultMaterial != null)
-                pending.Renderer.sharedMaterial = pending.DefaultMaterial;
-
-            if (pending.Mesh != null)
-            {
-                pending.Mesh.Clear();
-                DestroyDeferredObject(pending.Mesh);
-            }
-
-            if (pending.Owner != null)
-                DestroyDeferredObject(pending.Owner);
-
+            FinalizeDeferredPhysicsBakeTeardown(ref pending);
             RemoveDeferredPhysicsBakeTeardownAt(i);
             drained++;
         }
 
         if (_deferredPhysicsBakeTeardowns.Count == 0)
             UnregisterDeferredPhysicsBakeTeardownDriver();
+    }
+
+    private static void DrainCompletedDeferredPhysicsBakeTeardownsForCapacity()
+    {
+        int drained = 0;
+        for (int i = _deferredPhysicsBakeTeardowns.Count - 1;
+             i >= 0 && drained < DeferredPhysicsBakeTeardownDrainBudget;
+             i--)
+        {
+            DeferredPhysicsBakeTeardown pending = _deferredPhysicsBakeTeardowns[i];
+            if (!DispatcherJobSwap.TryFinalizeCompleted(ref pending.Handle))
+                continue;
+
+            FinalizeDeferredPhysicsBakeTeardown(ref pending);
+            RemoveDeferredPhysicsBakeTeardownAt(i);
+            drained++;
+        }
+
+        if (_deferredPhysicsBakeTeardowns.Count == 0)
+            UnregisterDeferredPhysicsBakeTeardownDriver();
+    }
+
+    private static void FinalizeDeferredPhysicsBakeTeardown(ref DeferredPhysicsBakeTeardown pending)
+    {
+        if (pending.Collider != null)
+        {
+            pending.Collider.enabled = false;
+            pending.Collider.sharedMesh = null;
+        }
+
+        DisablePendingPhysicsBakeProxy(pending.ProxyCollider);
+
+        if (pending.Renderer != null && pending.DefaultMaterial != null)
+            pending.Renderer.sharedMaterial = pending.DefaultMaterial;
+
+        if (pending.Mesh != null)
+        {
+            pending.Mesh.Clear();
+            DestroyDeferredObject(pending.Mesh);
+        }
+
+        if (pending.Owner != null)
+            DestroyDeferredObject(pending.Owner);
     }
 
     private static void RemoveDeferredPhysicsBakeTeardownAt(int index)
@@ -2244,6 +2448,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
         ReleasePoiEntry(_poiBases, cd.coord);
         ReleasePoiEntry(_poiResources, cd.coord);
+        DisablePendingPhysicsBakeProxy(cd.colliderBakeProxy);
     }
 
     void DestroyChunkMeshObject(HectonChunkData cd)
@@ -2256,6 +2461,8 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             cd.collider.enabled = false;
             cd.collider.sharedMesh = null;
         }
+
+        DisablePendingPhysicsBakeProxy(cd.colliderBakeProxy);
 
         if (cd.renderer != null)
             cd.renderer.enabled = false;
@@ -2324,11 +2531,11 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         float spineCX = (warpVal * 2f - 1f) * spine.warpStrength;
 
         float dx    = x - spineCX;
-        float absDx = Mathf.Abs(dx);
+        float absDx = math.abs(dx);
         bool  west  = dx < 0f;
 
         float sLen  = west ? slopes.westLength : slopes.eastLength;
-        float normD = Mathf.Clamp01(absDx / Mathf.Max(sLen, 1f));
+        float normD = math.saturate(absDx / math.max(sLen, 1f));
         float curveV;
 
         if (west) curveV = HectonNoise.SampleLUT(_westLUT, normD);
@@ -2337,33 +2544,33 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         if (west && slopes.terraceCount > 0 && slopes.terraceStrength > 0f)
         {
             float tc      = (float)slopes.terraceCount;
-            float stepped = Mathf.Round(curveV * tc) / tc;
-            curveV = Mathf.Lerp(curveV, stepped, slopes.terraceStrength);
+            float stepped = math.round(curveV * tc) / tc;
+            curveV = math.lerp(curveV, stepped, slopes.terraceStrength);
         }
 
-        float floor = Mathf.Lerp(-slopes.maxDepth, 0f, curveV);
+        float floor = math.lerp(-slopes.maxDepth, 0f, curveV);
 
-        float spineInf = Mathf.Clamp01(1f - absDx / Mathf.Max(spine.width, 1f));
+        float spineInf = math.saturate(1f - absDx / math.max(spine.width, 1f));
         spineInf *= spineInf;
         float islN = HectonNoise.Fractal2D(x * 0.1f, z, islND);
-        float islF = Mathf.Clamp01(
+        float islF = math.saturate(
             (islN - spine.islandThreshold) /
-            Mathf.Max(1f - spine.islandThreshold, 0.01f));
+            math.max(1f - spine.islandThreshold, 0.01f));
         float spineElev = spine.maxHeight * spineInf * islF;
 
         float bRaw = HectonNoise.Fractal2D(x, z, bioND);
         float bVal = HectonNoise.SampleLUT(_biomeLUT, bRaw);
         float fltN = HectonNoise.Fractal2D(x, z, flatND);
         float agrN = HectonNoise.Fractal2D(x, z, aggrND);
-        float surfY = (Mathf.Lerp(fltN, agrN, bVal) * 2f - 1f) *
-                       Mathf.Lerp(biomes.flatSurfaceAmplitude,
-                                  biomes.aggressiveSurfaceAmplitude, bVal);
+        float surfY = (math.lerp(fltN, agrN, bVal) * 2f - 1f) *
+                       math.lerp(biomes.flatSurfaceAmplitude,
+                                 biomes.aggressiveSurfaceAmplitude, bVal);
 
         float y = floor + spineElev + surfY;
 
-        float fadeX = Mathf.Clamp01((hs - Mathf.Abs(x)) / 1000f);
-        float fadeZ = Mathf.Clamp01((hs - Mathf.Abs(z)) / 1000f);
-        y = Mathf.Lerp(-slopes.maxDepth, y, fadeX * fadeZ);
+        float fadeX = math.saturate((hs - math.abs(x)) / 1000f);
+        float fadeZ = math.saturate((hs - math.abs(z)) / 1000f);
+        y = math.lerp(-slopes.maxDepth, y, fadeX * fadeZ);
 
         return y;
     }
@@ -2463,8 +2670,10 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             mr.shadowCastingMode = ShadowCastingMode.Off;
             mr.receiveShadows    = true;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             UnityEngine.Debug.Log($"[Hecton] Preview: {res}×{res} = {vc:N0} verts, " +
                       $"{tc / 3:N0} tris. Bounds: {mesh.bounds.size}");
+#endif
         }
         finally
         {

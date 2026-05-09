@@ -613,7 +613,7 @@ namespace Hecton8.World
             for (int i = 0; i < _activeVentCount; i++)
             {
                 ThermalVentState vent = _ventStates[i];
-                float eruptiveHeat = Mathf.Max(0f, vent.HeatIntensity) * Mathf.Lerp(1f, seismicEruptionHeatMultiplier, eruptionBlend);
+                float eruptiveHeat = Mathf.Max(0f, vent.HeatIntensity) * LerpClamped(1f, seismicEruptionHeatMultiplier, eruptionBlend);
                 if (eruptiveHeat <= bestHeat)
                     continue;
 
@@ -1018,8 +1018,8 @@ namespace Hecton8.World
             {
                 ThermalVentState vent = _ventStates[i];
                 float eruptionBlend = ResolveSeismicEruptionBlend();
-                float eruptiveHeatScale = Mathf.Lerp(1f, seismicEruptionHeatMultiplier, eruptionBlend);
-                float eruptiveUpdraftScale = Mathf.Lerp(1f, seismicEruptionUpdraftMultiplier, eruptionBlend);
+                float eruptiveHeatScale = LerpClamped(1f, seismicEruptionHeatMultiplier, eruptionBlend);
+                float eruptiveUpdraftScale = LerpClamped(1f, seismicEruptionUpdraftMultiplier, eruptionBlend);
                 float ventRadius = Mathf.Max(0.1f, vent.RadiusWS + effectiveRadius);
                 Vector2 planarDelta = new Vector2(positionWS.x - vent.PositionWS.x, positionWS.z - vent.PositionWS.z);
                 float planarDistance = ComputeAupPlanarDistance(positionWS, vent.PositionWS);
@@ -1036,7 +1036,7 @@ namespace Hecton8.World
                             : Vector3.zero;
                         sample.HasFlow = true;
                         sample.Heat01 = Mathf.Max(sample.Heat01, vent.HeatIntensity * eruptiveHeatScale * ventWeight);
-                        sample.DragMultiplier = Mathf.Max(sample.DragMultiplier, Mathf.Lerp(1f, ventDragMultiplier, ventWeight));
+                        sample.DragMultiplier = Mathf.Max(sample.DragMultiplier, LerpClamped(1f, ventDragMultiplier, ventWeight));
                         sample.FlowVelocityWS += Vector3.up * (vent.UpdraftVelocity * eruptiveUpdraftScale * ventWeight);
                         sample.FlowVelocityWS += swirlDirection * (vent.UpdraftVelocity * 0.12f * ventWeight);
                     }
@@ -1095,7 +1095,7 @@ namespace Hecton8.World
                 return;
             }
 
-            float eruptionHeatScale = Mathf.Lerp(1f, seismicEruptionHeatMultiplier, ResolveSeismicEruptionBlend());
+            float eruptionHeatScale = LerpClamped(1f, seismicEruptionHeatMultiplier, ResolveSeismicEruptionBlend());
             for (int i = 0; i < _activeVentCount && _pendingCrystallizationSampleCount < MaxCrystallizationSampleCapacity; i++)
             {
                 if (_ventCrystallizationCooldowns[i] > 0f)
@@ -1318,7 +1318,12 @@ namespace Hecton8.World
                 playerTransform.TryGetComponent(out _playerMovement);
 
             if (viewCamera == null && playerTransform != null)
-                viewCamera = ((Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null) ? Hecton8.Core.GlobalRegistry.Player.PlayerCamera : playerTransform.GetComponent<Camera>());
+            {
+                IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
+                viewCamera = playerContext != null ? playerContext.PlayerCamera : null;
+                if (viewCamera == null)
+                    playerTransform.TryGetComponent(out viewCamera);
+            }
 
             if (_fluidDecalManager == null)
             {
@@ -1686,7 +1691,7 @@ namespace Hecton8.World
                 if (holdWeight <= 0.01f)
                     continue;
 
-                int spawnCount = Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(1f, maxVentsPerAnchor, holdWeight)), 1, maxVentsPerAnchor);
+                int spawnCount = Mathf.Clamp(Mathf.RoundToInt(LerpClamped(1f, maxVentsPerAnchor, holdWeight)), 1, maxVentsPerAnchor);
                 for (int ventIndex = 0; ventIndex < spawnCount && _activeVentCount < maxActiveVentCount; ventIndex++)
                 {
                     RegisterVent(anchor, ventIndex, holdWeight);
@@ -1717,13 +1722,13 @@ namespace Hecton8.World
             float radial01 = HashToFloat01(hashIndex, (uint)(ventIndex + 1), 0x68E31DA4u);
             float angle01 = HashToFloat01(hashIndex, (uint)(ventIndex + 1), 0xB5297A4Du);
             float angle = angle01 * Mathf.PI * 2f;
-            float radialDistance = Mathf.Lerp(anchorRadius * 0.15f, anchorRadius, radial01);
+            float radialDistance = LerpClamped(anchorRadius * 0.15f, anchorRadius, radial01);
             Vector3 ventOffset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radialDistance;
             Vector3 ventPosition = anchorPosition + ventOffset;
-            float radius = Mathf.Lerp(ventRadiusMin, ventRadiusMax, HashToFloat01(hashIndex, (uint)(ventIndex + 5), 0x1B56C4E9u));
-            float updraft = ventUpdraftVelocity * Mathf.Lerp(0.85f, 1.2f, anchorWeight);
-            float heat = ventHeatIntensity * Mathf.Lerp(0.85f, 1.15f, anchorWeight);
-            float smokeDensity = Mathf.Lerp(0.55f, 1.25f, HashToFloat01(hashIndex, (uint)(ventIndex + 9), 0x94D049BBu));
+            float radius = LerpClamped(ventRadiusMin, ventRadiusMax, HashToFloat01(hashIndex, (uint)(ventIndex + 5), 0x1B56C4E9u));
+            float updraft = ventUpdraftVelocity * LerpClamped(0.85f, 1.2f, anchorWeight);
+            float heat = ventHeatIntensity * LerpClamped(0.85f, 1.15f, anchorWeight);
+            float smokeDensity = LerpClamped(0.55f, 1.25f, HashToFloat01(hashIndex, (uint)(ventIndex + 9), 0x94D049BBu));
             float cableRadius = Mathf.Max(radius * 1.4f, anchor.ActivationRadius * cableRadiusMultiplier);
 
             _ventStates[_activeVentCount] = new ThermalVentState
@@ -1825,7 +1830,7 @@ namespace Hecton8.World
         private void UpdateHazardSources()
         {
             float eruptionBlend = ResolveSeismicEruptionBlend();
-            float eruptiveHeatScale = Mathf.Lerp(1f, seismicEruptionHeatMultiplier, eruptionBlend);
+            float eruptiveHeatScale = LerpClamped(1f, seismicEruptionHeatMultiplier, eruptionBlend);
             for (int i = 0; i < MaxVentCapacity; i++)
             {
                 if (i < _activeVentCount)
@@ -1836,7 +1841,7 @@ namespace Hecton8.World
                         vent.HazardSourceId,
                         vent.PositionWS,
                         vent.HeatIntensity * eruptiveHeatScale,
-                        hazardRadius * Mathf.Lerp(1f, 1.45f, eruptionBlend),
+                        hazardRadius * LerpClamped(1f, 1.45f, eruptionBlend),
                         HazardType.Heat);
                     RegisterThermalSpatialEvent(vent.PositionWS, hazardRadius, vent.HeatIntensity * eruptiveHeatScale);
                 }
@@ -1885,10 +1890,10 @@ namespace Hecton8.World
         private void BuildVentGpuUploadData()
         {
             float eruptionBlend = ResolveSeismicEruptionBlend();
-            float eruptiveUpdraftScale = Mathf.Lerp(1f, seismicEruptionUpdraftMultiplier, eruptionBlend);
-            float eruptiveHeatScale = Mathf.Lerp(1f, seismicEruptionHeatMultiplier, eruptionBlend);
-            float eruptiveSmokeScale = Mathf.Lerp(1f, seismicEruptionSmokeMultiplier, eruptionBlend);
-            float eruptiveHeightScale = Mathf.Lerp(1f, seismicEruptionHeightMultiplier, eruptionBlend);
+            float eruptiveUpdraftScale = LerpClamped(1f, seismicEruptionUpdraftMultiplier, eruptionBlend);
+            float eruptiveHeatScale = LerpClamped(1f, seismicEruptionHeatMultiplier, eruptionBlend);
+            float eruptiveSmokeScale = LerpClamped(1f, seismicEruptionSmokeMultiplier, eruptionBlend);
+            float eruptiveHeightScale = LerpClamped(1f, seismicEruptionHeightMultiplier, eruptionBlend);
             for (int i = 0; i < MaxVentCapacity; i++)
             {
                 if (i < _activeVentCount)
@@ -2147,10 +2152,10 @@ namespace Hecton8.World
                 float radiusT = Mathf.Sqrt(HashToFloat01((uint)i, (uint)ventIndex, 0x8EBC6AF1u));
                 float radialDistance = vent.RadiusWS * 0.45f * radiusT;
                 Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radialDistance;
-                Vector3 position = vent.PositionWS + offset + Vector3.up * Mathf.Lerp(0.2f, 1.6f, HashToFloat01((uint)i, (uint)ventIndex, 0x589965CDu));
-                Vector3 velocity = Vector3.up * (vent.UpdraftVelocity * Mathf.Lerp(0.65f, 1.05f, seed));
-                float size = Mathf.Lerp(smokeParticleSizeMin, smokeParticleSizeMax, HashToFloat01((uint)i, (uint)ventIndex, 0x1D8E4E27u));
-                float maxLifetime = Mathf.Lerp(1.8f, 5.6f, HashToFloat01((uint)i, (uint)ventIndex, 0xA4093822u));
+                Vector3 position = vent.PositionWS + offset + Vector3.up * LerpClamped(0.2f, 1.6f, HashToFloat01((uint)i, (uint)ventIndex, 0x589965CDu));
+                Vector3 velocity = Vector3.up * (vent.UpdraftVelocity * LerpClamped(0.65f, 1.05f, seed));
+                float size = LerpClamped(smokeParticleSizeMin, smokeParticleSizeMax, HashToFloat01((uint)i, (uint)ventIndex, 0x1D8E4E27u));
+                float maxLifetime = LerpClamped(1.8f, 5.6f, HashToFloat01((uint)i, (uint)ventIndex, 0xA4093822u));
 
                 _initialParticles[i] = new AshParticleData
                 {
@@ -2234,7 +2239,7 @@ namespace Hecton8.World
         private void UpdateSmokeBounds()
         {
             float eruptionBlend = ResolveSeismicEruptionBlend();
-            float eruptiveHeightScale = Mathf.Lerp(1f, seismicEruptionHeightMultiplier, eruptionBlend);
+            float eruptiveHeightScale = LerpClamped(1f, seismicEruptionHeightMultiplier, eruptionBlend);
             if (_activeVentCount <= 0)
             {
                 _smokeBounds = new Bounds(transform.position, Vector3.one * 4f);
@@ -2289,14 +2294,15 @@ namespace Hecton8.World
             if (forward.sqrMagnitude <= 0.0001f)
                 forward = Vector3.forward;
 
-            Vector3 stampPosition = positionWS + forward.normalized * cableCutForwardOffset;
+            Vector3 safeForward = ResolveSafeDirection(forward, Vector3.forward);
+            Vector3 stampPosition = positionWS + safeForward * cableCutForwardOffset;
             cutManager.RegisterExternalCut(stampPosition, cableCutStampRadius, cableCutStampStrength, forward, 0.18f);
             _cableCutStampCooldown = cableCutStampInterval;
             _debugCutterSeveringCable = true;
 
             if (_fluidDecalManager != null && cableCutProgress >= cableCutReleaseThreshold && _cableFluidDecalCooldown <= 0f)
             {
-                float decalScale = Mathf.Clamp01(cableTension * Mathf.Lerp(0.65f, 1.15f, cableCutProgress));
+                float decalScale = Mathf.Clamp01(cableTension * LerpClamped(0.65f, 1.15f, cableCutProgress));
                 _fluidDecalManager.RegisterCableFluid(cableAnchorWS, decalScale);
                 _cableFluidDecalCooldown = 1.2f;
             }
@@ -2422,11 +2428,12 @@ namespace Hecton8.World
             }
 
             Vector3 toPlayer = playerPosition - nest.PositionWS;
-            float castDistance = Mathf.Min(empPulseRange, toPlayer.magnitude);
+            float toPlayerDistanceSq = toPlayer.sqrMagnitude;
+            float castDistance = Mathf.Min(empPulseRange, toPlayerDistanceSq > 0.0001f ? math.sqrt(toPlayerDistanceSq) : 0f);
             if (castDistance <= 0.0001f)
                 castDistance = empPulseRange;
 
-            Vector3 castDirection = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : Vector3.forward;
+            Vector3 castDirection = ResolveSafeDirection(toPlayer, Vector3.forward);
             int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
                 nest.PositionWS,
                 empSphereCastRadius,
@@ -2525,6 +2532,17 @@ namespace Hecton8.World
             return AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
         }
 
+        private static float LerpClamped(float from, float to, float t)
+        {
+            return from + ((to - from) * math.saturate(t));
+        }
+
+        private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
+        {
+            float lengthSq = direction.sqrMagnitude;
+            return lengthSq > 0.0001f ? direction * math.rsqrt(lengthSq) : fallback;
+        }
+
         private void UpdateCableVisuals(float dt)
         {
             if (_bioCableVisuals == null)
@@ -2604,10 +2622,10 @@ namespace Hecton8.World
                     if (snapDirection.sqrMagnitude <= 0.0001f)
                         snapDirection = Vector3.up;
 
-                    float recoilSpeed = cableSnapRecoilSpeed * Mathf.Lerp(0.65f, 1.25f, tension01);
-                    cableRig.TriggerSnapRecoil(snapDirection.normalized * recoilSpeed, cableSnapDuration);
+                    float recoilSpeed = cableSnapRecoilSpeed * LerpClamped(0.65f, 1.25f, tension01);
+                    cableRig.TriggerSnapRecoil(ResolveSafeDirection(snapDirection, Vector3.up) * recoilSpeed, cableSnapDuration);
                     if (_fluidDecalManager != null)
-                        _fluidDecalManager.RegisterCableFluid(cableAnchor, Mathf.Clamp01(Mathf.Lerp(0.75f, 1.2f, tension01)));
+                        _fluidDecalManager.RegisterCableFluid(cableAnchor, Mathf.Clamp01(LerpClamped(0.75f, 1.2f, tension01)));
                 }
                 else if (!snapped && !elasticReleased && _cableReleasedStates[i] && cutProgress01 <= cableCutReleaseThreshold * 0.45f)
                 {
@@ -2644,7 +2662,7 @@ namespace Hecton8.World
                     : 0f;
 
                 Vector3 toPlayer = playerPosition - cableAnchor;
-                Vector3 hullDirection = toPlayer.sqrMagnitude > 0.0001f ? toPlayer.normalized : Vector3.forward;
+                Vector3 hullDirection = ResolveSafeDirection(toPlayer, Vector3.forward);
                 Vector3 attractorPosition = playerPosition - hullDirection * hullRadius;
                 cableRig.SetCableActive(true);
                 cableRig.TickCable(cableAnchor, Vector3.up, attractorPosition, playerVelocity, attraction01, wrap01, dt);
@@ -2659,7 +2677,7 @@ namespace Hecton8.World
                         : (hullDirection.sqrMagnitude > 0.0001f ? hullDirection : Vector3.up) * cableSnapRecoilSpeed;
                     cableRig.TriggerSnapRecoil(elasticRecoilVelocity, cableSnapDuration);
                     if (_fluidDecalManager != null)
-                        _fluidDecalManager.RegisterCableFluid(cableAnchor, Mathf.Clamp01(Mathf.Lerp(0.8f, 1.35f, tension01)));
+                        _fluidDecalManager.RegisterCableFluid(cableAnchor, Mathf.Clamp01(LerpClamped(0.8f, 1.35f, tension01)));
                 }
             }
         }
@@ -2737,7 +2755,7 @@ namespace Hecton8.World
             if (planarDelta.sqrMagnitude <= 0.0001f || cableAnchorPull <= 0f)
                 return cableAnchorWS;
 
-            return cableAnchorWS + planarDelta.normalized * cableAnchorPull;
+            return cableAnchorWS + ResolveSafeDirection(planarDelta, Vector3.forward) * cableAnchorPull;
         }
 
         private float ResolveCableCutProgress(Vector3 positionWS, Vector3 cableAnchorWS, float cableRadiusWS)

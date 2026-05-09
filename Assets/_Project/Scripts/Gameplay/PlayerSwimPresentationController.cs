@@ -14,7 +14,10 @@ namespace Hecton8.Gameplay
     [AddComponentMenu("Hecton8/Gameplay/Player Swim Presentation Controller")]
     public sealed class PlayerSwimPresentationController : MonoBehaviour, ITickable, IUpdatable
     {
+        private const float Pi = 3.14159265359f;
         private const float TwoPi = 6.28318530718f;
+        private const float HalfPi = 1.57079632679f;
+        private const float DegreesToRadians = 0.01745329252f;
         private const float UtilitySuitMassThreshold = 120f;
         private const float HeavySuitMassThreshold = 220f;
         private const string LeftGuideName = "Swim_LeftGuide";
@@ -22,6 +25,9 @@ namespace Hecton8.Gameplay
         private const int MaxGuideHierarchySearchDepth = 64;
         private const int MaxGuideHierarchySearchNodes = 512;
         private const int MaxGuideChildScanCount = 128;
+        private const int ReferenceResolveRetryFrameInterval = 8;
+        private const int HandObstacleWallContactMaxPhysicsFrameAge = 2;
+        private const float HandObstaclePlaneEpsilon = 0.0001f;
         private static readonly int _WaveSlopeForwardHash = Animator.StringToHash("WaveSlopeForward");
         private static readonly int _WaveSlopeLateralHash = Animator.StringToHash("WaveSlopeLateral");
         private static readonly int _WaveSlopeXHash = Animator.StringToHash("WaveSlopeX");
@@ -306,9 +312,6 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 10f)] private float cameraTurnSwayRootRollBias = 2.8f;
 
         [Header("-- Environment Reactivity -------------")]
-        [Tooltip("Physics layers that can push swim hands back when the player swims close to walls, ceilings, or the seabed.")]
-        [SerializeField] private LayerMask handObstacleMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
-
         [Tooltip("Sphere radius used for hand obstacle probes. Keep this modest so tight caves feel reactive without causing jitter.")]
         [SerializeField, Range(0.02f, 0.18f)] private float handObstacleSphereRadius = 0.06f;
 
@@ -650,11 +653,11 @@ namespace Hecton8.Gameplay
         private PlayerTransportFeelContract _transportFeelContractCurrent;
         private float _previousCameraYaw;
         private int _lastDrivenFrame = -1;
+        private int _nextReferenceResolveFrame = -1;
         private bool _hasInitializedActiveBlend;
         private bool _cameraYawInitialized;
         private bool _poseStateInitialized;
         private IInputService _inputService;
-        private readonly RaycastHit[] _handObstacleHits = new RaycastHit[4]; // COLD ALLOC: RaycastHit[4] — swim hand obstacle probes — owner: PlayerSwimPresentationController
         private readonly Transform[] _guideHierarchyCache = new Transform[MaxGuideHierarchySearchNodes]; // COLD ALLOC: Transform[512] — cached swim guide hierarchy snapshot — owner: PlayerSwimPresentationController
         private readonly Transform[] _guideDirectChildCache = new Transform[MaxGuideChildScanCount]; // COLD ALLOC: Transform[128] — cached swim guide direct-children snapshot — owner: PlayerSwimPresentationController
         private Transform _guideHierarchySource;
@@ -824,11 +827,11 @@ namespace Hecton8.Gameplay
             Transform reference = viewModelRoot != null ? viewModelRoot : transform;
             Vector3 localImpulse = reference.InverseTransformDirection(worldImpulse);
             float normalization = math.max(0.5f, activeTraumaImpulseNormalization);
-            Vector3 normalizedImpulse = Vector3.ClampMagnitude(localImpulse / normalization, 1f);
+            Vector3 normalizedImpulse = ClampVectorBySqr(localImpulse / normalization, 1f);
             if (normalizedImpulse.sqrMagnitude <= 0.0001f)
                 normalizedImpulse = reference.InverseTransformDirection(Vector3.down);
 
-            _physicalTraumaLocalImpulseTarget = Vector3.ClampMagnitude(
+            _physicalTraumaLocalImpulseTarget = ClampVectorBySqr(
                 _physicalTraumaLocalImpulseTarget + normalizedImpulse * clampedWeight,
                 1f);
             _physicalTraumaLocalImpulseVelocity = Vector3.zero;
@@ -853,7 +856,13 @@ namespace Hecton8.Gameplay
 
             if (playerMovement == null || playerRigidbody == null)
             {
-                AutoResolveReferences();
+                if (frame >= _nextReferenceResolveFrame)
+                {
+                    _nextReferenceResolveFrame = frame + ReferenceResolveRetryFrameInterval;
+                    AutoResolveReferences();
+                    ResolveGuideReferences();
+                }
+
                 if (playerMovement == null || playerRigidbody == null)
                     return;
             }
@@ -868,8 +877,8 @@ namespace Hecton8.Gameplay
             Vector3 velocity = playerMovement != null
                 ? playerMovement.InterpolatedLinearVelocity
                 : playerRigidbody.linearVelocity;
-            float speed = math.length(velocity);
-            float planarSpeed = math.sqrt(velocity.x * velocity.x + velocity.z * velocity.z);
+            float speed = ApproximateVectorMagnitude(velocity);
+            float planarSpeed = ApproximatePlanarMagnitude(velocity.x, velocity.z);
             float speedDelta = speed - _previousSpeed;
             _currentVerticalPoseBias = math.clamp(velocity.y * 0.18f * verticalPoseInfluence, -1f, 1f);
             _previousSpeed = speed;
@@ -926,8 +935,7 @@ namespace Hecton8.Gameplay
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = GlobalRegistry.Updatables.Contains(this);
+            _registered = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.Player);
         }
 
         private void TryUnregister()
@@ -1200,10 +1208,10 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                _strokePhase = math.lerp(_strokePhase, 0f, 1f - math.exp(-presentationBlendSpeed * dt));
+                _strokePhase = math.lerp(_strokePhase, 0f, ResolveDecayBlend(presentationBlendSpeed, dt));
             }
 
-            float rawCycle = math.sin(_strokePhase * TwoPi);
+            float rawCycle = ApproximateSinCycle01(_strokePhase);
             float pullPulse = math.max(0f, rawCycle);
             float glidePulse = math.max(0f, -rawCycle) * profile.GlideBias;
             float accelerationBias = math.saturate(speedDelta * 0.2f);
@@ -1294,7 +1302,7 @@ namespace Hecton8.Gameplay
             targetDescentTuck *= traumaAnimatorScale;
             targetImmersionDepth *= traumaAnimatorScale;
 
-            float blendT = 1f - math.exp(-math.max(animatorWaveSignalBlendSpeed, 0.01f) * dt);
+            float blendT = ResolveDecayBlend(math.max(animatorWaveSignalBlendSpeed, 0.01f), dt);
             _waveSlopeForwardCurrent = math.lerp(_waveSlopeForwardCurrent, targetForward, blendT);
             _waveSlopeLateralCurrent = math.lerp(_waveSlopeLateralCurrent, targetLateral, blendT);
             _waveCrestReachCurrent = math.lerp(_waveCrestReachCurrent, targetCrestReach, blendT);
@@ -1318,7 +1326,7 @@ namespace Hecton8.Gameplay
             float speedDelta,
             float dt)
         {
-            float bodyLagDegrees = Mathf.DeltaAngle(playerMovement.BodyYaw, playerMovement.CameraYaw);
+            float bodyLagDegrees = DeltaAngleDegreesNoMathf(playerMovement.BodyYaw, playerMovement.CameraYaw);
             float targetYawLag = bodyLagDegrees * bodyYawLagInfluence;
             float targetRollLag = -bodyLagDegrees * 0.12f;
 
@@ -1336,19 +1344,21 @@ namespace Hecton8.Gameplay
                 turnSmoothTime,
                 dt);
 
-            float idleSin = math.sin(_idleTimer * profile.IdleDriftFrequency * TwoPi);
-            float idleCos = math.cos(_idleTimer * profile.IdleDriftFrequency * TwoPi * 0.7f);
-            float strokeSin = math.sin(_strokePhase * TwoPi);
-            float strokeCos = math.cos(_strokePhase * TwoPi);
+            float idleCycle = _idleTimer * profile.IdleDriftFrequency;
+            float idleSin = ApproximateSinCycle01(idleCycle);
+            float idleCos = ApproximateCosCycle01(idleCycle * 0.7f);
+            float strokeSin = ApproximateSinCycle01(_strokePhase);
+            float strokeCos = ApproximateCosCycle01(_strokePhase);
             float accelKick = math.clamp(speedDelta * profile.AccelerationKickAmplitude, -profile.AccelerationKickAmplitude, profile.AccelerationKickAmplitude);
             float traumaPresentationScale = 1f - _physicalTraumaBlendCurrent * activeTraumaPresentationSuppression;
             float presentationWeight = _presentationBlend * _toolSuppressionWeight * traumaPresentationScale;
             float surfaceFramingWeight = ResolveSurfaceFramingWeight();
             float toolFramingWeight = _equippedToolBlendCurrent;
             float surfaceIdleWeight = ResolveSurfaceIdleWeight();
-            float surfaceBreathSin = math.sin(_idleTimer * surfaceBreathFrequency * TwoPi);
-            float surfaceWaveSin = math.sin(_idleTimer * surfaceWaveBobFrequency * TwoPi + 0.75f);
-            float surfaceWaveCos = math.cos(_idleTimer * surfaceWaveBobFrequency * TwoPi * 0.82f);
+            float surfaceBreathSin = ApproximateSinCycle01(_idleTimer * surfaceBreathFrequency);
+            float surfaceWaveCycle = _idleTimer * surfaceWaveBobFrequency;
+            float surfaceWaveSin = ApproximateSinCycle01(surfaceWaveCycle + 0.1193662f);
+            float surfaceWaveCos = ApproximateCosCycle01(surfaceWaveCycle * 0.82f);
             float leftObstacleWeight = _leftObstacleWeightCurrent * _currentLeftGuideWeight;
             float rightObstacleWeight = _rightObstacleWeightCurrent * _currentRightGuideWeight;
             float obstacleAverage = (leftObstacleWeight + rightObstacleWeight) * 0.5f;
@@ -1431,7 +1441,7 @@ namespace Hecton8.Gameplay
             {
                 _currentLocalPosition = localPosition;
                 _rootPoseEulerCurrent = localEuler;
-                _currentLocalRotation = Quaternion.Euler(_rootPoseEulerCurrent) * environmentalRotation;
+                _currentLocalRotation = ResolveEulerRotationNoTrig(_rootPoseEulerCurrent) * environmentalRotation;
             }
             else
             {
@@ -1447,7 +1457,7 @@ namespace Hecton8.Gameplay
                     ref _rootPoseEulerVelocity,
                     rootRotationSmooth,
                     dt);
-                _currentLocalRotation = Quaternion.Euler(_rootPoseEulerCurrent) * environmentalRotation;
+                _currentLocalRotation = ResolveEulerRotationNoTrig(_rootPoseEulerCurrent) * environmentalRotation;
             }
 
             if (viewModelRoot != null)
@@ -1700,9 +1710,8 @@ namespace Hecton8.Gameplay
             float phase = _strokePhase + phaseOffset + phaseLead * guideWeight * phaseLeadSuppression;
             phase -= math.floor(phase);
 
-            float cycle = phase * TwoPi;
-            float strokeSin = math.sin(cycle);
-            float strokeCos = math.cos(cycle);
+            float strokeSin = ApproximateSinCycle01(phase);
+            float strokeCos = ApproximateCosCycle01(phase);
             float pull = ShapeStrokeHalfWave(math.max(0f, strokeSin), strokePullSharpness);
             float recover = ShapeStrokeHalfWave(math.max(0f, -strokeSin), strokeRecoverySharpness);
             float sweep = strokeCos;
@@ -1815,8 +1824,8 @@ namespace Hecton8.Gameplay
                 guideWeight,
                 dt);
             ApplyTraumaGuideBias(ref localPosition, ref localEuler, isLeft, guideWeight);
-            localPosition = Vector3.Lerp(basePosition, localPosition, guideWeight);
-            Vector3 blendedEuler = Vector3.Lerp(baseEuler, localEuler, guideWeight);
+            localPosition = basePosition + ((localPosition - basePosition) * guideWeight);
+            Vector3 blendedEuler = baseEuler + ((localEuler - baseEuler) * guideWeight);
             float obstacleLagWeight = isLeft ? _leftObstacleWeightCurrent : _rightObstacleWeightCurrent;
             float poseLagMultiplier = ResolveGuidePoseLagMultiplier(profile, toolHand, supportHand, obstacleLagWeight);
             float guidePositionSmooth = math.max(0.0001f, guidePosePositionSmoothTime * poseLagMultiplier);
@@ -1847,7 +1856,7 @@ namespace Hecton8.Gameplay
                         dt);
                 }
 
-                _leftGuideCurrentLocalRotation = Quaternion.Euler(_leftGuideEulerCurrent);
+                _leftGuideCurrentLocalRotation = ResolveEulerRotationNoTrig(_leftGuideEulerCurrent);
                 _debugStrokePhaseLeadCurrent = phaseLead;
                 appliedLocalPosition = _leftGuideCurrentLocalPosition;
                 appliedLocalRotation = _leftGuideCurrentLocalRotation;
@@ -1875,7 +1884,7 @@ namespace Hecton8.Gameplay
                         dt);
                 }
 
-                _rightGuideCurrentLocalRotation = Quaternion.Euler(_rightGuideEulerCurrent);
+                _rightGuideCurrentLocalRotation = ResolveEulerRotationNoTrig(_rightGuideEulerCurrent);
                 appliedLocalPosition = _rightGuideCurrentLocalPosition;
                 appliedLocalRotation = _rightGuideCurrentLocalRotation;
             }
@@ -1897,7 +1906,7 @@ namespace Hecton8.Gameplay
 
             if (_physicalTraumaBlendTarget > _physicalTraumaBlendCurrent)
             {
-                float blendT = 1f - math.exp(-math.max(activeTraumaBlendInSpeed, 0.01f) * dt);
+                float blendT = ResolveDecayBlend(math.max(activeTraumaBlendInSpeed, 0.01f), dt);
                 _physicalTraumaBlendCurrent = math.lerp(_physicalTraumaBlendCurrent, _physicalTraumaBlendTarget, blendT);
             }
             else
@@ -2070,7 +2079,7 @@ namespace Hecton8.Gameplay
             }
 
             float currentCameraYaw = playerMovement.CameraYaw;
-            float yawDelta = Mathf.DeltaAngle(_previousCameraYaw, currentCameraYaw);
+            float yawDelta = DeltaAngleDegreesNoMathf(_previousCameraYaw, currentCameraYaw);
             _previousCameraYaw = currentCameraYaw;
 
             float yawVelocityNormalized = dt > 0f
@@ -2106,16 +2115,15 @@ namespace Hecton8.Gameplay
             if (_currentMode != PlayerSwimPresentationMode.Dry &&
                 _currentMode != PlayerSwimPresentationMode.ShallowWade)
             {
-                float bodyYawRad = playerMovement.BodyYaw * Mathf.Deg2Rad;
-                float sinBodyYaw = math.sin(bodyYawRad);
-                float cosBodyYaw = math.cos(bodyYawRad);
+                float bodyYawRad = playerMovement.BodyYaw * DegreesToRadians;
+                ApproximateSinCosFullNoTrig(bodyYawRad, out float sinBodyYaw, out float cosBodyYaw);
                 float localLateralVelocity = velocity.x * cosBodyYaw + velocity.z * -sinBodyYaw;
                 float lateralVelocityIntent = math.clamp(
                     localLateralVelocity / math.max(0.5f, _activeProfile.UnderwaterStrokeStartSpeed * 1.5f),
                     -1f,
                     1f);
                 float inputStrafe = math.clamp(inputState.MoveDelta.x, -1f, 1f);
-                float yawDisagreement = Mathf.DeltaAngle(playerMovement.BodyYaw, playerMovement.CameraYaw);
+                float yawDisagreement = DeltaAngleDegreesNoMathf(playerMovement.BodyYaw, playerMovement.CameraYaw);
                 float turnIntent = math.clamp(yawDisagreement / 45f, -1f, 1f);
                 float swimSpeedWeight = math.saturate(planarSpeed / math.max(0.25f, _activeProfile.UnderwaterStrokeStartSpeed));
 
@@ -2162,11 +2170,13 @@ namespace Hecton8.Gameplay
             Vector3 baseWorld = castSpace.TransformPoint(basePosition);
             Vector3 desiredWorld = castSpace.TransformPoint(localPosition);
             Vector3 toDesired = desiredWorld - baseWorld;
-            float desiredDistance = toDesired.magnitude;
-            if (desiredDistance <= 0.0001f)
+            float desiredDistanceSqr = toDesired.sqrMagnitude;
+            if (desiredDistanceSqr <= 0.00000001f)
                 return;
 
-            Vector3 forwardDirection = toDesired / desiredDistance;
+            float inverseDesiredDistance = math.rsqrt(desiredDistanceSqr);
+            float desiredDistance = desiredDistanceSqr * inverseDesiredDistance;
+            Vector3 forwardDirection = toDesired * inverseDesiredDistance;
             float accumulatedWeight = 0f;
             float accumulatedSideBias = 0f;
             float accumulatedVerticalBias = 0f;
@@ -2333,58 +2343,47 @@ namespace Hecton8.Gameplay
             weight = 0f;
             sideBias = 0f;
             verticalBias = 0f;
-            if (distance <= 0.0001f)
+            if (distance <= HandObstaclePlaneEpsilon || playerMovement == null)
                 return;
 
-            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
-                origin,
-                handObstacleSphereRadius,
-                direction,
-                _handObstacleHits,
-                distance,
-                handObstacleMask,
-                QueryTriggerInteraction.Ignore);
-            if (hitCount <= 0)
-                return;
-
-            float closestFraction = 1f;
-            float resolvedSideBias = 0f;
-            float resolvedVerticalBias = 0f;
-            bool found = false;
-            for (int i = 0; i < hitCount; i++)
+            if (!playerMovement.TryGetRecentPresentationWallContact(
+                    HandObstacleWallContactMaxPhysicsFrameAge,
+                    out Vector3 wallNormal,
+                    out Vector3 wallPoint,
+                    out float velocityReduction01))
             {
-                RaycastHit hit = _handObstacleHits[i];
-                Transform hitTransform = hit.transform;
-                if (hitTransform == null)
-                    continue;
-
-                if (playerMovement != null && hitTransform.IsChildOf(playerMovement.transform))
-                    continue;
-
-                if (playerRigidbody != null && hit.rigidbody == playerRigidbody)
-                    continue;
-
-                float fraction = math.saturate(hit.distance / math.max(0.0001f, distance));
-                if (fraction >= closestFraction)
-                    continue;
-
-                closestFraction = fraction;
-                found = true;
-                if (viewModelRoot != null)
-                {
-                    resolvedSideBias = math.clamp(Vector3.Dot(viewModelRoot.right, hit.normal), -1f, 1f);
-                    resolvedVerticalBias = math.clamp(Vector3.Dot(viewModelRoot.up, hit.normal), -1f, 1f);
-                    if (resolvedVerticalBias >= -0.15f)
-                        resolvedVerticalBias = math.max(resolvedVerticalBias, handObstacleWallLiftBias);
-                }
+                return;
             }
 
-            if (!found)
+            float directionSqr = direction.sqrMagnitude;
+            if (directionSqr <= HandObstaclePlaneEpsilon * HandObstaclePlaneEpsilon)
                 return;
 
-            weight = math.saturate(1f - closestFraction);
-            sideBias = resolvedSideBias;
-            verticalBias = resolvedVerticalBias;
+            Vector3 safeDirection = direction * math.rsqrt(directionSqr);
+            float approach = -Vector3.Dot(safeDirection, wallNormal);
+            if (approach <= HandObstaclePlaneEpsilon)
+                return;
+
+            float signedDistance = Vector3.Dot(origin - wallPoint, wallNormal);
+            float probeRadius = math.max(0.001f, handObstacleSphereRadius);
+            float travel = math.max(0f, signedDistance - probeRadius) / approach;
+            if (travel > distance + probeRadius)
+                return;
+
+            float fraction = math.saturate(travel / math.max(HandObstaclePlaneEpsilon, distance));
+            float responseWeight = math.saturate(1f - fraction);
+            responseWeight = math.max(responseWeight, math.saturate(velocityReduction01));
+            if (responseWeight <= 0.0001f)
+                return;
+
+            weight = responseWeight;
+            if (viewModelRoot != null)
+            {
+                sideBias = math.clamp(Vector3.Dot(viewModelRoot.right, wallNormal), -1f, 1f);
+                verticalBias = math.clamp(Vector3.Dot(viewModelRoot.up, wallNormal), -1f, 1f);
+                if (verticalBias >= -0.15f)
+                    verticalBias = math.max(verticalBias, handObstacleWallLiftBias);
+            }
         }
 
         private float ResolveObstacleResponseScale(bool isLeft)
@@ -2788,7 +2787,126 @@ namespace Hecton8.Gameplay
             if (clamped <= 0f)
                 return 0f;
 
-            return math.pow(clamped, math.max(0.0001f, sharpness));
+            float squared = clamped * clamped;
+            float cubed = squared * clamped;
+            if (sharpness <= 1f)
+            {
+                float easeOut = clamped * (2f - clamped);
+                return math.lerp(easeOut, clamped, math.saturate(sharpness));
+            }
+
+            if (sharpness <= 2f)
+                return math.lerp(clamped, squared, math.saturate(sharpness - 1f));
+
+            return math.lerp(squared, cubed, math.saturate(sharpness - 2f));
+        }
+
+        private static float ApproximateVectorMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (0.375f * mid) + (0.125f * min);
+        }
+
+        private static float ApproximatePlanarMagnitude(float x, float z)
+        {
+            float ax = math.abs(x);
+            float az = math.abs(z);
+            float max = math.max(ax, az);
+            float min = math.min(ax, az);
+            return max + (0.375f * min);
+        }
+
+        private static Vector3 ClampVectorBySqr(Vector3 value, float maxMagnitude)
+        {
+            float maxMagnitudeSqr = maxMagnitude * maxMagnitude;
+            float valueSqr = value.sqrMagnitude;
+            if (valueSqr <= maxMagnitudeSqr || valueSqr <= 0.00000001f)
+                return value;
+
+            return value * (maxMagnitude * math.rsqrt(valueSqr));
+        }
+
+        private static float ResolveDecayBlend(float speed, float deltaTime)
+        {
+            float x = math.max(0f, speed) * math.max(0f, deltaTime);
+            return math.saturate(x / (1f + x));
+        }
+
+        private static float DeltaAngleDegreesNoMathf(float current, float target)
+        {
+            float delta = target - current;
+            float wrapped = delta + 180f;
+            wrapped -= 360f * math.floor(wrapped * 0.0027777778f);
+            return wrapped - 180f;
+        }
+
+        private static float ApproximateSinCycle01(float cycle01)
+        {
+            ApproximateSinCosFullNoTrig(cycle01 * TwoPi, out float sin, out _);
+            return sin;
+        }
+
+        private static float ApproximateCosCycle01(float cycle01)
+        {
+            ApproximateSinCosFullNoTrig(cycle01 * TwoPi, out _, out float cos);
+            return cos;
+        }
+
+        private static Quaternion ResolveEulerRotationNoTrig(Vector3 eulerDegrees)
+        {
+            ApproximateSinCosFullNoTrig(eulerDegrees.x * DegreesToRadians * 0.5f, out float sx, out float cx);
+            ApproximateSinCosFullNoTrig(eulerDegrees.y * DegreesToRadians * 0.5f, out float sy, out float cy);
+            ApproximateSinCosFullNoTrig(eulerDegrees.z * DegreesToRadians * 0.5f, out float sz, out float cz);
+
+            float4 pitch = new float4(sx, 0f, 0f, cx);
+            float4 yaw = new float4(0f, sy, 0f, cy);
+            float4 roll = new float4(0f, 0f, sz, cz);
+            return ToQuaternion(NormalizeQuaternionNoSqrt(MulQuaternionNoSqrt(MulQuaternionNoSqrt(yaw, pitch), roll)));
+        }
+
+        private static void ApproximateSinCosFullNoTrig(float radians, out float sin, out float cos)
+        {
+            float x = radians - (TwoPi * math.round(radians / TwoPi));
+            float cosSign = 1f;
+            if (x > HalfPi)
+            {
+                x = Pi - x;
+                cosSign = -1f;
+            }
+            else if (x < -HalfPi)
+            {
+                x = -Pi - x;
+                cosSign = -1f;
+            }
+
+            float x2 = x * x;
+            sin = x * (1f - (x2 * (0.16666667f - (x2 * 0.008333333f))));
+            cos = cosSign * (1f - (x2 * (0.5f - (x2 * 0.041666667f))));
+        }
+
+        private static float4 MulQuaternionNoSqrt(float4 lhs, float4 rhs)
+        {
+            return new float4(
+                lhs.w * rhs.x + lhs.x * rhs.w + lhs.y * rhs.z - lhs.z * rhs.y,
+                lhs.w * rhs.y - lhs.x * rhs.z + lhs.y * rhs.w + lhs.z * rhs.x,
+                lhs.w * rhs.z + lhs.x * rhs.y - lhs.y * rhs.x + lhs.z * rhs.w,
+                lhs.w * rhs.w - lhs.x * rhs.x - lhs.y * rhs.y - lhs.z * rhs.z);
+        }
+
+        private static float4 NormalizeQuaternionNoSqrt(float4 value)
+        {
+            float lengthSq = math.max(math.dot(value, value), 0.000001f);
+            return value * math.rsqrt(lengthSq);
+        }
+
+        private static Quaternion ToQuaternion(float4 value)
+        {
+            return new Quaternion(value.x, value.y, value.z, value.w);
         }
 
         private static Vector3 SmoothDampAngles(
@@ -2798,10 +2916,13 @@ namespace Hecton8.Gameplay
             float smoothTime,
             float dt)
         {
-            current.x = Mathf.SmoothDampAngle(current.x, target.x, ref velocity.x, math.max(0.0001f, smoothTime), Mathf.Infinity, dt);
-            current.y = Mathf.SmoothDampAngle(current.y, target.y, ref velocity.y, math.max(0.0001f, smoothTime), Mathf.Infinity, dt);
-            current.z = Mathf.SmoothDampAngle(current.z, target.z, ref velocity.z, math.max(0.0001f, smoothTime), Mathf.Infinity, dt);
-            return current;
+            float t = ResolveDecayBlend(1f / math.max(0.0001f, smoothTime), dt);
+            Vector3 next = new Vector3(
+                current.x + DeltaAngleDegreesNoMathf(current.x, target.x) * t,
+                current.y + DeltaAngleDegreesNoMathf(current.y, target.y) * t,
+                current.z + DeltaAngleDegreesNoMathf(current.z, target.z) * t);
+            velocity = dt > 0.0001f ? (next - current) / dt : Vector3.zero;
+            return next;
         }
 
         private static float SmoothDampValue(
@@ -2811,13 +2932,10 @@ namespace Hecton8.Gameplay
             float smoothTime,
             float dt)
         {
-            return Mathf.SmoothDamp(
-                current,
-                target,
-                ref velocity,
-                math.max(0.0001f, smoothTime),
-                Mathf.Infinity,
-                dt);
+            float t = ResolveDecayBlend(1f / math.max(0.0001f, smoothTime), dt);
+            float next = math.lerp(current, target, t);
+            velocity = dt > 0.0001f ? (next - current) / dt : 0f;
+            return next;
         }
 
         private static Vector3 SmoothDampVector(
@@ -2827,13 +2945,13 @@ namespace Hecton8.Gameplay
             float smoothTime,
             float dt)
         {
-            return Vector3.SmoothDamp(
-                current,
-                target,
-                ref velocity,
-                math.max(0.0001f, smoothTime),
-                Mathf.Infinity,
-                dt);
+            float t = ResolveDecayBlend(1f / math.max(0.0001f, smoothTime), dt);
+            Vector3 next = new Vector3(
+                math.lerp(current.x, target.x, t),
+                math.lerp(current.y, target.y, t),
+                math.lerp(current.z, target.z, t));
+            velocity = dt > 0.0001f ? (next - current) / dt : Vector3.zero;
+            return next;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]

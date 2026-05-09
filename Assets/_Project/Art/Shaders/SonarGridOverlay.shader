@@ -34,7 +34,9 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 
-        #define HECTON_SONAR_MAX_CONTACTS 24
+        #ifndef UNITY_PASS_STEREO_INSTANCE_ID
+        #define UNITY_PASS_STEREO_INSTANCE_ID(input) UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input)
+        #endif
 
         CBUFFER_START(UnityPerMaterial)
             half _OverlayOpacity;
@@ -71,10 +73,7 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
         float4 _HectonSonarColor;
         float _SonarActive;
         float _AbyssalDistortion;
-        float4 _SonarRevealContacts[HECTON_SONAR_MAX_CONTACTS];
-        float4 _SonarRevealContactMeta[HECTON_SONAR_MAX_CONTACTS];
         float _SonarRevealExpireTime;
-        int _SonarRevealContactCount;
 
         TEXTURE2D_X(_BlitTexture);
         TEXTURE2D_X(_HectonSonarHistoryTex);
@@ -83,11 +82,14 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
 
         struct Attributes
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
             uint vertexID : SV_VertexID;
         };
 
         struct Varyings
         {
+            UNITY_VERTEX_INPUT_INSTANCE_ID
+            UNITY_VERTEX_OUTPUT_STEREO
             float4 positionCS : SV_POSITION;
             float2 screenUV : TEXCOORD0;
         };
@@ -101,6 +103,9 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
         Varyings Vert(Attributes input)
         {
             Varyings output;
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_TRANSFER_INSTANCE_ID(input, output);
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(output);
             output.screenUV = float2((input.vertexID << 1) & 2, input.vertexID & 2);
             output.positionCS = float4(output.screenUV * 2.0 - 1.0, 0.0, 1.0);
 #if UNITY_UV_STARTS_AT_TOP
@@ -109,14 +114,27 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             return output;
         }
 
+        float2 ResolveXRStereoScreenUV(float2 screenUV)
+        {
+#if defined(UNITY_SINGLE_PASS_STEREO) || defined(UNITY_STEREO_INSTANCING_ENABLED) || defined(UNITY_STEREO_MULTIVIEW_ENABLED)
+            return UnityStereoTransformScreenSpaceTex(screenUV);
+#else
+            return screenUV;
+#endif
+        }
+
         float Hash21(float2 value)
         {
-            return frac(sin(dot(value, float2(12.9898, 78.233))) * 43758.5453);
+            float3 hash = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
+            hash += dot(hash, hash.yzx + 33.33);
+            return frac((hash.x + hash.y) * hash.z);
         }
 
         float Hash31(float3 value)
         {
-            return frac(sin(dot(value, float3(12.9898, 78.233, 37.719))) * 43758.5453);
+            float3 hash = frac(value * float3(0.1031, 0.1030, 0.0973));
+            hash += dot(hash, hash.yzx + 33.33);
+            return frac((hash.x + hash.y) * hash.z);
         }
 
         float DitherNoise(float2 screenUV)
@@ -125,8 +143,20 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             return Hash21(pixel);
         }
 
+        float2 ClampSceneDepthUVWithTexel(float2 screenUV, float2 texel)
+        {
+            return clamp(screenUV, texel, 1.0 - texel);
+        }
+
+        float2 ClampSceneDepthUV(float2 screenUV)
+        {
+            float2 texel = rcp(max(_ScaledScreenParams.xy, float2(1.0, 1.0)));
+            return ClampSceneDepthUVWithTexel(screenUV, texel);
+        }
+
         float3 SampleSceneWorldPosition(float2 screenUV, out float rawDepth, out float validMask)
         {
+            screenUV = ClampSceneDepthUV(screenUV);
             rawDepth = SampleSceneDepth(screenUV);
 #if UNITY_REVERSED_Z
             validMask = step(0.0001, rawDepth);
@@ -138,11 +168,17 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
 
         float ComputeSonarContourMask(float2 screenUV, float rawDepth)
         {
-            float2 texel = 1.0 / _ScaledScreenParams.xy;
-            float depthDx = SampleSceneDepth(saturate(screenUV + float2(texel.x, 0.0)));
-            float depthDy = SampleSceneDepth(saturate(screenUV + float2(0.0, texel.y)));
-            float depthGradient = abs(depthDx - rawDepth) + abs(depthDy - rawDepth);
-            return saturate(depthGradient * max(1.0, _SonarGridParams0.w) * 180.0);
+            float2 texel = rcp(max(_ScaledScreenParams.xy, float2(1.0, 1.0)));
+            screenUV = ClampSceneDepthUVWithTexel(screenUV, texel);
+            float depthLeft = SampleSceneDepth(ClampSceneDepthUVWithTexel(screenUV - float2(texel.x, 0.0), texel));
+            float depthRight = SampleSceneDepth(ClampSceneDepthUVWithTexel(screenUV + float2(texel.x, 0.0), texel));
+            float depthDown = SampleSceneDepth(ClampSceneDepthUVWithTexel(screenUV - float2(0.0, texel.y), texel));
+            float depthUp = SampleSceneDepth(ClampSceneDepthUVWithTexel(screenUV + float2(0.0, texel.y), texel));
+            float depthDx = depthRight - depthLeft;
+            float depthDy = depthUp - depthDown;
+            float depthGradient = abs(depthDx) + abs(depthDy);
+            float oneSidedGradient = abs(depthRight - rawDepth) + abs(depthUp - rawDepth);
+            return saturate(max(depthGradient, oneSidedGradient) * max(1.0, _SonarGridParams0.w) * 180.0);
         }
 
         float ComputeSonarGridMask(float3 sceneWorldPos)
@@ -192,17 +228,18 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             float speed = max(parameters.x, 0.01);
             float maxRadius = max(parameters.y, 0.01);
             float bandWidth = max(parameters.z, 0.05);
+            float invBandWidth = rcp(bandWidth);
             float age = _Time.y - pulse.w - ageOffset;
             if (age <= 0.0)
                 return 0.0;
 
             float radius = age * speed;
-            float lifeMask = 1.0 - saturate((radius - maxRadius) / bandWidth);
+            float lifeMask = 1.0 - saturate((radius - maxRadius) * invBandWidth);
             if (lifeMask <= 0.0001)
                 return 0.0;
 
             float distanceToPulse = ApproximatePulseDistance(sceneWorldPos, pulse.xyz);
-            float band = saturate(1.0 - abs(distanceToPulse - radius) / bandWidth);
+            float band = saturate(1.0 - abs(distanceToPulse - radius) * invBandWidth);
             band = band * band * (3.0 - 2.0 * band);
             float cinematicFalloff = rcp(1.0 + distanceToPulse * 0.004);
             return band * lifeMask * active * cinematicFalloff;
@@ -225,15 +262,17 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
                 return pointData;
 
             float sonarWaveSpeed = max(0.01, _SonarRevealWaveParams.y);
+            float invSonarWaveSpeed = rcp(sonarWaveSpeed);
             float sonarFadeDuration = max(0.05, _SonarRevealWaveParams.z);
+            float invSonarFadeDuration = rcp(sonarFadeDuration);
             float overlayLifetimeMask = step(
                 _Time.y,
-                _SonarRevealWaveParams.x + (_SonarRevealOriginWS.w / sonarWaveSpeed) + sonarFadeDuration);
+                _SonarRevealWaveParams.x + (_SonarRevealOriginWS.w * invSonarWaveSpeed) + sonarFadeDuration);
 
             float distanceToOrigin = ApproximatePulseDistance(sceneWorldPos, _SonarRevealOriginWS.xyz);
-            float timeSinceArrival = _Time.y - (_SonarRevealWaveParams.x + distanceToOrigin / sonarWaveSpeed);
+            float timeSinceArrival = _Time.y - (_SonarRevealWaveParams.x + distanceToOrigin * invSonarWaveSpeed);
             float arrivalMask = step(0.0, timeSinceArrival);
-            float terrainFade = arrivalMask * saturate(1.0 - (timeSinceArrival / sonarFadeDuration));
+            float terrainFade = arrivalMask * saturate(1.0 - (timeSinceArrival * invSonarFadeDuration));
             float waveRadius = max(0.0, _SonarWaveFront);
             float waveBandWidth = lerp(6.0, 2.0, saturate(_SonarRevealWaveParams.w));
             float waveFront = ResolveWavefrontMask(distanceToOrigin, waveRadius, waveBandWidth);
@@ -256,6 +295,8 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             float eventEchoWave = EvaluateScreenSpacePulseBand(_HectonSonarEchoPulse, _HectonSonarEchoParams, sceneWorldPos, 0.0, 1.0);
             float reflectedWave = saturate(automaticEchoWave * 0.72 + eventEchoWave);
             float screenSpaceWave = saturate(primaryVisualWave + reflectedWave);
+            float edgePulseMask = saturate(contourMask * (0.65 + screenSpaceWave * 2.75));
+            float cinematicRidge = screenSpaceWave * (0.18 + edgePulseMask * 1.85);
             float terrainGrid =
                 topoGridMask *
                 max(contourMask, 0.14) *
@@ -266,28 +307,11 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             float hardAccum = terrainGrid * 0.55;
             float organicAccum = terrainGrid * 0.18;
             float abyssalAccum = 0.0;
-            hardAccum += (primaryVisualWave * 0.28 + reflectedWave * max(0.28, contourMask)) *
+            hardAccum += (primaryVisualWave * 0.28 + reflectedWave * max(0.28, contourMask) + cinematicRidge * 0.48) *
                 max(contourMask, topoGridMask * 0.18) *
                 1.15;
-
-            [unroll(HECTON_SONAR_MAX_CONTACTS)]
-            for (int contactIndex = 0; contactIndex < HECTON_SONAR_MAX_CONTACTS; contactIndex++)
-            {
-                float active = step((float)contactIndex + 0.5, (float)_SonarRevealContactCount);
-                float contactArrivalTime = _SonarRevealWaveParams.x + _SonarRevealContacts[contactIndex].w;
-                float contactTimeSinceArrival = _Time.y - contactArrivalTime;
-                float contactArrivalMask = step(0.0, contactTimeSinceArrival);
-                float contactFade = active * contactArrivalMask * saturate(1.0 - (contactTimeSinceArrival / 3.0));
-                float contactRadius = max(0.25, _SonarRevealContactMeta[contactIndex].z);
-                float contactDistance = ApproximatePulseDistance(sceneWorldPos, _SonarRevealContacts[contactIndex].xyz);
-                float contactCore = 1.0 - smoothstep(contactRadius * 0.45, contactRadius, contactDistance);
-                float contactRing = ResolveWavefrontMask(contactDistance, 0.0, max(0.25, contactRadius * 0.55));
-                float contactPulse = max(contactCore, contactRing * 0.42) * contactFade * _PulseBoost;
-                float abyssalMask = step(0.5, _SonarRevealContactMeta[contactIndex].w);
-                hardAccum += contactPulse * _SonarRevealContactMeta[contactIndex].x * (1.0 - abyssalMask);
-                organicAccum += contactPulse * _SonarRevealContactMeta[contactIndex].y * (1.0 - abyssalMask);
-                abyssalAccum += contactPulse * abyssalMask * 1.15;
-            }
+            organicAccum += cinematicRidge * contourMask * 0.22;
+            abyssalAccum += reflectedWave * edgePulseMask * 0.18;
 
             float hardStrength = saturate(hardAccum);
             float organicStrength = saturate(organicAccum);
@@ -331,6 +355,12 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
                 (absoluteWorldPos.z - _HectonSonarWorldMemoryRect.y) * _HectonSonarWorldMemoryRect.w);
         }
 
+        float2 ResolveWorldMemoryAbsoluteXZ(float2 worldUv)
+        {
+            float2 worldSize = rcp(max(_HectonSonarWorldMemoryRect.zw, float2(0.000001, 0.000001)));
+            return _HectonSonarWorldMemoryRect.xy + worldUv * worldSize;
+        }
+
         half4 SampleWorldHistory(float2 worldUv)
         {
             if (_HasWorldHistory <= 0.5h)
@@ -341,6 +371,32 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
                 return half4(0.0h, 0.0h, 0.0h, 0.0h);
 
             return SAMPLE_TEXTURE2D(_HectonSonarWorldHistoryTex, sampler_LinearClamp, historyUv);
+        }
+
+        float EvaluateWorldMemoryPulseBand(float4 pulse, float4 parameters, float2 absoluteXZ, float ageOffset, float intensityScale)
+        {
+            float active = saturate(_SonarActive) * saturate(parameters.w) * saturate(intensityScale);
+            if (active <= 0.0001)
+                return 0.0;
+
+            float speed = max(parameters.x, 0.01);
+            float maxRadius = max(parameters.y, 0.01);
+            float bandWidth = max(max(parameters.z, _WorldPointRadius), 0.05);
+            float invBandWidth = rcp(bandWidth);
+            float age = _Time.y - pulse.w - ageOffset;
+            if (age <= 0.0)
+                return 0.0;
+
+            float radius = age * speed;
+            float lifeMask = 1.0 - saturate((radius - maxRadius) * invBandWidth);
+            if (lifeMask <= 0.0001)
+                return 0.0;
+
+            float distanceToPulse = ApproximatePulseDistance2D(absoluteXZ, pulse.xz);
+            float band = saturate(1.0 - abs(distanceToPulse - radius) * invBandWidth);
+            band = band * band * (3.0 - 2.0 * band);
+            float cinematicFalloff = rcp(1.0 + distanceToPulse * 0.004);
+            return band * lifeMask * active * cinematicFalloff;
         }
 
         half4 SampleWorldPointCloud(float3 absoluteWorldPos)
@@ -361,8 +417,10 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             float timePhase = _Time.y * (0.85 + distortion * 2.3);
             float phaseA = Hash31(float3(floor(screenUV * _ScaledScreenParams.xy * 0.35), floor(timePhase * 11.0)));
             float phaseB = Hash31(float3(floor(absoluteWorldPos.xz * 0.08 + timePhase * 0.47), floor(timePhase * 7.0)));
-            float2 jitterDirection = normalize(float2(phaseA * 2.0 - 1.0, phaseB * 2.0 - 1.0) + 0.0001);
-            float jitterPixels = distortion * lerp(0.5, 4.0, saturate(length(absoluteWorldPos.xz - _SonarRevealOriginWS.xz) * 0.0025));
+            float2 jitterVector = float2(phaseA * 2.0 - 1.0, phaseB * 2.0 - 1.0) + 0.0001;
+            float2 jitterDirection = jitterVector * rcp(max(0.0001, ApproximatePulseDistance2D(jitterVector, float2(0.0, 0.0))));
+            float distanceToPulse2D = ApproximatePulseDistance2D(absoluteWorldPos.xz, _SonarRevealOriginWS.xz);
+            float jitterPixels = distortion * lerp(0.5, 4.0, saturate(distanceToPulse2D * 0.0025));
             return jitterDirection * (jitterPixels * _ScaledScreenParams.zw);
         }
 
@@ -397,10 +455,14 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
 
         half4 FragAccumulate(Varyings input) : SV_Target
         {
-            half4 previousHistory = SAMPLE_TEXTURE2D_X(_HectonSonarHistoryTex, sampler_LinearClamp, input.screenUV) * _HasHistory;
-            SonarPointData pointData = EvaluateSonarPointCloud(input.screenUV);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            UNITY_PASS_STEREO_INSTANCE_ID(input);
+            float2 screenUV = ResolveXRStereoScreenUV(input.screenUV);
+            half4 previousHistory = SAMPLE_TEXTURE2D_X(_HectonSonarHistoryTex, sampler_LinearClamp, screenUV) * _HasHistory;
+            SonarPointData pointData = EvaluateSonarPointCloud(screenUV);
             float persistence = max(0.05, _PersistenceSeconds * lerp(1.0, 1.35, saturate(_LidarPersistence)));
-            float fade = rcp(1.0 + 1.442695f * unity_DeltaTime.x / persistence);
+            float fade = rcp(1.0 + 1.442695f * unity_DeltaTime.x * rcp(persistence));
             half4 fadedHistory = previousHistory * (half)fade;
             half3 resolvedColor = max(fadedHistory.rgb, pointData.color);
             half resolvedAlpha = max(fadedHistory.a, pointData.alpha);
@@ -409,63 +471,49 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
 
         half4 FragAccumulateWorld(Varyings input) : SV_Target
         {
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            UNITY_PASS_STEREO_INSTANCE_ID(input);
             half4 previousHistory = SampleWorldHistory(input.screenUV);
             float persistence = max(0.05, _WorldPersistenceSeconds * lerp(1.0, 1.35, saturate(_LidarPersistence)));
-            float fade = rcp(1.0 + 1.442695f * unity_DeltaTime.x / persistence);
+            float fade = rcp(1.0 + 1.442695f * unity_DeltaTime.x * rcp(persistence));
             half4 fadedHistory = previousHistory * (half)fade;
-
-            float worldSizeX = rcp(max(_HectonSonarWorldMemoryRect.z, 0.0001));
-            float worldSizeY = rcp(max(_HectonSonarWorldMemoryRect.w, 0.0001));
-            float3 absoluteWorldPos = float3(
-                _HectonSonarWorldMemoryRect.x + input.screenUV.x * worldSizeX,
-                _SonarRevealOriginWS.y + _HectonSonarWorldOriginOffset.y,
-                _HectonSonarWorldMemoryRect.y + input.screenUV.y * worldSizeY);
-
-            half hardAccum = 0.0h;
-            half organicAccum = 0.0h;
-            half abyssalAccum = 0.0h;
-            float worldPointRadius = max(0.1, _WorldPointRadius);
-
-            [unroll(HECTON_SONAR_MAX_CONTACTS)]
-            for (int contactIndex = 0; contactIndex < HECTON_SONAR_MAX_CONTACTS; contactIndex++)
-            {
-                float active = step((float)contactIndex + 0.5, (float)_SonarRevealContactCount);
-                float contactArrivalTime = _SonarRevealWaveParams.x + _SonarRevealContacts[contactIndex].w;
-                float contactTimeSinceArrival = _Time.y - contactArrivalTime;
-                float contactArrivalMask = step(0.0, contactTimeSinceArrival);
-                float contactFade = active * contactArrivalMask * saturate(1.0 - (contactTimeSinceArrival / 5.0));
-                float3 absoluteContactPos = _SonarRevealContacts[contactIndex].xyz + _HectonSonarWorldOriginOffset.xyz;
-                float contactRadius = max(worldPointRadius, _SonarRevealContactMeta[contactIndex].z * 0.65);
-                float contactDistance = ApproximatePulseDistance2D(absoluteWorldPos.xz, absoluteContactPos.xz);
-                float pointMask = 1.0 - smoothstep(contactRadius * 0.35, contactRadius, contactDistance);
-                float contactPulse = pointMask * contactFade;
-                float abyssalMask = step(0.5, _SonarRevealContactMeta[contactIndex].w);
-                hardAccum += (half)(contactPulse * _SonarRevealContactMeta[contactIndex].x * (1.0 - abyssalMask));
-                organicAccum += (half)(contactPulse * _SonarRevealContactMeta[contactIndex].y * (1.0 - abyssalMask));
-                abyssalAccum += (half)(contactPulse * abyssalMask * 1.15);
-            }
-
-            half hardStrength = saturate(hardAccum);
-            half organicStrength = saturate(organicAccum);
-            half abyssalStrength = saturate(abyssalAccum);
-            half compositeMask = saturate(max(max(hardStrength, organicStrength), abyssalStrength));
-            half3 newColor =
-                (_SonarGridHardColor.rgb * hardStrength) +
-                (_SonarGridOrganicColor.rgb * organicStrength) +
-                (_SonarGridAbyssalColor.rgb * abyssalStrength);
-            half3 resolvedColor = max(fadedHistory.rgb, newColor * compositeMask);
-            half resolvedAlpha = max(fadedHistory.a, compositeMask);
-            return half4(resolvedColor, resolvedAlpha);
+            float2 absoluteXZ = ResolveWorldMemoryAbsoluteXZ(input.screenUV);
+            float primaryWave = EvaluateWorldMemoryPulseBand(_HectonSonarPrimaryPulse, _HectonSonarVisualParams, absoluteXZ, 0.0, 1.0);
+            float4 automaticEchoParams = float4(
+                max(_HectonSonarVisualParams.x * 0.72, 0.01),
+                _HectonSonarVisualParams.y,
+                max(_HectonSonarVisualParams.z * 1.75, 0.05),
+                _HectonSonarVisualParams.w * 0.32);
+            float automaticEchoWave = EvaluateWorldMemoryPulseBand(
+                _HectonSonarPrimaryPulse,
+                automaticEchoParams,
+                absoluteXZ,
+                0.06,
+                1.0);
+            float eventEchoWave = EvaluateWorldMemoryPulseBand(_HectonSonarEchoPulse, _HectonSonarEchoParams, absoluteXZ, 0.0, 1.0);
+            float reflectedWave = saturate(automaticEchoWave * 0.72 + eventEchoWave);
+            float2 cell = abs(frac(absoluteXZ * max(0.1, _SonarGridParams0.y)) - 0.5);
+            float gridMask = 1.0 - smoothstep(max(0.001, _SonarGridParams0.z), max(0.001, _SonarGridParams0.z) * 2.5, min(cell.x, cell.y));
+            float worldPulseMask = saturate((primaryWave + reflectedWave) * (0.28 + gridMask * 0.92) * saturate(_SonarGridParams0.x));
+            half3 worldColor =
+                _SonarGridHardColor.rgb * (half)(worldPulseMask * (0.72 + primaryWave)) +
+                _SonarGridAbyssalColor.rgb * (half)(reflectedWave * 0.28);
+            return half4(max(fadedHistory.rgb, worldColor), max(fadedHistory.a, (half)worldPulseMask));
         }
 
         half4 FragComposite(Varyings input) : SV_Target
         {
-            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, input.screenUV);
+            UNITY_SETUP_INSTANCE_ID(input);
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            UNITY_PASS_STEREO_INSTANCE_ID(input);
+            float2 screenUV = ResolveXRStereoScreenUV(input.screenUV);
+            half4 sourceColor = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, screenUV);
             float rawDepth;
             float depthValid;
-            float3 sceneWorldPos = SampleSceneWorldPosition(input.screenUV, rawDepth, depthValid);
+            float3 sceneWorldPos = SampleSceneWorldPosition(screenUV, rawDepth, depthValid);
             float3 absoluteWorldPos = ResolveAbsoluteWorldPosition(sceneWorldPos);
-            half4 pointCloud = SampleScreenPointCloudDistorted(input.screenUV, absoluteWorldPos);
+            half4 pointCloud = SampleScreenPointCloudDistorted(screenUV, absoluteWorldPos);
             half4 worldPointCloud = depthValid > 0.5 ? SampleWorldPointCloudDistorted(absoluteWorldPos) : half4(0.0h, 0.0h, 0.0h, 0.0h);
             half3 overlay =
                 pointCloud.rgb * (pointCloud.a * _OverlayOpacity) +
@@ -475,8 +523,9 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             float pingBandWidth = max(0.25, _SonarPingParams.y);
             float pingDistance = depthValid > 0.5 ? ApproximatePulseDistance(sceneWorldPos, _SonarPingCenter.xyz) : 0.0;
             float pingShell = pingActive * (1.0 - smoothstep(pingBandWidth, pingBandWidth * 2.0, abs(pingDistance - _SonarRadius)));
-            float pingContour = ComputeSonarContourMask(input.screenUV, rawDepth);
-            half3 pingColor = half3(0.0h, 0.92h, 1.0h) * (half)(pingShell * (1.15 + pingContour * 1.35));
+            float pingContour = ComputeSonarContourMask(screenUV, rawDepth);
+            float depthEdgePulse = saturate(pingContour * (0.72 + pingShell * 2.2));
+            half3 pingColor = half3(0.0h, 0.92h, 1.0h) * (half)(pingShell * (1.0 + depthEdgePulse * 2.25));
             float primaryVisualWave = depthValid > 0.5
                 ? EvaluateScreenSpacePulseBand(_HectonSonarPrimaryPulse, _HectonSonarVisualParams, sceneWorldPos, 0.0, 1.0)
                 : 0.0;
@@ -497,8 +546,9 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
                 ? EvaluateScreenSpacePulseBand(_HectonSonarEchoPulse, _HectonSonarEchoParams, sceneWorldPos, 0.0, 1.0)
                 : 0.0;
             float reflectedWave = saturate(automaticEchoWave * 0.72 + eventEchoWave);
+            float cinematicEdgePulse = saturate((primaryVisualWave + reflectedWave) * (0.16 + depthEdgePulse * 1.95));
             half3 acousticWaveColor = half3(_HectonSonarColor.rgb) *
-                (half)((primaryVisualWave * 0.45 + reflectedWave) * (0.32 + pingContour * max(0.0, _HectonSonarColor.w)));
+                (half)((primaryVisualWave * 0.36 + reflectedWave * 0.78 + cinematicEdgePulse) * (0.28 + depthEdgePulse * max(0.0, _HectonSonarColor.w)));
 
             return half4(sourceColor.rgb + overlay + pingColor + acousticWaveColor, sourceColor.a);
         }
@@ -512,6 +562,8 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment FragAccumulate
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             ENDHLSL
         }
 
@@ -523,6 +575,8 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment FragAccumulateWorld
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             ENDHLSL
         }
 
@@ -534,6 +588,8 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment FragComposite
+            #pragma multi_compile_instancing
+            #pragma instancing_options assumeuniformscaling
             ENDHLSL
         }
     }

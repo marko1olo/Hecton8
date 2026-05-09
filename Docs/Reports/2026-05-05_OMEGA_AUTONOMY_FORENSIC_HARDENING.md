@@ -131,8 +131,8 @@ Authority: `AGENTS.md`, project skill registry, local source evidence.
 
 ## Status
 
-`OMEGA VERIFIED (SCOPED)`.
+`PENDING VERIFICATION (SCOPED SMOKE PASS RECORDED)`.
 
 Scope: the edited PowerGrid, BaseLogisticsNetwork, AutomationSmokeTester, ProceduralAudioEvents, MainMenuInputRoutingGuard, Omega smoke harness, and the bounded compile-blocker cleanup around `HectonWorldGenerator.ActiveRuntimeInstance` consumers.
 
-Project-wide `OMEGA VERIFIED` is not claimed. Full Play Mode, profiler, player build, global singleton purge, and global native leak proof remain outside this scoped verification.
+The Omega smoke artifact records `PASS`, but project-wide verification is not claimed. Full Play Mode, profiler, player build, global singleton purge, and global native leak proof remain outside this scoped evidence boundary.
