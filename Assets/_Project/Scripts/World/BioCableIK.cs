@@ -203,7 +203,7 @@ namespace Hecton8.World
                 Vector3 toAttractor = attractorPositionWS - point;
                 Vector3 attractForce = toAttractor * (attractorSpring * LerpClamped(0.2f, 1f, tail01) * clampedAttraction);
 
-                Vector3 wrapOffset = wrapAxis * Mathf.Sin((tail01 * 4.5f + _oscillationTime * 1.9f)) * segmentLength * 0.55f;
+                Vector3 wrapOffset = wrapAxis * FastTriangleSineSigned(tail01 * 4.5f + _oscillationTime * 1.9f) * segmentLength * 0.55f;
                 Vector3 wrapForce = wrapOffset * (wrapStrength * clampedWrap * Mathf.SmoothStep(0f, 1f, tail01));
 
                 velocity += (springForce + attractForce + wrapForce + velocityBias) * deltaTime;
@@ -221,6 +221,12 @@ namespace Hecton8.World
             UpdateSparkAnchor();
             ApplyVisualState();
             SyncRenderer();
+        }
+
+        private static float FastTriangleSineSigned(float radians)
+        {
+            float cycle = math.frac((radians * 0.159154943f) + 0.25f);
+            return 1f - math.abs((cycle * 4f) - 2f);
         }
 
         /// <summary>

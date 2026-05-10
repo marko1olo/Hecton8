@@ -189,7 +189,7 @@ namespace Hecton8.Audio
             InventoryRunawayExplosion = 2
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         internal struct ActiveEmitterSample
         {
             public AbsoluteUniversePosition PositionAup;
@@ -197,14 +197,14 @@ namespace Hecton8.Audio
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         internal struct ActiveImpactEmitterSample
         {
             public AbsoluteUniversePosition PositionAup;
             public float Amplitude;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         internal struct BinauralEmitterTelemetry
         {
             public Vector3 Position;
@@ -219,7 +219,7 @@ namespace Hecton8.Audio
             public int Valid;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Size = 96)]
         private struct DelayedAudioEvent
         {
             public DelayedAudioEventKind Kind;
@@ -236,7 +236,7 @@ namespace Hecton8.Audio
             public float TraumaWeight;
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Size = 80)]
         private struct ImpactEmitterSample
         {
             public Vector3 Position;
@@ -891,11 +891,9 @@ namespace Hecton8.Audio
             if (effectivePoolSize < _poolSize)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogErrorFormat(
-                    this,
-                    "[SpatialAudioManager] World pool requested {0} authored nodes, found {1}. Assign pre-authored AudioSource + AudioLowPassFilter children before play.",
-                    _poolSize,
-                    effectivePoolSize);
+                Debug.LogError(
+                    "[SpatialAudioManager] World pool under-authored. Assign pre-authored AudioSource + AudioLowPassFilter children before play.",
+                    this);
 #endif
             }
 
@@ -959,11 +957,9 @@ namespace Hecton8.Audio
             if (effectivePool2DSize < _pool2DSize)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogErrorFormat(
-                    this,
-                    "[SpatialAudioManager] Helmet/UI pool requested {0} authored nodes, found {1}. Assign pre-authored 2D AudioSource children before play.",
-                    _pool2DSize,
-                    effectivePool2DSize);
+                Debug.LogError(
+                    "[SpatialAudioManager] Helmet/UI pool under-authored. Assign pre-authored 2D AudioSource children before play.",
+                    this);
 #endif
             }
 
@@ -1668,7 +1664,7 @@ namespace Hecton8.Audio
             if (!(energy > bestScore))
                 return;
 
-            float3 sourceDirection = NormalizeApprox(runtimeDelta);
+            float3 sourceDirection = ResolveDominantAxisDirection(runtimeDelta);
             float earAxisDot = math.clamp(math.dot(listenerRight, sourceDirection), -1f, 1f);
             float absSin = math.abs(earAxisDot);
             float waterDensityMul = math.saturate(_listenerWaterDensityMul);
@@ -1797,11 +1793,7 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (ShouldEmitEditorThrottledLog(ref _nextWorldPoolFullEditorLogTime, PoolFullEditorLogIntervalSeconds))
             {
-                Debug.LogFormat(
-                    this,
-                    "[SpatialAudioManager] Pool full ({0}). Evicting quietest source at index {1}.",
-                    _poolSize,
-                    quietestIndex);
+                Debug.Log("[SpatialAudioManager] World pool full. Evicting quietest source.", this);
             }
 #endif
 
@@ -2256,7 +2248,13 @@ namespace Hecton8.Audio
         private static float FastSineRadians(float radians)
         {
             float phase = radians * InverseTwoPi;
-            phase -= math.floor(phase);
+            int whole = (int)phase;
+            phase -= whole;
+            if (phase < 0f)
+                phase += 1f;
+            else if (phase >= 1f)
+                phase -= 1f;
+
             float centered = phase > 0.5f ? phase - 1f : phase;
             float wave = (4f * centered) - (8f * centered * math.abs(centered));
             return wave + 0.225f * ((wave * math.abs(wave)) - wave);
@@ -2591,7 +2589,7 @@ namespace Hecton8.Audio
             if (local >= 0f && local < cellSize)
                 return;
 
-            long gridDelta = (long)math.floor(local / cellSize);
+            long gridDelta = FastFloorToLong(local / cellSize);
             grid += gridDelta;
             local -= gridDelta * cellSize;
             if (local < 0f)
@@ -2692,6 +2690,10 @@ namespace Hecton8.Audio
         private static float3 ResolveDominantAxisDirection(float3 direction)
         {
             float3 absDirection = math.abs(direction);
+            float maxAxis = math.max(absDirection.x, math.max(absDirection.y, absDirection.z));
+            if (!(maxAxis > 0.0001f))
+                return new float3(0f, 0f, 0f);
+
             if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
                 return direction.x < 0f ? new float3(-1f, 0f, 0f) : new float3(1f, 0f, 0f);
 
@@ -3195,7 +3197,7 @@ namespace Hecton8.Audio
             if (distanceSq <= 0.0001f)
                 return false;
 
-            float3 sourceDirection = NormalizeApprox(toSource);
+            float3 sourceDirection = ResolveDominantAxisDirection(toSource);
             float forwardDot = math.dot(listenerForward, sourceDirection);
             if (forwardDot >= RearHemisphereLowPassStartDot)
                 return false;
@@ -4273,7 +4275,7 @@ namespace Hecton8.Audio
                 int azimuthIndex = EncodeAcousticRadarGridAzimuthFast(listenerLocalPosition);
                 float elevation01 = ResolveElevation01Fast(listenerLocalPosition);
                 int elevationIndex = math.clamp(
-                    (int)math.floor(elevation01 * AcousticRadarGridElevationBins),
+                    FastFloorToInt(elevation01 * AcousticRadarGridElevationBins),
                     0,
                     AcousticRadarGridElevationBins - 1);
                 float transmission = ResolveRadarTransmission(sourcePosition, listenerWorldPosition, _radarNearestEmitterRoots[i]);
@@ -4457,7 +4459,7 @@ namespace Hecton8.Audio
             float distanceSq = math.lengthsq(listenerToSourceAup);
             if (distanceSq > 0.0001f)
             {
-                float3 direction = NormalizeApprox(listenerToSourceAup);
+                float3 direction = ResolveDominantAxisDirection(listenerToSourceAup);
                 float relativeVelocity = math.dot((float3)(listenerVelocity - sourceVelocity), direction);
                 float clampedRelativeVelocity = math.clamp(
                     relativeVelocity,
@@ -4645,12 +4647,16 @@ namespace Hecton8.Audio
             return maxAxis + midAxis * 0.375f + minAxis * 0.125f;
         }
 
-        private static float3 NormalizeApprox(float3 value)
+        private static int FastFloorToInt(float value)
         {
-            float magnitude = ApproximateMagnitude3D(value);
-            return magnitude > 0.0001f
-                ? value * math.rcp(magnitude)
-                : new float3(0f, 0f, 0f);
+            int truncated = (int)value;
+            return truncated > value ? truncated - 1 : truncated;
+        }
+
+        private static long FastFloorToLong(float value)
+        {
+            long truncated = (long)value;
+            return truncated > value ? truncated - 1L : truncated;
         }
 
         private static int EncodeAcousticRadarDegreeBinFast(float3 listenerLocalPosition)
@@ -4747,11 +4753,7 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (ShouldEmitEditorThrottledLog(ref _nextHelmetPoolFullEditorLogTime, PoolFullEditorLogIntervalSeconds))
             {
-                Debug.LogFormat(
-                    this,
-                    "[SpatialAudioManager] 2D pool full ({0}). Evicting quietest source at index {1}.",
-                    _pool2DSize,
-                    quietestIndex);
+                Debug.Log("[SpatialAudioManager] Helmet/UI pool full. Evicting quietest source.", this);
             }
 #endif
 

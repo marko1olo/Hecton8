@@ -89,7 +89,29 @@ float3 SampleTerrainNormal(float2 uv)
 
     float3 tangentX = float3(_HectonScatterTerrainSize.x * texel * 2.0, (right - left) * _HectonScatterTerrainSize.y, 0.0);
     float3 tangentZ = float3(0.0, (front - back) * _HectonScatterTerrainSize.y, _HectonScatterTerrainSize.z * texel * 2.0);
-    return normalize(cross(tangentZ, tangentX));
+    return cross(tangentZ, tangentX);
+}
+
+bool PassesNormalYThresholdSq(float3 normalWS, float threshold)
+{
+    float normalLenSq = dot(normalWS, normalWS);
+    if (!isfinite(normalLenSq) || normalLenSq <= 0.00000001)
+        return false;
+
+    float safeThreshold = saturate(threshold);
+    return normalWS.y >= 0.0 && normalWS.y * normalWS.y >= safeThreshold * safeThreshold * normalLenSq;
+}
+
+bool PassesDotThresholdSq(float dotValue, float threshold, float lengthProductSq)
+{
+    if (!isfinite(dotValue) || !isfinite(threshold) || !isfinite(lengthProductSq) || lengthProductSq <= 0.00000001)
+        return true;
+
+    float thresholdSq = threshold * threshold;
+    float dotSq = dotValue * dotValue;
+    return threshold >= 0.0
+        ? dotValue >= 0.0 && dotSq >= thresholdSq * lengthProductSq
+        : dotValue >= 0.0 || dotSq <= thresholdSq * lengthProductSq;
 }
 
 bool IsSphereVisibleInFrustum(float3 centerWS, float radius)
@@ -144,11 +166,11 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float height01 = SampleHeight01(terrainUv);
     float3 normalWS = SampleTerrainNormal(terrainUv);
-    if (normalWS.y < _HectonScatterMinNormalY)
+    if (!PassesNormalYThresholdSq(normalWS, _HectonScatterMinNormalY))
         return;
 
     float scale = lerp(_HectonScatterScaleRange.x, _HectonScatterScaleRange.y, Hash01(baseHash ^ 0x9f6abc1du));
-    float rotation = Hash01(baseHash ^ 0x42bead31u) * TWO_PI;
+    float rotation = (float)(HashUint(baseHash ^ 0x42bead31u) & 7u);
     float3 positionWS = float3(
         worldXZ.x,
         _HectonScatterTerrainPosition.y + height01 * _HectonScatterTerrainSize.y,
@@ -156,7 +178,7 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     ScatterInstanceGpuData instanceData;
     instanceData.PositionScale = float4(positionWS, scale);
-    instanceData.NormalRotation = float4(normalize(normalWS), rotation);
+    instanceData.NormalRotation = float4(normalWS, rotation);
     _HectonScatterInstances[instanceIndex] = instanceData;
 
     float3 toCamera = positionWS - _HectonScatterCameraPosition;
@@ -166,11 +188,12 @@ void GenerateScatterInstances(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (distanceToCameraSq > maxDistanceSq || distanceToCameraSq <= 0.00000001)
         return;
 
-    float3 directionToSample = toCamera * rsqrt(distanceToCameraSq);
     float peripheralDistance = max(_HectonScatterPeripheralDistance, 0.0);
     float peripheralDistanceSq = peripheralDistance * peripheralDistance;
+    float cameraForwardLenSq = dot(_HectonScatterCameraForward, _HectonScatterCameraForward);
+    float dotForward = dot(toCamera, _HectonScatterCameraForward);
     if (distanceToCameraSq > peripheralDistanceSq &&
-        dot(directionToSample, normalize(_HectonScatterCameraForward)) < _HectonScatterPeripheralDot)
+        !PassesDotThresholdSq(dotForward, _HectonScatterPeripheralDot, distanceToCameraSq * cameraForwardLenSq))
     {
         return;
     }

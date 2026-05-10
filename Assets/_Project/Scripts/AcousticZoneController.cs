@@ -1179,8 +1179,8 @@ namespace Hecton8.Audio
 
             _stateInitialized = false;
             _registeredToTickManager = false;
-            // COLD ALLOC: List<AudioSource>[8] — reused player-local audio scan buffer — owner: AcousticZoneController
-            _playerAudioSources = new List<AudioSource>(8);
+            // COLD ALLOC: List<AudioSource>[32] — reused player-local audio scan buffer — owner: AcousticZoneController
+            _playerAudioSources = new List<AudioSource>(32);
 
 #if UNITY_EDITOR
             TryAssignEditorAuthoringDefaults();
@@ -1428,7 +1428,9 @@ namespace Hecton8.Audio
             // ── Perehodnyy zvuk ──
             PlayTransitionSound(waterDrainSound);
 
-            LogDiagnostic($"[AcousticZoneController] Interior (dry zone). Transition: {interiorTransitionDuration}s");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogDiagnostic("[AcousticZoneController] Interior transition.");
+#endif
         }
 
         /// <summary>
@@ -1446,7 +1448,9 @@ namespace Hecton8.Audio
             if (!TransitionToResolvedSnapshot(AcousticZoneState.Surface, surfaceTransitionDuration))
                 return;
 
-            LogDiagnostic($"[AcousticZoneController] Surface/open air. Transition: {surfaceTransitionDuration}s");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogDiagnostic("[AcousticZoneController] Surface transition.");
+#endif
         }
 
         private void TransitionToUnderwater()
@@ -1458,7 +1462,9 @@ namespace Hecton8.Audio
             // ── Perehodnyy zvuk ──
             PlayTransitionSound(waterFillSound);
 
-            LogDiagnostic($"[AcousticZoneController] Underwater. Transition: {underwaterTransitionDuration}s");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogDiagnostic("[AcousticZoneController] Underwater transition.");
+#endif
         }
 
         /// <summary>
@@ -1485,7 +1491,9 @@ namespace Hecton8.Audio
 
             UpdateDiagnostics(zone);
 
-            LogDiagnostic($"[AcousticZoneController] Initial zone: {zone}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogDiagnostic("[AcousticZoneController] Initial zone resolved.");
+#endif
         }
 
         // ══════════════════════════════════════════════════════════
@@ -2563,7 +2571,13 @@ namespace Hecton8.Audio
         private static float FastSineRadians(float radians)
         {
             float phase = radians * InvTwoPi;
-            phase -= math.floor(phase);
+            int whole = (int)phase;
+            phase -= whole;
+            if (phase < 0f)
+                phase += 1f;
+            else if (phase >= 1f)
+                phase -= 1f;
+
             float centered = phase > 0.5f ? phase - 1f : phase;
             float wave = (4f * centered) - (8f * centered * math.abs(centered));
             return wave + 0.225f * ((wave * math.abs(wave)) - wave);
@@ -3087,7 +3101,9 @@ namespace Hecton8.Audio
             snapshot.TransitionTo(transitionTime);
             ArmSnapshotTransitionLock(transitionTime);
             CacheResolvedSnapshotState(zone, snapshot);
-            LogDiagnostic($"[AcousticZoneController] Snapshot activated: {snapshot.name}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogDiagnostic("[AcousticZoneController] Snapshot activated.");
+#endif
             return true;
         }
 
@@ -3590,7 +3606,7 @@ namespace Hecton8.Audio
             {
                 LogSnapshotFallbackWarningOnce(
                     ref _warnedIncompleteMixerSnapshotAuthoring,
-                    $"[AcousticZoneController] MasterMixer snapshot authoring is incomplete. Snapshot count={snapshotCount}. Expected named coverage includes Underwater, BaseInterior, Surface, SurfaceRain, and SurfaceStorm.");
+                    "[AcousticZoneController] MasterMixer snapshot authoring is incomplete. Expected named coverage includes Underwater, BaseInterior, Surface, SurfaceRain, and SurfaceStorm.");
             }
 
         }

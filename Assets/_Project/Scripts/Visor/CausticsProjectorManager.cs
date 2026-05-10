@@ -13,19 +13,10 @@ namespace Hecton8.Visor
     /// Player-local shader-only caustics state publisher. No render texture, compute shader, or dispatch is owned here.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CausticsProjectorManager : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class CausticsProjectorManager : MonoBehaviour, ISlowTickable
     {
-        private const float DependencyResolveRetryIntervalSeconds = 0.5f;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private const double CausticsPublishBudgetWarningMilliseconds = 0.2d;
-        private const int CausticsPerformanceWarningCooldownFrames = 30;
-#endif
         private const float InvTwoPi = 1f / (math.PI * 2f);
         private const float ShaderVectorPublishEpsilon = 0.0001f;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private const uint TelemetryWarningCausticsPublishOverBudgetHash = 0xC42257A1u;
-        private const uint TelemetryContextCausticsProjectorManagerHash = 0x75C9CA57u;
-#endif
         private static readonly int _CausticsWorldRectId = Shader.PropertyToID("_HectonProjectedCausticsWorldRect");
         private static readonly int _CausticsParamsId = Shader.PropertyToID("_HectonProjectedCausticsParams");
         private static readonly int _CausticsColorId = Shader.PropertyToID("_HectonProjectedCausticsColor");
@@ -73,18 +64,12 @@ namespace Hecton8.Visor
         [SerializeField] private float _debugWaveDisplacement;
         [SerializeField] private Vector2 _debugWaveFlow;
 
-        private bool _registeredTick;
         private bool _registeredSlowTick;
         private float _fade01;
         private HectonSurvivalSystem _survivalSystem;
         private Transform _playerTransform;
         private Camera _gameplayCamera;
         private Vector4 _worldRect;
-        private float _dependencyResolveRetryRemaining;
-        private float _shaderTimeSeconds;
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private int _nextPerformanceWarningFrame;
-#endif
         private Vector4 _publishedCausticsWorldRect;
         private Vector4 _publishedCausticsColor;
         private Vector4 _publishedCausticsSimulationParamsA;
@@ -99,19 +84,18 @@ namespace Hecton8.Visor
         {
             _playerTransform = transform;
             ResolveDependencies();
-            PublishShaderOnlyGlobals(_shaderTimeSeconds);
+            PublishShaderOnlyGlobals();
         }
 
         private void OnEnable()
         {
             TryRegisterTickHandlers();
-            PublishShaderOnlyGlobals(_shaderTimeSeconds);
+            PublishShaderOnlyGlobals();
         }
 
         private void OnDisable()
         {
             TryUnregisterTickHandlers();
-            _dependencyResolveRetryRemaining = 0f;
             Shader.SetGlobalVector(_CausticsParamsId, Vector4.zero);
             Shader.SetGlobalVector(_CausticsTextureParamsId, Vector4.zero);
             InvalidatePublishedShaderVectorCache();
@@ -123,22 +107,6 @@ namespace Hecton8.Visor
             Shader.SetGlobalVector(_CausticsParamsId, Vector4.zero);
             Shader.SetGlobalVector(_CausticsTextureParamsId, Vector4.zero);
             InvalidatePublishedShaderVectorCache();
-        }
-
-        public void Tick(float deltaTime)
-        {
-            if (deltaTime < 0f || !math.isfinite(deltaTime))
-                return;
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            long publishStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-#endif
-            _shaderTimeSeconds += deltaTime;
-            ResolveDependenciesThrottled(deltaTime);
-            PublishShaderOnlyGlobals(_shaderTimeSeconds);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            PublishCausticsPerformanceWarningIfNeeded(publishStartTimestamp);
-#endif
         }
 
         public void SlowTick()
@@ -162,6 +130,7 @@ namespace Hecton8.Visor
             _fade01 = math.saturate(fade);
             _debugDepthMeters = depthMeters;
             _debugFade01 = _fade01;
+            PublishShaderOnlyGlobals();
         }
 
         private void ResolveDependencies()
@@ -187,36 +156,13 @@ namespace Hecton8.Visor
 
         }
 
-        private void ResolveDependenciesThrottled(float deltaTime)
-        {
-            if (!NeedsDependencyResolve())
-                return;
-
-            if (_dependencyResolveRetryRemaining > 0f)
-            {
-                _dependencyResolveRetryRemaining = math.max(0f, _dependencyResolveRetryRemaining - deltaTime);
-                if (_dependencyResolveRetryRemaining > 0f)
-                    return;
-            }
-
-            _dependencyResolveRetryRemaining = DependencyResolveRetryIntervalSeconds;
-            ResolveDependencies();
-        }
-
-        private bool NeedsDependencyResolve()
-        {
-            return _playerTransform == null ||
-                   _survivalSystem == null ||
-                   _gameplayCamera == null;
-        }
-
-        private void PublishShaderOnlyGlobals(float timeValue)
+        private void PublishShaderOnlyGlobals()
         {
             Vector3 runtimeAnchor = ResolveRuntimeAnchor();
             UpdateWorldRect(runtimeAnchor);
             float waterLevel = ResolveWaterLevel();
-            Vector4 abyssalFlowWeatherCurrent = ResolveAbyssalFlowWeatherCurrent(timeValue, runtimeAnchor);
-            Vector4 waveCoupling = ResolveFakeWaveCoupling(timeValue, in abyssalFlowWeatherCurrent);
+            Vector4 abyssalFlowWeatherCurrent = ResolveAbyssalFlowWeatherCurrent(runtimeAnchor);
+            Vector4 waveCoupling = ResolveFakeWaveCoupling(in abyssalFlowWeatherCurrent);
 
             Color linearScatteringColor = scatteringColor.linear;
             Vector4 causticsColor = new Vector4(
@@ -225,7 +171,7 @@ namespace Hecton8.Visor
                 linearScatteringColor.b,
                 linearScatteringColor.a);
             Vector4 simulationParamsA = new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed);
-            Vector4 simulationParamsB = new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, waterLevel);
+            Vector4 simulationParamsB = new Vector4(ridgeSharpness, secondaryLayerWeight, 0f, waterLevel);
             Vector4 textureParams = Vector4.zero;
             Vector4 causticsParams = new Vector4(
                 _fade01 * math.max(0f, causticsIntensity),
@@ -265,14 +211,14 @@ namespace Hecton8.Visor
             return fluidEngine != null ? fluidEngine.WaterLevel : 4900f;
         }
 
-        private Vector4 ResolveFakeWaveCoupling(float timeValue, in Vector4 abyssalFlowWeatherCurrent)
+        private Vector4 ResolveFakeWaveCoupling(in Vector4 abyssalFlowWeatherCurrent)
         {
             float2 flowXZ = new float2(abyssalFlowWeatherCurrent.x, abyssalFlowWeatherCurrent.z);
             if (!math.all(math.isfinite(flowXZ)))
                 flowXZ = float2.zero;
 
             float flowEnergy01 = math.saturate(math.lengthsq(flowXZ) * (1f / 400f));
-            float phase = timeValue * (0.23f + flowEnergy01 * 0.12f) + math.dot(flowXZ, new float2(0.071f, -0.053f));
+            float phase = math.dot(flowXZ, new float2(0.071f, -0.053f)) + flowEnergy01 * 1.73f;
             float fakeDisplacement =
                 (EvaluateCheapWaveSigned(phase) * 0.12f) +
                 (EvaluateCheapWaveSigned(phase * 1.6180339f + 1.73f) * 0.045f);
@@ -330,23 +276,7 @@ namespace Hecton8.Visor
             return (triangle * 2f) - 1f;
         }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-        private void PublishCausticsPerformanceWarningIfNeeded(long publishStartTimestamp)
-        {
-            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - publishStartTimestamp;
-            double elapsedMilliseconds = elapsedTicks * 1000.0d / System.Diagnostics.Stopwatch.Frequency;
-            if (elapsedMilliseconds <= CausticsPublishBudgetWarningMilliseconds || Time.frameCount < _nextPerformanceWarningFrame)
-                return;
-
-            _nextPerformanceWarningFrame = Time.frameCount + CausticsPerformanceWarningCooldownFrames;
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                TelemetryWarningCausticsPublishOverBudgetHash,
-                TelemetryContextCausticsProjectorManagerHash,
-                (float)elapsedMilliseconds);
-        }
-#endif
-
-        private Vector4 ResolveAbyssalFlowWeatherCurrent(float timeValue, in Vector3 samplePosition)
+        private Vector4 ResolveAbyssalFlowWeatherCurrent(in Vector3 samplePosition)
         {
             float3 flow = float3.zero;
             Hecton8.Physics.HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
@@ -359,7 +289,7 @@ namespace Hecton8.Visor
             if (!math.all(math.isfinite(flow)))
                 flow = float3.zero;
 
-            Vector4 resolved = new Vector4(flow.x, flow.y, flow.z, timeValue);
+            Vector4 resolved = new Vector4(flow.x, flow.y, flow.z, 0f);
             _debugAbyssalFlowWeatherCurrent = resolved;
             return resolved;
         }
@@ -399,21 +329,12 @@ namespace Hecton8.Visor
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_registeredTick)
-                _registeredTick = GlobalRegistry.TryRegisterUpdatable(this, PriorityLayer.UI);
-
             if (!_registeredSlowTick)
                 _registeredSlowTick = GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.UI);
         }
 
         private void TryUnregisterTickHandlers()
         {
-            if (_registeredTick)
-            {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-                _registeredTick = false;
-            }
-
             if (_registeredSlowTick)
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);

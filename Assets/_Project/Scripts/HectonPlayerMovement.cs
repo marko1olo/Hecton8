@@ -77,6 +77,14 @@ namespace Hecton8.Gameplay
         private float _runtimeInventoryLoadRatio;
         private float _runtimeInventoryTotalMassKg;
         private const float TwoPi = 2f * math.PI;
+        private const int DegreeSinCosLutBits = 10;
+        private const int DegreeSinCosLutSize = 1 << DegreeSinCosLutBits;
+        private const int DegreeSinCosLutMask = DegreeSinCosLutSize - 1;
+        private const float DegreeSinCosLutScale = DegreeSinCosLutSize / 360f;
+        private const float InvTwoPi = 0.15915494309189535f;
+        private static readonly float[] _degreeSinLut = new float[DegreeSinCosLutSize]; // COLD ALLOC: float[1024] - hot-path degree sine LUT - owner: HectonPlayerMovement
+        private static readonly float[] _degreeCosLut = new float[DegreeSinCosLutSize]; // COLD ALLOC: float[1024] - hot-path degree cosine LUT - owner: HectonPlayerMovement
+        private static bool _degreeSinCosLutInitialized;
         private const float LocalGravityOverrideBlendSeconds = 1f;
         private const float VrComfortGravityTransitionSeconds = 1f;
         private const float VrComfortGravityTransitionTargetEpsilon = 0.015f;
@@ -1995,6 +2003,51 @@ namespace Hecton8.Gameplay
             return max + (0.375f * min);
         }
 
+        private static void EnsureDegreeSinCosLutInitialized()
+        {
+            if (_degreeSinCosLutInitialized)
+                return;
+
+            for (int i = 0; i < DegreeSinCosLutSize; i++)
+            {
+                float radians = i * TwoPi / DegreeSinCosLutSize;
+                _degreeSinLut[i] = math.sin(radians);
+                _degreeCosLut[i] = math.cos(radians);
+            }
+
+            _degreeSinCosLutInitialized = true;
+        }
+
+        private static void ResolveDegreesSinCosFast(float degrees, out float sinValue, out float cosValue)
+        {
+            if (!_degreeSinCosLutInitialized)
+                EnsureDegreeSinCosLutInitialized();
+
+            if (!math.isfinite(degrees))
+            {
+                sinValue = 0f;
+                cosValue = 1f;
+                return;
+            }
+
+            float scaled = degrees * DegreeSinCosLutScale;
+            int rounded = (int)(scaled >= 0f ? scaled + 0.5f : scaled - 0.5f);
+            int index = rounded & DegreeSinCosLutMask;
+            sinValue = _degreeSinLut[index];
+            cosValue = _degreeCosLut[index];
+        }
+
+        private static float ResolveDegreesCosFast(float degrees)
+        {
+            ResolveDegreesSinCosFast(degrees, out _, out float cosValue);
+            return cosValue;
+        }
+
+        private static float SignedTriangleRadians(float radians)
+        {
+            return SignedTriangle01(radians * InvTwoPi + 0.25f);
+        }
+
         private static float MagnitudeFromRsqrt(Vector3 value)
         {
             float sqrMagnitude =
@@ -2575,9 +2628,7 @@ namespace Hecton8.Gameplay
             float resolvedBodyYaw = _activeTransportPlatformTransform != null
                 ? ResolveYawRelativeToTransportPlatform(_bodyYaw)
                 : _bodyYaw;
-            float yawRad = resolvedBodyYaw * DEG_TO_RAD;
-            float sinYaw = math.sin(yawRad);
-            float cosYaw = math.cos(yawRad);
+            ResolveDegreesSinCosFast(resolvedBodyYaw, out float sinYaw, out float cosYaw);
             stepDirection.x = sinYaw * inputZ + cosYaw * inputX;
             stepDirection.y = 0f;
             stepDirection.z = cosYaw * inputZ - sinYaw * inputX;
@@ -2629,8 +2680,8 @@ namespace Hecton8.Gameplay
                 probeDistance = math.max(0.05f, dryInteriorFootProbeDistance);
             }
 
-            float yawRad = _bodyYaw * DEG_TO_RAD;
-            Vector3 bodyForward = new Vector3(math.sin(yawRad), 0f, math.cos(yawRad));
+            ResolveDegreesSinCosFast(_bodyYaw, out float sinYaw, out float cosYaw);
+            Vector3 bodyForward = new Vector3(sinYaw, 0f, cosYaw);
             Vector3 bodyRight = new Vector3(bodyForward.z, 0f, -bodyForward.x);
             Vector3 center = new Vector3(_fixedFrameBodyPosition.x, probeOriginY, _fixedFrameBodyPosition.z);
             Vector3 forwardOffset = bodyForward * forwardOffsetDistance;
@@ -3006,6 +3057,7 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
+            EnsureDegreeSinCosLutInitialized();
             _cachedTransform = transform;
 
             _rb = GetComponent<Rigidbody>();
@@ -5528,9 +5580,7 @@ namespace Hecton8.Gameplay
         private void UpdateCrestQueryPoints(float forwardDistance, float lateralDistance)
         {
             Vector3 center = _rb.position;
-            float yawRad = _bodyYaw * DEG_TO_RAD;
-            float sinYaw = math.sin(yawRad);
-            float cosYaw = math.cos(yawRad);
+            ResolveDegreesSinCosFast(_bodyYaw, out float sinYaw, out float cosYaw);
             Vector3 bodyForward = new Vector3(sinYaw, 0f, cosYaw);
             Vector3 bodyRight = new Vector3(cosYaw, 0f, -sinYaw);
 
@@ -6219,9 +6269,9 @@ namespace Hecton8.Gameplay
             float forwardVelocity01 = math.clamp(localVelocity.z * invSpeed, -1f, 1f);
 
             float phase = _underwaterSomaticPhase;
-            float primaryWave = math.sin(phase);
-            float secondaryWave = math.sin(phase * 0.5f + 1.5707964f);
-            float lateralWave = math.sin(phase * 0.73f + 1.5707964f);
+            float primaryWave = SignedTriangleRadians(phase);
+            float secondaryWave = SignedTriangleRadians(phase * 0.5f + 1.5707964f);
+            float lateralWave = SignedTriangleRadians(phase * 0.73f + 1.5707964f);
             float amplitudeDamping = math.lerp(1f, 0.45f, speed01);
             float fatigueAmplitude = math.lerp(1f, math.max(1f, underwaterSomaticFatigueSwayMultiplier), _underwaterSomaticFatigue01);
             float weight = _underwaterSomaticWeight * amplitudeDamping * fatigueAmplitude;
@@ -6330,11 +6380,13 @@ namespace Hecton8.Gameplay
         private static float NlerpRollDegrees(float currentDegrees, float targetDegrees, float deltaTime, float duration)
         {
             float t = math.saturate(deltaTime / math.max(0.0001f, duration));
-            quaternion current = quaternion.AxisAngle(new float3(0f, 0f, 1f), math.radians(currentDegrees));
-            quaternion target = quaternion.AxisAngle(new float3(0f, 0f, 1f), math.radians(targetDegrees));
-            quaternion resolved = NlerpQuaternion(current, target, t);
-            float3 up = math.mul(resolved, new float3(0f, 1f, 0f));
-            return math.degrees(math.atan2(-up.x, up.y));
+            float delta = targetDegrees - currentDegrees;
+            if (delta > 180f)
+                delta -= 360f;
+            else if (delta < -180f)
+                delta += 360f;
+
+            return currentDegrees + delta * t;
         }
 
         private void RegisterVrComfortVisualBounce(float intensity01)
@@ -7434,8 +7486,8 @@ namespace Hecton8.Gameplay
             Quaternion targetSurfacePose = Quaternion.identity;
             if (_isSurfaceSwimming && _crestSamplingSucceeded && _surfaceLockBlend > 0.001f)
             {
-                float yawRad = _bodyYaw * DEG_TO_RAD;
-                Vector3 bodyForward = new Vector3(math.sin(yawRad), 0f, math.cos(yawRad));
+                ResolveDegreesSinCosFast(_bodyYaw, out float sinYaw, out float cosYaw);
+                Vector3 bodyForward = new Vector3(sinYaw, 0f, cosYaw);
                 Vector3 desiredForward = ProjectOnPlaneFast(bodyForward, EffectiveWaterSurfaceNormal);
                 desiredForward = desiredForward.sqrMagnitude <= 0.0001f
                     ? bodyForward
@@ -7531,8 +7583,8 @@ namespace Hecton8.Gameplay
                 Vector3 horizontalDisplacement = _dynamicAverageWaterDisplacement;
                 horizontalDisplacement.y = 0f;
                 Vector3 horizontalWaveVector = horizontalWaveVelocity + horizontalDisplacement * underwaterTurbulenceFrequency + EffectiveWaterFlowVelocity * 0.55f;
-                float yawRad = _bodyYaw * DEG_TO_RAD;
-                Vector3 fallbackWaveVector = new Vector3(math.sin(yawRad), 0f, math.cos(yawRad));
+                ResolveDegreesSinCosFast(_bodyYaw, out float fallbackSinYaw, out float fallbackCosYaw);
+                Vector3 fallbackWaveVector = new Vector3(fallbackSinYaw, 0f, fallbackCosYaw);
                 if (horizontalWaveVector.sqrMagnitude <= 0.0001f)
                 {
                     horizontalWaveVector = fallbackWaveVector;
@@ -7544,9 +7596,9 @@ namespace Hecton8.Gameplay
 
                 Vector3 crossWave = new Vector3(-horizontalWaveVector.z, 0f, horizontalWaveVector.x);
                 float turbulencePhase = _currentTimer * underwaterTurbulenceFrequency;
-                float lateralOscillation = math.sin(turbulencePhase * TwoPi + _dynamicAverageWaterDisplacement.x * 1.65f + _dynamicAverageWaterVelocity.z * 0.3f);
-                float verticalOscillation = math.cos(turbulencePhase * TwoPi * 1.37f + _dynamicAverageWaterDisplacement.z * 1.1f - _dynamicAverageWaterVelocity.x * 0.45f);
-                float undertowOscillation = math.sin(turbulencePhase * TwoPi * 0.53f + _dynamicWaveHeightSpan * 1.6f);
+                float lateralOscillation = SignedTriangleRadians(turbulencePhase * TwoPi + _dynamicAverageWaterDisplacement.x * 1.65f + _dynamicAverageWaterVelocity.z * 0.3f);
+                float verticalOscillation = SignedTriangleRadians(turbulencePhase * TwoPi * 1.37f + _dynamicAverageWaterDisplacement.z * 1.1f - _dynamicAverageWaterVelocity.x * 0.45f + 1.5707964f);
+                float undertowOscillation = SignedTriangleRadians(turbulencePhase * TwoPi * 0.53f + _dynamicWaveHeightSpan * 1.6f);
 
                 float lateralForce = underwaterTurbulenceForce * turbulenceIntensity * _rb.mass;
                 float verticalForce = underwaterTurbulenceVerticalForce * turbulenceIntensity * _rb.mass;
@@ -7733,7 +7785,7 @@ namespace Hecton8.Gameplay
 
             float inverseSuctionMagnitude = math.rsqrt(suctionSqr);
             float oppositionDot = DotVector(counterDirection, -suctionVector * inverseSuctionMagnitude);
-            float oppositionThreshold = math.cos(math.radians(180f - abyssalCounterDriveOppositionAngleDegrees));
+            float oppositionThreshold = ResolveDegreesCosFast(180f - abyssalCounterDriveOppositionAngleDegrees);
             if (oppositionDot < oppositionThreshold)
                 return;
 
@@ -8068,8 +8120,8 @@ namespace Hecton8.Gameplay
                 ? -NormalizeVectorRsqrt(planarVelocity, Vector3.zero)
                 : ProjectOnPlaneFast(hitNormal, Vector3.up);
 
-            float fallbackYawRad = _bodyYaw * DEG_TO_RAD;
-            Vector3 fallbackLateralDirection = new Vector3(-math.sin(fallbackYawRad), 0f, -math.cos(fallbackYawRad));
+            ResolveDegreesSinCosFast(_bodyYaw, out float fallbackSinYaw, out float fallbackCosYaw);
+            Vector3 fallbackLateralDirection = new Vector3(-fallbackSinYaw, 0f, -fallbackCosYaw);
             if (lateralDirection.sqrMagnitude <= 0.0001f)
             {
                 lateralDirection = fallbackLateralDirection;
@@ -9375,7 +9427,7 @@ namespace Hecton8.Gameplay
 
         private void RefreshGroundSlopeCache()
         {
-            _minGroundNormalY = math.cos(maxGroundAngle * DEG_TO_RAD);
+            _minGroundNormalY = ResolveDegreesCosFast(maxGroundAngle);
         }
 
         private void ConsumeJumpRequest()
@@ -10318,13 +10370,8 @@ namespace Hecton8.Gameplay
             float hullStressTurnScale = ResolveHullStressTurnResponsivenessScale(transportPreset);
             transportStrafeInputScale *= hullStressTurnScale;
 
-            float bodyYawRad = ResolveVrSwimmingReferenceYawDegrees() * DEG_TO_RAD;
-            float pitchRad = _cameraPitch * DEG_TO_RAD;
-
-            float sinBodyYaw = math.sin(bodyYawRad);
-            float cosBodyYaw = math.cos(bodyYawRad);
-            float sinPitch = math.sin(pitchRad);
-            float cosPitch = math.cos(pitchRad);
+            ResolveDegreesSinCosFast(ResolveVrSwimmingReferenceYawDegrees(), out float sinBodyYaw, out float cosBodyYaw);
+            ResolveDegreesSinCosFast(_cameraPitch, out float sinPitch, out float cosPitch);
             float fwdX;
             float fwdY;
             float fwdZ;
@@ -10589,9 +10636,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                float yawRad = _bodyYaw * DEG_TO_RAD;
-                float sinYaw = math.sin(yawRad);
-                float cosYaw = math.cos(yawRad);
+                ResolveDegreesSinCosFast(_bodyYaw, out float sinYaw, out float cosYaw);
 
                 _moveDirection.x = sinYaw * _inputV + cosYaw * _inputH;
                 _moveDirection.y = 0f;
@@ -10844,9 +10889,7 @@ namespace Hecton8.Gameplay
             {
                 if (planarInputMagnitude > 0.001f)
                 {
-                    float yawRad = _bodyYaw * DEG_TO_RAD;
-                    float sinYaw = math.sin(yawRad);
-                    float cosYaw = math.cos(yawRad);
+                    ResolveDegreesSinCosFast(_bodyYaw, out float sinYaw, out float cosYaw);
 
                     float desiredX = sinYaw * _inputV + cosYaw * _inputH;
                     float desiredZ = cosYaw * _inputV - sinYaw * _inputH;
@@ -11551,12 +11594,12 @@ namespace Hecton8.Gameplay
             if (!_isWalking)
             {
                 Vector3 pos = bodyPos + Vector3.up * 1.5f;
-                float camR = _cameraYaw * DEG_TO_RAD;
-                float bodR = _bodyYaw * DEG_TO_RAD;
+                ResolveDegreesSinCosFast(_cameraYaw, out float cameraSinYaw, out float cameraCosYaw);
+                ResolveDegreesSinCosFast(_bodyYaw, out float bodySinYaw, out float bodyCosYaw);
                 Gizmos.color = Color.green;
-                Gizmos.DrawLine(pos, pos + new Vector3(math.sin(camR), 0f, math.cos(camR)) * 2f);
+                Gizmos.DrawLine(pos, pos + new Vector3(cameraSinYaw, 0f, cameraCosYaw) * 2f);
                 Gizmos.color = Color.red;
-                Gizmos.DrawLine(pos, pos + new Vector3(math.sin(bodR), 0f, math.cos(bodR)) * 1.5f);
+                Gizmos.DrawLine(pos, pos + new Vector3(bodySinYaw, 0f, bodyCosYaw) * 1.5f);
             }
 
             // Depth indicator

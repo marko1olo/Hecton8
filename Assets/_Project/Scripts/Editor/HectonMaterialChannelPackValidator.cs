@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 
@@ -301,8 +302,8 @@ namespace Hecton8.EditorTools
                     return false;
                 }
 
-                Color32[] pixels = snapshot.GetPixels32();
-                if (pixels == null || pixels.Length <= 0)
+                NativeArray<Color32> pixels = snapshot.GetRawTextureData<Color32>();
+                if (pixels.Length <= 0)
                 {
                     failureReason = "snapshot contains no pixels.";
                     return false;

@@ -659,7 +659,10 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(directionXz)) || math.lengthsq(directionXz) <= 0.000001f)
                 return new float2(1f, 0f);
 
-            return math.normalize(directionXz);
+            float2 absDirection = math.abs(directionXz);
+            return absDirection.x >= absDirection.y
+                ? new float2(directionXz.x < 0f ? -1f : 1f, 0f)
+                : new float2(0f, directionXz.y < 0f ? -1f : 1f);
         }
 
         private static int ResolvePillarEnvelopeRadiusCells(float radiusMeters, float edgeWarpMeters, float voxelSizeMeters)

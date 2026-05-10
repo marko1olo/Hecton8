@@ -159,24 +159,6 @@ namespace Hecton8.Caves
             return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
         }
 
-        private static float ApproxMagnitude(Vector3 value)
-        {
-            float ax = Mathf.Abs(value.x);
-            float ay = Mathf.Abs(value.y);
-            float az = Mathf.Abs(value.z);
-            float maxAxis = Mathf.Max(ax, Mathf.Max(ay, az));
-            float minAxis = Mathf.Min(ax, Mathf.Min(ay, az));
-            float midAxis = ax + ay + az - maxAxis - minAxis;
-            return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
-        }
-
-        private static Vector3 NormalizeApprox(Vector3 value, Vector3 fallback)
-        {
-            return value.sqrMagnitude > 0.000001f
-                ? value / Mathf.Max(ApproxMagnitude(value), 0.0001f)
-                : fallback;
-        }
-
         private float DecodeAt(int x, int y, int z)
         {
             int index = x + GridDimensions.x * (y + GridDimensions.y * z);
@@ -288,6 +270,33 @@ namespace Hecton8.Caves
 
         /// <summary>Voxel step size used by this runtime volume.</summary>
         public float VoxelSize => _voxelSize;
+
+        private static float ApproxMagnitude(float3 value)
+        {
+            float3 axis = math.abs(value);
+            float maxAxis = math.cmax(axis);
+            float minAxis = math.cmin(axis);
+            float midAxis = axis.x + axis.y + axis.z - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
+        }
+
+        private static float ApproxMagnitude(Vector3 value)
+        {
+            float ax = Mathf.Abs(value.x);
+            float ay = Mathf.Abs(value.y);
+            float az = Mathf.Abs(value.z);
+            float maxAxis = Mathf.Max(ax, Mathf.Max(ay, az));
+            float minAxis = Mathf.Min(ax, Mathf.Min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + midAxis * 0.375f + minAxis * 0.25f;
+        }
+
+        private static Vector3 NormalizeApprox(Vector3 value, Vector3 fallback)
+        {
+            return value.sqrMagnitude > 0.000001f
+                ? value / Mathf.Max(ApproxMagnitude(value), 0.0001f)
+                : fallback;
+        }
 
         /// <summary>
         /// Resolves the nearest voxel-corner world position for a raycast hit on this volume.
@@ -599,38 +608,61 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Samples the published runtime SDF gradient and resolves an outward-facing surface normal.
+        /// Samples the nearest published SDF grid node and resolves a cheap outward-facing surface normal.
         /// </summary>
         /// <param name="worldPosition">Runtime-space probe position near the target surface.</param>
-        /// <param name="probeDistance">Central-difference probe distance in meters.</param>
+        /// <param name="probeDistance">Reserved for API compatibility; nearest-grid sampling ignores it.</param>
         /// <param name="surfaceNormal">Resolved outward-facing normal.</param>
         /// <returns>True when a stable gradient could be resolved from the published SDF payload.</returns>
         public bool TrySampleSurfaceNormal(Vector3 worldPosition, float probeDistance, out Vector3 surfaceNormal)
         {
             surfaceNormal = Vector3.up;
 
-            if (!_runtimeDataReady || !_publishedSonarSdf.IsCreated)
+            if (!TrySampleNearestPublishedGradient(worldPosition, out Vector3 gradient))
                 return false;
 
-            float safeProbe = Mathf.Max(0.05f, probeDistance);
-            if (!TrySampleDensity(worldPosition + new Vector3(safeProbe, 0f, 0f), out float densityPosX) ||
-                !TrySampleDensity(worldPosition - new Vector3(safeProbe, 0f, 0f), out float densityNegX) ||
-                !TrySampleDensity(worldPosition + new Vector3(0f, safeProbe, 0f), out float densityPosY) ||
-                !TrySampleDensity(worldPosition - new Vector3(0f, safeProbe, 0f), out float densityNegY) ||
-                !TrySampleDensity(worldPosition + new Vector3(0f, 0f, safeProbe), out float densityPosZ) ||
-                !TrySampleDensity(worldPosition - new Vector3(0f, 0f, safeProbe), out float densityNegZ))
-            {
-                return false;
-            }
-
-            Vector3 gradient = new Vector3(
-                (densityPosX - densityNegX) / (safeProbe * 2f),
-                (densityPosY - densityNegY) / (safeProbe * 2f),
-                (densityPosZ - densityNegZ) / (safeProbe * 2f));
             if (gradient.sqrMagnitude <= 0.000001f)
                 return false;
 
             surfaceNormal = -NormalizeApprox(gradient, Vector3.up);
+            return true;
+        }
+
+        private bool TrySampleNearestPublishedGradient(Vector3 worldPosition, out Vector3 gradient)
+        {
+            gradient = Vector3.zero;
+
+            if (!_runtimeDataReady ||
+                !_publishedSonarSdf.IsCreated ||
+                _publishedSonarGridDimensions.x <= 1 ||
+                _publishedSonarGridDimensions.y <= 1 ||
+                _publishedSonarGridDimensions.z <= 1 ||
+                _publishedSonarSdfRange <= 0f)
+            {
+                return false;
+            }
+
+            float cellSizeX = Mathf.Max(0.0001f, _publishedSonarCellSize.x);
+            float cellSizeY = Mathf.Max(0.0001f, _publishedSonarCellSize.y);
+            float cellSizeZ = Mathf.Max(0.0001f, _publishedSonarCellSize.z);
+            int maxX = _publishedSonarGridDimensions.x - 1;
+            int maxY = _publishedSonarGridDimensions.y - 1;
+            int maxZ = _publishedSonarGridDimensions.z - 1;
+            int x = Mathf.Clamp((int)(((worldPosition.x - _publishedSonarOrigin.x) / cellSizeX) + 0.5f), 0, maxX);
+            int y = Mathf.Clamp((int)(((worldPosition.y - _publishedSonarOrigin.y) / cellSizeY) + 0.5f), 0, maxY);
+            int z = Mathf.Clamp((int)(((worldPosition.z - _publishedSonarOrigin.z) / cellSizeZ) + 0.5f), 0, maxZ);
+            float center = DecodePublishedDensityAt(x, y, z);
+
+            gradient = new Vector3(
+                x < maxX
+                    ? (DecodePublishedDensityAt(x + 1, y, z) - center) / cellSizeX
+                    : (center - DecodePublishedDensityAt(x - 1, y, z)) / cellSizeX,
+                y < maxY
+                    ? (DecodePublishedDensityAt(x, y + 1, z) - center) / cellSizeY
+                    : (center - DecodePublishedDensityAt(x, y - 1, z)) / cellSizeY,
+                z < maxZ
+                    ? (DecodePublishedDensityAt(x, y, z + 1) - center) / cellSizeZ
+                    : (center - DecodePublishedDensityAt(x, y, z - 1)) / cellSizeZ);
             return true;
         }
 

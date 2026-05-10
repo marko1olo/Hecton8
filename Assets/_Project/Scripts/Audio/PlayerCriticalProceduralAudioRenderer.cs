@@ -261,8 +261,6 @@ namespace Hecton8.Audio
         private const float StructuralSnapMaximumGain = 0.16f;
         private const float StructuralSnapPitchMinimum = 0.8f;
         private const float StructuralSnapPitchMaximum = 1.2f;
-        // Rescue path: route procedural output through the listener filter until the native mixer effect is proven healthy.
-        private const bool EnableNativeMixerKernel = false;
         private const float DspProducerSolveBudgetMilliseconds = 0.1f;
         private const double DspProducerSolveBudgetSeconds = 0.0001d;
         private const int DspProducerTelemetryCooldownFrames = 60;
@@ -639,7 +637,6 @@ namespace Hecton8.Audio
         private long _producedSampleCount;
         private bool _nativeOutputRegistered;
         private bool _nativeOutputBridgeFailureLogged;
-        private int _managedFilterFallbackEnabled;
         private int _binauralDelayWriteIndex;
         private ulong _playerBodyEntityId;
         private int _dspProducerOverBudgetPending;
@@ -696,6 +693,7 @@ namespace Hecton8.Audio
 
         // COLD ALLOC: ImpactAudioEvent[64] - main-thread physics impact bridge for the audio worker SPSC path - owner: PlayerCriticalProceduralAudioRenderer
         private readonly ImpactAudioEvent[] _impactEventQueue = new ImpactAudioEvent[ImpactEventQueueCapacity];
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct SonarEchoTap
         {
             public float DelaySeconds;
@@ -753,7 +751,6 @@ namespace Hecton8.Audio
         {
             public int BufferedFrames;
             public int WritableFrames;
-            public int UnderrunCount;
             public int OverflowDropCount;
             public int ImpactEventQueueDropCount;
             public int ProducerRunning;
@@ -864,6 +861,7 @@ namespace Hecton8.Audio
             }
         }
 
+        [StructLayout(LayoutKind.Sequential, Size = 32)]
         private struct ImpactAudioEvent
         {
             public float Stress;
@@ -1085,7 +1083,6 @@ namespace Hecton8.Audio
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterAcousticEchoListener(this);
             LaserCutterEvents.Register(this);
-            Volatile.Write(ref _managedFilterFallbackEnabled, 1);
             TryRegister();
             TryBindFromBootstrap();
             StartAudioProducerThread();
@@ -1093,7 +1090,6 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
-            Volatile.Write(ref _managedFilterFallbackEnabled, 0);
             LaserCutterEvents.Unregister(this);
             SpectrumEvents.UnregisterAcousticEchoListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
@@ -1143,25 +1139,6 @@ namespace Hecton8.Audio
             }
 
             TryUnregisterRuntimeService();
-        }
-
-        private void OnAudioFilterRead(float[] data, int channels)
-        {
-            if (EnableNativeMixerKernel ||
-                Volatile.Read(ref _managedFilterFallbackEnabled) == 0 ||
-                data == null ||
-                channels <= 0)
-            {
-                return;
-            }
-
-            AudioFrameSpscRingBuffer sampleRingBuffer = _sampleRingBuffer;
-            if (!_buffersInitialized || sampleRingBuffer == null || !sampleRingBuffer.IsCreated)
-                return;
-
-            // Stereo ITD/ILD is rendered into interleaved left/right frames on the worker thread.
-            // The managed filter path only transfers that channel ordering into Unity's output buffer.
-            sampleRingBuffer.MixInterleavedInto(data, channels);
         }
 
         /// <summary>
@@ -1595,7 +1572,6 @@ namespace Hecton8.Audio
                 return false;
 
             sampleRingBuffer.GetState(out diagnostics.BufferedFrames, out diagnostics.WritableFrames);
-            diagnostics.UnderrunCount = sampleRingBuffer.UnderrunCount;
             diagnostics.OverflowDropCount = sampleRingBuffer.OverflowDropCount;
             diagnostics.ImpactEventQueueDropCount = Volatile.Read(ref _impactEventQueueDropCount);
             diagnostics.ProducerRunning = Volatile.Read(ref _audioProducerRunning);
@@ -2286,6 +2262,12 @@ namespace Hecton8.Audio
             }
         }
 
+        private static int FastFloorToInt(double value)
+        {
+            int truncated = (int)value;
+            return truncated > value ? truncated - 1 : truncated;
+        }
+
         private static int ResolveSonarEchoCompositeHash(in AbsoluteUniversePosition position, byte audioMaterialId)
         {
             const uint primeX = 73856093u;
@@ -2294,9 +2276,9 @@ namespace Hecton8.Audio
             const uint primeMaterial = 2654435761u;
             double cellSize = SonarEchoCompositeCellSizeMeters;
             double sectorSize = 5000d;
-            int cellX = (int)math.floor(((position.GridX * sectorSize) + position.LocalX) / cellSize);
-            int cellY = (int)math.floor(((position.GridY * sectorSize) + position.LocalY) / cellSize);
-            int cellZ = (int)math.floor(((position.GridZ * sectorSize) + position.LocalZ) / cellSize);
+            int cellX = FastFloorToInt(((position.GridX * sectorSize) + position.LocalX) / cellSize);
+            int cellY = FastFloorToInt(((position.GridY * sectorSize) + position.LocalY) / cellSize);
+            int cellZ = FastFloorToInt(((position.GridZ * sectorSize) + position.LocalZ) / cellSize);
 
             unchecked
             {
@@ -3096,7 +3078,7 @@ namespace Hecton8.Audio
 
         private void RefreshAudioConfiguration()
         {
-            bool shouldRestartWorker = Volatile.Read(ref _managedFilterFallbackEnabled) != 0;
+            bool shouldRestartWorker = isActiveAndEnabled;
             bool hasProducerThread = Volatile.Read(ref _audioProducerRunning) != 0 || IsAudioProducerThreadAlive();
             bool producerStopped = !IsAudioProducerThreadAlive();
             if (hasProducerThread)
@@ -3430,8 +3412,7 @@ namespace Hecton8.Audio
                 {
                     _nativeOutputBridgeFailureLogged = true;
                     Debug.LogError(
-                        "[PlayerCriticalProceduralAudioRenderer] Native HectonAudioKernel descriptor rejected before registration. Status=" +
-                        descriptorStatus,
+                        "[PlayerCriticalProceduralAudioRenderer] Native HectonAudioKernel descriptor rejected before registration.",
                         this);
                 }
 #endif
@@ -3451,8 +3432,7 @@ namespace Hecton8.Audio
             {
                 _nativeOutputBridgeFailureLogged = true;
                 Debug.LogError(
-                    "[PlayerCriticalProceduralAudioRenderer] Native HectonAudioKernel bridge unavailable. Procedural master-bus output is not registered. Status=" +
-                    bridgeStatus,
+                    "[PlayerCriticalProceduralAudioRenderer] Native HectonAudioKernel bridge unavailable. Procedural master-bus output is not registered.",
                     this);
             }
 #endif
@@ -5908,7 +5888,7 @@ namespace Hecton8.Audio
             float startHash = Hash01(sampleIndex ^ 0xB913E51u);
             float lengthHash = Hash01(sampleIndex ^ 0x6F124C31u);
             state.GrainLoopLength = math.max(96, (int)(math.lerp(112f, 640f, lengthHash) + 0.5f));
-            state.GrainLoopStartIndex = ((int)math.floor(startHash * (MetallicGrainBankCapacity - state.GrainLoopLength))) & MetallicGrainBankMask;
+            state.GrainLoopStartIndex = ((int)(startHash * (MetallicGrainBankCapacity - state.GrainLoopLength))) & MetallicGrainBankMask;
             state.GrainReadCursor = 0d;
             state.GrainPlaybackRate = math.lerp(
                 PressureCreakMinimumPlaybackRate,
@@ -5934,8 +5914,7 @@ namespace Hecton8.Audio
 
             float frequency = math.lerp(HullSubBassMaximumHertz, HullSubBassMinimumHertz, depthParam);
             float sine = AdvanceSine(ref state.SubBassPhase, frequency, invSampleRate);
-            double trianglePhase = state.SubBassPhase;
-            float triangle = (float)(2.0 * math.abs((float)(2.0 * (trianglePhase - math.floor(trianglePhase + 0.5)))) - 1.0);
+            float triangle = 1f - (4f * math.abs((float)state.SubBassPhase - 0.5f));
             float amplitude = HullSubBassMaximumGain * math.saturate(depthParam * 0.85f + structuralStress * 0.15f);
             float boostedDepth01 = math.saturate(
                 (absoluteDepthMeters - DepthSubwooferBoostStartDepthMeters) /
@@ -6112,7 +6091,13 @@ namespace Hecton8.Audio
         private static double AdvancePhase(ref double phase, double frequencyHz, double invSampleRate)
         {
             phase += frequencyHz * invSampleRate;
-            phase -= math.floor(phase);
+            int whole = (int)phase;
+            phase -= whole;
+            if (phase < 0d)
+                phase += 1d;
+            else if (phase >= 1d)
+                phase -= 1d;
+
             return phase;
         }
 
@@ -6160,7 +6145,13 @@ namespace Hecton8.Audio
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private static float FastSine01(float phase01)
         {
-            float phase = phase01 - math.floor(phase01);
+            int whole = (int)phase01;
+            float phase = phase01 - whole;
+            if (phase < 0f)
+                phase += 1f;
+            else if (phase >= 1f)
+                phase -= 1f;
+
             float centered = phase > 0.5f ? phase - 1f : phase;
             float wave = (4f * centered) - (8f * centered * math.abs(centered));
             return wave + 0.225f * ((wave * math.abs(wave)) - wave);
@@ -6248,24 +6239,25 @@ namespace Hecton8.Audio
             if (!buffer.IsCreated || buffer.Length <= 0 || loopLength <= 0)
                 return 0f;
 
-            double wrapped = cursor - math.floor(cursor / loopLength) * loopLength;
-            if (wrapped < 0d)
-                wrapped += loopLength;
+            int baseIndex = (int)cursor;
+            float t = (float)(cursor - baseIndex);
+            if (t < 0f)
+            {
+                baseIndex--;
+                t += 1f;
+            }
 
-            int baseIndex = (int)wrapped;
-            float t = (float)(wrapped - baseIndex);
-            float x0 = buffer[WrapLoopIndex(loopStartIndex, loopLength, baseIndex)];
-            float x1 = buffer[WrapLoopIndex(loopStartIndex, loopLength, baseIndex + 1)];
+            int wrappedBase = baseIndex % loopLength;
+            if (wrappedBase < 0)
+                wrappedBase += loopLength;
+
+            int wrappedNext = wrappedBase + 1;
+            if (wrappedNext >= loopLength)
+                wrappedNext = 0;
+
+            float x0 = buffer[(loopStartIndex + wrappedBase) & MetallicGrainBankMask];
+            float x1 = buffer[(loopStartIndex + wrappedNext) & MetallicGrainBankMask];
             return math.lerp(x0, x1, t);
-        }
-
-        private static int WrapLoopIndex(int loopStartIndex, int loopLength, int index)
-        {
-            int wrapped = index % loopLength;
-            if (wrapped < 0)
-                wrapped += loopLength;
-
-            return (loopStartIndex + wrapped) & MetallicGrainBankMask;
         }
 
         private static float LinearSampleRing(NativeArray<float> buffer, float cursor, int mask)

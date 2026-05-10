@@ -7,12 +7,10 @@ Texture2D<float> _HectonVoxelSSAODepth;
 
 float4 _HectonVoxelSSAOInputSize;
 float4 _HectonVoxelSSAOOutputSize;
-float4x4 _HectonVoxelSSAOInverseViewProjection;
 float _HectonVoxelSSAOProjectionScale;
 float _HectonVoxelSSAORadiusMeters;
 float _HectonVoxelSSAOIntensity;
 float _HectonVoxelSSAODepthSigma;
-int _HectonVoxelSSAOSampleCount;
 
 bool IsFiniteScalar(float value)
 {
@@ -24,24 +22,41 @@ float ResolveFiniteOrDefault(float value, float fallback)
     return IsFiniteScalar(value) ? value : fallback;
 }
 
-bool IsFiniteFloat3(float3 value)
-{
-    return all(isfinite(value));
-}
-
-static const float2 kKernelDirections[6] =
+static const float2 kKernelDirections[4] =
 {
     float2(1.0, 0.0),
     float2(0.5, 0.8660254),
     float2(-0.5, 0.8660254),
-    float2(-1.0, 0.0),
-    float2(-0.5, -0.8660254),
-    float2(0.5, -0.8660254)
+    float2(-1.0, 0.0)
 };
 
 float ResolveInterleavedNoise(float2 pixelCoord)
 {
     return frac(52.9829189 * frac(dot(pixelCoord, float2(0.06711056, 0.00583715))));
+}
+
+float2 ResolveOctantRotation(float noiseValue)
+{
+    static const float2 kOctantRotations[8] =
+    {
+        float2(1.0, 0.0),
+        float2(0.7071068, 0.7071068),
+        float2(0.0, 1.0),
+        float2(-0.7071068, 0.7071068),
+        float2(-1.0, 0.0),
+        float2(-0.7071068, -0.7071068),
+        float2(0.0, -1.0),
+        float2(0.7071068, -0.7071068)
+    };
+    uint rotationIndex = (uint)(saturate(noiseValue) * 8.0) & 7u;
+    return kOctantRotations[rotationIndex];
+}
+
+int2 FastRoundToInt2(float2 value)
+{
+    return int2(
+        value.x >= 0.0 ? (int)(value.x + 0.5) : (int)(value.x - 0.5),
+        value.y >= 0.0 ? (int)(value.y + 0.5) : (int)(value.y - 0.5));
 }
 
 bool IsDepthValid(float rawDepth)
@@ -56,34 +71,12 @@ bool IsDepthValid(float rawDepth)
 #endif
 }
 
-float ResolveFarRawDepth()
-{
-#if defined(UNITY_REVERSED_Z)
-    return 0.0;
-#else
-    return 1.0;
-#endif
-}
-
 int2 ResolveSourcePixel(uint2 outputPixel, uint2 outputSize, int2 fullResSize)
 {
     int2 resolvedPixel = int2(
         ((outputPixel.x * fullResSize.x) + (outputSize.x >> 1)) / max(1u, outputSize.x),
         ((outputPixel.y * fullResSize.y) + (outputSize.y >> 1)) / max(1u, outputSize.y));
     return clamp(resolvedPixel, int2(0, 0), fullResSize - 1);
-}
-
-float3 ReconstructWorldPosition(float2 screenUV, float rawDepth)
-{
-    float4 clipPosition = float4(screenUV * 2.0 - 1.0, rawDepth, 1.0);
-#if UNITY_UV_STARTS_AT_TOP
-    clipPosition.y *= -1.0;
-#endif
-    float4 worldPosition = mul(_HectonVoxelSSAOInverseViewProjection, clipPosition);
-    if (!all(isfinite(worldPosition)))
-        return 0.0.xxx;
-
-    return worldPosition.xyz / max(ResolveFiniteOrDefault(worldPosition.w, 0.0001), 0.0001);
 }
 
 [numthreads(8, 8, 1)]
@@ -102,34 +95,26 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
         return;
     }
 
-    float2 centerUv = (float2(centerPixel) + 0.5) * _HectonVoxelSSAOInputSize.zw;
     float centerLinearDepth = ResolveFiniteOrDefault(LinearEyeDepth(centerDepthRaw, _ZBufferParams), 0.0);
-    float3 centerPositionWS = ReconstructWorldPosition(centerUv, centerDepthRaw);
-    if (!IsFiniteFloat3(centerPositionWS))
-    {
-        _HectonVoxelSSAOResult[dispatchThreadId.xy] = 1.0;
-        return;
-    }
 
     float radiusPixels = clamp(_HectonVoxelSSAOProjectionScale / max(centerLinearDepth, 0.5), 1.0, 24.0);
-    float rotationAngle = ResolveFiniteOrDefault(ResolveInterleavedNoise(dispatchThreadId.xy), 0.0) * 6.2831853;
-    float2 rotation = float2(cos(rotationAngle), sin(rotationAngle));
+    float2 rotation = ResolveOctantRotation(ResolveFiniteOrDefault(ResolveInterleavedNoise(dispatchThreadId.xy), 0.0));
+    float radiusMeters = max(_HectonVoxelSSAORadiusMeters, 0.001);
+    float radiusMetersSq = radiusMeters * radiusMeters;
+    float invRadiusMetersSq = rcp(radiusMetersSq);
+    float depthSigma = max(0.01, _HectonVoxelSSAODepthSigma);
 
     float occlusion = 0.0;
     float weightSum = 0.0;
-    int sampleCount = clamp(_HectonVoxelSSAOSampleCount, 4, 6);
 
-    [unroll]
-    for (int sampleIndex = 0; sampleIndex < 6; sampleIndex++)
+    [unroll(4)]
+    for (int sampleIndex = 0; sampleIndex < 4; sampleIndex++)
     {
-        if (sampleIndex >= sampleCount)
-            break;
-
         float2 direction = kKernelDirections[sampleIndex];
         float2 rotatedDirection = float2(
             direction.x * rotation.x - direction.y * rotation.y,
             direction.x * rotation.y + direction.y * rotation.x);
-        int2 samplePixel = centerPixel + int2(round(rotatedDirection * radiusPixels));
+        int2 samplePixel = centerPixel + FastRoundToInt2(rotatedDirection * radiusPixels);
         samplePixel = clamp(samplePixel, int2(0, 0), fullResSize - 1);
 
         float sampleDepthRaw = _HectonVoxelSSAODepth.Load(int3(samplePixel, 0));
@@ -141,17 +126,12 @@ void ResolveVoxelSSAO(uint3 dispatchThreadId : SV_DispatchThreadID)
         if (depthDelta <= 0.0)
             continue;
 
-        float2 sampleUv = (float2(samplePixel) + 0.5) * _HectonVoxelSSAOInputSize.zw;
-        float3 samplePositionWS = ReconstructWorldPosition(sampleUv, sampleDepthRaw);
-        if (!IsFiniteFloat3(samplePositionWS))
+        float depthDeltaSq = depthDelta * depthDelta;
+        if (!IsFiniteScalar(depthDeltaSq) || depthDeltaSq >= radiusMetersSq)
             continue;
 
-        float worldDistance = distance(centerPositionWS, samplePositionWS);
-        if (!IsFiniteScalar(worldDistance) || worldDistance > _HectonVoxelSSAORadiusMeters || worldDistance <= 0.0001)
-            continue;
-
-        float rangeWeight = 1.0 - saturate(worldDistance / max(_HectonVoxelSSAORadiusMeters, 0.001));
-        float depthWeight = exp2(-abs(depthDelta) * max(0.01, _HectonVoxelSSAODepthSigma));
+        float rangeWeight = 1.0 - saturate(depthDeltaSq * invRadiusMetersSq);
+        float depthWeight = rcp(1.0 + depthDelta * depthSigma);
         float sampleWeight = rangeWeight * depthWeight;
         occlusion += saturate(depthDelta * _HectonVoxelSSAOIntensity) * sampleWeight;
         weightSum += sampleWeight;

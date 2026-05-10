@@ -153,7 +153,7 @@ namespace Hecton8.Dev
         /// </summary>
         public void SetMoveCommand(float horizontal, float vertical)
         {
-            _wasdCommand = new Vector2(Mathf.Clamp(horizontal, -1f, 1f), Mathf.Clamp(vertical, -1f, 1f));
+            _wasdCommand = new Vector2(SanitizeAxis(horizontal), SanitizeAxis(vertical));
             ResolveDriveCommand();
         }
 
@@ -162,7 +162,7 @@ namespace Hecton8.Dev
         /// </summary>
         public void SetTargetDistanceMeters(float targetDistanceMeters)
         {
-            _targetDistanceMeters = Mathf.Max(1f, targetDistanceMeters);
+            _targetDistanceMeters = SanitizePositive(targetDistanceMeters, DefaultTargetDistanceMeters);
             _targetDistanceMetersSq = _targetDistanceMeters * _targetDistanceMeters;
         }
 
@@ -217,7 +217,7 @@ namespace Hecton8.Dev
             if (!_running)
                 return;
 
-            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+            float safeDeltaTime = SanitizeNonNegative(deltaTime);
             _elapsedSeconds += safeDeltaTime;
             ResolvePlayerBody(force: false, deltaTime: safeDeltaTime);
             if (_playerBody == null)
@@ -469,13 +469,40 @@ namespace Hecton8.Dev
 
         private float ResolveTargetDistanceMetersSq()
         {
-            float targetDistance = Mathf.Max(1f, _targetDistanceMeters);
+            float targetDistance = SanitizePositive(_targetDistanceMeters, DefaultTargetDistanceMeters);
             return targetDistance * targetDistance;
         }
 
         private static int ClampLongToInt(long value)
         {
             return value >= int.MaxValue ? int.MaxValue : (int)value;
+        }
+
+        private static float SanitizeAxis(float value)
+        {
+            if (!float.IsFinite(value))
+                return 0f;
+
+            if (value > 1f)
+                return 1f;
+
+            return value < -1f ? -1f : value;
+        }
+
+        private static float SanitizePositive(float value, float fallback)
+        {
+            if (!float.IsFinite(value) || value < 1f)
+                return fallback >= 1f ? fallback : 1f;
+
+            return value;
+        }
+
+        private static float SanitizeNonNegative(float value)
+        {
+            if (!float.IsFinite(value) || value <= 0f)
+                return 0f;
+
+            return value;
         }
 
         private static float ApproximateMagnitude(Vector3 value)

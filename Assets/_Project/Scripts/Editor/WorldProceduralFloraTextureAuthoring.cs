@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text;
+using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 
@@ -130,6 +131,8 @@ namespace Hecton8.EditorTools
                 importer.wrapMode = TextureWrapMode.Repeat;
                 importer.mipmapEnabled = true;
                 importer.isReadable = false;
+                importer.textureCompression = TextureImporterCompression.Compressed;
+                importer.crunchedCompression = false;
 
                 switch (mapToken)
                 {
@@ -154,6 +157,16 @@ namespace Hecton8.EditorTools
                         importer.maxTextureSize = 2048;
                         break;
                 }
+
+                TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
+                standalone.overridden = true;
+                standalone.format = string.Equals(mapToken, "normal", System.StringComparison.Ordinal)
+                    ? TextureImporterFormat.BC5
+                    : TextureImporterFormat.BC7;
+                standalone.maxTextureSize = importer.maxTextureSize;
+                standalone.textureCompression = TextureImporterCompression.Compressed;
+                standalone.crunchedCompression = false;
+                importer.SetPlatformTextureSettings(standalone);
 
                 importer.SaveAndReimport();
                 updated++;
@@ -670,7 +683,7 @@ namespace Hecton8.EditorTools
 
             int width = texture.width;
             int height = texture.height;
-            Color[] pixels = new Color[width * height];
+            NativeArray<Color32> pixels = texture.GetRawTextureData<Color32>();
             for (int y = 0; y < height; y++)
             {
                 float v = y / (float)(height - 1);
@@ -682,11 +695,11 @@ namespace Hecton8.EditorTools
                 {
                     float u = x / (float)(width - 1);
                     float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
-                    float edgeMask = Mathf.Pow(Mathf.Abs(u * 2.0f - 1.0f), 1.25f);
-                    float stripe = Mathf.Sin((u * 8.0f + v * 5.5f) * Mathf.PI);
-                    float veinA = Mathf.Sin((u * 34.0f - v * 16.0f) * Mathf.PI);
-                    float veinB = Mathf.Sin((u * 18.0f + v * 24.0f) * Mathf.PI);
-                    float mottled = Mathf.Sin((u * 23.0f + v * 13.0f) * Mathf.PI) * 0.5f + 0.5f;
+                    float edgeMask = FastEdgePower(Mathf.Abs(u * 2.0f - 1.0f));
+                    float stripe = FastSignedWavePi(u * 8.0f + v * 5.5f);
+                    float veinA = FastSignedWavePi(u * 34.0f - v * 16.0f);
+                    float veinB = FastSignedWavePi(u * 18.0f + v * 24.0f);
+                    float mottled = FastSignedWavePi(u * 23.0f + v * 13.0f) * 0.5f + 0.5f;
                     float band = 1.0f + stripe * bandStrength + (mottled - 0.5f) * 0.08f;
                     Color baseTint = gradient * band;
                     Color ribTint = Color.Lerp(baseTint, highColor * 1.08f, centerRib * 0.24f);
@@ -696,7 +709,6 @@ namespace Hecton8.EditorTools
                 }
             }
 
-            texture.SetPixels(pixels);
             texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
             EditorUtility.SetDirty(texture);
             return true;
@@ -719,25 +731,24 @@ namespace Hecton8.EditorTools
 
             int width = texture.width;
             int height = texture.height;
-            Color[] pixels = new Color[width * height];
+            NativeArray<Color32> pixels = texture.GetRawTextureData<Color32>();
             for (int y = 0; y < height; y++)
             {
                 float v = y / (float)(height - 1);
                 for (int x = 0; x < width; x++)
                 {
                     float u = x / (float)(width - 1);
-                    float a = Mathf.Sin((u * (9 + seed * 0.1f) + v * 5.1f) * Mathf.PI);
-                    float b = Mathf.Sin((u * 17.0f - v * (7 + seed * 0.05f)) * Mathf.PI);
-                    float c = Mathf.Sin(((u + v) * (11 + seed * 0.07f)) * Mathf.PI);
+                    float a = FastSignedWavePi(u * (9 + seed * 0.1f) + v * 5.1f);
+                    float b = FastSignedWavePi(u * 17.0f - v * (7 + seed * 0.05f));
+                    float c = FastSignedWavePi((u + v) * (11 + seed * 0.07f));
                     float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
-                    float longitudinal = Mathf.Sin((v * (26.0f + seed * 0.03f) + u * 3.5f) * Mathf.PI);
-                    float edgeWear = Mathf.Pow(Mathf.Abs(u * 2.0f - 1.0f), 1.45f);
+                    float longitudinal = FastSignedWavePi(v * (26.0f + seed * 0.03f) + u * 3.5f);
+                    float edgeWear = FastEdgePower(Mathf.Abs(u * 2.0f - 1.0f));
                     float value = Mathf.Clamp01(0.5f + a * 0.24f + b * 0.18f + c * 0.12f + longitudinal * 0.08f + centerRib * 0.12f - edgeWear * 0.08f);
                     pixels[y * width + x] = new Color(value, value, value, 1f);
                 }
             }
 
-            texture.SetPixels(pixels);
             texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
             EditorUtility.SetDirty(texture);
             return true;
@@ -760,7 +771,7 @@ namespace Hecton8.EditorTools
 
             int width = texture.width;
             int height = texture.height;
-            Color[] pixels = new Color[width * height];
+            NativeArray<Color32> pixels = texture.GetRawTextureData<Color32>();
             for (int y = 0; y < height; y++)
             {
                 float v = y / (float)(height - 1);
@@ -770,14 +781,11 @@ namespace Hecton8.EditorTools
                     float center = SampleLeafHeight(u, v, seed);
                     float sampleX = SampleLeafHeight(Mathf.Repeat(u + 1.0f / width, 1.0f), v, seed);
                     float sampleY = SampleLeafHeight(u, Mathf.Repeat(v + 1.0f / height, 1.0f), seed);
-                    Vector3 tangent = new Vector3(1f, 0f, (sampleX - center) * normalScale);
-                    Vector3 bitangent = new Vector3(0f, 1f, (sampleY - center) * normalScale);
-                    Vector3 normal = Vector3.Cross(tangent, bitangent).normalized;
-                    pixels[y * width + x] = new Color(normal.x * 0.5f + 0.5f, normal.y * 0.5f + 0.5f, normal.z * 0.5f + 0.5f, 1f);
+                    EncodeDominantAxisNormal((sampleX - center) * normalScale, (sampleY - center) * normalScale, out Color32 normal);
+                    pixels[y * width + x] = normal;
                 }
             }
 
-            texture.SetPixels(pixels);
             texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
             EditorUtility.SetDirty(texture);
             return true;
@@ -800,25 +808,24 @@ namespace Hecton8.EditorTools
 
             int width = texture.width;
             int height = texture.height;
-            Color[] pixels = new Color[width * height];
+            NativeArray<Color32> pixels = texture.GetRawTextureData<Color32>();
             for (int y = 0; y < height; y++)
             {
                 float v = y / (float)(height - 1);
-                float thickness = Mathf.Lerp(thicknessBase, thicknessTip, Mathf.Pow(v, 0.72f));
+                float thickness = Mathf.Lerp(thicknessBase, thicknessTip, FastTipCurve(v));
                 for (int x = 0; x < width; x++)
                 {
                     float u = x / (float)(width - 1);
                     float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
-                    float edgeMask = Mathf.Pow(Mathf.Abs(u * 2.0f - 1.0f), 1.28f);
-                    float gloss = Mathf.Clamp01(0.44f + Mathf.Sin((u * (7.0f + seed * 0.08f) + v * 3.1f) * Mathf.PI) * 0.20f + centerRib * 0.22f - edgeMask * 0.10f);
-                    float ambientLift = Mathf.Clamp01(0.40f + centerRib * 0.38f + Mathf.Sin((u + v) * (5.0f + seed * 0.04f) * Mathf.PI) * 0.08f);
-                    float causticBias = Mathf.Clamp01(0.46f + Mathf.Sin((u * 13.0f - v * (9.0f + seed * 0.03f)) * Mathf.PI) * 0.22f + edgeMask * 0.06f);
+                    float edgeMask = FastEdgePower(Mathf.Abs(u * 2.0f - 1.0f));
+                    float gloss = Mathf.Clamp01(0.44f + FastSignedWavePi(u * (7.0f + seed * 0.08f) + v * 3.1f) * 0.20f + centerRib * 0.22f - edgeMask * 0.10f);
+                    float ambientLift = Mathf.Clamp01(0.40f + centerRib * 0.38f + FastSignedWavePi((u + v) * (5.0f + seed * 0.04f)) * 0.08f);
+                    float causticBias = Mathf.Clamp01(0.46f + FastSignedWavePi(u * 13.0f - v * (9.0f + seed * 0.03f)) * 0.22f + edgeMask * 0.06f);
                     float thicknessValue = Mathf.Clamp01(thickness + centerRib * 0.12f - edgeMask * 0.14f);
                     pixels[y * width + x] = new Color(thicknessValue, gloss, ambientLift, causticBias);
                 }
             }
 
-            texture.SetPixels(pixels);
             texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
             EditorUtility.SetDirty(texture);
             return true;
@@ -841,7 +848,7 @@ namespace Hecton8.EditorTools
 
             int width = texture.width;
             int height = texture.height;
-            Color[] pixels = new Color[width * height];
+            NativeArray<Color32> pixels = texture.GetRawTextureData<Color32>();
             for (int y = 0; y < height; y++)
             {
                 float v = y / (float)(height - 1);
@@ -851,14 +858,11 @@ namespace Hecton8.EditorTools
                     float center = SampleCoralHeight(u, v, seed);
                     float sampleX = SampleCoralHeight(Mathf.Repeat(u + 1.0f / width, 1.0f), v, seed);
                     float sampleY = SampleCoralHeight(u, Mathf.Repeat(v + 1.0f / height, 1.0f), seed);
-                    Vector3 tangent = new Vector3(1f, 0f, (sampleX - center) * normalScale);
-                    Vector3 bitangent = new Vector3(0f, 1f, (sampleY - center) * normalScale);
-                    Vector3 normal = Vector3.Cross(tangent, bitangent).normalized;
-                    pixels[y * width + x] = new Color(normal.x * 0.5f + 0.5f, normal.y * 0.5f + 0.5f, normal.z * 0.5f + 0.5f, 1f);
+                    EncodeDominantAxisNormal((sampleX - center) * normalScale, (sampleY - center) * normalScale, out Color32 normal);
+                    pixels[y * width + x] = normal;
                 }
             }
 
-            texture.SetPixels(pixels);
             texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
             EditorUtility.SetDirty(texture);
             return true;
@@ -881,22 +885,21 @@ namespace Hecton8.EditorTools
 
             int width = texture.width;
             int height = texture.height;
-            Color[] pixels = new Color[width * height];
+            NativeArray<Color32> pixels = texture.GetRawTextureData<Color32>();
             for (int y = 0; y < height; y++)
             {
                 float v = y / (float)(height - 1);
                 for (int x = 0; x < width; x++)
                 {
                     float u = x / (float)(width - 1);
-                    float ridge = Mathf.Clamp01(0.5f + Mathf.Sin((u * (8.0f + seed * 0.05f) + v * 5.2f) * Mathf.PI) * 0.34f);
-                    float cavity = Mathf.Clamp01(cavityBase + Mathf.Sin((u * 17.0f - v * (9.0f + seed * 0.03f)) * Mathf.PI) * 0.22f);
-                    float gloss = Mathf.Clamp01(0.42f + ridge * 0.34f + Mathf.Sin((u + v) * (7.0f + seed * 0.02f) * Mathf.PI) * 0.12f);
-                    float thickness = Mathf.Clamp01(thicknessBase + ridge * 0.18f + Mathf.Sin((u * 5.0f + v * 11.0f) * Mathf.PI) * 0.08f);
+                    float ridge = Mathf.Clamp01(0.5f + FastSignedWavePi(u * (8.0f + seed * 0.05f) + v * 5.2f) * 0.34f);
+                    float cavity = Mathf.Clamp01(cavityBase + FastSignedWavePi(u * 17.0f - v * (9.0f + seed * 0.03f)) * 0.22f);
+                    float gloss = Mathf.Clamp01(0.42f + ridge * 0.34f + FastSignedWavePi((u + v) * (7.0f + seed * 0.02f)) * 0.12f);
+                    float thickness = Mathf.Clamp01(thicknessBase + ridge * 0.18f + FastSignedWavePi(u * 5.0f + v * 11.0f) * 0.08f);
                     pixels[y * width + x] = new Color(ridge, gloss, cavity, thickness);
                 }
             }
 
-            texture.SetPixels(pixels);
             texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
             EditorUtility.SetDirty(texture);
             return true;
@@ -1230,21 +1233,54 @@ namespace Hecton8.EditorTools
 
         private static float SampleLeafHeight(float u, float v, int seed)
         {
-            float stripeA = Mathf.Sin((u * (8.0f + seed * 0.05f) + v * 4.8f) * Mathf.PI);
-            float stripeB = Mathf.Sin((u * 21.0f - v * (6.0f + seed * 0.03f)) * Mathf.PI);
-            float curl = Mathf.Sin(((u * 0.75f + v) * (12.0f + seed * 0.02f)) * Mathf.PI);
+            float stripeA = FastSignedWavePi(u * (8.0f + seed * 0.05f) + v * 4.8f);
+            float stripeB = FastSignedWavePi(u * 21.0f - v * (6.0f + seed * 0.03f));
+            float curl = FastSignedWavePi((u * 0.75f + v) * (12.0f + seed * 0.02f));
             float centerRib = 1.0f - Mathf.Abs(u * 2.0f - 1.0f);
-            float edgeWear = Mathf.Pow(Mathf.Abs(u * 2.0f - 1.0f), 1.35f);
-            float microVein = Mathf.Sin((u * 31.0f + v * (17.0f + seed * 0.03f)) * Mathf.PI);
+            float edgeWear = FastEdgePower(Mathf.Abs(u * 2.0f - 1.0f));
+            float microVein = FastSignedWavePi(u * 31.0f + v * (17.0f + seed * 0.03f));
             return stripeA * 0.18f + stripeB * 0.10f + curl * 0.08f + centerRib * 0.18f + microVein * 0.05f - edgeWear * 0.04f;
         }
 
         private static float SampleCoralHeight(float u, float v, int seed)
         {
-            float cells = Mathf.Sin((u * (10.0f + seed * 0.06f) + v * 7.0f) * Mathf.PI);
-            float ridges = Mathf.Sin((u * 19.0f - v * (11.0f + seed * 0.04f)) * Mathf.PI);
-            float pores = Mathf.Sin(((u + v * 0.85f) * (15.0f + seed * 0.03f)) * Mathf.PI);
+            float cells = FastSignedWavePi(u * (10.0f + seed * 0.06f) + v * 7.0f);
+            float ridges = FastSignedWavePi(u * 19.0f - v * (11.0f + seed * 0.04f));
+            float pores = FastSignedWavePi((u + v * 0.85f) * (15.0f + seed * 0.03f));
             return cells * 0.16f + ridges * 0.12f + pores * 0.10f;
+        }
+
+        private static float FastSignedWavePi(float halfTurns)
+        {
+            float cycle = (halfTurns * 0.5f) - Mathf.Floor(halfTurns * 0.5f);
+            return 1f - Mathf.Abs(cycle * 2f - 1f) * 2f;
+        }
+
+        private static float FastEdgePower(float value)
+        {
+            float x = Mathf.Clamp01(value);
+            return x * (0.68f + x * 0.32f);
+        }
+
+        private static float FastTipCurve(float value)
+        {
+            float x = Mathf.Clamp01(value);
+            return x * (1.32f - x * 0.32f);
+        }
+
+        private static void EncodeDominantAxisNormal(float dx, float dy, out Color32 normal)
+        {
+            float invDominant = 1f / Mathf.Max(1f, Mathf.Abs(dx), Mathf.Abs(dy));
+            normal = new Color32(
+                EncodeSignedNormalChannel(-dx * invDominant),
+                EncodeSignedNormalChannel(-dy * invDominant),
+                EncodeSignedNormalChannel(invDominant),
+                255);
+        }
+
+        private static byte EncodeSignedNormalChannel(float value)
+        {
+            return (byte)Mathf.Clamp(Mathf.RoundToInt((value * 0.5f + 0.5f) * 255f), 0, 255);
         }
 
         private static void EnsureFolder(string assetPath)

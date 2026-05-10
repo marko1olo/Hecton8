@@ -165,6 +165,14 @@ Shader "Hecton8/Flora/KelpMaster"
             float4 _HectonPropWashPosition; // xyz: position, w: radius
             half _HectonPropWashForce;
 
+            float3 ResolvePropWashDominantDirection(float3 washDir)
+            {
+                float2 absXZ = abs(washDir.xz);
+                return absXZ.x >= absXZ.y
+                    ? float3(washDir.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0)
+                    : float3(0.0, 0.0, washDir.z < 0.0 ? -1.0 : 1.0);
+            }
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -296,7 +304,7 @@ Shader "Hecton8/Flora/KelpMaster"
                     float washRadius = _HectonPropWashPosition.w;
                     float washDistSq = dot(washDir, washDir);
                     float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
-                    float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
+                    float3 washDirection = ResolvePropWashDominantDirection(washDir);
                     positionOS.xyz += washDirection * (washStrength * propWashAmount);
                 }
 
@@ -553,7 +561,7 @@ Shader "Hecton8/Flora/KelpMaster"
                     float washRadius = _HectonPropWashPosition.w;
                     float washDistSq = dot(washDir, washDir);
                     float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
-                    float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
+                    float3 washDirection = ResolvePropWashDominantDirection(washDir);
                     positionOS.xyz += washDirection * (washStrength * propWashAmount);
                 }
                 positionOS.xz += input.normalOS.xz * (swayWave * _SwayAmplitude * heightMask);
@@ -703,7 +711,7 @@ Shader "Hecton8/Flora/KelpMaster"
                     float washRadius = _HectonPropWashPosition.w;
                     float washDistSq = dot(washDir, washDir);
                     float washStrength = saturate(1.0 - washDistSq / (washRadius * washRadius));
-                    float3 washDirection = washDir * rsqrt(max(washDistSq, 0.0001));
+                    float3 washDirection = ResolvePropWashDominantDirection(washDir);
                     positionOS.xyz += washDirection * (washStrength * propWashAmount);
                 }
                 positionOS.xz += input.normalOS.xz * (swayWave * _SwayAmplitude * heightMask);

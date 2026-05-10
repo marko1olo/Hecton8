@@ -328,16 +328,16 @@ bool IsVisibleInAnyShadowCascade(float3 rootWS, float3 centerWS, float3 topWS, f
     return false;
 }
 
-float3 ResolveUnitVectorForCone(float3 value)
+bool PassesDotThresholdSq(float dotValue, float threshold, float lengthProductSq)
 {
-    float lenSq = dot(value, value);
-    return IsFiniteScalar(lenSq) && lenSq > 0.00001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
-}
+    if (!IsFiniteScalar(dotValue) || !IsFiniteScalar(threshold) || !IsFiniteScalar(lengthProductSq) || lengthProductSq <= 0.00000001)
+        return true;
 
-float ResolveSpotConeAttenuation(float cosAngle, float innerCos, float outerCos)
-{
-    float coneRange = max(innerCos - outerCos, 0.0001);
-    return saturate((cosAngle - outerCos) / coneRange);
+    float thresholdSq = threshold * threshold;
+    float dotSq = dotValue * dotValue;
+    return threshold >= 0.0
+        ? dotValue >= 0.0 && dotSq >= thresholdSq * lengthProductSq
+        : dotValue >= 0.0 || dotSq <= thresholdSq * lengthProductSq;
 }
 
 bool IsVisibleInDarkness(float3 samplePositionWS)
@@ -367,36 +367,24 @@ bool IsVisibleInDarkness(float3 samplePositionWS)
         if (!IsFiniteScalar(sampleDistanceSq) || sampleDistanceSq <= 0.00000001 || sampleDistanceSq >= lightRangeSq)
             continue;
 
-        float3 sampleDirectionWS = toSampleWS * rsqrt(sampleDistanceSq);
-        float3 lightDirectionWS = ResolveUnitVectorForCone(_HectonScooterHeadlightDirectionsWS[headlightIndex].xyz);
-        float coneAttenuation = ResolveSpotConeAttenuation(
-            dot(lightDirectionWS, sampleDirectionWS),
-            _HectonScooterHeadlightDirectionsWS[headlightIndex].w,
-            _HectonScooterHeadlightConeData[headlightIndex].x);
-        if (!IsFiniteScalar(coneAttenuation) || coneAttenuation <= 0.0001)
+        float3 lightDirectionWS = _HectonScooterHeadlightDirectionsWS[headlightIndex].xyz;
+        float lightDirectionLenSq = dot(lightDirectionWS, lightDirectionWS);
+        if (!IsFiniteScalar(lightDirectionLenSq) || lightDirectionLenSq <= 0.00000001)
+            continue;
+
+        float dotLight = dot(lightDirectionWS, toSampleWS);
+        if (!PassesDotThresholdSq(dotLight, _HectonScooterHeadlightConeData[headlightIndex].x, sampleDistanceSq * lightDirectionLenSq))
             continue;
 
         float invRange = _HectonScooterHeadlightConeData[headlightIndex].z;
         float rangeAttenuation = saturate(1.0 - sampleDistanceSq * invRange * invRange);
         rangeAttenuation *= rangeAttenuation;
         float intensity = _HectonScooterHeadlightColors[headlightIndex].w * _HectonScooterHeadlightConeData[headlightIndex].y;
-        if (coneAttenuation * rangeAttenuation * intensity >= 0.02)
+        if (rangeAttenuation * intensity >= 0.02)
             return true;
     }
 
     return false;
-}
-
-bool PassesDotThresholdSq(float dotValue, float threshold, float lengthProductSq)
-{
-    if (!IsFiniteScalar(dotValue) || !IsFiniteScalar(threshold) || !IsFiniteScalar(lengthProductSq) || lengthProductSq <= 0.00000001)
-        return true;
-
-    float thresholdSq = threshold * threshold;
-    float dotSq = dotValue * dotValue;
-    return threshold >= 0.0
-        ? dotValue >= 0.0 && dotSq >= thresholdSq * lengthProductSq
-        : dotValue >= 0.0 || dotSq <= thresholdSq * lengthProductSq;
 }
 
 bool IsVisibleInPeripheralCone(float3 samplePositionWS)

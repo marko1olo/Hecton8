@@ -470,7 +470,7 @@ namespace Hecton8.Physics
         /// </summary>
         /// <param name="position">World-space burst origin.</param>
         /// <param name="direction">Preferred burst direction from the thruster exhaust.</param>
-        /// <param name="intensity01">Normalized cavitation intensity.</param>
+        /// <param name="intensity01">Cavitation intensity in the 0..1 range.</param>
         /// <param name="radius">Shockwave radius in meters.</param>
         /// <param name="acceleration">Shockwave velocity-change magnitude routed through PhysicsApplySystem.</param>
         /// <param name="sourceBodyInstanceId">Rigidbody instance ID to ignore, usually the submarine body.</param>
@@ -573,13 +573,13 @@ namespace Hecton8.Physics
             }
 
             float3 rawDirection = new float3(direction.x, direction.y, direction.z);
-            float3 normalizedDirection = NormalizeFastOrDefault(rawDirection, new float3(0f, 0f, 1f));
+            float3 axisDirection = DominantAxisOrDefault(rawDirection, new float3(0f, 0f, 1f));
             float clampedConeDegrees = math.clamp(coneDegrees, 1f, 89f);
             float cone01 = clampedConeDegrees * 0.011111111f;
             _thrusterFlowBuffer[slot] = new ActiveThrusterFlow
             {
                 PositionWS = new float3(position.x, position.y, position.z),
-                DirectionWS = normalizedDirection,
+                DirectionWS = axisDirection,
                 Strength = math.max(0f, strength),
                 Radius = math.max(0.01f, radius),
                 ConeCos = 1f - cone01 * cone01,
@@ -1467,7 +1467,7 @@ namespace Hecton8.Physics
                 return false;
             }
 
-            Vector3 safeDirection = NormalizeFastOrDefault(direction, Vector3.back);
+            Vector3 safeDirection = DominantAxisOrDefault(direction, Vector3.back);
 
             _cavitationBurstQueue[_cavitationBurstCount++] = new CavitationBurstEvent
             {
@@ -1556,11 +1556,11 @@ namespace Hecton8.Physics
                 Vector3 radial = targetBody.worldCenterOfMass - burstEvent.Position;
                 float radialDistanceSq = radial.sqrMagnitude;
                 Vector3 radialDirection = radialDistanceSq > 0.000001f
-                    ? NormalizeFastOrDefault(radial, burstEvent.Direction)
+                    ? DominantAxisOrDefault(radial, burstEvent.Direction)
                     : burstEvent.Direction;
                 radialDirection = Vector3.Lerp(radialDirection, burstEvent.Direction, 0.2f);
                 radialDirection.y += cavitationShockwaveVerticalLift;
-                radialDirection = NormalizeFastOrDefault(radialDirection, Vector3.up);
+                radialDirection = DominantAxisOrDefault(radialDirection, Vector3.up);
 
                 float radiusSq = math.max(0.0001f, burstEvent.Radius * burstEvent.Radius);
                 float distance01 = math.saturate(1f - radialDistanceSq / radiusSq);
@@ -1834,7 +1834,7 @@ namespace Hecton8.Physics
             return false;
         }
 
-        private static Vector3 NormalizeFastOrDefault(Vector3 value, Vector3 fallback)
+        private static Vector3 DominantAxisOrDefault(Vector3 value, Vector3 fallback)
         {
             float3 axis = DominantAxisOrDefault(new float3(value.x, value.y, value.z), new float3(fallback.x, fallback.y, fallback.z));
             return new Vector3(axis.x, axis.y, axis.z);
@@ -2216,9 +2216,9 @@ namespace Hecton8.Physics
             if (horizontalLengthSq <= GiantWakeDirectionEpsilonSq)
                 return float3.zero;
 
-            float3 wakeDirection = NormalizeFastOrDefault(horizontalDirection, new float3(1f, 0f, 0f));
+            float3 wakeDirection = DominantAxisOrDefault(horizontalDirection, new float3(1f, 0f, 0f));
             wakeDirection.y = giantWakeVerticalBias;
-            wakeDirection = NormalizeFastOrDefault(wakeDirection, new float3(1f, 0f, 0f));
+            wakeDirection = DominantAxisOrDefault(wakeDirection, new float3(1f, 0f, 0f));
             return wakeDirection * math.max(0f, giantWakeCurrentStrength);
         }
 
@@ -2264,22 +2264,6 @@ namespace Hecton8.Physics
             float minComponent = math.cmin(absValue);
             float midComponent = absValue.x + absValue.y + absValue.z - maxComponent - minComponent;
             return maxComponent + midComponent * 0.375f + minComponent * 0.125f;
-        }
-
-        private static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
-        {
-            float3 absValue = math.abs(value);
-            float maxComponent = math.cmax(absValue);
-            if (maxComponent <= 0.000001f)
-                return fallback;
-
-            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
-                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
-
-            if (absValue.y >= absValue.z)
-                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
-
-            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
         }
 
         private void ConsumeGpuBuoyancyReadbacks()
@@ -2746,7 +2730,7 @@ namespace Hecton8.Physics
             float3 pos = positions[i];
             float3 vel = velocities[i];
             float3 angularVel = angularVelocities[i];
-            float3 up = NormalizeFastOrDefault(upVectors[i], new float3(0f, 1f, 0f));
+            float3 up = DominantAxisOrDefault(upVectors[i], new float3(0f, 1f, 0f));
 
             // ── Glubina pogruzheniya tsentra mass ──
             float waveOffset = waveOffsets[i];
@@ -2917,7 +2901,7 @@ namespace Hecton8.Physics
             float3 tiltAxis = math.cross(up, new float3(0f, 1f, 0f));
             float3 stabilityTorque = tiltAxis * (p.surfaceStability * buoyancyMagnitude * surfaceBand * 0.12f);
             float3 angularDragTorque = -angularVel * (angularDragCoeff * math.max(0.1f, p.angularDragMultiplier) * subRatio * math.max(1f, p.mass * 0.35f));
-            float3 flowAxis = NormalizeFastOrDefault(sampledCurrent, new float3(1f, 0f, 0f));
+            float3 flowAxis = DominantAxisOrDefault(sampledCurrent, new float3(1f, 0f, 0f));
             float3 gyroscopicAxis = math.cross(up, flowAxis);
             float currentSpeed = FastMagnitudeApprox(sampledCurrent);
             float volumeLever = CinematicVolumeLever(p.volume);
@@ -2935,8 +2919,8 @@ namespace Hecton8.Physics
                 float wakeSpeedSq = math.lengthsq(resolvedGiantWakeCurrent);
                 if (standardSpeedSq > 0.0001f && wakeSpeedSq > 0.0001f)
                 {
-                    float3 standardAxis = NormalizeFastOrDefault(standardCurrent, new float3(1f, 0f, 0f));
-                    float3 wakeAxis = NormalizeFastOrDefault(resolvedGiantWakeCurrent, new float3(1f, 0f, 0f));
+                    float3 standardAxis = DominantAxisOrDefault(standardCurrent, new float3(1f, 0f, 0f));
+                    float3 wakeAxis = DominantAxisOrDefault(resolvedGiantWakeCurrent, new float3(1f, 0f, 0f));
                     float crossMagnitudeSq = math.lengthsq(math.cross(standardAxis, wakeAxis));
                     float opposition = math.saturate(-math.dot(standardAxis, wakeAxis));
                     float minCurrentSpeed = math.min(
@@ -2945,7 +2929,7 @@ namespace Hecton8.Physics
                     float shear01 = math.saturate((crossMagnitudeSq + opposition) * minCurrentSpeed * 0.85f);
                     float phase = math.dot(pos, new float3(0.071f, 0.113f, 0.097f)) + time * math.max(0.01f, tidalShearFrequency);
                     float turbulence = FastTriangleSigned(phase) * FastTriangleSigned(phase * 1.731f + 2.17f);
-                    float3 shearAxis = NormalizeFastOrDefault(math.cross(standardAxis, wakeAxis), up);
+                    float3 shearAxis = DominantAxisOrDefault(math.cross(standardAxis, wakeAxis), up);
                     shearTorque = shearAxis *
                                   (turbulence * shear01 * math.max(0f, tidalShearTorqueStrength) *
                                    volumeLever * subRatio * math.max(0f, p.currentResponse));
@@ -3003,7 +2987,7 @@ namespace Hecton8.Physics
                 : value;
         }
 
-        private static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
+        private static float3 DominantAxisOrDefault(float3 value, float3 fallback)
         {
             float3 absValue = math.abs(value);
             float maxComponent = math.cmax(absValue);
@@ -3056,7 +3040,7 @@ namespace Hecton8.Physics
             if (wave.Amplitude <= 0f || wave.Wavelength <= 0.01f)
                 return float3.zero;
 
-            float2 direction = NormalizeFastOrDefault(wave.DirectionXZ, new float2(1f, 0f));
+            float2 direction = DominantAxisOrDefault(wave.DirectionXZ, new float2(1f, 0f));
             float waveNumber = TwoPi / math.max(0.01f, wave.Wavelength);
             float phaseVelocity = (CinematicPhaseSpeedBase + wave.Wavelength * CinematicPhaseSpeedPerMeter) *
                                   math.max(0.01f, wave.SpeedMultiplier);
@@ -3091,7 +3075,7 @@ namespace Hecton8.Physics
             return major + minor * 0.375f;
         }
 
-        private static float2 NormalizeFastOrDefault(float2 value, float2 fallback)
+        private static float2 DominantAxisOrDefault(float2 value, float2 fallback)
         {
             float2 absValue = math.abs(value);
             float maxComponent = math.max(absValue.x, absValue.y);
@@ -3206,7 +3190,7 @@ namespace Hecton8.Physics
             if (distanceSq <= 0.000001f || distanceSq > radiusSq)
                 return;
 
-            float3 exhaustDirection = -NormalizeFastOrDefault(thruster.DirectionWS, new float3(0f, 0f, 1f));
+            float3 exhaustDirection = -DominantAxisOrDefault(thruster.DirectionWS, new float3(0f, 0f, 1f));
             float axialDistance = math.dot(toSample, exhaustDirection);
             if (axialDistance <= 0f)
                 return;
@@ -3234,7 +3218,7 @@ namespace Hecton8.Physics
             if (distanceSq <= 0.000001f || distanceSq > radiusSq)
                 return;
 
-            float3 inward = NormalizeFastOrDefault(toCenter, new float3(1f, 0f, 0f));
+            float3 inward = DominantAxisOrDefault(toCenter, new float3(1f, 0f, 0f));
             float3 tangent = new float3(inward.z, 0f, -inward.x);
             float falloff = math.saturate(1f - distanceSq / math.max(radiusSq, 0.000001f));
             flow += tangent * (whirlpool.TangentialStrength * falloff);
@@ -3264,7 +3248,7 @@ namespace Hecton8.Physics
             return maxComponent + midComponent * 0.375f + minComponent * 0.125f;
         }
 
-        private static float3 NormalizeFastOrDefault(float3 value, float3 fallback)
+        private static float3 DominantAxisOrDefault(float3 value, float3 fallback)
         {
             float3 absValue = math.abs(value);
             float maxComponent = math.cmax(absValue);

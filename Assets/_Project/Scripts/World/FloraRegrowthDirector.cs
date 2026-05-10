@@ -1323,9 +1323,32 @@ namespace Hecton8.World
         private static Vector3 ResolveSeedLateralOffset(uint seedUid)
         {
             uint state = seedUid != 0u ? seedUid : 0x91E10DA5u;
-            float angle = NextSeed01(ref state) * Mathf.PI * 2f;
+            float2 direction = ResolveSeedOctantDirection((int)(NextSeed01(ref state) * 7.999f));
             float radius = NextSeed01(ref state) * 1.65f;
-            return new Vector3(Mathf.Cos(angle) * radius, Mathf.Lerp(0.12f, 0.45f, NextSeed01(ref state)), Mathf.Sin(angle) * radius);
+            return new Vector3(direction.x * radius, 0.12f + (0.33f * NextSeed01(ref state)), direction.y * radius);
+        }
+
+        private static float2 ResolveSeedOctantDirection(int sector)
+        {
+            switch (sector & 7)
+            {
+                case 0:
+                    return new float2(1f, 0f);
+                case 1:
+                    return new float2(0.70710677f, 0.70710677f);
+                case 2:
+                    return new float2(0f, 1f);
+                case 3:
+                    return new float2(-0.70710677f, 0.70710677f);
+                case 4:
+                    return new float2(-1f, 0f);
+                case 5:
+                    return new float2(-0.70710677f, -0.70710677f);
+                case 6:
+                    return new float2(0f, -1f);
+                default:
+                    return new float2(0.70710677f, -0.70710677f);
+            }
         }
 
         private static float NextSeed01(ref uint state)

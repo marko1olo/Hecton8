@@ -69,7 +69,7 @@ namespace Hecton8.Audio.Editor
             AppendCheck("grain bank cold bake uses deterministic cheap fake", metallicGrainBank.Contains("GenerateCheapMetallicSample") && metallicGrainBank.Contains("TriOscFake") && metallicGrainBank.Contains("SoftClipFake") && metallicGrainBank.IndexOf("Complete", StringComparison.Ordinal) < 0 && metallicGrainBank.IndexOf("IJobParallelFor", StringComparison.Ordinal) < 0 && renderer.Contains("PlayerCriticalMetallicGrainBank.Generate"), ref passedCount, ref failedCount, checks);
             AppendCheck("renderer no longer owns metallic grain-bank job", renderer.IndexOf("MetallicGrainBankBuildJob", StringComparison.Ordinal) < 0 && renderer.IndexOf("private static void GenerateMetallicGrainBank", StringComparison.Ordinal) < 0, ref passedCount, ref failedCount, checks);
             AppendCheck("audio overflow emits performance telemetry on main thread", telemetry.Contains("GlobalTelemetryBus.PublishPerformanceWarning") && telemetry.Contains("_audioOverflowDropWarningHash"), ref passedCount, ref failedCount, checks);
-            AppendCheck("OnAudioFilterRead stays bridge-only", MethodBodyIsBridgeOnly(renderer, "private void OnAudioFilterRead(float[] data, int channels)"), ref passedCount, ref failedCount, checks);
+            AppendCheck("managed audio callback fallback is absent", renderer.IndexOf("OnAudioFilterRead", StringComparison.Ordinal) < 0 && renderer.IndexOf("MixInterleavedInto", StringComparison.Ordinal) < 0, ref passedCount, ref failedCount, checks);
             AppendCheck("hot DSP block has no JobHandle completion", !ExtractMethodBody(renderer, "private void MixAndFilterBlock").Contains(".Complete()"), ref passedCount, ref failedCount, checks);
             AppendCheck("renderer Tick has no string formatting", HasNoHotStringFormatting(ExtractMethodBody(renderer, "public void Tick(float deltaTime)")), ref passedCount, ref failedCount, checks);
             AppendCheck("crash telemetry Tick has no string formatting", HasNoHotStringFormatting(ExtractMethodBody(telemetry, "public void Tick(float dt)")), ref passedCount, ref failedCount, checks);
@@ -139,18 +139,6 @@ namespace Hecton8.Audio.Editor
             }
 
             return matches.Count > 0;
-        }
-
-        private static bool MethodBodyIsBridgeOnly(string source, string signature)
-        {
-            string body = ExtractMethodBody(source, signature);
-            return body.Length > 0 &&
-                   body.IndexOf("new ", StringComparison.Ordinal) < 0 &&
-                   body.IndexOf(".Complete()", StringComparison.Ordinal) < 0 &&
-                   body.IndexOf(".Run()", StringComparison.Ordinal) < 0 &&
-                   body.IndexOf("TryRefreshSourceCinematicMuffle", StringComparison.Ordinal) < 0 &&
-                   body.IndexOf("RenderLeviathanGranularRoarSample", StringComparison.Ordinal) < 0 &&
-                   body.IndexOf("MixInterleavedInto", StringComparison.Ordinal) >= 0;
         }
 
         private static bool HasNoHotStringFormatting(string body)

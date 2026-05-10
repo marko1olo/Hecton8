@@ -4918,9 +4918,19 @@ namespace Hecton8.Environment
 
             float3 direction = new float3(lightDirection.x, lightDirection.y, lightDirection.z);
             if (!math.all(math.isfinite(direction)) || math.lengthsq(direction) < 0.0001f)
+            {
                 direction = new float3(0f, 0f, 1f);
+            }
             else
-                direction = math.normalize(direction);
+            {
+                float3 absDirection = math.abs(direction);
+                if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
+                    direction = new float3(direction.x < 0f ? -1f : 1f, 0f, 0f);
+                else if (absDirection.y >= absDirection.z)
+                    direction = new float3(0f, direction.y < 0f ? -1f : 1f, 0f);
+                else
+                    direction = new float3(0f, 0f, direction.z < 0f ? -1f : 1f);
+            }
 
             bool hasActiveCone =
                 active > 0.5f &&
@@ -5508,10 +5518,23 @@ namespace Hecton8.Environment
         {
             float depth = math.max(0f, ResolveWaterLevel() - probePosition.y);
             float2 phase = new float2(probePosition.x * 0.017f, probePosition.z * 0.013f);
-            float ridge = math.sin(phase.x + phase.y * 1.37f) * 0.5f +
-                          math.sin(phase.x * -1.91f + phase.y * 0.73f + 2.17f) * 0.25f;
+            float ridge = FastTriangleSignedRadians(phase.x + phase.y * 1.37f) * 0.5f +
+                          FastTriangleSignedRadians(phase.x * -1.91f + phase.y * 0.73f + 2.17f) * 0.25f;
             float distance = math.lerp(18f, 140f, math.saturate(depth / 220f)) + ridge * 12f;
             return math.max(4f, distance);
+        }
+
+        private static float FastTriangleSignedRadians(float radians)
+        {
+            float phase = radians * 0.159154943f;
+            int whole = (int)phase;
+            phase -= whole;
+            if (phase < 0f)
+                phase += 1f;
+            else if (phase >= 1f)
+                phase -= 1f;
+
+            return 1f - (4f * math.abs(phase - 0.5f));
         }
 
         internal void TriggerExternalBottomSiltBurst(float intensity01)
@@ -6446,9 +6469,26 @@ namespace Hecton8.Environment
         private static Vector3 ResolveSafeDirection(Vector3 direction, Vector3 fallback)
         {
             float lengthSq = direction.sqrMagnitude;
-            return lengthSq > 0.0001f
-                ? direction * math.rsqrt(lengthSq)
-                : fallback;
+            if (lengthSq <= 0.0001f)
+                return fallback;
+
+            return math.abs(lengthSq - 1f) <= 0.0625f
+                ? direction
+                : DominantAxisOrDefault(direction, fallback);
+        }
+
+        private static Vector3 DominantAxisOrDefault(Vector3 direction, Vector3 fallback)
+        {
+            float ax = math.abs(direction.x);
+            float ay = math.abs(direction.y);
+            float az = math.abs(direction.z);
+            if (ax <= 0.000001f && ay <= 0.000001f && az <= 0.000001f)
+                return fallback;
+            if (ax >= ay && ax >= az)
+                return direction.x < 0f ? Vector3.left : Vector3.right;
+            if (ay >= az)
+                return direction.y < 0f ? Vector3.down : Vector3.up;
+            return direction.z < 0f ? Vector3.back : Vector3.forward;
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
@@ -6613,5 +6653,5 @@ namespace Hecton8.Environment
         }
 #endif
     }
-}
 
+}

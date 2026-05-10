@@ -2163,7 +2163,7 @@ namespace Hecton8.SaveSystem
                 if (IsIndexedSectorEntryPopulated(in entry) &&
                     !IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, mapping.Length))
                 {
-                    error = $"Indexed sector entry {i} exceeded the file bounds.";
+                    error = "Indexed sector entry exceeded the file bounds.";
                     return false;
                 }
 
@@ -2175,7 +2175,7 @@ namespace Hecton8.SaveSystem
 
             if (populatedCount != sectorCount)
             {
-                error = $"Indexed sector directory count mismatch. Header={sectorCount}, Populated={populatedCount}.";
+                error = "Indexed sector directory count mismatch.";
                 return false;
             }
 
@@ -2582,6 +2582,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            bool hasChecksumChain = header.Version >= HeaderChecksumVersion;
             if (!TryComputeIndexedChecksumRootFromMappedDirectory(
                     (byte*)mapping.View,
                     directoryEntryCursor,
@@ -2589,13 +2590,14 @@ namespace Hecton8.SaveSystem
                     mapping.Length,
                     checked((int)directoryHeader.SectorCount),
                     unchecked((uint)metadataHash64),
+                    hasChecksumChain,
                     out uint checksumRoot,
                     out error))
             {
                 return false;
             }
 
-            if (header.Version >= HeaderChecksumVersion)
+            if (hasChecksumChain)
             {
                 if (!IsIndexedChecksumRootValid(
                         checksumRoot,
@@ -3954,7 +3956,7 @@ namespace Hecton8.SaveSystem
 
                     if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, mapping.Length))
                     {
-                        error = $"Indexed sector entry {i} exceeded the file bounds.";
+                        error = "Indexed sector entry exceeded the file bounds.";
                         return false;
                     }
 
@@ -3982,7 +3984,7 @@ namespace Hecton8.SaveSystem
 
                 if (populatedCount != (int)directoryHeader.SectorCount)
                 {
-                    error = $"Indexed sector directory count mismatch. Header={directoryHeader.SectorCount}, Populated={populatedCount}.";
+                    error = "Indexed sector directory count mismatch.";
                     return false;
                 }
 
@@ -4042,7 +4044,7 @@ namespace Hecton8.SaveSystem
 
                     if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, mapping.Length))
                     {
-                        error = $"Indexed sector entry {i} exceeded the file bounds.";
+                        error = "Indexed sector entry exceeded the file bounds.";
                         return false;
                     }
 
@@ -4088,7 +4090,7 @@ namespace Hecton8.SaveSystem
 
                 if (populatedCount != (int)directoryHeader.SectorCount)
                 {
-                    error = $"Indexed sector directory count mismatch. Header={directoryHeader.SectorCount}, Populated={populatedCount}.";
+                    error = "Indexed sector directory count mismatch.";
                     return false;
                 }
 
@@ -4761,6 +4763,7 @@ namespace Hecton8.SaveSystem
             long fileLength,
             int expectedSectorCount,
             uint metadataChecksum,
+            bool computeChecksumRoot,
             out uint checksumRoot,
             out string error)
         {
@@ -4770,22 +4773,44 @@ namespace Hecton8.SaveSystem
 
             unchecked
             {
-                for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
+                if (computeChecksumRoot)
                 {
-                    SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
-                    if (IsIndexedSectorEntryPopulated(in entry))
+                    for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
                     {
-                        if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, fileLength))
+                        SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                        if (IsIndexedSectorEntryPopulated(in entry))
                         {
-                            error = $"Indexed sector entry {i} exceeded the file bounds.";
-                            return false;
+                            if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, fileLength))
+                            {
+                                error = "Indexed sector entry exceeded the file bounds.";
+                                return false;
+                            }
+
+                            populatedCount++;
+                            checksumRoot = (checksumRoot ^ FoldIndexedSectorChecksum(in entry)) * 16777619u;
                         }
 
-                        populatedCount++;
-                        checksumRoot = (checksumRoot ^ FoldIndexedSectorChecksum(in entry)) * 16777619u;
+                        entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
                     }
+                }
+                else
+                {
+                    for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
+                    {
+                        SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                        if (IsIndexedSectorEntryPopulated(in entry))
+                        {
+                            if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, fileLength))
+                            {
+                                error = "Indexed sector entry exceeded the file bounds.";
+                                return false;
+                            }
 
-                    entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+                            populatedCount++;
+                        }
+
+                        entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+                    }
                 }
 
                 if (checksumRoot == 0u)
@@ -4794,7 +4819,7 @@ namespace Hecton8.SaveSystem
 
             if (populatedCount != expectedSectorCount)
             {
-                error = $"Indexed sector directory count mismatch. Header={expectedSectorCount}, Populated={populatedCount}.";
+                error = "Indexed sector directory count mismatch.";
                 return false;
             }
 

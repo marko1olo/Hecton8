@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using Unity.Collections;
-using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 
@@ -108,32 +107,23 @@ namespace Hecton8.EditorTools
             return outputPath;
         }
 
-        private static unsafe void CopySourceRedToPackedChannel(Texture source, int width, int height, NativeArray<Color32> packedPixels, int channel)
+        private static void CopySourceRedToPackedChannel(Texture source, int width, int height, NativeArray<Color32> packedPixels, int channel)
         {
             Texture2D readable = null;
             try
             {
                 readable = CaptureReadableTexture(source, width, height);
                 NativeArray<Color32> sourcePixels = readable.GetRawTextureData<Color32>();
-                Color32* packedPtr = (Color32*)NativeArrayUnsafeUtility.GetUnsafePtr(packedPixels);
-                Color32* sourcePtr = (Color32*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(sourcePixels);
                 int pixelCount = packedPixels.Length;
 
-                for (int i = 0; i < pixelCount; i++)
-                {
-                    byte value = sourcePtr[i].r;
-                    Color32 pixel = packedPtr[i];
-                    if (channel == 0)
-                        pixel.r = value;
-                    else if (channel == 1)
-                        pixel.g = value;
-                    else if (channel == 2)
-                        pixel.b = value;
-                    else
-                        pixel.a = value;
-
-                    packedPtr[i] = pixel;
-                }
+                if (channel == 0)
+                    CopyRedToR(sourcePixels, packedPixels, pixelCount);
+                else if (channel == 1)
+                    CopyRedToG(sourcePixels, packedPixels, pixelCount);
+                else if (channel == 2)
+                    CopyRedToB(sourcePixels, packedPixels, pixelCount);
+                else
+                    CopyRedToA(sourcePixels, packedPixels, pixelCount);
             }
             finally
             {
@@ -167,12 +157,49 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static int ResolvePackDimension(params int[] dimensions)
+        private static void CopyRedToR(NativeArray<Color32> sourcePixels, NativeArray<Color32> packedPixels, int pixelCount)
         {
-            int max = 1;
-            for (int i = 0; i < dimensions.Length; i++)
-                max = Mathf.Max(max, dimensions[i]);
+            for (int i = 0; i < pixelCount; i++)
+            {
+                Color32 pixel = packedPixels[i];
+                pixel.r = sourcePixels[i].r;
+                packedPixels[i] = pixel;
+            }
+        }
 
+        private static void CopyRedToG(NativeArray<Color32> sourcePixels, NativeArray<Color32> packedPixels, int pixelCount)
+        {
+            for (int i = 0; i < pixelCount; i++)
+            {
+                Color32 pixel = packedPixels[i];
+                pixel.g = sourcePixels[i].r;
+                packedPixels[i] = pixel;
+            }
+        }
+
+        private static void CopyRedToB(NativeArray<Color32> sourcePixels, NativeArray<Color32> packedPixels, int pixelCount)
+        {
+            for (int i = 0; i < pixelCount; i++)
+            {
+                Color32 pixel = packedPixels[i];
+                pixel.b = sourcePixels[i].r;
+                packedPixels[i] = pixel;
+            }
+        }
+
+        private static void CopyRedToA(NativeArray<Color32> sourcePixels, NativeArray<Color32> packedPixels, int pixelCount)
+        {
+            for (int i = 0; i < pixelCount; i++)
+            {
+                Color32 pixel = packedPixels[i];
+                pixel.a = sourcePixels[i].r;
+                packedPixels[i] = pixel;
+            }
+        }
+
+        private static int ResolvePackDimension(int a, int b, int c, int d)
+        {
+            int max = Mathf.Max(Mathf.Max(a, b), Mathf.Max(c, d));
             return Mathf.Min(MaxPackedMaskSize, Mathf.NextPowerOfTwo(max));
         }
 

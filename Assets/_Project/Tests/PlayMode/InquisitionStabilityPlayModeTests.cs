@@ -571,7 +571,6 @@ namespace Hecton8.Tests.PlayMode
                 Rigidbody rb = cube.AddComponent<Rigidbody>();
                 rb.useGravity = true;
                 rb.mass = 1f;
-                rb.sleepThreshold = 0f;
                 SceneManager.MoveGameObjectToScene(cube, scene);
                 objects[i] = cube;
             }

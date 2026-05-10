@@ -20,6 +20,27 @@ namespace Hecton8.Physics
         /// <inheritdoc />
         public float WaterDensityKilogramsPerCubicMeter => WaterDensityKgPerCubicMeter;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ApproximateSqrtPositive(float value)
+        {
+            float safeValue = math.max(0f, value);
+            if (safeValue <= 0f)
+                return 0f;
+
+            float magnitude = math.asfloat((math.asint(safeValue) >> 1) + 0x1FC00000);
+            return math.isfinite(magnitude) ? magnitude : 0f;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float ApproximateMagnitude(float3 value)
+        {
+            float3 absValue = math.abs(value);
+            float maxAxis = math.cmax(absValue);
+            float minAxis = math.cmin(absValue);
+            float midAxis = absValue.x + absValue.y + absValue.z - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
+        }
+
         /// <inheritdoc />
         public float ResolveIngressVelocity(float depthMeters)
         {
@@ -31,7 +52,7 @@ namespace Hecton8.Physics
         {
             float safeDepth = math.max(0f, depthMeters);
             float safeGravity = math.max(0f, gravityMetersPerSecondSquared);
-            float velocity = math.sqrt(2f * safeGravity * safeDepth);
+            float velocity = ApproximateSqrtPositive(2f * safeGravity * safeDepth);
             return math.isfinite(velocity) ? velocity : 0f;
         }
 
@@ -96,7 +117,7 @@ namespace Hecton8.Physics
             if (dampingFactor <= epsilon)
                 return 0f;
 
-            float velocityMetersPerSecond = math.sqrt(math.max(0f, 2f * math.max(0f, gravityMetersPerSecondSquared) * absHeadDifferenceMeters));
+            float velocityMetersPerSecond = ApproximateSqrtPositive(2f * math.max(0f, gravityMetersPerSecondSquared) * absHeadDifferenceMeters);
             float signedDeltaVolume =
                 math.sign(headDifferenceMeters) *
                 safeDoorArea *
@@ -139,7 +160,7 @@ namespace Hecton8.Physics
 
             float3 delta = blendedCenter - currentCenter;
             float maxCenterDelta = math.max(epsilon, maxCenterDeltaMeters);
-            float deltaMagnitude = math.length(delta);
+            float deltaMagnitude = ApproximateMagnitude(delta);
             if (deltaMagnitude > maxCenterDelta)
             {
                 if (!TryResolveSafeQuotient(maxCenterDelta, deltaMagnitude, epsilon, out float centerClampScale))

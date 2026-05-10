@@ -103,7 +103,15 @@ float4 _TotalUniverseOffset;           // xyz=runtime-to-absolute offset used fo
 float3 HectonCoreLitSafeNormalize(float3 value)
 {
     float lenSq = dot(value, value);
-    return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+    if (lenSq <= 0.0001)
+        return float3(0.0, 1.0, 0.0);
+
+    float3 a = abs(value);
+    float maxAxis = max(max(a.x, a.y), a.z);
+    float minAxis = min(min(a.x, a.y), a.z);
+    float midAxis = a.x + a.y + a.z - maxAxis - minAxis;
+    float approxLength = max(maxAxis + midAxis * 0.375 + minAxis * 0.1875, 0.0001);
+    return value / approxLength;
 }
 
 float HectonCoreLitApproxDistance(float3 delta)
@@ -113,6 +121,11 @@ float HectonCoreLitApproxDistance(float3 delta)
     float minAxis = min(min(a.x, a.y), a.z);
     float midAxis = a.x + a.y + a.z - maxAxis - minAxis;
     return maxAxis + midAxis * 0.375 + minAxis * 0.1875;
+}
+
+int HectonCoreLitRoundToIntFast(float value)
+{
+    return value >= 0.0 ? (int)(value + 0.5) : (int)(value - 0.5);
 }
 
 float3 HectonCoreLitSanitizePositionOS(float3 positionOS)
@@ -139,12 +152,18 @@ float HectonCoreLitHash12(float2 value)
 
 float HectonCoreLitTemporalSinFlicker01(float timeSeconds, float speed, float phaseOffset)
 {
-    return frac(sin(timeSeconds * max(speed, 0.001) + phaseOffset) * 43758.5453123);
+    float phase = (timeSeconds * max(speed, 0.001) + phaseOffset) * 0.15915494 + 0.25;
+    return 1.0 - abs(frac(phase) * 2.0 - 1.0);
 }
 
 float HectonCoreLitTrianglePulse01(float phase)
 {
     return 1.0 - abs(frac(phase * 0.15915494 + 0.25) * 2.0 - 1.0);
+}
+
+float HectonCoreLitTriangle01(float value)
+{
+    return 1.0 - abs(frac(value) * 2.0 - 1.0);
 }
 
 float HectonCoreLitFastPower01(float value, float exponent)
@@ -701,19 +720,17 @@ float HectonCoreLitEvaluateParasiteField(float3 positionWS, out float pulseMulti
 float HectonCoreLitCheapCausticRidge(float2 uv, float cellDensity, float timePhase)
 {
     float2 animatedUv = uv * cellDensity + float2(timePhase, -timePhase * 0.73);
-    float broad = HectonCoreLitValueNoise2(animatedUv);
-    float tight = HectonCoreLitValueNoise2(animatedUv * 2.13 + 19.17);
-    return saturate(abs(broad - tight) * 2.8);
+    float stripeA = HectonCoreLitTriangle01(animatedUv.x + animatedUv.y * 0.37);
+    float stripeB = HectonCoreLitTriangle01(animatedUv.x * -0.61 + animatedUv.y + 0.23);
+    float cellMask = lerp(0.72, 1.0, HectonCoreLitHash12(floor(animatedUv)));
+    return saturate((1.0 - abs(stripeA - stripeB)) * cellMask);
 }
 
 float HectonCoreLitEvaluateProceduralCaustics(float2 uv)
 {
     float primaryDensity = max(_HectonCausticsSimulationParamsA.x, 0.5);
-    float primaryDensityBase = primaryDensity;
     float primarySpeed = _HectonCausticsSimulationParamsA.z;
-    float sharpness = max(_HectonCausticsSimulationParamsB.x, 0.1);
-    float secondaryWeight = saturate(_HectonCausticsSimulationParamsB.y);
-    float timeValue = _HectonCausticsSimulationParamsB.z;
+    float timeValue = _Time.y + _HectonCausticsSimulationParamsB.z;
     float waveDisplacement = _HectonCausticsSimulationParamsC.x;
     float2 waveFlow = _HectonCausticsSimulationParamsC.yz;
     float wavePhase = _HectonCausticsSimulationParamsC.w;
@@ -728,23 +745,12 @@ float HectonCoreLitEvaluateProceduralCaustics(float2 uv)
 
     float primaryTime = timeValue * primarySpeed + wavePhase;
 
-    float primaryLayer = HectonCoreLitCheapCausticRidge(animatedUv, primaryDensity, primaryTime);
-    float combined = primaryLayer;
-    [branch]
-    if (secondaryWeight > 0.0001)
-    {
-        float secondaryDensity = max(_HectonCausticsSimulationParamsA.y, primaryDensityBase);
-        secondaryDensity *= lerp(0.92, 1.12, saturate(waveFlowSq * 0.0064));
-        float secondaryTime = timeValue * _HectonCausticsSimulationParamsA.w + wavePhase * 1.37 + 17.0;
-        float secondaryLayer = HectonCoreLitCheapCausticRidge(animatedUv + 0.37, secondaryDensity, secondaryTime);
-        float twoLayerWeb = min(primaryLayer, secondaryLayer);
-        combined = lerp(primaryLayer, twoLayerWeb, secondaryWeight);
-    }
+    float combined = HectonCoreLitCheapCausticRidge(animatedUv, primaryDensity, primaryTime);
 
     if (combined <= 0.0001)
         return 0.0;
 
-    combined = HectonCoreLitFastPower01(saturate(combined * 2.3), sharpness);
+    combined = saturate(combined * combined * 3.2);
     combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + waveFlowMotionMask));
     return saturate(combined * 1.35);
 }
@@ -785,8 +791,8 @@ half HectonCoreLitResolveFlashlightPhotophobia(float3 positionWS)
     if (sampleDistanceSq <= 0.00000001 || sampleDistanceSq >= lightRange * lightRange)
         return 1.0h;
 
-    float invSampleDistance = rsqrt(max(sampleDistanceSq, 0.00001));
-    float3 sampleDirectionWS = toSampleWS * invSampleDistance;
+    float sampleDistance = max(HectonCoreLitApproxDistance(toSampleWS), 0.00001);
+    float3 sampleDirectionWS = toSampleWS / sampleDistance;
     float3 lightDirectionWS = HectonCoreLitSafeNormalize(_HectonFlashlightDirectionWS.xyz);
     float innerCos = _HectonFlashlightDirectionWS.w;
     float outerCos = _HectonFlashlightConeData.x;
@@ -798,7 +804,7 @@ half HectonCoreLitResolveFlashlightPhotophobia(float3 positionWS)
     if (_HectonXRFoveatedParams.x > 0.5)
         rangeMask = saturate(1.0 - sampleDistanceSq * inverseRange * inverseRange);
     else
-        rangeMask = saturate(1.0 - sampleDistanceSq * invSampleDistance * inverseRange);
+        rangeMask = saturate(1.0 - sampleDistance * inverseRange);
     rangeMask *= rangeMask;
     float photophobia = coneMask * rangeMask * lightEnergy;
     return (half)(lerp(1.0, 0.0, saturate(photophobia)) * fieldPhotophobia);
@@ -1293,17 +1299,16 @@ float HectonCoreLitEvaluateFlashlightShadow(float3 surfacePositionWS, float3 nor
     if (lightDistanceSq <= 0.00000001)
         return 1.0;
 
-    float invLightDistance = rsqrt(max(lightDistanceSq, 0.00001));
-    float lightDistance = lightDistanceSq * invLightDistance;
+    float lightDistance = max(HectonCoreLitApproxDistance(lightVector), 0.00001);
     float shadowBias = max(_HectonFlashlightShadowBias, 0.001);
     float rayLength = max(lightDistance - shadowBias, 0.0);
     if (rayLength <= 0.0001)
         return 1.0;
 
-    float3 rayDirectionWS = lightVector * invLightDistance;
+    float3 rayDirectionWS = lightVector / lightDistance;
     float3 rayOriginWS = surfacePositionWS + HectonCoreLitSafeNormalize(normalWS) * shadowBias;
     const int maxVoxelShadowSteps = HECTON_FLASHLIGHT_SDF_SHADOW_MAX_STEPS;
-    int stepCount = min(maxVoxelShadowSteps, clamp((int)round(_HectonFlashlightShadowSteps), 1, maxVoxelShadowSteps));
+    int stepCount = min(maxVoxelShadowSteps, clamp(HectonCoreLitRoundToIntFast(_HectonFlashlightShadowSteps), 1, maxVoxelShadowSteps));
     float minStep = max(_HectonFlashlightShadowMinStep, 0.01);
     float res = 1.0;
     float t = minStep;
@@ -1357,9 +1362,8 @@ float HectonCoreLitEvaluateAdditionalLightContactShadowFromResolved(float3 addit
     if (lightDistanceSq <= 0.0001)
         return defaultShadowAttenuation;
 
-    float invLightDistance = rsqrt(max(lightDistanceSq, 0.0001));
-    float lightDistance = lightDistanceSq * invLightDistance;
-    float3 lightDirectionWS = lightVectorWS * invLightDistance;
+    float lightDistance = max(HectonCoreLitApproxDistance(lightVectorWS), 0.0001);
+    float3 lightDirectionWS = lightVectorWS / lightDistance;
     float maxDistance = min(lightDistance, max(_HectonContactShadowMaxDistance, 0.001));
     float contactShadow = HectonCoreLitEvaluateScreenSpaceContactShadowFromUnitLightDirection(positionWS, normalWS, lightDirectionWS, maxDistance);
     return min(defaultShadowAttenuation, contactShadow);

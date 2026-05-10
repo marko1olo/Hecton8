@@ -30,6 +30,7 @@
 
 using UnityEngine;
 using UnityEditor;
+using Unity.Collections;
 using System.IO;
 
 namespace Hecton.Editor
@@ -364,8 +365,8 @@ namespace Hecton.Editor
                 "  G = Detail Map (high-freq noise)\n" +
                 "  B = Flow X (curl of density gradient)\n" +
                 "  A = Flow Y (curl of density gradient)\n\n" +
-                "Both source textures must have Read/Write enabled\n" +
-                "in their import settings.",
+                "Source textures stay Read/Write disabled; the packer\n" +
+                "captures one GPU snapshot per input.",
                 MessageType.Info);
 
             EditorGUILayout.Space(4);
@@ -390,25 +391,11 @@ namespace Hecton.Editor
                     "Density Map is required.", MessageType.Warning);
                 canPack = false;
             }
-            else if (!_densityMap.isReadable)
-            {
-                EditorGUILayout.HelpBox(
-                    "Density Map is not readable! Enable Read/Write in " +
-                    "the texture import settings.", MessageType.Error);
-                canPack = false;
-            }
 
             if (_detailMap == null)
             {
                 EditorGUILayout.HelpBox(
                     "Detail Map is required.", MessageType.Warning);
-                canPack = false;
-            }
-            else if (!_detailMap.isReadable)
-            {
-                EditorGUILayout.HelpBox(
-                    "Detail Map is not readable! Enable Read/Write in " +
-                    "the texture import settings.", MessageType.Error);
                 canPack = false;
             }
 
@@ -444,150 +431,95 @@ namespace Hecton.Editor
             int width  = _densityMap.width;
             int height = _densityMap.height;
 
-            // Read source pixels
-            Color[] densityPixels = _densityMap.GetPixels();
-            Color[] detailPixels  = _detailMap.GetPixels(
-                0, 0, _detailMap.width, _detailMap.height);
+            Texture2D densityReadable = null;
+            Texture2D detailReadable = null;
+            Texture2D atlas = null;
+            byte[] pngData;
 
-            // If detail map is different size, we need to sample it
-            // at density map resolution using bilinear interpolation
-            bool sizeMismatch = (_detailMap.width != width ||
-                                 _detailMap.height != height);
-
-            // Build density grayscale array for gradient computation
-            // Using red channel as density value
-            float[] density = new float[width * height];
-            for (int i = 0; i < density.Length; i++)
+            try
             {
-                density[i] = densityPixels[i].r;
-            }
+                densityReadable = CaptureReadableTexture(_densityMap, width, height);
+                detailReadable = CaptureReadableTexture(_detailMap, width, height);
+                atlas = new Texture2D(width, height, TextureFormat.RGBA32, false, true);
+                atlas.name = "HectonSkyAtlas_RGBA";
 
-            // ---------------------------------------------------------
-            // CURL NOISE FROM DENSITY GRADIENT
-            //
-            // For each pixel:
-            //   1. Compute gradient via central differences (wrapping)
-            //      gradX = density[x+1, y] - density[x-1, y]
-            //      gradY = density[x, y+1] - density[x, y-1]
-            //
-            //   2. Rotate 90 degrees CCW to get curl vector
-            //      curlX = -gradY
-            //      curlY =  gradX
-            //      This makes flow follow CONTOURS (iso-density lines)
-            //      rather than flowing along the gradient (away from clouds)
-            //
-            //   3. Normalize, scale by _flowStrength, clamp [-1,1]
-            //
-            //   4. Map [-1,1] -> [0,1] for texture storage
-            //      shader decodes: flowDir = tex.ba * 2 - 1
-            // ---------------------------------------------------------
+                NativeArray<Color32> densityPixels = densityReadable.GetRawTextureData<Color32>();
+                NativeArray<Color32> detailPixels = detailReadable.GetRawTextureData<Color32>();
+                NativeArray<Color32> atlasPixels = atlas.GetRawTextureData<Color32>();
 
-            Color[] atlasPixels = new Color[width * height];
+                int totalPixels = width * height;
+                int progressInterval = Mathf.Max(1, totalPixels / 100);
 
-            // Progress bar for large textures
-            int totalPixels = width * height;
-            int progressInterval = Mathf.Max(1, totalPixels / 100);
-
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
+                for (int y = 0; y < height; y++)
                 {
-                    int idx = y * width + x;
-
-                    // -- R channel: density --
-                    float r = density[idx];
-
-                    // -- G channel: detail --
-                    float g;
-                    if (sizeMismatch)
+                    for (int x = 0; x < width; x++)
                     {
-                        // Bilinear sample from detail map at this UV
-                        float u = (float)x / (width - 1);
-                        float v = (float)y / (height - 1);
-                        g = SampleBilinear(detailPixels,
-                            _detailMap.width, _detailMap.height, u, v).r;
-                    }
-                    else
-                    {
-                        g = detailPixels[idx].r;
-                    }
+                        int idx = y * width + x;
+                        float r = ReadRed01(densityPixels, idx);
+                        float g = ReadRed01(detailPixels, idx);
 
-                    // -- B,A channels: curl noise flowmap --
+                        int xP = (x + 1) % width;
+                        int xN = (x - 1 + width) % width;
+                        int yP = (y + 1) % height;
+                        int yN = (y - 1 + height) % height;
 
-                    // Central differences with wrapping (tiling textures)
-                    int xP = (x + 1) % width;   // x + 1, wrapped
-                    int xN = (x - 1 + width) % width; // x - 1, wrapped
-                    int yP = (y + 1) % height;  // y + 1, wrapped
-                    int yN = (y - 1 + height) % height; // y - 1, wrapped
+                        float gradX = ReadRed01(densityPixels, y * width + xP) -
+                                      ReadRed01(densityPixels, y * width + xN);
+                        float gradY = ReadRed01(densityPixels, yP * width + x) -
+                                      ReadRed01(densityPixels, yN * width + x);
 
-                    float gradX = density[y * width + xP]
-                                - density[y * width + xN];
-                    float gradY = density[yP * width + x]
-                                - density[yN * width + x];
-
-                    // Rotate 90 degrees CCW: curl = (-gradY, gradX)
-                    // This makes flow follow density contours
-                    float curlX = -gradY;
-                    float curlY =  gradX;
-
-                    // Normalize curl vector
-                    float curlLen = Mathf.Sqrt(curlX * curlX + curlY * curlY);
-                    if (curlLen > 0.0001f)
-                    {
-                        curlX /= curlLen;
-                        curlY /= curlLen;
-                    }
-                    else
-                    {
-                        // Zero gradient = no flow direction
-                        curlX = 0f;
-                        curlY = 0f;
-                    }
-
-                    // Scale by flow strength and clamp
-                    curlX = Mathf.Clamp(curlX * _flowStrength, -1f, 1f);
-                    curlY = Mathf.Clamp(curlY * _flowStrength, -1f, 1f);
-
-                    // Map [-1, 1] -> [0, 1]
-                    float b = curlX * 0.5f + 0.5f;
-                    float a = curlY * 0.5f + 0.5f;
-
-                    atlasPixels[idx] = new Color(r, g, b, a);
-
-                    // Progress bar
-                    if (idx % progressInterval == 0)
-                    {
-                        float progress = (float)idx / totalPixels;
-                        if (EditorUtility.DisplayCancelableProgressBar(
-                            "Packing Cloud Atlas",
-                            $"Processing pixel {idx}/{totalPixels}",
-                            progress))
+                        float curlX = -gradY;
+                        float curlY = gradX;
+                        float dominant = Mathf.Max(Mathf.Abs(curlX), Mathf.Abs(curlY));
+                        if (dominant > 0.0001f)
                         {
-                            EditorUtility.ClearProgressBar();
-                            Debug.LogWarning(
-                                "[HectonSkyTools] Atlas packing cancelled.");
-                            return;
+                            curlX /= dominant;
+                            curlY /= dominant;
+                        }
+                        else
+                        {
+                            curlX = 0f;
+                            curlY = 0f;
+                        }
+
+                        curlX = Mathf.Clamp(curlX * _flowStrength, -1f, 1f);
+                        curlY = Mathf.Clamp(curlY * _flowStrength, -1f, 1f);
+
+                        atlasPixels[idx] = new Color32(
+                            Encode01(r),
+                            Encode01(g),
+                            Encode01(curlX * 0.5f + 0.5f),
+                            Encode01(curlY * 0.5f + 0.5f));
+
+                        if (idx % progressInterval == 0)
+                        {
+                            float progress = (float)idx / totalPixels;
+                            if (EditorUtility.DisplayCancelableProgressBar(
+                                "Packing Cloud Atlas",
+                                $"Processing pixel {idx}/{totalPixels}",
+                                progress))
+                            {
+                                Debug.LogWarning(
+                                    "[HectonSkyTools] Atlas packing cancelled.");
+                                return;
+                            }
                         }
                     }
                 }
+
+                atlas.Apply(false, false);
+                pngData = atlas.EncodeToPNG();
             }
-
-            EditorUtility.ClearProgressBar();
-
-            // ---------------------------------------------------------
-            // CREATE AND SAVE PNG
-            // ---------------------------------------------------------
-
-            Texture2D atlas = new Texture2D(width, height,
-                TextureFormat.RGBA32, false, true); // linear color space
-            atlas.name = "HectonSkyAtlas_RGBA";
-            atlas.SetPixels(atlasPixels);
-            atlas.Apply(false, false); // no mipmaps during save
-
-            byte[] pngData = atlas.EncodeToPNG();
-
-            // Clean up the temporary texture
-            DestroyImmediate(atlas);
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+                if (densityReadable != null)
+                    DestroyImmediate(densityReadable);
+                if (detailReadable != null)
+                    DestroyImmediate(detailReadable);
+                if (atlas != null)
+                    DestroyImmediate(atlas);
+            }
 
             if (pngData == null || pngData.Length == 0)
             {
@@ -606,9 +538,8 @@ namespace Hecton.Editor
             //
             // The atlas needs specific import settings:
             //   - sRGB OFF (linear data -- flowmap vectors are not colors)
-            //   - Read/Write ON (for potential runtime access)
-            //   - No compression or high-quality compression
-            //     (compression destroys flowmap precision)
+            //   - Read/Write OFF
+            //   - BC7 compression for the HECTON-8 texture contract
             //   - Filter: Bilinear
             //   - Wrap: Repeat (clouds tile)
             // ---------------------------------------------------------
@@ -619,9 +550,9 @@ namespace Hecton.Editor
             if (importer != null)
             {
                 importer.sRGBTexture      = false;  // LINEAR -- flow data
-                importer.isReadable       = true;
+                importer.isReadable       = false;
                 importer.textureCompression =
-                    TextureImporterCompression.Uncompressed;
+                    TextureImporterCompression.Compressed;
                 importer.filterMode       = FilterMode.Bilinear;
                 importer.wrapMode         = TextureWrapMode.Repeat;
                 importer.mipmapEnabled    = true;
@@ -631,6 +562,16 @@ namespace Hecton.Editor
 
                 // Max size -- match source
                 importer.maxTextureSize = Mathf.Max(width, height);
+
+                TextureImporterPlatformSettings standalone =
+                    importer.GetPlatformTextureSettings("Standalone");
+                standalone.overridden = true;
+                standalone.format = TextureImporterFormat.BC7;
+                standalone.maxTextureSize = importer.maxTextureSize;
+                standalone.textureCompression =
+                    TextureImporterCompression.Compressed;
+                standalone.crunchedCompression = false;
+                importer.SetPlatformTextureSettings(standalone);
 
                 importer.SaveAndReimport();
             }
@@ -646,45 +587,47 @@ namespace Hecton.Editor
                 $"  Resolution: {width}x{height}\n" +
                 $"  Flow Strength: {_flowStrength}\n" +
                 $"  Channels: R=Density, G=Detail, BA=CurlFlowmap\n" +
-                $"  Import: Linear, Uncompressed, Repeat");
+                $"  Import: Linear, BC7, Read/Write Off, Repeat");
         }
 
-        // =============================================================
-        // UTILITY: Bilinear texture sampling
-        //
-        // Samples a pixel array at fractional UV coordinates using
-        // bilinear interpolation. Used when Detail Map and Density Map
-        // have different resolutions.
-        // =============================================================
-
-        private Color SampleBilinear(Color[] pixels,
-            int texWidth, int texHeight, float u, float v)
+        private static Texture2D CaptureReadableTexture(Texture texture, int width, int height)
         {
-            // Convert UV [0,1] to pixel coordinates
-            float px = u * (texWidth - 1);
-            float py = v * (texHeight - 1);
+            RenderTexture temp = RenderTexture.GetTemporary(
+                width,
+                height,
+                0,
+                RenderTextureFormat.ARGB32,
+                RenderTextureReadWrite.Linear);
+            RenderTexture previous = RenderTexture.active;
+            Texture2D readable = new Texture2D(width, height, TextureFormat.RGBA32, false, true);
+            bool returned = false;
 
-            // Four nearest pixel indices
-            int x0 = Mathf.FloorToInt(px);
-            int y0 = Mathf.FloorToInt(py);
-            int x1 = Mathf.Min(x0 + 1, texWidth - 1);
-            int y1 = Mathf.Min(y0 + 1, texHeight - 1);
+            try
+            {
+                Graphics.Blit(texture, temp);
+                RenderTexture.active = temp;
+                readable.ReadPixels(new Rect(0f, 0f, width, height), 0, 0, false);
+                readable.Apply(false, false);
+                returned = true;
+                return readable;
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                RenderTexture.ReleaseTemporary(temp);
+                if (!returned)
+                    DestroyImmediate(readable);
+            }
+        }
 
-            // Fractional parts
-            float fx = px - x0;
-            float fy = py - y0;
+        private static float ReadRed01(NativeArray<Color32> pixels, int index)
+        {
+            return pixels[index].r * (1f / 255f);
+        }
 
-            // Four corner samples
-            Color c00 = pixels[y0 * texWidth + x0];
-            Color c10 = pixels[y0 * texWidth + x1];
-            Color c01 = pixels[y1 * texWidth + x0];
-            Color c11 = pixels[y1 * texWidth + x1];
-
-            // Bilinear interpolation
-            Color c0 = Color.Lerp(c00, c10, fx);
-            Color c1 = Color.Lerp(c01, c11, fx);
-
-            return Color.Lerp(c0, c1, fy);
+        private static byte Encode01(float value)
+        {
+            return (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Clamp01(value) * 255f), 0, 255);
         }
 
         // =============================================================

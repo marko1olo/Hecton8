@@ -127,21 +127,35 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 return mul(matrixValue, float4(localPosition, 1.0)).xyz;
             }
 
-            float3 TransformDirection(float4x4 matrixValue, float3 direction)
-            {
-                return normalize(mul((float3x3)matrixValue, direction));
-            }
-
             float2 SafeNormalize2(float2 value)
             {
-                float lenSq = dot(value, value);
-                return lenSq > 0.0001 ? value * rsqrt(lenSq) : float2(1.0, 0.0);
+                float2 absValue = abs(value);
+                if (max(absValue.x, absValue.y) <= 0.0001)
+                    return float2(1.0, 0.0);
+
+                return absValue.x >= absValue.y
+                    ? float2(value.x < 0.0 ? -1.0 : 1.0, 0.0)
+                    : float2(0.0, value.y < 0.0 ? -1.0 : 1.0);
             }
 
             float3 SafeNormalize3(float3 value)
             {
-                float lenSq = dot(value, value);
-                return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+                float3 absValue = abs(value);
+                float maxAxis = max(max(absValue.x, absValue.y), absValue.z);
+                if (maxAxis <= 0.0001)
+                    return float3(0.0, 1.0, 0.0);
+
+                if (absValue.y >= absValue.x && absValue.y >= absValue.z)
+                    return float3(0.0, value.y < 0.0 ? -1.0 : 1.0, 0.0);
+
+                return absValue.x >= absValue.z
+                    ? float3(value.x < 0.0 ? -1.0 : 1.0, 0.0, 0.0)
+                    : float3(0.0, 0.0, value.z < 0.0 ? -1.0 : 1.0);
+            }
+
+            float3 TransformDirection(float4x4 matrixValue, float3 direction)
+            {
+                return SafeNormalize3(mul((float3x3)matrixValue, direction));
             }
 
             float FastLength2(float2 value)

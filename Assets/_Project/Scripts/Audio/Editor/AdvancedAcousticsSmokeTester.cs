@@ -106,7 +106,6 @@ namespace Hecton8.Audio.Editor
 
             if (renderer.Length > 0)
             {
-                string onAudioFilterRead = ExtractMethodBody(renderer, "private void OnAudioFilterRead(float[] data, int channels)");
                 string updateCaveReverb = ExtractMethodBody(renderer, "private void UpdateCaveReverb(float deltaTime)");
                 string handleSonarPingSent = ExtractMethodBody(renderer, "private void HandleSonarPingSent(float intensity)");
                 string renderBubbleBlock = ExtractMethodBody(renderer, "private void RenderBubbleBlock(");
@@ -153,9 +152,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "case ItemAudioMaterialId.Metal:", "Metal impacts route to clang multiplier", builder, ref failureCount);
                 AssertContains(renderer, "return 1.1f;", "Metal impact clang multiplier is boosted", builder, ref failureCount);
                 AssertContains(renderer, "return 0.4f;", "Rock/default impact clang multiplier remains dull", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "RenderLeviathanGranularRoarSample", "Leviathan synth is not in OnAudioFilterRead", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "TryResolveCinematicZoneMismatch", "Cinematic zone muffle is not in OnAudioFilterRead", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "new ", "OnAudioFilterRead has no explicit allocation", builder, ref failureCount);
+                AssertNotContains(renderer, "OnAudioFilterRead", "Critical renderer has no managed Unity audio callback fallback", builder, ref failureCount);
             }
 
             if (physicsApply.Length > 0)

@@ -38,9 +38,6 @@ namespace Hecton8.Visor
 
             [Tooltip("Depth rejection slope used to prevent AO bleeding across hard silhouettes.")]
             [Range(1f, 128f)] public float depthSigma = 28f;
-
-            [Tooltip("Number of deterministic IGN-rotated depth taps.")]
-            [Range(4, 6)] public int sampleCount = 4;
         }
 
         private sealed class VoxelSsaoPass : ScriptableRenderPass, IDisposable
@@ -57,12 +54,10 @@ namespace Hecton8.Visor
                 internal TextureHandle result;
                 internal Vector4 inputSize;
                 internal Vector4 outputSize;
-                internal Matrix4x4 inverseViewProjection;
                 internal float projectionScale;
                 internal float radiusMeters;
                 internal float intensity;
                 internal float depthSigma;
-                internal int sampleCount;
             }
 
             private readonly ProfilingSampler _profilingSampler = new ProfilingSampler("Hecton Voxel SSAO");
@@ -128,7 +123,6 @@ namespace Hecton8.Visor
                 TextureHandle aoTexture = renderGraph.ImportTexture(_aoTexture);
                 Camera camera = cameraData.camera;
                 Matrix4x4 projectionMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
-                Matrix4x4 inverseViewProjection = (projectionMatrix * camera.worldToCameraMatrix).inverse;
                 float projectionScale = Mathf.Abs(projectionMatrix.m11) * 0.5f * depthDesc.height * Mathf.Max(0.01f, _settings.radiusMeters);
 
                 using (var builder = renderGraph.AddComputePass("Hecton Voxel SSAO", out ComputePassData passData, _profilingSampler))
@@ -141,12 +135,10 @@ namespace Hecton8.Visor
                     passData.result = aoTexture;
                     passData.inputSize = new Vector4(depthDesc.width, depthDesc.height, 1f / Mathf.Max(1, depthDesc.width), 1f / Mathf.Max(1, depthDesc.height));
                     passData.outputSize = new Vector4(aoWidth, aoHeight, 1f / Mathf.Max(1, aoWidth), 1f / Mathf.Max(1, aoHeight));
-                    passData.inverseViewProjection = inverseViewProjection;
                     passData.projectionScale = projectionScale;
                     passData.radiusMeters = Mathf.Max(0.01f, _settings.radiusMeters);
                     passData.intensity = Mathf.Max(0f, _settings.intensity);
                     passData.depthSigma = Mathf.Max(0.01f, _settings.depthSigma);
-                    passData.sampleCount = Mathf.Clamp(_settings.sampleCount, 4, 6);
 
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(aoTexture, AccessFlags.Write);
@@ -162,12 +154,10 @@ namespace Hecton8.Visor
                         cmd.SetComputeTextureParam(data.computeShader, data.kernelIndex, ShaderConstants.ResultId, data.result);
                         cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.InputSizeId, data.inputSize);
                         cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.OutputSizeId, data.outputSize);
-                        cmd.SetComputeMatrixParam(data.computeShader, ShaderConstants.InverseViewProjectionId, data.inverseViewProjection);
                         cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.ProjectionScaleId, data.projectionScale);
                         cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.RadiusMetersId, data.radiusMeters);
                         cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.IntensityId, data.intensity);
                         cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.DepthSigmaId, data.depthSigma);
-                        cmd.SetComputeIntParam(data.computeShader, ShaderConstants.SampleCountId, data.sampleCount);
                         cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
                         cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
                     });
@@ -212,12 +202,10 @@ namespace Hecton8.Visor
             internal static readonly int ResultId = Shader.PropertyToID("_HectonVoxelSSAOResult");
             internal static readonly int InputSizeId = Shader.PropertyToID("_HectonVoxelSSAOInputSize");
             internal static readonly int OutputSizeId = Shader.PropertyToID("_HectonVoxelSSAOOutputSize");
-            internal static readonly int InverseViewProjectionId = Shader.PropertyToID("_HectonVoxelSSAOInverseViewProjection");
             internal static readonly int ProjectionScaleId = Shader.PropertyToID("_HectonVoxelSSAOProjectionScale");
             internal static readonly int RadiusMetersId = Shader.PropertyToID("_HectonVoxelSSAORadiusMeters");
             internal static readonly int IntensityId = Shader.PropertyToID("_HectonVoxelSSAOIntensity");
             internal static readonly int DepthSigmaId = Shader.PropertyToID("_HectonVoxelSSAODepthSigma");
-            internal static readonly int SampleCountId = Shader.PropertyToID("_HectonVoxelSSAOSampleCount");
             internal static readonly int GlobalTextureId = Shader.PropertyToID("_HectonVoxelSSAOTex");
             internal static readonly int ActiveId = Shader.PropertyToID("_HectonVoxelSSAOActive");
         }

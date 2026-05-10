@@ -93,23 +93,33 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                SetGlobalActive(0f);
-
                 if (!Application.isPlaying || _settings == null || _compositeMaterial == null || _settings.compositeStrength <= 0.0001f)
+                {
+                    SetGlobalActive(0f);
                     return;
+                }
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 if (resourceData.isActiveTargetBackBuffer)
+                {
+                    SetGlobalActive(0f);
                     return;
+                }
 
                 UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
                 if (IsUnsupportedCameraType(cameraData.cameraType))
+                {
+                    SetGlobalActive(0f);
                     return;
+                }
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 TextureHandle depthTexture = resourceData.cameraDepthTexture;
                 if (!sourceTexture.IsValid() || !depthTexture.IsValid())
+                {
+                    SetGlobalActive(0f);
                     return;
+                }
 
                 UniversalLightData lightData = frameData.Get<UniversalLightData>();
                 UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
@@ -202,6 +212,7 @@ namespace Hecton8.Visor
                         const RenderBufferStoreAction StoreAction = RenderBufferStoreAction.Store;
 
                         cmd.SetGlobalFloat(ShaderConstants.ActiveId, 1f);
+                        MarkGlobalActive(1f);
                         Blitter.BlitCameraTexture(cmd, data.Source, data.Destination, LoadAction, StoreAction, data.Material, 0);
                     });
                 }
@@ -220,12 +231,9 @@ namespace Hecton8.Visor
                 if (_hasCompositeStrength && math.abs(_lastCompositeStrength - compositeStrength) <= 0.000001f)
                     return;
 
-                if (!_hasCompositeStrength || math.abs(_lastCompositeStrength - compositeStrength) > 0.000001f)
-                {
-                    material.SetFloat(ShaderConstants.CompositeStrengthId, compositeStrength);
-                    _lastCompositeStrength = compositeStrength;
-                    _hasCompositeStrength = true;
-                }
+                material.SetFloat(ShaderConstants.CompositeStrengthId, compositeStrength);
+                _lastCompositeStrength = compositeStrength;
+                _hasCompositeStrength = true;
             }
         }
 
@@ -235,8 +243,6 @@ namespace Hecton8.Visor
             internal static readonly int ParticlesTextureId = Shader.PropertyToID("_HectonHalfResParticlesTex");
             internal static readonly int ActiveId = Shader.PropertyToID("_HectonHalfResParticlesActive");
         }
-
-        private const float ShaderFloatPublishEpsilon = 0.000001f;
 
         private static float _lastPublishedActive = -1f;
 
@@ -291,10 +297,15 @@ namespace Hecton8.Visor
 
         private static void SetGlobalActive(float value)
         {
-            if (math.abs(_lastPublishedActive - value) <= ShaderFloatPublishEpsilon)
+            if (_lastPublishedActive == value)
                 return;
 
             Shader.SetGlobalFloat(ShaderConstants.ActiveId, value);
+            _lastPublishedActive = value;
+        }
+
+        private static void MarkGlobalActive(float value)
+        {
             _lastPublishedActive = value;
         }
 

@@ -39,12 +39,7 @@ namespace Hecton8.EditorTools
             if (!TryGetRawColor32(texture, out NativeArray<Color32> pixels))
                 return;
 
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                Color32 pixel = pixels[i];
-                pixel.g = (byte)(255 - pixel.g);
-                pixels[i] = pixel;
-            }
+            FlipGreenChannel(pixels);
 
             texture.Apply(false, false);
         }
@@ -175,6 +170,7 @@ namespace Hecton8.EditorTools
         {
             string lowerPath = Normalize(path);
             return lowerPath.Contains("mask") ||
+                   lowerPath.Contains("detail") ||
                    lowerPath.Contains("metal") ||
                    lowerPath.Contains("rough") ||
                    lowerPath.Contains("smooth") ||
@@ -275,6 +271,16 @@ namespace Hecton8.EditorTools
 
             float averageGreen = greenSum / (float)sampleCount;
             return averageGreen < 126f && lowerTail > upperTail * 1.2f;
+        }
+
+        private static void FlipGreenChannel(NativeArray<Color32> pixels)
+        {
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                Color32 pixel = pixels[i];
+                pixel.g = (byte)(255 - pixel.g);
+                pixels[i] = pixel;
+            }
         }
 
         private static bool TryGetRawColor32(Texture2D texture, out NativeArray<Color32> pixels)

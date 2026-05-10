@@ -578,10 +578,10 @@ namespace Hecton8.World
         {
             unchecked
             {
-                int localX = Mathf.RoundToInt(position.LocalX * 10f);
-                int localY = Mathf.RoundToInt(position.LocalY * 10f);
-                int localZ = Mathf.RoundToInt(position.LocalZ * 10f);
-                int r = Mathf.RoundToInt(radius * 10f);
+                int localX = QuantizeTenth(position.LocalX);
+                int localY = QuantizeTenth(position.LocalY);
+                int localZ = QuantizeTenth(position.LocalZ);
+                int r = QuantizeTenth(radius);
                 long hash = 1469598103934665603L;
                 hash = (hash ^ position.GridX) * 1099511628211L;
                 hash = (hash ^ position.GridY) * 1099511628211L;
@@ -602,12 +602,18 @@ namespace Hecton8.World
                 hash = (hash ^ (uint)position.GridX) * 16777619u;
                 hash = (hash ^ (uint)position.GridY) * 16777619u;
                 hash = (hash ^ (uint)position.GridZ) * 16777619u;
-                hash = (hash ^ (uint)Mathf.RoundToInt(position.LocalX * 10f)) * 16777619u;
-                hash = (hash ^ (uint)Mathf.RoundToInt(position.LocalY * 10f)) * 16777619u;
-                hash = (hash ^ (uint)Mathf.RoundToInt(position.LocalZ * 10f)) * 16777619u;
-                hash = (hash ^ (uint)Mathf.RoundToInt(radius * 10f)) * 16777619u;
+                hash = (hash ^ (uint)QuantizeTenth(position.LocalX)) * 16777619u;
+                hash = (hash ^ (uint)QuantizeTenth(position.LocalY)) * 16777619u;
+                hash = (hash ^ (uint)QuantizeTenth(position.LocalZ)) * 16777619u;
+                hash = (hash ^ (uint)QuantizeTenth(radius)) * 16777619u;
                 return hash;
             }
+        }
+
+        private static int QuantizeTenth(float value)
+        {
+            float scaled = value * 10f;
+            return scaled >= 0f ? (int)(scaled + 0.5f) : (int)(scaled - 0.5f);
         }
     }
 }

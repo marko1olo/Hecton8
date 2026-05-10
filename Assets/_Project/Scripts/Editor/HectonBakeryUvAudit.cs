@@ -16,8 +16,8 @@ namespace Hecton8.EditorTools
         private const int MaxTrianglesPerMeshCheck = 4096;
         private const float DegenerateAreaThreshold = 0.000001f;
         private const float UvCellSize = 0.125f;
-        private const int UvUtilizationGridSize = 64;
         private const float MaxUvEmptySpaceRatio = 0.30f;
+        private const float UvAreaCoverageFudge = 1.18f;
 
         internal sealed class AuditResult
         {
@@ -255,9 +255,9 @@ namespace Hecton8.EditorTools
             out float emptySpaceRatio,
             out string reason)
         {
-            bool[] occupiedCells = new bool[UvUtilizationGridSize * UvUtilizationGridSize];
             List<int> indices = new List<int>((int)Math.Min(1024L, ResolveIndexCount(mesh)));
             int triangleCount = 0;
+            float occupiedArea = 0f;
 
             for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
             {
@@ -269,25 +269,12 @@ namespace Hecton8.EditorTools
                     int i0 = indices[triangleIndex * 3];
                     int i1 = indices[triangleIndex * 3 + 1];
                     int i2 = indices[triangleIndex * 3 + 2];
-                    TriangleRecord triangle = new TriangleRecord(uv0[i0], uv0[i1], uv0[i2], i0, i1, i2);
-
-                    if (Mathf.Abs(SignedArea(triangle.A, triangle.B, triangle.C)) <= DegenerateAreaThreshold)
+                    float signedArea = SignedArea(uv0[i0], uv0[i1], uv0[i2]);
+                    float triangleArea = Mathf.Abs(signedArea) * 0.5f;
+                    if (triangleArea <= DegenerateAreaThreshold)
                         continue;
 
-                    int minCellX = Mathf.Clamp(Mathf.FloorToInt(triangle.MinX * UvUtilizationGridSize), 0, UvUtilizationGridSize - 1);
-                    int minCellY = Mathf.Clamp(Mathf.FloorToInt(triangle.MinY * UvUtilizationGridSize), 0, UvUtilizationGridSize - 1);
-                    int maxCellX = Mathf.Clamp(Mathf.FloorToInt(triangle.MaxX * UvUtilizationGridSize), 0, UvUtilizationGridSize - 1);
-                    int maxCellY = Mathf.Clamp(Mathf.FloorToInt(triangle.MaxY * UvUtilizationGridSize), 0, UvUtilizationGridSize - 1);
-
-                    for (int cellY = minCellY; cellY <= maxCellY; cellY++)
-                    {
-                        for (int cellX = minCellX; cellX <= maxCellX; cellX++)
-                        {
-                            if (TriangleIntersectsUvCell(triangle, cellX, cellY))
-                                occupiedCells[cellY * UvUtilizationGridSize + cellX] = true;
-                        }
-                    }
-
+                    occupiedArea += triangleArea;
                     triangleCount++;
                 }
             }
@@ -299,31 +286,10 @@ namespace Hecton8.EditorTools
                 return true;
             }
 
-            int occupiedCount = 0;
-            for (int i = 0; i < occupiedCells.Length; i++)
-            {
-                if (occupiedCells[i])
-                    occupiedCount++;
-            }
-
-            emptySpaceRatio = 1f - occupiedCount / (float)occupiedCells.Length;
+            float estimatedOccupied = Mathf.Clamp01(occupiedArea * UvAreaCoverageFudge);
+            emptySpaceRatio = 1f - estimatedOccupied;
             reason = $"{mesh.name}: UV0 empty space {emptySpaceRatio:P0} exceeds 30%; asset is Bloated.";
             return true;
-        }
-
-        private static bool TriangleIntersectsUvCell(TriangleRecord triangle, int cellX, int cellY)
-        {
-            float invGrid = 1f / UvUtilizationGridSize;
-            Vector2 min = new Vector2(cellX * invGrid, cellY * invGrid);
-            Vector2 max = new Vector2((cellX + 1) * invGrid, (cellY + 1) * invGrid);
-            Vector2 a = min;
-            Vector2 b = new Vector2(max.x, min.y);
-            Vector2 c = max;
-            Vector2 d = new Vector2(min.x, max.y);
-
-            TriangleRecord cellTriA = new TriangleRecord(a, b, c, -1, -2, -3);
-            TriangleRecord cellTriB = new TriangleRecord(a, c, d, -1, -3, -4);
-            return TrianglesOverlap(triangle, cellTriA) || TrianglesOverlap(triangle, cellTriB);
         }
 
         private static bool SharesVertex(TriangleRecord a, TriangleRecord b)

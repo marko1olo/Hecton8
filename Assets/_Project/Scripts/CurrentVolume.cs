@@ -16,13 +16,14 @@ namespace Hecton8.Physics
     [AddComponentMenu("Hecton/Physics/Current Volume")]
     public sealed class CurrentVolume : MonoBehaviour
     {
-        private const float SharedAmbientNoiseScale = 0.0135f;
+        private const float SharedAmbientPatternScale = 0.0135f;
         private const float SharedAmbientTimeScale = 0.11f;
         private const float SharedAmbientStrength = 0.9f;
         private const float SharedAmbientVerticalFactor = 0.08f;
         private const int ActiveVolumeCapacity = 32;
         private const float LargeVolumeAupCullThresholdMeters = 50f;
         private const float LargeVolumeAupCullThresholdSq = LargeVolumeAupCullThresholdMeters * LargeVolumeAupCullThresholdMeters;
+        private const float TwoPi = 6.28318530718f;
 
         public enum VolumeShape
         {
@@ -149,7 +150,7 @@ namespace Hecton8.Physics
             Unity.Mathematics.float3 ambient = CurrentManager.SampleCurrent(
                 new Unity.Mathematics.float3(worldPos.x, worldPos.y, worldPos.z),
                 sampleTime,
-                SharedAmbientNoiseScale,
+                SharedAmbientPatternScale,
                 SharedAmbientTimeScale,
                 SharedAmbientStrength,
                 SharedAmbientVerticalFactor);
@@ -183,7 +184,7 @@ namespace Hecton8.Physics
         {
             flowPattern = targetPattern;
             localDirection = targetLocalDirection.sqrMagnitude > 0.0001f
-                ? NormalizeVectorRsqrt(targetLocalDirection, Vector3.forward)
+                ? DominantAxisOrDefault(targetLocalDirection, Vector3.forward)
                 : Vector3.forward;
             strength = math.max(0f, targetStrength);
             verticalFactor = math.clamp(targetVerticalFactor, -1f, 1f);
@@ -241,20 +242,20 @@ namespace Hecton8.Physics
             if (dir.sqrMagnitude <= 0.0001f)
                 return Vector3.zero;
 
-            dir = NormalizeVectorRsqrt(dir, Vector3.zero);
+            dir = DominantAxisOrDefault(dir, Vector3.zero);
 
             float pulse = 1f;
             if (pulseAmplitude > 0.0001f && pulseFrequency > 0.0001f)
             {
-                float t = _cachedSampleTime * pulseFrequency + phaseOffset;
-                pulse += math.sin(t * math.PI * 2f) * pulseAmplitude;
+                float phase = (_cachedSampleTime * pulseFrequency + phaseOffset) * TwoPi;
+                pulse += FastTriangleSigned(phase) * pulseAmplitude;
             }
 
             Vector3 result = dir * (strength * pulse * weight);
 
             if (turbulenceStrength > 0.0001f && turbulenceScale > 0.0001f)
             {
-                var noise = CurrentManager.SampleCurrent(
+                var turbulenceSample = CurrentManager.SampleCurrent(
                     new Unity.Mathematics.float3(worldPos.x, worldPos.y, worldPos.z),
                     _cachedSampleTime + phaseOffset,
                     turbulenceScale,
@@ -262,7 +263,7 @@ namespace Hecton8.Physics
                     turbulenceStrength * weight,
                     verticalFactor * 0.5f);
 
-                result += new Vector3(noise.x, noise.y, noise.z);
+                result += new Vector3(turbulenceSample.x, turbulenceSample.y, turbulenceSample.z);
             }
 
             return result;
@@ -327,7 +328,7 @@ namespace Hecton8.Physics
                 return inward ? -_cachedForward : _cachedForward;
             }
 
-            Vector3 radial = NormalizeVectorRsqrt(delta, _cachedForward);
+            Vector3 radial = DominantAxisOrDefault(delta, _cachedForward);
             if (inward)
                 radial = -radial;
             radial.y = math.clamp(verticalFactor * vertical * 0.1f, -1f, 1f);
@@ -347,8 +348,8 @@ namespace Hecton8.Physics
                 ? CrossVector(axis, radial)
                 : CrossVector(radial, axis);
 
-            tangent = NormalizeVectorRsqrt(tangent, Vector3.zero);
-            radial = NormalizeVectorRsqrt(radial, Vector3.zero);
+            tangent = DominantAxisOrDefault(tangent, Vector3.zero);
+            radial = DominantAxisOrDefault(radial, Vector3.zero);
 
             Vector3 dir = tangent + (-radial * vortexRadialPull) + (axis * verticalFactor);
             return dir;
@@ -391,10 +392,10 @@ namespace Hecton8.Physics
 
             Transform cachedTransform = transform;
             _cachedPosition = cachedTransform.position;
-            _cachedUp = NormalizeVectorRsqrt(cachedTransform.up, Vector3.up);
-            _cachedForward = NormalizeVectorRsqrt(cachedTransform.forward, Vector3.forward);
+            _cachedUp = DominantAxisOrDefault(cachedTransform.up, Vector3.up);
+            _cachedForward = DominantAxisOrDefault(cachedTransform.forward, Vector3.forward);
             _cachedWorldToLocalMatrix = cachedTransform.worldToLocalMatrix;
-            Vector3 safeLocalDirection = NormalizeVectorRsqrt(localDirection, Vector3.forward);
+            Vector3 safeLocalDirection = DominantAxisOrDefault(localDirection, Vector3.forward);
             _cachedDirectionalFlow = cachedTransform.TransformDirection(safeLocalDirection);
             _cachedDirectionalFlow.y *= verticalFactor;
             float influenceRadius = GetApproximateInfluenceRadius();
@@ -418,14 +419,28 @@ namespace Hecton8.Physics
             return _sharedSampleTime;
         }
 
-        private static Vector3 NormalizeVectorRsqrt(Vector3 value, Vector3 fallback)
+        private static float FastTriangleSigned(float phase)
         {
-            float sqrMagnitude = value.x * value.x + value.y * value.y + value.z * value.z;
-            if (sqrMagnitude <= 0.000001f)
+            float triangle01 = 1f - math.abs(math.frac(phase * 0.15915494f + 0.25f) * 2f - 1f);
+            return triangle01 * 2f - 1f;
+        }
+
+        private static Vector3 DominantAxisOrDefault(Vector3 value, Vector3 fallback)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxComponent = math.max(ax, math.max(ay, az));
+            if (maxComponent <= 0.000001f)
                 return fallback;
 
-            float invMagnitude = math.rsqrt(sqrMagnitude);
-            return new Vector3(value.x * invMagnitude, value.y * invMagnitude, value.z * invMagnitude);
+            if (ax >= ay && ax >= az)
+                return new Vector3(value.x >= 0f ? 1f : -1f, 0f, 0f);
+
+            if (ay >= az)
+                return new Vector3(0f, value.y >= 0f ? 1f : -1f, 0f);
+
+            return new Vector3(0f, 0f, value.z >= 0f ? 1f : -1f);
         }
 
         private static Vector3 ProjectOnPlaneUnit(Vector3 value, Vector3 unitNormal)
@@ -478,7 +493,7 @@ namespace Hecton8.Physics
                 Gizmos.DrawSphere(Vector3.zero, sphereRadius);
 
             Gizmos.color = new Color(0.1f, 0.95f, 1f, 0.85f);
-            Gizmos.DrawRay(Vector3.zero, NormalizeVectorRsqrt(localDirection, Vector3.forward) * 2f);
+            Gizmos.DrawRay(Vector3.zero, DominantAxisOrDefault(localDirection, Vector3.forward) * 2f);
             Gizmos.matrix = old;
         }
 #endif

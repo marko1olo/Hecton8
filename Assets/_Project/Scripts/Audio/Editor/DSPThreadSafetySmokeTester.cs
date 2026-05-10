@@ -45,7 +45,6 @@ namespace Hecton8.Audio.Editor
 
             if (renderer.Length > 0)
             {
-                string onAudioFilterRead = ExtractMethodBody(renderer, "private void OnAudioFilterRead(float[] data, int channels)");
                 string produceAudioBlock = ExtractMethodBody(renderer, "private void ProduceAudioBlock(int frameCount)");
                 string publishSnapshot = ExtractMethodBody(renderer, "private void PublishAudioParameterSnapshot()");
                 string tryConsumePendingSonarTrigger = ExtractMethodBody(renderer, "private void TryConsumePendingSonarTrigger(long blockStartFrame, int frameCount)");
@@ -64,8 +63,7 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "private struct AudioParameterSnapshot", "AudioParameterSnapshot value struct exists", builder, ref failureCount);
                 AssertContains(renderer, "StructLayout(LayoutKind.Explicit, Size = 128)", "Audio parameter snapshot slots include 128-byte cache-line padding", builder, ref failureCount);
                 AssertContains(renderer, "internal struct AudioThreadDiagnostics", "Audio thread diagnostic snapshot exists", builder, ref failureCount);
-                AssertContains(renderer, "TryGetAudioThreadDiagnostics(out AudioThreadDiagnostics diagnostics)", "Audio diagnostics expose SPSC counters without touching callback", builder, ref failureCount);
-                AssertContains(renderer, "diagnostics.UnderrunCount = sampleRingBuffer.UnderrunCount", "Audio diagnostics include underrun count", builder, ref failureCount);
+                AssertContains(renderer, "TryGetAudioThreadDiagnostics(out AudioThreadDiagnostics diagnostics)", "Audio diagnostics expose SPSC counters through native bridge state", builder, ref failureCount);
                 AssertContains(renderer, "diagnostics.OverflowDropCount = sampleRingBuffer.OverflowDropCount", "Audio diagnostics include overflow drop count", builder, ref failureCount);
                 AssertOccurrenceCount(produceAudioBlock, "Volatile.Read(ref _audioParameterSnapshotReadIndex)", 1, "Snapshot read occurs once per produced DSP block", builder, ref failureCount);
                 AssertContains(publishSnapshot, "Interlocked.Exchange(ref _audioParameterSnapshotReadIndex", "Main thread publishes inactive snapshot with Interlocked.Exchange", builder, ref failureCount);
@@ -73,14 +71,8 @@ namespace Hecton8.Audio.Editor
                 AssertContains(tryConsumePendingSonarTrigger, "_workerSonarEchoTaps[tapIndex] = sourceTapBuffer[tapIndex]", "Sonar tap payload is copied once before block rendering", builder, ref failureCount);
                 AssertContains(renderSonarBlock, "NativeArray<SonarEchoTap> activeTapBuffer = _workerSonarEchoTaps", "Sonar render reads the worker tap snapshot, not the publish buffer", builder, ref failureCount);
 
-                AssertContains(onAudioFilterRead, "sampleRingBuffer.MixInterleavedInto(data, channels)", "OnAudioFilterRead remains SPSC transfer bridge", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "new ", "OnAudioFilterRead has no explicit allocation", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, ".ToList(", "OnAudioFilterRead has no LINQ ToList", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, ".Where(", "OnAudioFilterRead has no LINQ Where", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "lock (", "OnAudioFilterRead has no lock statement", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "lock(", "OnAudioFilterRead has no compact lock statement", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "Complete(", "OnAudioFilterRead has no JobHandle.Complete", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "ResolveCriticalSidechainDuckingGain", "Compressor is outside managed callback", builder, ref failureCount);
+                AssertNotContains(renderer, "OnAudioFilterRead", "Renderer has no managed Unity audio callback fallback", builder, ref failureCount);
+                AssertNotContains(renderer, "MixInterleavedInto", "Renderer has no managed float[] consumer bridge", builder, ref failureCount);
 
                 AssertContains(renderer, "CriticalSidechainDuckedGain = 0.25118864f", "Critical sidechain gain is -12 dB", builder, ref failureCount);
                 AssertContains(renderer, "CriticalSidechainAttackSeconds = 0.05f", "Critical sidechain attack is 0.05 s", builder, ref failureCount);
@@ -139,21 +131,11 @@ namespace Hecton8.Audio.Editor
 
             if (ringBuffer.Length > 0)
             {
-                string mixInterleavedInto = ExtractMethodBody(ringBuffer, "public void MixInterleavedInto(float[] destination, int channels)");
                 string tryWriteInterleaved = ExtractMethodBody(ringBuffer, "public bool TryWriteInterleaved(NativeArray<float> source, int frameCount, int sourceChannels)");
 
-                AssertContains(ringBuffer, "public int UnderrunCount => Volatile.Read(ref _underrunCount)", "SPSC bridge exposes underrun diagnostic counter", builder, ref failureCount);
                 AssertContains(ringBuffer, "public int OverflowDropCount => Volatile.Read(ref _overflowDropCount)", "SPSC bridge exposes overflow diagnostic counter", builder, ref failureCount);
-                AssertContains(mixInterleavedInto, "Array.Clear(destination, 0, destination.Length)", "SPSC underrun path clears Unity output buffer", builder, ref failureCount);
-                AssertContains(mixInterleavedInto, "Interlocked.Increment(ref _underrunCount)", "SPSC underrun path records atomic counter", builder, ref failureCount);
-                AssertContains(mixInterleavedInto, "bool hasFrame = frameIndex < framesToConsume", "Partial underrun tail is explicitly zeroed", builder, ref failureCount);
+                AssertNotContains(ringBuffer, "MixInterleavedInto(float[]", "SPSC bridge has no managed float[] consumer", builder, ref failureCount);
                 AssertContains(tryWriteInterleaved, "Interlocked.Increment(ref _overflowDropCount)", "Producer overflow drop is recorded atomically", builder, ref failureCount);
-                AssertNotContains(mixInterleavedInto, "new ", "SPSC consumer bridge has no explicit allocation", builder, ref failureCount);
-                AssertNotContains(mixInterleavedInto, ".ToList(", "SPSC consumer bridge has no LINQ ToList", builder, ref failureCount);
-                AssertNotContains(mixInterleavedInto, ".Where(", "SPSC consumer bridge has no LINQ Where", builder, ref failureCount);
-                AssertNotContains(mixInterleavedInto, "lock (", "SPSC consumer bridge has no lock statement", builder, ref failureCount);
-                AssertNotContains(mixInterleavedInto, "lock(", "SPSC consumer bridge has no compact lock statement", builder, ref failureCount);
-                AssertNotContains(mixInterleavedInto, "Complete(", "SPSC consumer bridge has no JobHandle.Complete", builder, ref failureCount);
             }
 
             if (bufferJobs.Length > 0)

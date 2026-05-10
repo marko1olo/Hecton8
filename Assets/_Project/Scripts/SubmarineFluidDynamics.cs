@@ -88,6 +88,8 @@ namespace Hecton8.Physics
         private const float IceExpansionVolumeScale = 1.09f;
         private const float DefaultMaximumCompressionNormalized = 0.15f;
         private const int EngineCompartmentIndex = 3;
+        private const uint HydrodynamicsResetWarningHash = 0x48445253u;
+        private const uint SubmarineFluidDynamicsContextHash = 0x53464459u;
         private const float DefaultHydraulicLeakRateCubicMetersPerSecond = 0.006f;
         private const float DefaultMaximumHydraulicViscosity = 1f;
         private const float DefaultViscositySloshDampingScale = 0.85f;
@@ -2182,7 +2184,7 @@ namespace Hecton8.Physics
         private void SimulateIngress(float depthMeters, float fixedDeltaTime)
         {
             float safeDepth = math.max(0f, depthMeters);
-            float ingressVelocity = math.sqrt(2f * GravityMetersPerSecondSquared * safeDepth);
+            float ingressVelocity = ApproximateSqrtPositive(2f * GravityMetersPerSecondSquared * safeDepth);
             if (!math.isfinite(ingressVelocity))
                 ingressVelocity = 0f;
 
@@ -2241,7 +2243,7 @@ namespace Hecton8.Physics
                 if (!TryResolveSafeNormalizedRatio(_compartmentFloodVolumes[compartmentA], maxVolumeA, out float fillA) ||
                     !TryResolveSafeNormalizedRatio(_compartmentFloodVolumes[compartmentB], maxVolumeB, out float fillB))
                 {
-                    EmergencyResetHydrodynamics("SimulateBulkheadTransfer.FillRatio");
+                    EmergencyResetHydrodynamics();
                     continue;
                 }
 
@@ -2257,7 +2259,7 @@ namespace Hecton8.Physics
                 if (dampingFactor <= Epsilon)
                     continue;
 
-                float velocityMetersPerSecond = math.sqrt(math.max(0f, 2f * GravityMetersPerSecondSquared * absHeadDifferenceMeters));
+                float velocityMetersPerSecond = ApproximateSqrtPositive(2f * GravityMetersPerSecondSquared * absHeadDifferenceMeters);
                 float signedDeltaVolume =
                     math.sign(headDifferenceMeters) *
                     doorAreaSquareMeters *
@@ -2455,14 +2457,15 @@ namespace Hecton8.Physics
             if (!float.IsFinite(distanceSq) || distanceSq <= Epsilon * Epsilon)
                 return Vector3.zero;
 
-            float inverseDistance = math.rsqrt(distanceSq);
+            float approximateDistance = ApproximateMagnitude(toBreach);
+            float inverseDistance = math.rcp(math.max(approximateDistance, Epsilon));
             float floorMeters = math.max(depressurizationDistanceFloorMeters, Epsilon);
             float floorSq = floorMeters * floorMeters;
             float inverseSafeDistance = distanceSq <= floorSq
                 ? math.rcp(floorMeters)
                 : inverseDistance;
             float accelerationMagnitude = math.min(math.max(0f, maximumAcceleration), baseAcceleration * inverseSafeDistance);
-            return toBreach * (inverseDistance * accelerationMagnitude);
+            return DominantAxisOrDefault(toBreach, Vector3.zero) * accelerationMagnitude;
         }
 
         private bool TryResolveDepressurizationBounds(int compartmentIndex, out Vector3 roomCenter, out Vector3 breachPosition, out float influenceRadius)
@@ -2540,7 +2543,7 @@ namespace Hecton8.Physics
                 float sourceVolume = _compartmentFloodVolumes[i];
                 if (!math.isfinite(sourceVolume))
                 {
-                    EmergencyResetHydrodynamics("FinalizeCompartmentState.CurrentVolume");
+                    EmergencyResetHydrodynamics();
                     sourceVolume = 0f;
                 }
 
@@ -2558,7 +2561,7 @@ namespace Hecton8.Physics
 
                 if (!TryResolveSafeNormalizedRatio(currentVolume, maxVolume, out float fillRatio))
                 {
-                    EmergencyResetHydrodynamics("FinalizeCompartmentState.FillRatio");
+                    EmergencyResetHydrodynamics();
                     fillRatio = 0f;
                 }
 
@@ -2585,7 +2588,7 @@ namespace Hecton8.Physics
 
             if (!math.isfinite(totalFloodVolume))
             {
-                EmergencyResetHydrodynamics("FinalizeCompartmentState.TotalFloodVolume");
+                EmergencyResetHydrodynamics();
                 _totalFloodVolumeCubicMeters = 0f;
                 _floodFillRatio = 0f;
                 return;
@@ -2595,7 +2598,7 @@ namespace Hecton8.Physics
             float totalCapacity = ResolveTotalCapacityCubicMeters();
             if (!math.isfinite(totalCapacity) || totalCapacity <= Epsilon)
             {
-                EmergencyResetHydrodynamics("FinalizeCompartmentState.TotalCapacity");
+                EmergencyResetHydrodynamics();
                 _totalFloodVolumeCubicMeters = 0f;
                 _floodFillRatio = 0f;
                 return;
@@ -2624,7 +2627,7 @@ namespace Hecton8.Physics
             _debugFloraAddedMassKilograms = _currentFloraAddedMassKilograms;
             if (!math.isfinite(targetMass))
             {
-                EmergencyResetHydrodynamics("ApplyFloodMassPropertiesToRigidbody.TargetMass");
+                EmergencyResetHydrodynamics();
                 return;
             }
 
@@ -2654,7 +2657,7 @@ namespace Hecton8.Physics
                 out byte centerStepValid);
             if (centerStepValid == 0)
             {
-                EmergencyResetHydrodynamics("ApplyCenterOfMassShift.BlendedCenter");
+                EmergencyResetHydrodynamics();
                 return;
             }
 
@@ -2723,21 +2726,21 @@ namespace Hecton8.Physics
 
                 if (!math.isfinite(state.currentVolume))
                 {
-                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.CurrentVolume");
+                    EmergencyResetHydrodynamics();
                     return dryCenter;
                 }
 
                 float mass = math.max(0f, state.currentVolume) * WaterDensityKgPerCubicMeter;
                 if (!math.isfinite(mass))
                 {
-                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.Mass");
+                    EmergencyResetHydrodynamics();
                     return dryCenter;
                 }
 
                 float3 weightedCentroid = state.localCentroid * mass;
                 if (!math.all(math.isfinite(weightedCentroid)))
                 {
-                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.WeightedCentroid");
+                    EmergencyResetHydrodynamics();
                     return dryCenter;
                 }
 
@@ -2747,14 +2750,14 @@ namespace Hecton8.Physics
                 weightedSum += weightedCentroid;
                 if (!math.all(math.isfinite(weightedSum)))
                 {
-                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.WeightedSum");
+                    EmergencyResetHydrodynamics();
                     return dryCenter;
                 }
 
                 totalFloodMass += mass;
                 if (!math.isfinite(totalFloodMass))
                 {
-                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.TotalFloodMass");
+                    EmergencyResetHydrodynamics();
                     return dryCenter;
                 }
             }
@@ -2765,7 +2768,7 @@ namespace Hecton8.Physics
             {
                 if (!TryResolveSafeVectorDivision(weightedSum, totalFloodMass, out floodCenter))
                 {
-                    EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.WeightedCenter");
+                    EmergencyResetHydrodynamics();
                     floodCenter = dryCenter;
                 }
             }
@@ -2774,7 +2777,7 @@ namespace Hecton8.Physics
             if (maxFloodMass > Epsilon &&
                 !TryResolveSafeNormalizedRatio(totalFloodMass, maxFloodMass, out floodMassRatio))
             {
-                EmergencyResetHydrodynamics("ResolveFloodTargetCenterOfMassLocal.FloodMassRatio");
+                EmergencyResetHydrodynamics();
                 floodMassRatio = 0f;
             }
 
@@ -2833,7 +2836,7 @@ namespace Hecton8.Physics
                 localAngularVelocity.z);
             if (math.any(math.isnan(currentLocalAngularVelocity)) || !math.all(math.isfinite(currentLocalAngularVelocity)))
             {
-                EmergencyResetHydrodynamics("RecordAndSampleDelayedSloshAngularVelocityLocal.Current");
+                EmergencyResetHydrodynamics();
                 currentLocalAngularVelocity = float3.zero;
             }
 
@@ -2844,7 +2847,7 @@ namespace Hecton8.Physics
             float3 delayedAngularVelocity = _angularVelocityHistoryLocal[delayIndex];
             if (math.any(math.isnan(delayedAngularVelocity)) || !math.all(math.isfinite(delayedAngularVelocity)))
             {
-                EmergencyResetHydrodynamics("RecordAndSampleDelayedSloshAngularVelocityLocal.Delayed");
+                EmergencyResetHydrodynamics();
                 _angularVelocityHistoryLocal[delayIndex] = float3.zero;
                 return float3.zero;
             }
@@ -2872,7 +2875,7 @@ namespace Hecton8.Physics
 
             if (!IsFiniteVector(targetTensor))
             {
-                EmergencyResetHydrodynamics("ApplyInterpolatedInertiaTensor.Lerp");
+                EmergencyResetHydrodynamics();
                 return;
             }
 
@@ -2913,7 +2916,7 @@ namespace Hecton8.Physics
             float3 centerOfMassWorldFloat = new float3(centerOfMassWorld.x, centerOfMassWorld.y, centerOfMassWorld.z);
             if (math.any(math.isnan(centerOfMassWorldFloat)) || !math.all(math.isfinite(centerOfMassWorldFloat)))
             {
-                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.CenterOfMass");
+                EmergencyResetHydrodynamics();
                 _externalSubmergedVolumeCubicMeters = 0f;
                 _submersionFactor = 0f;
                 _lastExternalBuoyancyForce = Vector3.zero;
@@ -2932,7 +2935,7 @@ namespace Hecton8.Physics
 
             if (!TryResolveSafeQuotient(displacementVolume, ExteriorBuoyancySampleCount, out float sampleVolume))
             {
-                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SampleVolumeDivision");
+                EmergencyResetHydrodynamics();
                 _externalSubmergedVolumeCubicMeters = 0f;
                 _submersionFactor = 0f;
                 _lastExternalBuoyancyForce = Vector3.zero;
@@ -2944,7 +2947,7 @@ namespace Hecton8.Physics
             float rigidbodyMass = math.isfinite(_rigidbody.mass) ? math.max(_rigidbody.mass, Epsilon) : Epsilon;
             if (!TryResolveSafeQuotient(rigidbodyMass, ExteriorBuoyancySampleCount, out float sampleHullMass))
             {
-                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SampleMassDivision");
+                EmergencyResetHydrodynamics();
                 _externalSubmergedVolumeCubicMeters = 0f;
                 _submersionFactor = 0f;
                 _lastExternalBuoyancyForce = Vector3.zero;
@@ -2954,7 +2957,7 @@ namespace Hecton8.Physics
 
             if (!float.IsFinite(sampleVolume) || !float.IsFinite(perSampleForceMagnitude))
             {
-                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SampleVolume");
+                EmergencyResetHydrodynamics();
                 _externalSubmergedVolumeCubicMeters = 0f;
                 _submersionFactor = 0f;
                 _lastExternalBuoyancyForce = Vector3.zero;
@@ -2974,7 +2977,7 @@ namespace Hecton8.Physics
                 float3 worldPointFloat = new float3(worldPoint.x, worldPoint.y, worldPoint.z);
                 if (math.any(math.isnan(worldPointFloat)) || !math.all(math.isfinite(worldPointFloat)))
                 {
-                    EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SamplePoint");
+                    EmergencyResetHydrodynamics();
                     _externalSubmergedVolumeCubicMeters = 0f;
                     _submersionFactor = 0f;
                     _lastExternalBuoyancyForce = Vector3.zero;
@@ -2994,7 +2997,7 @@ namespace Hecton8.Physics
                 float submergedSampleVolume = sampleVolume * submersionFactor;
                 if (!float.IsFinite(submergedSampleVolume))
                 {
-                    EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SubmergedSampleVolume");
+                    EmergencyResetHydrodynamics();
                     _externalSubmergedVolumeCubicMeters = 0f;
                     _submersionFactor = 0f;
                     _lastExternalBuoyancyForce = Vector3.zero;
@@ -3007,7 +3010,7 @@ namespace Hecton8.Physics
                 Vector3 sampleAcceleration = Vector3.up * ((perSampleForceMagnitude * submersionFactor) / rigidbodyMass);
                 if (!IsFiniteVector(sampleAcceleration))
                 {
-                    EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SampleAcceleration");
+                    EmergencyResetHydrodynamics();
                     _externalSubmergedVolumeCubicMeters = 0f;
                     _submersionFactor = 0f;
                     _lastExternalBuoyancyForce = Vector3.zero;
@@ -3026,7 +3029,7 @@ namespace Hecton8.Physics
 
             if (!float.IsFinite(submergedVolume))
             {
-                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SubmergedVolume");
+                EmergencyResetHydrodynamics();
                 _externalSubmergedVolumeCubicMeters = 0f;
                 _submersionFactor = 0f;
                 _lastExternalBuoyancyForce = Vector3.zero;
@@ -3037,7 +3040,7 @@ namespace Hecton8.Physics
             _externalSubmergedVolumeCubicMeters = math.clamp(submergedVolume, 0f, displacementVolume);
             if (!TryResolveSafeNormalizedRatio(_externalSubmergedVolumeCubicMeters, displacementVolume, out _submersionFactor))
             {
-                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.SubmersionRatio");
+                EmergencyResetHydrodynamics();
                 _externalSubmergedVolumeCubicMeters = 0f;
                 _submersionFactor = 0f;
                 _lastExternalBuoyancyForce = Vector3.zero;
@@ -3060,7 +3063,7 @@ namespace Hecton8.Physics
             if (math.any(math.isnan(totalForceFloat)) || math.any(math.isnan(totalTorqueFloat)) ||
                 !math.all(math.isfinite(totalForceFloat)) || !math.all(math.isfinite(totalTorqueFloat)))
             {
-                EmergencyResetHydrodynamics("ApplySampledExteriorBuoyancy.Result");
+                EmergencyResetHydrodynamics();
                 totalEquivalentForce = Vector3.zero;
                 totalEquivalentTorque = Vector3.zero;
             }
@@ -3108,7 +3111,7 @@ namespace Hecton8.Physics
                 !float.IsFinite(floraLinearMultiplier) ||
                 !float.IsFinite(floraAngularMultiplier))
             {
-                EmergencyResetHydrodynamics("ApplyAddedMassDamping.Scale");
+                EmergencyResetHydrodynamics();
                 return;
             }
 
@@ -3119,7 +3122,7 @@ namespace Hecton8.Physics
 
             if (!float.IsFinite(targetLinearDamping) || !float.IsFinite(targetAngularDamping))
             {
-                EmergencyResetHydrodynamics("ApplyAddedMassDamping.Result");
+                EmergencyResetHydrodynamics();
                 return;
             }
 
@@ -3424,7 +3427,7 @@ namespace Hecton8.Physics
             float3 delayedAngularVelocity = RecordAndSampleDelayedSloshAngularVelocityLocal(internalFloodRatio);
             if (math.any(math.isnan(delayedAngularVelocity)) || !math.all(math.isfinite(delayedAngularVelocity)))
             {
-                EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.DelayedVelocity");
+                EmergencyResetHydrodynamics();
                 _debugDelayedSloshAngularVelocityLocal = Vector3.zero;
                 _lastSloshTorqueLocal = Vector3.zero;
                 return;
@@ -3449,7 +3452,7 @@ namespace Hecton8.Physics
 
                 if (!TryResolveSafeNormalizedRatio(currentVolume, maxVolume, out float fillRatio))
                 {
-                    EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.FillRatio");
+                    EmergencyResetHydrodynamics();
                     _lastSloshTorqueLocal = Vector3.zero;
                     return;
                 }
@@ -3459,7 +3462,7 @@ namespace Hecton8.Physics
                 float sloshMass = currentVolume * WaterDensityKgPerCubicMeter;
                 if (!float.IsFinite(sloshMass))
                 {
-                    EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.SloshMass");
+                    EmergencyResetHydrodynamics();
                     _lastSloshTorqueLocal = Vector3.zero;
                     return;
                 }
@@ -3469,7 +3472,7 @@ namespace Hecton8.Physics
                 totalSloshTorque += -delayedAngularVelocity * (fillRatio * torqueScale * sloshMass * freesurf * viscosityDamping);
                 if (math.any(math.isnan(totalSloshTorque)) || !math.all(math.isfinite(totalSloshTorque)))
                 {
-                    EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.Accumulate");
+                    EmergencyResetHydrodynamics();
                     _lastSloshTorqueLocal = Vector3.zero;
                     return;
                 }
@@ -3482,10 +3485,11 @@ namespace Hecton8.Physics
                 float maxTorqueMagnitudeSq = maxTorqueMagnitude * maxTorqueMagnitude;
                 if (torqueMagnitudeSq > maxTorqueMagnitudeSq && torqueMagnitudeSq > Epsilon)
                 {
-                    float torqueClampScale = maxTorqueMagnitude * math.rsqrt(torqueMagnitudeSq);
+                    float torqueMagnitude = ApproximateMagnitude(totalSloshTorque);
+                    float torqueClampScale = maxTorqueMagnitude / math.max(torqueMagnitude, Epsilon);
                     if (!math.isfinite(torqueClampScale))
                     {
-                        EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.Clamp");
+                        EmergencyResetHydrodynamics();
                         _lastSloshTorqueLocal = Vector3.zero;
                         return;
                     }
@@ -3496,7 +3500,7 @@ namespace Hecton8.Physics
 
             if (math.any(math.isnan(totalSloshTorque)) || !math.all(math.isfinite(totalSloshTorque)))
             {
-                EmergencyResetHydrodynamics("ApplyDelayedSloshTorque.Result");
+                EmergencyResetHydrodynamics();
                 _lastSloshTorqueLocal = Vector3.zero;
                 return;
             }
@@ -3528,7 +3532,7 @@ namespace Hecton8.Physics
             _lastSloshTorqueLocal = localTorque;
         }
 
-        private void EmergencyResetHydrodynamics(string context)
+        private void EmergencyResetHydrodynamics()
         {
             _skipHydrodynamicsForCurrentFixedTick = true;
 
@@ -3553,9 +3557,10 @@ namespace Hecton8.Physics
             _currentHydrodynamicAngularInertiaScale = 1f;
             ResetSplashDetectionState(clearQueuedEvents: true);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SubmarineFluidDynamics] NaN/Inf detected in {context}. Rigidbody velocities reset.");
-#endif
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                HydrodynamicsResetWarningHash,
+                SubmarineFluidDynamicsContextHash,
+                1f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -3711,7 +3716,7 @@ namespace Hecton8.Physics
                     maxLeverArmSq = leverArmSq;
             }
 
-            _exteriorBuoyancyMaxLeverArm = math.sqrt(maxLeverArmSq);
+            _exteriorBuoyancyMaxLeverArm = ApproximateSqrtPositive(maxLeverArmSq);
         }
 
         private float ResolveSurfaceHeightAtSample(Vector3 worldPoint, float fallbackSurfaceY)
@@ -4033,7 +4038,8 @@ namespace Hecton8.Physics
             if (magnitudeSq <= maxMagnitudeSq || magnitudeSq <= Epsilon)
                 return value;
 
-            return value * (maxMagnitude * math.rsqrt(magnitudeSq));
+            float magnitude = ApproximateMagnitude(value);
+            return value * (maxMagnitude / math.max(magnitude, Epsilon));
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -4043,10 +4049,49 @@ namespace Hecton8.Physics
             if (magnitudeSq <= Epsilon)
             {
                 float fallbackMagnitudeSq = fallback.sqrMagnitude;
-                return fallbackMagnitudeSq > Epsilon ? fallback * math.rsqrt(fallbackMagnitudeSq) : Vector3.up;
+                return fallbackMagnitudeSq > Epsilon ? DominantAxisOrDefault(fallback, Vector3.up) : Vector3.up;
             }
 
-            return value * math.rsqrt(magnitudeSq);
+            return DominantAxisOrDefault(value, fallback);
+        }
+
+        private static float ApproximateSqrtPositive(float value)
+        {
+            float safeValue = math.max(0f, value);
+            if (safeValue <= 0f)
+                return 0f;
+
+            float magnitude = math.asfloat((math.asint(safeValue) >> 1) + 0x1FC00000);
+            return math.isfinite(magnitude) ? magnitude : 0f;
+        }
+
+        private static float ApproximateMagnitude(Vector3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxAxis = math.max(ax, math.max(ay, az));
+            float minAxis = math.min(ax, math.min(ay, az));
+            float midAxis = ax + ay + az - maxAxis - minAxis;
+            return maxAxis + (midAxis * 0.375f) + (minAxis * 0.125f);
+        }
+
+        private static Vector3 DominantAxisOrDefault(Vector3 value, Vector3 fallback)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxComponent = math.max(ax, math.max(ay, az));
+            if (maxComponent <= Epsilon)
+                return fallback;
+
+            if (ax >= ay && ax >= az)
+                return new Vector3(value.x >= 0f ? 1f : -1f, 0f, 0f);
+
+            if (ay >= az)
+                return new Vector3(0f, value.y >= 0f ? 1f : -1f, 0f);
+
+            return new Vector3(0f, 0f, value.z >= 0f ? 1f : -1f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

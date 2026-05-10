@@ -144,6 +144,8 @@ namespace Hecton8.Gameplay
 
         // ── Constants ──
         private const float TWO_PI = 6.2831853f;
+        private const float INV_TWO_PI = 0.15915494309189535f;
+        private const float HALF_PI = 1.5707964f;
         private const float BOB_STEP_PHASE_THRESHOLD = -0.9f;
         private const float DEAD_ZONE = 0.001f;
         private const float IMPACT_RECOVERY_OMEGA = 6f;
@@ -739,7 +741,7 @@ namespace Hecton8.Gameplay
                 _abyssalNoirPulsePhase -= 1000f;
 
             float phase = _abyssalNoirPulsePhase * TWO_PI;
-            float pressureWave = (math.sin(phase) * 0.72f) + (math.sin((phase * 2.73f) + 1.11f) * 0.28f);
+            float pressureWave = (SignedTriangleRadians(phase) * 0.72f) + (SignedTriangleRadians((phase * 2.73f) + 1.11f) * 0.28f);
             float pulse = pressureWave * intensity;
             _output.fovOffset -= pulse * ABYSSAL_NOIR_PULSE_MAX_FOV_COMPRESS;
             _output.rollOffset += pulse * ABYSSAL_NOIR_PULSE_ROLL_DEGREES;
@@ -772,9 +774,9 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float verticalBob = math.sin(_swimBobTimer) * suit.swimBobVerticalAmplitude * scale;
-            float forwardBob = math.sin(_swimBobTimer * 0.5f) * suit.swimBobForwardAmplitude * scale;
-            float rollBob = math.sin(_swimBobTimer * 0.5f + 1.57f) * suit.swimBobRollAmplitude * scale;
+            float verticalBob = SignedTriangleRadians(_swimBobTimer) * suit.swimBobVerticalAmplitude * scale;
+            float forwardBob = SignedTriangleRadians(_swimBobTimer * 0.5f) * suit.swimBobForwardAmplitude * scale;
+            float rollBob = SignedTriangleRadians(_swimBobTimer * 0.5f + HALF_PI) * suit.swimBobRollAmplitude * scale;
 
             _output.localPositionOffset.y += verticalBob;
             _output.localPositionOffset.z += forwardBob;
@@ -794,9 +796,9 @@ namespace Hecton8.Gameplay
                 return;
 
             float cycle = input.swimStrokePhase * TWO_PI;
-            float verticalBob = math.sin(cycle) * suit.swimBobVerticalAmplitude * finalScale;
-            float forwardBob = math.sin(cycle * 0.5f - 0.35f) * suit.swimBobForwardAmplitude * finalScale;
-            float rollBob = math.sin(cycle + 1.57f) * suit.swimBobRollAmplitude * finalScale;
+            float verticalBob = SignedTriangleRadians(cycle) * suit.swimBobVerticalAmplitude * finalScale;
+            float forwardBob = SignedTriangleRadians(cycle * 0.5f - 0.35f) * suit.swimBobForwardAmplitude * finalScale;
+            float rollBob = SignedTriangleRadians(cycle + HALF_PI) * suit.swimBobRollAmplitude * finalScale;
             float pull = math.max(math.saturate(input.swimPropulsionPulse), transportBoost * TRANSPORT_PROPULSION_FLOOR);
             float pullKick = pull * pull;
             float pullImpulse = math.saturate(input.swimStrokeImpulse);
@@ -942,8 +944,8 @@ namespace Hecton8.Gameplay
             _bobTimer += suit.bobFrequency * cadenceScale * TWO_PI * dt * speedFactor;
             if (_bobTimer > 100000f) _bobTimer -= 100000f;
 
-            float sinVal = math.sin(_bobTimer);
-            float cosVal = math.cos(_bobTimer * 0.5f);
+            float sinVal = SignedTriangleRadians(_bobTimer);
+            float cosVal = SignedTriangleRadians((_bobTimer * 0.5f) + HALF_PI);
 
             _output.localPositionOffset.x += cosVal * suit.bobHorizontalAmplitude * amplitudeScale * _bobIntensity;
             _output.localPositionOffset.y += sinVal * suit.bobVerticalAmplitude * amplitudeScale * _bobIntensity;
@@ -992,11 +994,11 @@ namespace Hecton8.Gameplay
             _surfaceBobTimer += dt;
             if (_surfaceBobTimer > 100000f) _surfaceBobTimer -= 100000f;
 
-            float wave1 = math.sin(_surfaceBobTimer * 0.7f) * 0.05f;
-            float wave2 = math.sin(_surfaceBobTimer * 1.1f + 2.1f) * 0.025f;
-            float wave3 = math.sin(_surfaceBobTimer * 0.3f + 4.7f) * 0.015f;
-            float waveRoll = math.sin(_surfaceBobTimer * 0.4f + 0.7f) * 1.5f;
-            float wavePitch = math.sin(_surfaceBobTimer * 0.55f + 1.3f) * 0.6f;
+            float wave1 = SignedTriangleRadians(_surfaceBobTimer * 0.7f) * 0.05f;
+            float wave2 = SignedTriangleRadians(_surfaceBobTimer * 1.1f + 2.1f) * 0.025f;
+            float wave3 = SignedTriangleRadians(_surfaceBobTimer * 0.3f + 4.7f) * 0.015f;
+            float waveRoll = SignedTriangleRadians(_surfaceBobTimer * 0.4f + 0.7f) * 1.5f;
+            float wavePitch = SignedTriangleRadians(_surfaceBobTimer * 0.55f + 1.3f) * 0.6f;
 
             float finalIntensity = intensity;
 
@@ -1027,11 +1029,11 @@ namespace Hecton8.Gameplay
 
             float scale = _swayIntensity * depthScale;
 
-            float swayY = math.sin(_swayTimer * suit.idleSwayFrequencyY * TWO_PI)
+            float swayY = SignedTriangleRadians(_swayTimer * suit.idleSwayFrequencyY * TWO_PI)
                         * suit.idleSwayAmplitudeY * scale;
-            float swayX = math.sin(_swayTimer * suit.idleSwayFrequencyX * TWO_PI)
+            float swayX = SignedTriangleRadians(_swayTimer * suit.idleSwayFrequencyX * TWO_PI)
                         * suit.idleSwayAmplitudeX * scale;
-            float swayRoll = math.sin(_swayTimer * suit.idleSwayFrequencyRoll * TWO_PI)
+            float swayRoll = SignedTriangleRadians(_swayTimer * suit.idleSwayFrequencyRoll * TWO_PI)
                            * suit.idleSwayAmplitudeRoll * scale;
 
             _output.localPositionOffset.x += swayX;
@@ -1146,8 +1148,8 @@ namespace Hecton8.Gameplay
                 _bobIntensity = math.lerp(_bobIntensity, 0f, bobT);
                 if (_bobIntensity > DEAD_ZONE)
                 {
-                    float sinVal = math.sin(_bobTimer);
-                    float cosVal = math.cos(_bobTimer * 0.5f);
+                    float sinVal = SignedTriangleRadians(_bobTimer);
+                    float cosVal = SignedTriangleRadians((_bobTimer * 0.5f) + HALF_PI);
                     _output.localPositionOffset.y += sinVal * suit.bobVerticalAmplitude * _bobIntensity;
                     _output.localPositionOffset.x += cosVal * suit.bobHorizontalAmplitude * _bobIntensity;
                 }
@@ -1201,6 +1203,12 @@ namespace Hecton8.Gameplay
             float max = math.max(ax, ay);
             float min = math.min(ax, ay);
             return max + (0.375f * min);
+        }
+
+        private static float SignedTriangleRadians(float radians)
+        {
+            float wrapped = math.frac(radians * INV_TWO_PI + 0.25f);
+            return (1f - math.abs(wrapped * 2f - 1f)) * 2f - 1f;
         }
 
         private static float SpringDamp(float current, float target, ref float velocity, float omega, float dt)

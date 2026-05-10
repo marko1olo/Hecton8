@@ -41,6 +41,18 @@ public class HectonMeshCleaner : EditorWindow
     private string lastStatus = "";
     private MessageType lastStatusType = MessageType.None;
     private static readonly RaycastHit[] rayBuffer = new RaycastHit[64];
+    // COLD ALLOC: List<int>[196608] - editor submesh triangle collection scratch - owner: HectonMeshCleaner
+    private static readonly List<int> s_CollectSubmeshTriangles = new List<int>(196608);
+    // COLD ALLOC: List<Vector3>[65536] - editor occlusion analysis vertex scratch - owner: HectonMeshCleaner
+    private readonly List<Vector3> analyzeLocalVerts = new List<Vector3>(65536);
+    // COLD ALLOC: List<int>[196608] - editor occlusion analysis triangle scratch - owner: HectonMeshCleaner
+    private readonly List<int> analyzeTriangles = new List<int>(196608);
+    // COLD ALLOC: List<Vector3>[65536] - editor occlusion analysis world vertex scratch - owner: HectonMeshCleaner
+    private readonly List<Vector3> analyzeWorldVerts = new List<Vector3>(65536);
+    // COLD ALLOC: List<Vector3>[65536] - editor double-sided mesh vertex scratch - owner: HectonMeshCleaner
+    private readonly List<Vector3> doubleSidedVerts = new List<Vector3>(65536);
+    // COLD ALLOC: List<int>[393216] - editor double-sided mesh triangle scratch - owner: HectonMeshCleaner
+    private readonly List<int> doubleSidedTris = new List<int>(393216);
 
     private struct PerMeshAnalysis
     {
@@ -167,12 +179,11 @@ public class HectonMeshCleaner : EditorWindow
         if (mesh == null)
             return;
 
-        List<int> submeshTriangles = new List<int>();
         for (int subMeshIndex = 0; subMeshIndex < mesh.subMeshCount; subMeshIndex++)
         {
-            submeshTriangles.Clear();
-            mesh.GetTriangles(submeshTriangles, subMeshIndex, true);
-            triangles.AddRange(submeshTriangles);
+            s_CollectSubmeshTriangles.Clear();
+            mesh.GetTriangles(s_CollectSubmeshTriangles, subMeshIndex, true);
+            triangles.AddRange(s_CollectSubmeshTriangles);
         }
     }
 
@@ -361,11 +372,11 @@ public class HectonMeshCleaner : EditorWindow
     private AnalysisResult AnalyzeMesh(MeshFilter mf)
     {
         Mesh mesh = mf.sharedMesh;
-        List<Vector3> localVerts = new List<Vector3>(mesh.vertexCount);
-        List<int> tris = new List<int>((int)global::System.Math.Min(ResolveIndexCount(mesh), int.MaxValue));
-        mesh.GetVertices(localVerts);
-        CollectMeshTriangles(mesh, tris);
-        int triCount = tris.Count / 3;
+        analyzeLocalVerts.Clear();
+        analyzeTriangles.Clear();
+        mesh.GetVertices(analyzeLocalVerts);
+        CollectMeshTriangles(mesh, analyzeTriangles);
+        int triCount = analyzeTriangles.Count / 3;
 
         // Build double-sided mesh for raycasting
         Mesh dsMesh = BuildDoubleSidedMesh(mesh);
@@ -385,9 +396,9 @@ public class HectonMeshCleaner : EditorWindow
         int layerMask = 1 << 31;
 
         // Pre-transform verts to world space
-        Vector3[] worldVerts = new Vector3[localVerts.Count];
-        for (int i = 0; i < localVerts.Count; i++)
-            worldVerts[i] = mf.transform.TransformPoint(localVerts[i]);
+        analyzeWorldVerts.Clear();
+        for (int i = 0; i < analyzeLocalVerts.Count; i++)
+            analyzeWorldVerts.Add(mf.transform.TransformPoint(analyzeLocalVerts[i]));
 
         HashSet<int> hiddenTris = new HashSet<int>();
 
@@ -397,13 +408,15 @@ public class HectonMeshCleaner : EditorWindow
                 EditorUtility.DisplayProgressBar("Analyzing...",
                     $"{mf.gameObject.name}: tri {t}/{triCount}", (float)t / triCount);
 
-            int i0 = tris[t * 3], i1 = tris[t * 3 + 1], i2 = tris[t * 3 + 2];
-            Vector3 wv0 = worldVerts[i0], wv1 = worldVerts[i1], wv2 = worldVerts[i2];
+            int i0 = analyzeTriangles[t * 3], i1 = analyzeTriangles[t * 3 + 1], i2 = analyzeTriangles[t * 3 + 2];
+            Vector3 wv0 = analyzeWorldVerts[i0], wv1 = analyzeWorldVerts[i1], wv2 = analyzeWorldVerts[i2];
             Vector3 center = (wv0 + wv1 + wv2) / 3f;
-            Vector3 normal = Vector3.Cross(wv1 - wv0, wv2 - wv0).normalized;
+            Vector3 cross = Vector3.Cross(wv1 - wv0, wv2 - wv0);
 
             // Skip degenerate
-            if (normal.sqrMagnitude < 0.001f) continue;
+            if (cross.sqrMagnitude < 0.001f) continue;
+
+            Vector3 normal = DominantAxisDirection(cross);
 
             int reversedIdx = t + triCount; // index of reversed copy in double-sided mesh
 
@@ -423,7 +436,7 @@ public class HectonMeshCleaner : EditorWindow
         DestroyImmediate(tempGO);
 
         // Compute original boundary edges (before any removal)
-        HashSet<long> origBoundary = ComputeBoundaryEdges(tris, triCount, null);
+        HashSet<long> origBoundary = ComputeBoundaryEdges(analyzeTriangles, triCount, null);
 
         // Preview
         if (previewSourceMesh == null)
@@ -474,31 +487,42 @@ public class HectonMeshCleaner : EditorWindow
     // ═══════════════════════════════════════════════════════════════════
     // DOUBLE-SIDED MESH
     // ═══════════════════════════════════════════════════════════════════
-    private static Mesh BuildDoubleSidedMesh(Mesh src)
+    private static Vector3 DominantAxisDirection(Vector3 vector)
     {
-        List<Vector3> verts = new List<Vector3>(src.vertexCount);
-        List<int> tris = new List<int>((int)global::System.Math.Min(ResolveIndexCount(src), int.MaxValue));
-        src.GetVertices(verts);
-        CollectMeshTriangles(src, tris);
-        int triCount = tris.Count;
+        float ax = Mathf.Abs(vector.x);
+        float ay = Mathf.Abs(vector.y);
+        float az = Mathf.Abs(vector.z);
 
-        int[] dsTris = new int[triCount * 2];
-        for (int i = 0; i < triCount; i++)
-            dsTris[i] = tris[i];
+        if (ax >= ay && ax >= az)
+            return vector.x < 0f ? Vector3.left : Vector3.right;
+
+        if (ay >= az)
+            return vector.y < 0f ? Vector3.down : Vector3.up;
+
+        return vector.z < 0f ? Vector3.back : Vector3.forward;
+    }
+
+    private Mesh BuildDoubleSidedMesh(Mesh src)
+    {
+        doubleSidedVerts.Clear();
+        doubleSidedTris.Clear();
+        src.GetVertices(doubleSidedVerts);
+        CollectMeshTriangles(src, doubleSidedTris);
+        int triCount = doubleSidedTris.Count;
 
         // Reversed copy
         for (int i = 0; i < triCount; i += 3)
         {
-            dsTris[triCount + i + 0] = tris[i + 0];
-            dsTris[triCount + i + 1] = tris[i + 2]; // swap 1 and 2
-            dsTris[triCount + i + 2] = tris[i + 1];
+            doubleSidedTris.Add(doubleSidedTris[i + 0]);
+            doubleSidedTris.Add(doubleSidedTris[i + 2]); // swap 1 and 2
+            doubleSidedTris.Add(doubleSidedTris[i + 1]);
         }
 
         Mesh ds = new Mesh();
         ds.hideFlags = HideFlags.HideAndDontSave;
-        if (verts.Count > 65535) ds.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
-        ds.SetVertices(verts);
-        ds.SetTriangles(dsTris, 0, true);
+        if (doubleSidedVerts.Count > 65535) ds.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32;
+        ds.SetVertices(doubleSidedVerts);
+        ds.SetTriangles(doubleSidedTris, 0, true);
         ds.RecalculateBounds();
         return ds;
     }
@@ -661,8 +685,7 @@ public class HectonMeshCleaner : EditorWindow
                         if (hasNormals) avgNormal += srcNormals[vi];
                     }
                     centroid /= loop.Count;
-                    avgNormal = avgNormal.normalized;
-                    if (avgNormal.sqrMagnitude < 0.01f) avgNormal = Vector3.up;
+                    avgNormal = DominantAxisDirection(avgNormal);
 
                     int centroidIdx = extraVertBase + extraVerts.Count;
                     extraVerts.Add(centroid);

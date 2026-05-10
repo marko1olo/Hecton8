@@ -29,21 +29,6 @@ namespace Hecton8.Visor
                    cameraType == CameraType.SceneView;
         }
 
-        private static Vector3 ResolveAmbientDirectionCheap(Vector3 direction)
-        {
-            if (direction.sqrMagnitude <= 0.0001f)
-                return Vector3.up;
-
-            float ax = math.abs(direction.x);
-            float ay = math.abs(direction.y);
-            float az = math.abs(direction.z);
-            float maxAxis = math.max(ax, math.max(ay, az));
-            float minAxis = math.min(ax, math.min(ay, az));
-            float midAxis = ax + ay + az - maxAxis - minAxis;
-            float approximateLength = math.max(0.0001f, maxAxis + midAxis * 0.375f + minAxis * 0.125f);
-            return direction / approximateLength;
-        }
-
         [Serializable]
         private sealed class FeatureSettings
         {
@@ -73,12 +58,6 @@ namespace Hecton8.Visor
 
             [Tooltip("Composite weight applied to the camera color.")]
             [Range(0f, 1f)] public float compositeStrength = 0.52f;
-
-            [Tooltip("Number of rotated taps used by the directional gather.")]
-            [Range(4, 6)] public int sampleCount = 4;
-
-            [Tooltip("Ambient direction used for directional darkening in world space.")]
-            public Vector3 ambientDirection = new Vector3(0.18f, 0.94f, 0.26f);
         }
 
         private sealed class AbyssalSsdoPass : ScriptableRenderPass
@@ -98,7 +77,6 @@ namespace Hecton8.Visor
                 internal Material Material;
                 internal Vector4 InputSize;
                 internal Vector4 OutputSize;
-                internal Vector4 AmbientDirection;
                 internal float PassMode;
                 internal float RadiusMeters;
                 internal float Intensity;
@@ -107,7 +85,6 @@ namespace Hecton8.Visor
                 internal float BlurDepthThreshold;
                 internal float CompositeStrength;
                 internal float ProjectionScale;
-                internal int SampleCount;
                 internal bool Applied;
             }
 
@@ -149,7 +126,7 @@ namespace Hecton8.Visor
                 _blurVerticalMaterial = blurVerticalMaterial;
                 _compositeMaterial = compositeMaterial;
                 renderPassEvent = settings != null ? settings.injectionPoint : RenderPassEvent.BeforeRenderingTransparents;
-                ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Normal | ScriptableRenderPassInput.Color);
+                ConfigureInput(ScriptableRenderPassInput.Depth | ScriptableRenderPassInput.Color);
                 requiresIntermediateTexture = true;
             }
 
@@ -180,8 +157,7 @@ namespace Hecton8.Visor
 
                 TextureHandle sourceTexture = resourceData.activeColorTexture;
                 TextureHandle depthTexture = resourceData.cameraDepthTexture;
-                TextureHandle normalsTexture = resourceData.cameraNormalsTexture;
-                if (!sourceTexture.IsValid() || !depthTexture.IsValid() || !normalsTexture.IsValid())
+                if (!sourceTexture.IsValid() || !depthTexture.IsValid())
                     return;
 
                 TextureDesc sourceDesc = renderGraph.GetTextureDesc(sourceTexture);
@@ -195,7 +171,7 @@ namespace Hecton8.Visor
                 occlusionDesc.height = ssdoHeight;
                 occlusionDesc.depthBufferBits = DepthBits.None;
                 occlusionDesc.msaaSamples = MSAASamples.None;
-                occlusionDesc.colorFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                occlusionDesc.colorFormat = GraphicsFormat.R8_UNorm;
                 occlusionDesc.clearBuffer = true;
                 occlusionDesc.clearColor = Color.white;
                 occlusionDesc.filterMode = FilterMode.Bilinear;
@@ -219,7 +195,6 @@ namespace Hecton8.Visor
                 Camera camera = cameraData.camera;
                 Matrix4x4 projectionMatrix = GL.GetGPUProjectionMatrix(camera.projectionMatrix, false);
                 float projectionScale = math.abs(projectionMatrix.m11) * 0.5f * sourceDesc.height * math.max(0.01f, _settings.radiusMeters);
-                Vector3 ambientDirection = ResolveAmbientDirectionCheap(_settings.ambientDirection);
 
                 UpdateMaterialParameters(
                     _occlusionMaterial,
@@ -229,8 +204,7 @@ namespace Hecton8.Visor
                     sourceDesc,
                     ssdoWidth,
                     ssdoHeight,
-                    projectionScale,
-                    ambientDirection);
+                    projectionScale);
                 UpdateMaterialParameters(
                     _blurHorizontalMaterial,
                     ref _blurHorizontalParameterCache,
@@ -239,8 +213,7 @@ namespace Hecton8.Visor
                     sourceDesc,
                     ssdoWidth,
                     ssdoHeight,
-                    projectionScale,
-                    ambientDirection);
+                    projectionScale);
                 UpdateMaterialParameters(
                     _blurVerticalMaterial,
                     ref _blurVerticalParameterCache,
@@ -249,8 +222,7 @@ namespace Hecton8.Visor
                     sourceDesc,
                     ssdoWidth,
                     ssdoHeight,
-                    projectionScale,
-                    ambientDirection);
+                    projectionScale);
                 UpdateMaterialParameters(
                     _compositeMaterial,
                     ref _compositeParameterCache,
@@ -259,8 +231,7 @@ namespace Hecton8.Visor
                     sourceDesc,
                     ssdoWidth,
                     ssdoHeight,
-                    projectionScale,
-                    ambientDirection);
+                    projectionScale);
 
                 using (var builder = renderGraph.AddUnsafePass<FullscreenPassData>("Hecton Abyssal SSDO Gather", out var passData, _profilingSampler))
                 {
@@ -270,7 +241,6 @@ namespace Hecton8.Visor
 
                     builder.UseTexture(sourceTexture, AccessFlags.Read);
                     builder.UseTexture(depthTexture, AccessFlags.Read);
-                    builder.UseTexture(normalsTexture, AccessFlags.Read);
                     builder.UseTexture(occlusionTexture, AccessFlags.Write);
                     builder.AllowGlobalStateModification(true);
 
@@ -359,8 +329,7 @@ namespace Hecton8.Visor
                 TextureDesc sourceDesc,
                 int outputWidth,
                 int outputHeight,
-                float projectionScale,
-                Vector3 ambientDirection)
+                float projectionScale)
             {
                 bool materialDirty = !cache.Applied || !ReferenceEquals(cache.Material, material);
                 if (materialDirty)
@@ -379,7 +348,6 @@ namespace Hecton8.Visor
                     outputHeight,
                     1f / math.max(1, outputWidth),
                     1f / math.max(1, outputHeight));
-                Vector4 ambientDirectionVector = new Vector4(ambientDirection.x, ambientDirection.y, ambientDirection.z, 0f);
                 float radiusMeters = math.max(0.01f, settings.radiusMeters);
                 float intensity = math.max(0f, settings.intensity);
                 float bias = math.max(0f, settings.bias);
@@ -387,7 +355,6 @@ namespace Hecton8.Visor
                 float blurDepthThreshold = math.max(0.001f, settings.blurDepthThreshold);
                 float compositeStrength = math.saturate(settings.compositeStrength);
                 float safeProjectionScale = math.max(0.01f, projectionScale);
-                int sampleCount = math.clamp(settings.sampleCount, 4, 6);
 
                 SetMaterialFloatIfChanged(material, ShaderConstants.PassModeId, passMode, ref cache.PassMode, materialDirty);
                 SetMaterialVectorIfChanged(material, ShaderConstants.InputSizeId, inputSize, ref cache.InputSize, materialDirty);
@@ -414,13 +381,6 @@ namespace Hecton8.Visor
                     safeProjectionScale,
                     ref cache.ProjectionScale,
                     materialDirty);
-                SetMaterialIntIfChanged(material, ShaderConstants.SampleCountId, sampleCount, ref cache.SampleCount, materialDirty);
-                SetMaterialVectorIfChanged(
-                    material,
-                    ShaderConstants.AmbientDirectionId,
-                    ambientDirectionVector,
-                    ref cache.AmbientDirection,
-                    materialDirty);
             }
 
             private static void SetMaterialFloatIfChanged(Material material, int shaderId, float value, ref float cachedValue, bool materialDirty)
@@ -429,15 +389,6 @@ namespace Hecton8.Visor
                     return;
 
                 material.SetFloat(shaderId, value);
-                cachedValue = value;
-            }
-
-            private static void SetMaterialIntIfChanged(Material material, int shaderId, int value, ref int cachedValue, bool materialDirty)
-            {
-                if (!materialDirty && cachedValue == value)
-                    return;
-
-                material.SetInt(shaderId, value);
                 cachedValue = value;
             }
 
@@ -472,10 +423,6 @@ namespace Hecton8.Visor
             internal static readonly int BlurDepthThresholdId = Shader.PropertyToID("_HectonAbyssalSsdoBlurDepthThreshold");
             internal static readonly int ProjectionScaleId = Shader.PropertyToID("_HectonAbyssalSsdoProjectionScale");
             internal static readonly int CompositeStrengthId = Shader.PropertyToID("_HectonAbyssalSsdoCompositeStrength");
-            internal static readonly int SampleCountId = Shader.PropertyToID("_HectonAbyssalSsdoSampleCount");
-            internal static readonly int AmbientDirectionId = Shader.PropertyToID("_HectonAbyssalSsdoAmbientDirection");
-            internal static readonly int DepthTextureId = Shader.PropertyToID("_HectonAbyssalSsdoDepth");
-            internal static readonly int NormalsTextureId = Shader.PropertyToID("_HectonAbyssalSsdoNormals");
             internal static readonly int SsdoTextureId = Shader.PropertyToID("_HectonAbyssalSSDOTex");
             internal static readonly int ActiveId = Shader.PropertyToID("_HectonAbyssalSSDOActive");
         }

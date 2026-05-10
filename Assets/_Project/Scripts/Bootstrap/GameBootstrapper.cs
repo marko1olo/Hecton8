@@ -115,6 +115,8 @@ namespace Hecton8.Bootstrap
         private static readonly List<GameObject> _bootstrapSceneRootScratch = new List<GameObject>(BootstrapSceneRootScratchCapacity);
         // COLD ALLOC: List<Transform>[4096] - bootstrap transform traversal scratch without recursive iterator allocation - owner: GameBootstrapper
         private static readonly List<Transform> _bootstrapTransformScratch = new List<Transform>(BootstrapTransformScratchCapacity);
+        // COLD ALLOC: List<ProfilerRecorderHandle>[256] - reused bootstrap memory metric scanner; no per-call list allocation - owner: GameBootstrapper
+        private static readonly List<ProfilerRecorderHandle> _profilerRecorderHandleScratch = new List<ProfilerRecorderHandle>(256);
         // COLD ALLOC: StringBuilder[256] - BIOS route-error overlay formatter without string.Format params/boxing - owner: GameBootstrapper
         private static readonly StringBuilder _biosErrorMessageBuilder = new StringBuilder(256);
         // COLD ALLOC: StringBuilder[128] - fatal boot overlay formatter without string.Format params array - owner: GameBootstrapper
@@ -237,6 +239,7 @@ namespace Hecton8.Bootstrap
             new GlobalRegistryServiceSlot[(int)BootstrapDependencyNode.Count];
         private static readonly uint _BootstrapTotalBootTimeHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Bootstrap.TotalBootTimeMs"));
         private static readonly uint _GameBootstrapperContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("GameBootstrapper"));
+        private static readonly uint _ServiceHeartbeatFreezeHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SERVICE_HEARTBEAT_FREEZE"));
         private static bool _isBootstrapComplete;
         private static bool _sceneGuardRegistered;
         private static bool _entryRecoveryIssued;
@@ -821,13 +824,15 @@ namespace Hecton8.Bootstrap
 
                 if (_heartbeatFrozenSamples[index] == HeartbeatFreezeSlowTickLimit)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError(
                         "[GameBootstrapper] SERVICE_HEARTBEAT_FREEZE service=" +
                         ResolveBootstrapDependencyNodeName(node) +
                         " tick=" +
                         tickCount);
+#endif
                     GlobalTelemetryBus.PublishPerformanceWarning(
-                        unchecked((uint)Hecton.Localization.LocHash.Compute("SERVICE_HEARTBEAT_FREEZE")),
+                        _ServiceHeartbeatFreezeHash,
                         _GameBootstrapperContextHash,
                         tickCount);
                 }
@@ -3478,45 +3483,50 @@ namespace Hecton8.Bootstrap
             megabytes = 0f;
             resolvedMetric = "Unresolved";
 
-            List<ProfilerRecorderHandle> handles = new List<ProfilerRecorderHandle>(256); // COLD ALLOC: one-shot profiler handle scan during bootstrap before gameplay starts.
-            ProfilerRecorderHandle.GetAvailable(handles);
-
-            for (int candidateIndex = 0; candidateIndex < candidates.Length; candidateIndex++)
+            lock (_profilerRecorderHandleScratch)
             {
-                string candidate = candidates[candidateIndex];
-                for (int handleIndex = 0; handleIndex < handles.Count; handleIndex++)
+                _profilerRecorderHandleScratch.Clear();
+                ProfilerRecorderHandle.GetAvailable(_profilerRecorderHandleScratch);
+
+                for (int candidateIndex = 0; candidateIndex < candidates.Length; candidateIndex++)
                 {
-                    ProfilerRecorderDescription description =
-                        ProfilerRecorderHandle.GetDescription(handles[handleIndex]);
-
-                    if (!string.Equals(description.Name, candidate, StringComparison.OrdinalIgnoreCase))
-                        continue;
-
-                    ProfilerRecorder recorder = default;
-                    try
+                    string candidate = candidates[candidateIndex];
+                    for (int handleIndex = 0; handleIndex < _profilerRecorderHandleScratch.Count; handleIndex++)
                     {
-                        recorder = ProfilerRecorder.StartNew(
-                            description.Category,
-                            description.Name,
-                            1,
-                            ProfilerRecorderOptions.Default);
+                        ProfilerRecorderDescription description =
+                            ProfilerRecorderHandle.GetDescription(_profilerRecorderHandleScratch[handleIndex]);
 
-                        if (!recorder.Valid)
+                        if (!string.Equals(description.Name, candidate, StringComparison.OrdinalIgnoreCase))
                             continue;
 
-                        megabytes = recorder.LastValue / BytesPerMegabyte;
-                        resolvedMetric = description.Name;
-                        return true;
-                    }
-                    catch (ArgumentException)
-                    {
-                    }
-                    finally
-                    {
-                        if (recorder.Valid)
-                            recorder.Dispose();
+                        ProfilerRecorder recorder = default;
+                        try
+                        {
+                            recorder = ProfilerRecorder.StartNew(
+                                description.Category,
+                                description.Name,
+                                1,
+                                ProfilerRecorderOptions.Default);
+
+                            if (!recorder.Valid)
+                                continue;
+
+                            megabytes = recorder.LastValue / BytesPerMegabyte;
+                            resolvedMetric = description.Name;
+                            return true;
+                        }
+                        catch (ArgumentException)
+                        {
+                        }
+                        finally
+                        {
+                            if (recorder.Valid)
+                                recorder.Dispose();
+                        }
                     }
                 }
+
+                _profilerRecorderHandleScratch.Clear();
             }
 
             return false;
@@ -3690,9 +3700,35 @@ namespace Hecton8.Bootstrap
             if (!File.Exists(path))
                 return;
 
-            byte[] record = File.ReadAllBytes(path); // COLD ALLOC: boot.bin readback before gameplay; owner: GameBootstrapper
-            if (record.Length < BootStateRecordBytes)
+            Span<byte> record = stackalloc byte[BootStateRecordBytes];
+            int bytesRead = 0;
+            try
+            {
+                using FileStream stream = new FileStream(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite,
+                    BootStateRecordBytes,
+                    FileOptions.SequentialScan);
+
+                while (bytesRead < BootStateRecordBytes)
+                {
+                    int read = stream.Read(record.Slice(bytesRead, BootStateRecordBytes - bytesRead));
+                    if (read <= 0)
+                        return;
+
+                    bytesRead += read;
+                }
+            }
+            catch (IOException)
+            {
                 return;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return;
+            }
 
             uint magic = ReadUInt32(record, 0);
             ushort version = ReadUInt16(record, 4);
@@ -3771,15 +3807,15 @@ namespace Hecton8.Bootstrap
         {
             switch (node)
             {
-                case BootstrapDependencyNode.SystemDispatcher: return GlobalRegistryServiceSlot.SystemDispatcherRuntime;
-                case BootstrapDependencyNode.GameTickManager: return GlobalRegistryServiceSlot.TickManagerRuntime;
+                case BootstrapDependencyNode.SystemDispatcher: return GlobalRegistryServiceSlot.Dispatcher;
+                case BootstrapDependencyNode.GameTickManager: return GlobalRegistryServiceSlot.TickManager;
                 case BootstrapDependencyNode.SaveManager: return GlobalRegistryServiceSlot.Save;
                 case BootstrapDependencyNode.ObjectPoolManager: return GlobalRegistryServiceSlot.ObjectPool;
-                case BootstrapDependencyNode.RenderDispatcher: return GlobalRegistryServiceSlot.RenderDispatcherRuntime;
-                case BootstrapDependencyNode.SceneRuntimeService: return GlobalRegistryServiceSlot.SceneRuntime;
+                case BootstrapDependencyNode.RenderDispatcher: return GlobalRegistryServiceSlot.RenderDispatcher;
+                case BootstrapDependencyNode.SceneRuntimeService: return GlobalRegistryServiceSlot.Scene;
                 case BootstrapDependencyNode.EquipmentInteractionHandler: return GlobalRegistryServiceSlot.InteractionSignals;
                 case BootstrapDependencyNode.HectonFloatingOrigin: return GlobalRegistryServiceSlot.FloatingOriginRuntime;
-                case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistryServiceSlot.PhysicsStateManagerRuntime;
+                case BootstrapDependencyNode.GlobalPhysicsStateManager: return GlobalRegistryServiceSlot.PhysicsStateManager;
                 case BootstrapDependencyNode.PhysicsApplySystem: return GlobalRegistryServiceSlot.Physics;
                 case BootstrapDependencyNode.DebrisManager: return GlobalRegistryServiceSlot.Debris;
                 case BootstrapDependencyNode.EnvironmentRuntimeContextService: return GlobalRegistryServiceSlot.Environment;
@@ -3801,7 +3837,7 @@ namespace Hecton8.Bootstrap
             }
         }
 
-        private static uint ReadUInt32(byte[] data, int offset)
+        private static uint ReadUInt32(ReadOnlySpan<byte> data, int offset)
         {
             return (uint)(data[offset] |
                           (data[offset + 1] << 8) |
@@ -3809,7 +3845,7 @@ namespace Hecton8.Bootstrap
                           (data[offset + 3] << 24));
         }
 
-        private static ushort ReadUInt16(byte[] data, int offset)
+        private static ushort ReadUInt16(ReadOnlySpan<byte> data, int offset)
         {
             return (ushort)(data[offset] | (data[offset + 1] << 8));
         }

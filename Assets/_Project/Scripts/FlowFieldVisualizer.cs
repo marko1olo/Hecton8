@@ -542,7 +542,7 @@ namespace Hecton8.Physics
                         }
                         else
                         {
-                            float d = math.distance(pos, vol.Position);
+                            float d = ApproximateVectorMagnitude(pos - vol.Position);
                             if (d < vol.SphereRadius)
                             {
                                 float edge = 1f - d / math.max(0.01f, vol.SphereRadius);
@@ -555,7 +555,7 @@ namespace Hecton8.Physics
                             float pulse = 1f;
                             if (vol.PulseAmplitude > 0f && vol.PulseFrequency > 0f)
                             {
-                                pulse += math.sin(Time * vol.PulseFrequency * (2f * math.PI) + vol.PhaseOffset) * vol.PulseAmplitude;
+                                pulse += FastTriangleSigned(Time * vol.PulseFrequency * 6.2831855f + vol.PhaseOffset) * vol.PulseAmplitude;
                             }
 
                             flow += vol.Direction * (vol.Strength * pulse * weight);
@@ -585,7 +585,7 @@ namespace Hecton8.Physics
 
             // Animatsionnyy faktor dlya preview
             float animationFactor = animateInEditor ?
-                math.sin(Time.realtimeSinceStartup * animationSpeed) * 0.5f + 0.5f : 1f;
+                FastTriangleSigned(Time.realtimeSinceStartup * animationSpeed) * 0.5f + 0.5f : 1f;
 
             // Risuem strelki dlya kazhdoy tochki grid'a
             UpdateActiveParticles();
@@ -1032,14 +1032,39 @@ namespace Hecton8.Physics
             return max + (mid * 0.375f) + (min * 0.125f);
         }
 
-        private static Vector3 NormalizeVectorRsqrt(Vector3 value, Vector3 fallback)
+        private static float ApproximateVectorMagnitude(float3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float max = math.max(ax, math.max(ay, az));
+            float min = math.min(ax, math.min(ay, az));
+            float mid = ax + ay + az - max - min;
+            return max + (mid * 0.375f) + (min * 0.125f);
+        }
+
+        private static float FastTriangleSigned(float phase)
+        {
+            float triangle01 = 1f - math.abs(math.frac(phase * 0.15915494f + 0.25f) * 2f - 1f);
+            return triangle01 * 2f - 1f;
+        }
+
+        private static Vector3 DominantAxisOrDefault(Vector3 value, Vector3 fallback)
         {
             float lengthSq = value.x * value.x + value.y * value.y + value.z * value.z;
             if (lengthSq <= 0.0001f)
                 return fallback;
 
-            float invLength = math.rsqrt(lengthSq);
-            return new Vector3(value.x * invLength, value.y * invLength, value.z * invLength);
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            if (ax >= ay && ax >= az)
+                return new Vector3(value.x >= 0f ? 1f : -1f, 0f, 0f);
+
+            if (ay >= az)
+                return new Vector3(0f, value.y >= 0f ? 1f : -1f, 0f);
+
+            return new Vector3(0f, 0f, value.z >= 0f ? 1f : -1f);
         }
 
         private static Color BlendColorUnclamped(Color from, Color to, float t)
@@ -1099,7 +1124,7 @@ namespace Hecton8.Physics
                 Transform volumeTransform = volume.transform;
                 Vector3 volumePosition = volumeTransform.position;
                 Quaternion volumeRotation = volumeTransform.rotation;
-                Vector3 localFlowDirection = NormalizeVectorRsqrt(volume.LocalDirection, Vector3.forward);
+                Vector3 localFlowDirection = DominantAxisOrDefault(volume.LocalDirection, Vector3.forward);
                 Vector3 worldFlowDirection = volumeTransform.TransformDirection(localFlowDirection);
                 Vector3 shapedFlowDirection = Vector3.Scale(
                     worldFlowDirection,
@@ -1111,7 +1136,7 @@ namespace Hecton8.Physics
                     Rotation = volumeRotation,
                     HalfSize = new float3(volume.BoxSize.x, volume.BoxSize.y, volume.BoxSize.z) * 0.5f,
                     SphereRadius = Mathf.Max(0.01f, volume.SphereRadius),
-                    Direction = NormalizeVectorRsqrt(shapedFlowDirection, Vector3.forward),
+                    Direction = DominantAxisOrDefault(shapedFlowDirection, Vector3.forward),
                     Strength = volume.Strength,
                     VerticalFactor = volume.VerticalFactor,
                     EdgeSoftness = Mathf.Clamp01(volume.EdgeSoftness),
@@ -1307,7 +1332,7 @@ namespace Hecton8.Physics
             Gizmos.color = color;
 
             // Napravlenie i dlina strelki
-            Vector3 direction = NormalizeVectorRsqrt(flow, Vector3.forward);
+            Vector3 direction = DominantAxisOrDefault(flow, Vector3.forward);
             float length = arrowLength * math.lerp(0.1f, 1f, t); // Minimalnaya dlina dlya vidimosti
 
             switch (arrowStyle)
@@ -1347,9 +1372,9 @@ namespace Hecton8.Physics
 
             // Nakonechnik strelki
             Vector3 arrowTip = position + direction * length;
-            Vector3 rightUnit = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.up), Vector3.zero);
+            Vector3 rightUnit = DominantAxisOrDefault(Vector3.Cross(direction, Vector3.up), Vector3.zero);
             if (rightUnit.sqrMagnitude <= 0.0001f)
-                rightUnit = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.forward), Vector3.right);
+                rightUnit = DominantAxisOrDefault(Vector3.Cross(direction, Vector3.forward), Vector3.right);
             Vector3 right = rightUnit * arrowThickness;
 
             Vector3 left = -right;
@@ -1367,11 +1392,11 @@ namespace Hecton8.Physics
             float radius = arrowThickness * 2f;
 
             // Prostoy konus cherez Gizmos.DrawLine (Unity ne imeet Gizmos.DrawCone)
-            Vector3 up = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.right), Vector3.zero);
+            Vector3 up = DominantAxisOrDefault(Vector3.Cross(direction, Vector3.right), Vector3.zero);
             if (up.sqrMagnitude <= 0.0001f)
-                up = NormalizeVectorRsqrt(Vector3.Cross(direction, Vector3.forward), Vector3.up);
+                up = DominantAxisOrDefault(Vector3.Cross(direction, Vector3.forward), Vector3.up);
 
-            Vector3 right = NormalizeVectorRsqrt(Vector3.Cross(direction, up), Vector3.right);
+            Vector3 right = DominantAxisOrDefault(Vector3.Cross(direction, up), Vector3.right);
 
             // Osnovanie konusa
             Vector3 baseCenter = position + direction * length * 0.7f;
@@ -1435,7 +1460,7 @@ namespace Hecton8.Physics
                 return;
 
             ps.transform.position = position;
-            ps.transform.rotation = Quaternion.LookRotation(NormalizeVectorRsqrt(flow, Vector3.forward));
+            ps.transform.rotation = Quaternion.LookRotation(DominantAxisOrDefault(flow, Vector3.forward));
 
             var main = ps.main;
             float lifetime = Mathf.Max(0.1f, 1f + magnitude * 0.5f);

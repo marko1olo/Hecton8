@@ -99,9 +99,6 @@ namespace Hecton8.World
         private NativeArray<byte> _occupancyVolume;
         private NativeArray<byte> _sdfVolume;
         private Collider[] _overlapHits;
-        private Vector3[] _scanLocalCenters;
-        private Vector3[] _occupiedCenters;
-        private Vector3[] _emptyCenters;
         private Matrix4x4 _scanLocalToWorld = Matrix4x4.identity;
         private Vector3 _scanCenterWs;
         private Vector3 _scanHalfExtents;
@@ -276,9 +273,7 @@ namespace Hecton8.World
                 _occupancyVolume.Length == voxelCount &&
                 _sdfVolume.IsCreated &&
                 _sdfVolume.Length == voxelCount &&
-                _voxelDensityTexture != null &&
-                _scanLocalCenters != null &&
-                _scanLocalCenters.Length == voxelCount)
+                _voxelDensityTexture != null)
             {
                 return;
             }
@@ -294,13 +289,6 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeArray(_sdfVolume, NativeMemoryOwner, nameof(_sdfVolume), NativeMemoryLifetime);
             // COLD ALLOC: Collider[8] - reusable overlap-box hit cache for cave lighting volume voxelization - owner: HectonCaveVoxelLightingVolume
             _overlapHits = new Collider[MaxOverlapHits];
-            // COLD ALLOC: Vector3[voxelCount] - current voxel-center cache for local cave SDF encoding - owner: HectonCaveVoxelLightingVolume
-            _scanLocalCenters = new Vector3[voxelCount];
-            // COLD ALLOC: Vector3[voxelCount] - occupied voxel-center cache for local cave SDF encoding - owner: HectonCaveVoxelLightingVolume
-            _occupiedCenters = new Vector3[voxelCount];
-            // COLD ALLOC: Vector3[voxelCount] - empty voxel-center cache for local cave SDF encoding - owner: HectonCaveVoxelLightingVolume
-            _emptyCenters = new Vector3[voxelCount];
-
             TextureFormat textureFormat = SystemInfo.SupportsTextureFormat(TextureFormat.R8)
                 ? TextureFormat.R8
                 : TextureFormat.Alpha8;
@@ -337,9 +325,6 @@ namespace Hecton8.World
                 Destroy(_voxelDensityTexture);
 
             _overlapHits = null;
-            _scanLocalCenters = null;
-            _occupiedCenters = null;
-            _emptyCenters = null;
             _voxelDensityTexture = null;
             _resolutionRuntime = 0;
             _scanSliceCursor = 0;
@@ -414,7 +399,6 @@ namespace Hecton8.World
                     float localX = -_scanHalfExtents.x + (xIndex + 0.5f) * _scanCellSize.x;
                     int voxelIndex = sliceOffset + (yIndex * resolution) + xIndex;
                     Vector3 localCenter = new Vector3(localX, localY, localZ);
-                    _scanLocalCenters[voxelIndex] = localCenter;
 
                     Vector3 worldCenter = _scanLocalToWorld.MultiplyPoint3x4(localCenter);
                     _occupancyVolume[voxelIndex] = IsCellOccupied(worldCenter) ? byte.MaxValue : byte.MinValue;
@@ -467,64 +451,75 @@ namespace Hecton8.World
 
         private void EncodeSignedDistanceField()
         {
-            int voxelCount = _resolutionRuntime * _resolutionRuntime * _resolutionRuntime;
-            int occupiedCount = 0;
-            int emptyCount = 0;
+            int resolution = _resolutionRuntime;
+            int voxelCount = resolution * resolution * resolution;
+            if (voxelCount <= 0)
+                return;
 
+            bool foundOccupied = false;
+            bool foundEmpty = false;
             for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
             {
                 if (_occupancyVolume[voxelIndex] > 0)
-                {
-                    _occupiedCenters[occupiedCount] = _scanLocalCenters[voxelIndex];
-                    occupiedCount++;
-                }
+                    foundOccupied = true;
                 else
-                {
-                    _emptyCenters[emptyCount] = _scanLocalCenters[voxelIndex];
-                    emptyCount++;
-                }
+                    foundEmpty = true;
             }
 
-            if (occupiedCount <= 0)
+            if (!foundOccupied || !foundEmpty)
             {
+                byte fill = foundOccupied ? byte.MinValue : byte.MaxValue;
                 for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
-                    _sdfVolume[voxelIndex] = byte.MaxValue;
+                    _sdfVolume[voxelIndex] = fill;
                 return;
             }
 
-            if (emptyCount <= 0)
+            for (int zIndex = 0; zIndex < resolution; zIndex++)
             {
-                for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
-                    _sdfVolume[voxelIndex] = byte.MinValue;
-                return;
-            }
-
-            float boundaryBias = _scanCellDiagonal * 0.5f;
-            float boundaryBiasSq = boundaryBias * boundaryBias;
-            float inverseSdfRangeSq = _scanSdfRange > 0.0001f ? 1f / (_scanSdfRange * _scanSdfRange) : 0f;
-
-            for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
-            {
-                bool occupied = _occupancyVolume[voxelIndex] > 0;
-                Vector3 origin = _scanLocalCenters[voxelIndex];
-                Vector3[] searchSet = occupied ? _emptyCenters : _occupiedCenters;
-                int searchCount = occupied ? emptyCount : occupiedCount;
-                float nearestDistanceSq = float.MaxValue;
-
-                for (int searchIndex = 0; searchIndex < searchCount; searchIndex++)
+                int sliceOffset = zIndex * resolution * resolution;
+                for (int yIndex = 0; yIndex < resolution; yIndex++)
                 {
-                    float candidateDistanceSq = (origin - searchSet[searchIndex]).sqrMagnitude;
-                    if (candidateDistanceSq < nearestDistanceSq)
-                        nearestDistanceSq = candidateDistanceSq;
-                }
+                    int rowOffset = sliceOffset + yIndex * resolution;
+                    for (int xIndex = 0; xIndex < resolution; xIndex++)
+                    {
+                        int voxelIndex = rowOffset + xIndex;
+                        bool occupied = _occupancyVolume[voxelIndex] > 0;
+                        bool directShell = HasOppositeNeighbor(xIndex, yIndex, zIndex, occupied, 1);
+                        if (occupied)
+                        {
+                            _sdfVolume[voxelIndex] = directShell ? (byte)115 : byte.MinValue;
+                            continue;
+                        }
 
-                float unsignedDistance01 = nearestDistanceSq < float.MaxValue
-                    ? Mathf.Clamp01(Mathf.Max(0f, nearestDistanceSq - boundaryBiasSq) * inverseSdfRangeSq)
-                    : 1f;
-                float signedDistance01 = occupied ? -unsignedDistance01 : unsignedDistance01;
-                float encoded = Mathf.Clamp01(signedDistance01 * 0.5f + 0.5f);
-                _sdfVolume[voxelIndex] = (byte)(encoded * 255f + 0.5f);
+                        bool wideShell = !directShell && HasOppositeNeighbor(xIndex, yIndex, zIndex, occupied, 2);
+                        _sdfVolume[voxelIndex] = directShell
+                            ? (byte)140
+                            : wideShell
+                                ? (byte)166
+                                : byte.MaxValue;
+                    }
+                }
             }
+        }
+
+        private bool HasOppositeNeighbor(int x, int y, int z, bool occupied, int radius)
+        {
+            return IsOccupiedAt(x + radius, y, z) != occupied ||
+                   IsOccupiedAt(x - radius, y, z) != occupied ||
+                   IsOccupiedAt(x, y + radius, z) != occupied ||
+                   IsOccupiedAt(x, y - radius, z) != occupied ||
+                   IsOccupiedAt(x, y, z + radius) != occupied ||
+                   IsOccupiedAt(x, y, z - radius) != occupied;
+        }
+
+        private bool IsOccupiedAt(int x, int y, int z)
+        {
+            int resolution = _resolutionRuntime;
+            if (x < 0 || y < 0 || z < 0 || x >= resolution || y >= resolution || z >= resolution)
+                return false;
+
+            int index = x + y * resolution + z * resolution * resolution;
+            return _occupancyVolume[index] > 0;
         }
 
         private void PublishGlobals(bool hasVolume)

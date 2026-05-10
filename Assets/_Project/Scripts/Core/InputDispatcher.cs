@@ -1729,7 +1729,7 @@ namespace Hecton8.Core
 
         public static void MarkInputCaptured()
         {
-            double timestamp = InputSystem.currentTime;
+            double timestamp = InputState.currentTime;
             if (timestamp <= 0d)
                 timestamp = Time.unscaledTimeAsDouble;
 

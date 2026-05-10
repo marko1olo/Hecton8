@@ -16,6 +16,7 @@ namespace Hecton8.Core
         private const int InvalidNumberQueuePrewarmCapacity = 256;
         private const int MaxMainThreadDrainPerLateFrame = 32;
         private const float MinDirectionLengthSq = 0.000001f;
+        private const float UnitDirectionLengthSqTolerance = 0.0625f;
         private const float MinTransportSpeedMultiplier = 0.01f;
 
         private static NativeQueue<int> _invalidNumberQueue;
@@ -207,17 +208,34 @@ namespace Hecton8.Core
             {
                 float lengthSq = math.lengthsq(value);
                 if (lengthSq > MinDirectionLengthSq)
-                    return value * math.rsqrt(lengthSq);
+                    return math.abs(lengthSq - 1f) <= UnitDirectionLengthSqTolerance
+                        ? value
+                        : DominantAxisDirection(value);
             }
 
             if (IsFinite(fallback))
             {
                 float fallbackLengthSq = math.lengthsq(fallback);
                 if (fallbackLengthSq > MinDirectionLengthSq)
-                    return fallback * math.rsqrt(fallbackLengthSq);
+                    return math.abs(fallbackLengthSq - 1f) <= UnitDirectionLengthSqTolerance
+                        ? fallback
+                        : DominantAxisDirection(fallback);
             }
 
             return new float3(0f, 0f, 1f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float3 DominantAxisDirection(float3 value)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            if (ax >= ay && ax >= az)
+                return new float3(value.x < 0f ? -1f : 1f, 0f, 0f);
+            if (ay >= az)
+                return new float3(0f, value.y < 0f ? -1f : 1f, 0f);
+            return new float3(0f, 0f, value.z < 0f ? -1f : 1f);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -252,6 +252,7 @@ namespace Hecton8.SaveSystem
         {
             SidecarReader reader = new SidecarReader(bufferPtr, fileLength);
             record = new SaveSlotMaintenanceRecord();
+            error = string.Empty;
             if (!reader.ReadString(out record.SlotName)
                 || !reader.ReadLong(out record.LastSuccessfulSaveTicksUtc)
                 || !reader.ReadLong(out record.LastSuccessfulLoadTicksUtc)
@@ -286,6 +287,7 @@ namespace Hecton8.SaveSystem
         {
             SidecarReader reader = new SidecarReader(bufferPtr, fileLength);
             record = new SaveSlotMaintenanceRecord();
+            error = string.Empty;
             if (!reader.ReadString(out record.SlotName)
                 || !reader.ReadLong(out record.LastSuccessfulSaveTicksUtc)
                 || !reader.ReadLong(out record.LastSuccessfulLoadTicksUtc)

@@ -451,10 +451,16 @@ namespace Hecton8.Editor
             if (importer == null || !IsUnderRoot(importer.assetPath, ScifiFacilityRoot))
                 return false;
 
-            return importer.importNormals == ModelImporterNormals.Calculate &&
+            return !importer.isReadable &&
+                   !importer.importBlendShapes &&
+                   !importer.importVisibility &&
+                   !importer.importCameras &&
+                   importer.materialLocation == ModelImporterMaterialLocation.InPrefab &&
+                   importer.importNormals == ModelImporterNormals.Calculate &&
                    Mathf.Approximately(importer.normalSmoothingAngle, ScifiFacilityNormalSmoothingAngle) &&
                    importer.importTangents == ModelImporterTangents.CalculateMikk &&
-                   importer.weldVertices;
+                   importer.weldVertices &&
+                   importer.meshCompression == ModelImporterMeshCompression.Medium;
         }
 
         private static bool IsUnderRoot(string path, string root)

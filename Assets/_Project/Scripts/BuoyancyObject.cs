@@ -31,6 +31,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Unity.Mathematics;
 using UnityEngine;
 #if UNITY_EDITOR
 using Sirenix.OdinInspector;
@@ -274,9 +275,15 @@ namespace Hecton8.Physics
 
             float resolvedHeight = Mathf.Max(0.1f, height);
             float footprintArea = Mathf.Max(0.01f, volume / resolvedHeight);
-            float halfWidth = Mathf.Max(0.05f, Mathf.Sqrt(footprintArea) * 0.5f);
+            float halfWidth = Mathf.Max(0.05f, ApproximateSqrtPositive(footprintArea) * 0.5f);
             center = _cachedTransform != null ? _cachedTransform.position : transform.position;
             extents = new Vector3(halfWidth, resolvedHeight * 0.5f, halfWidth);
+        }
+
+        private static float ApproximateSqrtPositive(float value)
+        {
+            float safeValue = math.max(0.0001f, value);
+            return math.asfloat((math.asint(safeValue) >> 1) + 0x1FC00000);
         }
 
         /// <summary>

@@ -193,7 +193,8 @@ public class FlowFieldVisualizerTests
             Vector3 flow = (Vector3)result;
 
             // If flow is weak, it should be filtered in DrawFlowArrow
-            if (flow.magnitude < _visualizer.MinFlowStrength)
+            float minFlowStrengthSq = _visualizer.MinFlowStrength * _visualizer.MinFlowStrength;
+            if (flow.sqrMagnitude < minFlowStrengthSq)
             {
                 // This would be filtered out
                 Assert.Pass("Weak flow would be filtered");

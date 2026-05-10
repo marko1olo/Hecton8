@@ -455,10 +455,23 @@ namespace Hecton8.Visor
             }
 
             if (math.abs(lengthSq - 1f) > QuaternionUnitLengthSqEpsilon)
-                q *= math.rsqrt(lengthSq);
+                q *= math.rcp(math.max(ApproximateMagnitude(q), 0.000001f));
 
             sanitized = new Quaternion(q.x, q.y, q.z, q.w);
             return true;
+        }
+
+        private static float ApproximateMagnitude(float4 value)
+        {
+            float4 absValue = math.abs(value);
+            float maxA = math.max(absValue.x, absValue.y);
+            float maxB = math.max(absValue.z, absValue.w);
+            float maxAxis = math.max(maxA, maxB);
+            float minA = math.min(absValue.x, absValue.y);
+            float minB = math.min(absValue.z, absValue.w);
+            float minAxis = math.min(minA, minB);
+            float midSum = absValue.x + absValue.y + absValue.z + absValue.w - maxAxis - minAxis;
+            return maxAxis + (midSum * 0.25f) + (minAxis * 0.125f);
         }
 
         private static float ResolveAmbientLight01()

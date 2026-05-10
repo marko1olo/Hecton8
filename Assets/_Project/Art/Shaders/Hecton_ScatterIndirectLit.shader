@@ -100,16 +100,25 @@ Shader "Hecton8/World/ScatterIndirectLit"
             return _HectonScatterInstances[_HectonVisibleScatterIndices[instanceID]];
         }
 
+        float2 ResolveScatterYawOctant(float rotation)
+        {
+            uint sector = (uint)rotation & 7u;
+            if (sector == 0u) return float2(1.0, 0.0);
+            if (sector == 1u) return float2(0.70710677, 0.70710677);
+            if (sector == 2u) return float2(0.0, 1.0);
+            if (sector == 3u) return float2(-0.70710677, 0.70710677);
+            if (sector == 4u) return float2(-1.0, 0.0);
+            if (sector == 5u) return float2(-0.70710677, -0.70710677);
+            if (sector == 6u) return float2(0.0, -1.0);
+            return float2(0.70710677, -0.70710677);
+        }
+
         void BuildScatterBasis(float3 normalWS, float rotation, float scale, out float3 rightWS, out float3 upWS, out float3 forwardWS)
         {
-            upWS = HectonCoreLitSafeNormalize(normalWS);
-            float3 anchorRight = abs(upWS.y) > 0.99 ? float3(1.0, 0.0, 0.0) : HectonCoreLitSafeNormalize(cross(float3(0.0, 1.0, 0.0), upWS));
-            float3 anchorForward = HectonCoreLitSafeNormalize(cross(upWS, anchorRight));
-            float sinAngle;
-            float cosAngle;
-            sincos(rotation, sinAngle, cosAngle);
-            rightWS = (anchorRight * cosAngle + anchorForward * sinAngle) * scale;
-            forwardWS = (-anchorRight * sinAngle + anchorForward * cosAngle) * scale;
+            float2 forwardXZ = ResolveScatterYawOctant(rotation);
+            upWS = normalWS.y < 0.0 ? float3(0.0, -1.0, 0.0) : float3(0.0, 1.0, 0.0);
+            rightWS = float3(forwardXZ.y, 0.0, -forwardXZ.x) * scale;
+            forwardWS = float3(forwardXZ.x, 0.0, forwardXZ.y) * scale;
             upWS *= scale;
         }
 
@@ -118,7 +127,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float3 rightAxisWS = rightWS * invScale;
             float3 upAxisWS = upWS * invScale;
             float3 forwardAxisWS = forwardWS * invScale;
-            return HectonCoreLitSafeNormalize(rightAxisWS * normalOS.x + upAxisWS * normalOS.y + forwardAxisWS * normalOS.z);
+            return rightAxisWS * normalOS.x + upAxisWS * normalOS.y + forwardAxisWS * normalOS.z;
         }
 
         Varyings Vert(Attributes input)
@@ -135,7 +144,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float3 positionWS = instanceData.PositionScale.xyz;
             float scale = max(instanceData.PositionScale.w, 0.05);
             float invScale = rcp(scale);
-            float3 normalWS = HectonCoreLitSafeNormalize(instanceData.NormalRotation.xyz);
+            float3 normalWS = instanceData.NormalRotation.xyz;
             float rotation = instanceData.NormalRotation.w;
 
             float3 rightWS;
@@ -245,7 +254,7 @@ Shader "Hecton8/World/ScatterIndirectLit"
             float3 positionWS = instanceData.PositionScale.xyz;
             float scale = max(instanceData.PositionScale.w, 0.05);
             float invScale = rcp(scale);
-            float3 normalWS = HectonCoreLitSafeNormalize(instanceData.NormalRotation.xyz);
+            float3 normalWS = instanceData.NormalRotation.xyz;
             float rotation = instanceData.NormalRotation.w;
 
             float3 rightWS;

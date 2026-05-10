@@ -291,14 +291,14 @@ namespace Hecton8.Dev
 
         private bool ValidateVertexAmbientOcclusion()
         {
-            NativeArray<float> density = default;
+            NativeArray<sbyte> density = default;
             NativeArray<float3> positions = default;
             NativeArray<float3> normals = default;
             NativeArray<float> curvature = default;
             NativeArray<float> ambientOcclusion = default;
             try
             {
-                density = new NativeArray<float>(27, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                density = new NativeArray<sbyte>(27, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 positions = new NativeArray<float3>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 normals = new NativeArray<float3>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 curvature = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
@@ -309,7 +309,7 @@ namespace Hecton8.Dev
                 for (int y = 0; y < 3; y++)
                 for (int x = 0; x < 3; x++, index++)
                 {
-                    float value = x - 1f;
+                    sbyte value = (sbyte)(x - 1);
                     density[index] = value;
                 }
 
@@ -321,6 +321,7 @@ namespace Hecton8.Dev
                     ptsZ = 3,
                     volumeOrigin = float3.zero,
                     voxelStep = 1f,
+                    densityDecodeScale = 1f,
                     densityField = density,
                     positions = positions,
                     normals = normals,

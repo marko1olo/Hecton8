@@ -26,7 +26,6 @@ Shader "HECTON/Terrain/TerrainMaster"
         _BiomeTint      ("Biome Tint", Color) = (0.15, 0.12, 0.1, 1)
         _BiomeEdgeBleedScale ("Biome Edge Bleed Scale", Float) = 0.018
         _BiomeEdgeBleedStrength ("Biome Edge Bleed Strength", Range(0,1)) = 0.38
-        _BiomeTransitionMeters ("Biome Transition Meters", Float) = 50
         _BiomeTransitionNoiseStrength ("Biome Transition Noise", Range(0,1)) = 0.42
 
         [Header(Sedimentation)]
@@ -51,7 +50,6 @@ Shader "HECTON/Terrain/TerrainMaster"
         _CaveGlowPower  ("Cave Glow Intensity", Range(0,10)) = 3.0
         _NoirSiltPulseColor ("Noir Silt Pulse Color", Color) = (0.0, 0.38, 0.55, 1)
         _NoirSiltPulseStrength ("Noir Silt Pulse Strength", Range(0,1)) = 0.06
-        _NoirSiltPulseScale ("Noir Silt Pulse Scale", Float) = 0.045
 
         [Header(Surface)]
         _Metallic       ("Metallic", Range(0,1)) = 0.0
@@ -91,7 +89,6 @@ Shader "HECTON/Terrain/TerrainMaster"
             float  _StochasticStrength;
             float  _BiomeEdgeBleedScale;
             float  _BiomeEdgeBleedStrength;
-            float  _BiomeTransitionMeters;
             float  _BiomeTransitionNoiseStrength;
             float  _SedimentStrength;
             float  _SedimentSlopeThreshold;
@@ -104,7 +101,6 @@ Shader "HECTON/Terrain/TerrainMaster"
             float  _CaveGlowPower;
             float  _FadeDistance;
             float  _NoirSiltPulseStrength;
-            float  _NoirSiltPulseScale;
             half   _Metallic;
             half   _BaseSmooth;
             half4  _SandColor;
@@ -129,11 +125,6 @@ Shader "HECTON/Terrain/TerrainMaster"
         float4 _HectonTerrainFadeAupOrigin;
         float4 _HectonDistantTerrainShadowRect;
         float4 _HectonDistantTerrainShadowParams;
-
-        float3 HectonTerrainSanitizePositionOS(float3 positionOS)
-        {
-            return positionOS;
-        }
 
         half3 HectonDominantAxisDirection(float3 value)
         {
@@ -162,7 +153,9 @@ Shader "HECTON/Terrain/TerrainMaster"
             float2 fadeDelta = positionWS.xz - _HectonTerrainFadeRuntimeOrigin.xz;
             float distanceSqXZ = dot(fadeDelta, fadeDelta);
             float fadeStart = max(0.0, fadeDistance - fadeWidth);
-            half fade = (half)(1.0 - smoothstep(fadeStart * fadeStart, fadeDistance * fadeDistance, distanceSqXZ));
+            float fadeStartSq = fadeStart * fadeStart;
+            float fadeEndSq = fadeDistance * fadeDistance;
+            half fade = (half)(1.0 - saturate((distanceSqXZ - fadeStartSq) / max(fadeEndSq - fadeStartSq, 1.0)));
             return lerp(1.0h, fade, enabled);
         }
 
@@ -189,27 +182,14 @@ Shader "HECTON/Terrain/TerrainMaster"
             return saturate(mask * (half)_HectonDistantTerrainShadowParams.x) * enabled * inside;
         }
 
-        float2 HectonHash22(float2 value)
-        {
-            float3 p3 = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
-            p3 += dot(p3, p3.yzx + 33.33);
-            return frac((p3.xx + p3.yz) * p3.zy);
-        }
-
         half HectonCellNoise2D(float2 position)
         {
-            return (half)HectonHash22(floor(position)).x;
-        }
-
-        half HectonCheapCurve01(half value)
-        {
-            value = saturate(abs(value));
-            return value * value * (3.0h - 2.0h * value);
+            return HectonInterleavedGradientNoise(floor(position));
         }
 
         half HectonCheapSharp01(half value, float sharpness)
         {
-            half curved = HectonCheapCurve01(value);
+            half curved = saturate(abs(value));
             half curved2 = curved * curved;
             half weight = saturate((half)((sharpness - 1.0) * 0.0322580645));
             return lerp(curved, curved2, weight);
@@ -218,14 +198,12 @@ Shader "HECTON/Terrain/TerrainMaster"
         half4 HectonSampleStochastic2D(TEXTURE2D_PARAM(tex, samp), float2 uv, half strength)
         {
             float jitter = saturate(strength);
-            half4 baseSample = SAMPLE_TEXTURE2D(tex, samp, uv);
             float2 hexCoord = float2(uv.x + uv.y * 0.57735027, uv.y * 1.15470054);
             float2 cell = floor(hexCoord);
             cell.x += frac(cell.y * 0.5);
-            float2 offset = (HectonHash22(cell) - 0.5) * jitter;
-            half blend = (half)(HectonHash22(cell + 17.31).x * jitter);
-            half4 shiftedSample = SAMPLE_TEXTURE2D(tex, samp, uv + offset);
-            return lerp(baseSample, shiftedSample, blend);
+            float hash = HectonInterleavedGradientNoise(cell);
+            float2 offset = (float2(hash, frac(hash * 17.17)) - 0.5) * jitter;
+            return SAMPLE_TEXTURE2D(tex, samp, uv + offset);
         }
 
         half3 HectonUnpackNormalRG(half4 packedNormal, half strength)
@@ -248,24 +226,16 @@ Shader "HECTON/Terrain/TerrainMaster"
             float scale = max(_BiomeEdgeBleedScale, 0.0001);
             half edgeNoise = HectonCellNoise2D(positionWS.xz * scale);
             half bleed = (edgeNoise - 0.5h) * transitionMask * (half)_BiomeEdgeBleedStrength;
-            float transitionMeters = max(_BiomeTransitionMeters, 1.0);
-            half lowFrequencyNoise = HectonCellNoise2D(positionWS.xz / transitionMeters + float2(13.7, -9.2));
-            half gradientDither = (lowFrequencyNoise - 0.5h) * transitionMask * (half)_BiomeTransitionNoiseStrength;
+            half gradientDither = (edgeNoise - 0.5h) * transitionMask * (half)_BiomeTransitionNoiseStrength;
             return saturate(biome + bleed + gradientDither);
         }
 
-        half ApplyNoirSiltPulse(float3 positionWS, half depthFactor, half slopeBlend, inout half3 albedo, inout half3 emission)
+        void ApplyNoirSiltPulse(half depthFactor, half slopeBlend, inout half3 albedo, inout half3 emission)
         {
             half strength = saturate((half)_NoirSiltPulseStrength);
-            float scale = max(_NoirSiltPulseScale, 0.0001);
-            float2 pulseCoord = positionWS.xz * scale + positionWS.yy * 0.011;
-            half grainA = HectonInterleavedGradientNoise(pulseCoord * 173.31);
-            half grainB = HectonInterleavedGradientNoise(pulseCoord.yx * 91.70 + _Time.yy * 0.037);
-            half pulse = saturate(((grainA * 0.65h) + (grainB * 0.35h) - 0.52h) * 3.2h);
-            half mask = pulse * saturate(depthFactor * (1.0h - slopeBlend * 0.35h)) * strength;
+            half mask = saturate(depthFactor * (1.0h - slopeBlend * 0.35h)) * strength;
             albedo = lerp(albedo, albedo * _NoirSiltPulseColor.rgb, mask * 0.65h);
             emission += _NoirSiltPulseColor.rgb * (mask * 0.025h);
-            return mask;
         }
 
         ENDHLSL
@@ -348,7 +318,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
-                float3 safePositionOS = HectonTerrainSanitizePositionOS(IN.positionOS.xyz);
+                float3 safePositionOS = IN.positionOS.xyz;
                 VertexPositionInputs posInputs = GetVertexPositionInputs(safePositionOS);
                 VertexNormalInputs   nrmInputs = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
 
@@ -413,7 +383,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
                 // ---- Cave emission ----
                 half3 emission = cave * _CaveGlowColor.rgb * _CaveGlowPower;
-                ApplyNoirSiltPulse(IN.positionWS, depthFactor, slopeBlend, albedo, emission);
+                ApplyNoirSiltPulse(depthFactor, slopeBlend, albedo, emission);
                 half canopyShadow = EvaluateSargassumCanopyShadow(IN.positionWS);
                 albedo = lerp(albedo, albedo * 0.34h, canopyShadow);
                 emission *= 1.0h - canopyShadow * 0.8h;
@@ -423,10 +393,9 @@ Shader "HECTON/Terrain/TerrainMaster"
 
                 // ---- Final world normal ----
                 half baseUpDot = saturate(dot(IN.normalWS, float3(0.0, 1.0, 0.0)));
-                half steepMask = smoothstep(
-                    (half)_MicroErosionSlopeThreshold,
-                    1.0h,
-                    1.0h - baseUpDot) * (half)_MicroErosionStrength;
+                half steepMask = saturate(
+                    ((1.0h - baseUpDot) - (half)_MicroErosionSlopeThreshold) /
+                    max(1.0h - (half)_MicroErosionSlopeThreshold, 0.001h)) * (half)_MicroErosionStrength;
                 float flowScale = max(_FlowNormalScale, 0.0001);
                 float2 flowUv = IN.positionWS.xz * flowScale +
                     float2(IN.positionWS.y * flowScale * 2.13, IN.positionWS.y * flowScale * 0.37);
@@ -437,10 +406,9 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half3 finalNormalWS = HectonDominantAxisDirection(
                     IN.normalWS + blendedNormalOffset + flowNormalWS * steepMask);
                 half upDot = saturate(dot(finalNormalWS, float3(0.0, 1.0, 0.0)));
-                half sedimentMask = smoothstep(
-                    (half)_SedimentSlopeThreshold,
-                    (half)_SedimentSlopeThreshold + max((half)_SedimentBlendWidth, 0.001h),
-                    upDot) * (half)_SedimentStrength;
+                half sedimentMask = saturate(
+                    (upDot - (half)_SedimentSlopeThreshold) /
+                    max((half)_SedimentBlendWidth, 0.001h)) * (half)_SedimentStrength;
                 albedo = lerp(albedo, _SedimentColor.rgb, sedimentMask);
                 smoothness = lerp(smoothness, smoothness * 0.55h, sedimentMask);
 
@@ -586,7 +554,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
-                float3 posWS = TransformObjectToWorld(HectonTerrainSanitizePositionOS(IN.positionOS.xyz));
+                float3 posWS = TransformObjectToWorld(IN.positionOS.xyz);
                 float3 nrmWS = TransformObjectToWorldNormal(IN.normalOS);
 
                 #if defined(_CASTING_PUNCTUAL_LIGHT_SHADOW)
@@ -655,7 +623,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
-                OUT.positionCS = TransformObjectToHClip(HectonTerrainSanitizePositionOS(IN.positionOS.xyz));
+                OUT.positionCS = TransformObjectToHClip(IN.positionOS.xyz);
                 return OUT;
             }
 
@@ -693,8 +661,6 @@ Shader "HECTON/Terrain/TerrainMaster"
             {
                 float4 positionOS : POSITION;
                 float3 normalOS   : NORMAL;
-                float4 tangentOS  : TANGENT;
-                float4 color      : COLOR;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
@@ -702,9 +668,6 @@ Shader "HECTON/Terrain/TerrainMaster"
             {
                 float4 positionCS  : SV_POSITION;
                 float3 normalWS    : TEXCOORD0;
-                float3 positionWS  : TEXCOORD1;
-                // Pack: x = slopeBlend, y = biome texture-array index source
-                half2  blendData   : TEXCOORD2;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -716,16 +679,10 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_TRANSFER_INSTANCE_ID(IN, OUT);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(OUT);
 
-                VertexPositionInputs posInputs = GetVertexPositionInputs(HectonTerrainSanitizePositionOS(IN.positionOS.xyz));
-                VertexNormalInputs   nrmInputs = GetVertexNormalInputs(IN.normalOS, IN.tangentOS);
+                VertexPositionInputs posInputs = GetVertexPositionInputs(IN.positionOS.xyz);
 
                 OUT.positionCS = posInputs.positionCS;
-                OUT.positionWS = posInputs.positionWS;
-                OUT.normalWS   = nrmInputs.normalWS;
-
-                half slope = IN.color.r;
-                OUT.blendData.x = HectonCheapSharp01(slope, _SlopeSharpness);
-                OUT.blendData.y = IN.color.a;
+                OUT.normalWS   = TransformObjectToWorldNormal(IN.normalOS);
 
                 return OUT;
             }

@@ -1140,7 +1140,7 @@ namespace Hecton8.Gameplay
                     state.AngularVelocity += randomDrift * 0.45f;
                     state.AngularVelocity *= math.saturate(1f - (state.AngularDamping * dt));
                     quaternion deltaRotation = quaternion.Euler(state.AngularVelocity * dt);
-                    state.Rotation = math.normalize(math.mul(state.Rotation, deltaRotation));
+                    state.Rotation = ApproximateNormalizeRotation(math.mul(state.Rotation, deltaRotation));
                 }
                 else
                 {
@@ -1148,6 +1148,16 @@ namespace Hecton8.Gameplay
                 }
 
                 WriteStates[i] = state;
+            }
+
+            private static quaternion ApproximateNormalizeRotation(quaternion value)
+            {
+                float4 raw = value.value;
+                float lengthSq = math.dot(raw, raw);
+                if (!math.isfinite(lengthSq) || lengthSq <= 0.000001f)
+                    return quaternion.identity;
+
+                return new quaternion(raw * math.rsqrt(lengthSq));
             }
         }
     }

@@ -37,7 +37,7 @@ float FastTriangleSigned(float phase)
     return triangle01 * 2.0 - 1.0;
 }
 
-float2 NormalizeFastOrDefault(float2 value, float2 fallback)
+float2 DominantAxisOrDefault(float2 value, float2 fallback)
 {
     float2 absValue = abs(value);
     float maxComponent = max(absValue.x, absValue.y);
@@ -56,7 +56,7 @@ float3 ComputeWaveDisplacement(float2 worldXZ, float4 waveA, float4 waveB, float
     if (amplitude <= 0.0 || wavelength <= 0.01)
         return 0.0.xxx;
 
-    float2 direction = NormalizeFastOrDefault(waveA.xy, float2(1.0, 0.0));
+    float2 direction = DominantAxisOrDefault(waveA.xy, float2(1.0, 0.0));
     float waveNumber = TwoPi / max(0.01, wavelength);
     float phaseVelocity = (CinematicPhaseSpeedBase + wavelength * CinematicPhaseSpeedPerMeter) * max(0.01, waveB.z);
     float phase = waveNumber * dot(direction, worldXZ) - phaseVelocity * waveNumber * timeSeconds + waveB.y;

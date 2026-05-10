@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 using UnityObject = UnityEngine.Object;
@@ -466,14 +467,12 @@ namespace Hecton8.EditorTools
             camera.cullingMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
             camera.nearClipPlane = 0.01f;
 
-            Vector3 normalizedViewDirection = viewDirection.sqrMagnitude > 0.0001f
-                ? viewDirection.normalized
-                : new Vector3(-0.42f, 0.24f, -1f).normalized;
+            Vector3 normalizedViewDirection = ResolveDominantAxisDirection(viewDirection, new Vector3(-0.42f, 0.24f, -1f));
             Vector3 worldUp = Mathf.Abs(Vector3.Dot(normalizedViewDirection, Vector3.up)) > 0.96f
                 ? Vector3.forward
                 : Vector3.up;
-            Vector3 right = Vector3.Normalize(Vector3.Cross(worldUp, normalizedViewDirection));
-            Vector3 up = Vector3.Normalize(Vector3.Cross(normalizedViewDirection, right));
+            Vector3 right = DominantAxisVector(Vector3.Cross(worldUp, normalizedViewDirection), Vector3.right);
+            Vector3 up = DominantAxisVector(Vector3.Cross(normalizedViewDirection, right), Vector3.up);
 
             float focusYOffset = bounds.extents.y * focusYOffsetNormalized;
             Vector3 focus = bounds.center + Vector3.up * focusYOffset;
@@ -505,12 +504,13 @@ namespace Hecton8.EditorTools
             float tallZoomTightening = Mathf.Lerp(1f, 0.7f, tallBias);
             float crownFramingTightening = Mathf.Lerp(1f, 0.84f, crownBias);
             orthographicSize = Mathf.Max(0.18f, orthographicSize * tallZoomTightening * crownFramingTightening);
-            float fitDistance = Mathf.Max(bounds.extents.magnitude * 3.2f, orthographicSize * 3.1f);
+            float boundsRadius = FastExtentRadius(bounds.extents);
+            float fitDistance = Mathf.Max(boundsRadius * 3.2f, orthographicSize * 3.1f);
 
             camera.transform.position = focus - normalizedViewDirection * fitDistance;
             camera.transform.rotation = Quaternion.LookRotation(normalizedViewDirection, up);
             camera.orthographicSize = orthographicSize;
-            camera.farClipPlane = fitDistance * 3.6f + bounds.extents.magnitude * 2.6f + 8f;
+            camera.farClipPlane = fitDistance * 3.6f + boundsRadius * 2.6f + 8f;
 
             previewUtility.BeginStaticPreview(new Rect(0f, 0f, AutomationPreviewWidth, AutomationPreviewHeight));
             previewUtility.Render(true, true);
@@ -575,14 +575,12 @@ namespace Hecton8.EditorTools
 
         private static float EvaluateAutomationPreviewCoverage(Bounds bounds, Vector3 viewDirection, bool heroView)
         {
-            Vector3 normalizedViewDirection = viewDirection.sqrMagnitude > 0.0001f
-                ? viewDirection.normalized
-                : new Vector3(0f, 0.12f, -1f).normalized;
+            Vector3 normalizedViewDirection = ResolveDominantAxisDirection(viewDirection, new Vector3(0f, 0.12f, -1f));
             Vector3 worldUp = Mathf.Abs(Vector3.Dot(normalizedViewDirection, Vector3.up)) > 0.96f
                 ? Vector3.forward
                 : Vector3.up;
-            Vector3 right = Vector3.Normalize(Vector3.Cross(worldUp, normalizedViewDirection));
-            Vector3 up = Vector3.Normalize(Vector3.Cross(normalizedViewDirection, right));
+            Vector3 right = DominantAxisVector(Vector3.Cross(worldUp, normalizedViewDirection), Vector3.right);
+            Vector3 up = DominantAxisVector(Vector3.Cross(normalizedViewDirection, right), Vector3.up);
             float projectedVertical = Mathf.Max(EvaluateProjectedBoundsHalfExtent(bounds, up), bounds.extents.y * 1.04f);
 
             float maxHorizontalExtent = Mathf.Max(bounds.extents.x, bounds.extents.z);
@@ -617,6 +615,34 @@ namespace Hecton8.EditorTools
             return normalizedHorizontal * normalizedVertical;
         }
 
+        private static Vector3 ResolveDominantAxisDirection(Vector3 value, Vector3 fallback)
+        {
+            if (value.sqrMagnitude <= 0.0001f)
+                value = fallback;
+
+            return DominantAxisVector(value, Vector3.forward);
+        }
+
+        private static Vector3 DominantAxisVector(Vector3 value, Vector3 fallback)
+        {
+            float dominant = Mathf.Max(Mathf.Abs(value.x), Mathf.Abs(value.y), Mathf.Abs(value.z));
+            if (dominant <= 0.0001f)
+                return fallback;
+
+            return value / dominant;
+        }
+
+        private static float FastExtentRadius(Vector3 extents)
+        {
+            float x = Mathf.Abs(extents.x);
+            float y = Mathf.Abs(extents.y);
+            float z = Mathf.Abs(extents.z);
+            float max = Mathf.Max(x, Mathf.Max(y, z));
+            float min = Mathf.Min(x, Mathf.Min(y, z));
+            float mid = x + y + z - max - min;
+            return max + mid * 0.5f + min * 0.25f;
+        }
+
         private static Texture2D BuildAutomationPreviewContactSheet(Texture2D[] viewTextures)
         {
             if (viewTextures == null || viewTextures.Length != 4)
@@ -627,12 +653,11 @@ namespace Hecton8.EditorTools
             int sheetWidth = tileWidth * 2;
             int sheetHeight = tileHeight * 2;
             Texture2D contactSheet = new Texture2D(sheetWidth, sheetHeight, TextureFormat.RGBA32, false, false);
-            Color32[] blankPixels = new Color32[sheetWidth * sheetHeight]; // COLD ALLOC: editor-only contact sheet assembly, bounded 1024x1024
+            NativeArray<Color32> sheetPixels = contactSheet.GetRawTextureData<Color32>();
             Color32 background = new Color32(71, 71, 77, 255);
-            for (int i = 0; i < blankPixels.Length; i++)
-                blankPixels[i] = background;
+            for (int i = 0; i < sheetPixels.Length; i++)
+                sheetPixels[i] = background;
 
-            contactSheet.SetPixels32(blankPixels);
             CopyAutomationPreviewTile(contactSheet, viewTextures[0], 0, tileHeight);
             CopyAutomationPreviewTile(contactSheet, viewTextures[1], tileWidth, tileHeight);
             CopyAutomationPreviewTile(contactSheet, viewTextures[2], 0, 0);
@@ -646,8 +671,22 @@ namespace Hecton8.EditorTools
             if (contactSheet == null || source == null)
                 return;
 
-            Color[] sourcePixels = source.GetPixels(0, 0, source.width, source.height); // COLD ALLOC: editor-only tile copy for bounded preview textures
-            contactSheet.SetPixels(startX, startY, source.width, source.height, sourcePixels);
+            if (!TryGetRawPixels(source, out NativeArray<Color32> sourcePixels) ||
+                !TryGetRawPixels(contactSheet, out NativeArray<Color32> sheetPixels))
+            {
+                return;
+            }
+
+            int sheetWidth = contactSheet.width;
+            int copyWidth = Mathf.Min(source.width, contactSheet.width - startX);
+            int copyHeight = Mathf.Min(source.height, contactSheet.height - startY);
+            for (int y = 0; y < copyHeight; y++)
+            {
+                int sourceRow = y * source.width;
+                int targetRow = (startY + y) * sheetWidth + startX;
+                for (int x = 0; x < copyWidth; x++)
+                    sheetPixels[targetRow + x] = sourcePixels[sourceRow + x];
+            }
         }
 
         private static string SaveAutomationPreview(string prefabPath, Texture2D source)
@@ -675,8 +714,7 @@ namespace Hecton8.EditorTools
             if (texture == null)
                 return false;
 
-            Color32[] pixels = texture.GetPixels32(); // COLD ALLOC: editor-only preview validation for bounded 512x512 capture
-            if (pixels == null || pixels.Length == 0)
+            if (!TryGetRawPixels(texture, out NativeArray<Color32> pixels) || pixels.Length == 0)
                 return false;
 
             Color32 background = backgroundColor;
@@ -713,6 +751,24 @@ namespace Hecton8.EditorTools
                 return false;
 
             return informativeSamples >= Mathf.Max(2, sampleCount / 20);
+        }
+
+        private static bool TryGetRawPixels(Texture2D texture, out NativeArray<Color32> pixels)
+        {
+            pixels = default;
+            if (texture == null)
+                return false;
+
+            TextureFormat format = texture.format;
+            if (format != TextureFormat.RGBA32 &&
+                format != TextureFormat.ARGB32 &&
+                format != TextureFormat.BGRA32)
+            {
+                return false;
+            }
+
+            pixels = texture.GetRawTextureData<Color32>();
+            return pixels.Length == texture.width * texture.height;
         }
 
         private static bool HasMeaningfulAutomationView(Texture2D[] viewTextures, Color backgroundColor)

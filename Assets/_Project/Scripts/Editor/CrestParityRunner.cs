@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Reflection;
 using System.Text;
@@ -25,10 +26,12 @@ namespace Hecton8.Editor
         private const int DefaultWarmupFrames = 90;
         private const int DefaultMaxFrames = 240;
         private const float MinimumSpatialLength = 1f;
+        private const string Crest4AdapterTypeName = "Hecton8.Physics.Crest4KinematicsAdapter";
+        private const string Crest5AdapterTypeName = "Hecton8.Physics.Crest5KinematicsAdapter";
 
         private static GameObject s_Probe;
-        private static Crest4KinematicsAdapter s_Crest4Adapter;
-        private static Crest5KinematicsAdapter s_Crest5Adapter;
+        private static IHectonOceanKinematics s_Crest4Adapter;
+        private static IHectonOceanKinematics s_Crest5Adapter;
         private static Vector3[] s_SamplePositions;
         private static float[] s_Crest4Heights;
         private static float[] s_Crest5Heights;
@@ -124,6 +127,12 @@ namespace Hecton8.Editor
             }
 
             EnsureRuntimeHarness();
+            if (s_Crest4Adapter == null || s_Crest5Adapter == null)
+            {
+                FinalizeRun("[CrestParity] missing Crest kinematics adapter types.");
+                return;
+            }
+
             PrimeLegacyProviders(legacyOcean);
             PrimeCrest5Providers(crest5Water);
 
@@ -225,10 +234,10 @@ namespace Hecton8.Editor
             }
 
             if (s_Crest4Adapter == null)
-                s_Crest4Adapter = s_Probe.GetComponent<Crest4KinematicsAdapter>() ?? s_Probe.AddComponent<Crest4KinematicsAdapter>();
+                s_Crest4Adapter = ResolveOrAddAdapter(Crest4AdapterTypeName);
 
             if (s_Crest5Adapter == null)
-                s_Crest5Adapter = s_Probe.GetComponent<Crest5KinematicsAdapter>() ?? s_Probe.AddComponent<Crest5KinematicsAdapter>();
+                s_Crest5Adapter = ResolveOrAddAdapter(Crest5AdapterTypeName);
 
             if (s_SamplePositions == null)
             {
@@ -251,13 +260,50 @@ namespace Hecton8.Editor
             PopulateSamplePositions(ResolveAnchor(FindCrest5Water(includeInactive: false)));
         }
 
+        private static IHectonOceanKinematics ResolveOrAddAdapter(string adapterTypeName)
+        {
+            Type adapterType = ResolveType(adapterTypeName);
+            if (adapterType == null || !typeof(Component).IsAssignableFrom(adapterType))
+            {
+                Debug.LogError("[CrestParity] Adapter type unavailable: " + adapterTypeName);
+                return null;
+            }
+
+            Component component = s_Probe.GetComponent(adapterType);
+            if (component == null)
+                component = s_Probe.AddComponent(adapterType);
+
+            IHectonOceanKinematics adapter = component as IHectonOceanKinematics;
+            if (adapter == null)
+                Debug.LogError("[CrestParity] Adapter does not implement IHectonOceanKinematics: " + adapterTypeName);
+
+            return adapter;
+        }
+
+        private static Type ResolveType(string typeName)
+        {
+            Type type = Type.GetType(typeName);
+            if (type != null)
+                return type;
+
+            Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (int i = 0; i < assemblies.Length; i++)
+            {
+                type = assemblies[i].GetType(typeName);
+                if (type != null)
+                    return type;
+            }
+
+            return null;
+        }
+
         private static void DestroyRuntimeHarness()
         {
             s_Crest4Adapter = null;
             s_Crest5Adapter = null;
             if (s_Probe != null)
             {
-                Object.DestroyImmediate(s_Probe);
+                UnityEngine.Object.DestroyImmediate(s_Probe);
                 s_Probe = null;
             }
         }
@@ -334,13 +380,13 @@ namespace Hecton8.Editor
 
         private static Crest.OceanRenderer FindLegacyOcean(bool includeInactive)
         {
-            return Object.FindAnyObjectByType<Crest.OceanRenderer>(
+            return UnityEngine.Object.FindAnyObjectByType<Crest.OceanRenderer>(
                 includeInactive ? FindObjectsInactive.Include : FindObjectsInactive.Exclude);
         }
 
         private static WaveHarmonic.Crest.WaterRenderer FindCrest5Water(bool includeInactive)
         {
-            return Object.FindAnyObjectByType<WaveHarmonic.Crest.WaterRenderer>(
+            return UnityEngine.Object.FindAnyObjectByType<WaveHarmonic.Crest.WaterRenderer>(
                 includeInactive ? FindObjectsInactive.Include : FindObjectsInactive.Exclude);
         }
 

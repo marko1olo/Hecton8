@@ -48,12 +48,11 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: int[6] - shared scanner marker quad indices - owner: HectonScanMarkerSystem
         private static readonly int[] s_markerQuadTriangles = { 0, 2, 1, 0, 3, 2 };
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct ActiveMarker
         {
             public AbsoluteUniversePosition aup;
             public float timer;
-            public byte active;
         }
 
         [Header("── HUD Camera ───────────────────────────────")]
@@ -71,6 +70,7 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 0.4f)] private float flickerIntensity = 0.15f;
 
         private ActiveMarker[] _markers;
+        private ulong _activeMarkerMask;
         private int _writeIndex;
         private Transform _playerTransform;
         private IPlayerRuntimeContext _cachedPlayerContext;
@@ -142,10 +142,16 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
+            if (_activeMarkerMask == 0UL)
+                return;
+
+            UpdateMarkerTimers(deltaTime);
+            if (_activeMarkerMask == 0UL)
+                return;
+
             EnsureHudCamera();
             EnsurePlayerTransform();
             EnsureRuntimeResources();
-            UpdateMarkerTimers(deltaTime);
             RenderMarkers();
         }
 
@@ -160,35 +166,44 @@ namespace Hecton8.Gameplay
         private void HandleNodeFound(float3 worldPos)
         {
             AbsoluteUniversePosition markerAup = AbsoluteUniversePosition.FromRuntimePosition(new Vector3(worldPos.x, worldPos.y, worldPos.z));
-            for (int i = 0; i < MaxMarkers; i++)
+            ulong activeMask = _activeMarkerMask;
+            while (activeMask != 0UL)
             {
-                if (_markers[i].active != 0 && AbsoluteUniversePosition.DistanceSq(in _markers[i].aup, in markerAup) < 1d)
+                int i = (int)math.tzcnt(activeMask);
+                activeMask &= activeMask - 1UL;
+
+                if (AbsoluteUniversePosition.DistanceSq(in _markers[i].aup, in markerAup) < 1d)
                 {
                     _markers[i].timer = markerLifetime;
                     return;
                 }
             }
 
-            _markers[_writeIndex] = new ActiveMarker
+            int writeSlot = _writeIndex;
+            _markers[writeSlot] = new ActiveMarker
             {
                 aup = markerAup,
-                timer = markerLifetime,
-                active = 1
+                timer = markerLifetime
             };
 
-            _writeIndex = (_writeIndex + 1) % MaxMarkers;
+            _activeMarkerMask |= 1UL << writeSlot;
+            _writeIndex = (_writeIndex + 1) & (MaxMarkers - 1);
         }
 
         private void UpdateMarkerTimers(float deltaTime)
         {
-            for (int i = 0; i < MaxMarkers; i++)
+            ulong activeMask = _activeMarkerMask;
+            while (activeMask != 0UL)
             {
-                if (_markers[i].active == 0)
-                    continue;
+                int i = (int)math.tzcnt(activeMask);
+                ulong bit = 1UL << i;
+                activeMask &= activeMask - 1UL;
 
                 _markers[i].timer -= deltaTime;
                 if (_markers[i].timer <= 0f)
-                    _markers[i].active = 0;
+                {
+                    _activeMarkerMask &= ~bit;
+                }
             }
         }
 
@@ -220,6 +235,10 @@ namespace Hecton8.Gameplay
 
         private int BuildMarkerMatrices()
         {
+            ulong activeMask = _activeMarkerMask;
+            if (activeMask == 0UL)
+                return 0;
+
             Transform cameraTransform = hudCamera.transform;
             Vector3 playerPositionVector = _playerTransform.position;
             AbsoluteUniversePosition playerAup = ResolvePlayerAup(playerPositionVector);
@@ -230,12 +249,12 @@ namespace Hecton8.Gameplay
             float safeHalfHeight = _cachedSafeHalfHeight;
             int visibleCount = 0;
 
-            for (int i = 0; i < MaxMarkers; i++)
+            while (activeMask != 0UL)
             {
-                ActiveMarker marker = _markers[i];
-                if (marker.active == 0)
-                    continue;
+                int i = (int)math.tzcnt(activeMask);
+                activeMask &= activeMask - 1UL;
 
+                ActiveMarker marker = _markers[i];
                 float3 markerRuntime = marker.aup.ToRuntimeFloat3();
                 Vector3 markerRuntimePosition = new Vector3(markerRuntime.x, markerRuntime.y, markerRuntime.z);
                 Vector3 viewport = hudCamera.WorldToViewportPoint(markerRuntimePosition);

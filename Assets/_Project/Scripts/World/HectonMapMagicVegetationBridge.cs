@@ -4877,17 +4877,12 @@ namespace Hecton8.World
             float hUp = heights[(z1 * heightResolution) + centerX] * heightScale;
             float3 tangentX = new float3(dx, hRight - hLeft, 0f);
             float3 tangentZ = new float3(0f, hUp - hDown, dz);
-            return NormalizeFloat3Fast(math.cross(tangentZ, tangentX), new float3(0f, 1f, 0f));
+            return ResolveDominantFloat3(math.cross(tangentZ, tangentX), new float3(0f, 1f, 0f));
         }
 
         private static quaternion BuildAlignedRotation(float3 normal, int sector)
         {
-            float3 reference = math.abs(normal.y) > 0.99f ? new float3(1f, 0f, 0f) : new float3(0f, 1f, 0f);
-            float3 tangent = NormalizeFloat3Fast(math.cross(reference, normal), new float3(1f, 0f, 0f));
-            float3 bitangent = math.cross(normal, tangent);
-            float2 octant = ResolveOctantDirection(sector);
-            float3 forward = (tangent * octant.x) + (bitangent * octant.y);
-            return quaternion.LookRotationSafe(forward, normal);
+            return ResolveOctantYawRotation(sector);
         }
 
         private static int ResolveOctantSector(float variation, uint seed, uint salt)
@@ -4937,10 +4932,46 @@ namespace Hecton8.World
             return absX >= absY ? new float2(signX, 0f) : new float2(0f, signY);
         }
 
-        private static float3 NormalizeFloat3Fast(float3 value, float3 fallback)
+        private static quaternion ResolveOctantYawRotation(int sector)
         {
-            float lengthSq = math.lengthsq(value);
-            return lengthSq > 0.000001f ? value * math.rsqrt(lengthSq) : fallback;
+            switch (sector & 7)
+            {
+                case 0:
+                    return new quaternion(0f, 0f, 0f, 1f);
+                case 1:
+                    return new quaternion(0f, 0.38268343f, 0f, 0.9238795f);
+                case 2:
+                    return new quaternion(0f, 0.70710677f, 0f, 0.70710677f);
+                case 3:
+                    return new quaternion(0f, 0.9238795f, 0f, 0.38268343f);
+                case 4:
+                    return new quaternion(0f, 1f, 0f, 0f);
+                case 5:
+                    return new quaternion(0f, 0.9238795f, 0f, -0.38268343f);
+                case 6:
+                    return new quaternion(0f, 0.70710677f, 0f, -0.70710677f);
+                default:
+                    return new quaternion(0f, 0.38268343f, 0f, -0.9238795f);
+            }
+        }
+
+        private static float3 ResolveDominantFloat3(float3 value, float3 fallback)
+        {
+            if (!math.all(math.isfinite(value)))
+                return fallback;
+
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            if (math.max(math.max(ax, ay), az) <= 0.000001f)
+                return fallback;
+
+            if (ay >= ax && ay >= az)
+                return new float3(0f, value.y < 0f ? -1f : 1f, 0f);
+
+            return ax >= az
+                ? new float3(value.x < 0f ? -1f : 1f, 0f, 0f)
+                : new float3(0f, 0f, value.z < 0f ? -1f : 1f);
         }
 
         private static void ShiftChunkPayloadBounds(ref ChunkPayload payload, Vector3 offset)

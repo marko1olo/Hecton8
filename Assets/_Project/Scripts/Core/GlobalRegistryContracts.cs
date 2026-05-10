@@ -566,13 +566,15 @@ namespace Hecton8.Core
     /// Blittable gameplay audio request consumed by the central audio service queue.
     /// EventID maps to an authored clip-table slot owned by the audio runtime.
     /// </summary>
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Size = 32)]
     public readonly struct AudioEvent
     {
         public readonly uint EventID;
         public readonly Vector3 Position;
         public readonly float Volume;
         public readonly float Pitch;
+        private readonly uint _reserved0;
+        private readonly uint _reserved1;
 
         public AudioEvent(uint eventID, Vector3 position, float volume, float pitch)
         {
@@ -580,6 +582,8 @@ namespace Hecton8.Core
             Position = position;
             Volume = volume;
             Pitch = pitch;
+            _reserved0 = 0u;
+            _reserved1 = 0u;
         }
     }
 

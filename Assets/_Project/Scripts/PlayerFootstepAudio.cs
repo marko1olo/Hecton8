@@ -177,6 +177,7 @@ namespace Hecton8.Audio
         private readonly RaycastHit[] _surfaceHits = new RaycastHit[1]; // COLD ALLOC: footsteps read only the nearest surface under the player.
         private bool _surfaceHitValid;
         private int _lastClipIndex = -1;
+        private uint _footstepRandomState;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -189,6 +190,8 @@ namespace Hecton8.Audio
                 _playerRb = playerMovement.GetComponent<Rigidbody>();
             }
 
+            uint entitySeed = unchecked((uint)EntityId.ToULong(GetEntityId()));
+            _footstepRandomState = entitySeed != 0u ? entitySeed : 0xA511E9B3u;
             _lastStepTime = -1f;
         }
 
@@ -254,7 +257,7 @@ namespace Hecton8.Audio
                 int attempts = 0;
                 do
                 {
-                    clipIndex = UnityEngine.Random.Range(0, clips.Length);
+                    clipIndex = NextFootstepIndex(clips.Length);
                     attempts++;
                 }
                 while (clipIndex == _lastClipIndex && attempts < 4);
@@ -286,7 +289,7 @@ namespace Hecton8.Audio
             if (scaleVolumeBySpeed && _playerRb != null)
             {
                 Vector3 vel = _playerRb.linearVelocity;
-                float hSpeed = math.sqrt(vel.x * vel.x + vel.z * vel.z);
+                float hSpeed = ApproximatePlanarMagnitude(vel.x, vel.z);
                 float maxSpeed = playerMovement.CurrentSuit != null
                     ? playerMovement.CurrentSuit.maxWalkSpeed
                     : 6f;
@@ -297,12 +300,42 @@ namespace Hecton8.Audio
                 finalVolume *= speedVolume;
             }
 
-            float pitch = 1f + locomotionPitchOffset + UnityEngine.Random.Range(-pitchVariation, pitchVariation);
+            float pitch = 1f + locomotionPitchOffset + NextFootstepRange(-pitchVariation, pitchVariation);
             Vector3 playPosition = _surfaceHitValid ? _surfaceHit.point : transform.position;
 
             Hecton8.Core.IAudioService sam = Hecton8.Core.GlobalRegistry.Audio;
             if (sam != null)
                 sam.PlayAtPoint(clip, playPosition, finalVolume, pitch);
+        }
+
+        private int NextFootstepIndex(int exclusiveMax)
+        {
+            if (exclusiveMax <= 1)
+                return 0;
+
+            return (int)(NextFootstepRandomUInt() % (uint)exclusiveMax);
+        }
+
+        private float NextFootstepRange(float min, float max)
+        {
+            uint value = NextFootstepRandomUInt() >> 8;
+            float t = value * (1f / 16777215f);
+            return math.lerp(min, max, t);
+        }
+
+        private uint NextFootstepRandomUInt()
+        {
+            _footstepRandomState = unchecked(_footstepRandomState * 1664525u + 1013904223u);
+            return _footstepRandomState;
+        }
+
+        private static float ApproximatePlanarMagnitude(float x, float z)
+        {
+            float ax = math.abs(x);
+            float az = math.abs(z);
+            float max = math.max(ax, az);
+            float min = math.min(ax, az);
+            return max + (0.375f * min);
         }
 
         // ══════════════════════════════════════════════════════════

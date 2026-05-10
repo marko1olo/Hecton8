@@ -434,8 +434,7 @@ namespace Hecton8.World
                         math.max(
                             math.lengthsq(centerWs - topWs),
                             math.max(math.lengthsq(centerWs - sideAWs), math.lengthsq(centerWs - sideBWs))));
-                    float radius = radiusSq * math.rsqrt(math.max(radiusSq, 0.000001f));
-                    if (!IsSphereVisible(centerWs, math.max(0.25f, radius)))
+                    if (!IsSphereVisibleSq(centerWs, math.max(0.0625f, radiusSq)))
                     {
                         VisibilityMask[index] = 0;
                         return;
@@ -484,38 +483,51 @@ namespace Hecton8.World
                     if (sampleDistanceSq >= lightRangeSq || sampleDistanceSq <= 0.00000001f)
                         continue;
 
-                    float invSampleDistance = math.rsqrt(sampleDistanceSq);
-                    float sampleDistance = sampleDistanceSq * invSampleDistance;
-                    float3 sampleDirection = toSample * invSampleDistance;
                     float4 directionData = HeadlightDirectionsWs[headlightIndex];
-                    float3 lightDirection = math.normalizesafe(directionData.xyz);
-                    float innerCos = directionData.w;
-                    float outerCos = HeadlightConeData[headlightIndex].x;
-                    float coneRange = math.max(innerCos - outerCos, 0.0001f);
-                    float coneAttenuation = math.saturate((math.dot(lightDirection, sampleDirection) - outerCos) / coneRange);
-                    if (coneAttenuation <= 0.0001f)
+                    float3 lightDirection = directionData.xyz;
+                    float lightDirectionLenSq = math.lengthsq(lightDirection);
+                    if (!math.isfinite(lightDirectionLenSq) || lightDirectionLenSq <= 0.00000001f)
                         continue;
 
-                    float rangeAttenuation = math.saturate(1f - sampleDistance * HeadlightConeData[headlightIndex].z);
+                    float outerCos = HeadlightConeData[headlightIndex].x;
+                    float dotLight = math.dot(lightDirection, toSample);
+                    if (!PassesDotThresholdSq(dotLight, outerCos, sampleDistanceSq * lightDirectionLenSq))
+                        continue;
+
+                    float invRange = HeadlightConeData[headlightIndex].z;
+                    float rangeAttenuation = math.saturate(1f - sampleDistanceSq * invRange * invRange);
                     rangeAttenuation *= rangeAttenuation;
                     float intensity = HeadlightColors[headlightIndex].w * HeadlightConeData[headlightIndex].y;
-                    if (coneAttenuation * rangeAttenuation * intensity >= 0.02f)
+                    if (rangeAttenuation * intensity >= 0.02f)
                         return true;
                 }
 
                 return false;
             }
 
-            private bool IsSphereVisible(float3 center, float radius)
+            private bool IsSphereVisibleSq(float3 center, float radiusSq)
             {
                 for (int planeIndex = 0; planeIndex < CullingPlaneCount; planeIndex++)
                 {
                     float4 plane = CullingPlanes[planeIndex];
-                    if (math.dot(plane.xyz, center) + plane.w < -radius)
+                    float signedDistance = math.dot(plane.xyz, center) + plane.w;
+                    if (signedDistance < 0f && signedDistance * signedDistance > radiusSq)
                         return false;
                 }
 
                 return true;
+            }
+
+            private static bool PassesDotThresholdSq(float dotValue, float threshold, float lengthProductSq)
+            {
+                if (!math.isfinite(dotValue) || !math.isfinite(threshold) || !math.isfinite(lengthProductSq) || lengthProductSq <= 0.00000001f)
+                    return true;
+
+                float thresholdSq = threshold * threshold;
+                float dotSq = dotValue * dotValue;
+                return threshold >= 0f
+                    ? dotValue >= 0f && dotSq >= thresholdSq * lengthProductSq
+                    : dotValue >= 0f || dotSq <= thresholdSq * lengthProductSq;
             }
 
             private static void ResolveInstanceShape(HectonVegetationInstanceData instanceData, out float instanceHeight, out float instanceWidth)
@@ -2229,26 +2241,38 @@ namespace Hecton8.World
                 if (sampleDistanceSq >= lightRangeSq || sampleDistanceSq <= 0.00000001f)
                     continue;
 
-                float invSampleDistance = math.rsqrt(sampleDistanceSq);
-                float sampleDistance = sampleDistanceSq * invSampleDistance;
-                float3 sampleDirection = toSample * invSampleDistance;
                 Vector4 directionData = _scooterHeadlightDirectionsWs[headlightIndex];
-                float3 lightDirection = math.normalizesafe(new float3(directionData.x, directionData.y, directionData.z));
-                float innerCos = directionData.w;
-                float outerCos = _scooterHeadlightConeData[headlightIndex].x;
-                float coneRange = Mathf.Max(innerCos - outerCos, 0.0001f);
-                float coneAttenuation = math.saturate((math.dot(lightDirection, sampleDirection) - outerCos) / coneRange);
-                if (coneAttenuation <= 0.0001f)
+                float3 lightDirection = new float3(directionData.x, directionData.y, directionData.z);
+                float lightDirectionLenSq = math.lengthsq(lightDirection);
+                if (!math.isfinite(lightDirectionLenSq) || lightDirectionLenSq <= 0.00000001f)
                     continue;
 
-                float rangeAttenuation = math.saturate(1f - sampleDistance * _scooterHeadlightConeData[headlightIndex].z);
+                float outerCos = _scooterHeadlightConeData[headlightIndex].x;
+                float dotLight = math.dot(lightDirection, toSample);
+                if (!PassesDotThresholdSq(dotLight, outerCos, sampleDistanceSq * lightDirectionLenSq))
+                    continue;
+
+                float invRange = _scooterHeadlightConeData[headlightIndex].z;
+                float rangeAttenuation = math.saturate(1f - sampleDistanceSq * invRange * invRange);
                 rangeAttenuation *= rangeAttenuation;
                 float intensity = _scooterHeadlightColors[headlightIndex].w * _scooterHeadlightConeData[headlightIndex].y;
-                if (coneAttenuation * rangeAttenuation * intensity >= 0.02f)
+                if (rangeAttenuation * intensity >= 0.02f)
                     return true;
             }
 
             return false;
+        }
+
+        private static bool PassesDotThresholdSq(float dotValue, float threshold, float lengthProductSq)
+        {
+            if (!math.isfinite(dotValue) || !math.isfinite(threshold) || !math.isfinite(lengthProductSq) || lengthProductSq <= 0.00000001f)
+                return true;
+
+            float thresholdSq = threshold * threshold;
+            float dotSq = dotValue * dotValue;
+            return threshold >= 0f
+                ? dotValue >= 0f && dotSq >= thresholdSq * lengthProductSq
+                : dotValue >= 0f || dotSq <= thresholdSq * lengthProductSq;
         }
 
         private JobHandle OnPerformCulling(

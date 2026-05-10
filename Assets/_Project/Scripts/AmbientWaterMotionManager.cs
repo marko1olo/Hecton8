@@ -283,15 +283,15 @@ namespace Hecton8.Physics
             float currentSqrMagnitude = current.x * current.x + current.y * current.y + current.z * current.z;
             float currentMagnitude = ApproximateVectorMagnitude(current);
             Vector3 currentDir = currentSqrMagnitude > 0.0001f
-                ? current * math.rsqrt(currentSqrMagnitude)
+                ? DominantAxisOrDefault(current, Vector3.forward)
                 : Vector3.forward;
 
             float t = (_time + motion.Phase)
                     * math.max(0f, motion.BaseFrequency * globalFrequency);
 
-            float bobY = math.sin(t * 1.13f) * motion.VerticalAmplitude;
-            float bobX = math.sin(t * 0.91f) * motion.PositionalAmplitude.x;
-            float bobZ = math.cos(t * 1.07f) * motion.PositionalAmplitude.z;
+            float bobY = FastTriangleSigned(t * 1.13f) * motion.VerticalAmplitude;
+            float bobX = FastTriangleSigned(t * 0.91f) * motion.PositionalAmplitude.x;
+            float bobZ = FastTriangleSigned(t * 1.07f + 1.5707964f) * motion.PositionalAmplitude.z;
 
             Vector3 offset = new Vector3(
                 bobX + currentDir.x * currentMagnitude * 0.03f,
@@ -299,10 +299,10 @@ namespace Hecton8.Physics
                 bobZ + currentDir.z * currentMagnitude * 0.03f)
                 * globalAmplitude;
 
-            float pitch = math.sin(t * 0.87f) * motion.AngularAmplitude.x
+            float pitch = FastTriangleSigned(t * 0.87f) * motion.AngularAmplitude.x
                         + currentDir.z * currentMagnitude * 2f;
-            float yaw   = math.sin(t * 0.43f) * motion.AngularAmplitude.y;
-            float roll  = math.cos(t * 0.79f) * motion.AngularAmplitude.z
+            float yaw   = FastTriangleSigned(t * 0.43f) * motion.AngularAmplitude.y;
+            float roll  = FastTriangleSigned(t * 0.79f + 1.5707964f) * motion.AngularAmplitude.z
                         - currentDir.x * currentMagnitude * 3f;
 
             tr.localPosition = motion.RestLocalPosition + offset;
@@ -318,6 +318,30 @@ namespace Hecton8.Physics
             float min = math.min(ax, math.min(ay, az));
             float mid = ax + ay + az - max - min;
             return max + (mid * 0.375f) + (min * 0.125f);
+        }
+
+        private static float FastTriangleSigned(float phase)
+        {
+            float triangle01 = 1f - math.abs(math.frac(phase * 0.15915494f + 0.25f) * 2f - 1f);
+            return triangle01 * 2f - 1f;
+        }
+
+        private static Vector3 DominantAxisOrDefault(Vector3 value, Vector3 fallback)
+        {
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            float maxComponent = math.max(ax, math.max(ay, az));
+            if (maxComponent <= 0.000001f)
+                return fallback;
+
+            if (ax >= ay && ax >= az)
+                return new Vector3(value.x >= 0f ? 1f : -1f, 0f, 0f);
+
+            if (ay >= az)
+                return new Vector3(0f, value.y >= 0f ? 1f : -1f, 0f);
+
+            return new Vector3(0f, 0f, value.z >= 0f ? 1f : -1f);
         }
 
         private void UpdateBiomeCurrentBlend(float deltaTime)

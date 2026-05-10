@@ -20,7 +20,6 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
 
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
-        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareNormalsTexture.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
             float _HectonAbyssalSsdoPassMode;
@@ -33,8 +32,6 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             float _HectonAbyssalSsdoBlurDepthThreshold;
             float _HectonAbyssalSsdoProjectionScale;
             float _HectonAbyssalSsdoCompositeStrength;
-            int _HectonAbyssalSsdoSampleCount;
-            float4 _HectonAbyssalSsdoAmbientDirection;
         CBUFFER_END
 
         TEXTURE2D_X(_BlitTexture);
@@ -68,21 +65,34 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             return value > 0.00001 ? rcp(value) : 0.0;
         }
 
-        float3 SafeNormalize3(float3 value)
-        {
-            float lenSq = dot(value, value);
-            return lenSq > 0.00001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
-        }
-
         float ResolveInterleavedNoise(float2 screenUV)
         {
             float2 pixel = floor(screenUV * _ScaledScreenParams.xy);
             return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
         }
 
-        float2 Rotate2D(float2 value, float s, float c)
+        float2 ResolveOctantRotation(float noiseValue)
         {
-            return float2(value.x * c - value.y * s, value.x * s + value.y * c);
+            static const float2 kOctantRotations[8] =
+            {
+                float2(1.0, 0.0),
+                float2(0.7071068, 0.7071068),
+                float2(0.0, 1.0),
+                float2(-0.7071068, 0.7071068),
+                float2(-1.0, 0.0),
+                float2(-0.7071068, -0.7071068),
+                float2(0.0, -1.0),
+                float2(0.7071068, -0.7071068)
+            };
+            uint rotationIndex = (uint)(saturate(noiseValue) * 8.0) & 7u;
+            return kOctantRotations[rotationIndex];
+        }
+
+        float2 Rotate2D(float2 value, float2 rotation)
+        {
+            return float2(
+                value.x * rotation.x - value.y * rotation.y,
+                value.x * rotation.y + value.y * rotation.x);
         }
 
         float ResolveRawDepthValidity(float rawDepth)
@@ -94,27 +104,17 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
         #endif
         }
 
-        float3 SampleSceneWorldPosition(float2 screenUV, out float rawDepth, out float depthValid, out float linearEyeDepth)
+        void SampleSceneLinearDepth(float2 screenUV, out float rawDepth, out float depthValid, out float linearEyeDepth)
         {
             rawDepth = SampleSceneDepth(screenUV);
             depthValid = ResolveRawDepthValidity(rawDepth);
             if (depthValid <= 0.5)
             {
                 linearEyeDepth = 0.0;
-                return 0.0.xxx;
+                return;
             }
 
-            float3 positionWS = ComputeWorldSpacePosition(screenUV, rawDepth, UNITY_MATRIX_I_VP);
             linearEyeDepth = LinearEyeDepth(rawDepth, _ZBufferParams);
-            return positionWS;
-        }
-
-        float3 SampleSceneWorldNormal(float2 screenUV, out float normalValid)
-        {
-            float3 normalWS = SampleSceneNormals(screenUV);
-            float normalLengthSq = dot(normalWS, normalWS);
-            normalValid = step(0.01, normalLengthSq);
-            return normalValid > 0.5 ? normalWS * rsqrt(max(normalLengthSq, 0.00001)) : float3(0.0, 1.0, 0.0);
         }
 
         half EvaluateDirectionalOcclusion(float2 screenUV)
@@ -122,67 +122,56 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             float rawDepth;
             float depthValid;
             float linearEyeDepth;
-            float3 positionWS = SampleSceneWorldPosition(screenUV, rawDepth, depthValid, linearEyeDepth);
+            SampleSceneLinearDepth(screenUV, rawDepth, depthValid, linearEyeDepth);
             if (depthValid <= 0.5)
                 return 1.0h;
 
-            float normalValid;
-            float3 normalWS = SampleSceneWorldNormal(screenUV, normalValid);
-            if (normalValid <= 0.5)
-                return 1.0h;
-
             float radiusMeters = max(_HectonAbyssalSsdoRadiusMeters, 0.05);
+            float radiusMetersSq = radiusMeters * radiusMeters;
             float pixelRadius = _HectonAbyssalSsdoProjectionScale * SafeRcp(max(linearEyeDepth, 0.1));
             float2 uvRadius = pixelRadius * _HectonAbyssalSsdoInputSize.zw;
-            float angle = ResolveInterleavedNoise(screenUV) * 6.2831853;
-            float3 ambientDirectionWS = SafeNormalize3(_HectonAbyssalSsdoAmbientDirection.xyz);
+            float2 rotation = ResolveOctantRotation(ResolveInterleavedNoise(screenUV));
+            float2 screenBias = (screenUV - 0.5) * 0.25;
 
-            static const float2 kKernel[6] =
+            static const float2 kKernel[4] =
             {
                 float2(1.0, 0.0),
                 float2(-1.0, 0.0),
                 float2(0.0, 1.0),
-                float2(0.0, -1.0),
-                float2(0.7071, 0.7071),
-                float2(-0.7071, 0.7071)
+                float2(0.0, -1.0)
             };
 
             float accumulated = 0.0;
-            int sampleCount = clamp(_HectonAbyssalSsdoSampleCount, 4, 6);
-            float angleSin;
-            float angleCos;
-            sincos(angle, angleSin, angleCos);
-            [unroll(6)]
-            for (int sampleIndex = 0; sampleIndex < 6; sampleIndex++)
+            float invRadiusMeters = SafeRcp(radiusMeters);
+            float invRadiusMetersSq = SafeRcp(radiusMetersSq);
+            [unroll(4)]
+            for (int sampleIndex = 0; sampleIndex < 4; sampleIndex++)
             {
-                if (sampleIndex >= sampleCount)
-                    break;
-
-                float2 rotatedDirection = Rotate2D(kKernel[sampleIndex], angleSin, angleCos);
+                float2 rotatedDirection = Rotate2D(kKernel[sampleIndex], rotation);
                 float2 sampleUV = saturate(screenUV + rotatedDirection * uvRadius);
                 float sampleRawDepth;
                 float sampleDepthValid;
                 float sampleLinearEyeDepth;
-                float3 samplePositionWS = SampleSceneWorldPosition(sampleUV, sampleRawDepth, sampleDepthValid, sampleLinearEyeDepth);
+                SampleSceneLinearDepth(sampleUV, sampleRawDepth, sampleDepthValid, sampleLinearEyeDepth);
                 if (sampleDepthValid <= 0.5)
                     continue;
 
-                float3 deltaWS = samplePositionWS - positionWS;
-                float distSq = dot(deltaWS, deltaWS);
-                if (distSq <= 0.0001 || distSq >= radiusMeters * radiusMeters)
+                float depthDelta = linearEyeDepth - sampleLinearEyeDepth;
+                if (depthDelta <= 0.0)
                     continue;
 
-                float invDist = rsqrt(max(distSq, 0.0001));
-                float dist = distSq * invDist;
-                float3 sampleDirectionWS = deltaWS * invDist;
-                float rangeWeight = 1.0 - saturate(dist * SafeRcp(radiusMeters));
-                float horizonWeight = saturate(1.0 - dot(normalWS, sampleDirectionWS) - _HectonAbyssalSsdoBias);
-                float directionalWeight = saturate(dot(sampleDirectionWS, ambientDirectionWS));
-                float depthWeight = exp2(-abs(sampleLinearEyeDepth - linearEyeDepth) * _HectonAbyssalSsdoDepthSigma * 0.01);
+                float depthDeltaSq = depthDelta * depthDelta;
+                if (depthDeltaSq >= radiusMetersSq)
+                    continue;
+
+                float rangeWeight = 1.0 - saturate(depthDeltaSq * invRadiusMetersSq);
+                float horizonWeight = saturate(depthDelta * invRadiusMeters - _HectonAbyssalSsdoBias);
+                float directionalWeight = saturate(0.7 + dot(rotatedDirection, screenBias));
+                float depthWeight = rcp(1.0 + depthDelta * _HectonAbyssalSsdoDepthSigma * 0.01);
                 accumulated += horizonWeight * directionalWeight * rangeWeight * depthWeight;
             }
 
-            float normalizedOcclusion = accumulated * SafeRcp((float)sampleCount);
+            float normalizedOcclusion = accumulated * 0.25;
             return saturate(1.0 - normalizedOcclusion * _HectonAbyssalSsdoIntensity);
         }
 
@@ -191,7 +180,7 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             float centerRawDepth;
             float centerDepthValid;
             float centerLinearEyeDepth;
-            SampleSceneWorldPosition(screenUV, centerRawDepth, centerDepthValid, centerLinearEyeDepth);
+            SampleSceneLinearDepth(screenUV, centerRawDepth, centerDepthValid, centerLinearEyeDepth);
 
             float centerOcclusion = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, screenUV).r;
             if (centerDepthValid <= 0.5)
@@ -210,7 +199,7 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
                 float sampleRawDepthA;
                 float sampleDepthValidA;
                 float sampleLinearEyeDepthA;
-                SampleSceneWorldPosition(uvA, sampleRawDepthA, sampleDepthValidA, sampleLinearEyeDepthA);
+                SampleSceneLinearDepth(uvA, sampleRawDepthA, sampleDepthValidA, sampleLinearEyeDepthA);
                 float depthDeltaA = abs(sampleLinearEyeDepthA - centerLinearEyeDepth);
                 float weightA = sampleDepthValidA > 0.5 && depthDeltaA <= _HectonAbyssalSsdoBlurDepthThreshold ? 1.0 : 0.0;
                 accumulated += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uvA).r * weightA;
@@ -219,7 +208,7 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
                 float sampleRawDepthB;
                 float sampleDepthValidB;
                 float sampleLinearEyeDepthB;
-                SampleSceneWorldPosition(uvB, sampleRawDepthB, sampleDepthValidB, sampleLinearEyeDepthB);
+                SampleSceneLinearDepth(uvB, sampleRawDepthB, sampleDepthValidB, sampleLinearEyeDepthB);
                 float depthDeltaB = abs(sampleLinearEyeDepthB - centerLinearEyeDepth);
                 float weightB = sampleDepthValidB > 0.5 && depthDeltaB <= _HectonAbyssalSsdoBlurDepthThreshold ? 1.0 : 0.0;
                 accumulated += SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, uvB).r * weightB;
@@ -253,13 +242,8 @@ Shader "Hidden/Hecton8/AbyssalSSDO"
             float rawDepth;
             float depthValid;
             float linearEyeDepth;
-            SampleSceneWorldPosition(input.screenUV, rawDepth, depthValid, linearEyeDepth);
+            SampleSceneLinearDepth(input.screenUV, rawDepth, depthValid, linearEyeDepth);
             if (depthValid <= 0.5)
-                return sourceColor;
-
-            float normalValid;
-            SampleSceneWorldNormal(input.screenUV, normalValid);
-            if (normalValid <= 0.5)
                 return sourceColor;
 
             half occlusion = SAMPLE_TEXTURE2D_X(_HectonAbyssalSSDOTex, sampler_LinearClamp, input.screenUV).r;

@@ -14,14 +14,12 @@ namespace Hecton8.Audio
         private int _capacityFrames;
         private int _capacityMask;
         private int _sourceChannels = 1;
-        private int _underrunCount;
         private int _overflowDropCount;
         private int _lastTelemetryOverflowDropCount;
 
         public bool IsCreated => _frames.IsCreated && _sharedState.IsCreated;
         public int CapacityFrames => _capacityFrames;
         public int SourceChannels => _sourceChannels;
-        public int UnderrunCount => Volatile.Read(ref _underrunCount);
         public int OverflowDropCount => Volatile.Read(ref _overflowDropCount);
 
         public int BufferedFrames
@@ -74,7 +72,6 @@ namespace Hecton8.Audio
             _capacityFrames = resolvedCapacity;
             _capacityMask = resolvedCapacity - 1;
             _sourceChannels = resolvedChannels;
-            Volatile.Write(ref _underrunCount, 0);
             Volatile.Write(ref _overflowDropCount, 0);
             Volatile.Write(ref _lastTelemetryOverflowDropCount, 0);
             Clear();
@@ -144,73 +141,6 @@ namespace Hecton8.Audio
             return true;
         }
 
-        public void MixInterleavedInto(float[] destination, int channels)
-        {
-            if (!IsCreated || destination == null || channels <= 0)
-                return;
-
-            int frameCount = destination.Length / channels;
-            if (frameCount <= 0)
-                return;
-
-            int readIndex = ReadSharedIndex(NativeAudioKernelRingBufferDescriptor.ReadIndexSlot);
-            int writeIndex = ReadSharedIndex(NativeAudioKernelRingBufferDescriptor.WriteIndexSlot);
-            int bufferedFrames = (writeIndex - readIndex) & _capacityMask;
-            if (bufferedFrames <= 0)
-            {
-                Array.Clear(destination, 0, destination.Length);
-                Interlocked.Increment(ref _underrunCount);
-                return;
-            }
-
-            int framesToConsume = math.min(frameCount, bufferedFrames);
-            if (framesToConsume < frameCount)
-                Interlocked.Increment(ref _underrunCount);
-
-            int sampleCursor = 0;
-            for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
-            {
-                float sampleLeft = 0f;
-                float sampleRight = 0f;
-                bool hasFrame = frameIndex < framesToConsume;
-                if (hasFrame)
-                {
-                    int frameReadIndex = ((readIndex + frameIndex) & _capacityMask) * _sourceChannels;
-                    sampleLeft = _frames[frameReadIndex];
-                    sampleRight = _sourceChannels > 1 ? _frames[frameReadIndex + 1] : sampleLeft;
-                }
-
-                if (channels <= 1)
-                {
-                    float monoSample = (sampleLeft + sampleRight) * 0.5f;
-                    float mixedSample = hasFrame ? destination[sampleCursor] + monoSample : 0f;
-                    destination[sampleCursor] = math.clamp(mixedSample, -1f, 1f);
-                    sampleCursor++;
-                    continue;
-                }
-
-                float mixedLeft = hasFrame ? destination[sampleCursor] + sampleLeft : 0f;
-                destination[sampleCursor] = math.clamp(mixedLeft, -1f, 1f);
-                sampleCursor++;
-
-                float mixedRight = hasFrame ? destination[sampleCursor] + sampleRight : 0f;
-                destination[sampleCursor] = math.clamp(mixedRight, -1f, 1f);
-                sampleCursor++;
-
-                float overflowSample = (sampleLeft + sampleRight) * 0.5f;
-                for (int channelIndex = 2; channelIndex < channels; channelIndex++)
-                {
-                    float mixedSample = hasFrame ? destination[sampleCursor] + overflowSample : 0f;
-                    destination[sampleCursor] = math.clamp(mixedSample, -1f, 1f);
-                    sampleCursor++;
-                }
-            }
-
-            WriteSharedIndex(
-                NativeAudioKernelRingBufferDescriptor.ReadIndexSlot,
-                (readIndex + framesToConsume) & _capacityMask);
-        }
-
         public NativeAudioKernelRingBufferDescriptor CreateNativeDescriptor()
         {
             return TryCreateNativeDescriptor(out NativeAudioKernelRingBufferDescriptor descriptor, out _)
@@ -264,7 +194,6 @@ namespace Hecton8.Audio
             _capacityFrames = 0;
             _capacityMask = 0;
             _sourceChannels = 1;
-            Volatile.Write(ref _underrunCount, 0);
             Volatile.Write(ref _overflowDropCount, 0);
         }
 

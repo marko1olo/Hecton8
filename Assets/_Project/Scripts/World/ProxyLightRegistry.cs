@@ -60,7 +60,7 @@ namespace Hecton8.World
                 RangeMeters = math.max(0.01f, rangeMeters),
                 ColorLinear = new float3(colorLinear.r, colorLinear.g, colorLinear.b),
                 Intensity = math.saturate(intensity),
-                Forward = math.normalizesafe(forward, new float3(0f, 0f, 1f)),
+                Forward = ProxyLightRegistry.ResolveDominantAxisOrDefault(forward, new float3(0f, 0f, 1f)),
                 SpotCosine = 0f,
                 ShadowPhase01 = math.saturate(shadowPhase01),
                 PowerFlicker01 = math.saturate(powerFlicker01),
@@ -235,8 +235,8 @@ namespace Hecton8.World
             if (!IsInitialized || !output.IsCreated || output.Length == 0)
                 return 0;
 
-            float3 safeForward = math.normalizesafe(viewerForward);
-            bool useForwardGate = math.lengthsq(safeForward) > 0.0001f && minimumForwardDot > -1f;
+            float3 safeForward = ResolveDominantAxisOrDefault(viewerForward, new float3(0f, 0f, 1f));
+            bool useForwardGate = minimumForwardDot > -1f;
             float safeMaxDistance = math.isfinite(maxDistanceMeters) && maxDistanceMeters > 0f
                 ? maxDistanceMeters
                 : 0.01f;
@@ -267,7 +267,7 @@ namespace Hecton8.World
 
                 if (useForwardGate)
                 {
-                    float3 direction = math.normalizesafe(cameraRelative);
+                    float3 direction = ResolveDominantAxisOrDefault(cameraRelative, safeForward);
                     if (math.dot(direction, safeForward) < minimumForwardDot)
                         continue;
                 }
@@ -390,7 +390,7 @@ namespace Hecton8.World
             }
 
             float phase = (data.LastUpdateUnscaledTime * BrownoutFlickerFrequency) + (data.ShadowPhase01 * TwoPi);
-            float flickerWave = math.abs(math.sin(phase) * math.sin((phase * 0.37f) + 1.618f));
+            float flickerWave = math.abs(FastTriangleSineSigned(phase) * FastTriangleSineSigned((phase * 0.37f) + 1.618f));
             float brownoutFlicker01 = FastBrownoutBias01(flickerWave);
             float supplyScalar = math.lerp(0.55f, 1f, math.saturate(supplyRatio));
             float intensityScalar = math.lerp(BrownoutIntensityFloor, BrownoutIntensityCeiling, brownoutFlicker01) * supplyScalar;
@@ -403,6 +403,31 @@ namespace Hecton8.World
             float x = math.saturate(value);
             float denominator = x + (BrownoutBiasPadeK * (1f - x));
             return denominator > 0.000001f ? x / denominator : 0f;
+        }
+
+        private static float FastTriangleSineSigned(float radians)
+        {
+            float cycle = math.frac((radians * 0.159154943f) + 0.25f);
+            return 1f - math.abs((cycle * 4f) - 2f);
+        }
+
+        internal static float3 ResolveDominantAxisOrDefault(float3 value, float3 fallback)
+        {
+            if (!math.all(math.isfinite(value)))
+                return fallback;
+
+            float3 absValue = math.abs(value);
+            float maxAxis = math.cmax(absValue);
+            if (maxAxis <= 0.000001f)
+                return fallback;
+
+            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
+                return new float3(value.x < 0f ? -1f : 1f, 0f, 0f);
+
+            if (absValue.y >= absValue.z)
+                return new float3(0f, value.y < 0f ? -1f : 1f, 0f);
+
+            return new float3(0f, 0f, value.z < 0f ? -1f : 1f);
         }
 
         private static bool TryResolvePowerGridBrownout(out bool brownoutActive, out float supplyRatio)

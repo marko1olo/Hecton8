@@ -586,28 +586,29 @@ namespace Hecton8.Biolum
 
         private void PublishFloraShaderGlobals()
         {
-            if (!_floraShaderGlobalsPublished ||
+            bool forcePublish = !_floraShaderGlobalsPublished;
+            if (forcePublish ||
                 !NearlyEqual(_lastPublishedOceanBiolumColor, _cachedOceanBiolumColor, ShaderColorPublishEpsilon))
             {
                 Shader.SetGlobalColor(_FloraOceanBiolumColorId, _cachedOceanBiolumColor);
                 _lastPublishedOceanBiolumColor = _cachedOceanBiolumColor;
             }
 
-            if (!_floraShaderGlobalsPublished ||
+            if (forcePublish ||
                 math.abs(_lastPublishedOceanBiolumStrength - _cachedOceanBiolumStrength) > ShaderColorPublishEpsilon)
             {
                 Shader.SetGlobalFloat(_FloraOceanBiolumStrengthId, _cachedOceanBiolumStrength);
                 _lastPublishedOceanBiolumStrength = _cachedOceanBiolumStrength;
             }
 
-            if (!_floraShaderGlobalsPublished ||
+            if (forcePublish ||
                 !NearlyEqual(_lastPublishedFloorBiolumColor, _cachedFloorBiolumColor, ShaderColorPublishEpsilon))
             {
                 Shader.SetGlobalColor(_FloraFloorBiolumColorId, _cachedFloorBiolumColor);
                 _lastPublishedFloorBiolumColor = _cachedFloorBiolumColor;
             }
 
-            if (!_floraShaderGlobalsPublished ||
+            if (forcePublish ||
                 math.abs(_lastPublishedFloorBiolumStrength - _cachedFloorBiolumStrength) > ShaderColorPublishEpsilon)
             {
                 Shader.SetGlobalFloat(_FloraFloorBiolumStrengthId, _cachedFloorBiolumStrength);

@@ -4,6 +4,7 @@ using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Interaction;
+using Unity.Mathematics;
 using UnityEngine;
 using Stopwatch = System.Diagnostics.Stopwatch;
 

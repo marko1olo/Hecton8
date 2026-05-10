@@ -1,5 +1,6 @@
 using System.IO;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEditor;
 using UnityEngine;
 
@@ -79,10 +80,19 @@ namespace Hecton8.EditorTools
             importer.spritePixelsPerUnit = ThumbnailSize;
             importer.alphaIsTransparency = true;
             importer.mipmapEnabled = false;
-            importer.textureCompression = TextureImporterCompression.Uncompressed;
+            importer.textureCompression = TextureImporterCompression.Compressed;
             importer.npotScale = TextureImporterNPOTScale.None;
             importer.filterMode = FilterMode.Bilinear;
             importer.wrapMode = TextureWrapMode.Clamp;
+
+            TextureImporterPlatformSettings standalone = importer.GetPlatformTextureSettings("Standalone");
+            standalone.overridden = true;
+            standalone.format = TextureImporterFormat.BC7;
+            standalone.maxTextureSize = ThumbnailSize;
+            standalone.textureCompression = TextureImporterCompression.Compressed;
+            standalone.crunchedCompression = false;
+            importer.SetPlatformTextureSettings(standalone);
+
             importer.SaveAndReimport();
         }
 
@@ -93,18 +103,17 @@ namespace Hecton8.EditorTools
                 name = $"{template.name}_ThumbRuntime"
             };
 
-            Color32[] pixels = new Color32[ThumbnailSize * ThumbnailSize]; // COLD ALLOC: Color32[16384] - editor-only flora thumbnail raster surface - owner: FloraThumbnailGenerator
+            NativeArray<Color32> pixels = texture.GetRawTextureData<Color32>();
             FillBackground(pixels);
             DrawAttachmentBase(pixels, template.AttachmentSurfaceType);
             DrawFloraSilhouette(pixels, template);
             ApplyBiolumHalo(pixels, template.BioluminescenceColor);
 
-            texture.SetPixels32(pixels);
             texture.Apply(false, false);
             return texture;
         }
 
-        private static void FillBackground(Color32[] pixels)
+        private static void FillBackground(NativeArray<Color32> pixels)
         {
             Color top = new Color(0.03f, 0.08f, 0.14f, 1f);
             Color bottom = new Color(0.0f, 0.01f, 0.03f, 1f);
@@ -119,7 +128,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void DrawAttachmentBase(Color32[] pixels, FloraDataTemplate.AttachmentSurface attachmentSurface)
+        private static void DrawAttachmentBase(NativeArray<Color32> pixels, FloraDataTemplate.AttachmentSurface attachmentSurface)
         {
             switch (attachmentSurface)
             {
@@ -143,7 +152,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void DrawFloraSilhouette(Color32[] pixels, FloraDataTemplate template)
+        private static void DrawFloraSilhouette(NativeArray<Color32> pixels, FloraDataTemplate template)
         {
             Color glow = template.BioluminescenceColor;
             Color stalk = Color.Lerp(glow, Color.white, 0.32f);
@@ -166,7 +175,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void ApplyBiolumHalo(Color32[] pixels, Color biolumColor)
+        private static void ApplyBiolumHalo(NativeArray<Color32> pixels, Color biolumColor)
         {
             Color halo = new Color(biolumColor.r, biolumColor.g, biolumColor.b, Mathf.Clamp01(biolumColor.a * 0.18f));
             for (int y = 24; y < 116; y++)
@@ -184,7 +193,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void DrawBladeFan(Color32[] pixels, Color color, int bladeCount, float heightScale, float bendDirection)
+        private static void DrawBladeFan(NativeArray<Color32> pixels, Color color, int bladeCount, float heightScale, float bendDirection)
         {
             float baseY = 20f;
             float apexY = Mathf.Lerp(74f, 116f, Mathf.Clamp01(heightScale));
@@ -198,7 +207,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void DrawCanopyCluster(Color32[] pixels, Color stalkColor, Color canopyColor)
+        private static void DrawCanopyCluster(NativeArray<Color32> pixels, Color stalkColor, Color canopyColor)
         {
             DrawQuadraticCurve(pixels, new Vector2(64f, 22f), new Vector2(58f, 54f), new Vector2(60f, 84f), 4.5f, stalkColor);
             DrawQuadraticCurve(pixels, new Vector2(70f, 18f), new Vector2(76f, 48f), new Vector2(74f, 76f), 4f, stalkColor);
@@ -208,7 +217,7 @@ namespace Hecton8.EditorTools
             DrawDisc(pixels, 80f, 82f, 8f, Color.Lerp(stalkColor, canopyColor, 0.65f));
         }
 
-        private static void DrawQuadraticCurve(Color32[] pixels, Vector2 start, Vector2 control, Vector2 end, float thickness, Color color)
+        private static void DrawQuadraticCurve(NativeArray<Color32> pixels, Vector2 start, Vector2 control, Vector2 end, float thickness, Color color)
         {
             const int steps = 42;
             Vector2 previous = start;
@@ -222,9 +231,9 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void DrawLine(Color32[] pixels, Vector2 start, Vector2 end, float thickness, Color color)
+        private static void DrawLine(NativeArray<Color32> pixels, Vector2 start, Vector2 end, float thickness, Color color)
         {
-            float length = Vector2.Distance(start, end);
+            float length = FastLineLength(start, end);
             int steps = Mathf.Max(2, Mathf.CeilToInt(length * 1.5f));
             for (int i = 0; i <= steps; i++)
             {
@@ -234,7 +243,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void DrawRect(Color32[] pixels, int xMin, int yMin, int width, int height, Color color)
+        private static void DrawRect(NativeArray<Color32> pixels, int xMin, int yMin, int width, int height, Color color)
         {
             int xMax = Mathf.Min(ThumbnailSize, xMin + width);
             int yMax = Mathf.Min(ThumbnailSize, yMin + height);
@@ -245,7 +254,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void DrawDisc(Color32[] pixels, float centerX, float centerY, float radius, Color color)
+        private static void DrawDisc(NativeArray<Color32> pixels, float centerX, float centerY, float radius, Color color)
         {
             int xMin = Mathf.Max(0, Mathf.FloorToInt(centerX - radius));
             int xMax = Mathf.Min(ThumbnailSize - 1, Mathf.CeilToInt(centerX + radius));
@@ -268,7 +277,7 @@ namespace Hecton8.EditorTools
             }
         }
 
-        private static void BlendPixel(Color32[] pixels, int x, int y, Color source)
+        private static void BlendPixel(NativeArray<Color32> pixels, int x, int y, Color source)
         {
             if ((uint)x >= ThumbnailSize || (uint)y >= ThumbnailSize)
                 return;
@@ -278,6 +287,15 @@ namespace Hecton8.EditorTools
             float alpha = Mathf.Clamp01(source.a);
             Color blended = Color.Lerp(destination, new Color(source.r, source.g, source.b, 1f), alpha);
             pixels[index] = blended;
+        }
+
+        private static float FastLineLength(Vector2 start, Vector2 end)
+        {
+            float dx = Mathf.Abs(end.x - start.x);
+            float dy = Mathf.Abs(end.y - start.y);
+            float max = Mathf.Max(dx, dy);
+            float min = Mathf.Min(dx, dy);
+            return max + min * 0.375f;
         }
 
         private static void WritePngBytes(string thumbnailPath, byte[] pngBytes)

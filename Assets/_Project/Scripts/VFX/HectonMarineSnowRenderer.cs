@@ -840,7 +840,6 @@ namespace Hecton8.Environment
         {
             SetComputeVectorIfChanged(ShaderIds.SubmarineWashSphereId, Shader.GetGlobalVector(ShaderIds.SubmarineWashSphereId), ref _boundSubmarineWashSphere);
             SetComputeVectorIfChanged(ShaderIds.SubmarineWashVelocityId, Shader.GetGlobalVector(ShaderIds.SubmarineWashVelocityId), ref _boundSubmarineWashVelocity);
-            SetComputeVectorIfChanged(ShaderIds.PropwashParamsId, DefaultPropwashParams, ref _boundPropwashParams);
 
             _externalGpuBindingColdTickTimer -= math.max(0f, dt);
             if (!_externalGpuBindingsDirty && _externalGpuBindingColdTickTimer > 0f)
@@ -849,6 +848,7 @@ namespace Hecton8.Environment
             RefreshAbyssalFlowBinding();
             RefreshCaveSdfBinding();
             RefreshTerrainHeightBinding();
+            SetComputeVectorIfChanged(ShaderIds.PropwashParamsId, DefaultPropwashParams, ref _boundPropwashParams);
             SetComputeVectorIfChanged(ShaderIds.FlowSynchronyParamsId, ResolveFlowSynchronyParams(), ref _boundFlowSynchronyParams);
             _externalGpuBindingColdTickTimer = ExternalGpuBindingColdTickSeconds;
             _externalGpuBindingsDirty = false;

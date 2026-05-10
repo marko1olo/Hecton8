@@ -59,20 +59,33 @@ namespace Hecton8.World
             _swarmWakeImpulseExpireTime = Time.unscaledTime + math.max(0.1f, lifetimeSeconds);
         }
 
-        private static float2 NormalizeSafe2(float2 value, float2 fallback)
+        private static float2 DominantAxisOrDefault(float2 value, float2 fallback)
         {
             float lengthSq = math.lengthsq(value);
-            return lengthSq > 0.000001f
-                ? value * math.rsqrt(lengthSq)
-                : fallback;
+            if (lengthSq <= 0.000001f)
+                return fallback;
+
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            return ax >= ay
+                ? new float2(math.select(-1f, 1f, value.x >= 0f), 0f)
+                : new float2(0f, math.select(-1f, 1f, value.y >= 0f));
         }
 
-        private static float3 NormalizeSafe3(float3 value, float3 fallback)
+        private static float3 DominantAxisOrDefault(float3 value, float3 fallback)
         {
             float lengthSq = math.lengthsq(value);
-            return lengthSq > 0.000001f
-                ? value * math.rsqrt(lengthSq)
-                : fallback;
+            if (lengthSq <= 0.000001f)
+                return fallback;
+
+            float3 absValue = math.abs(value);
+            if (absValue.x >= absValue.y && absValue.x >= absValue.z)
+                return new float3(math.select(-1f, 1f, value.x >= 0f), 0f, 0f);
+
+            if (absValue.y >= absValue.z)
+                return new float3(0f, math.select(-1f, 1f, value.y >= 0f), 0f);
+
+            return new float3(0f, 0f, math.select(-1f, 1f, value.z >= 0f));
         }
 
         private static float ApproxMagnitude2(float2 value)
@@ -487,7 +500,7 @@ namespace Hecton8.World
                 ? _currentThreatHotspotLevel
                 : 0f;
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
-            float2 weatherDirectionXZ = NormalizeSafe2(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
+            float2 weatherDirectionXZ = DominantAxisOrDefault(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
 
             var job = new BuildAbyssalFlowFieldJob
             {
@@ -535,7 +548,7 @@ namespace Hecton8.World
 
             EnsureThermalGridBuffers();
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
-            float2 weatherDirectionXZ = NormalizeSafe2(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
+            float2 weatherDirectionXZ = DominantAxisOrDefault(weatherSnapshot.CurrentMeta.GlobalBaseVector.xz, new float2(0f, 1f));
 
             Vector3 thermalCenter = TryResolvePlayerRuntimePositionFromAup(out Vector3 playerRuntimePosition)
                 ? new Vector3(playerRuntimePosition.x, waterLevel - (thermalGridDepthMeters * 0.5f), playerRuntimePosition.z)
@@ -795,7 +808,7 @@ namespace Hecton8.World
             float2 sample11 = flowField[(nextCellZ * resolution) + nextCellX];
             float2 sampleX0 = math.lerp(sample00, sample10, fracX);
             float2 sampleX1 = math.lerp(sample01, sample11, fracX);
-            return NormalizeSafe2(math.lerp(sampleX0, sampleX1, fracZ), float2.zero);
+            return DominantAxisOrDefault(math.lerp(sampleX0, sampleX1, fracZ), float2.zero);
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -1058,7 +1071,7 @@ namespace Hecton8.World
                     AbyssalFlowNoiseStrength,
                     AbyssalFlowVerticalStrength,
                     seed);
-                flowDirection = NormalizeSafe2(new float2(flowVector.x, flowVector.z), flowDirection);
+                flowDirection = DominantAxisOrDefault(new float2(flowVector.x, flowVector.z), flowDirection);
                 int rotationSector = ResolveOctantSector(variation, seed, RotationSalt);
                 quaternion rotation = BuildAlignedRotation(normal, rotationSector);
                 Output[index] = new JobInstanceRecord
@@ -1342,7 +1355,7 @@ namespace Hecton8.World
                 float heightScale = math.lerp(0.35f, 0.9f, occupancy) * math.lerp(0.85f, 1.05f, scaleLerp);
                 float widthScale = math.lerp(0.8f, 1.25f, math.max(Hash01(seed ^ 0xA24BAEDCu), occupancy));
                 float3 position = new float3(sampleX, WaterLevel + FloatingSurfaceOffset, sampleZ);
-                float2 flowDirection = NormalizeSafe2(FloatingFlowDirection, new float2(1f, 0f));
+                float2 flowDirection = DominantAxisOrDefault(FloatingFlowDirection, new float2(1f, 0f));
                 float3 flowVector = new float3(flowDirection.x, 0f, flowDirection.y);
                 int rotationSector = ResolveOctantSector(variation, seed, RotationSalt);
                 float2 yawDirection = ResolveOctantDirection(rotationSector);
@@ -1825,11 +1838,11 @@ namespace Hecton8.World
                 float worldZ = GridCenter.z + ((cellZ - halfExtent) * CellSize);
                 float3 position = new float3(worldX, GridCenter.y, worldZ);
 
-                float2 threatGradient = NormalizeSafe2(ComputeThreatGradient(cellX, cellZ), float2.zero);
-                float2 toPlayer = NormalizeSafe2(new float2(PlayerPosition.x - worldX, PlayerPosition.z - worldZ), threatGradient);
+                float2 threatGradient = DominantAxisOrDefault(ComputeThreatGradient(cellX, cellZ), float2.zero);
+                float2 toPlayer = DominantAxisOrDefault(new float2(PlayerPosition.x - worldX, PlayerPosition.z - worldZ), threatGradient);
                 float hotspotBlend = math.saturate(HotspotThreatLevel);
-                float2 toHotspot = NormalizeSafe2(new float2(HotspotPosition.x - worldX, HotspotPosition.z - worldZ), toPlayer);
-                float2 seekDir = NormalizeSafe2(
+                float2 toHotspot = DominantAxisOrDefault(new float2(HotspotPosition.x - worldX, HotspotPosition.z - worldZ), toPlayer);
+                float2 seekDir = DominantAxisOrDefault(
                     (threatGradient * ThreatBias) +
                     (toPlayer * PlayerBias * (1f - hotspotBlend)) +
                     (toHotspot * HotspotBias * hotspotBlend),
@@ -1838,10 +1851,10 @@ namespace Hecton8.World
                 float centerObstacle = SampleObstacle(position);
                 float2 obstacleGradient = ComputeObstacleGradient(position);
                 float obstacleFactor = math.saturate((centerObstacle - ObstacleSoftThreshold) / math.max(0.0001f, ObstacleHardThreshold - ObstacleSoftThreshold));
-                float2 avoidanceDir = NormalizeSafe2(-obstacleGradient, new float2(0f, 0f));
+                float2 avoidanceDir = DominantAxisOrDefault(-obstacleGradient, new float2(0f, 0f));
 
                 float navSupport = SampleNavSupport(cellX, cellZ);
-                float2 roadDir = NormalizeSafe2(ComputeNavGradient(cellX, cellZ), seekDir);
+                float2 roadDir = DominantAxisOrDefault(ComputeNavGradient(cellX, cellZ), seekDir);
                 float2 wakeDir = SampleWakeFlow(position);
                 float2 weatherBias = ResolveWeatherBias();
 
@@ -1854,7 +1867,7 @@ namespace Hecton8.World
                     combined = avoidanceDir * math.max(1f, ObstacleAvoidBias);
 
                 float resolvedSpeed = ResolveFlowSpeedMetersPerSecond(wakeDir);
-                Output[index] = NormalizeSafe2(combined, float2.zero) * resolvedSpeed;
+                Output[index] = DominantAxisOrDefault(combined, float2.zero) * resolvedSpeed;
             }
 
             private float2 ResolveWeatherBias()
@@ -1987,7 +2000,7 @@ namespace Hecton8.World
 
                     float verticalGate = math.saturate(1f - (math.abs(position.y - impulse.Position.y) / radius));
                     float weight = planarGate * planarGate * verticalGate * impulse.Strength;
-                    wake += NormalizeSafe2(new float2(impulse.FlowVector.x, impulse.FlowVector.z), float2.zero) * weight;
+                    wake += DominantAxisOrDefault(new float2(impulse.FlowVector.x, impulse.FlowVector.z), float2.zero) * weight;
                 }
 
                 return wake;
@@ -2180,7 +2193,7 @@ namespace Hecton8.World
                 float aboveTemperature = ThermalGrid[GetPhysicalIndex(cellX, math.max(0, layer - 1), cellZ)];
                 float belowTemperature = ThermalGrid[GetPhysicalIndex(cellX, math.min(VerticalResolution - 1, layer + 1), cellZ)];
 
-                float2 weatherDirection = NormalizeSafe2(WeatherDirectionXZ, new float2(0f, 1f));
+                float2 weatherDirection = DominantAxisOrDefault(WeatherDirectionXZ, new float2(0f, 1f));
                 float2 horizontalCurrent = weatherDirection * WeatherCurrentSpeed;
                 float verticalCurrent = (aboveTemperature - belowTemperature) * math.max(0.05f, ThermalIntensity);
                 float thermalOffset = localTemperature - belowTemperature;
@@ -2236,7 +2249,7 @@ namespace Hecton8.World
                     if (weight <= 0f)
                         continue;
 
-                    wake += NormalizeSafe3(impulse.FlowVector, float3.zero) * (weight * weight * impulse.Strength);
+                    wake += DominantAxisOrDefault(impulse.FlowVector, float3.zero) * (weight * weight * impulse.Strength);
                 }
 
                 return wake;
@@ -2467,7 +2480,7 @@ namespace Hecton8.World
                     return 0f;
 
                 float3 edgeDirection = delta / distance;
-                float3 conduitDirection = NormalizeSafe3(conduitVector, edgeDirection);
+                float3 conduitDirection = DominantAxisOrDefault(conduitVector, edgeDirection);
                 conduitAlignment = math.saturate((math.dot(edgeDirection, conduitDirection) * 0.5f) + 0.5f);
                 verticalBonus = ConduitVerticalToleranceBonus * combinedStrength * conduitAlignment * math.abs(conduitDirection.y);
                 return combinedStrength;
@@ -2845,11 +2858,11 @@ namespace Hecton8.World
 
                 float3 previous = ToFloat3(InputPath[index - 1]);
                 float3 next = ToFloat3(InputPath[index + 1]);
-                float3 prevDirection = NormalizeSafe3(center - previous, new float3(0f, 0f, 1f));
-                float3 nextDirection = NormalizeSafe3(next - center, prevDirection);
-                portalAxis = NormalizeSafe3(prevDirection + nextDirection, nextDirection);
-                float3 cornerNormal = NormalizeSafe3(math.cross(prevDirection, nextDirection), ResolvePerpendicular(portalAxis));
-                float3 side = NormalizeSafe3(math.cross(cornerNormal, portalAxis), ResolvePerpendicular(portalAxis));
+                float3 prevDirection = DominantAxisOrDefault(center - previous, new float3(0f, 0f, 1f));
+                float3 nextDirection = DominantAxisOrDefault(next - center, prevDirection);
+                portalAxis = DominantAxisOrDefault(prevDirection + nextDirection, nextDirection);
+                float3 cornerNormal = DominantAxisOrDefault(math.cross(prevDirection, nextDirection), ResolvePerpendicular(portalAxis));
+                float3 side = DominantAxisOrDefault(math.cross(cornerNormal, portalAxis), ResolvePerpendicular(portalAxis));
                 float obstacle = SampleObstacle(centerValue);
                 float obstacleT = math.saturate(obstacle / math.max(0.01f, DensityObstacleThreshold));
                 float maxHalfWidth = math.max(0.9f, SampleSpacing * 1.6f);
@@ -2988,7 +3001,7 @@ namespace Hecton8.World
                 float3 activeVoxelOrigin = GetActiveVoxelOrigin();
                 float3 activeVoxelCellSize = GetActiveVoxelCellSize();
                 int3 activeVoxelDimensions = GetActiveVoxelDimensions();
-                float3 rayDirection = delta * math.rsqrt(distanceSq);
+                float3 rayDirection = DominantAxisOrDefault(delta, new float3(1f, 0f, 0f));
                 bool3 positiveMask = rayDirection >= 0f;
                 bool3 activeAxisMask = math.abs(rayDirection) > DdaEpsilon;
                 int3 step = math.select(new int3(-1, -1, -1), new int3(1, 1, 1), positiveMask);
@@ -3121,7 +3134,7 @@ namespace Hecton8.World
                 int nextIndex = math.min(InputPath.Length - 1, clampedIndex + 1);
                 float3 previous = ToFloat3(InputPath[previousIndex]);
                 float3 next = ToFloat3(InputPath[nextIndex]);
-                return NormalizeSafe3(next - previous, new float3(0f, 0f, 1f));
+                return DominantAxisOrDefault(next - previous, new float3(0f, 0f, 1f));
             }
 
             private static float3 ToFloat3(Vector3 value)
@@ -3134,7 +3147,7 @@ namespace Hecton8.World
                 float3 reference = math.abs(axis.y) < 0.9f
                     ? new float3(0f, 1f, 0f)
                     : new float3(1f, 0f, 0f);
-                return NormalizeSafe3(math.cross(reference, axis), new float3(0f, 0f, 1f));
+                return DominantAxisOrDefault(math.cross(reference, axis), new float3(0f, 0f, 1f));
             }
 
             private static float3 ResolveWindingAxis(
@@ -3146,15 +3159,15 @@ namespace Hecton8.World
                 float3 portalAxis,
                 float3 fallbackAxis)
             {
-                float3 portalCenterDirection = NormalizeSafe3(((portalLeft + portalRight) * 0.5f) - apex, portalAxis);
+                float3 portalCenterDirection = DominantAxisOrDefault(((portalLeft + portalRight) * 0.5f) - apex, portalAxis);
                 if (math.lengthsq(portalCenterDirection) > FunnelEpsilon)
                     return portalCenterDirection;
 
-                float3 wedgeCenterDirection = NormalizeSafe3(((left + right) * 0.5f) - apex, portalAxis);
+                float3 wedgeCenterDirection = DominantAxisOrDefault(((left + right) * 0.5f) - apex, portalAxis);
                 if (math.lengthsq(wedgeCenterDirection) > FunnelEpsilon)
                     return wedgeCenterDirection;
 
-                return NormalizeSafe3(portalAxis, NormalizeSafe3(fallbackAxis, new float3(0f, 0f, 1f)));
+                return DominantAxisOrDefault(portalAxis, DominantAxisOrDefault(fallbackAxis, new float3(0f, 0f, 1f)));
             }
 
             private static float ScalarTripleProduct(float3 axis, float3 b, float3 c)

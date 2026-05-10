@@ -493,15 +493,20 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return (half3)_BiomeFamilyAbyssalTint.rgb;
         }
 
+        int HectonVoxelRockRoundToIntFast(float value)
+        {
+            return value >= 0.0 ? (int)(value + 0.5) : (int)(value - 0.5);
+        }
+
         half3 ResolveBiomeFamilyTintMultiplier(float3 absolutePositionWS)
         {
             if (_HectonScatterBiomeInfluenceGridCount <= 0 || _BiomeFamilyTintStrength <= 0.0001)
                 return half3(1.0h, 1.0h, 1.0h);
 
             float cellSize = max(_HectonScatterBiomeInfluenceGridParams.x, 0.01);
-            int gridSide = max(1, (int)round(_HectonScatterBiomeInfluenceGridOrigin.z));
-            int cellX = (int)floor(absolutePositionWS.x / cellSize) - (int)round(_HectonScatterBiomeInfluenceGridOrigin.x);
-            int cellZ = (int)floor(absolutePositionWS.z / cellSize) - (int)round(_HectonScatterBiomeInfluenceGridOrigin.y);
+            int gridSide = max(1, HectonVoxelRockRoundToIntFast(_HectonScatterBiomeInfluenceGridOrigin.z));
+            int cellX = (int)floor(absolutePositionWS.x / cellSize) - HectonVoxelRockRoundToIntFast(_HectonScatterBiomeInfluenceGridOrigin.x);
+            int cellZ = (int)floor(absolutePositionWS.z / cellSize) - HectonVoxelRockRoundToIntFast(_HectonScatterBiomeInfluenceGridOrigin.y);
             if (cellX < 0 || cellZ < 0 || cellX >= gridSide || cellZ >= gridSide)
                 return half3(1.0h, 1.0h, 1.0h);
 

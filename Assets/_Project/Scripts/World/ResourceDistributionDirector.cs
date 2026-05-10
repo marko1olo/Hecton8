@@ -659,10 +659,11 @@ namespace Hecton8.World
                 return 0;
 
             uint state = Mix(0x43504854u, pillarId);
-            float angleA = Next01(ref state) * math.PI * 2f;
-            float angleB = angleA + (math.PI * 0.73f);
-            float3 normalA = new float3(math.cos(angleA), 0f, math.sin(angleA));
-            float3 normalB = new float3(math.cos(angleB), 0f, math.sin(angleB));
+            int sectorA = (int)(Next01(ref state) * 7.999f);
+            float2 directionA = ResolveOctantDirection(sectorA);
+            float2 directionB = ResolveOctantDirection(sectorA + 3);
+            float3 normalA = new float3(directionA.x, 0f, directionA.y);
+            float3 normalB = new float3(directionB.x, 0f, directionB.y);
 
             AbsoluteUniversePosition geodeAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
                 baseAbsolute.x + normalA.x * safeRadius,
@@ -810,7 +811,7 @@ namespace Hecton8.World
             if (pool == null || template == null)
                 return false;
 
-            float3 safeNormal = math.normalizesafe(surfaceNormalAup, new float3(0f, 1f, 0f));
+            float3 safeNormal = ResolveDominantSurfaceNormal(surfaceNormalAup);
             Vector3 surfaceNormal = new Vector3(safeNormal.x, safeNormal.y, safeNormal.z);
             Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
             float spawnOffset = math.max(template.SpawnOffsetMeters, math.max(0.25f, sourceRadiusMeters) * 0.08f);
@@ -904,10 +905,10 @@ namespace Hecton8.World
                 return false;
 
             double3 playerAbsolute = playerAup.ToAbsoluteDouble3();
-            float angleRadians = Next01(ref state) * math.PI * 2f;
+            float2 impactDirection = ResolveOctantDirection((int)(Next01(ref state) * 7.999f));
             float radialDistance = ResolveCinematicRadialDistance(ref state, math.max(1f, meteorImpactSearchRadiusMeters));
-            double absoluteX = playerAbsolute.x + (math.cos(angleRadians) * radialDistance);
-            double absoluteZ = playerAbsolute.z + (math.sin(angleRadians) * radialDistance);
+            double absoluteX = playerAbsolute.x + (impactDirection.x * radialDistance);
+            double absoluteZ = playerAbsolute.z + (impactDirection.y * radialDistance);
             Vector3 runtimeProbe = AbsoluteToRuntime(absoluteX, playerAbsolute.y, absoluteZ);
             if (!mapMagicBridge.TryGetHeight(runtimeProbe.x, runtimeProbe.z, out float seabedHeight))
                 return false;
@@ -1220,10 +1221,10 @@ namespace Hecton8.World
                 if (!brinePool.IsValid)
                     return false;
 
-                float angleRadians = Next01(ref state) * math.PI * 2f;
+                float2 brineDirection = ResolveOctantDirection((int)(Next01(ref state) * 7.999f));
                 float radialDistance = ResolveCinematicRadialDistance(ref state, math.max(1f, brinePool.RadiusMeters * 0.82f));
-                float sampleX = brinePool.Center.x + (math.cos(angleRadians) * radialDistance);
-                float sampleZ = brinePool.Center.z + (math.sin(angleRadians) * radialDistance);
+                float sampleX = brinePool.Center.x + (brineDirection.x * radialDistance);
+                float sampleZ = brinePool.Center.z + (brineDirection.y * radialDistance);
                 if (!mapMagicBridge.TryGetHeight(sampleX, sampleZ, out seabedHeight))
                     return false;
 
@@ -1949,9 +1950,9 @@ namespace Hecton8.World
             float rimMinHeight = float.MaxValue;
             for (int sampleIndex = 0; sampleIndex < 4; sampleIndex++)
             {
-                float angle = sampleIndex * (math.PI * 0.5f);
-                float sampleX = runtimeProbe.x + (math.cos(angle) * rimSampleRadius);
-                float sampleZ = runtimeProbe.z + (math.sin(angle) * rimSampleRadius);
+                float2 rimDirection = ResolveCardinalDirection(sampleIndex);
+                float sampleX = runtimeProbe.x + (rimDirection.x * rimSampleRadius);
+                float sampleZ = runtimeProbe.z + (rimDirection.y * rimSampleRadius);
                 if (!mapMagicBridge.TryGetHeight(sampleX, sampleZ, out float rimHeight) ||
                     !math.isfinite(rimHeight))
                 {
@@ -2167,8 +2168,8 @@ namespace Hecton8.World
 
             double3 absolutePosition = AbsoluteUniversePosition.FromRuntimePosition(request.RuntimePosition).ToAbsoluteDouble3();
             Vector3 absoluteStart = new Vector3((float)absolutePosition.x, (float)absolutePosition.y, (float)absolutePosition.z);
-            float yawRadians = request.YawDegrees * Mathf.Deg2Rad;
-            Vector3 veinDirection = new Vector3(math.cos(yawRadians), -0.35f, math.sin(yawRadians)).normalized;
+            float2 veinPlanarDirection = ResolveOctantDirection(QuantizeYawDegreesToOctant(request.YawDegrees));
+            Vector3 veinDirection = new Vector3(veinPlanarDirection.x, -0.35f, veinPlanarDirection.y);
             volume.TryApplyEmbeddedOreVein(
                 absoluteStart,
                 veinDirection,
@@ -2394,6 +2395,40 @@ namespace Hecton8.World
                 default:
                     return new float2(0.70710677f, -0.70710677f);
             }
+        }
+
+        private static float2 ResolveCardinalDirection(int sector)
+        {
+            switch (sector & 3)
+            {
+                case 0:
+                    return new float2(1f, 0f);
+                case 1:
+                    return new float2(0f, 1f);
+                case 2:
+                    return new float2(-1f, 0f);
+                default:
+                    return new float2(0f, -1f);
+            }
+        }
+
+        private static float3 ResolveDominantSurfaceNormal(float3 value)
+        {
+            if (!math.all(math.isfinite(value)))
+                return new float3(0f, 1f, 0f);
+
+            float ax = math.abs(value.x);
+            float ay = math.abs(value.y);
+            float az = math.abs(value.z);
+            if (math.max(math.max(ax, ay), az) <= 0.000001f)
+                return new float3(0f, 1f, 0f);
+
+            if (ay >= ax && ay >= az)
+                return new float3(0f, value.y < 0f ? -1f : 1f, 0f);
+
+            return ax >= az
+                ? new float3(value.x < 0f ? -1f : 1f, 0f, 0f)
+                : new float3(0f, 0f, value.z < 0f ? -1f : 1f);
         }
 
         private float ResolveSlope(Vector3 runtimePosition)

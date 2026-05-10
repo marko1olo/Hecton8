@@ -27,6 +27,7 @@
 #if UNITY_EDITOR
 
 using System.IO;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEditor;
 using UnityEngine;
@@ -275,11 +276,8 @@ namespace Hecton8.Editor
             // STEP 3: Process + pack
             // ══════════════════════════════════════════════
 
-            Color[] densityPx = densityResized.GetPixels();
-            Color[] detailPx  = detailResized.GetPixels();
-
-            DestroyImmediate(densityResized);
-            DestroyImmediate(detailResized);
+            NativeArray<Color32> densityPx = densityResized.GetRawTextureData<Color32>();
+            NativeArray<Color32> detailPx = detailResized.GetRawTextureData<Color32>();
 
             // Pre-compute flow trig tables
             float inv = 1f / N;
@@ -297,7 +295,12 @@ namespace Hecton8.Editor
                 _flowSeed * 271.17f);
             float eps = _flowEpsPx * inv;
 
-            Color[] output = new Color[N * N];
+            var atlas = new Texture2D(N, N, TextureFormat.RGBA32,
+                false, true); // LINEAR
+            atlas.name       = "HectonSkyAtlas_RGBA";
+            atlas.wrapMode   = TextureWrapMode.Repeat;
+            atlas.filterMode = FilterMode.Bilinear;
+            NativeArray<Color32> output = atlas.GetRawTextureData<Color32>();
 
             for (int y = 0; y < N; y++)
             {
@@ -346,9 +349,9 @@ namespace Hecton8.Editor
 
                     // Vortex bias
                     float2 toCenter = new float2(0.5f - u, 0.5f - v);
-                    float dist = math.length(toCenter);
+                    float dist = math.max(math.abs(toCenter.x), math.abs(toCenter.y));
                     float2 tangent = new float2(-toCenter.y, toCenter.x);
-                    float tLen = math.length(tangent);
+                    float tLen = math.max(math.abs(tangent.x), math.abs(tangent.y));
                     if (tLen > 0.001f) tangent /= tLen;
 
                     float vMask = math.smoothstep(1f, 0f, dist * 2.5f);
@@ -360,12 +363,16 @@ namespace Hecton8.Editor
                     float a = math.saturate(
                         flow.y * _flowIntensity * 0.5f + 0.5f);
 
-                    output[idx] = new Color(
-                        math.saturate(r),
-                        math.saturate(g),
-                        b, a);
+                    output[idx] = new Color32(
+                        Encode01(r),
+                        Encode01(g),
+                        Encode01(b),
+                        Encode01(a));
                 }
             }
+
+            DestroyImmediate(densityResized);
+            DestroyImmediate(detailResized);
 
             // ══════════════════════════════════════════════
             // STEP 4: Save
@@ -373,12 +380,6 @@ namespace Hecton8.Editor
 
             EditorUtility.DisplayProgressBar("Pack Atlas", "Saving...", 0.95f);
 
-            var atlas = new Texture2D(N, N, TextureFormat.RGBA32,
-                false, true); // LINEAR
-            atlas.name       = "HectonSkyAtlas_RGBA";
-            atlas.wrapMode   = TextureWrapMode.Repeat;
-            atlas.filterMode = FilterMode.Bilinear;
-            atlas.SetPixels(output);
             atlas.Apply(false, false);
 
             if (!Directory.Exists(OutDir))
@@ -479,6 +480,16 @@ namespace Hecton8.Editor
         private static float Luminance(Color c)
         {
             return c.r * 0.2126f + c.g * 0.7152f + c.b * 0.0722f;
+        }
+
+        private static float Luminance(Color32 c)
+        {
+            return ((c.r * 0.2126f) + (c.g * 0.7152f) + (c.b * 0.0722f)) * (1f / 255f);
+        }
+
+        private static byte Encode01(float value)
+        {
+            return (byte)math.clamp((int)math.round(math.saturate(value) * 255f), 0, 255);
         }
 
         // ══════════════════════════════════════════════════════════

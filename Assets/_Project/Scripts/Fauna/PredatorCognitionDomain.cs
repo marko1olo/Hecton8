@@ -3207,11 +3207,19 @@ namespace Hecton8.AI
                 if (!TryWorldToVoxel(worldPosition, out int3 voxel))
                     return false;
 
-                float x = SampleThreatVoxelScalar(voxel + new int3(1, 0, 0)) - SampleThreatVoxelScalar(voxel + new int3(-1, 0, 0));
-                float y = SampleThreatVoxelScalar(voxel + new int3(0, 1, 0)) - SampleThreatVoxelScalar(voxel + new int3(0, -1, 0));
-                float z = SampleThreatVoxelScalar(voxel + new int3(0, 0, 1)) - SampleThreatVoxelScalar(voxel + new int3(0, 0, -1));
-                gradient = new float3(x, y, z);
-                return math.lengthsq(gradient) > DdaEpsilon;
+                float sample01 = SampleThreatVoxelScalar(voxel);
+                float3 safeCellSize = math.max(ThreatVoxelCellSize, new float3(0.001f, 0.001f, 0.001f));
+                float3 cellMin = ThreatVoxelOrigin + (new float3(voxel.x, voxel.y, voxel.z) * safeCellSize);
+                float3 local01 = math.saturate((worldPosition - cellMin) * math.rcp(safeCellSize));
+                uint hash = HashAcousticBucket(voxel);
+                float3 hashAxis = ResolveOctantDirectionXZ((int)(hash & 7u));
+                hashAxis.y = math.select(-0.35f, 0.35f, (hash & 8u) != 0u);
+                float sign = ThreatVoxelUsesSignedDistanceEncoding != 0
+                    ? math.select(-1f, 1f, sample01 >= 0.5f)
+                    : math.select(-1f, 1f, sample01 > DdaEpsilon);
+                // Cinematic SDF gradient: one-cell local offset plus stable hash bias. No neighbor voxel scan.
+                gradient = ResolveDominantAxis(((local01 - new float3(0.5f, 0.5f, 0.5f)) + hashAxis) * sign, hashAxis);
+                return true;
             }
 
             private float SampleThreatVoxelScalarWorld(float3 worldPosition)

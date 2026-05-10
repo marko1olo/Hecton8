@@ -40,6 +40,20 @@ namespace Hecton8.UI
         private static readonly List<GameObject> s_sceneRootResolveBuffer = new List<GameObject>(16);
         // COLD ALLOC: List<Image>[32] — image resolve scratch — owner: SuitHUDV4CanvasOverlay
         private static readonly List<Image> s_imageResolveBuffer = new List<Image>(32);
+        // COLD ALLOC: Vector3[8] — threat chevron mesh build scratch — owner: SuitHUDV4CanvasOverlay
+        private static readonly Vector3[] s_threatChevronMeshVertices = new Vector3[8];
+        // COLD ALLOC: Vector2[8] — threat chevron mesh UV scratch — owner: SuitHUDV4CanvasOverlay
+        private static readonly Vector2[] s_threatChevronMeshUvs = new Vector2[8];
+        // COLD ALLOC: int[12] — threat chevron mesh index scratch — owner: SuitHUDV4CanvasOverlay
+        private static readonly int[] s_threatChevronMeshTriangles = new int[12];
+        private static readonly Quaternion s_threatChevronRoll0 = Quaternion.identity;
+        private static readonly Quaternion s_threatChevronRoll45 = Quaternion.Euler(0f, 0f, 45f);
+        private static readonly Quaternion s_threatChevronRoll90 = Quaternion.Euler(0f, 0f, 90f);
+        private static readonly Quaternion s_threatChevronRoll135 = Quaternion.Euler(0f, 0f, 135f);
+        private static readonly Quaternion s_threatChevronRoll180 = Quaternion.Euler(0f, 0f, 180f);
+        private static readonly Quaternion s_threatChevronRollNegative45 = Quaternion.Euler(0f, 0f, -45f);
+        private static readonly Quaternion s_threatChevronRollNegative90 = Quaternion.Euler(0f, 0f, -90f);
+        private static readonly Quaternion s_threatChevronRollNegative135 = Quaternion.Euler(0f, 0f, -135f);
         private const string PrimaryHudCanvasName = "Suit_HUD_Canvas";
         private const string DefaultSuitLabel = "EXPEDITION SUIT";
         private const string DefaultTemperatureLabel = "TEMP";
@@ -770,7 +784,6 @@ namespace Hecton8.UI
         private float _appliedAcousticRadarIntensity;
         private Mesh _threatChevronMesh;
         private Material _threatChevronMaterial;
-        private NativeArray<Matrix4x4> _threatChevronMatrices;
         // COLD ALLOC: Matrix4x4[4] — instanced threat-chevron draw mirror — owner: SuitHUDV4CanvasOverlay
         private readonly Matrix4x4[] _threatChevronMatrixMirror = new Matrix4x4[MaxThreatChevronCount];
         // COLD ALLOC: float[4] — per-chevron alpha cache for alpha-faded threat warnings — owner: SuitHUDV4CanvasOverlay
@@ -779,6 +792,7 @@ namespace Hecton8.UI
         private readonly Vector4[] _threatChevronInstanceDataMirror = new Vector4[MaxThreatChevronCount];
         // COLD ALLOC: ThreatChevronState[4] — cached top threat-grid chevron slots — owner: SuitHUDV4CanvasOverlay
         private readonly ThreatChevronState[] _threatChevronStates = new ThreatChevronState[MaxThreatChevronCount];
+        private uint _threatChevronActiveMask;
         private MaterialPropertyBlock _threatChevronPropertyBlock;
         private bool _hasAppliedThreatChevronColor;
         private bool _hasAppliedThreatChevronFlickerFrequency;
@@ -1012,12 +1026,18 @@ namespace Hecton8.UI
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct ThreatChevronState
         {
             public AbsoluteUniversePosition PositionAup;
             public float Threat01;
-            public bool Active;
+            public byte ActiveFlag;
+
+            public bool Active
+            {
+                readonly get => ActiveFlag != 0;
+                set => ActiveFlag = value ? (byte)1 : (byte)0;
+            }
         }
 
         private enum DynamicCanvasCadenceBucket : byte
@@ -2133,15 +2153,6 @@ namespace Hecton8.UI
 
             _threatChevronPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — threat chevron instanced alpha payload — owner: SuitHUDV4CanvasOverlay
 
-            if (!_threatChevronMatrices.IsCreated)
-            {
-                _threatChevronMatrices = new NativeArray<Matrix4x4>(MaxThreatChevronCount, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _threatChevronMatrices,
-                    nameof(SuitHUDV4CanvasOverlay),
-                    nameof(_threatChevronMatrices),
-                    NativeAllocationLifetime.Scene);
-            }
         }
 
         private void EnsureScannerHologramRuntimeResources()
@@ -2370,13 +2381,6 @@ namespace Hecton8.UI
 
         private void DisposeThreatChevronRuntimeResources()
         {
-            if (_threatChevronMatrices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_threatChevronMatrices);
-                _threatChevronMatrices.Dispose();
-                _threatChevronMatrices = default;
-            }
-
             if (_threatChevronMaterial != null)
             {
                 Destroy(_threatChevronMaterial);
@@ -2400,7 +2404,7 @@ namespace Hecton8.UI
         private void RefreshThreatChevronTargets()
         {
             _threatChevronVisibleCount = 0;
-            Array.Clear(_threatChevronStates, 0, _threatChevronStates.Length);
+            _threatChevronActiveMask = 0u;
 
             if (!Application.isPlaying ||
                 renderPath != RenderPath.ProjectionSource ||
@@ -2455,20 +2459,20 @@ namespace Hecton8.UI
                     if (horizontalDistanceSq > radiusSq)
                         continue;
 
-                    AbsoluteUniversePosition threatAup = AbsoluteUniversePosition.FromAbsolutePosition(
-                        cameraAbsolute + math.double3(relativeX, 0d, relativeZ));
-                    InsertThreatChevronCandidate(in threatAup, threat01);
+                    double3 threatAbsolute = cameraAbsolute + math.double3(relativeX, 0d, relativeZ);
+                    InsertThreatChevronCandidate(in threatAbsolute, threat01);
                 }
             }
         }
 
-        private void InsertThreatChevronCandidate(in AbsoluteUniversePosition positionAup, float threat01)
+        private void InsertThreatChevronCandidate(in double3 absolutePosition, float threat01)
         {
             int insertIndex = -1;
             float weakestThreat = threat01;
             for (int i = 0; i < MaxThreatChevronCount; i++)
             {
-                if (!_threatChevronStates[i].Active)
+                uint bit = 1u << i;
+                if ((_threatChevronActiveMask & bit) == 0u)
                 {
                     insertIndex = i;
                     break;
@@ -2485,10 +2489,10 @@ namespace Hecton8.UI
                 return;
 
             ThreatChevronState threatState = _threatChevronStates[insertIndex];
-            threatState.PositionAup = positionAup;
+            threatState.PositionAup = AbsoluteUniversePosition.FromAbsolutePosition(absolutePosition);
             threatState.Threat01 = threat01;
-            threatState.Active = true;
             _threatChevronStates[insertIndex] = threatState;
+            _threatChevronActiveMask |= 1u << insertIndex;
         }
 
         private void RenderScannerHologram(float deltaTime)
@@ -2625,8 +2629,14 @@ namespace Hecton8.UI
                 return;
             }
 
+            if (_threatChevronActiveMask == 0u)
+            {
+                _threatChevronVisibleCount = 0;
+                return;
+            }
+
             EnsureThreatChevronRuntimeResources();
-            if (_threatChevronMaterial == null || _threatChevronMesh == null || !_threatChevronMatrices.IsCreated)
+            if (_threatChevronMaterial == null || _threatChevronMesh == null)
                 return;
 
             int visibleCount = BuildThreatChevronMatrices();
@@ -2722,7 +2732,8 @@ namespace Hecton8.UI
 
         private int BuildThreatChevronMatrices()
         {
-            if (projectionCamera == null)
+            uint activeMask = _threatChevronActiveMask;
+            if (activeMask == 0u || projectionCamera == null)
                 return 0;
 
             Transform cameraTransform = projectionCamera.transform;
@@ -2737,10 +2748,10 @@ namespace Hecton8.UI
             float chevronScaleWorld = math.max(0.0001f, math.max(4f, threatChevronSizePixels) * worldPerPixel);
             int visibleCount = 0;
 
-            for (int i = 0; i < MaxThreatChevronCount; i++)
+            while (activeMask != 0u)
             {
-                if (!_threatChevronStates[i].Active)
-                    continue;
+                int i = (int)math.tzcnt(activeMask);
+                activeMask &= activeMask - 1u;
 
                 if (!TryBuildThreatChevronMatrix(
                     cameraTransform,
@@ -2755,7 +2766,6 @@ namespace Hecton8.UI
                     continue;
                 }
 
-                _threatChevronMatrices[visibleCount] = matrix;
                 _threatChevronMatrixMirror[visibleCount] = matrix;
                 _threatChevronAlphaMirror[visibleCount] = alpha01;
                 visibleCount++;
@@ -2816,8 +2826,7 @@ namespace Hecton8.UI
             float forwardDot01 = threatDirectionLengthSq > 0.000001f
                 ? math.saturate((forwardComponent * forwardComponent) / threatDirectionLengthSq)
                 : 1f;
-            float rollDegrees = ResolveApproxThreatChevronRotationDegrees(clampedPlanePosition);
-            Quaternion worldRotation = cameraTransform.rotation * Quaternion.Euler(0f, 0f, rollDegrees);
+            Quaternion worldRotation = cameraTransform.rotation * ResolveApproxThreatChevronRoll(clampedPlanePosition);
             float behindFade = behind ? 0.35f : 1f;
             float threatFade = FastInverseLerp01(threatChevronThreshold, 1f, threatState.Threat01);
             float edgeDistance01 = math.saturate(math.max(
@@ -2835,23 +2844,23 @@ namespace Hecton8.UI
             return true;
         }
 
-        private static float ResolveApproxThreatChevronRotationDegrees(Vector2 direction)
+        private static Quaternion ResolveApproxThreatChevronRoll(Vector2 direction)
         {
             float absX = math.abs(direction.x);
             float absY = math.abs(direction.y);
             if (absX <= 0.000001f && absY <= 0.000001f)
-                return 0f;
+                return s_threatChevronRoll0;
 
             if (absX > absY * 2.41421356f)
-                return direction.x >= 0f ? 0f : 180f;
+                return direction.x >= 0f ? s_threatChevronRoll0 : s_threatChevronRoll180;
 
             if (absY > absX * 2.41421356f)
-                return direction.y >= 0f ? 90f : -90f;
+                return direction.y >= 0f ? s_threatChevronRoll90 : s_threatChevronRollNegative90;
 
             if (direction.x >= 0f)
-                return direction.y >= 0f ? 45f : -45f;
+                return direction.y >= 0f ? s_threatChevronRoll45 : s_threatChevronRollNegative45;
 
-            return direction.y >= 0f ? 135f : -135f;
+            return direction.y >= 0f ? s_threatChevronRoll135 : s_threatChevronRollNegative135;
         }
 
         private void ApplyAcousticRadarVisuals(Color primary, Color warning, float corruptionIntensity)
@@ -2985,9 +2994,9 @@ namespace Hecton8.UI
                 name = "HUD_ThreatChevron_Mesh"
             };
 
-            Vector3[] vertices = new Vector3[8];
-            Vector2[] uvs = new Vector2[8];
-            int[] triangles = new int[12];
+            Vector3[] vertices = s_threatChevronMeshVertices;
+            Vector2[] uvs = s_threatChevronMeshUvs;
+            int[] triangles = s_threatChevronMeshTriangles;
 
             AppendThreatChevronBar(new Vector2(-0.48f, 0.44f), new Vector2(0.36f, 0f), 0.14f, vertices, uvs, 0, triangles, 0);
             AppendThreatChevronBar(new Vector2(-0.48f, -0.44f), new Vector2(0.36f, 0f), 0.14f, vertices, uvs, 4, triangles, 6);
