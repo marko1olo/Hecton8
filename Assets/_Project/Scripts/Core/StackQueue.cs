@@ -15,6 +15,7 @@ namespace Hecton8.Core
         private ushort _head;
         private ushort _tail;
         private ushort _count;
+        private ushort _capacity;
 
         public int Count => _count;
         public bool IsEmpty => _count == 0;
@@ -29,12 +30,7 @@ namespace Hecton8.Core
                 if (elementSize <= 0 || elementSize > BufferBytes)
                     return 0;
 
-                fixed (byte* raw = Buffer)
-                {
-                    byte* aligned = Align(raw);
-                    int usableBytes = BufferBytes - (int)(aligned - raw);
-                    return usableBytes > 0 ? usableBytes / elementSize : 0;
-                }
+                return ComputeCapacity(elementSize);
             }
         }
 
@@ -49,7 +45,7 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryEnqueue(in T value)
         {
-            int capacity = Capacity;
+            int capacity = EnsureCapacity();
             if (capacity <= 0 || _count >= capacity)
                 return false;
 
@@ -59,7 +55,8 @@ namespace Hecton8.Core
                 data[_tail] = value;
             }
 
-            _tail = (ushort)((_tail + 1) % capacity);
+            int nextTail = _tail + 1;
+            _tail = (ushort)(nextTail >= capacity ? 0 : nextTail);
             _count++;
             return true;
         }
@@ -67,7 +64,7 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryDequeue(out T value)
         {
-            int capacity = Capacity;
+            int capacity = EnsureCapacity();
             if (capacity <= 0 || _count == 0)
             {
                 value = default;
@@ -81,7 +78,8 @@ namespace Hecton8.Core
                 data[_head] = default;
             }
 
-            _head = (ushort)((_head + 1) % capacity);
+            int nextHead = _head + 1;
+            _head = (ushort)(nextHead >= capacity ? 0 : nextHead);
             _count--;
             return true;
         }
@@ -89,7 +87,7 @@ namespace Hecton8.Core
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryPeek(out T value)
         {
-            int capacity = Capacity;
+            int capacity = EnsureCapacity();
             if (capacity <= 0 || _count == 0)
             {
                 value = default;
@@ -103,6 +101,32 @@ namespace Hecton8.Core
             }
 
             return true;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int EnsureCapacity()
+        {
+            if (_capacity != 0)
+                return _capacity;
+
+            int elementSize = UnsafeUtility.SizeOf<T>();
+            if (elementSize <= 0 || elementSize > BufferBytes)
+                return 0;
+
+            int capacity = ComputeCapacity(elementSize);
+            _capacity = (ushort)capacity;
+            return capacity;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private int ComputeCapacity(int elementSize)
+        {
+            fixed (byte* raw = Buffer)
+            {
+                byte* aligned = Align(raw);
+                int usableBytes = BufferBytes - (int)(aligned - raw);
+                return usableBytes > 0 ? usableBytes / elementSize : 0;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -403,7 +403,7 @@ namespace Hecton8.Gameplay
             };
 
             mesh.SetVertices(s_markerQuadVertices);
-            mesh.uv = s_markerQuadUvs;
+            mesh.SetUVs(0, s_markerQuadUvs);
             mesh.SetTriangles(s_markerQuadTriangles, 0);
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();

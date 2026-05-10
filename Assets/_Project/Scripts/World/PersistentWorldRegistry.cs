@@ -3811,16 +3811,26 @@ namespace Hecton8.World
 
                         double3 currentAbsolute = currentAup.ToAbsoluteDouble3();
                         double3 toAttractor = attractorAbsolute - currentAbsolute;
-                        double distanceSq = math.lengthsq(toAttractor);
-                        if (distanceSq <= 0.0001d)
+                        double ax = math.abs(toAttractor.x);
+                        double ay = math.abs(toAttractor.y);
+                        double az = math.abs(toAttractor.z);
+                        double dominantDistance = math.max(ax, math.max(ay, az));
+                        if (dominantDistance <= 0.01d)
                         {
                             _entityStateScratch.Add(state);
                             continue;
                         }
 
-                        double invDistance = math.rsqrt(distanceSq);
-                        double moveScalar = math.min((double)stepMeters * invDistance, 1d);
-                        AbsoluteUniversePosition migratedAup = AbsoluteUniversePosition.FromAbsolutePosition(currentAbsolute + toAttractor * moveScalar);
+                        double moveMeters = math.min((double)stepMeters, dominantDistance);
+                        double3 moveDelta;
+                        if (ax >= ay && ax >= az)
+                            moveDelta = new double3(toAttractor.x < 0d ? -moveMeters : moveMeters, 0d, 0d);
+                        else if (ay >= az)
+                            moveDelta = new double3(0d, toAttractor.y < 0d ? -moveMeters : moveMeters, 0d);
+                        else
+                            moveDelta = new double3(0d, 0d, toAttractor.z < 0d ? -moveMeters : moveMeters);
+
+                        AbsoluteUniversePosition migratedAup = AbsoluteUniversePosition.FromAbsolutePosition(currentAbsolute + moveDelta);
                         EntityDataRecord migratedState = state;
                         migratedState.Position = migratedAup.ToAlignedBlit();
                         long migratedSectorHash = ComputeSectorHash(in migratedAup);

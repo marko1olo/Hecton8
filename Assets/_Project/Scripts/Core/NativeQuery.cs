@@ -75,12 +75,12 @@ namespace Hecton8.Core
             if (!source.IsCreated || !predicate.IsCreated || source.Length <= 0)
                 return output;
 
-            new NativeFilterJob<T>
+            for (int i = 0; i < source.Length; i++)
             {
-                Source = source,
-                Predicate = predicate,
-                Output = output
-            }.Schedule().Complete();
+                T value = source[i];
+                if (predicate.Invoke(value))
+                    output.AddNoResize(value);
+            }
 
             return output;
         }
@@ -97,12 +97,9 @@ namespace Hecton8.Core
                 return output;
 
             output.ResizeUninitialized(source.Length);
-            new NativeSelectJob<TSource, TResult>
-            {
-                Source = source,
-                Selector = selector,
-                Output = output.AsArray()
-            }.Schedule().Complete();
+            NativeArray<TResult> outputArray = output.AsArray();
+            for (int i = 0; i < source.Length; i++)
+                outputArray[i] = selector.Invoke(source[i]);
 
             return output;
         }

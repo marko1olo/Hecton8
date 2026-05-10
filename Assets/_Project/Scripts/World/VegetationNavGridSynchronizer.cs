@@ -3,8 +3,6 @@ using System.Runtime.InteropServices;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Environment;
-using MapMagic.Products;
-using MapMagic.Terrains;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;

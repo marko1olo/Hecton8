@@ -4718,6 +4718,7 @@ namespace Hecton8.Environment
                 targetEmission *= _adaptiveMotesScale;
                 targetEmission += ResolveBottomSiltEmissionBoost(isUnderwater);
                 targetEmission += submergeImpulse * suspendedMotesSubmergeBoost * transportExposureScale;
+                targetEmission *= FrameTimeWatchdog.ParticleEmissionScale;
                 shouldPlay = targetEmission > 0.01f;
             }
             else
@@ -4752,8 +4753,8 @@ namespace Hecton8.Environment
                     lightFactor,
                     submergeImpulse);
                 underwaterMarineSnow.SetBubbleTrailState(
-                    bubbleTrail01 * _adaptiveBubbleScale,
-                    _cachedVisualIsUnderwater ? _gpuBubbleExhaleImpulse01 * _adaptiveBubbleScale : 0f);
+                    bubbleTrail01 * _adaptiveBubbleScale * FrameTimeWatchdog.ParticleEmissionScale,
+                    _cachedVisualIsUnderwater ? _gpuBubbleExhaleImpulse01 * _adaptiveBubbleScale * FrameTimeWatchdog.ParticleEmissionScale : 0f);
 
                 if (underwaterMarineSnow.IsOperational)
                 {

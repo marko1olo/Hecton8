@@ -93,7 +93,7 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
+                SetGlobalActive(0f);
 
                 if (!Application.isPlaying || _settings == null || _compositeMaterial == null || _settings.compositeStrength <= 0.0001f)
                     return;
@@ -236,6 +236,10 @@ namespace Hecton8.Visor
             internal static readonly int ActiveId = Shader.PropertyToID("_HectonHalfResParticlesActive");
         }
 
+        private const float ShaderFloatPublishEpsilon = 0.000001f;
+
+        private static float _lastPublishedActive = -1f;
+
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
 
         private HalfResParticlesPass _pass;
@@ -259,19 +263,19 @@ namespace Hecton8.Visor
         {
             if (!Application.isPlaying)
             {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
+                SetGlobalActive(0f);
                 return;
             }
 
             if (settings == null || _pass == null || _compositeMaterial == null || settings.compositeStrength <= 0.0001f)
             {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
+                SetGlobalActive(0f);
                 return;
             }
 
             if (IsUnsupportedCameraType(renderingData.cameraData.cameraType))
             {
-                Shader.SetGlobalFloat(ShaderConstants.ActiveId, 0f);
+                SetGlobalActive(0f);
                 return;
             }
 
@@ -282,6 +286,16 @@ namespace Hecton8.Visor
         protected override void Dispose(bool disposing)
         {
             DisposeMaterial(ref _compositeMaterial);
+            SetGlobalActive(0f);
+        }
+
+        private static void SetGlobalActive(float value)
+        {
+            if (math.abs(_lastPublishedActive - value) <= ShaderFloatPublishEpsilon)
+                return;
+
+            Shader.SetGlobalFloat(ShaderConstants.ActiveId, value);
+            _lastPublishedActive = value;
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

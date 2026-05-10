@@ -455,7 +455,7 @@ namespace Hecton8.World
                 return;
 
             _legacyInputsResolved = true;
-            _usesCrest4LegacyInputs = TryGetComponent(out Crest.OceanRenderer _);
+            _usesCrest4LegacyInputs = GetComponent("OceanRenderer") != null;
             _wavesInputRenderer = ResolveLegacyInputRenderer(WavesInputName, ref _wavesInputState);
             _foamInputRenderer = ResolveLegacyInputRenderer(FoamInputName, ref _foamInputState);
             _oilFilmInputRenderer = ResolveLegacyInputRenderer(OilFilmInputName, ref _oilFilmInputState);

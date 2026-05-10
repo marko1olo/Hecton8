@@ -1476,14 +1476,13 @@ namespace Hecton8.Audio
 
                     float startVolume = _voiceFadeStartVolumes[i];
                     float targetVolume = _voiceFadeTargetVolumes[i];
-                    float fadeAngle = t * (math.PI * 0.5f);
                     if (targetVolume <= 0.0001f)
                     {
-                        _voiceBaseVolumes[i] = startVolume * math.cos(fadeAngle);
+                        _voiceBaseVolumes[i] = startVolume * (1f - t * t);
                     }
                     else if (startVolume <= 0.0001f)
                     {
-                        _voiceBaseVolumes[i] = targetVolume * math.sin(fadeAngle);
+                        _voiceBaseVolumes[i] = targetVolume * (t * (2f - t));
                     }
                     else
                     {
@@ -1660,7 +1659,7 @@ namespace Hecton8.Audio
                 return;
 
             depthBlendProfile = candidate;
-            depthBlendWeight = math.clamp((int)math.round(normalized * _depthBlendMaxWeight), 1, _depthBlendMaxWeight);
+            depthBlendWeight = math.clamp((int)(normalized * _depthBlendMaxWeight + 0.5f), 1, _depthBlendMaxWeight);
         }
 
         private bool TrySelectCueFromMode(HectonMusicBiomeProfile rootProfile, bool highTension, bool preferShort, out HectonMusicClip selectedCue, out HectonMusicBiomeProfile selectedProfile)

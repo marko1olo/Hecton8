@@ -459,7 +459,7 @@ namespace Hecton8.World
             }
 
             mesh.SetVertices(vertices);
-            mesh.uv = uvs;
+            mesh.SetUVs(0, uvs);
             mesh.SetNormals(normals);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();

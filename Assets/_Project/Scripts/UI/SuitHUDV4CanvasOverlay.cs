@@ -214,8 +214,9 @@ namespace Hecton8.UI
 
         public static void TriggerMemorySubsystemBreach(uint errorCode)
         {
-            s_memorySubsystemBreachCode = errorCode;
-            WriteMemorySubsystemBreachHex(errorCode);
+            uint resolvedCode = errorCode != 0u ? errorCode : 0x4D454D30u;
+            s_memorySubsystemBreachCode = resolvedCode;
+            WriteMemorySubsystemBreachHex(resolvedCode);
             s_memorySubsystemBreachUntilTime = Time.unscaledTimeAsDouble + MemorySubsystemBreachHoldSeconds;
             unchecked
             {
@@ -2992,7 +2993,7 @@ namespace Hecton8.UI
             AppendThreatChevronBar(new Vector2(-0.48f, -0.44f), new Vector2(0.36f, 0f), 0.14f, vertices, uvs, 4, triangles, 6);
 
             mesh.SetVertices(vertices);
-            mesh.uv = uvs;
+            mesh.SetUVs(0, uvs);
             mesh.SetTriangles(triangles, 0);
             mesh.RecalculateBounds();
             return mesh;

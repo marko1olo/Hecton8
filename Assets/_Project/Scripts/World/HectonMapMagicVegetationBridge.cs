@@ -3022,11 +3022,10 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Samples cached terrain normal.y from finite height gradients without allocating.
+        /// Tests cached terrain normal.y against a threshold from finite height gradients without allocating.
         /// </summary>
-        public bool TrySampleTerrainNormalY(Vector3 position, float sampleDistance, out float normalY)
+        public bool TryPassTerrainNormalYThreshold(Vector3 position, float sampleDistance, float minimumNormalY)
         {
-            normalY = 1f;
             float resolvedSampleDistance = math.max(0.5f, sampleDistance);
             if (!TryGetCachedTerrainHeight(position.x + resolvedSampleDistance, position.z, out float heightPosX) ||
                 !TryGetCachedTerrainHeight(position.x - resolvedSampleDistance, position.z, out float heightNegX) ||
@@ -3039,8 +3038,9 @@ namespace Hecton8.World
             float gradientX = (heightPosX - heightNegX) / (resolvedSampleDistance * 2f);
             float gradientZ = (heightPosZ - heightNegZ) / (resolvedSampleDistance * 2f);
             float normalLengthSq = 1f + (gradientX * gradientX) + (gradientZ * gradientZ);
-            normalY = math.rsqrt(math.max(normalLengthSq, 0.000001f));
-            return true;
+            float safeMinimumNormalY = math.saturate(minimumNormalY);
+            float minimumNormalYSq = safeMinimumNormalY * safeMinimumNormalY;
+            return normalLengthSq * minimumNormalYSq <= 1f;
         }
 
         private static float FastGradientMagnitude(float magnitudeSq)
@@ -3137,7 +3137,7 @@ namespace Hecton8.World
             if (!IsScatterSurfaceNormalSpawnable(surfaceNormal))
                 return false;
 
-            Vector3 surfaceUp = ResolveScatterSurfaceUp(surfaceNormal);
+            Vector3 surfaceUp = ResolveScatterSurfaceUpCheat(surfaceNormal);
             int yawSector = QuantizeYawDegreesToOctant(yawDegrees);
             Vector3 tangentForward = ResolveScatterSurfaceTangent(surfaceUp, yawSector);
             snappedPosition = surfacePoint + (surfaceUp * math.max(0f, surfaceOffset));
@@ -4730,14 +4730,9 @@ namespace Hecton8.World
             return normal.y > 0f && (normal.y * normal.y) >= ScatterMinimumSurfaceNormalUpDotSq * lengthSq;
         }
 
-        private static Vector3 ResolveScatterSurfaceUp(Vector3 normal)
+        private static Vector3 ResolveScatterSurfaceUpCheat(Vector3 normal)
         {
-            float lengthSq = normal.sqrMagnitude;
-            if (lengthSq <= 0.0001f)
-                return Vector3.up;
-
-            float invLength = math.rsqrt(lengthSq);
-            return new Vector3(normal.x * invLength, normal.y * invLength, normal.z * invLength);
+            return normal.sqrMagnitude > 0.0001f ? normal : Vector3.up;
         }
 
         private static int QuantizeYawDegreesToOctant(float yawDegrees)

@@ -6656,7 +6656,7 @@ namespace Hecton8.Gameplay
             if (blend01 >= 1f)
                 return targetGravity;
 
-            return NlerpGravityVector(startGravity, targetGravity, blend01);
+            return BlendGravityVectorCheap(startGravity, targetGravity, blend01);
         }
 
         private Vector3 ResolveCurrentGravityForOverrideBlend()
@@ -6672,45 +6672,14 @@ namespace Hecton8.Gameplay
             return Vector3.down * 9.81f;
         }
 
-        private static Vector3 NlerpGravityVector(Vector3 startGravity, Vector3 targetGravity, float blend01)
+        private static Vector3 BlendGravityVectorCheap(Vector3 startGravity, Vector3 targetGravity, float blend01)
         {
-            float startSqr = startGravity.sqrMagnitude;
-            float targetSqr = targetGravity.sqrMagnitude;
-            if (startSqr <= 0.00000001f)
-                return targetGravity;
+            float t = math.saturate(blend01);
+            Vector3 blended = startGravity + ((targetGravity - startGravity) * t);
+            if (blended.sqrMagnitude > MinLocalGravitySqr)
+                return blended;
 
-            if (targetSqr <= 0.00000001f)
-                return startGravity;
-
-            float startInvMagnitude = math.rsqrt(startSqr);
-            float targetInvMagnitude = math.rsqrt(targetSqr);
-            float startMagnitude = startSqr * startInvMagnitude;
-            float targetMagnitude = targetSqr * targetInvMagnitude;
-            float3 startDirection = new float3(startGravity.x, startGravity.y, startGravity.z) * startInvMagnitude;
-            float3 targetDirection = new float3(targetGravity.x, targetGravity.y, targetGravity.z) * targetInvMagnitude;
-            quaternion startRotation = quaternion.LookRotationSafe(startDirection, ResolveGravityNlerpUp(startDirection));
-            quaternion targetRotation = quaternion.LookRotationSafe(targetDirection, ResolveGravityNlerpUp(targetDirection));
-            quaternion blendedRotation = NlerpQuaternion(startRotation, targetRotation, math.saturate(blend01));
-            float3 blendedDirection = math.mul(blendedRotation, new float3(0f, 0f, 1f));
-            float magnitude = math.lerp(startMagnitude, targetMagnitude, math.saturate(blend01));
-            return new Vector3(blendedDirection.x, blendedDirection.y, blendedDirection.z) * magnitude;
-        }
-
-        private static quaternion NlerpQuaternion(quaternion start, quaternion target, float blend01)
-        {
-            float4 targetValue = math.dot(start.value, target.value) < 0f ? -target.value : target.value;
-            float4 blended = math.lerp(start.value, targetValue, math.saturate(blend01));
-            float lengthSq = math.dot(blended, blended);
-            return lengthSq > 0.000001f ? new quaternion(blended * math.rsqrt(lengthSq)) : start;
-        }
-
-        private static float3 ResolveGravityNlerpUp(float3 direction)
-        {
-            float3 up = math.up();
-            if (math.abs(math.dot(direction, up)) > 0.95f)
-                up = new float3(1f, 0f, 0f);
-
-            return up;
+            return t < 0.5f ? startGravity : targetGravity;
         }
 
         public void FixedTick(float fixedDeltaTime)

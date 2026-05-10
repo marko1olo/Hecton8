@@ -1364,7 +1364,7 @@ namespace Hecton8.World
 
                 if (hit.collider != null)
                 {
-                    Vector3 normal = hit.normal.sqrMagnitude > 0.000001f ? hit.normal.normalized : Vector3.up;
+                    Vector3 normal = hit.normal.sqrMagnitude > 0.000001f ? hit.normal : Vector3.up;
                     request.RuntimePosition = hit.point + (normal * math.max(0f, request.SurfaceOffsetMeters));
                     request.Rotation = ResolveSurfaceRotation(normal, request.YawDegrees);
                     request.TombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(request.RuntimePosition);
@@ -2346,12 +2346,12 @@ namespace Hecton8.World
             float gradientX = (heightPosX - heightNegX) / (probe * 2f);
             float gradientZ = (heightPosZ - heightNegZ) / (probe * 2f);
             Vector3 terrainNormal = new Vector3(-gradientX, 1f, -gradientZ);
-            return terrainNormal.sqrMagnitude > 0.000001f ? terrainNormal.normalized : Vector3.up;
+            return terrainNormal.sqrMagnitude > 0.000001f ? terrainNormal : Vector3.up;
         }
 
         private static Quaternion ResolveSurfaceRotation(Vector3 surfaceNormal, float yawDegrees)
         {
-            Vector3 up = ResolveUnitVector(surfaceNormal, Vector3.up);
+            Vector3 up = surfaceNormal.sqrMagnitude > 0.000001f ? surfaceNormal : Vector3.up;
             float2 yawDirection = ResolveOctantDirection(QuantizeYawDegreesToOctant(yawDegrees));
             Vector3 authoredForward = new Vector3(yawDirection.x, 0f, yawDirection.y);
             Vector3 tangentForward = authoredForward - (up * Vector3.Dot(authoredForward, up));
@@ -2365,16 +2365,6 @@ namespace Hecton8.World
                 tangentForward = Vector3.forward;
 
             return Quaternion.LookRotation(tangentForward, up);
-        }
-
-        private static Vector3 ResolveUnitVector(Vector3 vector, Vector3 fallback)
-        {
-            float lengthSq = vector.sqrMagnitude;
-            if (lengthSq <= 0.000001f)
-                return fallback;
-
-            float invLength = math.rsqrt(lengthSq);
-            return new Vector3(vector.x * invLength, vector.y * invLength, vector.z * invLength);
         }
 
         private static int QuantizeYawDegreesToOctant(float yawDegrees)
@@ -2420,7 +2410,7 @@ namespace Hecton8.World
             float gradientX = (heightPosX - heightNegX) / (probe * 2f);
             float gradientZ = (heightPosZ - heightNegZ) / (probe * 2f);
             float gradientMagnitude = FastMagnitudeApprox(new float2(gradientX, gradientZ));
-            return math.degrees(math.atan(gradientMagnitude));
+            return FastAtanDegreesPositive(gradientMagnitude);
         }
 
         private static float ResolveCinematicRadialDistance(ref uint state, float maxRadius)
@@ -2436,6 +2426,17 @@ namespace Hecton8.World
             float max = math.max(ax, ay);
             float min = math.min(ax, ay);
             return max + (min * 0.41421356f);
+        }
+
+        private static float FastAtanDegreesPositive(float value)
+        {
+            float x = math.max(0f, value);
+            float reciprocal = 1f / math.max(x, 0.000001f);
+            bool useReciprocal = x > 1f;
+            float y = math.select(x, reciprocal, useReciprocal);
+            float radians = y / (1f + 0.280872f * y * y);
+            radians = math.select(radians, 1.5707964f - radians, useReciprocal);
+            return radians * 57.29578f;
         }
 
         private int2 QuantizeSector(in AbsoluteUniversePosition position)

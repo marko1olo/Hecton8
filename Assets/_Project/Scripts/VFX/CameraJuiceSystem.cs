@@ -1396,7 +1396,8 @@ namespace Hecton8.VFX
             _speedLineIntensity = math.lerp(_speedLineIntensity, speed01, blend);
 
             var emission = _speedLineParticles.emission;
-            float emissionRate = math.lerp(0f, math.max(1f, _speedLineMaxEmissionRate), _speedLineIntensity);
+            float emissionRate = math.lerp(0f, math.max(1f, _speedLineMaxEmissionRate), _speedLineIntensity) *
+                                 FrameTimeWatchdog.ParticleEmissionScale;
             if (math.abs(_cachedSpeedLineEmissionRate - emissionRate) > 0.5f)
             {
                 emission.rateOverTime = emissionRate;

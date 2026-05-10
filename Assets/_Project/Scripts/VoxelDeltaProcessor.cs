@@ -1088,7 +1088,7 @@ namespace Hecton8.Caves
                 bool hasOverlay = overlayState.DirtyMaskWords.IsCreated;
                 chunkCount++;
                 totalDirtyCellCount += ChunkCellCount;
-                totalBytes += IsUniformSdfRleSnapshotEligible(in pair.Value, in overlayState, hasOverlay)
+                totalBytes += IsUniformSdfRleSnapshotEligible(in pair.Value, hasOverlay)
                     ? UnsafeUtility.SizeOf<NativeSnapshotChunkHeaderRle>() + NativeSnapshotUniformSdfRlePayloadBytes
                     : denseBytesPerChunk;
             }
@@ -1135,7 +1135,7 @@ namespace Hecton8.Caves
                 CompactedChunkState compactedState = pair.Value;
                 _chunkStates.TryGetValue(pair.Key, out ChunkDeltaState overlayState);
                 bool hasOverlay = overlayState.DirtyMaskWords.IsCreated;
-                if (IsUniformSdfRleSnapshotEligible(in compactedState, in overlayState, hasOverlay))
+                if (IsUniformSdfRleSnapshotEligible(in compactedState, hasOverlay))
                 {
                     WriteUniformSdfRleNativeSnapshotChunk(snapshotPtr, snapshot.Length, ref cursor, pair.Key, in compactedState);
                 }
@@ -1206,14 +1206,12 @@ namespace Hecton8.Caves
 
         private static bool IsUniformSdfRleSnapshotEligible(
             in CompactedChunkState compactedState,
-            in ChunkDeltaState overlayState,
             bool hasOverlay)
         {
             return compactedState.IsRleCompressed &&
                    compactedState.RleMaterialId == DefaultMaterialId &&
                    compactedState.RleCellFlags == DeltaModeReplace &&
-                   !hasOverlay &&
-                   !overlayState.DirtyMaskWords.IsCreated;
+                   !hasOverlay;
         }
 
         private static unsafe void WriteUniformSdfRleNativeSnapshotChunk(
@@ -1641,7 +1639,7 @@ namespace Hecton8.Caves
                     MaterialId = request.MaterialId,
                     DeltaFlags = request.DeltaFlags,
                     Shape = shape,
-                    Writes = _scheduledCarveWrites
+                    WritesPtr = (CarveCellWrite*)NativeArrayUnsafeUtility.GetUnsafePtr(_scheduledCarveWrites)
                 };
 
                 using (_carveScheduleProfilerMarker.Auto())
@@ -2104,17 +2102,12 @@ namespace Hecton8.Caves
                     VolumeOrigin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z),
                     CellSize = new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z),
                     SdfRange = sdfRange,
-                    EncodedSdf = sourceSdf,
-                    DirtyMaskWords = dirtyMaskCopy,
-                    DeltaSdfValueBits = deltaSdfCopy,
-                    DeltaMaterialIds = materialCopy,
-                    DeltaCellFlags = flagsCopy,
-                    OutputSdfValueBits = outputSdf,
-                    OutputMaterialIds = outputMaterials,
-                    OutputCellFlags = outputFlags,
                     EncodedSdfPtr = sourceSdf.GetUnsafeReadOnlyPtr(),
+                    DirtyMaskWordsPtr = (uint*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(dirtyMaskCopy),
+                    DeltaSdfValueBitsPtr = (ushort*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(deltaSdfCopy),
                     DeltaMaterialIdsPtr = materialCopy.GetUnsafeReadOnlyPtr(),
                     DeltaCellFlagsPtr = flagsCopy.GetUnsafeReadOnlyPtr(),
+                    OutputSdfValueBitsPtr = (ushort*)NativeArrayUnsafeUtility.GetUnsafePtr(outputSdf),
                     OutputMaterialIdsPtr = outputMaterials.GetUnsafePtr(),
                     OutputCellFlagsPtr = outputFlags.GetUnsafePtr()
                 };
@@ -2854,7 +2847,7 @@ namespace Hecton8.Caves
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct CarveSdfJob : IJobParallelFor
+        private unsafe struct CarveSdfJob : IJobParallelFor
         {
             public int3 MinCell;
             public int3 Span;
@@ -2868,7 +2861,7 @@ namespace Hecton8.Caves
             public byte MaterialId;
             public byte DeltaFlags;
             public byte Shape;
-            public NativeArray<CarveCellWrite> Writes;
+            [NativeDisableUnsafePtrRestriction] public CarveCellWrite* WritesPtr;
 
             public void Execute(int index)
             {
@@ -2886,7 +2879,7 @@ namespace Hecton8.Caves
                         : SphereSdfApprox(cellCenter - Center, Radius);
                 if (signedDistance >= BlendRadius)
                 {
-                    Writes[index] = default;
+                    *(WritesPtr + index) = default;
                     return;
                 }
 
@@ -2894,7 +2887,7 @@ namespace Hecton8.Caves
                     ? math.clamp(-signedDistance, -8f, 8f)
                     : math.clamp(signedDistance, -8f, 8f);
 
-                Writes[index] = new CarveCellWrite
+                *(WritesPtr + index) = new CarveCellWrite
                 {
                     AbsoluteCell = absoluteCell,
                     SdfValueBits = (ushort)math.f32tof16(densityValue),
@@ -2934,7 +2927,7 @@ namespace Hecton8.Caves
             }
         }
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 24)]
         private struct CarveCellWrite
         {
             public int3 AbsoluteCell;
@@ -3036,17 +3029,12 @@ namespace Hecton8.Caves
             public float3 VolumeOrigin;
             public float3 CellSize;
             public float SdfRange;
-            [ReadOnly] public NativeArray<byte> EncodedSdf;
-            [ReadOnly] public NativeArray<uint> DirtyMaskWords;
-            [ReadOnly] public NativeArray<ushort> DeltaSdfValueBits;
-            [ReadOnly] public NativeArray<byte> DeltaMaterialIds;
-            [ReadOnly] public NativeArray<byte> DeltaCellFlags;
-            public NativeArray<ushort> OutputSdfValueBits;
-            public NativeArray<byte> OutputMaterialIds;
-            public NativeArray<byte> OutputCellFlags;
             [NativeDisableUnsafePtrRestriction] public byte* EncodedSdfPtr;
+            [NativeDisableUnsafePtrRestriction] public uint* DirtyMaskWordsPtr;
+            [NativeDisableUnsafePtrRestriction] public ushort* DeltaSdfValueBitsPtr;
             [NativeDisableUnsafePtrRestriction] public byte* DeltaMaterialIdsPtr;
             [NativeDisableUnsafePtrRestriction] public byte* DeltaCellFlagsPtr;
+            [NativeDisableUnsafePtrRestriction] public ushort* OutputSdfValueBitsPtr;
             [NativeDisableUnsafePtrRestriction] public byte* OutputMaterialIdsPtr;
             [NativeDisableUnsafePtrRestriction] public byte* OutputCellFlagsPtr;
 
@@ -3058,15 +3046,15 @@ namespace Hecton8.Caves
                 if (IsDirty(flatIndex))
                 {
                     byte deltaFlags = *(DeltaCellFlagsPtr + flatIndex);
-                    float deltaDensity = DecodeHalfToFloat(DeltaSdfValueBits[flatIndex]);
+                    float deltaDensity = DecodeHalfToFloat(*(DeltaSdfValueBitsPtr + flatIndex));
                     float bakedDensity = BakeDeltaIntoBaseDensity(sampledDensity, deltaDensity, deltaFlags);
-                    OutputSdfValueBits[flatIndex] = (ushort)math.f32tof16(math.clamp(bakedDensity, -8f, 8f));
+                    *(OutputSdfValueBitsPtr + flatIndex) = (ushort)math.f32tof16(math.clamp(bakedDensity, -8f, 8f));
                     *(OutputMaterialIdsPtr + flatIndex) = *(DeltaMaterialIdsPtr + flatIndex);
                     *(OutputCellFlagsPtr + flatIndex) = DeltaModeReplace;
                     return;
                 }
 
-                OutputSdfValueBits[flatIndex] = (ushort)math.f32tof16(math.clamp(sampledDensity, -8f, 8f));
+                *(OutputSdfValueBitsPtr + flatIndex) = (ushort)math.f32tof16(math.clamp(sampledDensity, -8f, 8f));
                 *(OutputMaterialIdsPtr + flatIndex) = DefaultMaterialId;
                 *(OutputCellFlagsPtr + flatIndex) = DeltaModeReplace;
             }
@@ -3081,7 +3069,7 @@ namespace Hecton8.Caves
             {
                 int wordIndex = flatIndex >> 5;
                 uint bitMask = 1u << (flatIndex & 31);
-                return (DirtyMaskWords[wordIndex] & bitMask) != 0u;
+                return (*(DirtyMaskWordsPtr + wordIndex) & bitMask) != 0u;
             }
 
             private int3 AbsoluteCellFromFlatIndex(int flatIndex)
@@ -3312,13 +3300,12 @@ namespace Hecton8.Caves
         private readonly struct ChunkAddress : IEquatable<ChunkAddress>
         {
             public readonly int3 ChunkCoord;
-            public readonly float VoxelSize;
             private readonly int _voxelSizeBits;
+            public float VoxelSize => math.asfloat(_voxelSizeBits);
 
             public ChunkAddress(int3 chunkCoord, float voxelSize)
             {
                 ChunkCoord = chunkCoord;
-                VoxelSize = voxelSize;
                 _voxelSizeBits = math.asint(voxelSize);
             }
 

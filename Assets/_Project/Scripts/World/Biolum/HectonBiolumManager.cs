@@ -80,6 +80,7 @@ namespace Hecton8.Biolum
         private const int ActiveZoneListCapacity = 32;
         private const float GlobalBiolumPhaseRateHz = 0.58f;
         private const float GlobalBiolumPhasePublishEpsilon = 0.0001f;
+        private const float ShaderColorPublishEpsilon = 0.0001f;
 
         // COLD ALLOC: List<HectonBiolumZone>[32] - active cave-zone registry - owner: HectonBiolumManager
         private readonly List<HectonBiolumZone> _activeCaveZones = new List<HectonBiolumZone>(ActiveZoneListCapacity);
@@ -109,6 +110,11 @@ namespace Hecton8.Biolum
         private Color _cachedFloorBiolumColor = Color.black;
         private float _cachedOceanBiolumStrength = 0f;
         private float _cachedFloorBiolumStrength = 0f;
+        private Color _lastPublishedOceanBiolumColor = Color.black;
+        private Color _lastPublishedFloorBiolumColor = Color.black;
+        private float _lastPublishedOceanBiolumStrength = 0f;
+        private float _lastPublishedFloorBiolumStrength = 0f;
+        private bool _floraShaderGlobalsPublished = false;
 
         #if UNITY_EDITOR
         [SerializeField] private bool _debugLogUpdates = false;
@@ -398,10 +404,7 @@ namespace Hecton8.Biolum
                 _cachedFloorBiolumColor = FastLerpColor(_cachedFloorBiolumColor, _SonarResponseColor, sonarColorLift);
             }
 
-            Shader.SetGlobalColor(_FloraOceanBiolumColorId, _cachedOceanBiolumColor);
-            Shader.SetGlobalFloat(_FloraOceanBiolumStrengthId, _cachedOceanBiolumStrength);
-            Shader.SetGlobalColor(_FloraFloorBiolumColorId, _cachedFloorBiolumColor);
-            Shader.SetGlobalFloat(_FloraFloorBiolumStrengthId, _cachedFloorBiolumStrength);
+            PublishFloraShaderGlobals();
         }
 
         private void PublishGlobalBiolumPhase(float deltaTime)
@@ -574,13 +577,52 @@ namespace Hecton8.Biolum
             _cachedOceanBiolumStrength = 0f;
             _cachedFloorBiolumStrength = 0f;
 
-            Shader.SetGlobalColor(_FloraOceanBiolumColorId, Color.black);
-            Shader.SetGlobalFloat(_FloraOceanBiolumStrengthId, 0f);
-            Shader.SetGlobalColor(_FloraFloorBiolumColorId, Color.black);
-            Shader.SetGlobalFloat(_FloraFloorBiolumStrengthId, 0f);
-            Shader.SetGlobalFloat(_GlobalBiolumPhaseId, 0f);
+            PublishFloraShaderGlobals();
+            if (math.abs(_lastPublishedGlobalBiolumPhase) > GlobalBiolumPhasePublishEpsilon)
+                Shader.SetGlobalFloat(_GlobalBiolumPhaseId, 0f);
             _globalBiolumPhase = 0f;
             _lastPublishedGlobalBiolumPhase = 0f;
+        }
+
+        private void PublishFloraShaderGlobals()
+        {
+            if (!_floraShaderGlobalsPublished ||
+                !NearlyEqual(_lastPublishedOceanBiolumColor, _cachedOceanBiolumColor, ShaderColorPublishEpsilon))
+            {
+                Shader.SetGlobalColor(_FloraOceanBiolumColorId, _cachedOceanBiolumColor);
+                _lastPublishedOceanBiolumColor = _cachedOceanBiolumColor;
+            }
+
+            if (!_floraShaderGlobalsPublished ||
+                math.abs(_lastPublishedOceanBiolumStrength - _cachedOceanBiolumStrength) > ShaderColorPublishEpsilon)
+            {
+                Shader.SetGlobalFloat(_FloraOceanBiolumStrengthId, _cachedOceanBiolumStrength);
+                _lastPublishedOceanBiolumStrength = _cachedOceanBiolumStrength;
+            }
+
+            if (!_floraShaderGlobalsPublished ||
+                !NearlyEqual(_lastPublishedFloorBiolumColor, _cachedFloorBiolumColor, ShaderColorPublishEpsilon))
+            {
+                Shader.SetGlobalColor(_FloraFloorBiolumColorId, _cachedFloorBiolumColor);
+                _lastPublishedFloorBiolumColor = _cachedFloorBiolumColor;
+            }
+
+            if (!_floraShaderGlobalsPublished ||
+                math.abs(_lastPublishedFloorBiolumStrength - _cachedFloorBiolumStrength) > ShaderColorPublishEpsilon)
+            {
+                Shader.SetGlobalFloat(_FloraFloorBiolumStrengthId, _cachedFloorBiolumStrength);
+                _lastPublishedFloorBiolumStrength = _cachedFloorBiolumStrength;
+            }
+
+            _floraShaderGlobalsPublished = true;
+        }
+
+        private static bool NearlyEqual(Color left, Color right, float epsilon)
+        {
+            return math.abs(left.r - right.r) <= epsilon &&
+                   math.abs(left.g - right.g) <= epsilon &&
+                   math.abs(left.b - right.b) <= epsilon &&
+                   math.abs(left.a - right.a) <= epsilon;
         }
 
         private void TryRegisterService()

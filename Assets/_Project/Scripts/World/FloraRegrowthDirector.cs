@@ -1107,8 +1107,7 @@ namespace Hecton8.World
             if (vegetationBridge.TryGetCachedTerrainHeight(landingPosition.x, landingPosition.z, out float terrainHeight))
                 landingPosition.y = terrainHeight + 0.08f;
 
-            if (!vegetationBridge.TrySampleTerrainNormalY(landingPosition, SeedSlopeSampleDistance, out float normalY) ||
-                normalY < MinimumSeedNormalY)
+            if (!vegetationBridge.TryPassTerrainNormalYThreshold(landingPosition, SeedSlopeSampleDistance, MinimumSeedNormalY))
             {
                 return false;
             }

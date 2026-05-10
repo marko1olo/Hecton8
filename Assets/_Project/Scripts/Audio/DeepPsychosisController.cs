@@ -14,6 +14,7 @@ namespace Hecton8.Audio
     public sealed class DeepPsychosisController : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
         private const int DependencyRetryFrameInterval = 30;
+        private const float DiagonalCueAxis = 0.70710678f;
 
         [Header("── Clip Pools ──────────────────")]
         [Tooltip("3D whisper cues emitted around the player during deep psychosis windows.")]
@@ -273,20 +274,10 @@ namespace Hecton8.Audio
                 return;
 
             float radius = math.lerp(cueRadiusMin, cueRadiusMax, _psychosisIntensity01);
-            float3 offset = new float3(
+            float3 offset = ResolveCinematicCueOffset(
                 NextRandomRange(-1f, 1f),
                 NextRandomRange(-0.35f, 0.35f),
                 NextRandomRange(-1f, 1f));
-
-            float offsetLengthSq = math.lengthsq(offset);
-            if (offsetLengthSq < 0.01f)
-            {
-                offset = new float3(0f, 0f, 1f);
-            }
-            else
-            {
-                offset *= math.rsqrt(offsetLengthSq);
-            }
 
             Vector3 cuePosition = origin + new Vector3(offset.x, offset.y, offset.z) * radius;
             float volume = math.lerp(cueVolumeMin, cueVolumeMax, _psychosisIntensity01);
@@ -326,6 +317,24 @@ namespace Hecton8.Audio
 
             AudioClip[] fallbackPool = ReferenceEquals(primaryPool, whisperClips) ? hullStressClips : whisperClips;
             return SelectRandomClip(fallbackPool);
+        }
+
+        private static float3 ResolveCinematicCueOffset(float x, float y, float z)
+        {
+            float ax = math.abs(x);
+            float az = math.abs(z);
+            if (ax < 0.01f && az < 0.01f)
+                return new float3(0f, y, 1f);
+
+            float sx = x < 0f ? -1f : 1f;
+            float sz = z < 0f ? -1f : 1f;
+            if (ax > az * 2f)
+                return new float3(sx, y, 0f);
+
+            if (az > ax * 2f)
+                return new float3(0f, y, sz);
+
+            return new float3(sx * DiagonalCueAxis, y, sz * DiagonalCueAxis);
         }
 
         private AudioClip SelectRandomClip(AudioClip[] clips)

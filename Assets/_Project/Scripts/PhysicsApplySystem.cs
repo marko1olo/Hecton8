@@ -252,7 +252,7 @@ namespace Hecton8.Physics
             AcousticImpulseFlags flags)
         {
             RuntimePosition = runtimePosition;
-            Direction = NormalizeOrDefault(direction);
+            Direction = DominantAxisOrDefault(direction);
             KineticEnergyJoules = math.max(0f, kineticEnergyJoules);
             Volume01 = math.saturate(volume01);
             PitchScale = math.clamp(pitchScale, 0.05f, 4f);
@@ -272,15 +272,25 @@ namespace Hecton8.Physics
         public byte AudioMaterialId { get; }
         public AcousticImpulseFlags Flags { get; }
 
-        private static Vector3 NormalizeOrDefault(Vector3 value)
+        private static Vector3 DominantAxisOrDefault(Vector3 value)
         {
             float3 vector = new float3(value.x, value.y, value.z);
-            float lengthSq = math.lengthsq(vector);
-            if (lengthSq <= 0.000001f || !math.all(math.isfinite(vector)))
+            if (!math.all(math.isfinite(vector)))
                 return Vector3.forward;
 
-            float3 normalized = vector * math.rsqrt(lengthSq);
-            return new Vector3(normalized.x, normalized.y, normalized.z);
+            float ax = math.abs(vector.x);
+            float ay = math.abs(vector.y);
+            float az = math.abs(vector.z);
+            if ((ax + ay + az) <= 0.000001f)
+                return Vector3.forward;
+
+            if (ax >= ay && ax >= az)
+                return vector.x < 0f ? Vector3.left : Vector3.right;
+
+            if (ay >= az)
+                return vector.y < 0f ? Vector3.down : Vector3.up;
+
+            return vector.z < 0f ? Vector3.back : Vector3.forward;
         }
     }
 
@@ -1115,7 +1125,6 @@ namespace Hecton8.Physics
         private const int MaxQueuedPackets = 64;
         private const int MaxForcePacketsAppliedPerFixedTick = 64;
         private const int MaxQueuedSubmarineImpactSignals = 32;
-        private const int SharedRaycastCacheCapacity = 256;
         private const int MaxActiveDepressurizationVortices = 8;
         private const int MaxActiveImpactProxyLights = 4;
         private const int DepressurizationVortexContactCapacity = 32;
@@ -1198,8 +1207,6 @@ namespace Hecton8.Physics
         private NativeQueue<ForcePacket> _frontPacketQueue;
         private NativeQueue<ForcePacket> _backPacketQueue;
         private NativeQueue<DeferredSubmarineImpactSignal> _submarineImpactSignals;
-        private NativeArray<RaycastCommand> _sharedRaycastCommands;
-        private NativeArray<RaycastHit> _sharedRaycastHits;
         private int _submarineImpactSignalCount;
 
         private int _frontCount;
@@ -1287,26 +1294,12 @@ namespace Hecton8.Physics
             return true;
         }
 
-        public static bool TryGetSharedRaycastCache(
-            out NativeArray<RaycastCommand> commands,
-            out NativeArray<RaycastHit> hits)
+        internal static bool QueueSharedRaycast(
+            IDispatcherRaycastReceiver receiver,
+            int requestId,
+            in RaycastCommand command)
         {
-            commands = default;
-            hits = default;
-            if (!Application.isPlaying)
-                return false;
-
-            PhysicsApplySystem system = EnsureRuntimeInstance();
-            if (system == null)
-                return false;
-
-            system.EnsureSharedCollisionCache();
-            if (!system._sharedRaycastCommands.IsCreated || !system._sharedRaycastHits.IsCreated)
-                return false;
-
-            commands = system._sharedRaycastCommands;
-            hits = system._sharedRaycastHits;
-            return true;
+            return SystemDispatcher.QueueDispatcherRaycast(receiver, requestId, in command);
         }
 
         internal static bool TriggerDepressurizationVortex(
@@ -1719,7 +1712,6 @@ namespace Hecton8.Physics
             EnsureForcePacketQueues();
             EnsureValidationBuffers();
             EnsureSubmarineImpactSignalQueue();
-            EnsureSharedCollisionCache();
         }
 
         private void EnsureSubmarineImpactSignalQueue()
@@ -1772,7 +1764,6 @@ namespace Hecton8.Physics
             ClearQueuedPackets();
             DisposeValidationBuffers();
             DisposeForcePacketQueues();
-            DisposeSharedCollisionCache();
             ClearTransientImpactProxyLights();
 
             if (_submarineImpactSignals.IsCreated)
@@ -2398,15 +2389,12 @@ namespace Hecton8.Physics
             float maximumAccelerationMetersPerSecondSquared)
         {
             Vector3 toBreach = breachPosition - bodyPosition;
-            float distanceSq = VectorLengthSq(toBreach);
-            if (distanceSq <= 0.00000001f)
+            if (!TryResolveDominantAxisAndDistance(toBreach, out Vector3 axis, out float distanceMeters))
                 return Vector3.zero;
 
-            float invDistance = math.rsqrt(distanceSq);
-            float distanceMeters = distanceSq * invDistance;
             float safeDistance = math.max(DepressurizationVortexDistanceFloorMeters, distanceMeters);
             float accelerationMagnitude = math.min(maximumAccelerationMetersPerSecondSquared, baseAccelerationMetersPerSecondSquared / safeDistance);
-            return toBreach * (accelerationMagnitude * invDistance);
+            return axis * accelerationMagnitude;
         }
 
         private static Vector3 ResolveImplosionImpulse(
@@ -2416,15 +2404,37 @@ namespace Hecton8.Physics
             float maximumImpulseNewtonSeconds)
         {
             Vector3 toCenter = roomCenter - bodyPosition;
-            float distanceSq = VectorLengthSq(toCenter);
-            if (distanceSq <= 0.00000001f)
+            if (!TryResolveDominantAxisAndDistance(toCenter, out Vector3 axis, out float distanceMeters))
                 return Vector3.zero;
 
-            float invDistance = math.rsqrt(distanceSq);
-            float distanceMeters = distanceSq * invDistance;
             float safeDistance = math.max(DepressurizationVortexDistanceFloorMeters, distanceMeters);
             float impulseMagnitude = math.min(maximumImpulseNewtonSeconds, baseImpulseNewtonSeconds / safeDistance);
-            return toCenter * (impulseMagnitude * invDistance);
+            return axis * impulseMagnitude;
+        }
+
+        private static bool TryResolveDominantAxisAndDistance(
+            Vector3 vector,
+            out Vector3 axis,
+            out float distanceMeters)
+        {
+            float ax = math.abs(vector.x);
+            float ay = math.abs(vector.y);
+            float az = math.abs(vector.z);
+            distanceMeters = math.max(ax, math.max(ay, az));
+            if (distanceMeters <= 0.00000001f)
+            {
+                axis = Vector3.zero;
+                return false;
+            }
+
+            if (ax >= ay && ax >= az)
+                axis = vector.x < 0f ? Vector3.left : Vector3.right;
+            else if (ay >= az)
+                axis = vector.y < 0f ? Vector3.down : Vector3.up;
+            else
+                axis = vector.z < 0f ? Vector3.back : Vector3.forward;
+
+            return true;
         }
 
         private void SwapForcePacketQueues()
@@ -2533,34 +2543,6 @@ namespace Hecton8.Physics
                     _validationMask,
                     nameof(PhysicsApplySystem),
                     nameof(_validationMask),
-                    NativeAllocationLifetime.Session);
-            }
-        }
-
-        private void EnsureSharedCollisionCache()
-        {
-            if (!Application.isPlaying)
-                return;
-
-            if (!_sharedRaycastCommands.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<RaycastCommand>[256] - shared AI/kinematics raycast command cache - owner: PhysicsApplySystem
-                _sharedRaycastCommands = new NativeArray<RaycastCommand>(SharedRaycastCacheCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _sharedRaycastCommands,
-                    nameof(PhysicsApplySystem),
-                    nameof(_sharedRaycastCommands),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_sharedRaycastHits.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<RaycastHit>[256] - shared AI/kinematics raycast hit cache - owner: PhysicsApplySystem
-                _sharedRaycastHits = new NativeArray<RaycastHit>(SharedRaycastCacheCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _sharedRaycastHits,
-                    nameof(PhysicsApplySystem),
-                    nameof(_sharedRaycastHits),
                     NativeAllocationLifetime.Session);
             }
         }
@@ -3013,23 +2995,6 @@ namespace Hecton8.Physics
 
             _packetValidationHandle = dependency;
             _packetValidationScheduled = false;
-        }
-
-        private void DisposeSharedCollisionCache()
-        {
-            if (_sharedRaycastCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_sharedRaycastCommands);
-                _sharedRaycastCommands.Dispose();
-                _sharedRaycastCommands = default;
-            }
-
-            if (_sharedRaycastHits.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_sharedRaycastHits);
-                _sharedRaycastHits.Dispose();
-                _sharedRaycastHits = default;
-            }
         }
 
         private void DisposeForcePacketQueues()

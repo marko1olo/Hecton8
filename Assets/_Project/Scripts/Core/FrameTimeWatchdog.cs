@@ -34,10 +34,12 @@ namespace Hecton8.Core
         private static int _reportedBrgBatchFrame = -1;
         private static int _reportedBrgBatchCount;
         private static float _lowFpsAccumulatedSeconds;
+        private static float _particleEmissionScale = 1f;
         private static bool _thermalFallbackActive;
         private static bool _systemDegradationActive;
 
         public static bool IsDistantFloraRenderingEnabled => !_systemDegradationActive;
+        public static float ParticleEmissionScale => _particleEmissionScale;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -50,6 +52,7 @@ namespace Hecton8.Core
             _reportedBrgBatchFrame = -1;
             _reportedBrgBatchCount = 0;
             _lowFpsAccumulatedSeconds = 0f;
+            _particleEmissionScale = 1f;
             _thermalFallbackActive = false;
             _systemDegradationActive = false;
         }
@@ -170,6 +173,7 @@ namespace Hecton8.Core
                 return;
 
             _systemDegradationActive = true;
+            _particleEmissionScale = ThermalParticleSpawnScale;
             ActivateThermalFallback();
             Shader.SetGlobalInt(_distantFloraEnabledId, 0);
 

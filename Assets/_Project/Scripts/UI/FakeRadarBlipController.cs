@@ -999,7 +999,7 @@ namespace Hecton8.UI
             // COLD ALLOC: int[6] — one-time quad index upload — owner: FakeRadarBlipController
             int[] triangles = { 0, 1, 2, 0, 2, 3 };
             mesh.SetVertices(vertices);
-            mesh.uv = uvs;
+            mesh.SetUVs(0, uvs);
             mesh.SetTriangles(triangles, 0);
             mesh.UploadMeshData(true);
             return mesh;

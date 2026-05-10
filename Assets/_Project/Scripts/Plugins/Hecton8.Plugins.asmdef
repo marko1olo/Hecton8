@@ -4,6 +4,9 @@
     "references": [
         "Hecton8.Bootstrap.Contracts",
         "Hecton8.Core",
+        "Hecton8.SpaceEngine098Terrain",
+        "Unity.Collections",
+        "Unity.Mathematics",
         "Den.Tools",
         "MapMagic",
         "Crest",

@@ -1392,7 +1392,7 @@ namespace Hecton8.SaveSystem
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = 24)]
-        private struct IndexedChecksumLeaf
+        private struct LegacyIndexedChecksumLeaf
         {
             public long SectorHash;
             public uint Checksum;
@@ -1758,7 +1758,7 @@ namespace Hecton8.SaveSystem
 
             int metadataRawLength = metadataCursor;
             ulong metadataHash64 = Hash64(rawPtr, metadataRawLength);
-            uint metadataChecksum = Hash32(rawPtr, metadataRawLength);
+            uint metadataChecksum = unchecked((uint)metadataHash64);
 
             List<IndexedSectorGroup> sectorGroups = BuildIndexedSectorGroups(persistentWorldDeltas, chunkSizeMeters);
             int sectorCount = sectorGroups.Count;
@@ -2556,8 +2556,16 @@ namespace Hecton8.SaveSystem
             detectedVersion = 0;
             error = string.Empty;
 
-            if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
+            if (!TryReadIndexedDirectoryHeaderForMappedScan(
+                    in header,
+                    ref mapping,
+                    out IndexedSectorDirectoryHeader directoryHeader,
+                    out int directoryEntryCursor,
+                    out long metadataEndOffset,
+                    out error))
+            {
                 return false;
+            }
 
             if (!TryReadIndexedCompressedBlock(ref mapping, header.PlayerOffset, directoryHeader.MetadataCompressedSize, directoryHeader.MetadataDecompressedSize, rawBuffer, out int metadataRawLength, out error))
                 return false;
@@ -2574,10 +2582,27 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (!TryComputeIndexedChecksumRootFromMappedDirectory(
+                    (byte*)mapping.View,
+                    directoryEntryCursor,
+                    metadataEndOffset,
+                    mapping.Length,
+                    checked((int)directoryHeader.SectorCount),
+                    unchecked((uint)metadataHash64),
+                    out uint checksumRoot,
+                    out error))
+            {
+                return false;
+            }
+
             if (header.Version >= HeaderChecksumVersion)
             {
-                uint checksumRoot = ComputeIndexedChecksumRoot(Hash32(rawPtr, metadataRawLength), sectorEntries);
-                if (checksumRoot != header.Checksum)
+                if (!IsIndexedChecksumRootValid(
+                        checksumRoot,
+                        (byte*)mapping.View,
+                        directoryEntryCursor,
+                        unchecked((uint)metadataHash64),
+                        header.Checksum))
                 {
                     error = "Indexed metadata checksum-chain root mismatch.";
                     return false;
@@ -2660,8 +2685,7 @@ namespace Hecton8.SaveSystem
 
             if (header.Version >= HeaderChecksumVersion)
             {
-                uint checksumRoot = ComputeIndexedChecksumRoot(Hash32(rawPtr, metadataRawLength), sectorEntries);
-                if (checksumRoot != header.Checksum)
+                if (!IsIndexedChecksumRootValid(unchecked((uint)metadataHash64), sectorEntries, header.Checksum))
                 {
                     error = "Indexed checksum-chain root mismatch.";
                     return false;
@@ -4678,20 +4702,164 @@ namespace Hecton8.SaveSystem
                     if (!IsIndexedSectorEntryPopulated(in entry))
                         continue;
 
-                    IndexedChecksumLeaf leaf = new IndexedChecksumLeaf
-                    {
-                        SectorHash = entry.SectorHash,
-                        Checksum = entry.Checksum,
-                        CompressedSize = entry.CompressedSize,
-                        DecompressedSize = entry.DecompressedSize,
-                        Reserved = 0u
-                    };
-                    uint leafHash = Hash32(UnsafeUtility.AddressOf(ref leaf), UnsafeUtility.SizeOf<IndexedChecksumLeaf>());
+                    uint leafHash = FoldIndexedSectorChecksum(in entry);
                     root = (root ^ leafHash) * 16777619u;
                 }
 
                 return root == 0u ? 2166136261u : root;
             }
+        }
+
+        private static bool IsIndexedChecksumRootValid(uint metadataChecksum, SectorEntry[] sectorEntries, uint expectedChecksum)
+        {
+            uint checksumRoot = ComputeIndexedChecksumRoot(metadataChecksum, sectorEntries);
+            if (checksumRoot == expectedChecksum)
+                return true;
+
+            return ComputeIndexedChecksumRootLegacyHash(metadataChecksum, sectorEntries) == expectedChecksum;
+        }
+
+        private static bool IsIndexedChecksumRootValid(
+            uint checksumRoot,
+            byte* filePtr,
+            int entryCursor,
+            uint metadataChecksum,
+            uint expectedChecksum)
+        {
+            if (checksumRoot == expectedChecksum)
+                return true;
+
+            return ComputeIndexedChecksumRootLegacyHashFromMappedDirectory(filePtr, entryCursor, metadataChecksum) == expectedChecksum;
+        }
+
+        private static uint FoldIndexedSectorChecksum(in SectorEntry entry)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u;
+                hash = MixChecksum32(hash, (uint)entry.SectorHash);
+                hash = MixChecksum32(hash, (uint)((ulong)entry.SectorHash >> 32));
+                hash = MixChecksum32(hash, entry.Checksum);
+                hash = MixChecksum32(hash, (uint)entry.CompressedSize);
+                hash = MixChecksum32(hash, (uint)entry.DecompressedSize);
+                return hash == 0u ? 2166136261u : hash;
+            }
+        }
+
+        private static uint MixChecksum32(uint hash, uint value)
+        {
+            unchecked
+            {
+                return (hash ^ value) * 16777619u;
+            }
+        }
+
+        private static bool TryComputeIndexedChecksumRootFromMappedDirectory(
+            byte* filePtr,
+            int entryCursor,
+            long metadataEndOffset,
+            long fileLength,
+            int expectedSectorCount,
+            uint metadataChecksum,
+            out uint checksumRoot,
+            out string error)
+        {
+            checksumRoot = metadataChecksum == 0u ? 2166136261u : metadataChecksum;
+            error = string.Empty;
+            int populatedCount = 0;
+
+            unchecked
+            {
+                for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
+                {
+                    SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                    if (IsIndexedSectorEntryPopulated(in entry))
+                    {
+                        if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, fileLength))
+                        {
+                            error = $"Indexed sector entry {i} exceeded the file bounds.";
+                            return false;
+                        }
+
+                        populatedCount++;
+                        checksumRoot = (checksumRoot ^ FoldIndexedSectorChecksum(in entry)) * 16777619u;
+                    }
+
+                    entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+                }
+
+                if (checksumRoot == 0u)
+                    checksumRoot = 2166136261u;
+            }
+
+            if (populatedCount != expectedSectorCount)
+            {
+                error = $"Indexed sector directory count mismatch. Header={expectedSectorCount}, Populated={populatedCount}.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static uint ComputeIndexedChecksumRootLegacyHashFromMappedDirectory(
+            byte* filePtr,
+            int entryCursor,
+            uint metadataChecksum)
+        {
+            unchecked
+            {
+                uint root = metadataChecksum == 0u ? 2166136261u : metadataChecksum;
+                for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
+                {
+                    SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                    if (IsIndexedSectorEntryPopulated(in entry))
+                    {
+                        uint leafHash = FoldIndexedSectorChecksumLegacyHash(in entry);
+                        root = (root ^ leafHash) * 16777619u;
+                    }
+
+                    entryCursor += UnsafeUtility.SizeOf<SectorEntry>();
+                }
+
+                return root == 0u ? 2166136261u : root;
+            }
+        }
+
+        private static uint ComputeIndexedChecksumRootLegacyHash(uint metadataChecksum, SectorEntry[] sectorEntries)
+        {
+            unchecked
+            {
+                uint root = metadataChecksum == 0u ? 2166136261u : metadataChecksum;
+                if (sectorEntries == null)
+                    return root;
+
+                for (int i = 0; i < sectorEntries.Length; i++)
+                {
+                    SectorEntry entry = sectorEntries[i];
+                    if (!IsIndexedSectorEntryPopulated(in entry))
+                        continue;
+
+                    uint leafHash = FoldIndexedSectorChecksumLegacyHash(in entry);
+                    root = (root ^ leafHash) * 16777619u;
+                }
+
+                return root == 0u ? 2166136261u : root;
+            }
+        }
+
+        private static uint FoldIndexedSectorChecksumLegacyHash(in SectorEntry entry)
+        {
+            LegacyIndexedChecksumLeaf leaf = new LegacyIndexedChecksumLeaf
+            {
+                SectorHash = entry.SectorHash,
+                Checksum = entry.Checksum,
+                CompressedSize = entry.CompressedSize,
+                DecompressedSize = entry.DecompressedSize
+            };
+
+            return Hash32(
+                UnsafeUtility.AddressOf(ref leaf),
+                UnsafeUtility.SizeOf<LegacyIndexedChecksumLeaf>());
         }
 
         private static bool TryVerifyIndexedSectorPayloadChecksum(

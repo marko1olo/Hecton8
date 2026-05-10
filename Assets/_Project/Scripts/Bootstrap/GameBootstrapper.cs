@@ -65,7 +65,7 @@ namespace Hecton8.Bootstrap
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-29980)]
-    public sealed class GameBootstrapper : MonoBehaviour
+    public sealed class GameBootstrapper : MonoBehaviour, ISlowTickable
     {
         private const string BootstrapSceneName = "00_BOOTSTRAP";
         private const string MainMenuSceneName = "01_MAIN_MENU";
@@ -102,6 +102,7 @@ namespace Hecton8.Bootstrap
         private const float BytesPerMegabyte = 1024f * 1024f;
         private const int LowMemorySystemThresholdMb = 6144;
         private const int LowMemoryVramThresholdMb = 2048;
+        private const int HeartbeatFreezeSlowTickLimit = 3;
         private const double BootstrapSceneLoadWatchdogSeconds = 10.0d;
         private const double BootstrapJobWaitWatchdogSeconds = 10.0d;
         private const int BootstrapSceneRootScratchCapacity = 256;
@@ -305,6 +306,8 @@ namespace Hecton8.Bootstrap
 #endif
         // COLD ALLOC: BootstrapDependencyNode[bootstrap-node-count] - cached Kahn topological service execution order - owner: GameBootstrapper
         private readonly BootstrapDependencyNode[] _bootstrapExecutionOrder = new BootstrapDependencyNode[(int)BootstrapDependencyNode.Count];
+        private readonly int[] _heartbeatTickSamples = new int[(int)BootstrapDependencyNode.Count];
+        private readonly byte[] _heartbeatFrozenSamples = new byte[(int)BootstrapDependencyNode.Count];
         private int _bootstrapExecutionOrderCount;
 
         [Serializable]
@@ -761,6 +764,17 @@ namespace Hecton8.Bootstrap
             }
         }
 
+        private void OnEnable()
+        {
+            if (Application.isPlaying)
+                GlobalRegistry.TryRegisterSlowTickable(this, PriorityLayer.Core);
+        }
+
+        private void OnDisable()
+        {
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+        }
+
         private void Start()
         {
             Scene activeScene = gameObject.scene;
@@ -780,6 +794,44 @@ namespace Hecton8.Bootstrap
                 BootstrapState.PublishGameReady(false);
             DisposeSessionNativeStateForShutdown();
             GlobalRegistry.ClearBootstrapperRuntime(this);
+        }
+
+        public void SlowTick()
+        {
+            if (!_isBootstrapComplete || _bootstrapExecutionOrderCount <= 0)
+                return;
+
+            for (int index = 0; index < _bootstrapExecutionOrderCount; index++)
+            {
+                BootstrapDependencyNode node = _bootstrapExecutionOrder[index];
+                object service = ResolveBootstrapDependencyService(node);
+                if (service is not IServiceHeartbeat heartbeat || !heartbeat.IsServiceReady)
+                    continue;
+
+                int tickCount = heartbeat.TickCount;
+                if (tickCount != _heartbeatTickSamples[index])
+                {
+                    _heartbeatTickSamples[index] = tickCount;
+                    _heartbeatFrozenSamples[index] = 0;
+                    continue;
+                }
+
+                if (_heartbeatFrozenSamples[index] < byte.MaxValue)
+                    _heartbeatFrozenSamples[index]++;
+
+                if (_heartbeatFrozenSamples[index] == HeartbeatFreezeSlowTickLimit)
+                {
+                    Debug.LogError(
+                        "[GameBootstrapper] SERVICE_HEARTBEAT_FREEZE service=" +
+                        ResolveBootstrapDependencyNodeName(node) +
+                        " tick=" +
+                        tickCount);
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        unchecked((uint)Hecton.Localization.LocHash.Compute("SERVICE_HEARTBEAT_FREEZE")),
+                        _GameBootstrapperContextHash,
+                        tickCount);
+                }
+            }
         }
 
         private static void DisposeSessionNativeStateForShutdown()

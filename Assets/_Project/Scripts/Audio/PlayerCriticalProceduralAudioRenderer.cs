@@ -4153,7 +4153,7 @@ namespace Hecton8.Audio
             state.GrainAgeSeconds += (float)invSampleRate;
             state.Envelope = math.max(0f, state.Envelope - ((float)invSampleRate * LeviathanRoarAggroDecayPerSecond * 0.5f));
             float roar = (state.LowPassState * 0.74f + grain * 0.26f) * grainEnvelope * state.Envelope;
-            return math.tanh(roar * 2.8f) * LeviathanRoarMaximumGain;
+            return FastSoftClip(roar * 2.8f) * LeviathanRoarMaximumGain;
         }
 
         private float RenderInteriorFdnReverbSample(ref InteriorFdnReverbSynthesisState state, float input, float send01)
@@ -4266,7 +4266,7 @@ namespace Hecton8.Audio
         private static int ResolveSabineDelaySamples(float delaySeconds, float sampleRate)
         {
             return math.clamp(
-                (int)math.round(delaySeconds * sampleRate),
+                (int)(delaySeconds * sampleRate + 0.5f),
                 1,
                 SabineReverbDelayLineLength - 1);
         }
@@ -5691,11 +5691,11 @@ namespace Hecton8.Audio
                 double cavitationCarrierFrequency = math.max(
                     420d,
                     math.lerp(1200f, 4200f, math.saturate(acceleration * 0.9f + load * 0.1f)) + cavitationModulator);
-            AdvancePhase(ref state.CavitationCarrierPhase, cavitationCarrierFrequency, invSampleRate);
-            float cavitationFm =
-                FastSineRadians((float)(TwoPi * state.CavitationCarrierPhase) + highNoise * 0.6f) *
-                dynamicEnvelope *
-                math.saturate(acceleration * 0.82f + pressure * 0.35f + dive * 0.12f);
+                AdvancePhase(ref state.CavitationCarrierPhase, cavitationCarrierFrequency, invSampleRate);
+                float cavitationFm =
+                    FastSineRadians((float)(TwoPi * state.CavitationCarrierPhase) + highNoise * 0.6f) *
+                    dynamicEnvelope *
+                    math.saturate(acceleration * 0.82f + pressure * 0.35f + dive * 0.12f);
                 float rawScreechNoise = HighBandNoise(sampleIndex ^ 0xDA7A51C3u);
                 float highPassScreech =
                     VehicleCavitationHighPassAlpha *
@@ -5973,7 +5973,7 @@ namespace Hecton8.Audio
             float second = AdvanceSine(ref state.PressureScrubberHarmonicPhase, PressureScrubberHumFrequencyHertz * 2f, invSampleRate) * (0.18f + harmonicGain * 0.2f);
             float third = AdvanceSine(ref state.PressureScrubberSaturationPhase, PressureScrubberHumFrequencyHertz * 3f, invSampleRate) * (0.05f + harmonicGain * 0.13f);
             float cachedDrive = math.lerp(0.62f, 1.28f, harmonicGain);
-            return (fundamental + second + third) * cachedDrive * gain;
+            return FastSoftClip((fundamental + second + third) * cachedDrive) * gain;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

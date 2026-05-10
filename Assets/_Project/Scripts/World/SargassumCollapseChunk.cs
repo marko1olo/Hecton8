@@ -607,7 +607,8 @@ namespace Hecton8.World
 
             float speed01 = Mathf.Clamp01(downwardSpeed / Mathf.Max(0.1f, siltTrailFullSpeed));
             ParticleSystem.EmissionModule emission = siltTrail.emission;
-            emission.rateOverTime = LerpClamped(siltTrailBaseRate, siltTrailMaxRate, speed01);
+            emission.rateOverTime = LerpClamped(siltTrailBaseRate, siltTrailMaxRate, speed01) *
+                                    FrameTimeWatchdog.ParticleEmissionScale;
             if (!siltTrail.isPlaying)
                 siltTrail.Play(true);
         }
@@ -665,7 +666,7 @@ namespace Hecton8.World
 
             ParticleSystem.EmissionModule emission = particleSystem.emission;
             emission.enabled = true;
-            emission.rateOverTime = siltTrailBaseRate;
+            emission.rateOverTime = siltTrailBaseRate * FrameTimeWatchdog.ParticleEmissionScale;
 
             ParticleSystem.ShapeModule shape = particleSystem.shape;
             shape.enabled = true;

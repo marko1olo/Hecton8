@@ -4459,7 +4459,7 @@ namespace Hecton8.World
 
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
-            mesh.uv = uv;
+            mesh.SetUVs(0, uv);
             mesh.SetTriangles(triangles, 0);
             mesh.bounds = new Bounds(Vector3.zero, Vector3.one);
             return mesh;

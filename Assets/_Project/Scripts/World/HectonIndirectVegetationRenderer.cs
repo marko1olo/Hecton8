@@ -3299,8 +3299,8 @@ namespace Hecton8.World
 
             mesh.SetVertices(vertices);
             mesh.SetNormals(normals);
-            mesh.tangents = tangents;
-            mesh.uv = uvs;
+            mesh.SetTangents(tangents);
+            mesh.SetUVs(0, uvs);
             mesh.SetTriangles(triangles, 0);
             mesh.bounds = new Bounds(new Vector3(0f, 0.5f, 0f), new Vector3(1f, 1f, 0.01f));
             return mesh;

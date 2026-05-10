@@ -5,11 +5,12 @@ using Unity.Mathematics;
 
 namespace Hecton8.Core
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 24)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
     public struct HectonAabb
     {
         public float3 Min;
         public float3 Max;
+        public float2 Reserved;
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 16)]

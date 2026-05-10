@@ -132,7 +132,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
         float3 HectonTerrainSanitizePositionOS(float3 positionOS)
         {
-            return all(isfinite(positionOS)) ? positionOS : float3(0.0, 0.0, 0.0);
+            return positionOS;
         }
 
         half3 HectonDominantAxisDirection(float3 value)
@@ -144,29 +144,26 @@ Shader "HECTON/Terrain/TerrainMaster"
 
         half EvaluateSargassumCanopyShadow(float3 positionWS)
         {
-            if (_SargassumCanopyLightingParams.w < 0.5)
-                return 0.0h;
-
+            half enabled = step(0.5h, (half)_SargassumCanopyLightingParams.w);
             float2 delta = positionWS.xz - _SargassumCanopyShadowParams.xy;
             float distanceSq01 = dot(delta, delta) * (_SargassumCanopyShadowParams.z * _SargassumCanopyShadowParams.z);
             half radialFalloff = saturate(1.0 - distanceSq01);
             radialFalloff *= radialFalloff;
             half canopyWindow = saturate(_SargassumCanopyLightingParams.z);
             half canopyOcclusion = saturate(_SargassumCanopyShadowParams.w) * (1.0h - canopyWindow * 0.55h);
-            return radialFalloff * canopyOcclusion;
+            return radialFalloff * canopyOcclusion * enabled;
         }
 
         half EvaluatePlanetaryTerrainFade(float3 positionWS)
         {
-            if (_HectonTerrainFadeParams.z < 0.5)
-                return 1.0h;
-
+            half enabled = step(0.5h, (half)_HectonTerrainFadeParams.z);
             float fadeDistance = max(max(_FadeDistance, _HectonTerrainFadeParams.x), 1.0);
             float fadeWidth = max(1.0 / max(_HectonTerrainFadeParams.y, 0.0001), 1.0);
             float2 fadeDelta = positionWS.xz - _HectonTerrainFadeRuntimeOrigin.xz;
             float distanceSqXZ = dot(fadeDelta, fadeDelta);
             float fadeStart = max(0.0, fadeDistance - fadeWidth);
-            return (half)(1.0 - smoothstep(fadeStart * fadeStart, fadeDistance * fadeDistance, distanceSqXZ));
+            half fade = (half)(1.0 - smoothstep(fadeStart * fadeStart, fadeDistance * fadeDistance, distanceSqXZ));
+            return lerp(1.0h, fade, enabled);
         }
 
         half HectonInterleavedGradientNoise(float2 pixel)
@@ -184,15 +181,12 @@ Shader "HECTON/Terrain/TerrainMaster"
 
         half EvaluateDistantTerrainHeightShadow(float3 positionWS)
         {
-            if (_HectonDistantTerrainShadowParams.z < 0.5)
-                return 0.0h;
-
             float2 uv = (positionWS.xz - _HectonDistantTerrainShadowRect.xy) * _HectonDistantTerrainShadowRect.zw;
-            if (any(uv < 0.0) || any(uv > 1.0))
-                return 0.0h;
-
+            half enabled = step(0.5h, (half)_HectonDistantTerrainShadowParams.z);
+            half inside = step(0.0h, (half)uv.x) * step(0.0h, (half)uv.y) *
+                step((half)uv.x, 1.0h) * step((half)uv.y, 1.0h);
             half mask = SAMPLE_TEXTURE2D(_HectonDistantTerrainShadowMask, sampler_HectonDistantTerrainShadowMask, uv).r;
-            return saturate(mask * (half)_HectonDistantTerrainShadowParams.x);
+            return saturate(mask * (half)_HectonDistantTerrainShadowParams.x) * enabled * inside;
         }
 
         float2 HectonHash22(float2 value)
@@ -251,10 +245,6 @@ Shader "HECTON/Terrain/TerrainMaster"
         half ResolveBiomeEdgeBleed(float3 positionWS, half biome)
         {
             half transitionMask = saturate(1.0h - abs(biome * 2.0h - 1.0h));
-            if (transitionMask <= 0.0001h ||
-                (_BiomeEdgeBleedStrength <= 0.0001 && _BiomeTransitionNoiseStrength <= 0.0001))
-                return biome;
-
             float scale = max(_BiomeEdgeBleedScale, 0.0001);
             half edgeNoise = HectonCellNoise2D(positionWS.xz * scale);
             half bleed = (edgeNoise - 0.5h) * transitionMask * (half)_BiomeEdgeBleedStrength;
@@ -267,9 +257,6 @@ Shader "HECTON/Terrain/TerrainMaster"
         half ApplyNoirSiltPulse(float3 positionWS, half depthFactor, half slopeBlend, inout half3 albedo, inout half3 emission)
         {
             half strength = saturate((half)_NoirSiltPulseStrength);
-            if (strength <= 0.0001h)
-                return 0.0h;
-
             float scale = max(_NoirSiltPulseScale, 0.0001);
             float2 pulseCoord = positionWS.xz * scale + positionWS.yy * 0.011;
             half grainA = HectonInterleavedGradientNoise(pulseCoord * 173.31);
@@ -400,7 +387,8 @@ Shader "HECTON/Terrain/TerrainMaster"
                 float2 rockUv = IN.positionWS.xz * max(_RockScale, 0.0001);
                 half4 control = SAMPLE_TEXTURE2D(_TerrainControlRGBA, sampler_TerrainControlRGBA, IN.positionWS.xz * max(_ControlScale, 0.000001));
                 half controlSum = control.r + control.g;
-                half controlRock = controlSum > 0.001h ? control.g / controlSum : slopeBlend;
+                half hasControl = step(0.001h, controlSum);
+                half controlRock = lerp(slopeBlend, control.g / max(controlSum, 0.001h), hasControl);
                 half rockWeight = saturate(lerp(controlRock, max(controlRock, slopeBlend), 0.35h));
                 half sandWeight = 1.0h - rockWeight;
                 half stochasticStrength = saturate((half)_StochasticStrength);

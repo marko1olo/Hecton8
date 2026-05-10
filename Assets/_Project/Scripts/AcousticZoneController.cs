@@ -551,6 +551,8 @@ namespace Hecton8.Audio
     [DefaultExecutionOrder(-4000)] // Posle FluidEngine (-5000), do bolshinstva sistem
     public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable, ISoundscapeEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAtmosphereStateEventListener
     {
+        private const float TwoPi = 6.28318530718f;
+        private const float InvTwoPi = 0.15915494309f;
         private const string SurfaceSoundscapeTierLabel = "Surface";
         private const string ShallowSoundscapeTierLabel = "Shallow";
         private const string TwilightSoundscapeTierLabel = "Twilight";
@@ -2373,11 +2375,11 @@ namespace Hecton8.Audio
             _debugStormInterference = stormInterference;
 
             float flutterFrequency = math.lerp(stormAmbientFlutterFrequencyMin, stormAmbientFlutterFrequencyMax, stormInterference);
-            _stormAmbientFlutterPhase += deltaTime * flutterFrequency * math.PI * 2f;
-            if (_stormAmbientFlutterPhase >= math.PI * 2f)
-                _stormAmbientFlutterPhase -= math.PI * 2f;
+            _stormAmbientFlutterPhase += deltaTime * flutterFrequency * TwoPi;
+            if (_stormAmbientFlutterPhase >= TwoPi)
+                _stormAmbientFlutterPhase -= TwoPi;
 
-            _stormAmbientFlutter = math.sin(_stormAmbientFlutterPhase) * (stormAmbientPitchFlutterMax * stormInterference);
+            _stormAmbientFlutter = FastSineRadians(_stormAmbientFlutterPhase) * (stormAmbientPitchFlutterMax * stormInterference);
 
             _stormInterferencePulseTimer -= deltaTime;
             if (_stormInterferencePulseTimer > 0f)
@@ -2556,6 +2558,15 @@ namespace Hecton8.Audio
                 volume *= stormStaticUnderwaterVolumeScale;
 
             sam.PlayStatic2D(clip, volume, sam.InterfaceGroup);
+        }
+
+        private static float FastSineRadians(float radians)
+        {
+            float phase = radians * InvTwoPi;
+            phase -= math.floor(phase);
+            float centered = phase > 0.5f ? phase - 1f : phase;
+            float wave = (4f * centered) - (8f * centered * math.abs(centered));
+            return wave + 0.225f * ((wave * math.abs(wave)) - wave);
         }
 
         private string ResolveAmbientMoodLabel()

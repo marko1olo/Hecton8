@@ -322,7 +322,7 @@ namespace Hecton8.World
             {
                 OriginPosition = originPosition,
                 ProbeDistance = math.max(1f, probeDistance),
-                ForwardDirection = NormalizeForwardDirection(forwardDirection, directionLengthSq),
+                ForwardDirection = ResolveDominantForwardDirection(forwardDirection),
                 LayerMask = resolvedLayerMask,
                 IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
                 IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
@@ -420,7 +420,7 @@ namespace Hecton8.World
             {
                 OriginPosition = originPosition,
                 ProbeDistance = math.max(1f, probeDistance),
-                ForwardDirection = NormalizeForwardDirection(forwardDirection, directionLengthSq),
+                ForwardDirection = ResolveDominantForwardDirection(forwardDirection),
                 LayerMask = resolvedLayerMask,
                 IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
                 IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
@@ -436,10 +436,18 @@ namespace Hecton8.World
             return true;
         }
 
-        private static Vector3 NormalizeForwardDirection(Vector3 direction, float lengthSq)
+        private static Vector3 ResolveDominantForwardDirection(Vector3 direction)
         {
-            float invLength = math.rsqrt(math.max(lengthSq, MinimumPathDistanceMeters * MinimumPathDistanceMeters));
-            return direction * invLength;
+            float ax = math.abs(direction.x);
+            float ay = math.abs(direction.y);
+            float az = math.abs(direction.z);
+            if (ax >= ay && ax >= az)
+                return new Vector3(direction.x < 0f ? -1f : 1f, 0f, 0f);
+
+            if (ay >= az)
+                return new Vector3(0f, direction.y < 0f ? -1f : 1f, 0f);
+
+            return new Vector3(0f, 0f, direction.z < 0f ? -1f : 1f);
         }
 
         private static float FastTransmissionDecay(float x)

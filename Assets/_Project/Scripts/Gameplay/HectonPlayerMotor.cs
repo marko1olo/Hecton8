@@ -300,7 +300,7 @@ namespace Hecton8.Gameplay
             if (distance <= 0f || !math.isfinite(distance) || !IsFiniteNonZero(direction))
                 return false;
 
-            Vector3 safeDirection = SafeNormal(direction, Vector3.down);
+            Vector3 safeDirection = ResolveDominantProbeDirection(direction);
             int commandIndex = ResolveScheduledProbeCommandIndex(safeDirection);
             return TryFindNearestScheduledProbeHit(
                 commandIndex,
@@ -1617,6 +1617,25 @@ namespace Hecton8.Gameplay
             return direction.y >= 0.7f
                 ? ScheduledCeilingProbeCommandIndex
                 : ScheduledWallProbeCommandIndex;
+        }
+
+        private static Vector3 ResolveDominantProbeDirection(Vector3 direction)
+        {
+            if (!math.isfinite(direction.x) ||
+                !math.isfinite(direction.y) ||
+                !math.isfinite(direction.z))
+            {
+                return Vector3.down;
+            }
+
+            if (direction.y <= -0.7f)
+                return Vector3.down;
+
+            if (direction.y >= 0.7f)
+                return Vector3.up;
+
+            Vector3 planarDirection = ResolveDominantPlanarDirection(direction, Vector3.forward);
+            return planarDirection.sqrMagnitude > MinVectorMagnitudeSq ? planarDirection : Vector3.forward;
         }
 
         private bool TryFindNearestScheduledProbeHit(

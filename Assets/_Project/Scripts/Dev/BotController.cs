@@ -37,7 +37,7 @@ namespace Hecton8.Dev
         // COLD ALLOC: WaitCallback[1] — background CSV flush entry point — owner: BotController
         private static readonly WaitCallback _csvFlushCallback = ExecuteCsvFlush;
 
-        [StructLayout(LayoutKind.Sequential)]
+        [StructLayout(LayoutKind.Sequential, Size = 64)]
         private struct ExpeditionSample
         {
             public float ElapsedSeconds;
@@ -47,7 +47,7 @@ namespace Hecton8.Dev
             public float TotalAllocatedMb;
             public float TotalReservedMb;
             public float GraphicsDriverAllocatedMb;
-            public long GcThreadAllocatedBytes;
+            public int GcThreadAllocatedBytes;
             public int GcGen0;
             public int GcGen1;
             public int GcGen2;
@@ -55,6 +55,7 @@ namespace Hecton8.Dev
             public float PositionX;
             public float PositionY;
             public float PositionZ;
+            public int Reserved;
         }
 
         [SerializeField, Tooltip("Starts the QA expedition automatically when the component registers.")]
@@ -74,11 +75,15 @@ namespace Hecton8.Dev
 
         private Transform _cachedTransform;
         private Rigidbody _playerBody;
+        private LODSystemManager _lodSystem;
         private Vector3 _startPosition;
+        private Vector3 _driveDirection;
         private float _elapsedSeconds;
         private float _sampleTimer;
         private float _resolveTimer;
         private float _lowFpsSeconds;
+        private float _driveScale;
+        private float _targetDistanceMetersSq;
         private long _startThreadAllocatedBytes;
         private int _sampleCount;
         private int _sampleFrameCount;
@@ -91,6 +96,7 @@ namespace Hecton8.Dev
         private bool _running;
         private bool _csvDirty;
         private bool _hasFailure;
+        private bool _hasDriveCommand;
         private string _csvDirectoryPath;
         private string _failureReason = FailureNone;
 
@@ -148,6 +154,7 @@ namespace Hecton8.Dev
         public void SetMoveCommand(float horizontal, float vertical)
         {
             _wasdCommand = new Vector2(Mathf.Clamp(horizontal, -1f, 1f), Mathf.Clamp(vertical, -1f, 1f));
+            ResolveDriveCommand();
         }
 
         /// <summary>
@@ -156,6 +163,7 @@ namespace Hecton8.Dev
         public void SetTargetDistanceMeters(float targetDistanceMeters)
         {
             _targetDistanceMeters = Mathf.Max(1f, targetDistanceMeters);
+            _targetDistanceMetersSq = _targetDistanceMeters * _targetDistanceMeters;
         }
 
         /// <summary>
@@ -170,7 +178,10 @@ namespace Hecton8.Dev
             if (_playerBody == null)
                 return;
 
+            ResolveDriveCommand();
+            _lodSystem = LODSystemManager.Instance;
             _startPosition = _playerBody.position;
+            _targetDistanceMetersSq = ResolveTargetDistanceMetersSq();
             _elapsedSeconds = 0f;
             _sampleTimer = 0f;
             _resolveTimer = 0f;
@@ -184,6 +195,7 @@ namespace Hecton8.Dev
             _maxLodChangesSinceSample = 0;
             _csvDirty = false;
             _hasFailure = false;
+            _hasDriveCommand = _driveScale > 0f;
             _failureReason = FailureNone;
             _csvDirectoryPath = Application.persistentDataPath;
             CsvPath = Path.Combine(_csvDirectoryPath, CsvFileName);
@@ -214,14 +226,10 @@ namespace Hecton8.Dev
                 return;
             }
 
-            float commandLength = ApproximatePlanarMagnitude(_wasdCommand.x, _wasdCommand.y);
-            if (commandLength > 0.000001f)
+            if (_hasDriveCommand && _accelerationMetersPerSecondSq > 0f)
             {
-                Transform cachedTransform = _cachedTransform;
-                Vector3 forward = cachedTransform.forward;
-                Vector3 right = cachedTransform.right;
-                float commandScale = Mathf.Max(0f, _accelerationMetersPerSecondSq) / commandLength;
-                Vector3 command = ((forward * _wasdCommand.y) + (right * _wasdCommand.x)) * commandScale;
+                float acceleration = _accelerationMetersPerSecondSq * _driveScale;
+                Vector3 command = _driveDirection * acceleration;
                 PhysicsForceRouter.QueueForce(
                     _playerBody,
                     command,
@@ -238,9 +246,8 @@ namespace Hecton8.Dev
                 _sampleFrameCount = 0;
             }
 
-            float targetDistance = Mathf.Max(1f, _targetDistanceMeters);
             float traveledSq = DistanceSq(_startPosition, _playerBody.position);
-            if (traveledSq >= targetDistance * targetDistance || _elapsedSeconds >= MaxRuntimeSeconds)
+            if (traveledSq >= _targetDistanceMetersSq || _elapsedSeconds >= MaxRuntimeSeconds)
                 StopExpedition();
         }
 
@@ -279,7 +286,7 @@ namespace Hecton8.Dev
             sample.TotalAllocatedMb = Profiler.GetTotalAllocatedMemoryLong() * (1f / (1024f * 1024f));
             sample.TotalReservedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             sample.GraphicsDriverAllocatedMb = Math.Max(0L, Profiler.GetAllocatedMemoryForGraphicsDriver()) * (1f / (1024f * 1024f));
-            sample.GcThreadAllocatedBytes = Math.Max(0L, GC.GetAllocatedBytesForCurrentThread() - _startThreadAllocatedBytes);
+            sample.GcThreadAllocatedBytes = ClampLongToInt(Math.Max(0L, GC.GetAllocatedBytesForCurrentThread() - _startThreadAllocatedBytes));
             sample.GcGen0 = GC.CollectionCount(0) - _startGen0;
             sample.GcGen1 = GC.CollectionCount(1) - _startGen1;
             sample.GcGen2 = GC.CollectionCount(2) - _startGen2;
@@ -297,7 +304,8 @@ namespace Hecton8.Dev
 
         private void TrackLodTransitionPeak()
         {
-            int lodChanges = ResolveLodChangesFrame();
+            LODSystemManager lodSystem = _lodSystem;
+            int lodChanges = lodSystem != null ? lodSystem.LastFrameTransitionCount : 0;
             if (lodChanges > _maxLodChangesSinceSample)
                 _maxLodChangesSinceSample = lodChanges;
         }
@@ -330,10 +338,39 @@ namespace Hecton8.Dev
             StopExpedition();
         }
 
-        private static int ResolveLodChangesFrame()
+        private void ResolveDriveCommand()
         {
-            LODSystemManager lodSystem = LODSystemManager.Instance;
-            return lodSystem != null ? lodSystem.LastFrameTransitionCount : 0;
+            float absX = Mathf.Abs(_wasdCommand.x);
+            float absY = Mathf.Abs(_wasdCommand.y);
+            if (absX <= 0.000001f && absY <= 0.000001f)
+            {
+                _driveDirection = Vector3.zero;
+                _driveScale = 0f;
+                _hasDriveCommand = false;
+                return;
+            }
+
+            Transform cachedTransform = _cachedTransform;
+            if (cachedTransform == null)
+            {
+                _driveDirection = Vector3.zero;
+                _driveScale = 0f;
+                _hasDriveCommand = false;
+                return;
+            }
+
+            if (absY >= absX)
+            {
+                _driveDirection = _wasdCommand.y >= 0f ? cachedTransform.forward : -cachedTransform.forward;
+                _driveScale = absY;
+            }
+            else
+            {
+                _driveDirection = _wasdCommand.x >= 0f ? cachedTransform.right : -cachedTransform.right;
+                _driveScale = absX;
+            }
+
+            _hasDriveCommand = true;
         }
 
         private void QueueCsvFlushCold()
@@ -430,13 +467,15 @@ namespace Hecton8.Dev
             return delta.sqrMagnitude;
         }
 
-        private static float ApproximatePlanarMagnitude(float x, float y)
+        private float ResolveTargetDistanceMetersSq()
         {
-            float absX = Mathf.Abs(x);
-            float absY = Mathf.Abs(y);
-            float max = Mathf.Max(absX, absY);
-            float min = Mathf.Min(absX, absY);
-            return max + (min * 0.375f);
+            float targetDistance = Mathf.Max(1f, _targetDistanceMeters);
+            return targetDistance * targetDistance;
+        }
+
+        private static int ClampLongToInt(long value)
+        {
+            return value >= int.MaxValue ? int.MaxValue : (int)value;
         }
 
         private static float ApproximateMagnitude(Vector3 value)

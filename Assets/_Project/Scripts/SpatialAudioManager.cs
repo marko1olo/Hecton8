@@ -78,6 +78,7 @@ namespace Hecton8.Audio
         private const float MassiveDistanceFixedAudioDelayMeters = 740f;
         private const float MassiveDistanceFixedAudioDelaySeconds = 0.5f;
         private const float ThermalShimmerMaximumPitchRatio = 0.018f;
+        private const float InverseTwoPi = 0.15915494309f;
         private const float HaasArrivalWindowSeconds = 0.035f;
         private const float HaasReleaseThresholdSeconds = 0.04f;
         private const float HaasSecondarySpatialBlendFactor = 0.2f;
@@ -2248,8 +2249,17 @@ namespace Hecton8.Audio
             float phase = (Time.unscaledTime * 47.3f) +
                           ((float)absolutePosition.x * 0.013f) +
                           ((float)absolutePosition.z * 0.017f);
-            float shimmer = math.sin(phase) * ThermalShimmerMaximumPitchRatio * shimmer01;
+            float shimmer = FastSineRadians(phase) * ThermalShimmerMaximumPitchRatio * shimmer01;
             return math.clamp(delayedEvent.Pitch * (1f + shimmer), 0.1f, 3f);
+        }
+
+        private static float FastSineRadians(float radians)
+        {
+            float phase = radians * InverseTwoPi;
+            phase -= math.floor(phase);
+            float centered = phase > 0.5f ? phase - 1f : phase;
+            float wave = (4f * centered) - (8f * centered * math.abs(centered));
+            return wave + 0.225f * ((wave * math.abs(wave)) - wave);
         }
 
         private static float ResolveFixedUnderwaterArrivalDelaySecondsFromSq(float distanceSq)

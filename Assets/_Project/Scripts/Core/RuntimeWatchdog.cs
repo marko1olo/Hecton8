@@ -79,6 +79,7 @@ namespace Hecton8.Core
         private const long BaseMmfBloatThresholdBytes = 50L * 1024L * 1024L;
         private const long RuntimeMemorySpikeThresholdBytes = 50L * 1024L * 1024L;
         private const int MemorySpikeSampleIntervalFrames = 10;
+        private const int MemorySubsystemBreachCooldownFrames = 300;
         private const long InvalidMmfSectorHash = long.MinValue;
         private const int RegistryHeartbeatSlotCount = (int)GlobalRegistryServiceSlot.Unknown;
         private const int FaunaLogicRateColdTick = 1;
@@ -136,6 +137,7 @@ namespace Hecton8.Core
         private static string _mmfHealthWorkPath;
         private static long _mmfHealthWorkSectorHash;
         private static int _mmfHealthWorkGeneration;
+        private static long _runtimeMemorySafeBoundBytes;
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
@@ -194,6 +196,7 @@ namespace Hecton8.Core
             _mmfHealthWorkPath = null;
             _mmfHealthWorkSectorHash = InvalidMmfSectorHash;
             _mmfHealthWorkGeneration = 0;
+            _runtimeMemorySafeBoundBytes = 0L;
         }
 
         public static RuntimeWatchdog EnsureRuntimeInstance()
@@ -422,7 +425,8 @@ namespace Hecton8.Core
             double now = Time.realtimeSinceStartupAsDouble;
             EnforceHudHeartbeat(now, frame);
             QueueMmfHealthCheckIfDue(now);
-            SampleRegistryHeartbeatsIfDue(now);
+            if (now >= _nextRegistryHeartbeatGuardTime)
+                SampleRegistryHeartbeatsIfDue(now);
 
             if (frame < _nextSampleFrame)
                 return;
@@ -493,9 +497,14 @@ namespace Hecton8.Core
             _nextMemorySpikeSampleFrame = frame + MemorySpikeSampleIntervalFrames;
             long currentBytes = Profiler.GetTotalAllocatedMemoryLong();
             long previousBytes = _lastTotalAllocatedMemoryBytes;
-            long earlyDeltaBytes = currentBytes > previousBytes && previousBytes > 0L ? currentBytes - previousBytes : 0L;
-            uint memoryContextHash = ResolveMemorySpikeFingerprint(previousBytes, currentBytes, earlyDeltaBytes, frame);
-            TriggerMemorySubsystemBreachIfUnsafe(currentBytes, ResolveRuntimeMemorySafeBoundBytes(), frame, memoryContextHash);
+            long safeBoundBytes = ResolveRuntimeMemorySafeBoundBytes();
+            if (currentBytes > safeBoundBytes)
+            {
+                long earlyDeltaBytes = currentBytes > previousBytes && previousBytes > 0L ? currentBytes - previousBytes : 0L;
+                uint memoryContextHash = ResolveMemorySpikeFingerprint(previousBytes, currentBytes, earlyDeltaBytes, frame);
+                TriggerMemorySubsystemBreachIfUnsafe(currentBytes, safeBoundBytes, frame, memoryContextHash);
+            }
+
             if (previousBytes <= 0L)
             {
                 _lastTotalAllocatedMemoryBytes = currentBytes;
@@ -520,8 +529,11 @@ namespace Hecton8.Core
 
         private void TriggerMemorySubsystemBreachIfUnsafe(long currentBytes, long safeBoundBytes, int frame, uint contextHash)
         {
-            if (currentBytes <= safeBoundBytes || _lastMemoryBreachFrame == frame)
+            if (currentBytes <= safeBoundBytes ||
+                (_lastMemoryBreachFrame >= 0 && frame - _lastMemoryBreachFrame < MemorySubsystemBreachCooldownFrames))
+            {
                 return;
+            }
 
             _lastMemoryBreachFrame = frame;
             SuitHUDV4CanvasOverlay.TriggerMemorySubsystemBreach(contextHash);
@@ -533,13 +545,21 @@ namespace Hecton8.Core
 
         private static long ResolveRuntimeMemorySafeBoundBytes()
         {
+            long cachedBoundBytes = _runtimeMemorySafeBoundBytes;
+            if (cachedBoundBytes > 0L)
+                return cachedBoundBytes;
+
             long systemMemoryMegabytes = SystemInfo.systemMemorySize;
             if (systemMemoryMegabytes <= 0L)
-                return 3L * 1024L * 1024L * 1024L;
+            {
+                _runtimeMemorySafeBoundBytes = 3L * 1024L * 1024L * 1024L;
+                return _runtimeMemorySafeBoundBytes;
+            }
 
             long systemMemoryBytes = systemMemoryMegabytes * 1024L * 1024L;
             long safeBoundBytes = (long)(systemMemoryBytes * 0.75d);
-            return Math.Max(ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes), safeBoundBytes);
+            _runtimeMemorySafeBoundBytes = Math.Max(ResolveScaledByteThreshold(RuntimeMemorySpikeThresholdBytes), safeBoundBytes);
+            return _runtimeMemorySafeBoundBytes;
         }
 
         private static uint ResolveMemorySpikeFingerprint(long previousBytes, long currentBytes, long deltaBytes, int frame)
